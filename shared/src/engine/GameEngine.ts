@@ -27,6 +27,8 @@ import {
   stepProjectile,
   sweepCollide,
   explosionDamage,
+  surfaceNormalAt,
+  reflectVelocity,
   MAX_WIND,
   WIND_DRIFT_STEP,
   MAX_DAMAGE,
@@ -58,6 +60,10 @@ const DEFAULT_SEED = 0x5eed_1234;
 
 /** Barrel length (px) used to offset the projectile spawn off the tank body. */
 const BARREL_LENGTH = 18;
+
+/** Push-off distance (px) along the surface normal after a bounce so the next
+ *  tick does not re-collide with the same solid pixel. */
+const BOUNCE_EPS = 1.5;
 
 /** Aim-input clamps (SPEC §6: angle degrees 0=right..180=left; power 0–100). */
 const ANGLE_MIN = 0;
@@ -213,6 +219,8 @@ export class GameEngine {
             weaponType: tank.selectedWeapon,
             age: 0,
             hasSplit: false,
+            bounces:
+              getWeapon(tank.selectedWeapon).behavior?.bounce?.maxBounces ?? 0,
           },
         ];
 
@@ -267,18 +275,25 @@ export class GameEngine {
       stepProjectile(p, this.state.wind, this.gravity);
       p.age++;
 
-      // APEX AIRBURST: an airburst shell that just crossed the top of its arc
-      // (vy rising -> falling) splits in place into a deterministic velocity
-      // fan of submunitions and is itself removed (no detonation here).
+      // SPLIT GATE: an airburst/funky shell splits ONCE (hasSplit guard) into a
+      // deterministic velocity fan, then is consumed. The TRIGGER decides WHEN:
+      //  - 'apex': the tick the shell crosses the top of its arc (vy rising
+      //            -> falling). Pre-step sign vyBefore<0 && post-step p.vy>=0.
+      //  - 'age' : the first tick at/after the shell reaches ageFrames ticks of
+      //            flight (p.age was just incremented above). Mid-arc, NOT apex.
+      // Both reuse splitAirburst (no randomness; fan is a pure function of the
+      // parent state + weapon def). hasSplit:false on the parent and true on
+      // every submunition guarantees a single split.
       const airburst = getWeapon(p.weaponType).behavior?.airburst;
-      if (
-        airburst !== undefined &&
-        p.hasSplit === false &&
-        vyBefore < 0 &&
-        p.vy >= 0
-      ) {
-        for (const sub of this.splitAirburst(p, airburst)) survivors.push(sub);
-        continue; // parent shell consumed by the split
+      if (airburst !== undefined && p.hasSplit === false) {
+        const shouldSplit =
+          airburst.trigger === 'apex'
+            ? vyBefore < 0 && p.vy >= 0
+            : p.age >= (airburst.ageFrames ?? 0);
+        if (shouldSplit) {
+          for (const sub of this.splitAirburst(p, airburst)) survivors.push(sub);
+          continue; // parent shell consumed by the split
+        }
       }
 
       const hit = sweepCollide(p, prevX, prevY, this.terrain, this.state.tanks);
@@ -288,10 +303,42 @@ export class GameEngine {
         continue;
       }
 
-      // This projectile resolves. A ground/tank hit detonates at the impact
-      // point; an OOB miss produces no blast. Either way it leaves the flight.
-      if (hit.type === 'ground' || hit.type === 'tank') {
-        this.detonate(hit.x, hit.y, p.weaponType);
+      // This projectile resolves. A direct TANK hit always detonates. A GROUND
+      // hit on a bouncing shell with bounces REMAINING reflects (does NOT
+      // detonate) and keeps flying; otherwise it detonates. An OOB miss produces
+      // no blast. A still-bouncing shell is pushed back to survivors.
+      if (hit.type === 'tank') {
+        const napalm = getWeapon(p.weaponType).behavior?.napalm;
+        if (napalm !== undefined) {
+          this.detonateNapalm(hit.x, hit.y, p.weaponType, napalm);
+        } else {
+          this.detonate(hit.x, hit.y, p.weaponType); // direct tank hit always detonates
+        }
+      } else if (hit.type === 'ground') {
+        if (p.bounces > 0) {
+          // BOUNCE: reflect off the derived surface normal, decrement, keep
+          // flying. sweepCollide already snapped p.x/p.y to the impact point.
+          const n = surfaceNormalAt(this.terrain, p.x);
+          const restitution = getWeapon(p.weaponType).behavior?.bounce
+            ?.restitution;
+          const r = reflectVelocity({ vx: p.vx, vy: p.vy }, n, restitution);
+          p.vx = r.vx;
+          p.vy = r.vy;
+          p.bounces--;
+          // Nudge the projectile OFF the surface along the normal by >1px so the
+          // next tick's collide() does not immediately re-hit the same solid
+          // pixel (it was snapped to the impact point, which is on/at solid).
+          p.x += n.vx * BOUNCE_EPS;
+          p.y += n.vy * BOUNCE_EPS;
+          survivors.push(p); // still in flight
+        } else {
+          const napalm = getWeapon(p.weaponType).behavior?.napalm;
+          if (napalm !== undefined) {
+            this.detonateNapalm(hit.x, hit.y, p.weaponType, napalm);
+          } else {
+            this.detonate(hit.x, hit.y, p.weaponType); // bounces spent -> detonate
+          }
+        }
       }
     }
 
@@ -337,6 +384,7 @@ export class GameEngine {
         weaponType: parent.weaponType,
         age: 0,
         hasSplit: true,
+        bounces: 0,
       });
     }
     return subs;
@@ -455,5 +503,35 @@ export class GameEngine {
     // (back-compat: single-event consumers read the last event pushed).
     this.state.explosions.push(event);
     this.state.lastExplosion = event;
+  }
+
+  /**
+   * Napalm impact carpet — fire `cells` overlapping detonations laid
+   * LEFT-TO-RIGHT across the impact column, each offset `step` px from the
+   * previous and centered on (cx, cy). This is NOT a new blast primitive: it
+   * CALLS the existing detonate() N times, so every cell deforms terrain, runs
+   * gravity, applies proximity damage, re-resolves tank burial, and mints a
+   * distinct monotonic ExplosionEvent id — exactly like a cluster bomblet.
+   *
+   * Determinism (HARD): the FIXED i=0..cells-1 (left-to-right) order is
+   * load-bearing — because each detonate() mutates the shared bitmap and tanks,
+   * overlapping cells are order-dependent (a later cell sees an earlier cell's
+   * crater/gravity). The offset is pure arithmetic on cells/step + the impact x
+   * (no Math.random, no clock), so a same-seed/same-action shot replays
+   * bit-identically. cy is held constant across cells (impact y). The centering
+   * formula (i-(cells-1)/2)*step matches splitAirburst, so an odd `cells` puts
+   * one detonation exactly on cx.
+   */
+  private detonateNapalm(
+    cx: number,
+    cy: number,
+    weaponType: WeaponType,
+    def: { cells: number; step: number },
+  ): void {
+    const { cells, step } = def;
+    for (let i = 0; i < cells; i++) {
+      const offset = (i - (cells - 1) / 2) * step;
+      this.detonate(cx + offset, cy, weaponType);
+    }
   }
 }
