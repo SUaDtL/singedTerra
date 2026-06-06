@@ -162,6 +162,17 @@ export class Lobby {
   private waitingThisPlayerReady = false;
   private waitingChannel: ReturnType<typeof supabase.channel> | null = null;
 
+  /** Heartbeat interval keeping THIS player's lastSeen fresh; lifetime == waiting channel. */
+  private waitingHeartbeatId: ReturnType<typeof setInterval> | null = null;
+
+  /**
+   * "Meaningful signature" of the last-rendered waiting-room players + status,
+   * EXCLUDING lastSeen. Used to suppress the 10s heartbeat-driven Realtime
+   * UPDATE re-renders (de-flicker) while keeping ready/name/color/join/leave
+   * changes instant.
+   */
+  private lastWaitingSig = '';
+
   // Shared online status message
   private onlineError = '';
   private onlineBusy = false;
@@ -1087,10 +1098,70 @@ export class Lobby {
             return;
           }
 
-          this.render();
+          // De-flicker: heartbeats rewrite the row every 10s/player (bumping each
+          // player's lastSeen), which would otherwise trigger a re-render on a
+          // ~10s cadence. Compute a signature of the meaningful state EXCLUDING
+          // lastSeen and only re-render when it actually changed. State above is
+          // always updated from the row regardless.
+          const sig = this.waitingSignature(this.waitingPlayers, row.status);
+          if (sig !== this.lastWaitingSig) {
+            this.lastWaitingSig = sig;
+            this.render();
+          }
         },
       )
       .subscribe();
+
+    // Tie the heartbeat lifetime to the waiting channel. subscribeWaitingRoom is
+    // called from BOTH the create and join paths, so this covers both.
+    this.startHeartbeat();
+  }
+
+  /**
+   * "Meaningful signature" of the waiting-room state — id/name/color/ready per
+   * player plus the room status — deliberately EXCLUDING lastSeen so heartbeat
+   * writes don't change it.
+   */
+  private waitingSignature(players: NetworkPlayer[], status?: string): string {
+    return (
+      players.map((p) => `${p.id}|${p.name}|${p.color}|${p.ready}`).join(',') +
+      '|' +
+      (status ?? '')
+    );
+  }
+
+  /**
+   * Start the heartbeat loop: best-effort POST heartbeat every 10s so the server
+   * keeps THIS player's lastSeen fresh and the lazy-GC reaper doesn't treat them
+   * as a closed-tab ghost. Errors are ignored. Clears any prior interval first.
+   */
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.waitingHeartbeatId = setInterval(() => {
+      void fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/heartbeat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+          },
+          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId }),
+        },
+      ).catch(() => {
+        // Best-effort: a missed heartbeat just means one stale window; the next
+        // tick recovers it. Never surface heartbeat errors to the UI.
+      });
+    }, 10000);
+  }
+
+  /** Stop the heartbeat loop if running. */
+  private stopHeartbeat(): void {
+    if (this.waitingHeartbeatId !== null) {
+      clearInterval(this.waitingHeartbeatId);
+      this.waitingHeartbeatId = null;
+    }
   }
 
   private emitNetworkReady(room: { players: NetworkPlayer[]; seed: number; options: { maxPlayers: number; maxWind: number; gravity: number } }): void {
@@ -1359,6 +1430,10 @@ export class Lobby {
   }
 
   private cleanupWaitingChannel(): void {
+    // Heartbeat lifetime == waiting-channel lifetime: this runs on leave, hide,
+    // and game start, so the loop is torn down in every exit path.
+    this.stopHeartbeat();
+    this.lastWaitingSig = '';
     if (this.waitingChannel) {
       void supabase.removeChannel(this.waitingChannel);
       this.waitingChannel = null;

@@ -21,6 +21,7 @@ interface StoredPlayer {
   name: string
   color: string
   ready: boolean
+  lastSeen?: number
 }
 
 interface RoomRow {
@@ -29,6 +30,13 @@ interface RoomRow {
   options: StoredOptions
   players: StoredPlayer[]
   created_at: string
+}
+
+const STALE_MS = 30000
+
+// Lazy-GC: keep only players seen within the stale window.
+function reap(players: StoredPlayer[], nowMs: number): StoredPlayer[] {
+  return players.filter(p => (p.lastSeen ?? 0) >= nowMs - STALE_MS)
 }
 
 Deno.serve(async (req: Request) => {
@@ -62,14 +70,12 @@ Deno.serve(async (req: Request) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  // Cutoff: one hour ago (wall-clock read allowed in Edge Functions)
-  const cutoffIso = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-
+  // Lazy GC replaces the old created_at "last 1 hour" filter. Fetch ALL
+  // waiting rooms (every visibility) so private ghost rooms get reaped too.
   const { data: candidates, error: fetchError } = await supabase
     .from('rooms')
     .select('id, code, options, players, created_at')
     .eq('status', 'waiting')
-    .gte('created_at', cutoffIso)
 
   if (fetchError) {
     console.error('list_rooms: fetch error', fetchError)
@@ -80,26 +86,48 @@ Deno.serve(async (req: Request) => {
   }
 
   const rows = (candidates ?? []) as RoomRow[]
+  const nowMs = Date.now()
 
-  const open = rows.filter(r => {
-    const options = r.options ?? ({} as StoredOptions)
-    const players = r.players ?? []
+  // Reap each room (writing back as needed), then collect the post-reap rooms.
+  const reaped: { row: RoomRow; fresh: StoredPlayer[] }[] = []
+  for (const row of rows) {
+    const players = row.players ?? []
+    const fresh = reap(players, nowMs)
+
+    if (fresh.length === players.length) {
+      // Unchanged
+    } else if (fresh.length === 0) {
+      // Fully dead — delete the room row
+      await supabase.from('rooms').delete().eq('id', row.id)
+      continue
+    } else {
+      // Some ghosts reaped — persist the trimmed players
+      await supabase.from('rooms').update({ players: fresh }).eq('id', row.id)
+    }
+
+    reaped.push({ row, fresh })
+  }
+
+  const open = reaped.filter(({ row, fresh }) => {
+    const options = row.options ?? ({} as StoredOptions)
     return (
       options.visibility === 'public' &&
-      players.length >= 1 &&
-      players.length < options.maxPlayers
+      fresh.length >= 1 &&
+      fresh.length < options.maxPlayers
     )
   })
 
   // Sort by created_at desc, cap at 50
-  open.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
+  open.sort((a, b) =>
+    a.row.created_at < b.row.created_at ? 1 : a.row.created_at > b.row.created_at ? -1 : 0
+  )
 
-  const roomsOut = open.slice(0, 50).map(r => ({
-    roomId: r.id,
-    code: r.code,
-    hostName: r.players[0]?.name ?? '',
-    playerCount: r.players.length,
-    maxPlayers: r.options.maxPlayers,
+  const roomsOut = open.slice(0, 50).map(({ row, fresh }) => ({
+    roomId: row.id,
+    code: row.code,
+    hostName: fresh[0]?.name ?? '',
+    playerCount: fresh.length,
+    maxPlayers: row.options.maxPlayers,
   }))
 
   return new Response(

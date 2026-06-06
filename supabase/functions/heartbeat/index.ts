@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('ready_up: fetch error', fetchError)
+    console.error('heartbeat: fetch error', fetchError)
     return new Response(
       JSON.stringify({ error: 'Failed to fetch room' }),
       { status: 500, headers: corsHeaders() }
@@ -108,38 +108,28 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  // Mark player ready (and bump lastSeen)
   const nowMs = Date.now()
+
+  // Bump lastSeen for the heartbeating player
   const updatedPlayers: StoredPlayer[] = existingPlayers.map(p =>
-    p.id === playerId ? { ...p, ready: true, lastSeen: nowMs } : p
+    p.id === playerId ? { ...p, lastSeen: nowMs } : p
   )
-
-  // Determine if game should start
-  const allReady = updatedPlayers.every(p => p.ready)
-  const enoughPlayers = updatedPlayers.length >= 2
-  const shouldStart = allReady && enoughPlayers
-
-  // Build update payload
-  const updatePayload: Record<string, unknown> = { players: updatedPlayers }
-  if (shouldStart) {
-    updatePayload.status = 'active'
-  }
 
   const { error: updateError } = await supabase
     .from('rooms')
-    .update(updatePayload)
+    .update({ players: updatedPlayers })
     .eq('id', roomId)
 
   if (updateError) {
-    console.error('ready_up: update error', updateError)
+    console.error('heartbeat: update error', updateError)
     return new Response(
-      JSON.stringify({ error: 'Failed to update room' }),
+      JSON.stringify({ error: 'Failed to update heartbeat' }),
       { status: 500, headers: corsHeaders() }
     )
   }
 
   return new Response(
-    JSON.stringify({ started: shouldStart, players: updatedPlayers }),
+    JSON.stringify({ ok: true }),
     { status: 200, headers: corsHeaders() }
   )
 })

@@ -142,12 +142,14 @@ Deno.serve(async (req: Request) => {
   }
 
   // Build players array
+  const nowMs = Date.now()
   const players = [
     {
       id: playerId,
       name: playerName.trim(),
       color: color.trim(),
       ready: false,
+      lastSeen: nowMs,
     },
   ]
 

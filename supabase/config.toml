@@ -63,3 +63,6 @@ verify_jwt = false
 
 [functions.finish_game]
 verify_jwt = false
+
+[functions.heartbeat]
+verify_jwt = false

@@ -20,6 +20,14 @@ interface StoredPlayer {
   name: string
   color: string
   ready: boolean
+  lastSeen?: number
+}
+
+const STALE_MS = 30000
+
+// Lazy-GC: keep only players seen within the stale window.
+function reap(players: StoredPlayer[], nowMs: number): StoredPlayer[] {
+  return players.filter(p => (p.lastSeen ?? 0) >= nowMs - STALE_MS)
 }
 
 Deno.serve(async (req: Request) => {
@@ -118,7 +126,38 @@ Deno.serve(async (req: Request) => {
   }
 
   const roomOptions = room.options as StoredOptions
-  const existingPlayers = (room.players ?? []) as StoredPlayer[]
+  const storedPlayers = (room.players ?? []) as StoredPlayer[]
+
+  const nowMs = Date.now()
+
+  // Lazy-GC: reap stale players before any capacity/color/name checks
+  const fresh = reap(storedPlayers, nowMs)
+
+  if (fresh.length === 0) {
+    // Dead room — delete and report as not found
+    await supabase.from('rooms').delete().eq('id', room.id)
+    return new Response(
+      JSON.stringify({ error: 'Room not found or already started' }),
+      { status: 404, headers: corsHeaders() }
+    )
+  }
+
+  if (fresh.length !== storedPlayers.length) {
+    // Some ghosts reaped — persist so they no longer block capacity/color/name
+    const { error: reapError } = await supabase
+      .from('rooms')
+      .update({ players: fresh })
+      .eq('id', room.id)
+    if (reapError) {
+      console.error('join_room: reap update error', reapError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to join room' }),
+        { status: 500, headers: corsHeaders() }
+      )
+    }
+  }
+
+  const existingPlayers = fresh
 
   // Check capacity
   if (existingPlayers.length >= roomOptions.maxPlayers) {
@@ -156,6 +195,7 @@ Deno.serve(async (req: Request) => {
     name: playerName.trim(),
     color: color.trim(),
     ready: false,
+    lastSeen: nowMs,
   }
 
   const updatedPlayers = [...existingPlayers, newPlayer]
