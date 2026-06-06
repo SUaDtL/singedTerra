@@ -124,25 +124,25 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
   baby_nuke: {
     type: 'baby_nuke',
     name: 'Baby Nuke',
-    implemented: false,
+    implemented: true,
     detonation: {
-      radius: 60,
+      radius: 65,
       maxDamage: 90,
       style: 'blast',
       color: '#fff27a', // pale nuclear yellow
-      durationFrames: 58,
+      durationFrames: 95,
     },
   },
   nuke: {
     type: 'nuke',
     name: 'Nuke',
-    implemented: false,
+    implemented: true,
     detonation: {
       radius: 90,
       maxDamage: 100,
       style: 'blast',
       color: '#fff7c2', // bright white-yellow flash
-      durationFrames: 58,
+      durationFrames: 115,
     },
   },
   dirt_bomb: {

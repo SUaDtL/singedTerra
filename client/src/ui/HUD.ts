@@ -1,5 +1,18 @@
 import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS } from '@shared/engine/WeaponSystem';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
+
+/**
+ * Weapons shown in the strip: only `implemented` ones, in stable WeaponSystem
+ * key order. This MUST stay literally identical to InputHandler's
+ * IMPLEMENTED_WEAPONS predicate+order so the active-highlight tracks Tab/Q
+ * cycling. Defined locally (not imported) to keep UI modules decoupled.
+ */
+const STRIP_WEAPONS: WeaponType[] = (Object.keys(WEAPONS) as WeaponType[])
+  .filter((type) => WEAPONS[type].implemented);
+
+/** Glyph shown in place of a numeric count for unlimited-ammo weapons. */
+const AMMO_UNLIMITED_GLYPH = '∞';
 
 /**
  * HUD is an HTML/CSS overlay (SPEC §8), NOT canvas-drawn. MVP1 grows the MVP0
@@ -17,6 +30,9 @@ export class HUD {
   /** Restart callback registered via {@link onRestart}; may arrive before or after the overlay shows. */
   private restartCb: (() => void) | null = null;
 
+  /** Callback fired when a weapon strip button is clicked. */
+  private weaponSelectCb: ((weapon: WeaponType) => void) | null = null;
+
   /** Whether the static DOM scaffold has been built yet. */
   private built = false;
 
@@ -28,6 +44,10 @@ export class HUD {
   private aimEl!: HTMLElement;
   private overlayEl!: HTMLElement;
   private overlayTextEl!: HTMLElement;
+  private stripEl!: HTMLElement;
+
+  /** Per-weapon strip cells: button + its ammo-count node, for cheap per-frame updates. */
+  private weaponCells = new Map<WeaponType, { el: HTMLButtonElement; ammo: HTMLElement }>();
 
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
@@ -41,6 +61,11 @@ export class HUD {
     this.restartCb = cb;
   }
 
+  /** Register the weapon-select callback fired when a strip button is clicked. */
+  onWeaponSelect(cb: (weapon: WeaponType) => void): void {
+    this.weaponSelectCb = cb;
+  }
+
   /** Update the overlay to reflect the latest game state (called every frame). */
   update(state: GameState, isFiring = false): void {
     if (!this.built) this.build();
@@ -48,6 +73,7 @@ export class HUD {
     this.syncPlayers(state);
     this.syncWind(state.wind);
     this.syncAim(state, isFiring);
+    this.syncStrip(state, isFiring);
     this.syncOverlay(state);
   }
 
@@ -96,6 +122,26 @@ export class HUD {
       '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
       '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
 
+    // Clickable weapon strip (bottom-left): one button per implemented weapon,
+    // showing name + live ammo count. Listeners attached ONCE here.
+    this.stripEl = document.createElement('div');
+    this.stripEl.className = 'st-hud__strip';
+    for (const type of STRIP_WEAPONS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'st-hud__weapon-btn';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'st-hud__weapon-btn-name';
+      nameSpan.textContent = WEAPONS[type].name;
+      const ammoSpan = document.createElement('span');
+      ammoSpan.className = 'st-hud__weapon-btn-ammo';
+      btn.append(nameSpan, ammoSpan);
+      // Capture `type` per-iteration (for-of/const). Listener attached once.
+      btn.addEventListener('click', () => this.weaponSelectCb?.(type));
+      this.weaponCells.set(type, { el: btn, ammo: ammoSpan });
+      this.stripEl.append(btn);
+    }
+
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'st-hud__overlay st-hud__overlay--hidden';
@@ -112,7 +158,7 @@ export class HUD {
     panel.append(this.overlayTextEl, restartBtn);
     this.overlayEl.append(panel);
 
-    this.root.append(this.playersEl, wind, weapon, this.aimEl, controls, this.overlayEl);
+    this.root.append(this.playersEl, wind, weapon, this.aimEl, this.stripEl, controls, this.overlayEl);
     this.built = true;
   }
 
@@ -203,6 +249,27 @@ export class HUD {
       `${tank.playerName}  ·  ` +
       `Angle ${Math.round(tank.angle)}°  ·  ` +
       `Power ${Math.round(tank.power)}`;
+  }
+
+  /** Reconcile the weapon strip: active highlight + live ammo counts. No DOM rebuild. */
+  private syncStrip(state: GameState, isFiring: boolean): void {
+    const tank = state.tanks.find((t) => t.id === state.activePlayerId);
+    for (const [type, cell] of this.weaponCells) {
+      const entry = tank?.inventory[type];
+      const unlimited = entry?.unlimited ?? false;
+      const count = entry?.count ?? 0;
+      const depleted = !unlimited && count <= 0; // out of ammo
+      cell.ammo.textContent = unlimited ? AMMO_UNLIMITED_GLYPH : `${count}`;
+      cell.el.classList.toggle(
+        'st-hud__weapon-btn--active',
+        !!tank && tank.selectedWeapon === type,
+      );
+      cell.el.classList.toggle('st-hud__weapon-btn--depleted', depleted);
+      // Disable while firing, when no active tank, or when depleted, so a click
+      // cannot emit a select for an unusable weapon. (Engine still re-validates;
+      // this is UX only.)
+      cell.el.disabled = isFiring || !tank || depleted;
+    }
   }
 
   /** Show/hide the GAME_OVER overlay and set its winner/draw message. */
@@ -354,6 +421,49 @@ export class HUD {
   background: rgba(0, 0, 0, 0.4);
   font-size: 13px;
   white-space: nowrap;
+}
+.st-hud__strip {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 360px;
+  pointer-events: auto;
+}
+.st-hud__weapon-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #f5f5f5;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.st-hud__weapon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+.st-hud__weapon-btn--active {
+  border-color: #ffd54a;
+  box-shadow: 0 0 0 1px #ffd54a;
+  color: #ffd54a;
+}
+.st-hud__weapon-btn--depleted {
+  opacity: 0.45;
+}
+.st-hud__weapon-btn:disabled {
+  cursor: default;
+}
+.st-hud__weapon-btn-ammo {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
 }
 .st-hud__overlay {
   position: absolute;

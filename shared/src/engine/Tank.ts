@@ -1,4 +1,4 @@
-import type { TankState } from '../types/GameState';
+import type { TankState, AmmoEntry } from '../types/GameState';
 import type { GameOptions } from '../types/Events';
 import type { WeaponType } from './WeaponSystem';
 import { CANVAS_WIDTH } from './Terrain';
@@ -13,6 +13,9 @@ const DEFAULT_POWER = 50;
 const DEFAULT_HEALTH = 100;
 const DEFAULT_FUEL = 0;
 const DEFAULT_WEAPON: WeaponType = 'baby_missile';
+
+/** Per-weapon starting rounds for every NON-unlimited weapon (generous sandbox). */
+const DEFAULT_AMMO = 9;
 
 /** Horizontal placement fractions for the two MVP0 tanks. */
 const LEFT_TANK_FRACTION = 0.15;
@@ -33,25 +36,25 @@ const SPREAD_MIN_FRACTION = 0.1;
 const SPREAD_MAX_FRACTION = 0.9;
 
 /**
- * Minimal MVP0 inventory: only the baby missile, with effectively unlimited
- * ammo. Other weapon types are present (keys must be exhaustive for the
- * `Record<WeaponType, number>` type) but start at 0.
+ * Default loadout (Sprint 4, generous sandbox): baby_missile is unlimited; every
+ * other weapon starts with DEFAULT_AMMO rounds. No Infinity sentinel — the
+ * `unlimited` flag carries that meaning so inventory JSON round-trips cleanly.
+ * Deterministic: a pure literal, no clock/random.
  */
-function defaultInventory(): Record<WeaponType, number> {
+function defaultInventory(): Record<WeaponType, AmmoEntry> {
+  const limited = (count: number): AmmoEntry => ({ count, unlimited: false });
   return {
-    baby_missile: Infinity,
-    missile: 0,
-    heavy_missile: 0,
-    baby_nuke: 0,
-    nuke: 0,
-    dirt_bomb: 0,
-    bouncing_betty: 0,
-    funky_bomb: 0,
-    napalm: 0,
-    // Implemented MVP1 weapon — unlimited ammo so it is selectable (inventory is
-    // cosmetic for now; the engine does not gate firing on counts yet).
-    cluster_bomb: Infinity,
-    shield: 0,
+    baby_missile: { count: 0, unlimited: true },
+    missile: limited(DEFAULT_AMMO),
+    heavy_missile: limited(DEFAULT_AMMO),
+    baby_nuke: limited(DEFAULT_AMMO),
+    nuke: limited(DEFAULT_AMMO),
+    dirt_bomb: limited(DEFAULT_AMMO),
+    bouncing_betty: limited(DEFAULT_AMMO),
+    funky_bomb: limited(DEFAULT_AMMO),
+    napalm: limited(DEFAULT_AMMO),
+    cluster_bomb: limited(DEFAULT_AMMO),
+    shield: limited(DEFAULT_AMMO),
   };
 }
 

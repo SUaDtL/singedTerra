@@ -98,6 +98,15 @@ function bootstrap(): void {
     if (currentConfig) void startGame(currentConfig);
   });
 
+  // Register the weapon-strip select callback ONCE on the persistent HUD. A
+  // strip click both emits select_weapon AND re-seeds the InputHandler cursor so
+  // Tab/Q cycling stays in sync with the mouse pick. client/input are the
+  // mutable per-game closure vars (null between teardown and startGame).
+  hud.onWeaponSelect((weapon) => {
+    client?.sendAction({ type: 'select_weapon', weapon });
+    input?.setWeapon(weapon);
+  });
+
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
     void startGame(config);
     lobby.hide();

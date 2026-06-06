@@ -167,7 +167,8 @@ export class GameEngine {
    * Apply a player input. Aim changes (set_angle/set_power) are honored only
    * while aiming (PLAYER_TURN). `fire` is honored only while aiming and with no
    * projectile in flight; it launches the shot and transitions to FIRING.
-   * select_weapon is accepted for forward-compat but inert in MVP0.
+   * select_weapon sets the active weapon (no ammo gate here — gating happens on
+   * `fire`, which rejects a shot when the selected weapon is out of ammo).
    */
   applyAction(action: PlayerAction): void {
     if (this.state.phase !== 'PLAYER_TURN') return;
@@ -188,6 +189,15 @@ export class GameEngine {
         // Ignore a re-fire while a shot is still resolving (any projectile in
         // flight). FIRING iff projectiles.length > 0.
         if (this.state.projectiles.length > 0) return;
+
+        // AMMO GATE (Slice 1.1). Reject the shot if the selected weapon has no
+        // ammo and is not unlimited. Rejection returns WITHOUT mutating state or
+        // transitioning to FIRING — the tank stays in PLAYER_TURN, free to pick
+        // another weapon. The inventory entry is guaranteed present (inventory is
+        // exhaustive over WeaponType).
+        const ammo = tank.inventory[tank.selectedWeapon];
+        if (!ammo.unlimited && ammo.count <= 0) return;
+
         const v = launchVelocity(tank.angle, tank.power);
         const tip = barrelTip(tank, BARREL_LENGTH);
         // Reset the explosion list for THIS shot so its detonations accumulate
@@ -205,6 +215,12 @@ export class GameEngine {
             hasSplit: false,
           },
         ];
+
+        // AMMO DECREMENT. Spend exactly one round — only for finite weapons,
+        // and only AFTER the shot is committed (projectile pushed, gate passed).
+        // Bounded by the gate above (count was > 0), so count never goes negative.
+        if (!ammo.unlimited) ammo.count--;
+
         this.syncProjectileAlias();
         this.state.phase = 'FIRING';
         return;
