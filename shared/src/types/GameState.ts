@@ -23,7 +23,36 @@ export interface GameState {
   terrain: number[];
   tanks: TankState[];
   projectile: ProjectileState | null;
+  /**
+   * Most recent authoritative explosion, or `null` if none has occurred yet.
+   *
+   * Lifecycle / contract (so the client never replays a burst forever): the
+   * engine sets this on impact to a NEW event whose `id` strictly increases
+   * (monotonic counter). It is otherwise left untouched across ticks — it is
+   * NOT cleared the next tick. The client keeps the last `id` it has animated;
+   * on each `getState()` it compares `lastExplosion?.id`: if it is greater than
+   * the id it last saw, it spawns a fresh particle burst and records the new id.
+   * Equal id => already playing / already played => render nothing new. Because
+   * ids are unique and monotonic, a given explosion triggers exactly one burst.
+   */
+  lastExplosion: ExplosionEvent | null;
   winner: string | null;
+}
+
+/**
+ * Authoritative explosion record surfaced in {@link GameState.lastExplosion}.
+ * Position/radius are engine-authoritative; the client turns this into the
+ * ~500ms expanding-circles animation (client-only visual state, not in shared/).
+ */
+export interface ExplosionEvent {
+  /** Monotonically increasing id; the client dedupes bursts by this. */
+  id: number;
+  /** Blast center x (canvas px). */
+  cx: number;
+  /** Blast center y (canvas px). */
+  cy: number;
+  /** Blast radius (px). */
+  radius: number;
 }
 
 export interface TankState {

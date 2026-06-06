@@ -23,13 +23,34 @@ export class Lobby {
     this.onReady = onReady;
   }
 
-  /** Render the lobby overlay. */
+  /**
+   * Render the lobby overlay. MVP0 is hot-seat only with no name entry, so this
+   * is a single "Start Game" control; clicking it produces a default hot-seat
+   * config and hands off to onReady (which constructs the engine/client).
+   */
   show(): void {
-    throw new Error('Lobby.show not implemented');
+    this.root.replaceChildren();
+
+    const title = document.createElement('h1');
+    title.textContent = 'singedTerra';
+
+    const start = document.createElement('button');
+    start.type = 'button';
+    start.textContent = 'Start Game';
+    start.addEventListener('click', () => {
+      this.onReady({
+        mode: 'hotseat',
+        playerNames: ['Player 1', 'Player 2'],
+      });
+    });
+
+    this.root.append(title, start);
+    this.root.hidden = false;
   }
 
   /** Hide the lobby overlay (e.g. once the game starts). */
   hide(): void {
-    throw new Error('Lobby.hide not implemented');
+    this.root.replaceChildren();
+    this.root.hidden = true;
   }
 }

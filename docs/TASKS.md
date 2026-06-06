@@ -2,7 +2,7 @@
 
 Living register of work, organized by delivery phase (**MVP0 → MVP1 → MVP2 → V1**). Check items off as completed. Full details for each item are in [`SPEC.md`](SPEC.md) §9. Architecture context is in [`../CLAUDE.md`](../CLAUDE.md).
 
-**Current phase:** MVP0 (scaffold done — monorepo wiring compiles; engine/render/net are stubs awaiting implementation).
+**Current phase:** MVP0 complete — terrain/tanks/aim/fire/crater/explosion implemented and verified (typecheck + build + determinism + collision checks green). Next: MVP1.
 
 ---
 
@@ -10,13 +10,13 @@ Living register of work, organized by delivery phase (**MVP0 → MVP1 → MVP2 �
 *Goal: something visually real. No game yet.* Excludes: turns, health, wind, multiple players, HUD.
 
 - [x] Repo scaffold: npm workspaces, Vite client, Node server, shared package
-- [ ] Terrain generation (midpoint displacement) + rendering
-- [ ] Tank entity: place 2 tanks on terrain at game start
-- [ ] Barrel rendering: rotates with angle input (← →)
-- [ ] Power input (↑ ↓)
-- [ ] Fire: projectile launches, follows ballistic arc, hits terrain or goes OOB
-- [ ] Terrain deformation on impact (crater)
-- [ ] Basic explosion visual (expanding circles)
+- [x] Terrain generation (midpoint displacement) + rendering
+- [x] Tank entity: place 2 tanks on terrain at game start
+- [x] Barrel rendering: rotates with angle input (← →)
+- [x] Power input (↑ ↓)
+- [x] Fire: projectile launches, follows ballistic arc, hits terrain or goes OOB
+- [x] Terrain deformation on impact (crater)
+- [x] Basic explosion visual (expanding circles)
 
 ## MVP1 — It's a Game
 *Goal: playable hot-seat game, 2–4 players.*
