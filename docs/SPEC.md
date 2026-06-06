@@ -182,9 +182,58 @@ Turn timeout (V1): 30s per turn, configurable.
 | Bouncing Betty | Projectile bounces off terrain 3× before exploding |
 | Funky Bomb | Splits into 5 submunitions mid-flight |
 | Napalm | Horizontal spray on impact, damages wide area |
+| Cluster Bomb | **Apex airburst**: flies as one shell, splits at the top of its arc into 5 bomblets that fan out and fall ballistically, each cratering where it lands |
 | Shield | Places a damage-absorbing shield on your tank (defensive) |
 
-MVP1 stubs: Baby Missile + Missile only. V1 implements full list + shop.
+Implemented today: Baby Missile, Missile, Cluster Bomb. The rest are stubs in
+the table with rough tuning; V1 implements the full list + shop.
+
+**`WeaponDefinition` shape (grouped).** Each weapon's blast and flight behavior
+are kept in two nested groups so the library stays clean as it grows:
+
+```typescript
+interface DetonationDef {       // everything about the blast at impact
+  radius: number;               // px (PER-SUBMUNITION for airburst weapons)
+  maxDamage: number;            // peak damage at blast center
+  raisesTerrain?: boolean;      // present (true) only on Dirt Bomb
+  style: ExplosionStyle;        // 'blast' | 'cluster'
+  color: string;                // CSS color
+  durationFrames: number;       // burst animation length
+}
+interface AirburstDef { trigger: 'apex'; count: number; spread: number }
+interface BehaviorDef { airburst?: AirburstDef }   // absent => plain ballistic shell
+interface WeaponDefinition {
+  type: WeaponType; name: string; implemented: boolean;
+  detonation: DetonationDef;
+  behavior?: BehaviorDef;
+}
+```
+
+The engine's single `detonate()` primitive reads `weapon.detonation.*`; the
+airburst split reads `weapon.behavior.airburst`.
+
+**Apex-airburst / ballistic-fan model (Cluster Bomb).** The shell flies as one
+projectile. The tick its vertical velocity transitions from rising to falling
+(apex), it is removed (not detonated) and replaced by `count` submunitions
+spawned at that point, each carrying a deterministic horizontal velocity offset:
+
+```
+step      = 2 * spread / (count - 1)
+offset[i] = (i - (count-1)/2) * step       // symmetric, -spread .. +spread px/tick
+sub[i].vx = parent.vx + offset[i]          // vy inherited (≈0 at apex)
+```
+
+No randomness — purely a function of the parent state + weapon def, preserving
+determinism. Each submunition then falls under gravity + wind like any
+projectile and detonates on its own impact via `detonate()`; one that exits the
+field is removed with no blast. The turn resolves exactly once, after the LAST
+submunition leaves flight. Cluster tuning: 5 bomblets, `spread` 4.5 px/tick
+(a wide landing fan across the field), per-bomblet radius 18 / maxDamage 22.
+
+**Damage + pacing tuning.** Implemented weapons were tuned so kills take a few
+clean hits and bursts read clearly: Baby Missile maxDamage 34 / durationFrames
+50 (~3 hits to kill), Missile maxDamage 60 / durationFrames 56 (~2 hits). Stub
+weapons had `durationFrames` bumped to ~50–58 proportionally.
 
 ---
 
@@ -204,40 +253,54 @@ Browser
 - Input handler accepts input only from the active player
 - No network at all — GameEngine ticks via `requestAnimationFrame`
 
-### Networked mode
+### Networked mode (Supabase deterministic lockstep)
+
+> **This supersedes the earlier Socket.io / dedicated-authoritative-server plan.** Supabase
+> has no long-running stateful compute (Edge Functions are stateless), so it cannot host a
+> ticking authoritative `GameEngine`. Instead we use **deterministic lockstep**, which the
+> engine was already built for (fixed timestep, seeded RNG, no wall-clock, serializable state).
 
 ```
-Player A browser          Player B browser
-  └─ NetworkClient          └─ NetworkClient
-       │ socket.emit              │ socket.emit
-       └──────────┬───────────────┘
-                  │ Socket.io
-             GameServer
-               └─ GameEngine (authoritative)
-                    └─ shared/engine/*
+Player A browser            Player B browser
+  └─ NetworkClient            └─ NetworkClient
+       └─ GameEngine (local)       └─ GameEngine (local)   ← each runs shared/engine,
+            │  identical state ─────────┘                     applying the same action log
+            │  append ▲ / subscribe ▼
+   Supabase Postgres  room_actions   (the ordered action log = source of truth)
+   Supabase Realtime  broadcast of new rows (fan-out to all clients)
+   Supabase Edge Fn   submit_action  (stateless REFEREE: replays shared/ engine to
+                                      validate turn + legality, then inserts the row)
 ```
 
-- Server owns the single authoritative `GameEngine` per room
-- Clients send `PlayerAction` events; server validates, applies, broadcasts new `GameState`
-- Clients are **render-only** in networked mode — they never run physics locally
-- State sync: full `GameState` snapshot broadcast after each `RESOLVING` phase; delta updates during `FIRING` (projectile position at ~20fps)
+- **Source of truth is the ordered action log in Postgres** (`room_actions`), not a running
+  server. Game state = *(seed + ordered action list)*. Each committed turn is one row whose
+  `action` carries the final `{ angle, power, weapon }` (not every aim keystroke).
+- **Every client runs `GameEngine` locally** (like hot-seat) and applies each new action in
+  `seq` order ⇒ all clients reach byte-identical state.
+- **Flight is regenerated, not streamed.** On receiving a `fire` action, a client ticks its
+  own engine through `FIRING` and animates the projectile/airburst locally — identical on
+  every client. No projectile position crosses the wire (the old `projectile_tick` stream is
+  removed); per-turn traffic is a few small messages.
+- **Referee = stateless Edge Function.** `submit_action` loads the room's log + seed, replays
+  the `shared/` engine (Deno imports the pure TS directly) to confirm it is that player's turn
+  and the shot is legal, inserts the row, and updates a denormalized room cursor (turn, active
+  player, winner). Authoritative validation without a persistent loop.
+- **Async-capable.** Players need not be online together: open the room, replay the log to the
+  current state, take your turn. Real-time when both are present (Realtime delivers in ~ms),
+  play-by-mail when not. Reconnect / spectate / replay all fall out of replaying the log.
+- `GameClient` already hides hot-seat vs network; `NetworkClient` swaps Socket.io for a
+  Supabase Realtime subscription + action insert. **`shared/` is unchanged.**
 
-### Socket.io Events
+### Data model (Supabase Postgres)
 
-```typescript
-// Client → Server
-'join_room'      { roomId: string, playerName: string }
-'create_room'    { playerName: string, options: GameOptions }
-'player_action'  PlayerAction  // angle change, power change, fire, weapon select
-
-// Server → Client
-'room_joined'    { roomId: string, playerId: string }
-'game_start'     GameState
-'state_update'   GameState       // after each turn resolves
-'projectile_tick' { x: number, y: number }  // during flight
-'game_over'      { winner: string }
-'error'          { message: string }
+```sql
+rooms        ( id, code, seed, status, turn, active_player_id, winner, players jsonb, created_at )
+room_actions ( room_id, seq, player_id, action jsonb, created_at )   -- the ordered log
 ```
+
+RLS: only a room member may read a room's rows; all writes go through the `submit_action`
+Edge Function (clients never insert directly). Free-tier friendly — lockstep is the lightest
+option (no streaming); the main caveat is Supabase's ~7-day inactivity auto-pause.
 
 ---
 
@@ -253,7 +316,11 @@ interface GameState {
   wind: number;                    // current wind value
   terrain: number[];               // height map (serialized from Uint16Array)
   tanks: TankState[];
-  projectile: ProjectileState | null;
+  projectiles: ProjectileState[];  // all in-flight; [] when none. FIRING iff length > 0.
+                                   // A single shot may have several (airburst submunitions).
+  projectile: ProjectileState | null;  // back-compat alias = projectiles[0] ?? null (derived)
+  explosions: ExplosionEvent[];    // every blast of the most recent resolution (N>1 for cluster)
+  lastExplosion: ExplosionEvent | null;  // mirrors the last element of explosions (back-compat)
   winner: string | null;
 }
 
@@ -278,6 +345,8 @@ interface ProjectileState {
   vx: number;
   vy: number;
   weaponType: WeaponType;
+  age: number;          // ticks since spawn (0 on the spawn tick)
+  hasSplit: boolean;    // true for airburst submunitions (stops re-split); false otherwise
 }
 ```
 
@@ -290,12 +359,12 @@ interface ProjectileState {
   1. Sky gradient (static, drawn once or on resize)
   2. Terrain fill (redrawn when dirty flag set)
   3. Tanks (each frame)
-  4. Projectile (each frame, during FIRING phase)
-  5. Explosion effect (particle burst, ~30 frames, CSS-orange palette)
+  4. Projectiles (each frame during FIRING; the whole `projectiles[]` array — several at once after an airburst split)
+  5. Explosion effect (expanding-ring burst; size/color/duration/style read per ExplosionEvent)
   6. HUD overlay (drawn on top, every frame)
 - **Terrain dirty flag**: Only re-render terrain polygon when terrain array has changed. Saves meaningful CPU on a t3.micro.
 - **Tank art**: Simple geometric: a rectangle body, a trapezoid tread, a rotatable barrel line. No sprite sheets. Colored per-player.
-- **Explosion**: ~20 circles expanding outward from impact point, fading opacity over ~500ms. Pure canvas, no external particle library.
+- **Explosion**: ~20 circles expanding outward from impact point, fading opacity over the event's `durationFrames`. Drawing is **event-driven** — each `ExplosionEvent` supplies radius, `color`, `durationFrames`, and `style` (`'blast'` = wide rings, `'cluster'` = punchier flash), so per-weapon look needs no new draw code. A `cluster` weapon emits N events (one per bomblet) animated together. Pure canvas, no external particle library.
 
 ---
 
@@ -346,24 +415,27 @@ interface ProjectileState {
 - Turn system state machine (LOBBY → PLAYER_TURN → FIRING → RESOLVING → NEXT_TURN → GAME_OVER)
 - Health system: tanks take damage from explosions based on proximity
 - Tank death: remove from play when health ≤ 0, terrain collapse for unsupported tanks
-- Wind: generated per turn, shown on HUD, affects projectile
+- Wind: per turn, gently drifts (|wind| ≤ MAX_WIND, |Δ| ≤ WIND_DRIFT_STEP), shown on HUD, affects projectile; cap tunable via lobby
 - HUD: health bars, wind, angle, power, active player indicator
 - Hot-seat lobby: enter player names (2–4), pick colors
 - Win condition: last tank alive
 - Baby Missile + Missile weapons (stubs for weapon select key)
 - Game over screen: winner announcement, restart button
 
-### MVP2 — Networked
-**Goal**: Same gameplay, each player on their own browser.
+### MVP2 — Networked (Supabase deterministic lockstep)
+**Goal**: Same gameplay, each player on their own browser. **Deterministic lockstep over
+Supabase — no dedicated game server** (see §5).
 
-- Socket.io server wired up
-- Room creation / join flow (room code, 4-char alphanumeric)
-- NetworkClient: send PlayerAction, receive GameState
-- Server-side GameEngine running authoritative physics
-- Projectile position streaming during flight (~20fps delta updates)
-- Player disconnect handling: skip turn, drop if no rejoin within 30s
-- Reconnect: client re-requests full GameState on reconnect
-- Network lobby UI: create room / join with code, wait for all players ready
+- Supabase project + Postgres schema (`rooms`, `room_actions`) + RLS policies
+- `submit_action` Edge Function referee: replays the `shared/` engine to validate turn +
+  legality, inserts the action row, updates the room cursor (turn / active / winner)
+- NetworkClient: append committed actions; subscribe to the room's action log via Supabase
+  Realtime; apply each new action to the LOCAL GameEngine in `seq` order
+- Client regenerates projectile/airburst flight locally from the `fire` action (no streaming)
+- Room creation / join flow (4-char alphanumeric code), backed by the `rooms` table
+- Reconnect / async play: fetch room + replay the action log to the current state
+- Network lobby UI: create / join by code, ready-up via Supabase Realtime Presence
+- (Optional) disconnect/timeout policy — async turns mean a player can act later regardless
 
 ### V1 — Full Feature Set
 **Goal**: The thing you actually show people.
@@ -377,7 +449,7 @@ interface ProjectileState {
 - Turn timer: 30s per turn, configurable in room settings
 - Round system: best of N rounds, configurable
 - Scoreboard: damage dealt, kills, rounds won
-- SQLite persistence: scores per session (no accounts — session-keyed)
+- Supabase Postgres persistence: scores per session (session-keyed, no accounts) — reuses the MVP2 Supabase project instead of the originally-planned SQLite
 - Sound effects: fire, explosion, wind (Web Audio API, short synth sounds — no audio files needed)
 - Mobile-friendly HUD (touch controls for angle/power/fire)
 - Game options: gravity strength, wind strength, terrain type (hills / canyons / flat)
@@ -386,7 +458,16 @@ interface ProjectileState {
 
 ## 10. Infrastructure
 
-### EC2 Setup (t3.micro, Amazon Linux 2023 or Ubuntu 24.04)
+> **Updated for the Supabase lockstep direction (§5).** MVP2+ uses **Supabase** (Postgres +
+> Realtime + Edge Functions, free tier) as the backend — there is **no Node/Socket.io game
+> server, no pm2, and no nginx socket proxy** to run. The client is a static Vite build that
+> can be hosted anywhere (Supabase Storage / Vercel / Netlify, or the static-serve nginx
+> below). The EC2 + pm2 + nginx-reverse-proxy setup that follows is the **superseded**
+> authoritative-server plan — kept for reference / in case you ever self-host the static
+> client, but the `/socket.io/` proxy and the `server/` process are no longer part of the
+> target deployment.
+
+### EC2 Setup (t3.micro, Amazon Linux 2023 or Ubuntu 24.04) — SUPERSEDED (see note above)
 
 ```bash
 # Node.js 20 LTS
