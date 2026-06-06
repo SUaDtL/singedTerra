@@ -6,17 +6,24 @@ const PROJECTILE_RADIUS = 3;
 const TRAIL_LENGTH = 12;
 
 /**
- * ProjectileRenderer draws the in-flight projectile during the FIRING phase
- * (SPEC §7 layer 4): a small filled dot with a short motion trail pointing
- * back along its velocity. No-op when there is no projectile in flight.
+ * ProjectileRenderer draws every in-flight projectile during the FIRING phase
+ * (SPEC §7 layer 4): each a small filled dot with a short motion trail pointing
+ * back along its velocity. No-op when no projectiles are in flight.
  *
+ * Multiple projectiles can be live at once (e.g. an airburst shell splits into
+ * several submunitions that fan down together), so this draws the whole array.
  * The explosion burst is client-only visual state animated elsewhere; this
- * renderer only draws the authoritative projectile from GameState.
+ * renderer only draws the authoritative projectiles from GameState.
  */
 export class ProjectileRenderer {
-  draw(ctx: CanvasRenderingContext2D, projectile: ProjectileState | null): void {
-    if (projectile === null) return;
+  draw(ctx: CanvasRenderingContext2D, projectiles: ProjectileState[]): void {
+    for (const p of projectiles) {
+      this.drawOne(ctx, p);
+    }
+  }
 
+  /** Draw a single projectile (dot + short motion trail). */
+  private drawOne(ctx: CanvasRenderingContext2D, projectile: ProjectileState): void {
     const { x, y, vx, vy } = projectile;
 
     // Short trail pointing opposite the velocity vector. Skip when stationary.
