@@ -22,6 +22,19 @@ export interface GameState {
   /** Height map, serialized from a Uint16Array (one y-height per x-column). */
   terrain: number[];
   tanks: TankState[];
+  /**
+   * All projectiles currently in flight (`[]` when none). FIRING iff
+   * `projectiles.length > 0`. A single shot may spawn MULTIPLE projectiles —
+   * e.g. an airburst weapon flies as one shell, then SPLITS at apex into N
+   * submunitions, each of which is a separate entry here until it detonates.
+   */
+  projectiles: ProjectileState[];
+  /**
+   * BACK-COMPAT ALIAS for the first in-flight projectile (`projectiles[0]` or
+   * `null`). Kept in lockstep with {@link projectiles} on every mutation so
+   * legacy single-projectile consumers keep working. Do NOT mutate independently
+   * — always derive it as `projectiles[0] ?? null`.
+   */
   projectile: ProjectileState | null;
   /**
    * Most recent authoritative explosion, or `null` if none has occurred yet.
@@ -36,13 +49,31 @@ export interface GameState {
    * ids are unique and monotonic, a given explosion triggers exactly one burst.
    */
   lastExplosion: ExplosionEvent | null;
+  /**
+   * Every explosion event produced by the MOST RECENT resolution, in the order
+   * they fired (1..N — N>1 only for cluster weapons, which detonate as several
+   * bomblets). Contract:
+   *   - Initialized to `[]` and stays `[]` until the first blast.
+   *   - REPLACED with a fresh `[]` at the START of each shot resolution (before
+   *     any blast), then PUSHED to once per blast as each bomblet fires.
+   *   - `length === count` for a cluster hit, `=== 1` for a normal hit, `=== 0`
+   *     for an out-of-bounds miss (no blast, but the array is still reset).
+   * `lastExplosion` mirrors the LAST element pushed in that resolution (or
+   * `null` if none) for back-compat with consumers that read a single event.
+   */
+  explosions: ExplosionEvent[];
   winner: string | null;
 }
 
+/** Visual style of an explosion — drives the client's burst rendering. */
+export type ExplosionStyle = 'blast' | 'cluster';
+
 /**
- * Authoritative explosion record surfaced in {@link GameState.lastExplosion}.
- * Position/radius are engine-authoritative; the client turns this into the
- * ~500ms expanding-circles animation (client-only visual state, not in shared/).
+ * Authoritative explosion record surfaced in {@link GameState.lastExplosion}
+ * and {@link GameState.explosions}. Position/radius are engine-authoritative;
+ * the client turns this into the ~500ms expanding-circles animation
+ * (client-only visual state, not in shared/). The style/color/durationFrames
+ * fields come from the firing weapon's definition (SPEC §4.5).
  */
 export interface ExplosionEvent {
   /** Monotonically increasing id; the client dedupes bursts by this. */
@@ -53,6 +84,12 @@ export interface ExplosionEvent {
   cy: number;
   /** Blast radius (px). */
   radius: number;
+  /** Visual style of the burst (e.g. single 'blast' vs 'cluster' bomblet). */
+  style: ExplosionStyle;
+  /** CSS color string for the burst (from the weapon definition). */
+  color: string;
+  /** How many frames the client animation should run for this burst. */
+  durationFrames: number;
 }
 
 export interface TankState {
@@ -82,4 +119,13 @@ export interface ProjectileState {
   vx: number;
   vy: number;
   weaponType: WeaponType;
+  /** Ticks elapsed since this projectile spawned (0 on the spawn tick). */
+  age: number;
+  /**
+   * Whether this projectile has already performed its airburst split. A parent
+   * airburst shell is `false` until it crosses apex (then it is removed and
+   * replaced by submunitions); every submunition spawns with `true` so it never
+   * re-splits. Non-airburst projectiles are always `false`.
+   */
+  hasSplit: boolean;
 }

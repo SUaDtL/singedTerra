@@ -130,8 +130,9 @@ export function generate(seed: number): Uint16Array {
  * [cx-r, cx+r] by the circular chord depth at each column (SPEC §4.1).
  *
  * Lowering the surface means terrain[x] INCREASES (larger y = lower on screen).
- * The carve is the vertical extent of the blast circle at column x, i.e. the
- * chord height 2*sqrt(r^2 - dx^2). Result is clamped to [0, CANVAS_HEIGHT].
+ * The carve at column x is sqrt(r^2 - dx^2) — the blast-circle radius at that
+ * column — giving a ROUND bowl (depth r at center, 0 at the rim). Result is
+ * clamped to [0, CANVAS_HEIGHT].
  *
  * Deterministic: depends only on its arguments. `cy` is accepted for signature
  * stability / future shaping but the MVP0 crater is a symmetric circular bite
@@ -161,8 +162,11 @@ export function deform(
     const dx = x - cx;
     const inside = r2 - dx * dx;
     if (inside <= 0) continue;
-    // Full vertical chord of the blast circle at this column.
-    const depth = 2 * Math.sqrt(inside);
+    // Lower the surface by the blast-circle RADIUS at this column: sqrt(r^2-dx^2)
+    // gives a round bowl (depth r at center, tapering to 0 at the rim). Using the
+    // full chord (2*sqrt) made craters a deep oval gouge — twice as deep as wide —
+    // which read as ovals and left thin spikes between tightly-spaced cluster bomblets.
+    const depth = Math.sqrt(inside);
     const lowered = clamp(terrain[x] + depth, 0, CANVAS_HEIGHT);
     terrain[x] = Math.round(lowered);
   }
@@ -170,16 +174,40 @@ export function deform(
 }
 
 /**
- * Resolve unsupported tanks after deformation: any tank whose base is above the
- * terrain surface falls under gravity until grounded (SPEC §4.1).
- *
- * MVP0 has no tank entities wired through here yet; this is a no-op placeholder
- * kept for signature stability so GameEngine can call it once collapse lands in
- * MVP1. Returns true if any tank moved.
+ * Minimal positioned-entity shape collapse operates on (a subset of TankState).
+ * Kept structural so Terrain has no dependency on the TankState type.
  */
-export function collapse(terrain: Uint16Array): boolean {
-  void terrain;
-  return false;
+interface CollapsibleTank {
+  x: number;
+  y: number;
+  alive: boolean;
+}
+
+/**
+ * Resolve unsupported tanks after deformation (SPEC §4.1). A crater LOWERS the
+ * surface (increases terrain[x]); any ALIVE tank now floating above the new,
+ * lower surface (tank.y < surfaceAt(tank.x)) is dropped straight down to rest on
+ * it (tank.y = surfaceAt(tank.x)). Heightmap collapse — deterministic and
+ * instantaneous, no per-tick fall animation needed for correctness.
+ *
+ * Idempotent and chainable: re-running after another crater re-grounds tanks,
+ * and running twice in a row is a no-op the second time (it converges). Dead
+ * tanks are left untouched. Returns true if any tank moved.
+ */
+export function collapse(
+  terrain: Uint16Array,
+  tanks: readonly CollapsibleTank[] = [],
+): boolean {
+  let moved = false;
+  for (const tank of tanks) {
+    if (!tank.alive) continue;
+    const surface = surfaceAt(terrain, tank.x);
+    if (tank.y < surface) {
+      tank.y = surface;
+      moved = true;
+    }
+  }
+  return moved;
 }
 
 /** Terrain surface y at a given x-column (O(1) lookup). */

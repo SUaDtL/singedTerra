@@ -19,10 +19,17 @@ import { TANK_WIDTH, TANK_HEIGHT } from './Tank';
 export const GRAVITY = 0.15;
 
 /** Per-tick horizontal acceleration multiplier applied to the wind value. */
-export const WIND_FACTOR = 0.02;
+export const WIND_FACTOR = 0.006;
 
 /** Wind magnitude cap; range is [-MAX_WIND, +MAX_WIND] (SPEC §4.4). */
 export const MAX_WIND = 10;
+
+/**
+ * Max amount the wind may change from one turn to the next (gentle drift). Wind
+ * walks by a delta in [-WIND_DRIFT_STEP, +WIND_DRIFT_STEP] per turn (then clamps
+ * to [-maxWind, +maxWind]) so players can range/walk shots in across turns.
+ */
+export const WIND_DRIFT_STEP = MAX_WIND * 0.25; // 2.5
 
 /** Peak explosion damage at the blast center (SPEC §4.2). */
 export const MAX_DAMAGE = 100;
@@ -71,14 +78,18 @@ export function launchVelocity(angleDeg: number, power: number): Velocity {
 
 /**
  * Advance a projectile by one fixed timestep (SPEC §4.2):
- *   vy += GRAVITY; vx += wind * WIND_FACTOR; x += vx; y += vy.
+ *   vy += gravity; vx += wind * WIND_FACTOR; x += vx; y += vy.
  * Mutates and returns the projectile. dt is constant — never read from a clock.
+ *
+ * `gravity` defaults to the GRAVITY constant so existing 2-arg callers keep
+ * working unchanged; the engine threads a per-room override (GameOptions.gravity).
  */
 export function stepProjectile(
   p: ProjectileState,
   wind: number,
+  gravity = GRAVITY,
 ): ProjectileState {
-  p.vy += GRAVITY;
+  p.vy += gravity;
   p.vx += wind * WIND_FACTOR;
   p.x += p.vx;
   p.y += p.vy;
@@ -113,7 +124,15 @@ export function sweepCollide(
   // Sub-step finely enough to never skip the smallest collidable feature (a
   // 1px-wide terrain column). One sample per SWEEP_STEP px of travel.
   const steps = Math.max(1, Math.ceil(dist / SWEEP_STEP));
-  const probe = { x: prevX, y: prevY, vx: p.vx, vy: p.vy, weaponType: p.weaponType };
+  const probe: ProjectileState = {
+    x: prevX,
+    y: prevY,
+    vx: p.vx,
+    vy: p.vy,
+    weaponType: p.weaponType,
+    age: p.age,
+    hasSplit: p.hasSplit,
+  };
 
   for (let i = 1; i <= steps; i++) {
     const t = i / steps;

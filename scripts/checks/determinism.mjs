@@ -75,8 +75,10 @@ function serialize(state) {
     wind: state.wind,
     winner: state.winner,
     tanks,
+    projectiles: state.projectiles,
     projectile: state.projectile,
     lastExplosion: state.lastExplosion,
+    explosions: state.explosions,
     terrain: state.terrain,
   };
   return JSON.stringify(canonical);
