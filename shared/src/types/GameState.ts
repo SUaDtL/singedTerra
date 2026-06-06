@@ -96,6 +96,12 @@ export interface ExplosionEvent {
   durationFrames: number;
 }
 
+/** One inventory slot: remaining rounds, or unlimited ammo (no Infinity sentinel). */
+export interface AmmoEntry {
+  count: number;
+  unlimited: boolean;
+}
+
 export interface TankState {
   id: string;
   playerName: string;
@@ -110,8 +116,8 @@ export interface TankState {
   /** V1 movement fuel. */
   fuel: number;
   selectedWeapon: WeaponType;
-  /** V1 weapon inventory: count remaining per weapon type. */
-  inventory: Record<WeaponType, number>;
+  /** V1 weapon inventory: per-weapon ammo (count + unlimited flag). */
+  inventory: Record<WeaponType, AmmoEntry>;
   /** CSS color string. */
   color: string;
   alive: boolean;
