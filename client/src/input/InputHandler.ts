@@ -1,4 +1,6 @@
 import type { PlayerAction } from '@shared/types/PlayerAction';
+import { WEAPONS } from '@shared/engine/WeaponSystem';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
 
 /** Optional seed for the handler's tracked aim state. */
 export interface InputHandlerOptions {
@@ -21,6 +23,15 @@ const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
 const POWER_MIN = 0;
 const POWER_MAX = 100;
+
+/**
+ * The implemented weapon roster, in stable WeaponSystem key order. Tab / Q cycles
+ * forward through ONLY these (SPEC §4.5: MVP1 ships Baby Missile + Missile); the
+ * stubbed weapons are skipped. The first entry (baby_missile) is the engine's
+ * default selected weapon, so our locally-tracked index starts there.
+ */
+const IMPLEMENTED_WEAPONS: WeaponType[] = (Object.keys(WEAPONS) as WeaponType[])
+  .filter((type) => WEAPONS[type].implemented);
 
 const DEFAULT_ANGLE = 45;
 const DEFAULT_POWER = 50;
@@ -59,6 +70,12 @@ export class InputHandler {
   private angle: number;
   private power: number;
 
+  /**
+   * Index into IMPLEMENTED_WEAPONS for the locally-tracked selected weapon. Starts
+   * at 0 (baby_missile, the engine default) so Tab / Q advances deterministically.
+   */
+  private weaponIndex = 0;
+
   private attached = false;
 
   constructor(
@@ -84,6 +101,19 @@ export class InputHandler {
     this.power = clamp(power, POWER_MIN, POWER_MAX);
   }
 
+  /**
+   * Re-seed the locally-tracked weapon cursor to match a tank's currently
+   * selected weapon (e.g. on turn change, so the next Tab/Q advances from THIS
+   * player's weapon rather than whoever cycled last — the cursor is otherwise
+   * shared by the single handler across all hot-seat players). Does not emit —
+   * purely re-seeds the mirror. A weapon outside the implemented roster (should
+   * not happen for a live tank) leaves the cursor unchanged.
+   */
+  setWeapon(weapon: WeaponType): void {
+    const idx = IMPLEMENTED_WEAPONS.indexOf(weapon);
+    if (idx >= 0) this.weaponIndex = idx;
+  }
+
   /** Attach DOM event listeners. Idempotent. */
   attach(): void {
     if (this.attached) return;
@@ -104,12 +134,14 @@ export class InputHandler {
   private handleKeyDown = (event: KeyboardEvent): void => {
     switch (event.key) {
       case 'ArrowLeft':
-        event.preventDefault();
-        this.adjustAngle(-this.angleStep);
-        break;
-      case 'ArrowRight':
+        // angle 0=right..180=left, so swinging the barrel LEFT INCREASES the angle.
         event.preventDefault();
         this.adjustAngle(this.angleStep);
+        break;
+      case 'ArrowRight':
+        // swinging the barrel RIGHT DECREASES the angle (toward 0=right).
+        event.preventDefault();
+        this.adjustAngle(-this.angleStep);
         break;
       case 'ArrowUp':
         event.preventDefault();
@@ -124,6 +156,12 @@ export class InputHandler {
       case 'Enter':
         event.preventDefault();
         this.emit({ type: 'fire' });
+        break;
+      case 'Tab': // preventDefault so focus does not move off the canvas
+      case 'q':
+      case 'Q':
+        event.preventDefault();
+        this.cycleWeapon();
         break;
       default:
         break;
@@ -142,6 +180,17 @@ export class InputHandler {
     if (next === this.power) return; // already at bound — skip redundant emit
     this.power = next;
     this.emit({ type: 'set_power', power: this.power });
+  }
+
+  /**
+   * Advance to the next implemented weapon (wrapping) and emit its ABSOLUTE type
+   * via select_weapon. We track the index locally so successive presses step
+   * deterministically through IMPLEMENTED_WEAPONS regardless of engine echo.
+   */
+  private cycleWeapon(): void {
+    if (IMPLEMENTED_WEAPONS.length === 0) return; // defensive — roster is never empty
+    this.weaponIndex = (this.weaponIndex + 1) % IMPLEMENTED_WEAPONS.length;
+    this.emit({ type: 'select_weapon', weapon: IMPLEMENTED_WEAPONS[this.weaponIndex] });
   }
 
   // Mouse is unused in MVP0 (aim is keyboard-only); reserved for future drag-aim.

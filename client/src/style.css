@@ -1,0 +1,93 @@
+/*
+ * Global app stylesheet (C3). Establishes a dark, centered "stage" exactly the
+ * size of the 800x500 logical canvas, with #game and #hud overlaid pixel-for-
+ * pixel so the HUD (.st-hud { inset: 0 }) pins to the CANVAS, not the viewport.
+ * The whole stage is scaled together (never canvas/hud independently) so the
+ * HUD and canvas coordinate spaces stay in sync at any viewport size.
+ */
+
+:root {
+  /* Native logical size of the stage; mirror canvas width/height. */
+  --stage-w: 800px;
+  --stage-h: 500px;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #0e1116;
+  color: #e6e9ef;
+  font-family: system-ui, sans-serif;
+  /* Center the stage in the viewport. */
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/*
+ * #app is the positioned STAGE. It is exactly the canvas size and is scaled as
+ * a single unit to fit smaller viewports — keeping aspect ratio (the same
+ * scale on both axes) so canvas and HUD never desync. Larger viewports cap at
+ * native size (scale <= 1).
+ */
+#app {
+  position: relative;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  /* Fit-to-viewport scale: min(viewport-w/800, viewport-h/500, 1). */
+  --scale: min(100vw / 800, 100vh / 500, 1);
+  transform: scale(var(--scale));
+  transform-origin: center center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* #game and #hud both fill #app precisely (same 800x500 box). */
+#game,
+#hud {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#game {
+  z-index: 0;
+  display: block;
+}
+
+/*
+ * HUD overlays the canvas. It is non-interactive as a layer; its interactive
+ * bits (e.g. the Restart button) opt back into pointer events themselves.
+ */
+#hud {
+  z-index: 10;
+  pointer-events: none;
+}
+
+#hud .st-hud,
+#hud button {
+  pointer-events: auto;
+}
+
+/*
+ * The lobby is a full-stage overlay centered over the dark stage. It sits above
+ * the HUD and is fully interactive.
+ */
+#lobby {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+}
+
+#lobby[hidden] {
+  display: none;
+}
