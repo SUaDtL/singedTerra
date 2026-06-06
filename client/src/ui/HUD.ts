@@ -1,9 +1,9 @@
 import type { GameState } from '@shared/types/GameState';
 
 /**
- * HUD is an HTML/CSS overlay (SPEC §8), not canvas-drawn. It renders player
- * name + health bars, wind indicator, active weapon, angle, power, and the
- * fire button into a DOM container layered over the canvas.
+ * HUD is an HTML/CSS overlay (SPEC §8), NOT canvas-drawn. MVP0 keeps it minimal:
+ * a small angle + power readout for the active tank, written into the #hud DOM
+ * container layered over the canvas. Health bars / wind / weapon arrive in MVP1.
  */
 export class HUD {
   private readonly root: HTMLElement;
@@ -13,7 +13,15 @@ export class HUD {
   }
 
   /** Update the overlay to reflect the latest game state. */
-  update(_state: GameState): void {
-    throw new Error('HUD.update not implemented');
+  update(state: GameState): void {
+    const tank = state.tanks.find((t) => t.id === state.activePlayerId);
+    if (!tank) {
+      this.root.textContent = '';
+      return;
+    }
+    // Minimal, text-only readout in the DOM (never on the canvas).
+    this.root.textContent =
+      `Angle: ${Math.round(tank.angle)}°   ` +
+      `Power: ${Math.round(tank.power)}`;
   }
 }

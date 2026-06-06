@@ -26,7 +26,16 @@ function bootstrap(): void {
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
     const client = createClient(config);
 
-    const input = new InputHandler(canvas, (action) => client.sendAction(action));
+    // Seed the input handler's locally-tracked aim from the active tank so the
+    // arrow keys step from that tank's real angle/power (set_angle/set_power
+    // carry ABSOLUTE values). getState() may be null before the first snapshot.
+    const initial = client.getState();
+    const activeTank = initial?.tanks.find((t) => t.id === initial.activePlayerId);
+
+    const input = new InputHandler(canvas, (action) => client.sendAction(action), {
+      initialAngle: activeTank?.angle,
+      initialPower: activeTank?.power,
+    });
     input.attach();
 
     client.onStateChange((state) => {
@@ -46,8 +55,9 @@ function createClient(config: LobbyConfig): GameClient {
   if (config.mode === 'network') {
     return new NetworkClient();
   }
-  // Hot-seat: browser runs the shared GameEngine directly.
-  const engine = new GameEngine();
+  // Hot-seat: browser runs the shared GameEngine directly. Omit seed for the
+  // fixed reproducible default terrain (DEFAULT_SEED in GameEngine).
+  const engine = new GameEngine({ maxPlayers: 2 });
   return new HotSeatClient(engine);
 }
 

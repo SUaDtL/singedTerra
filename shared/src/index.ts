@@ -6,6 +6,7 @@ export type {
   GamePhase,
   TankState,
   ProjectileState,
+  ExplosionEvent,
 } from './types/GameState';
 export type {
   PlayerAction,
@@ -39,11 +40,19 @@ export {
   WIND_FACTOR,
   MAX_WIND,
   MAX_DAMAGE,
-  step,
-  collision,
-  explosion,
+  POWER_SCALE,
+  launchVelocity,
+  stepProjectile,
+  collide,
+  explosionResult,
+  damage,
+  explosionDamage,
 } from './engine/Physics';
-export type { CollisionResult } from './engine/Physics';
+export type {
+  CollisionResult,
+  ExplosionResult,
+  Velocity,
+} from './engine/Physics';
 export {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
@@ -51,8 +60,16 @@ export {
   deform,
   collapse,
   heightAt,
+  surfaceAt,
 } from './engine/Terrain';
-export { Tank, TANK_WIDTH, TANK_HEIGHT } from './engine/Tank';
+export {
+  Tank,
+  TANK_WIDTH,
+  TANK_HEIGHT,
+  createTank,
+  placeTwoTanks,
+  barrelTip,
+} from './engine/Tank';
 export {
   WEAPONS,
   getWeapon,
