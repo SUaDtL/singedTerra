@@ -16,6 +16,7 @@ interface StoredPlayer {
   name: string
   color: string
   ready: boolean
+  lastSeen?: number
 }
 
 Deno.serve(async (req: Request) => {
@@ -168,12 +169,14 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Apply the provided field(s), leave ready as-is
+  // Apply the provided field(s), leave ready as-is, bump lastSeen
+  const nowMs = Date.now()
   const updatedPlayers: StoredPlayer[] = existingPlayers.map(p => {
     if (p.id !== playerId) return p
     const next = { ...p }
     if (name !== undefined) next.name = (name as string).trim()
     if (color !== undefined) next.color = color as string
+    next.lastSeen = nowMs
     return next
   })
 
