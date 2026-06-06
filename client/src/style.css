@@ -38,10 +38,6 @@ body {
   position: relative;
   width: var(--stage-w);
   height: var(--stage-h);
-  /* Fit-to-viewport scale: min(viewport-w/800, viewport-h/500, 1). */
-  --scale: min(100vw / 800, 100vh / 500, 1);
-  transform: scale(var(--scale));
-  transform-origin: center center;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
   border-radius: 6px;
   overflow: hidden;

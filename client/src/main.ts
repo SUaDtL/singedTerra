@@ -2,7 +2,6 @@ import './style.css';
 import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
-import { NetworkClient } from './client/NetworkClient';
 import { InputHandler } from './input/InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { HUD } from './ui/HUD';
@@ -50,11 +49,11 @@ function bootstrap(): void {
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
-  function startGame(config: LobbyConfig): void {
+  async function startGame(config: LobbyConfig): Promise<void> {
     teardown();
     currentConfig = config;
 
-    const newClient = createClient(config);
+    const newClient = await createClient(config);
     client = newClient;
 
     // Seed the input handler's locally-tracked aim from the active tank so the
@@ -75,7 +74,7 @@ function bootstrap(): void {
 
     unsubscribe = newClient.onStateChange((state) => {
       renderer.render(state);
-      hud.update(state);
+      hud.update(state, newClient.isFiring ?? false);
 
       // When the active player changes, re-seed the input handler's aim AND
       // weapon cursor from the new active tank so each player's arrows start
@@ -96,22 +95,51 @@ function bootstrap(): void {
 
   // Register restart ONCE on the persistent HUD: rebuild with the same roster.
   hud.onRestart(() => {
-    if (currentConfig) startGame(currentConfig);
+    if (currentConfig) void startGame(currentConfig);
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
-    startGame(config);
+    void startGame(config);
     lobby.hide();
   });
 
   lobby.show();
+
+  // JS-driven scale: CSS min() with mixed types (length vs unitless) is invalid.
+  // Apply scale imperatively so any viewport size works correctly.
+  const appEl = document.getElementById('app');
+  function updateScale(): void {
+    if (!appEl) return;
+    const s = Math.min(window.innerWidth / 800, window.innerHeight / 500, 1);
+    appEl.style.transform = `scale(${s})`;
+    appEl.style.transformOrigin = 'center center';
+  }
+  window.addEventListener('resize', updateScale);
+  updateScale();
 }
 
 /** Build the GameClient for the selected mode (SPEC §5). */
-function createClient(config: LobbyConfig): GameClient {
+async function createClient(config: LobbyConfig): Promise<GameClient> {
   if (config.mode === 'network') {
-    return new NetworkClient();
+    if (!config.roomId)   throw new Error('createClient: missing roomId for network mode');
+    if (!config.playerId) throw new Error('createClient: missing playerId for network mode');
+
+    const { NetworkClient } = await import('./client/NetworkClient');
+    const { supabase } = await import('./lib/supabase');
+
+    const gameOptions = {
+      maxPlayers: config.players.length,
+      players:    config.players.map(p => ({ ...p, id: p.id! })),
+      seed:       config.settings?.seed,
+      maxWind:    config.settings?.maxWind,
+      gravity:    config.settings?.gravity,
+    };
+
+    const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions);
+    await nc.initialize();
+    return nc;
   }
+
   // Hot-seat: browser runs the shared GameEngine directly, built from the
   // lobby's chosen players (2-4, unique colors) plus any advanced settings the
   // user set. Each settings field is forwarded only when present so the engine

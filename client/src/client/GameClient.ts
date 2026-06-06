@@ -21,4 +21,7 @@ export interface GameClient {
 
   /** Subscribe to state changes. Returns an unsubscribe function. */
   onStateChange(listener: (state: GameState) => void): () => void;
+
+  /** True when a fire action has been submitted but not yet echoed back (network only). */
+  readonly isFiring?: boolean;
 }

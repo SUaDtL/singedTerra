@@ -1,0 +1,65 @@
+project_id = "your-project-id"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[realtime]
+enabled = true
+
+[functions.create_room]
+verify_jwt = false
+
+[functions.join_room]
+verify_jwt = false
+
+[functions.ready_up]
+verify_jwt = false
+
+[functions.submit_action]
+verify_jwt = false
+
+[functions.update_player]
+verify_jwt = false
+
+[functions.leave_room]
+verify_jwt = false
+
+[functions.list_rooms]
+verify_jwt = false
+
+[functions.finish_game]
+verify_jwt = false
