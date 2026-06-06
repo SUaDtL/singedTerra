@@ -138,4 +138,12 @@ export interface ProjectileState {
    * re-splits. Non-airburst projectiles are always `false`.
    */
   hasSplit: boolean;
+  /**
+   * Terrain bounces this projectile has REMAINING before it detonates. Bouncing
+   * weapons (bouncing_betty) spawn with MAX_BOUNCES; each ground hit reflects
+   * velocity and decrements this, detonating only when it reaches 0. Every other
+   * projectile (and every airburst submunition) spawns with 0 so a ground hit
+   * detonates immediately, preserving existing behavior.
+   */
+  bounces: number;
 }

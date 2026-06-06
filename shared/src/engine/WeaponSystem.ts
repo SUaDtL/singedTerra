@@ -51,18 +51,59 @@ export interface DetonationDef {
  * exact (deterministic) fan formula.
  */
 export interface AirburstDef {
-  /** Split trigger — currently only at the arc's apex. */
-  trigger: 'apex';
+  /**
+   * Split trigger: 'apex' fires when the shell crosses the top of its arc
+   * (vy rising -> falling); 'age' fires once the shell reaches `ageFrames`
+   * ticks of flight (mid-arc, independent of apex). Both reuse the same
+   * deterministic fan (splitAirburst) and the same hasSplit one-shot guard.
+   */
+  trigger: 'apex' | 'age';
+  /**
+   * For trigger:'age' ONLY — the projectile age (ticks since spawn) at which
+   * the shell splits. Ignored for trigger:'apex'. A fixed integer constant so
+   * the split fires on a deterministic tick (pure function of tick count).
+   */
+  ageFrames?: number;
   /** Number of submunitions the shell splits into. */
   count: number;
   /** Half-width of the horizontal velocity fan (px/tick). */
   spread: number;
 }
 
+/**
+ * Napalm spread: on impact the shell fans into `cells` overlapping detonations
+ * laid LEFT-TO-RIGHT across the impact column, each offset `step` px from the
+ * previous. Purely geometric — derived from the impact point + this def, no RNG.
+ */
+export interface NapalmDef {
+  /** Number of detonate() cells fired at the impact point. */
+  cells: number;
+  /** Horizontal spacing (px) between adjacent cells. */
+  step: number;
+}
+
+/**
+ * Bounce behavior: the shell reflects off terrain `maxBounces` times (deriving
+ * the surface normal from neighboring-column heights) before it detonates, losing
+ * a fraction of its speed per bounce (`restitution`). Tank hits always detonate
+ * immediately regardless of remaining bounces. Purely deterministic — the normal
+ * is derived from the replicated terrain bitmap, never random.
+ */
+export interface BounceDef {
+  /** Terrain bounces before detonation. */
+  maxBounces: number;
+  /** Velocity retained per bounce (0..1). */
+  restitution: number;
+}
+
 /** Optional non-default flight/behavior modifiers for a weapon. */
 export interface BehaviorDef {
   /** Present only on airburst (cluster) weapons. Absent => simple ballistic shell. */
   airburst?: AirburstDef;
+  /** Present only on napalm. Absent => plain shell (single impact detonation). */
+  napalm?: NapalmDef;
+  /** Present only on bouncing weapons (bouncing_betty). Absent => no bounce. */
+  bounce?: BounceDef;
 }
 
 /** Static description of a weapon's behavior. */
@@ -78,6 +119,16 @@ export interface WeaponDefinition {
   /** Optional flight-behavior modifiers (e.g. airburst). Absent => plain shell. */
   behavior?: BehaviorDef;
 }
+
+/**
+ * Napalm spread tuning (NAMED CONSTANTS, not magic numbers). On impact the
+ * shell fires NAPALM_CELLS overlapping detonations spaced NAPALM_STEP px apart,
+ * centered on the impact x. An ODD cell count puts one detonation exactly on the
+ * impact point. NAPALM_STEP ~= 0.7*radius(40) gives an overlapping carpet
+ * ~(NAPALM_CELLS-1)*NAPALM_STEP wide (~112px for 5/28).
+ */
+const NAPALM_CELLS = 5; // odd => one cell exactly on the impact x
+const NAPALM_STEP = 28; // px between cells; ~0.7*radius => overlapping carpet
 
 /**
  * Weapon definition table. MVP1 only implements Baby Missile + Missile; the
@@ -161,7 +212,7 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
   bouncing_betty: {
     type: 'bouncing_betty',
     name: 'Bouncing Betty',
-    implemented: false,
+    implemented: true,
     detonation: {
       radius: 30,
       maxDamage: 55,
@@ -169,11 +220,20 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
       color: '#ff8c42', // orange
       durationFrames: 52,
     },
+    behavior: {
+      // BOUNCING BETTY: reflect off terrain BETTY_MAX_BOUNCES (3) times, then
+      // detonate on the 4th ground contact. Each bounce reflects velocity about
+      // the derived surface normal and retains BETTY_RESTITUTION (0.7) of speed.
+      // These literals MUST match the canonical Physics constants MAX_BOUNCES /
+      // BOUNCE_RESTITUTION (asserted in the motion harness); kept inline here so
+      // WeaponSystem stays dependency-free of Physics (both live in shared/).
+      bounce: { maxBounces: 3, restitution: 0.7 },
+    },
   },
   funky_bomb: {
     type: 'funky_bomb',
     name: 'Funky Bomb',
-    implemented: false,
+    implemented: true,
     detonation: {
       radius: 25,
       maxDamage: 45,
@@ -181,17 +241,33 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
       color: '#d65cff', // funky magenta
       durationFrames: 52,
     },
+    behavior: {
+      // FUNKY BOMB: 5-way mid-flight split. trigger:'age' splits at ageFrames
+      // ticks (mid-arc, NOT apex) so the fan opens before the shell peaks,
+      // raining bomblets over a downrange spread. Same deterministic fan math
+      // as cluster_bomb (splitAirburst); a wider `spread` than cluster (0.5)
+      // gives the funky scatter. All values are NAMED TUNABLES below.
+      airburst: { trigger: 'age', count: 5, spread: 1.5, ageFrames: 40 },
+    },
   },
   napalm: {
     type: 'napalm',
     name: 'Napalm',
-    implemented: false,
+    implemented: true,
+    // detonation values are the PER-CELL blast read by detonate(); the impact
+    // fans into behavior.napalm.cells of these laid across the landing column.
     detonation: {
       radius: 40,
       maxDamage: 65,
       style: 'blast',
       color: '#ff5a1f', // burning orange
       durationFrames: 56,
+    },
+    behavior: {
+      // NAPALM: on impact (NOT mid-flight), the engine fires `cells` overlapping
+      // detonate() calls laid LEFT-TO-RIGHT across the impact column, `step` px
+      // apart. Purely geometric (impact point + this def) — deterministic, no RNG.
+      napalm: { cells: NAPALM_CELLS, step: NAPALM_STEP },
     },
   },
   cluster_bomb: {

@@ -14,7 +14,7 @@
     "dev:server": "npm -w @singedterra/server run dev",
     "build": "npm run typecheck && npm -w @singedterra/server run build && npm -w @singedterra/client run build",
     "typecheck": "npm -w @singedterra/shared run typecheck && npm -w @singedterra/server run typecheck && npm -w @singedterra/client run typecheck",
-    "check": "npm run typecheck && npx tsx scripts/checks/determinism.mjs && npx tsx scripts/checks/collision.mjs && npx tsx scripts/checks/timestep.mjs && npx tsx scripts/checks/turnstate.mjs && npx tsx scripts/checks/airburst.mjs && npx tsx scripts/checks/wind.mjs && npx tsx scripts/checks/ammo.mjs"
+    "check": "npm run typecheck && npx tsx scripts/checks/determinism.mjs && npx tsx scripts/checks/collision.mjs && npx tsx scripts/checks/timestep.mjs && npx tsx scripts/checks/turnstate.mjs && npx tsx scripts/checks/airburst.mjs && npx tsx scripts/checks/wind.mjs && npx tsx scripts/checks/ammo.mjs && npx tsx scripts/checks/motion.mjs"
   },
   "devDependencies": {
     "typescript": "^5.5.4",

@@ -1,5 +1,5 @@
 import type { ProjectileState, TankState } from '../types/GameState';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt } from './Terrain';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain';
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank';
 
 /**
@@ -132,6 +132,7 @@ export function sweepCollide(
     weaponType: p.weaponType,
     age: p.age,
     hasSplit: p.hasSplit,
+    bounces: p.bounces,
   };
 
   for (let i = 1; i <= steps; i++) {
@@ -202,6 +203,57 @@ export function collide(
   }
 
   return { type: 'none' };
+}
+
+/** Bounce tuning (named constants, not magic numbers). */
+export const MAX_BOUNCES = 3;            // bouncing_betty: reflect 3x, then detonate
+export const BOUNCE_RESTITUTION = 0.7;   // velocity retained per bounce (energy loss)
+/** Column half-window sampled either side of the impact x to estimate the slope. */
+const NORMAL_SAMPLE_DX = 2;              // sample x-2 .. x+2
+
+/**
+ * Derive a unit surface normal at impact x from neighboring-column surface
+ * heights (the bitmap has no stored normals). Central-difference the surface y
+ * over [x-NORMAL_SAMPLE_DX, x+NORMAL_SAMPLE_DX]:
+ *   slope = (surfaceAt(x+dx) - surfaceAt(x-dx)) / (2*dx)   // dy per dx, y down
+ * The outward (up-and-away-from-ground) normal of a height field y=f(x) is
+ * proportional to (slope, -1) (points toward -y / sky), normalized:
+ *   n = normalize( slope, -1 )
+ * Flat ground: slope=0 => n=(0,-1) (straight up) => a vertical drop reflects to
+ * a vertical bounce. Steep/near-vertical wall: |slope| huge => n ≈ (+/-1, ~0)
+ * (horizontal) => a horizontal shot reflects back horizontally. Sampling reads
+ * only surfaceAt() (pure bitmap scan) so it is fully replicated state.
+ *
+ * Edge guard: columns are clamped in-bounds by surfaceAt itself, so x near
+ * 0/799 is safe. An all-air column yields surfaceAt == CANVAS_HEIGHT on both
+ * sides => slope 0 => n=(0,-1), the safe default.
+ */
+export function surfaceNormalAt(terrain: Uint8Array, x: number): Velocity {
+  const left = surfaceAt(terrain, x - NORMAL_SAMPLE_DX); // returns y
+  const right = surfaceAt(terrain, x + NORMAL_SAMPLE_DX);
+  const slope = (right - left) / (2 * NORMAL_SAMPLE_DX);
+  // outward normal (slope, -1), normalized; mag >= 1 always so no /0.
+  const nx = slope;
+  const ny = -1;
+  const mag = Math.hypot(nx, ny);
+  return { vx: nx / mag, vy: ny / mag };
+}
+
+/**
+ * Reflect velocity v about unit normal n: v' = v - 2(v·n)n, then scale by
+ * restitution. Pure float math — identical on replay. (Velocity reuses the
+ * {vx,vy} shape.)
+ */
+export function reflectVelocity(
+  v: Velocity,
+  n: Velocity,
+  restitution = BOUNCE_RESTITUTION,
+): Velocity {
+  const dot = v.vx * n.vx + v.vy * n.vy;
+  return {
+    vx: (v.vx - 2 * dot * n.vx) * restitution,
+    vy: (v.vy - 2 * dot * n.vy) * restitution,
+  };
 }
 
 /**
