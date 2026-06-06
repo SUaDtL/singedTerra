@@ -1,5 +1,5 @@
 # singedTerra — Project Specification
-> Heavily-inspired Scorched Earth clone · Browser-based · Self-hosted EC2 · TypeScript throughout
+> Heavily-inspired Scorched Earth clone · Browser-based · Supabase deterministic lockstep · TypeScript throughout
 
 ---
 
@@ -14,6 +14,12 @@
 ---
 
 ## 2. Architecture Overview
+
+> **Historical.** The diagram and decisions table below describe the **original**
+> Socket.io authoritative-server plan. It is **superseded by the Supabase
+> deterministic-lockstep model in §5** (every client runs the same seeded engine;
+> Supabase is a stateless referee, not a ticking game server). Kept here for
+> reference; corrected rows in the decisions table flag what actually shipped.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -47,12 +53,12 @@
 |---|---|---|
 | Rendering | Canvas 2D | No GPU dependency; sufficient for 2D artillery |
 | Terrain model | Height map (int array, 1 value per x pixel) | Fast collision, easy to serialize, natural deformation |
-| Physics authority | Server-side for networked; in-browser for hot-seat | Single physics module, two execution contexts |
+| Physics authority | **Deterministic lockstep** — every client runs the same seeded engine; in-browser for hot-seat (no authoritative server for networked play) | Single physics module, two execution contexts; identical state from seed + action log (§5) |
 | Client framework | None — vanilla TS + Canvas API | Phaser is overkill; full control over game loop |
 | Bundler | Vite | Fast, zero-config TS, clean static output |
-| Server | Node.js + Socket.io + Express | Fits existing stack; WebSocket upgrade built in |
-| Persistence | None (MVP0–MVP2) · SQLite for V1 scores | Stateless is fine for a lab game |
-| Process management | pm2 | Auto-restart, survives reboots |
+| Server | **Supabase Edge Functions** as a stateless referee (no long-running Node/Socket.io game server) | Stateless validation fits Supabase; no persistent loop to host (§5) |
+| Persistence | **Supabase Postgres** (action log + room state; session-keyed V1 scores) | Backs the lockstep action log and replaces the originally-planned SQLite |
+| Process management | ~~pm2~~ — superseded (no server process to manage) | Edge Functions are managed by Supabase; nothing to keep alive |
 
 ---
 
@@ -63,6 +69,7 @@ singedTerra/
 ├── client/
 │   ├── src/
 │   │   ├── main.ts              # Entry point, mode selector (hot-seat vs network)
+│   │   ├── style.css           # Global app + HUD overlay styles
 │   │   ├── renderer/
 │   │   │   ├── Renderer.ts      # Canvas 2D draw loop
 │   │   │   ├── TerrainRenderer.ts
@@ -74,36 +81,55 @@ singedTerra/
 │   │   ├── client/
 │   │   │   ├── GameClient.ts    # Abstracts hot-seat vs networked behind same interface
 │   │   │   ├── HotSeatClient.ts # Calls shared game engine directly
-│   │   │   └── NetworkClient.ts # Socket.io client, syncs server state
+│   │   │   └── NetworkClient.ts # Supabase lockstep client (action log + Realtime)
+│   │   ├── lib/
+│   │   │   ├── supabase.ts      # Supabase client + Edge Function calls
+│   │   │   └── SupabaseTypes.ts # Row/payload types for the Supabase backend
 │   │   └── ui/
 │   │       ├── Lobby.ts         # Pre-game screen (player count, names, mode)
 │   │       └── HUD.ts           # In-game overlay (health bars, wind, weapon, power)
 │   ├── index.html
 │   └── vite.config.ts
 │
-├── server/
+├── shared/
+│   └── src/
+│       ├── index.ts             # Public barrel — re-exports engine + types
+│       ├── engine/
+│       │   ├── GameEngine.ts    # Master game state machine
+│       │   ├── Physics.ts       # Projectile ballistics, collision, explosion radius
+│       │   ├── Terrain.ts       # Pixel-bitmap generation, deformation, gravity (§4.1)
+│       │   ├── Tank.ts          # Tank entity: position, health, fuel, angle, power, ammo
+│       │   ├── WeaponSystem.ts  # Weapon definitions, tuning, shop logic (V1)
+│       │   └── Random.ts        # Seeded wind PRNG stream (mulberry32, independent of terrain)
+│       └── types/
+│           ├── GameState.ts     # Serializable snapshot of full game state
+│           ├── PlayerAction.ts  # Union type of all player inputs
+│           └── Events.ts        # Event names + payload types (GameOptions etc.)
+│
+├── supabase/                    # MVP2 backend (deterministic-lockstep referee, §5)
+│   ├── config.toml
+│   ├── migrations/
+│   │   └── 001_init.sql         # rooms + room_actions schema + RLS
+│   └── functions/               # Edge Functions (stateless referee)
+│       ├── create_room/  join_room/   leave_room/  list_rooms/
+│       ├── ready_up/     update_player/
+│       └── submit_action/ heartbeat/   finish_game/
+│
+├── scripts/
+│   └── checks/                  # Determinism / engine harnesses (.mjs)
+│       ├── determinism.mjs  collision.mjs  timestep.mjs  turnstate.mjs
+│       └── airburst.mjs      wind.mjs       ammo.mjs
+│
+├── server/                      # SUPERSEDED Socket.io authoritative path (no longer deployed)
 │   ├── src/
 │   │   ├── index.ts             # Express + Socket.io bootstrap
 │   │   ├── RoomManager.ts       # Create/join/destroy game rooms
 │   │   └── GameServer.ts        # Per-room: owns GameEngine, handles socket events
 │   └── tsconfig.json
 │
-├── shared/
-│   └── src/
-│       ├── engine/
-│       │   ├── GameEngine.ts    # Master game state machine
-│       │   ├── Physics.ts       # Projectile ballistics, collision, explosion radius
-│       │   ├── Terrain.ts       # Height map generation, deformation, collapse
-│       │   ├── Tank.ts          # Tank entity: position, health, fuel, angle, power
-│       │   └── WeaponSystem.ts  # Weapon definitions, shop logic (V1)
-│       └── types/
-│           ├── GameState.ts     # Serializable snapshot of full game state
-│           ├── PlayerAction.ts  # Union type of all player inputs
-│           └── Events.ts        # Socket.io event names + payload types
-│
 ├── package.json                 # Workspace root (npm workspaces)
-├── ecosystem.config.js          # pm2 config
-└── nginx.conf                   # Static client + proxy /socket.io to Node
+├── ecosystem.config.cjs         # pm2 config (superseded — see §10)
+└── nginx.conf                   # Static client (the /socket.io proxy is superseded)
 ```
 
 ### Why `shared/`?
@@ -119,11 +145,14 @@ Physics, terrain, and game state types live in `shared/` so:
 
 ### 4.1 Terrain
 
-- **Representation**: `Uint16Array` of length `CANVAS_WIDTH` (e.g. 800). Each index is an x-column; the value is the y-height of the terrain surface at that column.
-- **Generation**: Midpoint displacement (diamond-square variant) for natural-looking hills. Seed-able for reproducible games.
-- **Deformation**: On explosion at `(cx, cy)` with radius `r`, for each column `x` in `[cx-r, cx+r]`, compute the chord depth at that x, subtract from `terrain[x]`, clamp to `[0, CANVAS_HEIGHT]`.
-- **Collapse**: After deformation, tanks whose base is no longer supported by terrain fall until they land. Simple: check `tank.y < terrain[tank.x]`, apply gravity each tick until grounded.
-- **Rendering**: Fill a polygon from the height map to the canvas bottom. One `beginPath`, iterate columns, `lineTo`, close — drawn once per frame only when terrain is dirty.
+Terrain is a **pixel bitmap** (rewritten from the old per-column height map — git `86f287b`).
+
+- **Representation**: `Uint8Array` of length `CANVAS_WIDTH * CANVAS_HEIGHT` (800 × 500 = 400 000), indexed `y * CANVAS_WIDTH + x`, where `0 = air` and `1 = solid`. Convention: smaller `y` = higher on screen; `y` grows downward.
+- **Generation**: A height-map silhouette is built via 1D **midpoint displacement** using a **seeded `mulberry32` PRNG** (no `Math.random`), with the surface kept within `MIN_SURFACE_Y ≈ 175` and `MAX_SURFACE_Y ≈ 450`. That height line is then **rasterized** into the bitmap (`buildBitmap` fills each column from its surface y down to the floor). Same seed ⇒ identical terrain.
+- **Collision**: A point `(x, y)` is solid when its bitmap pixel is set — `Physics.pixelAt(terrain, floor(x), floor(y)) === 1` — or when `y >= CANVAS_HEIGHT` (the implicit floor).
+- **Deformation**: Explosions call `deform()` on a disc of radius `r` at `(cx, cy)`: craters **clear** (zero) every pixel in the disc; dirt bombs **set** (solidify) them (`raise = true`) to raise terrain.
+- **Gravity / burial**: After deformation, a per-column gravity pass (`applyGravity`) compacts each touched column's solid pixels to the bottom, so undermined terrain falls. Tanks left unsupported likewise fall and can be **buried** under settled dirt.
+- **Rendering**: The bitmap is drawn (and re-rendered only when a **dirty flag** is set) so terrain redraw cost stays low on a t3.micro.
 
 ### 4.2 Physics
 
@@ -139,7 +168,7 @@ y  += vy
 ```
 
 **Collision detection:**
-- Ground: `y >= terrain[Math.floor(x)]`
+- Ground: solid bitmap pixel `pixelAt(terrain, floor(x), floor(y)) === 1`, or `y >= CANVAS_HEIGHT` (implicit floor) — see §4.1
 - Tank: bounding box check against each tank's `{x, y, w, h}`
 - Out of bounds: `x < 0 || x > CANVAS_WIDTH` → miss
 
@@ -164,10 +193,14 @@ Turn timeout (V1): 30s per turn, configurable.
 
 ### 4.4 Wind
 
-- Generated fresh each turn: `wind = (Math.random() * 2 - 1) * MAX_WIND`
-- Range: `[-MAX_WIND, +MAX_WIND]` where `MAX_WIND = 10` (tunable)
-- Displayed on HUD as a directional arrow + numeric value
-- Applied as constant horizontal acceleration to projectile during flight
+- **Deterministic, seeded** — never `Math.random` (that would break lockstep). Wind comes from an independent `mulberry32` stream (`Random.createRng`, seeded from the game seed, separate from terrain gen) advanced **once per turn**.
+- **Gentle drift, not re-rolled.** Each turn the wind walks by a delta in `[-WIND_DRIFT_STEP, +WIND_DRIFT_STEP]` (`WIND_DRIFT_STEP = MAX_WIND * 0.25 = 2.5`), then clamps to `[-MAX_WIND, +MAX_WIND]` (`MAX_WIND = 10`). This lets players walk shots in across turns:
+  ```
+  delta = (rng() * 2 - 1) * WIND_DRIFT_STEP
+  wind  = clamp(wind + delta, -MAX_WIND, +MAX_WIND)
+  ```
+- Displayed on HUD as a directional arrow + numeric value.
+- Applied as horizontal acceleration each flight tick: `vx += wind * WIND_FACTOR` where `WIND_FACTOR = 0.006`.
 
 ### 4.5 Weapons (V1 full list, stubs from MVP1)
 
@@ -185,8 +218,17 @@ Turn timeout (V1): 30s per turn, configurable.
 | Cluster Bomb | **Apex airburst**: flies as one shell, splits at the top of its arc into 5 bomblets that fan out and fall ballistically, each cratering where it lands |
 | Shield | Places a damage-absorbing shield on your tank (defensive) |
 
-Implemented today: Baby Missile, Missile, Cluster Bomb. The rest are stubs in
-the table with rough tuning; V1 implements the full list + shop.
+Implemented today (`implemented: true`): **Baby Missile, Missile, Heavy Missile,
+Dirt Bomb, Cluster Bomb, Baby Nuke, Nuke** (seven). Still stubs
+(`implemented: false`): **Bouncing Betty, Funky Bomb, Napalm, Shield** — present
+in the table with rough tuning; V1 implements them + the shop.
+
+**Ammo economy (Sprint 4).** Each tank carries a finite inventory:
+`TankState.inventory` is `Record<WeaponType, AmmoEntry>` where
+`AmmoEntry = { count: number; unlimited: boolean }`. Baby Missile is `unlimited`;
+every other weapon starts at `count: 9`. `GameEngine.applyAction('fire')` rejects
+the shot (no state change) when the selected weapon's `count` is 0 and is not
+unlimited, and decrements `count` by one on a successful fire.
 
 **`WeaponDefinition` shape (grouped).** Each weapon's blast and flight behavior
 are kept in two nested groups so the library stays clean as it grows:
@@ -227,13 +269,14 @@ No randomness — purely a function of the parent state + weapon def, preserving
 determinism. Each submunition then falls under gravity + wind like any
 projectile and detonates on its own impact via `detonate()`; one that exits the
 field is removed with no blast. The turn resolves exactly once, after the LAST
-submunition leaves flight. Cluster tuning: 5 bomblets, `spread` 4.5 px/tick
-(a wide landing fan across the field), per-bomblet radius 18 / maxDamage 22.
+submunition leaves flight. Cluster tuning: `count` 5 bomblets, `spread` 0.5
+px/tick (a TIGHT carpet that rewards aim — a direct hit stacks ~3 overlapping
+bomblets), per-bomblet radius 18 / maxDamage 28 (damage stacks across bomblets).
 
 **Damage + pacing tuning.** Implemented weapons were tuned so kills take a few
 clean hits and bursts read clearly: Baby Missile maxDamage 34 / durationFrames
-50 (~3 hits to kill), Missile maxDamage 60 / durationFrames 56 (~2 hits). Stub
-weapons had `durationFrames` bumped to ~50–58 proportionally.
+85 (~3 hits to kill), Missile maxDamage 60 / durationFrames 100 (~2 hits). Stub
+weapons had `durationFrames` set to ~50–56 proportionally.
 
 ---
 
@@ -313,8 +356,9 @@ interface GameState {
   phase: 'LOBBY' | 'PLAYER_TURN' | 'FIRING' | 'RESOLVING' | 'GAME_OVER';
   turn: number;
   activePlayerId: string;
-  wind: number;                    // current wind value
-  terrain: number[];               // height map (serialized from Uint16Array)
+  wind: number;                    // current wind value, [-MAX_WIND, +MAX_WIND]
+  terrain: Uint8Array;             // pixel bitmap, length CANVAS_WIDTH*CANVAS_HEIGHT
+                                   // (index y*W + x; 0 = air, 1 = solid). Held BY REFERENCE.
   tanks: TankState[];
   projectiles: ProjectileState[];  // all in-flight; [] when none. FIRING iff length > 0.
                                    // A single shot may have several (airburst submunitions).
@@ -334,9 +378,14 @@ interface TankState {
   health: number;                  // 0–100
   fuel: number;                    // V1
   selectedWeapon: WeaponType;
-  inventory: Record<WeaponType, number>;  // V1
+  inventory: Record<WeaponType, AmmoEntry>;  // per-weapon ammo (Sprint 4)
   color: string;                   // CSS color string
   alive: boolean;
+}
+
+interface AmmoEntry {
+  count: number;                   // remaining rounds (ignored when unlimited)
+  unlimited: boolean;              // true => never decrements (e.g. Baby Missile)
 }
 
 interface ProjectileState {
