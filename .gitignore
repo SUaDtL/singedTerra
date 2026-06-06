@@ -5,3 +5,9 @@ dist
 client/dist
 server/dist
 .vite
+.env
+.env.local
+client/.env
+client/.env.local
+supabase/.env
+supabase/.temp/
