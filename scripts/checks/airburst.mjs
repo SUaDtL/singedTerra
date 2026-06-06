@@ -228,7 +228,7 @@ function fireShot(engine, { angle, power, weapon }) {
       explosions: state.explosions,
       lastExplosion: state.lastExplosion,
       tanks: state.tanks.map((t) => ({ id: t.id, x: t.x, y: t.y, health: t.health, alive: t.alive })),
-      terrain: state.terrain,
+      terrain: Buffer.from(state.terrain).toString('hex'),
     });
   }
   function run() {

@@ -42,12 +42,12 @@ export class HUD {
   }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
-  update(state: GameState): void {
+  update(state: GameState, isFiring = false): void {
     if (!this.built) this.build();
 
     this.syncPlayers(state);
     this.syncWind(state.wind);
-    this.syncAim(state);
+    this.syncAim(state, isFiring);
     this.syncOverlay(state);
   }
 
@@ -186,11 +186,15 @@ export class HUD {
   }
 
   /** Update the active tank's angle / power / weapon name readout. */
-  private syncAim(state: GameState): void {
+  private syncAim(state: GameState, isFiring = false): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);
     if (!tank) {
       this.aimEl.textContent = '';
       this.weaponValueEl.textContent = '—';
+      return;
+    }
+    if (isFiring) {
+      this.aimEl.textContent = `${tank.playerName}  ·  Sending...`;
       return;
     }
     const weaponName = WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon;

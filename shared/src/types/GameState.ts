@@ -19,8 +19,12 @@ export interface GameState {
   activePlayerId: string;
   /** Current wind value, range [-MAX_WIND, +MAX_WIND]. */
   wind: number;
-  /** Height map, serialized from a Uint16Array (one y-height per x-column). */
-  terrain: number[];
+  /**
+   * Pixel terrain bitmap (Uint8Array of length CANVAS_WIDTH*CANVAS_HEIGHT,
+   * index y*CANVAS_WIDTH + x, 0 = air, 1 = solid). Held by the engine and
+   * returned BY REFERENCE from getState() — not copied per snapshot.
+   */
+  terrain: Uint8Array;
   tanks: TankState[];
   /**
    * All projectiles currently in flight (`[]` when none). FIRING iff

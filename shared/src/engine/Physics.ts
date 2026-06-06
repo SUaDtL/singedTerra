@@ -1,5 +1,5 @@
 import type { ProjectileState, TankState } from '../types/GameState';
-import { CANVAS_WIDTH } from './Terrain';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt } from './Terrain';
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank';
 
 /**
@@ -112,7 +112,7 @@ export function sweepCollide(
   p: ProjectileState,
   prevX: number,
   prevY: number,
-  terrain: readonly number[] | Uint16Array,
+  terrain: Uint8Array,
   tanks: readonly TankState[],
 ): CollisionResult {
   const endX = p.x;
@@ -153,7 +153,8 @@ export function sweepCollide(
 
 /**
  * Max travel (px) between successive collision samples in `sweepCollide`. Must
- * be <= the smallest collidable feature (1px terrain column) so nothing tunnels.
+ * be <= the smallest collidable feature (a single 1px terrain pixel) so nothing
+ * tunnels.
  */
 const SWEEP_STEP = 1;
 
@@ -164,11 +165,12 @@ const SWEEP_STEP = 1;
  * - OOB: x < 0 || x >= CANVAS_WIDTH (x===0 ok, x===CANVAS_WIDTH-1 ok).
  * - Tank: AABB of width TANK_WIDTH / height TANK_HEIGHT, centered on tank.x
  *   with its base at tank.y (box spans [tank.y - h, tank.y]).
- * - Ground: y >= terrain[floor(x)].
+ * - Ground: bottom-floor (y >= CANVAS_HEIGHT) or a solid bitmap pixel at
+ *   (floor(x), floor(y)).
  */
 export function collide(
   p: ProjectileState,
-  terrain: readonly number[] | Uint16Array,
+  terrain: Uint8Array,
   tanks: readonly TankState[],
 ): CollisionResult {
   // Out of bounds (horizontal). A miss — handled before terrain/tank so an
@@ -190,10 +192,12 @@ export function collide(
     }
   }
 
-  // Ground hit. y grows downward; underground when y >= surface.
-  const col = Math.floor(p.x);
-  const surface = terrain[col];
-  if (surface !== undefined && p.y >= surface) {
+  // Ground hit. y grows downward. The bottom of the canvas is an implicit solid
+  // floor; otherwise hit when the pixel at (floor(x), floor(y)) is solid. (The
+  // OOB-x check above guarantees x in [0, CANVAS_WIDTH) here.)
+  const xi = Math.floor(p.x);
+  if (p.y >= CANVAS_HEIGHT) return { type: 'ground', x: p.x, y: p.y };
+  if (pixelAt(terrain, xi, Math.floor(p.y)) === 1) {
     return { type: 'ground', x: p.x, y: p.y };
   }
 

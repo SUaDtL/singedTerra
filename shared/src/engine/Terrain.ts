@@ -125,101 +125,135 @@ export function generate(seed: number): Uint16Array {
   return terrain;
 }
 
+/** Total pixel count of the terrain bitmap (one byte per pixel). */
+export const BITMAP_LEN = CANVAS_WIDTH * CANVAS_HEIGHT;
+
 /**
- * Crater the terrain at (cx, cy) with radius r by lowering the surface in
- * [cx-r, cx+r] by the circular chord depth at each column (SPEC §4.1).
+ * Build a pixel BITMAP (Uint8Array of length CANVAS_WIDTH*CANVAS_HEIGHT, index
+ * y*CANVAS_WIDTH + x, 0 = air, 1 = solid) from a height LINE (one surface y per
+ * column, as produced by generate()). For each column x the pixels from its
+ * surface y down to the canvas floor are filled solid; everything above is air.
  *
- * Lowering the surface means terrain[x] INCREASES (larger y = lower on screen).
- * The carve at column x is sqrt(r^2 - dx^2) — the blast-circle radius at that
- * column — giving a ROUND bowl (depth r at center, 0 at the rim). Result is
- * clamped to [0, CANVAS_HEIGHT].
+ * Deterministic — a pure function of the input height line. The bitmap is the
+ * runtime representation deformed by explosions; the height line is kept only
+ * for generation and tank placement.
+ */
+export function buildBitmap(heightLine: Uint16Array): Uint8Array {
+  const bitmap = new Uint8Array(BITMAP_LEN);
+  for (let x = 0; x < CANVAS_WIDTH; x++) {
+    const s = clamp(heightLine[x], 0, CANVAS_HEIGHT);
+    for (let y = s; y < CANVAS_HEIGHT; y++) {
+      bitmap[y * CANVAS_WIDTH + x] = 1;
+    }
+  }
+  return bitmap;
+}
+
+/** Generate a terrain bitmap directly from a seed (generate -> buildBitmap). */
+export function generateBitmap(seed: number): Uint8Array {
+  return buildBitmap(generate(seed));
+}
+
+/**
+ * Pure, bounds-checked pixel lookup: 1 if (x, y) is solid, 0 if air OR
+ * out-of-canvas. No bottom-floor synthesis here — out-of-bounds reads return
+ * air; the bottom-floor collision rule lives in Physics.collide, not here.
+ */
+export function pixelAt(bitmap: Uint8Array, x: number, y: number): number {
+  if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return 0;
+  return bitmap[y * CANVAS_WIDTH + x];
+}
+
+/**
+ * Surface y at a given (possibly fractional) x: the topmost solid pixel in that
+ * column. Scans top→bottom and returns the first solid y; if the whole column is
+ * air, returns CANVAS_HEIGHT (i.e. the floor). Replaces the old height-line
+ * surfaceAt — now derived from the live bitmap so it tracks deformation.
+ */
+export function surfaceAt(bitmap: Uint8Array, x: number): number {
+  const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
+  for (let y = 0; y < CANVAS_HEIGHT; y++) {
+    if (bitmap[y * CANVAS_WIDTH + xi] === 1) return y;
+  }
+  return CANVAS_HEIGHT;
+}
+
+/**
+ * Deform the BITMAP with a circular blast at (cx, cy) of radius r (SPEC §4.1).
  *
- * Deterministic: depends only on its arguments. `cy` is accepted for signature
- * stability / future shaping but the MVP0 crater is a symmetric circular bite
- * independent of impact height.
+ * raise=false CLEARS (sets 0/air) every solid-or-not pixel inside the blast
+ * circle — a crater. raise=true FILLS (sets 1/solid) every pixel inside the
+ * circle — dirt/raise weapons. Iterates the bounding box ceil(c-r)..floor(c+r)
+ * in both axes and writes only the in-canvas pixels whose center lies within r
+ * of (cx, cy). Pure integer/float arithmetic on the inputs — deterministic.
  *
- * Returns the inclusive [xStart, xEnd] column range it actually modified (or
- * null if nothing was carved) so callers (e.g. GameEngine.explode) can mirror
- * exactly the affected span into the serialized terrain instead of
- * independently re-deriving the bounds — which would silently desync if these
- * bounds ever change.
+ * Returns the clamped bounding rect {xStart,xEnd,yStart,yEnd} of the pixels
+ * ACTUALLY written (so the gravity pass can be confined to the touched column
+ * range), or null if r<=0 or no pixel fell inside the canvas+circle.
  */
 export function deform(
-  terrain: Uint16Array,
+  bitmap: Uint8Array,
   cx: number,
   cy: number,
   r: number,
-): { xStart: number; xEnd: number } | null {
-  void cy;
+  raise = false,
+): { xStart: number; xEnd: number; yStart: number; yEnd: number } | null {
   if (r <= 0) return null;
 
   const r2 = r * r;
-  const xStart = Math.max(0, Math.ceil(cx - r));
-  const xEnd = Math.min(CANVAS_WIDTH - 1, Math.floor(cx + r));
-  if (xStart > xEnd) return null;
+  const value = raise ? 1 : 0;
 
-  for (let x = xStart; x <= xEnd; x++) {
-    const dx = x - cx;
-    const inside = r2 - dx * dx;
-    if (inside <= 0) continue;
-    // Lower the surface by the blast-circle RADIUS at this column: sqrt(r^2-dx^2)
-    // gives a round bowl (depth r at center, tapering to 0 at the rim). Using the
-    // full chord (2*sqrt) made craters a deep oval gouge — twice as deep as wide —
-    // which read as ovals and left thin spikes between tightly-spaced cluster bomblets.
-    const depth = Math.sqrt(inside);
-    const lowered = clamp(terrain[x] + depth, 0, CANVAS_HEIGHT);
-    terrain[x] = Math.round(lowered);
-  }
-  return { xStart, xEnd };
-}
+  let xMin = Infinity;
+  let xMax = -Infinity;
+  let yMin = Infinity;
+  let yMax = -Infinity;
 
-/**
- * Minimal positioned-entity shape collapse operates on (a subset of TankState).
- * Kept structural so Terrain has no dependency on the TankState type.
- */
-interface CollapsibleTank {
-  x: number;
-  y: number;
-  alive: boolean;
-}
+  const pxStart = Math.ceil(cx - r);
+  const pxEnd = Math.floor(cx + r);
+  const pyStart = Math.ceil(cy - r);
+  const pyEnd = Math.floor(cy + r);
 
-/**
- * Resolve unsupported tanks after deformation (SPEC §4.1). A crater LOWERS the
- * surface (increases terrain[x]); any ALIVE tank now floating above the new,
- * lower surface (tank.y < surfaceAt(tank.x)) is dropped straight down to rest on
- * it (tank.y = surfaceAt(tank.x)). Heightmap collapse — deterministic and
- * instantaneous, no per-tick fall animation needed for correctness.
- *
- * Idempotent and chainable: re-running after another crater re-grounds tanks,
- * and running twice in a row is a no-op the second time (it converges). Dead
- * tanks are left untouched. Returns true if any tank moved.
- */
-export function collapse(
-  terrain: Uint16Array,
-  tanks: readonly CollapsibleTank[] = [],
-): boolean {
-  let moved = false;
-  for (const tank of tanks) {
-    if (!tank.alive) continue;
-    const surface = surfaceAt(terrain, tank.x);
-    if (tank.y < surface) {
-      tank.y = surface;
-      moved = true;
+  for (let px = pxStart; px <= pxEnd; px++) {
+    if (px < 0 || px >= CANVAS_WIDTH) continue;
+    const dx = px - cx;
+    for (let py = pyStart; py <= pyEnd; py++) {
+      if (py < 0 || py >= CANVAS_HEIGHT) continue;
+      const dy = py - cy;
+      if (dx * dx + dy * dy > r2) continue;
+      bitmap[py * CANVAS_WIDTH + px] = value;
+      if (px < xMin) xMin = px;
+      if (px > xMax) xMax = px;
+      if (py < yMin) yMin = py;
+      if (py > yMax) yMax = py;
     }
   }
-  return moved;
-}
 
-/** Terrain surface y at a given x-column (O(1) lookup). */
-export function heightAt(terrain: Uint16Array, x: number): number {
-  return terrain[Math.floor(x)];
+  if (xMin > xMax) return null; // nothing written
+  return { xStart: xMin, xEnd: xMax, yStart: yMin, yEnd: yMax };
 }
 
 /**
- * Surface y at a given (possibly fractional) x. Alias of heightAt with bounds
- * clamping — convenient for renderer/physics callers that hold a float x.
+ * Per-column "dirt falls" pass (SPEC §4.1). For each column x in the inclusive
+ * [xStart, xEnd] range (clamped to the canvas), count its solid pixels then
+ * rewrite the column so all solids are compacted to the BOTTOM: air for
+ * y in [0, H-count), solid for y in [H-count, H). Pure integer ops, run once
+ * per explosion over the columns deform() actually touched.
  */
-export function surfaceAt(terrain: Uint16Array, x: number): number {
-  const xi = clamp(Math.floor(x), 0, terrain.length - 1);
-  return terrain[xi];
+export function applyGravity(
+  bitmap: Uint8Array,
+  xStart: number,
+  xEnd: number,
+): void {
+  const lo = Math.max(0, xStart);
+  const hi = Math.min(CANVAS_WIDTH - 1, xEnd);
+  for (let x = lo; x <= hi; x++) {
+    let count = 0;
+    for (let y = 0; y < CANVAS_HEIGHT; y++) {
+      if (bitmap[y * CANVAS_WIDTH + x] === 1) count++;
+    }
+    const top = CANVAS_HEIGHT - count;
+    for (let y = 0; y < CANVAS_HEIGHT; y++) {
+      bitmap[y * CANVAS_WIDTH + x] = y < top ? 0 : 1;
+    }
+  }
 }

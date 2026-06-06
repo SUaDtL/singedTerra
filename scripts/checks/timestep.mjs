@@ -14,7 +14,9 @@
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import {
   generate,
+  generateBitmap,
   deform,
+  applyGravity,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
 } from '../../shared/src/engine/Terrain.ts';
@@ -214,21 +216,34 @@ log('\n(b) Terrain generation: stable & in-bounds across many seeds');
     ok(`every surface value within [0, ${CANVAS_HEIGHT}]`);
   else fail(`${oobValues} terrains had out-of-range surface values`);
 
-  // Deform must keep terrain in-bounds and deterministic too.
-  let deformOob = 0;
+  // Deform must keep the BITMAP well-formed: every pixel stays 0/1 (air/solid)
+  // and the length is invariant at 800*500 after deform + gravity. Operates on
+  // the pixel bitmap (deform now takes a Uint8Array, not a height line).
+  let deformBadPixel = 0;
+  let deformBadLen = 0;
   for (let i = 0; i < 500; i++) {
-    const t = generate((i * 40503) >>> 0);
+    const b = generateBitmap((i * 40503) >>> 0);
     const cx = (i * 37) % CANVAS_WIDTH;
-    deform(t, cx, 200, 28 + (i % 50));
-    for (let x = 0; x < t.length; x++) {
-      if (t[x] < 0 || t[x] > CANVAS_HEIGHT) {
-        deformOob++;
+    const cyVal = 200;
+    const r = 28 + (i % 50);
+    const range = deform(b, cx, cyVal, r);
+    if (range !== null) applyGravity(b, range.xStart, range.xEnd);
+    if (b.length !== CANVAS_WIDTH * CANVAS_HEIGHT) {
+      deformBadLen++;
+      continue;
+    }
+    for (let p = 0; p < b.length; p++) {
+      if (b[p] !== 0 && b[p] !== 1) {
+        deformBadPixel++;
         break;
       }
     }
   }
-  if (deformOob === 0) ok('deform keeps surface within [0, CANVAS_HEIGHT]');
-  else fail(`${deformOob} deformed terrains went out of range`);
+  if (deformBadLen === 0) ok(`deform keeps bitmap length ${CANVAS_WIDTH * CANVAS_HEIGHT}`);
+  else fail(`${deformBadLen} deformed bitmaps had wrong length`);
+
+  if (deformBadPixel === 0) ok('deform keeps every pixel value in {0, 1}');
+  else fail(`${deformBadPixel} deformed bitmaps had out-of-range pixel values`);
 
   // Sensitivity: different seeds should generally give different terrain (a
   // weak anti-stuck check — a constant generator would be "stable" but wrong).
