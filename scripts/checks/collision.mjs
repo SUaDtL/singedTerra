@@ -254,10 +254,10 @@ console.log('[5] Projectile does NOT collide with its OWN tank on the first tick
 
   const after = engine.getState();
   ok(after.phase === 'FIRING', 'phase is FIRING after fire');
-  ok(after.projectile !== null, 'projectile spawned after fire');
+  ok(after.projectiles.length === 1, 'one projectile spawned after fire');
 
   // The projectile spawn must NOT already be inside the shooter's AABB.
-  const p = after.projectile;
+  const p = after.projectiles[0];
   const halfW = TANK_WIDTH / 2;
   const insideOwn =
     p.x >= shooter.x - halfW &&
@@ -292,7 +292,7 @@ console.log('[5] Projectile does NOT collide with its OWN tank on the first tick
   // should still be in flight (phase FIRING) for a 45deg/60-power shot.
   engine.tick();
   const t1 = engine.getState();
-  ok(t1.phase === 'FIRING' && t1.projectile !== null,
+  ok(t1.phase === 'FIRING' && t1.projectiles.length === 1,
     'after first tick projectile still in flight (no self-collision)',
     `phase=${t1.phase}`);
 }
@@ -313,7 +313,7 @@ console.log('[6] Full-flight integration: a real shot lands (ground or tank), ne
   }
   ok(ticks < 100000, 'shot resolves within bounded ticks (no infinite flight)');
   eq(engine.getState().phase, 'PLAYER_TURN', 'engine returns to PLAYER_TURN after resolve');
-  ok(engine.getState().projectile === null, 'projectile cleared after resolve');
+  ok(engine.getState().projectiles.length === 0, 'projectiles cleared after resolve');
 }
 
 // ---------------------------------------------------------------------------

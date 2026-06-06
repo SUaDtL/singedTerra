@@ -10,6 +10,12 @@ import type { PlayerAction } from './PlayerAction';
 export interface GameOptions {
   /** Number of players (2–4 for MVP1). */
   maxPlayers: number;
+  /**
+   * Explicit per-player name + color (2–4). When provided, the engine builds
+   * exactly this many tanks via placeTanks; when absent it falls back to the
+   * default two-tank layout. `maxPlayers` should agree with `players.length`.
+   */
+  players?: Array<{ name: string; color: string }>;
   /** Terrain RNG seed; same seed → same terrain. */
   seed?: number;
   /** Wind strength cap; defaults to MAX_WIND. */

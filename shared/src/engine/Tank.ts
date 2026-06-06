@@ -22,6 +22,17 @@ const RIGHT_TANK_FRACTION = 0.85;
 const TANK_COLORS = ['#e84d4d', '#4d8ce8'] as const;
 
 /**
+ * Default color palette for multi-player (2–4) placement. The first two entries
+ * match the MVP0 two-tank colors so a 2-player game looks identical whether it
+ * goes through placeTwoTanks or placeTanks with default colors.
+ */
+const MULTI_TANK_COLORS = ['#e84d4d', '#4d8ce8', '#4de87a', '#e8c84d'] as const;
+
+/** Inclusive horizontal spread band (canvas fractions) for N evenly-spaced tanks. */
+const SPREAD_MIN_FRACTION = 0.1;
+const SPREAD_MAX_FRACTION = 0.9;
+
+/**
  * Minimal MVP0 inventory: only the baby missile, with effectively unlimited
  * ammo. Other weapon types are present (keys must be exhaustive for the
  * `Record<WeaponType, number>` type) but start at 0.
@@ -37,6 +48,9 @@ function defaultInventory(): Record<WeaponType, number> {
     bouncing_betty: 0,
     funky_bomb: 0,
     napalm: 0,
+    // Implemented MVP1 weapon — unlimited ammo so it is selectable (inventory is
+    // cosmetic for now; the engine does not gate firing on counts yet).
+    cluster_bomb: Infinity,
     shield: 0,
   };
 }
@@ -91,6 +105,40 @@ export function placeTwoTanks(
     createTank('p1', 'Player 1', leftX, terrain, TANK_COLORS[0]),
     createTank('p2', 'Player 2', rightX, terrain, TANK_COLORS[1]),
   ];
+}
+
+/**
+ * Place N (2–4) tanks spread evenly across the canvas in the inclusive band
+ * [SPREAD_MIN_FRACTION, SPREAD_MAX_FRACTION], each resting on the terrain
+ * surface, using each player's name + color. Ids are 'p1'..'pN'. Deterministic:
+ * placement depends only on N and the terrain, never on a random source.
+ *
+ * For N=2 this yields x at 0.1 and 0.9 — intentionally NOT the same as
+ * placeTwoTanks (0.15 / 0.85): callers wanting the exact MVP0 two-tank layout
+ * must use placeTwoTanks. Colors default to MULTI_TANK_COLORS when a player
+ * omits one.
+ */
+export function placeTanks(
+  terrain: number[],
+  players: Array<{ name: string; color: string }>,
+  opts?: GameOptions,
+): TankState[] {
+  void opts;
+  const n = players.length;
+  const tanks: TankState[] = [];
+  for (let i = 0; i < n; i++) {
+    // Evenly distribute across the band. With n===1 place at the band start.
+    const frac =
+      n <= 1
+        ? SPREAD_MIN_FRACTION
+        : SPREAD_MIN_FRACTION +
+          (SPREAD_MAX_FRACTION - SPREAD_MIN_FRACTION) * (i / (n - 1));
+    const x = Math.round(CANVAS_WIDTH * frac);
+    const player = players[i];
+    const color = player.color ?? MULTI_TANK_COLORS[i % MULTI_TANK_COLORS.length];
+    tanks.push(createTank(`p${i + 1}`, player.name, x, terrain, color));
+  }
+  return tanks;
 }
 
 /**

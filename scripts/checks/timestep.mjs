@@ -38,11 +38,13 @@ function ok(msg) {
 
 // --- helpers -----------------------------------------------------------------
 
-// Snapshot the projectile (or null) for comparison.
+// Snapshot all in-flight projectiles (or 'null' when none) for comparison.
+// Multiple projectiles can be live at once (airburst submunitions), so we
+// serialize the whole array; an empty array reads as 'null' (resolved).
 function projSnap(state) {
-  const p = state.projectile;
-  if (p === null) return 'null';
-  return [p.x, p.y, p.vx, p.vy].join(',');
+  const ps = state.projectiles;
+  if (ps.length === 0) return 'null';
+  return ps.map((p) => [p.x, p.y, p.vx, p.vy].join(',')).join('|');
 }
 
 // Drive an engine to FIRING with a fixed aim and a fixed shot, then return a
