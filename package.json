@@ -1,0 +1,23 @@
+{
+  "name": "singedterra",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:client": "npm -w @singedterra/client run dev",
+    "dev:server": "npm -w @singedterra/server run dev",
+    "build": "npm run typecheck && npm -w @singedterra/server run build && npm -w @singedterra/client run build",
+    "typecheck": "npm -w @singedterra/shared run typecheck && npm -w @singedterra/server run typecheck && npm -w @singedterra/client run typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.0",
+    "concurrently": "^8.2.2"
+  }
+}

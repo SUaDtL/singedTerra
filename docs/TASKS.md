@@ -2,14 +2,14 @@
 
 Living register of work, organized by delivery phase (**MVP0 → MVP1 → MVP2 → V1**). Check items off as completed. Full details for each item are in [`SPEC.md`](SPEC.md) §9. Architecture context is in [`../CLAUDE.md`](../CLAUDE.md).
 
-**Current phase:** MVP0 (not started — repo is an empty scaffold).
+**Current phase:** MVP0 (scaffold done — monorepo wiring compiles; engine/render/net are stubs awaiting implementation).
 
 ---
 
 ## MVP0 — Bones
 *Goal: something visually real. No game yet.* Excludes: turns, health, wind, multiple players, HUD.
 
-- [ ] Repo scaffold: npm workspaces, Vite client, Node server, shared package
+- [x] Repo scaffold: npm workspaces, Vite client, Node server, shared package
 - [ ] Terrain generation (midpoint displacement) + rendering
 - [ ] Tank entity: place 2 tanks on terrain at game start
 - [ ] Barrel rendering: rotates with angle input (← →)
