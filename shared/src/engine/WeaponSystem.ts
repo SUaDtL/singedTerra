@@ -112,13 +112,13 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
   heavy_missile: {
     type: 'heavy_missile',
     name: 'Heavy Missile',
-    implemented: false,
+    implemented: true,
     detonation: {
-      radius: 45,
-      maxDamage: 80,
+      radius: 50,
+      maxDamage: 85,
       style: 'blast',
-      color: '#ff3b1f', // deep red
-      durationFrames: 58,
+      color: '#ff6600',
+      durationFrames: 110,
     },
   },
   baby_nuke: {
@@ -148,7 +148,7 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
   dirt_bomb: {
     type: 'dirt_bomb',
     name: 'Dirt Bomb',
-    implemented: false,
+    implemented: true,
     detonation: {
       radius: 50,
       maxDamage: 0,

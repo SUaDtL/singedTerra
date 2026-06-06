@@ -6,8 +6,22 @@ import type {
 } from '../types/GameState';
 import type { PlayerAction } from '../types/PlayerAction';
 import type { GameOptions } from '../types/Events';
-import { generate, deform, collapse, CANVAS_HEIGHT } from './Terrain';
-import { placeTwoTanks, placeTanks, barrelTip, Tank } from './Tank';
+import {
+  generate,
+  buildBitmap,
+  deform,
+  applyGravity,
+  surfaceAt,
+  pixelAt,
+  CANVAS_HEIGHT,
+} from './Terrain';
+import {
+  placeTwoTanks,
+  placeTanks,
+  barrelTip,
+  Tank,
+  TANK_HEIGHT,
+} from './Tank';
 import {
   launchVelocity,
   stepProjectile,
@@ -58,8 +72,8 @@ function clamp(v: number, lo: number, hi: number): number {
 export class GameEngine {
   private state: GameState;
 
-  /** Live terrain height map (authoritative; serialized into getState()). */
-  private terrain: Uint16Array;
+  /** Live terrain pixel bitmap (authoritative; returned by ref from getState()). */
+  private terrain: Uint8Array;
 
   /** Monotonic explosion id source — drives ExplosionEvent.id dedupe. */
   private explosionSeq = 0;
@@ -80,12 +94,15 @@ export class GameEngine {
 
   constructor(options?: GameOptions) {
     const seed = options?.seed ?? DEFAULT_SEED;
-    this.terrain = generate(seed);
+    const heightLine = generate(seed);
+    this.terrain = buildBitmap(heightLine);
     this.windRng = createRng(seed);
     this.maxWind = options?.maxWind ?? MAX_WIND;
     this.gravity = options?.gravity ?? GRAVITY;
 
-    const terrainArr = Array.from(this.terrain);
+    // number[] height line for tank placement (Tank.ts is unchanged and still
+    // expects a per-column surface line, not the pixel bitmap).
+    const terrainArr = Array.from(heightLine);
 
     // 2–4 explicit players => generalized placement; otherwise the MVP0 default
     // two-tank layout (byte-identical to before for back-compat).
@@ -101,7 +118,9 @@ export class GameEngine {
       activePlayerId: tanks[0]?.id ?? '',
       // Opening turn's wind: drift from a 0 baseline, advancing the stream once.
       wind: this.nextWind(0),
-      terrain: terrainArr,
+      // SAME reference as this.terrain — getState() returns the live bitmap by
+      // reference, no per-snapshot copy/sync.
+      terrain: this.terrain,
       tanks,
       projectiles: [],
       projectile: null,
@@ -353,28 +372,24 @@ export class GameEngine {
 
   /**
    * THE detonation primitive — the SINGLE place a blast happens. Apply an
-   * explosion at (cx, cy) for the given weapon: crater the terrain, keep the
-   * serialized terrain in sync, apply proximity damage to EVERY alive tank,
-   * collapse any tank left floating over the new (lower) surface, and publish a
+   * explosion at (cx, cy) for the given weapon: deform the pixel bitmap (crater
+   * or raise) and let the touched columns' dirt fall, apply proximity damage to
+   * EVERY alive tank, resolve each surviving tank against the new terrain (drop
+   * into a fresh crater, or instakill if buried), and publish a
    * monotonically-id'd ExplosionEvent the client dedupes by id.
    *
    * Every weapon AND every airburst submunition routes through here, reading the
    * weapon's `detonation.*` group — so all blast behavior lives in one place.
    */
   private detonate(cx: number, cy: number, weaponType: WeaponType): void {
-    const { radius, maxDamage, style, color, durationFrames } =
+    const { radius, maxDamage, raisesTerrain, style, color, durationFrames } =
       getWeapon(weaponType).detonation;
+    const raise = raisesTerrain === true;
 
-    const range = deform(this.terrain, cx, cy, radius);
-
-    // Mirror exactly the columns deform() reported as modified back into the
-    // serialized height map — no independent re-derivation of the span, so the
-    // two can never desync.
-    if (range !== null) {
-      for (let x = range.xStart; x <= range.xEnd; x++) {
-        this.state.terrain[x] = this.terrain[x];
-      }
-    }
+    // Deform the live bitmap, then let the touched columns' dirt fall. The
+    // bitmap IS state.terrain (same reference), so no separate sync is needed.
+    const range = deform(this.terrain, cx, cy, radius, raise);
+    if (range !== null) applyGravity(this.terrain, range.xStart, range.xEnd);
 
     // Proximity damage to every living tank. explosionDamage() returns the
     // falloff value scaled to MAX_DAMAGE; rescale to the weapon's peak so
@@ -390,9 +405,24 @@ export class GameEngine {
       }
     }
 
-    // Collapse: any alive tank now floating above the lowered surface drops onto
-    // it. Mutates state.tanks in place; deterministic heightmap collapse.
-    collapse(this.terrain, this.state.tanks);
+    // Unified post-terrain tank resolution. For each alive tank:
+    //  - if a crater opened beneath it (new surface is LOWER, i.e. surf > tank.y)
+    //    the tank falls onto the new floor;
+    //  - else if dirt now covers its MID-BODY it is buried -> instakill.
+    // NOTE: tank.y is the BASE resting ON the surface, so the pixel at
+    // (floor(x), floor(y)) is ALWAYS solid for a resting tank (it would kill
+    // every resting tank). We instead sample the MID-BODY (tank.y - TANK_HEIGHT/2):
+    // air for a resting tank, solid only once dirt has risen over the body.
+    for (const tank of this.state.tanks) {
+      if (!tank.alive) continue;
+      const xi = Math.floor(tank.x);
+      const surf = surfaceAt(this.terrain, tank.x);
+      if (surf > tank.y) {
+        tank.y = surf; // crater opened beneath -> tank falls onto new floor
+      } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) === 1) {
+        Tank.applyDamage(tank, tank.health); // dirt covers mid-body -> buried, instakill
+      }
+    }
 
     // Style/color/duration come from the weapon definition; ids are strictly
     // increasing across every blast (including each bomblet of a cluster).

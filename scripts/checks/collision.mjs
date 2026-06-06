@@ -23,6 +23,8 @@ import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   deform,
+  applyGravity,
+  surfaceAt,
 } from '../../shared/src/engine/Terrain.ts';
 import {
   createTank,
@@ -52,12 +54,18 @@ function eq(a, b, label) {
   ok(a === b, label, `expected ${JSON.stringify(b)} got ${JSON.stringify(a)}`);
 }
 
-// A flat terrain at a known surface y, as a plain number[] (what GameState holds)
-// AND a Uint16Array (what the engine holds internally). collide() accepts both.
-function flatTerrain(surfaceY) {
-  const arr = new Array(CANVAS_WIDTH);
-  for (let x = 0; x < CANVAS_WIDTH; x++) arr[x] = surfaceY;
-  return arr;
+// A flat terrain BITMAP at a known surface y: a Uint8Array(800*500) with every
+// pixel solid (1) for y in [surfaceY, CANVAS_HEIGHT) and air (0) above. This is
+// exactly what collide()/sweepCollide() now consume (the engine holds the same
+// pixel bitmap by reference).
+function flatBitmap(surfaceY) {
+  const b = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT);
+  const s = surfaceY < 0 ? 0 : surfaceY > CANVAS_HEIGHT ? CANVAS_HEIGHT : surfaceY;
+  for (let y = s; y < CANVAS_HEIGHT; y++) {
+    const row = y * CANVAS_WIDTH;
+    for (let x = 0; x < CANVAS_WIDTH; x++) b[row + x] = 1;
+  }
+  return b;
 }
 
 function mkProjectile(x, y, vx = 0, vy = 0) {
@@ -68,7 +76,7 @@ function mkProjectile(x, y, vx = 0, vy = 0) {
 console.log('\n[1] OOB exact boundaries (x=0 in, x=799 in, x=800 oob, x<0 oob)');
 // ---------------------------------------------------------------------------
 {
-  const terrain = flatTerrain(490); // ground low so we don't accidentally hit it
+  const terrain = flatBitmap(490); // ground low so we don't accidentally hit it
   const tanks = [];
 
   // x === 0 : IN bounds (not OOB). At y above ground => 'none'.
@@ -112,8 +120,11 @@ console.log('[2] Fired straight up returns and hits GROUND near origin (not OOB 
   // so x never leaves bounds; projectile must come back down and hit GROUND,
   // and the ground impact x must be ~the launch x (near origin), never OOB.
   const surfaceY = 400;
-  const terrain = flatTerrain(surfaceY);
-  const tank = createTank('p1', 'P1', 60, terrain, '#fff');
+  const terrain = flatBitmap(surfaceY);
+  // createTank expects a number[] HEIGHT LINE (Tank.ts is unchanged), so give it
+  // a flat line at the same surface; collide() below gets the matching bitmap.
+  const heightLine = new Array(CANVAS_WIDTH).fill(surfaceY);
+  const tank = createTank('p1', 'P1', 60, heightLine, '#fff');
 
   const v = launchVelocity(90, 70);
   ok(Math.abs(v.vx) < 1e-9, 'straight-up vx ~ 0', `vx=${v.vx}`);
@@ -144,10 +155,11 @@ console.log('[2] Fired straight up returns and hits GROUND near origin (not OOB 
 console.log('[3] Aimed AT enemy tank => tank hit (AABB); near-miss => not a tank hit');
 // ---------------------------------------------------------------------------
 {
-  const terrain = flatTerrain(490);
+  const terrain = flatBitmap(490);
   // Enemy tank with base at y=400, x=400. AABB spans:
   //   x in [400-10, 400+10] = [390,410]; y in [400-12, 400] = [388,400].
-  const enemy = createTank('p2', 'P2', 400, terrain, '#00f');
+  const enemyLine = new Array(CANVAS_WIDTH).fill(490); // height line for createTank
+  const enemy = createTank('p2', 'P2', 400, enemyLine, '#00f');
   enemy.y = 400;
   const tanks = [enemy];
 
@@ -175,67 +187,65 @@ console.log('[3] Aimed AT enemy tank => tank hit (AABB); near-miss => not a tank
 }
 
 // ---------------------------------------------------------------------------
-console.log('[4] deform at terrain EDGES (cx near 0 / near 800): no OOR / NaN');
+console.log('[4] deform at bitmap EDGES (cx near 0 / near 800): no OOR / NaN');
 // ---------------------------------------------------------------------------
 {
-  function assertCleanTerrain(arr, label) {
+  // A deformed bitmap must stay a valid pixel buffer: fixed length (800*500),
+  // every cell strictly 0 or 1, never NaN, and no out-of-range index error
+  // (which would throw above and fail the harness outright).
+  function assertCleanBitmap(b, label) {
     let bad = false;
-    for (let x = 0; x < CANVAS_WIDTH; x++) {
-      const v = arr[x];
-      if (!Number.isFinite(v) || Number.isNaN(v) || v < 0 || v > CANVAS_HEIGHT) {
+    for (let i = 0; i < b.length; i++) {
+      const v = b[i];
+      if (v !== 0 && v !== 1) {
         bad = true;
-        failures.push(`${label}: terrain[${x}]=${v} out of [0,${CANVAS_HEIGHT}] or NaN`);
+        failures.push(`${label}: bitmap[${i}]=${v} not in {0,1}`);
         break;
       }
     }
     ok(!bad, label);
-    eq(arr.length, CANVAS_WIDTH, `${label}: length unchanged`);
+    eq(b.length, CANVAS_WIDTH * CANVAS_HEIGHT, `${label}: length unchanged`);
   }
 
-  // Uint16Array, since deform mutates Uint16Array in the engine.
-  const mk = (s) => {
-    const a = new Uint16Array(CANVAS_WIDTH);
-    a.fill(s);
-    return a;
-  };
+  // Edge / off-canvas blast centers must not throw or corrupt the buffer.
+  let b = flatBitmap(300);
+  deform(b, 0, 300, 40);        // center at exact left edge
+  assertCleanBitmap(b, 'deform cx=0 r=40');
 
-  let t = mk(300);
-  deform(t, 0, 300, 40);        // center at exact left edge
-  assertCleanTerrain(t, 'deform cx=0 r=40');
+  b = flatBitmap(300);
+  deform(b, -30, 300, 40);      // center off the left edge
+  assertCleanBitmap(b, 'deform cx=-30 r=40');
 
-  t = mk(300);
-  deform(t, -30, 300, 40);      // center off the left edge
-  assertCleanTerrain(t, 'deform cx=-30 r=40');
+  b = flatBitmap(300);
+  deform(b, CANVAS_WIDTH - 1, 300, 40);  // center at right edge x=799
+  assertCleanBitmap(b, 'deform cx=799 r=40');
 
-  t = mk(300);
-  deform(t, CANVAS_WIDTH - 1, 300, 40);  // center at right edge x=799
-  assertCleanTerrain(t, 'deform cx=799 r=40');
+  b = flatBitmap(300);
+  deform(b, CANVAS_WIDTH, 300, 40);      // center at x=800 (one past)
+  assertCleanBitmap(b, 'deform cx=800 r=40');
 
-  t = mk(300);
-  deform(t, CANVAS_WIDTH, 300, 40);      // center at x=800 (one past)
-  assertCleanTerrain(t, 'deform cx=800 r=40');
+  b = flatBitmap(300);
+  deform(b, CANVAS_WIDTH + 50, 300, 40); // center well off right
+  assertCleanBitmap(b, 'deform cx=850 r=40');
 
-  t = mk(300);
-  deform(t, CANVAS_WIDTH + 50, 300, 40); // center well off right
-  assertCleanTerrain(t, 'deform cx=850 r=40');
+  // A centered crater + gravity actually LOWERS the surface (surfaceAt grows).
+  b = flatBitmap(300);
+  const surfaceBefore = surfaceAt(b, 400);
+  const range = deform(b, 400, 400, 20);
+  ok(range !== null, 'centered crater wrote pixels (deform returned a range)');
+  if (range !== null) applyGravity(b, range.xStart, range.xEnd);
+  ok(surfaceAt(b, 400) > surfaceBefore,
+    'centered crater lowered the surface (surfaceAt increased)',
+    `before=${surfaceBefore} after=${surfaceAt(b, 400)}`);
+  assertCleanBitmap(b, 'centered crater bitmap still valid');
 
-  // Crater near right edge actually lowers the surface (terrain[x] increases).
-  t = mk(300);
-  deform(t, 799, 300, 20);
-  ok(t[799] > 300, 'crater at x=799 lowered surface (terrain increased)',
-    `terrain[799]=${t[799]}`);
-
-  // r<=0 and degenerate radius are no-ops (no NaN).
-  t = mk(300);
-  deform(t, 400, 300, 0);
-  ok(t[400] === 300, 'r=0 is a no-op');
-  deform(t, 400, 300, -5);
-  ok(t[400] === 300, 'r<0 is a no-op');
-
-  // Clamp: a huge crater at the bottom must clamp to CANVAS_HEIGHT, never overflow.
-  t = mk(CANVAS_HEIGHT - 1);
-  deform(t, 400, 300, 200);
-  assertCleanTerrain(t, 'deform huge r at deep surface clamps to CANVAS_HEIGHT');
+  // r<=0 and degenerate radius are no-ops: deform returns null, bitmap unchanged.
+  b = flatBitmap(300);
+  const before0 = surfaceAt(b, 400);
+  ok(deform(b, 400, 300, 0) === null, 'r=0 returns null (no-op)');
+  ok(surfaceAt(b, 400) === before0, 'r=0 left the bitmap unchanged');
+  ok(deform(b, 400, 300, -5) === null, 'r<0 returns null (no-op)');
+  ok(surfaceAt(b, 400) === before0, 'r<0 left the bitmap unchanged');
 }
 
 // ---------------------------------------------------------------------------
@@ -320,11 +330,13 @@ console.log('[6] Full-flight integration: a real shot lands (ground or tank), ne
 console.log('[7] placeTwoTanks rest ON the surface (sanity for spawn collision basis)');
 // ---------------------------------------------------------------------------
 {
-  const terrain = flatTerrain(420);
-  const tanks = placeTwoTanks(terrain);
+  // placeTwoTanks is UNCHANGED and operates on a number[] HEIGHT LINE (Tank.ts is
+  // untouched), NOT the pixel bitmap. Build a plain height line for this test.
+  const heightLine = new Array(CANVAS_WIDTH).fill(420);
+  const tanks = placeTwoTanks(heightLine);
   eq(tanks.length, 2, 'two tanks placed');
   for (const t of tanks) {
-    eq(t.y, terrain[Math.round(t.x)], `tank ${t.id} base sits at surface`);
+    eq(t.y, heightLine[Math.round(t.x)], `tank ${t.id} base sits at surface`);
   }
 }
 
@@ -335,19 +347,21 @@ console.log('\n[8] Swept collision: a FAST shot cannot tunnel through thin spike
 // TANK_WIDTH (20px), so a plain post-step point test would tunnel. sweepCollide
 // must catch these by sampling along the travelled segment.
 {
-  // (a) A thin 1px terrain spike directly in the flight path. Flat ground far
-  // below; a single tall column at x=400. A fast horizontal shot crossing it
-  // must register a ground hit, not sail past.
-  const terrain = flatTerrain(CANVAS_HEIGHT - 1); // ground effectively absent up high
-  terrain[400] = 250; // a single tall 1px spike (surface high on screen)
+  // (a) A thin 1px terrain spike directly in the flight path: an otherwise-empty
+  // bitmap with a SINGLE solid COLUMN at x=400 (solid from y=250 down). A fast
+  // horizontal shot at y=260 crosses that column (hit) but the empty neighbouring
+  // columns must not register — preserves the no-tunnel intent on a 1px feature.
+  const terrain = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT); // all air
+  for (let y = 250; y < CANVAS_HEIGHT; y++) terrain[y * CANVAS_WIDTH + 400] = 1;
 
   let tunneled = 0;
   let hitSpike = 0;
   // Sweep many sub-pixel approach phases so we don't get lucky with alignment.
   for (let phase = 0; phase < 60; phase++) {
     const startX = 380 + phase / 60; // just left of the spike, sub-px offsets
-    // Fly at y=260, which is BELOW the spike surface (250) so it intersects the
-    // spike, but ABOVE the surrounding flat ground (499) so only the spike hits.
+    // Fly at y=260, which is BELOW the column's top (250) so the segment passes
+    // THROUGH the solid column at x=400; every other column is pure air, so only
+    // the column can register a hit.
     const p = mkProjectile(startX, 260, 30, 0); // 30px/tick, faster than any feature
     const prevX = p.x;
     const prevY = p.y;
@@ -361,8 +375,11 @@ console.log('\n[8] Swept collision: a FAST shot cannot tunnel through thin spike
 
   // (b) Same flight against a 20px tank. A point-only test tunnels ~45% of the
   // time at this speed; swept must be 0%.
-  const flat = flatTerrain(CANVAS_HEIGHT - 1);
-  const tank = createTank('t', 'T', 400, flat, '#fff');
+  const flat = flatBitmap(CANVAS_HEIGHT - 1);
+  // createTank needs a number[] height line; the tank's y is read from it, and
+  // collide() gets the matching bitmap below.
+  const tankLine = new Array(CANVAS_WIDTH).fill(CANVAS_HEIGHT - 1);
+  const tank = createTank('t', 'T', 400, tankLine, '#fff');
   let tankTunneled = 0;
   for (let phase = 0; phase < 60; phase++) {
     const startX = 360 + phase / 60;
@@ -378,7 +395,7 @@ console.log('\n[8] Swept collision: a FAST shot cannot tunnel through thin spike
 
   // (c) Determinism: sweepCollide is a pure function of its inputs — same inputs
   // twice yields the same classification and snapped impact point.
-  const t1 = flatTerrain(300);
+  const t1 = flatBitmap(300);
   const pa = mkProjectile(100, 250, 30, 40);
   const pax = pa.x, pay = pa.y;
   stepProjectile(pa, 0);

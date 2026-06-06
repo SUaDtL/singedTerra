@@ -29,6 +29,11 @@ const ACTIONS = [
 
 const MAX_TICKS = 100_000; // generous safety cap so a stuck shot can't hang us
 
+// terrain is now a Uint8Array pixel bitmap (length 800*500). Hex-encode it for a
+// compact, stable string form — JSON.stringify on a 400k-element typed array is
+// huge and slow. Buffer is a Node global under tsx.
+const terrainHex = (t) => Buffer.from(t).toString('hex');
+
 /**
  * Drive a fresh engine through the scripted actions, then tick until the
  * projectile resolves (engine returns to PLAYER_TURN) or we hit MAX_TICKS.
@@ -79,7 +84,7 @@ function serialize(state) {
     projectile: state.projectile,
     lastExplosion: state.lastExplosion,
     explosions: state.explosions,
-    terrain: state.terrain,
+    terrain: terrainHex(state.terrain),
   };
   return JSON.stringify(canonical);
 }
@@ -147,8 +152,8 @@ if (s1 === s2) {
 
 // --- Check 2: different seed => different terrain ---
 const runC = runGame(SEED_B);
-const terrainA = JSON.stringify(run1.state.terrain);
-const terrainC = JSON.stringify(runC.state.terrain);
+const terrainA = terrainHex(run1.state.terrain);
+const terrainC = terrainHex(runC.state.terrain);
 
 log(`[run3] seed=0x${SEED_B.toString(16)} ticks=${runC.ticks} phase=${runC.state.phase}`);
 

@@ -58,10 +58,13 @@ export type {
 export {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
+  BITMAP_LEN,
   generate,
+  buildBitmap,
+  generateBitmap,
+  pixelAt,
   deform,
-  collapse,
-  heightAt,
+  applyGravity,
   surfaceAt,
 } from './engine/Terrain';
 export {

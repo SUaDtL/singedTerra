@@ -103,11 +103,13 @@ export class Renderer {
   render(state: GameState): void {
     this.consumeExplosion(state);
 
-    // 1. Sky — clears the whole canvas each frame, so terrain must repaint.
+    // 1. Sky — clears the whole canvas each frame as the base layer.
     this.drawSky();
-    this.terrain.markDirty();
 
-    // 2. Terrain.
+    // 2. Terrain. The TerrainRenderer keeps its own offscreen canvas and blits
+    // it (alpha-composited over the sky) on every draw(), rebuilding the
+    // offscreen only when the bitmap actually changes — so no per-frame
+    // markDirty() is needed here.
     this.terrain.draw(this.ctx, state.terrain);
 
     // 3. Tanks.
