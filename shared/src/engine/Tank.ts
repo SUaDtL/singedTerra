@@ -120,6 +120,9 @@ export function createTank(
     alive: true,
     shieldHp: 0, // no shield until activated
     credits: STARTING_CREDITS,
+    roundWins: 0, // V1 match structure: no rounds won yet
+    kills: 0, // V1 scoreboard
+    totalDamage: 0, // V1 scoreboard
     ai, // null => human; a difficulty => CPU-controlled
   };
 }
@@ -221,6 +224,9 @@ export const Tank = {
       alive: true,
       shieldHp: 0, // no shield until activated
       credits: STARTING_CREDITS,
+      roundWins: 0, // V1 match structure: no rounds won yet
+      kills: 0, // V1 scoreboard
+      totalDamage: 0, // V1 scoreboard
       ai: null, // Tank.create is used for human/default tanks
     };
   },

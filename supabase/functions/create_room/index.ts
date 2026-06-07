@@ -4,7 +4,7 @@ Deno.serve(withCors(async (body) => {
   const { playerName, color, options, bots } = body as {
     playerName?: unknown
     color?: unknown
-    options?: { maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown }
+    options?: { maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown }
     // Optional CPU seats to seed into the room (single-player / fill-a-room).
     bots?: unknown
   }
@@ -119,12 +119,22 @@ Deno.serve(withCors(async (body) => {
     ...botSeats,
   ]
 
+  // Best-of-N (optional). Stored on the row so every client builds the same engine
+  // (deterministic lockstep across rounds). Coerced to an odd integer in 1..9; an
+  // absent/invalid value is omitted so the engine falls back to a single round.
+  let rounds: number | undefined
+  if (typeof options.rounds === 'number' && Number.isFinite(options.rounds)) {
+    const clamped = Math.min(9, Math.max(1, Math.trunc(options.rounds)))
+    rounds = clamped % 2 === 0 ? clamped + 1 : clamped
+  }
+
   // Build stored options
   const storedOptions = {
     maxPlayers,
     maxWind: typeof options.maxWind === 'number' ? options.maxWind : 10,
     gravity: typeof options.gravity === 'number' ? options.gravity : 0.15,
     visibility,
+    ...(rounds !== undefined ? { rounds } : {}),
   }
 
   // Insert room

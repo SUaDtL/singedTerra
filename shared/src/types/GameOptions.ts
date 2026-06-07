@@ -23,4 +23,14 @@ export interface GameOptions {
   maxWind?: number;
   /** Gravity strength; defaults to GRAVITY. */
   gravity?: number;
+  /**
+   * Best-of-N match length (V1 round system). Defaults to 1 — a single round, i.e.
+   * the original "first elimination ends the game" behavior (full back-compat). For
+   * N > 1 the match runs until a tank clinches ceil(N/2) round wins (or all N rounds
+   * are played); each round regenerates terrain from a seed DERIVED from `seed` +
+   * the round index, so every networked client replays the same rounds with no new
+   * action. Credits + purchased inventory carry between rounds; health/shield/fuel/
+   * position reset. See docs/SPRINT6_MATCH_STRUCTURE.md.
+   */
+  rounds?: number;
 }

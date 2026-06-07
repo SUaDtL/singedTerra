@@ -124,6 +124,10 @@ export interface StoredOptions {
   maxWind: number
   gravity: number
   visibility?: 'public' | 'private'
+  /** Best-of-N match length (odd, 1..9). Absent on pre-feature rooms => single
+   *  round. Stored on the room row so EVERY client builds its engine with the same
+   *  value — required for deterministic lockstep across round boundaries. */
+  rounds?: number
 }
 
 export interface RoomRow {

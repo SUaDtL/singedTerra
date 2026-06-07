@@ -14,31 +14,46 @@ interface NetworkShieldAction {
 interface NetworkBuyAction {
   type: 'buy'
   weapon: string
+  tankId?: string
 }
 
-type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction
+interface NetworkNextRoundAction {
+  type: 'next_round'
+}
 
-/** Only turn-ENDING actions advance the active-player cursor; a buy is neutral
- *  (a player may buy several times, then fire/shield to end the turn). */
+type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction | NetworkNextRoundAction
+
+/** Only turn-ENDING actions advance the active-player cursor. A buy is neutral (a
+ *  player may buy several times, then fire/shield to end the turn); next_round is
+ *  neutral too (it leaves the between-rounds shop — the next round's opener is set
+ *  by the round-ending blow, not by next_round). */
 function endsTurn(type: string): boolean {
   return type === 'fire' || type === 'use_shield'
 }
 
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId, actingPlayerId, nextActiveIndex, action } = body as {
+  const { roomId, playerId, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
     roomId?: unknown
     playerId?: unknown
     // The seat index active AFTER this turn-ending action, computed by the
-    // submitting client's authoritative engine (which skips eliminated tanks).
-    // Used to advance the referee cursor death-aware; falls back to modulo if
-    // absent/invalid so old clients still work (P0-3).
+    // submitting client's authoritative engine (which skips eliminated tanks AND
+    // re-seats the opener at a round boundary). Used to advance the referee cursor;
+    // falls back to modulo if absent/invalid so old clients still work (P0-3).
     nextActiveIndex?: unknown
+    // roundOver: this action ENDS a round (a fire/shield whose resolution pauses in the
+    // ROUND_OVER shop) OR operates within that shop (buy / next_round). It (a) relaxes
+    // the turn gate for shop actions — every player may shop their own tank, and any
+    // may leave the shop — and (b) lets a round-ending blow re-seat the OPENER even when
+    // the opener is the very seat that just fired (the modulo "can't keep your own turn"
+    // guard would otherwise reject it). Advisory: the canonical state is the replayed
+    // log, so a wrong flag only changes which row the referee accepts, never the game.
+    roundOver?: unknown
     // actingPlayerId: the seat this action is FOR. Defaults to playerId (a human
     // acting for themselves). When it differs, the submitter is driving a CPU seat
     // on its behalf (any room member may; idempotency is the seq-unique + cursor
     // gate). Validated below.
     actingPlayerId?: unknown
-    action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown }
+    action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; tankId?: unknown }
   }
 
   // Validate roomId
@@ -56,11 +71,16 @@ Deno.serve(withCors(async (body) => {
     return json({ error: 'Invalid input: action' }, 400)
   }
 
-  // Turn-ending actions committed to the log: 'fire' (carries aim) or 'use_shield'
-  // (no payload). Both are validated here; any other type is rejected. (Sprint 4
-  // Slice 3.2 — use_shield is the first non-fire action the replay log carries.)
-  if (action.type !== 'fire' && action.type !== 'use_shield' && action.type !== 'buy') {
-    return json({ error: 'Invalid input: action.type must be "fire", "use_shield", or "buy"' }, 400)
+  // Actions committed to the log: 'fire' (carries aim) / 'use_shield' (turn-ending),
+  // 'buy' (turn-neutral store purchase), 'next_round' (leave the between-rounds shop).
+  // Any other type is rejected.
+  if (
+    action.type !== 'fire' &&
+    action.type !== 'use_shield' &&
+    action.type !== 'buy' &&
+    action.type !== 'next_round'
+  ) {
+    return json({ error: 'Invalid input: action.type must be "fire", "use_shield", "buy", or "next_round"' }, 400)
   }
 
   if (action.type === 'buy' && (typeof action.weapon !== 'string' || action.weapon.trim().length === 0)) {
@@ -118,37 +138,68 @@ Deno.serve(withCors(async (body) => {
     ? actingPlayerId
     : playerId
 
-  // REFEREE TURN-ENFORCEMENT (Sprint 4 Slice 3.3 — NON-OPTIONAL). The action's
-  // ACTING seat must be the active player; the cursor advances by modulo on every
-  // turn-ending action (exact for 2P; see the 3–4P elimination caveat tracked
-  // elsewhere). Two cases:
-  //   - Self (actingId === playerId): a human acting for their own seat.
-  //   - Proxy (actingId !== playerId): a client DRIVING A CPU SEAT. Allowed for
-  //     ANY room member, but ONLY when the active seat is actually a bot (ai set)
-  //     — never to impersonate another human. Exactly-once is guaranteed by the
-  //     seq-unique constraint (concurrent proxies collide; losers don't retry) +
-  //     this cursor gate (a late proxy is rejected once the turn has advanced).
+  const isRoundOver = roundOver === true
   const activeIndex = ((room.active_player_index ?? 0) % players.length + players.length) % players.length
   const activePlayer = players[activeIndex]
-  if (!activePlayer || activePlayer.id !== actingId) {
-    return json({ error: 'Not your turn' }, 403)
-  }
-  if (actingId !== playerId && !activePlayer.ai) {
-    return json({ error: 'Cannot act for another human player' }, 403)
+
+  // REFEREE GATING. Three regimes:
+  //
+  //  1. next_round — leaving the between-rounds shop. Turn-neutral, cursor-neutral,
+  //     accepted from ANY room member (membership already checked). Idempotent: a
+  //     duplicate replays as an engine no-op once combat has started.
+  //
+  //  2. ROUND_OVER buy — the between-rounds shop. Every player may buy, but ONLY for
+  //     their OWN seat (no spending another player's carried credits). No turn gate.
+  //
+  //  3. Everything else (fire / use_shield / normal-turn buy) — TURN-ENFORCEMENT
+  //     (Sprint 4 Slice 3.3, NON-OPTIONAL): the ACTING seat must be the active player.
+  //     Self (actingId === playerId) is a human acting for their own seat; a proxy
+  //     (actingId !== playerId) is a client DRIVING A CPU SEAT — allowed for any member
+  //     but ONLY when the active seat is a bot, never to impersonate another human.
+  //     Exactly-once is the seq-unique constraint + this cursor gate.
+  if (action.type === 'next_round') {
+    // no gate beyond membership
+  } else if (action.type === 'buy' && isRoundOver) {
+    const actingSeatIndex = players.findIndex((p) => p.id === actingId)
+    if (actingSeatIndex < 0) {
+      return json({ error: 'Acting seat not in room' }, 403)
+    }
+    if (actingId !== playerId && !players[actingSeatIndex].ai) {
+      return json({ error: 'Cannot act for another human player' }, 403)
+    }
+    // Must name your OWN seat ('p{index+1}', matching the engine's positional ids).
+    if (action.tankId !== `p${actingSeatIndex + 1}`) {
+      return json({ error: 'Can only buy for your own tank in the between-rounds shop' }, 403)
+    }
+  } else {
+    if (!activePlayer || activePlayer.id !== actingId) {
+      return json({ error: 'Not your turn' }, 403)
+    }
+    if (actingId !== playerId && !activePlayer.ai) {
+      return json({ error: 'Cannot act for another human player' }, 403)
+    }
   }
 
-  // Build the validated action committed to the log.
+  // Build the validated action committed to the log. A ROUND_OVER buy carries its
+  // tankId so replay routes it to the named tank (the engine falls back to the active
+  // opener if it is missing — which would silently desync per-tank shopping).
   const validatedAction: NetworkAction =
     action.type === 'use_shield'
       ? { type: 'use_shield' }
-      : action.type === 'buy'
-        ? { type: 'buy', weapon: (action.weapon as string).trim() }
-        : {
-            type: 'fire',
-            angle: action.angle as number,
-            power: action.power as number,
-            weapon: (action.weapon as string).trim(),
-          }
+      : action.type === 'next_round'
+        ? { type: 'next_round' }
+        : action.type === 'buy'
+          ? {
+              type: 'buy',
+              weapon: (action.weapon as string).trim(),
+              ...(isRoundOver && typeof action.tankId === 'string' ? { tankId: action.tankId } : {}),
+            }
+          : {
+              type: 'fire',
+              angle: action.angle as number,
+              power: action.power as number,
+              weapon: (action.weapon as string).trim(),
+            }
 
   // Atomically compute next seq and insert action using a Postgres function call.
   // The subquery inside VALUES computes MAX(seq)+1 at insert time, and the
@@ -211,7 +262,14 @@ Deno.serve(withCors(async (body) => {
     const reported = typeof nextActiveIndex === 'number' && Number.isInteger(nextActiveIndex)
       ? nextActiveIndex
       : -1
-    const reportedValid = reported >= 0 && reported < players.length && reported !== activeIndex
+    // Normally the next seat must differ from the acting seat ("you can't keep your own
+    // turn"). At a ROUND boundary the next round re-seats the OPENER, which may BE the
+    // seat that just fired the round-ending blow — so when roundOver is set we honor the
+    // reported opener unconditionally (still bounds-checked). Otherwise the cursor would
+    // fall back to modulo and reject the opener's first shot of the new round forever.
+    const reportedValid = isRoundOver
+      ? reported >= 0 && reported < players.length
+      : reported >= 0 && reported < players.length && reported !== activeIndex
     const newActivePlayerIndex = reportedValid ? reported : modulo
     const newTurn = (room.turn ?? 0) + 1
 
