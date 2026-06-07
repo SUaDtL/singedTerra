@@ -5,13 +5,17 @@
 > is the highest-value V1 gameplay cluster (see `docs/TASKS.md`): it unblocks the
 > between-rounds shop and a persistent scoreboard.
 
-> **Status (2026-06-07):** Slices 1 (round-system core) and 2 (scoreboard + hot-seat
-> rounds control) are DONE and committed, covered by the `rounds` and `scoreboard`
-> harnesses (15 total, all green). Slice 3 (networked best-of-N via synced room
-> options) is implemented and typecheck/build-green, but **pending a `create_room`
-> redeploy + a live 2-browser playtest** to confirm the referee/turn-cursor
-> interaction across round boundaries. Remaining: between-rounds shop (`ROUND_OVER`
-> pause), Postgres score persistence.
+> **Status (2026-06-07):** Slices 1 (round core), 2 (scoreboard + hot-seat rounds
+> control), and 4 (between-rounds shop via the `ROUND_OVER` phase) are DONE and
+> committed — covered by the `rounds` and `scoreboard` harnesses (15 total, all
+> green) and typecheck/build. Slice 3 (networked best-of-N via synced room options)
+> is implemented and green but **pending the one big deploy + a live 2-browser
+> playtest**: it needs `create_room` redeployed AND `next_round`/per-tank-buy logged
+> through `submit_action` so networked clients leave `ROUND_OVER` in lockstep (today
+> networked `next_round` is an explicit no-op and networked play stays single-round).
+> Remaining: networked `next_round` referee support, Postgres score persistence, and
+> a `npm run dev` visual pass of the round HUD / scoreboard / shop. **Hot-seat
+> best-of-N with a between-rounds shop is fully playable now.**
 
 ## Goal
 
