@@ -109,7 +109,7 @@ export function createTank(
     inventory: defaultInventory(),
     color: color,
     alive: true,
-    shieldParticles: 0, // no shield until activated
+    shieldHp: 0, // no shield until activated
     credits: STARTING_CREDITS,
     ai, // null => human; a difficulty => CPU-controlled
   };
@@ -210,7 +210,7 @@ export const Tank = {
       inventory: defaultInventory(),
       color: params.color,
       alive: true,
-      shieldParticles: 0, // no shield until activated
+      shieldHp: 0, // no shield until activated
       credits: STARTING_CREDITS,
       ai: null, // Tank.create is used for human/default tanks
     };
