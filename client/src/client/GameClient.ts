@@ -15,6 +15,14 @@ export interface RematchInfo {
 }
 
 /**
+ * Liveness of the networked client's Realtime link. 'connecting' before the first
+ * subscribe, 'connected' while the channel is live, 'reconnecting' after the socket
+ * drops (Supabase auto-retries; on recovery the client re-fetches any missed
+ * actions). Hot-seat has no link and never reports this.
+ */
+export type ConnectionState = 'connecting' | 'connected' | 'reconnecting';
+
+/**
  * GameClient abstracts the difference between hot-seat and networked play
  * behind a single interface. The renderer/input layers talk only to this,
  * never knowing whether physics runs locally (HotSeat) or on a server (Network).
@@ -51,4 +59,19 @@ export interface GameClient {
    * it. Returns an unsubscribe function.
    */
   onRematch?(listener: (info: RematchInfo) => void): () => void;
+
+  /**
+   * Subscribe to Realtime connection-state changes (network only). Called
+   * immediately with the current state, then on every transition. Returns an
+   * unsubscribe function. Lets the UI surface a "reconnecting…" overlay instead of
+   * silently freezing on a dropped socket.
+   */
+  onConnectionChange?(listener: (state: ConnectionState) => void): () => void;
+
+  /**
+   * Subscribe to fire/shield submission failures (network only): a rejected submit
+   * or a fire that never echoes back within the timeout. Lets the UI clear the
+   * stuck "Sending…" lock and tell the player to try again. Returns an unsubscribe.
+   */
+  onFireFailed?(listener: (message: string) => void): () => void;
 }
