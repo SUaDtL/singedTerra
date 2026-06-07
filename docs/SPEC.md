@@ -170,7 +170,7 @@ y  += vy
 **Collision detection:**
 - Ground: solid bitmap pixel `pixelAt(terrain, floor(x), floor(y)) === 1`, or `y >= CANVAS_HEIGHT` (implicit floor) — see §4.1
 - Tank: bounding box check against each tank's `{x, y, w, h}`
-- Out of bounds: `x < 0 || x > CANVAS_WIDTH` → miss
+- Out of bounds: `x < 0 || x >= CANVAS_WIDTH` → miss. Columns are `0..CANVAS_WIDTH-1` (0..799), so `x` must be `< CANVAS_WIDTH`: `floor(x) === CANVAS_WIDTH` would index past the 800-wide terrain. The right edge (column 799) is IN bounds; `x >= 800` is OOB. (Matches `Physics.collide`; asserted by `scripts/checks/collision.mjs` test [1].)
 
 **Explosion:**
 - Circular damage falloff: `damage = MAX_DAMAGE * (1 - dist/radius)`
