@@ -15,8 +15,27 @@ const DEFAULT_HEALTH = 100;
 const DEFAULT_FUEL = 0;
 const DEFAULT_WEAPON: WeaponType = 'baby_missile';
 
-/** Per-weapon starting rounds for every NON-unlimited weapon (generous sandbox). */
-const DEFAULT_AMMO = 9;
+/**
+ * Per-weapon STARTING loadout (SPEC §9 economy). A tank opens with unlimited Baby
+ * Missile plus a small mid-tier kit; the premium NUKE tier (baby_nuke, nuke) and
+ * extra rounds must be BOUGHT from the store with credits earned per damage dealt.
+ * This is what makes the credits/buy/earn loop actually change decisions — see
+ * REVIEW_BACKLOG.md task P0-1. Deterministic: pure literals. Tune in playtesting;
+ * the AI's chooseWeapon() only picks weapons it actually has, so it degrades
+ * gracefully (heavy_missile -> missile -> baby_missile) as stock runs down.
+ */
+const START_AMMO: Record<Exclude<WeaponType, 'baby_missile'>, number> = {
+  missile:         4,
+  heavy_missile:   1,
+  cluster_bomb:    2,
+  bouncing_betty:  2,
+  funky_bomb:      1,
+  napalm:          1,
+  dirt_bomb:       1,
+  shield:          1,
+  baby_nuke:       0, // premium — buy from the store
+  nuke:            0, // premium — buy from the store
+};
 
 /** Horizontal placement fractions for the two MVP0 tanks. */
 const LEFT_TANK_FRACTION = 0.15;
@@ -46,16 +65,16 @@ function defaultInventory(): Record<WeaponType, AmmoEntry> {
   const limited = (count: number): AmmoEntry => ({ count, unlimited: false });
   return {
     baby_missile: { count: 0, unlimited: true },
-    missile: limited(DEFAULT_AMMO),
-    heavy_missile: limited(DEFAULT_AMMO),
-    baby_nuke: limited(DEFAULT_AMMO),
-    nuke: limited(DEFAULT_AMMO),
-    dirt_bomb: limited(DEFAULT_AMMO),
-    bouncing_betty: limited(DEFAULT_AMMO),
-    funky_bomb: limited(DEFAULT_AMMO),
-    napalm: limited(DEFAULT_AMMO),
-    cluster_bomb: limited(DEFAULT_AMMO),
-    shield: limited(DEFAULT_AMMO),
+    missile: limited(START_AMMO.missile),
+    heavy_missile: limited(START_AMMO.heavy_missile),
+    baby_nuke: limited(START_AMMO.baby_nuke),
+    nuke: limited(START_AMMO.nuke),
+    dirt_bomb: limited(START_AMMO.dirt_bomb),
+    bouncing_betty: limited(START_AMMO.bouncing_betty),
+    funky_bomb: limited(START_AMMO.funky_bomb),
+    napalm: limited(START_AMMO.napalm),
+    cluster_bomb: limited(START_AMMO.cluster_bomb),
+    shield: limited(START_AMMO.shield),
   };
 }
 
