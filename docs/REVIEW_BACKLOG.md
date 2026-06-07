@@ -2,6 +2,14 @@
 
 > Generated 2026-06-07 by an adversarial multi-agent review (6 dimensions × skeptic verification × triage). **44** findings raised, **40** survived verification, consolidated into **16** tasks. Raw verified findings: [REVIEW_FINDINGS.md](./REVIEW_FINDINGS.md).
 
+> **Status (2026-06-07): all 16 tasks resolved.** PR #5 landed P0-1/2/3, P1-4/5,
+> P2-8/9/10/11/12, and the P3-13 OOB part + P3-15. A follow-up branch landed P3-14
+> (`_shared/` extraction, all 10 functions redeployed), P3-16 (modal layering +
+> theme tokens), P3-13b (barrel-relative aim readout + lobby controls legend),
+> P1-7b (AI buy-to-restock + idempotent CPU-seat buy), and P1-6b (opponent-turn
+> watchdog + dead-room handling). The networked UX items (P1-6b) and the in-game UI
+> items (P3-16, P3-13b) still want a live 2-browser playtest to confirm visually.
+
 ## Executive summary
 
 singedTerra's deterministic shared/ engine is the healthiest part of the codebase, but the Supabase networking layer has two correctness defects that break 3-4P and out-of-order play: the referee's pure-modulo turn cursor never skips eliminated players (deadlocks/corrupts every 3-4P game on first death), and buffered Realtime fire actions can be silently dropped while the engine is mid-flight (permanent per-client desync). Networked UX has no liveness or connection-state feedback at all — disconnects, dropped submits, and reaped rooms leave players frozen with no error or exit. The recent store/economy, shield, and AI sprints shipped but are gameplay-dead: every tank spawns with 9 of every weapon and 15000 unspendable credits, the shield no-sells 12 full nukes, and the AI never buys, shields, or uses any special weapon. A large amount of orphaned socket.io code (the entire server/ workspace, the shared Events.ts contract, dead deploy config) and stale CLAUDE.md docs describe an architecture that was replaced by Supabase lockstep, plus pervasive copy-paste across the 10 edge functions.
