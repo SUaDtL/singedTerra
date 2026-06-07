@@ -97,37 +97,65 @@ export class Renderer {
   /** Highest explosion id already turned into a burst (dedupe). */
   private lastSeenExplosionId = 0;
 
+  /** Current screen-shake magnitude (px), decays each frame. Client-only juice. */
+  private shake = 0;
+  /** Honor reduced-motion: when true, no screen-shake. */
+  private readonly reduceMotion: boolean;
+
   constructor(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to acquire 2D rendering context');
     this.ctx = ctx;
+    this.reduceMotion =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
   }
 
   /** Draw a single frame for the given state. */
   render(state: GameState): void {
     this.consumeExplosion(state);
+    const ctx = this.ctx;
 
-    // 1. Sky — clears the whole canvas each frame as the base layer.
+    // Screen-shake (juice): a decaying random offset applied to the WHOLE world
+    // (not the DOM HUD, which stays readable). Triggered by detonations.
+    let sx = 0;
+    let sy = 0;
+    if (this.shake > 0.2) {
+      sx = (Math.random() * 2 - 1) * this.shake;
+      sy = (Math.random() * 2 - 1) * this.shake;
+      this.shake *= 0.85;
+    } else {
+      this.shake = 0;
+    }
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // 1. Sky — clears the whole canvas each frame as the base layer (oversized to
+    // cover the shake offset so no backdrop bleeds in at the edges).
     this.drawSky();
 
     // 2. Terrain. The TerrainRenderer keeps its own offscreen canvas and blits
     // it (alpha-composited over the sky) on every draw(), rebuilding the
     // offscreen only when the bitmap actually changes — so no per-frame
     // markDirty() is needed here.
-    this.terrain.draw(this.ctx, state.terrain);
+    this.terrain.draw(ctx, state.terrain);
 
     // 3. Tanks (active player emphasised).
-    this.tanks.drawAll(this.ctx, state.tanks, state.activePlayerId);
+    this.tanks.drawAll(ctx, state.tanks, state.activePlayerId);
 
     // 4. Projectiles (no-op when none / not FIRING). May be several at once
     // (an airburst shell splits into multiple submunitions in flight).
-    this.projectile.draw(this.ctx, state.projectiles);
+    this.projectile.draw(ctx, state.projectiles);
 
     // 5. Explosion particles.
     this.drawExplosions();
 
-    // 6. HUD slot (canvas no-op; real HUD is the DOM overlay).
-    this.hud.draw(this.ctx, state);
+    ctx.restore();
+
+    // 6. HUD slot (canvas no-op; real HUD is the DOM overlay — unshaken).
+    this.hud.draw(ctx, state);
   }
 
   /**
@@ -156,6 +184,10 @@ export class Renderer {
           style: ex.style,
           age: 0,
         });
+        // Juice: bigger blast => bigger kick (capped). Reduced-motion = none.
+        if (!this.reduceMotion) {
+          this.shake = Math.min(9, Math.max(this.shake, ex.radius * 0.14));
+        }
       }
     }
   }
@@ -200,6 +232,18 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(b.cx, b.cy, r, 0, Math.PI * 2);
         ctx.fill();
+
+        // 16-bit shrapnel: pixel squares radiating out (the banner's boom spokes),
+        // fading with the burst. Deterministic per-spoke length for a jagged look.
+        const spokes = b.style === 'cluster' ? 6 : 9;
+        ctx.fillStyle = `rgba(${core[0] | 0}, ${core[1] | 0}, ${core[2] | 0}, ${fade})`;
+        for (let i = 0; i < spokes; i++) {
+          const a = (i / spokes) * Math.PI * 2 + (b.style === 'cluster' ? 0.4 : 0);
+          const d = r * (0.62 + 0.38 * (((i * 7) % spokes) / spokes));
+          const px = b.cx + Math.cos(a) * d;
+          const py = b.cy + Math.sin(a) * d;
+          ctx.fillRect((px - 1.5) | 0, (py - 1.5) | 0, 3, 3);
+        }
       }
       b.age++;
     }
@@ -215,7 +259,9 @@ export class Renderer {
       this.skyGradient = skyGradient(ctx, 0, CANVAS_HEIGHT);
     }
     ctx.fillStyle = this.skyGradient;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    // Oversized by SHAKE_MARGIN so the shake offset never reveals the backdrop.
+    const m = 12;
+    ctx.fillRect(-m, -m, CANVAS_WIDTH + 2 * m, CANVAS_HEIGHT + 2 * m);
     this.drawStars();
     this.drawSun();
   }
