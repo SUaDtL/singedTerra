@@ -210,20 +210,29 @@ export class Lobby {
       #lobby .lobby-card {
         max-width: 460px;
         margin: 0 auto;
-        padding: 24px 28px;
-        background: rgba(18, 22, 30, 0.92);
-        border: 1px solid #2c3442;
-        border-radius: 10px;
-        color: #e6e9ef;
-        font-family: system-ui, sans-serif;
+        padding: 26px 30px;
+        background: rgba(12, 7, 22, 0.92);
+        border: 1px solid rgba(255, 210, 63, 0.22);
+        border-radius: 8px;
+        color: var(--text);
+        font-family: var(--font-sans);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 122, 31, 0.12);
       }
-      #lobby h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: 0.5px; }
-      #lobby .lobby-sub { margin: 0 0 18px; color: #9aa3b2; font-size: 13px; }
+      #lobby h1 {
+        margin: 0 0 4px; font-size: 30px; letter-spacing: 0.5px;
+        font-family: var(--font-display); font-weight: bold;
+        color: var(--gold); text-shadow: 0 0 16px rgba(255, 122, 31, 0.45);
+      }
+      #lobby .lobby-sub { margin: 0 0 18px; color: var(--text-dim); font-size: 13px; }
       #lobby .lobby-field { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-      #lobby .lobby-field > label { width: 92px; color: #9aa3b2; font-size: 13px; }
+      #lobby .lobby-field > label { width: 92px; color: var(--text-dim); font-size: 13px; }
       #lobby select, #lobby input[type="text"] {
-        background: #11151c; color: #e6e9ef; border: 1px solid #2c3442;
-        border-radius: 6px; padding: 6px 8px; font-size: 14px;
+        background: rgba(12, 7, 22, 0.7); color: var(--text);
+        border: 1px solid rgba(255, 210, 63, 0.2);
+        border-radius: 5px; padding: 6px 8px; font-size: 14px; font-family: var(--font-sans);
+      }
+      #lobby select:focus, #lobby input[type="text"]:focus {
+        outline: none; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold);
       }
       #lobby .lobby-rows { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 18px; }
       #lobby .lobby-row { display: flex; align-items: center; gap: 10px; }
@@ -233,18 +242,24 @@ export class Lobby {
       #lobby .lobby-swatch {
         width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
         border: 2px solid transparent; padding: 0; background-clip: padding-box;
+        transition: transform 80ms ease;
       }
-      #lobby .lobby-swatch.selected { border-color: #ffffff; }
+      #lobby .lobby-swatch:hover { transform: scale(1.12); }
+      #lobby .lobby-swatch.selected { border-color: var(--gold); box-shadow: 0 0 8px rgba(255, 210, 63, 0.5); }
       #lobby .lobby-swatch.taken { opacity: 0.3; cursor: not-allowed; }
-      #lobby .lobby-error { color: #e84d4d; font-size: 13px; min-height: 18px; margin-bottom: 10px; }
+      #lobby .lobby-error { color: var(--tank-red); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
       #lobby .lobby-start {
-        width: 100%; padding: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
-        background: #4d8ce8; color: #fff; border: none; border-radius: 6px;
+        width: 100%; padding: 11px; font-size: 15px; font-weight: bold; cursor: pointer;
+        background: var(--gold); color: var(--ink); border: none; border-radius: 5px;
+        font-family: var(--font-display); letter-spacing: 0.5px;
+        transition: background 130ms ease, transform 80ms ease;
       }
-      #lobby .lobby-start:disabled { background: #3a4250; cursor: not-allowed; }
-      #lobby .lobby-advanced { margin: 0 0 16px; border-top: 1px solid #2c3442; padding-top: 12px; }
+      #lobby .lobby-start:hover:not(:disabled) { background: var(--ember); }
+      #lobby .lobby-start:active:not(:disabled) { transform: translateY(1px); }
+      #lobby .lobby-start:disabled { background: rgba(255, 255, 255, 0.12); color: var(--text-dim); cursor: not-allowed; }
+      #lobby .lobby-advanced { margin: 0 0 16px; border-top: 1px solid rgba(255, 210, 63, 0.14); padding-top: 12px; }
       #lobby .lobby-advanced > summary {
-        cursor: pointer; color: #9aa3b2; font-size: 13px; list-style: none;
+        cursor: pointer; color: var(--text-dim); font-size: 13px; list-style: none;
         user-select: none; margin-bottom: 4px;
       }
       #lobby .lobby-advanced > summary::-webkit-details-marker { display: none; }
@@ -252,38 +267,43 @@ export class Lobby {
       #lobby .lobby-advanced[open] > summary::before { content: '\\25BE '; }
       #lobby .lobby-advanced .lobby-field > label { width: 110px; }
       #lobby .lobby-advanced input[type="number"] {
-        background: #11151c; color: #e6e9ef; border: 1px solid #2c3442;
-        border-radius: 6px; padding: 6px 8px; font-size: 14px; width: 110px;
+        background: rgba(12, 7, 22, 0.7); color: var(--text); border: 1px solid rgba(255, 210, 63, 0.2);
+        border-radius: 5px; padding: 6px 8px; font-size: 14px; width: 110px; font-family: var(--font-mono);
       }
-      #lobby .lobby-advanced .lobby-hint { color: #6b7280; font-size: 12px; margin-left: 8px; }
+      #lobby .lobby-advanced .lobby-hint { color: var(--text-dim); font-size: 12px; margin-left: 8px; }
 
       /* Tab bar */
       #lobby .lobby-tabs {
         display: flex; gap: 0; margin-bottom: 20px;
-        border-bottom: 1px solid #2c3442;
+        border-bottom: 1px solid rgba(255, 210, 63, 0.18);
       }
       #lobby .lobby-tab {
-        padding: 8px 18px; font-size: 14px; font-weight: 500;
+        padding: 8px 18px; font-size: 14px; font-weight: 600;
         cursor: pointer; background: none; border: none;
-        color: #9aa3b2; border-bottom: 2px solid transparent;
-        margin-bottom: -1px;
+        color: var(--text-dim); border-bottom: 2px solid transparent;
+        margin-bottom: -1px; font-family: var(--font-sans);
+        transition: color 120ms ease, border-color 120ms ease;
       }
       #lobby .lobby-tab.active {
-        color: #e6e9ef; border-bottom-color: #4d8ce8;
+        color: var(--text-gold); border-bottom-color: var(--gold);
       }
-      #lobby .lobby-tab:hover:not(.active) { color: #c9cfd8; }
+      #lobby .lobby-tab:hover:not(.active) { color: var(--text); }
 
       /* Online sub-views */
       #lobby .lobby-btn {
-        padding: 9px 18px; font-size: 14px; font-weight: 500; cursor: pointer;
-        background: #4d8ce8; color: #fff; border: none; border-radius: 6px;
+        padding: 9px 18px; font-size: 14px; font-weight: bold; cursor: pointer;
+        background: var(--gold); color: var(--ink); border: none; border-radius: 5px;
+        font-family: var(--font-display); letter-spacing: 0.3px;
+        transition: background 130ms ease, transform 80ms ease;
       }
-      #lobby .lobby-btn:disabled { background: #3a4250; cursor: not-allowed; }
+      #lobby .lobby-btn:hover:not(:disabled) { background: var(--ember); }
+      #lobby .lobby-btn:active:not(:disabled) { transform: translateY(1px); }
+      #lobby .lobby-btn:disabled { background: rgba(255, 255, 255, 0.12); color: var(--text-dim); cursor: not-allowed; }
       #lobby .lobby-btn.secondary {
-        background: none; color: #9aa3b2; text-decoration: underline;
-        padding: 9px 0;
+        background: none; color: var(--text-dim); text-decoration: underline;
+        padding: 9px 0; font-family: var(--font-sans); font-weight: 500;
       }
-      #lobby .lobby-btn.secondary:hover { color: #e6e9ef; }
+      #lobby .lobby-btn.secondary:hover { color: var(--text-gold); background: none; }
       #lobby .lobby-btn-row {
         display: flex; align-items: center; gap: 16px; margin-top: 4px;
       }
@@ -291,9 +311,11 @@ export class Lobby {
         display: flex; gap: 8px; justify-content: center; margin: 12px 0 20px;
       }
       #lobby .online-code-char {
-        width: 44px; height: 52px; background: #11151c; border: 1px solid #2c3442;
-        border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        font-size: 28px; font-weight: 700; letter-spacing: 0; color: #e6e9ef;
+        width: 44px; height: 52px; background: rgba(12, 7, 22, 0.8);
+        border: 1px solid rgba(255, 210, 63, 0.25);
+        border-radius: 6px; display: flex; align-items: center; justify-content: center;
+        font-size: 28px; font-weight: 700; letter-spacing: 0; color: var(--gold);
+        font-family: var(--font-mono);
       }
       #lobby .online-player-list {
         list-style: none; margin: 0 0 16px; padding: 0;
@@ -306,20 +328,22 @@ export class Lobby {
         width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
       }
       #lobby .online-player-dot.clash {
-        box-shadow: 0 0 0 2px #e84d4d; outline: 1px solid #e84d4d;
+        box-shadow: 0 0 0 2px var(--tank-red); outline: 1px solid var(--tank-red);
       }
       #lobby .online-badge {
         margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 10px;
-        font-weight: 600;
+        font-weight: 600; font-family: var(--font-mono);
       }
-      #lobby .online-badge.ready { background: #1a3a1a; color: #4de87a; }
-      #lobby .online-badge.waiting { background: #2a2a18; color: #e8c84d; }
-      #lobby .online-status { color: #9aa3b2; font-size: 13px; min-height: 18px; margin-bottom: 10px; }
-      #lobby .online-status.error { color: #e84d4d; }
+      #lobby .online-badge.ready { background: rgba(77, 232, 122, 0.16); color: #6ff09a; }
+      #lobby .online-badge.waiting { background: rgba(255, 210, 63, 0.16); color: var(--gold); }
+      #lobby .online-status { color: var(--text-dim); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
+      #lobby .online-status.error { color: var(--tank-red); }
       #lobby .lobby-code-input {
-        background: #11151c; color: #e6e9ef; border: 1px solid #2c3442;
-        border-radius: 6px; padding: 6px 8px; font-size: 20px; font-weight: 700;
+        background: rgba(12, 7, 22, 0.8); color: var(--gold);
+        border: 1px solid rgba(255, 210, 63, 0.25);
+        border-radius: 5px; padding: 6px 8px; font-size: 20px; font-weight: 700;
         width: 80px; text-align: center; letter-spacing: 4px; text-transform: uppercase;
+        font-family: var(--font-mono);
       }
     `;
     document.head.append(style);
