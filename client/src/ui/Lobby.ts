@@ -141,7 +141,8 @@ export class Lobby {
   // waiting-room Ready-Up guard (below) is the authoritative client-side block;
   // this just removes the most common accidental clash.
   private joinCode = '';
-  private joinName = '';
+  // Name is shared with the Create form (this.onlineName) so it persists when
+  // switching between online sub-views / tabs.
   private joinColor = PALETTE[1].value;
 
   // Browse (public rooms) sub-view state.
@@ -207,16 +208,33 @@ export class Lobby {
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
+      /* Fill the whole 800x500 stage (same size as the game field). The #app
+         gold frame + CRT overlay still frame it; content is vertically centred,
+         falling back to top-aligned + scroll when it would overflow. */
       #lobby .lobby-card {
-        max-width: 460px;
-        margin: 0 auto;
-        padding: 26px 30px;
-        background: rgba(12, 7, 22, 0.92);
-        border: 1px solid rgba(255, 210, 63, 0.22);
-        border-radius: 8px;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        margin: 0;
+        box-sizing: border-box;
+        padding: 30px 56px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: safe center;
+        background: rgba(12, 7, 22, 0.94);
+        border: none;
+        border-radius: 0;
         color: var(--text);
         font-family: var(--font-sans);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 122, 31, 0.12);
+      }
+      /* Keep the form readable on the wide panel: constrain content width,
+         centred, while the dusk panel itself spans the full field. */
+      #lobby .lobby-card > * {
+        width: 100%;
+        max-width: 460px;
+        margin-left: auto;
+        margin-right: auto;
       }
       #lobby h1 {
         margin: 0 0 4px; font-size: 30px; letter-spacing: 0.5px;
@@ -705,9 +723,9 @@ export class Lobby {
 
     // Name + color
     frag.append(this.renderOnlineNameColor(
-      this.joinName,
+      this.onlineName,
       this.joinColor,
-      (v) => { this.joinName = v; },
+      (v) => { this.onlineName = v; },
       (v) => { this.joinColor = v; this.render(); },
       [],
     ));
@@ -760,12 +778,12 @@ export class Lobby {
 
   /**
    * Shared join flow used by both the Join form and the Browse list. Reads
-   * this.joinName / this.joinColor (callers set these before invoking), POSTs
+   * this.onlineName / this.joinColor (callers set these before invoking), POSTs
    * join_room with the given code, and transitions to the waiting room on
    * success. Stops the browse poll on a successful join.
    */
   private async joinByCode(code: string): Promise<void> {
-    const name = this.joinName.trim();
+    const name = this.onlineName.trim();
     if (!name) {
       this.onlineError = 'Enter your name.';
       this.render();
@@ -905,9 +923,9 @@ export class Lobby {
 
     // Name + color for the joiner (no colors are pre-taken in this view).
     frag.append(this.renderOnlineNameColor(
-      this.joinName,
+      this.onlineName,
       this.joinColor,
-      (v) => { this.joinName = v; },
+      (v) => { this.onlineName = v; },
       (v) => { this.joinColor = v; this.render(); },
       /* takenColors */ [],
     ));
