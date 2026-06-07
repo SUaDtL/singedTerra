@@ -219,8 +219,15 @@ function bootstrap(): void {
   // Register the store Buy callback ONCE on the persistent HUD. A buy is a
   // turn-neutral action: hot-seat applies it locally; network commits it to the
   // log (and the engine re-gates affordability + whose turn it is).
-  hud.onBuy((weapon) => {
-    client?.sendAction({ type: 'buy', weapon });
+  hud.onBuy((weapon, tankId) => {
+    client?.sendAction({ type: 'buy', weapon, ...(tankId ? { tankId } : {}) });
+  });
+
+  // Start the next round from the ROUND_OVER between-rounds shop. Like a turn
+  // action: hot-seat applies it locally; networked commits it to the log so every
+  // client leaves the shop in lockstep.
+  hud.onNextRound(() => {
+    client?.sendAction({ type: 'next_round' });
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {

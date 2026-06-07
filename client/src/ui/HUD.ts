@@ -67,8 +67,12 @@ export class HUD {
   /** Callback fired when the player quits a game back to the lobby (in-game Menu / game-over Main Menu). */
   private quitCb: (() => void) | null = null;
 
-  /** Callback fired when a store Buy button is clicked. */
-  private buyCb: ((weapon: WeaponType) => void) | null = null;
+  /** Callback fired when a store Buy button is clicked. Optional tankId targets a
+   *  specific tank (used by the ROUND_OVER between-rounds shop); omitted => active tank. */
+  private buyCb: ((weapon: WeaponType, tankId?: string) => void) | null = null;
+
+  /** Callback fired when the player starts the next round from the ROUND_OVER shop. */
+  private nextRoundCb: (() => void) | null = null;
 
   /** Whether the store panel is currently open. */
   private storeOpen = false;
@@ -90,6 +94,19 @@ export class HUD {
   private overlayScoreEl!: HTMLElement;
   /** Highest round number seen, to fire the one-shot round-transition banner. */
   private lastSeenRound = 1;
+  // ROUND_OVER between-rounds shop modal.
+  private roundOverEl!: HTMLElement;
+  private roundOverTitleEl!: HTMLElement;
+  private roundOverScoreEl!: HTMLElement;
+  private roundOverShopEl!: HTMLElement;
+  private roundOverTankSel!: HTMLSelectElement;
+  private roundOverCreditsEl!: HTMLElement;
+  /** Per-weapon buy cells in the ROUND_OVER shop (button + owned count). */
+  private roundOverCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
+  /** Whether the ROUND_OVER modal is currently shown (build standings once on entry). */
+  private roundOverShown = false;
+  /** Tank id selected in the between-rounds shop (which tank a buy targets). */
+  private shopTankId: string | null = null;
   private stripEl!: HTMLElement;
   private storeBtnEl!: HTMLButtonElement;
   private storeEl!: HTMLElement;
@@ -134,8 +151,13 @@ export class HUD {
   }
 
   /** Register the callback fired when a store Buy button is clicked. */
-  onBuy(cb: (weapon: WeaponType) => void): void {
+  onBuy(cb: (weapon: WeaponType, tankId?: string) => void): void {
     this.buyCb = cb;
+  }
+
+  /** Register the callback fired when the player starts the next round. */
+  onNextRound(cb: () => void): void {
+    this.nextRoundCb = cb;
   }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
@@ -148,6 +170,7 @@ export class HUD {
     this.syncAim(state, isFiring);
     this.syncStrip(state, isFiring);
     this.syncStore(state);
+    this.syncRoundOver(state);
     this.syncOverlay(state);
   }
 
@@ -335,6 +358,65 @@ export class HUD {
     panel.append(this.overlayTextEl, this.overlayScoreEl, overlayBtns);
     this.overlayEl.append(panel);
 
+    // ROUND_OVER between-rounds shop modal (hidden until phase === ROUND_OVER).
+    this.roundOverEl = document.createElement('div');
+    this.roundOverEl.className = 'st-hud__overlay st-hud__overlay--hidden';
+    const roPanel = document.createElement('div');
+    roPanel.className = 'st-hud__overlay-panel';
+    this.roundOverTitleEl = document.createElement('div');
+    this.roundOverTitleEl.className = 'st-hud__overlay-text';
+    this.roundOverScoreEl = document.createElement('div');
+    this.roundOverScoreEl.className = 'st-hud__score';
+
+    // Shop: a tank selector + that tank's credits, then a grid of buy buttons.
+    this.roundOverShopEl = document.createElement('div');
+    this.roundOverShopEl.className = 'st-hud__roundshop';
+    const shopHead = document.createElement('div');
+    shopHead.className = 'st-hud__roundshop-head';
+    const shopTitle = document.createElement('span');
+    shopTitle.className = 'st-hud__roundshop-title';
+    shopTitle.textContent = 'Between-rounds shop';
+    this.roundOverTankSel = document.createElement('select');
+    this.roundOverTankSel.className = 'st-hud__roundshop-sel';
+    this.roundOverTankSel.addEventListener('change', () => {
+      this.shopTankId = this.roundOverTankSel.value || null;
+    });
+    this.roundOverCreditsEl = document.createElement('span');
+    this.roundOverCreditsEl.className = 'st-hud__roundshop-credits';
+    shopHead.append(shopTitle, this.roundOverTankSel, this.roundOverCreditsEl);
+
+    const shopGrid = document.createElement('div');
+    shopGrid.className = 'st-hud__roundshop-grid';
+    for (const type of STORE_WEAPONS) {
+      const def = WEAPONS[type];
+      const buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'st-hud__store-buy';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = def.name;
+      const priceSpan = document.createElement('span');
+      priceSpan.className = 'st-hud__store-price';
+      priceSpan.textContent = `$${def.price}`;
+      const owned = document.createElement('span');
+      owned.className = 'st-hud__store-bundle';
+      buyBtn.append(nameSpan, priceSpan, owned);
+      buyBtn.addEventListener('click', () => {
+        if (this.shopTankId) this.buyCb?.(type, this.shopTankId);
+      });
+      this.roundOverCells.set(type, { buyBtn, owned });
+      shopGrid.append(buyBtn);
+    }
+    this.roundOverShopEl.append(shopHead, shopGrid);
+
+    const nextRoundBtn = document.createElement('button');
+    nextRoundBtn.className = 'st-hud__restart';
+    nextRoundBtn.type = 'button';
+    nextRoundBtn.textContent = 'Start Next Round';
+    nextRoundBtn.addEventListener('click', () => this.nextRoundCb?.());
+
+    roPanel.append(this.roundOverTitleEl, this.roundOverScoreEl, this.roundOverShopEl, nextRoundBtn);
+    this.roundOverEl.append(roPanel);
+
     // Persistent Quit/Menu button (top of the side panel) — returns to the lobby.
     const menu = document.createElement('button');
     menu.type = 'button';
@@ -359,7 +441,7 @@ export class HUD {
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
     this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
-    this.modalRoot.append(this.storeEl, this.overlayEl);
+    this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl);
     this.built = true;
   }
 
@@ -628,17 +710,67 @@ export class HUD {
         ? `${winner.playerName} wins!`
         : 'Game Over';
     }
-    this.buildScoreboard(state);
+    this.buildScoreboard(state, this.overlayScoreEl);
     this.overlayEl.classList.remove('st-hud__overlay--hidden');
     this.overlayShown = true;
   }
 
   /**
-   * Build the final scoreboard table inside the GAME_OVER panel: one row per tank
-   * with round wins (only for multi-round matches), kills, and total damage dealt,
-   * ordered by round wins then damage. Built once per game-over (see syncOverlay).
+   * Show/update the ROUND_OVER between-rounds shop. On entry it builds the standings
+   * + the tank selector once; while shown it keeps the selected tank's credits and
+   * each buy button's affordability/owned-count live (a buy mutates state without a
+   * phase change, so the modal stays open and reflects the purchase next frame).
    */
-  private buildScoreboard(state: GameState): void {
+  private syncRoundOver(state: GameState): void {
+    if (state.phase !== 'ROUND_OVER') {
+      this.roundOverEl.classList.add('st-hud__overlay--hidden');
+      this.roundOverShown = false;
+      return;
+    }
+
+    if (!this.roundOverShown) {
+      const completed = state.round - 1;
+      const winner = state.tanks.find((t) => t.id === state.lastRoundWinnerId);
+      this.roundOverTitleEl.textContent = winner
+        ? `Round ${completed}: ${winner.playerName} wins — Round ${state.round} of ${state.totalRounds}`
+        : `Round ${completed} drawn — Round ${state.round} of ${state.totalRounds}`;
+      this.buildScoreboard(state, this.roundOverScoreEl);
+
+      // Tank selector: human tanks only (bots shop via the AI on their own turn).
+      const humans = state.tanks.filter((t) => !t.ai);
+      this.roundOverTankSel.innerHTML = '';
+      for (const t of humans) {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.playerName;
+        this.roundOverTankSel.append(opt);
+      }
+      this.roundOverShopEl.style.display = humans.length > 0 ? '' : 'none';
+      if (!this.shopTankId || !humans.some((t) => t.id === this.shopTankId)) {
+        this.shopTankId = humans[0]?.id ?? null;
+      }
+      if (this.shopTankId) this.roundOverTankSel.value = this.shopTankId;
+      this.roundOverEl.classList.remove('st-hud__overlay--hidden');
+      this.roundOverShown = true;
+    }
+
+    // Live shop sync for the selected tank (credits + per-weapon affordability).
+    const tank = state.tanks.find((t) => t.id === this.shopTankId);
+    this.roundOverCreditsEl.textContent = tank ? `${tank.credits} cr` : '';
+    for (const [type, cell] of this.roundOverCells) {
+      const def = WEAPONS[type];
+      const slot = tank?.inventory[type];
+      cell.owned.textContent = slot ? `have ${slot.count}` : '';
+      cell.buyBtn.disabled = !tank || tank.credits < def.price;
+    }
+  }
+
+  /**
+   * Build a scoreboard table into `el`: one row per tank with round wins (only for
+   * multi-round matches), kills, and total damage dealt, ordered by round wins then
+   * damage. Used by the GAME_OVER panel and the ROUND_OVER standings.
+   */
+  private buildScoreboard(state: GameState, el: HTMLElement): void {
     const multi = state.totalRounds > 1;
     const ranked = [...state.tanks].sort(
       (a, b) => b.roundWins - a.roundWins || b.totalDamage - a.totalDamage,
@@ -660,8 +792,8 @@ export class HUD {
         );
       })
       .join('');
-    this.overlayScoreEl.style.setProperty('--score-cols', multi ? '4' : '3');
-    this.overlayScoreEl.innerHTML = head + rows;
+    el.style.setProperty('--score-cols', multi ? '4' : '3');
+    el.innerHTML = head + rows;
   }
 
   /** Inject the HUD stylesheet exactly once per document. */
@@ -1171,6 +1303,48 @@ export class HUD {
 }
 .st-hud__score-name { text-align: left; }
 .st-hud__score-num { text-align: right; font-family: var(--font-mono); }
+
+/* ROUND_OVER between-rounds shop. */
+.st-hud__roundshop {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 210, 63, 0.2);
+  border-radius: 6px;
+  background: rgba(12, 7, 22, 0.5);
+}
+.st-hud__roundshop-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.st-hud__roundshop-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-gold);
+}
+.st-hud__roundshop-sel {
+  pointer-events: auto;
+  background: rgba(12, 7, 22, 0.8);
+  color: var(--text);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: var(--font-sans);
+}
+.st-hud__roundshop-credits {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--text-gold);
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__roundshop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
 
 @keyframes st-hud-pulse {
   0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.25); }

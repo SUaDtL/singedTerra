@@ -6,6 +6,7 @@ export type GamePhase =
   | 'PLAYER_TURN'
   | 'FIRING'
   | 'RESOLVING'
+  | 'ROUND_OVER'
   | 'GAME_OVER';
 
 /**

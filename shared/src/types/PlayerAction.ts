@@ -11,7 +11,8 @@ export type PlayerAction =
   | SelectWeaponAction
   | FireAction
   | UseShieldAction
-  | BuyAction;
+  | BuyAction
+  | NextRoundAction;
 
 export type PlayerActionType =
   | 'set_angle'
@@ -19,7 +20,8 @@ export type PlayerActionType =
   | 'select_weapon'
   | 'fire'
   | 'use_shield'
-  | 'buy';
+  | 'buy'
+  | 'next_round';
 
 /** Set the active tank's barrel angle (degrees, 0 = right, 90 = up). */
 export interface SetAngleAction {
@@ -58,9 +60,27 @@ export interface UseShieldAction {
  * Buy one bundle of a weapon from the store (SPEC §9). Spends the active tank's
  * credits and adds the weapon's `bundleSize` to its inventory. Unlike fire /
  * use_shield this does NOT end the turn — a player may buy several times, then
- * fire. Honored only during PLAYER_TURN; rejected if credits are insufficient.
+ * fire. Honored during PLAYER_TURN (active tank) and during the ROUND_OVER
+ * between-rounds shop; rejected if credits are insufficient.
  */
 export interface BuyAction {
   type: 'buy';
   weapon: WeaponType;
+  /**
+   * Which tank is buying. Omitted during PLAYER_TURN (the active tank buys, as
+   * before). During the ROUND_OVER between-rounds shop ALL players may buy, so the
+   * tank is named explicitly. A mismatch with the active tank during PLAYER_TURN is
+   * ignored (the active tank still buys) to preserve the prior contract.
+   */
+  tankId?: string;
+}
+
+/**
+ * Advance from the ROUND_OVER between-rounds shop into the next round's combat
+ * (V1 match structure). Valid only during ROUND_OVER; flips the staged next round
+ * (terrain + reset tanks already prepared at round resolution) to PLAYER_TURN.
+ * In networked play this is a logged action so every client advances in lockstep.
+ */
+export interface NextRoundAction {
+  type: 'next_round';
 }
