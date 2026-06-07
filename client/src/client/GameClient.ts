@@ -23,6 +23,18 @@ export interface RematchInfo {
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting';
 
 /**
+ * Per-turn liveness of a REMOTE opponent's turn (network only, P1-6b). 'clear'
+ * whenever it's my turn, a bot's turn, or an opponent who just acted; 'waiting'
+ * once a remote human has held the turn past the idle threshold; 'stalled' after a
+ * longer timeout (offer to leave to the lobby). Lets the UI show a non-blocking
+ * "Waiting for {name}…" banner instead of a silently frozen board.
+ */
+export type TurnWatch =
+  | { state: 'clear' }
+  | { state: 'waiting'; playerName: string }
+  | { state: 'stalled'; playerName: string };
+
+/**
  * GameClient abstracts the difference between hot-seat and networked play
  * behind a single interface. The renderer/input layers talk only to this,
  * never knowing whether physics runs locally (HotSeat) or on a server (Network).
@@ -74,4 +86,12 @@ export interface GameClient {
    * stuck "Sending…" lock and tell the player to try again. Returns an unsubscribe.
    */
   onFireFailed?(listener: (message: string) => void): () => void;
+
+  /**
+   * Subscribe to opponent-turn liveness (network only, P1-6b). Called immediately
+   * with the current state, then on every transition. Lets the UI surface a
+   * "Waiting for {name}…" banner (and a leave-to-lobby option once stalled) when a
+   * remote player's turn goes idle. Returns an unsubscribe function.
+   */
+  onTurnWatch?(listener: (watch: TurnWatch) => void): () => void;
 }

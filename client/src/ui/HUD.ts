@@ -1,7 +1,7 @@
 import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS } from '@shared/engine/WeaponSystem';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
-import type { ConnectionState } from '../client/GameClient';
+import type { ConnectionState, TurnWatch } from '../client/GameClient';
 
 /**
  * Weapons shown in the strip: only `implemented` ones, in stable WeaponSystem
@@ -93,6 +93,9 @@ export class HUD {
   private connBannerEl!: HTMLElement;
   private toastEl!: HTMLElement;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  // Opponent-turn watchdog banner (P1-6b): "Waiting for {name}…", escalating to a
+  // disconnect notice with a leave-to-lobby button.
+  private turnWatchEl!: HTMLElement;
 
   /** Per-store-row nodes (buy button + owned count), for cheap per-frame sync. */
   private storeCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
@@ -312,12 +315,14 @@ export class HUD {
     this.connBannerEl.className = 'st-hud__conn st-hud__conn--hidden';
     this.toastEl = document.createElement('div');
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
+    this.turnWatchEl = document.createElement('div');
+    this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
 
     this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
     // Controls legend + liveness widgets stay on the canvas overlay (positioned
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
-    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl);
+    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
     this.modalRoot.append(this.storeEl, this.overlayEl);
     this.built = true;
   }
@@ -349,6 +354,38 @@ export class HUD {
       this.toastEl.classList.add('st-hud__toast--hidden');
       this.toastTimer = null;
     }, 4000);
+  }
+
+  /**
+   * Reflect the opponent-turn watchdog (P1-6b). 'clear' hides the banner; 'waiting'
+   * shows a non-blocking "Waiting for {name}…"; 'stalled' switches to a disconnect
+   * notice with a "Leave to lobby" button (wired to the same quit callback as the
+   * in-game Menu). Rebuilt on each transition — these fire rarely, never per frame.
+   */
+  setTurnWatch(watch: TurnWatch): void {
+    if (!this.built) this.build();
+    if (watch.state === 'clear') {
+      this.turnWatchEl.classList.add('st-hud__turnwatch--hidden');
+      this.turnWatchEl.replaceChildren();
+      return;
+    }
+    this.turnWatchEl.classList.remove('st-hud__turnwatch--hidden');
+    this.turnWatchEl.classList.toggle('st-hud__turnwatch--stalled', watch.state === 'stalled');
+    this.turnWatchEl.replaceChildren();
+
+    const msg = document.createElement('span');
+    if (watch.state === 'waiting') {
+      msg.textContent = `Waiting for ${watch.playerName}…`;
+      this.turnWatchEl.append(msg);
+    } else {
+      msg.textContent = `${watch.playerName} may have disconnected`;
+      const leave = document.createElement('button');
+      leave.type = 'button';
+      leave.className = 'st-hud__turnwatch-leave';
+      leave.textContent = 'Leave to lobby';
+      leave.addEventListener('click', () => this.quitCb?.());
+      this.turnWatchEl.append(msg, leave);
+    }
   }
 
   /** Open/close the store modal. With no argument, toggles. */
@@ -805,6 +842,44 @@ export class HUD {
   white-space: nowrap;
 }
 .st-hud__toast--hidden { display: none; }
+/* Opponent-turn watchdog banner (P1-6b): top-center, below the conn/toast slot. */
+.st-hud__turnwatch {
+  position: absolute;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--text-gold, #ffe9b0);
+  background: rgba(40, 28, 60, 0.92);
+  border: 1px solid rgba(255, 210, 63, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__turnwatch--stalled {
+  color: #ffd7d7;
+  background: rgba(90, 20, 28, 0.92);
+  border-color: rgba(255, 120, 120, 0.7);
+}
+.st-hud__turnwatch--hidden { display: none; }
+.st-hud__turnwatch-leave {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--gold, #ffd23f);
+  background: transparent;
+  color: var(--gold, #ffd23f);
+  font: 600 12px/1 system-ui, sans-serif;
+}
+.st-hud__turnwatch-leave:hover { background: rgba(255, 210, 63, 0.16); }
 .st-hud__overlay-panel {
   display: flex;
   flex-direction: column;
