@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { AiDifficulty } from '@shared/types/GameState';
+import { clamp } from '@shared/engine/math';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
 
 /** Play mode chosen in the lobby. */
@@ -1074,9 +1075,20 @@ export class Lobby {
   private renderWaitingRoom(): HTMLElement {
     const frag = document.createElement('div');
 
+    // Sub-copy reflects HUMAN readiness, not raw seat counts (P2-11): a room of
+    // 1 human + 3 CPU is not "waiting for players" — its bots are always ready, so
+    // counting them made the room look perpetually unfilled. Show humans-ready, the
+    // CPU count, and only flag "waiting for players" when seats are genuinely open.
+    const humans = this.waitingPlayers.filter((p) => !p.ai);
+    const humansReady = humans.filter((p) => p.ready).length;
+    const cpuCount = this.waitingPlayers.length - humans.length;
+    const seatsOpen = this.waitingPlayers.length < this.waitingOptions.maxPlayers;
     const sub = document.createElement('p');
     sub.className = 'lobby-sub';
-    sub.textContent = 'Waiting for players...';
+    sub.textContent =
+      `${humansReady}/${humans.length} human${humans.length === 1 ? '' : 's'} ready`
+      + (cpuCount > 0 ? ` · ${cpuCount} CPU` : '')
+      + (seatsOpen ? ' · waiting for players to join' : '');
     frag.append(sub);
 
     // Room code display
@@ -1106,6 +1118,7 @@ export class Lobby {
     // two tanks visually indistinguishable in-game, so we surface it here and
     // block the game from starting until it is resolved (see Ready-Up gate).
     const clashColors = this.duplicateColors();
+    const clashNames = this.duplicateNames();
 
     const playerList = document.createElement('ul');
     playerList.className = 'online-player-list';
@@ -1120,9 +1133,31 @@ export class Lobby {
       const nameSpan = document.createElement('span');
       nameSpan.textContent = p.name;
 
+      // Accessible clash cue (P2-11): a red ring on the dot relies on color alone
+      // and was only meaningful to the clashing client. Add a text/icon tag on ANY
+      // row sharing a color or name, so every player can see (and read) the clash.
+      const sharesColor = clashColors.has(p.color);
+      const sharesName = clashNames.has(p.name.trim().toLowerCase());
+      if (sharesColor || sharesName) {
+        const tag = document.createElement('span');
+        tag.className = 'online-clash-tag';
+        const what = sharesColor && sharesName ? 'color + name' : sharesColor ? 'color' : 'name';
+        tag.textContent = `⚠ shared ${what}`;
+        tag.style.cssText = 'color:var(--tank-red,#e8554d);font-size:11px;margin-left:6px;white-space:nowrap;';
+        nameSpan.append(tag);
+      }
+
       const badge = document.createElement('span');
-      badge.className = 'online-badge ' + (p.ready ? 'ready' : 'waiting');
-      badge.textContent = p.ready ? 'Ready' : 'Waiting...';
+      if (p.ai) {
+        // Bot seats are always ready; badge them as CPU + difficulty so a mostly-CPU
+        // room doesn't read as waiting on humans who will never come.
+        const diff = p.ai.charAt(0).toUpperCase() + p.ai.slice(1);
+        badge.className = 'online-badge ready';
+        badge.textContent = `🤖 ${diff}`;
+      } else {
+        badge.className = 'online-badge ' + (p.ready ? 'ready' : 'waiting');
+        badge.textContent = p.ready ? 'Ready' : 'Waiting...';
+      }
 
       row.append(dot, nameSpan, badge);
       playerList.append(row);
@@ -1376,6 +1411,20 @@ export class Lobby {
     }
     const dupes = new Set<string>();
     for (const [color, n] of counts) if (n > 1) dupes.add(color);
+    return dupes;
+  }
+
+  /** Names (trimmed, case-insensitive) held by more than one player — mirrors
+   *  duplicateColors so a name clash carries a cue visible to ALL players (P2-11),
+   *  not just the clashing client's own warning. */
+  private duplicateNames(): Set<string> {
+    const counts = new Map<string, number>();
+    for (const p of this.waitingPlayers) {
+      const key = p.name.trim().toLowerCase();
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const dupes = new Set<string>();
+    for (const [name, n] of counts) if (n > 1) dupes.add(name);
     return dupes;
   }
 
@@ -1881,7 +1930,3 @@ function parseNumber(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Clamp `n` to the inclusive [lo, hi] range. */
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, n));
-}

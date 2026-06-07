@@ -125,13 +125,20 @@ export interface BounceDef {
 
 /**
  * Shield: not a projectile at all. Activating it (the `use_shield` action) wraps
- * the firing tank in `particles` destructible force-field particles; each
- * damaging blast destroys one and is fully negated while ≥1 remains. Pure integer
- * count, decremented per damaging hit — deterministic, no RNG.
+ * the firing tank in a force field with `capacity` HP of absorption. Each damaging
+ * blast/burn tick drains the pool by the ACTUAL damage it would have dealt; while
+ * the pool has charge it soaks up to that much, and any overflow beyond the
+ * remaining pool leaks through to the tank's health (the hit that breaks the shield
+ * still wounds). Pure arithmetic (min/subtract) — deterministic, no RNG.
+ *
+ * This is a damage POOL, not a hit COUNT: a 100-damage nuke drains ~100, a 0.7
+ * napalm tick drains ~0.7. So the shield absorbs a sensible amount proportional to
+ * incoming magnitude — it is neither immune to 12 nukes nor stripped by 12 tiny
+ * burn ticks (the old per-hit-particle bug, REVIEW_BACKLOG P1-5).
  */
 export interface ShieldDef {
-  /** Particles granted on activation (each absorbs one damaging blast/burn tick). */
-  particles: number;
+  /** HP of damage the field absorbs before failing (overflow leaks to health). */
+  capacity: number;
 }
 
 /** Optional non-default flight/behavior modifiers for a weapon. */
@@ -190,12 +197,13 @@ const NAPALM_DOT = 0.7;
 const NAPALM_CLIMB = 6;         // max px rise the fire will climb (walls block it)
 
 /**
- * Shield force-field tuning. Activating the shield grants this many particles;
- * each damaging blast (or napalm burn tick) destroys one and is negated while ≥1
- * remains. 12 => blocks a direct missile + glance, or ~12 cluster bomblets / napalm
- * ticks before failing. Tunable in playtesting.
+ * Shield force-field tuning. Activating the shield grants this many HP of damage
+ * absorption (a pool, not a hit count — see ShieldDef). 120 => soaks one full nuke
+ * (max 100) plus a glance, ~2 missiles (60 each), or one napalm burn (~55 total),
+ * then the next overflow leaks to health. Chosen so a bought shield is worth its
+ * credits without being immune to sustained heavy fire. Tunable in playtesting.
  */
-const SHIELD_PARTICLES = 12;
+const SHIELD_CAPACITY = 120;
 
 /**
  * Store economy tuning (SPEC §9). Credits use the Scorched Earth scale (weapons
@@ -420,9 +428,9 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
       durationFrames: 50,
     },
     behavior: {
-      // SHIELD: activating it (use_shield) grants SHIELD_PARTICLES particles; each
-      // damaging blast strips one and is fully negated while ≥1 remains.
-      shield: { particles: SHIELD_PARTICLES },
+      // SHIELD: activating it (use_shield) grants SHIELD_CAPACITY HP of absorption;
+      // each damaging blast drains the pool by its actual damage, overflow leaks.
+      shield: { capacity: SHIELD_CAPACITY },
     },
   },
 };

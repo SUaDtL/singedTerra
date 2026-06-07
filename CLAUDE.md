@@ -4,35 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**singedTerra** — a browser-based, Scorched Earth–inspired turn-based artillery game. TypeScript throughout, Canvas 2D rendering, Node + Socket.io backend, self-hosted on a t3.micro EC2 instance. Supports both **hot-seat** (all players in one browser tab) and **networked** (each player on their own browser) play.
+**singedTerra** — a browser-based, Scorched Earth–inspired turn-based artillery game. TypeScript throughout, Canvas 2D rendering, and a **Supabase backend** (Edge Functions + Postgres + Realtime) for networked play. Supports both **hot-seat** (all players in one browser tab) and **networked** (each player on their own browser) play.
 
 > Named `singedTerra` (singed earth) — a play on *Scorched Earth*, the 1991 game this pays homage to.
 
-**Status:** Greenfield. As of this writing the repo is an empty scaffold (only `.git`). Nothing in the structure below exists yet — it is the target. See `docs/TASKS.md` for the phased build plan and `docs/SPEC.md` for the full specification.
+**Status:** Implemented and playable (hot-seat + networked), with an ongoing review backlog in `docs/REVIEW_BACKLOG.md`. See `docs/TASKS.md` for the build history and `docs/SPEC.md` for the specification.
 
 ## Commands
 
-The project is planned as an **npm workspaces** monorepo (`client`, `server`, `shared`). These are the intended scripts (per spec §11) — wire them into the root `package.json` as the scaffold is built:
+An **npm workspaces** monorepo with two workspaces: `client` (Vite/Canvas app) and `shared` (the deterministic engine + types). The networked backend is **Supabase** — Edge Functions under `supabase/functions/` and migrations under `supabase/migrations/` — not a Node server in this repo.
 
 ```bash
 npm install            # install all workspaces
-npm run dev            # concurrently: Vite dev (client) + nodemon (server)
-npm run dev:client     # Vite on :5173, proxies /socket.io -> :3000
-npm run dev:server     # nodemon server on :3000
-npm run build          # tsc + vite build -> client/dist + server/dist
-npm run typecheck      # typecheck all workspaces
+npm run dev            # Vite dev server (client) on :5173
+npm run build          # typecheck + vite build -> client/dist
+npm run typecheck      # typecheck shared + client
+npm run check          # typecheck + run the deterministic engine harnesses (scripts/checks/*.mjs)
 ```
 
-No test runner is chosen yet. When adding one, prioritize **`shared/src/engine/`** (Physics, Terrain, GameEngine) — it is deterministic and the highest-value unit-test target.
+The engine is covered by deterministic harnesses in **`scripts/checks/*.mjs`** (run via `npm run check`) — `shared/src/engine/` (Physics, Terrain, GameEngine, AI, WeaponSystem) is the highest-value test target. Supabase Edge Functions are deployed with `npx supabase functions deploy <name>`.
 
 ## Architecture
 
 The central design constraint is **one physics codebase, two execution contexts**. All game logic lives in `shared/` and runs in exactly one of two places depending on mode:
 
 - **Hot-seat:** the browser runs `shared/engine/*` directly via `HotSeatClient` — zero network, zero server round-trips. `GameEngine` ticks on `requestAnimationFrame`.
-- **Networked:** the **server** owns the single authoritative `GameEngine` per room. Clients are **render-only** — they send `PlayerAction`s and receive `GameState` snapshots; they never run physics locally.
+- **Networked: deterministic lockstep, NOT server-authoritative.** Every client runs its OWN `GameEngine`, seeded identically. The canonical game is **seed + an ordered action log** (`room_actions` in Postgres). A turn-ending/buy action is POSTed to the `submit_action` Edge Function, which acts as a thin **referee** (validates turn ownership, allocates the next `seq`) — it does NOT run physics. Supabase **Realtime** broadcasts each committed action row; every client applies it to its local engine in `seq` order, so all clients stay in sync without anyone shipping `GameState` over the wire. CPU seats are driven client-side (every client computes the same deterministic plan and submits it; the `seq`-unique constraint + referee cursor make it exactly-once).
 
-`GameClient` is the interface that hides this difference from the renderer/input layers. This is why physics/terrain/types live in `shared/` — to prevent client/server physics drift.
+`GameClient` is the interface that hides this difference from the renderer/input layers (`HotSeatClient` vs `NetworkClient`). This is why physics/terrain/types live in `shared/` — both the hot-seat engine and every networked client's engine are the SAME code, so they can never drift.
 
 ### Determinism is a hard requirement
 
@@ -41,19 +40,17 @@ Physics uses a **fixed 16ms timestep** so hot-seat and networked execution produ
 ### Core data model
 
 - **Terrain** is a `Uint16Array` of length `CANVAS_WIDTH` (800) — one y-height per x-column. This drives everything: O(1) collision (`y >= terrain[floor(x)]`), trivial serialization (sent as `number[]` in `GameState`), and natural deformation (subtract a chord on explosion). Re-render the terrain polygon only when a **dirty flag** is set — meaningful CPU savings on a t3.micro.
-- **`GameState`** (`shared/src/types/GameState.ts`) is the single serializable snapshot — phase, turn, active player, wind, terrain, tanks, projectile, winner. The server broadcasts a full snapshot after each `RESOLVING` phase and streams lightweight `projectile_tick` deltas (~20fps) during `FIRING`.
+- **`GameState`** (`shared/src/types/GameState.ts`) is each engine's local snapshot — phase, turn, active player, wind, terrain, tanks, projectile, winner. It is NOT shipped over the network (clients derive it by replaying the action log through their own engine); it is the renderer's input. Per-room config is `GameOptions` (`shared/src/types/GameOptions.ts`).
 - **Turn state machine:** `LOBBY → PLAYER_TURN → FIRING → RESOLVING → NEXT_TURN → GAME_OVER`. Input is accepted only during `PLAYER_TURN`. New wind is generated on `NEXT_TURN`.
 
 ### Layering / dependency direction
 
 ```
-client/ (Canvas renderer, input, UI)  ─┐
-server/ (RoomManager, GameServer)     ─┼─► shared/ (engine + types)
-                                       │
-shared/ depends on nothing
+client/ (Canvas renderer, input, UI, NetworkClient) ──► shared/ (engine + types)
+supabase/functions/ (Edge Function referees, Deno)         shared/ depends on nothing
 ```
 
-`shared/` must never import from `client/` or `server/`. Both consumers depend inward on `shared/`.
+`shared/` must never import from `client/`. The Supabase Edge Functions are a separate Deno runtime and do not import `shared/` either (they are thin referees, not physics) — `submit_action` re-derives turn ownership from the action log + a client-reported next-seat index rather than running the engine.
 
 ### Rendering notes
 
@@ -65,8 +62,10 @@ shared/ depends on nothing
 
 - **Angle:** degrees, `0 = right`, `90 = up`. **Power:** 0–100. **Health:** 0–100.
 - Tunable constants (gravity `0.15` px/tick, `MAX_WIND = 10`, explosion radii, damage falloff) are expected to be tuned during playtesting — keep them as named constants, not magic numbers scattered in logic. See spec §12 for open tuning questions.
-- Socket.io event names and payloads are fixed contracts — see spec §5 and define them once in `shared/src/types/Events.ts`.
+- The networked contract is the **Supabase Edge Function** request/response shapes (`supabase/functions/*/index.ts`) plus the `NetworkAction` union in `client/src/client/NetworkClient.ts` — the action types committed to the `room_actions` log. (The old socket.io `Events.ts` event/payload contract was deleted; only `GameOptions` survived, in its own module.)
 
 ## Deployment
 
-Production runs under **pm2** (`ecosystem.config.js`) behind **nginx**, which serves `client/dist` statically and reverse-proxies `/socket.io/` to Node on `:3000`. The box is internal-only (no public internet exposure); HTTPS is currently out of scope. Persistence is none until V1, which adds SQLite for session-keyed scores. Full infra details in `docs/SPEC.md` §10.
+- **Client:** the static Vite bundle (`client/dist`) is served by **nginx** (`nginx.conf`, SPA fallback) — or any static host. There is **no Node app server** and no socket.io proxy; the browser talks to Supabase directly.
+- **Networked backend:** **Supabase** hosts the Edge Functions (`supabase/functions/`, deploy with `npx supabase functions deploy <name>`), Postgres (the `rooms` + `room_actions` tables, migrations under `supabase/migrations/`), and Realtime (the action-log broadcast). Project ref + auth are managed by the Supabase CLI.
+- Persistence is the Postgres tables above (rooms + their action logs). HTTPS/auth posture is handled by Supabase for the backend; the static client can sit behind any host. (Historical note: an earlier design used pm2 + a Node socket.io server on `:3000`; that stack was removed — REVIEW_BACKLOG P2-12.)
