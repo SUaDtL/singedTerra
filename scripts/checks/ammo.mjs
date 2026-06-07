@@ -174,8 +174,10 @@ function runLog() {
   // Identify the two tank ids in stable order. The active tank rotates each
   // accepted shot, so tank A acts on even turns, tank B on odd turns.
   const ids = engine.getState().tanks.map((t) => t.id);
+  // Read the starting count from the engine so this check is robust to loadout
+  // tuning (the economy slice reduced default ammo; the MECHANIC is what matters).
   const startCount = engine.getState().tanks[0].inventory.missile.count;
-  if (startCount !== 9) fail(`expected starting missile count 9, got ${startCount}`);
+  if (startCount < 1) fail(`expected a finite starting missile count >= 1, got ${startCount}`);
   if (engine.getState().tanks[0].inventory.missile.unlimited) fail('missile should be finite, not unlimited');
   if (!engine.getState().tanks[0].inventory.baby_missile.unlimited) fail('baby_missile should be unlimited');
 
@@ -186,7 +188,7 @@ function runLog() {
   // fire 'missile' until BOTH tanks have 9 accepted fires, observing along the
   // way that every accepted finite fire decrements by exactly 1 and every fire
   // attempted at count 0 is rejected (count untouched, never negative).
-  const perTank = new Map(ids.map((id) => [id, { fires: 0, accepted: 0, rejected: 0, lastCount: 9 }]));
+  const perTank = new Map(ids.map((id) => [id, { fires: 0, accepted: 0, rejected: 0, lastCount: startCount }]));
 
   let guard = 0;
   const GUARD_MAX = 200; // generous; expected ~18 accepted + a handful of rejects
@@ -217,21 +219,22 @@ function runLog() {
 
     // Stop once BOTH tanks are exhausted AND we've observed at least one
     // rejection from a dry tank (so the reject-at-zero path is exercised).
-    const allDry = [...perTank.values()].every((r) => r.accepted >= 9);
+    const allDry = [...perTank.values()].every((r) => r.accepted >= startCount);
     const sawReject = [...perTank.values()].some((r) => r.rejected > 0);
     if (allDry && sawReject) break;
   }
   if (guard >= GUARD_MAX) fail(`missile-exhaustion loop did not terminate within ${GUARD_MAX} fires`);
 
-  // Each tank: exactly 9 ACCEPTED missile fires (count 9->0), then rejected at 0.
+  // Each tank: exactly `startCount` ACCEPTED missile fires (count startCount->0),
+  // then rejected at 0.
   for (const [id, rec] of perTank) {
-    if (rec.accepted !== 9) fail(`tank ${id} expected 9 ACCEPTED missile fires (count was 9), got ${rec.accepted}`);
+    if (rec.accepted !== startCount) fail(`tank ${id} expected ${startCount} ACCEPTED missile fires (count was ${startCount}), got ${rec.accepted}`);
     if (rec.lastCount !== 0) fail(`tank ${id} missile count not 0 after exhaustion (got ${rec.lastCount})`);
     if (rec.rejected > 0 && rec.lastCount !== 0) fail(`tank ${id} rejected a fire while count != 0`);
   }
   const totalRejects = [...perTank.values()].reduce((s, r) => s + r.rejected, 0);
   if (totalRejects === 0) fail('no missile fire was ever rejected — reject-at-zero path not exercised');
-  if (!failed) log(`PASS: each tank's missile decremented exactly 1/accepted-fire; 9 accepted then rejected at 0 (count never < 0; ${totalRejects} rejections observed).`);
+  if (!failed) log(`PASS: each tank's missile decremented exactly 1/accepted-fire; ${startCount} accepted then rejected at 0 (count never < 0; ${totalRejects} rejections observed).`);
 
   // Check 2 (cont.): a still-stocked weapon fires fine AFTER missile is dry —
   // the gate is per-weapon, not a global lockout.

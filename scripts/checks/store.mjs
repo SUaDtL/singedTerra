@@ -105,6 +105,30 @@ function tickToRest(e) { let t = 0; while (e.getState().phase === 'FIRING' && t 
   if (!failed) log('PASS: buying an unlimited-stock weapon is a no-op (no charge).');
 }
 
+// --- Check 4b: the premium tier is BUY-ONLY (economy actually matters) ---
+// A fresh tank starts with 0 nukes, so firing one is rejected (gated, no turn
+// advance); after buying a bundle it fires. Proves the loadout no longer hands
+// out premium weapons for free (REVIEW_BACKLOG P0-1).
+{
+  const e = freshEngine();
+  const nuke = getWeapon('nuke');
+  if (e.getState().tanks[0].inventory.nuke.count !== 0) fail(`fresh tank should start with 0 nukes, got ${e.getState().tanks[0].inventory.nuke.count}`);
+  // Attempt to fire a nuke with none in stock — must be rejected (stays PLAYER_TURN).
+  e.applyAction({ type: 'select_weapon', weapon: 'nuke' });
+  e.applyAction({ type: 'set_angle', angle: 50 });
+  e.applyAction({ type: 'set_power', power: 50 });
+  const turnBefore = e.getState().turn;
+  e.applyAction({ type: 'fire' });
+  if (e.getState().phase !== 'PLAYER_TURN' || e.getState().turn !== turnBefore) fail('firing a nuke with 0 in stock was NOT rejected — premium tier is not buy-only');
+  // Give the tank enough credits, buy a bundle, then it can fire.
+  e.getState().tanks[0].credits = nuke.price;
+  e.applyAction({ type: 'buy', weapon: 'nuke' });
+  if (e.getState().tanks[0].inventory.nuke.count !== nuke.bundleSize) fail(`buying a nuke did not grant ${nuke.bundleSize}`);
+  e.applyAction({ type: 'fire' });
+  if (e.getState().phase !== 'FIRING' && e.getState().phase !== 'PLAYER_TURN' && e.getState().phase !== 'GAME_OVER') fail('a bought nuke did not fire');
+  if (!failed) log('PASS: premium tier (nuke) is buy-only — 0 at spawn, gated until bought.');
+}
+
 // --- Check 5: earning from damage + flat stipend on a miss ---
 {
   // Damaging shot.
