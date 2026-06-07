@@ -24,10 +24,11 @@ function bootstrap(): void {
   // Bind the narrowed type to a const so it survives into nested closures.
   const canvas: HTMLCanvasElement = canvasEl;
   const hudRoot = requireElement('hud');
+  const overlayRoot = requireElement('game-overlay');
   const lobbyRoot = requireElement('lobby');
 
   const renderer = new Renderer(canvas);
-  const hud = new HUD(hudRoot);
+  const hud = new HUD(hudRoot, overlayRoot);
 
   // Per-game wiring that gets torn down and rebuilt on restart.
   let client: GameClient | null = null;
@@ -128,7 +129,7 @@ function bootstrap(): void {
   const appEl = document.getElementById('app');
   function updateScale(): void {
     if (!appEl) return;
-    const s = Math.min(window.innerWidth / 800, window.innerHeight / 500, 1);
+    const s = Math.min(window.innerWidth / 1064, window.innerHeight / 500, 1);
     appEl.style.transform = `scale(${s})`;
     appEl.style.transformOrigin = 'center center';
   }

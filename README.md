@@ -58,6 +58,7 @@ can blow a hole straight through.
 | `Space` | **Fire** |
 | `Tab` / `Q` | Cycle weapon (accelerator) |
 | **Click the weapon strip** | Select a weapon directly (shows live ammo) |
+| **Menu** (side panel) / **Main Menu** (game-over) | Quit the game back to the lobby |
 
 Input is accepted only on your turn, only while aiming — never mid-flight.
 
@@ -78,10 +79,10 @@ damage, color, burst style) and an optional **behavior** (e.g. airburst split). 
 | 5 | 🟡 **Cluster Bomb** | ✅ | 5 × r18 · 28 dmg | **Apex airburst** — splits at the top of its arc into a falling carpet. |
 | 6 | ☢️ **Baby Nuke** | ✅ | r65 · 90 dmg | Now live (Sprint 4). |
 | 7 | 💥 **Nuke** | ✅ | r90 · 100 dmg | Now live. A near-direct hit is a one-shot kill. |
-| 8 | 🟣 **Bouncing Betty** | 🚧 | r30 · 55 dmg | *Slice 2* — bounces off terrain 3× before detonating. |
-| 9 | 🟪 **Funky Bomb** | 🚧 | 5 × split | *Slice 2* — mid-flight (non-apex) 5-way split. |
-| 10 | 🟧 **Napalm** | 🚧 | wide area | *Slice 2* — multi-cell horizontal burn. |
-| 11 | 🔵 **Shield** | 🚧 | defensive | *Slice 3* — a destructible particle force-field. |
+| 8 | 🟣 **Bouncing Betty** | ✅ | r30 · 55 dmg | Bounces off terrain 3× (surface-normal reflection) before detonating. |
+| 9 | 🟪 **Funky Bomb** | ✅ | 5 × split | Mid-flight (non-apex) age-triggered 5-way split. |
+| 10 | 🟧 **Napalm** | ✅ | 5 × r40 · 65 dmg | Wide multi-cell carpet on impact. |
+| 11 | 🔵 **Shield** | 🚧 | defensive | *Next up (Sprint 4 Slice 3)* — a destructible particle force-field. |
 
 **Ammo economy.** `TankState.inventory` maps each weapon to `{ count, unlimited }`. Baby Missile is
 unlimited; everything else starts at **9 rounds** (a generous sandbox loadout, tuned later). Firing a
@@ -139,7 +140,7 @@ plain bytes for the action-log world, and only re-rasterizes the terrain polygon
 
 ## ✅ The determinism harnesses
 
-`npm run check` runs the full typecheck plus **7 deterministic test harnesses** (`scripts/checks/`).
+`npm run check` runs the full typecheck plus **8 deterministic test harnesses** (`scripts/checks/`).
 They are the project's safety net — every change must keep them green:
 
 | Harness | Proves |
@@ -150,7 +151,8 @@ They are the project's safety net — every change must keep them green:
 | `turnstate` | Turn order, wind, health & winner reproducible for N=2/3/4 |
 | `airburst` | Cluster splits into a deterministic symmetric fan; resolves once |
 | `wind` | Seeded wind sequence reproducible; within cap; drift-bounded |
-| `ammo` 🆕 | Ammo gating + decrement; **live vs. replay byte-identical** (Sprint 4) |
+| `ammo` | Ammo gating + decrement; **live vs. replay byte-identical** |
+| `motion` 🆕 | Bounce reflection, funky age-split & napalm fan — deterministic + replay-identical |
 
 ---
 
@@ -164,7 +166,7 @@ npm run dev:client     # Vite on :5173
 
 npm run build          # typecheck + server build + vite client build
 npm run typecheck      # typecheck every workspace
-npm run check          # typecheck + all 7 determinism harnesses  ← run before every commit
+npm run check          # typecheck + all 8 determinism harnesses  ← run before every commit
 ```
 
 > Requires Node 20 LTS (see `.nvmrc`). Online play needs Supabase keys in `client/.env`
@@ -187,7 +189,7 @@ singedTerra/
 │       ├── input/  ui/  lib/
 ├── supabase/               # Edge Functions (submit_action referee, rooms, lobby) + migrations
 ├── server/                 # legacy Socket.io authoritative path — superseded by lockstep
-├── scripts/checks/         # the 7 determinism harnesses
+├── scripts/checks/         # the 8 determinism harnesses
 └── docs/                   # SPEC · TASKS · sprint plans · assets
 ```
 
@@ -211,11 +213,12 @@ it's your turn and the shot is legal before inserting the row. Because state is 
 | **MVP0** — Bones (terrain, tanks, ballistics, craters) | ✅ Done |
 | **MVP1** — It's a Game (turns, health, wind, HUD, hot-seat 2–4) | ✅ Done |
 | **MVP2** — Networked (Supabase lockstep, lobbies, rooms) | ✅ Done |
-| **Sprint 4** — Combat Depth (ammo economy, nukes, weapon strip) | 🚧 In progress (MVP slices landed) |
-| **V1** — Full roster, shop, fuel, shields, scoreboard, audio | ⏳ Planned |
+| **Sprint 4** — Combat Depth (ammo, nukes, weapon strip, new-motion weapons) | ✅ Slices 0–2 done · shield (Slice 3) deferred |
+| **Sprint 5** — Graphical overhaul (banner art direction, CRT, juice, side-panel HUD) | ✅ Done |
+| **V1** — Shop, fuel, scoreboard, audio, mobile HUD | ⏳ Planned |
 
 The living register is [`docs/TASKS.md`](docs/TASKS.md); the full design is [`docs/SPEC.md`](docs/SPEC.md);
-the active sprint is [`docs/SPRINT4_COMBAT_DEPTH.md`](docs/SPRINT4_COMBAT_DEPTH.md).
+recent sprints: [`docs/SPRINT4_COMBAT_DEPTH.md`](docs/SPRINT4_COMBAT_DEPTH.md) · [`docs/SPRINT5_GRAPHICS_OVERHAUL.md`](docs/SPRINT5_GRAPHICS_OVERHAUL.md).
 
 ---
 

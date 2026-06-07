@@ -25,7 +25,10 @@ const AMMO_UNLIMITED_GLYPH = '∞';
  * listeners, keeping per-frame work cheap and leak-free.
  */
 export class HUD {
+  /** Side-panel root (#hud) — status widgets stack here, off the canvas. */
   private readonly root: HTMLElement;
+  /** On-canvas overlay root (#game-overlay) — controls legend + game-over modal. */
+  private readonly overlayRoot: HTMLElement;
 
   /** Restart callback registered via {@link onRestart}; may arrive before or after the overlay shows. */
   private restartCb: (() => void) | null = null;
@@ -55,8 +58,9 @@ export class HUD {
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
 
-  constructor(root: HTMLElement) {
+  constructor(root: HTMLElement, overlayRoot: HTMLElement) {
     this.root = root;
+    this.overlayRoot = overlayRoot;
   }
 
   /** Register the restart callback fired when the GAME_OVER Restart button is clicked. */
@@ -181,14 +185,18 @@ export class HUD {
     panel.append(this.overlayTextEl, overlayBtns);
     this.overlayEl.append(panel);
 
-    // Persistent in-game Quit/Menu button (top-right) — returns to the lobby.
+    // Persistent Quit/Menu button (top of the side panel) — returns to the lobby.
     const menu = document.createElement('button');
     menu.type = 'button';
     menu.className = 'st-hud__menu';
     menu.textContent = '⤺ Menu';
     menu.addEventListener('click', () => this.quitCb?.());
 
-    this.root.append(this.playersEl, menu, wind, weapon, this.aimEl, this.stripEl, controls, this.overlayEl);
+    // Status widgets stack in the side panel (this.root = #hud). The controls
+    // legend + game-over modal go on the canvas overlay (#game-overlay) so they
+    // (and nothing else) sit over the play field.
+    this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.stripEl);
+    this.overlayRoot.append(controls, this.overlayEl);
     this.built = true;
   }
 
@@ -343,16 +351,11 @@ export class HUD {
 
   private static readonly CSS = `
 .st-hud {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
   font-family: var(--font-sans);
   color: var(--text);
+  font-size: 13px;
 }
 .st-hud__players {
-  position: absolute;
-  top: 10px;
-  left: 10px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -420,36 +423,31 @@ export class HUD {
 }
 .st-hud__wind,
 .st-hud__weapon {
-  position: absolute;
-  right: 10px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 7px;
-  padding: 3px 9px;
+  padding: 4px 9px;
   border-radius: 4px;
-  background: rgba(12, 7, 22, 0.62);
+  background: rgba(12, 7, 22, 0.55);
   border: 1px solid rgba(255, 210, 63, 0.14);
   font-size: 13px;
 }
 .st-hud__menu {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  width: 100%;
   pointer-events: auto;
   cursor: pointer;
-  padding: 4px 10px;
+  padding: 6px 10px;
   border: 1px solid rgba(255, 210, 63, 0.3);
   border-radius: 4px;
   background: rgba(12, 7, 22, 0.7);
   color: var(--text-gold);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   transition: background 130ms ease, border-color 130ms ease;
 }
 .st-hud__menu:hover { background: rgba(255, 122, 31, 0.3); border-color: var(--ember); }
-.st-hud__wind { top: 42px; }
-.st-hud__weapon { top: 72px; }
 .st-hud__wind-label,
 .st-hud__weapon-label {
   opacity: 0.65;
@@ -494,30 +492,22 @@ export class HUD {
   font-size: 9px;
 }
 .st-hud__aim {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 12px;
+  padding: 5px 10px;
   border-radius: 4px;
-  background: rgba(12, 7, 22, 0.62);
+  background: rgba(12, 7, 22, 0.55);
   border: 1px solid rgba(255, 210, 63, 0.14);
   font-family: var(--font-mono);
-  font-size: 13px;
-  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--text-gold);
 }
 .st-hud__strip {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
   display: flex;
   flex-direction: column;
   gap: 5px;
   padding: 7px 9px 8px;
-  max-width: 300px;
-  background: rgba(12, 7, 22, 0.72);
-  border: 1px solid rgba(255, 210, 63, 0.18);
+  background: rgba(12, 7, 22, 0.5);
+  border: 1px solid rgba(255, 210, 63, 0.14);
   border-radius: 6px;
   pointer-events: auto;
 }

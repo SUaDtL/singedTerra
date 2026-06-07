@@ -7,9 +7,14 @@
   </head>
   <body>
     <div id="app">
-      <!-- HUD is HTML/CSS overlaid on the canvas (SPEC §8), not drawn on canvas -->
-      <canvas id="game" width="800" height="500"></canvas>
-      <div id="hud" class="hud-overlay"></div>
+      <!-- Play field: the canvas + a small on-canvas overlay (controls + game-over). -->
+      <div id="stage">
+        <canvas id="game" width="800" height="500"></canvas>
+        <div id="game-overlay"></div>
+      </div>
+      <!-- HUD status widgets live in a side panel beside the canvas, not over it. -->
+      <div id="hud" class="hud-panel"></div>
+      <!-- Lobby is a full-app overlay shown before/between games. -->
       <div id="lobby" class="lobby-overlay"></div>
     </div>
     <!-- Title / splash screen: self-contained overlay shown on load (src/ui/Splash.ts) -->

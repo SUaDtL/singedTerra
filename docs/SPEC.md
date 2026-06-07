@@ -219,9 +219,9 @@ Turn timeout (V1): 30s per turn, configurable.
 | Shield | Places a damage-absorbing shield on your tank (defensive) |
 
 Implemented today (`implemented: true`): **Baby Missile, Missile, Heavy Missile,
-Dirt Bomb, Cluster Bomb, Baby Nuke, Nuke** (seven). Still stubs
-(`implemented: false`): **Bouncing Betty, Funky Bomb, Napalm, Shield** — present
-in the table with rough tuning; V1 implements them + the shop.
+Dirt Bomb, Cluster Bomb, Baby Nuke, Nuke, Funky Bomb, Napalm, Bouncing Betty**
+(ten). Only **Shield** remains a stub (`implemented: false`) — present
+in the table with rough tuning; Sprint 4 Slice 3 implements it + V1 the shop.
 
 **Ammo economy (Sprint 4).** Each tank carries a finite inventory:
 `TankState.inventory` is `Record<WeaponType, AmmoEntry>` where
