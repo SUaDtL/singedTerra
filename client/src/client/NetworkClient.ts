@@ -107,6 +107,12 @@ export class NetworkClient implements GameClient {
   // the player isn't trapped in "Sending…" forever (lost submit, dropped echo, …).
   private fireWatchdog:     ReturnType<typeof setTimeout> | null = null;
   private static readonly FIRE_TIMEOUT_MS = 9000;
+  // Seq-collision retry (P2-10). Two humans firing near-simultaneously collide on
+  // UNIQUE(room_id,seq); the loser gets a 409. Retry with bounded exponential
+  // backoff (40,80,160,240,240ms) so the action lands instead of being dropped
+  // after a single one-shot. UNIQUE remains the corruption guard; this is liveness.
+  private static readonly MAX_SEQ_RETRIES = 5;
+  private static readonly SEQ_BACKOFF_MS = 40;
 
   // Rematch signaling. The old room's rematch_room_id flips from NULL to the
   // successor room id when either player clicks Restart; both clients observe it
@@ -573,6 +579,7 @@ export class NetworkClient implements GameClient {
     networkAction: NetworkAction,
     retryOnConflict = true,
     actingPlayerId?: string,
+    attempt = 0,
   ): void {
     // For turn-ending actions, tell the server which seat is active NEXT (this
     // client's engine skips eliminated tanks; the server's modulo cursor can't).
@@ -600,10 +607,22 @@ export class NetworkClient implements GameClient {
       .then((data: { ok?: boolean; error?: string; retry?: boolean; seq?: number }) => {
         if (!data.ok) {
           const isConflict = data.error === 'seq_conflict' || data.retry === true;
-          if (isConflict && retryOnConflict) {
-            // Retry once after 50ms on seq collision (humans only — bots pass
-            // retryOnConflict=false, since the winning row is the same action).
-            setTimeout(() => this.submitAction(networkAction, false, actingPlayerId), 50);
+          if (isConflict && retryOnConflict && attempt < NetworkClient.MAX_SEQ_RETRIES) {
+            // Seq collision (humans only — bots pass retryOnConflict=false, since the
+            // winning row is the same bot action). Retry with bounded exponential
+            // backoff + jitter so a near-simultaneous human submit lands instead of
+            // being dropped after one shot (P2-10). Jitter decorrelates the racers.
+            const delay = Math.min(NetworkClient.SEQ_BACKOFF_MS * 2 ** attempt, 240)
+              + Math.floor(Math.random() * 25);
+            setTimeout(
+              () => this.submitAction(networkAction, true, actingPlayerId, attempt + 1),
+              delay,
+            );
+          } else if (isConflict && retryOnConflict) {
+            // Exhausted retries (a human action that kept colliding) — release the
+            // input lock so the player can re-fire rather than stay stuck.
+            console.error('NetworkClient: submit_action seq-conflict retries exhausted');
+            if (!actingPlayerId) this.failFire('Shot kept colliding — try again.');
           } else if (!isConflict && data.error !== 'Not your turn') {
             // A bot's lost race shows up as a benign seq-conflict / turn-advanced
             // rejection — don't log those as errors.
