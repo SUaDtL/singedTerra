@@ -247,13 +247,22 @@ export class HUD {
     bar.append(fill);
 
     el.append(swatch, name, hp, bar);
-    return { el, hp, fill, lastHealth: Math.max(0, Math.round(tank.health)) };
+    return { el, hp, fill, name, swatch, lastHealth: Math.max(0, Math.round(tank.health)) };
   }
 
   /** Mutate a player row's volatile bits (hp text, bar width, alive/active classes). */
   private syncRow(row: PlayerRow, tank: TankState, active: boolean): void {
     const health = Math.max(0, Math.round(tank.health));
     const dead = !tank.alive || health <= 0;
+
+    // Reconcile identity. Rows are cached by tank.id (the seat slot p1/p2/...),
+    // and the persistent HUD reuses them across games — so without this a reused
+    // seat keeps the previous game's name/color. Guard the name (textContent
+    // round-trips cleanly); reassign colors unconditionally since the browser
+    // normalizes backgroundColor and a 2-4 node restyle is negligible.
+    if (row.name.textContent !== tank.playerName) row.name.textContent = tank.playerName;
+    row.swatch.style.backgroundColor = tank.color;
+    row.fill.style.backgroundColor = tank.color;
 
     // Damage flash: re-trigger the ::after wash whenever health drops. Remove +
     // force reflow + re-add restarts the CSS animation even on consecutive hits.
@@ -637,6 +646,10 @@ interface PlayerRow {
   el: HTMLElement;
   hp: HTMLElement;
   fill: HTMLElement;
+  /** Identity nodes, reconciled each frame so a reused seat id (p1/p2) picks up
+   *  the new game's player name/color instead of the previous occupant's. */
+  name: HTMLElement;
+  swatch: HTMLElement;
   /** Last rendered health, to detect drops and trigger the damage flash. */
   lastHealth: number;
 }
