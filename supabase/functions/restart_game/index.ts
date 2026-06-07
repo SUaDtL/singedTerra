@@ -1,40 +1,13 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
-
-function generateCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  const bytes = new Uint8Array(4)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes).map(b => chars[b % 36]).join('')
-}
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-// deno-lint-ignore no-explicit-any
-type Supabase = any
-
-interface StoredPlayer {
-  id: string
-  name: string
-  color: string
-  ready: boolean
-  lastSeen?: number
-}
-
-interface StoredOptions {
-  maxPlayers: number
-  maxWind?: number
-  gravity?: number
-  visibility?: 'public' | 'private'
-}
+import {
+  withCors,
+  json,
+  getServiceClient,
+  generateCode,
+  UUID_REGEX,
+  StoredOptions,
+  StoredPlayer,
+  ServiceClient,
+} from '../_shared/mod.ts'
 
 /** Shape returned to the client (and broadcast-derived peers re-fetch the same). */
 interface RematchInfo {
@@ -46,7 +19,7 @@ interface RematchInfo {
 }
 
 /** Read a room by id and project it into the RematchInfo wire shape. */
-async function fetchRematchInfo(supabase: Supabase, id: string): Promise<RematchInfo | null> {
+async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<RematchInfo | null> {
   const { data } = await supabase
     .from('rooms')
     .select('id, code, seed, options, players')
@@ -68,37 +41,17 @@ async function fetchRematchInfo(supabase: Supabase, id: string): Promise<Rematch
   }
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: corsHeaders() })
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: corsHeaders() })
-  }
-
+Deno.serve(withCors(async (body) => {
   const { roomId, playerId } = body as { roomId?: unknown; playerId?: unknown }
 
   if (typeof roomId !== 'string' || !UUID_REGEX.test(roomId)) {
-    return new Response(JSON.stringify({ error: 'Invalid input: roomId must be a UUID' }), { status: 400, headers: corsHeaders() })
+    return json({ error: 'Invalid input: roomId must be a UUID' }, 400)
   }
   if (typeof playerId !== 'string' || playerId.trim().length === 0) {
-    return new Response(JSON.stringify({ error: 'Invalid input: playerId' }), { status: 400, headers: corsHeaders() })
+    return json({ error: 'Invalid input: playerId' }, 400)
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(JSON.stringify({ error: 'Server misconfiguration: missing env vars' }), { status: 500, headers: corsHeaders() })
-  }
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = getServiceClient()
 
   // Fetch the old room (any status — a rematch is normally requested from a
   // 'finished' room, but accept 'active' too so a request that races the
@@ -111,15 +64,15 @@ Deno.serve(async (req: Request) => {
 
   if (fetchError) {
     console.error('restart_game: fetch error', fetchError)
-    return new Response(JSON.stringify({ error: 'Failed to fetch room' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Failed to fetch room' }, 500)
   }
   if (!oldRoom) {
-    return new Response(JSON.stringify({ error: 'Room not found' }), { status: 404, headers: corsHeaders() })
+    return json({ error: 'Room not found' }, 404)
   }
 
   const players = (oldRoom.players ?? []) as StoredPlayer[]
   if (!players.some(p => p.id === playerId)) {
-    return new Response(JSON.stringify({ error: 'Player not in room' }), { status: 403, headers: corsHeaders() })
+    return json({ error: 'Player not in room' }, 403)
   }
 
   // --- Atomic claim ---------------------------------------------------------
@@ -140,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
   if (claimError) {
     console.error('restart_game: claim error', claimError)
-    return new Response(JSON.stringify({ error: 'Failed to claim rematch' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Failed to claim rematch' }, 500)
   }
 
   if (!claimed || claimed.length === 0) {
@@ -155,10 +108,10 @@ Deno.serve(async (req: Request) => {
     if (existingId) {
       const info = await fetchRematchInfo(supabase, existingId)
       if (info) {
-        return new Response(JSON.stringify({ ok: true, ...info }), { status: 200, headers: corsHeaders() })
+        return json({ ok: true, ...info }, 200)
       }
     }
-    return new Response(JSON.stringify({ error: 'Rematch pointer unresolved' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Rematch pointer unresolved' }, 500)
   }
 
   // --- We own the claim: build the successor room ---------------------------
@@ -195,7 +148,7 @@ Deno.serve(async (req: Request) => {
   if (!code) {
     // Could not allocate a code — release the claim so a retry can succeed.
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
-    return new Response(JSON.stringify({ error: 'Could not generate unique room code' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Could not generate unique room code' }, 500)
   }
 
   const { error: insertError } = await supabase
@@ -216,7 +169,7 @@ Deno.serve(async (req: Request) => {
     console.error('restart_game: insert error', insertError)
     // Roll back the claim so the pointer never dangles at a room that does not exist.
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
-    return new Response(JSON.stringify({ error: 'Failed to create rematch room' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Failed to create rematch room' }, 500)
   }
 
   const info: RematchInfo = {
@@ -231,5 +184,5 @@ Deno.serve(async (req: Request) => {
     players: newPlayers.map(p => ({ id: p.id, name: p.name, color: p.color })),
   }
 
-  return new Response(JSON.stringify({ ok: true, ...info }), { status: 200, headers: corsHeaders() })
-})
+  return json({ ok: true, ...info }, 200)
+}))

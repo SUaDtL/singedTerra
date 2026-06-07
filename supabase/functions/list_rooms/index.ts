@@ -1,74 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer, RoomRow } from '../_shared/mod.ts'
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
-
-interface StoredOptions {
-  maxPlayers: number
-  maxWind: number
-  gravity: number
-  visibility?: 'public' | 'private'
-}
-
-interface StoredPlayer {
-  id: string
-  name: string
-  color: string
-  ready: boolean
-  lastSeen?: number
-}
-
-interface RoomRow {
-  id: string
-  code: string
-  options: StoredOptions
-  players: StoredPlayer[]
-  created_at: string
-}
-
-const STALE_MS = 30000
-
-// Lazy-GC: keep only players seen within the stale window.
-function reap(players: StoredPlayer[], nowMs: number): StoredPlayer[] {
-  return players.filter(p => (p.lastSeen ?? 0) >= nowMs - STALE_MS)
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: corsHeaders() }
-    )
-  }
-
-  // Body is optional — tolerate empty/missing JSON
-  try {
-    await req.json()
-  } catch {
-    // ignore — no body required
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Server misconfiguration: missing env vars' }),
-      { status: 500, headers: corsHeaders() }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+// list_rooms takes no body — optionalBody tolerates an empty/missing/invalid one.
+Deno.serve(withCors(async () => {
+  const supabase = getServiceClient()
 
   // Lazy GC replaces the old created_at "last 1 hour" filter. Fetch ALL
   // waiting rooms (every visibility) so private ghost rooms get reaped too.
@@ -79,10 +13,7 @@ Deno.serve(async (req: Request) => {
 
   if (fetchError) {
     console.error('list_rooms: fetch error', fetchError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to list rooms' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to list rooms' }, 500)
   }
 
   const rows = (candidates ?? []) as RoomRow[]
@@ -130,8 +61,5 @@ Deno.serve(async (req: Request) => {
     maxPlayers: row.options.maxPlayers,
   }))
 
-  return new Response(
-    JSON.stringify({ rooms: roomsOut }),
-    { status: 200, headers: corsHeaders() }
-  )
-})
+  return json({ rooms: roomsOut }, 200)
+}, { optionalBody: true }))
