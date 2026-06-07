@@ -1,43 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCors, json, getServiceClient, generateCode } from '../_shared/mod.ts'
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
-
-function generateCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  const bytes = new Uint8Array(4)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes).map(b => chars[b % 36]).join('')
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: corsHeaders() }
-    )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(
-      JSON.stringify({ error: 'Invalid JSON body' }),
-      { status: 400, headers: corsHeaders() }
-    )
-  }
-
+Deno.serve(withCors(async (body) => {
   const { playerName, color, options, bots } = body as {
     playerName?: unknown
     color?: unknown
@@ -48,32 +11,20 @@ Deno.serve(async (req: Request) => {
 
   // Validate playerName
   if (typeof playerName !== 'string' || playerName.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: playerName' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: playerName' }, 400)
   }
   if (playerName.trim().length > 20) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: playerName too long (max 20)' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: playerName too long (max 20)' }, 400)
   }
 
   // Validate color
   if (typeof color !== 'string' || color.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: color' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: color' }, 400)
   }
 
   // Validate options.maxPlayers
   if (!options || typeof options !== 'object') {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: options' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: options' }, 400)
   }
   const maxPlayers = options.maxPlayers
   if (
@@ -82,35 +33,19 @@ Deno.serve(async (req: Request) => {
     maxPlayers < 2 ||
     maxPlayers > 4
   ) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: options.maxPlayers must be integer 2-4' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: options.maxPlayers must be integer 2-4' }, 400)
   }
 
   // Validate options.visibility (optional; default 'private')
   let visibility: 'public' | 'private' = 'private'
   if (options.visibility !== undefined) {
     if (options.visibility !== 'public' && options.visibility !== 'private') {
-      return new Response(
-        JSON.stringify({ error: 'Invalid input: options.visibility' }),
-        { status: 400, headers: corsHeaders() }
-      )
+      return json({ error: 'Invalid input: options.visibility' }, 400)
     }
     visibility = options.visibility
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Server misconfiguration: missing env vars' }),
-      { status: 500, headers: corsHeaders() }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = getServiceClient()
 
   // Generate playerId
   const playerId = crypto.randomUUID()
@@ -137,10 +72,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!code) {
-    return new Response(
-      JSON.stringify({ error: 'Could not generate unique room code' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Could not generate unique room code' }, 500)
   }
 
   // Validate + build any CPU seats. Bots are ready immediately and occupy seats,
@@ -149,10 +81,7 @@ Deno.serve(async (req: Request) => {
   interface BotIn { name?: unknown; color?: unknown; ai?: unknown }
   const botsIn: BotIn[] = Array.isArray(bots) ? (bots as BotIn[]) : []
   if (botsIn.length > maxPlayers - 1) {
-    return new Response(
-      JSON.stringify({ error: `Too many CPU opponents (max ${maxPlayers - 1} for ${maxPlayers}-player room)` }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: `Too many CPU opponents (max ${maxPlayers - 1} for ${maxPlayers}-player room)` }, 400)
   }
   const usedColors = new Set<string>([color.trim()])
   const nowMs = Date.now()
@@ -162,16 +91,10 @@ Deno.serve(async (req: Request) => {
     const bColor = typeof b.color === 'string' ? b.color.trim() : ''
     const bAi = typeof b.ai === 'string' ? b.ai : ''
     if (!bColor || !AI_LEVELS.has(bAi)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid CPU opponent (needs color + difficulty)' }),
-        { status: 400, headers: corsHeaders() }
-      )
+      return json({ error: 'Invalid CPU opponent (needs color + difficulty)' }, 400)
     }
     if (usedColors.has(bColor)) {
-      return new Response(
-        JSON.stringify({ error: 'CPU opponents must use distinct colors' }),
-        { status: 400, headers: corsHeaders() }
-      )
+      return json({ error: 'CPU opponents must use distinct colors' }, 400)
     }
     usedColors.add(bColor)
     botSeats.push({
@@ -221,16 +144,10 @@ Deno.serve(async (req: Request) => {
 
   if (insertError || !room) {
     console.error('create_room: insert error', insertError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to create room' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to create room' }, 500)
   }
 
-  return new Response(
-    // Return the full players array so the client has the generated CPU seat ids
-    // (and renders them in the waiting room) without waiting for a Realtime update.
-    JSON.stringify({ roomId: room.id, code, playerId, players }),
-    { status: 200, headers: corsHeaders() }
-  )
-})
+  // Return the full players array so the client has the generated CPU seat ids
+  // (and renders them in the waiting room) without waiting for a Realtime update.
+  return json({ roomId: room.id, code, playerId, players }, 200)
+}))

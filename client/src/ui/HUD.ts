@@ -1,7 +1,7 @@
 import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS } from '@shared/engine/WeaponSystem';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
-import type { ConnectionState } from '../client/GameClient';
+import type { ConnectionState, TurnWatch } from '../client/GameClient';
 
 /**
  * Weapons shown in the strip: only `implemented` ones, in stable WeaponSystem
@@ -24,6 +24,22 @@ const STORE_WEAPONS: WeaponType[] = STRIP_WEAPONS.filter(
 const AMMO_UNLIMITED_GLYPH = '∞';
 
 /**
+ * Barrel-relative aim readout (P3-13b). The engine angle is a GLOBAL compass
+ * value (0=right, 90=up, 180=left). Shown raw, the number doesn't track the
+ * visible barrel — a left-firing tank reads "135°" while its barrel looks
+ * raised ~45° — so ←/→ feel inverted. Present it instead as ELEVATION above the
+ * horizon (0=flat, 90=straight up) plus an aim-direction arrow, so the number
+ * rises and falls WITH the barrel for either side. Display-only: the logged
+ * set_angle values are untouched, so deterministic replay is unaffected.
+ */
+function aimReadout(angle: number): string {
+  const a = Math.round(angle);
+  const elevation = a <= 90 ? a : 180 - a;
+  const dir = a < 90 ? '▶' : a > 90 ? '◀' : '▲'; // aiming right / left / straight up
+  return `Elev ${elevation}° ${dir}`;
+}
+
+/**
  * HUD is an HTML/CSS overlay (SPEC §8), NOT canvas-drawn. MVP1 grows the MVP0
  * text readout into a full overlay: per-player health bars, a wind indicator,
  * active-tank aim/weapon readout, and a GAME_OVER panel with a Restart button.
@@ -36,8 +52,11 @@ const AMMO_UNLIMITED_GLYPH = '∞';
 export class HUD {
   /** Side-panel root (#hud) — status widgets stack here, off the canvas. */
   private readonly root: HTMLElement;
-  /** On-canvas overlay root (#game-overlay) — controls legend + game-over modal. */
+  /** On-canvas overlay root (#game-overlay) — controls legend + liveness widgets. */
   private readonly overlayRoot: HTMLElement;
+  /** Full-app modal layer (#modal-layer), ABOVE the CRT chrome — store + game-over
+   *  modals mount here so they render crisp and span canvas+panel (P3-16). */
+  private readonly modalRoot: HTMLElement;
 
   /** Restart callback registered via {@link onRestart}; may arrive before or after the overlay shows. */
   private restartCb: (() => void) | null = null;
@@ -74,6 +93,9 @@ export class HUD {
   private connBannerEl!: HTMLElement;
   private toastEl!: HTMLElement;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  // Opponent-turn watchdog banner (P1-6b): "Waiting for {name}…", escalating to a
+  // disconnect notice with a leave-to-lobby button.
+  private turnWatchEl!: HTMLElement;
 
   /** Per-store-row nodes (buy button + owned count), for cheap per-frame sync. */
   private storeCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
@@ -84,9 +106,10 @@ export class HUD {
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
 
-  constructor(root: HTMLElement, overlayRoot: HTMLElement) {
+  constructor(root: HTMLElement, overlayRoot: HTMLElement, modalRoot: HTMLElement) {
     this.root = root;
     this.overlayRoot = overlayRoot;
+    this.modalRoot = modalRoot;
   }
 
   /** Register the restart callback fired when the GAME_OVER Restart button is clicked. */
@@ -284,17 +307,23 @@ export class HUD {
     menu.addEventListener('click', () => this.quitCb?.());
 
     // Status widgets stack in the side panel (this.root = #hud). The controls
-    // legend + game-over modal go on the canvas overlay (#game-overlay) so they
-    // (and nothing else) sit over the play field.
+    // legend + liveness widgets go on the canvas overlay (#game-overlay) so they
+    // sit over the play field; the store + game-over modals go on #modal-layer.
     // Networked liveness widgets (P1-6) — top-center over the canvas. The banner
     // shows only while the link is down; the toast flashes a failed-shot message.
     this.connBannerEl = document.createElement('div');
     this.connBannerEl.className = 'st-hud__conn st-hud__conn--hidden';
     this.toastEl = document.createElement('div');
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
+    this.turnWatchEl = document.createElement('div');
+    this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
 
     this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
-    this.overlayRoot.append(controls, this.storeEl, this.overlayEl, this.connBannerEl, this.toastEl);
+    // Controls legend + liveness widgets stay on the canvas overlay (positioned
+    // relative to the play field). The store + game-over modals go on the full-app
+    // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
+    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
+    this.modalRoot.append(this.storeEl, this.overlayEl);
     this.built = true;
   }
 
@@ -325,6 +354,38 @@ export class HUD {
       this.toastEl.classList.add('st-hud__toast--hidden');
       this.toastTimer = null;
     }, 4000);
+  }
+
+  /**
+   * Reflect the opponent-turn watchdog (P1-6b). 'clear' hides the banner; 'waiting'
+   * shows a non-blocking "Waiting for {name}…"; 'stalled' switches to a disconnect
+   * notice with a "Leave to lobby" button (wired to the same quit callback as the
+   * in-game Menu). Rebuilt on each transition — these fire rarely, never per frame.
+   */
+  setTurnWatch(watch: TurnWatch): void {
+    if (!this.built) this.build();
+    if (watch.state === 'clear') {
+      this.turnWatchEl.classList.add('st-hud__turnwatch--hidden');
+      this.turnWatchEl.replaceChildren();
+      return;
+    }
+    this.turnWatchEl.classList.remove('st-hud__turnwatch--hidden');
+    this.turnWatchEl.classList.toggle('st-hud__turnwatch--stalled', watch.state === 'stalled');
+    this.turnWatchEl.replaceChildren();
+
+    const msg = document.createElement('span');
+    if (watch.state === 'waiting') {
+      msg.textContent = `Waiting for ${watch.playerName}…`;
+      this.turnWatchEl.append(msg);
+    } else {
+      msg.textContent = `${watch.playerName} may have disconnected`;
+      const leave = document.createElement('button');
+      leave.type = 'button';
+      leave.className = 'st-hud__turnwatch-leave';
+      leave.textContent = 'Leave to lobby';
+      leave.addEventListener('click', () => this.quitCb?.());
+      this.turnWatchEl.append(msg, leave);
+    }
   }
 
   /** Open/close the store modal. With no argument, toggles. */
@@ -463,7 +524,7 @@ export class HUD {
     this.weaponValueEl.textContent = weaponName;
     this.aimEl.textContent =
       `${tank.playerName}  ·  ` +
-      `Angle ${Math.round(tank.angle)}°  ·  ` +
+      `${aimReadout(tank.angle)}  ·  ` +
       `Power ${Math.round(tank.power)}`;
   }
 
@@ -781,6 +842,44 @@ export class HUD {
   white-space: nowrap;
 }
 .st-hud__toast--hidden { display: none; }
+/* Opponent-turn watchdog banner (P1-6b): top-center, below the conn/toast slot. */
+.st-hud__turnwatch {
+  position: absolute;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--text-gold, #ffe9b0);
+  background: rgba(40, 28, 60, 0.92);
+  border: 1px solid rgba(255, 210, 63, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__turnwatch--stalled {
+  color: #ffd7d7;
+  background: rgba(90, 20, 28, 0.92);
+  border-color: rgba(255, 120, 120, 0.7);
+}
+.st-hud__turnwatch--hidden { display: none; }
+.st-hud__turnwatch-leave {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--gold, #ffd23f);
+  background: transparent;
+  color: var(--gold, #ffd23f);
+  font: 600 12px/1 system-ui, sans-serif;
+}
+.st-hud__turnwatch-leave:hover { background: rgba(255, 210, 63, 0.16); }
 .st-hud__overlay-panel {
   display: flex;
   flex-direction: column;
@@ -850,7 +949,8 @@ export class HUD {
   justify-content: center;
   background: rgba(6, 4, 12, 0.62);
   pointer-events: auto;
-  z-index: 6;
+  /* No z-index: store + game-over are siblings on #modal-layer, so DOM order
+   * governs — game-over (appended last) correctly paints above an open store. */
 }
 .st-hud__store--hidden { display: none; }
 .st-hud__store-panel {

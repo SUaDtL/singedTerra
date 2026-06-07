@@ -1,57 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer } from '../_shared/mod.ts'
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
-
-interface StoredOptions {
-  maxPlayers: number
-  maxWind: number
-  gravity: number
-}
-
-interface StoredPlayer {
-  id: string
-  name: string
-  color: string
-  ready: boolean
-  lastSeen?: number
-}
-
-const STALE_MS = 30000
-
-// Lazy-GC: keep only players seen within the stale window.
-function reap(players: StoredPlayer[], nowMs: number): StoredPlayer[] {
-  return players.filter(p => (p.lastSeen ?? 0) >= nowMs - STALE_MS)
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: corsHeaders() }
-    )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(
-      JSON.stringify({ error: 'Invalid JSON body' }),
-      { status: 400, headers: corsHeaders() }
-    )
-  }
-
+Deno.serve(withCors(async (body) => {
   const { code, playerName, color } = body as {
     code?: unknown
     playerName?: unknown
@@ -60,47 +9,25 @@ Deno.serve(async (req: Request) => {
 
   // Validate code
   if (typeof code !== 'string' || code.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: code' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: code' }, 400)
   }
 
   // Validate playerName
   if (typeof playerName !== 'string' || playerName.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: playerName' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: playerName' }, 400)
   }
   if (playerName.trim().length > 20) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: playerName too long (max 20)' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: playerName too long (max 20)' }, 400)
   }
 
   // Validate color
   if (typeof color !== 'string' || color.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: color' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: color' }, 400)
   }
 
   const normalizedCode = code.trim().toUpperCase()
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Server misconfiguration: missing env vars' }),
-      { status: 500, headers: corsHeaders() }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = getServiceClient()
 
   // Fetch room by code, must be in 'waiting' status
   const { data: room, error: fetchError } = await supabase
@@ -112,17 +39,11 @@ Deno.serve(async (req: Request) => {
 
   if (fetchError) {
     console.error('join_room: fetch error', fetchError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to look up room' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to look up room' }, 500)
   }
 
   if (!room) {
-    return new Response(
-      JSON.stringify({ error: 'Room not found or already started' }),
-      { status: 404, headers: corsHeaders() }
-    )
+    return json({ error: 'Room not found or already started' }, 404)
   }
 
   const roomOptions = room.options as StoredOptions
@@ -136,10 +57,7 @@ Deno.serve(async (req: Request) => {
   if (fresh.length === 0) {
     // Dead room — delete and report as not found
     await supabase.from('rooms').delete().eq('id', room.id)
-    return new Response(
-      JSON.stringify({ error: 'Room not found or already started' }),
-      { status: 404, headers: corsHeaders() }
-    )
+    return json({ error: 'Room not found or already started' }, 404)
   }
 
   if (fresh.length !== storedPlayers.length) {
@@ -150,10 +68,7 @@ Deno.serve(async (req: Request) => {
       .eq('id', room.id)
     if (reapError) {
       console.error('join_room: reap update error', reapError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to join room' }),
-        { status: 500, headers: corsHeaders() }
-      )
+      return json({ error: 'Failed to join room' }, 500)
     }
   }
 
@@ -161,19 +76,13 @@ Deno.serve(async (req: Request) => {
 
   // Check capacity
   if (existingPlayers.length >= roomOptions.maxPlayers) {
-    return new Response(
-      JSON.stringify({ error: 'Room is full' }),
-      { status: 409, headers: corsHeaders() }
-    )
+    return json({ error: 'Room is full' }, 409)
   }
 
   // Check for color conflict
   const colorTaken = existingPlayers.some((p: StoredPlayer) => p.color === color.trim())
   if (colorTaken) {
-    return new Response(
-      JSON.stringify({ error: 'That color is already taken. Choose a different color.' }),
-      { status: 409, headers: corsHeaders() }
-    )
+    return json({ error: 'That color is already taken. Choose a different color.' }, 409)
   }
 
   // Check for name conflict (trimmed + case-insensitive)
@@ -181,10 +90,7 @@ Deno.serve(async (req: Request) => {
     (p: StoredPlayer) => p.name.trim().toLowerCase() === playerName.trim().toLowerCase()
   )
   if (nameTaken) {
-    return new Response(
-      JSON.stringify({ error: 'That name is already taken. Choose a different name.' }),
-      { status: 409, headers: corsHeaders() }
-    )
+    return json({ error: 'That name is already taken. Choose a different name.' }, 409)
   }
 
   // Generate playerId
@@ -208,20 +114,14 @@ Deno.serve(async (req: Request) => {
 
   if (updateError) {
     console.error('join_room: update error', updateError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to join room' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to join room' }, 500)
   }
 
-  return new Response(
-    JSON.stringify({
-      roomId: room.id,
-      playerId,
-      seed: room.seed,
-      options: roomOptions,
-      players: updatedPlayers,
-    }),
-    { status: 200, headers: corsHeaders() }
-  )
-})
+  return json({
+    roomId: room.id,
+    playerId,
+    seed: room.seed,
+    options: roomOptions,
+    players: updatedPlayers,
+  }, 200)
+}))

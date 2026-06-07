@@ -9,6 +9,7 @@ import { InputHandler } from './input/InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
+import { crtCssVars } from './ui/theme';
 
 /**
  * Entry point. Grabs the canvas + overlay containers, shows the Lobby, and on
@@ -28,10 +29,16 @@ function bootstrap(): void {
   const canvas: HTMLCanvasElement = canvasEl;
   const hudRoot = requireElement('hud');
   const overlayRoot = requireElement('game-overlay');
+  const modalRoot = requireElement('modal-layer');
   const lobbyRoot = requireElement('lobby');
 
+  // Project the canonical CRT intensities (theme.ts) onto the DOM chrome's CSS
+  // custom properties so the canvas tokens and the --crt-* vars share one source. (P3-16)
+  const rootStyle = document.documentElement.style;
+  for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);
+
   const renderer = new Renderer(canvas);
-  const hud = new HUD(hudRoot, overlayRoot);
+  const hud = new HUD(hudRoot, overlayRoot, modalRoot);
 
   // Per-game wiring that gets torn down and rebuilt on restart.
   let client: GameClient | null = null;
@@ -72,6 +79,10 @@ function bootstrap(): void {
     lastActiveId = null;
     activeIsAi = false;
     aiActedKey = null;
+    // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
+    // a networked "Waiting for…" surviving into a later hot-seat game (which has no
+    // turn-watch to reset it).
+    hud.setTurnWatch({ state: 'clear' });
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
@@ -120,6 +131,7 @@ function bootstrap(): void {
     hud.setConnection('connected');
     newClient.onConnectionChange?.((connState) => hud.setConnection(connState));
     newClient.onFireFailed?.((message) => hud.flashMessage(message));
+    newClient.onTurnWatch?.((watch) => hud.setTurnWatch(watch));
 
     unsubscribe = newClient.onStateChange((state) => {
       renderer.render(state);
@@ -168,7 +180,11 @@ function bootstrap(): void {
 
     clearAiTimers();
     // Swing the barrel to the planned aim first (visible), then fire after a beat.
+    // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first — the
+    // HotSeatClient applies it synchronously, so the select_weapon + fire below use
+    // the just-restocked ammo. (aiActedKey already gates this to once per turn.)
     aiTimers.push(setTimeout(() => {
+      if (plan.buy) client?.sendAction({ type: 'buy', weapon: plan.buy });
       client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
       client?.sendAction({ type: 'set_angle', angle: plan.angle });
       client?.sendAction({ type: 'set_power', power: plan.power });

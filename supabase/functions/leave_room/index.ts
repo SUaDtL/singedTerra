@@ -1,45 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-interface StoredPlayer {
-  id: string
-  name: string
-  color: string
-  ready: boolean
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: corsHeaders() }
-    )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(
-      JSON.stringify({ error: 'Invalid JSON body' }),
-      { status: 400, headers: corsHeaders() }
-    )
-  }
-
+Deno.serve(withCors(async (body) => {
   const { roomId, playerId } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -47,31 +8,15 @@ Deno.serve(async (req: Request) => {
 
   // Validate roomId (UUID format)
   if (typeof roomId !== 'string' || !UUID_REGEX.test(roomId)) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: roomId must be a UUID' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: roomId must be a UUID' }, 400)
   }
 
   // Validate playerId
   if (typeof playerId !== 'string' || playerId.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: playerId' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: playerId' }, 400)
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Server misconfiguration: missing env vars' }),
-      { status: 500, headers: corsHeaders() }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = getServiceClient()
 
   // Fetch room — must be in 'waiting' status
   const { data: room, error: fetchError } = await supabase
@@ -83,17 +28,11 @@ Deno.serve(async (req: Request) => {
 
   if (fetchError) {
     console.error('leave_room: fetch error', fetchError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to fetch room' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to fetch room' }, 500)
   }
 
   if (!room) {
-    return new Response(
-      JSON.stringify({ error: 'Room not found or already started' }),
-      { status: 404, headers: corsHeaders() }
-    )
+    return json({ error: 'Room not found or already started' }, 404)
   }
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]
@@ -110,16 +49,10 @@ Deno.serve(async (req: Request) => {
 
     if (deleteError) {
       console.error('leave_room: delete error', deleteError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to delete room' }),
-        { status: 500, headers: corsHeaders() }
-      )
+      return json({ error: 'Failed to delete room' }, 500)
     }
 
-    return new Response(
-      JSON.stringify({ ok: true, roomDeleted: true, players: [] }),
-      { status: 200, headers: corsHeaders() }
-    )
+    return json({ ok: true, roomDeleted: true, players: [] }, 200)
   }
 
   const { error: updateError } = await supabase
@@ -129,14 +62,8 @@ Deno.serve(async (req: Request) => {
 
   if (updateError) {
     console.error('leave_room: update error', updateError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to update room' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to update room' }, 500)
   }
 
-  return new Response(
-    JSON.stringify({ ok: true, roomDeleted: false, players: remaining }),
-    { status: 200, headers: corsHeaders() }
-  )
-})
+  return json({ ok: true, roomDeleted: false, players: remaining }, 200)
+}))

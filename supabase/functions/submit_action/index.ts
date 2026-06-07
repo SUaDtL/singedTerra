@@ -1,13 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
+import { withCors, json, getServiceClient, StoredPlayer } from '../_shared/mod.ts'
 
 interface NetworkFireAction {
   type: 'fire'
@@ -33,38 +24,7 @@ function endsTurn(type: string): boolean {
   return type === 'fire' || type === 'use_shield'
 }
 
-interface StoredPlayer {
-  id: string
-  name: string
-  color: string
-  ready: boolean
-  /** CPU difficulty when this seat is a bot; absent => human. Lets the referee
-   *  authorize a member to proxy a bot's action. */
-  ai?: 'easy' | 'medium' | 'hard'
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: corsHeaders() }
-    )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(
-      JSON.stringify({ error: 'Invalid JSON body' }),
-      { status: 400, headers: corsHeaders() }
-    )
-  }
-
+Deno.serve(withCors(async (body) => {
   const { roomId, playerId, actingPlayerId, nextActiveIndex, action } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -83,51 +43,33 @@ Deno.serve(async (req: Request) => {
 
   // Validate roomId
   if (typeof roomId !== 'string' || roomId.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: roomId' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: roomId' }, 400)
   }
 
   // Validate playerId
   if (typeof playerId !== 'string' || playerId.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: playerId' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: playerId' }, 400)
   }
 
   // Validate action
   if (!action || typeof action !== 'object') {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: action' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: action' }, 400)
   }
 
   // Turn-ending actions committed to the log: 'fire' (carries aim) or 'use_shield'
   // (no payload). Both are validated here; any other type is rejected. (Sprint 4
   // Slice 3.2 — use_shield is the first non-fire action the replay log carries.)
   if (action.type !== 'fire' && action.type !== 'use_shield' && action.type !== 'buy') {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: action.type must be "fire", "use_shield", or "buy"' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: action.type must be "fire", "use_shield", or "buy"' }, 400)
   }
 
   if (action.type === 'buy' && (typeof action.weapon !== 'string' || action.weapon.trim().length === 0)) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: buy action requires a weapon' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    return json({ error: 'Invalid input: buy action requires a weapon' }, 400)
   }
 
   if (action.type === 'fire') {
     if (typeof action.angle !== 'number' || !isFinite(action.angle)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid input: action.angle must be a finite number' }),
-        { status: 400, headers: corsHeaders() }
-      )
+      return json({ error: 'Invalid input: action.angle must be a finite number' }, 400)
     }
 
     if (
@@ -136,31 +78,15 @@ Deno.serve(async (req: Request) => {
       action.power < 0 ||
       action.power > 100
     ) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid input: action.power must be a number in [0, 100]' }),
-        { status: 400, headers: corsHeaders() }
-      )
+      return json({ error: 'Invalid input: action.power must be a number in [0, 100]' }, 400)
     }
 
     if (typeof action.weapon !== 'string' || action.weapon.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid input: action.weapon' }),
-        { status: 400, headers: corsHeaders() }
-      )
+      return json({ error: 'Invalid input: action.weapon' }, 400)
     }
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Server misconfiguration: missing env vars' }),
-      { status: 500, headers: corsHeaders() }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = getServiceClient()
 
   // Fetch room — must be 'active'
   const { data: room, error: fetchError } = await supabase
@@ -172,27 +98,18 @@ Deno.serve(async (req: Request) => {
 
   if (fetchError) {
     console.error('submit_action: fetch error', fetchError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to fetch room' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to fetch room' }, 500)
   }
 
   if (!room) {
-    return new Response(
-      JSON.stringify({ error: 'Room not found or not active' }),
-      { status: 404, headers: corsHeaders() }
-    )
+    return json({ error: 'Room not found or not active' }, 404)
   }
 
   // Validate player membership (the SUBMITTER must be in the room).
   const players = (room.players ?? []) as StoredPlayer[]
   const isMember = players.some(p => p.id === playerId)
   if (!isMember) {
-    return new Response(
-      JSON.stringify({ error: 'Player not in room' }),
-      { status: 403, headers: corsHeaders() }
-    )
+    return json({ error: 'Player not in room' }, 403)
   }
 
   // The seat this action is FOR (defaults to the submitter — a human acting for
@@ -214,16 +131,10 @@ Deno.serve(async (req: Request) => {
   const activeIndex = ((room.active_player_index ?? 0) % players.length + players.length) % players.length
   const activePlayer = players[activeIndex]
   if (!activePlayer || activePlayer.id !== actingId) {
-    return new Response(
-      JSON.stringify({ error: 'Not your turn' }),
-      { status: 403, headers: corsHeaders() }
-    )
+    return json({ error: 'Not your turn' }, 403)
   }
   if (actingId !== playerId && !activePlayer.ai) {
-    return new Response(
-      JSON.stringify({ error: 'Cannot act for another human player' }),
-      { status: 403, headers: corsHeaders() }
-    )
+    return json({ error: 'Cannot act for another human player' }, 403)
   }
 
   // Build the validated action committed to the log.
@@ -263,10 +174,7 @@ Deno.serve(async (req: Request) => {
 
   if (seqError) {
     console.error('submit_action: seq fetch error', seqError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to compute action sequence' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to compute action sequence' }, 500)
   }
 
   const nextSeq = seqData === null ? 0 : (seqData.seq as number) + 1
@@ -284,16 +192,10 @@ Deno.serve(async (req: Request) => {
   if (insertError) {
     // Postgres unique violation code: 23505
     if (insertError.code === '23505') {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'seq_conflict', retry: true }),
-        { status: 409, headers: corsHeaders() }
-      )
+      return json({ ok: false, error: 'seq_conflict', retry: true }, 409)
     }
     console.error('submit_action: insert error', insertError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to insert action' }),
-      { status: 500, headers: corsHeaders() }
-    )
+    return json({ error: 'Failed to insert action' }, 500)
   }
 
   // Step 3: Advance the active-player cursor — ONLY for turn-ending actions. A buy
@@ -338,15 +240,9 @@ Deno.serve(async (req: Request) => {
     }
     if (cursorError) {
       console.error('submit_action: cursor update failed after retries', cursorError)
-      return new Response(
-        JSON.stringify({ ok: false, error: 'cursor_update_failed' }),
-        { status: 500, headers: corsHeaders() }
-      )
+      return json({ ok: false, error: 'cursor_update_failed' }, 500)
     }
   }
 
-  return new Response(
-    JSON.stringify({ seq: nextSeq, ok: true }),
-    { status: 200, headers: corsHeaders() }
-  )
-})
+  return json({ seq: nextSeq, ok: true }, 200)
+}))

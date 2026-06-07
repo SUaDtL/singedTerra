@@ -1,5 +1,5 @@
 import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js';
-import type { GameClient, RematchInfo, ConnectionState } from './GameClient';
+import type { GameClient, RematchInfo, ConnectionState, TurnWatch } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type { GameOptions } from '@shared/types/GameOptions';
@@ -113,6 +113,18 @@ export class NetworkClient implements GameClient {
   // after a single one-shot. UNIQUE remains the corruption guard; this is liveness.
   private static readonly MAX_SEQ_RETRIES = 5;
   private static readonly SEQ_BACKOFF_MS = 40;
+
+  // --- Opponent-turn watchdog (P1-6b) --- When a REMOTE human holds the turn and
+  // no action arrives, escalate a non-blocking banner: 'waiting' after WAIT_MS,
+  // then 'stalled' (offer leave-to-lobby) after STALL_MS. Re-armed per opponent
+  // turn; cleared on my/bot turns, between games, and while disconnected.
+  private turnWatchListeners = new Set<(w: TurnWatch) => void>();
+  private turnWaitTimer:    ReturnType<typeof setTimeout> | null = null;
+  private turnStallTimer:   ReturnType<typeof setTimeout> | null = null;
+  private turnWatchKey:     string | null = null;          // armed `${turn}:${activeTankId}`
+  private _turnWatch:       TurnWatch = { state: 'clear' };
+  private static readonly TURN_WAIT_MS  = 12000;
+  private static readonly TURN_STALL_MS = 30000;
 
   // Rematch signaling. The old room's rematch_room_id flips from NULL to the
   // successor room id when either player clicks Restart; both clients observe it
@@ -314,6 +326,7 @@ export class NetworkClient implements GameClient {
       clearTimeout(this.fireWatchdog);
       this.fireWatchdog = null;
     }
+    this.clearTurnWatchTimers();
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
@@ -761,6 +774,74 @@ export class NetworkClient implements GameClient {
       listener(state);
     }
     this.maybeDriveBot(state);
+    this.updateTurnWatch(state);
+  }
+
+  // ---- Opponent-turn watchdog (P1-6b) ----
+
+  /**
+   * Subscribe to opponent-turn liveness. Fires immediately with the current state,
+   * then on every transition. Returns an unsubscribe.
+   */
+  onTurnWatch(listener: (w: TurnWatch) => void): () => void {
+    this.turnWatchListeners.add(listener);
+    listener(this._turnWatch);
+    return () => { this.turnWatchListeners.delete(listener); };
+  }
+
+  /** Emit a turn-watch transition (de-duped so the rAF cadence doesn't spam it). */
+  private setTurnWatch(w: TurnWatch): void {
+    const prev = this._turnWatch;
+    const samePlayer = w.state !== 'clear' && prev.state !== 'clear' && w.playerName === prev.playerName;
+    if (w.state === prev.state && (w.state === 'clear' || samePlayer)) return;
+    this._turnWatch = w;
+    for (const l of this.turnWatchListeners) l(w);
+  }
+
+  private clearTurnWatchTimers(): void {
+    if (this.turnWaitTimer !== null)  { clearTimeout(this.turnWaitTimer);  this.turnWaitTimer = null; }
+    if (this.turnStallTimer !== null) { clearTimeout(this.turnStallTimer); this.turnStallTimer = null; }
+  }
+
+  /**
+   * Re-arm / clear the opponent-turn watchdog from the latest state. Called every
+   * frame from emitState() but only re-arms when the watched (turn, seat) actually
+   * changes — so the timers run uninterrupted across the rAF cadence. Only a REMOTE
+   * HUMAN's turn is watched (my turn = I act; a bot drives itself fast); the watch
+   * is also suppressed while the link is down (the connection banner covers that).
+   */
+  private updateTurnWatch(state: GameState): void {
+    const myTankId = this.playerIndexMap.get(this.playerId);
+    const activeId = state.activePlayerId;
+    const watchable =
+      state.phase === 'PLAYER_TURN' &&
+      this._connection === 'connected' &&
+      activeId !== myTankId &&
+      !this.botByTank.has(activeId);
+
+    if (!watchable) {
+      if (this.turnWatchKey !== null) {
+        this.turnWatchKey = null;
+        this.clearTurnWatchTimers();
+        this.setTurnWatch({ state: 'clear' });
+      }
+      return;
+    }
+
+    const key = `${state.turn}:${activeId}`;
+    if (key === this.turnWatchKey) return; // already armed for this opponent turn
+
+    // New opponent turn — reset to 'clear' and (re)arm both escalation stages.
+    this.turnWatchKey = key;
+    this.clearTurnWatchTimers();
+    this.setTurnWatch({ state: 'clear' });
+    const playerName = state.tanks.find((t) => t.id === activeId)?.playerName ?? 'opponent';
+    this.turnWaitTimer = setTimeout(() => {
+      this.setTurnWatch({ state: 'waiting', playerName });
+    }, NetworkClient.TURN_WAIT_MS);
+    this.turnStallTimer = setTimeout(() => {
+      this.setTurnWatch({ state: 'stalled', playerName });
+    }, NetworkClient.TURN_STALL_MS);
   }
 
   /**
@@ -781,19 +862,28 @@ export class NetworkClient implements GameClient {
     const difficulty = this.botByTank.get(tankId);
     if (!difficulty) return;                       // active seat is human
 
-    const key = `${state.turn}:${tankId}`;
-    if (key === this.lastBotKey) return;           // already submitted this turn
-    this.lastBotKey = key;
-
     const plan = computeAiPlan(state, tankId, difficulty, this.gravity);
     if (!plan) return;                             // no target (shouldn't happen)
+
+    // Buy-to-restock (P1-7b) is a TWO-PHASE turn: a turn-neutral buy, then the
+    // shot. The buy does NOT advance the turn, so the guard is keyed on the PHASE
+    // (buy vs act), not just (turn, tank). After the buy commits and replays, the
+    // bot owns the weapon, so the recomputed plan has no `buy` and this driver
+    // submits the fire on the next pass. Every client recomputes the same
+    // transition deterministically, so buy and fire land as two ordered log rows.
+    const phase = plan.buy ? 'buy' : 'act';
+    const key = `${state.turn}:${tankId}:${phase}`;
+    if (key === this.lastBotKey) return;           // already submitted this phase
+    this.lastBotKey = key;
 
     const actingId = this.supaIdByTank.get(tankId);
     if (!actingId) return;
 
-    const action: NetworkAction = plan.weapon === 'shield'
-      ? { type: 'use_shield' }
-      : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
+    const action: NetworkAction = plan.buy
+      ? { type: 'buy', weapon: plan.buy }
+      : plan.weapon === 'shield'
+        ? { type: 'use_shield' }
+        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
 
     // No retry: a seq-conflict means another client already committed the (same)
     // bot action; the referee would reject a late retry anyway (turn advanced).
