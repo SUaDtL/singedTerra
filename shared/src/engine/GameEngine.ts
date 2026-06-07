@@ -5,7 +5,7 @@ import type {
   TankState,
 } from '../types/GameState';
 import type { PlayerAction } from '../types/PlayerAction';
-import type { GameOptions } from '../types/Events';
+import type { GameOptions } from '../types/GameOptions';
 import {
   generate,
   buildBitmap,

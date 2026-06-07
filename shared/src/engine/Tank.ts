@@ -1,5 +1,5 @@
 import type { TankState, AmmoEntry, AiDifficulty } from '../types/GameState';
-import type { GameOptions } from '../types/Events';
+import type { GameOptions } from '../types/GameOptions';
 import type { WeaponType } from './WeaponSystem';
 import { STARTING_CREDITS } from './WeaponSystem';
 import { CANVAS_WIDTH } from './Terrain';
