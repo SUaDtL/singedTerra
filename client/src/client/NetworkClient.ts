@@ -2,7 +2,7 @@ import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, Re
 import type { GameClient, RematchInfo, ConnectionState } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
-import type { GameOptions } from '@shared/types/Events';
+import type { GameOptions } from '@shared/types/GameOptions';
 import type { AiDifficulty } from '@shared/types/GameState';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';

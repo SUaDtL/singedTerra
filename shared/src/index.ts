@@ -17,22 +17,7 @@ export type {
   SelectWeaponAction,
   FireAction,
 } from './types/PlayerAction';
-export type {
-  GameOptions,
-  SocketEventName,
-  JoinRoomPayload,
-  CreateRoomPayload,
-  PlayerActionPayload,
-  RoomJoinedPayload,
-  GameStartPayload,
-  StateUpdatePayload,
-  ProjectileTickPayload,
-  GameOverPayload,
-  ErrorPayload,
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from './types/Events';
-export { SocketEvents } from './types/Events';
+export type { GameOptions } from './types/GameOptions';
 
 // Engine
 export { GameEngine } from './engine/GameEngine';
