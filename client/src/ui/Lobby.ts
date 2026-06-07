@@ -389,6 +389,24 @@ export class Lobby {
         width: 80px; text-align: center; letter-spacing: 4px; text-transform: uppercase;
         font-family: var(--font-mono);
       }
+      /* Pre-canvas controls legend (P3-13b): non-blocking footer so keyboard
+         players learn aim/power/fire before the play field is uncovered. */
+      #lobby .lobby-controls {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+        margin-top: 18px; padding-top: 12px;
+        border-top: 1px solid rgba(255, 210, 63, 0.14);
+        color: var(--text-dim); font-size: 12px;
+      }
+      #lobby .lobby-controls .lobby-controls__title {
+        color: var(--text-gold); font-size: 11px;
+        text-transform: uppercase; letter-spacing: 0.5px;
+      }
+      #lobby .lobby-controls kbd {
+        font-family: var(--font-mono); font-size: 11px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 210, 63, 0.25);
+        border-radius: 3px; padding: 1px 5px;
+      }
     `;
     document.head.append(style);
   }
@@ -413,7 +431,27 @@ export class Lobby {
       card.append(this.renderOnlineTab());
     }
 
+    card.append(this.renderControlsLegend());
+
     this.root.append(card);
+  }
+
+  /**
+   * Non-blocking controls legend shown in the lobby BEFORE the canvas is
+   * uncovered, so keyboard players know the aim/power/fire keys up front
+   * (P3-13b). Mirrors the in-game on-canvas legend; purely informational, so it
+   * never gates the start flow.
+   */
+  private renderControlsLegend(): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'lobby-controls';
+    el.innerHTML =
+      '<span class="lobby-controls__title">Controls</span>' +
+      '<span><kbd>&larr;</kbd>/<kbd>&rarr;</kbd> Aim</span>' +
+      '<span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> Power</span>' +
+      '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
+      '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
+    return el;
   }
 
   // ---- Tab bar ----
