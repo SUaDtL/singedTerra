@@ -1,4 +1,4 @@
-import type { GameState } from './GameState';
+import type { GameState, AiDifficulty } from './GameState';
 import type { PlayerAction } from './PlayerAction';
 
 /**
@@ -14,8 +14,9 @@ export interface GameOptions {
    * Explicit per-player name + color (2–4). When provided, the engine builds
    * exactly this many tanks via placeTanks; when absent it falls back to the
    * default two-tank layout. `maxPlayers` should agree with `players.length`.
+   * `ai` marks a CPU-controlled seat at a difficulty (absent/undefined => human).
    */
-  players?: Array<{ name: string; color: string }>;
+  players?: Array<{ name: string; color: string; ai?: AiDifficulty }>;
   /** Terrain RNG seed; same seed → same terrain. */
   seed?: number;
   /** Wind strength cap; defaults to MAX_WIND. */

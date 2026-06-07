@@ -9,13 +9,17 @@ export type PlayerAction =
   | SetAngleAction
   | SetPowerAction
   | SelectWeaponAction
-  | FireAction;
+  | FireAction
+  | UseShieldAction
+  | BuyAction;
 
 export type PlayerActionType =
   | 'set_angle'
   | 'set_power'
   | 'select_weapon'
-  | 'fire';
+  | 'fire'
+  | 'use_shield'
+  | 'buy';
 
 /** Set the active tank's barrel angle (degrees, 0 = right, 90 = up). */
 export interface SetAngleAction {
@@ -38,4 +42,25 @@ export interface SelectWeaponAction {
 /** Fire the currently selected weapon at the current angle/power. */
 export interface FireAction {
   type: 'fire';
+}
+
+/**
+ * Activate the shield: raise the active tank's destructible force field (consumes
+ * one shield round) and end the turn. Like {@link FireAction} this is a
+ * turn-ending commitment — it is the FIRST non-fire action the networked replay
+ * log carries (SPEC §4.5, Sprint 4 Slice 3).
+ */
+export interface UseShieldAction {
+  type: 'use_shield';
+}
+
+/**
+ * Buy one bundle of a weapon from the store (SPEC §9). Spends the active tank's
+ * credits and adds the weapon's `bundleSize` to its inventory. Unlike fire /
+ * use_shield this does NOT end the turn — a player may buy several times, then
+ * fire. Honored only during PLAYER_TURN; rejected if credits are insufficient.
+ */
+export interface BuyAction {
+  type: 'buy';
+  weapon: WeaponType;
 }

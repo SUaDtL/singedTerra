@@ -11,6 +11,14 @@ import type { WeaponType } from '@shared/engine/WeaponSystem';
 const STRIP_WEAPONS: WeaponType[] = (Object.keys(WEAPONS) as WeaponType[])
   .filter((type) => WEAPONS[type].implemented);
 
+/**
+ * Weapons sold in the store: implemented AND finite-stock. An unlimited weapon
+ * (baby_missile) has nothing to buy, so it is excluded. Same stable key order.
+ */
+const STORE_WEAPONS: WeaponType[] = STRIP_WEAPONS.filter(
+  (type) => type !== 'baby_missile',
+);
+
 /** Glyph shown in place of a numeric count for unlimited-ammo weapons. */
 const AMMO_UNLIMITED_GLYPH = '∞';
 
@@ -39,6 +47,12 @@ export class HUD {
   /** Callback fired when the player quits a game back to the lobby (in-game Menu / game-over Main Menu). */
   private quitCb: (() => void) | null = null;
 
+  /** Callback fired when a store Buy button is clicked. */
+  private buyCb: ((weapon: WeaponType) => void) | null = null;
+
+  /** Whether the store panel is currently open. */
+  private storeOpen = false;
+
   /** Whether the static DOM scaffold has been built yet. */
   private built = false;
 
@@ -51,6 +65,12 @@ export class HUD {
   private overlayEl!: HTMLElement;
   private overlayTextEl!: HTMLElement;
   private stripEl!: HTMLElement;
+  private storeBtnEl!: HTMLButtonElement;
+  private storeEl!: HTMLElement;
+  private storeCreditsEl!: HTMLElement;
+
+  /** Per-store-row nodes (buy button + owned count), for cheap per-frame sync. */
+  private storeCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
 
   /** Per-weapon strip cells: button + its ammo-count node, for cheap per-frame updates. */
   private weaponCells = new Map<WeaponType, { el: HTMLButtonElement; ammo: HTMLElement }>();
@@ -78,6 +98,11 @@ export class HUD {
     this.quitCb = cb;
   }
 
+  /** Register the callback fired when a store Buy button is clicked. */
+  onBuy(cb: (weapon: WeaponType) => void): void {
+    this.buyCb = cb;
+  }
+
   /** Update the overlay to reflect the latest game state (called every frame). */
   update(state: GameState, isFiring = false): void {
     if (!this.built) this.build();
@@ -86,6 +111,7 @@ export class HUD {
     this.syncWind(state.wind);
     this.syncAim(state, isFiring);
     this.syncStrip(state, isFiring);
+    this.syncStore(state);
     this.syncOverlay(state);
   }
 
@@ -161,6 +187,65 @@ export class HUD {
     }
     this.stripEl.append(stripTitle, stripGrid);
 
+    // Store toggle button (side panel) + the store modal (on the canvas overlay).
+    // Clicking the button opens/closes the modal; buying is wired per-row below.
+    this.storeBtnEl = document.createElement('button');
+    this.storeBtnEl.type = 'button';
+    this.storeBtnEl.className = 'st-hud__store-btn';
+    this.storeBtnEl.addEventListener('click', () => this.toggleStore());
+
+    this.storeEl = document.createElement('div');
+    this.storeEl.className = 'st-hud__store st-hud__store--hidden';
+    const storePanel = document.createElement('div');
+    storePanel.className = 'st-hud__store-panel';
+    const storeHeader = document.createElement('div');
+    storeHeader.className = 'st-hud__store-header';
+    const storeTitle = document.createElement('div');
+    storeTitle.className = 'st-hud__store-title';
+    storeTitle.textContent = 'Store';
+    this.storeCreditsEl = document.createElement('div');
+    this.storeCreditsEl.className = 'st-hud__store-credits';
+    storeHeader.append(storeTitle, this.storeCreditsEl);
+
+    const storeGrid = document.createElement('div');
+    storeGrid.className = 'st-hud__store-grid';
+    for (const type of STORE_WEAPONS) {
+      const def = WEAPONS[type];
+      const row = document.createElement('div');
+      row.className = 'st-hud__store-row';
+
+      const info = document.createElement('div');
+      info.className = 'st-hud__store-info';
+      const nm = document.createElement('span');
+      nm.className = 'st-hud__store-name';
+      nm.textContent = def.name;
+      const owned = document.createElement('span');
+      owned.className = 'st-hud__store-owned';
+      info.append(nm, owned);
+
+      const buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'st-hud__store-buy';
+      // Price line: "$1,875 ×5" (bundle). Listener attached ONCE.
+      buyBtn.innerHTML =
+        `<span class="st-hud__store-price">$${def.price.toLocaleString()}</span>` +
+        `<span class="st-hud__store-bundle">+${def.bundleSize}</span>`;
+      buyBtn.addEventListener('click', () => this.buyCb?.(type));
+
+      row.append(info, buyBtn);
+      storeGrid.append(row);
+      this.storeCells.set(type, { buyBtn, owned });
+    }
+
+    const storeClose = document.createElement('button');
+    storeClose.type = 'button';
+    storeClose.className = 'st-hud__store-close';
+    storeClose.textContent = 'Close';
+    storeClose.addEventListener('click', () => this.toggleStore(false));
+
+    storePanel.append(storeHeader, storeGrid, storeClose);
+    this.storeEl.append(storePanel);
+
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'st-hud__overlay st-hud__overlay--hidden';
@@ -195,9 +280,41 @@ export class HUD {
     // Status widgets stack in the side panel (this.root = #hud). The controls
     // legend + game-over modal go on the canvas overlay (#game-overlay) so they
     // (and nothing else) sit over the play field.
-    this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.stripEl);
-    this.overlayRoot.append(controls, this.overlayEl);
+    this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
+    this.overlayRoot.append(controls, this.storeEl, this.overlayEl);
     this.built = true;
+  }
+
+  /** Open/close the store modal. With no argument, toggles. */
+  private toggleStore(open?: boolean): void {
+    this.storeOpen = open ?? !this.storeOpen;
+    this.storeEl.classList.toggle('st-hud__store--hidden', !this.storeOpen);
+  }
+
+  /**
+   * Reflect the ACTIVE tank's wallet/inventory into the store: credit balance,
+   * per-weapon owned count, and per-row affordability. Buying is only allowed
+   * during PLAYER_TURN (no acting mid-flight), so every Buy button is disabled
+   * outside it OR when the active tank can't afford that bundle. Also keeps the
+   * toggle button's credit badge current.
+   */
+  private syncStore(state: GameState): void {
+    const active = state.tanks.find((t) => t.id === state.activePlayerId);
+    const credits = active?.credits ?? 0;
+    const canAct = state.phase === 'PLAYER_TURN';
+
+    this.storeBtnEl.textContent = `⛁ Store · $${credits.toLocaleString()}`;
+    this.storeCreditsEl.textContent = `Credits: $${credits.toLocaleString()}`;
+
+    for (const [type, cell] of this.storeCells) {
+      const def = WEAPONS[type];
+      const slot = active?.inventory[type];
+      const owned = slot ? (slot.unlimited ? '∞' : String(slot.count)) : '0';
+      if (cell.owned.textContent !== `Own ${owned}`) cell.owned.textContent = `Own ${owned}`;
+      const affordable = canAct && credits >= def.price;
+      cell.buyBtn.disabled = !affordable;
+      cell.buyBtn.classList.toggle('st-hud__store-buy--disabled', !affordable);
+    }
   }
 
   /** Reconcile the per-player health bars against `state.tanks`. */
@@ -234,7 +351,7 @@ export class HUD {
 
     const name = document.createElement('span');
     name.className = 'st-hud__name';
-    name.textContent = tank.playerName;
+    name.textContent = HUD.playerLabel(tank);
 
     const hp = document.createElement('span');
     hp.className = 'st-hud__hp';
@@ -260,7 +377,8 @@ export class HUD {
     // seat keeps the previous game's name/color. Guard the name (textContent
     // round-trips cleanly); reassign colors unconditionally since the browser
     // normalizes backgroundColor and a 2-4 node restyle is negligible.
-    if (row.name.textContent !== tank.playerName) row.name.textContent = tank.playerName;
+    const label = HUD.playerLabel(tank);
+    if (row.name.textContent !== label) row.name.textContent = label;
     row.swatch.style.backgroundColor = tank.color;
     row.fill.style.backgroundColor = tank.color;
 
@@ -348,6 +466,11 @@ export class HUD {
   }
 
   /** Inject the HUD stylesheet exactly once per document. */
+  /** Health-bar label: a 🤖 prefix marks a CPU-controlled tank. */
+  private static playerLabel(tank: TankState): string {
+    return `${tank.ai ? '🤖 ' : ''}${tank.playerName}`;
+  }
+
   private static injectStyle(): void {
     if (document.getElementById(HUD.STYLE_ID)) return;
     const style = document.createElement('style');
@@ -622,6 +745,116 @@ export class HUD {
   border: 1px solid var(--gold);
 }
 .st-hud__restart--ghost:hover { background: rgba(255, 210, 63, 0.16); }
+
+/* ---- Store ---- */
+.st-hud__store-btn {
+  width: 100%;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 7px 10px;
+  margin-top: 4px;
+  border: 1px solid rgba(122, 215, 255, 0.4);
+  border-radius: 4px;
+  background: rgba(12, 7, 22, 0.7);
+  color: var(--tank-blue-lite, #7ad7ff);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  transition: background 130ms ease, border-color 130ms ease;
+}
+.st-hud__store-btn:hover { background: rgba(122, 215, 255, 0.18); border-color: #7ad7ff; }
+.st-hud__store {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 4, 12, 0.62);
+  pointer-events: auto;
+  z-index: 6;
+}
+.st-hud__store--hidden { display: none; }
+.st-hud__store-panel {
+  width: min(440px, 86%);
+  max-height: 86%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(122, 215, 255, 0.45);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(18, 11, 30, 0.98), rgba(10, 6, 18, 0.98));
+  box-shadow: 0 0 28px rgba(122, 215, 255, 0.22);
+}
+.st-hud__store-header { display: flex; align-items: baseline; justify-content: space-between; }
+.st-hud__store-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+.st-hud__store-credits {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: #7ad7ff;
+  font-size: 13px;
+}
+.st-hud__store-grid { display: flex; flex-direction: column; gap: 6px; }
+.st-hud__store-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 210, 63, 0.16);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.st-hud__store-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.st-hud__store-name { color: var(--text-gold); font-size: 13px; }
+.st-hud__store-owned {
+  opacity: 0.6;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__store-buy {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 78px;
+  padding: 5px 10px;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: rgba(255, 210, 63, 0.12);
+  color: var(--text-gold);
+  font-family: var(--font-mono);
+  transition: background 120ms ease;
+}
+.st-hud__store-buy:hover { background: rgba(255, 210, 63, 0.26); }
+.st-hud__store-price { font-size: 12px; font-variant-numeric: tabular-nums; }
+.st-hud__store-bundle { font-size: 9px; opacity: 0.7; }
+.st-hud__store-buy--disabled { opacity: 0.32; cursor: not-allowed; }
+.st-hud__store-buy--disabled:hover { background: rgba(255, 210, 63, 0.12); }
+.st-hud__store-close {
+  align-self: flex-end;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 7px 18px;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 13px;
+}
+.st-hud__store-close:hover { background: rgba(255, 210, 63, 0.16); }
 
 @keyframes st-hud-pulse {
   0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.25); }

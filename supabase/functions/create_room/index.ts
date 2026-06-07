@@ -38,10 +38,12 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  const { playerName, color, options } = body as {
+  const { playerName, color, options, bots } = body as {
     playerName?: unknown
     color?: unknown
     options?: { maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown }
+    // Optional CPU seats to seed into the room (single-player / fill-a-room).
+    bots?: unknown
   }
 
   // Validate playerName
@@ -141,8 +143,48 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  // Build players array
+  // Validate + build any CPU seats. Bots are ready immediately and occupy seats,
+  // so humans fill the remainder. At most maxPlayers-1 (≥1 human: the creator).
+  const AI_LEVELS = new Set(['easy', 'medium', 'hard'])
+  interface BotIn { name?: unknown; color?: unknown; ai?: unknown }
+  const botsIn: BotIn[] = Array.isArray(bots) ? (bots as BotIn[]) : []
+  if (botsIn.length > maxPlayers - 1) {
+    return new Response(
+      JSON.stringify({ error: `Too many CPU opponents (max ${maxPlayers - 1} for ${maxPlayers}-player room)` }),
+      { status: 400, headers: corsHeaders() }
+    )
+  }
+  const usedColors = new Set<string>([color.trim()])
   const nowMs = Date.now()
+  const botSeats: Array<{ id: string; name: string; color: string; ready: boolean; lastSeen: number; ai: 'easy' | 'medium' | 'hard' }> = []
+  for (let i = 0; i < botsIn.length; i++) {
+    const b = botsIn[i]
+    const bColor = typeof b.color === 'string' ? b.color.trim() : ''
+    const bAi = typeof b.ai === 'string' ? b.ai : ''
+    if (!bColor || !AI_LEVELS.has(bAi)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid CPU opponent (needs color + difficulty)' }),
+        { status: 400, headers: corsHeaders() }
+      )
+    }
+    if (usedColors.has(bColor)) {
+      return new Response(
+        JSON.stringify({ error: 'CPU opponents must use distinct colors' }),
+        { status: 400, headers: corsHeaders() }
+      )
+    }
+    usedColors.add(bColor)
+    botSeats.push({
+      id: crypto.randomUUID(),
+      name: (typeof b.name === 'string' && b.name.trim()) ? b.name.trim().slice(0, 20) : `CPU ${i + 1}`,
+      color: bColor,
+      ready: true,            // bots are always ready — they never block the start
+      lastSeen: nowMs,
+      ai: bAi as 'easy' | 'medium' | 'hard',
+    })
+  }
+
+  // Build players array: the human creator first (so creator => 'p1'), then bots.
   const players = [
     {
       id: playerId,
@@ -151,6 +193,7 @@ Deno.serve(async (req: Request) => {
       ready: false,
       lastSeen: nowMs,
     },
+    ...botSeats,
   ]
 
   // Build stored options
@@ -185,7 +228,9 @@ Deno.serve(async (req: Request) => {
   }
 
   return new Response(
-    JSON.stringify({ roomId: room.id, code, playerId }),
+    // Return the full players array so the client has the generated CPU seat ids
+    // (and renders them in the waiting room) without waiting for a Realtime update.
+    JSON.stringify({ roomId: room.id, code, playerId, players }),
     { status: 200, headers: corsHeaders() }
   )
 })
