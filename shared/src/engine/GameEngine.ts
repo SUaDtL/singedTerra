@@ -166,6 +166,7 @@ export class GameEngine {
       // SAME reference as this.terrain — getState() returns the live bitmap by
       // reference, no per-snapshot copy/sync.
       terrain: this.terrain,
+      terrainVersion: 0, // bumped on every deform/raise (render-only; see GameState)
       tanks,
       projectiles: [],
       projectile: null,
@@ -585,7 +586,12 @@ export class GameEngine {
     // Deform the live bitmap, then let the touched columns' dirt fall. The
     // bitmap IS state.terrain (same reference), so no separate sync is needed.
     const range = deform(this.terrain, cx, cy, radius, raise);
-    if (range !== null) applyGravity(this.terrain, range.xStart, range.xEnd);
+    if (range !== null) {
+      applyGravity(this.terrain, range.xStart, range.xEnd);
+      // Signal the (in-place) bitmap change so the renderer rebuilds its offscreen
+      // without hashing 400k bytes every frame (P2-8). Render-only; not physics.
+      this.state.terrainVersion++;
+    }
 
     // Proximity damage to every living tank. explosionDamage() returns the
     // falloff value scaled to MAX_DAMAGE; rescale to the weapon's peak so

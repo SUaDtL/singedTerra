@@ -142,7 +142,7 @@ export class Renderer {
     // it (alpha-composited over the sky) on every draw(), rebuilding the
     // offscreen only when the bitmap actually changes — so no per-frame
     // markDirty() is needed here.
-    this.terrain.draw(ctx, state.terrain);
+    this.terrain.draw(ctx, state.terrain, state.terrainVersion);
 
     // 3. Tanks (active player emphasised).
     this.tanks.drawAll(ctx, state.tanks, state.activePlayerId);

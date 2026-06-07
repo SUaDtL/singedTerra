@@ -25,6 +25,15 @@ export interface GameState {
    * returned BY REFERENCE from getState() — not copied per snapshot.
    */
   terrain: Uint8Array;
+  /**
+   * Monotonic counter bumped every time the terrain bitmap is mutated (a crater or
+   * raised dirt). Render-only metadata: the terrain is mutated in place (same
+   * Uint8Array reference each snapshot), so a renderer can't detect a change by
+   * identity. Comparing this integer lets the TerrainRenderer skip its offscreen
+   * rebuild when nothing changed, instead of hashing all 400k bytes every frame
+   * (REVIEW_BACKLOG P2-8). Not used by physics — never affects determinism.
+   */
+  terrainVersion: number;
   tanks: TankState[];
   /**
    * All projectiles currently in flight (`[]` when none). FIRING iff
