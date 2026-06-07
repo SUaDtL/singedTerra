@@ -68,6 +68,19 @@ import { createRng } from './Random';
  */
 const DEFAULT_SEED = 0x5eed_1234;
 
+/**
+ * Derive a per-round terrain/wind seed from the match's base seed and the (1-based)
+ * round number. Round 1 uses the base seed directly (see the constructor); rounds
+ * 2..N use this. Pure arithmetic over uint32 (the >>> 0 keeps it a 32-bit unsigned
+ * value, matching what generate()/createRng() consume) — so every networked client
+ * replaying the same action log computes the identical seed for every round, with no
+ * new action and no server involvement. The multiplier is the golden-ratio constant
+ * (2^32/φ) used widely as a cheap hash mixer, so successive rounds decorrelate.
+ */
+function deriveRoundSeed(baseSeed: number, round: number): number {
+  return (baseSeed + round * 0x9e3779b1) >>> 0;
+}
+
 /** Push-off distance (px) along the surface normal after a bounce so the next
  *  tick does not re-collide with the same solid pixel. */
 const BOUNCE_EPS = 1.5;
@@ -132,6 +145,20 @@ export class GameEngine {
   /** Per-room gravity (defaults to GRAVITY); tunable via GameOptions. */
   private gravity: number;
 
+  /**
+   * Base terrain/wind seed for the whole match. The opening round uses it directly;
+   * each later round derives its own seed from it + the round index (deriveRoundSeed)
+   * so rounds differ yet every networked client regenerates the identical terrain.
+   */
+  private seed: number;
+
+  /** Best-of-N match length (>= 1). 1 => single-round / back-compat behavior. */
+  private totalRounds: number;
+
+  /** Original construction options, retained so startNextRound can re-place tanks
+   *  the same way the opening round did (same player roster / layout path). */
+  private options?: GameOptions;
+
   constructor(options?: GameOptions) {
     const seed = options?.seed ?? DEFAULT_SEED;
     const heightLine = generate(seed);
@@ -139,6 +166,10 @@ export class GameEngine {
     this.windRng = createRng(seed);
     this.maxWind = options?.maxWind ?? MAX_WIND;
     this.gravity = options?.gravity ?? GRAVITY;
+    this.seed = seed;
+    // Clamp to a sane >= 1 integer; non-finite/<=0 falls back to a single round.
+    this.totalRounds = Math.max(1, Math.floor(options?.rounds ?? 1) || 1);
+    this.options = options;
 
     // number[] height line for tank placement (Tank.ts is unchanged and still
     // expects a per-column surface line, not the pixel bitmap).
@@ -155,6 +186,9 @@ export class GameEngine {
     this.state = {
       phase: 'PLAYER_TURN',
       turn: 0,
+      round: 1,
+      totalRounds: this.totalRounds,
+      lastRoundWinnerId: null,
       activePlayerId: tanks[0]?.id ?? '',
       // Opening turn's wind: drift from a 0 baseline, advancing the stream once.
       wind: this.nextWind(0),
@@ -511,9 +545,28 @@ export class GameEngine {
     const alive = this.state.tanks.filter((t) => t.alive);
 
     if (alive.length <= 1) {
-      // 1 alive => winner; 0 alive (mutual kill) => draw (winner stays null).
-      this.state.phase = 'GAME_OVER';
-      this.state.winner = alive.length === 1 ? alive[0].id : null;
+      // ROUND END (V1 match structure). 1 alive => that tank won the round; 0 alive
+      // (mutual kill) => the round is a draw (no one scores). Record the result, then
+      // either end the MATCH or start the next round. With totalRounds === 1 this is
+      // byte-identical to the old single-round behavior (clinch is 1, so any round win
+      // ends the match, and a draw with round >= totalRounds also ends it).
+      const roundWinner = alive.length === 1 ? alive[0] : null;
+      this.state.lastRoundWinnerId = roundWinner?.id ?? null;
+      if (roundWinner) roundWinner.roundWins += 1;
+
+      // First to clinch ceil(N/2) round wins takes the match; or the match ends once
+      // all N rounds have been played (only reachable past a clinch via draws).
+      const clinch = Math.ceil(this.totalRounds / 2);
+      const clinched = roundWinner !== null && roundWinner.roundWins >= clinch;
+      const matchOver = clinched || this.state.round >= this.totalRounds;
+
+      if (matchOver) {
+        this.state.phase = 'GAME_OVER';
+        this.state.winner = this.computeMatchWinner();
+        return;
+      }
+
+      this.startNextRound();
       return;
     }
 
@@ -541,6 +594,86 @@ export class GameEngine {
         return;
       }
     }
+  }
+
+  /**
+   * Match winner = the tank with the STRICTLY-most round wins; a tie for the lead is
+   * a draw (null). For a single-round match this reproduces the old win/draw rule
+   * exactly: the sole survivor has 1 win (everyone else 0) => that tank; a mutual kill
+   * leaves everyone at 0 => tie => null. Pure read over the roster — deterministic.
+   */
+  private computeMatchWinner(): string | null {
+    const tanks = this.state.tanks;
+    if (tanks.length === 0) return null;
+    let best = tanks[0];
+    let tie = false;
+    for (let i = 1; i < tanks.length; i++) {
+      if (tanks[i].roundWins > best.roundWins) {
+        best = tanks[i];
+        tie = false;
+      } else if (tanks[i].roundWins === best.roundWins) {
+        tie = true;
+      }
+    }
+    return tie ? null : best.id;
+  }
+
+  /**
+   * Begin the next round of a best-of-N match (V1 match structure). Called from
+   * resolve() when a round ended but the match has not been clinched. EVERYTHING here
+   * is a pure function of (base seed, the new round number, the carried roster) — no
+   * clock, no Math.random — so a fresh-engine replay of the same action log lands on
+   * an identical next round on every networked client, needing NO new action.
+   *
+   * Carried across the round boundary: each tank's credits, purchased inventory, and
+   * accumulated roundWins (matched by stable id). Reset: terrain (regenerated from the
+   * derived round seed), tank positions (re-placed on the new surface), health, shield,
+   * fuel, aim, selected weapon, alive flag, wind stream, projectiles, and the fire field.
+   */
+  private startNextRound(): void {
+    this.state.round += 1;
+    const roundSeed = deriveRoundSeed(this.seed, this.state.round);
+
+    // Fresh terrain for the new round, from the derived (deterministic) seed.
+    const heightLine = generate(roundSeed);
+    this.terrain = buildBitmap(heightLine);
+    this.state.terrain = this.terrain;
+    this.state.terrainVersion += 1; // render-only: force a terrain re-render
+
+    // Re-place tanks on the new surface via the same path the opening round used, then
+    // graft the carried economy/score fields back over the fresh (reset) tanks.
+    const terrainArr = Array.from(heightLine);
+    const players = this.options?.players;
+    const fresh =
+      players && players.length >= 2 && players.length <= 4
+        ? placeTanks(terrainArr, players, this.options)
+        : placeTwoTanks(terrainArr, this.options);
+    const prior = new Map(this.state.tanks.map((t) => [t.id, t]));
+    for (const tank of fresh) {
+      const old = prior.get(tank.id);
+      if (old) {
+        tank.credits = old.credits; // carry earnings
+        tank.inventory = old.inventory; // carry purchased ammo (and spent rounds)
+        tank.roundWins = old.roundWins; // accumulate match score
+      }
+    }
+    this.state.tanks = fresh;
+    this.state.activePlayerId = fresh[0]?.id ?? '';
+
+    // Reset transient combat state and re-seed the wind stream for the new round.
+    this.state.projectiles = [];
+    this.syncProjectileAlias();
+    this.state.explosions = [];
+    this.state.lastExplosion = null;
+    this.state.fire = [];
+    this.fire.clear();
+    this.fireScorched.clear();
+    this.fireDef = null;
+    this.windRng = createRng(roundSeed);
+    this.state.wind = this.nextWind(0);
+
+    this.state.turn += 1;
+    this.state.phase = 'PLAYER_TURN';
   }
 
   /**

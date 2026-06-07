@@ -17,6 +17,25 @@ export interface GameState {
   phase: GamePhase;
   turn: number;
   activePlayerId: string;
+  /**
+   * Current round number, 1-based (V1 match structure). 1 for the whole game when
+   * `GameOptions.rounds` is 1 (the default / back-compat single-round mode). Bumped
+   * by the engine when a round resolves and the match isn't over. Determinism: the
+   * round's terrain + wind are derived from `seed` + this index, so every networked
+   * client regenerates the identical round. See docs/SPRINT6_MATCH_STRUCTURE.md.
+   */
+  round: number;
+  /** Best-of-N match length (echo of `GameOptions.rounds`, clamped to >= 1). */
+  totalRounds: number;
+  /**
+   * Id of the tank that won the MOST RECENTLY resolved round, or `null` for a
+   * mutual-kill draw (and `null` before any round has resolved). Set every time a
+   * round ends (whether or not the match continues). The client uses it — together
+   * with the `round` counter advancing — to show a "Player X won round N" banner,
+   * deduping on `round` the same way bursts dedupe on `lastExplosion.id`. NOT the
+   * match winner: the overall winner is `winner`, set only at GAME_OVER.
+   */
+  lastRoundWinnerId: string | null;
   /** Current wind value, range [-MAX_WIND, +MAX_WIND]. */
   wind: number;
   /**
@@ -174,8 +193,16 @@ export interface TankState {
    * Store credits (SPEC §9 weapon shop). Spent on `buy` actions during the tank's
    * turn; earned deterministically in the engine — per point of damage dealt to an
    * opponent, plus a flat per-shot stipend. Starts at STARTING_CREDITS. Integer.
+   * Carries between rounds in a best-of-N match (V1 match structure).
    */
   credits: number;
+  /**
+   * Rounds this tank has won in the current match (V1 match structure). Starts at 0,
+   * incremented when this tank is the sole survivor of a round. The match ends when a
+   * tank reaches ceil(totalRounds/2). Accumulates across rounds (unlike health, which
+   * resets). Deterministic integer. See docs/SPRINT6_MATCH_STRUCTURE.md.
+   */
+  roundWins: number;
 }
 
 export interface ProjectileState {
