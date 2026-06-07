@@ -217,7 +217,7 @@ export class Lobby {
         max-width: none;
         margin: 0;
         box-sizing: border-box;
-        padding: 30px 56px;
+        padding: 16px 40px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
@@ -329,10 +329,10 @@ export class Lobby {
         display: flex; gap: 8px; justify-content: center; margin: 12px 0 20px;
       }
       #lobby .online-code-char {
-        width: 44px; height: 52px; background: rgba(12, 7, 22, 0.8);
+        width: 40px; height: 44px; background: rgba(12, 7, 22, 0.8);
         border: 1px solid rgba(255, 210, 63, 0.25);
         border-radius: 6px; display: flex; align-items: center; justify-content: center;
-        font-size: 28px; font-weight: 700; letter-spacing: 0; color: var(--gold);
+        font-size: 24px; font-weight: 700; letter-spacing: 0; color: var(--gold);
         font-family: var(--font-mono);
       }
       #lobby .online-player-list {

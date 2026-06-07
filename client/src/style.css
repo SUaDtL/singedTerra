@@ -7,8 +7,11 @@
  */
 
 :root {
-  /* Native logical size of the stage; mirror canvas width/height. */
-  --stage-w: 800px;
+  /* Stage = the 800x500 play canvas + a right-side HUD panel. */
+  --canvas-w: 800px;
+  --canvas-h: 500px;
+  --panel-w: 264px;
+  --stage-w: 1064px; /* canvas-w + panel-w — the full app width */
   --stage-h: 500px;
 
   /* ===== singedTerra art tokens (Sprint 5) — mirror client/src/ui/theme.ts ===== */
@@ -61,6 +64,8 @@ body {
  */
 #app {
   position: relative;
+  display: flex;
+  flex-direction: row;
   width: var(--stage-w);
   height: var(--stage-h);
   /* Drop shadow + a subtle gold inset frame echoing the banner border. */
@@ -107,42 +112,68 @@ body {
     radial-gradient(130% 130% at 50% 50%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, var(--crt-vignette-alpha)) 100%);
 }
 
-/* #game and #hud both fill #app precisely (same 800x500 box). */
-#game,
-#hud {
+/*
+ * #stage is the play field: the 800x500 canvas plus its ON-canvas overlays
+ * (controls legend + game-over modal). It sits left of the HUD panel.
+ */
+#stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+}
+#game {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-#game {
   z-index: 0;
   display: block;
 }
-
 /*
- * HUD overlays the canvas. It is non-interactive as a layer; its interactive
- * bits (e.g. the Restart button) opt back into pointer events themselves.
+ * On-canvas overlay layer — ONLY the controls legend and the game-over modal
+ * live here (kept small / transient so the tanks stay visible). Non-interactive
+ * as a layer; interactive bits opt back in.
  */
-#hud {
-  z-index: 10;
+#game-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
   pointer-events: none;
 }
-
-#hud .st-hud,
+/*
+ * #hud is the RIGHT SIDE PANEL — all status widgets (players, wind, weapon, aim,
+ * arsenal, menu) stack here, OFF the play field, so nothing covers the tanks.
+ */
+#hud {
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: var(--panel-w);
+  height: 100%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(18, 10, 34, 0.96), rgba(12, 7, 22, 0.96));
+  border-left: 1px solid rgba(255, 210, 63, 0.22);
+  overflow-y: auto;
+  pointer-events: auto;
+}
+#game-overlay button,
 #hud button {
   pointer-events: auto;
 }
 
 /*
- * The lobby is a full-stage overlay centered over the dark stage. It sits above
- * the HUD and is fully interactive.
+ * The lobby is a full-APP overlay (covers canvas + panel), centered + fully
+ * interactive. Sits above the CRT chrome so the pre-game screen stays crisp.
  */
 #lobby {
   position: absolute;
   inset: 0;
-  z-index: 20;
+  z-index: 40;
   display: grid;
   place-items: center;
   pointer-events: auto;
