@@ -39,7 +39,7 @@ Physics uses a **fixed 16ms timestep** so hot-seat and networked execution produ
 
 ### Core data model
 
-- **Terrain** is a `Uint16Array` of length `CANVAS_WIDTH` (800) — one y-height per x-column. This drives everything: O(1) collision (`y >= terrain[floor(x)]`), trivial serialization (sent as `number[]` in `GameState`), and natural deformation (subtract a chord on explosion). Re-render the terrain polygon only when a **dirty flag** is set — meaningful CPU savings on a t3.micro.
+- **Terrain** is a per-pixel `Uint8Array` of length `CANVAS_WIDTH * CANVAS_HEIGHT` (800×500) — one byte of solidity per pixel (`0` = air, non-zero = solid), rasterized from a midpoint-displacement height-map silhouette (`generate()` returns the `Uint16Array` height line; `buildBitmap()` rasterizes it). This drives everything: O(1) collision (a point `(x, y)` is solid when its bitmap pixel is set, or `y >= CANVAS_HEIGHT`), and natural deformation (explosions clear a disc of pixels — a real hole; the Dirt Bomb sets them; unsupported columns collapse and bury tanks). Re-render the terrain polygon only when the **`terrainVersion` dirty flag** changes — meaningful CPU savings on a t3.micro. (`shared/src/engine/Terrain.ts`.)
 - **`GameState`** (`shared/src/types/GameState.ts`) is each engine's local snapshot — phase, turn, active player, wind, terrain, tanks, projectile, winner. It is NOT shipped over the network (clients derive it by replaying the action log through their own engine); it is the renderer's input. Per-room config is `GameOptions` (`shared/src/types/GameOptions.ts`).
 - **Turn state machine:** `LOBBY → PLAYER_TURN → FIRING → RESOLVING → NEXT_TURN → GAME_OVER`. Input is accepted only during `PLAYER_TURN`. New wind is generated on `NEXT_TURN`.
 
