@@ -569,7 +569,7 @@ export class NetworkClient implements GameClient {
       return;
     }
 
-    const opts = (data.options ?? {}) as { maxPlayers?: number; maxWind?: number; gravity?: number };
+    const opts = (data.options ?? {}) as { maxPlayers?: number; maxWind?: number; gravity?: number; rounds?: number };
     const players = (data.players ?? []) as Array<{ id: string; name: string; color: string }>;
     listener({
       roomId:  data.id as string,
@@ -579,6 +579,8 @@ export class NetworkClient implements GameClient {
         maxPlayers: opts.maxPlayers ?? players.length,
         maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : 10,
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : 0.15,
+        // Carry best-of-N across a rematch so the successor match keeps the format.
+        ...(typeof opts.rounds === 'number' ? { rounds: opts.rounds } : {}),
       },
       players: players.map(p => ({ id: p.id, name: p.name, color: p.color })),
     });

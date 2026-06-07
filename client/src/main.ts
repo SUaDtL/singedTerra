@@ -267,6 +267,10 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
       seed:       config.settings?.seed,
       maxWind:    config.settings?.maxWind,
       gravity:    config.settings?.gravity,
+      // Best-of-N is sourced from the synced room row (see Lobby.emitNetworkReady),
+      // so every client builds an identical engine — required for deterministic
+      // lockstep across round boundaries. Undefined => single round.
+      rounds:     config.settings?.rounds,
     };
 
     const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions);
@@ -308,6 +312,7 @@ function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyConfig {
       seed: info.seed,
       maxWind: info.options.maxWind,
       gravity: info.options.gravity,
+      ...(info.options.rounds !== undefined ? { rounds: info.options.rounds } : {}),
     },
   };
 }

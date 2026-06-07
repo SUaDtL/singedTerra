@@ -111,6 +111,11 @@ type OnlineSubView = 'create' | 'join' | 'browse' | 'waiting';
 /** Room visibility for created online rooms. */
 type RoomVisibility = 'public' | 'private';
 
+/** Per-room engine options as stored on the room row / echoed by the Edge
+ *  Functions. `rounds` (best-of-N) is optional for back-compat with rooms created
+ *  before the match-structure feature; absent => single round. */
+type RoomOptions = { maxPlayers: number; maxWind: number; gravity: number; rounds?: number };
+
 /** A public room as returned by the list_rooms Edge Function. */
 interface BrowseRoom {
   roomId: string;
@@ -148,6 +153,7 @@ export class Lobby {
   private onlineMaxPlayers = 2;
   private onlineMaxWind = '';
   private onlineGravity = '';
+  private onlineRounds = '';
   /** Visibility for the room being created; defaults to public. */
   private onlineVisibility: RoomVisibility = 'public';
   /** Number of CPU opponents to seed into the room on create (0..maxPlayers-1). */
@@ -175,7 +181,7 @@ export class Lobby {
   private waitingPlayerId = '';
   private waitingPlayers: NetworkPlayer[] = [];
   private waitingSeed = 0;
-  private waitingOptions: { maxPlayers: number; maxWind: number; gravity: number } = {
+  private waitingOptions: RoomOptions = {
     maxPlayers: 2,
     maxWind: 10,
     gravity: 0.15,
@@ -687,6 +693,10 @@ export class Lobby {
         min: GRAVITY_MIN, max: GRAVITY_MAX, step: GRAVITY_STEP, placeholder: String(GRAVITY_DEFAULT),
         hint: `${GRAVITY_MIN}–${GRAVITY_MAX}`,
       }),
+      this.onlineNumberField('Rounds', this.onlineRounds, (v) => { this.onlineRounds = v; }, {
+        min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT),
+        hint: 'best-of-N, odd',
+      }),
     );
     frag.append(details);
 
@@ -740,6 +750,7 @@ export class Lobby {
     try {
       const maxWind = parseNumber(this.onlineMaxWind);
       const gravity = parseNumber(this.onlineGravity);
+      const rounds = this.parseOnlineRounds();
 
       // Build CPU seats with palette colors unique vs the creator + each other.
       const used = new Set<string>([this.onlineColor]);
@@ -760,6 +771,7 @@ export class Lobby {
           visibility: this.onlineVisibility,
           ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
           ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
+          ...(rounds !== undefined ? { rounds } : {}),
         },
       };
 
@@ -803,6 +815,7 @@ export class Lobby {
         gravity: parseNumber(this.onlineGravity) !== undefined
           ? clamp(parseNumber(this.onlineGravity)!, GRAVITY_MIN, GRAVITY_MAX)
           : GRAVITY_DEFAULT,
+        ...(rounds !== undefined ? { rounds } : {}),
       };
       this.waitingThisPlayerReady = false;
       this.onlineSubView = 'waiting';
@@ -934,7 +947,7 @@ export class Lobby {
         roomId?: string;
         playerId?: string;
         seed?: number;
-        options?: { maxPlayers: number; maxWind: number; gravity: number };
+        options?: RoomOptions;
         players?: NetworkPlayer[];
         error?: string;
       };
@@ -1280,7 +1293,7 @@ export class Lobby {
           table: 'rooms',
           filter: `id=eq.${roomId}`,
         },
-        (payload: { new: { players?: NetworkPlayer[]; status?: string; seed?: number; options?: { maxPlayers: number; maxWind: number; gravity: number } } }) => {
+        (payload: { new: { players?: NetworkPlayer[]; status?: string; seed?: number; options?: RoomOptions } }) => {
           const row = payload.new;
           if (Array.isArray(row.players)) {
             this.waitingPlayers = row.players;
@@ -1294,7 +1307,7 @@ export class Lobby {
 
           if (row.status === 'active') {
             this.cleanupWaitingChannel();
-            this.emitNetworkReady(row as { players: NetworkPlayer[]; seed: number; options: { maxPlayers: number; maxWind: number; gravity: number } });
+            this.emitNetworkReady(row as { players: NetworkPlayer[]; seed: number; options: RoomOptions });
             return;
           }
 
@@ -1390,7 +1403,7 @@ export class Lobby {
     }
   }
 
-  private emitNetworkReady(room: { players: NetworkPlayer[]; seed: number; options: { maxPlayers: number; maxWind: number; gravity: number } }): void {
+  private emitNetworkReady(room: { players: NetworkPlayer[]; seed: number; options: RoomOptions }): void {
     const config: LobbyConfig = {
       mode: 'network',
       players: room.players.map((p) => ({ id: p.id, name: p.name, color: p.color, ...(p.ai ? { ai: p.ai } : {}) })),
@@ -1402,6 +1415,10 @@ export class Lobby {
         seed: room.seed,
         maxWind: room.options.maxWind,
         gravity: room.options.gravity,
+        // Best-of-N comes from the SYNCED room row so every client's engine agrees
+        // (a per-client value would desync the deterministic lockstep). Absent on
+        // pre-feature rooms => engine defaults to a single round.
+        ...(room.options.rounds !== undefined ? { rounds: room.options.rounds } : {}),
       },
     };
     this.onReady(config);
@@ -1968,6 +1985,18 @@ export class Lobby {
     }
 
     return Object.keys(out).length > 0 ? out : undefined;
+  }
+
+  /**
+   * Parse the online "Rounds" input into a clamped, ODD best-of-N value, or
+   * undefined when blank (engine default = single round). Shared by the create
+   * body and the local waitingOptions so both agree on the value sent to the room.
+   */
+  private parseOnlineRounds(): number | undefined {
+    const raw = parseNumber(this.onlineRounds);
+    if (raw === undefined) return undefined;
+    const clamped = clamp(Math.trunc(raw), ROUNDS_MIN, ROUNDS_MAX);
+    return clamped % 2 === 0 ? clamped + 1 : clamped;
   }
 
   /** Grow/shrink the working player list, assigning unique default colors. */
