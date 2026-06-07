@@ -1,5 +1,5 @@
 import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js';
-import type { GameClient, RematchInfo } from './GameClient';
+import type { GameClient, RematchInfo, ConnectionState } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type { GameOptions } from '@shared/types/Events';
@@ -93,6 +93,20 @@ export class NetworkClient implements GameClient {
   private isReplaying:      boolean;
   private _isFiring         = false;
   private _gameOverReported = false;
+
+  // --- Liveness / connection state (REVIEW_BACKLOG P1-6) ---
+  // Realtime link state, surfaced to the UI so a dropped socket shows an overlay
+  // instead of a silently frozen board. Supabase auto-reconnects the underlying
+  // socket; on each (re)SUBSCRIBED we re-fetch any actions missed while down.
+  private _connection:      ConnectionState = 'connecting';
+  private _everSubscribed   = false;            // distinguishes first subscribe from a reconnect
+  private _closing          = false;            // set in stop() so teardown isn't reported as a drop
+  private connectionListeners = new Set<(s: ConnectionState) => void>();
+  private fireFailedListeners = new Set<(msg: string) => void>();
+  // Watchdog: if a submitted fire/shield never echoes back, clear the input lock so
+  // the player isn't trapped in "Sending…" forever (lost submit, dropped echo, …).
+  private fireWatchdog:     ReturnType<typeof setTimeout> | null = null;
+  private static readonly FIRE_TIMEOUT_MS = 9000;
 
   // Rematch signaling. The old room's rematch_room_id flips from NULL to the
   // successor room id when either player clicks Restart; both clients observe it
@@ -215,7 +229,24 @@ export class NetworkClient implements GameClient {
           this.flushPendingActions();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Realtime link lifecycle. SUBSCRIBED = live; the error/closed states mean
+        // the socket dropped (Supabase retries automatically and re-fires SUBSCRIBED
+        // on recovery). Ignore CLOSED during our own teardown (stop()).
+        if (status === 'SUBSCRIBED') {
+          const recovered = this._everSubscribed && this._connection !== 'connected';
+          this.setConnection('connected');
+          // On a RE-subscribe, fetch any actions that committed while we were down
+          // so we never miss a turn taken during the outage (deterministic catch-up).
+          if (recovered) void this.resyncLog();
+          this._everSubscribed = true;
+        } else if (
+          !this._closing &&
+          (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')
+        ) {
+          this.setConnection('reconnecting');
+        }
+      });
 
     // 3. Subscribe to this room's UPDATE stream to detect a rematch. When either
     //    player requests one, restart_game sets rematch_room_id on THIS room;
@@ -272,6 +303,11 @@ export class NetworkClient implements GameClient {
   }
 
   stop(): void {
+    this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
+    if (this.fireWatchdog !== null) {
+      clearTimeout(this.fireWatchdog);
+      this.fireWatchdog = null;
+    }
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
@@ -326,7 +362,7 @@ export class NetworkClient implements GameClient {
       if (!shielder) return;
       const ammo = shielder.inventory.shield;
       if (!ammo.unlimited && ammo.count <= 0) return;
-      this._isFiring = true; // lock input until the Realtime echo applies it
+      this.setFiring(true); // lock input until the Realtime echo applies it
       this.submitAction({ type: 'use_shield' });
       return;
     }
@@ -354,7 +390,7 @@ export class NetworkClient implements GameClient {
       weapon: activeTank.selectedWeapon,
     };
 
-    this._isFiring = true;
+    this.setFiring(true);
     this.submitAction(networkAction);
   }
 
@@ -372,6 +408,78 @@ export class NetworkClient implements GameClient {
   onRematch(listener: (info: RematchInfo) => void): () => void {
     this.rematchListener = listener;
     return () => { if (this.rematchListener === listener) this.rematchListener = null; };
+  }
+
+  // ---- Liveness API (REVIEW_BACKLOG P1-6) ----
+
+  /** Subscribe to connection-state changes; fires immediately with the current state. */
+  onConnectionChange(listener: (state: ConnectionState) => void): () => void {
+    this.connectionListeners.add(listener);
+    listener(this._connection); // prime with current state
+    return () => this.connectionListeners.delete(listener);
+  }
+
+  /** Subscribe to fire/shield submission failures (rejected or never echoed). */
+  onFireFailed(listener: (message: string) => void): () => void {
+    this.fireFailedListeners.add(listener);
+    return () => this.fireFailedListeners.delete(listener);
+  }
+
+  /** Update + broadcast the connection state (no-op if unchanged). */
+  private setConnection(state: ConnectionState): void {
+    if (this._connection === state) return;
+    this._connection = state;
+    for (const l of this.connectionListeners) l(state);
+  }
+
+  /**
+   * Set the "firing" input lock. Arming it (true) starts a watchdog so a submitted
+   * shot that never echoes back (lost submit / dropped Realtime echo) eventually
+   * releases the lock instead of trapping the player in "Sending…". The echo path
+   * (flushPendingActions) calls this with false, which also disarms the watchdog.
+   */
+  private setFiring(value: boolean): void {
+    this._isFiring = value;
+    if (this.fireWatchdog !== null) {
+      clearTimeout(this.fireWatchdog);
+      this.fireWatchdog = null;
+    }
+    if (value) {
+      this.fireWatchdog = setTimeout(() => {
+        this.fireWatchdog = null;
+        if (this._isFiring) this.failFire('Shot timed out — try again.');
+      }, NetworkClient.FIRE_TIMEOUT_MS);
+    }
+  }
+
+  /** Release a stuck fire lock and notify the UI so the player can re-aim. */
+  private failFire(message: string): void {
+    this.setFiring(false);
+    this.emitState(); // re-render so the HUD drops "Sending…" immediately
+    for (const l of this.fireFailedListeners) l(message);
+  }
+
+  /**
+   * Re-fetch the action log from nextExpectedSeq onward and flush it. Called after
+   * a Realtime RE-subscribe so any turns committed during an outage are applied in
+   * order — the canonical log is the source of truth, so this is a safe, idempotent
+   * catch-up (rows we already have are skipped by the seq gate in flushPendingActions).
+   */
+  private async resyncLog(): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('room_actions')
+      .select('*')
+      .eq('room_id', this.roomId)
+      .gte('seq', this.nextExpectedSeq)
+      .order('seq', { ascending: true });
+    if (error) {
+      console.error('NetworkClient.resyncLog: failed to re-fetch log:', error.message);
+      return;
+    }
+    for (const row of (data ?? []) as RoomActionRow[]) {
+      this.pendingActions.set(row.seq, row.action as NetworkAction);
+    }
+    this.flushPendingActions();
   }
 
   /**
@@ -500,11 +608,16 @@ export class NetworkClient implements GameClient {
             // A bot's lost race shows up as a benign seq-conflict / turn-advanced
             // rejection — don't log those as errors.
             console.error('NetworkClient: submit_action rejected:', data.error);
+            // A genuine rejection of OUR OWN turn-ending action (not a bot proxy):
+            // release the "Sending…" lock and tell the player, so a failed shot
+            // doesn't trap them (P1-6). Bot proxies don't hold the lock.
+            if (!actingPlayerId) this.failFire('Shot failed — try again.');
           }
         }
       })
       .catch(err => {
         console.error('NetworkClient: submit_action network error:', err);
+        if (!actingPlayerId) this.failFire('Connection problem — shot not sent. Try again.');
       });
   }
 
@@ -610,7 +723,7 @@ export class NetworkClient implements GameClient {
       const action = this.pendingActions.get(this.nextExpectedSeq)!;
       this.pendingActions.delete(this.nextExpectedSeq);
       this.nextExpectedSeq++;
-      this._isFiring = false;
+      this.setFiring(false); // our action (or any) echoed → release the input lock + watchdog
       this.applyNetworkAction(action);
       // During initialize() replay there is no RAF loop, so tick the flight to
       // completion synchronously to return to PLAYER_TURN for the next action.

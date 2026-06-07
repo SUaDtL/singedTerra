@@ -1,6 +1,7 @@
 import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS } from '@shared/engine/WeaponSystem';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
+import type { ConnectionState } from '../client/GameClient';
 
 /**
  * Weapons shown in the strip: only `implemented` ones, in stable WeaponSystem
@@ -68,6 +69,11 @@ export class HUD {
   private storeBtnEl!: HTMLButtonElement;
   private storeEl!: HTMLElement;
   private storeCreditsEl!: HTMLElement;
+  // Networked liveness widgets (P1-6): a persistent connection banner (shown only
+  // while reconnecting/connecting) and a transient toast for failed shots.
+  private connBannerEl!: HTMLElement;
+  private toastEl!: HTMLElement;
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Per-store-row nodes (buy button + owned count), for cheap per-frame sync. */
   private storeCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
@@ -280,9 +286,45 @@ export class HUD {
     // Status widgets stack in the side panel (this.root = #hud). The controls
     // legend + game-over modal go on the canvas overlay (#game-overlay) so they
     // (and nothing else) sit over the play field.
+    // Networked liveness widgets (P1-6) — top-center over the canvas. The banner
+    // shows only while the link is down; the toast flashes a failed-shot message.
+    this.connBannerEl = document.createElement('div');
+    this.connBannerEl.className = 'st-hud__conn st-hud__conn--hidden';
+    this.toastEl = document.createElement('div');
+    this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
+
     this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
-    this.overlayRoot.append(controls, this.storeEl, this.overlayEl);
+    this.overlayRoot.append(controls, this.storeEl, this.overlayEl, this.connBannerEl, this.toastEl);
     this.built = true;
+  }
+
+  /**
+   * Reflect the networked Realtime connection state (P1-6). Shows a persistent
+   * top-center banner while 'connecting'/'reconnecting'; hides it once 'connected'.
+   * No-op before the HUD is built (build() runs on the first update()).
+   */
+  setConnection(state: ConnectionState): void {
+    if (!this.built) this.build();
+    const down = state !== 'connected';
+    this.connBannerEl.textContent =
+      state === 'reconnecting' ? '⚠ Connection lost — reconnecting…' : 'Connecting…';
+    this.connBannerEl.classList.toggle('st-hud__conn--hidden', !down);
+  }
+
+  /**
+   * Flash a transient message over the canvas (P1-6) — used when a shot fails to
+   * send or never echoes, so the player knows to try again rather than staring at
+   * a frozen "Sending…". Auto-hides after a few seconds.
+   */
+  flashMessage(message: string): void {
+    if (!this.built) this.build();
+    this.toastEl.textContent = message;
+    this.toastEl.classList.remove('st-hud__toast--hidden');
+    if (this.toastTimer !== null) clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => {
+      this.toastEl.classList.add('st-hud__toast--hidden');
+      this.toastTimer = null;
+    }, 4000);
   }
 
   /** Open/close the store modal. With no argument, toggles. */
@@ -703,6 +745,42 @@ export class HUD {
   pointer-events: auto;
 }
 .st-hud__overlay--hidden { display: none; }
+/* Networked liveness widgets (P1-6): connection banner + transient toast. */
+.st-hud__conn {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: #ffe9b0;
+  background: rgba(120, 60, 10, 0.92);
+  border: 1px solid rgba(255, 180, 80, 0.7);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__conn--hidden { display: none; }
+.st-hud__toast {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  color: #ffd7d7;
+  background: rgba(90, 20, 28, 0.92);
+  border: 1px solid rgba(255, 120, 120, 0.7);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__toast--hidden { display: none; }
 .st-hud__overlay-panel {
   display: flex;
   flex-direction: column;
