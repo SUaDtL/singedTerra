@@ -327,20 +327,37 @@ export class NetworkClient implements GameClient {
    * Resolve a detected successor room id into a full RematchInfo and hand it to
    * the listener. The UPDATE broadcast only carries the pointer (it is the OLD
    * room's row), so re-fetch the successor row for its seed/options/roster.
+   *
+   * Race note: restart_game claims the pointer (firing this broadcast) BEFORE it
+   * inserts the successor room — claim-first is what prevents orphan rooms. So a
+   * peer can observe rematch_room_id before the successor INSERT has replicated
+   * to its read path. The single UPDATE never repeats, so we cannot rely on a
+   * "later broadcast" — instead we poll a few times for the row to appear.
    */
   private async handleRematch(newRoomId: string): Promise<void> {
     const listener = this.rematchListener;
     if (!listener) return;
 
-    const { data, error } = await this.supabase
-      .from('rooms')
-      .select('id, code, seed, options, players')
-      .eq('id', newRoomId)
-      .maybeSingle();
+    // Bounded poll: the successor row is written within one edge-function
+    // invocation of the pointer claim, so a handful of short retries comfortably
+    // covers replication lag without hanging the UI if something truly failed.
+    let data: Record<string, unknown> | null = null;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const res = await this.supabase
+        .from('rooms')
+        .select('id, code, seed, options, players')
+        .eq('id', newRoomId)
+        .maybeSingle();
+      if (res.data) { data = res.data as Record<string, unknown>; break; }
+      if (res.error) {
+        console.warn(`NetworkClient.handleRematch: fetch attempt ${attempt + 1} failed`, res.error);
+      }
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
 
-    if (error || !data) {
-      console.error('NetworkClient.handleRematch: failed to load successor room', error);
-      this._rematchHandled = false; // allow a later broadcast/retry to resolve it
+    if (!data) {
+      console.error('NetworkClient.handleRematch: successor room never resolved', newRoomId);
+      this._rematchHandled = false; // let a manual re-click re-drive the migration
       return;
     }
 
