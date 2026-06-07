@@ -112,6 +112,15 @@ function bootstrap(): void {
     lobby.hide();
   });
 
+  // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
+  // Tears down the engine/client/input and re-shows the full-field lobby overlay
+  // (which covers the now-frozen canvas). For networked games this stops the
+  // client; the room is reaped server-side by the heartbeat/lazy-GC.
+  hud.onQuit(() => {
+    teardown();
+    lobby.show();
+  });
+
   lobby.show();
 
   // JS-driven scale: CSS min() with mixed types (length vs unitless) is invalid.

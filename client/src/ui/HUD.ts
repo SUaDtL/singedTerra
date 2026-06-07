@@ -33,6 +33,9 @@ export class HUD {
   /** Callback fired when a weapon strip button is clicked. */
   private weaponSelectCb: ((weapon: WeaponType) => void) | null = null;
 
+  /** Callback fired when the player quits a game back to the lobby (in-game Menu / game-over Main Menu). */
+  private quitCb: (() => void) | null = null;
+
   /** Whether the static DOM scaffold has been built yet. */
   private built = false;
 
@@ -64,6 +67,11 @@ export class HUD {
   /** Register the weapon-select callback fired when a strip button is clicked. */
   onWeaponSelect(cb: (weapon: WeaponType) => void): void {
     this.weaponSelectCb = cb;
+  }
+
+  /** Register the callback fired when the player quits a game back to the lobby. */
+  onQuit(cb: () => void): void {
+    this.quitCb = cb;
   }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
@@ -122,10 +130,16 @@ export class HUD {
       '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
       '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
 
-    // Clickable weapon strip (bottom-left): one button per implemented weapon,
-    // showing name + live ammo count. Listeners attached ONCE here.
+    // Weapon strip (bottom-left): a framed "Arsenal" panel with a titled header
+    // and a 2-column grid of buttons, each showing name + live ammo count.
+    // Listeners attached ONCE here.
     this.stripEl = document.createElement('div');
     this.stripEl.className = 'st-hud__strip';
+    const stripTitle = document.createElement('div');
+    stripTitle.className = 'st-hud__strip-title';
+    stripTitle.textContent = 'Arsenal';
+    const stripGrid = document.createElement('div');
+    stripGrid.className = 'st-hud__strip-grid';
     for (const type of STRIP_WEAPONS) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -139,8 +153,9 @@ export class HUD {
       // Capture `type` per-iteration (for-of/const). Listener attached once.
       btn.addEventListener('click', () => this.weaponSelectCb?.(type));
       this.weaponCells.set(type, { el: btn, ammo: ammoSpan });
-      this.stripEl.append(btn);
+      stripGrid.append(btn);
     }
+    this.stripEl.append(stripTitle, stripGrid);
 
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
@@ -155,10 +170,25 @@ export class HUD {
     restartBtn.textContent = 'Restart';
     // Listener attached ONCE here (never in update) — fires the stored callback.
     restartBtn.addEventListener('click', () => this.restartCb?.());
-    panel.append(this.overlayTextEl, restartBtn);
+    const overlayMenuBtn = document.createElement('button');
+    overlayMenuBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    overlayMenuBtn.type = 'button';
+    overlayMenuBtn.textContent = 'Main Menu';
+    overlayMenuBtn.addEventListener('click', () => this.quitCb?.());
+    const overlayBtns = document.createElement('div');
+    overlayBtns.className = 'st-hud__overlay-btns';
+    overlayBtns.append(restartBtn, overlayMenuBtn);
+    panel.append(this.overlayTextEl, overlayBtns);
     this.overlayEl.append(panel);
 
-    this.root.append(this.playersEl, wind, weapon, this.aimEl, this.stripEl, controls, this.overlayEl);
+    // Persistent in-game Quit/Menu button (top-right) — returns to the lobby.
+    const menu = document.createElement('button');
+    menu.type = 'button';
+    menu.className = 'st-hud__menu';
+    menu.textContent = '⤺ Menu';
+    menu.addEventListener('click', () => this.quitCb?.());
+
+    this.root.append(this.playersEl, menu, wind, weapon, this.aimEl, this.stripEl, controls, this.overlayEl);
     this.built = true;
   }
 
@@ -401,8 +431,25 @@ export class HUD {
   border: 1px solid rgba(255, 210, 63, 0.14);
   font-size: 13px;
 }
-.st-hud__wind { top: 10px; }
-.st-hud__weapon { top: 40px; }
+.st-hud__menu {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.3);
+  border-radius: 4px;
+  background: rgba(12, 7, 22, 0.7);
+  color: var(--text-gold);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  transition: background 130ms ease, border-color 130ms ease;
+}
+.st-hud__menu:hover { background: rgba(255, 122, 31, 0.3); border-color: var(--ember); }
+.st-hud__wind { top: 42px; }
+.st-hud__weapon { top: 72px; }
 .st-hud__wind-label,
 .st-hud__weapon-label {
   opacity: 0.65;
@@ -465,17 +512,37 @@ export class HUD {
   bottom: 10px;
   left: 10px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 5px;
-  max-width: 360px;
+  padding: 7px 9px 8px;
+  max-width: 300px;
+  background: rgba(12, 7, 22, 0.72);
+  border: 1px solid rgba(255, 210, 63, 0.18);
+  border-radius: 6px;
   pointer-events: auto;
+}
+.st-hud__strip-title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.st-hud__strip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
 }
 .st-hud__weapon-btn {
   pointer-events: auto;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
   padding: 4px 9px;
   border: 1px solid rgba(255, 210, 63, 0.18);
   border-radius: 4px;
@@ -549,6 +616,13 @@ export class HUD {
 }
 .st-hud__restart:hover { background: var(--ember); }
 .st-hud__restart:active { transform: translateY(1px); }
+.st-hud__overlay-btns { display: flex; gap: 12px; }
+.st-hud__restart--ghost {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+.st-hud__restart--ghost:hover { background: rgba(255, 210, 63, 0.16); }
 
 @keyframes st-hud-pulse {
   0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.25); }
