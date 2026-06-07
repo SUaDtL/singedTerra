@@ -36,8 +36,11 @@ const AMMO_UNLIMITED_GLYPH = '∞';
 export class HUD {
   /** Side-panel root (#hud) — status widgets stack here, off the canvas. */
   private readonly root: HTMLElement;
-  /** On-canvas overlay root (#game-overlay) — controls legend + game-over modal. */
+  /** On-canvas overlay root (#game-overlay) — controls legend + liveness widgets. */
   private readonly overlayRoot: HTMLElement;
+  /** Full-app modal layer (#modal-layer), ABOVE the CRT chrome — store + game-over
+   *  modals mount here so they render crisp and span canvas+panel (P3-16). */
+  private readonly modalRoot: HTMLElement;
 
   /** Restart callback registered via {@link onRestart}; may arrive before or after the overlay shows. */
   private restartCb: (() => void) | null = null;
@@ -84,9 +87,10 @@ export class HUD {
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
 
-  constructor(root: HTMLElement, overlayRoot: HTMLElement) {
+  constructor(root: HTMLElement, overlayRoot: HTMLElement, modalRoot: HTMLElement) {
     this.root = root;
     this.overlayRoot = overlayRoot;
+    this.modalRoot = modalRoot;
   }
 
   /** Register the restart callback fired when the GAME_OVER Restart button is clicked. */
@@ -284,8 +288,8 @@ export class HUD {
     menu.addEventListener('click', () => this.quitCb?.());
 
     // Status widgets stack in the side panel (this.root = #hud). The controls
-    // legend + game-over modal go on the canvas overlay (#game-overlay) so they
-    // (and nothing else) sit over the play field.
+    // legend + liveness widgets go on the canvas overlay (#game-overlay) so they
+    // sit over the play field; the store + game-over modals go on #modal-layer.
     // Networked liveness widgets (P1-6) — top-center over the canvas. The banner
     // shows only while the link is down; the toast flashes a failed-shot message.
     this.connBannerEl = document.createElement('div');
@@ -294,7 +298,11 @@ export class HUD {
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
 
     this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
-    this.overlayRoot.append(controls, this.storeEl, this.overlayEl, this.connBannerEl, this.toastEl);
+    // Controls legend + liveness widgets stay on the canvas overlay (positioned
+    // relative to the play field). The store + game-over modals go on the full-app
+    // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
+    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl);
+    this.modalRoot.append(this.storeEl, this.overlayEl);
     this.built = true;
   }
 
@@ -850,7 +858,8 @@ export class HUD {
   justify-content: center;
   background: rgba(6, 4, 12, 0.62);
   pointer-events: auto;
-  z-index: 6;
+  /* No z-index: store + game-over are siblings on #modal-layer, so DOM order
+   * governs — game-over (appended last) correctly paints above an open store. */
 }
 .st-hud__store--hidden { display: none; }
 .st-hud__store-panel {
