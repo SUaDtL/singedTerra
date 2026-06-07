@@ -79,6 +79,10 @@ function bootstrap(): void {
     lastActiveId = null;
     activeIsAi = false;
     aiActedKey = null;
+    // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
+    // a networked "Waiting for…" surviving into a later hot-seat game (which has no
+    // turn-watch to reset it).
+    hud.setTurnWatch({ state: 'clear' });
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
@@ -127,6 +131,7 @@ function bootstrap(): void {
     hud.setConnection('connected');
     newClient.onConnectionChange?.((connState) => hud.setConnection(connState));
     newClient.onFireFailed?.((message) => hud.flashMessage(message));
+    newClient.onTurnWatch?.((watch) => hud.setTurnWatch(watch));
 
     unsubscribe = newClient.onStateChange((state) => {
       renderer.render(state);

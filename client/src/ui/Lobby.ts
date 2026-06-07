@@ -1292,6 +1292,17 @@ export class Lobby {
             return;
           }
 
+          // Dead-room: if I'm no longer in the roster (reaped as a stale ghost, or
+          // otherwise removed), the room is effectively gone for me — bail to the
+          // create view instead of waiting forever on a row I'm not part of (P1-6b).
+          if (
+            Array.isArray(row.players) &&
+            !row.players.some((p) => p.id === this.waitingPlayerId)
+          ) {
+            this.handleRoomGone('You are no longer in this room.');
+            return;
+          }
+
           // De-flicker: heartbeats rewrite the row every 10s/player (bumping each
           // player's lastSeen), which would otherwise trigger a re-render on a
           // ~10s cadence. Compute a signature of the meaningful state EXCLUDING
@@ -1302,6 +1313,21 @@ export class Lobby {
             this.lastWaitingSig = sig;
             this.render();
           }
+        },
+      )
+      .on(
+        // Dead-room: the whole row was deleted (last player left, or the lazy-GC
+        // reaper culled a fully-stale room) — return to the create view instead of
+        // freezing on a room that no longer exists (P1-6b).
+        'postgres_changes' as Parameters<ReturnType<typeof supabase.channel>['on']>[0],
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${roomId}`,
+        },
+        () => {
+          this.handleRoomGone('This room is no longer available.');
         },
       )
       .subscribe();
@@ -1634,6 +1660,26 @@ export class Lobby {
     this.cleanupWaitingChannel();
     this.onlineSubView = 'create';
     this.onlineError = '';
+    this.render();
+  }
+
+  /**
+   * Handle a waiting room that has vanished out from under this client — either
+   * deleted (DELETE event) or with this player no longer in its roster (P1-6b).
+   * Tears the channel/heartbeat down, resets waiting state so nothing stale leaks
+   * into a later create/join, and returns to the create view with an explanation.
+   * Idempotent: a no-op once we've already left a waiting room.
+   */
+  private handleRoomGone(message: string): void {
+    if (!this.waitingRoomId) return; // already left / handled
+    this.cleanupWaitingChannel();
+    this.waitingRoomId = '';
+    this.waitingRoomCode = '';
+    this.waitingPlayerId = '';
+    this.waitingPlayers = [];
+    this.waitingThisPlayerReady = false;
+    this.onlineSubView = 'create';
+    this.onlineError = message;
     this.render();
   }
 
