@@ -5,6 +5,14 @@
 > is the highest-value V1 gameplay cluster (see `docs/TASKS.md`): it unblocks the
 > between-rounds shop and a persistent scoreboard.
 
+> **Status (2026-06-07):** Slices 1 (round-system core) and 2 (scoreboard + hot-seat
+> rounds control) are DONE and committed, covered by the `rounds` and `scoreboard`
+> harnesses (15 total, all green). Slice 3 (networked best-of-N via synced room
+> options) is implemented and typecheck/build-green, but **pending a `create_room`
+> redeploy + a live 2-browser playtest** to confirm the referee/turn-cursor
+> interaction across round boundaries. Remaining: between-rounds shop (`ROUND_OVER`
+> pause), Postgres score persistence.
+
 ## Goal
 
 A match is **best-of-N rounds**. Each round is a full skirmish on fresh terrain; the first
