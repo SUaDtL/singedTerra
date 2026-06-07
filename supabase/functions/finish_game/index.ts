@@ -1,30 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCors, json, getServiceClient } from '../_shared/mod.ts'
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders() })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: corsHeaders() })
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: corsHeaders() })
-  }
-
+Deno.serve(withCors(async (body) => {
   const { roomId, winnerId, playerId } = body as {
     roomId?: unknown
     winnerId?: unknown
@@ -34,25 +10,18 @@ Deno.serve(async (req: Request) => {
   }
 
   if (typeof roomId !== 'string' || roomId.trim().length === 0) {
-    return new Response(JSON.stringify({ error: 'Invalid input: roomId' }), { status: 400, headers: corsHeaders() })
+    return json({ error: 'Invalid input: roomId' }, 400)
   }
   if (typeof playerId !== 'string' || playerId.trim().length === 0) {
-    return new Response(JSON.stringify({ error: 'Invalid input: playerId' }), { status: 400, headers: corsHeaders() })
+    return json({ error: 'Invalid input: playerId' }, 400)
   }
   // winnerId is the engine tank id of the victor ('p1'..'pN'), or null for no
   // winner. Anything else is rejected — never store a client-supplied free string.
   if (winnerId !== null && (typeof winnerId !== 'string' || !/^p[1-9]\d*$/.test(winnerId))) {
-    return new Response(JSON.stringify({ error: 'Invalid input: winnerId' }), { status: 400, headers: corsHeaders() })
+    return json({ error: 'Invalid input: winnerId' }, 400)
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response(JSON.stringify({ error: 'Server misconfiguration' }), { status: 500, headers: corsHeaders() })
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = getServiceClient()
 
   // Fetch the active room to authorize the caller and bound-check the winner.
   const { data: room, error: fetchError } = await supabase
@@ -64,22 +33,22 @@ Deno.serve(async (req: Request) => {
 
   if (fetchError) {
     console.error('finish_game: fetch error', fetchError)
-    return new Response(JSON.stringify({ error: 'Failed to fetch room' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Failed to fetch room' }, 500)
   }
   if (!room) {
-    return new Response(JSON.stringify({ error: 'Room not found or not active' }), { status: 404, headers: corsHeaders() })
+    return json({ error: 'Room not found or not active' }, 404)
   }
 
   const players = (room.players ?? []) as Array<{ id: string }>
   // Authorization: the caller must be a member of the room.
   if (!players.some((p) => p.id === playerId)) {
-    return new Response(JSON.stringify({ error: 'Player not in room' }), { status: 403, headers: corsHeaders() })
+    return json({ error: 'Player not in room' }, 403)
   }
   // Roster bound-check: winner 'pN' must map to a real seat (1..players.length).
   if (winnerId !== null) {
     const seat = Number(winnerId.slice(1))
     if (!(seat >= 1 && seat <= players.length)) {
-      return new Response(JSON.stringify({ error: 'winnerId is not a seat in this room' }), { status: 400, headers: corsHeaders() })
+      return json({ error: 'winnerId is not a seat in this room' }, 400)
     }
   }
 
@@ -91,8 +60,8 @@ Deno.serve(async (req: Request) => {
 
   if (error) {
     console.error('finish_game: update error', error)
-    return new Response(JSON.stringify({ error: 'Failed to finish game' }), { status: 500, headers: corsHeaders() })
+    return json({ error: 'Failed to finish game' }, 500)
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders() })
-})
+  return json({ ok: true }, 200)
+}))

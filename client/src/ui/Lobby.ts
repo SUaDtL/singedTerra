@@ -378,7 +378,7 @@ export class Lobby {
         margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 10px;
         font-weight: 600; font-family: var(--font-mono);
       }
-      #lobby .online-badge.ready { background: rgba(77, 232, 122, 0.16); color: #6ff09a; }
+      #lobby .online-badge.ready { background: rgba(77, 232, 122, 0.16); color: var(--ready); }
       #lobby .online-badge.waiting { background: rgba(255, 210, 63, 0.16); color: var(--gold); }
       #lobby .online-status { color: var(--text-dim); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
       #lobby .online-status.error { color: var(--tank-red); }
@@ -388,6 +388,24 @@ export class Lobby {
         border-radius: 5px; padding: 6px 8px; font-size: 20px; font-weight: 700;
         width: 80px; text-align: center; letter-spacing: 4px; text-transform: uppercase;
         font-family: var(--font-mono);
+      }
+      /* Pre-canvas controls legend (P3-13b): non-blocking footer so keyboard
+         players learn aim/power/fire before the play field is uncovered. */
+      #lobby .lobby-controls {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+        margin-top: 18px; padding-top: 12px;
+        border-top: 1px solid rgba(255, 210, 63, 0.14);
+        color: var(--text-dim); font-size: 12px;
+      }
+      #lobby .lobby-controls .lobby-controls__title {
+        color: var(--text-gold); font-size: 11px;
+        text-transform: uppercase; letter-spacing: 0.5px;
+      }
+      #lobby .lobby-controls kbd {
+        font-family: var(--font-mono); font-size: 11px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 210, 63, 0.25);
+        border-radius: 3px; padding: 1px 5px;
       }
     `;
     document.head.append(style);
@@ -413,7 +431,27 @@ export class Lobby {
       card.append(this.renderOnlineTab());
     }
 
+    card.append(this.renderControlsLegend());
+
     this.root.append(card);
+  }
+
+  /**
+   * Non-blocking controls legend shown in the lobby BEFORE the canvas is
+   * uncovered, so keyboard players know the aim/power/fire keys up front
+   * (P3-13b). Mirrors the in-game on-canvas legend; purely informational, so it
+   * never gates the start flow.
+   */
+  private renderControlsLegend(): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'lobby-controls';
+    el.innerHTML =
+      '<span class="lobby-controls__title">Controls</span>' +
+      '<span><kbd>&larr;</kbd>/<kbd>&rarr;</kbd> Aim</span>' +
+      '<span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> Power</span>' +
+      '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
+      '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
+    return el;
   }
 
   // ---- Tab bar ----
@@ -1019,7 +1057,7 @@ export class Lobby {
     if (this.browseRooms.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'online-player-row';
-      empty.style.cssText = 'color:#9aa3b2;';
+      empty.style.cssText = 'color:var(--text-dim);';
       empty.textContent = 'No public rooms right now.';
       list.append(empty);
     } else {
@@ -1093,7 +1131,7 @@ export class Lobby {
 
     // Room code display
     const codeLabel = document.createElement('p');
-    codeLabel.style.cssText = 'color:#9aa3b2;font-size:13px;margin:0 0 6px;';
+    codeLabel.style.cssText = 'color:var(--text-dim);font-size:13px;margin:0 0 6px;';
     codeLabel.textContent = 'Share this code:';
     frag.append(codeLabel);
 
@@ -1110,7 +1148,7 @@ export class Lobby {
 
     // Player list
     const listHeader = document.createElement('p');
-    listHeader.style.cssText = 'color:#9aa3b2;font-size:13px;margin:0 0 8px;';
+    listHeader.style.cssText = 'color:var(--text-dim);font-size:13px;margin:0 0 8px;';
     listHeader.textContent = `Players (${this.waitingPlayers.length}/${this.waitingOptions.maxPlayers}):`;
     frag.append(listHeader);
 
@@ -1254,6 +1292,17 @@ export class Lobby {
             return;
           }
 
+          // Dead-room: if I'm no longer in the roster (reaped as a stale ghost, or
+          // otherwise removed), the room is effectively gone for me — bail to the
+          // create view instead of waiting forever on a row I'm not part of (P1-6b).
+          if (
+            Array.isArray(row.players) &&
+            !row.players.some((p) => p.id === this.waitingPlayerId)
+          ) {
+            this.handleRoomGone('You are no longer in this room.');
+            return;
+          }
+
           // De-flicker: heartbeats rewrite the row every 10s/player (bumping each
           // player's lastSeen), which would otherwise trigger a re-render on a
           // ~10s cadence. Compute a signature of the meaningful state EXCLUDING
@@ -1264,6 +1313,21 @@ export class Lobby {
             this.lastWaitingSig = sig;
             this.render();
           }
+        },
+      )
+      .on(
+        // Dead-room: the whole row was deleted (last player left, or the lazy-GC
+        // reaper culled a fully-stale room) — return to the create view instead of
+        // freezing on a room that no longer exists (P1-6b).
+        'postgres_changes' as Parameters<ReturnType<typeof supabase.channel>['on']>[0],
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${roomId}`,
+        },
+        () => {
+          this.handleRoomGone('This room is no longer available.');
         },
       )
       .subscribe();
@@ -1460,7 +1524,7 @@ export class Lobby {
     if (!me) return wrapper;
 
     const heading = document.createElement('p');
-    heading.style.cssText = 'color:#9aa3b2;font-size:13px;margin:8px 0 6px;';
+    heading.style.cssText = 'color:var(--text-dim);font-size:13px;margin:8px 0 6px;';
     heading.textContent = 'Your name & color:';
     wrapper.append(heading);
 
@@ -1596,6 +1660,26 @@ export class Lobby {
     this.cleanupWaitingChannel();
     this.onlineSubView = 'create';
     this.onlineError = '';
+    this.render();
+  }
+
+  /**
+   * Handle a waiting room that has vanished out from under this client — either
+   * deleted (DELETE event) or with this player no longer in its roster (P1-6b).
+   * Tears the channel/heartbeat down, resets waiting state so nothing stale leaks
+   * into a later create/join, and returns to the create view with an explanation.
+   * Idempotent: a no-op once we've already left a waiting room.
+   */
+  private handleRoomGone(message: string): void {
+    if (!this.waitingRoomId) return; // already left / handled
+    this.cleanupWaitingChannel();
+    this.waitingRoomId = '';
+    this.waitingRoomCode = '';
+    this.waitingPlayerId = '';
+    this.waitingPlayers = [];
+    this.waitingThisPlayerReady = false;
+    this.onlineSubView = 'create';
+    this.onlineError = message;
     this.render();
   }
 
