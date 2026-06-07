@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { AiDifficulty } from '@shared/types/GameState';
+import { clamp } from '@shared/engine/math';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
 
 /** Play mode chosen in the lobby. */
@@ -1929,7 +1930,3 @@ function parseNumber(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Clamp `n` to the inclusive [lo, hi] range. */
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, n));
-}

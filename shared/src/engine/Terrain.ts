@@ -16,6 +16,8 @@
  * seed always yields identical terrain.
  */
 
+import { clamp } from './math';
+
 export const CANVAS_WIDTH = 800;
 export const CANVAS_HEIGHT = 500;
 
@@ -36,11 +38,6 @@ function mulberry32(seed: number): () => number {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-/** Clamp a number to an inclusive range. */
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 
 /**

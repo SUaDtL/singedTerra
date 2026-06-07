@@ -23,7 +23,9 @@ import {
   Tank,
   TANK_HEIGHT,
   TANK_WIDTH,
+  BARREL_LENGTH,
 } from './Tank';
+import { clamp } from './math';
 import {
   launchVelocity,
   stepProjectile,
@@ -66,9 +68,6 @@ import { createRng } from './Random';
  */
 const DEFAULT_SEED = 0x5eed_1234;
 
-/** Barrel length (px) used to offset the projectile spawn off the tank body. */
-const BARREL_LENGTH = 18;
-
 /** Push-off distance (px) along the surface normal after a bounce so the next
  *  tick does not re-collide with the same solid pixel. */
 const BOUNCE_EPS = 1.5;
@@ -78,10 +77,6 @@ const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
 const POWER_MIN = 0;
 const POWER_MAX = 100;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 export class GameEngine {
   private state: GameState;

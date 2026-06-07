@@ -27,9 +27,10 @@ import {
   sweepCollide,
   GRAVITY,
 } from './Physics';
-import { barrelTip, TANK_HEIGHT } from './Tank';
+import { barrelTip, TANK_HEIGHT, BARREL_LENGTH } from './Tank';
 import { getWeapon, type WeaponType } from './WeaponSystem';
 import { createRng } from './Random';
+import { clamp } from './math';
 
 // AiDifficulty is defined in types/GameState (a leaf module) and re-exported here
 // for convenience so callers can `import { AiDifficulty } from './AI'`.
@@ -42,10 +43,6 @@ export interface AiPlan {
   angle: number;
   power: number;
 }
-
-/** Barrel length used to offset the projectile spawn — MUST match GameEngine's
- *  BARREL_LENGTH so the bot simulates from the same muzzle point the engine fires from. */
-const BARREL_LENGTH = 18;
 
 /** Hard cap on simulated flight ticks per candidate (a high lob is ~500–900). */
 const SIM_MAX_TICKS = 1600;
@@ -65,10 +62,6 @@ const TUNING: Record<AiDifficulty, Tuning> = {
   medium: { angleStep: 2, powerStep: 2, angleError: 1.6, powerError: 2 },
   hard:   { angleStep: 1, powerStep: 1, angleError: 0.5, powerError: 0.8 },
 };
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 /** Stable small hash of a tank id (e.g. 'p1','p2') for seeding. */
 function hashId(id: string): number {
