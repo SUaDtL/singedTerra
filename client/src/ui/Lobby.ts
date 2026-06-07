@@ -378,7 +378,7 @@ export class Lobby {
         margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 10px;
         font-weight: 600; font-family: var(--font-mono);
       }
-      #lobby .online-badge.ready { background: rgba(77, 232, 122, 0.16); color: #6ff09a; }
+      #lobby .online-badge.ready { background: rgba(77, 232, 122, 0.16); color: var(--ready); }
       #lobby .online-badge.waiting { background: rgba(255, 210, 63, 0.16); color: var(--gold); }
       #lobby .online-status { color: var(--text-dim); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
       #lobby .online-status.error { color: var(--tank-red); }
@@ -1019,7 +1019,7 @@ export class Lobby {
     if (this.browseRooms.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'online-player-row';
-      empty.style.cssText = 'color:#9aa3b2;';
+      empty.style.cssText = 'color:var(--text-dim);';
       empty.textContent = 'No public rooms right now.';
       list.append(empty);
     } else {
@@ -1093,7 +1093,7 @@ export class Lobby {
 
     // Room code display
     const codeLabel = document.createElement('p');
-    codeLabel.style.cssText = 'color:#9aa3b2;font-size:13px;margin:0 0 6px;';
+    codeLabel.style.cssText = 'color:var(--text-dim);font-size:13px;margin:0 0 6px;';
     codeLabel.textContent = 'Share this code:';
     frag.append(codeLabel);
 
@@ -1110,7 +1110,7 @@ export class Lobby {
 
     // Player list
     const listHeader = document.createElement('p');
-    listHeader.style.cssText = 'color:#9aa3b2;font-size:13px;margin:0 0 8px;';
+    listHeader.style.cssText = 'color:var(--text-dim);font-size:13px;margin:0 0 8px;';
     listHeader.textContent = `Players (${this.waitingPlayers.length}/${this.waitingOptions.maxPlayers}):`;
     frag.append(listHeader);
 
@@ -1460,7 +1460,7 @@ export class Lobby {
     if (!me) return wrapper;
 
     const heading = document.createElement('p');
-    heading.style.cssText = 'color:#9aa3b2;font-size:13px;margin:8px 0 6px;';
+    heading.style.cssText = 'color:var(--text-dim);font-size:13px;margin:8px 0 6px;';
     heading.textContent = 'Your name & color:';
     wrapper.append(heading);
 

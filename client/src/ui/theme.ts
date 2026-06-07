@@ -79,11 +79,31 @@ export const FONT = {
   sans: "system-ui, -apple-system, 'Segoe UI', sans-serif",
 } as const;
 
-/** CRT overlay intensity (D2: subtle). Mirrored in style.css :root. */
+/** CRT overlay intensity (D2: subtle). The CANONICAL source for the CSS chrome:
+ *  crtCssVars() projects these into the --crt-* custom properties at startup, so
+ *  style.css's :root values are only fallbacks and can't silently drift. */
 export const CRT = {
   scanlineAlpha: 0.1,
   vignetteAlpha: 0.35,
 } as const;
+
+/** Functional UI-state accents — NOT part of the dusk art palette (the banner has
+ *  no green); DOM-only state colours mirrored as CSS vars in style.css :root. */
+export const STATUS = {
+  ready: '#6ff09a', // online "ready" badge green
+} as const;
+
+/**
+ * The CRT chrome as a CSS-custom-property map. Pure (no DOM access — see file
+ * header); the caller (main.ts) writes the result onto document root so the
+ * canvas tokens (CRT) and the DOM chrome (--crt-*) are generated from ONE place.
+ */
+export function crtCssVars(): Record<string, string> {
+  return {
+    '--crt-scanline-alpha': String(CRT.scanlineAlpha),
+    '--crt-vignette-alpha': String(CRT.vignetteAlpha),
+  };
+}
 
 /**
  * Build the banner dusk-sky gradient onto a canvas context. Centralised so every

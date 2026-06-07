@@ -9,6 +9,7 @@ import { InputHandler } from './input/InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
+import { crtCssVars } from './ui/theme';
 
 /**
  * Entry point. Grabs the canvas + overlay containers, shows the Lobby, and on
@@ -28,10 +29,16 @@ function bootstrap(): void {
   const canvas: HTMLCanvasElement = canvasEl;
   const hudRoot = requireElement('hud');
   const overlayRoot = requireElement('game-overlay');
+  const modalRoot = requireElement('modal-layer');
   const lobbyRoot = requireElement('lobby');
 
+  // Project the canonical CRT intensities (theme.ts) onto the DOM chrome's CSS
+  // custom properties so the canvas tokens and the --crt-* vars share one source. (P3-16)
+  const rootStyle = document.documentElement.style;
+  for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);
+
   const renderer = new Renderer(canvas);
-  const hud = new HUD(hudRoot, overlayRoot);
+  const hud = new HUD(hudRoot, overlayRoot, modalRoot);
 
   // Per-game wiring that gets torn down and rebuilt on restart.
   let client: GameClient | null = null;

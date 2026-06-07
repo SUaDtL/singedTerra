@@ -33,9 +33,13 @@
   --font-display: 'SingedDisplay', 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
   --font-mono: 'Courier New', ui-monospace, 'SFMono-Regular', monospace;
   --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* CRT chrome intensity (D2: subtle) */
+  /* CRT chrome intensity (D2: subtle). These are the static fallbacks; the
+   * canonical values live in theme.ts (CRT) and are written over these at
+   * startup by crtCssVars() in main.ts, so the two can never drift again. */
   --crt-scanline-alpha: 0.10;
-  --crt-vignette-alpha: 0.45;
+  --crt-vignette-alpha: 0.35;
+  /* Functional UI-state accent (online "ready" green) — mirrors theme.ts STATUS.ready. */
+  --ready: #6ff09a;
 }
 
 html,
@@ -181,4 +185,23 @@ body {
 
 #lobby[hidden] {
   display: none;
+}
+
+/*
+ * In-game modal layer (store + game-over). A full-#app overlay pinned ABOVE the
+ * CRT chrome (z 30/31) so its panels render crisp and undimmed — unlike the
+ * on-canvas #game-overlay (z 5), whose stacking context traps its children
+ * beneath the CRT. Non-interactive as a layer; the modals inside opt back in
+ * (pointer-events: auto). Because it spans the full app (canvas + HUD panel),
+ * a modal's inset:0 centers over the whole stage, near its right-panel trigger,
+ * instead of the far-left canvas. (P3-16)
+ */
+#modal-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+#modal-layer button {
+  pointer-events: auto;
 }
