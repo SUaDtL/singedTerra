@@ -203,6 +203,22 @@ export interface TankState {
    * resets). Deterministic integer. See docs/SPRINT6_MATCH_STRUCTURE.md.
    */
   roundWins: number;
+  /**
+   * Opponents this tank has killed across the whole match (V1 scoreboard). Credited
+   * to the SHOOTER when its blast/burn or a crater-burial it caused takes an opponent
+   * from alive to dead. Self-kills never count. Accumulates across rounds (carried,
+   * not reset). Deterministic integer.
+   */
+  kills: number;
+  /**
+   * Total EFFECTIVE damage this tank has dealt to OPPONENTS across the match (V1
+   * scoreboard). The same figure the store economy pays for — post-clamp health lost
+   * by opponents, excluding self-damage, overkill, and shield-absorbed amounts.
+   * Accumulates across rounds (carried, not reset). Deterministic, but may be
+   * FRACTIONAL (it sums raw health deltas, not the rounded credit figure) — the HUD
+   * rounds it for display.
+   */
+  totalDamage: number;
 }
 
 export interface ProjectileState {

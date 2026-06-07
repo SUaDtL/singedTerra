@@ -655,6 +655,8 @@ export class GameEngine {
         tank.credits = old.credits; // carry earnings
         tank.inventory = old.inventory; // carry purchased ammo (and spent rounds)
         tank.roundWins = old.roundWins; // accumulate match score
+        tank.kills = old.kills; // accumulate match scoreboard
+        tank.totalDamage = old.totalDamage; // accumulate match scoreboard
       }
     }
     this.state.tanks = fresh;
@@ -711,7 +713,17 @@ export class GameEngine {
     // Store economy: credit the shooter for EFFECTIVE damage (post-clamp) dealt to
     // an OPPONENT this shot — self-damage, overkill, and shield-absorbed damage
     // don't pay (only the leaked overflow reaches health and counts).
-    if (tank.id !== this.shooterId) this.shotDamage += before - tank.health;
+    if (tank.id !== this.shooterId) {
+      const dealt = before - tank.health;
+      this.shotDamage += dealt;
+      // V1 scoreboard: accrue the shooter's match damage tally, and credit a kill
+      // when this hit takes the opponent from alive to dead.
+      const shooter = this.state.tanks.find((t) => t.id === this.shooterId);
+      if (shooter) {
+        shooter.totalDamage += dealt;
+        if (before > 0 && tank.health <= 0) shooter.kills += 1;
+      }
+    }
   }
 
   private detonate(cx: number, cy: number, weaponType: WeaponType): void {
@@ -759,6 +771,13 @@ export class GameEngine {
         tank.y = surf; // crater opened beneath -> tank falls onto new floor
       } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) === 1) {
         Tank.applyDamage(tank, tank.health); // dirt covers mid-body -> buried, instakill
+        // V1 scoreboard: a burial caused by this shot is a kill for the shooter
+        // (not blast damage, so it adds to kills but not totalDamage). Self-burial
+        // from one's own crater does not count.
+        if (!tank.alive && tank.id !== this.shooterId) {
+          const shooter = this.state.tanks.find((t) => t.id === this.shooterId);
+          if (shooter) shooter.kills += 1;
+        }
       }
     }
 
