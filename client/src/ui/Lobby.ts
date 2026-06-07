@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import type { AiDifficulty } from '@shared/types/GameState';
+// NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
 
 /** Play mode chosen in the lobby. */
 export type GameMode = 'hotseat' | 'network';
@@ -9,6 +11,9 @@ export interface LobbyPlayer {
   id?: string;
   name: string;
   color: string;
+  /** CPU difficulty when this seat is a computer opponent (hot-seat only);
+   *  absent => human. */
+  ai?: AiDifficulty;
 }
 
 /**
@@ -76,6 +81,8 @@ interface SettingsState {
 interface PlayerRowState {
   name: string;
   color: string;
+  /** CPU difficulty for this seat, or undefined for a human. */
+  ai?: AiDifficulty;
 }
 
 /** Network room player as returned by the Edge Functions. */
@@ -84,6 +91,8 @@ interface NetworkPlayer {
   name: string;
   color: string;
   ready: boolean;
+  /** CPU difficulty for bot seats; absent => human. */
+  ai?: AiDifficulty;
 }
 
 /** Active tab on the lobby. */
@@ -134,6 +143,10 @@ export class Lobby {
   private onlineGravity = '';
   /** Visibility for the room being created; defaults to public. */
   private onlineVisibility: RoomVisibility = 'public';
+  /** Number of CPU opponents to seed into the room on create (0..maxPlayers-1). */
+  private onlineBots = 0;
+  /** Difficulty applied to all seeded CPU opponents. */
+  private onlineBotDifficulty: AiDifficulty = 'medium';
 
   // Join form state. Default the join color to the SECOND palette entry (Blue)
   // rather than the first (Red) — the create form defaults to Red, so if both
@@ -257,6 +270,18 @@ export class Lobby {
       #lobby .lobby-row .lobby-name { flex: 1; }
       #lobby .lobby-row input[type="text"] { width: 100%; box-sizing: border-box; }
       #lobby .lobby-swatches { display: flex; gap: 6px; }
+      #lobby .lobby-control {
+        flex: 0 0 auto;
+        padding: 6px 8px;
+        border: 1px solid rgba(255, 210, 63, 0.3);
+        border-radius: 4px;
+        background: rgba(12, 7, 22, 0.85);
+        color: var(--text-gold, #ffe9b0);
+        font-family: var(--font-sans, sans-serif);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      #lobby .lobby-control:hover { border-color: var(--ember, #ff7a1f); }
       #lobby .lobby-swatch {
         width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
         border: 2px solid transparent; padding: 0; background-clip: padding-box;
@@ -470,7 +495,11 @@ export class Lobby {
     start.disabled = this.validationError() !== null;
     start.addEventListener('click', () => {
       if (this.validationError() !== null) return;
-      const players = this.players.map((p) => ({ name: p.name.trim(), color: p.color }));
+      const players = this.players.map((p, i) => ({
+        name: p.name.trim() || (p.ai ? `CPU ${i + 1}` : `Player ${i + 1}`),
+        color: p.color,
+        ...(p.ai ? { ai: p.ai } : {}),
+      }));
       const settings = this.parseSettings();
       this.onReady({
         mode: 'hotseat',
@@ -537,9 +566,46 @@ export class Lobby {
       if (n === this.onlineMaxPlayers) opt.selected = true;
       mpSelect.append(opt);
     }
-    mpSelect.addEventListener('change', () => { this.onlineMaxPlayers = Number(mpSelect.value); });
+    mpSelect.addEventListener('change', () => {
+      this.onlineMaxPlayers = Number(mpSelect.value);
+      // Keep bot count valid (need ≥1 human seat).
+      if (this.onlineBots > this.onlineMaxPlayers - 1) this.onlineBots = this.onlineMaxPlayers - 1;
+      this.render();
+    });
     mpField.append(mpLabel, mpSelect);
     frag.append(mpField);
+
+    // CPU opponents: seed N bot seats (0..maxPlayers-1) at a chosen difficulty.
+    // They occupy seats immediately (always ready), so the remaining seats are
+    // the human ones friends join via the code. Driven by whichever client is
+    // connected (see NetworkClient.maybeDriveBot).
+    const botField = document.createElement('div');
+    botField.className = 'lobby-field';
+    const botLabel = document.createElement('label');
+    botLabel.textContent = 'CPU opponents';
+    const botSelect = document.createElement('select');
+    for (let n = 0; n <= this.onlineMaxPlayers - 1; n++) {
+      const opt = document.createElement('option');
+      opt.value = String(n);
+      opt.textContent = String(n);
+      if (n === this.onlineBots) opt.selected = true;
+      botSelect.append(opt);
+    }
+    botSelect.addEventListener('change', () => { this.onlineBots = Number(botSelect.value); this.render(); });
+    botField.append(botLabel, botSelect);
+    if (this.onlineBots > 0) {
+      const diffSelect = document.createElement('select');
+      for (const d of ['easy', 'medium', 'hard'] as AiDifficulty[]) {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d[0].toUpperCase() + d.slice(1);
+        if (d === this.onlineBotDifficulty) opt.selected = true;
+        diffSelect.append(opt);
+      }
+      diffSelect.addEventListener('change', () => { this.onlineBotDifficulty = diffSelect.value as AiDifficulty; });
+      botField.append(diffSelect);
+    }
+    frag.append(botField);
 
     // Visibility toggle (public is listed/joinable from Browse; private is
     // code-only). Defaults to public.
@@ -629,9 +695,21 @@ export class Lobby {
     try {
       const maxWind = parseNumber(this.onlineMaxWind);
       const gravity = parseNumber(this.onlineGravity);
+
+      // Build CPU seats with palette colors unique vs the creator + each other.
+      const used = new Set<string>([this.onlineColor]);
+      const bots: Array<{ name: string; color: string; ai: AiDifficulty }> = [];
+      for (let i = 0; i < this.onlineBots; i++) {
+        const c = PALETTE.find((p) => !used.has(p.value));
+        if (!c) break; // ran out of distinct colors
+        used.add(c.value);
+        bots.push({ name: `CPU ${i + 1}`, color: c.value, ai: this.onlineBotDifficulty });
+      }
+
       const body: Record<string, unknown> = {
         playerName: name,
         color: this.onlineColor,
+        ...(bots.length > 0 ? { bots } : {}),
         options: {
           maxPlayers: this.onlineMaxPlayers,
           visibility: this.onlineVisibility,
@@ -652,7 +730,7 @@ export class Lobby {
           body: JSON.stringify(body),
         },
       );
-      const data = await res.json() as { roomId?: string; code?: string; playerId?: string; error?: string };
+      const data = await res.json() as { roomId?: string; code?: string; playerId?: string; players?: NetworkPlayer[]; error?: string };
 
       if (!res.ok || data.error) {
         this.onlineError = data.error ?? 'Failed to create room.';
@@ -661,11 +739,12 @@ export class Lobby {
         return;
       }
 
-      // Transition to waiting room
+      // Transition to waiting room. Prefer the server's full players array (it
+      // includes any CPU seats with their generated ids); fall back to just us.
       this.waitingRoomId = data.roomId!;
       this.waitingRoomCode = data.code!;
       this.waitingPlayerId = data.playerId!;
-      this.waitingPlayers = [{
+      this.waitingPlayers = data.players ?? [{
         id: data.playerId!,
         name,
         color: this.onlineColor,
@@ -1209,7 +1288,7 @@ export class Lobby {
   private emitNetworkReady(room: { players: NetworkPlayer[]; seed: number; options: { maxPlayers: number; maxWind: number; gravity: number } }): void {
     const config: LobbyConfig = {
       mode: 'network',
-      players: room.players.map((p) => ({ id: p.id, name: p.name, color: p.color })),
+      players: room.players.map((p) => ({ id: p.id, name: p.name, color: p.color, ...(p.ai ? { ai: p.ai } : {}) })),
       playerNames: room.players.map((p) => p.name),
       roomCode: this.waitingRoomCode,
       roomId: this.waitingRoomId,
@@ -1607,7 +1686,35 @@ export class Lobby {
       swatches.append(swatch);
     }
 
-    row.append(name, swatches);
+    // Control selector: Human or a CPU difficulty. A CPU seat ignores its name
+    // input visually (kept for color/label) and is driven by the AI at runtime.
+    const control = document.createElement('select');
+    control.className = 'lobby-control';
+    control.title = 'Who controls this tank';
+    const OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+      { value: 'human', label: '👤 Human' },
+      { value: 'easy', label: '🤖 CPU · Easy' },
+      { value: 'medium', label: '🤖 CPU · Medium' },
+      { value: 'hard', label: '🤖 CPU · Hard' },
+    ];
+    for (const o of OPTIONS) {
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.label;
+      if ((this.players[index].ai ?? 'human') === o.value) opt.selected = true;
+      control.append(opt);
+    }
+    control.addEventListener('change', () => {
+      const v = control.value;
+      this.players[index].ai = v === 'human' ? undefined : (v as AiDifficulty);
+      // Default a friendly CPU name if the seat is still on its placeholder.
+      if (this.players[index].ai && !this.players[index].name.trim()) {
+        this.players[index].name = `CPU ${index + 1}`;
+      }
+      this.render();
+    });
+
+    row.append(name, swatches, control);
     return row;
   }
 

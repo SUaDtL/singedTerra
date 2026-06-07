@@ -16,11 +16,31 @@ interface NetworkFireAction {
   weapon: string
 }
 
+interface NetworkShieldAction {
+  type: 'use_shield'
+}
+
+interface NetworkBuyAction {
+  type: 'buy'
+  weapon: string
+}
+
+type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction
+
+/** Only turn-ENDING actions advance the active-player cursor; a buy is neutral
+ *  (a player may buy several times, then fire/shield to end the turn). */
+function endsTurn(type: string): boolean {
+  return type === 'fire' || type === 'use_shield'
+}
+
 interface StoredPlayer {
   id: string
   name: string
   color: string
   ready: boolean
+  /** CPU difficulty when this seat is a bot; absent => human. Lets the referee
+   *  authorize a member to proxy a bot's action. */
+  ai?: 'easy' | 'medium' | 'hard'
 }
 
 Deno.serve(async (req: Request) => {
@@ -45,9 +65,14 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  const { roomId, playerId, action } = body as {
+  const { roomId, playerId, actingPlayerId, action } = body as {
     roomId?: unknown
     playerId?: unknown
+    // actingPlayerId: the seat this action is FOR. Defaults to playerId (a human
+    // acting for themselves). When it differs, the submitter is driving a CPU seat
+    // on its behalf (any room member may; idempotency is the seq-unique + cursor
+    // gate). Validated below.
+    actingPlayerId?: unknown
     action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown }
   }
 
@@ -75,37 +100,49 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  if (action.type !== 'fire') {
+  // Turn-ending actions committed to the log: 'fire' (carries aim) or 'use_shield'
+  // (no payload). Both are validated here; any other type is rejected. (Sprint 4
+  // Slice 3.2 — use_shield is the first non-fire action the replay log carries.)
+  if (action.type !== 'fire' && action.type !== 'use_shield' && action.type !== 'buy') {
     return new Response(
-      JSON.stringify({ error: 'Invalid input: action.type must be "fire"' }),
+      JSON.stringify({ error: 'Invalid input: action.type must be "fire", "use_shield", or "buy"' }),
       { status: 400, headers: corsHeaders() }
     )
   }
 
-  if (typeof action.angle !== 'number' || !isFinite(action.angle)) {
+  if (action.type === 'buy' && (typeof action.weapon !== 'string' || action.weapon.trim().length === 0)) {
     return new Response(
-      JSON.stringify({ error: 'Invalid input: action.angle must be a finite number' }),
+      JSON.stringify({ error: 'Invalid input: buy action requires a weapon' }),
       { status: 400, headers: corsHeaders() }
     )
   }
 
-  if (
-    typeof action.power !== 'number' ||
-    !isFinite(action.power) ||
-    action.power < 0 ||
-    action.power > 100
-  ) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: action.power must be a number in [0, 100]' }),
-      { status: 400, headers: corsHeaders() }
-    )
-  }
+  if (action.type === 'fire') {
+    if (typeof action.angle !== 'number' || !isFinite(action.angle)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input: action.angle must be a finite number' }),
+        { status: 400, headers: corsHeaders() }
+      )
+    }
 
-  if (typeof action.weapon !== 'string' || action.weapon.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid input: action.weapon' }),
-      { status: 400, headers: corsHeaders() }
-    )
+    if (
+      typeof action.power !== 'number' ||
+      !isFinite(action.power) ||
+      action.power < 0 ||
+      action.power > 100
+    ) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input: action.power must be a number in [0, 100]' }),
+        { status: 400, headers: corsHeaders() }
+      )
+    }
+
+    if (typeof action.weapon !== 'string' || action.weapon.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input: action.weapon' }),
+        { status: 400, headers: corsHeaders() }
+      )
+    }
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -143,7 +180,7 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  // Validate player membership
+  // Validate player membership (the SUBMITTER must be in the room).
   const players = (room.players ?? []) as StoredPlayer[]
   const isMember = players.some(p => p.id === playerId)
   if (!isMember) {
@@ -153,13 +190,49 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  // Build the validated fire action
-  const fireAction: NetworkFireAction = {
-    type: 'fire',
-    angle: action.angle as number,
-    power: action.power as number,
-    weapon: (action.weapon as string).trim(),
+  // The seat this action is FOR (defaults to the submitter — a human acting for
+  // themselves). When it differs, the submitter is proxying a CPU seat.
+  const actingId = typeof actingPlayerId === 'string' && actingPlayerId.trim().length > 0
+    ? actingPlayerId
+    : playerId
+
+  // REFEREE TURN-ENFORCEMENT (Sprint 4 Slice 3.3 — NON-OPTIONAL). The action's
+  // ACTING seat must be the active player; the cursor advances by modulo on every
+  // turn-ending action (exact for 2P; see the 3–4P elimination caveat tracked
+  // elsewhere). Two cases:
+  //   - Self (actingId === playerId): a human acting for their own seat.
+  //   - Proxy (actingId !== playerId): a client DRIVING A CPU SEAT. Allowed for
+  //     ANY room member, but ONLY when the active seat is actually a bot (ai set)
+  //     — never to impersonate another human. Exactly-once is guaranteed by the
+  //     seq-unique constraint (concurrent proxies collide; losers don't retry) +
+  //     this cursor gate (a late proxy is rejected once the turn has advanced).
+  const activeIndex = ((room.active_player_index ?? 0) % players.length + players.length) % players.length
+  const activePlayer = players[activeIndex]
+  if (!activePlayer || activePlayer.id !== actingId) {
+    return new Response(
+      JSON.stringify({ error: 'Not your turn' }),
+      { status: 403, headers: corsHeaders() }
+    )
   }
+  if (actingId !== playerId && !activePlayer.ai) {
+    return new Response(
+      JSON.stringify({ error: 'Cannot act for another human player' }),
+      { status: 403, headers: corsHeaders() }
+    )
+  }
+
+  // Build the validated action committed to the log.
+  const validatedAction: NetworkAction =
+    action.type === 'use_shield'
+      ? { type: 'use_shield' }
+      : action.type === 'buy'
+        ? { type: 'buy', weapon: (action.weapon as string).trim() }
+        : {
+            type: 'fire',
+            angle: action.angle as number,
+            power: action.power as number,
+            weapon: (action.weapon as string).trim(),
+          }
 
   // Atomically compute next seq and insert action using a Postgres function call.
   // The subquery inside VALUES computes MAX(seq)+1 at insert time, and the
@@ -199,8 +272,8 @@ Deno.serve(async (req: Request) => {
     .insert({
       room_id: roomId,
       seq: nextSeq,
-      player_id: playerId,
-      action: fireAction,
+      player_id: actingId, // attribute the action to the SEAT it is for (bot or human)
+      action: validatedAction,
     })
 
   if (insertError) {
@@ -218,20 +291,27 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  // Step 3: Advance advisory cursor (diagnostic only — not used for turn enforcement)
-  const newActivePlayerIndex = (room.active_player_index + 1) % players.length
-  const newTurn = (room.turn ?? 0) + 1
+  // Step 3: Advance the active-player cursor — ONLY for turn-ending actions. A buy
+  // is turn-neutral, so the same player keeps the turn (and the referee keeps
+  // accepting their further buys / their eventual fire). The cursor now BACKS the
+  // referee check above, so this is no longer "diagnostic only".
+  if (endsTurn(validatedAction.type)) {
+    const newActivePlayerIndex = (room.active_player_index + 1) % players.length
+    const newTurn = (room.turn ?? 0) + 1
 
-  // Fire-and-forget advisory update — failure here does not affect game correctness
-  supabase
-    .from('rooms')
-    .update({ active_player_index: newActivePlayerIndex, turn: newTurn })
-    .eq('id', roomId)
-    .then(({ error }) => {
-      if (error) {
-        console.error('submit_action: advisory cursor update error (non-fatal)', error)
-      }
-    })
+    // Fire-and-forget — a failed cursor update is non-fatal to game correctness
+    // (the canonical state is the action log), but it would mis-gate the referee,
+    // so it is logged.
+    supabase
+      .from('rooms')
+      .update({ active_player_index: newActivePlayerIndex, turn: newTurn })
+      .eq('id', roomId)
+      .then(({ error }) => {
+        if (error) {
+          console.error('submit_action: cursor update error (non-fatal)', error)
+        }
+      })
+  }
 
   return new Response(
     JSON.stringify({ seq: nextSeq, ok: true }),
