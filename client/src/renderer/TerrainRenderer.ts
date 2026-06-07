@@ -1,12 +1,18 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
+import { TERRAIN, hexToRgb } from '../ui/theme';
 
-/** Earthy crater-brown fill for solid ground pixels. */
-const TERRAIN_FILL = '#6b4a2b';
-
-/** Parse the #rrggbb fill into [r,g,b] once at module load. */
-const FILL_R = parseInt(TERRAIN_FILL.slice(1, 3), 16);
-const FILL_G = parseInt(TERRAIN_FILL.slice(3, 5), 16);
-const FILL_B = parseInt(TERRAIN_FILL.slice(5, 7), 16);
+/**
+ * Scorched depth ramp (banner palette): a LIT RIM on the top 2px of every solid
+ * run, then a shade from `top` → `mid` → `deep` over the first ~120px of depth.
+ * Gives the terrain dimensional, scorched body + a lit surface edge instead of a
+ * flat brown slab. Parsed once at module load.
+ */
+const RIM = hexToRgb(TERRAIN.rim);
+const TOP = hexToRgb(TERRAIN.top);
+const MID = hexToRgb(TERRAIN.mid);
+const DEEP = hexToRgb(TERRAIN.deep);
+/** Depth (px below the lit rim) over which top→mid→deep fully ramps. */
+const RAMP_DEPTH = 120;
 
 /**
  * TerrainRenderer paints the pixel terrain bitmap (SPEC §7 layer 2). The terrain
@@ -105,10 +111,12 @@ export class TerrainRenderer {
   }
 
   /**
-   * Rebuild the offscreen ImageData from the bitmap: solid pixels => opaque brown
-   * fill, air pixels => alpha 0 (transparent). One RGBA quad per pixel; the
-   * bitmap index y*WIDTH+x maps to byte offset (y*WIDTH+x)*4. putImageData writes
-   * the whole buffer into the offscreen canvas (NOT the main ctx).
+   * Rebuild the offscreen ImageData from the bitmap: solid pixels => opaque
+   * SCORCHED-RAMP fill (lit rim on top, darkening with depth), air pixels =>
+   * alpha 0 (transparent). Iterated PER COLUMN so each solid run's depth-from-its-
+   * own-surface drives the shade — so overhangs/cave lips also get a lit rim.
+   * No per-pixel allocation (writes straight into the Uint8ClampedArray). Runs
+   * only on bitmap change, so the per-pixel ramp math stays off the frame budget.
    */
   private rebuild(terrain: Uint8Array): void {
     const offCtx = this.offCtx;
@@ -116,16 +124,41 @@ export class TerrainRenderer {
     if (offCtx === null || img === null) return; // ensureOffscreen ran first
 
     const data = img.data;
-    const n = CANVAS_WIDTH * CANVAS_HEIGHT;
-    for (let i = 0; i < n; i++) {
-      const o = i * 4;
-      if (terrain[i] === 1) {
-        data[o] = FILL_R;
-        data[o + 1] = FILL_G;
-        data[o + 2] = FILL_B;
-        data[o + 3] = 255; // opaque solid ground
-      } else {
-        data[o + 3] = 0; // transparent air — sky shows through on composite
+    const W = CANVAS_WIDTH;
+    const H = CANVAS_HEIGHT;
+    for (let x = 0; x < W; x++) {
+      let depth = -1; // -1 = in air; resets at every air gap (fresh rim per run)
+      for (let y = 0; y < H; y++) {
+        const o = (y * W + x) * 4;
+        if (terrain[y * W + x] === 1) {
+          depth++;
+          let r: number;
+          let g: number;
+          let b: number;
+          if (depth < 2) {
+            r = RIM[0]; g = RIM[1]; b = RIM[2]; // lit surface edge
+          } else {
+            const t = Math.min((depth - 2) / RAMP_DEPTH, 1);
+            if (t < 0.5) {
+              const u = t * 2; // top -> mid
+              r = TOP[0] + (MID[0] - TOP[0]) * u;
+              g = TOP[1] + (MID[1] - TOP[1]) * u;
+              b = TOP[2] + (MID[2] - TOP[2]) * u;
+            } else {
+              const u = (t - 0.5) * 2; // mid -> deep
+              r = MID[0] + (DEEP[0] - MID[0]) * u;
+              g = MID[1] + (DEEP[1] - MID[1]) * u;
+              b = MID[2] + (DEEP[2] - MID[2]) * u;
+            }
+          }
+          data[o] = r;
+          data[o + 1] = g;
+          data[o + 2] = b;
+          data[o + 3] = 255; // opaque solid ground
+        } else {
+          depth = -1;
+          data[o + 3] = 0; // transparent air — sky shows through on composite
+        }
       }
     }
     offCtx.putImageData(img, 0, 0);

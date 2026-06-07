@@ -4,10 +4,14 @@ import { TerrainRenderer } from './TerrainRenderer';
 import { TankRenderer } from './TankRenderer';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { HUDRenderer } from './HUDRenderer';
+import { skyGradient, ACCENT } from '../ui/theme';
 
-/** Sky gradient stops (top -> horizon). */
-const SKY_TOP = '#1b2a4a';
-const SKY_BOTTOM = '#5a78a8';
+/** Fixed pixel-star field (x, y) in the upper indigo sky — deterministic. */
+const STARS: ReadonlyArray<readonly [number, number]> = [
+  [60, 36], [142, 64], [232, 28], [300, 72], [388, 40],
+  [520, 34], [612, 24], [700, 58], [760, 44], [180, 96],
+  [440, 88], [560, 100], [668, 90],
+];
 
 /**
  * One live explosion burst — purely client-side visual state.
@@ -112,8 +116,8 @@ export class Renderer {
     // markDirty() is needed here.
     this.terrain.draw(this.ctx, state.terrain);
 
-    // 3. Tanks.
-    this.tanks.drawAll(this.ctx, state.tanks);
+    // 3. Tanks (active player emphasised).
+    this.tanks.drawAll(this.ctx, state.tanks, state.activePlayerId);
 
     // 4. Projectiles (no-op when none / not FIRING). May be several at once
     // (an airburst shell splits into multiple submunitions in flight).
@@ -206,13 +210,41 @@ export class Renderer {
   }
 
   private drawSky(): void {
+    const ctx = this.ctx;
     if (this.skyGradient === null) {
-      const g = this.ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-      g.addColorStop(0, SKY_TOP);
-      g.addColorStop(1, SKY_BOTTOM);
-      this.skyGradient = g;
+      this.skyGradient = skyGradient(ctx, 0, CANVAS_HEIGHT);
     }
-    this.ctx.fillStyle = this.skyGradient;
-    this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.fillStyle = this.skyGradient;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    this.drawStars();
+    this.drawSun();
+  }
+
+  /** Pixel stars in the upper indigo band (crisp little squares). */
+  private drawStars(): void {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = ACCENT.sunCore;
+    for (const [sx, sy] of STARS) ctx.fillRect(sx, sy, 2, 2);
+    ctx.restore();
+  }
+
+  /** A low, soft sun glow on the horizon (partly occluded by terrain hills). */
+  private drawSun(): void {
+    const ctx = this.ctx;
+    const cx = CANVAS_WIDTH * 0.5;
+    const cy = CANVAS_HEIGHT * 0.66;
+    const r = 78;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, ACCENT.sunCore);
+    g.addColorStop(0.5, ACCENT.sun);
+    g.addColorStop(1, 'rgba(255, 122, 31, 0)');
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 }
