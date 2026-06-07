@@ -209,13 +209,22 @@ export class HUD {
     bar.append(fill);
 
     el.append(swatch, name, hp, bar);
-    return { el, hp, fill };
+    return { el, hp, fill, lastHealth: Math.max(0, Math.round(tank.health)) };
   }
 
   /** Mutate a player row's volatile bits (hp text, bar width, alive/active classes). */
   private syncRow(row: PlayerRow, tank: TankState, active: boolean): void {
     const health = Math.max(0, Math.round(tank.health));
     const dead = !tank.alive || health <= 0;
+
+    // Damage flash: re-trigger the ::after wash whenever health drops. Remove +
+    // force reflow + re-add restarts the CSS animation even on consecutive hits.
+    if (health < row.lastHealth) {
+      row.el.classList.remove('st-hud__player--hit');
+      void row.el.offsetWidth;
+      row.el.classList.add('st-hud__player--hit');
+    }
+    row.lastHealth = health;
 
     row.hp.textContent = `${health}`;
     row.fill.style.width = `${Math.max(0, Math.min(100, health))}%`;
@@ -307,33 +316,49 @@ export class HUD {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  font-family: system-ui, sans-serif;
-  color: #f5f5f5;
+  font-family: var(--font-sans);
+  color: var(--text);
 }
 .st-hud__players {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 10px;
+  left: 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 .st-hud__player {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 6px;
+  gap: 7px;
+  padding: 3px 8px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(12, 7, 22, 0.62);
+  border: 1px solid rgba(255, 210, 63, 0.14);
   font-size: 13px;
+  transition: box-shadow 160ms ease, background 160ms ease, opacity 220ms ease;
 }
 .st-hud__player--active {
-  background: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 0 0 2px #ffd54a;
+  background: rgba(142, 47, 83, 0.42);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(255, 210, 63, 0.35);
+  animation: st-hud-pulse 1.6s ease-in-out infinite;
 }
 .st-hud__player--dead {
-  opacity: 0.5;
+  opacity: 0.45;
   text-decoration: line-through;
+}
+/* Damage flash — a fading red wash on the ::after layer so it never fights the
+   active-player pulse animation on the element itself. */
+.st-hud__player--hit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  pointer-events: none;
+  background: rgba(232, 77, 77, 0.6);
+  animation: st-hud-flash 420ms ease forwards;
 }
 .st-hud__swatch {
   width: 12px;
@@ -341,94 +366,107 @@ export class HUD {
   border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
-.st-hud__name { min-width: 72px; }
+.st-hud__name { min-width: 74px; }
 .st-hud__hp {
   min-width: 26px;
   text-align: right;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  color: var(--text-gold);
 }
 .st-hud__bar {
   display: inline-block;
-  width: 90px;
+  width: 92px;
   height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 .st-hud__bar-fill {
   display: block;
   height: 100%;
-  transition: width 120ms linear;
+  transition: width 160ms ease;
 }
-.st-hud__wind {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.35);
-  font-size: 13px;
-}
-.st-hud__wind-arrow { font-size: 16px; }
-.st-hud__wind-value { font-variant-numeric: tabular-nums; }
+.st-hud__wind,
 .st-hud__weapon {
   position: absolute;
-  top: 36px;
-  right: 8px;
+  right: 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
+  gap: 7px;
+  padding: 3px 9px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(12, 7, 22, 0.62);
+  border: 1px solid rgba(255, 210, 63, 0.14);
   font-size: 13px;
 }
-.st-hud__weapon-label { opacity: 0.7; }
-.st-hud__weapon-value { font-weight: 600; color: #ffd54a; }
+.st-hud__wind { top: 10px; }
+.st-hud__weapon { top: 40px; }
+.st-hud__wind-label,
+.st-hud__weapon-label {
+  opacity: 0.65;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 10px;
+}
+.st-hud__wind-arrow { font-size: 16px; color: var(--tank-blue-lite); }
+.st-hud__wind-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-gold);
+}
+.st-hud__weapon-value {
+  font-family: var(--font-display);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--gold);
+}
 .st-hud__controls {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 10px;
+  right: 10px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.28);
-  color: rgba(245, 245, 245, 0.7);
+  background: rgba(12, 7, 22, 0.5);
+  color: var(--text-dim);
   font-size: 10px;
   line-height: 1.4;
 }
 .st-hud__controls kbd {
   display: inline-block;
-  padding: 0 3px;
+  padding: 0 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.16);
-  font-family: inherit;
+  background: rgba(255, 210, 63, 0.14);
+  color: var(--text-gold);
+  font-family: var(--font-mono);
   font-size: 9px;
 }
 .st-hud__aim {
   position: absolute;
-  bottom: 8px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(12, 7, 22, 0.62);
+  border: 1px solid rgba(255, 210, 63, 0.14);
+  font-family: var(--font-mono);
   font-size: 13px;
   white-space: nowrap;
+  color: var(--text-gold);
 }
 .st-hud__strip {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 10px;
+  left: 10px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
   max-width: 360px;
   pointer-events: auto;
 }
@@ -437,33 +475,34 @@ export class HUD {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 210, 63, 0.18);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.4);
-  color: #f5f5f5;
-  font-family: inherit;
+  background: rgba(12, 7, 22, 0.7);
+  color: var(--text);
+  font-family: var(--font-sans);
   font-size: 11px;
   line-height: 1.2;
+  transition: background 130ms ease, border-color 130ms ease, transform 80ms ease;
 }
 .st-hud__weapon-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 122, 31, 0.28);
+  border-color: var(--ember);
 }
+.st-hud__weapon-btn:active:not(:disabled) { transform: translateY(1px); }
 .st-hud__weapon-btn--active {
-  border-color: #ffd54a;
-  box-shadow: 0 0 0 1px #ffd54a;
-  color: #ffd54a;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.35);
+  color: var(--gold);
 }
-.st-hud__weapon-btn--depleted {
-  opacity: 0.45;
-}
-.st-hud__weapon-btn:disabled {
-  cursor: default;
-}
+.st-hud__weapon-btn--depleted { opacity: 0.4; }
+.st-hud__weapon-btn:disabled { cursor: default; }
 .st-hud__weapon-btn-ammo {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  opacity: 0.85;
+  color: var(--text-gold);
+  opacity: 0.9;
 }
 .st-hud__overlay {
   position: absolute;
@@ -471,7 +510,7 @@ export class HUD {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(12, 7, 22, 0.66);
   pointer-events: auto;
 }
 .st-hud__overlay--hidden { display: none; }
@@ -479,28 +518,53 @@ export class HUD {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 24px 32px;
+  gap: 16px;
+  padding: 28px 40px;
   border-radius: 8px;
-  background: rgba(20, 20, 24, 0.92);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  background: rgba(12, 7, 22, 0.92);
+  border: 2px solid var(--gold);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 122, 31, 0.25);
 }
 .st-hud__overlay-text {
-  font-size: 24px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(255, 122, 31, 0.5);
 }
 .st-hud__restart {
   pointer-events: auto;
   cursor: pointer;
-  padding: 8px 20px;
+  padding: 9px 24px;
   border: none;
   border-radius: 4px;
-  background: #ffd54a;
-  color: #1a1a1a;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: var(--font-display);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  transition: background 130ms ease, transform 80ms ease;
 }
-.st-hud__restart:hover { background: #ffe27a; }
+.st-hud__restart:hover { background: var(--ember); }
+.st-hud__restart:active { transform: translateY(1px); }
+
+@keyframes st-hud-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.25); }
+  50% { box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgba(255, 210, 63, 0.5); }
+}
+@keyframes st-hud-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-hud__player--active { animation: none; }
+  .st-hud__player--hit::after { animation: none; opacity: 0; }
+  .st-hud__bar-fill,
+  .st-hud__weapon-btn,
+  .st-hud__restart { transition: none; }
+}
 `;
 }
 
@@ -509,4 +573,6 @@ interface PlayerRow {
   el: HTMLElement;
   hp: HTMLElement;
   fill: HTMLElement;
+  /** Last rendered health, to detect drops and trigger the damage flash. */
+  lastHealth: number;
 }
