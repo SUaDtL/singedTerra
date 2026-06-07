@@ -781,19 +781,28 @@ export class NetworkClient implements GameClient {
     const difficulty = this.botByTank.get(tankId);
     if (!difficulty) return;                       // active seat is human
 
-    const key = `${state.turn}:${tankId}`;
-    if (key === this.lastBotKey) return;           // already submitted this turn
-    this.lastBotKey = key;
-
     const plan = computeAiPlan(state, tankId, difficulty, this.gravity);
     if (!plan) return;                             // no target (shouldn't happen)
+
+    // Buy-to-restock (P1-7b) is a TWO-PHASE turn: a turn-neutral buy, then the
+    // shot. The buy does NOT advance the turn, so the guard is keyed on the PHASE
+    // (buy vs act), not just (turn, tank). After the buy commits and replays, the
+    // bot owns the weapon, so the recomputed plan has no `buy` and this driver
+    // submits the fire on the next pass. Every client recomputes the same
+    // transition deterministically, so buy and fire land as two ordered log rows.
+    const phase = plan.buy ? 'buy' : 'act';
+    const key = `${state.turn}:${tankId}:${phase}`;
+    if (key === this.lastBotKey) return;           // already submitted this phase
+    this.lastBotKey = key;
 
     const actingId = this.supaIdByTank.get(tankId);
     if (!actingId) return;
 
-    const action: NetworkAction = plan.weapon === 'shield'
-      ? { type: 'use_shield' }
-      : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
+    const action: NetworkAction = plan.buy
+      ? { type: 'buy', weapon: plan.buy }
+      : plan.weapon === 'shield'
+        ? { type: 'use_shield' }
+        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
 
     // No retry: a seq-conflict means another client already committed the (same)
     // bot action; the referee would reject a late retry anyway (turn advanced).

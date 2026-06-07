@@ -175,7 +175,11 @@ function bootstrap(): void {
 
     clearAiTimers();
     // Swing the barrel to the planned aim first (visible), then fire after a beat.
+    // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first — the
+    // HotSeatClient applies it synchronously, so the select_weapon + fire below use
+    // the just-restocked ammo. (aiActedKey already gates this to once per turn.)
     aiTimers.push(setTimeout(() => {
+      if (plan.buy) client?.sendAction({ type: 'buy', weapon: plan.buy });
       client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
       client?.sendAction({ type: 'set_angle', angle: plan.angle });
       client?.sendAction({ type: 'set_power', power: plan.power });

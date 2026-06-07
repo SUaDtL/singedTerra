@@ -41,6 +41,9 @@ function aiTurn(e, difficulty) {
     tickToRest(e);
     return true;
   }
+  // Buy-to-restock (P1-7b): a buy plan commits the turn-neutral purchase first, so
+  // the select_weapon + fire below use the restocked ammo. Mirrors the real drivers.
+  if (plan.buy) e.applyAction({ type: 'buy', weapon: plan.buy });
   e.applyAction({ type: 'select_weapon', weapon: plan.weapon });
   e.applyAction({ type: 'set_angle', angle: plan.angle });
   e.applyAction({ type: 'set_power', power: plan.power });
@@ -174,6 +177,66 @@ function playGame(seed, difficulty, turnCap = 120) {
   log(`[scale] vs 100hp target: ${big?.weapon}`);
   if (big?.weapon !== 'nuke') fail(`vs a full-health target a hard bot with a nuke should pick nuke, got ${big?.weapon}`);
   if (!failed) log('PASS: weapon choice scales to target health (small for near-dead, heavy for healthy).');
+}
+
+// --- Check 7: buy-to-restock — a hard bot with credits + an exhausted ladder
+//     BUYS a finisher (deterministically), but a broke bot does not (P1-7b). ---
+{
+  const e = engine(0x5eed1234);
+  const st = e.getState();
+  // Exhaust every finite-stock weapon so nothing in stock can one-shot a healthy
+  // target; only the unlimited Baby Missile (34 eff dmg) remains.
+  for (const w of Object.keys(st.tanks[0].inventory)) {
+    if (!st.tanks[0].inventory[w].unlimited) st.tanks[0].inventory[w].count = 0;
+  }
+  st.tanks[1].health = 100; // needs a real finisher (eff >= 100 => nuke)
+
+  // Affordable: 15000 credits covers the nuke (12000). Expect a BUY of nuke.
+  st.tanks[0].credits = 15000;
+  const a = computeAiPlan(st, 'p1', 'hard');
+  const b = computeAiPlan(st, 'p1', 'hard');
+  log(`[restock] plan weapon=${a?.weapon} buy=${a?.buy} (credits 15000)`);
+  if (a?.buy !== 'nuke') fail(`a flush hard bot with no in-stock finisher should BUY a nuke, got buy=${a?.buy}`);
+  else if (a.weapon !== a.buy) fail(`plan.buy (${a.buy}) must equal the weapon to fire (${a.weapon})`);
+  if (JSON.stringify(a) !== JSON.stringify(b)) fail('buy-to-restock plan is NOT deterministic');
+
+  // Unaffordable: 0 credits => no buy, falls back to the unlimited Baby Missile.
+  st.tanks[0].credits = 0;
+  const broke = computeAiPlan(st, 'p1', 'hard');
+  log(`[restock] plan weapon=${broke?.weapon} buy=${broke?.buy} (credits 0)`);
+  if (broke?.buy) fail(`a broke bot must not plan a buy it cannot afford, got buy=${broke.buy}`);
+  if (broke?.weapon !== 'baby_missile') fail(`a broke bot with no premium stock should fall back to baby_missile, got ${broke?.weapon}`);
+
+  if (!failed) log('PASS: hard bot buys to restock a finisher when affordable, not when broke.');
+}
+
+// --- Check 8: a CPU-seat buy is IDEMPOTENT — duplicate bot buys (every networked
+//     client submits one; a buy is turn-neutral so the referee can't dedupe them)
+//     collapse to ONE bundle and ONE charge on replay. Humans are unaffected. ---
+{
+  const e = engine(0x5eed1234);
+  const st = e.getState();
+  st.tanks[0].ai = 'hard';                 // mark P1's seat as a CPU
+  st.tanks[0].inventory.nuke.count = 0;    // lacks the weapon
+  st.tanks[0].credits = 30000;             // could afford TWO bundles
+  e.applyAction({ type: 'buy', weapon: 'nuke' });
+  e.applyAction({ type: 'buy', weapon: 'nuke' }); // duplicate from another client
+  const inv = e.getState().tanks[0].inventory.nuke.count;
+  const spent = 30000 - e.getState().tanks[0].credits;
+  log(`[restock-idemp] bot nuke count=${inv} spent=${spent}`);
+  if (inv !== 1) fail(`a duplicate CPU-seat buy should stock ONE bundle, got ${inv}`);
+  if (spent !== 12000) fail(`a duplicate CPU-seat buy should charge ONCE (12000), spent ${spent}`);
+
+  // A HUMAN seat may still stock multiples (idempotency is bots-only).
+  const e2 = engine(0x5eed1234);
+  const h = e2.getState();
+  h.tanks[0].inventory.nuke.count = 0;
+  h.tanks[0].credits = 30000;              // ai stays null => human
+  e2.applyAction({ type: 'buy', weapon: 'nuke' });
+  e2.applyAction({ type: 'buy', weapon: 'nuke' });
+  if (e2.getState().tanks[0].inventory.nuke.count !== 2) fail('a human should be able to buy two bundles');
+
+  if (!failed) log('PASS: CPU-seat buy is idempotent; human multi-buy still works.');
 }
 
 if (failed) { log('\nAI CHECK: FAILED'); process.exit(1); }

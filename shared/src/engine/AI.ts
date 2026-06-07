@@ -37,11 +37,16 @@ import { clamp } from './math';
 export type { AiDifficulty };
 
 /** The bot's chosen shot. The driver applies it as select_weapon + set_angle +
- *  set_power + fire (in that order). */
+ *  set_power + fire (in that order). When `buy` is set, the driver FIRST commits a
+ *  turn-neutral buy of that weapon (restocking before the shot) — see the
+ *  buy-to-restock note on chooseBuy(). `buy`, when present, always equals `weapon`. */
 export interface AiPlan {
   weapon: WeaponType;
   angle: number;
   power: number;
+  /** Restock this weapon before firing (the bot lacked an in-stock finisher but
+   *  can afford one). Turn-neutral; always === weapon. Absent => no purchase. */
+  buy?: WeaponType;
 }
 
 /** Hard cap on simulated flight ticks per candidate (a high lob is ~500–900). */
@@ -91,7 +96,7 @@ export function computeAiPlan(
   if (!target) return null;
 
   const tune = TUNING[difficulty];
-  const weapon = chooseWeapon(me, target, difficulty);
+  const { weapon, buy } = chooseLoadout(me, target, difficulty);
 
   // Shield is not a projectile — raise it and end the turn (both drivers map the
   // 'shield' weapon to use_shield). No ballistic search / aim error needed; the
@@ -100,12 +105,16 @@ export function computeAiPlan(
     return { weapon, angle: me.angle, power: me.power };
   }
 
+  // A buy is turn-neutral; the bot will own `weapon` once the restock applies, so
+  // the ballistic search (which doesn't depend on ammo) plans the same shot now.
+  const buyField = buy ? { buy } : {};
+
   const best = searchShot(state, me, target, weapon, tune, gravity);
   if (!best) {
     // No simulated shot found the target's column (heavily walled in, etc.).
     // Fall back to a sensible lob roughly toward the target.
     const toward = target.x >= me.x ? 60 : 120;
-    return { weapon, angle: toward, power: 70 };
+    return { weapon, angle: toward, power: 70, ...buyField };
   }
 
   // Aim error — a seeded, difficulty-scaled perturbation so easy bots spray and
@@ -116,7 +125,7 @@ export function computeAiPlan(
   const angle = clamp(best.angle + (rng() * 2 - 1) * tune.angleError, 0, 180);
   const power = clamp(best.power + (rng() * 2 - 1) * tune.powerError, 1, 100);
 
-  return { weapon, angle, power };
+  return { weapon, angle, power, ...buyField };
 }
 
 /** Nearest living enemy tank (Euclidean, body-center), or null. */
@@ -164,17 +173,24 @@ const HEAVY_TIER: ReadonlySet<WeaponType> = new Set<WeaponType>([
 const SHIELD_HP_THRESHOLD = 35;
 
 /**
- * Pick a weapon (or the shield) for this turn. Difficulty-scaled and DAMAGE-scaled:
+ * Pick a weapon (or the shield), and optionally a weapon to BUY first, for this
+ * turn. Difficulty-scaled and DAMAGE-scaled:
  *  - easy always lobs the free Baby Missile (beatable, predictable).
  *  - a HARD bot that is hurt and holds a shield raises it (defensive).
  *  - otherwise: among the damaging weapons the bot actually OWNS (medium excludes
  *    the heavy/premium tier), pick the WEAKEST that can still finish the target in
  *    one solid hit (effective dmg >= target health) — so it won't waste a nuke on a
- *    near-dead tank — falling back to the strongest it has when nothing one-shots.
- * Pure function of state => deterministic. Buy-to-restock is intentionally NOT done
- * here yet (REVIEW_BACKLOG P1-7b: needs careful buy+fire sequencing in both drivers).
+ *    near-dead tank.
+ *  - BUY-TO-RESTOCK (hard only, P1-7b): if NOTHING in stock one-shots the target
+ *    but the bot can afford a finisher, buy it (see chooseBuy) and fire it. Else
+ *    fall back to the strongest weapon in stock.
+ * Pure function of state => deterministic (no clock/random).
  */
-function chooseWeapon(me: TankState, target: TankState, difficulty: AiDifficulty): WeaponType {
+function chooseLoadout(
+  me: TankState,
+  target: TankState,
+  difficulty: AiDifficulty,
+): { weapon: WeaponType; buy?: WeaponType } {
   const has = (w: WeaponType): boolean => {
     const a = me.inventory[w];
     return a.unlimited || a.count > 0;
@@ -182,21 +198,55 @@ function chooseWeapon(me: TankState, target: TankState, difficulty: AiDifficulty
 
   // Defensive shield (hard only): hurt + holding a shield => raise it.
   if (difficulty === 'hard' && me.health <= SHIELD_HP_THRESHOLD && has('shield')) {
-    return 'shield';
+    return { weapon: 'shield' };
   }
 
-  if (difficulty === 'easy') return 'baby_missile';
+  if (difficulty === 'easy') return { weapon: 'baby_missile' };
 
   // Owned damaging weapons, weakest→strongest by effective damage. Medium is capped
   // below the heavy tier; baby_missile is unlimited so this is never empty.
   const ranked = (Object.keys(AI_EFFECTIVE_DAMAGE) as WeaponType[])
     .filter((w) => has(w) && (difficulty === 'hard' || !HEAVY_TIER.has(w)))
     .sort((a, b) => AI_EFFECTIVE_DAMAGE[a]! - AI_EFFECTIVE_DAMAGE[b]!);
-  if (ranked.length === 0) return 'baby_missile';
 
-  // Weakest one-shot finisher (don't overkill); else the strongest in stock.
+  // Weakest in-stock one-shot finisher (don't overkill).
   const finisher = ranked.find((w) => AI_EFFECTIVE_DAMAGE[w]! >= target.health);
-  return finisher ?? ranked[ranked.length - 1];
+  if (finisher) return { weapon: finisher };
+
+  // Nothing in stock one-shots. A hard bot restocks if it can afford a finisher.
+  if (difficulty === 'hard') {
+    const buy = chooseBuy(me, target);
+    if (buy) return { weapon: buy, buy };
+  }
+
+  // Fall back to the strongest weapon in stock (baby_missile is always available).
+  return { weapon: ranked.length > 0 ? ranked[ranked.length - 1] : 'baby_missile' };
+}
+
+/**
+ * Buy-to-restock pick (P1-7b): the cheapest affordable weapon the bot LACKS that
+ * would one-shot the target. Returns null when no such weapon is affordable (the
+ * caller then falls back to its strongest in-stock weapon — the prior behaviour).
+ *
+ * Restricting the buy to a FINISHER (effective dmg >= target health) is what keeps
+ * the buy+fire sequencing simple and loop-free: the bot buys exactly ONE bundle and
+ * then owns a finisher, so the very next plan picks it as `finisher` above (no
+ * `buy`) and fires it. Networked, every client recomputes this same transition, so
+ * the buy and the fire land as two ordered log entries with no extra coordination.
+ * Pure function of state => deterministic.
+ */
+function chooseBuy(me: TankState, target: TankState): WeaponType | null {
+  const candidates = (Object.keys(AI_EFFECTIVE_DAMAGE) as WeaponType[])
+    .filter((w) => {
+      const slot = me.inventory[w];
+      if (slot.unlimited || slot.count > 0) return false; // only restock what we lack
+      const def = getWeapon(w);
+      return def.implemented
+        && def.price <= me.credits                  // affordable now
+        && AI_EFFECTIVE_DAMAGE[w]! >= target.health; // and finishes the target
+    })
+    .sort((a, b) => AI_EFFECTIVE_DAMAGE[a]! - AI_EFFECTIVE_DAMAGE[b]!);
+  return candidates.length > 0 ? candidates[0] : null;
 }
 
 /**
