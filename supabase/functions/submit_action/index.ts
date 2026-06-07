@@ -65,9 +65,14 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  const { roomId, playerId, actingPlayerId, action } = body as {
+  const { roomId, playerId, actingPlayerId, nextActiveIndex, action } = body as {
     roomId?: unknown
     playerId?: unknown
+    // The seat index active AFTER this turn-ending action, computed by the
+    // submitting client's authoritative engine (which skips eliminated tanks).
+    // Used to advance the referee cursor death-aware; falls back to modulo if
+    // absent/invalid so old clients still work (P0-3).
+    nextActiveIndex?: unknown
     // actingPlayerId: the seat this action is FOR. Defaults to playerId (a human
     // acting for themselves). When it differs, the submitter is driving a CPU seat
     // on its behalf (any room member may; idempotency is the seq-unique + cursor
@@ -296,7 +301,16 @@ Deno.serve(async (req: Request) => {
   // accepting their further buys / their eventual fire). The cursor now BACKS the
   // referee check above, so this is no longer "diagnostic only".
   if (endsTurn(validatedAction.type)) {
-    const newActivePlayerIndex = (room.active_player_index + 1) % players.length
+    // Prefer the client's death-aware next seat; fall back to raw modulo (correct
+    // for 2P, and the only option for a client that didn't report one). The
+    // reported index must be a valid seat and NOT the acting seat (you can't keep
+    // your own turn) — otherwise the modulo fallback applies.
+    const modulo = (room.active_player_index + 1) % players.length
+    const reported = typeof nextActiveIndex === 'number' && Number.isInteger(nextActiveIndex)
+      ? nextActiveIndex
+      : -1
+    const reportedValid = reported >= 0 && reported < players.length && reported !== activeIndex
+    const newActivePlayerIndex = reportedValid ? reported : modulo
     const newTurn = (room.turn ?? 0) + 1
 
     // Fire-and-forget — a failed cursor update is non-fatal to game correctness
