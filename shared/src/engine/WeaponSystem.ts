@@ -205,7 +205,11 @@ const SHIELD_PARTICLES = 12;
  * A clean kill (~100 dmg) nets ~CREDITS_PER_DAMAGE*100 + stipend ≈ a Baby Nuke.
  * All integers / pure arithmetic — deterministic, no RNG.
  */
-export const STARTING_CREDITS = 15000;  // ~ a Nuke, or a Missile pack + Cluster
+// Opening wallet. Deliberately BELOW the nuke (12000) / baby_nuke (10000) price so
+// a tank cannot open with the premium tier — you buy mid-tier (a Missile pack 1875,
+// Cluster 10000/3, etc.) and EARN toward the big weapons (a couple of solid hits
+// ≈ a nuke). This is the decision the economy exists to create (REVIEW_BACKLOG P0-1).
+export const STARTING_CREDITS = 8000;
 export const CREDITS_PER_DAMAGE = 80;   // 100-dmg kill => 8000
 export const TURN_STIPEND = 500;        // flat income per shot fired
 
