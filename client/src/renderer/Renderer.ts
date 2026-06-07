@@ -1,5 +1,7 @@
 import type { GameState, ExplosionEvent, ExplosionStyle } from '@shared/types/GameState';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
+import { TANK_WIDTH, TANK_HEIGHT } from '@shared/engine/Tank';
+import { getWeapon } from '@shared/engine/WeaponSystem';
 import { TerrainRenderer } from './TerrainRenderer';
 import { TankRenderer } from './TankRenderer';
 import { ProjectileRenderer } from './ProjectileRenderer';
@@ -145,9 +147,17 @@ export class Renderer {
     // 3. Tanks (active player emphasised).
     this.tanks.drawAll(ctx, state.tanks, state.activePlayerId);
 
+    // 3.5 Shield force fields — a depleting ring of particles around any shielded
+    // tank (drawn over tanks so it reads as a bubble around them).
+    this.drawShields(state);
+
     // 4. Projectiles (no-op when none / not FIRING). May be several at once
     // (an airburst shell splits into multiple submunitions in flight).
     this.projectile.draw(ctx, state.projectiles);
+
+    // 4.5 Napalm fire field — flames licking up off every burning column. Drawn
+    // OVER tanks (it engulfs them) but UNDER the explosion flash.
+    this.drawFire(state);
 
     // 5. Explosion particles.
     this.drawExplosions();
@@ -251,6 +261,122 @@ export class Renderer {
 
     // Drop bursts that have outlived their own (per-event) lifetime.
     this.bursts = this.bursts.filter((b) => b.age < b.lifeFrames);
+  }
+
+  /**
+   * Draw the napalm fire field: a flickering flame tongue rising off every
+   * burning column, plus a soft ember glow pooled along the ground. Purely
+   * client-side visual state — `Math.random()` flicker is fine here (the engine's
+   * `state.fire` is the authoritative, deterministic source; only the LOOK jitters).
+   *
+   * Each {@link import('@shared/types/GameState').FireCell} carries `life` (ticks
+   * remaining); we fade a cell's flame as it dies so the field gutters out at the
+   * edges. The flame top sits at the column's live terrain surface so it tracks
+   * any deformation under it.
+   */
+  private drawFire(state: GameState): void {
+    const fire = state.fire;
+    if (fire.length === 0) return;
+    const ctx = this.ctx;
+    // Visual reference for "full" intensity — decoupled from the engine's burnTicks
+    // (cells below this read as full-strength; only the dying tail fades).
+    const FULL = 36;
+
+    ctx.save();
+
+    // Pass 1: a soft ember glow hugging the ground (additive warmth under the
+    // flames), one low wide blob per cell — cheap and reads as a fire pool.
+    ctx.globalCompositeOperation = 'lighter';
+    for (const cell of fire) {
+      const sy = surfaceAt(state.terrain, cell.x);
+      const t = Math.min(1, cell.life / FULL);
+      ctx.globalAlpha = 0.05 + 0.07 * t;
+      ctx.fillStyle = '#ff5a1f';
+      ctx.fillRect(cell.x - 4, sy - 6, 8, 8);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Pass 2: flame tongues — a jittery triangle per column (orange body), with a
+    // shorter yellow-hot core. Adjacent columns merge into a wall of fire.
+    for (const cell of fire) {
+      const sx = cell.x;
+      const sy = surfaceAt(state.terrain, cell.x);
+      const t = Math.min(1, cell.life / FULL);
+      const h = (9 + 15 * t) * (0.7 + Math.random() * 0.55); // flicker height
+      const tip = sx + (Math.random() * 2 - 1) * 2;          // wind-licked tip
+
+      ctx.globalAlpha = 0.45 + 0.35 * t;
+      ctx.fillStyle = '#ff5a1f'; // burning orange (napalm palette)
+      ctx.beginPath();
+      ctx.moveTo(sx - 2.2, sy);
+      ctx.lineTo(tip, sy - h);
+      ctx.lineTo(sx + 2.2, sy);
+      ctx.closePath();
+      ctx.fill();
+
+      const hc = h * 0.52;
+      ctx.globalAlpha = 0.5 + 0.4 * t;
+      ctx.fillStyle = '#ffd23f'; // hot yellow core
+      ctx.beginPath();
+      ctx.moveTo(sx - 1.1, sy);
+      ctx.lineTo(tip, sy - hc);
+      ctx.lineTo(sx + 1.1, sy);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  /**
+   * Draw the shield force field around each shielded tank: a faint bubble plus a
+   * ring of particle dots. The number of LIT dots is `tank.shieldParticles`; the
+   * field's full capacity (the shield weapon's particle count) draws as dim empty
+   * slots, so the player watches the ring deplete hit-by-hit. Purely derived from
+   * the authoritative count — no client-side shield state.
+   */
+  private drawShields(state: GameState): void {
+    const ctx = this.ctx;
+    const capacity = getWeapon('shield').behavior?.shield?.particles ?? 12;
+    const color = getWeapon('shield').detonation.color; // shimmer blue
+
+    for (const tank of state.tanks) {
+      if (!tank.alive || tank.shieldParticles <= 0) continue;
+      const cx = tank.x;
+      const cy = tank.y - TANK_HEIGHT / 2;
+      const radius = TANK_WIDTH * 0.95;
+
+      ctx.save();
+      // Faint energy bubble.
+      ctx.strokeStyle = 'rgba(122, 215, 255, 0.28)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      // A soft inner glow so it reads as an energy shell, not just an outline.
+      const grad = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius);
+      grad.addColorStop(0, 'rgba(122, 215, 255, 0)');
+      grad.addColorStop(1, 'rgba(122, 215, 255, 0.12)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Particle slots around the ring: lit for remaining particles, dim for spent.
+      const slots = Math.max(capacity, tank.shieldParticles);
+      for (let i = 0; i < slots; i++) {
+        const a = (i / slots) * Math.PI * 2 - Math.PI / 2;
+        const px = cx + Math.cos(a) * radius;
+        const py = cy + Math.sin(a) * radius;
+        const lit = i < tank.shieldParticles;
+        ctx.fillStyle = lit ? color : 'rgba(122, 215, 255, 0.18)';
+        ctx.beginPath();
+        ctx.arc(px, py, lit ? 2.4 : 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   private drawSky(): void {

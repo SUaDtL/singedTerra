@@ -1,6 +1,7 @@
-import type { TankState, AmmoEntry } from '../types/GameState';
+import type { TankState, AmmoEntry, AiDifficulty } from '../types/GameState';
 import type { GameOptions } from '../types/Events';
 import type { WeaponType } from './WeaponSystem';
+import { STARTING_CREDITS } from './WeaponSystem';
 import { CANVAS_WIDTH } from './Terrain';
 
 /** Tank bounding-box dimensions (px) used for collision (SPEC §4.2). */
@@ -74,6 +75,7 @@ export function createTank(
   x: number,
   terrain: number[],
   color: string,
+  ai: AiDifficulty | null = null,
 ): TankState {
   return {
     id,
@@ -88,6 +90,9 @@ export function createTank(
     inventory: defaultInventory(),
     color: color,
     alive: true,
+    shieldParticles: 0, // no shield until activated
+    credits: STARTING_CREDITS,
+    ai, // null => human; a difficulty => CPU-controlled
   };
 }
 
@@ -123,7 +128,7 @@ export function placeTwoTanks(
  */
 export function placeTanks(
   terrain: number[],
-  players: Array<{ name: string; color: string }>,
+  players: Array<{ name: string; color: string; ai?: AiDifficulty }>,
   opts?: GameOptions,
 ): TankState[] {
   void opts;
@@ -139,7 +144,7 @@ export function placeTanks(
     const x = Math.round(CANVAS_WIDTH * frac);
     const player = players[i];
     const color = player.color ?? MULTI_TANK_COLORS[i % MULTI_TANK_COLORS.length];
-    tanks.push(createTank(`p${i + 1}`, player.name, x, terrain, color));
+    tanks.push(createTank(`p${i + 1}`, player.name, x, terrain, color, player.ai ?? null));
   }
   return tanks;
 }
@@ -186,6 +191,9 @@ export const Tank = {
       inventory: defaultInventory(),
       color: params.color,
       alive: true,
+      shieldParticles: 0, // no shield until activated
+      credits: STARTING_CREDITS,
+      ai: null, // Tank.create is used for human/default tanks
     };
   },
 

@@ -3,15 +3,31 @@ import type { GameClient, RematchInfo } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type { GameOptions } from '@shared/types/Events';
+import type { AiDifficulty } from '@shared/types/GameState';
 import { GameEngine } from '@shared/engine/GameEngine';
+import { computeAiPlan } from '@shared/engine/AI';
+import { GRAVITY } from '@shared/engine/Physics';
 
-// MVP2-only: the only action type committed to the action log
+// Turn-ending actions committed to the action log. A fire carries its aim; a
+// use_shield carries nothing (it just raises the active tank's field and ends the
+// turn). Both must be LOGGED so every client replays them deterministically — a
+// shield applied locally-only would desync the games (Sprint 4 Slice 3.2).
 export interface NetworkFireAction {
   type:   'fire';
   angle:  number;   // degrees
   power:  number;   // 0–100
   weapon: string;   // WeaponType value
 }
+export interface NetworkShieldAction {
+  type: 'use_shield';
+}
+// A store purchase. Turn-NEUTRAL (does not end the turn), but still LOGGED so
+// every client replays the credit/inventory change identically.
+export interface NetworkBuyAction {
+  type: 'buy';
+  weapon: string;
+}
+export type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction;
 
 // Shape of a row returned from room_actions
 interface RoomActionRow {
@@ -19,7 +35,7 @@ interface RoomActionRow {
   room_id:    string;
   seq:        number;
   player_id:  string;
-  action:     NetworkFireAction;
+  action:     NetworkAction;
   created_at: string;
 }
 
@@ -30,6 +46,7 @@ interface NetworkPlayerEntry {
   id:    string;
   name:  string;
   color: string;
+  ai?:   AiDifficulty;
 }
 
 // GameOptions extended with the network-mode player id field.
@@ -71,7 +88,7 @@ export class NetworkClient implements GameClient {
   // Sequence ordering buffer for out-of-order Realtime delivery.
   // Supabase Realtime does not guarantee delivery order; events with
   // seq > nextExpectedSeq are held here until the gap fills in.
-  private pendingActions:   Map<number, NetworkFireAction>;
+  private pendingActions:   Map<number, NetworkAction>;
   private nextExpectedSeq:  number;
   private isReplaying:      boolean;
   private _isFiring         = false;
@@ -82,6 +99,17 @@ export class NetworkClient implements GameClient {
   // on the rooms UPDATE stream and migrate. _rematchHandled makes that one-shot.
   private rematchListener:  ((info: RematchInfo) => void) | null = null;
   private _rematchHandled   = false;
+
+  // --- CPU-seat driving (client-driven, idempotent) ---
+  // engine tank id ('p1'..) → CPU difficulty, for bot seats only.
+  private botByTank:        Map<string, AiDifficulty>;
+  // engine tank id → that seat's Supabase player UUID (to submit on its behalf).
+  private supaIdByTank:     Map<string, string>;
+  // Per-room gravity (for the AI's trajectory sim to match the engine).
+  private gravity:          number;
+  // Guards one bot submission per (turn, bot) from THIS client; the seq-unique +
+  // referee cursor make the cross-client race exactly-once regardless.
+  private lastBotKey:       string | null = null;
 
   // ---- constructor ----
   constructor(
@@ -108,8 +136,20 @@ export class NetworkClient implements GameClient {
       (options.players ?? []).map((p, i) => [p.id, `p${i + 1}`])
     );
 
-    // Instantiate local engine. Cast to GameOptions — the engine only reads
-    // { name, color } from each player entry, ignoring any extra fields.
+    // CPU-seat maps: which engine tanks are bots (+ difficulty), and each seat's
+    // Supabase id so this client can submit on a bot's behalf. Same ordering as
+    // placeTanks (players[i] → 'p{i+1}'), so every client agrees on the seats.
+    this.botByTank = new Map();
+    this.supaIdByTank = new Map();
+    (options.players ?? []).forEach((p, i) => {
+      const tankId = `p${i + 1}`;
+      this.supaIdByTank.set(tankId, p.id);
+      if (p.ai) this.botByTank.set(tankId, p.ai);
+    });
+    this.gravity = options.gravity ?? GRAVITY;
+
+    // Instantiate local engine. Cast to GameOptions — the engine reads
+    // { name, color, ai } from each player entry, ignoring any extra fields.
     this.engine = new GameEngine(options as GameOptions);
   }
 
@@ -136,7 +176,7 @@ export class NetworkClient implements GameClient {
 
     this.isReplaying = true;
     for (const row of (existingActions ?? []) as RoomActionRow[]) {
-      this.applyNetworkFireAction(row.action);
+      this.applyNetworkAction(row.action);
       this.tickToCompletion();
     }
     this.isReplaying = false;
@@ -161,7 +201,7 @@ export class NetworkClient implements GameClient {
           // Do not apply immediately — Supabase Realtime does not guarantee
           // delivery order, so seq=6 may arrive before seq=5. Buffer and flush
           // in strict order.
-          this.pendingActions.set(row.seq, row.action as NetworkFireAction);
+          this.pendingActions.set(row.seq, row.action as NetworkAction);
           this.flushPendingActions();
         }
       )
@@ -251,8 +291,30 @@ export class NetworkClient implements GameClient {
     const state = this.engine.getState();
     if (state.activePlayerId !== engineTankId) return;
 
+    // buy is a turn-NEUTRAL COMMITTED action: logged (so all clients replay the
+    // credit/inventory change) but it does not end the turn. Submit it; the
+    // engine applies on the Realtime echo. Affordability is re-gated by the engine.
+    if (action.type === 'buy') {
+      this.submitAction({ type: 'buy', weapon: action.weapon });
+      return;
+    }
+
+    // use_shield is a turn-ending COMMITTED action (like fire): it must be logged
+    // so all clients replay it. Gate on shield ammo locally (the engine re-gates)
+    // to avoid logging a no-op, then submit.
+    if (action.type === 'use_shield') {
+      const shielder = state.tanks.find(t => t.id === engineTankId);
+      if (!shielder) return;
+      const ammo = shielder.inventory.shield;
+      if (!ammo.unlimited && ammo.count <= 0) return;
+      this._isFiring = true; // lock input until the Realtime echo applies it
+      this.submitAction({ type: 'use_shield' });
+      return;
+    }
+
     if (action.type !== 'fire') {
-      // Non-fire actions: apply locally only.
+      // Aim actions (set_angle/set_power/select_weapon): apply locally only —
+      // they are never logged; only turn-ending actions reach the log.
       this.engine.applyAction(action);
       this.emitState();
       return;
@@ -380,7 +442,11 @@ export class NetworkClient implements GameClient {
    * POST the fire action to the submit_action Edge Function.
    * Fire-and-forget; errors are logged but not retried in MVP2 (see Appendix C item 3).
    */
-  private submitAction(networkAction: NetworkFireAction, retryOnConflict = true): void {
+  private submitAction(
+    networkAction: NetworkAction,
+    retryOnConflict = true,
+    actingPlayerId?: string,
+  ): void {
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit_action`, {
       method:  'POST',
       headers: {
@@ -391,16 +457,22 @@ export class NetworkClient implements GameClient {
       body: JSON.stringify({
         roomId:   this.roomId,
         playerId: this.playerId,
+        // Present only when proxying a CPU seat — the seat the action is FOR.
+        ...(actingPlayerId ? { actingPlayerId } : {}),
         action:   networkAction,
       }),
     })
       .then(res => res.json())
-      .then((data: { ok?: boolean; error?: string; seq?: number }) => {
+      .then((data: { ok?: boolean; error?: string; retry?: boolean; seq?: number }) => {
         if (!data.ok) {
-          if (data.error === 'Seq conflict, retry' && retryOnConflict) {
-            // Retry once after 50ms on seq collision.
-            setTimeout(() => this.submitAction(networkAction, false), 50);
-          } else {
+          const isConflict = data.error === 'seq_conflict' || data.retry === true;
+          if (isConflict && retryOnConflict) {
+            // Retry once after 50ms on seq collision (humans only — bots pass
+            // retryOnConflict=false, since the winning row is the same action).
+            setTimeout(() => this.submitAction(networkAction, false, actingPlayerId), 50);
+          } else if (!isConflict && data.error !== 'Not your turn') {
+            // A bot's lost race shows up as a benign seq-conflict / turn-advanced
+            // rejection — don't log those as errors.
             console.error('NetworkClient: submit_action rejected:', data.error);
           }
         }
@@ -411,10 +483,19 @@ export class NetworkClient implements GameClient {
   }
 
   /**
-   * Synthesize the three setup actions then the fire action, keeping the
-   * shared/ engine interface unchanged.
+   * Apply a logged network action to the local engine. A fire is synthesized as
+   * the three setup actions then the fire; a use_shield is applied directly.
+   * Keeps the shared/ engine interface unchanged.
    */
-  private applyNetworkFireAction(action: NetworkFireAction): void {
+  private applyNetworkAction(action: NetworkAction): void {
+    if (action.type === 'use_shield') {
+      this.engine.applyAction({ type: 'use_shield' });
+      return;
+    }
+    if (action.type === 'buy') {
+      this.engine.applyAction({ type: 'buy', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
+      return;
+    }
     this.engine.applyAction({ type: 'set_angle',     angle:  action.angle });
     this.engine.applyAction({ type: 'set_power',     power:  action.power });
     this.engine.applyAction({ type: 'select_weapon', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
@@ -456,7 +537,7 @@ export class NetworkClient implements GameClient {
       this.pendingActions.delete(this.nextExpectedSeq);
       this.nextExpectedSeq++;
       this._isFiring = false;
-      this.applyNetworkFireAction(action);
+      this.applyNetworkAction(action);
       // During live play the RAF loop animates the flight; only tick to
       // completion synchronously during initialize() replay.
       if (this.isReplaying) this.tickToCompletion();
@@ -473,6 +554,44 @@ export class NetworkClient implements GameClient {
     for (const listener of this.listeners) {
       listener(state);
     }
+    this.maybeDriveBot(state);
+  }
+
+  /**
+   * Client-driven CPU seats. When a bot holds the turn, EVERY connected client
+   * reaches this state (deterministic replay) and computes the IDENTICAL plan
+   * (the AI is a pure function of state). They all submit it on the bot's behalf;
+   * the seq-unique constraint + the referee's turn-cursor make it exactly-once —
+   * the lowest-latency client wins, the rest are no-ops. We submit at most once
+   * per (turn, bot) from this client, and never retry a bot seq-conflict (the
+   * winning row is the same action, by determinism).
+   */
+  private maybeDriveBot(state: GameState): void {
+    if (this.isReplaying) return;                 // history replay drives itself
+    if (state.phase !== 'PLAYER_TURN') return;
+    if (this.botByTank.size === 0) return;        // no CPU seats in this room
+
+    const tankId = state.activePlayerId;
+    const difficulty = this.botByTank.get(tankId);
+    if (!difficulty) return;                       // active seat is human
+
+    const key = `${state.turn}:${tankId}`;
+    if (key === this.lastBotKey) return;           // already submitted this turn
+    this.lastBotKey = key;
+
+    const plan = computeAiPlan(state, tankId, difficulty, this.gravity);
+    if (!plan) return;                             // no target (shouldn't happen)
+
+    const actingId = this.supaIdByTank.get(tankId);
+    if (!actingId) return;
+
+    const action: NetworkAction = plan.weapon === 'shield'
+      ? { type: 'use_shield' }
+      : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
+
+    // No retry: a seq-conflict means another client already committed the (same)
+    // bot action; the referee would reject a late retry anyway (turn advanced).
+    this.submitAction(action, /* retryOnConflict */ false, actingId);
   }
 
   private callFinishGame(winnerId: string | null): void {

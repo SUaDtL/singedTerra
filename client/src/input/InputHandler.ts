@@ -155,7 +155,13 @@ export class InputHandler {
       case 'Spacebar': // legacy key name
       case 'Enter':
         event.preventDefault();
-        this.emit({ type: 'fire' });
+        // The shield is a defensive "weapon": firing it RAISES the field and ends
+        // the turn (use_shield) rather than launching a projectile.
+        this.emit(
+          IMPLEMENTED_WEAPONS[this.weaponIndex] === 'shield'
+            ? { type: 'use_shield' }
+            : { type: 'fire' },
+        );
         break;
       case 'Tab': // preventDefault so focus does not move off the canvas
       case 'q':
