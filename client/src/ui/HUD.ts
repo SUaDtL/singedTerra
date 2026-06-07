@@ -24,6 +24,22 @@ const STORE_WEAPONS: WeaponType[] = STRIP_WEAPONS.filter(
 const AMMO_UNLIMITED_GLYPH = '∞';
 
 /**
+ * Barrel-relative aim readout (P3-13b). The engine angle is a GLOBAL compass
+ * value (0=right, 90=up, 180=left). Shown raw, the number doesn't track the
+ * visible barrel — a left-firing tank reads "135°" while its barrel looks
+ * raised ~45° — so ←/→ feel inverted. Present it instead as ELEVATION above the
+ * horizon (0=flat, 90=straight up) plus an aim-direction arrow, so the number
+ * rises and falls WITH the barrel for either side. Display-only: the logged
+ * set_angle values are untouched, so deterministic replay is unaffected.
+ */
+function aimReadout(angle: number): string {
+  const a = Math.round(angle);
+  const elevation = a <= 90 ? a : 180 - a;
+  const dir = a < 90 ? '▶' : a > 90 ? '◀' : '▲'; // aiming right / left / straight up
+  return `Elev ${elevation}° ${dir}`;
+}
+
+/**
  * HUD is an HTML/CSS overlay (SPEC §8), NOT canvas-drawn. MVP1 grows the MVP0
  * text readout into a full overlay: per-player health bars, a wind indicator,
  * active-tank aim/weapon readout, and a GAME_OVER panel with a Restart button.
@@ -471,7 +487,7 @@ export class HUD {
     this.weaponValueEl.textContent = weaponName;
     this.aimEl.textContent =
       `${tank.playerName}  ·  ` +
-      `Angle ${Math.round(tank.angle)}°  ·  ` +
+      `${aimReadout(tank.angle)}  ·  ` +
       `Power ${Math.round(tank.power)}`;
   }
 
