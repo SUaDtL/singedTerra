@@ -7,15 +7,44 @@
 
 > **Status (2026-06-07):** Slices 1 (round core), 2 (scoreboard + hot-seat rounds
 > control), and 4 (between-rounds shop via the `ROUND_OVER` phase) are DONE and
-> committed — covered by the `rounds` and `scoreboard` harnesses (15 total, all
-> green) and typecheck/build. Slice 3 (networked best-of-N via synced room options)
-> is implemented and green but **pending the one big deploy + a live 2-browser
-> playtest**: it needs `create_room` redeployed AND `next_round`/per-tank-buy logged
-> through `submit_action` so networked clients leave `ROUND_OVER` in lockstep (today
-> networked `next_round` is an explicit no-op and networked play stays single-round).
-> Remaining: networked `next_round` referee support, Postgres score persistence, and
-> a `npm run dev` visual pass of the round HUD / scoreboard / shop. **Hot-seat
-> best-of-N with a between-rounds shop is fully playable now.**
+> committed. Slice 3 (networked best-of-N) and Postgres score persistence are
+> **CODED, harness-green, and DEPLOYED to production (2026-06-07)** — the client is on
+> Netlify (`inspiring-rolypoly-eaaf1e`, `npm run deploy`) and all edge functions + the
+> `003_match_scores` migration are on Supabase (`jdvxfxjpobtyasozxauh`). 16 engine
+> harnesses + typecheck + build all green; both edge fns `deno check`/`lint` clean.
+> **The only remaining Sprint 6 item is a live 2-browser networked playtest.** (The
+> working tree is still UNCOMMITTED — git is behind what's live.) Hot-seat best-of-N
+> with a between-rounds shop is fully playable, and networked best-of-N + score
+> persistence are now live end-to-end.
+>
+> **What changed for the bundle (uncommitted, ready to deploy):**
+> - `shared/src/net/replay.ts` (NEW): the canonical `NetworkAction` union + pure
+>   `replayNetworkAction()` — one source of truth for log→engine replay, now shared by
+>   `NetworkClient` and the new harness (no more client-only copy).
+> - `scripts/checks/netrounds.mjs` (NEW, 16th harness): proves the round boundary
+>   (fire→next_round) and per-tank ROUND_OVER buys replay in lockstep through the
+>   shared path, and that `next_round` re-seats the opener even when the opener fired
+>   the killing blow.
+> - `NetworkClient.ts`: `next_round` + per-tank ROUND_OVER buys now LOGGED through the
+>   referee (was a no-op); `flushPendingActions` drains in `ROUND_OVER`; a `roundOver`
+>   flag + `computeNextSeat` (reports the round-end + opener seat) are sent to the
+>   referee; `finish_game` now carries the final scoreboard.
+> - `supabase/functions/submit_action`: accepts `next_round`, carries `tankId` on a
+>   buy, and uses `roundOver` to (a) relax the turn gate for shop actions and (b) honor
+>   the reported opener seat unconditionally at a round boundary.
+> - `supabase/functions/finish_game` + `supabase/migrations/003_match_scores.sql`:
+>   persist final standings (one row per match, public-read / service-write RLS).
+>
+> Both edge functions pass `deno check` + `deno lint` clean (deno 2.8.2 at
+> `C:\Users\brenn\.deno\bin\deno.exe`, not on PATH — call by full path). They are NOT
+> unit-tested (handlers wrap `Deno.serve`/`getServiceClient`; testing the gating logic
+> would need extracting it into a pure function — a reasonable follow-up). The genuine
+> remaining risk is the cross-client lockstep, which only the 2-browser playtest covers.
+>
+> **The deploy bundle (run all three, then 2-browser playtest):**
+> `npx supabase db push` (003 migration) · `npx supabase functions deploy submit_action`
+> · `npx supabase functions deploy finish_game`. `create_room` already stores `rounds`
+> (Slice 3 earlier), so it only needs redeploy if not already live.
 
 ## Goal
 

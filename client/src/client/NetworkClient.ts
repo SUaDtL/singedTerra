@@ -7,27 +7,18 @@ import type { AiDifficulty } from '@shared/types/GameState';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
+import { replayNetworkAction, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 
-// Turn-ending actions committed to the action log. A fire carries its aim; a
-// use_shield carries nothing (it just raises the active tank's field and ends the
-// turn). Both must be LOGGED so every client replays them deterministically — a
-// shield applied locally-only would desync the games (Sprint 4 Slice 3.2).
-export interface NetworkFireAction {
-  type:   'fire';
-  angle:  number;   // degrees
-  power:  number;   // 0–100
-  weapon: string;   // WeaponType value
-}
-export interface NetworkShieldAction {
-  type: 'use_shield';
-}
-// A store purchase. Turn-NEUTRAL (does not end the turn), but still LOGGED so
-// every client replays the credit/inventory change identically.
-export interface NetworkBuyAction {
-  type: 'buy';
-  weapon: string;
-}
-export type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction;
+// The logged-action contract now lives in shared/ (one source of truth for the
+// log→engine replay, exercised by both this client and the determinism harnesses).
+// Re-exported here so any caller importing it from the client keeps working.
+export type {
+  NetworkAction,
+  NetworkFireAction,
+  NetworkShieldAction,
+  NetworkBuyAction,
+  NetworkNextRoundAction,
+} from '@shared/net/replay';
 
 // Shape of a row returned from room_actions
 interface RoomActionRow {
@@ -361,21 +352,42 @@ export class NetworkClient implements GameClient {
       return;
     }
 
-    // next_round (leave the ROUND_OVER between-rounds shop) must be LOGGED through
-    // the referee so every client advances in lockstep — applying it locally would
-    // desync. That logging is part of the deferred networked-rounds work (needs a
-    // submit_action change + deploy + 2-browser playtest), and networked multi-round
-    // is not enabled until then, so here it is an explicit no-op rather than a
-    // local-only apply. Hot-seat handles next_round directly (HotSeatClient).
+    const state = this.engine.getState();
+
+    // ROUND_OVER between-rounds shop (V1 match structure, networked). Turn ownership
+    // does NOT apply here — every player may shop their own tank, and the round is
+    // advanced by the staged opener. Both actions are LOGGED so all clients leave the
+    // shop in the same seq slot (a local-only apply would desync). The `roundOver`
+    // flag tells the referee to skip its turn gate for these.
+    if (state.phase === 'ROUND_OVER') {
+      if (action.type === 'buy') {
+        // Always name the buyer's OWN tank: in ROUND_OVER the engine routes a buy by
+        // tankId, and the referee only accepts a buy for your own seat. (We ignore any
+        // tankId the HUD passed — a networked player can only spend their own credits.)
+        this.submitAction({ type: 'buy', weapon: action.weapon, tankId: engineTankId }, true, undefined, 0, true);
+        return;
+      }
+      if (action.type === 'next_round') {
+        // Only the staged opener's client submits next_round, so the referee sees
+        // exactly one (no double-advance). Every client agrees on the opener
+        // (deterministic), and p1 — the room creator — is always a human, so the
+        // shop can always be left. A stray duplicate replays as an engine no-op.
+        if (state.activePlayerId !== engineTankId) return;
+        this.submitAction({ type: 'next_round' }, true, undefined, 0, true);
+        return;
+      }
+      return; // aim / fire / shield are ignored during the shop
+    }
+
+    // Outside the shop, next_round is meaningless.
     if (action.type === 'next_round') return;
 
     // Only process input when it is this player's turn.
-    const state = this.engine.getState();
     if (state.activePlayerId !== engineTankId) return;
 
     // buy is a turn-NEUTRAL COMMITTED action: logged (so all clients replay the
-    // credit/inventory change) but it does not end the turn. Submit it; the
-    // engine applies on the Realtime echo. Affordability is re-gated by the engine.
+    // credit/inventory change) but it does not end the turn. During a normal turn the
+    // engine buys for the ACTIVE tank (no tankId), so the referee turn-gates it.
     if (action.type === 'buy') {
       this.submitAction({ type: 'buy', weapon: action.weapon });
       return;
@@ -603,13 +615,23 @@ export class NetworkClient implements GameClient {
     retryOnConflict = true,
     actingPlayerId?: string,
     attempt = 0,
+    roundOver = false,
   ): void {
-    // For turn-ending actions, tell the server which seat is active NEXT (this
-    // client's engine skips eliminated tanks; the server's modulo cursor can't).
-    // Omitted for turn-neutral buys (they don't change whose turn it is).
-    const nextActiveIndex = networkAction.type === 'buy'
-      ? undefined
-      : this.computeNextActiveIndex(networkAction);
+    // For TURN-ENDING actions, tell the server which seat is active NEXT (this client's
+    // engine skips eliminated tanks AND re-seats the opener at a round boundary; the
+    // server's modulo cursor can't do either). We also detect whether this action ENDS
+    // a round — if so the server must honor the reported seat unconditionally, because
+    // a round resets to the opener (seat 0), which may be the very seat that just fired
+    // (the modulo "you can't keep your own turn" guard would otherwise reject it).
+    // Turn-neutral buys / next_round don't move the cursor, so they report neither.
+    const isTurnEnding = networkAction.type === 'fire' || networkAction.type === 'use_shield';
+    let nextActiveIndex: number | undefined;
+    let endsRound = roundOver; // ROUND_OVER buy / next_round pass this in directly
+    if (isTurnEnding) {
+      const seat = this.computeNextSeat(networkAction);
+      nextActiveIndex = seat.index;
+      endsRound = endsRound || seat.endsRound;
+    }
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit_action`, {
       method:  'POST',
       headers: {
@@ -621,6 +643,10 @@ export class NetworkClient implements GameClient {
         roomId:   this.roomId,
         playerId: this.playerId,
         ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
+        // roundOver: this action ends a round (the killing blow) or operates within the
+        // between-rounds shop (buy / next_round). Tells the referee to skip the turn gate
+        // (shop actions) or honor the reported opener seat unconditionally (killing blow).
+        ...(endsRound ? { roundOver: true } : {}),
         // Present only when proxying a CPU seat — the seat the action is FOR.
         ...(actingPlayerId ? { actingPlayerId } : {}),
         action:   networkAction,
@@ -638,7 +664,7 @@ export class NetworkClient implements GameClient {
             const delay = Math.min(NetworkClient.SEQ_BACKOFF_MS * 2 ** attempt, 240)
               + Math.floor(Math.random() * 25);
             setTimeout(
-              () => this.submitAction(networkAction, true, actingPlayerId, attempt + 1),
+              () => this.submitAction(networkAction, true, actingPlayerId, attempt + 1, roundOver),
               delay,
             );
           } else if (isConflict && retryOnConflict) {
@@ -665,53 +691,37 @@ export class NetworkClient implements GameClient {
 
   /**
    * Apply a logged network action to the local engine and RECORD it in the
-   * applied log (used to compute the next active seat — see computeNextActiveIndex).
+   * applied log (used to compute the next active seat — see computeNextSeat).
    */
   private applyNetworkAction(action: NetworkAction): void {
-    NetworkClient.replayInto(this.engine, action);
+    replayNetworkAction(this.engine, action);
     this.appliedLog.push(action);
   }
 
   /**
-   * Apply one network action to an arbitrary engine. A fire is synthesized as the
-   * three setup actions then the fire; use_shield / buy are applied directly. Pure
-   * w.r.t. the engine it is given — used both for the live engine and a throwaway
-   * one when computing the next active seat.
+   * Compute, for a turn-ending action, the 0-based SEAT INDEX active AFTER it commits
+   * AND whether it ends a round. Replays the applied log + the pending action through a
+   * throwaway engine (via the same shared replay path) and reads the resulting state.
+   * Because the engine skips ELIMINATED tanks and re-seats the opener at a round
+   * boundary, `index` is the death-aware/round-aware seat the server's raw modulo cursor
+   * gets wrong (P0-3 + the round reset). `endsRound` is true iff the engine paused in the
+   * ROUND_OVER shop — the server uses it to honor `index` unconditionally (the opener may
+   * be the seat that just fired). Deterministic — every client computes the same values.
    */
-  private static replayInto(engine: GameEngine, action: NetworkAction): void {
-    if (action.type === 'use_shield') {
-      engine.applyAction({ type: 'use_shield' });
-      return;
-    }
-    if (action.type === 'buy') {
-      engine.applyAction({ type: 'buy', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
-      return;
-    }
-    engine.applyAction({ type: 'set_angle',     angle:  action.angle });
-    engine.applyAction({ type: 'set_power',     power:  action.power });
-    engine.applyAction({ type: 'select_weapon', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
-    engine.applyAction({ type: 'fire' });
-  }
-
-  /**
-   * Compute the 0-based SEAT INDEX of the player whose turn it will be AFTER the
-   * given turn-ending action commits. Replays the applied log + the pending action
-   * through a throwaway engine and reads its activePlayerId ('p{i+1}'). Because the
-   * engine skips ELIMINATED tanks, this is the death-aware rotation the server's
-   * raw modulo cursor gets wrong in 3-4P games (P0-3). Deterministic — every
-   * client computes the same value, so it is safe for the server to store.
-   */
-  private computeNextActiveIndex(pending: NetworkAction): number {
+  private computeNextSeat(pending: NetworkAction): { index: number; endsRound: boolean } {
     const tmp = new GameEngine(this.options as GameOptions);
     for (const a of this.appliedLog) {
-      NetworkClient.replayInto(tmp, a);
+      replayNetworkAction(tmp, a);
       this.tickEngineToCompletion(tmp);
     }
-    NetworkClient.replayInto(tmp, pending);
+    replayNetworkAction(tmp, pending);
     this.tickEngineToCompletion(tmp);
-    const id = tmp.getState().activePlayerId; // 'p1'..'pN'
-    const idx = Number(id.replace(/[^0-9]/g, '')) - 1;
-    return Number.isFinite(idx) && idx >= 0 ? idx : 0;
+    const st = tmp.getState();
+    const idx = Number(st.activePlayerId.replace(/[^0-9]/g, '')) - 1;
+    return {
+      index:     Number.isFinite(idx) && idx >= 0 ? idx : 0,
+      endsRound: st.phase === 'ROUND_OVER',
+    };
   }
 
   /** Tick any engine until it leaves FIRING (bounded). */
@@ -756,10 +766,15 @@ export class NetworkClient implements GameClient {
    * to lose buffered back-to-back / out-of-order actions and desync this client).
    * A turn-NEUTRAL buy keeps the engine in PLAYER_TURN, so the loop continues to
    * the next buffered action in the same pass.
+   *
+   * ROUND_OVER (the between-rounds shop) is ALSO an input-accepting, non-flight phase:
+   * buys land on named tanks and `next_round` flips it to PLAYER_TURN. So we drain in
+   * ROUND_OVER too — otherwise shop actions and the round advance would sit buffered
+   * forever and the client would freeze on the scoreboard.
    */
   private flushPendingActions(): void {
     while (
-      this.engine.getState().phase === 'PLAYER_TURN' &&
+      (this.engine.getState().phase === 'PLAYER_TURN' || this.engine.getState().phase === 'ROUND_OVER') &&
       this.pendingActions.has(this.nextExpectedSeq)
     ) {
       const action = this.pendingActions.get(this.nextExpectedSeq)!;
@@ -901,6 +916,17 @@ export class NetworkClient implements GameClient {
   }
 
   private callFinishGame(winnerId: string | null): void {
+    // Final standings (Sprint 6 persistence). Replay-derived, so every client reports
+    // the identical board; finish_game persists exactly one (UNIQUE(room_id)). Best
+    // effort — a failure here never affects the (already-decided) game.
+    const state = this.engine.getState();
+    const scoreboard = state.tanks.map((t) => ({
+      tankId:      t.id,
+      playerName:  t.playerName,
+      roundWins:   t.roundWins,
+      kills:       t.kills,
+      totalDamage: t.totalDamage,
+    }));
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finish_game`, {
       method: 'POST',
       headers: {
@@ -909,7 +935,13 @@ export class NetworkClient implements GameClient {
         'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
       },
       // playerId lets finish_game authorize the caller as a room member (P2-9).
-      body: JSON.stringify({ roomId: this.roomId, playerId: this.playerId, winnerId }),
+      body: JSON.stringify({
+        roomId:   this.roomId,
+        playerId: this.playerId,
+        winnerId,
+        rounds:     state.totalRounds,
+        scoreboard,
+      }),
     }).catch(err => {
       console.error('NetworkClient: finish_game error:', err);
     });
