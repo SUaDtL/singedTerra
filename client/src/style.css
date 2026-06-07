@@ -10,6 +10,29 @@
   /* Native logical size of the stage; mirror canvas width/height. */
   --stage-w: 800px;
   --stage-h: 500px;
+
+  /* ===== singedTerra art tokens (Sprint 5) — mirror client/src/ui/theme.ts ===== */
+  /* dusk sky (top -> horizon) */
+  --sky-0: #160d2e; --sky-1: #3a1d5e; --sky-2: #8e2f53; --sky-3: #d4562a; --sky-4: #f2a04b;
+  /* scorched terrain ramp + lit rim */
+  --terrain-rim: #7a4f2e; --terrain-top: #5a3a22; --terrain-mid: #3c2516; --terrain-deep: #1d120b;
+  /* signature accents */
+  --gold: #ffd23f; --ember: #ff7a1f; --ember-deep: #d4562a; --sun: #ffb24a; --sun-core: #ffe9a8;
+  /* tanks */
+  --tank-red: #e84d4d; --tank-red-lite: #ff7a7a;
+  --tank-blue: #4d8ce8; --tank-blue-lite: #7fb0ff; --tread: #2a2118;
+  /* explosion burst (core -> edge) */
+  --boom-core: #fff7d6; --boom-mid: #ffd23f; --boom-edge: #ff7a1f;
+  /* text + ink + backdrop */
+  --text: #e9e4f2; --text-gold: #ffe9a8; --text-dim: #9a86b8; --ink: #160d2e;
+  --backdrop: #0c0716;
+  /* type system (D1: bundled display face + system mono/sans) */
+  --font-display: 'SingedDisplay', 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
+  --font-mono: 'Courier New', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* CRT chrome intensity (D2: subtle) */
+  --crt-scanline-alpha: 0.10;
+  --crt-vignette-alpha: 0.45;
 }
 
 html,
@@ -19,9 +42,11 @@ body {
 }
 
 body {
-  background: #0e1116;
-  color: #e6e9ef;
-  font-family: system-ui, sans-serif;
+  /* Deep dusk backdrop so the surrounding frame matches the banner/splash. */
+  background:
+    radial-gradient(120% 100% at 50% 0%, #1a1033 0%, var(--backdrop) 60%);
+  color: var(--text);
+  font-family: var(--font-sans);
   /* Center the stage in the viewport. */
   display: grid;
   place-items: center;
@@ -38,9 +63,48 @@ body {
   position: relative;
   width: var(--stage-w);
   height: var(--stage-h);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  /* Drop shadow + a subtle gold inset frame echoing the banner border. */
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 2px rgba(255, 210, 63, 0.22);
   border-radius: 6px;
   overflow: hidden;
+}
+
+/*
+ * ===== Global CRT chrome (Sprint 5 Slice 0) =====
+ * Two non-interactive overlays covering the WHOLE stage (canvas + HUD + lobby),
+ * pinned above all stage layers. Pure CSS — cheap on a t3.micro. Intensity is
+ * token-driven (--crt-* in :root) so it dials with one edit.
+ */
+#app::before {
+  /* Dusk vignette wash + faint ember bloom from the horizon. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 38%, rgba(142, 47, 83, 0.22) 0%, rgba(22, 13, 46, 0) 55%),
+    radial-gradient(140% 120% at 50% 122%, rgba(255, 122, 31, 0.16) 0%, rgba(22, 13, 46, 0) 50%);
+  mix-blend-mode: screen;
+}
+#app::after {
+  /* Scanlines + corner vignette darkening. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--crt-scanline-alpha)) 0px,
+      rgba(0, 0, 0, var(--crt-scanline-alpha)) 1px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0) 4px
+    ),
+    radial-gradient(130% 130% at 50% 50%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, var(--crt-vignette-alpha)) 100%);
 }
 
 /* #game and #hud both fill #app precisely (same 800x500 box). */
