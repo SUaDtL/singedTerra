@@ -1,6 +1,6 @@
 import './style.css';
 import { GameEngine } from '@shared/engine/GameEngine';
-import type { GameClient } from './client/GameClient';
+import type { GameClient, RematchInfo } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { InputHandler } from './input/InputHandler';
 import { Renderer } from './renderer/Renderer';
@@ -73,6 +73,15 @@ function bootstrap(): void {
     // Seed the weapon cursor from the opening active tank too (mirrors aim).
     if (activeTank) newInput.setWeapon(activeTank.selectedWeapon);
 
+    // Network rematch: when a successor room is allocated (by either player),
+    // migrate into it with the SAME roster + THIS client's preserved playerId.
+    // Both clients receive this independently, so the rematch is symmetric.
+    newClient.onRematch?.((info) => {
+      const myId = currentConfig?.playerId;
+      if (!myId) return;
+      void startGame(rematchToConfig(info, myId));
+    });
+
     unsubscribe = newClient.onStateChange((state) => {
       renderer.render(state);
       hud.update(state, newClient.isFiring ?? false);
@@ -94,9 +103,17 @@ function bootstrap(): void {
     newClient.start();
   }
 
-  // Register restart ONCE on the persistent HUD: rebuild with the same roster.
+  // Register restart ONCE on the persistent HUD. Hot-seat rebuilds a fresh local
+  // engine with the same roster. Network can't restart in place — the room's
+  // action log replays the finished game — so it asks the server for a fresh
+  // successor room; both clients then migrate via onRematch (above).
   hud.onRestart(() => {
-    if (currentConfig) void startGame(currentConfig);
+    if (!currentConfig) return;
+    if (currentConfig.mode === 'network') {
+      void client?.requestRematch?.();
+    } else {
+      void startGame(currentConfig);
+    }
   });
 
   // Register the weapon-strip select callback ONCE on the persistent HUD. A
@@ -172,6 +189,25 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
     ...(settings?.gravity != null ? { gravity: settings.gravity } : {}),
   });
   return new HotSeatClient(engine);
+}
+
+/** Map a rematch successor-room payload into a network LobbyConfig. The local
+ *  player's id is preserved across the rematch (restart_game copies the roster
+ *  verbatim), so this client keeps owning the same engine tank. */
+function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyConfig {
+  return {
+    mode: 'network',
+    players: info.players.map((p) => ({ id: p.id, name: p.name, color: p.color })),
+    playerNames: info.players.map((p) => p.name),
+    roomCode: info.code,
+    roomId: info.roomId,
+    playerId: myPlayerId,
+    settings: {
+      seed: info.seed,
+      maxWind: info.options.maxWind,
+      gravity: info.options.gravity,
+    },
+  };
 }
 
 function requireElement(id: string): HTMLElement {
