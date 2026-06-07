@@ -361,6 +361,14 @@ export class NetworkClient implements GameClient {
       return;
     }
 
+    // next_round (leave the ROUND_OVER between-rounds shop) must be LOGGED through
+    // the referee so every client advances in lockstep — applying it locally would
+    // desync. That logging is part of the deferred networked-rounds work (needs a
+    // submit_action change + deploy + 2-browser playtest), and networked multi-round
+    // is not enabled until then, so here it is an explicit no-op rather than a
+    // local-only apply. Hot-seat handles next_round directly (HotSeatClient).
+    if (action.type === 'next_round') return;
+
     // Only process input when it is this player's turn.
     const state = this.engine.getState();
     if (state.activePlayerId !== engineTankId) return;

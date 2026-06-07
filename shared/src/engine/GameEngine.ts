@@ -247,6 +247,21 @@ export class GameEngine {
    * `fire`, which rejects a shot when the selected weapon is out of ammo).
    */
   applyAction(action: PlayerAction): void {
+    // ROUND_OVER between-rounds shop (V1 match structure): only buying and starting
+    // the next round are honored. buy targets the named tank (all players may shop);
+    // next_round flips the already-staged next round into combat.
+    if (this.state.phase === 'ROUND_OVER') {
+      if (action.type === 'buy') {
+        const target = action.tankId
+          ? this.state.tanks.find((t) => t.id === action.tankId)
+          : this.activeTank();
+        if (target) this.applyBuy(action, target);
+      } else if (action.type === 'next_round') {
+        this.state.phase = 'PLAYER_TURN';
+      }
+      return;
+    }
+
     if (this.state.phase !== 'PLAYER_TURN') return;
     const tank = this.activeTank();
     if (!tank) return;
@@ -308,27 +323,13 @@ export class GameEngine {
         this.state.phase = 'FIRING';
         return;
       }
-      case 'buy': {
-        // Purchase one bundle from the store. Does NOT end the turn (buy as many
-        // times as credits allow, then fire). Rejected for unimplemented or
-        // unlimited weapons, or when the active tank can't afford it.
-        const def = getWeapon(action.weapon);
-        if (!def.implemented) return;
-        const slot = tank.inventory[action.weapon];
-        if (slot.unlimited) return; // unlimited stock — nothing to buy
-        // Idempotent restock for CPU seats (P1-7b). In networked lockstep EVERY
-        // client submits a bot's action, and a buy is turn-neutral, so the referee's
-        // turn-cursor (which makes fires exactly-once) can't dedupe staggered
-        // duplicate buys — two clients could each commit a buy row and overspend the
-        // bot. A bot only ever buys a weapon it LACKS (AI.chooseBuy), so collapse the
-        // duplicates by skipping a CPU-seat buy when it already owns one: exactly-once
-        // effective on every replay. Humans may stock multiples, so this is bots-only.
-        if (tank.ai && slot.count > 0) return;
-        if (tank.credits < def.price) return; // can't afford
-        tank.credits -= def.price;
-        slot.count += def.bundleSize;
+      case 'buy':
+        // Buy for the active tank (PLAYER_TURN ignores any tankId, preserving the
+        // prior contract). Does NOT end the turn.
+        this.applyBuy(action, tank);
         return;
-      }
+      case 'next_round':
+        return; // only valid during ROUND_OVER (handled above)
       case 'use_shield': {
         // Activating the shield is a turn-ending commitment, like firing. Gate on
         // shield ammo (the inventory entry is guaranteed present). Rejection leaves
@@ -352,6 +353,24 @@ export class GameEngine {
       default:
         return;
     }
+  }
+
+  /**
+   * Purchase one bundle of a weapon for `target` (shared by the PLAYER_TURN store
+   * and the ROUND_OVER between-rounds shop). Rejected for unimplemented or
+   * unlimited-stock weapons, or when the tank can't afford it. Turn-neutral — never
+   * changes phase or active player. The CPU-seat idempotency guard (P1-7b) collapses
+   * staggered duplicate bot buys in networked lockstep to exactly-once.
+   */
+  private applyBuy(action: { weapon: WeaponType }, target: TankState): void {
+    const def = getWeapon(action.weapon);
+    if (!def.implemented) return;
+    const slot = target.inventory[action.weapon];
+    if (slot.unlimited) return; // unlimited stock — nothing to buy
+    if (target.ai && slot.count > 0) return; // idempotent bot restock (P1-7b)
+    if (target.credits < def.price) return; // can't afford
+    target.credits -= def.price;
+    slot.count += def.bundleSize;
   }
 
   /**
@@ -566,7 +585,12 @@ export class GameEngine {
         return;
       }
 
+      // Stage the next round (fresh terrain, reset tanks, carried economy/score) but
+      // PAUSE in the ROUND_OVER between-rounds shop — players spend carried credits,
+      // then a next_round action begins combat. startNextRound() leaves phase at
+      // PLAYER_TURN; override to ROUND_OVER so the shop window opens first.
       this.startNextRound();
+      this.state.phase = 'ROUND_OVER';
       return;
     }
 

@@ -41,6 +41,10 @@ function p1WinsRound(e) {
   e.applyAction({ type: 'fire' });
   tickToRest(e);
 }
+/** Leave the ROUND_OVER between-rounds shop and start the next round's combat. */
+function startNextRound(e) { e.applyAction({ type: 'next_round' }); }
+/** Win a round AND advance past the between-rounds shop into the next round. */
+function p1WinsAndAdvances(e) { p1WinsRound(e); if (e.getState().phase === 'ROUND_OVER') startNextRound(e); }
 
 function terrainsEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -74,8 +78,8 @@ function terrainsEqual(a, b) {
 
   p1WinsRound(e);
   const st = e.getState();
-  if (st.phase !== 'PLAYER_TURN') fail(`best-of-3 should resume play after round 1, got ${st.phase}`);
-  if (st.round !== 2) fail(`should have advanced to round 2, got ${st.round}`);
+  if (st.phase !== 'ROUND_OVER') fail(`best-of-3 should pause in the between-rounds shop after round 1, got ${st.phase}`);
+  if (st.round !== 2) fail(`should have staged round 2, got ${st.round}`);
   if (st.lastRoundWinnerId !== 'p1') fail(`round-1 winner should be p1, got ${st.lastRoundWinnerId}`);
   if (st.tanks[0].roundWins !== 1) fail(`p1 should have 1 round win, got ${st.tanks[0].roundWins}`);
   if (st.tanks[1].roundWins !== 0) fail(`p2 should have 0 round wins, got ${st.tanks[1].roundWins}`);
@@ -87,15 +91,37 @@ function terrainsEqual(a, b) {
   if (!st.tanks.every((t) => t.alive)) fail('all tanks should be alive again at the start of a new round');
   if (st.terrainVersion <= versionR1) fail(`terrainVersion should bump on regen (was ${versionR1}, now ${st.terrainVersion})`);
   if (terrainsEqual(terrainR1, st.terrain)) fail('round 2 terrain should differ from round 1 (derived seed) — got an identical map');
-  if (!failed) log('PASS: best-of-3 advances to round 2; credits/inventory carry, health/terrain reset, roundWins ticks.');
+  // next_round leaves the shop and begins combat.
+  startNextRound(e);
+  if (e.getState().phase !== 'PLAYER_TURN') fail(`next_round should start combat, got ${e.getState().phase}`);
+  if (!failed) log('PASS: best-of-3 pauses in ROUND_OVER then next_round starts round 2; credits/inventory carry, health/terrain reset.');
+}
+
+// --- Check 2b: the between-rounds shop — a buy in ROUND_OVER carries into the round ---
+{
+  const e = engine(2, 3);
+  e.getState().tanks[0].credits = 99999; // ensure affordability
+  const nukeBefore = e.getState().tanks[0].inventory.nuke.count;
+  p1WinsRound(e);
+  if (e.getState().phase !== 'ROUND_OVER') fail('expected ROUND_OVER for the shop test');
+  // Buy a nuke for p1 (named tank) during the between-rounds shop.
+  e.applyAction({ type: 'buy', weapon: 'nuke', tankId: 'p1' });
+  const bought = e.getState().tanks[0].inventory.nuke.count;
+  if (bought <= nukeBefore) fail(`ROUND_OVER buy did not add inventory (${nukeBefore} -> ${bought})`);
+  startNextRound(e);
+  if (e.getState().tanks[0].inventory.nuke.count !== bought) fail('ROUND_OVER purchase did not carry into the round');
+  // A fire/aim action during ROUND_OVER must be ignored (shop, not combat).
+  const phaseBeforeFire = (() => { const e2 = engine(2, 3); p1WinsRound(e2); e2.applyAction({ type: 'fire' }); return e2.getState().phase; })();
+  if (phaseBeforeFire !== 'ROUND_OVER') fail(`fire during ROUND_OVER should be ignored, phase became ${phaseBeforeFire}`);
+  if (!failed) log('PASS: ROUND_OVER shop accepts buys (carried into the round) and ignores fire.');
 }
 
 // --- Check 3: two engines, same seed + same driver => identical mid-match state ---
 {
   const a = engine(3, 5);
   const b = engine(3, 5);
-  p1WinsRound(a); p1WinsRound(a); // a at round 3, p1 wins = 2
-  p1WinsRound(b); p1WinsRound(b);
+  p1WinsAndAdvances(a); p1WinsAndAdvances(a); // a in round-3 shop, p1 wins = 2
+  p1WinsAndAdvances(b); p1WinsAndAdvances(b);
   const sa = a.getState(); const sb = b.getState();
   if (sa.round !== sb.round) fail(`round diverged: ${sa.round} vs ${sb.round}`);
   if (sa.tanks[0].roundWins !== sb.tanks[0].roundWins) fail('roundWins diverged across identical engines');
@@ -109,9 +135,10 @@ function terrainsEqual(a, b) {
 // --- Check 4: best-of-3 clinches at 2 wins => GAME_OVER with the right winner ---
 {
   const e = engine(2, 3);
-  p1WinsRound(e); // round 1 -> p1 1 win, advance to round 2
-  if (e.getState().phase !== 'PLAYER_TURN') fail('match should still be live after 1 of 3 round wins');
-  p1WinsRound(e); // round 2 -> p1 2 wins -> clinch (ceil(3/2)=2)
+  p1WinsRound(e); // round 1 -> p1 1 win, pause in ROUND_OVER
+  if (e.getState().phase !== 'ROUND_OVER') fail('match should pause in the shop, still live, after 1 of 3 round wins');
+  startNextRound(e); // begin round 2
+  p1WinsRound(e); // round 2 -> p1 2 wins -> clinch (ceil(3/2)=2) -> GAME_OVER (no shop)
   const st = e.getState();
   if (st.phase !== 'GAME_OVER') fail(`match should end on the 2nd round win, got ${st.phase}`);
   if (st.winner !== 'p1') fail(`match winner should be p1, got ${st.winner}`);
