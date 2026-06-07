@@ -111,6 +111,15 @@ export class NetworkClient implements GameClient {
   // referee cursor make the cross-client race exactly-once regardless.
   private lastBotKey:       string | null = null;
 
+  // For computing the NEXT active seat after a turn-ending action (P0-3): the
+  // room options (to build a throwaway engine) and the ordered log of actions
+  // applied so far. The submitting client replays log + its pending action to
+  // learn whose turn is next — its engine skips ELIMINATED seats, which the
+  // server's raw modulo cursor cannot. The server stores that index, so the
+  // referee tracks the engine's alive-only rotation in 3-4P games.
+  private options:          NetworkGameOptions;
+  private appliedLog:       NetworkAction[] = [];
+
   // ---- constructor ----
   constructor(
     supabase:  SupabaseClient,
@@ -121,6 +130,7 @@ export class NetworkClient implements GameClient {
     this.supabase         = supabase;
     this.roomId           = roomId;
     this.playerId         = playerId;
+    this.options          = options;
     this.listeners        = new Set();
     this.rafId            = null;
     this.channel          = null;
@@ -456,6 +466,12 @@ export class NetworkClient implements GameClient {
     retryOnConflict = true,
     actingPlayerId?: string,
   ): void {
+    // For turn-ending actions, tell the server which seat is active NEXT (this
+    // client's engine skips eliminated tanks; the server's modulo cursor can't).
+    // Omitted for turn-neutral buys (they don't change whose turn it is).
+    const nextActiveIndex = networkAction.type === 'buy'
+      ? undefined
+      : this.computeNextActiveIndex(networkAction);
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit_action`, {
       method:  'POST',
       headers: {
@@ -466,6 +482,7 @@ export class NetworkClient implements GameClient {
       body: JSON.stringify({
         roomId:   this.roomId,
         playerId: this.playerId,
+        ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
         // Present only when proxying a CPU seat — the seat the action is FOR.
         ...(actingPlayerId ? { actingPlayerId } : {}),
         action:   networkAction,
@@ -492,23 +509,60 @@ export class NetworkClient implements GameClient {
   }
 
   /**
-   * Apply a logged network action to the local engine. A fire is synthesized as
-   * the three setup actions then the fire; a use_shield is applied directly.
-   * Keeps the shared/ engine interface unchanged.
+   * Apply a logged network action to the local engine and RECORD it in the
+   * applied log (used to compute the next active seat — see computeNextActiveIndex).
    */
   private applyNetworkAction(action: NetworkAction): void {
+    NetworkClient.replayInto(this.engine, action);
+    this.appliedLog.push(action);
+  }
+
+  /**
+   * Apply one network action to an arbitrary engine. A fire is synthesized as the
+   * three setup actions then the fire; use_shield / buy are applied directly. Pure
+   * w.r.t. the engine it is given — used both for the live engine and a throwaway
+   * one when computing the next active seat.
+   */
+  private static replayInto(engine: GameEngine, action: NetworkAction): void {
     if (action.type === 'use_shield') {
-      this.engine.applyAction({ type: 'use_shield' });
+      engine.applyAction({ type: 'use_shield' });
       return;
     }
     if (action.type === 'buy') {
-      this.engine.applyAction({ type: 'buy', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
+      engine.applyAction({ type: 'buy', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
       return;
     }
-    this.engine.applyAction({ type: 'set_angle',     angle:  action.angle });
-    this.engine.applyAction({ type: 'set_power',     power:  action.power });
-    this.engine.applyAction({ type: 'select_weapon', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
-    this.engine.applyAction({ type: 'fire' });
+    engine.applyAction({ type: 'set_angle',     angle:  action.angle });
+    engine.applyAction({ type: 'set_power',     power:  action.power });
+    engine.applyAction({ type: 'select_weapon', weapon: action.weapon as import('@shared/engine/WeaponSystem').WeaponType });
+    engine.applyAction({ type: 'fire' });
+  }
+
+  /**
+   * Compute the 0-based SEAT INDEX of the player whose turn it will be AFTER the
+   * given turn-ending action commits. Replays the applied log + the pending action
+   * through a throwaway engine and reads its activePlayerId ('p{i+1}'). Because the
+   * engine skips ELIMINATED tanks, this is the death-aware rotation the server's
+   * raw modulo cursor gets wrong in 3-4P games (P0-3). Deterministic — every
+   * client computes the same value, so it is safe for the server to store.
+   */
+  private computeNextActiveIndex(pending: NetworkAction): number {
+    const tmp = new GameEngine(this.options as GameOptions);
+    for (const a of this.appliedLog) {
+      NetworkClient.replayInto(tmp, a);
+      this.tickEngineToCompletion(tmp);
+    }
+    NetworkClient.replayInto(tmp, pending);
+    this.tickEngineToCompletion(tmp);
+    const id = tmp.getState().activePlayerId; // 'p1'..'pN'
+    const idx = Number(id.replace(/[^0-9]/g, '')) - 1;
+    return Number.isFinite(idx) && idx >= 0 ? idx : 0;
+  }
+
+  /** Tick any engine until it leaves FIRING (bounded). */
+  private tickEngineToCompletion(engine: GameEngine): void {
+    let t = 0;
+    while (engine.getState().phase === 'FIRING' && t < 10_000) { engine.tick(); t++; }
   }
 
   /**
