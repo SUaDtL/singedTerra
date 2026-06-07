@@ -789,7 +789,8 @@ export class NetworkClient implements GameClient {
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
       },
-      body: JSON.stringify({ roomId: this.roomId, winnerId }),
+      // playerId lets finish_game authorize the caller as a room member (P2-9).
+      body: JSON.stringify({ roomId: this.roomId, playerId: this.playerId, winnerId }),
     }).catch(err => {
       console.error('NetworkClient: finish_game error:', err);
     });
