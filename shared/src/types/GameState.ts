@@ -145,14 +145,15 @@ export interface TankState {
   color: string;
   alive: boolean;
   /**
-   * Remaining shield particles — a destructible particle force field (SPEC §4.5,
-   * Sprint 4 Slice 3). 0 = no shield. Activating the shield sets it to the shield
-   * weapon's particle count; each DAMAGING blast (or napalm burn tick) destroys
-   * ONE particle and is fully negated while ≥1 remains, so area weapons shred it
-   * faster. Pure integer, decremented per damaging hit — deterministic, no RNG.
-   * The client renders a depleting ring of dots straight from this count.
+   * Remaining shield HP — a damage-absorbing force field (SPEC §4.5, Sprint 4
+   * Slice 3). 0 = no shield. Activating the shield sets it to the shield weapon's
+   * `capacity`; each DAMAGING blast (or napalm burn tick) drains it by the ACTUAL
+   * damage dealt, and any overflow beyond the remaining pool leaks to health — so
+   * the field absorbs an amount proportional to incoming magnitude rather than
+   * negating one hit of any size. Pure arithmetic (min/subtract) — deterministic,
+   * no RNG. The client renders a depleting ring straight from this value.
    */
-  shieldParticles: number;
+  shieldHp: number;
   /**
    * Computer-opponent control: the difficulty tier when this tank is CPU-driven,
    * or `null` for a human. Set at creation, never affects physics — purely tells
