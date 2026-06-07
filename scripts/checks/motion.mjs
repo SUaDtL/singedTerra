@@ -85,13 +85,20 @@ const BETTY_MAX_BOUNCES = BETTY.behavior.bounce.maxBounces;
 const BETTY_DET = BETTY.detonation;
 
 const NAPALM = getWeapon('napalm');
-const NAPALM_CELLS = NAPALM.behavior.napalm.cells;
+const NAPALM_DEF = NAPALM.behavior.napalm;
+const NAPALM_SPLASH_WIDTH = NAPALM_DEF.splashRadius * 2 + 1; // columns seeded on impact
 
 // Representative aims (chosen by sweep against the real engine for this seed so
 // the intended behavior actually fires in-bounds).
 const FUNKY_AIM = { angle: 78, power: 60, weapon: 'funky_bomb' };
-const BETTY_AIM = { angle: 55, power: 35, weapon: 'bouncing_betty' };
+// A flatter, lower-power lob so the full bounding-mine chain (3 hops + final)
+// stays in-bounds for THIS seed — the hopBoost leaps a high/hot shot off-field
+// before the 4th contact. Swept against the real engine (181 valid aims).
+const BETTY_AIM = { angle: 34, power: 26, weapon: 'bouncing_betty' };
 const NAPALM_AIM = { angle: 65, power: 40, weapon: 'napalm' };
+// Aim that drops napalm onto/just-uphill of an opponent so the fire pools over it
+// (swept against the real engine for this seed). Proves damage-over-time.
+const NAPALM_BURN_AIM = { angle: 63, power: 46, weapon: 'napalm' };
 
 /**
  * Fire one shot and tick to resolution, capturing a per-tick in-flight trace.
@@ -125,6 +132,13 @@ function fireShot(engine, { angle, power, weapon }) {
   let ticks = 0;
   let prevSingle = null; // the single in-flight projectile from the previous tick
 
+  // Napalm fire trace: peak burning-column count, ticks the field was alight, and
+  // the widest x-extent it reached (to prove SPREAD beyond the initial splash).
+  let maxFire = 0;
+  let fireTicks = 0;
+  let fireMinX = Infinity;
+  let fireMaxX = -Infinity;
+
   while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
     // Capture the single-shell apex BEFORE this tick integrates (only meaningful
     // while there is exactly one un-split shell in flight).
@@ -133,6 +147,16 @@ function fireShot(engine, { angle, power, weapon }) {
 
     engine.tick();
     ticks++;
+
+    const fire = engine.getState().fire;
+    if (fire.length > 0) {
+      fireTicks++;
+      maxFire = Math.max(maxFire, fire.length);
+      for (const c of fire) {
+        if (c.x < fireMinX) fireMinX = c.x;
+        if (c.x > fireMaxX) fireMaxX = c.x;
+      }
+    }
 
     const ps = engine.getState().projectiles;
     maxInFlight = Math.max(maxInFlight, ps.length);
@@ -184,6 +208,7 @@ function fireShot(engine, { angle, power, weapon }) {
     st: engine.getState(),
     everSplit, maxInFlight, preSplitMax, atSplit, anySplitFlag,
     splitTick, splitVyBefore, apexTick, bounceTransitions, ticks,
+    maxFire, fireTicks, fireMinX, fireMaxX,
   };
 }
 
@@ -288,40 +313,77 @@ function fireShot(engine, { angle, power, weapon }) {
     if (t.y < CANVAS_HEIGHT * 0.2) fail(`betty bounce at y=${t.y.toFixed(1)} is too high to be a terrain contact`);
   }
 
-  // Check 6: exactly ONE explosion, AFTER the last bounce, with detonation fields.
-  if (ex.length !== 1) {
-    fail(`bouncing_betty produced ${ex.length} explosions, expected exactly 1 (detonates only after bounces spent)`);
+  // Check 6: BOUNDING-MINE CHAIN — a full blast at EVERY ground contact, i.e.
+  // maxBounces hops + 1 final = maxBounces+1 explosions, each carrying betty's
+  // detonation-def visuals, all minted with strictly-increasing ids, and laid
+  // out in TRAVEL order (the shell skips downrange so blast ids advance with the
+  // hops). The final explosion fires on/after the last bounce.
+  const BETTY_EXPECTED = BETTY_MAX_BOUNCES + 1;
+  if (ex.length !== BETTY_EXPECTED) {
+    fail(`bouncing_betty produced ${ex.length} explosions, expected ${BETTY_EXPECTED} (one blast per contact: ${BETTY_MAX_BOUNCES} hops + 1 final)`);
   } else {
-    const e = ex[0];
-    if (e.style !== BETTY_DET.style) fail(`betty explosion style=${e.style}, expected ${BETTY_DET.style}`);
-    if (e.color !== BETTY_DET.color) fail(`betty explosion color=${e.color}, expected ${BETTY_DET.color}`);
-    if (e.durationFrames !== BETTY_DET.durationFrames) fail(`betty explosion dur=${e.durationFrames}, expected ${BETTY_DET.durationFrames}`);
-    if (e.radius !== BETTY_DET.radius) fail(`betty explosion radius=${e.radius}, expected ${BETTY_DET.radius}`);
-    if (r.st.lastExplosion !== e) fail('betty lastExplosion is not explosions[0]');
+    for (let i = 0; i < ex.length; i++) {
+      const e = ex[i];
+      if (e.style !== BETTY_DET.style) fail(`betty explosion[${i}] style=${e.style}, expected ${BETTY_DET.style}`);
+      if (e.color !== BETTY_DET.color) fail(`betty explosion[${i}] color=${e.color}, expected ${BETTY_DET.color}`);
+      if (e.durationFrames !== BETTY_DET.durationFrames) fail(`betty explosion[${i}] dur=${e.durationFrames}, expected ${BETTY_DET.durationFrames}`);
+      if (e.radius !== BETTY_DET.radius) fail(`betty explosion[${i}] radius=${e.radius}, expected ${BETTY_DET.radius}`);
+      if (i > 0 && !(e.id > ex[i - 1].id)) fail(`betty explosion ids not strictly increasing at i=${i}: ${ex[i - 1].id} then ${e.id}`);
+    }
+    if (r.st.lastExplosion !== ex[ex.length - 1]) fail('betty lastExplosion is not the final explosion');
   }
-  if (!failed) log(`PASS: bouncing_betty reflected exactly ${BETTY_MAX_BOUNCES}x (bounces ${BETTY_MAX_BOUNCES}->0) then detonated ONCE with detonation-def visuals.`);
+  if (!failed) log(`PASS: bouncing_betty laid ${BETTY_EXPECTED} blasts (${BETTY_MAX_BOUNCES} hops + 1 final), bounces ${BETTY_MAX_BOUNCES}->0, each with detonation-def visuals.`);
 }
 
-// --- Check 7: napalm emits N distinct, strictly-increasing ids in one tick ---
+// --- Check 7: napalm is a SPREADING, LINGERING FIRE FIELD, not a cluster carpet.
+//     On impact it (a) emits exactly ONE ignition flash (not N blasts), (b)
+//     seeds a burning puddle that (c) SPREADS wider than the initial splash and
+//     LINGERS for many ticks (holding the FIRING phase open), then (d) fully
+//     burns out so the turn resolves. A second shot aimed at a tank proves the
+//     burn deals DAMAGE OVER TIME (no impact damage — pure fire). ---
 {
   const engine = freshEngine();
   const r = fireShot(engine, NAPALM_AIM);
   const ex = r.st.explosions;
-  log(`[napalm] explosions.length=${ex.length} (expected ${NAPALM_CELLS}); cx=[${ex.map((e) => e.cx.toFixed(1)).join(', ')}]; ids=[${ex.map((e) => e.id).join(', ')}]`);
-  if (ex.length !== NAPALM_CELLS) {
-    fail(`napalm produced ${ex.length} cells, expected ${NAPALM_CELLS} (aim should land on terrain)`);
-  } else {
-    // Distinct, strictly increasing ids (the client's id>highWater dedupe relies
-    // on this for N-in-one-tick bursts).
-    for (let i = 1; i < ex.length; i++) {
-      if (!(ex[i].id > ex[i - 1].id)) fail(`napalm ids not strictly increasing at i=${i}: ${ex[i - 1].id} then ${ex[i].id}`);
-    }
-    // Laid out left-to-right (cx non-decreasing in emission order).
-    for (let i = 1; i < ex.length; i++) {
-      if (ex[i].cx < ex[i - 1].cx) fail(`napalm cells not left-to-right at i=${i}: cx ${ex[i - 1].cx} then ${ex[i].cx}`);
-    }
-    if (!failed) log(`PASS: napalm emitted ${NAPALM_CELLS} distinct strictly-increasing ids in one tick, laid left-to-right.`);
+  log(`[napalm] flashes=${ex.length} (expect 1); maxFire=${r.maxFire} cols; fireTicks=${r.fireTicks}; extent=[${r.fireMinX}..${r.fireMaxX}] (splash width ${NAPALM_SPLASH_WIDTH}); restFire=${r.st.fire.length}`);
+
+  // (a) exactly one ignition flash — NOT a multi-blast cluster carpet.
+  if (ex.length !== 1) fail(`napalm emitted ${ex.length} explosion events, expected exactly 1 (a single ignition flash — it is a fire weapon, not a cluster)`);
+  else if (ex[0].style !== NAPALM.detonation.style || ex[0].color !== NAPALM.detonation.color) {
+    fail('napalm ignition flash does not source its visuals from the napalm detonation def');
   }
+
+  // (b)+(c) the fire existed, lingered, and SPREAD beyond the seeded splash.
+  if (r.maxFire === 0 || r.fireTicks === 0) {
+    fail('napalm never produced a fire field (aim should land on terrain to ignite)');
+  } else {
+    if (r.fireTicks < 20) fail(`napalm fire lingered only ${r.fireTicks} ticks — expected a sustained burn (it should hold FIRING open)`);
+    const extent = r.fireMaxX - r.fireMinX + 1;
+    if (extent <= NAPALM_SPLASH_WIDTH) fail(`napalm fire never spread past its splash (extent ${extent} <= splash ${NAPALM_SPLASH_WIDTH}) — spread is broken`);
+    if (extent > NAPALM_DEF.maxSpread * 2 + NAPALM_SPLASH_WIDTH + 2) fail(`napalm fire spread past its bound (extent ${extent} exceeds maxSpread)`);
+  }
+
+  // (d) the field fully burned out and the shot RESOLVED (no fire left at rest,
+  //     phase back to a resting state) — i.e. the burn terminates deterministically.
+  if (r.st.fire.length !== 0) fail(`napalm left ${r.st.fire.length} cells burning at rest — fire must fully decay`);
+  if (r.st.phase === 'FIRING') fail('napalm shot never left FIRING — fire field did not terminate');
+
+  if (!failed) log(`PASS: napalm ignites ONE flash, spreads a fire field (extent ${r.fireMaxX - r.fireMinX + 1} > splash ${NAPALM_SPLASH_WIDTH}px), burns ${r.fireTicks} ticks, then fully decays.`);
+}
+
+// --- Check 7b: napalm BURNS a tank over time (damage-over-time, no impact dmg) ---
+{
+  const engine = freshEngine();
+  // Find the opponent and an aim that drops napalm onto/just-uphill of it so the
+  // fire pools over it. Read tank positions from the live engine.
+  const tanksBefore = engine.getState().tanks.map((t) => ({ id: t.id, x: t.x, health: t.health }));
+  const r = fireShot(engine, NAPALM_BURN_AIM);
+  const after = r.st.tanks;
+  const burned = after.filter((t, i) => t.health < tanksBefore[i].health);
+  log(`[napalm-dot] aim ${JSON.stringify(NAPALM_BURN_AIM)}; tanks damaged=${burned.length}; healths ${tanksBefore.map((t) => t.health).join('/')} -> ${after.map((t) => t.health).join('/')}; fireTicks=${r.fireTicks}`);
+  if (r.fireTicks === 0) fail('napalm-dot aim did not ignite a fire (re-tune NAPALM_BURN_AIM to land on terrain)');
+  else if (burned.length === 0) fail('napalm fire dealt NO damage to any tank — DOT is broken or aim missed (re-tune NAPALM_BURN_AIM)');
+  else if (!failed) log(`PASS: napalm fire dealt damage-over-time to ${burned.length} tank(s) — pure burn, no impact blast.`);
 }
 
 // --- Check 8: same-seed runs byte-identical (funky + betty) ---
@@ -339,6 +401,10 @@ function fireShot(engine, { angle, power, weapon }) {
       projectile: state.projectile,
       explosions: state.explosions,
       lastExplosion: state.lastExplosion,
+      // fire covers the napalm field's spread/decay determinism (empty at rest,
+      // but identical mid-burn for the same seed/action — proven by a tick-by-tick
+      // serialize below).
+      fire: state.fire,
       tanks: state.tanks.map((t) => ({ id: t.id, x: t.x, y: t.y, health: t.health, alive: t.alive })),
       terrain: Buffer.from(state.terrain).toString('hex'),
     });
@@ -355,6 +421,13 @@ function fireShot(engine, { angle, power, weapon }) {
   const b2 = run(BETTY_AIM);
   if (b1 !== b2) fail('two same-seed bouncing_betty runs DIVERGED (NON-DETERMINISTIC bounce normal/reflection)');
   else log(`PASS: two same-seed bouncing_betty runs byte-identical (len ${b1.length}).`);
+
+  // Napalm: same-seed runs must match — a nondeterministic spread would change
+  // which ticks a tank burns and thus the final healths (fire is empty at rest).
+  const n1 = run(NAPALM_BURN_AIM);
+  const n2 = run(NAPALM_BURN_AIM);
+  if (n1 !== n2) fail('two same-seed napalm runs DIVERGED (NON-DETERMINISTIC fire spread/DOT)');
+  else log(`PASS: two same-seed napalm runs byte-identical (len ${n1.length}).`);
 }
 
 if (failed) {

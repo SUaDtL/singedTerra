@@ -1,5 +1,8 @@
 import './style.css';
 import { GameEngine } from '@shared/engine/GameEngine';
+import { computeAiPlan } from '@shared/engine/AI';
+import { GRAVITY } from '@shared/engine/Physics';
+import type { GameState } from '@shared/types/GameState';
 import type { GameClient, RematchInfo } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { InputHandler } from './input/InputHandler';
@@ -38,8 +41,28 @@ function bootstrap(): void {
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
 
+  // --- Computer-opponent (AI) driver state ---
+  // Whether the active tank is CPU-controlled (gates out human input for that turn).
+  let activeIsAi = false;
+  // Guards against re-driving the same bot turn: onStateChange fires every frame,
+  // so we act ONCE per (turn, tank) and skip until the turn changes.
+  let aiActedKey: string | null = null;
+  // Pending bot "think" timers, cleared on teardown so a torn-down game never fires.
+  let aiTimers: ReturnType<typeof setTimeout>[] = [];
+
+  /** ms the bot waits before swinging its barrel, then before firing — so the
+   *  human sees it aim and shoot rather than an instant teleport-kill. */
+  const AI_AIM_DELAY = 600;
+  const AI_FIRE_DELAY = 550;
+
+  function clearAiTimers(): void {
+    for (const t of aiTimers) clearTimeout(t);
+    aiTimers = [];
+  }
+
   /** Tear down the current game's client/input/subscription (idempotent). */
   function teardown(): void {
+    clearAiTimers();
     unsubscribe?.();
     unsubscribe = null;
     input?.detach();
@@ -47,6 +70,8 @@ function bootstrap(): void {
     client?.stop();
     client = null;
     lastActiveId = null;
+    activeIsAi = false;
+    aiActedKey = null;
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
@@ -64,7 +89,12 @@ function bootstrap(): void {
     const activeTank = initial?.tanks.find((t) => t.id === initial.activePlayerId);
     lastActiveId = initial?.activePlayerId ?? null;
 
-    const newInput = new InputHandler(canvas, (action) => newClient.sendAction(action), {
+    // Human input is dropped while a CPU tank holds the turn — otherwise the
+    // player's keys would drive the bot's tank.
+    const newInput = new InputHandler(canvas, (action) => {
+      if (activeIsAi) return;
+      newClient.sendAction(action);
+    }, {
       initialAngle: activeTank?.angle,
       initialPower: activeTank?.power,
     });
@@ -98,9 +128,45 @@ function bootstrap(): void {
           newInput.setWeapon(next.selectedWeapon);
         }
       }
+
+      // Computer-opponent driver: if a CPU tank holds the turn, plan + play it.
+      maybeDriveAi(state);
     });
 
     newClient.start();
+  }
+
+  /**
+   * Drive the active tank when it is CPU-controlled: gate out human input, and —
+   * once per turn — plan a shot and play it as ordinary actions on a short timer
+   * so the human watches the bot aim and fire. Hot-seat / single-player only
+   * (networked rooms have no AI seats). The (turn, tank) key makes it fire exactly
+   * once even though onStateChange runs every frame.
+   */
+  function maybeDriveAi(state: GameState): void {
+    const active = state.tanks.find((t) => t.id === state.activePlayerId);
+    const isAi = !!active?.ai && currentConfig?.mode !== 'network';
+    activeIsAi = isAi && state.phase === 'PLAYER_TURN';
+    if (!isAi || state.phase !== 'PLAYER_TURN' || !active) return;
+
+    const key = `${state.turn}:${active.id}`;
+    if (key === aiActedKey) return; // already acting on this turn
+    aiActedKey = key;
+
+    const gravity = currentConfig?.settings?.gravity ?? GRAVITY;
+    const plan = computeAiPlan(state, active.id, active.ai!, gravity);
+    if (!plan) return; // no target (game effectively over) — nothing to do
+
+    clearAiTimers();
+    // Swing the barrel to the planned aim first (visible), then fire after a beat.
+    aiTimers.push(setTimeout(() => {
+      client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
+      client?.sendAction({ type: 'set_angle', angle: plan.angle });
+      client?.sendAction({ type: 'set_power', power: plan.power });
+    }, AI_AIM_DELAY));
+    aiTimers.push(setTimeout(() => {
+      client?.sendAction(plan.weapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
+    }, AI_AIM_DELAY + AI_FIRE_DELAY));
   }
 
   // Register restart ONCE on the persistent HUD. Hot-seat rebuilds a fresh local
@@ -123,6 +189,13 @@ function bootstrap(): void {
   hud.onWeaponSelect((weapon) => {
     client?.sendAction({ type: 'select_weapon', weapon });
     input?.setWeapon(weapon);
+  });
+
+  // Register the store Buy callback ONCE on the persistent HUD. A buy is a
+  // turn-neutral action: hot-seat applies it locally; network commits it to the
+  // log (and the engine re-gates affordability + whose turn it is).
+  hud.onBuy((weapon) => {
+    client?.sendAction({ type: 'buy', weapon });
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {

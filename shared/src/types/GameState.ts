@@ -66,7 +66,26 @@ export interface GameState {
    * `null` if none) for back-compat with consumers that read a single event.
    */
   explosions: ExplosionEvent[];
+  /**
+   * Active napalm fire field — every terrain column currently burning, with the
+   * ticks of burn each has remaining. `[]` whenever nothing is alight (the
+   * resting state between/after shots). Produced entirely by the engine each tick
+   * (seeded on a napalm impact, then spread + decayed deterministically), read by
+   * the renderer to draw flames. Like {@link terrain}, it is engine-authoritative
+   * and never carries randomness — same (seed, action log) replays identically.
+   * The FIRING phase is held open until this drains, so a turn resolves only once
+   * the fire has burned out.
+   */
+  fire: FireCell[];
   winner: string | null;
+}
+
+/** One burning terrain column in the napalm fire field (see {@link GameState.fire}). */
+export interface FireCell {
+  /** Burning column (integer canvas x). */
+  x: number;
+  /** Ticks of burn remaining; counts down to 0, then the cell is removed. */
+  life: number;
 }
 
 /** Visual style of an explosion — drives the client's burst rendering. */
@@ -102,6 +121,10 @@ export interface AmmoEntry {
   unlimited: boolean;
 }
 
+/** Computer-opponent difficulty tier. Defined here (a leaf types module) so both
+ *  the engine AI and the options/lobby plumbing can reference it cycle-free. */
+export type AiDifficulty = 'easy' | 'medium' | 'hard';
+
 export interface TankState {
   id: string;
   playerName: string;
@@ -121,6 +144,28 @@ export interface TankState {
   /** CSS color string. */
   color: string;
   alive: boolean;
+  /**
+   * Remaining shield particles — a destructible particle force field (SPEC §4.5,
+   * Sprint 4 Slice 3). 0 = no shield. Activating the shield sets it to the shield
+   * weapon's particle count; each DAMAGING blast (or napalm burn tick) destroys
+   * ONE particle and is fully negated while ≥1 remains, so area weapons shred it
+   * faster. Pure integer, decremented per damaging hit — deterministic, no RNG.
+   * The client renders a depleting ring of dots straight from this count.
+   */
+  shieldParticles: number;
+  /**
+   * Computer-opponent control: the difficulty tier when this tank is CPU-driven,
+   * or `null` for a human. Set at creation, never affects physics — purely tells
+   * the client's AI driver to plan + play this tank's turn (and the HUD to badge
+   * it "CPU"). Deterministic (a static flag).
+   */
+  ai: AiDifficulty | null;
+  /**
+   * Store credits (SPEC §9 weapon shop). Spent on `buy` actions during the tank's
+   * turn; earned deterministically in the engine — per point of damage dealt to an
+   * opponent, plus a flat per-shot stipend. Starts at STARTING_CREDITS. Integer.
+   */
+  credits: number;
 }
 
 export interface ProjectileState {

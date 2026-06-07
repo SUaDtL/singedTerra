@@ -13,6 +13,7 @@ import {
   applyGravity,
   surfaceAt,
   pixelAt,
+  CANVAS_WIDTH,
   CANVAS_HEIGHT,
 } from './Terrain';
 import {
@@ -21,6 +22,7 @@ import {
   barrelTip,
   Tank,
   TANK_HEIGHT,
+  TANK_WIDTH,
 } from './Tank';
 import {
   launchVelocity,
@@ -34,7 +36,13 @@ import {
   MAX_DAMAGE,
   GRAVITY,
 } from './Physics';
-import { getWeapon, type WeaponType } from './WeaponSystem';
+import {
+  getWeapon,
+  type WeaponType,
+  type NapalmDef,
+  CREDITS_PER_DAMAGE,
+  TURN_STIPEND,
+} from './WeaponSystem';
 import { createRng } from './Random';
 
 /**
@@ -85,6 +93,37 @@ export class GameEngine {
   private explosionSeq = 0;
 
   /**
+   * Active napalm fire field — working store of burning column x → ticks of burn
+   * remaining. A Map (not the GameState array) for O(1) ignite/decay during
+   * spread; mirrored to `state.fire` (sorted by x, deterministic) after each
+   * mutation. Empty whenever nothing is alight. Only one napalm shot burns at a
+   * time (a shot fully resolves before the next turn), so a single field suffices.
+   */
+  private fire = new Map<number, number>();
+
+  /** The burning napalm's def + impact column, retained while `fire` is non-empty
+   *  so processFire() knows the spread bounds/rate. Null when nothing is alight. */
+  private fireDef: NapalmDef | null = null;
+  private fireCenter = 0;
+
+  /**
+   * Columns this fire has EVER lit. A column burns exactly once: spread never
+   * re-ignites a scorched column. Without this, a frontier cell that decays lets
+   * the spread retreat then re-extend into the just-burned column, relighting it
+   * forever — an oscillating, non-terminating fire. Cleared when the field dies.
+   */
+  private fireScorched = new Set<number>();
+
+  /**
+   * Store economy bookkeeping for the in-flight shot: who fired it, and the total
+   * EFFECTIVE damage it has dealt to OTHER tanks so far. Set/reset when a shot is
+   * fired; read in resolve() to award the shooter credits. Self-damage does not
+   * pay. Pure integers — deterministic.
+   */
+  private shooterId = '';
+  private shotDamage = 0;
+
+  /**
    * Independent seeded wind RNG stream (SPEC §4.4). Advanced exactly once per
    * turn (once at construction for the opening turn, once per NEXT_TURN). Kept
    * separate from terrain generation so the two streams never correlate. Same
@@ -132,6 +171,7 @@ export class GameEngine {
       projectile: null,
       lastExplosion: null,
       explosions: [],
+      fire: [],
       winner: null,
     };
   }
@@ -204,6 +244,11 @@ export class GameEngine {
         const ammo = tank.inventory[tank.selectedWeapon];
         if (!ammo.unlimited && ammo.count <= 0) return;
 
+        // Store-economy bookkeeping: this tank owns the shot, and its dealt
+        // damage tally starts fresh (credited to the shooter in resolve()).
+        this.shooterId = tank.id;
+        this.shotDamage = 0;
+
         const v = launchVelocity(tank.angle, tank.power);
         const tip = barrelTip(tank, BARREL_LENGTH);
         // Reset the explosion list for THIS shot so its detonations accumulate
@@ -233,6 +278,39 @@ export class GameEngine {
         this.state.phase = 'FIRING';
         return;
       }
+      case 'buy': {
+        // Purchase one bundle from the store. Does NOT end the turn (buy as many
+        // times as credits allow, then fire). Rejected for unimplemented or
+        // unlimited weapons, or when the active tank can't afford it.
+        const def = getWeapon(action.weapon);
+        if (!def.implemented) return;
+        const slot = tank.inventory[action.weapon];
+        if (slot.unlimited) return; // unlimited stock — nothing to buy
+        if (tank.credits < def.price) return; // can't afford
+        tank.credits -= def.price;
+        slot.count += def.bundleSize;
+        return;
+      }
+      case 'use_shield': {
+        // Activating the shield is a turn-ending commitment, like firing. Gate on
+        // shield ammo (the inventory entry is guaranteed present). Rejection leaves
+        // the tank aiming, free to choose otherwise.
+        const ammo = tank.inventory.shield;
+        if (!ammo.unlimited && ammo.count <= 0) return;
+
+        const particles = getWeapon('shield').behavior?.shield?.particles ?? 0;
+        tank.shieldParticles = particles;
+        if (!ammo.unlimited) ammo.count--;
+
+        // No projectile, no FIRING phase — the shield resolves instantly. No one
+        // can die from shielding, so skip the win-check and just advance the turn
+        // (next living player, fresh wind), mirroring resolve()'s NEXT_TURN tail.
+        this.advanceTurn();
+        this.state.wind = this.nextWind(this.state.wind);
+        this.state.turn += 1;
+        this.state.phase = 'PLAYER_TURN';
+        return;
+      }
       default:
         return;
     }
@@ -247,8 +325,11 @@ export class GameEngine {
    */
   tick(): void {
     if (this.state.phase !== 'FIRING') return;
-    if (this.state.projectiles.length === 0) {
-      // Defensive: FIRING with no projectile — recover to aiming.
+    if (this.state.projectiles.length === 0 && this.fire.size === 0) {
+      // Defensive: FIRING with nothing in flight AND no fire burning — a stuck
+      // state; recover to aiming. NOTE the fire guard: a napalm field burns on
+      // AFTER its shell is consumed (no projectile, fire active is VALID FIRING),
+      // so we must NOT bail while it is alight — fall through to processFire().
       this.state.phase = 'PLAYER_TURN';
       this.syncProjectileAlias();
       return;
@@ -310,7 +391,7 @@ export class GameEngine {
       if (hit.type === 'tank') {
         const napalm = getWeapon(p.weaponType).behavior?.napalm;
         if (napalm !== undefined) {
-          this.detonateNapalm(hit.x, hit.y, p.weaponType, napalm);
+          this.igniteNapalm(hit.x, hit.y, napalm); // splashes burning fuel, no blast
         } else {
           this.detonate(hit.x, hit.y, p.weaponType); // direct tank hit always detonates
         }
@@ -318,23 +399,32 @@ export class GameEngine {
         if (p.bounces > 0) {
           // BOUNCE: reflect off the derived surface normal, decrement, keep
           // flying. sweepCollide already snapped p.x/p.y to the impact point.
+          // We compute the normal + reflect BEFORE any detonate() so the bounce
+          // direction reads the surface the shell actually struck (a per-bounce
+          // crater must not perturb the very normal we are bouncing off).
+          const bounce = getWeapon(p.weaponType).behavior?.bounce;
           const n = surfaceNormalAt(this.terrain, p.x);
-          const restitution = getWeapon(p.weaponType).behavior?.bounce
-            ?.restitution;
-          const r = reflectVelocity({ vx: p.vx, vy: p.vy }, n, restitution);
+          const r = reflectVelocity({ vx: p.vx, vy: p.vy }, n, bounce?.restitution);
           p.vx = r.vx;
           p.vy = r.vy;
+          // HOP: a bounding mine leaps off each contact (upward = −y). Pure
+          // constant kick, so replay stays deterministic.
+          if (bounce?.hopBoost) p.vy -= bounce.hopBoost;
           p.bounces--;
           // Nudge the projectile OFF the surface along the normal by >1px so the
           // next tick's collide() does not immediately re-hit the same solid
           // pixel (it was snapped to the impact point, which is on/at solid).
           p.x += n.vx * BOUNCE_EPS;
           p.y += n.vy * BOUNCE_EPS;
+          // BOUNDING-MINE CHAIN: detonate a full blast at this contact (damage +
+          // crater + explosion event) so betty lays a line of blasts as it skips,
+          // instead of bouncing silently. Done AFTER reflecting/nudging above.
+          if (bounce?.detonateEachBounce) this.detonate(hit.x, hit.y, p.weaponType);
           survivors.push(p); // still in flight
         } else {
           const napalm = getWeapon(p.weaponType).behavior?.napalm;
           if (napalm !== undefined) {
-            this.detonateNapalm(hit.x, hit.y, p.weaponType, napalm);
+            this.igniteNapalm(hit.x, hit.y, napalm); // splashes burning fuel, no blast
           } else {
             this.detonate(hit.x, hit.y, p.weaponType); // bounces spent -> detonate
           }
@@ -345,10 +435,15 @@ export class GameEngine {
     this.state.projectiles = survivors;
     this.syncProjectileAlias();
 
-    // The shot is fully resolved only once NO projectiles remain in flight
-    // (parent + all submunitions have detonated / missed). Until then stay
-    // FIRING. Run the turn-machine resolution EXACTLY ONCE on the emptying tick.
-    if (survivors.length === 0) {
+    // Burn the napalm fire field one tick (spread + DOT + decay). No-op when
+    // nothing is alight. Runs every FIRING tick so a fire ignited THIS tick by an
+    // impact above gets its first burn immediately.
+    this.processFire();
+
+    // The shot is fully resolved only once NO projectiles remain in flight AND
+    // the napalm fire has burned out — so a turn waits for the flames. Run the
+    // turn-machine resolution EXACTLY ONCE on the settling tick.
+    if (survivors.length === 0 && this.fire.size === 0) {
       this.state.phase = 'RESOLVING';
       this.resolve();
     }
@@ -399,6 +494,16 @@ export class GameEngine {
    * turn-machine portion (RESOLVING → GAME_OVER | NEXT_TURN → PLAYER_TURN).
    */
   private resolve(): void {
+    // Store economy: pay the shooter for this shot — CREDITS_PER_DAMAGE per point
+    // of effective damage dealt to opponents, plus a flat TURN_STIPEND (so even a
+    // miss earns a little). Awarded BEFORE the win-check/turn-advance, while
+    // shooterId is still the player who fired. Dead shooters still collect (a
+    // mutual-kill shot paid out). Pure arithmetic — deterministic.
+    const shooter = this.state.tanks.find((t) => t.id === this.shooterId);
+    if (shooter) {
+      shooter.credits += Math.round(this.shotDamage * CREDITS_PER_DAMAGE) + TURN_STIPEND;
+    }
+
     const alive = this.state.tanks.filter((t) => t.alive);
 
     if (alive.length <= 1) {
@@ -445,6 +550,28 @@ export class GameEngine {
    * Every weapon AND every airburst submunition routes through here, reading the
    * weapon's `detonation.*` group — so all blast behavior lives in one place.
    */
+  /**
+   * Apply blast/burn damage to a tank, honoring its shield. While the tank has
+   * shield particles, each DAMAGING hit destroys exactly ONE particle and the
+   * damage is fully negated; at 0 particles damage applies normally. Multi-blast
+   * weapons (cluster bomblets, betty hops, napalm burn ticks) each route through
+   * here, so an area weapon strips the field faster — thematic AND deterministic
+   * (integer decrement per damaging hit, no RNG). Burial (terrain) does NOT come
+   * through here — being buried bypasses the force field by design.
+   */
+  private applyBlastDamage(tank: TankState, amount: number): void {
+    if (amount <= 0) return;
+    if (tank.shieldParticles > 0) {
+      tank.shieldParticles--; // one particle absorbs this whole blast/tick
+      return;
+    }
+    const before = tank.health;
+    Tank.applyDamage(tank, amount);
+    // Store economy: credit the shooter for EFFECTIVE damage (post-clamp) dealt to
+    // an OPPONENT this shot — self-damage and overkill don't pay.
+    if (tank.id !== this.shooterId) this.shotDamage += before - tank.health;
+  }
+
   private detonate(cx: number, cy: number, weaponType: WeaponType): void {
     const { radius, maxDamage, raisesTerrain, style, color, durationFrames } =
       getWeapon(weaponType).detonation;
@@ -465,7 +592,7 @@ export class GameEngine {
       // weapon's maxDamage so the falloff shape is preserved.
       const scaled = (baseDamage / MAX_DAMAGE) * maxDamage;
       if (scaled > 0) {
-        Tank.applyDamage(tank, scaled);
+        this.applyBlastDamage(tank, scaled); // shield absorbs one blast per particle
       }
     }
 
@@ -506,32 +633,154 @@ export class GameEngine {
   }
 
   /**
-   * Napalm impact carpet — fire `cells` overlapping detonations laid
-   * LEFT-TO-RIGHT across the impact column, each offset `step` px from the
-   * previous and centered on (cx, cy). This is NOT a new blast primitive: it
-   * CALLS the existing detonate() N times, so every cell deforms terrain, runs
-   * gravity, applies proximity damage, re-resolves tank burial, and mints a
-   * distinct monotonic ExplosionEvent id — exactly like a cluster bomblet.
+   * Napalm impact — IGNITE, do not blast. Seeds a burning puddle of terrain
+   * columns ±def.splashRadius around the impact x (no crater, no impact damage)
+   * and emits a single ignition flash for visual punch + screen-shake. All of
+   * napalm's damage is the per-tick burn applied later in processFire(); the
+   * impact itself is harmless. Retains the def + center so the fire can spread.
    *
-   * Determinism (HARD): the FIXED i=0..cells-1 (left-to-right) order is
-   * load-bearing — because each detonate() mutates the shared bitmap and tanks,
-   * overlapping cells are order-dependent (a later cell sees an earlier cell's
-   * crater/gravity). The offset is pure arithmetic on cells/step + the impact x
-   * (no Math.random, no clock), so a same-seed/same-action shot replays
-   * bit-identically. cy is held constant across cells (impact y). The centering
-   * formula (i-(cells-1)/2)*step matches splitAirburst, so an odd `cells` puts
-   * one detonation exactly on cx.
+   * Determinism: ignite writes are pure arithmetic on the integer impact column;
+   * the flash id comes from the same monotonic explosionSeq as every other blast.
    */
-  private detonateNapalm(
-    cx: number,
-    cy: number,
-    weaponType: WeaponType,
-    def: { cells: number; step: number },
-  ): void {
-    const { cells, step } = def;
-    for (let i = 0; i < cells; i++) {
-      const offset = (i - (cells - 1) / 2) * step;
-      this.detonate(cx + offset, cy, weaponType);
+  private igniteNapalm(cx: number, cy: number, def: NapalmDef): void {
+    const center = Math.round(cx);
+    this.fireDef = def;
+    this.fireCenter = center;
+    // Seed the initial puddle. ignite() refreshes life on overlap, so re-igniting
+    // an already-burning column is harmless.
+    for (let dx = -def.splashRadius; dx <= def.splashRadius; dx++) {
+      this.ignite(center + dx, def.burnTicks);
     }
+
+    // Ignition flash — VISUAL ONLY (reuses the weapon's detonation look). No
+    // terrain deform, no proximity damage: the burn does the work.
+    const det = getWeapon('napalm').detonation;
+    const event: ExplosionEvent = {
+      id: ++this.explosionSeq,
+      cx,
+      cy: clamp(cy, 0, CANVAS_HEIGHT),
+      radius: det.radius,
+      style: det.style,
+      color: det.color,
+      durationFrames: det.durationFrames,
+    };
+    this.state.explosions.push(event);
+    this.state.lastExplosion = event;
+
+    this.syncFire();
+  }
+
+  /** Light a single terrain column, clamped in-bounds. A column burns at most
+   *  once per fire: an already-scorched column is never relit (caller also guards
+   *  this for spread, but igniting the splash is funneled through here too). */
+  private ignite(x: number, life: number): void {
+    if (x < 0 || x >= CANVAS_WIDTH) return;
+    if (this.fireScorched.has(x)) return;
+    this.fireScorched.add(x);
+    this.fire.set(x, life);
+  }
+
+  /**
+   * Advance the napalm fire one tick: SPREAD the front outward (downhill-biased),
+   * BURN any tank standing in the flames, then DECAY every column. No-op when
+   * nothing is alight. Fully deterministic — surface heights + fixed integer
+   * steps, no RNG, no clock.
+   */
+  private processFire(): void {
+    if (this.fire.size === 0 || this.fireDef === null) {
+      if (this.state.fire.length > 0) this.state.fire = [];
+      return;
+    }
+    const def = this.fireDef;
+
+    // 1. SPREAD. Creep the current extent outward up to spreadRate columns per
+    //    side. Fire flows freely DOWNHILL (and across) but only climbs into a
+    //    higher neighbour when the rise is within climbLimit — so it pours into
+    //    valleys/craters and is stopped by walls. Bounded by ±maxSpread of the
+    //    impact center, guaranteeing termination.
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (const x of this.fire.keys()) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+    }
+    for (let s = 0; s < def.spreadRate; s++) {
+      const rx = maxX + 1;
+      if (
+        rx - this.fireCenter <= def.maxSpread &&
+        !this.fireScorched.has(rx) &&
+        this.canSpread(maxX, rx, def)
+      ) {
+        this.ignite(rx, def.burnTicks);
+        maxX = rx;
+      }
+      const lx = minX - 1;
+      if (
+        this.fireCenter - lx <= def.maxSpread &&
+        !this.fireScorched.has(lx) &&
+        this.canSpread(minX, lx, def)
+      ) {
+        this.ignite(lx, def.burnTicks);
+        minX = lx;
+      }
+    }
+
+    // 2. BURN. A tank takes dotPerTick if a burning column lies within its
+    //    footprint AND at roughly its feet (so fire pooled in a pit far below an
+    //    elevated tank does not scorch it). One application per tank per tick.
+    const halfW = TANK_WIDTH / 2;
+    for (const tank of this.state.tanks) {
+      if (!tank.alive) continue;
+      const lo = Math.ceil(tank.x - halfW);
+      const hi = Math.floor(tank.x + halfW);
+      let inFire = false;
+      for (let x = lo; x <= hi; x++) {
+        if (!this.fire.has(x)) continue;
+        if (Math.abs(surfaceAt(this.terrain, x) - tank.y) <= TANK_HEIGHT * 2) {
+          inFire = true;
+          break;
+        }
+      }
+      if (inFire) this.applyBlastDamage(tank, def.dotPerTick); // shield absorbs per-tick
+    }
+
+    // 3. DECAY. Tick every column down; drop the burnt-out ones. Collect keys
+    //    first so we never mutate the Map mid-iteration.
+    for (const x of [...this.fire.keys()]) {
+      const life = this.fire.get(x)! - 1;
+      if (life <= 0) this.fire.delete(x);
+      else this.fire.set(x, life);
+    }
+
+    // Fire fully burnt out — clear the retained def + scorched set so the NEXT
+    // napalm starts with a clean slate (a fresh shot may light the same columns).
+    if (this.fire.size === 0) {
+      this.fireDef = null;
+      this.fireScorched.clear();
+    }
+
+    this.syncFire();
+  }
+
+  /**
+   * Whether the fire may spread from column `fromX` into neighbour `toX`. Flows
+   * downhill (toX lower, i.e. larger surface y) freely; climbs a higher neighbour
+   * only when the rise is within def.climbLimit px. An all-air neighbour column
+   * (surfaceAt == CANVAS_HEIGHT) reads as far below => fire pours into the pit.
+   */
+  private canSpread(fromX: number, toX: number, def: NapalmDef): boolean {
+    if (toX < 0 || toX >= CANVAS_WIDTH) return false;
+    const from = surfaceAt(this.terrain, fromX); // y (down = larger)
+    const to = surfaceAt(this.terrain, toX);
+    const rise = from - to; // > 0 => toX is HIGHER (smaller y)
+    return rise <= def.climbLimit;
+  }
+
+  /** Mirror the working `fire` Map into `state.fire`, sorted by x for a stable,
+   *  deterministic snapshot order (renderer + serialization read this array). */
+  private syncFire(): void {
+    const cells = [...this.fire.entries()].map(([x, life]) => ({ x, life }));
+    cells.sort((a, b) => a.x - b.x);
+    this.state.fire = cells;
   }
 }
