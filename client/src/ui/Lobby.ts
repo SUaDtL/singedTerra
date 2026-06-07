@@ -29,6 +29,8 @@ export interface LobbySettings {
   gravity?: number;
   /** Terrain seed; blank => engine's reproducible default. */
   seed?: number;
+  /** Best-of-N match length, odd 1..9 (engine default 1 = single round). */
+  rounds?: number;
 }
 
 /** Configuration produced by the lobby once the player(s) are ready. */
@@ -70,12 +72,16 @@ const GRAVITY_MIN = 0.05;
 const GRAVITY_MAX = 0.4;
 const GRAVITY_STEP = 0.01;
 const GRAVITY_DEFAULT = 0.15;
+const ROUNDS_MIN = 1;
+const ROUNDS_MAX = 9;
+const ROUNDS_DEFAULT = 1;
 
 /** Raw (string) working state for the advanced-settings inputs. */
 interface SettingsState {
   maxWind: string;
   gravity: string;
   seed: string;
+  rounds: string;
 }
 
 /** A working row of player config state in the setup UI. */
@@ -127,7 +133,7 @@ export class Lobby {
   private players: PlayerRowState[] = [];
 
   /** Raw working state for the advanced-settings inputs (blank = use default). */
-  private settings: SettingsState = { maxWind: '', gravity: '', seed: '' };
+  private settings: SettingsState = { maxWind: '', gravity: '', seed: '', rounds: '' };
 
   /** Whether the advanced-settings <details> is open (persist across renders). */
   private settingsOpen = false;
@@ -1889,6 +1895,13 @@ export class Lobby {
         placeholder: 'default',
         hint: 'integer, blank = default',
       }),
+      this.numberField('Rounds', 'rounds', {
+        min: ROUNDS_MIN,
+        max: ROUNDS_MAX,
+        step: 2,
+        placeholder: String(ROUNDS_DEFAULT),
+        hint: 'best-of-N, odd',
+      }),
     );
 
     return details;
@@ -1945,6 +1958,13 @@ export class Lobby {
     const seed = parseNumber(this.settings.seed);
     if (seed !== undefined) {
       out.seed = Math.trunc(seed);
+    }
+
+    const rounds = parseNumber(this.settings.rounds);
+    if (rounds !== undefined) {
+      // Clamp into range, then force ODD (an even best-of-N can't break a tie cleanly).
+      const clamped = clamp(Math.trunc(rounds), ROUNDS_MIN, ROUNDS_MAX);
+      out.rounds = clamped % 2 === 0 ? clamped + 1 : clamped;
     }
 
     return Object.keys(out).length > 0 ? out : undefined;

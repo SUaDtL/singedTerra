@@ -285,6 +285,10 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
     ...(settings?.seed != null ? { seed: settings.seed } : {}),
     ...(settings?.maxWind != null ? { maxWind: settings.maxWind } : {}),
     ...(settings?.gravity != null ? { gravity: settings.gravity } : {}),
+    // Best-of-N is hot-seat-only for now: in networked lockstep `rounds` must come
+    // from the synced room row so every client's engine agrees (Slice 3), otherwise
+    // engines would diverge on when a round ends. Networked play stays single-round.
+    ...(settings?.rounds != null ? { rounds: settings.rounds } : {}),
   });
   return new HotSeatClient(engine);
 }

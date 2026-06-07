@@ -82,8 +82,14 @@ export class HUD {
   private windValueEl!: HTMLElement;
   private weaponValueEl!: HTMLElement;
   private aimEl!: HTMLElement;
+  /** "Round N of M" indicator (side panel); hidden in single-round matches. */
+  private roundEl!: HTMLElement;
   private overlayEl!: HTMLElement;
   private overlayTextEl!: HTMLElement;
+  /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
+  private overlayScoreEl!: HTMLElement;
+  /** Highest round number seen, to fire the one-shot round-transition banner. */
+  private lastSeenRound = 1;
   private stripEl!: HTMLElement;
   private storeBtnEl!: HTMLButtonElement;
   private storeEl!: HTMLElement;
@@ -136,12 +142,35 @@ export class HUD {
   update(state: GameState, isFiring = false): void {
     if (!this.built) this.build();
 
+    this.syncRound(state);
     this.syncPlayers(state);
     this.syncWind(state.wind);
     this.syncAim(state, isFiring);
     this.syncStrip(state, isFiring);
     this.syncStore(state);
     this.syncOverlay(state);
+  }
+
+  /**
+   * Round indicator + one-shot round-transition banner (V1 match structure). The
+   * "Round N of M" label is shown only for multi-round matches. When the engine's
+   * round counter advances (a round resolved and the match continues), flash a
+   * transient "{winner} won round K" banner — reusing the toast layer. A counter
+   * that goes backwards means a new game started, so reset silently.
+   */
+  private syncRound(state: GameState): void {
+    const multi = state.totalRounds > 1;
+    this.roundEl.classList.toggle('st-hud__round--hidden', !multi);
+    if (multi) this.roundEl.textContent = `Round ${state.round} of ${state.totalRounds}`;
+
+    if (state.round > this.lastSeenRound && state.phase !== 'GAME_OVER') {
+      const completed = state.round - 1;
+      const winner = state.tanks.find((t) => t.id === state.lastRoundWinnerId);
+      this.flashMessage(
+        winner ? `${winner.playerName} won round ${completed}` : `Round ${completed} drawn`,
+      );
+    }
+    this.lastSeenRound = state.round;
   }
 
   /** Build the static DOM scaffold + inject styles. Runs once (idempotent). */
@@ -175,6 +204,10 @@ export class HUD {
     this.weaponValueEl = document.createElement('span');
     this.weaponValueEl.className = 'st-hud__weapon-value';
     weapon.append(weaponLabel, this.weaponValueEl);
+
+    // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
+    this.roundEl = document.createElement('div');
+    this.roundEl.className = 'st-hud__round st-hud__round--hidden';
 
     // Active-tank aim readout (bottom strip): angle + power.
     this.aimEl = document.createElement('div');
@@ -282,6 +315,9 @@ export class HUD {
     panel.className = 'st-hud__overlay-panel';
     this.overlayTextEl = document.createElement('div');
     this.overlayTextEl.className = 'st-hud__overlay-text';
+    // Final scoreboard (round wins / kills / damage), populated in syncOverlay.
+    this.overlayScoreEl = document.createElement('div');
+    this.overlayScoreEl.className = 'st-hud__score';
     const restartBtn = document.createElement('button');
     restartBtn.className = 'st-hud__restart';
     restartBtn.type = 'button';
@@ -296,7 +332,7 @@ export class HUD {
     const overlayBtns = document.createElement('div');
     overlayBtns.className = 'st-hud__overlay-btns';
     overlayBtns.append(restartBtn, overlayMenuBtn);
-    panel.append(this.overlayTextEl, overlayBtns);
+    panel.append(this.overlayTextEl, this.overlayScoreEl, overlayBtns);
     this.overlayEl.append(panel);
 
     // Persistent Quit/Menu button (top of the side panel) — returns to the lobby.
@@ -318,7 +354,7 @@ export class HUD {
     this.turnWatchEl = document.createElement('div');
     this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
 
-    this.root.append(menu, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
+    this.root.append(menu, this.roundEl, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
     // Controls legend + liveness widgets stay on the canvas overlay (positioned
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
@@ -432,7 +468,7 @@ export class HUD {
         this.rows.set(tank.id, row);
         this.playersEl.append(row.el);
       }
-      this.syncRow(row, tank, tank.id === state.activePlayerId);
+      this.syncRow(row, tank, tank.id === state.activePlayerId, state.totalRounds);
     }
 
     // Remove rows for tanks that disappeared (defensive; tanks normally persist).
@@ -459,6 +495,9 @@ export class HUD {
     const hp = document.createElement('span');
     hp.className = 'st-hud__hp';
 
+    const pips = document.createElement('span');
+    pips.className = 'st-hud__pips';
+
     const bar = document.createElement('span');
     bar.className = 'st-hud__bar';
     const fill = document.createElement('span');
@@ -466,14 +505,32 @@ export class HUD {
     fill.style.backgroundColor = tank.color;
     bar.append(fill);
 
-    el.append(swatch, name, hp, bar);
-    return { el, hp, fill, name, swatch, lastHealth: Math.max(0, Math.round(tank.health)) };
+    el.append(swatch, name, pips, hp, bar);
+    return {
+      el, hp, fill, name, swatch, pips,
+      lastHealth: Math.max(0, Math.round(tank.health)),
+      lastPips: '',
+    };
   }
 
   /** Mutate a player row's volatile bits (hp text, bar width, alive/active classes). */
-  private syncRow(row: PlayerRow, tank: TankState, active: boolean): void {
+  private syncRow(row: PlayerRow, tank: TankState, active: boolean, totalRounds: number): void {
     const health = Math.max(0, Math.round(tank.health));
     const dead = !tank.alive || health <= 0;
+
+    // Round-win pips (V1 match structure): one slot per round needed to clinch
+    // (ceil(N/2)), filled = roundWins. Hidden entirely in a single-round match.
+    // Rebuilt only when the (wins/clinch) signature changes — not every frame.
+    const clinch = Math.max(1, Math.ceil(totalRounds / 2));
+    const sig = totalRounds > 1 ? `${Math.min(tank.roundWins, clinch)}/${clinch}` : '';
+    if (sig !== row.lastPips) {
+      row.pips.textContent =
+        totalRounds > 1
+          ? '●'.repeat(Math.min(tank.roundWins, clinch)) +
+            '○'.repeat(Math.max(0, clinch - tank.roundWins))
+          : '';
+      row.lastPips = sig;
+    }
 
     // Reconcile identity. Rows are cached by tank.id (the seat slot p1/p2/...),
     // and the persistent HUD reuses them across games — so without this a reused
@@ -549,15 +606,21 @@ export class HUD {
     }
   }
 
-  /** Show/hide the GAME_OVER overlay and set its winner/draw message. */
+  /** Tracks whether the GAME_OVER panel is currently shown, so its content (winner
+   *  text + scoreboard) builds ONCE on entry rather than every frame. */
+  private overlayShown = false;
+
+  /** Show/hide the GAME_OVER overlay and set its winner/draw message + scoreboard. */
   private syncOverlay(state: GameState): void {
     if (state.phase !== 'GAME_OVER') {
       this.overlayEl.classList.add('st-hud__overlay--hidden');
+      this.overlayShown = false;
       return;
     }
+    if (this.overlayShown) return; // already built for this game-over screen
 
     if (state.winner === null) {
-      // 0 alive (mutual kill) => DRAW per engine contract.
+      // 0 alive (mutual kill) / round-win tie => DRAW per engine contract.
       this.overlayTextEl.textContent = 'Draw';
     } else {
       const winner = state.tanks.find((t) => t.id === state.winner);
@@ -565,7 +628,40 @@ export class HUD {
         ? `${winner.playerName} wins!`
         : 'Game Over';
     }
+    this.buildScoreboard(state);
     this.overlayEl.classList.remove('st-hud__overlay--hidden');
+    this.overlayShown = true;
+  }
+
+  /**
+   * Build the final scoreboard table inside the GAME_OVER panel: one row per tank
+   * with round wins (only for multi-round matches), kills, and total damage dealt,
+   * ordered by round wins then damage. Built once per game-over (see syncOverlay).
+   */
+  private buildScoreboard(state: GameState): void {
+    const multi = state.totalRounds > 1;
+    const ranked = [...state.tanks].sort(
+      (a, b) => b.roundWins - a.roundWins || b.totalDamage - a.totalDamage,
+    );
+    const cell = (text: string, cls: string): string => `<span class="${cls}">${text}</span>`;
+    const head =
+      cell('Player', 'st-hud__score-th') +
+      (multi ? cell('Wins', 'st-hud__score-th st-hud__score-num') : '') +
+      cell('Kills', 'st-hud__score-th st-hud__score-num') +
+      cell('Dmg', 'st-hud__score-th st-hud__score-num');
+    const rows = ranked
+      .map((t) => {
+        const name = `${t.ai ? '🤖 ' : ''}${t.playerName}`;
+        return (
+          cell(name, 'st-hud__score-name') +
+          (multi ? cell(`${t.roundWins}`, 'st-hud__score-num') : '') +
+          cell(`${t.kills}`, 'st-hud__score-num') +
+          cell(`${Math.round(t.totalDamage)}`, 'st-hud__score-num')
+        );
+      })
+      .join('');
+    this.overlayScoreEl.style.setProperty('--score-cols', multi ? '4' : '3');
+    this.overlayScoreEl.innerHTML = head + rows;
   }
 
   /** Inject the HUD stylesheet exactly once per document. */
@@ -1034,6 +1130,48 @@ export class HUD {
 }
 .st-hud__store-close:hover { background: rgba(255, 210, 63, 0.16); }
 
+/* Round indicator (side panel) — "Round N of M". */
+.st-hud__round {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--text-gold);
+  text-transform: uppercase;
+  text-align: center;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.18);
+}
+.st-hud__round--hidden { display: none; }
+
+/* Per-player round-win pips (●/○ slots up to the clinch count). */
+.st-hud__pips {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin-left: auto;
+}
+
+/* Final scoreboard grid inside the GAME_OVER panel. */
+.st-hud__score {
+  display: grid;
+  grid-template-columns: 1fr repeat(calc(var(--score-cols, 3) - 1), auto);
+  gap: 4px 14px;
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__score-th {
+  font-family: var(--font-display);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.18);
+}
+.st-hud__score-name { text-align: left; }
+.st-hud__score-num { text-align: right; font-family: var(--font-mono); }
+
 @keyframes st-hud-pulse {
   0%, 100% { box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.25); }
   50% { box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgba(255, 210, 63, 0.5); }
@@ -1061,6 +1199,10 @@ interface PlayerRow {
    *  the new game's player name/color instead of the previous occupant's. */
   name: HTMLElement;
   swatch: HTMLElement;
+  /** Round-win pips (V1 match structure); empty in single-round matches. */
+  pips: HTMLElement;
   /** Last rendered health, to detect drops and trigger the damage flash. */
   lastHealth: number;
+  /** Last rendered "roundWins/clinch" signature, to skip pip rebuilds. */
+  lastPips: string;
 }
