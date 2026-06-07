@@ -1,0 +1,23 @@
+# Netlify config for singedTerra — the static Vite client (client/dist).
+#
+# Deploys are driven from a LOCAL CLI build (see the root `npm run deploy`):
+#   npm run build && netlify deploy --prod --dir=client/dist
+# The prod deploy uses --dir and does NOT run the [build] block below; that block
+# is here so a future Git-based continuous deploy would also work without changes.
+#
+# The Supabase keys the client needs (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)
+# are inlined by Vite at BUILD time from client/.env on the machine that builds —
+# for CLI deploys that is this repo, not Netlify. (Set them in the Netlify UI only
+# if you ever switch on Git-based continuous deploy.)
+
+[build]
+  command = "npm run build"
+  publish = "client/dist"
+
+# SPA fallback — serve index.html for any path so client-side routing works
+# (mirrors nginx.conf's try_files). Also shipped as client/public/_redirects so the
+# rule travels inside the published artifact regardless of how it is deployed.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

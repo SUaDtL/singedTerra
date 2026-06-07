@@ -1,5 +1,12 @@
 # Sprint Plan — Graphical Overhaul (the "love letter" art direction)
 
+> **ARCHIVED 2026-06-07 — COMPLETE.** All five slices shipped: `2ce5b3c` (pixel splash),
+> `0a21c33` (Slice 0–1: tokens + CRT + dusk world), `b34794a` (Slice 2: projectiles +
+> 16-bit explosions + juice), `17d3fc1` (Slice 4: lobby re-skin, "overhaul complete").
+> Slice 3 (HUD) landed via the HUD-relocation commit `106953a` + backlog fixes
+> P3-16/P3-13b/P2-11. Kept for reference; the banner palette in `client/src/ui/theme.ts`
+> is now the shipped baseline any new UI must match. Superseded by the V1 gameplay sprints.
+
 > Pulled AHEAD of Sprint 4 Slice 3 (shield), by user decision (2026-06-06). Slices 0–2
 > of Sprint 4 are shipped (8/11 weapons, 8 determinism harnesses). This sprint makes the
 > **whole game look like `docs/assets/banner.svg`** — the README banner / in-game splash.

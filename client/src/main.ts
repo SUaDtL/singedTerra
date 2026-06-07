@@ -219,8 +219,15 @@ function bootstrap(): void {
   // Register the store Buy callback ONCE on the persistent HUD. A buy is a
   // turn-neutral action: hot-seat applies it locally; network commits it to the
   // log (and the engine re-gates affordability + whose turn it is).
-  hud.onBuy((weapon) => {
-    client?.sendAction({ type: 'buy', weapon });
+  hud.onBuy((weapon, tankId) => {
+    client?.sendAction({ type: 'buy', weapon, ...(tankId ? { tankId } : {}) });
+  });
+
+  // Start the next round from the ROUND_OVER between-rounds shop. Like a turn
+  // action: hot-seat applies it locally; networked commits it to the log so every
+  // client leaves the shop in lockstep.
+  hud.onNextRound(() => {
+    client?.sendAction({ type: 'next_round' });
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
@@ -267,6 +274,10 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
       seed:       config.settings?.seed,
       maxWind:    config.settings?.maxWind,
       gravity:    config.settings?.gravity,
+      // Best-of-N is sourced from the synced room row (see Lobby.emitNetworkReady),
+      // so every client builds an identical engine — required for deterministic
+      // lockstep across round boundaries. Undefined => single round.
+      rounds:     config.settings?.rounds,
     };
 
     const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions);
@@ -285,6 +296,10 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
     ...(settings?.seed != null ? { seed: settings.seed } : {}),
     ...(settings?.maxWind != null ? { maxWind: settings.maxWind } : {}),
     ...(settings?.gravity != null ? { gravity: settings.gravity } : {}),
+    // Best-of-N is hot-seat-only for now: in networked lockstep `rounds` must come
+    // from the synced room row so every client's engine agrees (Slice 3), otherwise
+    // engines would diverge on when a round ends. Networked play stays single-round.
+    ...(settings?.rounds != null ? { rounds: settings.rounds } : {}),
   });
   return new HotSeatClient(engine);
 }
@@ -304,6 +319,7 @@ function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyConfig {
       seed: info.seed,
       maxWind: info.options.maxWind,
       gravity: info.options.gravity,
+      ...(info.options.rounds !== undefined ? { rounds: info.options.rounds } : {}),
     },
   };
 }

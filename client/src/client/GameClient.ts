@@ -10,7 +10,7 @@ export interface RematchInfo {
   roomId: string;
   code: string;
   seed: number;
-  options: { maxPlayers: number; maxWind: number; gravity: number };
+  options: { maxPlayers: number; maxWind: number; gravity: number; rounds?: number };
   players: Array<{ id: string; name: string; color: string }>;
 }
 
