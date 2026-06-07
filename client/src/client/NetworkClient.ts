@@ -245,7 +245,16 @@ export class NetworkClient implements GameClient {
    */
   start(): void {
     const loop = () => {
+      const wasFiring = this.engine.getState().phase === 'FIRING';
       this.engine.tick();
+      // When a shot's flight just RESOLVED (FIRING -> PLAYER_TURN/GAME_OVER), drain
+      // the NEXT buffered action. flushPendingActions only applies one turn-ending
+      // action at a time (it stops once the engine re-enters FIRING), so the RAF
+      // loop is what advances the queue between shots — this is what prevents a
+      // buffered N+1 from being dropped while N is still in flight (P0-2).
+      if (wasFiring && this.engine.getState().phase !== 'FIRING') {
+        this.flushPendingActions();
+      }
       this.emitState();
       this.rafId = requestAnimationFrame(loop);
     };
@@ -528,18 +537,29 @@ export class NetworkClient implements GameClient {
 
   /**
    * Flush buffered Realtime events in strict seq order.
-   * Called after every buffered insertion. Applies all contiguous actions
-   * starting from nextExpectedSeq, ticking to completion after each one.
+   * Called after every buffered insertion AND from the RAF loop when a shot
+   * resolves. Applies contiguous buffered actions in seq order, but ONLY while
+   * the engine can accept one (phase === PLAYER_TURN). A turn-ending action flips
+   * the engine to FIRING and the loop STOPS — the RAF loop animates the flight and
+   * re-invokes this once it resolves. This is the P0-2 fix: never advance
+   * nextExpectedSeq past an action the engine would refuse (a fire applied while
+   * FIRING is silently dropped by GameEngine.applyAction's phase guard, which used
+   * to lose buffered back-to-back / out-of-order actions and desync this client).
+   * A turn-NEUTRAL buy keeps the engine in PLAYER_TURN, so the loop continues to
+   * the next buffered action in the same pass.
    */
   private flushPendingActions(): void {
-    while (this.pendingActions.has(this.nextExpectedSeq)) {
+    while (
+      this.engine.getState().phase === 'PLAYER_TURN' &&
+      this.pendingActions.has(this.nextExpectedSeq)
+    ) {
       const action = this.pendingActions.get(this.nextExpectedSeq)!;
       this.pendingActions.delete(this.nextExpectedSeq);
       this.nextExpectedSeq++;
       this._isFiring = false;
       this.applyNetworkAction(action);
-      // During live play the RAF loop animates the flight; only tick to
-      // completion synchronously during initialize() replay.
+      // During initialize() replay there is no RAF loop, so tick the flight to
+      // completion synchronously to return to PLAYER_TURN for the next action.
       if (this.isReplaying) this.tickToCompletion();
       this.emitState();
     }
