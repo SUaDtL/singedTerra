@@ -56,11 +56,13 @@ export {
   Tank,
   TANK_WIDTH,
   TANK_HEIGHT,
+  BARREL_LENGTH,
   createTank,
   placeTwoTanks,
   placeTanks,
   barrelTip,
 } from './engine/Tank';
+export { clamp } from './engine/math';
 export {
   WEAPONS,
   getWeapon,

@@ -8,6 +8,15 @@ import { CANVAS_WIDTH } from './Terrain';
 export const TANK_WIDTH = 20;
 export const TANK_HEIGHT = 12;
 
+/**
+ * Muzzle offset (px) from the barrel pivot where a shell spawns — passed to
+ * barrelTip(). SINGLE SOURCE OF TRUTH: GameEngine fires from here and the AI
+ * simulates from here, so they cannot drift (REVIEW_BACKLOG P3-15). NOTE: this is
+ * the PHYSICS muzzle offset, distinct from the renderer's larger VISUAL barrel
+ * length in TankRenderer — do not unify those.
+ */
+export const BARREL_LENGTH = 18;
+
 /** MVP0 default aiming/loadout values. */
 const DEFAULT_ANGLE = 45;
 const DEFAULT_POWER = 50;
