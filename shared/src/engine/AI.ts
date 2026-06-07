@@ -27,9 +27,10 @@ import {
   sweepCollide,
   GRAVITY,
 } from './Physics';
-import { barrelTip, TANK_HEIGHT } from './Tank';
+import { barrelTip, TANK_HEIGHT, BARREL_LENGTH } from './Tank';
 import { getWeapon, type WeaponType } from './WeaponSystem';
 import { createRng } from './Random';
+import { clamp } from './math';
 
 // AiDifficulty is defined in types/GameState (a leaf module) and re-exported here
 // for convenience so callers can `import { AiDifficulty } from './AI'`.
@@ -42,10 +43,6 @@ export interface AiPlan {
   angle: number;
   power: number;
 }
-
-/** Barrel length used to offset the projectile spawn — MUST match GameEngine's
- *  BARREL_LENGTH so the bot simulates from the same muzzle point the engine fires from. */
-const BARREL_LENGTH = 18;
 
 /** Hard cap on simulated flight ticks per candidate (a high lob is ~500–900). */
 const SIM_MAX_TICKS = 1600;
@@ -65,10 +62,6 @@ const TUNING: Record<AiDifficulty, Tuning> = {
   medium: { angleStep: 2, powerStep: 2, angleError: 1.6, powerError: 2 },
   hard:   { angleStep: 1, powerStep: 1, angleError: 0.5, powerError: 0.8 },
 };
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 /** Stable small hash of a tank id (e.g. 'p1','p2') for seeding. */
 function hashId(id: string): number {
@@ -98,7 +91,14 @@ export function computeAiPlan(
   if (!target) return null;
 
   const tune = TUNING[difficulty];
-  const weapon = chooseWeapon(me, difficulty);
+  const weapon = chooseWeapon(me, target, difficulty);
+
+  // Shield is not a projectile — raise it and end the turn (both drivers map the
+  // 'shield' weapon to use_shield). No ballistic search / aim error needed; the
+  // aim is irrelevant, so just echo the current barrel.
+  if (weapon === 'shield') {
+    return { weapon, angle: me.angle, power: me.power };
+  }
 
   const best = searchShot(state, me, target, weapon, tune, gravity);
   if (!best) {
@@ -134,31 +134,69 @@ function nearestEnemy(state: GameState, me: TankState): TankState | null {
 }
 
 /**
- * Pick a weapon to fire. Conservative + difficulty-scaled, preferring DIRECT-BLAST
- * weapons (predictable to aim by first-impact). Easy uses the free Baby Missile;
- * hard uses the strongest affordable/stocked blast. Never picks the shield (it is
- * not offensive) or a no-damage utility weapon.
+ * Heuristic EFFECTIVE damage per weapon, used ONLY for AI weapon selection — NOT
+ * the engine's per-hit values. Area/DOT weapons (napalm, cluster) carry an
+ * aggregate estimate because their detonation.maxDamage understates them (napalm's
+ * impact is 0; the burn does the work). Utility weapons (dirt_bomb) and the shield
+ * are absent — they are never offensive picks. Pure constants => deterministic.
  */
-function chooseWeapon(me: TankState, difficulty: AiDifficulty): WeaponType {
+const AI_EFFECTIVE_DAMAGE: Partial<Record<WeaponType, number>> = {
+  baby_missile:   34,
+  funky_bomb:     45,
+  bouncing_betty: 55,
+  cluster_bomb:   55,
+  napalm:         55,
+  missile:        60,
+  heavy_missile:  85,
+  baby_nuke:      90,
+  nuke:          100,
+};
+
+/** Heavy/premium tier a MEDIUM bot won't reach for — kept as a hard-bot escalation
+ *  so medium stays moderate (tops out around a Missile) while hard brings nukes. */
+const HEAVY_TIER: ReadonlySet<WeaponType> = new Set<WeaponType>([
+  'heavy_missile', 'baby_nuke', 'nuke',
+]);
+
+/** A hard bot at/below this health raises a shield (if stocked) instead of trading
+ *  blows — closes the exploit where the bot never shields and is out-traded, and
+ *  makes the damage-pool shield (P1-5) actually get used defensively. */
+const SHIELD_HP_THRESHOLD = 35;
+
+/**
+ * Pick a weapon (or the shield) for this turn. Difficulty-scaled and DAMAGE-scaled:
+ *  - easy always lobs the free Baby Missile (beatable, predictable).
+ *  - a HARD bot that is hurt and holds a shield raises it (defensive).
+ *  - otherwise: among the damaging weapons the bot actually OWNS (medium excludes
+ *    the heavy/premium tier), pick the WEAKEST that can still finish the target in
+ *    one solid hit (effective dmg >= target health) — so it won't waste a nuke on a
+ *    near-dead tank — falling back to the strongest it has when nothing one-shots.
+ * Pure function of state => deterministic. Buy-to-restock is intentionally NOT done
+ * here yet (REVIEW_BACKLOG P1-7b: needs careful buy+fire sequencing in both drivers).
+ */
+function chooseWeapon(me: TankState, target: TankState, difficulty: AiDifficulty): WeaponType {
   const has = (w: WeaponType): boolean => {
     const a = me.inventory[w];
     return a.unlimited || a.count > 0;
   };
 
+  // Defensive shield (hard only): hurt + holding a shield => raise it.
+  if (difficulty === 'hard' && me.health <= SHIELD_HP_THRESHOLD && has('shield')) {
+    return 'shield';
+  }
+
   if (difficulty === 'easy') return 'baby_missile';
 
-  // Direct-blast options ranked weakest→strongest.
-  const ladder: WeaponType[] = ['missile', 'heavy_missile', 'baby_nuke', 'nuke'];
+  // Owned damaging weapons, weakest→strongest by effective damage. Medium is capped
+  // below the heavy tier; baby_missile is unlimited so this is never empty.
+  const ranked = (Object.keys(AI_EFFECTIVE_DAMAGE) as WeaponType[])
+    .filter((w) => has(w) && (difficulty === 'hard' || !HEAVY_TIER.has(w)))
+    .sort((a, b) => AI_EFFECTIVE_DAMAGE[a]! - AI_EFFECTIVE_DAMAGE[b]!);
+  if (ranked.length === 0) return 'baby_missile';
 
-  if (difficulty === 'medium') {
-    return has('missile') ? 'missile' : 'baby_missile';
-  }
-
-  // hard: strongest stocked blast, else fall back down the ladder.
-  for (let i = ladder.length - 1; i >= 0; i--) {
-    if (has(ladder[i])) return ladder[i];
-  }
-  return 'baby_missile';
+  // Weakest one-shot finisher (don't overkill); else the strongest in stock.
+  const finisher = ranked.find((w) => AI_EFFECTIVE_DAMAGE[w]! >= target.health);
+  return finisher ?? ranked[ranked.length - 1];
 }
 
 /**

@@ -5,7 +5,7 @@ import type {
   TankState,
 } from '../types/GameState';
 import type { PlayerAction } from '../types/PlayerAction';
-import type { GameOptions } from '../types/Events';
+import type { GameOptions } from '../types/GameOptions';
 import {
   generate,
   buildBitmap,
@@ -23,7 +23,9 @@ import {
   Tank,
   TANK_HEIGHT,
   TANK_WIDTH,
+  BARREL_LENGTH,
 } from './Tank';
+import { clamp } from './math';
 import {
   launchVelocity,
   stepProjectile,
@@ -66,9 +68,6 @@ import { createRng } from './Random';
  */
 const DEFAULT_SEED = 0x5eed_1234;
 
-/** Barrel length (px) used to offset the projectile spawn off the tank body. */
-const BARREL_LENGTH = 18;
-
 /** Push-off distance (px) along the surface normal after a bounce so the next
  *  tick does not re-collide with the same solid pixel. */
 const BOUNCE_EPS = 1.5;
@@ -78,10 +77,6 @@ const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
 const POWER_MIN = 0;
 const POWER_MAX = 100;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 export class GameEngine {
   private state: GameState;
@@ -166,6 +161,7 @@ export class GameEngine {
       // SAME reference as this.terrain — getState() returns the live bitmap by
       // reference, no per-snapshot copy/sync.
       terrain: this.terrain,
+      terrainVersion: 0, // bumped on every deform/raise (render-only; see GameState)
       tanks,
       projectiles: [],
       projectile: null,
@@ -298,8 +294,8 @@ export class GameEngine {
         const ammo = tank.inventory.shield;
         if (!ammo.unlimited && ammo.count <= 0) return;
 
-        const particles = getWeapon('shield').behavior?.shield?.particles ?? 0;
-        tank.shieldParticles = particles;
+        const capacity = getWeapon('shield').behavior?.shield?.capacity ?? 0;
+        tank.shieldHp = capacity;
         if (!ammo.unlimited) ammo.count--;
 
         // No projectile, no FIRING phase — the shield resolves instantly. No one
@@ -551,24 +547,29 @@ export class GameEngine {
    * weapon's `detonation.*` group — so all blast behavior lives in one place.
    */
   /**
-   * Apply blast/burn damage to a tank, honoring its shield. While the tank has
-   * shield particles, each DAMAGING hit destroys exactly ONE particle and the
-   * damage is fully negated; at 0 particles damage applies normally. Multi-blast
-   * weapons (cluster bomblets, betty hops, napalm burn ticks) each route through
-   * here, so an area weapon strips the field faster — thematic AND deterministic
-   * (integer decrement per damaging hit, no RNG). Burial (terrain) does NOT come
-   * through here — being buried bypasses the force field by design.
+   * Apply blast/burn damage to a tank, honoring its shield. The shield is a DAMAGE
+   * POOL (tank.shieldHp): it absorbs up to its remaining charge of this hit and
+   * drains by exactly that much; any OVERFLOW beyond the pool leaks through to the
+   * tank's health (so the hit that breaks the shield still wounds). Every blast and
+   * burn tick (cluster bomblets, betty hops, napalm ticks) routes through here with
+   * its ACTUAL damage, so the field depletes commensurate with incoming magnitude —
+   * a nuke drains ~100, a napalm tick ~0.7 — not one-hit-per-particle regardless of
+   * size (REVIEW_BACKLOG P1-5). Pure min/subtract — deterministic, no RNG. Burial
+   * (terrain) does NOT come through here — being buried bypasses the field by design.
    */
   private applyBlastDamage(tank: TankState, amount: number): void {
     if (amount <= 0) return;
-    if (tank.shieldParticles > 0) {
-      tank.shieldParticles--; // one particle absorbs this whole blast/tick
-      return;
+    if (tank.shieldHp > 0) {
+      const absorbed = Math.min(tank.shieldHp, amount);
+      tank.shieldHp -= absorbed;
+      amount -= absorbed;
+      if (amount <= 0) return; // hit fully soaked by the field
     }
     const before = tank.health;
     Tank.applyDamage(tank, amount);
     // Store economy: credit the shooter for EFFECTIVE damage (post-clamp) dealt to
-    // an OPPONENT this shot — self-damage and overkill don't pay.
+    // an OPPONENT this shot — self-damage, overkill, and shield-absorbed damage
+    // don't pay (only the leaked overflow reaches health and counts).
     if (tank.id !== this.shooterId) this.shotDamage += before - tank.health;
   }
 
@@ -580,7 +581,12 @@ export class GameEngine {
     // Deform the live bitmap, then let the touched columns' dirt fall. The
     // bitmap IS state.terrain (same reference), so no separate sync is needed.
     const range = deform(this.terrain, cx, cy, radius, raise);
-    if (range !== null) applyGravity(this.terrain, range.xStart, range.xEnd);
+    if (range !== null) {
+      applyGravity(this.terrain, range.xStart, range.xEnd);
+      // Signal the (in-place) bitmap change so the renderer rebuilds its offscreen
+      // without hashing 400k bytes every frame (P2-8). Render-only; not physics.
+      this.state.terrainVersion++;
+    }
 
     // Proximity damage to every living tank. explosionDamage() returns the
     // falloff value scaled to MAX_DAMAGE; rescale to the weapon's peak so
@@ -592,7 +598,7 @@ export class GameEngine {
       // weapon's maxDamage so the falloff shape is preserved.
       const scaled = (baseDamage / MAX_DAMAGE) * maxDamage;
       if (scaled > 0) {
-        this.applyBlastDamage(tank, scaled); // shield absorbs one blast per particle
+        this.applyBlastDamage(tank, scaled); // shield pool soaks up to its charge
       }
     }
 
@@ -741,7 +747,7 @@ export class GameEngine {
           break;
         }
       }
-      if (inFire) this.applyBlastDamage(tank, def.dotPerTick); // shield absorbs per-tick
+      if (inFire) this.applyBlastDamage(tank, def.dotPerTick); // shield pool drains per-tick
     }
 
     // 3. DECAY. Tick every column down; drop the burnt-out ones. Collect keys

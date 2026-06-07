@@ -112,6 +112,15 @@ function bootstrap(): void {
       void startGame(rematchToConfig(info, myId));
     });
 
+    // Networked liveness (P1-6): surface Realtime connection state as a banner and
+    // failed/timed-out shots as a toast, so a dropped socket or lost submit never
+    // leaves the player on a silently frozen board. Reset first so a stale banner
+    // from a prior network game can't linger into a hot-seat game (whose client has
+    // no onConnectionChange); the network client immediately re-primes its state.
+    hud.setConnection('connected');
+    newClient.onConnectionChange?.((connState) => hud.setConnection(connState));
+    newClient.onFireFailed?.((message) => hud.flashMessage(message));
+
     unsubscribe = newClient.onStateChange((state) => {
       renderer.render(state);
       hud.update(state, newClient.isFiring ?? false);

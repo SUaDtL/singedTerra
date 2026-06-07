@@ -313,18 +313,36 @@ Deno.serve(async (req: Request) => {
     const newActivePlayerIndex = reportedValid ? reported : modulo
     const newTurn = (room.turn ?? 0) + 1
 
-    // Fire-and-forget — a failed cursor update is non-fatal to game correctness
-    // (the canonical state is the action log), but it would mis-gate the referee,
-    // so it is logged.
-    supabase
-      .from('rooms')
-      .update({ active_player_index: newActivePlayerIndex, turn: newTurn })
-      .eq('id', roomId)
-      .then(({ error }) => {
-        if (error) {
-          console.error('submit_action: cursor update error (non-fatal)', error)
-        }
-      })
+    // The cursor is the AUTHORITATIVE referee gate (it backs the "Not your turn"
+    // check above), so it must be durably advanced before we ack the action — NOT
+    // fire-and-forget. A dropped write, or an Edge Function instance torn down after
+    // the response is flushed but before an un-awaited write lands, would freeze the
+    // cursor and reject the next player's fire forever (the client does not retry a
+    // "Not your turn" rejection). So we AWAIT the write, retry transient errors a
+    // bounded number of times, and fail the request if it cannot be persisted.
+    //
+    // Failing here is safe and cannot double-insert the already-committed action:
+    // the client only re-submits on a seq-conflict (see NetworkClient.submitAction),
+    // and the action is applied from the Realtime echo of the log, not this response.
+    let cursorError: unknown = null
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ active_player_index: newActivePlayerIndex, turn: newTurn })
+        .eq('id', roomId)
+      if (!error) {
+        cursorError = null
+        break
+      }
+      cursorError = error
+    }
+    if (cursorError) {
+      console.error('submit_action: cursor update failed after retries', cursorError)
+      return new Response(
+        JSON.stringify({ ok: false, error: 'cursor_update_failed' }),
+        { status: 500, headers: corsHeaders() }
+      )
+    }
   }
 
   return new Response(

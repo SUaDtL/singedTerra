@@ -32,15 +32,17 @@ const RAMP_DEPTH = 120;
  *
  * Dirty-flag pattern (SPEC §7): rebuilding the 400k-pixel ImageData every frame
  * is wasteful on a t3.micro, and terrain only changes when a crater deforms it.
- * The self-hashing means callers do not have to manage dirtiness; two explicit
+ * Change is detected by comparing state.terrainVersion — a counter the engine bumps
+ * on every deform (REVIEW_BACKLOG P2-8) — instead of hashing all 400k bytes each
+ * frame (which defeated the very dirty-flag design it implemented). Two explicit
  * hooks are also provided:
  *   - markDirty(): force the next draw() to rebuild the offscreen.
- *   - needsRedraw(terrain): whether the next draw() would rebuild, without doing
+ *   - needsRedraw(version): whether the next draw() would rebuild, without doing
  *     it — useful for orchestrators that batch layer redraws.
  *
  * Usage:
  *   const tr = new TerrainRenderer();
- *   tr.draw(ctx, state.terrain);   // blits every frame; rebuilds only on change
+ *   tr.draw(ctx, state.terrain, state.terrainVersion); // blits every frame; rebuilds on change
  */
 export class TerrainRenderer {
   /** Lazily-created offscreen canvas holding the composited terrain (800x500). */
@@ -50,28 +52,28 @@ export class TerrainRenderer {
   /** Reusable ImageData buffer for the offscreen rebuild (avoids reallocation). */
   private imageData: ImageData | null = null;
 
-  /** Hash of the bitmap contents at the last rebuild; null => never rebuilt. */
-  private lastHash: number | null = null;
-  /** When true, the next draw() rebuilds the offscreen regardless of the hash. */
+  /** terrainVersion at the last rebuild; null => never rebuilt. */
+  private lastVersion: number | null = null;
+  /** When true, the next draw() rebuilds the offscreen regardless of version. */
   private forceRedraw = true;
 
   /**
-   * Composite the terrain onto ctx. The offscreen is rebuilt only if the bitmap
-   * changed since the last rebuild (or a redraw was forced); the blit happens on
-   * every call so the terrain is always present even when nothing changed.
+   * Composite the terrain onto ctx. The offscreen is rebuilt only if the terrain
+   * version changed since the last rebuild (or a redraw was forced); the blit
+   * happens on every call so the terrain is always present even when unchanged.
    *
    * @param ctx     2D context (sized CANVAS_WIDTH x CANVAS_HEIGHT).
    * @param terrain Pixel bitmap: index y*CANVAS_WIDTH + x, 0 = air, 1 = solid.
+   * @param version state.terrainVersion — bumped by the engine on every deform.
    * @returns true if it rebuilt the offscreen this call, false if it only blitted.
    */
-  draw(ctx: CanvasRenderingContext2D, terrain: Uint8Array): boolean {
+  draw(ctx: CanvasRenderingContext2D, terrain: Uint8Array, version: number): boolean {
     const off = this.ensureOffscreen();
 
-    const hash = this.hash(terrain);
     let rebuilt = false;
-    if (this.forceRedraw || hash !== this.lastHash) {
+    if (this.forceRedraw || version !== this.lastVersion) {
       this.rebuild(terrain);
-      this.lastHash = hash;
+      this.lastVersion = version;
       this.forceRedraw = false;
       rebuilt = true;
     }
@@ -81,18 +83,18 @@ export class TerrainRenderer {
     return rebuilt;
   }
 
-  /** Force the next draw() to rebuild the offscreen regardless of bitmap change. */
+  /** Force the next draw() to rebuild the offscreen regardless of version. */
   markDirty(): void {
     this.forceRedraw = true;
   }
 
   /**
-   * Whether the next draw() with this terrain would rebuild the offscreen (dirty),
-   * without rebuilding. True if a redraw is forced or the bitmap differs from the
-   * last rebuilt state.
+   * Whether the next draw() at this version would rebuild the offscreen (dirty),
+   * without rebuilding. True if a redraw is forced or the version advanced since
+   * the last rebuilt state.
    */
-  needsRedraw(terrain: Uint8Array): boolean {
-    return this.forceRedraw || this.hash(terrain) !== this.lastHash;
+  needsRedraw(version: number): boolean {
+    return this.forceRedraw || version !== this.lastVersion;
   }
 
   /** Lazily create the offscreen canvas + its context and ImageData buffer. */
@@ -162,20 +164,5 @@ export class TerrainRenderer {
       }
     }
     offCtx.putImageData(img, 0, 0);
-  }
-
-  /**
-   * Cheap order-sensitive content hash of the bitmap (FNV-1a style, kept in
-   * 32-bit range). Used purely to detect "did the terrain change" between frames;
-   * not a security hash. Deterministic for identical bitmaps.
-   */
-  private hash(terrain: Uint8Array): number {
-    let h = 0x811c9dc5;
-    for (let i = 0; i < terrain.length; i++) {
-      h ^= terrain[i];
-      // h *= 16777619, kept in 32-bit unsigned range without 64-bit drift.
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-    return h >>> 0;
   }
 }

@@ -1,5 +1,5 @@
 import type { TankState, AmmoEntry, AiDifficulty } from '../types/GameState';
-import type { GameOptions } from '../types/Events';
+import type { GameOptions } from '../types/GameOptions';
 import type { WeaponType } from './WeaponSystem';
 import { STARTING_CREDITS } from './WeaponSystem';
 import { CANVAS_WIDTH } from './Terrain';
@@ -7,6 +7,15 @@ import { CANVAS_WIDTH } from './Terrain';
 /** Tank bounding-box dimensions (px) used for collision (SPEC §4.2). */
 export const TANK_WIDTH = 20;
 export const TANK_HEIGHT = 12;
+
+/**
+ * Muzzle offset (px) from the barrel pivot where a shell spawns — passed to
+ * barrelTip(). SINGLE SOURCE OF TRUTH: GameEngine fires from here and the AI
+ * simulates from here, so they cannot drift (REVIEW_BACKLOG P3-15). NOTE: this is
+ * the PHYSICS muzzle offset, distinct from the renderer's larger VISUAL barrel
+ * length in TankRenderer — do not unify those.
+ */
+export const BARREL_LENGTH = 18;
 
 /** MVP0 default aiming/loadout values. */
 const DEFAULT_ANGLE = 45;
@@ -109,7 +118,7 @@ export function createTank(
     inventory: defaultInventory(),
     color: color,
     alive: true,
-    shieldParticles: 0, // no shield until activated
+    shieldHp: 0, // no shield until activated
     credits: STARTING_CREDITS,
     ai, // null => human; a difficulty => CPU-controlled
   };
@@ -210,7 +219,7 @@ export const Tank = {
       inventory: defaultInventory(),
       color: params.color,
       alive: true,
-      shieldParticles: 0, // no shield until activated
+      shieldHp: 0, // no shield until activated
       credits: STARTING_CREDITS,
       ai: null, // Tank.create is used for human/default tanks
     };

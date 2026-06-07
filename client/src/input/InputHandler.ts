@@ -1,6 +1,7 @@
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import { WEAPONS } from '@shared/engine/WeaponSystem';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
+import { clamp } from '@shared/engine/math';
 
 /** Optional seed for the handler's tracked aim state. */
 export interface InputHandlerOptions {
@@ -37,10 +38,6 @@ const DEFAULT_ANGLE = 45;
 const DEFAULT_POWER = 50;
 const DEFAULT_ANGLE_STEP = 2;
 const DEFAULT_POWER_STEP = 2;
-
-function clamp(value: number, lo: number, hi: number): number {
-  return value < lo ? lo : value > hi ? hi : value;
-}
 
 /**
  * InputHandler translates keyboard events into PlayerActions (SPEC §8):

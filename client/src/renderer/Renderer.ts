@@ -142,7 +142,7 @@ export class Renderer {
     // it (alpha-composited over the sky) on every draw(), rebuilding the
     // offscreen only when the bitmap actually changes — so no per-frame
     // markDirty() is needed here.
-    this.terrain.draw(ctx, state.terrain);
+    this.terrain.draw(ctx, state.terrain, state.terrainVersion);
 
     // 3. Tanks (active player emphasised).
     this.tanks.drawAll(ctx, state.tanks, state.activePlayerId);
@@ -331,18 +331,19 @@ export class Renderer {
 
   /**
    * Draw the shield force field around each shielded tank: a faint bubble plus a
-   * ring of particle dots. The number of LIT dots is `tank.shieldParticles`; the
-   * field's full capacity (the shield weapon's particle count) draws as dim empty
-   * slots, so the player watches the ring deplete hit-by-hit. Purely derived from
-   * the authoritative count — no client-side shield state.
+   * ring of dots. The shield is now an HP POOL (tank.shieldHp), so the ring shows a
+   * fixed SHIELD_RING_SLOTS dots and lights them in proportion to the REMAINING
+   * fraction of capacity — the player watches the ring drain smoothly as damage is
+   * soaked. Purely derived from the authoritative pool — no client-side shield state.
    */
   private drawShields(state: GameState): void {
     const ctx = this.ctx;
-    const capacity = getWeapon('shield').behavior?.shield?.particles ?? 12;
+    const capacity = getWeapon('shield').behavior?.shield?.capacity ?? 120;
     const color = getWeapon('shield').detonation.color; // shimmer blue
+    const SHIELD_RING_SLOTS = 12; // visual dot count; independent of HP capacity
 
     for (const tank of state.tanks) {
-      if (!tank.alive || tank.shieldParticles <= 0) continue;
+      if (!tank.alive || tank.shieldHp <= 0) continue;
       const cx = tank.x;
       const cy = tank.y - TANK_HEIGHT / 2;
       const radius = TANK_WIDTH * 0.95;
@@ -363,13 +364,15 @@ export class Renderer {
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Particle slots around the ring: lit for remaining particles, dim for spent.
-      const slots = Math.max(capacity, tank.shieldParticles);
+      // Ring slots: lit in proportion to the remaining HP fraction, dim for drained.
+      // ceil so any surviving charge keeps at least one dot lit (the field is up).
+      const slots = SHIELD_RING_SLOTS;
+      const litCount = Math.ceil((Math.min(tank.shieldHp, capacity) / capacity) * slots);
       for (let i = 0; i < slots; i++) {
         const a = (i / slots) * Math.PI * 2 - Math.PI / 2;
         const px = cx + Math.cos(a) * radius;
         const py = cy + Math.sin(a) * radius;
-        const lit = i < tank.shieldParticles;
+        const lit = i < litCount;
         ctx.fillStyle = lit ? color : 'rgba(122, 215, 255, 0.18)';
         ctx.beginPath();
         ctx.arc(px, py, lit ? 2.4 : 1.4, 0, Math.PI * 2);
