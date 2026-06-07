@@ -282,6 +282,14 @@ export class GameEngine {
         if (!def.implemented) return;
         const slot = tank.inventory[action.weapon];
         if (slot.unlimited) return; // unlimited stock — nothing to buy
+        // Idempotent restock for CPU seats (P1-7b). In networked lockstep EVERY
+        // client submits a bot's action, and a buy is turn-neutral, so the referee's
+        // turn-cursor (which makes fires exactly-once) can't dedupe staggered
+        // duplicate buys — two clients could each commit a buy row and overspend the
+        // bot. A bot only ever buys a weapon it LACKS (AI.chooseBuy), so collapse the
+        // duplicates by skipping a CPU-seat buy when it already owns one: exactly-once
+        // effective on every replay. Humans may stock multiples, so this is bots-only.
+        if (tank.ai && slot.count > 0) return;
         if (tank.credits < def.price) return; // can't afford
         tank.credits -= def.price;
         slot.count += def.bundleSize;
