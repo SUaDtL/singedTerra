@@ -1,5 +1,5 @@
-import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload } from '@supabase/supabase-js';
-import type { GameClient } from './GameClient';
+import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js';
+import type { GameClient, RematchInfo } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type { GameOptions } from '@shared/types/Events';
@@ -76,6 +76,12 @@ export class NetworkClient implements GameClient {
   private isReplaying:      boolean;
   private _isFiring         = false;
   private _gameOverReported = false;
+
+  // Rematch signaling. The old room's rematch_room_id flips from NULL to the
+  // successor room id when either player clicks Restart; both clients observe it
+  // on the rooms UPDATE stream and migrate. _rematchHandled makes that one-shot.
+  private rematchListener:  ((info: RematchInfo) => void) | null = null;
+  private _rematchHandled   = false;
 
   // ---- constructor ----
   constructor(
@@ -157,6 +163,30 @@ export class NetworkClient implements GameClient {
           // in strict order.
           this.pendingActions.set(row.seq, row.action as NetworkFireAction);
           this.flushPendingActions();
+        }
+      )
+      .subscribe();
+
+    // 3. Subscribe to this room's UPDATE stream to detect a rematch. When either
+    //    player requests one, restart_game sets rematch_room_id on THIS room;
+    //    the broadcast (rooms is REPLICA IDENTITY FULL) carries the new id to
+    //    both clients, which then migrate to the successor room together.
+    this.roomsChannel = this.supabase
+      .channel(`rooms:game:${this.roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event:  'UPDATE',
+          schema: 'public',
+          table:  'rooms',
+          filter: `id=eq.${this.roomId}`,
+        },
+        (payload: RealtimePostgresUpdatePayload<{ rematch_room_id?: string | null }>) => {
+          const next = (payload.new?.rematch_room_id ?? null) as string | null;
+          if (next && !this._rematchHandled) {
+            this._rematchHandled = true;
+            void this.handleRematch(next);
+          }
         }
       )
       .subscribe();
@@ -258,7 +288,76 @@ export class NetworkClient implements GameClient {
 
   get isFiring(): boolean { return this._isFiring; }
 
+  onRematch(listener: (info: RematchInfo) => void): () => void {
+    this.rematchListener = listener;
+    return () => { if (this.rematchListener === listener) this.rematchListener = null; };
+  }
+
+  /**
+   * Ask the server to start a rematch. POSTs restart_game, which atomically
+   * allocates ONE successor room for the pair (idempotent under double-clicks /
+   * races). This does NOT migrate directly — both players migrate via the rooms
+   * UPDATE broadcast → onRematch, so there is a single symmetric code path.
+   */
+  async requestRematch(): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/restart_game`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+        },
+        body: JSON.stringify({ roomId: this.roomId, playerId: this.playerId }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        return { ok: false, error: data.error ?? 'Failed to start rematch' };
+      }
+      return { ok: true };
+    } catch (err) {
+      console.error('NetworkClient: restart_game error:', err);
+      return { ok: false, error: 'Network error' };
+    }
+  }
+
   // ---- private helpers ----
+
+  /**
+   * Resolve a detected successor room id into a full RematchInfo and hand it to
+   * the listener. The UPDATE broadcast only carries the pointer (it is the OLD
+   * room's row), so re-fetch the successor row for its seed/options/roster.
+   */
+  private async handleRematch(newRoomId: string): Promise<void> {
+    const listener = this.rematchListener;
+    if (!listener) return;
+
+    const { data, error } = await this.supabase
+      .from('rooms')
+      .select('id, code, seed, options, players')
+      .eq('id', newRoomId)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error('NetworkClient.handleRematch: failed to load successor room', error);
+      this._rematchHandled = false; // allow a later broadcast/retry to resolve it
+      return;
+    }
+
+    const opts = (data.options ?? {}) as { maxPlayers?: number; maxWind?: number; gravity?: number };
+    const players = (data.players ?? []) as Array<{ id: string; name: string; color: string }>;
+    listener({
+      roomId:  data.id as string,
+      code:    data.code as string,
+      seed:    Number(data.seed),
+      options: {
+        maxPlayers: opts.maxPlayers ?? players.length,
+        maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : 10,
+        gravity:    typeof opts.gravity === 'number' ? opts.gravity : 0.15,
+      },
+      players: players.map(p => ({ id: p.id, name: p.name, color: p.color })),
+    });
+  }
 
   /**
    * POST the fire action to the submit_action Edge Function.
