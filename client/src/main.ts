@@ -244,18 +244,33 @@ function bootstrap(): void {
     lobby.show();
   });
 
+  // Touch-aim strip callbacks (M2 mobile). Registered once on the persistent HUD;
+  // `input` is the mutable per-game closure var so these always drive the live handler.
+  // The AI guard (activeIsAi) matches what the keyboard path does in startGame().
+  hud.onTouchAngle((delta) => { if (!activeIsAi) input?.stepAngle(delta); });
+  hud.onTouchPower((delta) => { if (!activeIsAi) input?.stepPower(delta); });
+  hud.onTouchFire(()       => { if (!activeIsAi) input?.triggerFire(); });
+  hud.onTouchWeapon(()     => { if (!activeIsAi) input?.nextWeapon(); });
+
   lobby.show();
 
   // JS-driven scale: CSS min() with mixed types (length vs unitless) is invalid.
   // Apply scale imperatively so any viewport size works correctly.
+  // Allow upscaling on small viewports (mobile) so the game fills the screen;
+  // cap at 1 on large monitors where the native 800×500 already looks sharp.
   const appEl = document.getElementById('app');
   function updateScale(): void {
     if (!appEl) return;
-    const s = Math.min(window.innerWidth / 1064, window.innerHeight / 500, 1);
+    // Cap at 2× so 4K monitors don't get an absurdly large stage; phones and
+    // small viewports scale down naturally (fit < 1 there, cap never reached).
+    const s = Math.min(window.innerWidth / 1064, window.innerHeight / 500, 2);
     appEl.style.transform = `scale(${s})`;
     appEl.style.transformOrigin = 'center center';
   }
   window.addEventListener('resize', updateScale);
+  // visualViewport fires separately on mobile when the address bar animates —
+  // window.resize does not always fire for those micro-height changes.
+  window.visualViewport?.addEventListener('resize', updateScale);
   updateScale();
 }
 

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>singedTerra</title>
   </head>
   <body>
@@ -19,6 +19,11 @@
       <!-- In-game modal layer (store + game-over). Full-app, ABOVE the CRT chrome
            so panels render crisp and span the canvas+panel, not just the canvas. -->
       <div id="modal-layer"></div>
+    </div>
+    <!-- Portrait-phone gating: shown by CSS when orientation=portrait + narrow width. -->
+    <div id="portrait-warn">
+      <div class="portrait-warn__icon">↺</div>
+      <p>Rotate your device to landscape to play singedTerra.</p>
     </div>
     <!-- Title / splash screen: self-contained overlay shown on load (src/ui/Splash.ts) -->
     <script type="module" src="/src/ui/Splash.ts"></script>
