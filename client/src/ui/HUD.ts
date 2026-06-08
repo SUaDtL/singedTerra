@@ -511,11 +511,14 @@ export class HUD {
 
     this.touchStripEl.append(touchAngleL, touchAngleR, touchPowerD, touchPowerU, this.touchWeaponBtnEl, this.touchFireBtnEl);
 
-    this.root.append(menu, this.roundEl, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
+    // Touch strip goes into the HUD side panel, NOT the canvas overlay, so it
+    // can never overlap the play field. margin-top:auto (via CSS) pushes it to
+    // the bottom of the panel column.
+    this.root.append(menu, this.roundEl, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl, this.touchStripEl);
     // Controls legend + liveness widgets stay on the canvas overlay (positioned
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
-    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl, this.touchStripEl);
+    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
     this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl);
     this.built = true;
   }
@@ -1450,16 +1453,16 @@ export class HUD {
 /* Hidden on precise-pointer (mouse) devices; shown on coarse (touch). */
 .st-hud__touch-strip {
   display: none;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  /* Push to the bottom of the #hud flex column by consuming leftover space above. */
+  margin-top: auto;
+  width: 100%;
+  flex-shrink: 0;
   gap: 4px;
   padding: 6px 8px;
+  box-sizing: border-box;
   background: rgba(12, 7, 22, 0.88);
   border-top: 1px solid rgba(255, 210, 63, 0.22);
   pointer-events: auto;
-  z-index: 10;
   /* Prevent touch gestures (scroll, pinch) hijacking button presses. */
   touch-action: none;
 }
