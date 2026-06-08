@@ -44,7 +44,6 @@
 
 html,
 body {
-  height: 100%;
   margin: 0;
 }
 
@@ -54,16 +53,17 @@ body {
     radial-gradient(120% 100% at 50% 0%, #1a1033 0%, var(--backdrop) 60%);
   color: var(--text);
   font-family: var(--font-sans);
-  /* Center the stage in the viewport. */
+  /* position:fixed + inset:0 locks the body to the VIEWPORT coordinate system,
+     not the initial containing block (ICB). On mobile Chrome the ICB is the
+     full-screen height (address bar hidden), but window.innerHeight is shorter
+     when the address bar is shown. Using fixed positioning means the body is
+     always exactly the visible viewport, so #app (sized by zoom to match
+     window.innerHeight) centers without overflowing or being clipped. */
+  position: fixed;
+  inset: 0;
   display: grid;
   place-items: center;
   overflow: hidden;
-  /* Mobile fix: `height: 100%` resolves to the initial containing block (ICB),
-     which Chrome sets to full-screen height even when the address bar is shown —
-     making the body taller than window.innerHeight and pushing the centered #app
-     partially below the visible area. `100dvh` (dynamic viewport height) tracks
-     window.innerHeight and keeps body height in sync with the address bar. */
-  height: 100dvh;
 }
 
 /*
