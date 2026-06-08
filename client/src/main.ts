@@ -254,18 +254,19 @@ function bootstrap(): void {
 
   lobby.show();
 
-  // JS-driven scale: CSS min() with mixed types (length vs unitless) is invalid.
-  // Apply scale imperatively so any viewport size works correctly.
-  // Allow upscaling on small viewports (mobile) so the game fills the screen;
-  // cap at 1 on large monitors where the native 800×500 already looks sharp.
+  // JS-driven scale via CSS zoom (NOT transform: scale).
+  //
+  // zoom is used because it affects layout: at zoom 0.76 a 1064×500 #app
+  // takes up ~809×380 in document flow, so the body can center it without
+  // overflow. transform:scale() leaves the layout box at 1064×500 regardless
+  // of the visual size — body overflow:hidden then clips visible content.
+  //
+  // Cap at 2× so 4K monitors don't get an absurdly large stage.
   const appEl = document.getElementById('app');
   function updateScale(): void {
     if (!appEl) return;
-    // Cap at 2× so 4K monitors don't get an absurdly large stage; phones and
-    // small viewports scale down naturally (fit < 1 there, cap never reached).
     const s = Math.min(window.innerWidth / 1064, window.innerHeight / 500, 2);
-    appEl.style.transform = `scale(${s})`;
-    appEl.style.transformOrigin = 'center center';
+    appEl.style.zoom = String(s);
   }
   window.addEventListener('resize', updateScale);
   // visualViewport fires separately on mobile when the address bar animates —
