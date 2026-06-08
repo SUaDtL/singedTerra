@@ -74,6 +74,13 @@ export class HUD {
   /** Callback fired when the player starts the next round from the ROUND_OVER shop. */
   private nextRoundCb: (() => void) | null = null;
 
+  // Touch-aim strip callbacks (M2 mobile). Invoked by the on-screen stepper buttons;
+  // main.ts wires these to InputHandler's public step methods.
+  private touchAngleCb: ((delta: number) => void) | null = null;
+  private touchPowerCb: ((delta: number) => void) | null = null;
+  private touchFireCb: (() => void) | null = null;
+  private touchWeaponCb: (() => void) | null = null;
+
   /** Whether the store panel is currently open. */
   private storeOpen = false;
 
@@ -129,6 +136,11 @@ export class HUD {
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
 
+  // Touch-aim strip (M2 mobile): fire + weapon buttons need per-frame sync.
+  private touchStripEl!: HTMLElement;
+  private touchFireBtnEl!: HTMLButtonElement;
+  private touchWeaponBtnEl!: HTMLButtonElement;
+
   constructor(root: HTMLElement, overlayRoot: HTMLElement, modalRoot: HTMLElement) {
     this.root = root;
     this.overlayRoot = overlayRoot;
@@ -159,6 +171,12 @@ export class HUD {
   onNextRound(cb: () => void): void {
     this.nextRoundCb = cb;
   }
+
+  // Touch-aim strip registrations (M2 mobile).
+  onTouchAngle(cb: (delta: number) => void): void { this.touchAngleCb = cb; }
+  onTouchPower(cb: (delta: number) => void): void { this.touchPowerCb = cb; }
+  onTouchFire(cb: () => void): void { this.touchFireCb = cb; }
+  onTouchWeapon(cb: () => void): void { this.touchWeaponCb = cb; }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
   update(state: GameState, isFiring = false): void {
@@ -436,11 +454,68 @@ export class HUD {
     this.turnWatchEl = document.createElement('div');
     this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
 
+    // Touch-aim strip (M2 mobile): angle, power, weapon-cycle, fire buttons along
+    // the bottom of #game-overlay. Shown only on coarse-pointer (touch) devices via
+    // CSS. Each stepper uses hold-to-repeat: tap = immediate step; hold 400ms = fast
+    // repeat at 80ms intervals, matching keyboard auto-repeat feel.
+    this.touchStripEl = document.createElement('div');
+    this.touchStripEl.className = 'st-hud__touch-strip';
+
+    const mkTouchBtn = (label: string, extra?: string): HTMLButtonElement => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `st-hud__touch-btn${extra ? ` ${extra}` : ''}`;
+      b.textContent = label;
+      return b;
+    };
+
+    /** Wire hold-to-repeat on a stepper button. Immediate step on pointerdown,
+     *  then fast repeat after a short hold. pointerCapture keeps events firing
+     *  if the finger drifts off the button. */
+    const wireRepeater = (btn: HTMLButtonElement, action: () => void): void => {
+      let holdTimer: ReturnType<typeof setTimeout> | null = null;
+      let repeatTimer: ReturnType<typeof setInterval> | null = null;
+      const stop = (): void => {
+        if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
+        if (repeatTimer !== null) { clearInterval(repeatTimer); repeatTimer = null; }
+      };
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        action();
+        holdTimer = setTimeout(() => {
+          holdTimer = null;
+          repeatTimer = setInterval(action, 80);
+        }, 400);
+      });
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('pointercancel', stop);
+    };
+
+    const touchAngleL = mkTouchBtn('◀\nAim');
+    const touchAngleR = mkTouchBtn('Aim\n▶');
+    const touchPowerD = mkTouchBtn('▼\nPwr');
+    const touchPowerU = mkTouchBtn('Pwr\n▲');
+    this.touchWeaponBtnEl = mkTouchBtn('⇄\nWeapon', 'st-hud__touch-weapon');
+    this.touchFireBtnEl = mkTouchBtn('🔥 FIRE', 'st-hud__touch-fire');
+
+    wireRepeater(touchAngleL, () => this.touchAngleCb?.(-3));
+    wireRepeater(touchAngleR, () => this.touchAngleCb?.(3));
+    wireRepeater(touchPowerD, () => this.touchPowerCb?.(-3));
+    wireRepeater(touchPowerU, () => this.touchPowerCb?.(3));
+    this.touchWeaponBtnEl.addEventListener('click', () => this.touchWeaponCb?.());
+    this.touchFireBtnEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.touchFireCb?.();
+    });
+
+    this.touchStripEl.append(touchAngleL, touchAngleR, touchPowerD, touchPowerU, this.touchWeaponBtnEl, this.touchFireBtnEl);
+
     this.root.append(menu, this.roundEl, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl);
     // Controls legend + liveness widgets stay on the canvas overlay (positioned
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
-    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
+    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl, this.touchStripEl);
     this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl);
     this.built = true;
   }
@@ -685,6 +760,15 @@ export class HUD {
       // cannot emit a select for an unusable weapon. (Engine still re-validates;
       // this is UX only.)
       cell.el.disabled = isFiring || !tank || depleted;
+    }
+    // Sync touch-aim strip: fire disabled while firing/no tank; weapon label = current weapon.
+    const canAct = !isFiring && !!tank && state.phase === 'PLAYER_TURN';
+    this.touchFireBtnEl.disabled = !canAct;
+    this.touchWeaponBtnEl.disabled = !canAct;
+    const weaponName = tank ? (WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon) : 'Weapon';
+    const touchWeaponLabel = `⇄\n${weaponName}`;
+    if (this.touchWeaponBtnEl.textContent !== touchWeaponLabel) {
+      this.touchWeaponBtnEl.textContent = touchWeaponLabel;
     }
   }
 
@@ -1360,6 +1444,74 @@ export class HUD {
   .st-hud__bar-fill,
   .st-hud__weapon-btn,
   .st-hud__restart { transition: none; }
+}
+
+/* ===== Touch-aim strip (M2 mobile) ===================================== */
+/* Hidden on precise-pointer (mouse) devices; shown on coarse (touch). */
+.st-hud__touch-strip {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(12, 7, 22, 0.88);
+  border-top: 1px solid rgba(255, 210, 63, 0.22);
+  pointer-events: auto;
+  z-index: 10;
+  /* Prevent touch gestures (scroll, pinch) hijacking button presses. */
+  touch-action: none;
+}
+@media (pointer: coarse) {
+  .st-hud__touch-strip { display: flex; }
+}
+.st-hud__touch-btn {
+  flex: 1;
+  cursor: pointer;
+  /* 52px ensures ~40px effective height even at 0.78× game scale on phones. */
+  min-height: 52px;
+  padding: 4px 2px;
+  border: 1px solid rgba(255, 210, 63, 0.28);
+  border-radius: 6px;
+  background: rgba(12, 7, 22, 0.82);
+  color: var(--text-gold);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: pre-line;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: background 60ms ease;
+}
+.st-hud__touch-btn:active:not(:disabled) { background: rgba(255, 122, 31, 0.32); }
+.st-hud__touch-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+.st-hud__touch-weapon {
+  border-color: rgba(122, 215, 255, 0.4);
+  color: var(--tank-blue-lite, #7ad7ff);
+}
+.st-hud__touch-fire {
+  background: rgba(142, 47, 83, 0.55);
+  border-color: var(--ember);
+  color: var(--text);
+  font-weight: bold;
+  font-size: 13px;
+  flex: 1.4;
+}
+.st-hud__touch-fire:active:not(:disabled) { background: rgba(212, 86, 42, 0.65); }
+
+/* ===== Coarse-pointer (touch) overrides ================================ */
+/* Enlarge interactive targets to ≥44px and hide the keyboard legend. */
+@media (pointer: coarse) {
+  .st-hud__controls { display: none; }
+  .st-hud__weapon-btn { min-height: 44px; }
+  .st-hud__store-buy  { min-height: 44px; }
+  .st-hud__restart    { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
+  .st-hud__menu       { min-height: 44px; }
+  .st-hud__store-btn  { min-height: 44px; }
+  .st-hud__store-close { min-height: 44px; }
+  .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
 }
 `;
 }

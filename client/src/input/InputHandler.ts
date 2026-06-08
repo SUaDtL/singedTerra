@@ -111,6 +111,29 @@ export class InputHandler {
     if (idx >= 0) this.weaponIndex = idx;
   }
 
+  // ----- Touch-control entry points (called by on-screen stepper buttons) -----
+  // These are thin public wrappers over the private mutators so the HUD's touch
+  // strip can drive the same aim-state machine as keyboard events. The caller
+  // (main.ts) is responsible for gating them when an AI holds the turn.
+
+  /** Adjust aim angle by `delta` degrees (positive = more left / higher angle). */
+  stepAngle(delta: number): void { this.adjustAngle(delta); }
+
+  /** Adjust power by `delta` units (positive = more power). */
+  stepPower(delta: number): void { this.adjustPower(delta); }
+
+  /** Advance weapon selection forward one slot (wrapping). */
+  nextWeapon(): void { this.cycleWeapon(); }
+
+  /** Emit a fire or use_shield action for the currently selected weapon. */
+  triggerFire(): void {
+    this.emit(
+      IMPLEMENTED_WEAPONS[this.weaponIndex] === 'shield'
+        ? { type: 'use_shield' }
+        : { type: 'fire' },
+    );
+  }
+
   /** Attach DOM event listeners. Idempotent. */
   attach(): void {
     if (this.attached) return;

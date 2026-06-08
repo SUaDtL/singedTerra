@@ -58,6 +58,12 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
+  /* Mobile fix: `height: 100%` resolves to the initial containing block (ICB),
+     which Chrome sets to full-screen height even when the address bar is shown —
+     making the body taller than window.innerHeight and pushing the centered #app
+     partially below the visible area. `100dvh` (dynamic viewport height) tracks
+     window.innerHeight and keeps body height in sync with the address bar. */
+  height: 100dvh;
 }
 
 /*
@@ -133,6 +139,10 @@ body {
   height: 100%;
   z-index: 0;
   display: block;
+  /* Nearest-neighbour upscaling keeps canvas pixels crisp at >1× on large
+     monitors — matches the retro CRT aesthetic rather than blurring them. */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges; /* Firefox fallback */
 }
 /*
  * On-canvas overlay layer — ONLY the controls legend and the game-over modal
@@ -204,4 +214,48 @@ body {
 }
 #modal-layer button {
   pointer-events: auto;
+}
+
+/*
+ * ===== Portrait-phone gate =====
+ * Shown only when the primary pointer is coarse (touch) and the device is in
+ * portrait orientation — artillery needs landscape. Hides itself the moment the
+ * user rotates. Displayed above everything (z 9999) so the CRT chrome, lobby,
+ * and modals cannot bleed through.
+ */
+#portrait-warn {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--backdrop, #0c0716);
+  color: var(--text-gold, #ffe9a8);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+}
+.portrait-warn__icon {
+  font-size: 64px;
+  line-height: 1;
+  animation: portrait-warn-spin 2s ease-in-out infinite;
+}
+#portrait-warn p {
+  font-size: 18px;
+  margin: 0;
+  opacity: 0.85;
+  max-width: 300px;
+}
+/* Activate only for coarse-pointer (touch) devices in portrait orientation. */
+@media (pointer: coarse) and (orientation: portrait) {
+  #portrait-warn { display: flex; }
+}
+@keyframes portrait-warn-spin {
+  0%   { transform: rotate(0deg); }
+  40%  { transform: rotate(90deg); }
+  60%  { transform: rotate(90deg); }
+  100% { transform: rotate(90deg); }
 }
