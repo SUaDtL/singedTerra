@@ -3,6 +3,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
 import { TANK_WIDTH, TANK_HEIGHT } from '@shared/engine/Tank';
 import { getWeapon } from '@shared/engine/WeaponSystem';
 import { launchVelocity, GRAVITY, WIND_FACTOR } from '@shared/engine/Physics';
+import { fireActiveEdge, bettyHopCount, isOobFizzle } from './audioEdges';
 
 /** Aim guide length in ticks. DELIBERATELY SHORT: it shows launch direction +
  *  relative power (and which way the wind bends the opening arc), but stops long
@@ -14,7 +15,9 @@ import { TankRenderer } from './TankRenderer';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { HUDRenderer } from './HUDRenderer';
 import { EffectsRenderer } from './EffectsRenderer';
-import { skyGradient, ACCENT } from '../ui/theme';
+import { skyGradient, ACCENT, TERRAIN } from '../ui/theme';
+import { flashIntensity, scorchAlpha } from './explosionFx';
+import { damageTier } from './tankFx';
 
 /** Mirror TankRenderer's barrel geometry so muzzle FX sit at the VISUAL tip:
  *  pivot at (x, y − TREAD_HEIGHT(6) − BODY_HEIGHT(10)), barrel length 22. */
@@ -33,6 +36,22 @@ export interface RenderEventSink {
   onLaunch(): void;
   /** One or more new detonations appeared this frame; `radius` is the largest. */
   onExplosion(radius: number): void;
+  /**
+   * A bouncing-betty projectile hopped off terrain this frame.
+   * Called once per bounce tick (i.e. once when `bounces` decrements by 1).
+   */
+  onHop(): void;
+  /**
+   * The napalm fire field changed active state.  `active = true` means fire
+   * just appeared (0 → >0); `active = false` means it just died out (>0 → 0).
+   * The audio layer should start or stop a looping crackle accordingly.
+   */
+  onFireActive(active: boolean): void;
+  /**
+   * A projectile flew off-screen (OOB miss): it was present last frame, is
+   * absent this frame, and produced no new explosion.  Emit a soft fizzle.
+   */
+  onMiss(): void;
 }
 
 /** Fixed pixel-star field (x, y) in the upper indigo sky — deterministic. Spans
@@ -67,6 +86,20 @@ interface Burst {
   /** Visual flavor: 'blast' (expanding rings) vs 'cluster' (punchier flash). */
   style: ExplosionStyle;
   /** Frames elapsed since spawn. */
+  age: number;
+}
+
+/**
+ * Client-side crater scorch decal. Rendered as a darkened ring at the blast
+ * centre; fades out over lifeFrames. Never touches the terrain bitmap —
+ * purely cosmetic overlay.
+ */
+interface Scorch {
+  cx: number;
+  cy: number;
+  /** Draw radius ≈ 0.6 × blast radius so it fits inside the crater. */
+  radius: number;
+  lifeFrames: number;
   age: number;
 }
 
@@ -128,6 +161,10 @@ export class Renderer {
   private bursts: Burst[] = [];
   /** Highest explosion id already turned into a burst (dedupe). */
   private lastSeenExplosionId = 0;
+  /** Client-side crater scorch decals (render-only; never touch terrain bitmap). */
+  private scorches: Scorch[] = [];
+  /** Deep-terrain RGB for the scorch ring fill, parsed once (not per frame). */
+  private readonly scorchRgb = parseColor(TERRAIN.deep);
 
   /** Current screen-shake magnitude (px), decays each frame. Client-only juice. */
   private shake = 0;
@@ -139,10 +176,33 @@ export class Renderer {
   /** Tracks FIRING so a launch event fires once per shot, not once per frame. */
   private wasFiring = false;
 
+  // ---- per-frame audio signal tracking ----------------------------------------
+  /** Fire-field length last frame (for fireActiveEdge edge detection). */
+  private prevFireLen = 0;
+  /**
+   * Bounces value for each projectile seen last frame, keyed by index (0..N-1).
+   * Because there is no stable projectile id, we key by slot index — the same
+   * heuristic used by the smoke-trail (ProjectileRenderer).  A new projectile
+   * appearing at slot 0 will have prevBounces = 0 (Map miss → 0), which is the
+   * same as the "no prior bounce" baseline, so the first frame of a betty shot
+   * never spuriously emits a hop tick (bounces goes 0 → MAX_BOUNCES, an
+   * increase, which bettyHopCount ignores).
+   */
+  private readonly prevBounces = new Map<number, number>();
+  /** Whether a projectile was in flight last frame (for OOB fizzle detection). */
+  private hadProjectileLastFrame = false;
+
   /** Transient visual juice: debris, smoke, sparks, floating damage text. */
   private readonly effects: EffectsRenderer;
   /** Per-tank health last frame, to detect damage for floating numbers. */
   private readonly prevHealth = new Map<string, number>();
+  /**
+   * Per-tank smoke-emit countdown. When this hits 0 for a low-HP alive tank,
+   * one wispy puff is emitted and the counter resets. Prevents continuous
+   * particle flood while keeping the damage smoke as a recognisable wisp.
+   * Cleared in reset() alongside prevHealth.
+   */
+  private readonly smokeThrottle = new Map<string, number>();
 
   /** Set per-frame by main.ts: the LOCAL human controls the active tank this turn
    *  (so the aim guide is theirs to see, never an opponent's or a CPU's). */
@@ -209,17 +269,30 @@ export class Renderer {
    */
   reset(): void {
     this.bursts.length = 0;
+    this.scorches.length = 0;
     this.lastSeenExplosionId = 0;
     this.lastImpact = null;
     this.prevHealth.clear();
+    this.smokeThrottle.clear();
     this.shake = 0;
     this.wasFiring = false;
     this.effects.clear();
+    this.projectile.clear();
     this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
+    // Audio signal tracking: reset per-frame bookkeeping and stop any sustained
+    // napalm crackle so a stuck loop can't survive across rounds or games.
+    this.prevFireLen = 0;
+    this.prevBounces.clear();
+    this.hadProjectileLastFrame = false;
+    this.events?.onFireActive(false); // tell audio to stop the sustained crackle
   }
 
   /** Draw a single frame for the given state. */
   render(state: GameState): void {
+    // Snapshot the explosion high-water mark BEFORE consumeExplosion advances it,
+    // so the OOB fizzle detector can tell whether a new explosion appeared this frame.
+    const explosionIdBefore = this.lastSeenExplosionId;
+
     this.consumeExplosion(state);
 
     // Emit a launch event once per shot when a turn enters FIRING. Cluster shells
@@ -230,6 +303,13 @@ export class Renderer {
       this.spawnMuzzleFlash(state);
     }
     this.wasFiring = firing;
+
+    // --- Per-frame audio signal pass -------------------------------------------
+    // All edge-detection runs here, after consumeExplosion (so explosionIdBefore
+    // vs lastSeenExplosionId reliably reflects whether a new explosion appeared).
+    if (this.events) {
+      this.emitAudioSignals(state, explosionIdBefore);
+    }
 
     // Floating damage numbers + K.O. flourish from per-tank health deltas (juice),
     // then advance all transient particles one frame.
@@ -297,6 +377,14 @@ export class Renderer {
     // 5. Explosion particles.
     this.drawExplosions();
 
+    // 5.1 Canvas light-flash: full-screen additive brightening at the blast centre,
+    // scaled to the largest live burst radius.  Gated by !reduceMotion.
+    this.drawFlash();
+
+    // 5.2 Scorch decals: darkened crater rings that linger after the fireball fades.
+    // Render-only — never touch the terrain bitmap.
+    this.drawScorches();
+
     // 5.5 Transient juice: debris/dust/sparks + floating damage text (in-world, so
     // it shakes with the scene). Drawn over blasts, under the DOM HUD.
     this.effects.draw(ctx);
@@ -313,6 +401,53 @@ export class Renderer {
 
     // 6. HUD slot (canvas no-op; real HUD is the DOM overlay — unshaken).
     this.hud.draw(ctx, state);
+  }
+
+  /**
+   * Run all per-frame audio edge detectors and emit to the event sink.
+   * Called once per render() after consumeExplosion so the explosion high-water
+   * mark is already updated.  Modifies prevFireLen, prevBounces, and
+   * hadProjectileLastFrame for the NEXT frame's edge detection.
+   *
+   * @param state            Current game state.
+   * @param explosionIdBefore  lastSeenExplosionId captured BEFORE consumeExplosion ran.
+   */
+  private emitAudioSignals(state: GameState, explosionIdBefore: number): void {
+    const sink = this.events;
+    if (!sink) return;
+
+    // 1. Napalm crackle: fire-field length edge.
+    const curFireLen = state.fire.length;
+    const fireEdge = fireActiveEdge(this.prevFireLen, curFireLen);
+    if (fireEdge === 'start') sink.onFireActive(true);
+    else if (fireEdge === 'stop') sink.onFireActive(false);
+    this.prevFireLen = curFireLen;
+
+    // 2. Bouncing-betty hop ticks: per-projectile bounces decrement.
+    // Keyed by slot index; new projectiles in a slot start at 0 (Map miss),
+    // so the first frame of a betty (bounces spikes up from 0) is ignored by
+    // bettyHopCount (increase → 0 ticks).
+    for (let i = 0; i < state.projectiles.length; i++) {
+      const p = state.projectiles[i];
+      const prev = this.prevBounces.get(i) ?? 0;
+      const ticks = bettyHopCount(prev, p.bounces);
+      for (let t = 0; t < ticks; t++) sink.onHop();
+      this.prevBounces.set(i, p.bounces);
+    }
+    // Drop stale entries for slots that no longer exist (projectile resolved).
+    if (this.prevBounces.size > state.projectiles.length) {
+      for (const key of this.prevBounces.keys()) {
+        if (key >= state.projectiles.length) this.prevBounces.delete(key);
+      }
+    }
+
+    // 3. OOB fizzle: projectile gone this frame with no new explosion.
+    const hasProjectile = state.projectiles.length > 0;
+    const newExplosion = this.lastSeenExplosionId > explosionIdBefore;
+    if (isOobFizzle(this.hadProjectileLastFrame, hasProjectile, newExplosion)) {
+      sink.onMiss();
+    }
+    this.hadProjectileLastFrame = hasProjectile;
   }
 
   /**
@@ -354,6 +489,17 @@ export class Renderer {
         this.effects.spawnExplosion(ex.cx, ex.cy, ex.radius, ex.color);
         // Remember the latest blast centre for the last-shot ranging marker.
         this.lastImpact = { x: ex.cx, y: ex.cy };
+        // Crater scorch decal: a darkened ring that lingers at the impact point,
+        // purely client-side (never writes the terrain bitmap). Radius is kept
+        // slightly inside the blast so it reads as a charred crater floor.
+        // Lifetime is 3× the burst life so the scorch outlasts the fireball.
+        this.scorches.push({
+          cx: ex.cx,
+          cy: ex.cy,
+          radius: ex.radius * 0.6,
+          lifeFrames: ex.durationFrames * 3,
+          age: 0,
+        });
         if (ex.radius > maxNewRadius) maxNewRadius = ex.radius;
         anyNew = true;
       }
@@ -377,18 +523,44 @@ export class Renderer {
 
   /**
    * Float a damage number over any tank whose health dropped since last frame, and
-   * a K.O. flourish when it dies. Health INCREASES (round resets) are ignored. The
-   * map persists across games/rounds but only triggers on a strict drop, so a reset
-   * to full health silently re-baselines without a spurious number.
+   * a K.O. flourish + wreck burst when it dies. Health INCREASES (round resets) are
+   * ignored. The map persists across games/rounds but only triggers on a strict drop,
+   * so a reset to full health silently re-baselines without a spurious number.
+   *
+   * Also drives continuous damage smoke for low-HP alive tanks: a wispy puff is
+   * emitted every SMOKE_INTERVAL frames (throttled so it's a wisp, not a fog).
+   * Suppressed automatically when reduceMotion is set inside EffectsRenderer.
    */
   private trackDamage(state: GameState): void {
+    /** Frames between damage-smoke puffs per tank (≈ 10 puffs/second at 60fps). */
+    const SMOKE_INTERVAL = 6;
+
     for (const tank of state.tanks) {
       const prev = this.prevHealth.get(tank.id);
       if (prev !== undefined && tank.health < prev - 0.01) {
         this.effects.spawnDamage(tank.x, tank.y - 30, prev - tank.health);
-        if (tank.health <= 0 && prev > 0) this.effects.spawnKill(tank.x, tank.y - 18);
+        if (tank.health <= 0 && prev > 0) {
+          this.effects.spawnKill(tank.x, tank.y - 18);
+          // Turret-pop + wreck debris burst on the alive→dead transition.
+          this.effects.spawnWreck(tank.x, tank.y, tank.color);
+        }
       }
       this.prevHealth.set(tank.id, tank.health);
+
+      // Continuous damage smoke for low-HP alive tanks (throttled per-tank).
+      if (tank.alive && !tank.buried && damageTier(tank.health) === 'damaged') {
+        const countdown = this.smokeThrottle.get(tank.id) ?? 0;
+        if (countdown <= 0) {
+          this.effects.emitDamageSmoke(tank.x, tank.y);
+          this.smokeThrottle.set(tank.id, SMOKE_INTERVAL);
+        } else {
+          this.smokeThrottle.set(tank.id, countdown - 1);
+        }
+      } else {
+        // Reset the counter when the tank is no longer in the damaged tier
+        // (healed, died, or buried) so smoke stops immediately.
+        this.smokeThrottle.delete(tank.id);
+      }
     }
   }
 
@@ -507,6 +679,84 @@ export class Renderer {
 
     // Drop bursts that have outlived their own (per-event) lifetime.
     this.bursts = this.bursts.filter((b) => b.age < b.lifeFrames);
+  }
+
+  /**
+   * Full-canvas additive light-flash keyed to the freshest/strongest live burst.
+   *
+   * Uses `globalCompositeOperation = 'lighter'` so it brightens whatever is already
+   * on the canvas without washing it to white (additive mode clamps at white
+   * naturally). The flash intensity is computed by the pure helper {@link flashIntensity}
+   * (age 0 of the strongest burst) and decays quickly so it complements the
+   * existing DOM bloom in main.ts rather than doubling it.
+   *
+   * Gated by !reduceMotion.  No-op when there are no live bursts.
+   */
+  private drawFlash(): void {
+    if (this.reduceMotion || this.bursts.length === 0) return;
+
+    // Find the burst with the largest radius among live bursts (the "headline" blast).
+    let strongest: Burst | null = null;
+    for (const b of this.bursts) {
+      if (strongest === null || b.radius > strongest.radius) strongest = b;
+    }
+    if (!strongest) return;
+
+    const alpha = flashIntensity(strongest.age, strongest.lifeFrames, strongest.radius);
+    if (alpha <= 0) return;
+
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    // A warm near-white for the flash colour (suncore palette tone).
+    ctx.fillStyle = ACCENT.sunCore;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore();
+  }
+
+  /**
+   * Crater scorch decals: darkened rings drawn at blast impact points that linger
+   * after the fireball has faded, reinforcing the sense of scorched earth.
+   *
+   * Each decal is a concentric ring (outer filled with TERRAIN.deep tinted down,
+   * inner cleared back toward the burst color) that fades out via {@link scorchAlpha}.
+   * Purely client-side cosmetic; never reads or writes the terrain bitmap.
+   *
+   * Under reduceMotion the ring is held at a constant alpha (the continuous
+   * alpha-fade IS motion, so it is suppressed); the decal still ages and is culled
+   * at end of life. Otherwise it fades out smoothly.
+   */
+  private drawScorches(): void {
+    if (this.scorches.length === 0) return;
+    const ctx = this.ctx;
+    const [dr, dg, db] = this.scorchRgb;
+
+    ctx.save();
+    for (const s of this.scorches) {
+      const alpha = this.reduceMotion ? 0.6 : scorchAlpha(s.age, s.lifeFrames);
+      if (alpha <= 0 || s.radius <= 0) { s.age++; continue; }
+
+      // Outer dark ring (the scorched rim).
+      const outerR = s.radius;
+      const innerR = s.radius * 0.45;
+      const grad = ctx.createRadialGradient(s.cx, s.cy, innerR, s.cx, s.cy, outerR);
+      grad.addColorStop(0, `rgba(${dr | 0}, ${dg | 0}, ${db | 0}, 0)`);
+      grad.addColorStop(0.4, `rgba(${dr | 0}, ${dg | 0}, ${db | 0}, ${(alpha * 0.6).toFixed(4)})`);
+      grad.addColorStop(1, `rgba(${dr | 0}, ${dg | 0}, ${db | 0}, ${(alpha * 0.85).toFixed(4)})`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(s.cx, s.cy, outerR, 0, Math.PI * 2);
+      ctx.fill();
+      s.age++;
+    }
+    ctx.restore();
+
+    // Cull fully faded decals.
+    this.scorches = this.scorches.filter((s) => s.age < s.lifeFrames);
   }
 
   /**

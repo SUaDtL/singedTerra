@@ -123,6 +123,69 @@ export class EffectsRenderer {
     }
   }
 
+  /**
+   * Turret-pop + wreck debris burst on the alive→dead transition.
+   *
+   * Spawns a tight upward debris fountain (barrel/turret chunk colors) and a
+   * wider smoke billow to read as the turret blowing off. The K.O. text +
+   * sparkle burst from spawnKill() should be called alongside this.
+   *
+   * Reduced-motion: debris/smoke suppressed; only text (from spawnKill) shows.
+   */
+  spawnWreck(x: number, y: number, tankColor: string): void {
+    if (this.reduce) return;
+    // Turret chunks — tight upward cone, in the tank's own color plus dark metal.
+    for (let i = 0; i < 8; i++) {
+      const a = this.rand(-Math.PI * 0.85, -Math.PI * 0.15); // upper hemisphere
+      const speed = this.rand(3, 7);
+      this.debris.push({
+        x, y: y - 10,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed - this.rand(1, 3),
+        size: this.rand(2.5, 5),
+        color: i % 3 === 0 ? tankColor : i % 3 === 1 ? TERRAIN.deep : '#3a2a18',
+        rot: this.rand(0, Math.PI), vr: this.rand(-0.5, 0.5),
+        age: 0, life: this.rand(40, 70),
+      });
+    }
+    // Wide smoke billow for the blast-off.
+    for (let i = 0; i < 3; i++) {
+      this.smoke.push({
+        x: x + this.rand(-8, 8),
+        y: y - this.rand(4, 14),
+        vy: -this.rand(0.4, 0.9),
+        r: this.rand(6, 10),
+        grow: this.rand(0.5, 1.2),
+        alpha: this.rand(0.22, 0.38),
+        age: 0, life: this.rand(40, 60),
+      });
+    }
+  }
+
+  /**
+   * Emit a single wispy smoke puff above a low-HP tank (continuous damage smoke).
+   *
+   * Throttle call frequency at the Renderer level — this emits ONE puff per
+   * call. Suppressed when reduceMotion is set (the caller must gate it).
+   *
+   * @param x  Tank center x.
+   * @param y  Tank surface y (canvas y grows down; smoke rises above this).
+   */
+  emitDamageSmoke(x: number, y: number): void {
+    if (this.reduce) return;
+    // A thin, dark wisp — lighter than the explosion smoke so it reads as
+    // simmering heat rather than a full-on blast cloud.
+    this.smoke.push({
+      x: x + this.rand(-4, 4),
+      y: y - 14,            // start above the turret
+      vy: -this.rand(0.3, 0.65),
+      r: this.rand(2.5, 4.5),
+      grow: this.rand(0.15, 0.35),
+      alpha: this.rand(0.10, 0.18),
+      age: 0, life: this.rand(28, 44),
+    });
+  }
+
   /** Advance every particle one frame; cull the dead. Call once per frame. */
   update(): void {
     for (const d of this.debris) { d.vy += DEBRIS_GRAVITY; d.x += d.vx; d.y += d.vy; d.rot += d.vr; d.age++; }
