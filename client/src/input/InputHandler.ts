@@ -2,6 +2,7 @@ import type { PlayerAction } from '@shared/types/PlayerAction';
 import { WEAPONS } from '@shared/engine/WeaponSystem';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { clamp } from '@shared/engine/math';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
 
 /** Optional seed for the handler's tracked aim state. */
 export interface InputHandlerOptions {
@@ -39,6 +40,9 @@ const DEFAULT_POWER = 50;
 const DEFAULT_ANGLE_STEP = 2;
 const DEFAULT_POWER_STEP = 2;
 
+/** Logical-px drag distance from the tank that maps to full power (100). Tunable. */
+const FULL_POWER_DRAG_PX = 280;
+
 /**
  * InputHandler translates keyboard events into PlayerActions (SPEC §8):
  *   ← / →  adjust angle, ↑ / ↓ adjust power, Space / Enter fire.
@@ -75,6 +79,14 @@ export class InputHandler {
 
   private attached = false;
 
+  /** Active tank's LOGICAL (canvas-space) barrel-origin position, fed by main.ts
+   *  each frame, so mouse drag-aim derives angle/power relative to the tank. */
+  private activeTankX = 0;
+  private activeTankY = 0;
+  private tankPosKnown = false;
+  /** True while a mouse button is held for a drag-aim gesture. */
+  private dragging = false;
+
   constructor(
     target: HTMLElement,
     emit: (action: PlayerAction) => void,
@@ -96,6 +108,15 @@ export class InputHandler {
   setAim(angle: number, power: number): void {
     this.angle = clamp(angle, ANGLE_MIN, ANGLE_MAX);
     this.power = clamp(power, POWER_MIN, POWER_MAX);
+  }
+
+  /** Feed the active tank's LOGICAL (canvas-space) barrel-origin position so mouse
+   *  drag-aim can derive angle (drag direction) + power (drag distance). Called by
+   *  main.ts each frame; purely informational — never emits. */
+  setActiveTankScreenPos(x: number, y: number): void {
+    this.activeTankX = x;
+    this.activeTankY = y;
+    this.tankPosKnown = true;
   }
 
   /**
@@ -149,6 +170,7 @@ export class InputHandler {
     this.attached = false;
     window.removeEventListener('keydown', this.handleKeyDown);
     this.target.removeEventListener('mousedown', this.handleMouse);
+    if (this.dragging) this.handleMouseUp(); // tear down any in-flight drag
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
@@ -219,8 +241,67 @@ export class InputHandler {
     this.emit({ type: 'select_weapon', weapon: IMPLEMENTED_WEAPONS[this.weaponIndex] });
   }
 
-  // Mouse is unused in MVP0 (aim is keyboard-only); reserved for future drag-aim.
-  private handleMouse = (_event: MouseEvent): void => {
-    /* no-op in MVP0 */
+  // ----- Mouse drag-aim (desktop) ------------------------------------------
+  // Press on the field and drag FROM the tank: the drag DIRECTION sets the barrel
+  // angle, the drag DISTANCE sets power. Emits the same ABSOLUTE set_angle/set_power
+  // actions as the keyboard, so it shares the engine clamps and main.ts's emit gate
+  // (dropped while a CPU holds the turn). It NEVER fires — Space/Enter still fires,
+  // so a stray drag cannot loose a shot.
+
+  private handleMouse = (event: MouseEvent): void => {
+    if (event.button !== 0 || !this.tankPosKnown) return;
+    event.preventDefault();
+    this.dragging = true;
+    // Track on window so a drag that leaves the canvas keeps updating / releases.
+    window.addEventListener('mousemove', this.handleMouseMove);
+    window.addEventListener('mouseup', this.handleMouseUp);
+    this.applyDragAim(event);
   };
+
+  private handleMouseMove = (event: MouseEvent): void => {
+    if (this.dragging) this.applyDragAim(event);
+  };
+
+  private handleMouseUp = (): void => {
+    this.dragging = false;
+    window.removeEventListener('mousemove', this.handleMouseMove);
+    window.removeEventListener('mouseup', this.handleMouseUp);
+  };
+
+  /**
+   * Map the mouse to LOGICAL canvas coords and emit aim from the drag vector.
+   * getBoundingClientRect() returns the DISPLAYED (CSS-zoomed) size, so dividing by
+   * it maps to [0,1] across the canvas regardless of the #app zoom — then scale up
+   * to logical px. Angle = direction from the tank (0=right, 90=up; screen y is
+   * down, hence -dy); power = drag distance / FULL_POWER_DRAG_PX.
+   */
+  private applyDragAim(event: MouseEvent): void {
+    const rect = this.target.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const mx = ((event.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
+    const my = ((event.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+    const dx = mx - this.activeTankX;
+    const dy = my - this.activeTankY;
+    let deg = (Math.atan2(-dy, dx) * 180) / Math.PI; // upper hemisphere => 0..180
+    if (deg < 0) deg = 0; // clamp a below-horizontal drag up to flat
+    const power = (Math.hypot(dx, dy) / FULL_POWER_DRAG_PX) * POWER_MAX;
+    this.setAngleAbsolute(deg);
+    this.setPowerAbsolute(power);
+  }
+
+  /** Set angle to an ABSOLUTE value (clamped), emitting only on a real change. */
+  private setAngleAbsolute(angle: number): void {
+    const next = clamp(Math.round(angle), ANGLE_MIN, ANGLE_MAX);
+    if (next === this.angle) return;
+    this.angle = next;
+    this.emit({ type: 'set_angle', angle: this.angle });
+  }
+
+  /** Set power to an ABSOLUTE value (clamped), emitting only on a real change. */
+  private setPowerAbsolute(power: number): void {
+    const next = clamp(Math.round(power), POWER_MIN, POWER_MAX);
+    if (next === this.power) return;
+    this.power = next;
+    this.emit({ type: 'set_power', power: this.power });
+  }
 }

@@ -18,12 +18,12 @@
 
 import { clamp } from './math';
 
-export const CANVAS_WIDTH = 800;
-export const CANVAS_HEIGHT = 500;
+export const CANVAS_WIDTH = 1200;
+export const CANVAS_HEIGHT = 600;
 
 /** Surface kept within these vertical bounds so tanks have sky above / ground below. */
-const MIN_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.35); // 175 — tallest allowed hill
-const MAX_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.9); //  450 — lowest allowed valley
+const MIN_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.35); // 210 — tallest allowed hill
+const MAX_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.9); //  540 — lowest allowed valley
 
 /**
  * Seeded PRNG (mulberry32). Deterministic, fast, good enough for terrain gen.

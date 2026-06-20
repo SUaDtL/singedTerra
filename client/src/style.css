@@ -1,18 +1,18 @@
 /*
  * Global app stylesheet (C3). Establishes a dark, centered "stage" exactly the
- * size of the 800x500 logical canvas, with #game and #hud overlaid pixel-for-
+ * size of the 1200x600 logical canvas, with #game and #hud overlaid pixel-for-
  * pixel so the HUD (.st-hud { inset: 0 }) pins to the CANVAS, not the viewport.
  * The whole stage is scaled together (never canvas/hud independently) so the
  * HUD and canvas coordinate spaces stay in sync at any viewport size.
  */
 
 :root {
-  /* Stage = the 800x500 play canvas + a right-side HUD panel. */
-  --canvas-w: 800px;
-  --canvas-h: 500px;
+  /* Stage = the 1200x600 play canvas + a right-side HUD panel. */
+  --canvas-w: 1200px;
+  --canvas-h: 600px;
   --panel-w: 264px;
-  --stage-w: 1064px; /* canvas-w + panel-w — the full app width */
-  --stage-h: 500px;
+  --stage-w: 1464px; /* canvas-w + panel-w — the full app width */
+  --stage-h: 600px;
 
   /* ===== singedTerra art tokens (Sprint 5) — mirror client/src/ui/theme.ts ===== */
   /* dusk sky (top -> horizon) */
@@ -123,7 +123,7 @@ body {
 }
 
 /*
- * #stage is the play field: the 800x500 canvas plus its ON-canvas overlays
+ * #stage is the play field: the 1200x600 canvas plus its ON-canvas overlays
  * (controls legend + game-over modal). It sits left of the HUD panel.
  */
 #stage {
@@ -143,6 +143,27 @@ body {
      monitors — matches the retro CRT aesthetic rather than blurring them. */
   image-rendering: pixelated;
   image-rendering: crisp-edges; /* Firefox fallback */
+}
+/*
+ * Detonation bloom — a brief warm light-bleed flashed over the play field on each
+ * blast (paired with the screen-shake + boom). Opacity is set instantly then
+ * transitioned to 0 from JS (renderer onExplosion), scaled by blast radius. Sits
+ * over the canvas (z 1) but under the controls legend. Honors reduced-motion (JS
+ * skips the pulse). Non-interactive.
+ */
+.boom-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    120% 90% at 50% 62%,
+    rgba(255, 170, 70, 0.9) 0%,
+    rgba(255, 90, 20, 0.28) 42%,
+    rgba(255, 90, 20, 0) 70%
+  );
 }
 /*
  * On-canvas overlay layer — ONLY the controls legend and the game-over modal
