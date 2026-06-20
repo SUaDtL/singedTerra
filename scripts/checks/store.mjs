@@ -29,8 +29,9 @@ const SEED = 0x5eed1234;
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
 
-// P1 (x=80) lands a missile on P2 (x=720) for this seed (swept against the engine).
-const HIT_P2 = { angle: 52, power: 40, weapon: 'missile' };
+// P1 (x=120) lands a missile on P2 (x=1080) for this seed on the 1200×600 field
+// (swept against the engine — a near-direct hit dealing ~49 damage).
+const HIT_P2 = { angle: 49, power: 71, weapon: 'missile' };
 
 let failed = false;
 const log = (...a) => console.log(...a);

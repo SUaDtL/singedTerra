@@ -41,9 +41,13 @@ const START_AMMO: Record<Exclude<WeaponType, 'baby_missile'>, number> = {
   funky_bomb:      1,
   napalm:          1,
   dirt_bomb:       1,
+  riot_bomb:       1, // cheap earth-mover — a couple on hand
   shield:          1,
   baby_nuke:       0, // premium — buy from the store
   nuke:            0, // premium — buy from the store
+  mirv:            0, // premium — buy from the store
+  deaths_head:     0, // premium — buy from the store
+  hot_napalm:      0, // premium — buy from the store
 };
 
 /** Horizontal placement fractions for the two MVP0 tanks. */
@@ -83,6 +87,10 @@ function defaultInventory(): Record<WeaponType, AmmoEntry> {
     funky_bomb: limited(START_AMMO.funky_bomb),
     napalm: limited(START_AMMO.napalm),
     cluster_bomb: limited(START_AMMO.cluster_bomb),
+    mirv: limited(START_AMMO.mirv),
+    deaths_head: limited(START_AMMO.deaths_head),
+    riot_bomb: limited(START_AMMO.riot_bomb),
+    hot_napalm: limited(START_AMMO.hot_napalm),
     shield: limited(START_AMMO.shield),
   };
 }
@@ -123,6 +131,8 @@ export function createTank(
     roundWins: 0, // V1 match structure: no rounds won yet
     kills: 0, // V1 scoreboard
     totalDamage: 0, // V1 scoreboard
+    buried: false, // #15 burial: not trapped at spawn
+    buriedTurns: 0,
     ai, // null => human; a difficulty => CPU-controlled
   };
 }
@@ -227,6 +237,8 @@ export const Tank = {
       roundWins: 0, // V1 match structure: no rounds won yet
       kills: 0, // V1 scoreboard
       totalDamage: 0, // V1 scoreboard
+      buried: false, // #15 burial: not trapped at spawn
+      buriedTurns: 0,
       ai: null, // Tank.create is used for human/default tanks
     };
   },

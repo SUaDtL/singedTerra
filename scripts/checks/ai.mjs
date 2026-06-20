@@ -239,5 +239,41 @@ function playGame(seed, difficulty, turnCap = 120) {
   if (!failed) log('PASS: CPU-seat buy is idempotent; human multi-buy still works.');
 }
 
+// --- Check 9: a hard bot USES the premium Phase-2 weapons it owns (mirv/deaths_head/
+//     hot_napalm). Before they were added to AI_EFFECTIVE_DAMAGE the picker ignored
+//     them entirely — a bot holding only a Death's Head would fire a Baby Missile. ---
+{
+  const e = engine(0x5eed1234);
+  const st = e.getState();
+  // Own ONLY a Death's Head among finishers (exhaust every other finite-stock weapon).
+  for (const w of Object.keys(st.tanks[0].inventory)) {
+    if (!st.tanks[0].inventory[w].unlimited) st.tanks[0].inventory[w].count = 0;
+  }
+  st.tanks[0].inventory.deaths_head.count = 1;
+  st.tanks[1].health = 100; // healthy target => needs the heavy finisher it holds
+  const dh = computeAiPlan(st, 'p1', 'hard');
+  log(`[arsenal] owns only Death's Head vs 100hp: weapon=${dh?.weapon}`);
+  if (dh?.weapon !== 'deaths_head') fail(`a hard bot holding only a Death's Head should fire it, got ${dh?.weapon} (premium weapon ignored?)`);
+
+  // hot_napalm (eff 75) is the weakest owned finisher vs a 70hp target => pick it.
+  st.tanks[0].inventory.deaths_head.count = 0;
+  st.tanks[0].inventory.hot_napalm.count = 1;
+  st.tanks[1].health = 70;
+  const hn = computeAiPlan(st, 'p1', 'hard');
+  log(`[arsenal] owns hot_napalm vs 70hp: weapon=${hn?.weapon}`);
+  if (hn?.weapon !== 'hot_napalm') fail(`a hard bot should pick hot_napalm (eff 75) as the weakest finisher vs a 70hp target, got ${hn?.weapon}`);
+
+  // The premium weapons stay HARD-ONLY: a MEDIUM bot owning only a Death's Head must
+  // NOT reach for it (it falls back to the unlimited Baby Missile).
+  st.tanks[0].inventory.hot_napalm.count = 0;
+  st.tanks[0].inventory.deaths_head.count = 1;
+  st.tanks[1].health = 100;
+  const med = computeAiPlan(st, 'p1', 'medium');
+  log(`[arsenal] MEDIUM owns only Death's Head vs 100hp: weapon=${med?.weapon}`);
+  if (med?.weapon === 'deaths_head') fail('a MEDIUM bot must not use the premium Death\'s Head (HEAVY_TIER is hard-only)');
+
+  if (!failed) log("PASS: hard bots use the premium Phase-2 weapons when owned + apt; medium stays capped.");
+}
+
 if (failed) { log('\nAI CHECK: FAILED'); process.exit(1); }
 else { log('\nAI CHECK: PASSED'); process.exit(0); }

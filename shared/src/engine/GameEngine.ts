@@ -48,6 +48,14 @@ import {
 import { createRng } from './Random';
 
 /**
+ * Burial safety valve (#15): the maximum number of turns a tank may stay trapped under
+ * dirt before it auto-digs-out, so a player can never be locked out of the match forever.
+ * A buried tank may be freed EARLIER by terrain cleared over it (a crater / Riot Bomb).
+ * Tunable; a named constant, not a magic number.
+ */
+const MAX_BURIED_TURNS = 2;
+
+/**
  * Master game state machine (SPEC §4.3). Owns the authoritative `GameState` and
  * drives the loop. Runs identically in the browser (hot-seat) and on the server
  * (networked) — physics is fixed-timestep and deterministic: identical
@@ -341,9 +349,12 @@ export class GameEngine {
         tank.shieldHp = capacity;
         if (!ammo.unlimited) ammo.count--;
 
-        // No projectile, no FIRING phase — the shield resolves instantly. No one
-        // can die from shielding, so skip the win-check and just advance the turn
-        // (next living player, fresh wind), mirroring resolve()'s NEXT_TURN tail.
+        // No projectile, no FIRING phase — the shield resolves instantly. Shielding
+        // can't kill, so normally we just advance the turn (next living player, fresh
+        // wind), mirroring resolve()'s NEXT_TURN tail. Defensive guard (#14): if the
+        // board is somehow already down to one survivor, end the round/match instead
+        // of advancing the turn over an already-decided game.
+        if (this.endRoundIfDecided()) return;
         this.advanceTurn();
         this.state.wind = this.nextWind(this.state.wind);
         this.state.turn += 1;
@@ -497,10 +508,24 @@ export class GameEngine {
     // impact above gets its first burn immediately.
     this.processFire();
 
-    // The shot is fully resolved only once NO projectiles remain in flight AND
-    // the napalm fire has burned out — so a turn waits for the flames. Run the
-    // turn-machine resolution EXACTLY ONCE on the settling tick.
-    if (survivors.length === 0 && this.fire.size === 0) {
+    // A turn normally resolves only once NO projectiles remain in flight AND the
+    // napalm fire has burned out — so the turn waits for the flames. BUT the
+    // game-over check must NOT wait: if the board is already down to one (or zero)
+    // survivors, end immediately instead of letting lingering bomblets or a napalm
+    // burn defer the win banner for many ticks (#14). When ending early, drop any
+    // remaining in-flight projectiles + fire so the match freezes cleanly on the
+    // eliminating tick (the next tick is a no-op once phase leaves FIRING anyway).
+    const aliveCount = this.state.tanks.reduce((n, t) => (t.alive ? n + 1 : n), 0);
+    const settled = survivors.length === 0 && this.fire.size === 0;
+    if (settled || aliveCount <= 1) {
+      if (!settled) {
+        this.state.projectiles = [];
+        this.syncProjectileAlias();
+        this.fire.clear();
+        this.fireDef = null;
+        this.fireScorched.clear();
+        this.syncFire();
+      }
       this.state.phase = 'RESOLVING';
       this.resolve();
     }
@@ -561,41 +586,10 @@ export class GameEngine {
       shooter.credits += Math.round(this.shotDamage * CREDITS_PER_DAMAGE) + TURN_STIPEND;
     }
 
-    const alive = this.state.tanks.filter((t) => t.alive);
-
-    if (alive.length <= 1) {
-      // ROUND END (V1 match structure). 1 alive => that tank won the round; 0 alive
-      // (mutual kill) => the round is a draw (no one scores). Record the result, then
-      // either end the MATCH or start the next round. With totalRounds === 1 this is
-      // byte-identical to the old single-round behavior (clinch is 1, so any round win
-      // ends the match, and a draw with round >= totalRounds also ends it).
-      const roundWinner = alive.length === 1 ? alive[0] : null;
-      this.state.lastRoundWinnerId = roundWinner?.id ?? null;
-      if (roundWinner) roundWinner.roundWins += 1;
-
-      // First to clinch ceil(N/2) round wins takes the match; or the match ends once
-      // all N rounds have been played (only reachable past a clinch via draws).
-      const clinch = Math.ceil(this.totalRounds / 2);
-      const clinched = roundWinner !== null && roundWinner.roundWins >= clinch;
-      const matchOver = clinched || this.state.round >= this.totalRounds;
-
-      if (matchOver) {
-        this.state.phase = 'GAME_OVER';
-        this.state.winner = this.computeMatchWinner();
-        return;
-      }
-
-      // Stage the next round (fresh terrain, reset tanks, carried economy/score) but
-      // PAUSE in the ROUND_OVER between-rounds shop — players spend carried credits,
-      // then a next_round action begins combat. startNextRound() leaves phase at
-      // PLAYER_TURN; override to ROUND_OVER so the shop window opens first.
-      this.startNextRound();
-      this.state.phase = 'ROUND_OVER';
-      return;
-    }
-
-    // NEXT_TURN: rotate to the next living tank (stable order, wrapping), bump
-    // the turn counter, and draw fresh wind.
+    // End the round/match if the board is down to <= 1 survivor; otherwise rotate to
+    // the next living tank (stable order, wrapping), bump the turn counter, and draw
+    // fresh wind.
+    if (this.endRoundIfDecided()) return;
     this.advanceTurn();
     this.state.wind = this.nextWind(this.state.wind);
     this.state.turn += 1;
@@ -603,20 +597,93 @@ export class GameEngine {
   }
 
   /**
-   * Rotate `activePlayerId` to the next ALIVE tank in stable array order,
-   * wrapping around. Dead tanks are skipped. Caller guarantees >= 2 are alive.
+   * Round/match terminator (V1 match structure). If <= 1 tank is alive, record the
+   * round result and either end the MATCH (phase=GAME_OVER, winner set) or stage the
+   * next round (phase=ROUND_OVER, between-rounds shop) — returning true. If >= 2 are
+   * alive the round continues and this returns false (no state change). Carries NO
+   * credit/turn side-effects, so it is safe to call from ANY elimination point — the
+   * post-shot resolve() and the use_shield turn-advance (#14). With totalRounds === 1
+   * this is byte-identical to the old single-round behavior (clinch is 1, so any round
+   * win ends the match, and a draw with round >= totalRounds also ends it).
+   */
+  private endRoundIfDecided(): boolean {
+    const alive = this.state.tanks.filter((t) => t.alive);
+    if (alive.length > 1) return false;
+
+    // 1 alive => that tank won the round; 0 alive (mutual kill) => draw (no one scores).
+    const roundWinner = alive.length === 1 ? alive[0] : null;
+    this.state.lastRoundWinnerId = roundWinner?.id ?? null;
+    if (roundWinner) roundWinner.roundWins += 1;
+
+    // First to clinch ceil(N/2) round wins takes the match; or the match ends once all
+    // N rounds have been played (only reachable past a clinch via draws).
+    const clinch = Math.ceil(this.totalRounds / 2);
+    const clinched = roundWinner !== null && roundWinner.roundWins >= clinch;
+    const matchOver = clinched || this.state.round >= this.totalRounds;
+
+    if (matchOver) {
+      this.state.phase = 'GAME_OVER';
+      this.state.winner = this.computeMatchWinner();
+      return true;
+    }
+
+    // Stage the next round (fresh terrain, reset tanks, carried economy/score) but
+    // PAUSE in the ROUND_OVER between-rounds shop — players spend carried credits, then
+    // a next_round action begins combat. startNextRound() leaves phase at PLAYER_TURN;
+    // override to ROUND_OVER so the shop window opens first.
+    this.startNextRound();
+    this.state.phase = 'ROUND_OVER';
+    return true;
+  }
+
+  /**
+   * Rotate `activePlayerId` to the next tank that can actually take a turn — ALIVE and
+   * NOT buried — in stable array order, wrapping around. Dead tanks are skipped; buried
+   * tanks are skipped too (they are trapped, #15). Caller guarantees >= 2 are alive.
+   *
+   * Each call also advances the burial safety valve: every still-buried tank counts one
+   * trapped turn, and once it has been trapped MAX_BURIED_TURNS turns it auto-digs-out so
+   * a player can never be locked out forever (they may also be freed earlier by terrain
+   * cleared over them). If EVERY alive tank is buried, the longest-trapped one is freed so
+   * play always progresses.
    */
   private advanceTurn(): void {
     const tanks = this.state.tanks;
     const n = tanks.length;
+
+    // Safety valve (#15): tick down each buried tank's trap timer; auto-free at the cap.
+    for (const t of tanks) {
+      if (t.alive && t.buried) {
+        t.buriedTurns += 1;
+        if (t.buriedTurns >= MAX_BURIED_TURNS) {
+          t.buried = false;
+          t.buriedTurns = 0;
+        }
+      }
+    }
+
     const cur = tanks.findIndex((t) => t.id === this.state.activePlayerId);
     const start = cur < 0 ? 0 : cur;
     for (let step = 1; step <= n; step++) {
       const cand = tanks[(start + step) % n];
-      if (cand.alive) {
+      if (cand.alive && !cand.buried) {
         this.state.activePlayerId = cand.id;
         return;
       }
+    }
+
+    // Deadlock guard: every alive tank is buried. Free the longest-trapped one (stable
+    // tie-break by array order) and hand it the turn so the match can't stall.
+    let pick = -1;
+    for (let i = 0; i < n; i++) {
+      if (tanks[i].alive && (pick < 0 || tanks[i].buriedTurns > tanks[pick].buriedTurns)) {
+        pick = i;
+      }
+    }
+    if (pick >= 0) {
+      tanks[pick].buried = false;
+      tanks[pick].buriedTurns = 0;
+      this.state.activePlayerId = tanks[pick].id;
     }
   }
 
@@ -779,29 +846,31 @@ export class GameEngine {
       }
     }
 
-    // Unified post-terrain tank resolution. For each alive tank:
-    //  - if a crater opened beneath it (new surface is LOWER, i.e. surf > tank.y)
-    //    the tank falls onto the new floor;
-    //  - else if dirt now covers its MID-BODY it is buried -> instakill.
-    // NOTE: tank.y is the BASE resting ON the surface, so the pixel at
-    // (floor(x), floor(y)) is ALWAYS solid for a resting tank (it would kill
-    // every resting tank). We instead sample the MID-BODY (tank.y - TANK_HEIGHT/2):
-    // air for a resting tank, solid only once dirt has risen over the body.
+    // Unified post-terrain tank resolution. For each alive tank, re-derive its
+    // relationship to the (just-deformed) surface:
+    //  - if a crater opened beneath it (new surface is LOWER, i.e. surf > tank.y) the
+    //    tank falls onto the new floor — and is freed if it had been buried;
+    //  - else if dirt now covers its MID-BODY it is TRAPPED (buried, #15) — NOT killed:
+    //    being stuck is the punishment. Burial deals no damage and credits no kill; the
+    //    tank digs out when terrain above it clears (this same loop on a later crater /
+    //    Riot Bomb) or auto-frees after MAX_BURIED_TURNS turns (see advanceTurn);
+    //  - else its mid-body is clear air => it is not (or no longer) buried.
+    // NOTE: tank.y is the BASE resting ON the surface, so the pixel at (floor(x),
+    // floor(y)) is ALWAYS solid for a resting tank. We sample the MID-BODY
+    // (tank.y - TANK_HEIGHT/2): air for a resting tank, solid only once dirt has risen
+    // over the body — so burial is a pure function of current terrain vs tank position.
     for (const tank of this.state.tanks) {
       if (!tank.alive) continue;
       const xi = Math.floor(tank.x);
       const surf = surfaceAt(this.terrain, tank.x);
       if (surf > tank.y) {
         tank.y = surf; // crater opened beneath -> tank falls onto new floor
+        tank.buried = false; // ...and is dug free if it had been buried
       } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) === 1) {
-        Tank.applyDamage(tank, tank.health); // dirt covers mid-body -> buried, instakill
-        // V1 scoreboard: a burial caused by this shot is a kill for the shooter
-        // (not blast damage, so it adds to kills but not totalDamage). Self-burial
-        // from one's own crater does not count.
-        if (!tank.alive && tank.id !== this.shooterId) {
-          const shooter = this.state.tanks.find((t) => t.id === this.shooterId);
-          if (shooter) shooter.kills += 1;
-        }
+        if (!tank.buried) tank.buriedTurns = 0; // a FRESH burial starts the trap timer
+        tank.buried = true; // dirt over mid-body -> trapped (no damage, no kill)
+      } else {
+        tank.buried = false; // mid-body is clear air -> not buried / dug out
       }
     }
 

@@ -19,7 +19,7 @@ import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 const SEED = 0x5eed1234;
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
-const HIT_P2 = { angle: 52, power: 40, weapon: 'missile' }; // P1 -> P2 for this seed
+const HIT_P2 = { angle: 49, power: 71, weapon: 'missile' }; // P1 -> P2, 1200×600 field (swept, ~49 dmg)
 
 let failed = false;
 const log = (...a) => console.log(...a);

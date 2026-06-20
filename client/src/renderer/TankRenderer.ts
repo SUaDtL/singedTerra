@@ -107,4 +107,37 @@ export class TankRenderer {
       this.draw(ctx, tank, tank.id === activeId);
     }
   }
+
+  /**
+   * Surface beacon over a BURIED tank (#15). The tank body itself is painted UNDER the
+   * terrain (the renderer draws buried tanks before the terrain layer, so the risen dirt
+   * covers them — they read as submerged). This marker sits ON TOP of the dirt so the
+   * player can still see a trapped tank's position + owner and knows to dig it out.
+   * `surfaceY` is the dirt top at the tank's column.
+   */
+  drawBuriedMarker(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    surfaceY: number,
+    color: string,
+  ): void {
+    ctx.save();
+    // A small colored dome poking out of the dirt, dark-outlined for contrast.
+    ctx.beginPath();
+    ctx.arc(x, surfaceY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = darkenHex(color, 0.45);
+    ctx.stroke();
+    // An up-chevron above it — a "dig me out" cue in the player's lit color.
+    ctx.beginPath();
+    ctx.moveTo(x - 4, surfaceY - 8);
+    ctx.lineTo(x + 4, surfaceY - 8);
+    ctx.lineTo(x, surfaceY - 14);
+    ctx.closePath();
+    ctx.fillStyle = lightenHex(color, 0.5);
+    ctx.fill();
+    ctx.restore();
+  }
 }

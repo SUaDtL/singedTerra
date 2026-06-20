@@ -144,10 +144,17 @@ function nearestEnemy(state: GameState, me: TankState): TankState | null {
 
 /**
  * Heuristic EFFECTIVE damage per weapon, used ONLY for AI weapon selection — NOT
- * the engine's per-hit values. Area/DOT weapons (napalm, cluster) carry an
- * aggregate estimate because their detonation.maxDamage understates them (napalm's
- * impact is 0; the burn does the work). Utility weapons (dirt_bomb) and the shield
- * are absent — they are never offensive picks. Pure constants => deterministic.
+ * the engine's per-hit values. Area/DOT weapons (napalm, cluster, mirv, deaths_head,
+ * hot_napalm) carry an AGGREGATE estimate because their per-submunition / per-tick
+ * detonation values understate them (napalm's impact is 0; the burn does the work;
+ * an airburst's value is the stacked carpet, not one bomblet). Utility weapons
+ * (dirt_bomb, riot_bomb — zero blast damage) and the shield are absent — they are
+ * never offensive picks. Pure constants => deterministic.
+ *
+ * The Phase-2 premium additions (mirv/deaths_head/hot_napalm) are included so hard
+ * bots actually buy + use the full arsenal. Their values keep `nuke` (100) the
+ * WEAKEST >=100 finisher, so a healthy-target pick/restock still lands on the nuke
+ * (deaths_head is a strict escalation above it).
  */
 const AI_EFFECTIVE_DAMAGE: Partial<Record<WeaponType, number>> = {
   baby_missile:   34,
@@ -156,15 +163,19 @@ const AI_EFFECTIVE_DAMAGE: Partial<Record<WeaponType, number>> = {
   cluster_bomb:   55,
   napalm:         55,
   missile:        60,
+  hot_napalm:     75, // hotter/wider/longer burn than napalm (55)
   heavy_missile:  85,
+  mirv:           88, // 3 stacking warheads — punchier than cluster, below the nuke
   baby_nuke:      90,
   nuke:          100,
+  deaths_head:   120, // 7-warhead saturation — the apex offensive pick
 };
 
 /** Heavy/premium tier a MEDIUM bot won't reach for — kept as a hard-bot escalation
- *  so medium stays moderate (tops out around a Missile) while hard brings nukes. */
+ *  so medium stays moderate (tops out around a Missile) while hard brings the nukes
+ *  and the premium Phase-2 ordnance (mirv / deaths_head / hot_napalm). */
 const HEAVY_TIER: ReadonlySet<WeaponType> = new Set<WeaponType>([
-  'heavy_missile', 'baby_nuke', 'nuke',
+  'heavy_missile', 'baby_nuke', 'nuke', 'mirv', 'deaths_head', 'hot_napalm',
 ]);
 
 /** A hard bot at/below this health raises a shield (if stocked) instead of trading
