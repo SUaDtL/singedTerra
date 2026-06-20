@@ -96,3 +96,9 @@ Phase-1 STOP gate. Branch `sprint/stabilize-and-juice`.
 
 ## Phase 3 — Land
 - Routing to commit-gate → finishing-a-development-branch (auto open-PR per /ca:sprint).
+
+## Phase 3 — Receipt
+- Commit 6175a18 (30 files, +2966/-145) → pushed → **PR #21** (base main). commit-gate cleared (explicit staging, secret scan clean, all suites green). finishing-a-development-branch auto-selected open-PR per /ca:sprint — NOT merged, NOT deployed (merge decision is the user's).
+- Standup marker `.codearbiter/.markers/standup-2026-06-20` deliberately EXCLUDED from the sprint commit (unrelated /ca:standup artifact).
+- **Auto-decisions:** all logged here; **zero `low`-confidence** survived to review (clean run — the safe-cut scope kept SMARTS verdicts strong throughout). No hard gates tripped.
+- **Follow-ups:** (1) update `docs`/`open-tasks.md` to mark the 9 backlog items done (post-merge hygiene, mirrors PR #20 pattern); (2) manual canvas/audio playtest checklist in PR #21; (3) deferred: thud-vs-clang audio (needs engine signal), + the two held-out heavyweights (animated collapse, referee re-derive seat).
