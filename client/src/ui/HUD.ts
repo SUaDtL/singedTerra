@@ -93,6 +93,10 @@ export class HUD {
   private windValueEl!: HTMLElement;
   private weaponValueEl!: HTMLElement;
   private aimEl!: HTMLElement;
+  /** Aim readout sub-nodes: the text line + an animated power fill bar. */
+  private aimTextEl!: HTMLElement;
+  private aimPowerWrapEl!: HTMLElement;
+  private aimPowerFillEl!: HTMLElement;
   /** "Round N of M" indicator (side panel); hidden in single-round matches. */
   private roundEl!: HTMLElement;
   private overlayEl!: HTMLElement;
@@ -250,9 +254,18 @@ export class HUD {
     this.roundEl = document.createElement('div');
     this.roundEl.className = 'st-hud__round st-hud__round--hidden';
 
-    // Active-tank aim readout (bottom strip): angle + power.
+    // Active-tank aim readout (bottom strip): angle + power text, plus an animated
+    // power fill bar (CSS width transition) so charging power reads as a ramp.
     this.aimEl = document.createElement('div');
     this.aimEl.className = 'st-hud__aim';
+    this.aimTextEl = document.createElement('span');
+    this.aimTextEl.className = 'st-hud__aim-text';
+    this.aimPowerWrapEl = document.createElement('span');
+    this.aimPowerWrapEl.className = 'st-hud__power';
+    this.aimPowerFillEl = document.createElement('span');
+    this.aimPowerFillEl.className = 'st-hud__power-fill';
+    this.aimPowerWrapEl.append(this.aimPowerFillEl);
+    this.aimEl.append(this.aimTextEl, this.aimPowerWrapEl);
 
     // Controls legend (bottom-right, unobtrusive; built once, never updated).
     const controls = document.createElement('div');
@@ -729,20 +742,26 @@ export class HUD {
   private syncAim(state: GameState, isFiring = false): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);
     if (!tank) {
-      this.aimEl.textContent = '';
+      this.aimTextEl.textContent = '';
+      this.aimPowerWrapEl.style.visibility = 'hidden';
       this.weaponValueEl.textContent = '—';
       return;
     }
     if (isFiring) {
-      this.aimEl.textContent = `${tank.playerName}  ·  Sending...`;
+      this.aimTextEl.textContent = `${tank.playerName}  ·  Sending...`;
+      this.aimPowerWrapEl.style.visibility = 'hidden';
       return;
     }
     const weaponName = WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon;
     this.weaponValueEl.textContent = weaponName;
-    this.aimEl.textContent =
+    this.aimTextEl.textContent =
       `${tank.playerName}  ·  ` +
       `${aimReadout(tank.angle)}  ·  ` +
       `Power ${Math.round(tank.power)}`;
+    // Animated fill: width tracks power 0–100 (CSS transitions the change so it
+    // ramps as the player holds ↑/↓). The fill gradient runs cool→hot with power.
+    this.aimPowerWrapEl.style.visibility = 'visible';
+    this.aimPowerFillEl.style.width = `${Math.max(0, Math.min(100, tank.power))}%`;
   }
 
   /** Reconcile the weapon strip: active highlight + live ammo counts. No DOM rebuild. */
@@ -1042,6 +1061,9 @@ export class HUD {
   font-size: 9px;
 }
 .st-hud__aim {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 5px 10px;
   border-radius: 4px;
   background: rgba(12, 7, 22, 0.55);
@@ -1050,6 +1072,27 @@ export class HUD {
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-gold);
+}
+.st-hud__aim-text { white-space: nowrap; }
+/* Animated power meter (V1 "animated fill bar"): a track + a cool→hot gradient
+ * fill whose width tracks power 0–100; the width transition makes holding ↑/↓
+ * read as a charge ramp. Mirrors the health-bar track styling. */
+.st-hud__power {
+  flex: 0 0 auto;
+  width: 132px;
+  height: 8px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.st-hud__power-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--ember-deep), var(--gold));
+  box-shadow: 0 0 6px rgba(255, 210, 63, 0.5);
+  transition: width 90ms linear;
 }
 .st-hud__strip {
   display: flex;
@@ -1445,6 +1488,7 @@ export class HUD {
   .st-hud__player--active { animation: none; }
   .st-hud__player--hit::after { animation: none; opacity: 0; }
   .st-hud__bar-fill,
+  .st-hud__power-fill,
   .st-hud__weapon-btn,
   .st-hud__restart { transition: none; }
 }

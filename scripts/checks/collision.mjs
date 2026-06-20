@@ -73,7 +73,8 @@ function mkProjectile(x, y, vx = 0, vy = 0) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n[1] OOB exact boundaries (x=0 in, x=799 in, x=800 oob, x<0 oob)');
+const LAST_COL = CANVAS_WIDTH - 1; // last valid column index
+console.log(`\n[1] OOB exact boundaries (x=0 in, x=${LAST_COL} in, x=${CANVAS_WIDTH} oob, x<0 oob)`);
 // ---------------------------------------------------------------------------
 {
   const terrain = flatBitmap(490); // ground low so we don't accidentally hit it
@@ -83,17 +84,17 @@ console.log('\n[1] OOB exact boundaries (x=0 in, x=799 in, x=800 oob, x<0 oob)')
   eq(collide(mkProjectile(0, 10), terrain, tanks).type, 'none',
     'x=0 is in-bounds (high in air => none)');
 
-  // x === 799 : last valid column, IN bounds.
-  eq(collide(mkProjectile(CANVAS_WIDTH - 1, 10), terrain, tanks).type, 'none',
-    'x=799 is in-bounds (high in air => none)');
+  // x === LAST_COL : last valid column, IN bounds.
+  eq(collide(mkProjectile(LAST_COL, 10), terrain, tanks).type, 'none',
+    `x=${LAST_COL} is in-bounds (high in air => none)`);
 
-  // x === 800 : OOB (>= CANVAS_WIDTH).
+  // x === CANVAS_WIDTH : OOB (>= CANVAS_WIDTH).
   eq(collide(mkProjectile(CANVAS_WIDTH, 10), terrain, tanks).type, 'oob',
-    'x=800 is OOB');
+    `x=${CANVAS_WIDTH} is OOB`);
 
   // just over the right edge
-  eq(collide(mkProjectile(800.0001, 10), terrain, tanks).type, 'oob',
-    'x=800.0001 is OOB');
+  eq(collide(mkProjectile(CANVAS_WIDTH + 0.0001, 10), terrain, tanks).type, 'oob',
+    `x=${CANVAS_WIDTH}.0001 is OOB`);
 
   // x just below 0
   eq(collide(mkProjectile(-0.0001, 10), terrain, tanks).type, 'oob',
@@ -101,15 +102,15 @@ console.log('\n[1] OOB exact boundaries (x=0 in, x=799 in, x=800 oob, x<0 oob)')
   eq(collide(mkProjectile(-50, 10), terrain, tanks).type, 'oob',
     'x=-50 is OOB');
 
-  // x=799.9999 — fractional last column, floor->799, still in bounds, none in air.
-  eq(collide(mkProjectile(799.9999, 10), terrain, tanks).type, 'none',
-    'x=799.9999 is in-bounds (floor=799)');
+  // fractional last column, floor -> LAST_COL, still in bounds, none in air.
+  eq(collide(mkProjectile(CANVAS_WIDTH - 0.0001, 10), terrain, tanks).type, 'none',
+    `x=${LAST_COL}.9999 is in-bounds (floor=${LAST_COL})`);
 
   // ADVERSARIAL: ensure an in-bounds column never indexes terrain out of range.
-  // floor(799.9999)=799 which is a valid index; floor(800) would be 800 (OOB) but
-  // that path is short-circuited by the OOB check. Confirm ground hit at x=799.
-  eq(collide(mkProjectile(799, 495), terrain, tanks).type, 'ground',
-    'x=799 at/below surface => ground (valid index, no OOR)');
+  // floor(CANVAS_WIDTH-0.0001)=LAST_COL is a valid index; floor(CANVAS_WIDTH) would
+  // be OOB but that path is short-circuited by the OOB check. Confirm ground hit.
+  eq(collide(mkProjectile(LAST_COL, 495), terrain, tanks).type, 'ground',
+    `x=${LAST_COL} at/below surface => ground (valid index, no OOR)`);
 }
 
 // ---------------------------------------------------------------------------

@@ -60,9 +60,9 @@ const SPREAD = cdef.behavior.airburst.spread;
 const STEP = COUNT > 1 ? (2 * SPREAD) / (COUNT - 1) : 0;
 const DET = cdef.detonation;
 
-// A representative lob (angle 78, power 50 from the left tank at x=80) that puts
-// ALL COUNT bomblets in-bounds with a genuinely WIDE landing fan (cx span >700px
-// across an 800px field). Chosen by sweep against the real engine for this seed.
+// A representative lob (angle 78, power 50 from the left tank near x=120 on the
+// 1200px field) that puts ALL COUNT bomblets in-bounds in a modest landing carpet
+// (cx span ~55px for this seed). Chosen by sweep against the real engine.
 const CLUSTER_AIM = { angle: 78, power: 50, weapon: 'cluster_bomb' };
 
 /**
@@ -170,11 +170,15 @@ function fireShot(engine, { angle, power, weapon }) {
       if (e.cy < 0 || e.cy > CANVAS_HEIGHT) fail(`bomblet cy=${e.cy} not clamped to [0,${CANVAS_HEIGHT}]`);
     }
     // The bomblets form a genuine spread carpet (not bunched at one point). The
-    // fan is deliberately tuned tight enough to stay on-field for ordinary lobs
-    // (spread 2.0), so we demand a real but modest carpet, not "most of the field".
+    // fan is deliberately tuned tight enough to stay on-field for ordinary lobs,
+    // so we demand a real but modest carpet, not "most of the field".
     const cxs = ex.map((e) => e.cx);
     const span = Math.max(...cxs) - Math.min(...cxs);
-    const MIN_SPAN = CANVAS_WIDTH * 0.05; // a genuine carpet (~40px), not bunched
+    // Absolute px floor: the carpet width is a function of the airburst spread +
+    // post-apex fall time (PHYSICS), NOT the canvas width — so this must NOT be
+    // tied to CANVAS_WIDTH (a wider field would wrongly raise the bar, which is
+    // exactly what broke when the field grew 800->1200 and POWER_SCALE dropped).
+    const MIN_SPAN = 40; // a genuine carpet, not bunched at one point
     if (span < MIN_SPAN) fail(`landing fan span ${span.toFixed(1)} too narrow (< ${MIN_SPAN})`);
     if (r.st.lastExplosion !== ex[ex.length - 1]) fail('lastExplosion is not explosions[last] for the cluster shot');
     if (!failed) log(`PASS: ${COUNT} ballistic bomblets landed in a spread carpet (cx span ${span.toFixed(1)}px), ids 1..${COUNT}, fields from detonation def.`);

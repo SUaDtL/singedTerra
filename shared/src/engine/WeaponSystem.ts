@@ -19,6 +19,10 @@ export type WeaponType =
   | 'funky_bomb'
   | 'napalm'
   | 'cluster_bomb'
+  | 'mirv'
+  | 'deaths_head'
+  | 'riot_bomb'
+  | 'hot_napalm'
   | 'shield';
 
 /**
@@ -195,6 +199,19 @@ const NAPALM_BURN_TICKS = 78;   // ~1.3s per column at 60fps — fire lingers
 // burst damage). Tunable in playtesting.
 const NAPALM_DOT = 0.7;
 const NAPALM_CLIMB = 6;         // max px rise the fire will climb (walls block it)
+
+/**
+ * Hot Napalm — a hotter, wider, longer-burning variant of the napalm field. It
+ * runs the SAME deterministic processFire path; only the tuning is escalated.
+ * Peak total burn ≈ HOT_NAPALM_DOT * HOT_NAPALM_BURN_TICKS ≈ 95 — heavy sustained
+ * area denial (vs ~55 for regular napalm). Tunable in playtesting.
+ */
+const HOT_NAPALM_SPLASH = 30;       // wider initial puddle (~60px wide splat)
+const HOT_NAPALM_MAX_SPREAD = 120;  // creeps further from impact
+const HOT_NAPALM_SPREAD_RATE = 4;   // advances faster
+const HOT_NAPALM_BURN_TICKS = 100;  // burns longer (~1.7s/column)
+const HOT_NAPALM_DOT = 0.95;        // hotter per-tick burn
+const HOT_NAPALM_CLIMB = 8;         // climbs slightly steeper rises
 
 /**
  * Shield force-field tuning. Activating the shield grants this many HP of damage
@@ -410,6 +427,86 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
       // ~3 overlapping bomblets. (Was 4.5 then 2.0 — both scattered too wide to
       // reward aim; see airburst playtest feedback.)
       airburst: { trigger: 'apex', count: 5, spread: 0.5 },
+    },
+  },
+  mirv: {
+    type: 'mirv',
+    name: 'MIRV',
+    implemented: true,
+    price: 14000, bundleSize: 2, armsLevel: 3, // apex multi-warhead: fewer/bigger than cluster
+    // Per-WARHEAD blast. 3 independently-cratering warheads that can stack on a
+    // target — wider, punchier coverage than the cluster's tight bomblet carpet.
+    detonation: {
+      radius: 32,
+      maxDamage: 50,
+      style: 'cluster',
+      color: '#ffae3d', // amber (distinct from the cluster's gold)
+      durationFrames: 80,
+    },
+    behavior: {
+      // Reuses the cluster apex-split machinery (splitAirburst): FEWER, BIGGER,
+      // wider-spread warheads (3 @ spread 0.7 vs cluster's 5 @ 0.5). Pure data.
+      airburst: { trigger: 'apex', count: 3, spread: 0.7 },
+    },
+  },
+  deaths_head: {
+    type: 'deaths_head',
+    name: "Death's Head",
+    implemented: true,
+    price: 24000, bundleSize: 1, armsLevel: 4, // premium escalation of the MIRV
+    // Per-WARHEAD blast. 7 heavy warheads over a wide fan => devastating saturation.
+    detonation: {
+      radius: 36,
+      maxDamage: 55,
+      style: 'cluster',
+      color: '#ff4d4d', // ominous red
+      durationFrames: 85,
+    },
+    behavior: {
+      // Same apex split, escalated to the catalog's top-tier multi-warhead. Pure data.
+      airburst: { trigger: 'apex', count: 7, spread: 1.0 },
+    },
+  },
+  riot_bomb: {
+    type: 'riot_bomb',
+    name: 'Riot Bomb',
+    implemented: true,
+    price: 3000, bundleSize: 5, armsLevel: 1, // earth-mover: clears dirt, no blast damage
+    // maxDamage 0 => NO blast damage; a normal (non-raising) crater that CLEARS a
+    // wide disc of terrain. Reuses detonate() exactly — dig out a buried ally, open a
+    // firing lane, or undermine a hill so it collapses (any burial is emergent terrain
+    // collapse, not a direct hit). The inverse of dirt_bomb (which RAISES terrain).
+    detonation: {
+      radius: 55,
+      maxDamage: 0,
+      style: 'blast',
+      color: '#cdbf9a', // pale dust
+      durationFrames: 42,
+    },
+  },
+  hot_napalm: {
+    type: 'hot_napalm',
+    name: 'Hot Napalm',
+    implemented: true,
+    price: 16000, bundleSize: 5, armsLevel: 3, // hotter/wider/longer napalm field
+    detonation: {
+      radius: 40,
+      maxDamage: 0, // pure DOT (the burn does the work), like regular napalm
+      style: 'blast',
+      color: '#ff3a00', // searing orange-red
+      durationFrames: 44,
+    },
+    behavior: {
+      // A hotter variant of the napalm field — same deterministic processFire path,
+      // escalated tuning (wider splash/spread, longer burn, more DOT). See HOT_NAPALM_*.
+      napalm: {
+        splashRadius: HOT_NAPALM_SPLASH,
+        maxSpread:    HOT_NAPALM_MAX_SPREAD,
+        spreadRate:   HOT_NAPALM_SPREAD_RATE,
+        burnTicks:    HOT_NAPALM_BURN_TICKS,
+        dotPerTick:   HOT_NAPALM_DOT,
+        climbLimit:   HOT_NAPALM_CLIMB,
+      },
     },
   },
   shield: {
