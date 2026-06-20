@@ -98,6 +98,45 @@ function fire(e, { angle, power, weapon }) {
   if (!failed) log('PASS: the safety valve auto-frees a buried tank after MAX_BURIED_TURNS turns (no lock-out).');
 }
 
+// --- (5) Multi-player: a buried tank is SKIPPED in 3P turn rotation ---
+{
+  const e = new GameEngine({
+    players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }, { name: 'P3', color: '#4de87a' }],
+    maxPlayers: 3, seed: SEED,
+  });
+  const st = e.getState();
+  // Trap the MIDDLE tank (P2) directly. use_shield ends the turn via advanceTurn WITHOUT
+  // an explosion, so the burial loop (which recomputes `buried` from terrain) never runs
+  // and this artificial trap persists — isolating pure rotation logic.
+  st.tanks[1].buried = true; st.tanks[1].buriedTurns = 0;
+  e.applyAction({ type: 'use_shield' }); // P1 (active) ends its turn
+  const after = e.getState();
+  log(`[3p-skip] active after P1 shield (P2 buried) = ${after.activePlayerId}; P2 buriedTurns=${after.tanks[1].buriedTurns}`);
+  if (after.activePlayerId !== 'p3') fail(`3P rotation must SKIP buried P2 (p1 -> p3), got ${after.activePlayerId}`);
+  if (after.tanks[1].buriedTurns !== 1) fail(`P2 buriedTurns should be 1 after one skipped rotation, got ${after.tanks[1].buriedTurns}`);
+  if (!after.tanks[1].buried) fail('P2 should still be buried (1 < MAX_BURIED_TURNS)');
+  if (!failed) log('PASS: 3P turn rotation skips a buried tank (p1 -> p3; P2 stays trapped).');
+}
+
+// --- (6) Deadlock guard: if EVERY alive tank is buried, one is freed (no hang) ---
+{
+  const e = new GameEngine({
+    players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }, { name: 'P3', color: '#4de87a' }],
+    maxPlayers: 3, seed: SEED,
+  });
+  const st = e.getState();
+  for (const t of st.tanks) { t.buried = true; t.buriedTurns = 0; }
+  // Active P1 ends the turn; advanceTurn finds NO unburied alive tank and must free the
+  // longest-trapped one rather than hang or leave an invalid activePlayerId.
+  e.applyAction({ type: 'use_shield' });
+  const after = e.getState();
+  const active = after.tanks.find((t) => t.id === after.activePlayerId);
+  log(`[deadlock] all 3 buried -> active=${after.activePlayerId} buried=${active ? active.buried : 'N/A'}`);
+  if (!active) fail(`deadlock guard left an invalid activePlayerId (${after.activePlayerId})`);
+  else if (active.buried) fail('deadlock guard must FREE the tank it hands the turn to');
+  if (!failed) log('PASS: the all-buried deadlock guard frees a tank and keeps the match progressing.');
+}
+
 // --- Determinism: the burying shot replays byte-identically ---
 {
   const run = () => {
