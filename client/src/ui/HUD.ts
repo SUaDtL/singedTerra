@@ -822,6 +822,20 @@ export class HUD {
   }
 
   /**
+   * Explicitly hide BOTH end-of-game overlays (the GAME_OVER winner panel and the
+   * ROUND_OVER shop) and reset their "shown" guards. syncOverlay/syncRoundOver only
+   * hide these while the render loop is running, so once a game is torn down (quit to
+   * menu / restart) nothing else would clear a lingering "{winner} wins!" banner — it
+   * would bleed over the lobby. Called from the game teardown path (#13). Idempotent.
+   */
+  hideEndScreens(): void {
+    this.overlayEl.classList.add('st-hud__overlay--hidden');
+    this.overlayShown = false;
+    this.roundOverEl.classList.add('st-hud__overlay--hidden');
+    this.roundOverShown = false;
+  }
+
+  /**
    * Show/update the ROUND_OVER between-rounds shop. On entry it builds the standings
    * + the tank selector once; while shown it keeps the selected tank's credits and
    * each buy button's affordability/owned-count live (a buy mutates state without a
