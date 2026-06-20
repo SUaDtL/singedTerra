@@ -2,17 +2,47 @@ import type { GameState, ExplosionEvent, ExplosionStyle } from '@shared/types/Ga
 import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
 import { TANK_WIDTH, TANK_HEIGHT } from '@shared/engine/Tank';
 import { getWeapon } from '@shared/engine/WeaponSystem';
+import { launchVelocity, GRAVITY, WIND_FACTOR } from '@shared/engine/Physics';
+
+/** Aim guide length in ticks. DELIBERATELY SHORT: it shows launch direction +
+ *  relative power (and which way the wind bends the opening arc), but stops long
+ *  before the landing point — so reading wind/gravity over distance stays the
+ *  player's skill and the guide can't trivialize aiming (per design constraint). */
+const AIM_GUIDE_TICKS = 16;
 import { TerrainRenderer } from './TerrainRenderer';
 import { TankRenderer } from './TankRenderer';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { HUDRenderer } from './HUDRenderer';
+import { EffectsRenderer } from './EffectsRenderer';
 import { skyGradient, ACCENT } from '../ui/theme';
 
-/** Fixed pixel-star field (x, y) in the upper indigo sky — deterministic. */
+/** Mirror TankRenderer's barrel geometry so muzzle FX sit at the VISUAL tip:
+ *  pivot at (x, y − TREAD_HEIGHT(6) − BODY_HEIGHT(10)), barrel length 22. */
+const BARREL_VISUAL_LEN = 22;
+const TANK_BODY_TOP_OFFSET = 16;
+
+/**
+ * Optional sink the renderer emits gameplay-feel events to (audio, etc.). Kept as
+ * a thin interface so the renderer stays DECOUPLED from the AudioEngine — main.ts
+ * wires an adapter. Both hooks are presentation-only and derive from the same
+ * authoritative state the renderer already consumes, so they never affect the
+ * deterministic engine.
+ */
+export interface RenderEventSink {
+  /** A shot just launched (a turn transitioned into FIRING). */
+  onLaunch(): void;
+  /** One or more new detonations appeared this frame; `radius` is the largest. */
+  onExplosion(radius: number): void;
+}
+
+/** Fixed pixel-star field (x, y) in the upper indigo sky — deterministic. Spans
+ *  the full 1200px width so the widened field (Phase 0) has no bare sky. */
 const STARS: ReadonlyArray<readonly [number, number]> = [
   [60, 36], [142, 64], [232, 28], [300, 72], [388, 40],
   [520, 34], [612, 24], [700, 58], [760, 44], [180, 96],
   [440, 88], [560, 100], [668, 90],
+  [820, 30], [880, 70], [944, 42], [1008, 26], [1064, 62],
+  [1120, 38], [1168, 82], [840, 106], [992, 98], [1104, 112],
 ];
 
 /**
@@ -104,6 +134,24 @@ export class Renderer {
   /** Honor reduced-motion: when true, no screen-shake. */
   private readonly reduceMotion: boolean;
 
+  /** Optional gameplay-feel event sink (audio). Wired by main.ts; may stay null. */
+  private events: RenderEventSink | null = null;
+  /** Tracks FIRING so a launch event fires once per shot, not once per frame. */
+  private wasFiring = false;
+
+  /** Transient visual juice: debris, smoke, sparks, floating damage text. */
+  private readonly effects: EffectsRenderer;
+  /** Per-tank health last frame, to detect damage for floating numbers. */
+  private readonly prevHealth = new Map<string, number>();
+
+  /** Set per-frame by main.ts: the LOCAL human controls the active tank this turn
+   *  (so the aim guide is theirs to see, never an opponent's or a CPU's). */
+  private showAimGuide = false;
+  /** User master toggle (G key), persisted: aim guide on/off. */
+  private aimGuideEnabled: boolean;
+  /** Centre of the most recent detonation, for the last-shot ranging marker. */
+  private lastImpact: { x: number; y: number } | null = null;
+
   constructor(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to acquire 2D rendering context');
@@ -112,11 +160,82 @@ export class Renderer {
       typeof window !== 'undefined' && typeof window.matchMedia === 'function'
         ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
         : false;
+    this.effects = new EffectsRenderer(this.reduceMotion);
+    this.aimGuideEnabled = (() => {
+      try {
+        return localStorage.getItem('singedterra:aimguide') !== '0';
+      } catch {
+        return true;
+      }
+    })();
+  }
+
+  /** Attach a gameplay-feel event sink (e.g. audio). The renderer emits to it but
+   *  never imports it, keeping presentation layers decoupled. */
+  setEvents(sink: RenderEventSink): void {
+    this.events = sink;
+  }
+
+  /** main.ts sets this each turn: true only when the LOCAL human controls the
+   *  active tank (hot-seat human turn, or networked + it's my id). */
+  setAimGuide(visible: boolean): void {
+    this.showAimGuide = visible;
+  }
+
+  /** Flip the aim-guide master toggle (G key) and persist it. Returns new state. */
+  toggleAimGuide(): boolean {
+    this.aimGuideEnabled = !this.aimGuideEnabled;
+    try {
+      localStorage.setItem('singedterra:aimguide', this.aimGuideEnabled ? '1' : '0');
+    } catch {
+      /* localStorage unavailable — preference just isn't persisted */
+    }
+    return this.aimGuideEnabled;
+  }
+
+  /**
+   * Reset all PER-GAME visual state. The Renderer is a page-level singleton reused
+   * across games (a fresh GameEngine — with its own explosionSeq restarting at 0 — is
+   * built per game), so without this the previous game's state leaks. Most importantly
+   * `lastSeenExplosionId` keeps its high-water mark while the new engine's explosion ids
+   * restart at 1, so every early explosion of the next same-tab game fails the
+   * `id > lastSeenExplosionId` dedupe and its boom / shake / debris / damage-numbers /
+   * bloom are ALL silently dropped — the V1 juice vanishing on restart/rematch. Also
+   * clears the stale last-shot crosshair, per-tank health deltas, shake, and FIRING
+   * latch, and invalidates the terrain offscreen cache (which is ALSO keyed on the
+   * per-engine terrainVersion — if game #1's final version equals game #2's initial
+   * one, the cache would blit game #1's stale terrain until the next deformation).
+   * Call on every new game. Client-only — touches no engine/replayed state.
+   */
+  reset(): void {
+    this.bursts.length = 0;
+    this.lastSeenExplosionId = 0;
+    this.lastImpact = null;
+    this.prevHealth.clear();
+    this.shake = 0;
+    this.wasFiring = false;
+    this.effects.clear();
+    this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
   }
 
   /** Draw a single frame for the given state. */
   render(state: GameState): void {
     this.consumeExplosion(state);
+
+    // Emit a launch event once per shot when a turn enters FIRING. Cluster shells
+    // split mid-flight without re-entering FIRING, so this fires exactly once/shot.
+    const firing = state.phase === 'FIRING';
+    if (firing && !this.wasFiring) {
+      this.events?.onLaunch();
+      this.spawnMuzzleFlash(state);
+    }
+    this.wasFiring = firing;
+
+    // Floating damage numbers + K.O. flourish from per-tank health deltas (juice),
+    // then advance all transient particles one frame.
+    this.trackDamage(state);
+    this.effects.update();
+
     const ctx = this.ctx;
 
     // Screen-shake (juice): a decaying random offset applied to the WHOLE world
@@ -138,14 +257,30 @@ export class Renderer {
     // cover the shake offset so no backdrop bleeds in at the edges).
     this.drawSky();
 
+    // 2.0 Buried tanks (#15): draw BEFORE the terrain so the risen dirt paints over
+    // them — they read as submerged rather than sitting on top of the mound that buried
+    // them. A surface beacon (below) keeps them findable. (Almost always empty.)
+    const buried = state.tanks.filter((t) => t.alive && t.buried);
+    if (buried.length > 0) this.tanks.drawAll(ctx, buried);
+
     // 2. Terrain. The TerrainRenderer keeps its own offscreen canvas and blits
     // it (alpha-composited over the sky) on every draw(), rebuilding the
     // offscreen only when the bitmap actually changes — so no per-frame
     // markDirty() is needed here.
     this.terrain.draw(ctx, state.terrain, state.terrainVersion);
 
-    // 3. Tanks (active player emphasised).
-    this.tanks.drawAll(ctx, state.tanks, state.activePlayerId);
+    // 3. Tanks (active player emphasised). Buried tanks were painted under the terrain
+    // above, so draw only the visible (non-buried) ones here.
+    const visible = buried.length > 0
+      ? state.tanks.filter((t) => !(t.alive && t.buried))
+      : state.tanks;
+    this.tanks.drawAll(ctx, visible, state.activePlayerId);
+
+    // 3.0 Buried beacons: a small surface marker over each trapped tank so the player
+    // can see where to dig it out (the body itself is hidden under the dirt).
+    for (const t of buried) {
+      this.tanks.drawBuriedMarker(ctx, t.x, surfaceAt(state.terrain, t.x), t.color);
+    }
 
     // 3.5 Shield force fields — a depleting ring of particles around any shielded
     // tank (drawn over tanks so it reads as a bubble around them).
@@ -161,6 +296,18 @@ export class Renderer {
 
     // 5. Explosion particles.
     this.drawExplosions();
+
+    // 5.5 Transient juice: debris/dust/sparks + floating damage text (in-world, so
+    // it shakes with the scene). Drawn over blasts, under the DOM HUD.
+    this.effects.draw(ctx);
+
+    // 5.6 Aiming aids (PLAYER_TURN only): a faint last-shot ranging marker, and for
+    // the locally-controlled human a LIMITED launch guide (first AIM_GUIDE_TICKS
+    // ticks only — never the landing point).
+    if (state.phase === 'PLAYER_TURN') {
+      this.drawLastImpact();
+      if (this.showAimGuide && this.aimGuideEnabled) this.drawAimGuide(state);
+    }
 
     ctx.restore();
 
@@ -182,6 +329,11 @@ export class Renderer {
         : state.lastExplosion !== null
           ? [state.lastExplosion]
           : [];
+    // Coalesce all NEW blasts this frame into a single audio boom at the largest
+    // radius, so a 5-bomblet cluster reads as one punchy detonation, not five
+    // simultaneous booms. Screen-shake still takes the max per-event as before.
+    let maxNewRadius = 0;
+    let anyNew = false;
     for (const ex of events) {
       if (ex.id > this.lastSeenExplosionId) {
         this.lastSeenExplosionId = ex.id;
@@ -198,8 +350,102 @@ export class Renderer {
         if (!this.reduceMotion) {
           this.shake = Math.min(9, Math.max(this.shake, ex.radius * 0.14));
         }
+        // Ejecta: terrain debris + dust + sparks at the blast (reduced-motion = none).
+        this.effects.spawnExplosion(ex.cx, ex.cy, ex.radius, ex.color);
+        // Remember the latest blast centre for the last-shot ranging marker.
+        this.lastImpact = { x: ex.cx, y: ex.cy };
+        if (ex.radius > maxNewRadius) maxNewRadius = ex.radius;
+        anyNew = true;
       }
     }
+    if (anyNew) this.events?.onExplosion(maxNewRadius);
+  }
+
+  /**
+   * Spawn muzzle sparks at the active shooter's barrel tip. Mirrors TankRenderer's
+   * geometry (pivot at the body top, barrel length 22) so the flash sits exactly at
+   * the visual barrel end. Purely cosmetic; reduced-motion suppresses it inside FX.
+   */
+  private spawnMuzzleFlash(state: GameState): void {
+    const shooter = state.tanks.find((t) => t.id === state.activePlayerId);
+    if (!shooter) return;
+    const rad = (shooter.angle * Math.PI) / 180;
+    const px = shooter.x + Math.cos(rad) * BARREL_VISUAL_LEN;
+    const py = shooter.y - TANK_BODY_TOP_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
+    this.effects.spawnMuzzle(px, py, shooter.angle, shooter.color);
+  }
+
+  /**
+   * Float a damage number over any tank whose health dropped since last frame, and
+   * a K.O. flourish when it dies. Health INCREASES (round resets) are ignored. The
+   * map persists across games/rounds but only triggers on a strict drop, so a reset
+   * to full health silently re-baselines without a spurious number.
+   */
+  private trackDamage(state: GameState): void {
+    for (const tank of state.tanks) {
+      const prev = this.prevHealth.get(tank.id);
+      if (prev !== undefined && tank.health < prev - 0.01) {
+        this.effects.spawnDamage(tank.x, tank.y - 30, prev - tank.health);
+        if (tank.health <= 0 && prev > 0) this.effects.spawnKill(tank.x, tank.y - 18);
+      }
+      this.prevHealth.set(tank.id, tank.health);
+    }
+  }
+
+  /**
+   * A faint dotted launch guide from the active tank's barrel tip. It integrates
+   * the REAL projectile step (launchVelocity + gravity + this turn's wind), so it is
+   * honest — but only for AIM_GUIDE_TICKS ticks, so it reveals launch direction and
+   * relative power (and the wind's opening bend) WITHOUT showing the impact point.
+   * Read-only: it never touches the deterministic engine, only mirrors its math.
+   */
+  private drawAimGuide(state: GameState): void {
+    const tank = state.tanks.find((t) => t.id === state.activePlayerId);
+    if (!tank || !tank.alive) return;
+    const rad = (tank.angle * Math.PI) / 180;
+    let x = tank.x + Math.cos(rad) * BARREL_VISUAL_LEN;
+    let y = tank.y - TANK_BODY_TOP_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
+    const v = launchVelocity(tank.angle, tank.power);
+    let vx = v.vx;
+    let vy = v.vy;
+    const ctx = this.ctx;
+    ctx.save();
+    for (let i = 0; i < AIM_GUIDE_TICKS; i++) {
+      // Mirror Physics.stepProjectile's integration exactly (room-gravity override
+      // is ignored — this is a short HINT, not a precise predictor).
+      vy += GRAVITY;
+      vx += state.wind * WIND_FACTOR;
+      x += vx;
+      y += vy;
+      ctx.globalAlpha = 0.55 * (1 - i / AIM_GUIDE_TICKS);
+      ctx.fillStyle = ACCENT.gold;
+      ctx.fillRect((x - 1.5) | 0, (y - 1.5) | 0, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  /** A faint crosshair at the most recent detonation so players range-find by
+   *  adjustment rather than guesswork. Shown only while aiming (PLAYER_TURN). */
+  private drawLastImpact(): void {
+    if (!this.lastImpact) return;
+    const { x, y } = this.lastImpact;
+    const ctx = this.ctx;
+    const r = 6;
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = ACCENT.ember;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - r, y);
+    ctx.lineTo(x + r, y);
+    ctx.moveTo(x, y - r);
+    ctx.lineTo(x, y + r);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   /**

@@ -35,11 +35,14 @@ const PALETTE = ['#e84d4d', '#4d8ce8'];
 
 const SHIELD_CAPACITY = getWeapon('shield').behavior.shield.capacity;
 
-// Aims swept against the real engine for THIS seed: P2 (x=720) hits P1 (x=80). The
-// nuke/missile share ballistics (both plain shells), so the same aim lands for both.
-const MISSILE_AT_P1 = { angle: 116, power: 50, weapon: 'missile' };
-const NUKE_AT_P1    = { angle: 116, power: 50, weapon: 'nuke' };
-const NAPALM_AT_P1  = { angle: 112, power: 50, weapon: 'napalm' };
+// Aims swept against the real engine for THIS seed on the 1200×600 field: P2
+// (x=1080) lobs left and hits P1 (x=120), 960px away. The nuke/missile SHARE
+// ballistics (both plain shells), so the same aim lands for both — chosen so the
+// missile clearly damages P1 (~21) and the nuke clearly exceeds it (~78), which
+// the proportional-drain assertion requires.
+const MISSILE_AT_P1 = { angle: 117, power: 88, weapon: 'missile' };
+const NUKE_AT_P1    = { angle: 117, power: 88, weapon: 'nuke' };
+const NAPALM_AT_P1  = { angle: 115, power: 86, weapon: 'napalm' };
 
 let failed = false;
 const log = (...a) => console.log(...a);

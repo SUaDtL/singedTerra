@@ -7,6 +7,7 @@ import type { GameClient, RematchInfo } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { InputHandler } from './input/InputHandler';
 import { Renderer } from './renderer/Renderer';
+import { AudioEngine } from './audio/AudioEngine';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
 import { crtCssVars } from './ui/theme';
@@ -39,6 +40,51 @@ function bootstrap(): void {
 
   const renderer = new Renderer(canvas);
   const hud = new HUD(hudRoot, overlayRoot, modalRoot);
+
+  // Synthesized SFX (Web Audio, no files). Pure presentation — wired to the
+  // renderer's event sink so detonations/launches sound off the same authoritative
+  // state the renderer draws, never touching the deterministic engine.
+  const audio = new AudioEngine();
+  audio.unlockOnGesture();
+
+  // Detonation bloom: a brief warm light-bleed over the play field, paired with
+  // the boom + screen-shake. Reduced-motion users get audio but no flash.
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+  const boomFlash = document.createElement('div');
+  boomFlash.className = 'boom-flash';
+  document.getElementById('stage')?.appendChild(boomFlash);
+  function flashBloom(radius: number): void {
+    if (prefersReducedMotion || radius <= 0) return;
+    const alpha = Math.min(0.5, (radius / 60) * 0.5);
+    // Instant ON (no transition), then transition the fade OUT to 0 next frame.
+    boomFlash.style.transition = 'none';
+    boomFlash.style.opacity = String(alpha);
+    void boomFlash.offsetWidth; // force reflow so the OFF below actually animates
+    boomFlash.style.transition = 'opacity 240ms ease-out';
+    boomFlash.style.opacity = '0';
+  }
+
+  renderer.setEvents({
+    onLaunch: () => audio.launch(),
+    onExplosion: (radius) => {
+      audio.explosion(radius);
+      flashBloom(radius);
+    },
+  });
+  // Mute toggle (M). Document-level so it works on any screen; 'M' is unused by
+  // InputHandler (which owns arrows/space/Tab/Q), so there's no key conflict.
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyM' && !e.repeat) {
+      const muted = audio.toggleMute();
+      hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
+    } else if (e.code === 'KeyG' && !e.repeat) {
+      const on = renderer.toggleAimGuide();
+      hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
+    }
+  });
 
   // Per-game wiring that gets torn down and rebuilt on restart.
   let client: GameClient | null = null;
@@ -83,11 +129,27 @@ function bootstrap(): void {
     // a networked "Waiting for…" surviving into a later hot-seat game (which has no
     // turn-watch to reset it).
     hud.setTurnWatch({ state: 'clear' });
+    // Explicitly tear down the end-of-game overlays. syncOverlay/syncRoundOver only
+    // hide them while the render loop runs; once we unsubscribe above, nothing would
+    // otherwise clear a lingering "{winner} wins!" banner when quitting to the menu
+    // (it would sit on top of the lobby) — #13.
+    hud.hideEndScreens();
+    // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
+    // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
+    // mark while the fresh engine restarts explosion ids at 1, so early explosions fail
+    // the dedupe (no boom/shake/debris/damage-numbers/bloom) — plus a stale last-shot
+    // crosshair leaks across games. (Branch-review finding.)
+    renderer.reset();
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
     teardown();
+    // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
+    // callback. Restart (restartCb) and network rematch (onRematch) call startGame()
+    // directly, so without this a Restart issued while the lobby is showing (i.e. after
+    // a quit to menu) would run the fresh game behind the still-visible lobby (#13).
+    lobby.hide();
     currentConfig = config;
 
     const newClient = await createClient(config);
@@ -104,6 +166,11 @@ function bootstrap(): void {
     // player's keys would drive the bot's tank.
     const newInput = new InputHandler(canvas, (action) => {
       if (activeIsAi) return;
+      // UI feedback ticks (presentation only). The launch boom comes from the
+      // renderer's FIRING transition, so 'fire' needs nothing here.
+      if (action.type === 'set_angle' || action.type === 'set_power') audio.aimTick();
+      else if (action.type === 'select_weapon') audio.weaponCycle();
+      else if (action.type === 'use_shield') audio.shieldUp();
       newClient.sendAction(action);
     }, {
       initialAngle: activeTank?.angle,
@@ -134,6 +201,18 @@ function bootstrap(): void {
     newClient.onTurnWatch?.((watch) => hud.setTurnWatch(watch));
 
     unsubscribe = newClient.onStateChange((state) => {
+      // Aim guide is shown only when the LOCAL human controls the active tank: a
+      // human turn in hot-seat, or (networked) the active tank is THIS client's id.
+      // Never for a CPU seat or a remote opponent's turn.
+      const activeTank = state.tanks.find((t) => t.id === state.activePlayerId);
+      const localControls =
+        !activeTank?.ai &&
+        (config.mode !== 'network' || state.activePlayerId === config.playerId);
+      renderer.setAimGuide(localControls);
+      // Feed the active tank's barrel-origin (logical px) so mouse drag-aim can
+      // derive angle/power from the drag vector (pivot = body top, y − 16).
+      if (activeTank) newInput.setActiveTankScreenPos(activeTank.x, activeTank.y - 16);
+
       renderer.render(state);
       hud.update(state, newClient.isFiring ?? false);
 
@@ -231,8 +310,9 @@ function bootstrap(): void {
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
+    // startGame() now hides the lobby itself (see its body), so the start callback no
+    // longer needs to — keeping lobby-visibility owned by a single place (#13).
     void startGame(config);
-    lobby.hide();
   });
 
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
@@ -256,16 +336,19 @@ function bootstrap(): void {
 
   // JS-driven scale via CSS zoom (NOT transform: scale).
   //
-  // zoom is used because it affects layout: at zoom 0.76 a 1064×500 #app
-  // takes up ~809×380 in document flow, so the body can center it without
-  // overflow. transform:scale() leaves the layout box at 1064×500 regardless
-  // of the visual size — body overflow:hidden then clips visible content.
+  // zoom is used because it affects layout: a 1464×600 #app at zoom s takes up
+  // 1464s×600s in document flow, so the body can center it without overflow.
+  // transform:scale() leaves the layout box at 1464×600 regardless of the visual
+  // size — body overflow:hidden then clips visible content.
+  //
+  // The 1464×600 divisor MUST mirror --stage-w / --stage-h in style.css (the full
+  // stage = 1200×600 canvas + 264px HUD panel); keep them in sync.
   //
   // Cap at 2× so 4K monitors don't get an absurdly large stage.
   const appEl = document.getElementById('app');
   function updateScale(): void {
     if (!appEl) return;
-    const s = Math.min(window.innerWidth / 1064, window.innerHeight / 500, 2);
+    const s = Math.min(window.innerWidth / 1464, window.innerHeight / 600, 2);
     appEl.style.zoom = String(s);
   }
   window.addEventListener('resize', updateScale);

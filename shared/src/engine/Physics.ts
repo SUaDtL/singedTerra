@@ -36,9 +36,13 @@ export const MAX_DAMAGE = 100;
 
 /**
  * Launch speed (px/tick) per unit of power (power is 0–100). Tunable
- * (~0.12–0.3); with power 100 this yields a muzzle speed of ~24 px/tick.
+ * (~0.12–0.3); with power 100 this yields a muzzle speed of ~16.5 px/tick.
+ * Retuned 0.24 -> 0.165 alongside the 1200×600 field (Terrain.CANVAS_*): max-power
+ * flat range is now ~1.5× the map width (was ~4.8×), so the full 0–100 power dial
+ * is meaningful and crossing the field at 45° needs ~power 70 (was ~38). Longer
+ * flights also give wind more influence, so games run more turns (playtest note).
  */
-export const POWER_SCALE = 0.24;
+export const POWER_SCALE = 0.165;
 
 /** Degrees → radians. */
 const DEG_TO_RAD = Math.PI / 180;
