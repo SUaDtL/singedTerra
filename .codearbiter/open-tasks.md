@@ -10,12 +10,13 @@ that review live in `open-questions.md`.
 
 ## Start here (highest impact-per-effort)
 
-- Fix `computeNextSeat` quadratic replay: it builds a fresh `GameEngine` and replays the ENTIRE action log on every fire/shield — O(turns²) full ballistic re-sims on the main thread, hitching worse as a match grows. Reuse the live engine's post-resolution seat instead of re-deriving. `client/src/client/NetworkClient.ts:711-731`. [H/M] (corroborated: perf + stabilization)
-- Verify canvas sizing coherence: terrain offscreen + sky fill use 1200×600 but renderer docs still say 800×500 — if the main canvas backing store is still 800×500 the terrain blit clips/misaligns every frame AND wastes a 720k-px rebuild. Verify end-to-end first; may be a live prod bug. `shared/src/engine/Terrain.ts:21-22`, `client/src/renderer/TerrainRenderer.ts`, canvas element creation. [H/S]
-- Make `seq` allocation atomic: replace read-MAX-then-insert (2 round-trips, 409-retry path) with one Postgres RPC (`INSERT ... SELECT COALESCE(MAX(seq)+1,0)`). Removes the race window and a round-trip; the `UNIQUE(room_id,seq)` stays the guard. `supabase/functions/submit_action/index.ts:217-250` + new migration. [H/M] (corroborated: perf + stabilization + backend)
-- Make action-insert + cursor-advance transactional: today the action commits, then a separate cursor write can permanently fail (500) while the action is already logged → next player frozen out forever (clients don't retry "Not your turn"). Wrap both in one transaction/RPC. `supabase/functions/submit_action/index.ts:234-303`. [H/M]
-- Delete the stray `TEMPcheck.log` at repo root and add a `.gitignore` entry so it can't recur. [L/S] (corroborated)
-- Fix Edge Function env-var mismatch: `supabase/functions/.env.example` documents `SUPABASE_SECRET_KEYS`, but the loader (`supabase/functions/_shared/mod.ts:99`) reads `SUPABASE_SERVICE_ROLE_KEY` — a fresh deploy following the example 500s on every call. One-line doc fix. [M/S] (corroborated: security scout + stabilization)
+✅ **All 6 completed in PR #19 (`start-here-sweep` sprint), 2026-06-20.** computeNextSeat
+quadratic replay → `GameEngine.clone()` O(1) seat derivation; `seq` allocation + cursor
+advance → atomic `submit_room_action` RPC (`FOR UPDATE` serialization, migration 004);
+env-var doc mismatch fixed + drift guard; canvas sizing verified coherent (stale comments
+fixed); `TEMPcheck.log` confirmed already gone + `*.log`-ignored. See
+`.codearbiter/specs/start-here-sweep.md` + `sprint-log.md`. (Backend migration deploy still
+pending — see deploy note.)
 
 ## Stabilization & correctness
 
