@@ -193,6 +193,27 @@ export class Renderer {
     return this.aimGuideEnabled;
   }
 
+  /**
+   * Reset all PER-GAME visual state. The Renderer is a page-level singleton reused
+   * across games (a fresh GameEngine — with its own explosionSeq restarting at 0 — is
+   * built per game), so without this the previous game's state leaks. Most importantly
+   * `lastSeenExplosionId` keeps its high-water mark while the new engine's explosion ids
+   * restart at 1, so every early explosion of the next same-tab game fails the
+   * `id > lastSeenExplosionId` dedupe and its boom / shake / debris / damage-numbers /
+   * bloom are ALL silently dropped — the V1 juice vanishing on restart/rematch. Also
+   * clears the stale last-shot crosshair, per-tank health deltas, shake, and FIRING
+   * latch. Call on every new game. Client-only — touches no engine/replayed state.
+   */
+  reset(): void {
+    this.bursts.length = 0;
+    this.lastSeenExplosionId = 0;
+    this.lastImpact = null;
+    this.prevHealth.clear();
+    this.shake = 0;
+    this.wasFiring = false;
+    this.effects.clear();
+  }
+
   /** Draw a single frame for the given state. */
   render(state: GameState): void {
     this.consumeExplosion(state);

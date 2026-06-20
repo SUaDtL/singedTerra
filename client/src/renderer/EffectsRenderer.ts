@@ -31,6 +31,16 @@ export class EffectsRenderer {
     this.reduce = reduceMotion;
   }
 
+  /** Drop ALL transient particles immediately — called on a game reset so the next
+   *  game starts with a clean field (no debris/smoke/sparks/damage-text carried over
+   *  from the previous game on the page-singleton renderer). */
+  clear(): void {
+    this.debris.length = 0;
+    this.smoke.length = 0;
+    this.sparks.length = 0;
+    this.texts.length = 0;
+  }
+
   private rand(a: number, b: number): number {
     return a + Math.random() * (b - a);
   }

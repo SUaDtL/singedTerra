@@ -134,6 +134,12 @@ function bootstrap(): void {
     // otherwise clear a lingering "{winner} wins!" banner when quitting to the menu
     // (it would sit on top of the lobby) — #13.
     hud.hideEndScreens();
+    // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
+    // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
+    // mark while the fresh engine restarts explosion ids at 1, so early explosions fail
+    // the dedupe (no boom/shake/debris/damage-numbers/bloom) — plus a stale last-shot
+    // crosshair leaks across games. (Branch-review finding.)
+    renderer.reset();
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
