@@ -1,4 +1,43 @@
-import { withCors, json, getServiceClient, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, StoredPlayer, nextCursor } from '../_shared/mod.ts'
+
+// ---------------------------------------------------------------------------
+// rpcResultToResponse — pure mapper (exported for testing, T-08 AC4)
+//
+// Converts the raw { data, error } pair returned by supabase.rpc(
+//   'submit_room_action', ...) into the canonical HTTP Response for this
+// endpoint.  This is the testable seam: tests inject synthetic rpc results
+// without touching the database or the full request-handling stack.
+//
+// Success:  data is the INT returned by the plpgsql function (the seq).
+//           PostgREST may deliver it as a bare number or as an array whose
+//           first element is the number — handle both defensively.
+// 23505:    Postgres unique violation → 409 seq_conflict (same contract as
+//           the old separate INSERT path).
+// Any other error → 500 with a safe message (no internal detail exposed).
+// ---------------------------------------------------------------------------
+export interface RpcResult {
+  // deno-lint-ignore no-explicit-any
+  data: any
+  // deno-lint-ignore no-explicit-any
+  error: any
+}
+
+export function rpcResultToResponse(result: RpcResult): Response {
+  const { data, error } = result
+
+  if (error) {
+    if (error.code === '23505') {
+      return json({ ok: false, error: 'seq_conflict', retry: true }, 409)
+    }
+    console.error('submit_action: rpc error', error)
+    return json({ ok: false, error: 'Failed to submit action' }, 500)
+  }
+
+  // PostgREST delivers a RETURNS INT scalar as either a bare number or a
+  // single-element array.  Extract defensively.
+  const seq: number = Array.isArray(data) ? data[0] : data
+  return json({ seq, ok: true }, 200)
+}
 
 interface NetworkFireAction {
   type: 'fire'
@@ -31,6 +70,10 @@ function endsTurn(type: string): boolean {
   return type === 'fire' || type === 'use_shield'
 }
 
+// Guard Deno.serve so importing this module in tests does not start the HTTP
+// listener.  When Deno executes the file as the program entry point,
+// import.meta.main is true; when it is imported by a test file it is false.
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, playerId, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
     roomId?: unknown
@@ -201,106 +244,37 @@ Deno.serve(withCors(async (body) => {
               weapon: (action.weapon as string).trim(),
             }
 
-  // Atomically compute next seq and insert action using a Postgres function call.
-  // The subquery inside VALUES computes MAX(seq)+1 at insert time, and the
-  // UNIQUE(room_id, seq) constraint acts as the final race guard.
+  // Atomically allocate seq, insert the action, and (when turn-ending) advance
+  // the active-player cursor — all inside a single Postgres transaction via the
+  // submit_room_action plpgsql function (migration 004).
   //
-  // We use supabase.rpc() with a raw SQL approach via the REST API.
-  // Since Deno Edge Functions can use the service role, we call the PostgREST
-  // /rpc endpoint is not available for raw SQL. Instead we:
-  //   1. Read current max seq
-  //   2. Attempt insert with that seq
-  //   3. Catch UNIQUE violation and return 409 for client retry
+  // The function uses FOR UPDATE on the rooms row to serialise concurrent submits
+  // per room, so no two callers can compute the same seq.  The UNIQUE(room_id,seq)
+  // constraint is retained as a final safety net.
   //
-  // The UNIQUE constraint on (room_id, seq) is the authoritative race guard.
+  // Compute next-cursor inputs.  For non-turn-ending actions p_ends_turn is false
+  // and the index/turn arguments are ignored by the plpgsql function; passing the
+  // current values is harmless but 0 would be equally correct.
+  const isTurnEnding = endsTurn(validatedAction.type)
+  const { index: p_next_index, turn: p_next_turn } = isTurnEnding
+    ? nextCursor({
+        activeIndex,
+        playersLength: players.length,
+        reported: typeof nextActiveIndex === 'number' ? nextActiveIndex : null,
+        isRoundOver,
+        currentTurn: room.turn ?? 0,
+      })
+    : { index: room.active_player_index ?? 0, turn: room.turn ?? 0 }
 
-  // Step 1: Get next seq
-  const { data: seqData, error: seqError } = await supabase
-    .from('room_actions')
-    .select('seq')
-    .eq('room_id', roomId)
-    .order('seq', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const rpcResult = await supabase.rpc('submit_room_action', {
+    p_room_id: roomId,
+    p_player_id: actingId,
+    p_action: validatedAction,
+    p_ends_turn: isTurnEnding,
+    p_next_index,
+    p_next_turn,
+  })
 
-  if (seqError) {
-    console.error('submit_action: seq fetch error', seqError)
-    return json({ error: 'Failed to compute action sequence' }, 500)
-  }
-
-  const nextSeq = seqData === null ? 0 : (seqData.seq as number) + 1
-
-  // Step 2: Insert the action row. UNIQUE constraint guards against concurrent seq collision.
-  const { error: insertError } = await supabase
-    .from('room_actions')
-    .insert({
-      room_id: roomId,
-      seq: nextSeq,
-      player_id: actingId, // attribute the action to the SEAT it is for (bot or human)
-      action: validatedAction,
-    })
-
-  if (insertError) {
-    // Postgres unique violation code: 23505
-    if (insertError.code === '23505') {
-      return json({ ok: false, error: 'seq_conflict', retry: true }, 409)
-    }
-    console.error('submit_action: insert error', insertError)
-    return json({ error: 'Failed to insert action' }, 500)
-  }
-
-  // Step 3: Advance the active-player cursor — ONLY for turn-ending actions. A buy
-  // is turn-neutral, so the same player keeps the turn (and the referee keeps
-  // accepting their further buys / their eventual fire). The cursor now BACKS the
-  // referee check above, so this is no longer "diagnostic only".
-  if (endsTurn(validatedAction.type)) {
-    // Prefer the client's death-aware next seat; fall back to raw modulo (correct
-    // for 2P, and the only option for a client that didn't report one). The
-    // reported index must be a valid seat and NOT the acting seat (you can't keep
-    // your own turn) — otherwise the modulo fallback applies.
-    const modulo = (room.active_player_index + 1) % players.length
-    const reported = typeof nextActiveIndex === 'number' && Number.isInteger(nextActiveIndex)
-      ? nextActiveIndex
-      : -1
-    // Normally the next seat must differ from the acting seat ("you can't keep your own
-    // turn"). At a ROUND boundary the next round re-seats the OPENER, which may BE the
-    // seat that just fired the round-ending blow — so when roundOver is set we honor the
-    // reported opener unconditionally (still bounds-checked). Otherwise the cursor would
-    // fall back to modulo and reject the opener's first shot of the new round forever.
-    const reportedValid = isRoundOver
-      ? reported >= 0 && reported < players.length
-      : reported >= 0 && reported < players.length && reported !== activeIndex
-    const newActivePlayerIndex = reportedValid ? reported : modulo
-    const newTurn = (room.turn ?? 0) + 1
-
-    // The cursor is the AUTHORITATIVE referee gate (it backs the "Not your turn"
-    // check above), so it must be durably advanced before we ack the action — NOT
-    // fire-and-forget. A dropped write, or an Edge Function instance torn down after
-    // the response is flushed but before an un-awaited write lands, would freeze the
-    // cursor and reject the next player's fire forever (the client does not retry a
-    // "Not your turn" rejection). So we AWAIT the write, retry transient errors a
-    // bounded number of times, and fail the request if it cannot be persisted.
-    //
-    // Failing here is safe and cannot double-insert the already-committed action:
-    // the client only re-submits on a seq-conflict (see NetworkClient.submitAction),
-    // and the action is applied from the Realtime echo of the log, not this response.
-    let cursorError: unknown = null
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const { error } = await supabase
-        .from('rooms')
-        .update({ active_player_index: newActivePlayerIndex, turn: newTurn })
-        .eq('id', roomId)
-      if (!error) {
-        cursorError = null
-        break
-      }
-      cursorError = error
-    }
-    if (cursorError) {
-      console.error('submit_action: cursor update failed after retries', cursorError)
-      return json({ ok: false, error: 'cursor_update_failed' }, 500)
-    }
-  }
-
-  return json({ seq: nextSeq, ok: true }, 200)
+  return rpcResultToResponse(rpcResult)
 }))
+} // end if (import.meta.main)

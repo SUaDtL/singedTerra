@@ -20,7 +20,8 @@ const RAMP_DEPTH = 120;
  * 0 = air, 1 = solid), deformed pixel-by-pixel on explosions — no longer a single
  * height-line polygon.
  *
- * Approach — OFFSCREEN COMPOSITE: an offscreen HTMLCanvasElement (800x500) holds
+ * Approach — OFFSCREEN COMPOSITE: an offscreen HTMLCanvasElement (CANVAS_WIDTH×CANVAS_HEIGHT,
+ * i.e. 1200×600) holds
  * the rendered terrain as an ImageData where solid pixels are the opaque brown
  * fill and air pixels are fully TRANSPARENT (alpha 0). The expensive
  * per-pixel ImageData rebuild + putImageData runs ONLY when the bitmap content
@@ -30,10 +31,10 @@ const RAMP_DEPTH = 120;
  * layer beneath show through. (We deliberately do NOT putImageData onto the main
  * ctx: putImageData overwrites pixels wholesale and would erase the sky.)
  *
- * Dirty-flag pattern (SPEC §7): rebuilding the 400k-pixel ImageData every frame
+ * Dirty-flag pattern (SPEC §7): rebuilding the 720k-pixel ImageData every frame
  * is wasteful on a t3.micro, and terrain only changes when a crater deforms it.
  * Change is detected by comparing state.terrainVersion — a counter the engine bumps
- * on every deform (REVIEW_BACKLOG P2-8) — instead of hashing all 400k bytes each
+ * on every deform (REVIEW_BACKLOG P2-8) — instead of hashing all 720k bytes each
  * frame (which defeated the very dirty-flag design it implemented). Two explicit
  * hooks are also provided:
  *   - markDirty(): force the next draw() to rebuild the offscreen.
@@ -45,7 +46,7 @@ const RAMP_DEPTH = 120;
  *   tr.draw(ctx, state.terrain, state.terrainVersion); // blits every frame; rebuilds on change
  */
 export class TerrainRenderer {
-  /** Lazily-created offscreen canvas holding the composited terrain (800x500). */
+  /** Lazily-created offscreen canvas holding the composited terrain (1200×600). */
   private offscreen: HTMLCanvasElement | null = null;
   /** 2D context of {@link offscreen}. */
   private offCtx: CanvasRenderingContext2D | null = null;
