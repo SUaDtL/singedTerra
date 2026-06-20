@@ -202,7 +202,10 @@ export class Renderer {
    * `id > lastSeenExplosionId` dedupe and its boom / shake / debris / damage-numbers /
    * bloom are ALL silently dropped — the V1 juice vanishing on restart/rematch. Also
    * clears the stale last-shot crosshair, per-tank health deltas, shake, and FIRING
-   * latch. Call on every new game. Client-only — touches no engine/replayed state.
+   * latch, and invalidates the terrain offscreen cache (which is ALSO keyed on the
+   * per-engine terrainVersion — if game #1's final version equals game #2's initial
+   * one, the cache would blit game #1's stale terrain until the next deformation).
+   * Call on every new game. Client-only — touches no engine/replayed state.
    */
   reset(): void {
     this.bursts.length = 0;
@@ -212,6 +215,7 @@ export class Renderer {
     this.shake = 0;
     this.wasFiring = false;
     this.effects.clear();
+    this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
   }
 
   /** Draw a single frame for the given state. */
