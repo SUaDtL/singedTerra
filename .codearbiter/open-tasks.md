@@ -20,12 +20,15 @@ pending — see deploy note.)
 
 ## Stabilization & correctness
 
-- Add Deno tests for the Edge Functions (currently ZERO coverage). The referee owns the whole lockstep contract; highest-value cases: `endsTurn` cursor math, `roundOver`/`reportedValid` branch, bot-proxy auth branches, seq-conflict 409. `supabase/functions/submit_action/index.ts`. [H/M]
+✅ **4 completed in PR #21 (`stabilize-and-juice` sprint), 2026-06-20.** Edge-Function
+referee tests (13→46 Deno cases via a pure `validate.ts` extraction — `endsTurn`,
+action-shape, turn-gate/bot-proxy/per-seat-buy auth); resync buffer drops already-applied
+`seq < nextExpectedSeq` rows (`shouldBufferSeq` guard + `resync_guard.mjs`); flight-tick
+budget harness (`flightticks.mjs`, worst 700 vs 10k cap); AI-plan determinism harness
+(`ai_determinism.mjs`). See `.codearbiter/specs/stabilize-and-juice.md`.
+
 - Harden referee turn-gate trust: `actingPlayerId`/`nextActiveIndex`/`roundOver` are client-reported and only weakly bounds-checked, yet they set the authoritative cursor — a buggy/malicious client can stall a room. Re-derive the next seat from the roster + log instead of trusting the wire (referee can't run physics but can skip eliminated seats). `submit_action/index.ts:137-181, 261-273`. [M/S]
-- Drop already-applied seqs in the resync/Realtime buffer: rows with `seq < nextExpectedSeq` that arrive via a late echo are stored in `pendingActions` and never pruned (slow memory leak over a long match). Guard on incoming seq. `client/src/client/NetworkClient.ts:507-522, 775-789`. [M/S]
 - Bound action-log replay on join/reconnect: `initialize()` fetches the full log and replays every shot synchronously (up to 10k ticks each), freezing the tab for late joiners / long matches. Add periodic state checkpoints/snapshots, or at least chunk-and-yield. `client/src/client/NetworkClient.ts:200-218`. [M/M]
-- Add a harness asserting max real-flight tick count (across seeds × aims) stays well under the 10k `tickToCompletion` cap; exceeding it silently leaves the engine in FIRING and desyncs clients. POWER_SCALE was retuned for the larger field, so margins shrank. `client/src/client/NetworkClient.ts:742-755`, `shared/src/engine/AI.ts`. [M/S]
-- Add a lockstep-style harness cross-checking that two independently-seeded engines compute byte-identical AI plans (locks in the `Object.keys`+stable-sort tie-break that CPU-seat determinism implicitly depends on). `shared/src/engine/AI.ts:219-259`. [L/S]
 - Add one retry to best-effort `finish_game` POST: a transient failure means match standings are never persisted; the `UNIQUE(room_id)` on `match_scores` already makes it idempotent. `client/src/client/NetworkClient.ts:918-948`. [L/S]
 - Improve rematch successor recovery: the non-initiating peer polls 8×150ms then gives up silently if replication lags >1.2s, stranding the player on the finished room. Increase budget or add a manual "rejoin rematch" affordance; also add a reaper for dangling `rematch_room_id` from partial `restart_game` failure. `client/src/client/NetworkClient.ts:565-590`, `supabase/functions/restart_game/index.ts:85-173`. [L/M]
 
@@ -49,12 +52,15 @@ pending — see deploy note.)
 - Add wall/boundary modes (wrap / bounce / concrete) via `GameOptions.walls`; OOB is currently always a flat miss. Bank shots are a signature SE mechanic. `shared/src/engine/Physics.ts` collide/stepProjectile, `GameOptions.ts`. [H/M] (corroborated: physics + feature)
 - Add tunneling/digger weapons (Sandhog/Tunneler): detonate then bore a tunnel of discs along a deterministic path before a final blast — counters burial/walls, reuses `deform()`. `shared/src/engine/WeaponSystem.ts`, `GameEngine.ts`. [M/M] (corroborated: physics + feature)
 - Add a small deterministic projectile drag term so wind asymptotes to a terminal drift (currently wind accelerates a shell without bound; arcs are perfectly parabolic). Retune + re-pin affected harness seeds. `shared/src/engine/Physics.ts` stepProjectile. [M/S]
-- Terrain strata coloring: render 2-3 horizontal earth/rock bands keyed on world-y so craters expose layered cross-sections (render-only). `client/src/renderer/TerrainRenderer.ts`. [M/S]
-- Client-side projectile smoke trail: a renderer ring buffer of recent positions traces the true arc (kept out of GameState; identical across clients since they replay the same path). `client/src/renderer/ProjectileRenderer.ts`. [M/S]
-- Tank damage states + death sequence: scorch/smoke below ~33% HP, turret-pop + debris + wreck/crater on death (driven by authoritative health, render-only). `client/src/renderer/TankRenderer.ts`, `EffectsRenderer.ts`. [M/M]
+✅ **4½ completed in PR #21 (`stabilize-and-juice` sprint), 2026-06-20** (all render/audio-only):
+terrain strata coloring; client-side projectile smoke trail (ring buffer); tank damage states
+(<33% HP scorch/smoke) + turret-pop/wreck on death; explosion light-flash (reduce-motion gated)
++ crater scorch decals; render-side audio — betty hop tick, sustained napalm crackle, OOB fizzle.
+**Deferred (the ½):** terrain-thud vs tank-clang impacts — needs an engine signal on
+`ExplosionEvent` (hit surface), out of that sprint's "render-only" safe cut. See below.
+
+- Audio: distinct terrain-thud vs tank-clang impacts (deferred from PR #21) — surface `hit.type==='ground'|'tank'` on `ExplosionEvent` and split the impact sound. Small additive engine field, guarded by the determinism harnesses. `shared/src/engine/GameEngine.ts`, `shared/src/types/GameState.ts`, `client/src/audio/AudioEngine.ts`. [M/S]
 - Falling debris that settles on the terrain surface (pairs with animated collapse) instead of flying through hills. `client/src/renderer/EffectsRenderer.ts`. [M/M]
-- Explosion light flash + crater scorch rim: brief additive full-canvas flash scaled to radius + darkened rim on fresh craters; sells big nukes cheaply. `client/src/renderer/Renderer.ts` drawExplosions. [M/S]
-- Audio gaps: distinct terrain-thud vs tank-clang impacts, a tick per `bouncing_betty` hop, a sustained napalm crackle while `state.fire` is alive, and an OOB "fizzle" (off-screen shots are currently a silent dead beat). `client/src/audio/AudioEngine.ts`, `RenderEventSink`. [M/M]
 - Heavier juice on big detonations: brief hit-stop + directional screen-kick (already reduced-motion gated). `client/src/renderer/Renderer.ts`. [L/S]
 - Anti-alias destruction edges in the render only (keep collision on the crisp bitmap): soften boundary-pixel alpha in `rebuild`. `client/src/renderer/TerrainRenderer.ts`. [L/M]
 - (Larger) Water/lava terrain hazard: a second bitmap value for indestructible+lethal pools; touches collision, collapse, and serialization. `shared/src/engine/Terrain.ts`, `Physics.ts`, `GameState` serialization. [M/L]
