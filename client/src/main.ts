@@ -73,6 +73,12 @@ function bootstrap(): void {
       audio.explosion(radius);
       flashBloom(radius);
     },
+    onHop: () => audio.hopTick(),
+    onFireActive: (active) => {
+      if (active) audio.napalmStart();
+      else audio.napalmStop();
+    },
+    onMiss: () => audio.fizzle(),
   });
   // Mute toggle (M). Document-level so it works on any screen; 'M' is unused by
   // InputHandler (which owns arrows/space/Tab/Q), so there's no key conflict.

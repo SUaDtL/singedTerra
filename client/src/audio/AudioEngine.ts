@@ -21,6 +21,13 @@ export class AudioEngine {
   private muted = false;
   /** Wall-clock (performance.now) of the last aim tick, to throttle key-repeat. */
   private lastAimTick = 0;
+  /**
+   * Sustained napalm-crackle source nodes.  Held for the lifetime of the fire
+   * field so the sound loops continuously until napalmStop() tears them down.
+   * Both are non-null only while napalm is active.
+   */
+  private napalmSrc: AudioBufferSourceNode | null = null;
+  private napalmGain: GainNode | null = null;
 
   private static readonly STORAGE_KEY = 'singedterra:muted';
   private static readonly VOLUME = 0.85;
@@ -234,6 +241,101 @@ export class AudioEngine {
   /** A slightly brighter click for cycling the selected weapon. */
   weaponCycle(): void {
     this.blip(720, 0.05, 0.07, 'square');
+  }
+
+  /**
+   * A short mechanical tick for each bouncing-betty hop.
+   * Intentionally clicky and metallic — different from the aim tick — so it
+   * reads as the betty physically skipping off terrain.
+   */
+  hopTick(): void {
+    if (this.muted) return;
+    const ctx = this.ensure();
+    if (!ctx || !this.master) return;
+    const t = ctx.currentTime;
+    this.noiseHit(t, 0.055, 0.18, 'bandpass', 1800, 4.0);
+    // A quick pitch-drop transient underneath to sell the bounce impact.
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(320, t);
+    o.frequency.exponentialRampToValueAtTime(110, t + 0.04);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    o.connect(g).connect(this.master);
+    o.start(t);
+    o.stop(t + 0.09);
+  }
+
+  /**
+   * Begin the sustained napalm-crackle loop.  Creates a looping white-noise
+   * source filtered to a narrow band-pass that reads as a crackling fire.
+   * Idempotent — calling start while already playing is a no-op.
+   *
+   * Must call napalmStop() (or reset()) to tear down the held nodes;
+   * otherwise the AudioContext keeps them alive indefinitely.
+   */
+  napalmStart(): void {
+    if (this.muted) return;
+    if (this.napalmSrc) return; // already running
+    const ctx = this.ensure();
+    if (!ctx || !this.master || !this.noise) return;
+
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+
+    // Narrow bandpass centred on the crackle frequency: ~600 Hz reads as fire
+    // without being harsh.  A second bandpass an octave up adds presence.
+    const bp1 = ctx.createBiquadFilter();
+    bp1.type = 'bandpass';
+    bp1.frequency.value = 600;
+    bp1.Q.value = 0.9;
+
+    const bp2 = ctx.createBiquadFilter();
+    bp2.type = 'bandpass';
+    bp2.frequency.value = 1200;
+    bp2.Q.value = 1.2;
+
+    const g = ctx.createGain();
+    g.gain.value = 0.22;
+
+    // Series: src → bp1 → bp2 → gain → master
+    src.connect(bp1).connect(bp2).connect(g).connect(this.master);
+    src.start(ctx.currentTime);
+
+    this.napalmSrc = src;
+    this.napalmGain = g;
+  }
+
+  /**
+   * Stop the sustained napalm-crackle loop, with a short gain-fade to avoid
+   * a hard click.  Idempotent — safe to call when not playing.
+   */
+  napalmStop(): void {
+    const src = this.napalmSrc;
+    const g = this.napalmGain;
+    this.napalmSrc = null;
+    this.napalmGain = null;
+    if (!src || !this.ctx || !g) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    // Ramp gain to zero over 120 ms then stop the source.
+    g.gain.setTargetAtTime(0.0001, t, 0.04);
+    src.stop(t + 0.18);
+  }
+
+  /**
+   * A soft noise fizzle for a shot that flew off-screen (OOB miss).
+   * Short, airy, and high-pass — reads as a "whoosh" disappearing.
+   */
+  fizzle(): void {
+    if (this.muted) return;
+    const ctx = this.ensure();
+    if (!ctx || !this.master) return;
+    const t = ctx.currentTime;
+    this.noiseHit(t, 0.32, 0.15, 'highpass', 2400, 0.5);
   }
 
   /** Rising shimmer for raising a shield. */

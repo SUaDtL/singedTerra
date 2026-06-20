@@ -8,6 +8,7 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
 import { replayNetworkAction, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
+import { shouldBufferSeq } from '@shared/net/seqGuard';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -230,6 +231,10 @@ export class NetworkClient implements GameClient {
         },
         (payload: RealtimePostgresInsertPayload<RoomActionRow>) => {
           const row = payload.new as RoomActionRow;
+          // Drop already-applied rows before buffering to prevent a slow memory
+          // leak where stale keys below nextExpectedSeq accumulate indefinitely
+          // (flushPendingActions only ever consumes the exact nextExpectedSeq key).
+          if (!shouldBufferSeq(row.seq, this.nextExpectedSeq)) return;
           // Buffer the incoming action keyed by its seq number.
           // Do not apply immediately — Supabase Realtime does not guarantee
           // delivery order, so seq=6 may arrive before seq=5. Buffer and flush
@@ -516,6 +521,10 @@ export class NetworkClient implements GameClient {
       return;
     }
     for (const row of (data ?? []) as RoomActionRow[]) {
+      // nextExpectedSeq may have advanced between the .gte() fetch and now
+      // (a Realtime event could have been applied in the interim). Guard here
+      // to match the insertion-site policy and prevent stale key accumulation.
+      if (!shouldBufferSeq(row.seq, this.nextExpectedSeq)) continue;
       this.pendingActions.set(row.seq, row.action as NetworkAction);
     }
     this.flushPendingActions();
