@@ -147,6 +147,24 @@ export class GameEngine {
    */
   private windRng: () => number;
 
+  /**
+   * The seed passed to `createRng()` when the current `windRng` stream was
+   * initialised — equal to `this.seed` for the opening round and to
+   * `deriveRoundSeed(this.seed, round)` for every subsequent round (set by
+   * `startNextRound()`). Retained so `clone()` can reconstruct an identical RNG
+   * stream at exactly the same position without having to snapshot the closure's
+   * internal state.
+   */
+  private windRngSeed: number;
+
+  /**
+   * How many times `this.windRng()` has been called since the last
+   * `createRng()` invocation (construction or `startNextRound()`). Incremented
+   * by `nextWind()`. Used by `clone()` to fast-forward a fresh copy of the RNG
+   * to the same stream position as the original.
+   */
+  private windRngCalls = 0;
+
   /** Per-room wind cap (defaults to MAX_WIND); tunable via GameOptions. */
   private maxWind: number;
 
@@ -172,6 +190,7 @@ export class GameEngine {
     const heightLine = generate(seed);
     this.terrain = buildBitmap(heightLine);
     this.windRng = createRng(seed);
+    this.windRngSeed = seed;
     this.maxWind = options?.maxWind ?? MAX_WIND;
     this.gravity = options?.gravity ?? GRAVITY;
     this.seed = seed;
@@ -224,6 +243,7 @@ export class GameEngine {
    * by at most WIND_DRIFT_STEP, so players can range/walk shots in across turns.
    */
   private nextWind(current: number): number {
+    this.windRngCalls++;
     const delta = (this.windRng() * 2 - 1) * WIND_DRIFT_STEP;
     return clamp(current + delta, -this.maxWind, this.maxWind);
   }
@@ -231,6 +251,107 @@ export class GameEngine {
   /** Current snapshot of game state for rendering / broadcast. */
   getState(): GameState {
     return this.state;
+  }
+
+  /**
+   * Return a fully-independent deep copy of this engine. Ticking or applying
+   * actions on the clone NEVER mutates the original (and vice versa).
+   *
+   * Every piece of mutable state is deep-copied:
+   *   - terrain bitmap (`Uint8Array.slice()`)
+   *   - tanks array (each `TankState` including its `inventory` record)
+   *   - projectiles array (each `ProjectileState`)
+   *   - fire field (`Map` + `Set` + `fireDef` reference — NapalmDef is a
+   *     read-only weapon definition constant, not mutated by the engine)
+   *   - `GameState.fire` snapshot array (plain objects)
+   *   - explosion arrays and `lastExplosion` (plain objects)
+   *   - all scalar state fields
+   *   - wind RNG stream (re-created from `windRngSeed` and fast-forwarded
+   *     `windRngCalls` times so the clone is at the identical stream position)
+   *
+   * Determinism guarantee: the clone produces the same future sequence of
+   * wind values, phase transitions, and seat rotations as a full-log replay
+   * would, because every field that influences those transitions is copied.
+   */
+  clone(): GameEngine {
+    // Build a new instance without running the constructor (which would
+    // generate fresh terrain and tanks from the seed — wasteful and wrong).
+    const c = Object.create(GameEngine.prototype) as GameEngine;
+
+    // --- Scalar / primitive fields ---
+    c.explosionSeq  = this.explosionSeq;
+    c.fireCenter    = this.fireCenter;
+    c.shooterId     = this.shooterId;
+    c.shotDamage    = this.shotDamage;
+    c.maxWind       = this.maxWind;
+    c.gravity       = this.gravity;
+    c.seed          = this.seed;
+    c.totalRounds   = this.totalRounds;
+    c.options       = this.options; // GameOptions is treated as immutable config
+
+    // --- Wind RNG: re-create from the recorded seed + fast-forward ---
+    c.windRngSeed   = this.windRngSeed;
+    c.windRngCalls  = this.windRngCalls;
+    const freshRng  = createRng(this.windRngSeed);
+    for (let i = 0; i < this.windRngCalls; i++) freshRng();
+    c.windRng       = freshRng;
+
+    // --- Terrain bitmap: independent copy ---
+    c.terrain = this.terrain.slice();
+
+    // --- Napalm fire: Map + Set + def reference (def is immutable) ---
+    c.fire         = new Map(this.fire);
+    c.fireScorched = new Set(this.fireScorched);
+    c.fireDef      = this.fireDef;   // NapalmDef is a read-only weapon-def constant
+
+    // --- Deep-copy GameState ---
+    const s = this.state;
+
+    // Deep-copy each TankState including its inventory (Record<WeaponType, AmmoEntry>).
+    const cloneTanks = s.tanks.map((t) => {
+      const inv: Record<string, { count: number; unlimited: boolean }> = {};
+      for (const [k, v] of Object.entries(t.inventory)) {
+        inv[k] = { count: v.count, unlimited: v.unlimited };
+      }
+      return {
+        ...t,
+        inventory: inv as typeof t.inventory,
+      };
+    });
+
+    // Deep-copy each ProjectileState.
+    const cloneProjectiles = s.projectiles.map((p) => ({ ...p }));
+
+    // The back-compat projectile alias must point into the CLONE's array, not the original.
+    const cloneProjectile = cloneProjectiles[0] ?? null;
+
+    // Explosion events are plain-data value objects; spread-copy each.
+    const cloneExplosions   = s.explosions.map((e) => ({ ...e }));
+    const cloneLastExp      = s.lastExplosion ? { ...s.lastExplosion } : null;
+
+    // Fire cells are plain-data value objects.
+    const cloneFire = s.fire.map((f) => ({ ...f }));
+
+    c.state = {
+      phase:             s.phase,
+      turn:              s.turn,
+      round:             s.round,
+      totalRounds:       s.totalRounds,
+      lastRoundWinnerId: s.lastRoundWinnerId,
+      activePlayerId:    s.activePlayerId,
+      wind:              s.wind,
+      terrain:           c.terrain,   // points to the clone's own bitmap
+      terrainVersion:    s.terrainVersion,
+      tanks:             cloneTanks,
+      projectiles:       cloneProjectiles,
+      projectile:        cloneProjectile,
+      lastExplosion:     cloneLastExp,
+      explosions:        cloneExplosions,
+      fire:              cloneFire,
+      winner:            s.winner,
+    };
+
+    return c;
   }
 
   /**
@@ -763,6 +884,8 @@ export class GameEngine {
     this.fireScorched.clear();
     this.fireDef = null;
     this.windRng = createRng(roundSeed);
+    this.windRngSeed = roundSeed;
+    this.windRngCalls = 0;
     this.state.wind = this.nextWind(0);
 
     this.state.turn += 1;
