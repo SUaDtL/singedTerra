@@ -1,4 +1,5 @@
 import { withCors, json, getServiceClient, StoredPlayer, nextCursor } from '../_shared/mod.ts'
+import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
 
 // ---------------------------------------------------------------------------
 // rpcResultToResponse — pure mapper (exported for testing, T-08 AC4)
@@ -62,14 +63,6 @@ interface NetworkNextRoundAction {
 
 type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction | NetworkNextRoundAction
 
-/** Only turn-ENDING actions advance the active-player cursor. A buy is neutral (a
- *  player may buy several times, then fire/shield to end the turn); next_round is
- *  neutral too (it leaves the between-rounds shop — the next round's opener is set
- *  by the round-ending blow, not by next_round). */
-function endsTurn(type: string): boolean {
-  return type === 'fire' || type === 'use_shield'
-}
-
 // Guard Deno.serve so importing this module in tests does not start the HTTP
 // listener.  When Deno executes the file as the program entry point,
 // import.meta.main is true; when it is imported by a test file it is false.
@@ -99,54 +92,10 @@ Deno.serve(withCors(async (body) => {
     action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; tankId?: unknown }
   }
 
-  // Validate roomId
-  if (typeof roomId !== 'string' || roomId.trim().length === 0) {
-    return json({ error: 'Invalid input: roomId' }, 400)
-  }
-
-  // Validate playerId
-  if (typeof playerId !== 'string' || playerId.trim().length === 0) {
-    return json({ error: 'Invalid input: playerId' }, 400)
-  }
-
-  // Validate action
-  if (!action || typeof action !== 'object') {
-    return json({ error: 'Invalid input: action' }, 400)
-  }
-
-  // Actions committed to the log: 'fire' (carries aim) / 'use_shield' (turn-ending),
-  // 'buy' (turn-neutral store purchase), 'next_round' (leave the between-rounds shop).
-  // Any other type is rejected.
-  if (
-    action.type !== 'fire' &&
-    action.type !== 'use_shield' &&
-    action.type !== 'buy' &&
-    action.type !== 'next_round'
-  ) {
-    return json({ error: 'Invalid input: action.type must be "fire", "use_shield", "buy", or "next_round"' }, 400)
-  }
-
-  if (action.type === 'buy' && (typeof action.weapon !== 'string' || action.weapon.trim().length === 0)) {
-    return json({ error: 'Invalid input: buy action requires a weapon' }, 400)
-  }
-
-  if (action.type === 'fire') {
-    if (typeof action.angle !== 'number' || !isFinite(action.angle)) {
-      return json({ error: 'Invalid input: action.angle must be a finite number' }, 400)
-    }
-
-    if (
-      typeof action.power !== 'number' ||
-      !isFinite(action.power) ||
-      action.power < 0 ||
-      action.power > 100
-    ) {
-      return json({ error: 'Invalid input: action.power must be a number in [0, 100]' }, 400)
-    }
-
-    if (typeof action.weapon !== 'string' || action.weapon.trim().length === 0) {
-      return json({ error: 'Invalid input: action.weapon' }, 400)
-    }
+  // Pure shape validation — all 400 paths (no DB required)
+  const shapeResult = validateActionShape({ roomId, playerId, action })
+  if (!shapeResult.ok) {
+    return json({ error: shapeResult.error }, shapeResult.status)
   }
 
   const supabase = getServiceClient()
@@ -183,65 +132,45 @@ Deno.serve(withCors(async (body) => {
 
   const isRoundOver = roundOver === true
   const activeIndex = ((room.active_player_index ?? 0) % players.length + players.length) % players.length
-  const activePlayer = players[activeIndex]
 
-  // REFEREE GATING. Three regimes:
-  //
-  //  1. next_round — leaving the between-rounds shop. Turn-neutral, cursor-neutral,
-  //     accepted from ANY room member (membership already checked). Idempotent: a
-  //     duplicate replays as an engine no-op once combat has started.
-  //
-  //  2. ROUND_OVER buy — the between-rounds shop. Every player may buy, but ONLY for
-  //     their OWN seat (no spending another player's carried credits). No turn gate.
-  //
-  //  3. Everything else (fire / use_shield / normal-turn buy) — TURN-ENFORCEMENT
-  //     (Sprint 4 Slice 3.3, NON-OPTIONAL): the ACTING seat must be the active player.
-  //     Self (actingId === playerId) is a human acting for their own seat; a proxy
-  //     (actingId !== playerId) is a client DRIVING A CPU SEAT — allowed for any member
-  //     but ONLY when the active seat is a bot, never to impersonate another human.
-  //     Exactly-once is the seq-unique constraint + this cursor gate.
-  if (action.type === 'next_round') {
-    // no gate beyond membership
-  } else if (action.type === 'buy' && isRoundOver) {
-    const actingSeatIndex = players.findIndex((p) => p.id === actingId)
-    if (actingSeatIndex < 0) {
-      return json({ error: 'Acting seat not in room' }, 403)
-    }
-    if (actingId !== playerId && !players[actingSeatIndex].ai) {
-      return json({ error: 'Cannot act for another human player' }, 403)
-    }
-    // Must name your OWN seat ('p{index+1}', matching the engine's positional ids).
-    if (action.tankId !== `p${actingSeatIndex + 1}`) {
-      return json({ error: 'Can only buy for your own tank in the between-rounds shop' }, 403)
-    }
-  } else {
-    if (!activePlayer || activePlayer.id !== actingId) {
-      return json({ error: 'Not your turn' }, 403)
-    }
-    if (actingId !== playerId && !activePlayer.ai) {
-      return json({ error: 'Cannot act for another human player' }, 403)
-    }
+  // REFEREE GATING. Three regimes (see validate.ts authorizeAction for regime docs):
+  //   1. next_round  — membership only (no turn gate)
+  //   2. ROUND_OVER buy — per-seat shop, no turn gate
+  //   3. fire / use_shield / normal-turn buy — turn-enforcement gate
+  const authResult = authorizeAction({
+    action: action as { type: 'fire' | 'use_shield' | 'buy' | 'next_round'; tankId?: unknown },
+    players,
+    playerId: playerId as string,
+    actingId: actingId as string,
+    isRoundOver,
+    activeIndex,
+  })
+  if (!authResult.ok) {
+    return json({ error: authResult.error }, authResult.status)
   }
 
   // Build the validated action committed to the log. A ROUND_OVER buy carries its
   // tankId so replay routes it to the named tank (the engine falls back to the active
   // opener if it is missing — which would silently desync per-tank shopping).
+  // action is guaranteed non-undefined here: validateActionShape already rejected
+  // the request if action was absent or the wrong type.
+  const a = action!
   const validatedAction: NetworkAction =
-    action.type === 'use_shield'
+    a.type === 'use_shield'
       ? { type: 'use_shield' }
-      : action.type === 'next_round'
+      : a.type === 'next_round'
         ? { type: 'next_round' }
-        : action.type === 'buy'
+        : a.type === 'buy'
           ? {
               type: 'buy',
-              weapon: (action.weapon as string).trim(),
-              ...(isRoundOver && typeof action.tankId === 'string' ? { tankId: action.tankId } : {}),
+              weapon: (a.weapon as string).trim(),
+              ...(isRoundOver && typeof a.tankId === 'string' ? { tankId: a.tankId } : {}),
             }
           : {
               type: 'fire',
-              angle: action.angle as number,
-              power: action.power as number,
-              weapon: (action.weapon as string).trim(),
+              angle: a.angle as number,
+              power: a.power as number,
+              weapon: (a.weapon as string).trim(),
             }
 
   // Atomically allocate seq, insert the action, and (when turn-ending) advance

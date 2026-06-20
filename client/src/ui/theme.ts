@@ -28,6 +28,12 @@ export const TERRAIN = {
   top: '#5a3a22',
   mid: '#3c2516',
   deep: '#1d120b',
+  // Strata band base colors (T7): horizontal earth/rock bands keyed on world-y.
+  // These are BASE colors; the existing depth ramp (rim/top/mid/deep) shades on top.
+  // Exposed by craters, giving layered cross-sections.
+  bandSurface: '#5a3a22', // surface earth (same warm-brown hue as top — subtle)
+  bandMid: '#3d2d1a',     // mid stratum: cooler, sandstone-shifted brown
+  bandDeep: '#2a1e2e',    // deep stratum: dark purple-rock, hints at the bedrock
 } as const;
 
 /** Signature accents. */

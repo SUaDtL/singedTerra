@@ -1,5 +1,6 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
 import { TERRAIN, hexToRgb } from '../ui/theme';
+import { bandForY } from './strata';
 
 /**
  * Scorched depth ramp (banner palette): a LIT RIM on the top 2px of every solid
@@ -8,11 +9,26 @@ import { TERRAIN, hexToRgb } from '../ui/theme';
  * flat brown slab. Parsed once at module load.
  */
 const RIM = hexToRgb(TERRAIN.rim);
-const TOP = hexToRgb(TERRAIN.top);
 const MID = hexToRgb(TERRAIN.mid);
 const DEEP = hexToRgb(TERRAIN.deep);
 /** Depth (px below the lit rim) over which top→mid→deep fully ramps. */
 const RAMP_DEPTH = 120;
+
+/**
+ * Strata band BASE colors (T7). Each band supplies a starting RGB that the
+ * depth-ramp blends FROM, so the surface rim/ramp still reads correctly but
+ * deeper craters expose visually distinct rock layers.
+ *
+ * Band 0 (surface earth): warm brown — same family as TOP, nearly imperceptible
+ * without a crater cut, ensuring the unmodified surface looks unchanged.
+ * Band 1 (mid rock): cooler sandstone-shifted brown, visible in medium craters.
+ * Band 2 (deep rock): dark purple-rock, visible only in the deepest craters.
+ */
+const BAND_COLORS: [[number, number, number], [number, number, number], [number, number, number]] = [
+  hexToRgb(TERRAIN.bandSurface),
+  hexToRgb(TERRAIN.bandMid),
+  hexToRgb(TERRAIN.bandDeep),
+];
 
 /**
  * TerrainRenderer paints the pixel terrain bitmap (SPEC §7 layer 2). The terrain
@@ -120,6 +136,15 @@ export class TerrainRenderer {
    * own-surface drives the shade — so overhangs/cave lips also get a lit rim.
    * No per-pixel allocation (writes straight into the Uint8ClampedArray). Runs
    * only on bitmap change, so the per-pixel ramp math stays off the frame budget.
+   *
+   * Strata (T7): each pixel's base color is selected by its WORLD-Y position via
+   * `bandForY`, giving 2–3 horizontal earth/rock bands. The existing depth ramp is
+   * then applied ON TOP of that base, so surface pixels still read correctly and
+   * craters expose the underlying band color as they cut deeper.
+   *
+   * The band base color blends toward the ramp's TOP/MID/DEEP palette so the
+   * transition between strata is smooth rather than abrupt: the ramp lerps from
+   * the band base instead of from a fixed `TOP`.
    */
   private rebuild(terrain: Uint8Array): void {
     const offCtx = this.offCtx;
@@ -139,16 +164,22 @@ export class TerrainRenderer {
           let g: number;
           let b: number;
           if (depth < 2) {
-            r = RIM[0]; g = RIM[1]; b = RIM[2]; // lit surface edge
+            r = RIM[0]; g = RIM[1]; b = RIM[2]; // lit surface edge (unchanged)
           } else {
+            // Strata band base: pick starting color by world-y so horizontal
+            // earth/rock bands are revealed as craters cut deeper.
+            const band = bandForY(y);
+            const BASE = BAND_COLORS[band];
+            // Depth ramp: blend BASE → MID → DEEP over RAMP_DEPTH px so the
+            // band color grades smoothly into the deep-rock palette.
             const t = Math.min((depth - 2) / RAMP_DEPTH, 1);
             if (t < 0.5) {
-              const u = t * 2; // top -> mid
-              r = TOP[0] + (MID[0] - TOP[0]) * u;
-              g = TOP[1] + (MID[1] - TOP[1]) * u;
-              b = TOP[2] + (MID[2] - TOP[2]) * u;
+              const u = t * 2; // band-base → mid
+              r = BASE[0] + (MID[0] - BASE[0]) * u;
+              g = BASE[1] + (MID[1] - BASE[1]) * u;
+              b = BASE[2] + (MID[2] - BASE[2]) * u;
             } else {
-              const u = (t - 0.5) * 2; // mid -> deep
+              const u = (t - 0.5) * 2; // mid → deep
               r = MID[0] + (DEEP[0] - MID[0]) * u;
               g = MID[1] + (DEEP[1] - MID[1]) * u;
               b = MID[2] + (DEEP[2] - MID[2]) * u;

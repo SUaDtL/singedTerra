@@ -1,5 +1,6 @@
 import type { TankState } from '@shared/types/GameState';
 import { TANK, ACCENT, lightenHex, darkenHex } from '../ui/theme';
+import { damageTier } from './tankFx';
 
 /** Tank body dimensions (logical canvas px). */
 const BODY_WIDTH = 24;
@@ -83,6 +84,35 @@ export class TankRenderer {
     // Reset to avoid leaking line state to subsequent draws.
     ctx.lineWidth = 1;
     ctx.lineCap = 'butt';
+
+    // --- Damage-state scorch overlay (render-only; keyed on authoritative health). ---
+    // When the tank is alive and below the damage threshold, overlay the body with
+    // a dark semi-transparent wash and a few char marks to read as "battle damage".
+    if (tank.alive && damageTier(tank.health) === 'damaged') {
+      ctx.save();
+      // Proportional darkness: deeper scorch as health approaches zero.
+      // health 33 → alpha 0.15;  health 1 → alpha 0.50.
+      const scorchStrength = 1 - (tank.health / 33);
+      const bodyAlpha = 0.15 + scorchStrength * 0.35;
+      ctx.globalAlpha = bodyAlpha;
+      ctx.fillStyle = '#1a0d00';
+      ctx.fillRect(left, bodyTop, BODY_WIDTH, BODY_HEIGHT);
+
+      // Diagonal char mark — two short dark scratches across the body.
+      ctx.globalAlpha = bodyAlpha * 0.9;
+      ctx.strokeStyle = '#0d0600';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(left + 4, bodyTop + 2);
+      ctx.lineTo(left + 10, bodyTop + BODY_HEIGHT - 2);
+      ctx.moveTo(left + BODY_WIDTH - 4, bodyTop + 2);
+      ctx.lineTo(left + BODY_WIDTH - 10, bodyTop + BODY_HEIGHT - 2);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'butt';
+      ctx.restore();
+    }
 
     // --- Active-player chevron above the body (gold). ---
     if (active) {
