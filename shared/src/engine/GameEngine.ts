@@ -580,7 +580,7 @@ export class GameEngine {
       if (hit.type === 'tank') {
         const napalm = getWeapon(p.weaponType).behavior?.napalm;
         if (napalm !== undefined) {
-          this.igniteNapalm(hit.x, hit.y, napalm); // splashes burning fuel, no blast
+          this.igniteNapalm(hit.x, hit.y, napalm, p.weaponType); // splashes burning fuel, no blast
         } else {
           this.detonate(hit.x, hit.y, p.weaponType); // direct tank hit always detonates
         }
@@ -613,7 +613,7 @@ export class GameEngine {
         } else {
           const napalm = getWeapon(p.weaponType).behavior?.napalm;
           if (napalm !== undefined) {
-            this.igniteNapalm(hit.x, hit.y, napalm); // splashes burning fuel, no blast
+            this.igniteNapalm(hit.x, hit.y, napalm, p.weaponType); // splashes burning fuel, no blast
           } else {
             this.detonate(hit.x, hit.y, p.weaponType); // bounces spent -> detonate
           }
@@ -1024,7 +1024,7 @@ export class GameEngine {
    * Determinism: ignite writes are pure arithmetic on the integer impact column;
    * the flash id comes from the same monotonic explosionSeq as every other blast.
    */
-  private igniteNapalm(cx: number, cy: number, def: NapalmDef): void {
+  private igniteNapalm(cx: number, cy: number, def: NapalmDef, weaponType: WeaponType): void {
     const center = Math.round(cx);
     this.fireDef = def;
     this.fireCenter = center;
@@ -1034,9 +1034,12 @@ export class GameEngine {
       this.ignite(center + dx, def.burnTicks);
     }
 
-    // Ignition flash — VISUAL ONLY (reuses the weapon's detonation look). No
-    // terrain deform, no proximity damage: the burn does the work.
-    const det = getWeapon('napalm').detonation;
+    // Ignition flash — VISUAL ONLY (reuses the FIRING weapon's detonation look,
+    // so hot_napalm flashes hotter/wider/longer than napalm). No terrain deform,
+    // no proximity damage: the burn does the work. weaponType comes from the
+    // replayed action log, so this stays determinism-safe; fall back to napalm if
+    // a future caller ever omits it.
+    const det = (getWeapon(weaponType) ?? getWeapon('napalm')).detonation;
     const event: ExplosionEvent = {
       id: ++this.explosionSeq,
       cx,
