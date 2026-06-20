@@ -131,6 +131,8 @@ export function createTank(
     roundWins: 0, // V1 match structure: no rounds won yet
     kills: 0, // V1 scoreboard
     totalDamage: 0, // V1 scoreboard
+    buried: false, // #15 burial: not trapped at spawn
+    buriedTurns: 0,
     ai, // null => human; a difficulty => CPU-controlled
   };
 }
@@ -235,6 +237,8 @@ export const Tank = {
       roundWins: 0, // V1 match structure: no rounds won yet
       kills: 0, // V1 scoreboard
       totalDamage: 0, // V1 scoreboard
+      buried: false, // #15 burial: not trapped at spawn
+      buriedTurns: 0,
       ai: null, // Tank.create is used for human/default tanks
     };
   },

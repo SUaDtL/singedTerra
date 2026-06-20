@@ -220,6 +220,16 @@ export interface TankState {
    * rounds it for display.
    */
   totalDamage: number;
+  /**
+   * Trapped under risen dirt (V1 burial, #15). A buried tank is ALIVE but cannot take a
+   * turn — it is skipped in rotation until dug out: terrain cleared over its mid-body (a
+   * crater / Riot Bomb) frees it, or it auto-frees after a couple of turns. Burial deals
+   * NO damage and credits NO kill — being trapped IS the punishment. Reset each round.
+   * Deterministic boolean.
+   */
+  buried: boolean;
+  /** Turns spent trapped while `buried` (burial safety-valve counter, #15). 0 when free. */
+  buriedTurns: number;
 }
 
 export interface ProjectileState {

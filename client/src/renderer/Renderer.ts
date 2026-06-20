@@ -232,14 +232,30 @@ export class Renderer {
     // cover the shake offset so no backdrop bleeds in at the edges).
     this.drawSky();
 
+    // 2.0 Buried tanks (#15): draw BEFORE the terrain so the risen dirt paints over
+    // them — they read as submerged rather than sitting on top of the mound that buried
+    // them. A surface beacon (below) keeps them findable. (Almost always empty.)
+    const buried = state.tanks.filter((t) => t.alive && t.buried);
+    if (buried.length > 0) this.tanks.drawAll(ctx, buried);
+
     // 2. Terrain. The TerrainRenderer keeps its own offscreen canvas and blits
     // it (alpha-composited over the sky) on every draw(), rebuilding the
     // offscreen only when the bitmap actually changes — so no per-frame
     // markDirty() is needed here.
     this.terrain.draw(ctx, state.terrain, state.terrainVersion);
 
-    // 3. Tanks (active player emphasised).
-    this.tanks.drawAll(ctx, state.tanks, state.activePlayerId);
+    // 3. Tanks (active player emphasised). Buried tanks were painted under the terrain
+    // above, so draw only the visible (non-buried) ones here.
+    const visible = buried.length > 0
+      ? state.tanks.filter((t) => !(t.alive && t.buried))
+      : state.tanks;
+    this.tanks.drawAll(ctx, visible, state.activePlayerId);
+
+    // 3.0 Buried beacons: a small surface marker over each trapped tank so the player
+    // can see where to dig it out (the body itself is hidden under the dirt).
+    for (const t of buried) {
+      this.tanks.drawBuriedMarker(ctx, t.x, surfaceAt(state.terrain, t.x), t.color);
+    }
 
     // 3.5 Shield force fields — a depleting ring of particles around any shielded
     // tank (drawn over tanks so it reads as a bubble around them).
