@@ -153,6 +153,75 @@ export function generateCode(): string {
 }
 
 // ---------------------------------------------------------------------------
+// nextCursor — pure seat-decision for submit_action (extracted for testability)
+// ---------------------------------------------------------------------------
+
+export interface NextCursorOpts {
+  /** Index of the seat that just acted. */
+  activeIndex: number
+  /** Total number of seats in the room. */
+  playersLength: number
+  /**
+   * Client-reported next-seat index (may be null/undefined if the client did
+   * not send one, or -1 if it was pre-normalised to the sentinel).  A value
+   * outside [0, playersLength) is treated as absent.
+   */
+  reported: number | null | undefined
+  /**
+   * True when this action ends a round (relaxes the "can't keep your own turn"
+   * guard so the new-round opener may be the seat that just fired the blow).
+   */
+  isRoundOver: boolean
+  /** Current value of `room.turn` (treated as 0 when null/undefined). */
+  currentTurn: number
+}
+
+export interface NextCursorResult {
+  /** The seat index that should become active next. */
+  index: number
+  /** The new turn counter (currentTurn + 1). */
+  turn: number
+}
+
+/**
+ * Decide the next active-seat index and advance the turn counter by one.
+ *
+ * This is the pure-function extraction of the inline block that previously
+ * lived in submit_action/index.ts (lines ~261-274).  Behaviour is identical:
+ *
+ *  - The client-reported seat is honoured when it is a valid seat index AND
+ *    either differs from the acting seat (normal case) or `isRoundOver` is true
+ *    (round-boundary exception: the new-round opener may re-seat the same seat
+ *    that fired the round-ending blow).
+ *  - Any other situation falls back to the raw modulo successor
+ *    `(activeIndex + 1) % playersLength`.
+ *  - The turn counter always increments by 1.
+ */
+export function nextCursor(opts: NextCursorOpts): NextCursorResult {
+  const { activeIndex, playersLength, reported: rawReported, isRoundOver, currentTurn } = opts
+
+  const modulo = (activeIndex + 1) % playersLength
+
+  // Normalise: a non-integer or absent value becomes the out-of-range sentinel -1.
+  const reported =
+    typeof rawReported === 'number' && Number.isInteger(rawReported)
+      ? rawReported
+      : -1
+
+  // A reported index is valid when it is in-bounds AND (different from the
+  // acting seat OR we are at a round boundary where re-seating the same seat
+  // is intentional).
+  const reportedValid = isRoundOver
+    ? reported >= 0 && reported < playersLength
+    : reported >= 0 && reported < playersLength && reported !== activeIndex
+
+  return {
+    index: reportedValid ? reported : modulo,
+    turn: currentTurn + 1,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Lazy-GC reaper
 // ---------------------------------------------------------------------------
 

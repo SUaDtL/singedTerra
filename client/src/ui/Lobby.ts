@@ -234,7 +234,7 @@ export class Lobby {
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      /* Fill the whole 800x500 stage (same size as the game field). The #app
+      /* Fill the whole 1200x600 stage (same size as the game field). The #app
          gold frame + CRT overlay still frame it; content is vertically centred,
          falling back to top-aligned + scroll when it would overflow. */
       #lobby .lobby-card {

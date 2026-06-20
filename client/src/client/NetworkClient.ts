@@ -700,8 +700,10 @@ export class NetworkClient implements GameClient {
 
   /**
    * Compute, for a turn-ending action, the 0-based SEAT INDEX active AFTER it commits
-   * AND whether it ends a round. Replays the applied log + the pending action through a
-   * throwaway engine (via the same shared replay path) and reads the resulting state.
+   * AND whether it ends a round. Derives the post-turn seat from the LIVE engine (which
+   * already reflects all of `appliedLog`) by cloning it, applying ONLY the pending action
+   * to the clone, ticking to completion, and reading the resulting state. This is O(1)
+   * per call — no throwaway `GameEngine` construction and no `appliedLog` replay loop.
    * Because the engine skips ELIMINATED tanks and re-seats the opener at a round
    * boundary, `index` is the death-aware/round-aware seat the server's raw modulo cursor
    * gets wrong (P0-3 + the round reset). `endsRound` is true iff the engine paused in the
@@ -709,11 +711,7 @@ export class NetworkClient implements GameClient {
    * be the seat that just fired). Deterministic — every client computes the same values.
    */
   private computeNextSeat(pending: NetworkAction): { index: number; endsRound: boolean } {
-    const tmp = new GameEngine(this.options as GameOptions);
-    for (const a of this.appliedLog) {
-      replayNetworkAction(tmp, a);
-      this.tickEngineToCompletion(tmp);
-    }
+    const tmp = this.engine.clone();
     replayNetworkAction(tmp, pending);
     this.tickEngineToCompletion(tmp);
     const st = tmp.getState();
