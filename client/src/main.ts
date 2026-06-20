@@ -129,11 +129,21 @@ function bootstrap(): void {
     // a networked "Waiting for…" surviving into a later hot-seat game (which has no
     // turn-watch to reset it).
     hud.setTurnWatch({ state: 'clear' });
+    // Explicitly tear down the end-of-game overlays. syncOverlay/syncRoundOver only
+    // hide them while the render loop runs; once we unsubscribe above, nothing would
+    // otherwise clear a lingering "{winner} wins!" banner when quitting to the menu
+    // (it would sit on top of the lobby) — #13.
+    hud.hideEndScreens();
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
     teardown();
+    // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
+    // callback. Restart (restartCb) and network rematch (onRematch) call startGame()
+    // directly, so without this a Restart issued while the lobby is showing (i.e. after
+    // a quit to menu) would run the fresh game behind the still-visible lobby (#13).
+    lobby.hide();
     currentConfig = config;
 
     const newClient = await createClient(config);
@@ -294,8 +304,9 @@ function bootstrap(): void {
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
+    // startGame() now hides the lobby itself (see its body), so the start callback no
+    // longer needs to — keeping lobby-visibility owned by a single place (#13).
     void startGame(config);
-    lobby.hide();
   });
 
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
