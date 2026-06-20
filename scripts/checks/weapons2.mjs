@@ -128,6 +128,49 @@ for (const [type, aim] of [
   else log(`PASS: ${type} two same-seed runs byte-identical (len ${a.length}).`);
 }
 
+// --- Robustness fuzz: every new weapon resolves (no crash/hang) across many seeds ×
+//     aims — exercises airburst splits near the field edge, napalm spread at columns
+//     0/1199, OOB bomblets, etc. — plus a determinism spot-check on sampled combos. ---
+{
+  const WEAPONS = ['mirv', 'deaths_head', 'riot_bomb', 'hot_napalm', 'dirt_bomb'];
+  const SEEDS = [0x1, 0x9, 0x1a3, 0xbeef, 0x5eed, 0xc0ffee, 0x1234, 0xfade, 0x77, 0xabcd];
+  const AIMS = [
+    { angle: 15, power: 85 }, { angle: 45, power: 60 }, { angle: 75, power: 50 },
+    { angle: 90, power: 35 }, { angle: 30, power: 75 },
+  ];
+  let runs = 0;
+  for (const type of WEAPONS) {
+    for (const seed of SEEDS) {
+      for (const aim of AIMS) {
+        try {
+          const e = new GameEngine({
+            players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }],
+            maxPlayers: 2, seed,
+          });
+          grant(e, 0, type);
+          fireTrace(e, { ...aim, weapon: type }); // throws on hang (MAX_TICKS) or engine error
+          runs++;
+        } catch (err) {
+          fail(`${type} @seed 0x${seed.toString(16)} ${JSON.stringify(aim)} crashed/hung: ${err && err.message}`);
+        }
+      }
+    }
+  }
+  log(`[fuzz] ${runs}/${WEAPONS.length * SEEDS.length * AIMS.length} runs resolved (${WEAPONS.length} weapons × ${SEEDS.length} seeds × ${AIMS.length} aims)`);
+  if (!failed) log('PASS: every new weapon resolves without crashing or hanging across many seeds/aims.');
+
+  // Determinism spot-check: sampled weapon/aim combos replay byte-identically.
+  for (const [type, aim] of [['deaths_head', { angle: 75, power: 50 }], ['hot_napalm', { angle: 30, power: 75 }], ['mirv', { angle: 45, power: 60 }]]) {
+    const one = () => {
+      const e = new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed: 0x1a3 });
+      grant(e, 0, type);
+      return serialize(fireTrace(e, { ...aim, weapon: type }).st);
+    };
+    if (one() !== one()) fail(`${type} fuzz combo DIVERGED across same-seed runs`);
+  }
+  if (!failed) log('PASS: fuzz determinism spot-check — sampled combos replay byte-identically.');
+}
+
 if (failed) {
   log('\nWEAPONS2 CHECK: FAILED');
   process.exit(1);
