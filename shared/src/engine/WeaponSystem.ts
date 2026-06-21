@@ -258,6 +258,40 @@ export const BATTERY_POWER_PER_UNIT = 10;
 export const BATTERY_ARMS_LEVEL = 2;
 
 /**
+ * Store descriptor for a purchasable accessory — the SINGLE source the store UI reads for an
+ * accessory's label / price / bundle / arms-gate. Mirrors the shape the UI already uses for
+ * {@link WeaponDefinition} (name/price/bundleSize/armsLevel) so a store row renders the same way
+ * for a weapon or an accessory.
+ */
+export interface AccessoryDefinition {
+  type: AccessoryType;
+  name: string;
+  price: number;
+  /** Units granted per purchase (display only; the engine applies the effect). */
+  bundleSize: number;
+  /** Minimum room arms level required to buy — gated in both `applyBuy` and the store UI. */
+  armsLevel: number;
+  /** One-line store blurb describing the effect. */
+  blurb: string;
+}
+
+/**
+ * Accessory catalog. Values are sourced FROM the battery constants above, so editing a constant can
+ * never desync the store label from the engine effect (guarded by `scripts/checks/accessories.mjs`).
+ * Single-membered today; the extension point for parachutes/fuel later.
+ */
+export const ACCESSORIES: Record<AccessoryType, AccessoryDefinition> = {
+  battery: {
+    type: 'battery',
+    name: 'Battery',
+    price: BATTERY_PRICE,
+    bundleSize: BATTERY_BUNDLE_SIZE,
+    armsLevel: BATTERY_ARMS_LEVEL,
+    blurb: `+${BATTERY_POWER_PER_UNIT * BATTERY_BUNDLE_SIZE} power cap`,
+  },
+};
+
+/**
  * Weapon definition table. MVP1 only implements Baby Missile + Missile; the
  * remaining entries are placeholders with rough tuning values so the type is
  * exhaustive and consumers can render a full shop UI later.

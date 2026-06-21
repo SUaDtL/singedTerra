@@ -1,7 +1,18 @@
 import type { GameState, TankState } from '@shared/types/GameState';
-import { WEAPONS } from '@shared/engine/WeaponSystem';
-import type { WeaponType } from '@shared/engine/WeaponSystem';
+import { WEAPONS, ACCESSORIES } from '@shared/engine/WeaponSystem';
+import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
 import type { ConnectionState, TurnWatch } from '../client/GameClient';
+
+/**
+ * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
+ * engine's `BuyAction` "exactly one of weapon/accessory" invariant. The HUD emits this and the
+ * caller (main.ts) forwards it verbatim into a `buy` action — so the store stays decoupled from the
+ * action/transport layer.
+ */
+export type StorePurchase = { weapon?: WeaponType; accessory?: AccessoryType };
+
+/** Accessories sold in the store, in stable record order (currently just Battery). */
+const STORE_ACCESSORIES: AccessoryType[] = Object.keys(ACCESSORIES) as AccessoryType[];
 
 /**
  * Weapons shown in the strip: only `implemented` ones, in stable WeaponSystem
@@ -67,9 +78,10 @@ export class HUD {
   /** Callback fired when the player quits a game back to the lobby (in-game Menu / game-over Main Menu). */
   private quitCb: (() => void) | null = null;
 
-  /** Callback fired when a store Buy button is clicked. Optional tankId targets a
-   *  specific tank (used by the ROUND_OVER between-rounds shop); omitted => active tank. */
-  private buyCb: ((weapon: WeaponType, tankId?: string) => void) | null = null;
+  /** Callback fired when a store Buy button is clicked. `purchase` carries exactly one of a weapon
+   *  or an accessory. Optional tankId targets a specific tank (used by the ROUND_OVER between-rounds
+   *  shop); omitted => active tank. */
+  private buyCb: ((purchase: StorePurchase, tankId?: string) => void) | null = null;
 
   /** Callback fired when the player starts the next round from the ROUND_OVER shop. */
   private nextRoundCb: (() => void) | null = null;
@@ -134,6 +146,16 @@ export class HUD {
   /** Per-store-row nodes (buy button + owned count), for cheap per-frame sync. */
   private storeCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
 
+  /** Per-accessory store-row nodes (PLAYER_TURN store) — battery etc. */
+  private storeAccessoryCells = new Map<AccessoryType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
+  /** Per-accessory cells in the ROUND_OVER between-rounds shop. */
+  private roundOverAccessoryCells = new Map<AccessoryType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
+
+  /** Room arms level (0–4), set once per game via {@link setArmsLevel}. Above-level store rows are
+   *  shown disabled. Defaults to the max (4 => nothing gated) for full back-compat. UI-only — the
+   *  engine independently enforces the same gate, so this never affects determinism. */
+  private armsLevel = 4;
+
   /** Per-weapon strip cells: button + its ammo-count node, for cheap per-frame updates. */
   private weaponCells = new Map<WeaponType, { el: HTMLButtonElement; ammo: HTMLElement }>();
 
@@ -167,13 +189,22 @@ export class HUD {
   }
 
   /** Register the callback fired when a store Buy button is clicked. */
-  onBuy(cb: (weapon: WeaponType, tankId?: string) => void): void {
+  onBuy(cb: (purchase: StorePurchase, tankId?: string) => void): void {
     this.buyCb = cb;
   }
 
   /** Register the callback fired when the player starts the next round. */
   onNextRound(cb: () => void): void {
     this.nextRoundCb = cb;
+  }
+
+  /**
+   * Set the room's arms level (0–4) so the store can show above-level weapons/accessories as locked.
+   * UI-only: the engine independently enforces the same gate in `applyBuy`, so a stale or unset value
+   * never causes a desync — it only changes which rows LOOK buyable. Called once at game creation.
+   */
+  setArmsLevel(level: number): void {
+    this.armsLevel = level;
   }
 
   // Touch-aim strip registrations (M2 mobile).
@@ -346,11 +377,40 @@ export class HUD {
       buyBtn.innerHTML =
         `<span class="st-hud__store-price">$${def.price.toLocaleString()}</span>` +
         `<span class="st-hud__store-bundle">+${def.bundleSize}</span>`;
-      buyBtn.addEventListener('click', () => this.buyCb?.(type));
+      buyBtn.addEventListener('click', () => this.buyCb?.({ weapon: type }));
 
       row.append(info, buyBtn);
       storeGrid.append(row);
       this.storeCells.set(type, { buyBtn, owned });
+    }
+
+    // Accessory rows (Battery etc.) — same row markup as weapons, but the buy emits an
+    // `accessory` purchase. The blurb (e.g. "+100 power cap") stands in for the bundle line.
+    for (const key of STORE_ACCESSORIES) {
+      const acc = ACCESSORIES[key];
+      const row = document.createElement('div');
+      row.className = 'st-hud__store-row';
+
+      const info = document.createElement('div');
+      info.className = 'st-hud__store-info';
+      const nm = document.createElement('span');
+      nm.className = 'st-hud__store-name';
+      nm.textContent = acc.name;
+      const owned = document.createElement('span');
+      owned.className = 'st-hud__store-owned';
+      info.append(nm, owned);
+
+      const buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'st-hud__store-buy';
+      buyBtn.innerHTML =
+        `<span class="st-hud__store-price">$${acc.price.toLocaleString()}</span>` +
+        `<span class="st-hud__store-bundle">${acc.blurb}</span>`;
+      buyBtn.addEventListener('click', () => this.buyCb?.({ accessory: key }));
+
+      row.append(info, buyBtn);
+      storeGrid.append(row);
+      this.storeAccessoryCells.set(key, { buyBtn, owned });
     }
 
     const storeClose = document.createElement('button');
@@ -432,9 +492,29 @@ export class HUD {
       owned.className = 'st-hud__store-bundle';
       buyBtn.append(nameSpan, priceSpan, owned);
       buyBtn.addEventListener('click', () => {
-        if (this.shopTankId) this.buyCb?.(type, this.shopTankId);
+        if (this.shopTankId) this.buyCb?.({ weapon: type }, this.shopTankId);
       });
       this.roundOverCells.set(type, { buyBtn, owned });
+      shopGrid.append(buyBtn);
+    }
+    // Accessory cells (Battery etc.) in the between-rounds shop — buy for the selected tank.
+    for (const key of STORE_ACCESSORIES) {
+      const acc = ACCESSORIES[key];
+      const buyBtn = document.createElement('button');
+      buyBtn.type = 'button';
+      buyBtn.className = 'st-hud__store-buy';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = acc.name;
+      const priceSpan = document.createElement('span');
+      priceSpan.className = 'st-hud__store-price';
+      priceSpan.textContent = `$${acc.price}`;
+      const owned = document.createElement('span');
+      owned.className = 'st-hud__store-bundle';
+      buyBtn.append(nameSpan, priceSpan, owned);
+      buyBtn.addEventListener('click', () => {
+        if (this.shopTankId) this.buyCb?.({ accessory: key }, this.shopTankId);
+      });
+      this.roundOverAccessoryCells.set(key, { buyBtn, owned });
       shopGrid.append(buyBtn);
     }
     this.roundOverShopEl.append(shopHead, shopGrid);
@@ -621,11 +701,28 @@ export class HUD {
     for (const [type, cell] of this.storeCells) {
       const def = WEAPONS[type];
       const slot = active?.inventory[type];
+      const locked = def.armsLevel > this.armsLevel;
       const owned = slot ? (slot.unlimited ? '∞' : String(slot.count)) : '0';
-      if (cell.owned.textContent !== `Own ${owned}`) cell.owned.textContent = `Own ${owned}`;
-      const affordable = canAct && credits >= def.price;
-      cell.buyBtn.disabled = !affordable;
-      cell.buyBtn.classList.toggle('st-hud__store-buy--disabled', !affordable);
+      const label = locked ? `🔒 Arms Lv ${def.armsLevel}` : `Own ${owned}`;
+      if (cell.owned.textContent !== label) cell.owned.textContent = label;
+      const buyable = canAct && !locked && credits >= def.price;
+      cell.buyBtn.disabled = !buyable;
+      cell.buyBtn.classList.toggle('st-hud__store-buy--disabled', !buyable);
+    }
+
+    // Accessory rows: owned-readout is the effect (battery => current power cap), gated by arms level.
+    for (const [key, cell] of this.storeAccessoryCells) {
+      const acc = ACCESSORIES[key];
+      const locked = acc.armsLevel > this.armsLevel;
+      const label = locked
+        ? `🔒 Arms Lv ${acc.armsLevel}`
+        : key === 'battery'
+          ? `Cap ${active?.powerCap ?? 100}`
+          : '';
+      if (cell.owned.textContent !== label) cell.owned.textContent = label;
+      const buyable = canAct && !locked && credits >= acc.price;
+      cell.buyBtn.disabled = !buyable;
+      cell.buyBtn.classList.toggle('st-hud__store-buy--disabled', !buyable);
     }
   }
 
@@ -880,8 +977,19 @@ export class HUD {
     for (const [type, cell] of this.roundOverCells) {
       const def = WEAPONS[type];
       const slot = tank?.inventory[type];
-      cell.owned.textContent = slot ? `have ${slot.count}` : '';
-      cell.buyBtn.disabled = !tank || tank.credits < def.price;
+      const locked = def.armsLevel > this.armsLevel;
+      cell.owned.textContent = locked ? `🔒 Lv ${def.armsLevel}` : slot ? `have ${slot.count}` : '';
+      cell.buyBtn.disabled = !tank || locked || tank.credits < def.price;
+    }
+    for (const [key, cell] of this.roundOverAccessoryCells) {
+      const acc = ACCESSORIES[key];
+      const locked = acc.armsLevel > this.armsLevel;
+      cell.owned.textContent = locked
+        ? `🔒 Lv ${acc.armsLevel}`
+        : key === 'battery'
+          ? `cap ${tank?.powerCap ?? 100}`
+          : '';
+      cell.buyBtn.disabled = !tank || locked || tank.credits < acc.price;
     }
   }
 

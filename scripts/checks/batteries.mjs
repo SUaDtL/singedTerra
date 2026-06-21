@@ -157,6 +157,29 @@ function midflightX(e, angle, power, K = 5) {
   if (!failed) log('PASS: replay raises the cap; the arms gate blocks a battery below its level.');
 }
 
+// --- Check 5c: a rebuilt network buy preserves `accessory` (guards the NetworkClient pass-through) ---
+// NetworkClient.sendAction REBUILDS a buy into a NetworkBuyAction before submitting. The historical
+// bug flattened it to `{ type:'buy', weapon: action.weapon }`, silently dropping a battery on the
+// wire. Mirror the fixed conditional-spread rebuild here and assert an accessory-only buy survives
+// it AND replays to a cap gain — so a future re-simplification of that rebuild fails loudly.
+{
+  const rebuild = (a) => ({
+    type: 'buy',
+    ...(a.weapon ? { weapon: a.weapon } : {}),
+    ...(a.accessory ? { accessory: a.accessory } : {}),
+  });
+  const wire = rebuild({ type: 'buy', accessory: 'battery' });
+  if (wire.accessory !== 'battery') fail('rebuilt network buy DROPPED accessory (the NetworkClient bug)');
+  if ('weapon' in wire) fail('rebuilt accessory-only buy spuriously carries a weapon field');
+
+  const e = engine();
+  e.getState().tanks[0].credits = 100000;
+  const capBefore = e.getState().tanks[0].powerCap;
+  replayNetworkAction(e, wire);
+  if (e.getState().tanks[0].powerCap !== capBefore + CAP_GAIN) fail('rebuilt network battery buy did not raise the cap on replay');
+  if (!failed) log('PASS: a rebuilt accessory-only network buy preserves accessory and replays to a cap gain.');
+}
+
 // --- Check 5b: the ENGINE is the authoritative power clamp (why the referee may relax to >100) ---
 // A networked fire row may carry power > 100 (a battery-boosted shot). On replay, EVERY client's
 // engine clamps set_power to that tank's powerCap, so an over-committed power is harmless and
