@@ -185,4 +185,4 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ ok: true, ...info }, 200)
-}))
+}, { rateLimit: 'restart_game' }))

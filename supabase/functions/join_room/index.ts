@@ -124,4 +124,4 @@ Deno.serve(withCors(async (body) => {
     options: roomOptions,
     players: updatedPlayers,
   }, 200)
-}))
+}, { rateLimit: 'join_room' }))

@@ -62,4 +62,4 @@ Deno.serve(withCors(async () => {
   }))
 
   return json({ rooms: roomsOut }, 200)
-}, { optionalBody: true }))
+}, { optionalBody: true, rateLimit: 'list_rooms' }))

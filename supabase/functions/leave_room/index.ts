@@ -66,4 +66,4 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ ok: true, roomDeleted: false, players: remaining }, 200)
-}))
+}, { rateLimit: 'leave_room' }))
