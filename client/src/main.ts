@@ -181,6 +181,10 @@ function bootstrap(): void {
     const newClient = await createClient(config);
     client = newClient;
 
+    // Tell the store which weapons/accessories are buyable in this room (UI gate only; the engine
+    // enforces it independently). Default 4 => everything buyable, matching the engine default.
+    hud.setArmsLevel(config.settings?.armsLevel ?? 4);
+
     // Seed the input handler's locally-tracked aim from the active tank so the
     // arrow keys step from that tank's real angle/power (set_angle/set_power
     // carry ABSOLUTE values). getState() may be null before the first snapshot.
@@ -352,9 +356,11 @@ function bootstrap(): void {
   // Register the store Buy callback ONCE on the persistent HUD. A buy is a
   // turn-neutral action: hot-seat applies it locally; network commits it to the
   // log (and the engine re-gates affordability + whose turn it is).
-  hud.onBuy((weapon, tankId) => {
+  hud.onBuy((purchase, tankId) => {
     markDirty(); // a buy changes ammo/credits surfaced in the scene — repaint next frame
-    client?.sendAction({ type: 'buy', weapon, ...(tankId ? { tankId } : {}) });
+    // `purchase` carries exactly one of weapon/accessory; forward it verbatim (the engine + referee
+    // re-validate the "exactly one" invariant, affordability, the arms gate, and whose turn it is).
+    client?.sendAction({ type: 'buy', ...purchase, ...(tankId ? { tankId } : {}) });
   });
 
   // Start the next round from the ROUND_OVER between-rounds shop. Like a turn
@@ -432,6 +438,11 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
       // so every client builds an identical engine — required for deterministic
       // lockstep across round boundaries. Undefined => single round.
       rounds:     config.settings?.rounds,
+      // SE-parity economy options — same sourcing as `rounds`: synced via the room row so
+      // every client's engine agrees (else interest/sudden-death/arms-gate would diverge).
+      interestRate:    config.settings?.interestRate,
+      suddenDeathTurn: config.settings?.suddenDeathTurn,
+      armsLevel:       config.settings?.armsLevel,
     };
 
     const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions);
@@ -454,6 +465,10 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
     // from the synced room row so every client's engine agrees (Slice 3), otherwise
     // engines would diverge on when a round ends. Networked play stays single-round.
     ...(settings?.rounds != null ? { rounds: settings.rounds } : {}),
+    // SE-parity economy options (hot-seat) — forwarded only when set, so engine defaults hold.
+    ...(settings?.interestRate != null ? { interestRate: settings.interestRate } : {}),
+    ...(settings?.suddenDeathTurn != null ? { suddenDeathTurn: settings.suddenDeathTurn } : {}),
+    ...(settings?.armsLevel != null ? { armsLevel: settings.armsLevel } : {}),
   });
   return new HotSeatClient(engine);
 }

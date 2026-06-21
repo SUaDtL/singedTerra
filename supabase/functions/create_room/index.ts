@@ -1,10 +1,15 @@
 import { withCors, json, getServiceClient, generateCode } from '../_shared/mod.ts'
+import { coerceEconomyOptions } from './validate.ts'
 
 Deno.serve(withCors(async (body) => {
   const { playerName, color, options, bots } = body as {
     playerName?: unknown
     color?: unknown
-    options?: { maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown }
+    options?: {
+      maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown
+      // SE-parity economy (optional, additive). Coerced by coerceEconomyOptions.
+      interestRate?: unknown; suddenDeathTurn?: unknown; armsLevel?: unknown
+    }
     // Optional CPU seats to seed into the room (single-player / fill-a-room).
     bots?: unknown
   }
@@ -135,6 +140,8 @@ Deno.serve(withCors(async (body) => {
     gravity: typeof options.gravity === 'number' ? options.gravity : 0.15,
     visibility,
     ...(rounds !== undefined ? { rounds } : {}),
+    // SE-parity economy — coerced + omitted-when-absent so every client builds an identical engine.
+    ...coerceEconomyOptions(options),
   }
 
   // Insert room

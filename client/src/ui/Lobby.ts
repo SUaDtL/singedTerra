@@ -31,6 +31,12 @@ export interface LobbySettings {
   seed?: number;
   /** Best-of-N match length, odd 1..9 (engine default 1 = single round). */
   rounds?: number;
+  /** Per-round credit interest rate, 0..0.5 (engine default 0 = no interest). */
+  interestRate?: number;
+  /** Sudden-death per-round turn threshold, integer ≥0 (engine default 0/absent = off). */
+  suddenDeathTurn?: number;
+  /** Arms-level store gate, integer 0..4 (engine default 4 = everything buyable). */
+  armsLevel?: number;
 }
 
 /** Configuration produced by the lobby once the player(s) are ready. */
@@ -75,6 +81,17 @@ const GRAVITY_DEFAULT = 0.15;
 const ROUNDS_MIN = 1;
 const ROUNDS_MAX = 9;
 const ROUNDS_DEFAULT = 1;
+// SE-parity economy bounds + engine defaults (shown as placeholders; blank/default => omitted).
+const INTEREST_MIN = 0;
+const INTEREST_MAX = 0.5;       // up to 50% per round
+const INTEREST_STEP = 0.05;
+const INTEREST_DEFAULT = 0;
+const SUDDEN_DEATH_MIN = 0;     // 0/blank => off
+const SUDDEN_DEATH_MAX = 50;
+const SUDDEN_DEATH_DEFAULT = 0;
+const ARMS_MIN = 0;
+const ARMS_MAX = 4;
+const ARMS_DEFAULT = 4;         // everything buyable (back-compat)
 
 /** Raw (string) working state for the advanced-settings inputs. */
 interface SettingsState {
@@ -82,6 +99,10 @@ interface SettingsState {
   gravity: string;
   seed: string;
   rounds: string;
+  interestRate: string;
+  suddenDeathTurn: string;
+  /** Arms level as a select value ('' = default/4). */
+  armsLevel: string;
 }
 
 /** A working row of player config state in the setup UI. */
@@ -114,7 +135,15 @@ type RoomVisibility = 'public' | 'private';
 /** Per-room engine options as stored on the room row / echoed by the Edge
  *  Functions. `rounds` (best-of-N) is optional for back-compat with rooms created
  *  before the match-structure feature; absent => single round. */
-type RoomOptions = { maxPlayers: number; maxWind: number; gravity: number; rounds?: number };
+type RoomOptions = {
+  maxPlayers: number;
+  maxWind: number;
+  gravity: number;
+  rounds?: number;
+  interestRate?: number;
+  suddenDeathTurn?: number;
+  armsLevel?: number;
+};
 
 /** A public room as returned by the list_rooms Edge Function. */
 interface BrowseRoom {
@@ -138,7 +167,7 @@ export class Lobby {
   private players: PlayerRowState[] = [];
 
   /** Raw working state for the advanced-settings inputs (blank = use default). */
-  private settings: SettingsState = { maxWind: '', gravity: '', seed: '', rounds: '' };
+  private settings: SettingsState = { maxWind: '', gravity: '', seed: '', rounds: '', interestRate: '', suddenDeathTurn: '', armsLevel: '' };
 
   /** Whether the advanced-settings <details> is open (persist across renders). */
   private settingsOpen = false;
@@ -154,6 +183,10 @@ export class Lobby {
   private onlineMaxWind = '';
   private onlineGravity = '';
   private onlineRounds = '';
+  private onlineInterestRate = '';
+  private onlineSuddenDeath = '';
+  /** Arms level select value for the room being created ('' = default/4). */
+  private onlineArmsLevel = '';
   /** Visibility for the room being created; defaults to public. */
   private onlineVisibility: RoomVisibility = 'public';
   /** Number of CPU opponents to seed into the room on create (0..maxPlayers-1). */
@@ -704,6 +737,18 @@ export class Lobby {
         min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT),
         hint: 'best-of-N, odd',
       }),
+      this.onlineNumberField('Interest', this.onlineInterestRate, (v) => { this.onlineInterestRate = v; }, {
+        min: INTEREST_MIN, max: INTEREST_MAX, step: INTEREST_STEP, placeholder: String(INTEREST_DEFAULT),
+        hint: 'per-round credit interest (0–0.5)',
+      }),
+      this.onlineNumberField('Sudden death', this.onlineSuddenDeath, (v) => { this.onlineSuddenDeath = v; }, {
+        min: SUDDEN_DEATH_MIN, max: SUDDEN_DEATH_MAX, step: 1, placeholder: String(SUDDEN_DEATH_DEFAULT),
+        hint: 'gravity ramps past this turn (0 = off)',
+      }),
+      this.onlineNumberField('Arms level', this.onlineArmsLevel, (v) => { this.onlineArmsLevel = v; }, {
+        min: ARMS_MIN, max: ARMS_MAX, step: 1, placeholder: String(ARMS_DEFAULT),
+        hint: '0 = basic … 4 = full arsenal',
+      }),
     );
     frag.append(details);
 
@@ -758,6 +803,7 @@ export class Lobby {
       const maxWind = parseNumber(this.onlineMaxWind);
       const gravity = parseNumber(this.onlineGravity);
       const rounds = this.parseOnlineRounds();
+      const economy = this.parseOnlineEconomy();
 
       // Build CPU seats with palette colors unique vs the creator + each other.
       const used = new Set<string>([this.onlineColor]);
@@ -779,6 +825,7 @@ export class Lobby {
           ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
           ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
           ...(rounds !== undefined ? { rounds } : {}),
+          ...economy,
         },
       };
 
@@ -823,6 +870,7 @@ export class Lobby {
           ? clamp(parseNumber(this.onlineGravity)!, GRAVITY_MIN, GRAVITY_MAX)
           : GRAVITY_DEFAULT,
         ...(rounds !== undefined ? { rounds } : {}),
+        ...economy,
       };
       this.waitingThisPlayerReady = false;
       this.onlineSubView = 'waiting';
@@ -1440,6 +1488,11 @@ export class Lobby {
         // (a per-client value would desync the deterministic lockstep). Absent on
         // pre-feature rooms => engine defaults to a single round.
         ...(room.options.rounds !== undefined ? { rounds: room.options.rounds } : {}),
+        // SE-parity economy — same sourcing as rounds: from the synced room row, so every
+        // client builds an identical engine. Absent on pre-feature rooms => engine defaults.
+        ...(room.options.interestRate !== undefined ? { interestRate: room.options.interestRate } : {}),
+        ...(room.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: room.options.suddenDeathTurn } : {}),
+        ...(room.options.armsLevel !== undefined ? { armsLevel: room.options.armsLevel } : {}),
       },
     };
     this.onReady(config);
@@ -1940,6 +1993,27 @@ export class Lobby {
         placeholder: String(ROUNDS_DEFAULT),
         hint: 'best-of-N, odd',
       }),
+      this.numberField('Interest', 'interestRate', {
+        min: INTEREST_MIN,
+        max: INTEREST_MAX,
+        step: INTEREST_STEP,
+        placeholder: String(INTEREST_DEFAULT),
+        hint: 'per-round credit interest (0–0.5)',
+      }),
+      this.numberField('Sudden death', 'suddenDeathTurn', {
+        min: SUDDEN_DEATH_MIN,
+        max: SUDDEN_DEATH_MAX,
+        step: 1,
+        placeholder: String(SUDDEN_DEATH_DEFAULT),
+        hint: 'gravity ramps past this turn (0 = off)',
+      }),
+      this.numberField('Arms level', 'armsLevel', {
+        min: ARMS_MIN,
+        max: ARMS_MAX,
+        step: 1,
+        placeholder: String(ARMS_DEFAULT),
+        hint: '0 = basic … 4 = full arsenal',
+      }),
     );
 
     return details;
@@ -2005,6 +2079,21 @@ export class Lobby {
       out.rounds = clamped % 2 === 0 ? clamped + 1 : clamped;
     }
 
+    const interestRate = parseNumber(this.settings.interestRate);
+    if (interestRate !== undefined) {
+      out.interestRate = clamp(interestRate, INTEREST_MIN, INTEREST_MAX);
+    }
+
+    const suddenDeathTurn = parseNumber(this.settings.suddenDeathTurn);
+    if (suddenDeathTurn !== undefined) {
+      out.suddenDeathTurn = clamp(Math.trunc(suddenDeathTurn), SUDDEN_DEATH_MIN, SUDDEN_DEATH_MAX);
+    }
+
+    const armsLevel = parseNumber(this.settings.armsLevel);
+    if (armsLevel !== undefined) {
+      out.armsLevel = clamp(Math.trunc(armsLevel), ARMS_MIN, ARMS_MAX);
+    }
+
     return Object.keys(out).length > 0 ? out : undefined;
   }
 
@@ -2018,6 +2107,22 @@ export class Lobby {
     if (raw === undefined) return undefined;
     const clamped = clamp(Math.trunc(raw), ROUNDS_MIN, ROUNDS_MAX);
     return clamped % 2 === 0 ? clamped + 1 : clamped;
+  }
+
+  /**
+   * Parse the online SE-parity economy inputs (interest / sudden-death / arms-level) into clamped
+   * values, omitting blanks. Shared by the create-room body and the local waitingOptions so both
+   * agree on exactly what the room is created with (and thus what every client's engine builds).
+   */
+  private parseOnlineEconomy(): { interestRate?: number; suddenDeathTurn?: number; armsLevel?: number } {
+    const out: { interestRate?: number; suddenDeathTurn?: number; armsLevel?: number } = {};
+    const interest = parseNumber(this.onlineInterestRate);
+    if (interest !== undefined) out.interestRate = clamp(interest, INTEREST_MIN, INTEREST_MAX);
+    const sudden = parseNumber(this.onlineSuddenDeath);
+    if (sudden !== undefined) out.suddenDeathTurn = clamp(Math.trunc(sudden), SUDDEN_DEATH_MIN, SUDDEN_DEATH_MAX);
+    const arms = parseNumber(this.onlineArmsLevel);
+    if (arms !== undefined) out.armsLevel = clamp(Math.trunc(arms), ARMS_MIN, ARMS_MAX);
+    return out;
   }
 
   /** Grow/shrink the working player list, assigning unique default colors. */

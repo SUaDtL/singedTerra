@@ -307,3 +307,45 @@ engine-only + one contract-touching, all determinism-harness-validated.
 - Final state: `npm run check` exit 0 (typecheck + 38 harnesses); `check:edge` 41 passed. The
   `fix-determinism` lens found NOTHING — the AI effective-gravity wiring is lockstep-safe (every client's
   engine is at the same turn, so all compute the identical plan).
+
+---
+
+# Sprint: se-parity-ui (2026-06-21) — UI exposure of the SE-parity economy
+
+Spec: `.codearbiter/specs/se-parity-ui.md` · Plan: `.codearbiter/plans/se-parity-ui.md` · Branch:
+`feat/se-parity-ui` (cut from `feat/se-parity-economy`, carries the unmerged engine commit 7552170).
+
+## Spec-gate decisions (user, 2026-06-21)
+- Arms-level visual store gate: **IN** (UI-only `HUD.setArmsLevel`, no GameState/determinism change).
+- Scope: **full hot-seat + networked** (additive `create_room` change + NetworkClient accessory fix).
+
+## Auto-decisions (append-only)
+
+- **[high] Execution mode: direct orchestrator implementation, not per-task fresh subagents.**
+  Options: (a) dispatch one fresh subagent per task per subagent-driven-development; (b) implement
+  directly in this context. SMARTS: the 14 tasks have heavy file overlap (`HUD.ts` in B1/B2/F1,
+  `main.ts` in B3/D2/E4/F2, `Lobby.ts` in D1/D2/E1/E4) — fresh subagents would each re-read the same
+  large files and risk edit races; a single coherent context is lower-drift here. Gate discipline
+  preserved: harness-first for testable seams, typecheck per slice, full `npm run check` + `deno test`
+  before commit-gate. Chosen (b). Confidence high (the value of fresh contexts — no accumulated drift —
+  is outweighed by the coordination cost on tightly-coupled shared-file edits).
+
+- **[high] armsLevel control as a number field, not a `<select>`.** Spec suggested a 0–4 select. Used
+  the existing `numberField`/`onlineNumberField` helpers (0–4 integer input + descriptive hint "0 =
+  basic … 4 = full arsenal") in BOTH forms instead. SMARTS: a select needs a new string-bound helper
+  in two places for marginal UX gain; the number field reuses tested code and stays consistent across
+  both forms. Confidence high; trivially upgradeable to a select later if playtest wants labels.
+- **[high] `parseOnlineEconomy()` shared helper.** The create-room body and the local `waitingOptions`
+  MUST agree on the values (else the host's engine could differ from what the room stores). Extracted
+  one parse helper used by both, mirroring the existing `parseOnlineRounds()`. Confidence high.
+- **[high] `create_room/validate.ts` extraction.** AC1 needs a unit-testable coercion seam without a
+  live Supabase. Extracted a pure `coerceEconomyOptions` (mirrors `submit_action/validate.ts`) +
+  Deno tests. Coercion is omit-on-invalid (never 400s) so a bad economy value can't fail room
+  creation. Confidence high.
+- **[high] Verification:** `npm run check` (typecheck + 39 harnesses) green; `npm run build` clean;
+  `check:edge` 57 passed (incl. 6 new create_room cases). New harness `accessories.mjs` (drift guard)
+  + `batteries.mjs` check 5c (NetworkClient rebuild contract) added to the chain.
+
+## Owed at close (Receipt)
+- OPS: `npm run deploy:backend` — additive `create_room` (economy fields) + battery referee shape.
+- Manual 2-browser networked playtest + hot-seat arms-gate/battery/interest visual check.
