@@ -52,6 +52,14 @@ export interface GameClient {
   /** Latest known game state, or null before the first snapshot. */
   getState(): GameState | null;
 
+  /**
+   * The engine's EFFECTIVE gravity for the current turn (SE-parity sudden death). The AI
+   * driver feeds this to the shot planner so a bot aims with the gravity the engine will
+   * actually fly the shot under (base gravity until sudden death escalates). Delegates to
+   * the underlying GameEngine in both clients, so it can never drift from the simulation.
+   */
+  getEffectiveGravity(): number;
+
   /** Subscribe to state changes. Returns an unsubscribe function. */
   onStateChange(listener: (state: GameState) => void): () => void;
 

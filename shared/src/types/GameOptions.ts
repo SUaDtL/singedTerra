@@ -33,4 +33,30 @@ export interface GameOptions {
    * position reset. See docs/SPRINT6_MATCH_STRUCTURE.md.
    */
   rounds?: number;
+  /**
+   * Per-round credit interest rate (V1 SE-parity economy). At each ROUND_OVER boundary
+   * every tank earns `floor(credits * interestRate)` on its carried (post-payout)
+   * balance, adding save-vs-spend tension to the between-rounds shop. Defaults to 0 (no
+   * interest — full back-compat). INTEGER-floored so a networked replay never drifts on a
+   * fractional credit. A single-round match (`rounds` 1) has no boundary, so none applies.
+   */
+  interestRate?: number;
+  /**
+   * Sudden-death stalemate-breaker (V1 SE-parity match-flow). When set to a turn index `T`,
+   * effective gravity ramps up as a PURE FUNCTION of the PER-ROUND turn (turns since THIS
+   * round began): it equals the base gravity while `roundTurn <= T` and
+   * `base * (1 + (roundTurn - T) * ramp)` once `roundTurn > T`, shrinking max range each turn
+   * so an entrenched duel within a round must resolve. PER-ROUND (not match-global): every
+   * round of a best-of-N match starts fresh at base gravity, so a long earlier round never
+   * carries escalation into the next. Absent/0 => off (back-compat). Physics-input only (no
+   * terrain mutation); same round-turn => same gravity on every client.
+   */
+  suddenDeathTurn?: number;
+  /**
+   * Arms-level store gate (V1 SE-parity economy, 0–4). A purchase whose weapon `armsLevel`
+   * exceeds this is rejected engine-side, so a room can be a "basic" (low-level) duel or a
+   * full-arsenal brawl. Defaults to the max (4 => everything buyable — back-compat). Gates
+   * the store only; the opening loadout is unaffected.
+   */
+  armsLevel?: number;
 }

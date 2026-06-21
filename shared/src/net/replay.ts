@@ -1,5 +1,5 @@
 import type { GameEngine } from '../engine/GameEngine';
-import type { WeaponType } from '../engine/WeaponSystem';
+import type { WeaponType, AccessoryType } from '../engine/WeaponSystem';
 
 /**
  * The networked action log contract — the SHARED source of truth.
@@ -33,7 +33,11 @@ export interface NetworkShieldAction {
 }
 export interface NetworkBuyAction {
   type:    'buy';
-  weapon:  string;
+  /** The weapon to buy. Present for a weapon purchase; omitted when `accessory` is set. */
+  weapon?: string;
+  /** A non-weapon accessory to buy (SE-parity, e.g. `'battery'`). Present for an accessory
+   *  purchase; omitted for a weapon buy. Additive + optional — weapon-only rows are unchanged. */
+  accessory?: string;
   /** The tank buying. Present only in the ROUND_OVER shop (per-tank shopping); omitted during a normal turn. */
   tankId?: string;
 }
@@ -100,7 +104,10 @@ export function replayNetworkAction(engine: GameEngine, action: NetworkAction): 
     case 'buy':
       engine.applyAction({
         type:   'buy',
-        weapon: action.weapon as WeaponType,
+        // Exactly one of weapon/accessory is set; pass through only what is present so an
+        // accessory buy (battery) carries no spurious weapon and vice versa.
+        ...(action.weapon ? { weapon: action.weapon as WeaponType } : {}),
+        ...(action.accessory ? { accessory: action.accessory as AccessoryType } : {}),
         ...(action.tankId ? { tankId: action.tankId } : {}),
       });
       return;

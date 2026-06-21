@@ -239,6 +239,25 @@ export const CREDITS_PER_DAMAGE = 80;   // 100-dmg kill => 8000
 export const TURN_STIPEND = 500;        // flat income per shot fired
 
 /**
+ * Purchasable accessories — non-weapon economy items bought through the same `buy` action
+ * (its optional `accessory` field) but NOT held in the weapon inventory. The union is the
+ * extension point for parachutes/fuel later; today only Battery is wired.
+ */
+export type AccessoryType = 'battery';
+
+/**
+ * Battery accessory economy (SE-parity). A Battery raises a tank's `powerCap` above the 100
+ * baseline so a player can INVEST credits to extend range on the 1200px field. Values are
+ * the canonical Scorched Earth 1991 catalog ($5000 / bundle of 10, +10 power per unit,
+ * arms-level 2 — see docs/reference/scorched_earth_1991_catalog.ts) as NAMED, playtest-
+ * tunable constants. One purchase grants the whole bundle: +PER_UNIT*BUNDLE_SIZE cap.
+ */
+export const BATTERY_PRICE = 5000;
+export const BATTERY_BUNDLE_SIZE = 10;
+export const BATTERY_POWER_PER_UNIT = 10;
+export const BATTERY_ARMS_LEVEL = 2;
+
+/**
  * Weapon definition table. MVP1 only implements Baby Missile + Missile; the
  * remaining entries are placeholders with rough tuning values so the type is
  * exhaustive and consumers can render a full shop UI later.

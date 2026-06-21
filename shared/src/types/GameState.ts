@@ -163,6 +163,13 @@ export interface TankState {
   angle: number;
   /** 0–100. */
   power: number;
+  /**
+   * Maximum firing power this tank may dial (SE-parity Battery accessory). Defaults to 100
+   * (the baseline cap); each bought Battery raises it by BATTERY_POWER_PER_UNIT*bundle. The
+   * engine clamps `set_power` to [0, powerCap], so a battery-equipped tank can over-power a
+   * shot for extra range. Carries across rounds like inventory. Deterministic integer.
+   */
+  powerCap: number;
   /** 0–100. */
   health: number;
   /** V1 movement fuel. */
