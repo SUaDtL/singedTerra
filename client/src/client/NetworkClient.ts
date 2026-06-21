@@ -383,7 +383,12 @@ export class NetworkClient implements GameClient {
         // Always name the buyer's OWN tank: in ROUND_OVER the engine routes a buy by
         // tankId, and the referee only accepts a buy for your own seat. (We ignore any
         // tankId the HUD passed — a networked player can only spend their own credits.)
-        this.submitAction({ type: 'buy', weapon: action.weapon, tankId: engineTankId }, true, undefined, 0, true);
+        this.submitAction({
+          type: 'buy',
+          ...(action.weapon ? { weapon: action.weapon } : {}),
+          ...(action.accessory ? { accessory: action.accessory } : {}),
+          tankId: engineTankId,
+        }, true, undefined, 0, true);
         return;
       }
       if (action.type === 'next_round') {
@@ -408,7 +413,11 @@ export class NetworkClient implements GameClient {
     // credit/inventory change) but it does not end the turn. During a normal turn the
     // engine buys for the ACTIVE tank (no tankId), so the referee turn-gates it.
     if (action.type === 'buy') {
-      this.submitAction({ type: 'buy', weapon: action.weapon });
+      this.submitAction({
+        type: 'buy',
+        ...(action.weapon ? { weapon: action.weapon } : {}),
+        ...(action.accessory ? { accessory: action.accessory } : {}),
+      });
       return;
     }
 
