@@ -1003,7 +1003,14 @@ export class HUD {
     const ranked = [...state.tanks].sort(
       (a, b) => b.roundWins - a.roundWins || b.totalDamage - a.totalDamage,
     );
-    const cell = (text: string, cls: string): string => `<span class="${cls}">${text}</span>`;
+    // SECURITY: playerName is peer-controlled in networked play (server-validated
+    // only for non-empty/len/uniqueness, NOT for HTML). Escape every interpolated
+    // value so a name like `<svg/onload=…>` renders as inert text, not live markup.
+    const esc = (s: string): string =>
+      s.replace(/[&<>"']/g, (c) =>
+        c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;',
+      );
+    const cell = (text: string, cls: string): string => `<span class="${cls}">${esc(text)}</span>`;
     const head =
       cell('Player', 'st-hud__score-th') +
       (multi ? cell('Wins', 'st-hud__score-th st-hud__score-num') : '') +

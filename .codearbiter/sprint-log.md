@@ -349,3 +349,48 @@ Spec: `.codearbiter/specs/se-parity-ui.md` · Plan: `.codearbiter/plans/se-parit
 ## Owed at close (Receipt)
 - OPS: `npm run deploy:backend` — additive `create_room` (economy fields) + battery referee shape.
 - Manual 2-browser networked playtest + hot-seat arms-gate/battery/interest visual check.
+
+---
+
+# Sprint: checkpoint-quick-kills (2026-06-21)
+
+Spec/plan: `.codearbiter/specs/checkpoint-quick-kills.md`, `plans/checkpoint-quick-kills.md`.
+Source: the 6-reviewer checkpoint `.codearbiter/checkpoints/2026-06-21.md` — the 8 findings tagged
+(quick-kill → sprint). User approved spec + plan at the Phase 1 gate before autonomy.
+
+## Auto-decisions
+
+- **[high] XSS fix: escape inside `cell()`, not a `textContent` rebuild.** T1 had two routes — (a)
+  rebuild the rows with `document.createElement` + `.textContent`, or (b) add an `esc()` HTML-escaper
+  applied to every interpolated value inside the existing `cell()` helper. SMARTS: (b) is the smaller,
+  lower-risk diff, preserves the working layout, and is future-proof (every cell escaped, not just
+  today's `name`). Chose (b). `client/src/ui/HUD.ts` buildScoreboard. Confidence high.
+- **[high] XSS sink audit came back clean elsewhere.** Grepped all 13 `playerName`/`playerLabel`
+  refs in HUD.ts: 246/667/670/763/810/848/854/909/912/951/962 all assign via `.textContent`; 958 is
+  `innerHTML = ''` (clear). `buildScoreboard:1024` was the ONLY `innerHTML` sink with user data. No
+  further change needed. Confidence high.
+- **[high] `playerId` log: truncate to an 8-char prefix, not drop.** T5 — `this.playerId?.slice(0, 8)`
+  keeps session-distinguishing diagnostic value without exposing the full identity token. Confidence high.
+- **[high] config.toml: disable `[auth]` only.** T4 — set `enabled`/`enable_signup` false in the
+  `[auth]` block (lines 29-33) ONLY; left the `enabled = true` under `[api]`/`[db]`/`[realtime]`/
+  `[studio]` untouched (required subsystems). Confidence high.
+- **[high] `random.mjs` asserts the documented NaN/Infinity coincidence, not distinctness.** `hashSeed`
+  folds every non-finite seed to `0x9e3779b9`, so `createRng(NaN)` and `createRng(Infinity)` SHARE a
+  stream by design — the harness pins that fold + reproducibility/range, rather than wrongly demanding
+  they differ. Confidence high.
+- **[high] `resync_guard.mjs`: extend, don't duplicate.** Check B/D already cover `seq==nextExpected`
+  and one-behind; added only a new Check F for the uncovered extreme values (large gap, ±Infinity,
+  negative seq). Confidence high.
+
+## Verification (fresh run)
+- `npm run check`: typecheck clean + 41 harnesses green (38 existing + new `math.mjs`, `random.mjs`;
+  extended `resync_guard.mjs`). `npm run check:edge`: 57 Deno cases passed. `tsx@^4.19.0` now
+  lockfile-pinned (3 packages added). Determinism unbroken.
+
+## Hard gates
+- None tripped. The XSS fix is trust-boundary-adjacent but ADDS escaping (bypasses no control) — flagged
+  for the commit-gate security pass. No `/override`, no migration, no merge-to-default (auto open-PR).
+
+## Owed at close (Receipt)
+- OPS: the `_shared/mod.ts` pin (`@2.107.0`) and `config.toml` `[auth]=false` take effect on the NEXT
+  `npm run deploy:backend` — NOT deployed by this sprint (source-only change).

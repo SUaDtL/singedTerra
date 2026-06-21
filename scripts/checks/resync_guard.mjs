@@ -89,5 +89,24 @@ const fail = (m) => { failed = true; log('FAIL: ' + m); };
   if (!failed) log('PASS: simulation — stale row excluded from Map; contiguous + ahead rows retained.');
 }
 
+// --- Check F: extreme values (the gap Check D didn't cover) ---
+// A huge seq gap (e.g. a very late joiner / long match) must still buffer, never
+// be mistaken for stale; Infinity is treated as "ahead"; and a (malformed)
+// negative seq below nextExpectedSeq must be dropped, not crash the guard.
+{
+  const cases = [
+    { seq: 1_000_000, next: 5,        expected: true,  label: 'seq=1e6,next=5 (large forward gap — buffer)' },
+    { seq: Infinity,  next: 5,        expected: true,  label: 'seq=Infinity,next=5 (ahead — buffer)' },
+    { seq: 5,         next: Infinity, expected: false, label: 'seq=5,next=Infinity (stale vs ∞ cursor — drop)' },
+    { seq: -1,        next: 5,        expected: false, label: 'seq=-1,next=5 (negative/malformed — drop, no crash)' },
+  ];
+  let fFailed = false;
+  for (const { seq, next, expected, label } of cases) {
+    const got = shouldBufferSeq(seq, next);
+    if (got !== expected) { fail(`F: ${label} → expected ${expected}, got ${got}`); fFailed = true; }
+  }
+  if (!fFailed) log('PASS: extreme values (large gap, ±Infinity, negative seq) handled without misclassification.');
+}
+
 if (failed) { log('\nRESYNC_GUARD CHECK: FAILED'); process.exit(1); }
 else { log('\nRESYNC_GUARD CHECK: PASSED'); process.exit(0); }

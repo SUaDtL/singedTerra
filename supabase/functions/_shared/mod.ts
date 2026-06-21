@@ -10,7 +10,9 @@
 // browser/Node TypeScript with their own toolchains). The Edge Functions are thin
 // referees, not the physics engine — see CLAUDE.md "Layering / dependency direction".
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// Pinned to an exact version: a floating `@2` re-resolves on any `deno cache
+// --reload` and would silently advance all 10 functions to a new minor/patch.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.107.0'
 
 // ---------------------------------------------------------------------------
 // CORS + request preamble
