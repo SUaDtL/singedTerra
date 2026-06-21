@@ -31,7 +31,7 @@ function engine(rounds) {
     maxPlayers: 2, seed: SEED, rounds,
   });
 }
-function tickToRest(e) { let t = 0; while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; } }
+function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 function fireHit(e) {
   e.applyAction({ type: 'select_weapon', weapon: HIT_P2.weapon });
   e.applyAction({ type: 'set_angle', angle: HIT_P2.angle });

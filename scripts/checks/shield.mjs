@@ -55,7 +55,7 @@ function freshEngine() {
 
 function tickToRest(e) {
   let t = 0;
-  while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; }
+  while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; }
   if (t >= MAX_TICKS) throw new Error('never resolved (infinite flight/fire)');
 }
 

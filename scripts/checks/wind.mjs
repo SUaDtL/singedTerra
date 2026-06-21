@@ -49,7 +49,7 @@ function windSequence(n, seed) {
     engine.applyAction({ type: 'fire' });
 
     let ticks = 0;
-    while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+    while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
       engine.tick();
       ticks++;
     }

@@ -235,27 +235,89 @@ export function deform(
 }
 
 /**
+ * Number of pixels a settling column advances per engine tick during the
+ * animated end-of-turn collapse. Exported so GameEngine can reference the
+ * constant without duplicating the literal. Playtest-tunable — do not inline.
+ */
+export const COLLAPSE_PX_PER_TICK = 4;
+
+/**
+ * Advance the per-column "dirt falls" settle by AT MOST `pxPerTick` pixels per
+ * column per call. Uses a SAND model: only UNSUPPORTED solid pixels (those with
+ * air directly below) fall, by exactly 1px per sub-step. `pxPerTick` sub-steps
+ * are run per column per call (with early-exit if the column is fully settled).
+ *
+ * Scanning bottom-up each sub-step: when a solid at y has air at y+1, the solid
+ * swaps down (bitmap[y+1]=1, bitmap[y]=0). This means an entire floating run
+ * descends exactly 1px per sub-step (the vacated row is filled by the grain
+ * above; the gap rises to the top of the floating mass). Supported grains (solid
+ * directly below, or resting on the canvas floor) never move.
+ *
+ * Properties:
+ *   - Strictly downward-only: no solid pixel ever moves upward.
+ *   - Solid-count conserved: no pixel is created or destroyed per column.
+ *   - Supported ground is preserved: if a solid's lower neighbour is solid it
+ *     never moves, so a resting floor stays in place while a floating overhang
+ *     above it descends independently.
+ *   - Convergence parity: looping to convergence produces a result byte-identical
+ *     to a single applyGravity call on the same input bitmap (all solids end at
+ *     the bottom of each column, same final compacted state).
+ *   - Termination: converges in at most ceil(CANVAS_HEIGHT / pxPerTick) calls.
+ *   - Deterministic: no Math.random, no Date, no wall-clock reads.
+ *
+ * Returns `true` iff any pixel moved this call; `false` once fully settled.
+ */
+export function settleStep(
+  bitmap: Uint8Array,
+  xStart: number,
+  xEnd: number,
+  pxPerTick: number,
+): boolean {
+  const lo = Math.max(0, xStart);
+  const hi = Math.min(CANVAS_WIDTH - 1, xEnd);
+  let anyMoved = false;
+
+  for (let x = lo; x <= hi; x++) {
+    // Run up to pxPerTick one-pixel sub-steps for this column.
+    for (let s = 0; s < pxPerTick; s++) {
+      let movedThisSubstep = false;
+      // Scan bottom-up (y from H-2 down to 0): a solid at y with air at y+1
+      // falls one pixel. Bottom-up scan ensures a floating run shifts down as
+      // a whole unit in a single pass (each grain clears the row below it for
+      // the grain above).
+      for (let y = CANVAS_HEIGHT - 2; y >= 0; y--) {
+        if (bitmap[y * CANVAS_WIDTH + x] === 1 && bitmap[(y + 1) * CANVAS_WIDTH + x] === 0) {
+          bitmap[(y + 1) * CANVAS_WIDTH + x] = 1;
+          bitmap[y * CANVAS_WIDTH + x] = 0;
+          movedThisSubstep = true;
+          anyMoved = true;
+        }
+      }
+      if (!movedThisSubstep) break; // column fully settled — no more sub-steps needed
+    }
+  }
+
+  return anyMoved;
+}
+
+/**
  * Per-column "dirt falls" pass (SPEC §4.1). For each column x in the inclusive
  * [xStart, xEnd] range (clamped to the canvas), count its solid pixels then
  * rewrite the column so all solids are compacted to the BOTTOM: air for
  * y in [0, H-count), solid for y in [H-count, H). Pure integer ops, run once
  * per explosion over the columns deform() actually touched.
+ *
+ * Re-expressed as a loop over settleStep to convergence, preserving identical
+ * external behavior (byte-identical result) while reusing the stepped logic.
  */
 export function applyGravity(
   bitmap: Uint8Array,
   xStart: number,
   xEnd: number,
 ): void {
-  const lo = Math.max(0, xStart);
-  const hi = Math.min(CANVAS_WIDTH - 1, xEnd);
-  for (let x = lo; x <= hi; x++) {
-    let count = 0;
-    for (let y = 0; y < CANVAS_HEIGHT; y++) {
-      if (bitmap[y * CANVAS_WIDTH + x] === 1) count++;
-    }
-    const top = CANVAS_HEIGHT - count;
-    for (let y = 0; y < CANVAS_HEIGHT; y++) {
-      bitmap[y * CANVAS_WIDTH + x] = y < top ? 0 : 1;
-    }
-  }
+  // Drive settleStep to convergence with an unbounded step size to match the
+  // original single-pass instant compaction. Using CANVAS_HEIGHT as the step
+  // guarantees each column compacts in exactly one settleStep iteration,
+  // preserving the byte-identical result callers depend on.
+  while (settleStep(bitmap, xStart, xEnd, CANVAS_HEIGHT)) { /* settle */ }
 }

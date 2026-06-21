@@ -43,10 +43,10 @@ function makeEngine(seed) {
   });
 }
 
-/** Tick until out of FIRING phase (settle a projectile in flight). */
+/** Tick until out of FIRING/RESOLVING phase (settle a projectile in flight). */
 function tickToRest(e) {
   let t = 0;
-  while (e.getState().phase === 'FIRING' && t < MAX_TICKS) {
+  while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) {
     e.tick();
     t++;
   }

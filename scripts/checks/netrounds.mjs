@@ -36,7 +36,7 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 
 function players(n) { return Array.from({ length: n }, (_, i) => ({ name: `P${i + 1}`, color: PALETTE[i] })); }
 function engine(n, rounds) { return new GameEngine({ players: players(n), maxPlayers: n, seed: SEED, rounds }); }
-function tickToRest(e) { let t = 0; while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; } }
+function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 
 // Apply a logged NetworkAction through the canonical SHARED replay path (the same
 // call the live NetworkClient makes), then settle any projectile flight.
