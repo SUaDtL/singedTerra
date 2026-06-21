@@ -218,10 +218,10 @@ Turn timeout (V1): 30s per turn, configurable.
 | Cluster Bomb | **Apex airburst**: flies as one shell, splits at the top of its arc into 5 bomblets that fan out and fall ballistically, each cratering where it lands |
 | Shield | Places a damage-absorbing shield on your tank (defensive) |
 
-Implemented today (`implemented: true`): **Baby Missile, Missile, Heavy Missile,
-Dirt Bomb, Cluster Bomb, Baby Nuke, Nuke, Funky Bomb, Napalm, Bouncing Betty**
-(ten). Only **Shield** remains a stub (`implemented: false`) — present
-in the table with rough tuning; Sprint 4 Slice 3 implements it + V1 the shop.
+Implemented today (`implemented: true`): **all eleven** weapons in the table
+above, **Shield** included (the damage-absorbing defensive force field). None
+remain stubs. (Four premium tiers have since been added to the engine beyond
+this V1 list: **MIRV**, **Death's Head**, **Riot Bomb**, and **Hot Napalm**.)
 
 **Ammo economy (Sprint 4).** Each tank carries a finite inventory:
 `TankState.inventory` is `Record<WeaponType, AmmoEntry>` where
