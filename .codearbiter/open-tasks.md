@@ -34,14 +34,17 @@ budget harness (`flightticks.mjs`, worst 700 vs 10k cap); AI-plan determinism ha
 
 ## Performance & scaling
 
-- Cache a per-column surface array (invalidated by `terrainVersion`) or binary-search `surfaceAt` (currently an O(H)=600-deep top-down scan called per burning column per tick AND per fire cell per render frame). Cheapest slice: compute surfaces once per frame in `drawFire`. `shared/src/engine/Terrain.ts:175-181`, `GameEngine.ts:990-1004`, `client/src/renderer/Renderer.ts:523-572`. [M/M]
-- Start `applyGravity`'s column passes at the crater's `yStart` (already returned by `deform`) instead of y=0 — halves+ the per-detonation pixel work; cluster/MIRV detonate many times per shot. `shared/src/engine/Terrain.ts:244-261`. [M/S]
-- Parse explosion color ONCE at burst spawn (store `[r,g,b]`) instead of regex-parsing `b.color` every frame for every live burst (7+ simultaneous on cluster/MIRV). `client/src/renderer/Renderer.ts:325-362, 467-510`. [M/S]
-- Skip the full redraw when nothing is animating (idle PLAYER_TURN redraws sky+sun-gradient+tanks 60×/sec for a static scene — dominant idle cost on low-end/mobile, drains battery). Gate `render()` on phase===FIRING || bursts || effects || shake || fire || input change. `client/src/main.ts:203-217`, `client/src/renderer/Renderer.ts:222-316`. [M/M]
+✅ **6 completed in PR #25 (`perf-housekeeping-batch`), 2026-06-21.** Per-column `surfaceAt`
+cache invalidated by `terrainVersion` (replaces the O(H) per-tick scan) + per-frame `drawFire`
+surface memo; parse explosion color once at burst spawn; idle-redraw skip (gates `render()` on
+FIRING/RESOLVING / live bursts / fire / shake / effects / input-change); code-split
+`@supabase/supabase-js` into its own ~211 kB (~55 kB gzip) chunk, lazy-imported and out of the
+hot-seat initial bundle; remove the dead `/socket.io` dev proxy; trim napalm
+`syncFire`/`processFire` per-tick allocations. All engine changes byte-identical under the
+determinism harnesses. See `sprint-log.md`.
+
+- **Deferred (attempted in PR #25, found NOT equivalent):** start `applyGravity`'s column passes at the crater's `yStart` instead of y=0. The crater top (`deform`'s `yMin`, the topmost CLEARED pixel) does NOT bound the topmost SOLID pixel that must fall — a hillside leaves a floating overhang above `yStart`, so raising the scan's lower bound strands those solids and changes the compacted bitmap (a determinism break). Needs a per-column topmost-solid bound, not `yStart`. `shared/src/engine/Terrain.ts` settleStep. [M/M]
 - Coarse-then-refine the AI shot search: `hard` sweeps ~6800 candidates × up to 1600 ticks each, run synchronously on EVERY client in networked mode → frame stalls in bot rooms. Coarse grid then fine-search around the best; early-out on near-target. Keep search order deterministic. `shared/src/engine/AI.ts:269-340`. [M/M]
-- Code-split `@supabase/supabase-js` behind a dynamic `import()` taken only when entering networked mode, so hot-seat (the common path) ships a smaller initial bundle. Run `vite build` first to confirm chunk sizes. `client/vite.config.ts`, NetworkClient import site. [M/M]
-- Remove the dead `socket.io` proxy block (`/socket.io` → localhost:3000) — the socket.io stack was deleted; this is stale config that can trip dev startup. `client/vite.config.ts:13-20`. [L/S]
-- Trim napalm per-tick allocations: `syncFire` spreads+maps+sorts a fresh array every burning tick, and `processFire` copies all fire keys every tick — keep `state.fire` sorted incrementally / collect only expired keys. `shared/src/engine/GameEngine.ts:1006-1044`. [L/S]
 
 - Swap Realtime transport from Postgres Changes to Realtime **Broadcast**: have the referee broadcast the committed action row directly instead of relying on the WAL/replication listener — cuts broadcast latency and per-room replication cost at scale. Decided direction (CONFIRM-03 = stay Supabase, optimize in place). `client/src/client/NetworkClient.ts` channel setup, `supabase/functions/submit_action/index.ts`. [M/M]
 - Document Cloudflare Durable Objects / PartyKit as the DESIGNATED transport successor with an explicit trigger condition (Realtime connection-limit pressure OR move toward a serious/mobile release). Capture the migration sketch (DO = per-room coordinator: in-memory seq, WebSocket fan-out, action-log in DO storage; engine + `shared/net/replay.ts` unchanged). Governance note, not code. [L/S]
@@ -86,15 +89,17 @@ terrain strata coloring; client-side projectile smoke trail (ring buffer); tank 
 
 ## Housekeeping / governance
 
-- Enact the intended MIT license: add a `LICENSE` file + `license: "MIT"` to the package.json files and decide whether to drop `private: true`.
+✅ **2 completed in PR #25, 2026-06-21:** enacted the MIT license (`LICENSE` + `license: "MIT"` on all three manifests; `private: true` retained, since dropping it to publish is a separate decision); reconciled the `NEXT_TURN` → `ROUND_OVER` doc drift in CLAUDE.md / SPEC.md / TASKS.md.
+
 - (Optional) Add a linter (ESLint/Biome) or formally decide to stay `tsc --noEmit`-only (current state). Surfaced during context extraction.
 - (Optional) Wire `deno check`/`deno lint` for the Edge Functions into a committed script (Deno is installed locally but not in any committed check). Overlaps with the Edge Function test task above.
 - Carried: Issue #16 — Hot Napalm ignition flash reuses regular Napalm's visual def; cosmetic. Plus the queued feel-tuning playtest of audio/juice/aim/weapon-balance (needs the user's eyes).
-- Reconcile doc-vs-code drift: CLAUDE.md/SPEC say `NEXT_TURN`; the real `GamePhase` enum is `ROUND_OVER` (NEXT_TURN is an internal transient). Update the docs to match code.
 
 ## Sprint stabilize-and-juice-2 follow-ups (from PR Phase-4 review)
 
-- Add a harness pinning the animated-collapse in-flight-flush paths specifically: path A (projectiles still in flight → `flushSettleInstant`), path B (game-ending instant flush), path D (fire-burning flush). The deferred-flush decision tree in `GameEngine.tick()` currently rides on the pre-existing suite + `collapse_engine.mjs` (which exercises the animate path C); A/B/D aren't directly asserted. `shared/src/engine/GameEngine.ts`, `scripts/checks/`. [L/S]
+✅ **2 completed in PR #25, 2026-06-21:** `collapse_flush.mjs` now directly asserts the
+in-flight-flush paths A (projectile-in-flight → instant flush), B (game-ending → GAME_OVER), and
+D (fire-burning); `postOnceWithRetry` gained an inter-attempt backoff + `attempts<1` clamp,
+covered by three new `netretry.mjs` cases.
 - KNOWN DEVIATION (accepted, documented): same-tick multi-detonation now collides blast #2 against blast #1's un-compacted overhang (deferred-settle trade-off — deterministic, NOT a desync). If pre-animated-collapse gameplay parity is ever wanted, the only clean route is compact-immediately + replay-the-collapse-delta-as-overlay (a larger redesign). Revisit only if playtest shows it matters. `shared/src/engine/GameEngine.ts` path-A comment. [M/L]
-- `postOnceWithRetry` (the `finish_game` retry) has no backoff and no `attempts<1` guard; the call site hardcodes 2 so it's harmless today. Add a small delay between attempts + a guard if the helper is reused. `client/src/client/retry.ts`. [L/S]
 - Manual 2-browser networked playtest owed: confirm (a) animated collapse renders + a tank visibly sinks during RESOLVING; (b) join/reconnect mid-RESOLVING replays cleanly (NetworkClient `FIRING||RESOLVING` fix); (c) buffered back-to-back shots flush correctly after the settle (rAF `wasBusy` fix). Tuning: `COLLAPSE_PX_PER_TICK=4` feel.
