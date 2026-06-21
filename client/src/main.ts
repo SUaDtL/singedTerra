@@ -47,6 +47,20 @@ function bootstrap(): void {
   const audio = new AudioEngine();
   audio.unlockOnGesture();
 
+  // Render idle-skip (perf): the rAF render loop (onStateChange) fires ~60fps even
+  // when a PLAYER_TURN scene is fully static (sky + sun-gradient + tanks redrawn for
+  // nothing — the dominant idle cost on low-end/mobile). `renderDirty` forces a redraw
+  // on the next frame after any input/aim/weapon change (or a fresh game / phase
+  // change) so HUD/aim feedback stays instant; otherwise the loop skips the canvas
+  // redraw whenever renderer.isAnimating() is false. Conservative: when in doubt we
+  // redraw. Declared up here so the keydown handlers below can mark dirty too.
+  let renderDirty = true;
+  const markDirty = (): void => { renderDirty = true; };
+  // Last phase seen by the render loop; a phase change always forces one redraw so the
+  // settling frame of a transition (e.g. into a static PLAYER_TURN, ROUND_OVER, or
+  // GAME_OVER) is painted even when isAnimating() has already gone false.
+  let lastPhase: GameState['phase'] | null = null;
+
   // Detonation bloom: a brief warm light-bleed over the play field, paired with
   // the boom + screen-shake. Reduced-motion users get audio but no flash.
   const prefersReducedMotion =
@@ -88,6 +102,7 @@ function bootstrap(): void {
       hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
     } else if (e.code === 'KeyG' && !e.repeat) {
       const on = renderer.toggleAimGuide();
+      markDirty(); // show/hide the aim guide on the next frame even on a static turn
       hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
     }
   });
@@ -129,6 +144,11 @@ function bootstrap(): void {
     client?.stop();
     client = null;
     lastActiveId = null;
+    // Force a full redraw on the next game's first frame, and clear the phase latch so
+    // its opening phase counts as a change (otherwise the fresh static PLAYER_TURN
+    // could be skipped because isAnimating() is false and nothing marked us dirty).
+    renderDirty = true;
+    lastPhase = null;
     activeIsAi = false;
     aiActedKey = null;
     // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
@@ -172,6 +192,9 @@ function bootstrap(): void {
     // player's keys would drive the bot's tank.
     const newInput = new InputHandler(canvas, (action) => {
       if (activeIsAi) return;
+      // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
+      // aim guide / HUD update instantly even when the idle-skip gate would skip.
+      markDirty();
       // UI feedback ticks (presentation only). The launch boom comes from the
       // renderer's FIRING transition, so 'fire' needs nothing here.
       if (action.type === 'set_angle' || action.type === 'set_power') audio.aimTick();
@@ -219,7 +242,22 @@ function bootstrap(): void {
       // derive angle/power from the drag vector (pivot = body top, y − 16).
       if (activeTank) newInput.setActiveTankScreenPos(activeTank.x, activeTank.y - 16);
 
-      renderer.render(state);
+      // A phase change always warrants one redraw (e.g. the settling frame into a
+      // static PLAYER_TURN / ROUND_OVER / GAME_OVER, which isAnimating() may already
+      // report as idle).
+      if (state.phase !== lastPhase) {
+        lastPhase = state.phase;
+        markDirty();
+      }
+
+      // Idle-skip: only repaint the canvas when something can visibly change this
+      // frame (anything animating) OR an input/aim/weapon change marked us dirty. A
+      // static PLAYER_TURN scene is otherwise redrawn at 60fps for nothing. The HUD
+      // (cheap DOM diff) still updates every frame so turn/score/wind stay live.
+      if (renderDirty || renderer.isAnimating(state)) {
+        renderer.render(state);
+        renderDirty = false;
+      }
       hud.update(state, newClient.isFiring ?? false);
 
       // When the active player changes, re-seed the input handler's aim AND
@@ -228,6 +266,9 @@ function bootstrap(): void {
       // their own selected weapon. Neither setter emits an action.
       if (state.activePlayerId !== lastActiveId) {
         lastActiveId = state.activePlayerId;
+        // Active tank changed (turn handoff): the emphasis + aim-guide ownership
+        // shift, so force at least one redraw even if the new scene is static.
+        markDirty();
         const next = state.tanks.find((t) => t.id === state.activePlayerId);
         if (next) {
           newInput.setAim(next.angle, next.power);
@@ -273,6 +314,9 @@ function bootstrap(): void {
       client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
       client?.sendAction({ type: 'set_angle', angle: plan.angle });
       client?.sendAction({ type: 'set_power', power: plan.power });
+      // The bot's barrel swing happens during the static PLAYER_TURN phase, so force
+      // a redraw to show it (no human input marked us dirty for the CPU's turn).
+      markDirty();
     }, AI_AIM_DELAY));
     aiTimers.push(setTimeout(() => {
       client?.sendAction(plan.weapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
@@ -297,6 +341,7 @@ function bootstrap(): void {
   // Tab/Q cycling stays in sync with the mouse pick. client/input are the
   // mutable per-game closure vars (null between teardown and startGame).
   hud.onWeaponSelect((weapon) => {
+    markDirty(); // weapon pick can change aim-guide/HUD context — repaint next frame
     client?.sendAction({ type: 'select_weapon', weapon });
     input?.setWeapon(weapon);
   });
@@ -305,6 +350,7 @@ function bootstrap(): void {
   // turn-neutral action: hot-seat applies it locally; network commits it to the
   // log (and the engine re-gates affordability + whose turn it is).
   hud.onBuy((weapon, tankId) => {
+    markDirty(); // a buy changes ammo/credits surfaced in the scene — repaint next frame
     client?.sendAction({ type: 'buy', weapon, ...(tankId ? { tankId } : {}) });
   });
 

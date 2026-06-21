@@ -25,6 +25,13 @@ const BARREL_VISUAL_LEN = 22;
 const TANK_BODY_TOP_OFFSET = 16;
 
 /**
+ * Frames to keep redrawing after the renderer last spawned a transient effect
+ * (debris/smoke/sparks/floating damage text). Must be >= the longest particle
+ * lifetime spawned by EffectsRenderer (≈70 frames) so the idle-skip gate never
+ * stops redrawing while a particle is still alive. Conservative on purpose. */
+const EFFECTS_BUSY_FRAMES = 80;
+
+/**
  * Optional sink the renderer emits gameplay-feel events to (audio, etc.). Kept as
  * a thin interface so the renderer stays DECOUPLED from the AudioEngine — main.ts
  * wires an adapter. Both hooks are presentation-only and derive from the same
@@ -81,6 +88,14 @@ interface Burst {
   radius: number;
   /** CSS color string for this burst (from the firing weapon). */
   color: string;
+  /**
+   * `color` parsed to an [r,g,b] triple ONCE at spawn, so the per-frame draw never
+   * re-runs the regex/hex parse (cluster/MIRV puts 7+ bursts on-screen at once, each
+   * drawn every frame for its whole life). Identical visuals — just cached.
+   */
+  rgb: [number, number, number];
+  /** White-hot core ([r,g,b]), derived from `rgb` once at spawn (drawn every frame). */
+  core: [number, number, number];
   /** Lifetime of this burst in frames (from the firing weapon). */
   lifeFrames: number;
   /** Visual flavor: 'blast' (expanding rings) vs 'cluster' (punchier flash). */
@@ -168,6 +183,18 @@ export class Renderer {
 
   /** Current screen-shake magnitude (px), decays each frame. Client-only juice. */
   private shake = 0;
+
+  /**
+   * Frame count remaining during which transient EffectsRenderer particles
+   * (debris/smoke/sparks/floating text) may still be on-screen. Set to
+   * EFFECTS_BUSY_FRAMES every time this renderer spawns any effect, and decremented
+   * once per render(); while > 0 the idle-skip gate ({@link isAnimating}) keeps
+   * redrawing. We track it here rather than querying EffectsRenderer so this file
+   * (Cluster B) stays self-contained; EFFECTS_BUSY_FRAMES covers the longest particle
+   * lifetime (≈70 frames), so the cap is conservative — it can only over-draw, never
+   * freeze a live particle.
+   */
+  private effectsBusy = 0;
   /** Honor reduced-motion: when true, no screen-shake. */
   private readonly reduceMotion: boolean;
 
@@ -275,6 +302,7 @@ export class Renderer {
     this.prevHealth.clear();
     this.smokeThrottle.clear();
     this.shake = 0;
+    this.effectsBusy = 0;
     this.wasFiring = false;
     this.effects.clear();
     this.projectile.clear();
@@ -315,6 +343,11 @@ export class Renderer {
     // then advance all transient particles one frame.
     this.trackDamage(state);
     this.effects.update();
+
+    // Tick down the transient-effects busy window. trackDamage / consumeExplosion /
+    // spawnMuzzleFlash (re)set it whenever they spawn particles; once it hits 0 and
+    // nothing else is live, the idle-skip gate (isAnimating) may skip future frames.
+    if (this.effectsBusy > 0) this.effectsBusy--;
 
     const ctx = this.ctx;
 
@@ -404,6 +437,39 @@ export class Renderer {
   }
 
   /**
+   * Idle-skip gate (perf): is anything on-screen still capable of VISIBLY changing
+   * this frame purely from existing renderer/game state? main.ts calls this to skip
+   * the full redraw of an otherwise-static PLAYER_TURN scene (sky + sun + tanks at
+   * 60fps drains battery on low-end/mobile). Conservative by design — it returns
+   * true whenever in doubt, and main.ts also forces a redraw on any input/aim change
+   * and on the first frame after a teardown/reset. It NEVER gates FIRING/RESOLVING.
+   *
+   * Returns true when:
+   *   - phase is FIRING or RESOLVING (projectile in flight / shot resolving), OR
+   *   - any live explosion burst, lingering scorch decal, or active napalm fire, OR
+   *   - screen-shake is still decaying, OR
+   *   - transient effect particles may still be on-screen (effectsBusy window), OR
+   *   - a damaged-tier alive tank is emitting continuous smoke (perpetual juice).
+   * When NONE hold, the scene is static and the frame can be safely skipped.
+   */
+  isAnimating(state: GameState): boolean {
+    if (state.phase === 'FIRING' || state.phase === 'RESOLVING') return true;
+    if (this.bursts.length > 0) return true;
+    if (this.scorches.length > 0) return true;
+    if (state.fire.length > 0) return true;
+    if (state.projectiles.length > 0) return true;
+    if (this.shake > 0) return true;
+    if (this.effectsBusy > 0) return true;
+    // Continuous damage smoke keeps emitting while any tank sits in the damaged tier,
+    // so that is a live animation that must keep redrawing (and keep trackDamage's
+    // throttle advancing) until the tank heals/dies/is buried.
+    for (const tank of state.tanks) {
+      if (tank.alive && !tank.buried && damageTier(tank.health) === 'damaged') return true;
+    }
+    return false;
+  }
+
+  /**
    * Run all per-frame audio edge detectors and emit to the event sink.
    * Called once per render() after consumeExplosion so the explosion high-water
    * mark is already updated.  Modifies prevFireLen, prevBounces, and
@@ -472,11 +538,16 @@ export class Renderer {
     for (const ex of events) {
       if (ex.id > this.lastSeenExplosionId) {
         this.lastSeenExplosionId = ex.id;
+        // Parse the burst color ONCE here (not per draw frame): a cluster/MIRV puts
+        // many bursts on-screen simultaneously, each re-drawn every frame of its life.
+        const rgb = parseColor(ex.color);
         this.bursts.push({
           cx: ex.cx,
           cy: ex.cy,
           radius: ex.radius,
           color: ex.color,
+          rgb,
+          core: lighten(rgb, 0.75), // white-hot center, derived once
           lifeFrames: ex.durationFrames,
           style: ex.style,
           age: 0,
@@ -504,7 +575,12 @@ export class Renderer {
         anyNew = true;
       }
     }
-    if (anyNew) this.events?.onExplosion(maxNewRadius);
+    if (anyNew) {
+      this.events?.onExplosion(maxNewRadius);
+      // Ejecta particles (debris/smoke/sparks) outlive the burst itself, so keep the
+      // idle-skip gate redrawing until they can no longer be on-screen.
+      this.effectsBusy = EFFECTS_BUSY_FRAMES;
+    }
   }
 
   /**
@@ -519,6 +595,7 @@ export class Renderer {
     const px = shooter.x + Math.cos(rad) * BARREL_VISUAL_LEN;
     const py = shooter.y - TANK_BODY_TOP_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
     this.effects.spawnMuzzle(px, py, shooter.angle, shooter.color);
+    this.effectsBusy = EFFECTS_BUSY_FRAMES; // muzzle sparks live a few frames
   }
 
   /**
@@ -544,6 +621,9 @@ export class Renderer {
           // Turret-pop + wreck debris burst on the alive→dead transition.
           this.effects.spawnWreck(tank.x, tank.y, tank.color);
         }
+        // Floating damage text / K.O. flourish / wreck debris linger past this frame;
+        // keep the idle-skip gate redrawing until they expire.
+        this.effectsBusy = EFFECTS_BUSY_FRAMES;
       }
       this.prevHealth.set(tank.id, tank.health);
 
@@ -650,8 +730,8 @@ export class Renderer {
       if (r > 0) {
         // Full opacity while growing, then ease the fade across the long tail.
         const fade = t < GROW ? 1 : 1 - (t - GROW) / (1 - GROW);
-        const base = parseColor(b.color);
-        const core = lighten(base, 0.75); // white-hot center
+        const base = b.rgb;   // parsed once at spawn (see consumeExplosion)
+        const core = b.core;  // white-hot center, derived once at spawn
         const grad = ctx.createRadialGradient(b.cx, b.cy, 0, b.cx, b.cy, r);
         grad.addColorStop(0, `rgba(${core[0] | 0}, ${core[1] | 0}, ${core[2] | 0}, ${fade})`);
         grad.addColorStop(0.55, `rgba(${base[0] | 0}, ${base[1] | 0}, ${base[2] | 0}, ${fade * 0.92})`);
@@ -778,13 +858,27 @@ export class Renderer {
     // (cells below this read as full-strength; only the dying tail fades).
     const FULL = 36;
 
+    // Memoize the per-column surface for THIS frame: surfaceAt is an O(H) top-down
+    // scan, and each burning column is queried twice below (glow pass + flame pass),
+    // often with adjacent cells sharing a column. Compute each column's surface once
+    // here and reuse it in both passes (render-only; the engine's surfaceAt is untouched).
+    const surfaceByColumn = new Map<number, number>();
+    const surfaceFor = (x: number): number => {
+      let sy = surfaceByColumn.get(x);
+      if (sy === undefined) {
+        sy = surfaceAt(state.terrain, x);
+        surfaceByColumn.set(x, sy);
+      }
+      return sy;
+    };
+
     ctx.save();
 
     // Pass 1: a soft ember glow hugging the ground (additive warmth under the
     // flames), one low wide blob per cell — cheap and reads as a fire pool.
     ctx.globalCompositeOperation = 'lighter';
     for (const cell of fire) {
-      const sy = surfaceAt(state.terrain, cell.x);
+      const sy = surfaceFor(cell.x);
       const t = Math.min(1, cell.life / FULL);
       ctx.globalAlpha = 0.05 + 0.07 * t;
       ctx.fillStyle = '#ff5a1f';
@@ -796,7 +890,7 @@ export class Renderer {
     // shorter yellow-hot core. Adjacent columns merge into a wall of fire.
     for (const cell of fire) {
       const sx = cell.x;
-      const sy = surfaceAt(state.terrain, cell.x);
+      const sy = surfaceFor(cell.x);
       const t = Math.min(1, cell.life / FULL);
       const h = (9 + 15 * t) * (0.7 + Math.random() * 0.55); // flicker height
       const tip = sx + (Math.random() * 2 - 1) * 2;          // wind-licked tip
