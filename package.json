@@ -24,6 +24,6 @@
     "concurrently": "^8.2.2",
     "netlify-cli": "^26.1.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.4"
+    "typescript": "^6.0.3"
   }
 }
