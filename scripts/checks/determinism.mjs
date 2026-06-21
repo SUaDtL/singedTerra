@@ -49,7 +49,7 @@ function runGame(seed) {
   let ticks = 0;
   // After `fire`, phase is FIRING and projectile is non-null. tick() resolves
   // back to PLAYER_TURN with projectile === null on impact / OOB.
-  while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+  while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
     engine.tick();
     ticks++;
   }

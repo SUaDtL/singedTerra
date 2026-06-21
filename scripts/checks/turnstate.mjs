@@ -86,7 +86,7 @@ function runGame(n) {
 
     // Tick the shot to resolution (back to PLAYER_TURN or GAME_OVER).
     let ticks = 0;
-    while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+    while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
       engine.tick();
       ticks++;
     }

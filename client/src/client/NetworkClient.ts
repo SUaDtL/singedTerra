@@ -7,8 +7,9 @@ import type { AiDifficulty } from '@shared/types/GameState';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
-import { replayNetworkAction, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
+import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 import { shouldBufferSeq } from '@shared/net/seqGuard';
+import { postOnceWithRetry } from './retry';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -208,11 +209,21 @@ export class NetworkClient implements GameClient {
       throw new Error(`NetworkClient: failed to fetch action log: ${error.message}`);
     }
 
+    // Number of rows to replay per event-loop turn. Keeps the tab responsive for
+    // late joiners replaying a long action log. Named constant — playtest-tunable.
+    const REPLAY_CHUNK_SIZE = 16;
+
+    const rows = (existingActions ?? []) as RoomActionRow[];
     this.isReplaying = true;
-    for (const row of (existingActions ?? []) as RoomActionRow[]) {
-      this.applyNetworkAction(row.action);
-      this.tickToCompletion();
-    }
+    await replayInChunks(
+      rows,
+      (row) => {
+        this.applyNetworkAction(row.action);
+        this.tickToCompletion();
+      },
+      REPLAY_CHUNK_SIZE,
+      () => new Promise<void>((r) => setTimeout(r, 0)),
+    );
     this.isReplaying = false;
 
     // nextExpectedSeq is now the count of replayed actions.
@@ -300,14 +311,17 @@ export class NetworkClient implements GameClient {
    */
   start(): void {
     const loop = () => {
-      const wasFiring = this.engine.getState().phase === 'FIRING';
+      const preTick = this.engine.getState().phase;
+      const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
       this.engine.tick();
-      // When a shot's flight just RESOLVED (FIRING -> PLAYER_TURN/GAME_OVER), drain
-      // the NEXT buffered action. flushPendingActions only applies one turn-ending
-      // action at a time (it stops once the engine re-enters FIRING), so the RAF
-      // loop is what advances the queue between shots — this is what prevents a
-      // buffered N+1 from being dropped while N is still in flight (P0-2).
-      if (wasFiring && this.engine.getState().phase !== 'FIRING') {
+      const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
+      // When the engine LEAVES the entire flight-resolution sequence (FIRING then
+      // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
+      // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
+      // the engine re-enters FIRING, so the RAF loop advances the queue between
+      // shots — this prevents a buffered N+1 from being dropped while N is still
+      // in the settle phase (P0-2 + RESOLVING regression).
+      if (wasBusy && !nowBusy) {
         this.flushPendingActions();
       }
       this.emitState();
@@ -731,26 +745,27 @@ export class NetworkClient implements GameClient {
     };
   }
 
-  /** Tick any engine until it leaves FIRING (bounded). */
+  /** Tick any engine until it leaves FIRING and RESOLVING (bounded). */
   private tickEngineToCompletion(engine: GameEngine): void {
     let t = 0;
-    while (engine.getState().phase === 'FIRING' && t < 10_000) { engine.tick(); t++; }
+    while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && t < 10_000) { engine.tick(); t++; }
   }
 
   /**
-   * Tick the engine forward until the phase exits FIRING (i.e., reaches
-   * PLAYER_TURN, NEXT_TURN, RESOLVING, or GAME_OVER). Must be called after
-   * every applyNetworkFireAction() to ensure the engine is ready for the next
-   * action.
+   * Tick the engine forward until the phase exits FIRING and RESOLVING (i.e.,
+   * reaches PLAYER_TURN, ROUND_OVER, or GAME_OVER). Must be called after every
+   * applyNetworkAction() for a fire/shield to ensure the engine completes both
+   * the projectile-flight phase (FIRING) and the terrain-collapse settle phase
+   * (RESOLVING) before the next action is accepted.
    *
    * Hard cap of 10,000 ticks prevents an infinite loop if game state is corrupt.
-   * At 16ms/tick a full ballistic arc is typically 100–500 ticks; 10,000 is safe.
+   * At 16ms/tick a full ballistic arc + settle is typically 100–800 ticks; 10,000 is safe.
    */
   private tickToCompletion(): void {
     const MAX_TICKS = 10_000;
     let ticks = 0;
     while (
-      this.engine.getState().phase === 'FIRING' &&
+      (this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING') &&
       ticks < MAX_TICKS
     ) {
       this.engine.tick();
@@ -934,23 +949,42 @@ export class NetworkClient implements GameClient {
       kills:       t.kills,
       totalDamage: t.totalDamage,
     }));
-    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finish_game`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+    const body = JSON.stringify({
+      roomId:   this.roomId,
+      playerId: this.playerId,
+      winnerId,
+      rounds:     state.totalRounds,
+      scoreboard,
+    });
+    // Fire-and-forget with one retry on transient failure. The server's
+    // UNIQUE(room_id) on match_scores makes a duplicate POST idempotent.
+    // A non-ok HTTP response is treated as a transient failure (thrown inside
+    // the fn) so the retry fires. On final failure we log and move on.
+    void postOnceWithRetry(
+      async () => {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finish_game`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+            },
+            // playerId lets finish_game authorize the caller as a room member (P2-9).
+            body,
+          },
+        );
+        if (!res.ok) {
+          throw new Error(`finish_game HTTP ${res.status}`);
+        }
+        return res;
       },
-      // playerId lets finish_game authorize the caller as a room member (P2-9).
-      body: JSON.stringify({
-        roomId:   this.roomId,
-        playerId: this.playerId,
-        winnerId,
-        rounds:     state.totalRounds,
-        scoreboard,
-      }),
-    }).catch(err => {
-      console.error('NetworkClient: finish_game error:', err);
+      2,
+    ).then((result) => {
+      if (!result.ok) {
+        console.error('NetworkClient: finish_game error:', result.error);
+      }
     });
   }
 }

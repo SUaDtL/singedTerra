@@ -28,7 +28,7 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 function engine(seed) {
   return new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed });
 }
-function tickToRest(e) { let t = 0; while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; } }
+function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 
 /** Apply one AI turn for the active tank; returns false if the bot could not act.
  *  Mirrors the real drivers: a 'shield' plan becomes use_shield, not a fire. */

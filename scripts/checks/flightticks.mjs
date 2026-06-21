@@ -103,7 +103,7 @@ function flyShot(seed, weapon, angle, power) {
   engine.applyAction({ type: 'fire' });
 
   let ticks = 0;
-  while (engine.getState().phase === 'FIRING' && ticks < LOOP_CAP) {
+  while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < LOOP_CAP) {
     engine.tick();
     ticks++;
   }

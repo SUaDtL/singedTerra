@@ -34,7 +34,7 @@ const OPTS = {
 function makeEngine() { return new GameEngine(OPTS); }
 function tickToCompletion(e) {
   let t = 0;
-  while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; }
+  while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; }
 }
 // 'p1' -> 0, 'p3' -> 2, etc.
 const seatIndex = (id) => Number(String(id).replace(/[^0-9]/g, '')) - 1;

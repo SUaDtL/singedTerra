@@ -102,3 +102,142 @@ Phase-1 STOP gate. Branch `sprint/stabilize-and-juice`.
 - Standup marker `.codearbiter/.markers/standup-2026-06-20` deliberately EXCLUDED from the sprint commit (unrelated /ca:standup artifact).
 - **Auto-decisions:** all logged here; **zero `low`-confidence** survived to review (clean run — the safe-cut scope kept SMARTS verdicts strong throughout). No hard gates tripped.
 - **Follow-ups:** (1) update `docs`/`open-tasks.md` to mark the 9 backlog items done (post-merge hygiene, mirrors PR #20 pattern); (2) manual canvas/audio playtest checklist in PR #21; (3) deferred: thud-vs-clang audio (needs engine signal), + the two held-out heavyweights (animated collapse, referee re-derive seat).
+
+---
+
+# Sprint: stabilize-and-juice-2 (2026-06-20)
+
+Spec `specs/stabilize-and-juice-2.md` + plan `plans/stabilize-and-juice-2.md` — USER-APPROVED at the
+Phase-1 STOP gate ("approved"). Branch `sprint/stabilize-and-juice-2`. Follow-up to PR #21; takes on
+the held-out heavy item (animated terrain collapse) + 2 safe-cut netcode companions.
+
+## Phase 1 — spec & plan decisions (interactive gate, user-attributed)
+
+- **Scope tier:** user chose "Take on a heavy item" (over safe-cut / safe-cut+signal). (User-decided.)
+- **Heavy item:** user chose "Animated terrain collapse" (over referee seat re-derivation, which would
+  hard-gate). (User-decided.)
+- **Priority:** user chose "Balanced". (User-decided.)
+- **Spec + plan approval:** user typed "approved". Interactive STOP gate cleared; autonomy begins.
+
+## Phase 2 — execution auto-decisions
+
+- **[high] Subagent granularity = one fresh subagent per acceptance criterion (4), not per plan-task (9).**
+  `tdd` is test-first, so each AC's failing-harness task and impl task are one red→green unit; splitting
+  them across two fresh contexts would hand the impl subagent a test authored in a different context.
+  SMARTS: strong. Chosen: 4 per-obligation subagents (each red→green over its coupled task pair).
+- **[high] Sequential dispatch (AC-01 → AC-02 → AC-03 → AC-04).** All four obligations edit the root
+  `package.json` `check` script (wire their new harness in) — a shared-file conflict point; AC-02 also
+  depends on AC-01. Parallel risks lost edits for no worthwhile wall-clock win. SMARTS: strong.
+  Orchestrator owns the central `package.json` `check`-chain wiring (mirrors the prior two sprints).
+- **[high] REFINEMENT — parallel-where-disjoint.** Because subagents never touch package.json (orchestrator
+  owns that wiring), the package.json conflict point is removed. Real overlaps: AC-02 depends on AC-01's
+  `settleStep`; AC-03 + AC-04 both edit `NetworkClient.ts`. But Track A (Terrain.ts/GameEngine.ts) and
+  Track B (retry.ts/NetworkClient.ts/replay.ts) are file-disjoint, so AC-01 ‖ AC-03 launched in PARALLEL.
+  Order: {AC-01 ‖ AC-03} → {AC-02 after AC-01 ‖ AC-04 after AC-03}. SMARTS: strong (real wall-clock win,
+  zero added collision risk).
+- **Wave 1 dispatched (parallel, disjoint files):** AC-01 (Terrain.ts settleStep + collapse.mjs parity
+  harness, ca:backend-author) ‖ AC-03 (retry.ts postOnceWithRetry + finish_game rewire + netretry.mjs,
+  ca:frontend-author).
+
+## Phase 3 — spec-compliance reviews
+
+- **[AC-03] PASS (review, fresh-verify pending Phase 5).** `postOnceWithRetry<T>(fn, attempts=2)` is a
+  pure discriminated-union helper that never rejects (loop swallows every throw → `{ok:false,error}`).
+  `callFinishGame` wraps the real fetch, throws on `!res.ok` so non-2xx triggers the one retry,
+  `void`-prefixed (fire-and-forget preserved), original `console.error` on final failure preserved.
+  Scope clean (retry.ts + callFinishGame + netretry.mjs only). RED failed correctly (module missing),
+  GREEN 3/3.
+- **[AC-01] RETURNED to Phase 2 — real defect caught.** `settleStep` shipped a RIGID-BLOCK model
+  (anchors all column solids at the topmost solid, slides as one block). Convergence parity held (final
+  state correct) so the harness "passed" — but it reported worst-case settle ticks = 0, i.e. NO case
+  exercised the multi-tick path. The bug: a `solid→air-gap→solid-floor` column (a crater carved through
+  a hill) would lift the resting lower ground UP into the gap mid-settle — non-downward, and it would
+  yank the floor out from under a tank resting on the lower ground. AC-02's progressive burial needs a
+  monotonically descending surface, so this had to be fixed BEFORE AC-02 builds on it. Corrective brief:
+  replace with a supported-dirt sand model (pxPerTick one-px sub-steps, bottom-up; supported grains stay,
+  only unsupported dirt falls) + strengthen collapse.mjs to include overhang cases that require >=2
+  settle calls and assert downward-only (solid count conserved, surface monotonically descends, bottom
+  resting run never loses pixels). This is exactly the value of not trusting a self-reported green: a
+  vacuously-green harness over an unexercised code path. Confidence: high (defect concrete + reproduced).
+- **[AC-04] PASS (review, fresh-verify pending Phase 5).** `replayInChunks<A>` added to `shared/net/replay.ts`
+  — pure, no `GameEngine` import (shared-purity intact), strict index order, yields after every `chunkSize`
+  apps except the last, `chunkSize<1`→1, empty array no-op. `initialize()` swaps its synchronous for-loop for
+  `await replayInChunks(rows, row=>{applyNetworkAction;tickToCompletion}, 16, ()=>setTimeout(r,0))`; isReplaying
+  bracket + `nextExpectedSeq=rows.length` preserved → byte-identical replay result, only event-loop yields added.
+  Scope clean (replay.ts helper + initialize() + chunkreplay.mjs). RED failed correctly, GREEN 5/5.
+- **[AC-01 corrective] DISPATCH NOTE — fork failed, re-routed to fresh backend-author.** First corrective
+  used `subagent_type: fork`, which inherited the orchestrator persona and NARRATED the fix back (0 tool uses,
+  no edits) instead of executing it. No harm (tree unchanged). Lesson logged: `fork` = "continue my reasoning",
+  wrong for isolated implementation; a fresh `ca:backend-author` arrives as an implementer. Re-dispatched the
+  same corrective brief to a fresh backend-author. Confidence: high.
+
+## Phase 5 (partial) + Phase 2 wave 2
+
+- **[AC-01] corrective VERIFIED by orchestrator (fresh run).** Sand model confirmed in code (bottom-up
+  1px substeps; supported dirt/floor inert). `npx tsx scripts/checks/collapse.mjs` = 72 passed / 0 failed,
+  worst-case settle ticks **70** (>=2, multi-step path genuinely exercised; limit 150). Existing 29 harnesses
+  + typecheck green. AC-01 is Phase-3+5 clean (final ACCEPT deferred to the once-per-scope Phase 4).
+- **[AC-02] dispatched (fresh ca:backend-author, solo — Track B done, GameEngine.ts free).** Design briefed:
+  deferred-final-settle. detonate() defers gravity into `pendingSettle` + tank-resolution moved to
+  `resolveTanksToTerrain()`; `flushSettleInstant()` keeps terrain compacted while projectiles/fire remain
+  (mid-flight collision parity byte-identical); only the final settle (survivors==0, no fire, >1 alive)
+  animates one `settleStep`/tick during RESOLVING; game-ending path instant-settles (preserves #14 banner
+  immediacy). PARITY GATE: all final-state harnesses must stay green UNCHANGED; only timing harnesses
+  (flightticks, maybe motion/timestep counts) may be re-pinned; if a final-state harness needs new expected
+  values, the subagent STOPs and surfaces (hard-gate-class signal). New `collapse_engine.mjs` covers the
+  animation (monotonic tank descent, RESOLVING spans >=2 ticks, bounded, per-tick determinism, #14).
+
+- **[AC-02] GREEN (engine), but review caught an INCOMPLETE obligation across the client boundary.**
+  Engine impl clean: `pendingSettle` + `flushSettleInstant`/`settleStepAnimated`/`resolveTanksToTerrain` +
+  RESOLVING tick branch; worst RESOLVING 7 ticks (cluster, limit 150). PARITY HELD: all final-state harnesses
+  green with ZERO assertion-value changes — the 21 re-pins are loop-condition only (`FIRING` → `FIRING||RESOLVING`
+  so the harness ticks through the new multi-tick phase to the SAME final state). flightticks worst 702 (was ~600),
+  still << 5000 threshold (unchanged). This is the textbook "convergent final state → only timing re-pins" outcome.
+  - **Caught (completeness):** the subagent surfaced `[NEEDS-TRIAGE]` that `NetworkClient.tickToCompletion` loops
+    on `phase==='FIRING'` only. On review this is NOT defer-for-later — it's an INCOMPLETE AC-02 obligation: the
+    spec's Determinism Contract promises replay stays correct, but a client replay loop halting at RESOLVING leaves
+    the engine mid-settle. Found 3 client sites with the same root cause: `tickToCompletion` (replay driver),
+    `tickEngineToCompletion` (next-seat clone → wrong cursor if it stops pre-resolve()), and the `start()` rAF flush
+    trigger (`wasFiring && phase!==FIRING` → after FIRING→RESOLVING the flush never re-fires on RESOLVING→PLAYER_TURN
+    → buffered-action queue stalls, a P0-2 regression). The engine harnesses missed all 3 because they drive the
+    SHARED engine directly, never NetworkClient's fast-forward/queue logic — the bug lives in the layer harnesses
+    don't reach. SMARTS: strong (real correctness defect in the networked half of the product). Confidence: high.
+  - **Completion fix dispatched** (fresh ca:frontend-author, NetworkClient.ts now free post-AC-04): mirror the
+    engine's `FIRING||RESOLVING` busy predicate at all 3 sites; scan for sibling busy-checks; Renderer.ts:300
+    FIRING-only render gate left untouched (correct). No client harness exists → verified by typecheck + written
+    traces + flagged for the 2-browser manual playtest in the receipt.
+
+## Orchestrator TODO before landing
+- Central `package.json` `check`-chain wiring for the 4 NEW harnesses: `collapse.mjs`, `collapse_engine.mjs`,
+  `netretry.mjs`, `chunkreplay.mjs` (subagents created the files; orchestrator owns the wiring per the sequencing
+  decision above). Then run authoritative `npm run check` + `npm run typecheck`.
+
+- **[AC-02 completion fix] ACCEPTED (review + traces).** All 3 NetworkClient sites mirror `FIRING||RESOLVING`;
+  siblings scanned (Renderer.ts:300 render gate + main.ts PLAYER_TURN AI gate correctly left alone; HotSeatClient
+  ticks unconditionally — fine). typecheck + check green.
+- **[ORCHESTRATOR] package.json wiring applied + authoritative fresh-run.** Appended collapse.mjs, collapse_engine.mjs,
+  netretry.mjs, chunkreplay.mjs to `check`. `npm run check` exit 0 — 33 harnesses (29 prior + 4 new), typecheck
+  included. collapse_engine worst RESOLVING 7/150 ticks, per-tick determinism green, #14 preserved.
+
+## Phase 4 — quality review (combined diff, independent reviewer)
+
+- **Determinism/correctness reviewer: PASS — no CRITICAL/HIGH.** Verified all 7 determinism-contract points:
+  pendingSettle reset on every game/round boundary (constructor + startNextRound + all flush paths; null at
+  GAME_OVER); resolveTanksToTerrain moved byte-identical (diffed vs `main`); RESOLVING branch resolves exactly
+  once, convergence guaranteed; instant-flush == applyGravity by construction; the 3 NetworkClient fixes correct
+  (seat-derivation clone fix flagged LOAD-BEARING — without it AC-02 returns the wrong next seat); no new
+  Math.random/Date/float-nondeterminism in engine. Verdict: lockstep integrity intact, live == replay, safe to ship.
+- **MEDIUM disposition (as-user, SMARTS moderate → ACCEPT + document). Confidence: LOW (review this).**
+  Same-tick multi-detonation: two projectiles detonating in ONE tick now collide #2 against #1's un-compacted
+  overhang (single flush runs after the projectile loop, not per-blast). NOT a desync (deterministic; all clients
+  identical) — a gameplay-parity shift vs main for rare same-tick seeds. Spec promised "byte-identical bomblet
+  collision," so this is a real deviation from an approved promise → logged low-confidence. ACCEPTED because: (a)
+  lockstep integrity (the property that matters) is intact; (b) affected case is uncommon + deterministic; (c) the
+  reviewer's suggested fix (compact per-blast in-loop) would instant-compact the FINAL blast and DEFEAT the
+  animation — perfect mid-flight parity and deferred-settle animation are fundamentally in tension; (d) gameplay
+  constants are explicitly playtest-tunable. Documented in-code (GameEngine path-A comment) + receipt + open-tasks.
+- **LOW dispositions:** (1) no harness pins the in-flight-flush paths A/B/D specifically — open-tasks follow-up
+  (existing suite + collapse_engine cover the main paths). (2) postOnceWithRetry has no backoff / no attempts<1
+  guard — harmless (call site hardcodes 2); open-tasks follow-up. (3) CANVAS 600 vs CLAUDE.md doc drift —
+  pre-existing, already tracked; not this diff.
+- **Phase 4 GATE: PASS.** No CRITICAL/HIGH across combined diff. All 5 units (AC-01..04 + completion fix) ACCEPTED.

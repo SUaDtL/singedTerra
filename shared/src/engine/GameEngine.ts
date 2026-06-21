@@ -11,6 +11,8 @@ import {
   buildBitmap,
   deform,
   applyGravity,
+  settleStep,
+  COLLAPSE_PX_PER_TICK,
   surfaceAt,
   pixelAt,
   CANVAS_WIDTH,
@@ -185,6 +187,21 @@ export class GameEngine {
    *  the same way the opening round did (same player roster / layout path). */
   private options?: GameOptions;
 
+  /**
+   * Pending unsettled column range from the most recent detonation(s), merged
+   * across multiple detonations in the same tick (cluster/MIRV/betty chain).
+   * Non-null only between the moment FIRING ends (settled, non-game-over) and
+   * when the animated RESOLVING settle completes. Null when no settle is pending.
+   *
+   * During FIRING (projectiles still in flight), detonations settle instantly
+   * (flushSettleInstant) and this field is consumed within the same tick.
+   * At end-of-turn with no projectiles and no fire, this field is LEFT for the
+   * RESOLVING phase to animate one settleStep per tick until converged.
+   *
+   * Determinism: pure integer xStart/xEnd — no clock, no random.
+   */
+  private pendingSettle: { xStart: number; xEnd: number } | null = null;
+
   constructor(options?: GameOptions) {
     const seed = options?.seed ?? DEFAULT_SEED;
     const heightLine = generate(seed);
@@ -288,6 +305,8 @@ export class GameEngine {
     c.seed          = this.seed;
     c.totalRounds   = this.totalRounds;
     c.options       = this.options; // GameOptions is treated as immutable config
+    // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
+    c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
 
     // --- Wind RNG: re-create from the recorded seed + fast-forward ---
     c.windRngSeed   = this.windRngSeed;
@@ -510,9 +529,37 @@ export class GameEngine {
    * (with the active wind) then sweep-test for collision. On any resolution
    * (ground/tank hit OR out-of-bounds miss) the shot resolves: crater + damage +
    * collapse + win check, then the turn advances (new wind) to PLAYER_TURN, or
-   * the game ends at GAME_OVER. Outside FIRING this is a no-op.
+   * the game ends at GAME_OVER.
+   *
+   * While RESOLVING with a pending settle (AC-02), advances the animated terrain
+   * collapse by ONE settleStep (COLLAPSE_PX_PER_TICK pixels per column) and
+   * re-derives tank positions. When fully settled, calls resolve() to advance the
+   * turn machine. Outside FIRING/RESOLVING this is a no-op.
    */
   tick(): void {
+    // RESOLVING branch (AC-02): animate the terrain collapse one step per tick.
+    // Only entered when pendingSettle is non-null (set by detonate() during the
+    // just-completed FIRING phase). Each call advances the settle by
+    // COLLAPSE_PX_PER_TICK px/column; when converged, calls resolve() to finish
+    // the turn. If pendingSettle is null (e.g. napalm-only or no deform), this
+    // branch is never reached (phase transitions to PLAYER_TURN directly).
+    if (this.state.phase === 'RESOLVING') {
+      if (this.pendingSettle !== null) {
+        const stillSettling = this.settleStepAnimated();
+        if (!stillSettling) {
+          // Settle converged this tick — advance the turn machine.
+          this.resolve();
+        }
+        // else: stay in RESOLVING for the next tick.
+      }
+      // If pendingSettle is null but phase is somehow still RESOLVING (defensive),
+      // call resolve() to avoid getting stuck.
+      else {
+        this.resolve();
+      }
+      return;
+    }
+
     if (this.state.phase !== 'FIRING') return;
     if (this.state.projectiles.length === 0 && this.fire.size === 0) {
       // Defensive: FIRING with nothing in flight AND no fire burning — a stuck
@@ -629,27 +676,66 @@ export class GameEngine {
     // impact above gets its first burn immediately.
     this.processFire();
 
-    // A turn normally resolves only once NO projectiles remain in flight AND the
-    // napalm fire has burned out — so the turn waits for the flames. BUT the
-    // game-over check must NOT wait: if the board is already down to one (or zero)
-    // survivors, end immediately instead of letting lingering bomblets or a napalm
-    // burn defer the win banner for many ticks (#14). When ending early, drop any
-    // remaining in-flight projectiles + fire so the match freezes cleanly on the
-    // eliminating tick (the next tick is a no-op once phase leaves FIRING anyway).
+    // -----------------------------------------------------------------------
+    // POST-FIRE settle + turn-resolution decision (AC-02 deferred-final-settle)
+    //
+    // The rule:
+    //  (A) Projectiles still in flight OR fire still burning → flush instantly so
+    //      mid-flight bomblet trajectories/collisions stay byte-identical to today
+    //      ACROSS ticks. KNOWN DEVIATION: when two projectiles detonate in the SAME
+    //      tick, blast #1 is no longer compacted before blast #2's collide within that
+    //      tick (the single flush runs after the whole projectile loop), so a same-tick
+    //      #2 may collide an un-compacted overhang. This is deterministic (every client
+    //      runs identical deferred logic → no lockstep desync; replay == live); it only
+    //      shifts gameplay outcomes for rare same-tick multi-detonation seeds vs pre-
+    //      animated-collapse. Accepted as a gameplay-parity trade-off of the deferred
+    //      settle (compacting per-blast in-loop would instant-compact the FINAL blast
+    //      too and defeat the animation). See sprint-log stabilize-and-juice-2.
+    //  (B) Board already down to <= 1 alive → flush instantly and end immediately
+    //      (preserves #14: win banner must not wait for dirt).
+    //  (C) Settled + alive > 1 + no fire → leave pendingSettle for the RESOLVING
+    //      phase to animate one settleStep per tick.
+    //  (D) While fire is burning (no projectiles, fire active) → flush instantly
+    //      each tick (fire is the visual focus; collapse settles under it).
+    // -----------------------------------------------------------------------
     const aliveCount = this.state.tanks.reduce((n, t) => (t.alive ? n + 1 : n), 0);
     const settled = survivors.length === 0 && this.fire.size === 0;
-    if (settled || aliveCount <= 1) {
-      if (!settled) {
-        this.state.projectiles = [];
-        this.syncProjectileAlias();
-        this.fire.clear();
-        this.fireDef = null;
-        this.fireScorched.clear();
-        this.syncFire();
-      }
+
+    if (survivors.length > 0) {
+      // (A) Projectiles still in flight — flush instantly to keep trajectory parity.
+      this.flushSettleInstant();
+    } else if (!settled) {
+      // (D) No projectiles but fire still burning — flush instantly each tick.
+      this.flushSettleInstant();
+    }
+
+    if (aliveCount <= 1) {
+      // (B) Game-ending condition — abandon any remaining in-flight state, flush
+      // instantly (no animation), and resolve immediately (preserves #14).
+      this.state.projectiles = [];
+      this.syncProjectileAlias();
+      this.fire.clear();
+      this.fireDef = null;
+      this.fireScorched.clear();
+      this.syncFire();
+      this.flushSettleInstant();
       this.state.phase = 'RESOLVING';
       this.resolve();
+    } else if (settled) {
+      // (C) Normal turn end: board has > 1 alive, no projectiles, no fire.
+      // Leave pendingSettle for the RESOLVING animated collapse if one is pending;
+      // set phase to RESOLVING but do NOT call resolve() yet.
+      // If no settle is pending (e.g. missed shot, or raise-terrain weapon with
+      // no unsettled columns), go straight through to resolve().
+      this.state.phase = 'RESOLVING';
+      if (this.pendingSettle === null) {
+        // Nothing to animate — resolve immediately (same as before AC-02 for
+        // no-deform turns, e.g. napalm-only or missed shots).
+        this.resolve();
+      }
+      // else: stay in RESOLVING; tick() will drive the animated settle.
     }
+    // If neither settled nor game-ending, stay in FIRING for the next tick.
   }
 
   /**
@@ -883,6 +969,7 @@ export class GameEngine {
     this.fire.clear();
     this.fireScorched.clear();
     this.fireDef = null;
+    this.pendingSettle = null; // clear any pending animated settle from the prior round
     this.windRng = createRng(roundSeed);
     this.windRngSeed = roundSeed;
     this.windRngCalls = 0;
@@ -940,37 +1027,18 @@ export class GameEngine {
     }
   }
 
-  private detonate(cx: number, cy: number, weaponType: WeaponType): void {
-    const { radius, maxDamage, raisesTerrain, style, color, durationFrames } =
-      getWeapon(weaponType).detonation;
-    const raise = raisesTerrain === true;
-
-    // Deform the live bitmap, then let the touched columns' dirt fall. The
-    // bitmap IS state.terrain (same reference), so no separate sync is needed.
-    const range = deform(this.terrain, cx, cy, radius, raise);
-    if (range !== null) {
-      applyGravity(this.terrain, range.xStart, range.xEnd);
-      // Signal the (in-place) bitmap change so the renderer rebuilds its offscreen
-      // without hashing 400k bytes every frame (P2-8). Render-only; not physics.
-      this.state.terrainVersion++;
-    }
-
-    // Proximity damage to every living tank. explosionDamage() returns the
-    // falloff value scaled to MAX_DAMAGE; rescale to the weapon's peak so
-    // dist=0 => weapon.maxDamage and dist>=radius => 0.
-    for (const tank of this.state.tanks) {
-      if (!tank.alive) continue;
-      const baseDamage = explosionDamage(cx, cy, radius, tank);
-      // explosionDamage() peaks at the global MAX_DAMAGE; rescale to this
-      // weapon's maxDamage so the falloff shape is preserved.
-      const scaled = (baseDamage / MAX_DAMAGE) * maxDamage;
-      if (scaled > 0) {
-        this.applyBlastDamage(tank, scaled); // shield pool soaks up to its charge
-      }
-    }
-
+  /**
+   * Re-derive every alive tank's position and burial state against the CURRENT
+   * (post-settle) terrain bitmap. Called after each terrain compaction:
+   *   - after flushSettleInstant() completes a full instant settle, and
+   *   - after each settleStepAnimated() advances the animated settle one step.
+   *
+   * Loop body is identical to the original per-blast loop in detonate() — extracted
+   * so that progressive settle ticks can re-run it without touching detonate().
+   */
+  private resolveTanksToTerrain(): void {
     // Unified post-terrain tank resolution. For each alive tank, re-derive its
-    // relationship to the (just-deformed) surface:
+    // relationship to the (just-deformed/settled) surface:
     //  - if a crater opened beneath it (new surface is LOWER, i.e. surf > tank.y) the
     //    tank falls onto the new floor — and is freed if it had been buried;
     //  - else if dirt now covers its MID-BODY it is TRAPPED (buried, #15) — NOT killed:
@@ -994,6 +1062,92 @@ export class GameEngine {
         tank.buried = true; // dirt over mid-body -> trapped (no damage, no kill)
       } else {
         tank.buried = false; // mid-body is clear air -> not buried / dug out
+      }
+    }
+  }
+
+  /**
+   * Flush any pending terrain settle to full convergence in a SINGLE synchronous
+   * call (instant compaction, identical to the old immediate applyGravity). Used
+   * during FIRING (projectiles still in flight, so mid-flight bomblet trajectories
+   * and collisions must stay byte-identical to the pre-AC-02 behavior) and on
+   * game-ending turns (so the win banner never waits for dirt — preserves #14).
+   *
+   * After compaction, re-derives every alive tank's position/burial (same call
+   * as the per-tick animated path), bumps terrainVersion, and clears pendingSettle.
+   * No-op if pendingSettle is null.
+   */
+  private flushSettleInstant(): void {
+    if (this.pendingSettle === null) return;
+    const { xStart, xEnd } = this.pendingSettle;
+    // settleStep with pxPerTick=CANVAS_HEIGHT compacts each column in one pass,
+    // identical to the original applyGravity behavior.
+    while (settleStep(this.terrain, xStart, xEnd, CANVAS_HEIGHT)) { /* converge */ }
+    this.state.terrainVersion++;
+    this.resolveTanksToTerrain();
+    this.pendingSettle = null;
+  }
+
+  /**
+   * Advance the animated end-of-turn terrain collapse by ONE tick (COLLAPSE_PX_PER_TICK
+   * pixels per column). Called once per RESOLVING tick. Re-derives tank positions
+   * after each step (tanks sink progressively). Returns `true` if any pixel moved
+   * (more settling still to do); `false` once fully converged (settle is done —
+   * caller should transition to resolve() on the same tick). Clears pendingSettle
+   * when converged.
+   *
+   * Bumps terrainVersion on every call so the renderer redraws after each step.
+   */
+  private settleStepAnimated(): boolean {
+    if (this.pendingSettle === null) return false;
+    const { xStart, xEnd } = this.pendingSettle;
+    const moved = settleStep(this.terrain, xStart, xEnd, COLLAPSE_PX_PER_TICK);
+    this.state.terrainVersion++;
+    this.resolveTanksToTerrain();
+    if (!moved) {
+      this.pendingSettle = null;
+    }
+    return moved;
+  }
+
+  private detonate(cx: number, cy: number, weaponType: WeaponType): void {
+    const { radius, maxDamage, raisesTerrain, style, color, durationFrames } =
+      getWeapon(weaponType).detonation;
+    const raise = raisesTerrain === true;
+
+    // Deform the live bitmap. The bitmap IS state.terrain (same reference).
+    // Do NOT compact (applyGravity) here — instead merge the deformed column range
+    // into pendingSettle so the caller can decide whether to settle instantly
+    // (mid-flight) or animate (end-of-turn). Signal the bitmap change so the
+    // renderer rebuilds its offscreen without hashing 400k bytes every frame (P2-8).
+    const range = deform(this.terrain, cx, cy, radius, raise);
+    if (range !== null) {
+      // MERGE into pendingSettle (widen xStart = min, xEnd = max across all blasts
+      // in this tick — cluster/MIRV/betty chain can fire multiple detonations).
+      if (this.pendingSettle === null) {
+        this.pendingSettle = { xStart: range.xStart, xEnd: range.xEnd };
+      } else {
+        this.pendingSettle.xStart = Math.min(this.pendingSettle.xStart, range.xStart);
+        this.pendingSettle.xEnd   = Math.max(this.pendingSettle.xEnd,   range.xEnd);
+      }
+      // Signal the deform (pre-settle) so the renderer shows the raw crater shape.
+      this.state.terrainVersion++;
+    }
+
+    // Proximity damage to every living tank. explosionDamage() returns the
+    // falloff value scaled to MAX_DAMAGE; rescale to the weapon's peak so
+    // dist=0 => weapon.maxDamage and dist>=radius => 0.
+    // NOTE: tank resolution (drop/burial) is intentionally DEFERRED to after
+    // terrain settles (flushSettleInstant or settleStepAnimated) — damage is
+    // computed against the crater shape, not the settled shape.
+    for (const tank of this.state.tanks) {
+      if (!tank.alive) continue;
+      const baseDamage = explosionDamage(cx, cy, radius, tank);
+      // explosionDamage() peaks at the global MAX_DAMAGE; rescale to this
+      // weapon's maxDamage so the falloff shape is preserved.
+      const scaled = (baseDamage / MAX_DAMAGE) * maxDamage;
+      if (scaled > 0) {
+        this.applyBlastDamage(tank, scaled); // shield pool soaks up to its charge
       }
     }
 
