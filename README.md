@@ -13,7 +13,8 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white">
   <img alt="Canvas 2D" src="https://img.shields.io/badge/render-Canvas%202D-ff7a1f">
   <img alt="Supabase" src="https://img.shields.io/badge/netcode-Supabase%20lockstep-3ecf8e?logo=supabase&logoColor=white">
-  <img alt="Determinism" src="https://img.shields.io/badge/determinism-16%20harnesses%20green-ffd23f">
+  <img alt="Determinism" src="https://img.shields.io/badge/determinism-41%20harnesses%20green-ffd23f">
+  <a href="https://github.com/SUaDtL/singedTerra/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/SUaDtL/singedTerra/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="No deps" src="https://img.shields.io/badge/game%20engine-zero%20runtime%20deps-9b59b6">
   <img alt="Status" src="https://img.shields.io/badge/status-V1%20%C2%B7%20Match%20Structure-e84d4d">
 </p>
@@ -162,8 +163,8 @@ savings on a small box.
 
 ## ✅ The determinism harnesses
 
-`npm run check` runs the full typecheck plus **16 deterministic test harnesses** (`scripts/checks/`).
-They are the project's safety net — every change must keep them green:
+`npm run check` runs the full typecheck plus **41 deterministic test harnesses** (`scripts/checks/`).
+They are the project's safety net — every change must keep them green. A representative selection:
 
 | Harness | Proves |
 |---|---|
@@ -184,6 +185,9 @@ They are the project's safety net — every change must keep them green:
 | `scoreboard` | Shooter-attributed kills + damage (overkill/self excluded); carry across rounds |
 | `netrounds` | Networked round-boundary + per-tank-buy lockstep through the shared replay path |
 
+_…and 25 more — terrain collapse, batteries, interest, sudden-death, arms level, resync guard,
+net-retry, chunked replay, `clamp`/PRNG primitives, and more._
+
 ---
 
 ## 🚀 Quickstart
@@ -196,7 +200,7 @@ npm run dev:client     # same
 
 npm run build          # typecheck + vite client build -> client/dist
 npm run typecheck      # typecheck shared + client
-npm run check          # typecheck + all 16 determinism harnesses  ← run before every commit
+npm run check          # typecheck + all 41 determinism harnesses  ← run before every commit
 ```
 
 > Requires Node 20 LTS. Online play needs Supabase keys in `client/.env`
@@ -236,7 +240,7 @@ singedTerra/
 │       ├── client/         # GameClient · HotSeatClient · NetworkClient
 │       ├── input/  ui/  lib/
 ├── supabase/               # Edge Functions (submit_action referee, rooms, lobby) + migrations
-├── scripts/checks/         # the 16 determinism harnesses
+├── scripts/checks/         # the 41 determinism harnesses
 └── docs/                   # SPEC · TASKS · sprint plans · reference · assets
 ```
 
@@ -277,6 +281,15 @@ recent sprint plans live in [`docs/`](docs/) (older ones archived under [`docs/a
 **TypeScript** (strict, throughout) · **Canvas 2D** (no game framework) · **Vite** (client) ·
 **Supabase** (Postgres + Realtime + Edge Functions, lockstep netcode) · **Netlify** (static client host) ·
 **npm workspaces** monorepo · zero runtime dependencies in the game engine.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup and the one rule that
+matters most here (**determinism**: the engine must replay identically across clients). Bugs and ideas
+go through the issue templates; security reports go privately via [`SECURITY.md`](SECURITY.md). Be
+excellent to each other — [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 ---
 
