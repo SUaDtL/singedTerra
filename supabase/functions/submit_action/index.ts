@@ -53,7 +53,10 @@ interface NetworkShieldAction {
 
 interface NetworkBuyAction {
   type: 'buy'
-  weapon: string
+  // Exactly one of weapon/accessory is set: a weapon bundle, or an SE-parity accessory
+  // (e.g. 'battery'). Both optional + additive so weapon-only buy rows are unchanged.
+  weapon?: string
+  accessory?: string
   tankId?: string
 }
 
@@ -89,7 +92,7 @@ Deno.serve(withCors(async (body) => {
     // on its behalf (any room member may; idempotency is the seq-unique + cursor
     // gate). Validated below.
     actingPlayerId?: unknown
-    action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; tankId?: unknown }
+    action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; accessory?: unknown; tankId?: unknown }
   }
 
   // Pure shape validation — all 400 paths (no DB required)
@@ -163,7 +166,9 @@ Deno.serve(withCors(async (body) => {
         : a.type === 'buy'
           ? {
               type: 'buy',
-              weapon: (a.weapon as string).trim(),
+              // Carry whichever of weapon/accessory the validated buy supplied (exactly one).
+              ...(typeof a.weapon === 'string' && a.weapon.trim().length > 0 ? { weapon: a.weapon.trim() } : {}),
+              ...(a.accessory === 'battery' ? { accessory: 'battery' } : {}),
               ...(isRoundOver && typeof a.tankId === 'string' ? { tankId: a.tankId } : {}),
             }
           : {

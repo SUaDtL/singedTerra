@@ -143,22 +143,40 @@ Deno.test('validateActionShape: bad action.type returns 400', () => {
   })
 })
 
-Deno.test('validateActionShape: buy without weapon returns 400', () => {
+Deno.test('validateActionShape: buy without weapon or accessory returns 400', () => {
   const result = validateActionShape({
     roomId: 'room-1',
     playerId: 'player-1',
     action: { type: 'buy' },
   })
-  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon' })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon or accessory' })
 })
 
-Deno.test('validateActionShape: buy with empty weapon returns 400', () => {
+Deno.test('validateActionShape: buy with empty weapon and no accessory returns 400', () => {
   const result = validateActionShape({
     roomId: 'room-1',
     playerId: 'player-1',
     action: { type: 'buy', weapon: '  ' },
   })
-  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon' })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon or accessory' })
+})
+
+Deno.test('validateActionShape: buy with battery accessory (no weapon) passes', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'buy', accessory: 'battery' },
+  })
+  assertEquals(result, { ok: true })
+})
+
+Deno.test('validateActionShape: buy with an unrecognized accessory and no weapon returns 400', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'buy', accessory: 'jetpack' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon or accessory' })
 })
 
 Deno.test('validateActionShape: fire with NaN angle returns 400', () => {
@@ -179,13 +197,17 @@ Deno.test('validateActionShape: fire with Infinity angle returns 400', () => {
   assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.angle must be a finite number' })
 })
 
-Deno.test('validateActionShape: fire with power 101 returns 400', () => {
+// Battery-boosted shots dial power ABOVE 100 (powerCap raised by a Battery). The referee
+// has no powerCap knowledge and the engine clamps to powerCap on replay, so a >100 power
+// MUST pass the referee — a hard 100 ceiling would reject battery shots over the network
+// while hot-seat accepts them (a context drift). This pins the relaxed bound.
+Deno.test('validateActionShape: fire with battery-boosted power 150 passes', () => {
   const result = validateActionShape({
     roomId: 'room-1',
     playerId: 'player-1',
-    action: { type: 'fire', angle: 45, power: 101, weapon: 'missile' },
+    action: { type: 'fire', angle: 45, power: 150, weapon: 'missile' },
   })
-  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.power must be a number in [0, 100]' })
+  assertEquals(result, { ok: true })
 })
 
 Deno.test('validateActionShape: fire with negative power returns 400', () => {
@@ -194,7 +216,34 @@ Deno.test('validateActionShape: fire with negative power returns 400', () => {
     playerId: 'player-1',
     action: { type: 'fire', angle: 45, power: -1, weapon: 'missile' },
   })
-  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.power must be a number in [0, 100]' })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.power must be a finite number >= 0' })
+})
+
+Deno.test('validateActionShape: fire with NaN power returns 400', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'fire', angle: 45, power: NaN, weapon: 'missile' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.power must be a finite number >= 0' })
+})
+
+Deno.test('validateActionShape: fire with Infinity power returns 400', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'fire', angle: 45, power: Infinity, weapon: 'missile' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.power must be a finite number >= 0' })
+})
+
+Deno.test('validateActionShape: buy with BOTH weapon and accessory returns 400', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'buy', weapon: 'missile', accessory: 'battery' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action must set exactly one of weapon/accessory' })
 })
 
 Deno.test('validateActionShape: fire with empty weapon returns 400', () => {

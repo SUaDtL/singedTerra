@@ -43,9 +43,14 @@ import {
 import {
   getWeapon,
   type WeaponType,
+  type AccessoryType,
   type NapalmDef,
   CREDITS_PER_DAMAGE,
   TURN_STIPEND,
+  BATTERY_PRICE,
+  BATTERY_BUNDLE_SIZE,
+  BATTERY_POWER_PER_UNIT,
+  BATTERY_ARMS_LEVEL,
 } from './WeaponSystem';
 import { createRng } from './Random';
 
@@ -99,7 +104,32 @@ const BOUNCE_EPS = 1.5;
 const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
 const POWER_MIN = 0;
-const POWER_MAX = 100;
+/** Baseline firing-power cap (SPEC §6). A tank's effective cap may rise above this with
+ *  bought Batteries (TankState.powerCap); this is only the default / no-battery ceiling. */
+export const POWER_MAX = 100;
+
+/**
+ * Sudden-death gravity ramp (SE-parity stalemate-breaker). Once `state.turn` passes the
+ * room's `suddenDeathTurn`, effective gravity is multiplied by (1 + turnsPast * this), so
+ * each subsequent turn shrinks max range and forces resolution. A NAMED, playtest-tunable
+ * constant (12%/turn) — exported so the harness pins the exact value with no magic-number
+ * drift. Pure arithmetic; sudden death is a function of the turn count only, never a clock.
+ */
+export const SUDDEN_DEATH_GRAVITY_RAMP = 0.12;
+
+/**
+ * Effective gravity under sudden death — the SINGLE source of truth, shared by the engine's
+ * per-tick integration AND the AI shot planner (so bots aim with the gravity the engine will
+ * actually fly the shot under). Pure: equals `baseGravity` until `turn` passes
+ * `suddenDeathTurn`, then ramps `baseGravity * (1 + (turn - suddenDeathTurn) * RAMP)`.
+ * suddenDeathTurn <= 0 disables it (returns base). No clock, no random.
+ */
+export function effectiveGravity(baseGravity: number, turn: number, suddenDeathTurn: number): number {
+  if (suddenDeathTurn <= 0) return baseGravity;
+  const past = turn - suddenDeathTurn;
+  if (past <= 0) return baseGravity;
+  return baseGravity * (1 + past * SUDDEN_DEATH_GRAVITY_RAMP);
+}
 
 export class GameEngine {
   private state: GameState;
@@ -183,6 +213,37 @@ export class GameEngine {
   /** Best-of-N match length (>= 1). 1 => single-round / back-compat behavior. */
   private totalRounds: number;
 
+  /**
+   * Per-round credit interest rate (SE-parity economy). At each ROUND_OVER boundary every
+   * tank earns `floor(credits * interestRate)` on its carried balance. 0 => no interest
+   * (back-compat). A non-finite/negative option falls back to 0. Pure integer arithmetic.
+   */
+  private interestRate: number;
+
+  /**
+   * Sudden-death threshold turn (SE-parity stalemate-breaker). 0 => off (back-compat).
+   * Once the PER-ROUND turn (`state.turn - turnAtRoundStart`) exceeds this, `currentGravity()`
+   * ramps gravity up per turn. A non-finite/negative option falls back to 0 (off). Pure
+   * function of the per-round turn count.
+   */
+  private suddenDeathTurn: number;
+
+  /**
+   * The match-global `state.turn` value at which the CURRENT round began (0 for the opening
+   * round; reset in startNextRound). Subtracted from `state.turn` to get the PER-ROUND turn
+   * that drives sudden death, so escalation resets each round and a long earlier round never
+   * carries it forward. Deterministic integer; copied by clone().
+   */
+  private turnAtRoundStart: number;
+
+  /**
+   * Arms-level store cap (SE-parity economy, 0–4). `applyBuy` rejects any weapon whose
+   * `armsLevel` exceeds this. Defaults to 4 (everything buyable / back-compat); an
+   * out-of-range option is clamped into [0, 4]. Gates purchases only — never the opening
+   * loadout or physics. Static config; copied by clone() for next-seat derivation parity.
+   */
+  private armsLevel: number;
+
   /** Original construction options, retained so startNextRound can re-place tanks
    *  the same way the opening round did (same player roster / layout path). */
   private options?: GameOptions;
@@ -246,6 +307,16 @@ export class GameEngine {
     this.seed = seed;
     // Clamp to a sane >= 1 integer; non-finite/<=0 falls back to a single round.
     this.totalRounds = Math.max(1, Math.floor(options?.rounds ?? 1) || 1);
+    // Per-round interest: a finite, non-negative rate or 0 (no interest / back-compat).
+    const rate = options?.interestRate ?? 0;
+    this.interestRate = Number.isFinite(rate) && rate > 0 ? rate : 0;
+    // Sudden death: a finite, positive threshold turn or 0 (off / back-compat).
+    const sd = options?.suddenDeathTurn ?? 0;
+    this.suddenDeathTurn = Number.isFinite(sd) && sd > 0 ? Math.floor(sd) : 0;
+    // Arms level: a finite level clamped to [0,4], else 4 (everything / back-compat).
+    const al = options?.armsLevel;
+    this.armsLevel = Number.isFinite(al) ? clamp(Math.floor(al as number), 0, 4) : 4;
+    this.turnAtRoundStart = 0; // opening round begins at the turn-0 baseline
     this.options = options;
 
     // number[] height line for tank placement (Tank.ts is unchanged and still
@@ -298,6 +369,31 @@ export class GameEngine {
     return clamp(current + delta, -this.maxWind, this.maxWind);
   }
 
+  /**
+   * Effective gravity for the CURRENT turn (SE-parity sudden death). Equal to the base
+   * `this.gravity` until `state.turn` passes `suddenDeathTurn`, after which it ramps:
+   *   base * (1 + (turn - suddenDeathTurn) * SUDDEN_DEATH_GRAVITY_RAMP).
+   * A PURE FUNCTION of (base gravity, state.turn, suddenDeathTurn) — no clock, no random —
+   * so every networked client computes the identical value for a given turn. The turn does
+   * not change mid-flight (it advances only at resolve()), so a shot uses one fixed gravity
+   * for its whole arc. suddenDeathTurn 0 returns base unchanged (back-compat).
+   */
+  private currentGravity(): number {
+    // PER-ROUND turn: turns since this round began, so sudden death resets every round
+    // rather than accumulating match-global turns into later rounds.
+    return effectiveGravity(this.gravity, this.state.turn - this.turnAtRoundStart, this.suddenDeathTurn);
+  }
+
+  /**
+   * Public read of the engine's effective gravity for the CURRENT turn (SE-parity sudden
+   * death). The AI shot planner reads this so a bot aims with the gravity the engine will
+   * ACTUALLY fly the shot under — otherwise it plans a flatter arc and lands short once
+   * sudden death escalates. Pure read; never mutates. Deterministic (a function of turn).
+   */
+  getEffectiveGravity(): number {
+    return this.currentGravity();
+  }
+
   /** Current snapshot of game state for rendering / broadcast. */
   getState(): GameState {
     return this.state;
@@ -337,6 +433,10 @@ export class GameEngine {
     c.gravity       = this.gravity;
     c.seed          = this.seed;
     c.totalRounds   = this.totalRounds;
+    c.interestRate  = this.interestRate;
+    c.suddenDeathTurn = this.suddenDeathTurn;
+    c.turnAtRoundStart = this.turnAtRoundStart;
+    c.armsLevel     = this.armsLevel;
     c.options       = this.options; // GameOptions is treated as immutable config
     // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
     c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
@@ -458,7 +558,9 @@ export class GameEngine {
         tank.angle = clamp(action.angle, ANGLE_MIN, ANGLE_MAX);
         return;
       case 'set_power':
-        tank.power = clamp(action.power, POWER_MIN, POWER_MAX);
+        // Clamp to the tank's per-tank power cap (POWER_MAX baseline, raised by bought
+        // Batteries) so a battery-equipped tank can over-power a shot for extra range.
+        tank.power = clamp(action.power, POWER_MIN, tank.powerCap);
         return;
       case 'select_weapon':
         tank.selectedWeapon = action.weapon;
@@ -552,9 +654,31 @@ export class GameEngine {
    * changes phase or active player. The CPU-seat idempotency guard (P1-7b) collapses
    * staggered duplicate bot buys in networked lockstep to exactly-once.
    */
-  private applyBuy(action: { weapon: WeaponType }, target: TankState): void {
+  private applyBuy(action: { weapon?: WeaponType; accessory?: AccessoryType }, target: TankState): void {
+    // Enforce "exactly one of weapon/accessory" in the ENGINE too (the referee enforces it on
+    // the wire). Without this, a both-fields buy resolves the accessory first and silently
+    // drops the paid-for weapon — and hot-seat has no referee to catch it. Same rejection in
+    // both execution contexts so they can never diverge (CLAUDE.md: one codebase, two contexts).
+    if (action.weapon && action.accessory) return;
+
+    // ACCESSORY purchases (SE-parity) route through the same buy action but raise a tank
+    // attribute instead of adding weapon ammo. A Battery raises powerCap (extra range). It
+    // is logged once and replayed once, so it applies exactly once per client — no count is
+    // needed for idempotency (bots don't buy accessories in this sprint; if a future AI
+    // does, it must gain an idempotency guard like the weapon path's `slot.count > 0`).
+    if (action.accessory === 'battery') {
+      if (BATTERY_ARMS_LEVEL > this.armsLevel) return; // arms-level gate (battery is lvl 2)
+      if (target.credits < BATTERY_PRICE) return;      // can't afford
+      target.credits -= BATTERY_PRICE;
+      target.powerCap += BATTERY_POWER_PER_UNIT * BATTERY_BUNDLE_SIZE;
+      return;
+    }
+    if (!action.weapon) return; // neither a weapon nor a recognized accessory — nothing to buy
     const def = getWeapon(action.weapon);
     if (!def.implemented) return;
+    // Arms-level gate (SE-parity): the room caps what is buyable. A weapon above the
+    // room's arms level is not for sale here. Default armsLevel 4 => everything (no-op).
+    if (def.armsLevel > this.armsLevel) return;
     const slot = target.inventory[action.weapon];
     if (slot.unlimited) return; // unlimited stock — nothing to buy
     if (target.ai && slot.count > 0) return; // idempotent bot restock (P1-7b)
@@ -628,7 +752,9 @@ export class GameEngine {
       // terrain spike or a tank (per-tick displacement can exceed TANK_WIDTH).
       const prevX = p.x;
       const prevY = p.y;
-      stepProjectile(p, this.state.wind, this.gravity);
+      // Effective gravity rises under sudden death (pure function of the current turn);
+      // identical to this.gravity when sudden death is off, so trajectories are unchanged.
+      stepProjectile(p, this.state.wind, this.currentGravity());
       p.age++;
 
       // SPLIT GATE: an airburst/funky shell splits ONCE (hasSplit guard) into a
@@ -989,8 +1115,12 @@ export class GameEngine {
     for (const tank of fresh) {
       const old = prior.get(tank.id);
       if (old) {
-        tank.credits = old.credits; // carry earnings
+        // Carry earnings, plus per-round INTEREST on the carried (post-payout) balance.
+        // floor() keeps credits integer so a networked replay never drifts on a fraction;
+        // interestRate 0 => +0 => byte-identical to the pre-interest carry (back-compat).
+        tank.credits = old.credits + Math.floor(old.credits * this.interestRate); // carry + interest
         tank.inventory = old.inventory; // carry purchased ammo (and spent rounds)
+        tank.powerCap = old.powerCap; // carry bought Batteries (power cap) across rounds
         tank.roundWins = old.roundWins; // accumulate match score
         tank.kills = old.kills; // accumulate match scoreboard
         tank.totalDamage = old.totalDamage; // accumulate match scoreboard
@@ -1015,6 +1145,9 @@ export class GameEngine {
     this.state.wind = this.nextWind(0);
 
     this.state.turn += 1;
+    // Reset the sudden-death per-round baseline: this round restarts at base gravity even if
+    // the match-global turn count is already past the threshold (per-round, not match-global).
+    this.turnAtRoundStart = this.state.turn;
     this.state.phase = 'PLAYER_TURN';
   }
 

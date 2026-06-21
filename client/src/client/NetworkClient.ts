@@ -456,6 +456,10 @@ export class NetworkClient implements GameClient {
     return this.engine.getState();
   }
 
+  getEffectiveGravity(): number {
+    return this.engine.getEffectiveGravity();
+  }
+
   onStateChange(listener: StateChangeListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -909,7 +913,11 @@ export class NetworkClient implements GameClient {
     const difficulty = this.botByTank.get(tankId);
     if (!difficulty) return;                       // active seat is human
 
-    const plan = computeAiPlan(state, tankId, difficulty, this.gravity);
+    // Use the engine's EFFECTIVE gravity (sudden death ramps it past the threshold) so the
+    // bot aims for the arc the engine will actually fly — not a flat base-gravity arc that
+    // lands short once sudden death kicks in. Deterministic: every client's engine is at the
+    // same turn, so all compute the identical plan (lockstep preserved).
+    const plan = computeAiPlan(state, tankId, difficulty, this.engine.getEffectiveGravity());
     if (!plan) return;                             // no target (shouldn't happen)
 
     // Buy-to-restock (P1-7b) is a TWO-PHASE turn: a turn-neutral buy, then the

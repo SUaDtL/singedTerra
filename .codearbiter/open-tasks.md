@@ -70,17 +70,24 @@ terrain strata coloring; client-side projectile smoke trail (ring buffer); tank 
 
 ## Feature expansion (Scorched Earth homage)
 
+✅ **4 completed in the `se-parity-economy` sprint, 2026-06-21** (engine + network-contract level,
+all determinism-harness-validated): **Credit interest at ROUND_OVER** (`GameOptions.interestRate`,
+`floor(credits*rate)` integer interest — `interest.mjs`); **Sudden-death gravity escalation**
+(`GameOptions.suddenDeathTurn`, gravity ramps as a pure function of `state.turn` — `suddendeath.mjs`);
+**Arms-level room setting** (`GameOptions.armsLevel`, `applyBuy` gate — `armslevel.mjs`); **Batteries
+accessory** (`TankState.powerCap`, `buy.accessory='battery'` extended through `replay.ts` + the Deno
+referee — `batteries.mjs` + 3 new referee Deno cases). Spec: `.codearbiter/specs/se-parity-economy.md`.
+**Follow-ups owed:** (a) UI exposure — lobby toggles for interest/sudden-death/arms-level + a Store
+button for Batteries (`HUD.ts` store is `WeaponType`-keyed; accessory rows need a small generalization);
+(b) backend redeploy (`npm run deploy:backend`) for the battery referee shape (additive/back-compat).
+
 - Tank movement on fuel — the single biggest missing SE pillar: add a `move` action (logged, so lockstep replays it) consuming `fuel`; integer px steps against existing bitmap collision; buy fuel via the catalog Fuel Tank. `shared/src/types/PlayerAction.ts`, `shared/src/net/replay.ts`, `GameEngine.ts`, `Tank.ts`. [H/M]
-- Parachutes: purchasable accessory that limits fall damage when a crater drops your tank (pure threshold in the post-terrain tank-resolution loop). Counters undermining. `GameEngine.ts` detonate(), `WeaponSystem.ts`. [H/S]
+- Parachutes: purchasable accessory that limits fall damage when a crater drops your tank (pure threshold in the post-terrain tank-resolution loop). Counters undermining. `GameEngine.ts` detonate(), `WeaponSystem.ts`. [H/S] — **NOTE (se-parity-economy scoping, 2026-06-21): the `[H/S]` undercounts this.** There is currently NO fall damage at all (`resolveTanksToTerrain` drops a tank onto the new floor harmlessly), so a faithful parachute first needs a NEW fall-damage gameplay mechanic (drop-distance threshold → damage) + retuning of the burial/collapse harness seeds. Treat as `[H/M]`, its own physics sprint with a playtest gate. The Battery accessory path (`buy.accessory`) is now in place to hang it on.
 - Room browser UI over the existing `list_rooms` Edge Function: surface open public rooms (players, rounds, status) so players don't have to share a code out-of-band. Lobby/UI only. `client/src/ui/Lobby.ts`. [H/M]
 - Teams mode (2v2): add `team` to `GameOptions.players`; win condition → last team standing, optional friendly fire. Roster already supports 4; win-check is centralized. `GameEngine.ts` endRoundIfDecided/computeMatchWinner. [H/M]
-- Batteries accessory: per-tank power cap above 100 (catalog +10/unit) — non-weapon economy investment, extends range on the bigger field. `GameEngine.ts`, `Tank.ts`. [M/S]
-- Credit interest at ROUND_OVER: integer `floor(credits * rate)` (keep integer to avoid replay float drift) — adds save-vs-spend tension. `GameEngine.ts` round-over path. [M/S]
 - Tracer / ranging shot: cheap zero-damage preview shell reusing the AI's `simulateImpact` forward-sim to show the arc; strong onboarding + skill tool (log it like any fire if it ends the turn). `shared/src/engine/WeaponSystem.ts`, `AI.ts`, `Renderer.ts`. [M/M]
-- Arms-level room setting: every weapon already carries an unused `armsLevel` (0-4); add `GameOptions.armsLevel` and gate the store engine-side ("basic" vs "everything" matches). `GameOptions.ts`, `GameEngine.ts` applyBuy. [M/S]
 - Multiple shield classes: add Heavy Shield (bigger pool) and Mag Deflector (reflects shots off a deterministic shield-circle normal via `reflectVelocity`, no RNG). `shared/src/engine/WeaponSystem.ts`, `GameEngine.ts`. [M/M]
 - Spectator mode: join-as-observer that read-only replays the `room_actions` log (RLS already allows member SELECT) — nearly free under lockstep; lets eliminated players keep watching. `client/src/client/NetworkClient.ts`, RLS tweak. [M/M]
-- Sudden death: deterministically escalate gravity/wind or rain dirt after turn N (pure function of `state.turn`) to break long-round stalemates. `GameEngine.ts`. [M/S]
 - Emotes / quick-chat over a SEPARATE Realtime broadcast channel (ephemeral, NEVER on the action log so it stays out of the deterministic seq). `client/src/client/NetworkClient.ts`, `Lobby.ts`. [M/S]
 - Interactive tutorial / onboarding: guided first shot (aim → power → read wind → fire) + aim-assist tier reusing the forward-sim; controls are currently undiscoverable (REVIEW_BACKLOG P3-13). Client UI. [M/M]
 - AI personalities: 2-3 flavors (aggressive nuke, conservative dirt-builder, area-denial napalm) by varying weapon-preference weights in the deterministic `chooseLoadout` ranking. `shared/src/engine/AI.ts`. [L/S]

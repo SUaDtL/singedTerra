@@ -300,7 +300,10 @@ function bootstrap(): void {
     if (key === aiActedKey) return; // already acting on this turn
     aiActedKey = key;
 
-    const gravity = currentConfig?.settings?.gravity ?? GRAVITY;
+    // Plan with the engine's EFFECTIVE gravity (sudden death ramps it past the threshold)
+    // so the bot aims for the arc the engine will actually fly; falls back to the configured
+    // base gravity if the client can't report it.
+    const gravity = client?.getEffectiveGravity() ?? currentConfig?.settings?.gravity ?? GRAVITY;
     const plan = computeAiPlan(state, active.id, active.ai!, gravity);
     if (!plan) return; // no target (game effectively over) — nothing to do
 

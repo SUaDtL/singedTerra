@@ -48,6 +48,10 @@ export class HotSeatClient implements GameClient {
     return this.engine.getState();
   }
 
+  getEffectiveGravity(): number {
+    return this.engine.getEffectiveGravity();
+  }
+
   onStateChange(listener: (state: GameState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

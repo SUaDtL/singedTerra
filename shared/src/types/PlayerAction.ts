@@ -1,4 +1,4 @@
-import type { WeaponType } from '../engine/WeaponSystem';
+import type { WeaponType, AccessoryType } from '../engine/WeaponSystem';
 
 /**
  * Discriminated union of all player inputs (SPEC §4.3 / §5). Sent by clients as
@@ -65,7 +65,17 @@ export interface UseShieldAction {
  */
 export interface BuyAction {
   type: 'buy';
-  weapon: WeaponType;
+  /**
+   * The weapon bundle to buy. Present for a WEAPON purchase; omitted when buying an
+   * {@link accessory} instead. Exactly one of `weapon`/`accessory` is set.
+   */
+  weapon?: WeaponType;
+  /**
+   * A non-weapon accessory to buy (SE-parity — currently `'battery'`, which raises the
+   * tank's powerCap). Present for an ACCESSORY purchase; omitted for a weapon buy. The
+   * field is optional + additive, so existing weapon-only buy rows are unchanged.
+   */
+  accessory?: AccessoryType;
   /**
    * Which tank is buying. Omitted during PLAYER_TURN (the active tank buys, as
    * before). During the ROUND_OVER between-rounds shop ALL players may buy, so the
