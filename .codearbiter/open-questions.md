@@ -10,11 +10,9 @@ Both forks surfaced by the 2026-06-21 checkpoint were resolved in the `public-ha
 - **Edge Function rate-limiting posture** → chose (a) **implement a limiter** (RESOLVED). Per-IP
   fixed-window limiter on all 10 functions (migration `005_rate_limits.sql` + `withCors`); documented
   in `security-controls.md` → "Rate limiting".
-- **ADR adoption** → chose (a) **formalize now** (decision made; authoring PENDING). ADRs must be
-  authored through `/ca:adr` (user-attributed — a hard rule blocks batch-writing them), so the seven
-  ADRs (six invariants + the rate-limiter decision) are a `/ca:adr` follow-up, not part of the
-  autonomous sprint. Until authored, the invariants remain documented in CLAUDE.md / CONTEXT.md /
-  coding-standards.md and the rate-limiter rationale in `security-controls.md` + the threat model.
+- **ADR adoption** → chose (a) **formalize now** (RESOLVED). The seven ADRs were authored via `/ca:adr`
+  (user-attributed) on 2026-06-21: `.codearbiter/decisions/0001..0007` + `decision-log.md`
+  (ADR-0001..0005 invariants, ADR-0006 no-auth/ephemeral-identity, ADR-0007 the rate limiter).
 
 ---
 
