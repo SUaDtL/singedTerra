@@ -180,14 +180,14 @@ y  += vy
 ### 4.3 Turn System
 
 ```
-States: LOBBY → ACTIVE → PLAYER_TURN → FIRING → RESOLVING → NEXT_TURN → GAME_OVER
+States: LOBBY → ACTIVE → PLAYER_TURN → FIRING → RESOLVING → ROUND_OVER → GAME_OVER
 ```
 
 - `PLAYER_TURN`: active player adjusts angle, power, selects weapon, fires
 - `FIRING`: projectile in flight — no input accepted
-- `RESOLVING`: explosion applied, terrain deformed, health updated, death check
-- `NEXT_TURN`: advance to next living player, generate new wind value, broadcast state
-- `GAME_OVER`: last tank standing wins
+- `RESOLVING`: explosion applied, terrain deformed, health updated, death check — then advance to the next living player, generating a new wind value (no `GameState` is shipped; clients replay the action log)
+- `ROUND_OVER`: round ends (last tank standing); score the round before the next round or game over
+- `GAME_OVER`: match decided
 
 Turn timeout (V1): 30s per turn, configurable.
 
@@ -461,7 +461,7 @@ interface ProjectileState {
 ### MVP1 — It's a Game
 **Goal**: Playable hot-seat game, 2–4 players.
 
-- Turn system state machine (LOBBY → PLAYER_TURN → FIRING → RESOLVING → NEXT_TURN → GAME_OVER)
+- Turn system state machine (LOBBY → PLAYER_TURN → FIRING → RESOLVING → ROUND_OVER → GAME_OVER)
 - Health system: tanks take damage from explosions based on proximity
 - Tank death: remove from play when health ≤ 0, terrain collapse for unsupported tanks
 - Wind: per turn, gently drifts (|wind| ≤ MAX_WIND, |Δ| ≤ WIND_DRIFT_STEP), shown on HUD, affects projectile; cap tunable via lobby
