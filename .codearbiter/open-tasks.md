@@ -110,3 +110,49 @@ D (fire-burning); `postOnceWithRetry` gained an inter-attempt backoff + `attempt
 covered by three new `netretry.mjs` cases.
 - KNOWN DEVIATION (accepted, documented): same-tick multi-detonation now collides blast #2 against blast #1's un-compacted overhang (deferred-settle trade-off — deterministic, NOT a desync). If pre-animated-collapse gameplay parity is ever wanted, the only clean route is compact-immediately + replay-the-collapse-delta-as-overlay (a larger redesign). Revisit only if playtest shows it matters. `shared/src/engine/GameEngine.ts` path-A comment. [M/L]
 - Manual 2-browser networked playtest owed: confirm (a) animated collapse renders + a tank visibly sinks during RESOLVING; (b) join/reconnect mid-RESOLVING replays cleanly (NetworkClient `FIRING||RESOLVING` fix); (c) buffered back-to-back shots flush correctly after the settle (rAF `wasBusy` fix). Tuning: `COLLAPSE_PX_PER_TICK=4` feel.
+
+## Checkpoint 2026-06-21 findings (6-reviewer sweep → `.codearbiter/checkpoints/2026-06-21.md`)
+
+Severity counts: 0 CRITICAL · 5 HIGH · 13 MEDIUM · 11 LOW · 11 NEEDS-TRIAGE (40 total).
+0 overrides, 0 drift (6/6 invariants confirmed), 38 harnesses + 57 Deno cases green.
+Items tagged **(quick-kill → sprint)** are batched into the `checkpoint-quick-kills` sprint.
+Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-05 ADRs).
+
+### Security & client
+- **Stored XSS** — `buildScoreboard` interpolates peer-controlled `playerName` into `innerHTML`; a `<svg/onload=…>` name (≤20 chars, the server limit) broadcasts via the roster, replays, and executes as live HTML in every opponent's GAME_OVER/ROUND_OVER scoreboard. Build rows via `createElement` + `.textContent` (or HTML-escape); optionally strip `<>` in the server name validators. `client/src/ui/HUD.ts:1024` (src `client/src/client/NetworkClient.ts:962`). [H/S] **(quick-kill → sprint)**
+- `console.error` logs the full ephemeral `playerId` (the de-facto identity token); truncate or drop it. `client/src/client/NetworkClient.ts:370`. [L/S] **(quick-kill → sprint)**
+- `[auth] enabled=true` + `enable_signup=true` in committed `supabase/config.toml` contradicts the no-auth design (local-dev scaffold; no evidence deployed); set `enabled=false` / comment as local-only. `supabase/config.toml:29-38`. [L/S] **(quick-kill → sprint)**
+- Untrusted `p.color` → `dot.style.background`, validated only non-empty/unique; safe today (DOM setter discards invalid) but unvalidated — add a hex/`rgb()` allowlist in the server validators. `client/src/ui/Lobby.ts:1243,1668`. [L/S]
+- Room code: 4-char/36-symbol via `b%36` (slight modulo bias); accepted non-security CSPRNG tradeoff (controls §41) — no action unless room confidentiality ever matters. `supabase/functions/_shared/mod.ts:147-153`. [—] accepted
+
+### Tooling & dependencies
+- `tsx` is undeclared/unversioned yet runs all 38 `npm run check` harnesses via `npx tsx` (no lockfile integrity) — the sole pre-deploy gate. Add `tsx` to root `devDependencies` (^4.19.0) to pin it. `package.json`. [H/S] **(quick-kill → sprint)**
+- Pin the floating Deno import `@supabase/supabase-js@2` → `@2.107.0` (re-resolves on any `deno cache --reload`, affects all 10 functions). `supabase/functions/_shared/mod.ts:13`. [L/S] **(quick-kill → sprint)**
+- `http-proxy-middleware@3.0.6` (dev-only, transitive via `netlify-cli`): GHSA-gcq2-9pq2-cxqm CRLF (CVSS 7.5, fixed 3.0.7); `npm update http-proxy-middleware --depth 10` or await a netlify-cli bump. [M/S]
+- Remove the phantom `iceberg-js@0.8.1` entry from `deno.lock` (imported nowhere) — find+remove the originating import then `deno cache --reload`, or drop manually. [L/S]
+- Remove the extraneous `server` workspace from `package-lock.json:17827-17840` (references deleted socket.io/express/tsx); regenerate via `npm install`. [L/S]
+- `node-forge@1.4.0` dev-only transitive carries `(BSD-3-Clause OR GPL-2.0)` — acknowledge the copyleft disjunct vs MIT intent, or pursue removal via netlify-cli. [L/S]
+- LOW deprecations, dev-only transitive: `postcss-values-parser@6.0.2` (MPL-2.0), `glob@10.5.0`, `node-domexception@1.0.0` — acknowledge / monitor netlify-cli updates. [L/—]
+
+### Migrations (committed migrations are IMMUTABLE — fixes ship as a NEW migration 005 + backend deploy)
+- Add `SET LOCAL lock_timeout='3s'` to `submit_room_action`: the per-room `FOR UPDATE` lock has no timeout, so a wedged caller head-of-line-stalls all submits + rematch/finish for that room (the seq race itself IS closed correctly). `supabase/migrations/004_atomic_submit_action.sql:50-58`. [M/S]
+- Guard the `CREATE OR REPLACE FUNCTION` signature footgun: a future arg-signature change spawns a new overload that re-acquires default `PUBLIC EXECUTE` → anon-callable. Add schema-level `ALTER DEFAULT PRIVILEGES … REVOKE EXECUTE … FROM PUBLIC` or single-source the signature. `004…:35`. [M/S]
+- Reword the `submit_room_action` SECURITY RATIONALE comment: it claims RLS still applies, but the sole caller is service_role (bypasses RLS) — the real control is `REVOKE PUBLIC` / `GRANT service_role`. `004…:43`. [L/S]
+- (Optional) Add one-line data-classification comments per table (no-PII / random-ids by design). `001_init.sql`, `003_match_scores.sql`. [L/S]
+
+### Test coverage
+- finish_game `sanitizeScoreboard` bounds-checking untested (malformed array / invalid tankId / OOB seat / non-finite damage clamp). `supabase/functions/finish_game/index.ts`. [M/M]
+- join_room authz + roster mutation untested (success / 404 / finished-rejected / duplicate / maxPlayers). `supabase/functions/join_room/index.ts`. [M/M]
+- ready_up / leave_room / restart_game flows untested — consolidate one Deno test file. [M/M]
+- create_room handler (DB-mutating; `validate.test.ts` covers only option coercion), heartbeat, list_rooms, update_player (incl. self-only 403) untested. [M/M]
+- `Random.ts` has no dedicated harness (only indirect via `wind.mjs`) — add `scripts/checks/random.mjs` (same-seed-identical / independent-streams / edge-seeds). [L/S] **(quick-kill → sprint)**
+- `seqGuard.ts` `resync_guard.mjs` lacks boundary cases (`seq==nextExpected`, `seq-1`, `Infinity`). [L/S] **(quick-kill → sprint)**
+- `math.ts` `clamp()` NaN-preservation has no explicit test (a maintainer could "fix" the intentional NaN passthrough) — add `scripts/checks/math.mjs`. [L/S] **(quick-kill → sprint)**
+- `replay.ts` edge cases untested (OOB angle, buy with both weapon+accessory, empty payload). [L/S]
+- (NEEDS-TRIAGE — integration/manual, no unit harness practical) NetworkClient buffering/seq/reconnect; canvas renderers; AudioEngine; InputHandler — hard to test without Supabase/Canvas/DOM mocks. NOTE: all `scripts/checks/*.mjs` verified wired into the `npm run check` &&-chain (no silently-skipped harness).
+
+### Doc consistency / informational
+- The `.env.example` var-name mismatch is ALREADY fixed (now `SUPABASE_SERVICE_ROLE_KEY`) — the `security-controls.md:36` text describing it is now stale; update the text and close the prior open-task. [L/S]
+- `active_player_index` is commented "advisory only / may be removed in V1" (`001_init.sql:20-23`) but migration 004 writes it as the authoritative turn cursor — reconcile the comment; the column is load-bearing. [L/S]
+- (informational, no action) `submit_action` lets any room member proxy any bot/ai seat — within documented design (controls §26), exactly-once via the seq cursor; threat-model awareness only.
+- (informational, no action) `REPLICA IDENTITY FULL` on rooms/room_actions = WAL write-amplification, justified for Realtime; revisit only if WAL cost grows.

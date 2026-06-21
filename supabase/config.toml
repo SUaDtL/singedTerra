@@ -27,10 +27,13 @@ enabled = true
 file_size_limit = "50MiB"
 
 [auth]
-enabled = true
+# Disabled by design: singedTerra uses no end-user auth (ephemeral identity model).
+# This block is local-dev scaffolding from `supabase init`; keep it off so it never
+# stands up an unused GoTrue surface if this config is ever applied.
+enabled = false
 site_url = "http://localhost:5173"
 jwt_expiry = 3600
-enable_signup = true
+enable_signup = false
 
 [auth.email]
 enable_signup = true
