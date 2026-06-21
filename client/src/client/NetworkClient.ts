@@ -367,7 +367,8 @@ export class NetworkClient implements GameClient {
   sendAction(action: PlayerAction): void {
     const engineTankId = this.playerIndexMap.get(this.playerId);
     if (!engineTankId) {
-      console.error('NetworkClient.sendAction: no engine tank ID for playerId', this.playerId);
+      // Log only a short prefix — playerId is the de-facto identity token.
+      console.error('NetworkClient.sendAction: no engine tank ID for playerId', this.playerId?.slice(0, 8));
       return;
     }
 
