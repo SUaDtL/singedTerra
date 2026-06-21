@@ -3,23 +3,18 @@
 Unresolved `[CONFIRM-NN]` items. Each blocks dependent work until resolved.
 The SessionStart hook and statusline count `CONFIRM-NN` occurrences here.
 
-## Checkpoint 2026-06-21 decision forks
+## Resolved 2026-06-21 (the two checkpoint decision forks)
 
-- [CONFIRM-04] **Edge Function rate-limiting posture.** All 10 functions are
-  `verify_jwt=false` public POST endpoints reachable with the anon key and have NO
-  application-level rate limiting (`supabase/functions/_shared/mod.ts:51`); a client can
-  loop create_room/join_room/heartbeat/list_rooms/submit_action for resource-exhaustion.
-  RLS blocks unauthorized *writes* but does nothing to cap request *volume*, and
-  `security-controls.md` is silent on abuse-volume controls. Options: (a) add a
-  per-IP/per-room limiter on the write-side functions; (b) formally record "no application
-  rate limiting — accepted (casual game; RLS blocks writes; Supabase platform limits cap
-  cost)" in `security-controls.md`. Surfaced by security-reviewer (MEDIUM).
-- [CONFIRM-05] **ADR adoption.** No `.codearbiter/decisions/` directory exists; the 6 core
-  invariants are confirmed in code (0 drift) but live only in CLAUDE.md / CONTEXT.md /
-  coding-standards.md. Options: (a) stand up `decisions/` and formalize ADR-001..006
-  (two-context physics, deterministic lockstep, seeded PRNG, HUD-as-DOM, thin referees,
-  no-auth/ephemeral-identity) now via `/ca:adr`; (b) defer until the project leaves Stage 1
-  and record the deferral. Surfaced by architecture-drift-reviewer.
+Both forks surfaced by the 2026-06-21 checkpoint were resolved in the `public-hardening` sprint:
+
+- **Edge Function rate-limiting posture** → chose (a) **implement a limiter** (RESOLVED). Per-IP
+  fixed-window limiter on all 10 functions (migration `005_rate_limits.sql` + `withCors`); documented
+  in `security-controls.md` → "Rate limiting".
+- **ADR adoption** → chose (a) **formalize now** (decision made; authoring PENDING). ADRs must be
+  authored through `/ca:adr` (user-attributed — a hard rule blocks batch-writing them), so the seven
+  ADRs (six invariants + the rate-limiter decision) are a `/ca:adr` follow-up, not part of the
+  autonomous sprint. Until authored, the invariants remain documented in CLAUDE.md / CONTEXT.md /
+  coding-standards.md and the rate-limiter rationale in `security-controls.md` + the threat model.
 
 ---
 

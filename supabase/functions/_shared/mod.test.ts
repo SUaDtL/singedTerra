@@ -6,7 +6,14 @@
 // Uses Deno.test with manual assertions (no external import) so the suite is
 // hermetic and does not require network access.
 
-import { nextCursor } from './mod.ts'
+import {
+  nextCursor,
+  checkRateLimit,
+  clientIp,
+  rateWindow,
+  rateLimitFor,
+  RATE_LIMIT_DEFAULT,
+} from './mod.ts'
 
 // ---------------------------------------------------------------------------
 // Helper: assert strict equality with a descriptive message
@@ -157,4 +164,60 @@ Deno.test('round-over + out-of-bounds reported → modulo fallback', () => {
   // modulo = (0 + 1) % 3 = 1
   assertEqual(result.index, 1, 'index')
   assertEqual(result.turn, 2, 'turn')
+})
+
+// ---------------------------------------------------------------------------
+// Rate limiting — pure helpers (migration 005)
+// ---------------------------------------------------------------------------
+
+// checkRateLimit: allowed while count <= limit; the boundary (count === limit) is allowed.
+Deno.test('checkRateLimit: under the limit is allowed', () => {
+  assertEqual(checkRateLimit(1, 10), true, 'count 1 / limit 10')
+  assertEqual(checkRateLimit(9, 10), true, 'count 9 / limit 10')
+})
+Deno.test('checkRateLimit: at the limit is allowed (inclusive boundary)', () => {
+  assertEqual(checkRateLimit(10, 10), true, 'count 10 / limit 10')
+})
+Deno.test('checkRateLimit: over the limit is denied', () => {
+  assertEqual(checkRateLimit(11, 10), false, 'count 11 / limit 10')
+  assertEqual(checkRateLimit(61, 60), false, 'count 61 / limit 60')
+})
+
+// clientIp: x-forwarded-for first hop, list trimming, x-real-ip fallback, missing.
+function reqWith(headers: Record<string, string>): Request {
+  return new Request('https://example.test', { method: 'POST', headers })
+}
+Deno.test('clientIp: single x-forwarded-for', () => {
+  assertEqual(clientIp(reqWith({ 'x-forwarded-for': '1.2.3.4' })), '1.2.3.4', 'single')
+})
+Deno.test('clientIp: x-forwarded-for list takes the first hop, trimmed', () => {
+  assertEqual(clientIp(reqWith({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8, 9.10.11.12' })), '1.2.3.4', 'list')
+})
+Deno.test('clientIp: falls back to x-real-ip', () => {
+  assertEqual(clientIp(reqWith({ 'x-real-ip': '8.8.8.8' })), '8.8.8.8', 'real-ip')
+})
+Deno.test('clientIp: empty when neither header is present', () => {
+  assertEqual(clientIp(reqWith({})), '', 'missing')
+})
+
+// rateWindow: floor(ms / 1000 / 60); the same window for two times in the same minute,
+// the next window for a time 60s later. Pure (time passed in).
+const MINUTE_ALIGNED_MS = 16_666_667 * 60_000 // exactly on a 60s boundary
+Deno.test('rateWindow: same 60s window collapses to one bucket', () => {
+  const a = rateWindow(MINUTE_ALIGNED_MS)
+  const b = rateWindow(MINUTE_ALIGNED_MS + 59_000) // +59s, still same window
+  assertEqual(a, b, 'same minute')
+})
+Deno.test('rateWindow: crossing 60s advances the window', () => {
+  const a = rateWindow(MINUTE_ALIGNED_MS)
+  const c = rateWindow(MINUTE_ALIGNED_MS + 60_000) // +60s, next window
+  assertEqual(c, a + 1, 'next minute')
+})
+
+// rateLimitFor: known buckets get their cap; unknown falls back to the default.
+Deno.test('rateLimitFor: known buckets and default fallback', () => {
+  assertEqual(rateLimitFor('create_room'), 10, 'create_room')
+  assertEqual(rateLimitFor('join_room'), 20, 'join_room')
+  assertEqual(rateLimitFor('restart_game'), 10, 'restart_game')
+  assertEqual(rateLimitFor('heartbeat'), RATE_LIMIT_DEFAULT, 'unknown → default')
 })

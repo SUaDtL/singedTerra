@@ -71,4 +71,4 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ started: shouldStart, players: updatedPlayers }, 200)
-}))
+}, { rateLimit: 'ready_up' }))
