@@ -114,6 +114,31 @@ for (const type of ['mirv', 'deaths_head']) {
   if (!failed) log('PASS: hot_napalm ignites a hotter/wider/longer fire field that burns a tank.');
 }
 
+// --- Hot Napalm ignition FLASH uses its OWN detonation visual (regression, #16) ---
+// Both napalm and hot_napalm route through igniteNapalm() (each sets behavior.napalm),
+// so neither ever calls detonate(). The ignition flash is the ONLY ExplosionEvent these
+// weapons emit — it must render with the FIRING weapon's detonation look, not a hardcoded
+// napalm one. radius/color/durationFrames all differ between the two defs, and radius also
+// drives screen-shake/boom scaling, so a wrong flash is a real (cosmetic) output bug.
+{
+  const hotDet = getWeapon('hot_napalm').detonation;
+  const napDet = getWeapon('napalm').detonation;
+  const e = freshEngine();
+  grant(e, 0, 'hot_napalm');
+  const r = fireTrace(e, { angle: 27, power: 68, weapon: 'hot_napalm' });
+  // napalm-type weapons emit exactly one ExplosionEvent: the ignition flash.
+  const flash = r.st.explosions[r.st.explosions.length - 1];
+  if (flash === undefined) {
+    fail('hot_napalm produced no ignition-flash ExplosionEvent');
+  } else {
+    log(`[hot_napalm flash] radius=${flash.radius} color=${flash.color} dur=${flash.durationFrames} (own def: ${hotDet.radius}/${hotDet.color}/${hotDet.durationFrames}, napalm def: ${napDet.radius}/${napDet.color}/${napDet.durationFrames})`);
+    if (flash.radius !== hotDet.radius) fail(`hot_napalm flash radius ${flash.radius} != own detonation radius ${hotDet.radius} (got ${flash.radius === napDet.radius ? "napalm's" : 'an unexpected'} value)`);
+    if (flash.color !== hotDet.color) fail(`hot_napalm flash color ${flash.color} != own detonation color ${hotDet.color} (got ${flash.color === napDet.color ? "napalm's" : 'an unexpected'} value)`);
+    if (flash.durationFrames !== hotDet.durationFrames) fail(`hot_napalm flash durationFrames ${flash.durationFrames} != own detonation ${hotDet.durationFrames} (got ${flash.durationFrames === napDet.durationFrames ? "napalm's" : 'an unexpected'} value)`);
+  }
+  if (!failed) log("PASS: hot_napalm ignition flash uses its OWN detonation visual (radius/color/duration).");
+}
+
 // --- Determinism: two same-seed runs byte-identical for each new weapon ---
 for (const [type, aim] of [
   ['mirv', { angle: 75, power: 50 }],
