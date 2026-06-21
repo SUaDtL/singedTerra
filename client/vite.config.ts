@@ -10,14 +10,6 @@ export default defineConfig({
       '@shared': resolve(__dirname, '../shared/src'),
     },
   },
-  server: {
-    proxy: {
-      '/socket.io': {
-        target: 'http://localhost:3000',
-        ws: true,
-      },
-    },
-  },
   build: {
     outDir: 'dist',
   },
