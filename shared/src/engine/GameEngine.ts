@@ -202,6 +202,39 @@ export class GameEngine {
    */
   private pendingSettle: { xStart: number; xEnd: number } | null = null;
 
+  /**
+   * Lazily-built per-column surface cache (P2 perf): surfaceAt() is an O(H) top-down
+   * scan, and processFire/canSpread/resolveTanksToTerrain call it per burning column
+   * EVERY tick — re-scanning a stable bitmap. This memoizes the topmost-solid y per
+   * column, keyed on `state.terrainVersion`. Every terrain mutation (deform, each
+   * settle step, round-restart rebuild) already bumps terrainVersion, so a version
+   * mismatch invalidates the whole cache; entries are computed lazily on first query
+   * via the SAME surfaceAt() scan, so cached values are byte-identical to a fresh
+   * scan. `-1` marks an uncomputed column (a real surface y is always in [0, H]).
+   * Determinism: pure derived data — no clock, no random; a clone rebuilds it lazily.
+   */
+  private surfaceCache = new Int16Array(CANVAS_WIDTH).fill(-1);
+  private surfaceCacheVersion = -1;
+
+  /**
+   * Cached surfaceAt: returns the topmost-solid y for column floor(x), identical to
+   * surfaceAt(this.terrain, x). Rebuilds (invalidates) the cache when terrainVersion
+   * has changed since the last fill, then memoizes each queried column. The clamp on
+   * x mirrors surfaceAt exactly so the cache is keyed on the same column index.
+   */
+  private surfaceAtCached(x: number): number {
+    if (this.surfaceCacheVersion !== this.state.terrainVersion) {
+      this.surfaceCache.fill(-1);
+      this.surfaceCacheVersion = this.state.terrainVersion;
+    }
+    const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
+    const cached = this.surfaceCache[xi];
+    if (cached !== -1) return cached;
+    const surf = surfaceAt(this.terrain, xi);
+    this.surfaceCache[xi] = surf;
+    return surf;
+  }
+
   constructor(options?: GameOptions) {
     const seed = options?.seed ?? DEFAULT_SEED;
     const heightLine = generate(seed);
@@ -307,6 +340,12 @@ export class GameEngine {
     c.options       = this.options; // GameOptions is treated as immutable config
     // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
     c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
+
+    // Surface cache: pure derived data — give the clone its own buffer and force a
+    // lazy rebuild (version -1 never matches the copied terrainVersion). Not copying
+    // entries keeps clone() equivalent: the first query recomputes via surfaceAt().
+    c.surfaceCache = new Int16Array(CANVAS_WIDTH).fill(-1);
+    c.surfaceCacheVersion = -1;
 
     // --- Wind RNG: re-create from the recorded seed + fast-forward ---
     c.windRngSeed   = this.windRngSeed;
@@ -1053,7 +1092,7 @@ export class GameEngine {
     for (const tank of this.state.tanks) {
       if (!tank.alive) continue;
       const xi = Math.floor(tank.x);
-      const surf = surfaceAt(this.terrain, tank.x);
+      const surf = this.surfaceAtCached(tank.x);
       if (surf > tank.y) {
         tank.y = surf; // crater opened beneath -> tank falls onto new floor
         tank.buried = false; // ...and is dug free if it had been buried
@@ -1275,7 +1314,7 @@ export class GameEngine {
       let inFire = false;
       for (let x = lo; x <= hi; x++) {
         if (!this.fire.has(x)) continue;
-        if (Math.abs(surfaceAt(this.terrain, x) - tank.y) <= TANK_HEIGHT * 2) {
+        if (Math.abs(this.surfaceAtCached(x) - tank.y) <= TANK_HEIGHT * 2) {
           inFire = true;
           break;
         }
@@ -1283,12 +1322,20 @@ export class GameEngine {
       if (inFire) this.applyBlastDamage(tank, def.dotPerTick); // shield pool drains per-tick
     }
 
-    // 3. DECAY. Tick every column down; drop the burnt-out ones. Collect keys
-    //    first so we never mutate the Map mid-iteration.
-    for (const x of [...this.fire.keys()]) {
-      const life = this.fire.get(x)! - 1;
-      if (life <= 0) this.fire.delete(x);
-      else this.fire.set(x, life);
+    // 3. DECAY. Tick every column down; drop the burnt-out ones. Decrement survivors
+    //    in place (Map.set on an EXISTING key during iteration is safe and does not
+    //    disturb the iteration order), and collect only the EXPIRED keys to delete
+    //    after the loop — deleting mid-iteration is the only unsafe mutation. This
+    //    avoids spreading the full key set into a fresh array every burning tick;
+    //    the resulting fire contents are identical (same survivors, same removals).
+    let expired: number[] | null = null;
+    for (const [x, life] of this.fire) {
+      const next = life - 1;
+      if (next <= 0) (expired ??= []).push(x);
+      else this.fire.set(x, next);
+    }
+    if (expired !== null) {
+      for (const x of expired) this.fire.delete(x);
     }
 
     // Fire fully burnt out — clear the retained def + scorched set so the NEXT
@@ -1309,8 +1356,8 @@ export class GameEngine {
    */
   private canSpread(fromX: number, toX: number, def: NapalmDef): boolean {
     if (toX < 0 || toX >= CANVAS_WIDTH) return false;
-    const from = surfaceAt(this.terrain, fromX); // y (down = larger)
-    const to = surfaceAt(this.terrain, toX);
+    const from = this.surfaceAtCached(fromX); // y (down = larger)
+    const to = this.surfaceAtCached(toX);
     const rise = from - to; // > 0 => toX is HIGHER (smaller y)
     return rise <= def.climbLimit;
   }
@@ -1318,7 +1365,11 @@ export class GameEngine {
   /** Mirror the working `fire` Map into `state.fire`, sorted by x for a stable,
    *  deterministic snapshot order (renderer + serialization read this array). */
   private syncFire(): void {
-    const cells = [...this.fire.entries()].map(([x, life]) => ({ x, life }));
+    // Build the snapshot in a single pass (no intermediate spread/map arrays), then
+    // sort by x. Same resulting array of {x,life} in the same ascending-x order as
+    // the prior spread+map+sort — purely fewer per-tick allocations.
+    const cells: { x: number; life: number }[] = [];
+    for (const [x, life] of this.fire) cells.push({ x, life });
     cells.sort((a, b) => a.x - b.x);
     this.state.fire = cells;
   }

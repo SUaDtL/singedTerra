@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
@@ -187,7 +187,14 @@ export class Lobby {
     gravity: 0.15,
   };
   private waitingThisPlayerReady = false;
-  private waitingChannel: ReturnType<typeof supabase.channel> | null = null;
+  private waitingChannel: RealtimeChannel | null = null;
+  /**
+   * Lazily-loaded Supabase client. The hot-seat path (the common case) never
+   * needs it, so we keep `@supabase/supabase-js` out of the initial bundle and
+   * dynamic-import it only when the waiting room first subscribes (see
+   * `getSupabase`). Mirrors the `await import('./lib/supabase')` seam in main.ts.
+   */
+  private supabaseClient: SupabaseClient | null = null;
 
   /** Heartbeat interval keeping THIS player's lastSeen fresh; lifetime == waiting channel. */
   private waitingHeartbeatId: ReturnType<typeof setInterval> | null = null;
@@ -822,7 +829,7 @@ export class Lobby {
       this.onlineError = '';
       this.onlineBusy = false;
       this.render();
-      this.subscribeWaitingRoom();
+      void this.subscribeWaitingRoom();
     } catch (err) {
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
@@ -972,7 +979,7 @@ export class Lobby {
       this.onlineError = '';
       this.onlineBusy = false;
       this.render();
-      this.subscribeWaitingRoom();
+      void this.subscribeWaitingRoom();
     } catch (err) {
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
@@ -1279,9 +1286,23 @@ export class Lobby {
     return frag;
   }
 
-  private subscribeWaitingRoom(): void {
+  /**
+   * Dynamic-import + memoize the Supabase client. Keeps `@supabase/supabase-js`
+   * out of the hot-seat initial bundle; the chunk is fetched only on the first
+   * networked waiting-room subscription.
+   */
+  private async getSupabase(): Promise<SupabaseClient> {
+    if (!this.supabaseClient) {
+      const mod = await import('../lib/supabase');
+      this.supabaseClient = mod.supabase;
+    }
+    return this.supabaseClient;
+  }
+
+  private async subscribeWaitingRoom(): Promise<void> {
     this.cleanupWaitingChannel();
     const roomId = this.waitingRoomId;
+    const supabase = await this.getSupabase();
 
     this.waitingChannel = supabase
       .channel(`rooms:${roomId}`)
@@ -1712,7 +1733,7 @@ export class Lobby {
     this.stopHeartbeat();
     this.lastWaitingSig = '';
     if (this.waitingChannel) {
-      void supabase.removeChannel(this.waitingChannel);
+      void this.supabaseClient?.removeChannel(this.waitingChannel);
       this.waitingChannel = null;
     }
   }
