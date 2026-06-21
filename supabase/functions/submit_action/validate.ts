@@ -29,7 +29,10 @@ interface NetworkShieldAction {
 
 interface NetworkBuyAction {
   type: 'buy'
-  weapon: string
+  // Exactly one of weapon/accessory is set: a weapon bundle, or an SE-parity accessory
+  // (e.g. 'battery'). Both optional + additive so weapon-only buy rows are unchanged.
+  weapon?: string
+  accessory?: string
   tankId?: string
 }
 
@@ -75,7 +78,7 @@ export type ValidationResult =
 export function validateActionShape(body: {
   roomId?: unknown
   playerId?: unknown
-  action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; tankId?: unknown }
+  action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; accessory?: unknown; tankId?: unknown }
 }): ValidationResult {
   const { roomId, playerId, action } = body
 
@@ -108,24 +111,40 @@ export function validateActionShape(body: {
     }
   }
 
-  // buy requires a non-empty weapon
-  if (action.type === 'buy' && (typeof action.weapon !== 'string' || action.weapon.trim().length === 0)) {
-    return { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon' }
+  // buy requires EXACTLY ONE of a non-empty weapon OR a recognized accessory (SE-parity battery).
+  if (action.type === 'buy') {
+    const hasWeapon = typeof action.weapon === 'string' && action.weapon.trim().length > 0
+    const hasAccessory = action.accessory === 'battery'
+    if (!hasWeapon && !hasAccessory) {
+      return { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon or accessory' }
+    }
+    // Reject a buy that sets BOTH — applyBuy resolves the accessory first and would silently
+    // drop the paid-for weapon. Enforce the "exactly one" invariant the contract comments assert.
+    if (hasWeapon && hasAccessory) {
+      return { ok: false, status: 400, error: 'Invalid input: buy action must set exactly one of weapon/accessory' }
+    }
   }
 
-  // fire requires finite angle, power in [0,100], non-empty weapon
+  // fire requires a finite angle, a finite non-negative power (NO upper bound — see the note
+  // in the power check below), and a non-empty weapon
   if (action.type === 'fire') {
     if (typeof action.angle !== 'number' || !isFinite(action.angle)) {
       return { ok: false, status: 400, error: 'Invalid input: action.angle must be a finite number' }
     }
 
+    // NO fixed upper bound. A bought Battery raises a tank's powerCap above 100 (SE-parity),
+    // so a legitimate fire may carry power > 100. The referee runs NO physics and has no
+    // powerCap knowledge; the canonical state is the replayed log, and every client's engine
+    // clamps set_power to that tank's powerCap on replay (trust-client, CONTEXT CONFIRM-01).
+    // So the referee only sanity-checks a finite, non-negative number — an over-large value
+    // is harmless (the engine clamps it identically on every client). A hard 100 ceiling here
+    // would reject battery shots over the network while hot-seat accepts them (a context drift).
     if (
       typeof action.power !== 'number' ||
       !isFinite(action.power) ||
-      action.power < 0 ||
-      action.power > 100
+      action.power < 0
     ) {
-      return { ok: false, status: 400, error: 'Invalid input: action.power must be a number in [0, 100]' }
+      return { ok: false, status: 400, error: 'Invalid input: action.power must be a finite number >= 0' }
     }
 
     if (typeof action.weapon !== 'string' || action.weapon.trim().length === 0) {

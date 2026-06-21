@@ -23,6 +23,8 @@ const DEFAULT_POWER = 50;
 const DEFAULT_HEALTH = 100;
 const DEFAULT_FUEL = 0;
 const DEFAULT_WEAPON: WeaponType = 'baby_missile';
+/** Baseline firing-power cap; bought Batteries raise a tank's powerCap above this (SE-parity). */
+export const DEFAULT_POWER_CAP = 100;
 
 /**
  * Per-weapon STARTING loadout (SPEC §9 economy). A tank opens with unlimited Baby
@@ -120,6 +122,7 @@ export function createTank(
     y: surfaceY(x, terrain),
     angle: DEFAULT_ANGLE,
     power: DEFAULT_POWER,
+    powerCap: DEFAULT_POWER_CAP,
     health: DEFAULT_HEALTH,
     fuel: DEFAULT_FUEL,
     selectedWeapon: DEFAULT_WEAPON,
@@ -226,6 +229,7 @@ export const Tank = {
       y: params.y,
       angle: DEFAULT_ANGLE,
       power: DEFAULT_POWER,
+      powerCap: DEFAULT_POWER_CAP,
       health: DEFAULT_HEALTH,
       fuel: DEFAULT_FUEL,
       selectedWeapon: params.selectedWeapon ?? DEFAULT_WEAPON,

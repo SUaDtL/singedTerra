@@ -241,3 +241,69 @@ the held-out heavy item (animated terrain collapse) + 2 safe-cut netcode compani
   guard — harmless (call site hardcodes 2); open-tasks follow-up. (3) CANVAS 600 vs CLAUDE.md doc drift —
   pre-existing, already tracked; not this diff.
 - **Phase 4 GATE: PASS.** No CRITICAL/HIGH across combined diff. All 5 units (AC-01..04 + completion fix) ACCEPTED.
+
+---
+
+# Sprint — "Scorched Earth parity: economy & match-flow" (`se-parity-economy`, 2026-06-21)
+
+Branch `feat/se-parity-economy`. Spec: `.codearbiter/specs/se-parity-economy.md`. Ultracode pass; SDD→TDD
+maintained per feature (spec → failing harness → implement → green). Four SE-parity features, three
+engine-only + one contract-touching, all determinism-harness-validated.
+
+## Features (each: spec ACs → one harness, red→green)
+- **Credit interest at ROUND_OVER** — `GameOptions.interestRate`; `floor(credits*rate)` integer interest on
+  the carried (post-payout) balance in `startNextRound`; `clone()` copies the rate. Harness `interest.mjs`
+  (5 checks: back-compat, floor math, single-round no-op, once-per-transition, determinism+clone parity).
+- **Sudden-death gravity escalation** — `GameOptions.suddenDeathTurn`; `effectiveGravity(base,turn,sdTurn)`
+  pure function ramps gravity past the threshold, threaded into the projectile integration. Harness
+  `suddendeath.mjs` (precise straight-up y re-sim pins the exact gravity; within-config AC8 range; AI check).
+- **Arms-level room setting** — `GameOptions.armsLevel` (0–4, default 4=everything); `applyBuy` rejects a
+  weapon above the room level. Harness `armslevel.mjs` (5 checks incl. both shop paths).
+- **Batteries accessory** — `TankState.powerCap` (default 100), `buy.accessory='battery'` raises it +100
+  ($5000 catalog bundle); extended through `PlayerAction`/`replay.ts`/the Deno referee
+  (`validate.ts`+`index.ts`); carried across rounds. Harness `batteries.mjs` (6 checks) + 4 new referee
+  Deno cases.
+
+## Verification
+- `npm run check` exit 0 — typecheck (shared + client) + **38 harnesses** (34 prior + 4 new).
+- Deno referee suite: **41 passed** (38 prior + 3 new), backward-compatible contract change.
+
+## Adversarial review (Workflow, 4 lenses × independent verify) — 5 confirmed findings, all addressed
+- **BLOCKER (2 lenses, conf 5) — referee fire-power ceiling.** A Battery raises powerCap>100, the engine
+  clamps `set_power` to powerCap (power 150 legit), the client POSTs 150, but the referee still hard-capped
+  `fire` power at `[0,100]` → battery shot REJECTED networked but works hot-seat = a real cross-context
+  divergence. **Real miss.** Fix: relaxed the referee bound (finite+>=0 only; the engine clamps to powerCap
+  authoritatively on replay — trust-client, CONFIRM-01). Pinned by a new `batteries.mjs` engine-authoritative-
+  clamp assertion + updated Deno tests (power 150 passes; NaN/Inf/neg rejected).
+- **MAJOR — AI planner ignored sudden-death gravity** (deterministic, not a desync; bots fall short once
+  escalation kicks in). Fix: exported `effectiveGravity()` + public `getEffectiveGravity()`; added it to the
+  `GameClient` interface (HotSeat/Network delegate to their engine); both AI drivers now plan with effective
+  gravity. Proven by a new `suddendeath.mjs` check (bot lands 10px vs 300px from target).
+- **MINOR — `suddendeath.mjs` AC8 test proved ON-vs-OFF, not the literal within-config across-turn.** Fix:
+  rewrote Check 4 to fire one config at turn==T vs turn>T and assert range shrinks (ON-vs-OFF kept as bonus).
+- **MINOR — buy with BOTH weapon+accessory unenforced** (silently dropped the weapon). Fix: referee now
+  400-rejects both-fields + a Deno test.
+- Second-pass review on the FIXES dispatched (referee relaxation / AI wiring / completeness).
+
+## Deferred (documented in open-tasks.md)
+- **UI exposure** (lobby toggles for interest/sudden-death/arms-level; a Store button for Batteries — the
+  HUD store is `WeaponType`-keyed and needs a small accessory generalization). The engine+contract is
+  complete and harness-validated; the UI affordance is the remaining surface.
+- **Backend redeploy** (`npm run deploy:backend`) for the battery referee shape (additive/back-compat).
+- **Tank movement** (new networked action; own sprint) and **Parachutes** (needs a NEW fall-damage mechanic
+  first — the `[H/S]` estimate undercounts it; re-tagged `[H/M]` in open-tasks).
+
+## Second-pass review (on the FIXES) — completed; no new blocker; 4 findings, all dispositioned
+- **MINOR — sudden death keyed off match-global `state.turn`** (never reset per round) → in a best-of-N
+  match later rounds opened already-escalated. **Fixed:** added a `turnAtRoundStart` baseline (reset in
+  `startNextRound`, copied by `clone()`); `currentGravity()` now uses the PER-ROUND turn. New `suddendeath.mjs`
+  Check 7 plays through a round boundary and asserts round 2 opens at base gravity (global turn 11).
+- **MINOR — both-fields buy guard was referee-only.** **Fixed:** `applyBuy` now no-ops a both-fields buy too
+  (two-context symmetry) + new `batteries.mjs` Check 2b.
+- **NIT — stale `[0,100]` one-liner comment** in `validate.ts`. **Fixed.**
+- **NIT — Deno edge tests run via `check:edge`, not `npm run check`.** ACCEPTED + tracked: overlaps the
+  existing open-tasks governance item ("wire `deno check`/`deno lint` into a committed script"); forcing
+  deno + network into the Node-only primary gate is undesirable. Referee tests pass via `check:edge` (41).
+- Final state: `npm run check` exit 0 (typecheck + 38 harnesses); `check:edge` 41 passed. The
+  `fix-determinism` lens found NOTHING — the AI effective-gravity wiring is lockstep-safe (every client's
+  engine is at the same turn, so all compute the identical plan).
