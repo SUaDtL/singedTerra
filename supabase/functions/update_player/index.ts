@@ -108,4 +108,4 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ players: updatedPlayers }, 200)
-}))
+}, { rateLimit: 'update_player' }))

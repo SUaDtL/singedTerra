@@ -125,4 +125,4 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ ok: true }, 200)
-}))
+}, { rateLimit: 'finish_game' }))

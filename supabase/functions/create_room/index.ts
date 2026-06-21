@@ -167,4 +167,4 @@ Deno.serve(withCors(async (body) => {
   // Return the full players array so the client has the generated CPU seat ids
   // (and renders them in the waiting room) without waiting for a Realtime update.
   return json({ roomId: room.id, code, playerId, players }, 200)
-}))
+}, { rateLimit: 'create_room' }))

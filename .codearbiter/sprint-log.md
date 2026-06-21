@@ -441,3 +441,51 @@ threat-model, ADRs) runs next, gated by this CI. User approved spec + plan at th
 - USER: after merge, enable branch protection on `main` requiring the `check` + `edge` checks; set repo
   description/topics; add the canonical play URL to the README; flip to public AFTER Sprint B lands.
 - NEXT: Sprint B `public-hardening` — rate limiter (CONFIRM-04), `/ca:threat-model`, ADRs (CONFIRM-05).
+
+---
+
+# Sprint: public-hardening (2026-06-21)
+
+Spec/plan: `.codearbiter/specs/public-hardening.md`, `plans/public-hardening.md`. Part 2 of 2 of "going
+public". Branched off main AFTER #32 merged, so its PR is gated by the CI from #32. User approved the
+spec at the gate and locked the rate-limiter design: **Postgres counter table, default caps**, execute
+after #32 merges; deploy + repo flip stay the user's.
+
+## Auto-decisions
+
+- **[high] Limiter hooks into `withCors()`, the single chokepoint.** All 10 functions already wrap
+  through `withCors`; added a `rateLimit?: string` (bucket) opt there + an `enforceRateLimit()` helper,
+  rather than editing 10 handlers. One seam, per-function caps via `RATE_LIMITS`/`RATE_LIMIT_DEFAULT`.
+- **[high] RPC returns the count; the app decides.** `bump_rate_limit` returns the post-increment count;
+  the pure, unit-tested `checkRateLimit(count, limit)` makes the allow/deny call. Keeps the limits in the
+  app (tunable without a migration) and the decision testable without a live DB.
+- **[high] Fail OPEN on limiter error.** An RPC/DB hiccup logs and allows the request — a limiter outage
+  must not take the game down. MissingEnvError still propagates to the canonical 500.
+- **[high] `rateWindow(nowMs)` takes the time as an argument** (pure) so it's unit-testable; `withCors`
+  passes `Date.now()`. Wall-clock is fine here — Edge Functions are NOT the deterministic engine.
+- **[high] Migration 005 security comment written accurately** (unlike 004's, which the checkpoint
+  flagged): states the real control is the REVOKE-PUBLIC/GRANT-service_role grant, since the caller is
+  service_role and bypasses RLS. Table also carries a data-classification comment.
+- **[high] Threat model (T1): no CRITICAL.** STRIDE surfaced the DoS gap (fixed by this sprint) plus an
+  accepted Spoofing vector — `playerId` is NOT secret (it's in the publicly-SELECTable action log), so a
+  reader could act as another player ON THAT SEAT'S TURN; bounded by the turn-gate + seq-unique +
+  bot-only-proxy, and accepted under the ephemeral-identity decision. Recorded for the threat-model owner.
+
+## HARD GATE encountered (not a stop — scope-adjusted)
+- **[HARD GATE — H-11] ADR authoring blocked.** The pre-write hook prohibits batch-writing ADR files;
+  ADRs must go through `/ca:adr` with explicit user attribution ("never author an ADR as its own
+  judgment"). CORRECT behavior — I did NOT work around it. Scope-adjusted: the rate-limiter (code,
+  tested) shipped; the **decision** to formalize ADRs is recorded, but authoring the 7 ADRs is a
+  `/ca:adr` follow-up (user-attributed). CONFIRM-05 is "decided, authoring pending"; CONFIRM-04 fully
+  resolved. open-questions.md + security-controls.md adjusted to not reference not-yet-authored ADRs.
+
+## Verification (fresh run)
+- `"$HOME/.deno/bin/deno.exe" test supabase/functions/`: **67 passed** (57 + 10 new rate-limit cases:
+  checkRateLimit boundary, clientIp parsing, rateWindow, rateLimitFor). `npm run check` (typecheck + 41
+  harnesses) + `npm run build` green. Shared/client untouched.
+
+## Hard gates / owed
+- **OPS deploy (USER):** `npm run deploy:backend` applies migration 005 + the 10 functions — the limiter
+  does nothing until deployed. Then a manual `curl` 429 check (live DB not in CI).
+- **ADRs (USER):** author ADR-001..007 via `/ca:adr` (I can drive them interactively).
+- **Repo flip to public (USER).**

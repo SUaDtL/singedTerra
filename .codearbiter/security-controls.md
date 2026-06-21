@@ -43,3 +43,20 @@ Known trust observation (accepted under the replayed-log design): the next-turn 
 ## CORS
 
 `Access-Control-Allow-Origin: *` on all functions (`_shared/mod.ts`). Acceptable: there is no cookie-based auth and all writes are gated server-side.
+
+## Rate limiting (resolves CONFIRM-04)
+
+All 10 Edge Functions enforce a **per-IP fixed-window** limit via `withCors()` (`_shared/mod.ts`),
+backed by a **service-role-only** `rate_limits` counter table + the `bump_rate_limit` RPC (migration
+`005_rate_limits.sql`; `REVOKE … FROM PUBLIC` / `GRANT … TO service_role`, mirroring 004). The cap is
+60 requests/min/IP by default, tightened on the expensive writers (`create_room` 10, `join_room` 20,
+`restart_game` 10 — named constants in `_shared/mod.ts`, tunable without a migration). Over-limit
+returns **429**. Client IP is read from `x-forwarded-for` (first hop) / `x-real-ip`. (A formal ADR for
+this decision is owed via `/ca:adr`.)
+
+- **Fails open by design:** a limiter/DB error is logged and the request is allowed — a limiter outage
+  must never take the game down. The decision helper `checkRateLimit()` and window math `rateWindow()`
+  are pure and unit-tested (Deno).
+- **Residual (accepted):** a distributed many-IP flood is bounded only by Supabase platform limits;
+  acceptable at this stage, revisit if abuse appears (see the public threat model,
+  `.codearbiter/checkpoints/threat-model-public-2026-06-21.md`).

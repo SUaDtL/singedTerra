@@ -210,5 +210,5 @@ Deno.serve(withCors(async (body) => {
   })
 
   return rpcResultToResponse(rpcResult)
-}))
+}, { rateLimit: 'submit_action' }))
 } // end if (import.meta.main)

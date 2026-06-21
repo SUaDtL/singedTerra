@@ -32,12 +32,77 @@ export function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), { status, headers: corsHeaders() })
 }
 
+// ---------------------------------------------------------------------------
+// Rate limiting (per-IP fixed window) — see migration 005_rate_limits.sql
+// ---------------------------------------------------------------------------
+
+/** Fixed rate-limit window, in seconds. */
+export const RATE_WINDOW_SEC = 60
+
+/** Per-function request cap (per IP, per window). Tunable named constants — the
+ *  limit lives here in the app, so changing it needs no migration. The expensive
+ *  writers are capped tighter than the default. */
+export const RATE_LIMITS: Record<string, number> = {
+  create_room: 10,
+  join_room: 20,
+  restart_game: 10,
+}
+/** Applied to any function bucket without a specific entry above. */
+export const RATE_LIMIT_DEFAULT = 60
+
+/** Resolve the cap for a function bucket. */
+export function rateLimitFor(bucket: string): number {
+  return RATE_LIMITS[bucket] ?? RATE_LIMIT_DEFAULT
+}
+
+/** The fixed-window index for a wall-clock ms value. Pure (caller passes the
+ *  time) so it is unit-testable without a clock. */
+export function rateWindow(nowMs: number): number {
+  return Math.floor(nowMs / 1000 / RATE_WINDOW_SEC)
+}
+
+/** Extract the client IP from the standard proxy headers; '' if unknown. */
+export function clientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff && xff.trim()) return xff.split(',')[0].trim()
+  return req.headers.get('x-real-ip')?.trim() ?? ''
+}
+
+/** Pure allow/deny decision: a request is allowed while the post-increment count
+ *  is at or below the limit. */
+export function checkRateLimit(count: number, limit: number): boolean {
+  return count <= limit
+}
+
+/**
+ * Enforce the per-IP limit for one request against the `bump_rate_limit` RPC.
+ * Returns true (allowed) / false (over limit). FAILS OPEN: a limiter/DB hiccup
+ * must never take the game down, so an RPC error is logged and allowed through.
+ * A MissingEnvError propagates so withCors() maps it to the canonical 500.
+ */
+async function enforceRateLimit(req: Request, bucket: string): Promise<boolean> {
+  const supabase = getServiceClient() // throws MissingEnvError → caught by withCors
+  const ip = clientIp(req) || 'unknown'
+  const { data, error } = await supabase.rpc('bump_rate_limit', {
+    p_bucket: `${bucket}:${ip}`,
+    p_window: rateWindow(Date.now()),
+  })
+  if (error) {
+    console.error('rate_limit rpc error:', error.message)
+    return true // fail open
+  }
+  return checkRateLimit(typeof data === 'number' ? data : 0, rateLimitFor(bucket))
+}
+
 type Handler = (body: unknown, req: Request) => Response | Promise<Response>
 
 interface WithCorsOpts {
   /** When true, a missing/invalid JSON body yields `undefined` instead of a 400
    *  (list_rooms takes no body). Default false: parse failure => 400. */
   optionalBody?: boolean
+  /** Function bucket name to rate-limit by (per IP). The cap is resolved from
+   *  RATE_LIMITS / RATE_LIMIT_DEFAULT. Omit to disable limiting for this function. */
+  rateLimit?: string
 }
 
 /**
@@ -67,6 +132,10 @@ export function withCors(handler: Handler, opts: WithCorsOpts = {}): (req: Reque
     }
 
     try {
+      if (opts.rateLimit) {
+        const allowed = await enforceRateLimit(req, opts.rateLimit)
+        if (!allowed) return json({ error: 'Too many requests. Please slow down.' }, 429)
+      }
       return await handler(body, req)
     } catch (e) {
       if (e instanceof MissingEnvError) {
