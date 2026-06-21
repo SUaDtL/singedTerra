@@ -9,8 +9,12 @@
 //   3. BOTH-FAIL (attempts=2): mock fn that always rejects →
 //      fn called exactly twice, result { ok: false } and helper RESOLVES
 //      (never rejects) — proven by wrapping in try/catch.
+//   4. ATTEMPTS-CLAMP (attempts=0): clamped to 1 → fn called exactly once.
+//   5. DELAY-ZERO (delayMs=0): retries with no pause (elapsed < 100ms).
+//   6. DELAY-APPLIED (delayMs=25): one inter-attempt pause fires (elapsed >= ~25ms).
 //
-// Deterministic: no I/O, no network, no Math.random. Pure mock injection.
+// Deterministic in outcome: no I/O, no network, no Math.random. Cases 5/6 use
+// wall-clock only for loose delay bounds (setTimeout fires at-or-after its delay).
 // Run: npx tsx scripts/checks/netretry.mjs
 
 import { postOnceWithRetry } from '../../client/src/client/retry.ts';
@@ -90,6 +94,88 @@ const fail = (m) => { failed = true; log('FAIL: ' + m); };
     fail(`[both-fail] expected { ok: false }, got { ok: ${result.ok} }`);
   } else {
     log('PASS: both-fail — fn called twice, helper resolves to { ok: false } and never rejects.');
+  }
+}
+
+// -----------------------------------------------------------------------
+// 4. ATTEMPTS CLAMP (attempts=0 -> still calls fn exactly once, never zero)
+//    Guards the `total = attempts < 1 ? 1 : attempts` clamp: a non-positive
+//    count must NOT skip the call entirely. Use an always-failing fn so a
+//    zero-call bug would surface as callCount===0 (a false { ok:false }).
+//    delayMs=0 because a single attempt incurs no inter-attempt delay anyway.
+// -----------------------------------------------------------------------
+{
+  let callCount = 0;
+  const mockFn = async () => {
+    callCount++;
+    throw new Error('always fails');
+  };
+
+  const result = await postOnceWithRetry(mockFn, 0, 0);
+
+  if (callCount !== 1) {
+    fail(`[attempts-clamp] expected attempts=0 clamped to exactly 1 call, got ${callCount}`);
+  } else if (result.ok !== false) {
+    fail(`[attempts-clamp] expected { ok: false } after the single failed attempt, got { ok: ${result.ok} }`);
+  } else {
+    log('PASS: attempts-clamp — attempts=0 still calls fn exactly once, resolves { ok: false }.');
+  }
+}
+
+// -----------------------------------------------------------------------
+// 5. DELAY SUPPRESSED (attempts=2, delayMs=0 -> retries with NO pause)
+//    Proves delayMs=0 skips the inter-attempt wait while still retrying.
+//    Elapsed must be far below the 200ms default (loose < 100ms bound).
+// -----------------------------------------------------------------------
+{
+  let callCount = 0;
+  const mockFn = async () => {
+    callCount++;
+    if (callCount === 1) throw new Error('transient error');
+    return 'ok';
+  };
+
+  const start = Date.now();
+  const result = await postOnceWithRetry(mockFn, 2, 0);
+  const elapsed = Date.now() - start;
+
+  if (callCount !== 2) {
+    fail(`[delay-zero] expected fn called exactly 2 times, got ${callCount}`);
+  } else if (result.ok !== true) {
+    fail(`[delay-zero] expected { ok: true }, got { ok: ${result.ok} }`);
+  } else if (elapsed >= 100) {
+    fail(`[delay-zero] expected ~no delay with delayMs=0, but retry took ${elapsed}ms`);
+  } else {
+    log(`PASS: delay-zero — delayMs=0 retries with no pause (${elapsed}ms).`);
+  }
+}
+
+// -----------------------------------------------------------------------
+// 6. DELAY APPLIED (attempts=2, delayMs=25 -> a pause fires BETWEEN attempts)
+//    setTimeout fires at-or-after its delay, so elapsed >= ~delayMs is a
+//    non-flaky lower bound (asserted >=20ms for ms-rounding tolerance). The
+//    delay sits between attempts only, so two attempts incur exactly one.
+// -----------------------------------------------------------------------
+{
+  let callCount = 0;
+  const mockFn = async () => {
+    callCount++;
+    if (callCount === 1) throw new Error('transient error');
+    return 'ok';
+  };
+
+  const start = Date.now();
+  const result = await postOnceWithRetry(mockFn, 2, 25);
+  const elapsed = Date.now() - start;
+
+  if (callCount !== 2) {
+    fail(`[delay-applied] expected fn called exactly 2 times, got ${callCount}`);
+  } else if (result.ok !== true) {
+    fail(`[delay-applied] expected { ok: true }, got { ok: ${result.ok} }`);
+  } else if (elapsed < 20) {
+    fail(`[delay-applied] expected an inter-attempt delay >=~25ms, but retry took only ${elapsed}ms`);
+  } else {
+    log(`PASS: delay-applied — one inter-attempt pause fired (${elapsed}ms >= ~25ms).`);
   }
 }
 

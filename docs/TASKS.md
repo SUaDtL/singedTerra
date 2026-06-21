@@ -21,7 +21,7 @@ Living register of work, organized by delivery phase (**MVP0 → MVP1 → MVP2 �
 ## MVP1 — It's a Game
 *Goal: playable hot-seat game, 2–4 players.*
 
-- [x] Turn system state machine (LOBBY → PLAYER_TURN → FIRING → RESOLVING → NEXT_TURN → GAME_OVER)
+- [x] Turn system state machine (LOBBY → PLAYER_TURN → FIRING → RESOLVING → ROUND_OVER → GAME_OVER)
 - [x] Health system: tanks take damage from explosions based on proximity
 - [x] Tank death: remove at health ≤ 0; terrain collapse for unsupported tanks
 - [x] Wind: generated per turn, shown on HUD, affects projectile
