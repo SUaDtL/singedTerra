@@ -20,7 +20,7 @@
     "check:edge": "deno test supabase/functions/"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
+    "@types/node": "^26.0.0",
     "concurrently": "^8.2.2",
     "netlify-cli": "^26.1.0",
     "tsx": "^4.19.0",
