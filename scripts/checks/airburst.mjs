@@ -86,7 +86,7 @@ function fireShot(engine, { angle, power, weapon }) {
   let anySplitFlag = false;
 
   let ticks = 0;
-  while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+  while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
     engine.tick();
     const ps = engine.getState().projectiles;
     maxInFlight = Math.max(maxInFlight, ps.length);

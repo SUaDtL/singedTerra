@@ -47,6 +47,41 @@ export type NetworkAction =
   | NetworkNextRoundAction;
 
 /**
+ * Replay an ordered action log in bounded chunks, yielding to the event loop
+ * between batches so long replays (late joiners, long matches) do not freeze
+ * the tab.
+ *
+ * Semantics:
+ * - Actions are iterated in strict index order (0 → actions.length-1).
+ * - `applyOne(action, index)` is called once per action, in order.
+ * - After every `chunkSize` applications, `await yieldFn()` is called BEFORE
+ *   processing the next chunk — so no batch processes more than `chunkSize`
+ *   actions without a yield.
+ * - An empty `actions` array applies nothing and never calls `yieldFn`.
+ * - `chunkSize < 1` is clamped to 1 to prevent an infinite loop.
+ *
+ * This helper is PURE — it does not touch a GameEngine. The caller injects
+ * `applyOne` (which may wrap `replayNetworkAction` + `tickToCompletion`), so
+ * the function is harness-testable with a no-op engine.
+ */
+export async function replayInChunks<A>(
+  actions:  readonly A[],
+  applyOne: (action: A, index: number) => void,
+  chunkSize: number,
+  yieldFn:  () => Promise<void>,
+): Promise<void> {
+  const size = chunkSize < 1 ? 1 : Math.floor(chunkSize);
+  for (let i = 0; i < actions.length; i++) {
+    applyOne(actions[i], i);
+    // After every `size` applications AND not at the very end, yield.
+    // We yield when (i+1) is a multiple of size AND there are more actions to process.
+    if ((i + 1) % size === 0 && i + 1 < actions.length) {
+      await yieldFn();
+    }
+  }
+}
+
+/**
  * Apply one logged {@link NetworkAction} to an engine. A `fire` is synthesized as
  * the three aim setup actions then the fire (so the committed aim replays exactly);
  * the others map one-to-one onto a `PlayerAction`. Pure w.r.t. the engine it is

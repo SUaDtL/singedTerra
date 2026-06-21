@@ -46,7 +46,7 @@ function fire(e, { angle, power, weapon }) {
   e.applyAction({ type: 'set_power', power });
   e.applyAction({ type: 'fire' });
   let t = 0;
-  while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; }
+  while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; }
   if (t >= MAX_TICKS) throw new Error(`${weapon} never resolved`);
   return e.getState();
 }

@@ -318,7 +318,7 @@ console.log('[6] Full-flight integration: a real shot lands (ground or tank), ne
   engine.applyAction({ type: 'fire' });
 
   let ticks = 0;
-  while (engine.getState().phase === 'FIRING' && ticks < 100000) {
+  while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < 100000) {
     engine.tick();
     ticks++;
   }

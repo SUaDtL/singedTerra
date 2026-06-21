@@ -25,7 +25,7 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 
 function players(n) { return Array.from({ length: n }, (_, i) => ({ name: `P${i + 1}`, color: PALETTE[i] })); }
 function engine(n) { return new GameEngine({ players: players(n), maxPlayers: n, seed: SEED }); }
-function tickToRest(e) { let t = 0; while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; } }
+function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 const seatIndex = (id) => Number(String(id).replace(/[^0-9]/g, '')) - 1; // 'p3' -> 2
 
 // --- Check 1: rotation skips an eliminated middle seat (p1 -> p3, NOT p2) ---

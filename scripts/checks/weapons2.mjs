@@ -46,7 +46,7 @@ function fireTrace(e, { angle, power, weapon }) {
   let maxInFlight = 0;
   let fireTicks = 0;
   let ticks = 0;
-  while (e.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+  while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
     e.tick(); ticks++;
     const st = e.getState();
     maxInFlight = Math.max(maxInFlight, st.projectiles.length);

@@ -27,7 +27,7 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 
 function players(n) { return Array.from({ length: n }, (_, i) => ({ name: `P${i + 1}`, color: PALETTE[i] })); }
 function engine(n, rounds) { return new GameEngine({ players: players(n), maxPlayers: n, seed: SEED, rounds }); }
-function tickToRest(e) { let t = 0; while (e.getState().phase === 'FIRING' && t < MAX_TICKS) { e.tick(); t++; } }
+function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 
 // End the current round with p1 (seat 0, always the active opener) as the winner:
 // mark every other tank dead, then have p1 fire a far harmless shot that resolves —

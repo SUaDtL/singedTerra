@@ -141,7 +141,7 @@ function fireShot(engine, { angle, power, weapon }) {
   let fireMinX = Infinity;
   let fireMaxX = -Infinity;
 
-  while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+  while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
     // Capture the single-shell apex BEFORE this tick integrates (only meaningful
     // while there is exactly one un-split shell in flight).
     const psBefore = engine.getState().projectiles;

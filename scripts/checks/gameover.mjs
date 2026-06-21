@@ -50,11 +50,11 @@ function fireUntilSettled(e, victim) {
   e.applyAction({ type: 'set_power', power: AIM.power });
   e.applyAction({ type: 'fire' });
   let t = 0, deathTick = -1, gameOverTick = -1, firingAfterDeath = 0;
-  while (e.getState().phase === 'FIRING' && t < MAX_TICKS) {
+  while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) {
     e.tick(); t++;
     const st = e.getState();
     if (deathTick < 0 && !st.tanks[victim].alive) deathTick = t;
-    if (deathTick > 0 && st.phase === 'FIRING') firingAfterDeath++;
+    if (deathTick > 0 && (st.phase === 'FIRING' || st.phase === 'RESOLVING')) firingAfterDeath++;
     if (gameOverTick < 0 && st.phase === 'GAME_OVER') gameOverTick = t;
   }
   if (t >= MAX_TICKS) throw new Error('shot never resolved (fire never drained?)');
