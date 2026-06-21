@@ -394,3 +394,50 @@ Source: the 6-reviewer checkpoint `.codearbiter/checkpoints/2026-06-21.md` — t
 ## Owed at close (Receipt)
 - OPS: the `_shared/mod.ts` pin (`@2.107.0`) and `config.toml` `[auth]=false` take effect on the NEXT
   `npm run deploy:backend` — NOT deployed by this sprint (source-only change).
+
+---
+
+# Sprint: public-ready (2026-06-21)
+
+Spec/plan: `.codearbiter/specs/public-ready.md`, `plans/public-ready.md`. Part 1 of 2 of "going
+public" (user chose full community-ready · CI gate+hygiene · implement the limiter). This is the SAFE
+half — CI, hygiene, docs; zero backend/trust-boundary change. Sprint B `public-hardening` (limiter,
+threat-model, ADRs) runs next, gated by this CI. User approved spec + plan at the Phase 1 gate.
+
+## Auto-decisions
+
+- **[high] CodeQL guarded on repo visibility.** Uploading CodeQL results needs a public repo (or GHAS);
+  on the currently-private repo a naive job would fail its upload and paint a red check on this very PR.
+  Guarded the analyze job with `if: github.event.repository.visibility == 'public'` so it's SKIPPED
+  (neutral) while private and self-activates at the flip — no edit needed later. Confidence high.
+- **[high] CI edge job calls `deno test` directly, not via `npm run`.** The edge runtime is Deno; the
+  job uses `denoland/setup-deno@v2` + `deno test supabase/functions/` rather than installing Node just
+  to shell `npm run check:edge`. The referee tests import only the pure `validate.ts` (no remote
+  imports), so no `--allow-net`/`--allow-import` is needed. Confidence high.
+- **[high] README harness count → 41, table kept as a representative sample.** The prose said 16 and the
+  table lists 16 rows; there are now 41 harnesses. Updated all four "16" references to 41 and reworded
+  the table as "a representative selection" + a "…and 25 more" note, rather than bloating it to 41 rows.
+  Confidence high. (Count verified: 39 original chain entries + math + random = 41.)
+- **[high] No "play it live" link added.** The README has no live URL today; rather than guess a
+  Netlify alias (a dead link in a public README is worse than none), left it blank and flagged it as a
+  user action at flip time. Confidence high.
+- **[high] One npm Dependabot entry, grouped.** The root lockfile governs the whole workspaces monorepo,
+  so a single `npm` ecosystem entry at `/` covers client + shared; grouped minor/patch to cut PR noise.
+  Confidence high.
+- **[high] `private: true` deliberately KEPT.** Confirmed unchanged — it blocks accidental `npm publish`
+  and is unrelated to GitHub visibility. Recorded in the exposure-audit doc so it isn't "fixed" later.
+
+## Verification (fresh run)
+- `npm run check` (typecheck + 41 harnesses) green; `npm run build` green; all four YAML files parse;
+  `private: true` intact. Edge functions untouched → `check:edge` unaffected (CI's edge job re-runs it
+  on the PR). AC1 (CI green) is confirmed by the PR's own checks.
+
+## Hard gates
+- None tripped. All work is file creation under `.github/` + root docs + a light README edit; no
+  engine/client/Edge Function/migration change. The repo flip, branch protection, and repo
+  description remain USER ACTIONS (outward-facing/irreversible) — not automated.
+
+## Owed at close (Receipt)
+- USER: after merge, enable branch protection on `main` requiring the `check` + `edge` checks; set repo
+  description/topics; add the canonical play URL to the README; flip to public AFTER Sprint B lands.
+- NEXT: Sprint B `public-hardening` — rate limiter (CONFIRM-04), `/ca:threat-model`, ADRs (CONFIRM-05).
