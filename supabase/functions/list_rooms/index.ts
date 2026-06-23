@@ -1,4 +1,5 @@
 import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer, RoomRow } from '../_shared/mod.ts'
+import { mapListedRoom } from './mapRoom.ts'
 
 // list_rooms takes no body — optionalBody tolerates an empty/missing/invalid one.
 Deno.serve(withCors(async () => {
@@ -53,13 +54,7 @@ Deno.serve(withCors(async () => {
     a.row.created_at < b.row.created_at ? 1 : a.row.created_at > b.row.created_at ? -1 : 0
   )
 
-  const roomsOut = open.slice(0, 50).map(({ row, fresh }) => ({
-    roomId: row.id,
-    code: row.code,
-    hostName: fresh[0]?.name ?? '',
-    playerCount: fresh.length,
-    maxPlayers: row.options.maxPlayers,
-  }))
+  const roomsOut = open.slice(0, 50).map(({ row, fresh }) => mapListedRoom(row, fresh))
 
   return json({ rooms: roomsOut }, 200)
 }, { optionalBody: true, rateLimit: 'list_rooms' }))

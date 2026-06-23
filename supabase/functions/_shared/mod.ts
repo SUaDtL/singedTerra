@@ -199,6 +199,13 @@ export interface StoredOptions {
    *  round. Stored on the room row so EVERY client builds its engine with the same
    *  value — required for deterministic lockstep across round boundaries. */
   rounds?: number
+  /** SE-parity economy options, persisted by `coerceEconomyOptions` at create time.
+   *  Already written to the `options` JSONB; declared here so the read path (list_rooms)
+   *  can surface them without a type error. Absent => the GameOptions engine default
+   *  holds (armsLevel 4 = full arsenal, interestRate 0, suddenDeathTurn off). */
+  armsLevel?: number
+  interestRate?: number
+  suddenDeathTurn?: number
 }
 
 export interface RoomRow {
