@@ -46,6 +46,15 @@ export interface GameClient {
   /** Tear down the client (stop the loop or close the socket). */
   stop(): void;
 
+  /**
+   * Toggle local fast-forward of the projectile/explosion animation (review #7).
+   * Pure VIEW pacing: the rAF loop runs several fixed-step ticks per frame while a
+   * shot is live, so the animation plays faster WITHOUT changing the tick count, the
+   * action log, or the outcome — safe in hot-seat and networked alike. No-op outside
+   * FIRING/RESOLVING. Optional so a client may omit it.
+   */
+  setFastForward?(on: boolean): void;
+
   /** Submit a player input. Validated/applied locally or sent to the server. */
   sendAction(action: PlayerAction): void;
 

@@ -104,7 +104,15 @@ function bootstrap(): void {
       const on = renderer.toggleAimGuide();
       markDirty(); // show/hide the aim guide on the next frame even on a static turn
       hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
+    } else if (e.code === 'KeyF') {
+      // Hold F to fast-forward the shot animation (review #7). Local view pacing only;
+      // never a logged action. Repeats while held (idempotent); released on keyup.
+      client?.setFastForward?.(true);
+      if (!e.repeat) hud.flashMessage('⏩ Fast-forward');
     }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'KeyF') client?.setFastForward?.(false);
   });
 
   // Per-game wiring that gets torn down and rebuilt on restart.
@@ -361,6 +369,12 @@ function bootstrap(): void {
     // `purchase` carries exactly one of weapon/accessory; forward it verbatim (the engine + referee
     // re-validate the "exactly one" invariant, affordability, the arms gate, and whose turn it is).
     client?.sendAction({ type: 'buy', ...purchase, ...(tankId ? { tankId } : {}) });
+    // Auto-select a bought WEAPON so the active weapon becomes the one just bought
+    // (review #9). select_weapon is local-only (never logged) — pure client convenience.
+    // Accessory buys (battery, …) must NOT hijack the weapon slot, hence the narrow.
+    if ('weapon' in purchase && purchase.weapon) {
+      client?.sendAction({ type: 'select_weapon', weapon: purchase.weapon });
+    }
   });
 
   // Start the next round from the ROUND_OVER between-rounds shop. Like a turn
