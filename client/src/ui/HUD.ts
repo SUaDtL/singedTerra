@@ -112,6 +112,9 @@ export class HUD {
   /** "Round N of M" indicator (side panel); hidden in single-round matches. */
   private roundEl!: HTMLElement;
   private overlayEl!: HTMLElement;
+  /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
+   *  the client/engine keeps running underneath, so Resume returns to the live game. */
+  private pauseEl!: HTMLElement;
   private overlayTextEl!: HTMLElement;
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
@@ -449,6 +452,33 @@ export class HUD {
     panel.append(this.overlayTextEl, this.overlayScoreEl, overlayBtns);
     this.overlayEl.append(panel);
 
+    // PAUSE overlay — opened by the side-panel Menu button. Non-destructive: it does
+    // NOT tear the game down and does NOT stop the client loop (REQUIRED for networked
+    // lockstep, where the loop must keep applying the broadcast action log to stay in
+    // seq sync). Resume just hides it; Quit runs the existing teardown-to-lobby path.
+    this.pauseEl = document.createElement('div');
+    this.pauseEl.className = 'st-hud__overlay st-hud__overlay--hidden';
+    const pausePanel = document.createElement('div');
+    pausePanel.className = 'st-hud__overlay-panel';
+    const pauseText = document.createElement('div');
+    pauseText.className = 'st-hud__overlay-text';
+    pauseText.textContent = 'Paused';
+    const resumeBtn = document.createElement('button');
+    resumeBtn.className = 'st-hud__restart';
+    resumeBtn.type = 'button';
+    resumeBtn.textContent = 'Resume';
+    resumeBtn.addEventListener('click', () => this.togglePause(false));
+    const pauseQuitBtn = document.createElement('button');
+    pauseQuitBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    pauseQuitBtn.type = 'button';
+    pauseQuitBtn.textContent = 'Quit to Menu';
+    pauseQuitBtn.addEventListener('click', () => { this.togglePause(false); this.quitCb?.(); });
+    const pauseBtns = document.createElement('div');
+    pauseBtns.className = 'st-hud__overlay-btns';
+    pauseBtns.append(resumeBtn, pauseQuitBtn);
+    pausePanel.append(pauseText, pauseBtns);
+    this.pauseEl.append(pausePanel);
+
     // ROUND_OVER between-rounds shop modal (hidden until phase === ROUND_OVER).
     this.roundOverEl = document.createElement('div');
     this.roundOverEl.className = 'st-hud__overlay st-hud__overlay--hidden';
@@ -533,7 +563,9 @@ export class HUD {
     menu.type = 'button';
     menu.className = 'st-hud__menu';
     menu.textContent = '⤺ Menu';
-    menu.addEventListener('click', () => this.quitCb?.());
+    // Opens the non-destructive PAUSE overlay (Resume / Quit), NOT a direct quit —
+    // so the player can get back into the live game (review #5).
+    menu.addEventListener('click', () => this.togglePause(true));
 
     // Status widgets stack in the side panel (this.root = #hud). The controls
     // legend + liveness widgets go on the canvas overlay (#game-overlay) so they
@@ -612,7 +644,7 @@ export class HUD {
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
     this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
-    this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl);
+    this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
     this.built = true;
   }
 
@@ -678,6 +710,13 @@ export class HUD {
   }
 
   /** Open/close the store modal. With no argument, toggles. */
+  /** Show/hide the in-game PAUSE overlay. Non-destructive — the client/engine keeps
+   *  running underneath (the networked lockstep loop MUST keep applying the broadcast
+   *  log to stay in sync), so Resume returns to the exact live game. */
+  private togglePause(show: boolean): void {
+    this.pauseEl.classList.toggle('st-hud__overlay--hidden', !show);
+  }
+
   private toggleStore(open?: boolean): void {
     this.storeOpen = open ?? !this.storeOpen;
     this.storeEl.classList.toggle('st-hud__store--hidden', !this.storeOpen);
