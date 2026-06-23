@@ -2,6 +2,17 @@ import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS, ACCESSORIES } from '@shared/engine/WeaponSystem';
 import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
 import type { ConnectionState, TurnWatch } from '../client/GameClient';
+import { MAX_WIND } from '@shared/engine/Physics';
+import {
+  gaugeFraction,
+  windNeedleOffset,
+  elevationNeedleDeg,
+  elevationDegrees,
+  aimDirectionGlyph,
+  powerLabel,
+  windMagnitudeLabel,
+  windDirectionSymbol,
+} from './gaugeMath';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -42,12 +53,11 @@ const AMMO_UNLIMITED_GLYPH = '∞';
  * horizon (0=flat, 90=straight up) plus an aim-direction arrow, so the number
  * rises and falls WITH the barrel for either side. Display-only: the logged
  * set_angle values are untouched, so deterministic replay is unaffected.
+ *
+ * Delegates to gaugeMath helpers so the computation is not duplicated.
  */
 function aimReadout(angle: number): string {
-  const a = Math.round(angle);
-  const elevation = a <= 90 ? a : 180 - a;
-  const dir = a < 90 ? '▶' : a > 90 ? '◀' : '▲'; // aiming right / left / straight up
-  return `Elev ${elevation}° ${dir}`;
+  return `Elev ${elevationDegrees(angle)}° ${aimDirectionGlyph(angle)}`;
 }
 
 /**
@@ -101,14 +111,10 @@ export class HUD {
 
   // Cached node references (populated by `build()`).
   private playersEl!: HTMLElement;
-  private windArrowEl!: HTMLElement;
-  private windValueEl!: HTMLElement;
   private weaponValueEl!: HTMLElement;
   private aimEl!: HTMLElement;
-  /** Aim readout sub-nodes: the text line + an animated power fill bar. */
+  /** Aim readout sub-node: the "Sending..." text line shown during firing. */
   private aimTextEl!: HTMLElement;
-  private aimPowerWrapEl!: HTMLElement;
-  private aimPowerFillEl!: HTMLElement;
   /** "Round N of M" indicator (side panel); hidden in single-round matches. */
   private roundEl!: HTMLElement;
   private overlayEl!: HTMLElement;
@@ -164,6 +170,20 @@ export class HUD {
 
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
+
+  // ── Instrument cluster gauge nodes (cockpit HUD, #44) ──────────────────
+  // Cached once in build(); mutated each frame in syncWind / syncAim.
+  // Elevation gauge SVG nodes:
+  private gaugeElevNeedle!: SVGLineElement;
+  private gaugeElevLabel!: SVGTextElement;
+  // Wind gauge SVG nodes:
+  private gaugeWindMarker!: SVGRectElement;
+  private gaugeWindLabel!: SVGTextElement;
+  // Power gauge SVG nodes:
+  private gaugePowerArc!: SVGPathElement;
+  private gaugePowerLabel!: SVGTextElement;
+  // Active-player name row (replaces old aimTextEl player portion):
+  private activePlayerEl!: HTMLElement;
 
   // Touch-aim strip (M2 mobile): fire + weapon buttons need per-frame sync.
   private touchStripEl!: HTMLElement;
@@ -262,19 +282,220 @@ export class HUD {
     this.playersEl = document.createElement('div');
     this.playersEl.className = 'st-hud__players';
 
-    // Wind indicator (top-right): arrow + numeric value.
-    const wind = document.createElement('div');
-    wind.className = 'st-hud__wind';
-    const windLabel = document.createElement('span');
-    windLabel.className = 'st-hud__wind-label';
-    windLabel.textContent = 'Wind';
-    this.windArrowEl = document.createElement('span');
-    this.windArrowEl.className = 'st-hud__wind-arrow';
-    this.windValueEl = document.createElement('span');
-    this.windValueEl.className = 'st-hud__wind-value';
-    wind.append(windLabel, this.windArrowEl, this.windValueEl);
+    // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
+    this.roundEl = document.createElement('div');
+    this.roundEl.className = 'st-hud__round st-hud__round--hidden';
 
-    // Active weapon readout (top-right, directly under the wind indicator; SPEC §8).
+    // ── Cockpit instrument cluster (#44) ────────────────────────────────
+    // One framed panel holding three SVG gauges in a row: Elevation, Wind, Power.
+    // All needle/fill geometry is driven by gaugeMath helpers; nothing inline here.
+
+    const instruments = document.createElement('div');
+    instruments.className = 'st-hud__instruments';
+    const instrTitle = document.createElement('div');
+    instrTitle.className = 'st-hud__instr-title';
+    instrTitle.textContent = 'Instruments';
+
+    // ── Elevation gauge (semicircular dial, 180° arc) ──
+    // Needle pivots at center of a 72×44 SVG.  Arc: 180° semicircle, flat edge down.
+    // Angle mapping via elevationNeedleDeg(angle): 0=right(3 o'clock), 90=up, 180=left.
+    // SVG coordinate origin: top-left.  Dial center: (36, 40).  Arc radius: 30.
+    // The arc goes from (6,40) [left, 180°] to (66,40) [right, 0°] along the top.
+    const elevSvg = HUD.makeSvg(72, 56);
+    elevSvg.setAttribute('aria-label', 'Elevation gauge');
+    // Dial arc track
+    const elevTrack = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    elevTrack.setAttribute('d', 'M 6 40 A 30 30 0 0 1 66 40');
+    elevTrack.setAttribute('class', 'st-hud__gauge-track');
+    // Center pivot mark
+    const elevPivot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    elevPivot.setAttribute('cx', '36');
+    elevPivot.setAttribute('cy', '40');
+    elevPivot.setAttribute('r', '2.5');
+    elevPivot.setAttribute('class', 'st-hud__gauge-pivot');
+    // Needle (pivots at dial center 36,40; points upward at natural 0° rotation)
+    this.gaugeElevNeedle = document.createElementNS('http://www.w3.org/2000/svg', 'line') as SVGLineElement;
+    this.gaugeElevNeedle.setAttribute('x1', '36');
+    this.gaugeElevNeedle.setAttribute('y1', '40');
+    this.gaugeElevNeedle.setAttribute('x2', '36');
+    this.gaugeElevNeedle.setAttribute('y2', '12');
+    this.gaugeElevNeedle.setAttribute('class', 'st-hud__gauge-needle');
+    // Tick marks at 0°, 45°, 90°, 135°, 180° of the dial arc
+    const elevTicks = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    elevTicks.setAttribute('class', 'st-hud__gauge-ticks');
+    for (const deg of [0, 45, 90, 135, 180]) {
+      // Map dial degrees → SVG angle: 0°=right, rotated CCW from positive-x axis.
+      // dial deg 0 → SVG 0° from center pointing right; 90 → pointing up (−90° SVG); 180 → left
+      const rad = ((180 - deg) * Math.PI) / 180; // 0=right at SVG angle 0
+      const r = 30; const cx = 36; const cy = 40;
+      const x1 = cx + r * Math.cos(rad);
+      const y1 = cy - r * Math.sin(rad);
+      const x2 = cx + (r - 5) * Math.cos(rad);
+      const y2 = cy - (r - 5) * Math.sin(rad);
+      const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tick.setAttribute('x1', String(x1));
+      tick.setAttribute('y1', String(y1));
+      tick.setAttribute('x2', String(x2));
+      tick.setAttribute('y2', String(y2));
+      elevTicks.append(tick);
+    }
+    // On-gauge numeric label (elevation degrees + direction glyph)
+    this.gaugeElevLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
+    this.gaugeElevLabel.setAttribute('x', '36');
+    this.gaugeElevLabel.setAttribute('y', '54');
+    this.gaugeElevLabel.setAttribute('text-anchor', 'middle');
+    this.gaugeElevLabel.setAttribute('class', 'st-hud__gauge-label');
+    this.gaugeElevLabel.textContent = '0° ▶';
+    elevSvg.append(elevTrack, elevTicks, elevPivot, this.gaugeElevNeedle, this.gaugeElevLabel);
+    const elevCell = document.createElement('div');
+    elevCell.className = 'st-hud__gauge-cell';
+    const elevCellTitle = document.createElement('div');
+    elevCellTitle.className = 'st-hud__gauge-cell-title';
+    elevCellTitle.textContent = 'Elev';
+    elevCell.append(elevCellTitle, elevSvg);
+
+    // ── Wind gauge (horizontal center-zero track) ──
+    // Track: 64px wide, center at x=32. Marker slides left/right by windNeedleOffset×28px.
+    const windSvg = HUD.makeSvg(72, 56);
+    windSvg.setAttribute('aria-label', 'Wind gauge');
+    // Track background bar
+    const windTrack = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    windTrack.setAttribute('x', '4');
+    windTrack.setAttribute('y', '22');
+    windTrack.setAttribute('width', '64');
+    windTrack.setAttribute('height', '6');
+    windTrack.setAttribute('rx', '3');
+    windTrack.setAttribute('class', 'st-hud__gauge-track-rect');
+    // Center tick
+    const windCenter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    windCenter.setAttribute('x1', '36');
+    windCenter.setAttribute('y1', '18');
+    windCenter.setAttribute('x2', '36');
+    windCenter.setAttribute('y2', '34');
+    windCenter.setAttribute('class', 'st-hud__gauge-ticks');
+    // End ticks
+    const windTickL = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    windTickL.setAttribute('x1', '4'); windTickL.setAttribute('y1', '20');
+    windTickL.setAttribute('x2', '4'); windTickL.setAttribute('y2', '32');
+    windTickL.setAttribute('class', 'st-hud__gauge-ticks');
+    const windTickR = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    windTickR.setAttribute('x1', '68'); windTickR.setAttribute('y1', '20');
+    windTickR.setAttribute('x2', '68'); windTickR.setAttribute('y2', '32');
+    windTickR.setAttribute('class', 'st-hud__gauge-ticks');
+    // Moving marker (diamond shape via rect rotated 45°, centered on track center y=25)
+    this.gaugeWindMarker = document.createElementNS('http://www.w3.org/2000/svg', 'rect') as SVGRectElement;
+    this.gaugeWindMarker.setAttribute('x', '32');
+    this.gaugeWindMarker.setAttribute('y', '22');
+    this.gaugeWindMarker.setAttribute('width', '8');
+    this.gaugeWindMarker.setAttribute('height', '8');
+    this.gaugeWindMarker.setAttribute('rx', '1');
+    this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 36, 25)');
+    this.gaugeWindMarker.setAttribute('class', 'st-hud__gauge-needle-rect');
+    // Label
+    this.gaugeWindLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
+    this.gaugeWindLabel.setAttribute('x', '36');
+    this.gaugeWindLabel.setAttribute('y', '54');
+    this.gaugeWindLabel.setAttribute('text-anchor', 'middle');
+    this.gaugeWindLabel.setAttribute('class', 'st-hud__gauge-label');
+    this.gaugeWindLabel.textContent = '• 0.0';
+    windSvg.append(windTrack, windTickL, windTickR, windCenter, this.gaugeWindMarker, this.gaugeWindLabel);
+    const windCell = document.createElement('div');
+    windCell.className = 'st-hud__gauge-cell';
+    const windCellTitle = document.createElement('div');
+    windCellTitle.className = 'st-hud__gauge-cell-title';
+    windCellTitle.textContent = 'Wind';
+    windCell.append(windCellTitle, windSvg);
+
+    // ── Power gauge (arc fill driven by stroke-dasharray) ──
+    // Arc: 220° sweep from bottom-left to bottom-right (like a fuel gauge).
+    // SVG 80×56. Center (40,48). Radius 28. Start angle = 200° from positive-x (bottom-left).
+    // We use a fixed-length path and manipulate stroke-dasharray to fill it.
+    // Arc length ≈ 2π×28×(220/360) ≈ 107.5 — we'll compute precisely.
+    const pwrSvg = HUD.makeSvg(72, 56);
+    pwrSvg.setAttribute('aria-label', 'Power gauge');
+    const PWR_R = 26; const PWR_CX = 36; const PWR_CY = 46;
+    // Start angle: 200° (bottom-left), end angle: 340° (bottom-right) — 140° sweep total
+    // Using CSS convention: 0° = top, clockwise. For SVG path arcs we use standard math angles.
+    // Start: 200° from SVG +x axis (measured clockwise from top = 110° from +x counter-clockwise)
+    // Let's use the sweep directly: start at SVG angle 200° CW from top:
+    // SVG +x is 3 o'clock. Our start = -140° from +x (i.e. 220° CW from +x).
+    // Simpler: start = lower-left, end = lower-right with a 220° sweep going CCW through top.
+    // In SVG large-arc=1, sweep=0 (CCW):
+    //   start point at angle 160° from +x (going CCW means angle decreasing for CW motion)
+    // Actually let's use: start = 200° from +x (CCW / standard math = bottom-left area)
+    //   start: (cx + r*cos(200°), cy - r*sin(200°))  [SVG y flipped]
+    //   = (36 + 26*cos(200°), 46 - 26*sin(200°))
+    //   = (36 + 26*(-0.940), 46 - 26*(-0.342))
+    //   = (36 - 24.44, 46 + 8.89) = (11.56, 54.89) → ~(12, 55)
+    //   end: angle -20° from +x (= 340°): (cx + r*cos(-20°), cy - r*sin(-20°))
+    //   = (36 + 26*0.940, 46 + 26*0.342) = (60.44, 54.89) → ~(60, 55)
+    // sweep = 140° (from 200° going CW: 200→340 = 140°)
+    // large-arc: 140° < 180° so large-arc=0
+    const psx = PWR_CX + PWR_R * Math.cos((200 * Math.PI) / 180);
+    const psy = PWR_CY - PWR_R * Math.sin((200 * Math.PI) / 180);
+    const pex = PWR_CX + PWR_R * Math.cos((-20 * Math.PI) / 180);
+    const pey = PWR_CY - PWR_R * Math.sin((-20 * Math.PI) / 180);
+    const pwrArcD = `M ${psx.toFixed(2)} ${psy.toFixed(2)} A ${PWR_R} ${PWR_R} 0 0 1 ${pex.toFixed(2)} ${pey.toFixed(2)}`;
+    // Arc circumference for a 140° sweep
+    const PWR_ARC_LEN = 2 * Math.PI * PWR_R * (140 / 360);
+    // Track (full arc, dim)
+    const pwrTrack = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pwrTrack.setAttribute('d', pwrArcD);
+    pwrTrack.setAttribute('class', 'st-hud__gauge-track');
+    // Fill arc (same path, stroke-dasharray driven by gaugeFraction × ARC_LEN)
+    this.gaugePowerArc = document.createElementNS('http://www.w3.org/2000/svg', 'path') as SVGPathElement;
+    this.gaugePowerArc.setAttribute('d', pwrArcD);
+    this.gaugePowerArc.setAttribute('stroke-dasharray', `0 ${PWR_ARC_LEN.toFixed(2)}`);
+    this.gaugePowerArc.setAttribute('class', 'st-hud__gauge-power-fill');
+    // Store arc length as data attribute for frame updates
+    this.gaugePowerArc.dataset['arcLen'] = String(PWR_ARC_LEN.toFixed(4));
+    // End-cap dot at start position (low end)
+    const pwrDotL = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    pwrDotL.setAttribute('cx', psx.toFixed(2));
+    pwrDotL.setAttribute('cy', psy.toFixed(2));
+    pwrDotL.setAttribute('r', '2.5');
+    pwrDotL.setAttribute('class', 'st-hud__gauge-pivot');
+    const pwrDotR = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    pwrDotR.setAttribute('cx', pex.toFixed(2));
+    pwrDotR.setAttribute('cy', pey.toFixed(2));
+    pwrDotR.setAttribute('r', '2.5');
+    pwrDotR.setAttribute('class', 'st-hud__gauge-pivot');
+    // Numeric label
+    this.gaugePowerLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
+    this.gaugePowerLabel.setAttribute('x', '36');
+    this.gaugePowerLabel.setAttribute('y', '44');
+    this.gaugePowerLabel.setAttribute('text-anchor', 'middle');
+    this.gaugePowerLabel.setAttribute('class', 'st-hud__gauge-label st-hud__gauge-label--lg');
+    this.gaugePowerLabel.textContent = '0';
+    pwrSvg.append(pwrTrack, this.gaugePowerArc, pwrDotL, pwrDotR, this.gaugePowerLabel);
+    const pwrCell = document.createElement('div');
+    pwrCell.className = 'st-hud__gauge-cell';
+    const pwrCellTitle = document.createElement('div');
+    pwrCellTitle.className = 'st-hud__gauge-cell-title';
+    pwrCellTitle.textContent = 'Power';
+    pwrCell.append(pwrCellTitle, pwrSvg);
+
+    // Assemble the instrument cluster row
+    const gaugeRow = document.createElement('div');
+    gaugeRow.className = 'st-hud__gauge-row';
+    gaugeRow.append(elevCell, windCell, pwrCell);
+    instruments.append(instrTitle, gaugeRow);
+
+    // ── Active player + weapon name row (replaces aim text + old wind/weapon blocks) ──
+    // This shows "PlayerName  ·  WeaponName" in one compact row. It persists below the
+    // gauges and is hidden during the firing "Sending..." state (replaced by aimTextEl).
+    this.activePlayerEl = document.createElement('div');
+    this.activePlayerEl.className = 'st-hud__active-row';
+    // aimEl is the "Sending..." firing strip — shown only during isFiring state.
+    this.aimEl = document.createElement('div');
+    this.aimEl.className = 'st-hud__aim';
+    this.aimTextEl = document.createElement('span');
+    this.aimTextEl.className = 'st-hud__aim-text';
+    this.aimEl.append(this.aimTextEl);
+    this.aimEl.classList.add('st-hud__aim--hidden');
+
+    // Active weapon readout — kept as a text row (not a gauge; SPEC says "may be
+    // repositioned"). Placed inside activePlayerEl alongside the player name.
     const weapon = document.createElement('div');
     weapon.className = 'st-hud__weapon';
     const weaponLabel = document.createElement('span');
@@ -283,23 +504,6 @@ export class HUD {
     this.weaponValueEl = document.createElement('span');
     this.weaponValueEl.className = 'st-hud__weapon-value';
     weapon.append(weaponLabel, this.weaponValueEl);
-
-    // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
-    this.roundEl = document.createElement('div');
-    this.roundEl.className = 'st-hud__round st-hud__round--hidden';
-
-    // Active-tank aim readout (bottom strip): angle + power text, plus an animated
-    // power fill bar (CSS width transition) so charging power reads as a ramp.
-    this.aimEl = document.createElement('div');
-    this.aimEl.className = 'st-hud__aim';
-    this.aimTextEl = document.createElement('span');
-    this.aimTextEl.className = 'st-hud__aim-text';
-    this.aimPowerWrapEl = document.createElement('span');
-    this.aimPowerWrapEl.className = 'st-hud__power';
-    this.aimPowerFillEl = document.createElement('span');
-    this.aimPowerFillEl.className = 'st-hud__power-fill';
-    this.aimPowerWrapEl.append(this.aimPowerFillEl);
-    this.aimEl.append(this.aimTextEl, this.aimPowerWrapEl);
 
     // Controls legend (bottom-right, unobtrusive; built once, never updated).
     const controls = document.createElement('div');
@@ -646,10 +850,14 @@ export class HUD {
 
     this.touchStripEl.append(touchAngleL, touchAngleR, touchPowerD, touchPowerU, this.touchWeaponBtnEl, this.touchFireBtnEl);
 
+    // Active player row: player name + weapon readout, shown when not firing.
+    // Sits directly below the instrument cluster.
+    this.activePlayerEl.append(weapon);
+
     // Touch strip goes into the HUD side panel, NOT the canvas overlay, so it
     // can never overlap the play field. margin-top:auto (via CSS) pushes it to
     // the bottom of the panel column.
-    this.root.append(menu, this.roundEl, this.playersEl, wind, weapon, this.aimEl, this.storeBtnEl, this.stripEl, this.touchStripEl);
+    this.root.append(menu, this.roundEl, this.playersEl, instruments, this.activePlayerEl, this.aimEl, this.storeBtnEl, this.stripEl, this.touchStripEl);
     // Controls legend + liveness widgets stay on the canvas overlay (positioned
     // relative to the play field). The store + game-over modals go on the full-app
     // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
@@ -887,38 +1095,82 @@ export class HUD {
     row.el.classList.toggle('st-hud__player--active', active && !dead);
   }
 
-  /** Update the wind arrow direction + numeric value (one decimal). */
+  /**
+   * Update the wind SVG gauge: slide the marker horizontally and refresh the label.
+   * The half-track half-width is 32px (track spans x=4..68, center=36, half=32).
+   * windNeedleOffset returns [-1,1]; marker center starts at x=36.
+   * The marker is a rotated rect with natural center at (x+4, y+4) after the 45° rotate
+   * around (x+4, y+4) = (36, 25). We translate it by offset×30px.
+   */
   private syncWind(wind: number): void {
-    // Treat tiny magnitudes as calm so the arrow does not jitter near zero.
-    const arrow = Math.abs(wind) < 0.05 ? '•' : wind > 0 ? '→' : '←';
-    this.windArrowEl.textContent = arrow;
-    this.windValueEl.textContent = Math.abs(wind).toFixed(1);
+    const offset = windNeedleOffset(wind, MAX_WIND); // [-1, 1]
+    const tx = offset * 30; // ±30px max travel from center
+    // Marker: rect x=32 y=22 w=8 h=8, rotated 45° around its center (36,26).
+    // Translate center by tx: new center at (36+tx, 26). Update transform.
+    const cx = 36 + tx;
+    this.gaugeWindMarker.setAttribute('x', String(cx - 4));
+    this.gaugeWindMarker.setAttribute('transform', `rotate(45, ${cx}, 26)`);
+    // Label: "→ 3.2" / "← 3.2" / "• 0.0"
+    const sym = windDirectionSymbol(wind);
+    const mag = windMagnitudeLabel(wind);
+    const lbl = `${sym} ${mag}`;
+    if (this.gaugeWindLabel.textContent !== lbl) this.gaugeWindLabel.textContent = lbl;
   }
 
-  /** Update the active tank's angle / power / weapon name readout. */
+  /** Update the active tank's SVG gauges + weapon/player name row. */
   private syncAim(state: GameState, isFiring = false): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);
     if (!tank) {
-      this.aimTextEl.textContent = '';
-      this.aimPowerWrapEl.style.visibility = 'hidden';
+      // No active tank: blank gauges, hide active row.
+      this.activePlayerEl.classList.remove('st-hud__active-row--hidden');
+      this.aimEl.classList.add('st-hud__aim--hidden');
       this.weaponValueEl.textContent = '—';
+      // Zero out gauges
+      this.gaugeElevNeedle.setAttribute('transform', '');
+      if (this.gaugeElevLabel.textContent !== '0° ▶') this.gaugeElevLabel.textContent = '0° ▶';
+      this.gaugeWindMarker.setAttribute('x', '32');
+      this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 36, 26)');
+      if (this.gaugeWindLabel.textContent !== '• 0.0') this.gaugeWindLabel.textContent = '• 0.0';
+      const arcLen = parseFloat(this.gaugePowerArc.dataset['arcLen'] ?? '0');
+      this.gaugePowerArc.setAttribute('stroke-dasharray', `0 ${arcLen.toFixed(2)}`);
+      if (this.gaugePowerLabel.textContent !== '0') this.gaugePowerLabel.textContent = '0';
       return;
     }
+
     if (isFiring) {
+      // Firing: show "Sending…" in the aim strip; hide the normal active-player row.
       this.aimTextEl.textContent = `${tank.playerName}  ·  Sending...`;
-      this.aimPowerWrapEl.style.visibility = 'hidden';
+      this.aimEl.classList.remove('st-hud__aim--hidden');
+      this.activePlayerEl.classList.add('st-hud__active-row--hidden');
+      // Keep gauges frozen at their last values during flight — no update.
       return;
     }
+
+    // Normal PLAYER_TURN state: show active player + weapon row, hide aim strip.
+    this.aimEl.classList.add('st-hud__aim--hidden');
+    this.activePlayerEl.classList.remove('st-hud__active-row--hidden');
     const weaponName = WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon;
     this.weaponValueEl.textContent = weaponName;
-    this.aimTextEl.textContent =
-      `${tank.playerName}  ·  ` +
-      `${aimReadout(tank.angle)}  ·  ` +
-      `Power ${Math.round(tank.power)}`;
-    // Animated fill: width tracks power 0–100 (CSS transitions the change so it
-    // ramps as the player holds ↑/↓). The fill gradient runs cool→hot with power.
-    this.aimPowerWrapEl.style.visibility = 'visible';
-    this.aimPowerFillEl.style.width = `${Math.max(0, Math.min(100, tank.power))}%`;
+
+    // ── Elevation gauge ──
+    // elevationNeedleDeg(angle) gives [0,180]: 0=right, 90=up, 180=left.
+    // The needle SVG natural position (no transform) points up (from y=40 to y=12),
+    // which corresponds to dial 90°. So we rotate by (needleDeg - 90)° around the pivot.
+    const needleDeg = elevationNeedleDeg(tank.angle);
+    const needleRot = needleDeg - 90; // 0→−90° (right), 90→0° (up), 180→+90° (left)
+    this.gaugeElevNeedle.setAttribute('transform', `rotate(${needleRot}, 36, 40)`);
+    const elevLbl = `${elevationDegrees(tank.angle)}° ${aimDirectionGlyph(tank.angle)}`;
+    if (this.gaugeElevLabel.textContent !== elevLbl) this.gaugeElevLabel.textContent = elevLbl;
+
+    // ── Power gauge (arc fill) ──
+    const fraction = gaugeFraction(tank.power, 0, tank.powerCap ?? 100);
+    const arcLen = parseFloat(this.gaugePowerArc.dataset['arcLen'] ?? '0');
+    const filled = fraction * arcLen;
+    const gap = arcLen - filled;
+    const dasharrayVal = `${filled.toFixed(2)} ${gap.toFixed(2)}`;
+    this.gaugePowerArc.setAttribute('stroke-dasharray', dasharrayVal);
+    const pwrLbl = powerLabel(tank.power);
+    if (this.gaugePowerLabel.textContent !== pwrLbl) this.gaugePowerLabel.textContent = pwrLbl;
   }
 
   /** Reconcile the weapon strip: active highlight + live ammo counts. No DOM rebuild. */
@@ -1097,6 +1349,16 @@ export class HUD {
     return `${tank.ai ? '🤖 ' : ''}${tank.playerName}`;
   }
 
+  /** Create an SVG element with the correct namespace and a fixed viewBox. */
+  private static makeSvg(w: number, h: number): SVGSVGElement {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(h));
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    return svg;
+  }
+
   private static injectStyle(): void {
     if (document.getElementById(HUD.STYLE_ID)) return;
     const style = document.createElement('style');
@@ -1179,7 +1441,6 @@ export class HUD {
   height: 100%;
   transition: width 160ms ease;
 }
-.st-hud__wind,
 .st-hud__weapon {
   display: flex;
   align-items: center;
@@ -1206,18 +1467,11 @@ export class HUD {
   transition: background 130ms ease, border-color 130ms ease;
 }
 .st-hud__menu:hover { background: rgba(255, 122, 31, 0.3); border-color: var(--ember); }
-.st-hud__wind-label,
 .st-hud__weapon-label {
   opacity: 0.65;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 10px;
-}
-.st-hud__wind-arrow { font-size: 16px; color: var(--tank-blue-lite); }
-.st-hud__wind-value {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-gold);
 }
 .st-hud__weapon-value {
   font-family: var(--font-display);
@@ -1263,26 +1517,6 @@ export class HUD {
   color: var(--text-gold);
 }
 .st-hud__aim-text { white-space: nowrap; }
-/* Animated power meter (V1 "animated fill bar"): a track + a cool→hot gradient
- * fill whose width tracks power 0–100; the width transition makes holding ↑/↓
- * read as a charge ramp. Mirrors the health-bar track styling. */
-.st-hud__power {
-  flex: 0 0 auto;
-  width: 132px;
-  height: 8px;
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-.st-hud__power-fill {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, var(--ember-deep), var(--gold));
-  box-shadow: 0 0 6px rgba(255, 210, 63, 0.5);
-  transition: width 90ms linear;
-}
 .st-hud__strip {
   display: flex;
   flex-direction: column;
@@ -1677,7 +1911,6 @@ export class HUD {
   .st-hud__player--active { animation: none; }
   .st-hud__player--hit::after { animation: none; opacity: 0; }
   .st-hud__bar-fill,
-  .st-hud__power-fill,
   .st-hud__weapon-btn,
   .st-hud__restart { transition: none; }
 }
@@ -1749,7 +1982,127 @@ export class HUD {
   .st-hud__store-close { min-height: 44px; }
   .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
 }
+
+/* ===== Cockpit instrument cluster (#44) ================================ */
+/* A single bordered panel holding three SVG gauges in a row. All sizing is
+ * box-sizing:border-box and width:100% so nothing overflows the 264px panel. */
+.st-hud__instruments {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 8px 8px;
+  background: rgba(12, 7, 22, 0.72);
+  border: 1px solid rgba(255, 210, 63, 0.32);
+  border-radius: 6px;
+  box-shadow: inset 0 0 12px rgba(255, 122, 31, 0.08), 0 2px 8px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+.st-hud__instr-title {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.14);
+}
+/* Three equal-width gauge cells in a row, no overflow. */
+.st-hud__gauge-row {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  width: 100%;
+  overflow: hidden;
+}
+.st-hud__gauge-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.st-hud__gauge-cell-title {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+}
+/* SVG gauge shared element styles — referenced by SVG class attributes. */
+.st-hud__gauge-track {
+  fill: none;
+  stroke: rgba(255, 210, 63, 0.18);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.st-hud__gauge-track-rect {
+  fill: rgba(255, 210, 63, 0.12);
+  stroke: rgba(255, 210, 63, 0.22);
+  stroke-width: 1;
+}
+.st-hud__gauge-ticks {
+  fill: none;
+  stroke: rgba(255, 210, 63, 0.35);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+.st-hud__gauge-pivot {
+  fill: var(--gold);
+}
+.st-hud__gauge-needle {
+  stroke: var(--gold);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+/* Wind marker (rotated rect) */
+.st-hud__gauge-needle-rect {
+  fill: var(--gold);
+}
+/* Power arc fill: gold→ember gradient effect via a single stroke color;
+ * stroke-dasharray is set per-frame via JS. */
+.st-hud__gauge-power-fill {
+  fill: none;
+  stroke: var(--ember);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(255, 122, 31, 0.6));
+}
+/* On-gauge numeric labels: monospace, small, gold. */
+.st-hud__gauge-label {
+  fill: var(--text-gold);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__gauge-label--lg {
+  font-size: 11px;
+  fill: var(--gold);
+  font-weight: bold;
+}
+/* Active player + weapon row (below the cluster). */
+.st-hud__active-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+.st-hud__active-row--hidden { display: none; }
+/* The aim strip is only shown during "Sending..." (firing state). */
+.st-hud__aim--hidden { display: none; }
+/* Snap needle transforms instead of animating when reduced-motion is requested. */
+@media (prefers-reduced-motion: reduce) {
+  .st-hud__gauge-needle,
+  .st-hud__gauge-needle-rect,
+  .st-hud__gauge-power-fill { transition: none; }
+}
 `;
+
 }
 
 /** Cached mutable nodes for a single player's health bar. */
