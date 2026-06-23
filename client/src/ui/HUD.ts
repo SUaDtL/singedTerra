@@ -422,6 +422,16 @@ export class HUD {
     storePanel.append(storeHeader, storeGrid, storeClose);
     this.storeEl.append(storePanel);
 
+    // Click-outside-to-dismiss (review #8): a click on the store BACKDROP (storeEl
+    // itself, not the centered panel) closes the store. Clicks inside storePanel have a
+    // descendant target, so buying/closing within the store is unaffected. The store
+    // overlay lives in #modal-layer above the canvas, so this click never reaches the
+    // play field (no stray aim/fire). Scoped to the in-turn store; the flow-gated
+    // game-over / round-over modals deliberately do NOT get casual dismiss.
+    this.storeEl.addEventListener('click', (e) => {
+      if (e.target === this.storeEl) this.toggleStore(false);
+    });
+
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'st-hud__overlay st-hud__overlay--hidden';

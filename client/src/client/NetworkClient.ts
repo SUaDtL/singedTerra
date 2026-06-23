@@ -10,6 +10,7 @@ import { GRAVITY } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 import { shouldBufferSeq } from '@shared/net/seqGuard';
 import { postOnceWithRetry } from './retry';
+import { fastForwardTicks } from './fastForward';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -86,6 +87,7 @@ export class NetworkClient implements GameClient {
   private isReplaying:      boolean;
   private _isFiring         = false;
   private _gameOverReported = false;
+  private _fastForward      = false;   // local view pacing (review #7); never affects the log
 
   // --- Liveness / connection state (REVIEW_BACKLOG P1-6) ---
   // Realtime link state, surfaced to the UI so a dropped socket shows an overlay
@@ -310,20 +312,35 @@ export class NetworkClient implements GameClient {
    * a submit that never commits. This RAF loop renders the flight tick-by-tick and,
    * when the engine leaves FIRING/RESOLVING, drains the next buffered action.
    */
+  setFastForward(on: boolean): void {
+    this._fastForward = on;
+  }
+
   start(): void {
     const loop = () => {
-      const preTick = this.engine.getState().phase;
-      const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
-      this.engine.tick();
-      const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
-      // When the engine LEAVES the entire flight-resolution sequence (FIRING then
-      // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
-      // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
-      // the engine re-enters FIRING, so the RAF loop advances the queue between
-      // shots — this prevents a buffered N+1 from being dropped while N is still
-      // in the settle phase (P0-2 + RESOLVING regression).
-      if (wasBusy && !nowBusy) {
-        this.flushPendingActions();
+      // Fast-forward (review #7) runs several fixed-step ticks per frame while a shot
+      // is live — SAME tick count + outcome as 1/frame (deterministic), just fewer
+      // frames drawn. The per-tick wasBusy/!nowBusy drain below is UNCHANGED and still
+      // runs at most once per frame (we break on it), so the seq-ordered buffered-action
+      // hand-off at the shot boundary is preserved exactly — fast-forward is pure local
+      // view pacing and never touches the log or the lockstep drain.
+      const maxTicks = fastForwardTicks(this._fastForward, this.engine.getState().phase);
+      for (let i = 0; i < maxTicks; i++) {
+        const preTick = this.engine.getState().phase;
+        const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
+        this.engine.tick();
+        const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
+        // When the engine LEAVES the entire flight-resolution sequence (FIRING then
+        // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
+        // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
+        // the engine re-enters FIRING, so the RAF loop advances the queue between
+        // shots — this prevents a buffered N+1 from being dropped while N is still
+        // in the settle phase (P0-2 + RESOLVING regression).
+        if (wasBusy && !nowBusy) {
+          this.flushPendingActions();
+          break; // one drain per frame; next shot animates fresh next frame
+        }
+        if (!wasBusy) break; // input-accepting phase — tick() is a no-op, don't spin
       }
       this.emitState();
       this.rafId = requestAnimationFrame(loop);

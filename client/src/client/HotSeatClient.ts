@@ -2,6 +2,7 @@ import type { GameClient } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import { GameEngine } from '@shared/engine/GameEngine';
+import { fastForwardTicks } from './fastForward';
 
 /**
  * HotSeatClient runs the shared GameEngine directly in the browser. All players
@@ -15,15 +16,28 @@ export class HotSeatClient implements GameClient {
   private readonly engine: GameEngine;
   private readonly listeners = new Set<(state: GameState) => void>();
   private rafId: number | null = null;
+  private fastForward = false;
 
   constructor(engine: GameEngine) {
     this.engine = engine;
   }
 
+  setFastForward(on: boolean): void {
+    this.fastForward = on;
+  }
+
   start(): void {
     if (this.rafId !== null) return; // already running
     const loop = (): void => {
-      this.engine.tick();
+      // Fast-forward (review #7): run several fixed-step ticks this frame while a shot
+      // is live, breaking the moment it settles. Same tick count + outcome as 1/frame
+      // (deterministic), just fewer frames drawn.
+      const maxTicks = fastForwardTicks(this.fastForward, this.engine.getState().phase);
+      for (let i = 0; i < maxTicks; i++) {
+        this.engine.tick();
+        const phase = this.engine.getState().phase;
+        if (phase !== 'FIRING' && phase !== 'RESOLVING') break; // settled — stop spinning
+      }
       this.emit(this.engine.getState());
       this.rafId = requestAnimationFrame(loop);
     };
