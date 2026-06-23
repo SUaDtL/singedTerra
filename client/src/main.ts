@@ -6,6 +6,7 @@ import type { GameState } from '@shared/types/GameState';
 import type { GameClient, RematchInfo } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { InputHandler } from './input/InputHandler';
+import { shouldAcceptLocalInput } from './input/inputGate';
 import { Renderer } from './renderer/Renderer';
 import { AudioEngine } from './audio/AudioEngine';
 import { HUD } from './ui/HUD';
@@ -200,10 +201,13 @@ function bootstrap(): void {
     const activeTank = initial?.tanks.find((t) => t.id === initial.activePlayerId);
     lastActiveId = initial?.activePlayerId ?? null;
 
-    // Human input is dropped while a CPU tank holds the turn — otherwise the
-    // player's keys would drive the bot's tank.
+    // Human input is dropped while a CPU tank holds the turn (its keys would
+    // drive the bot) OR while the in-game Pause overlay is open — a reflex
+    // arrow/space must not change aim or fire a shot while paused (#52). The
+    // rAF loop keeps running underneath either way (networked lockstep stays
+    // in sync); only this LOCAL emit is suppressed.
     const newInput = new InputHandler(canvas, (action) => {
-      if (activeIsAi) return;
+      if (!shouldAcceptLocalInput({ activeIsAi, paused: hud.isPaused() })) return;
       // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
       // aim guide / HUD update instantly even when the idle-skip gate would skip.
       markDirty();
@@ -401,11 +405,12 @@ function bootstrap(): void {
 
   // Touch-aim strip callbacks (M2 mobile). Registered once on the persistent HUD;
   // `input` is the mutable per-game closure var so these always drive the live handler.
-  // The AI guard (activeIsAi) matches what the keyboard path does in startGame().
-  hud.onTouchAngle((delta) => { if (!activeIsAi) input?.stepAngle(delta); });
-  hud.onTouchPower((delta) => { if (!activeIsAi) input?.stepPower(delta); });
-  hud.onTouchFire(()       => { if (!activeIsAi) input?.triggerFire(); });
-  hud.onTouchWeapon(()     => { if (!activeIsAi) input?.nextWeapon(); });
+  // Same gate as the keyboard path (startGame): dropped on a CPU turn or while paused (#52).
+  const touchAllowed = (): boolean => shouldAcceptLocalInput({ activeIsAi, paused: hud.isPaused() });
+  hud.onTouchAngle((delta) => { if (touchAllowed()) input?.stepAngle(delta); });
+  hud.onTouchPower((delta) => { if (touchAllowed()) input?.stepPower(delta); });
+  hud.onTouchFire(()       => { if (touchAllowed()) input?.triggerFire(); });
+  hud.onTouchWeapon(()     => { if (touchAllowed()) input?.nextWeapon(); });
 
   lobby.show();
 

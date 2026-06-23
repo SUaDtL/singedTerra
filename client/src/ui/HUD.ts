@@ -719,11 +719,22 @@ export class HUD {
     }
   }
 
+  /** True while the in-game PAUSE overlay is open. Read by main.ts to drop local
+   *  human input (aim/fire) while paused — the rAF loop keeps running regardless. */
+  private paused = false;
+
+  /** Whether the in-game PAUSE overlay is currently open. */
+  isPaused(): boolean {
+    return this.paused;
+  }
+
   /** Open/close the store modal. With no argument, toggles. */
   /** Show/hide the in-game PAUSE overlay. Non-destructive — the client/engine keeps
    *  running underneath (the networked lockstep loop MUST keep applying the broadcast
-   *  log to stay in sync), so Resume returns to the exact live game. */
+   *  log to stay in sync), so Resume returns to the exact live game. Local human input
+   *  is suppressed while open via main.ts's gate (#52), NOT by stopping the loop. */
   private togglePause(show: boolean): void {
+    this.paused = show;
     this.pauseEl.classList.toggle('st-hud__overlay--hidden', !show);
   }
 
