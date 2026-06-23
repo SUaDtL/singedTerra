@@ -100,6 +100,16 @@ function deriveRoundSeed(baseSeed: number, round: number): number {
  *  tick does not re-collide with the same solid pixel. */
 const BOUNCE_EPS = 1.5;
 
+/** Hard cap on a projectile's airborne lifetime (ticks). Once a shell has flown
+ *  this long it is force-detonated where it is, bounding worst-case ANIMATION length
+ *  — without this, a bounding mine's hop kick can keep it skipping for ~700 ticks
+ *  (12s @60fps), leaving the player watching a shell crawl across the field. (The fire
+ *  watchdog itself clears on the committed echo, not animation, so this is a UX +
+ *  runaway guard, not a network-timeout fix.) Every LEGIT ballistic arc resolves by
+ *  ~224 ticks (flightticks.mjs grid), so this only fires on an anomalous skip, never a
+ *  normal shot. Playtest-tunable (sibling to the combat-feel rebalance, issue #45). */
+const MAX_FLIGHT_TICKS = 240;
+
 /** Aim-input clamps (SPEC §6: angle degrees 0=right..180=left; power 0–100). */
 const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
@@ -756,6 +766,20 @@ export class GameEngine {
       // identical to this.gravity when sudden death is off, so trajectories are unchanged.
       stepProjectile(p, this.state.wind, this.currentGravity());
       p.age++;
+
+      // FLIGHT CAP: a shell that has been airborne MAX_FLIGHT_TICKS is force-detonated
+      // where it is (same resolution path as a spent shell), so a bounding mine's hop
+      // skip can't keep the shell crawling across the field for an absurd duration.
+      // Normal arcs resolve far below this, so this never fires on a legitimate shot.
+      if (p.age >= MAX_FLIGHT_TICKS) {
+        const napalm = getWeapon(p.weaponType).behavior?.napalm;
+        if (napalm !== undefined) {
+          this.igniteNapalm(p.x, p.y, napalm, p.weaponType);
+        } else {
+          this.detonate(p.x, p.y, p.weaponType);
+        }
+        continue; // shell consumed — not pushed back to survivors
+      }
 
       // SPLIT GATE: an airburst/funky shell splits ONCE (hasSplit guard) into a
       // deterministic velocity fan, then is consumed. The TRIGGER decides WHEN:
