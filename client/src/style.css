@@ -47,6 +47,15 @@ body {
   margin: 0;
 }
 
+html {
+  /* The ultimate backdrop. body (position:fixed + dark gradient) normally covers the
+     viewport, but the JS `zoom` scale on #app (main.ts) and any overscroll can reveal
+     html in the letterbox gutters when the window's aspect ratio differs from the
+     stage's (2:1) — and html, left unset, defaults to WHITE, which reads as white bars
+     above/below the field. Match the body backdrop so any gutter is an intentional frame. */
+  background: var(--backdrop);
+}
+
 body {
   /* Deep dusk backdrop so the surrounding frame matches the banner/splash. */
   background:
