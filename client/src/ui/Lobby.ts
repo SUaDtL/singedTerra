@@ -1,6 +1,7 @@
 import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
+import { armsLabel, roundsLabel, botLabel } from './browseLabels';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
 
 /** Play mode chosen in the lobby. */
@@ -152,6 +153,12 @@ interface BrowseRoom {
   hostName: string;
   playerCount: number;
   maxPlayers: number;
+  /** Best-of-N match length (1 = single round). Defaulted server-side for legacy rooms. */
+  rounds: number;
+  /** Arms tier 0–4 (4 = full arsenal). Defaulted server-side for legacy rooms. */
+  armsLevel: number;
+  /** Count of CPU seats in the room's live roster. */
+  botCount: number;
 }
 
 /**
@@ -1142,6 +1149,15 @@ export class Lobby {
         const nameSpan = document.createElement('span');
         nameSpan.textContent = room.hostName || '(unnamed host)';
 
+        // Match-shape metadata: rounds · arms tier · CPU count (each omitted when empty).
+        const metaSpan = document.createElement('span');
+        metaSpan.style.cssText = 'margin-left:8px;color:var(--text-dim);font-size:12px;';
+        metaSpan.textContent = [
+          roundsLabel(room.rounds),
+          armsLabel(room.armsLevel),
+          botLabel(room.botCount),
+        ].filter(Boolean).join(' · ');
+
         const joinBtn = document.createElement('button');
         joinBtn.type = 'button';
         joinBtn.className = 'lobby-btn';
@@ -1154,7 +1170,7 @@ export class Lobby {
           void this.joinByCode(room.code);
         });
 
-        row.append(nameSpan, joinBtn);
+        row.append(nameSpan, metaSpan, joinBtn);
         list.append(row);
       }
     }

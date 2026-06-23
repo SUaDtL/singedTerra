@@ -156,3 +156,5 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - `active_player_index` is commented "advisory only / may be removed in V1" (`001_init.sql:20-23`) but migration 004 writes it as the authoritative turn cursor — reconcile the comment; the column is load-bearing. [L/S]
 - (informational, no action) `submit_action` lets any room member proxy any bot/ai seat — within documented design (controls §26), exactly-once via the seq cursor; threat-model awareness only.
 - (informational, no action) `REPLICA IDENTITY FULL` on rooms/room_actions = WAL write-amplification, justified for Realtime; revisit only if WAL cost grows.
+
+- (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
