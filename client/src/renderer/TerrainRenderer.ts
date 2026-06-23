@@ -1,6 +1,6 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
 import { TERRAIN, hexToRgb } from '../ui/theme';
-import { bandForY } from './strata';
+import { bandFloatForY } from './strata';
 
 /**
  * Scorched depth ramp (banner palette): a LIT RIM on the top 2px of every solid
@@ -166,18 +166,27 @@ export class TerrainRenderer {
           if (depth < 2) {
             r = RIM[0]; g = RIM[1]; b = RIM[2]; // lit surface edge (unchanged)
           } else {
-            // Strata band base: pick starting color by world-y so horizontal
-            // earth/rock bands are revealed as craters cut deeper.
-            const band = bandForY(y);
-            const BASE = BAND_COLORS[band];
+            // Strata band base: a CONTINUOUS color by world-y (cross-faded across
+            // the band thresholds via bandFloatForY) so horizontal earth/rock bands
+            // are revealed as craters cut deeper WITHOUT a hard horizontal seam at
+            // the boundaries. Lerp the two bordering band colors by the fractional
+            // band coordinate.
+            const bf = bandFloatForY(y);      // 0..2, smooth across boundaries
+            const lo = bf < 1 ? 0 : 1;        // lower of the two bands to blend
+            const f = bf - lo;                // 0..1 within the pair
+            const A = BAND_COLORS[lo];
+            const Bc = BAND_COLORS[lo + 1];
+            const baseR = A[0] + (Bc[0] - A[0]) * f;
+            const baseG = A[1] + (Bc[1] - A[1]) * f;
+            const baseB = A[2] + (Bc[2] - A[2]) * f;
             // Depth ramp: blend BASE → MID → DEEP over RAMP_DEPTH px so the
             // band color grades smoothly into the deep-rock palette.
             const t = Math.min((depth - 2) / RAMP_DEPTH, 1);
             if (t < 0.5) {
               const u = t * 2; // band-base → mid
-              r = BASE[0] + (MID[0] - BASE[0]) * u;
-              g = BASE[1] + (MID[1] - BASE[1]) * u;
-              b = BASE[2] + (MID[2] - BASE[2]) * u;
+              r = baseR + (MID[0] - baseR) * u;
+              g = baseG + (MID[1] - baseG) * u;
+              b = baseB + (MID[2] - baseB) * u;
             } else {
               const u = (t - 0.5) * 2; // mid → deep
               r = MID[0] + (DEEP[0] - MID[0]) * u;

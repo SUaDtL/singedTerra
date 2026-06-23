@@ -32,3 +32,26 @@ export function bandForY(y: number): 0 | 1 | 2 {
   if (y < STRATA_BAND_B) return 1;
   return 2;
 }
+
+/** Half-width (px) of the cross-fade zone around each band threshold. Within
+ *  ±STRATA_BLEND of a boundary the base color lerps between the two bands instead
+ *  of switching abruptly, so there is no hard horizontal seam in the terrain fill. */
+export const STRATA_BLEND = 48;
+
+/**
+ * Continuous band coordinate in [0, 2] for a world-y. Integer-valued away from the
+ * thresholds (0/1/2, matching {@link bandForY}); inside ±STRATA_BLEND of a threshold
+ * it ramps linearly so a renderer can lerp band colors across the seam. The two
+ * blend zones do not overlap (A+blend=248 < B-blend=332).
+ */
+export function bandFloatForY(y: number): number {
+  if (y < STRATA_BAND_A - STRATA_BLEND) return 0;
+  if (y < STRATA_BAND_A + STRATA_BLEND) {
+    return (y - (STRATA_BAND_A - STRATA_BLEND)) / (2 * STRATA_BLEND); // 0 → 1
+  }
+  if (y < STRATA_BAND_B - STRATA_BLEND) return 1;
+  if (y < STRATA_BAND_B + STRATA_BLEND) {
+    return 1 + (y - (STRATA_BAND_B - STRATA_BLEND)) / (2 * STRATA_BLEND); // 1 → 2
+  }
+  return 2;
+}
