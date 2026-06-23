@@ -342,7 +342,7 @@ export class HUD {
     // On-gauge numeric label (elevation degrees + direction glyph)
     this.gaugeElevLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
     this.gaugeElevLabel.setAttribute('x', '36');
-    this.gaugeElevLabel.setAttribute('y', '54');
+    this.gaugeElevLabel.setAttribute('y', '52');
     this.gaugeElevLabel.setAttribute('text-anchor', 'middle');
     this.gaugeElevLabel.setAttribute('class', 'st-hud__gauge-label');
     this.gaugeElevLabel.textContent = '0° ▶';
@@ -394,7 +394,7 @@ export class HUD {
     // Label
     this.gaugeWindLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
     this.gaugeWindLabel.setAttribute('x', '36');
-    this.gaugeWindLabel.setAttribute('y', '54');
+    this.gaugeWindLabel.setAttribute('y', '52');
     this.gaugeWindLabel.setAttribute('text-anchor', 'middle');
     this.gaugeWindLabel.setAttribute('class', 'st-hud__gauge-label');
     this.gaugeWindLabel.textContent = '• 0.0';
@@ -1104,7 +1104,7 @@ export class HUD {
    */
   private syncWind(wind: number): void {
     const offset = windNeedleOffset(wind, MAX_WIND); // [-1, 1]
-    const tx = offset * 30; // ±30px max travel from center
+    const tx = offset * 26; // ±26px keeps the 8px diamond inside the 4..68 track at max wind
     // Marker: rect x=32 y=22 w=8 h=8, rotated 45° around its center (36,26).
     // Translate center by tx: new center at (36+tx, 26). Update transform.
     const cx = 36 + tx;
@@ -2095,12 +2095,9 @@ export class HUD {
 .st-hud__active-row--hidden { display: none; }
 /* The aim strip is only shown during "Sending..." (firing state). */
 .st-hud__aim--hidden { display: none; }
-/* Snap needle transforms instead of animating when reduced-motion is requested. */
-@media (prefers-reduced-motion: reduce) {
-  .st-hud__gauge-needle,
-  .st-hud__gauge-needle-rect,
-  .st-hud__gauge-power-fill { transition: none; }
-}
+/* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by
+   direct attribute mutation (transform / stroke-dasharray) with no CSS transition,
+   so they snap to each new value instantly — there is nothing to suppress. */
 `;
 
 }

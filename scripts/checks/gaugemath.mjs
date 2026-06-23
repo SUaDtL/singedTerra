@@ -72,5 +72,20 @@ eq(aimDirectionGlyph(135), '◀', 'aim glyph left');
 eq(elevationDegrees(90), 90, 'elevationDegrees straight up');
 eq(aimDirectionGlyph(90), '▲', 'aim glyph up');
 
+// Guard clauses (degenerate inputs the engine shouldn't supply, but the helpers
+// must stay total — no NaN/Infinity leaking into an SVG attribute).
+eq(gaugeFraction(50, 100, 100), 0, 'gaugeFraction min==max -> 0 (no divide-by-zero)');
+eq(windNeedleOffset(5, 0), 0, 'windNeedleOffset maxWind==0 -> 0');
+eq(windNeedleOffset(5, -10), 0, 'windNeedleOffset maxWind<0 -> 0');
+
+// Wind calm epsilon is a STRICT < 0.05: just-below is calm, at/above is directional.
+eq(windDirectionSymbol(0.04), '•', 'wind 0.04 (< epsilon) -> calm');
+eq(windDirectionSymbol(0.05), '→', 'wind 0.05 (== epsilon, not < ) -> right');
+eq(windDirectionSymbol(-0.06), '←', 'wind -0.06 (> epsilon) -> left');
+
+// Rounding boundary: elevationDegrees rounds, then mirror-folds across 90.
+eq(elevationDegrees(89.5), 90, 'elevationDegrees 89.5 rounds to 90');
+eq(elevationDegrees(90.5), 89, 'elevationDegrees 90.5 rounds to 91, mirrors to 89');
+
 console.log(`\ngaugemath: ${checks} ok, ${failures} failed`);
 if (failures > 0) process.exit(1);
