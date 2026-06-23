@@ -302,12 +302,13 @@ export class NetworkClient implements GameClient {
    * Begin the rAF loop. engine.tick() is called each frame (~60fps) and
    * state is emitted to listeners.
    *
-   * NOTE: After a fire action is applied via applyNetworkFireAction +
-   * tickToCompletion (in the Realtime callback), the engine is already back in
-   * PLAYER_TURN and the RAF tick() calls are no-ops until the next action. The
-   * RAF loop is responsible for smooth rendering of projectile flight; ticking
-   * to completion in the Realtime callback handles deterministic outcome
-   * resolution.
+   * NOTE: In LIVE play a fire echo is applied in flushPendingActions WITHOUT
+   * ticking to completion (tickToCompletion runs only during initialize() replay).
+   * The input lock + fire watchdog are released the moment the echo applies
+   * (setFiring(false) in flushPendingActions) — BEFORE this RAF loop animates the
+   * flight — so a long shot's animation can never trip the watchdog; it only guards
+   * a submit that never commits. This RAF loop renders the flight tick-by-tick and,
+   * when the engine leaves FIRING/RESOLVING, drains the next buffered action.
    */
   start(): void {
     const loop = () => {
@@ -505,10 +506,14 @@ export class NetworkClient implements GameClient {
   }
 
   /**
-   * Set the "firing" input lock. Arming it (true) starts a watchdog so a submitted
-   * shot that never echoes back (lost submit / dropped Realtime echo) eventually
-   * releases the lock instead of trapping the player in "Sending…". The echo path
-   * (flushPendingActions) calls this with false, which also disarms the watchdog.
+   * Set the "firing" input lock. Arming it (true) starts a watchdog: if a submitted
+   * shot has not echoed back within FIRE_TIMEOUT_MS, the watchdog first attempts a
+   * RESYNC (re-fetch the canonical log) rather than failing outright — the submit may
+   * have committed while the Realtime echo was slow or dropped, in which case the
+   * resync applies our shot and self-heals. Only if the shot is STILL unresolved after
+   * the resync (it genuinely never committed) do we release the lock and notify for a
+   * retry — a clean retry that can no longer desync from a half-applied commit. The
+   * echo path (flushPendingActions) calls this with false, which also disarms the watchdog.
    */
   private setFiring(value: boolean): void {
     this._isFiring = value;
@@ -519,9 +524,23 @@ export class NetworkClient implements GameClient {
     if (value) {
       this.fireWatchdog = setTimeout(() => {
         this.fireWatchdog = null;
-        if (this._isFiring) this.failFire('Shot timed out — try again.');
+        if (this._isFiring) void this.recoverStuckFire();
       }, NetworkClient.FIRE_TIMEOUT_MS);
     }
+  }
+
+  /**
+   * Watchdog recovery: a fired shot has not echoed within FIRE_TIMEOUT_MS. Re-fetch
+   * the canonical log first — if our action committed (slow / dropped Realtime echo),
+   * resyncLog applies it and flushPendingActions clears the firing lock, so the shot
+   * resolves and we self-heal. If the lock is STILL set afterward, the submit never
+   * landed: release it and notify the player for a clean retry (no half-applied commit
+   * to desync from). resyncLog swallows its own fetch errors, so a dead network simply
+   * leaves the lock set and falls through to the retry notice.
+   */
+  private async recoverStuckFire(): Promise<void> {
+    await this.resyncLog();
+    if (this._isFiring) this.failFire('Shot timed out — try again.');
   }
 
   /** Release a stuck fire lock and notify the UI so the player can re-aim. */

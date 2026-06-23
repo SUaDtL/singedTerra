@@ -13,14 +13,16 @@
 //     riot_bomb) + premium weapons granted for completeness (nuke, mirv,
 //     deaths_head, hot_napalm). Shield is not a projectile — excluded.
 //
-// The threshold is 5_000 ticks — a comfortable 2× headroom under the 10k cap.
-// Napalm-class weapons are the expected slow case (burnTicks 78–100 + spread).
-// Even at worst the fire field is bounded by NAPALM_MAX_SPREAD (90px) at
-// NAPALM_SPREAD_RATE (3/tick), so max spread ticks ≈ 90/3 = 30 PLUS the
-// NAPALM_BURN_TICKS of the last column to ignite ≈ 30+100 = 130 fire ticks.
-// Add flight time (~200 ticks at full power), and the true ceiling is well under
-// 500 ticks for napalm and under 300 for every ballistic weapon. 5_000 is chosen
-// to be unambiguously safe and clearly below 10_000 with room to spare.
+// The threshold is 500 ticks. The ORIGINAL comment here claimed napalm stays
+// "well under 500 ticks and under 300 for every ballistic weapon" — but Bouncing
+// Betty's hopBoost skip (a ballistic, bouncing weapon) ran 702 ticks at angle≥75/
+// power=100, silently violating that stated intent, and the old 5_000 threshold was
+// far too loose to ever catch it. The MAX_FLIGHT_TICKS cap in GameEngine now
+// force-detonates any shell past 240 flight ticks, bringing Betty back in line;
+// this 500-tick bar ENFORCES the design intent (napalm burn <500, ballistic <300)
+// and is the regression guard for that cap — remove the cap and Betty's 702 fails
+// here. (Note: this is NOT a network-watchdog budget; the fire watchdog clears on
+// the committed echo, not on animation length — see NetworkClient.setFiring.)
 //
 // Deterministic: no Math.random / Date. Run: npx tsx scripts/checks/flightticks.mjs
 
@@ -67,9 +69,9 @@ const ALL_WEAPONS = [...DEFAULT_WEAPONS, ...PREMIUM_WEAPONS];
 const LOOP_CAP = 10_000;
 
 // The threshold we assert: worst-case ticks must stay BELOW this value.
-// Chosen at 5_000 — a 2× safety margin under the 10k production cap.
-// See the comment at the top for reasoning on why real shots stay well under 500.
-const TICK_THRESHOLD = 5_000;
+// 500 enforces the original design intent (napalm burn <500, ballistic <300) and
+// is the regression guard for GameEngine's MAX_FLIGHT_TICKS cap — see top comment.
+const TICK_THRESHOLD = 500;
 
 let failed = false;
 const log = (...a) => console.log(...a);
@@ -160,7 +162,7 @@ log(`[flightticks] margin: ${LOOP_CAP - worstTicks} ticks below production cap (
 
 // --- Assert ---
 if (worstTicks >= TICK_THRESHOLD) {
-  fail(`worst-case tick count ${worstTicks} >= threshold ${TICK_THRESHOLD} (margin too thin — check napalm burnTicks or POWER_SCALE)`);
+  fail(`worst-case tick count ${worstTicks} >= threshold ${TICK_THRESHOLD} (runaway flight/burn — check GameEngine MAX_FLIGHT_TICKS cap, napalm burnTicks, or POWER_SCALE)`);
 }
 
 if (failed) {
