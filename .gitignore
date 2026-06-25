@@ -10,6 +10,10 @@ server/dist
 client/.env
 client/.env.local
 supabase/.env
+# Edge Function secrets (hold the SERVICE-ROLE key) — explicit belt-and-suspenders
+# entries in addition to the global .env/.env.local catch-all above.
+supabase/functions/.env
+supabase/functions/.env.local
 supabase/.temp/
 # Netlify CLI local state (linked-site id + deploy cache) — not secrets, but local.
 .netlify

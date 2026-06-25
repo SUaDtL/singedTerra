@@ -1,4 +1,4 @@
-import type { WeaponType } from '@shared/engine/WeaponSystem'
+import type { NetworkAction } from '@shared/net/replay'
 
 // Matches the rooms table
 export interface Room {
@@ -21,22 +21,16 @@ export interface RoomPlayer {
   ready: boolean
 }
 
-// Matches the room_actions table
+// Matches the room_actions table. `action` carries the full committed-action
+// union (fire | use_shield | buy | next_round) — the log is not fire-only, so
+// any consumer switching on `action.type` gets real exhaustiveness checking.
 export interface RoomAction {
   id: string
   room_id: string
   seq: number
   player_id: string
-  action: NetworkFireAction
+  action: NetworkAction
   created_at: string
-}
-
-// The only action type committed to the log
-export interface NetworkFireAction {
-  type: 'fire'
-  angle: number
-  power: number
-  weapon: WeaponType
 }
 
 // Edge Function response types

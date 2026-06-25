@@ -106,7 +106,7 @@ Deno.serve(withCors(async (body) => {
   // Fetch room — must be 'active'
   const { data: room, error: fetchError } = await supabase
     .from('rooms')
-    .select('*')
+    .select('players, active_player_index, turn, status')
     .eq('id', roomId)
     .eq('status', 'active')
     .maybeSingle()
