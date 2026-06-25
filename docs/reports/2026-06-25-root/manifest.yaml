@@ -24,7 +24,7 @@ lenses:
 waves:
   - wave: 1
     lenses: [appsec, secrets-crypto-supply, reliability]
-    status: pending
+    status: triaged
   - wave: 2
     lenses: [performance, architecture, migration-data-integrity]
     status: pending
