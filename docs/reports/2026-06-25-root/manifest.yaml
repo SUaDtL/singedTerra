@@ -27,7 +27,18 @@ waves:
     status: triaged
   - wave: 2
     lenses: [performance, architecture, migration-data-integrity]
-    status: pending
+    status: triaged
   - wave: 3
     lenses: [observability, dx-typesafety, tests-coverage, tests-fidelity]
-    status: pending
+    status: triaged
+
+result:
+  findings_total: 69
+  issue_eligible: { high: 2, medium: 21, low: 41 }
+  decisions: { keep: 27, combine: 28, decision_required: 3, false_positive: 4, investigate: 3, defer: 3, duplicate: 1 }
+  positive_controls: [reliability-004, performance-011, migration-006, migration-007]
+  top_task: rematch-ai-flag   # HIGH: restart_game drops ai flag -> bot rematch freeze
+  decision_required: referee-cursor-trust
+  status: complete
+  mode: report-only   # no issue-create command supplied
+
