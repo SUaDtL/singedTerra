@@ -273,8 +273,9 @@ export class AudioEngine {
    * source filtered to a narrow band-pass that reads as a crackling fire.
    * Idempotent — calling start while already playing is a no-op.
    *
-   * Must call napalmStop() (or reset()) to tear down the held nodes;
-   * otherwise the AudioContext keeps them alive indefinitely.
+   * Must call napalmStop() to tear down the held nodes; otherwise the
+   * AudioContext keeps them alive indefinitely. (main.ts teardown() calls
+   * napalmStop() so a game quit mid-burn does not leak the loop.)
    */
   napalmStart(): void {
     if (this.muted) return;
