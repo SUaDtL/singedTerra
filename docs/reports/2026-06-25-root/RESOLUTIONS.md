@@ -19,6 +19,19 @@ Disposition of every triaged finding after the post-review action pass on branch
 | architecture-002 | deleted dead `shared/src/index.ts` barrel |
 | architecture-003 | deleted dead `Tank.create` / `Tank.bounds` |
 
+## ✅ Quick-kills also fixed in branch (commit `09e3203`) — from the filed issues
+
+| Finding | Fix | Issue |
+|---|---|---|
+| observability-004 | global `unhandledrejection`/`error` handler in `main.ts` | #66 (closed) |
+| dx-007 | Lobby guards a malformed 200 instead of `!`-asserting undefined room IDs | #70 (partial) |
+| reliability-001 | release napalm nodes on teardown (`audio.napalmStop`) + drop stale `reset()` doc | #70 (partial) |
+| observability-006 | warn on "Not your turn" with roomId + local active seat | #67 (partial) |
+| performance-006 | cache the invariant sun `CanvasGradient` | #68 (partial) |
+| performance-010 | lazy per-isolate service-client singleton | #68 (partial) |
+
+Remaining in those issues (left as effort-M / higher-risk): `noUncheckedIndexedAccess` (#70), the rest of the edge logging + secrets-001 (#67), explosion/scorch gradient caching + `syncFire` (#68).
+
 ## 📋 Filed as GitHub issues (for future investigation)
 
 | Issue | Title | Findings |
