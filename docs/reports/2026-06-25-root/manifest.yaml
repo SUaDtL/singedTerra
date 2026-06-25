@@ -1,0 +1,33 @@
+schema: manifest/v1
+run_id: 2026-06-25-root
+scope: .            # repository root
+concurrency: 3
+issue_create_cmd: null   # $3 omitted → report-only, print ready-to-run commands
+created_at: 2026-06-25
+orchestrator_model: claude-opus-4-8
+
+stack:
+  languages: [typescript, sql-plpgsql]
+  runtimes: [browser-vite, deno-edge-functions, node-tsx-harnesses]
+  datastore: postgres-supabase
+  realtime: supabase-realtime
+  auth: none-ephemeral-uuid   # ADR 0006
+
+mappers:
+  dispatched: false
+  reason: repo small (~15.6k LOC TS); mapped inline without bloating triage context
+
+lenses:
+  launched: [appsec, secrets-crypto-supply, reliability, performance, architecture, migration-data-integrity, observability, dx-typesafety, tests-coverage, tests-fidelity]
+  skipped: []
+
+waves:
+  - wave: 1
+    lenses: [appsec, secrets-crypto-supply, reliability]
+    status: pending
+  - wave: 2
+    lenses: [performance, architecture, migration-data-integrity]
+    status: pending
+  - wave: 3
+    lenses: [observability, dx-typesafety, tests-coverage, tests-fidelity]
+    status: pending
