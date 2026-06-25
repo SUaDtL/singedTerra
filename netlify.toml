@@ -14,6 +14,18 @@
   command = "npm run build"
   publish = "client/dist"
 
+# Baseline security headers (mirror nginx.conf). Cheap defense-in-depth for the
+# static SPA: no MIME sniffing, no framing, tight referrer/permissions, and a CSP
+# whose connect-src allows the Supabase backend (Edge Functions + Realtime ws).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'"
+
 # SPA fallback — serve index.html for any path so client-side routing works
 # (mirrors nginx.conf's try_files). Also shipped as client/public/_redirects so the
 # rule travels inside the published artifact regardless of how it is deployed.

@@ -64,18 +64,36 @@ function runGame(seed) {
  * here (not reliant on engine insertion order) so the comparison is robust.
  */
 function serialize(state) {
+  // Include EVERY engine-computed TankState field, not just position/aim. The
+  // economy/scoreboard/shield/burial sprints added fields (powerCap, shieldHp,
+  // credits, inventory, fuel, kills, totalDamage, roundWins, buried, buriedTurns)
+  // that are part of the determinism claim; omitting them let a divergence in any
+  // of them pass the byte-comparison silently.
   const tanks = state.tanks.map((t) => ({
     id: t.id,
     x: t.x,
     y: t.y,
     angle: t.angle,
     power: t.power,
+    powerCap: t.powerCap,
     health: t.health,
+    fuel: t.fuel,
     alive: t.alive,
+    shieldHp: t.shieldHp,
+    credits: t.credits,
+    inventory: t.inventory,
+    roundWins: t.roundWins,
+    kills: t.kills,
+    totalDamage: t.totalDamage,
+    buried: t.buried,
+    buriedTurns: t.buriedTurns,
   }));
   const canonical = {
     phase: state.phase,
     turn: state.turn,
+    round: state.round,
+    totalRounds: state.totalRounds,
+    lastRoundWinnerId: state.lastRoundWinnerId,
     activePlayerId: state.activePlayerId,
     wind: state.wind,
     winner: state.winner,
@@ -84,6 +102,8 @@ function serialize(state) {
     projectile: state.projectile,
     lastExplosion: state.lastExplosion,
     explosions: state.explosions,
+    // Napalm fire field — engine-authoritative + part of the determinism claim.
+    fire: state.fire,
     terrain: terrainHex(state.terrain),
   };
   return JSON.stringify(canonical);

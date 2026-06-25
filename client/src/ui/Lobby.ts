@@ -857,13 +857,23 @@ export class Lobby {
         return;
       }
 
+      // Guard against a structurally-wrong 200 (contract drift): without this, the
+      // `!` assertions below would assign undefined-as-string and silently break the
+      // Realtime subscription with no visible error (dx-007).
+      if (!data.roomId || !data.code || !data.playerId) {
+        this.onlineError = 'Unexpected server response — please try again.';
+        this.onlineBusy = false;
+        this.render();
+        return;
+      }
+
       // Transition to waiting room. Prefer the server's full players array (it
       // includes any CPU seats with their generated ids); fall back to just us.
-      this.waitingRoomId = data.roomId!;
-      this.waitingRoomCode = data.code!;
-      this.waitingPlayerId = data.playerId!;
+      this.waitingRoomId = data.roomId;
+      this.waitingRoomCode = data.code;
+      this.waitingPlayerId = data.playerId;
       this.waitingPlayers = data.players ?? [{
-        id: data.playerId!,
+        id: data.playerId,
         name,
         color: this.onlineColor,
         ready: false,

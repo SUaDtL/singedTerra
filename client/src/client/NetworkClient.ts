@@ -745,7 +745,15 @@ export class NetworkClient implements GameClient {
             // input lock so the player can re-fire rather than stay stuck.
             console.error('NetworkClient: submit_action seq-conflict retries exhausted');
             if (!actingPlayerId) this.failFire('Shot kept colliding — try again.');
-          } else if (!isConflict && data.error !== 'Not your turn') {
+          } else if (!isConflict && data.error === 'Not your turn') {
+            // The canonical local-vs-referee desync signature: our engine thought it
+            // was our turn but the referee disagreed. Not an error (can be a benign
+            // race), but log it at warn so a real desync is diagnosable (obs-006).
+            console.warn('NetworkClient: submit_action "Not your turn" — possible desync', {
+              roomId: this.roomId,
+              localActivePlayerId: this.engine.getState().activePlayerId,
+            });
+          } else if (!isConflict) {
             // A bot's lost race shows up as a benign seq-conflict / turn-advanced
             // rejection — don't log those as errors.
             console.error('NetworkClient: submit_action rejected:', data.error);

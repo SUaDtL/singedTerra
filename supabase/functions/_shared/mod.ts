@@ -163,15 +163,25 @@ export class MissingEnvError extends Error {
 // deno-lint-ignore no-explicit-any
 export type ServiceClient = any
 
-/** Create a service-role Supabase client from the runtime env. Throws
- *  MissingEnvError (caught by withCors) when either var is absent. */
+/** Cached per-isolate service client (perf-010). Lazily created on first use —
+ *  NOT at module load — so importing this module in a test without env set does
+ *  not construct a client or throw. */
+let _serviceClient: ServiceClient | null = null
+
+/** Get the service-role Supabase client, reusing one instance per Deno isolate so
+ *  repeated calls (incl. enforceRateLimit + the handler within one request) share
+ *  HTTP keep-alive instead of each constructing a fresh client. Throws
+ *  MissingEnvError (caught by withCors) when either env var is absent; the cache is
+ *  only populated on success, so a transient missing-env still retries. */
 export function getServiceClient(): ServiceClient {
+  if (_serviceClient) return _serviceClient
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new MissingEnvError()
   }
-  return createClient(supabaseUrl, supabaseServiceKey)
+  _serviceClient = createClient(supabaseUrl, supabaseServiceKey)
+  return _serviceClient
 }
 
 // ---------------------------------------------------------------------------

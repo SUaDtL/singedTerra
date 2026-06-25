@@ -171,6 +171,7 @@ export class Renderer {
 
   /** Cached sky gradient, rebuilt only on (re)size. */
   private skyGradient: CanvasGradient | null = null;
+  private sunGradient: CanvasGradient | null = null;
 
   /** Live explosion bursts (client-only visual state). */
   private bursts: Burst[] = [];
@@ -1000,10 +1001,17 @@ export class Renderer {
     const cx = CANVAS_WIDTH * 0.5;
     const cy = CANVAS_HEIGHT * 0.66;
     const r = 78;
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, ACCENT.sunCore);
-    g.addColorStop(0.5, ACCENT.sun);
-    g.addColorStop(1, 'rgba(255, 122, 31, 0)');
+    // The sun gradient is invariant (fixed position + theme colors) but drawSky ->
+    // drawSun runs every frame; cache it instead of rebuilding a CanvasGradient per
+    // frame (perf-006), mirroring skyGradient.
+    if (this.sunGradient === null) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, ACCENT.sunCore);
+      g.addColorStop(0.5, ACCENT.sun);
+      g.addColorStop(1, 'rgba(255, 122, 31, 0)');
+      this.sunGradient = g;
+    }
+    const g = this.sunGradient;
     ctx.save();
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = g;

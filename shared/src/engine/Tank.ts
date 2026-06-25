@@ -213,53 +213,9 @@ export function barrelTip(tank: TankState, length: number): { x: number; y: numb
  * GameState broadcast.
  */
 export const Tank = {
-  /** Create a fresh tank at full health at an explicit (x, y). */
-  create(params: {
-    id: string;
-    playerName: string;
-    x: number;
-    y: number;
-    color: string;
-    selectedWeapon?: WeaponType;
-  }): TankState {
-    return {
-      id: params.id,
-      playerName: params.playerName,
-      x: params.x,
-      y: params.y,
-      angle: DEFAULT_ANGLE,
-      power: DEFAULT_POWER,
-      powerCap: DEFAULT_POWER_CAP,
-      health: DEFAULT_HEALTH,
-      fuel: DEFAULT_FUEL,
-      selectedWeapon: params.selectedWeapon ?? DEFAULT_WEAPON,
-      inventory: defaultInventory(),
-      color: params.color,
-      alive: true,
-      shieldHp: 0, // no shield until activated
-      credits: STARTING_CREDITS,
-      roundWins: 0, // V1 match structure: no rounds won yet
-      kills: 0, // V1 scoreboard
-      totalDamage: 0, // V1 scoreboard
-      buried: false, // #15 burial: not trapped at spawn
-      buriedTurns: 0,
-      ai: null, // Tank.create is used for human/default tanks
-    };
-  },
-
   /** Apply damage, clamping health to [0, 100] and updating `alive`. */
   applyDamage(tank: TankState, amount: number): void {
     tank.health = Math.min(100, Math.max(0, tank.health - amount));
     tank.alive = tank.health > 0;
-  },
-
-  /** Axis-aligned bounding box for collision tests. */
-  bounds(tank: TankState): { x: number; y: number; w: number; h: number } {
-    return {
-      x: tank.x - TANK_WIDTH / 2,
-      y: tank.y - TANK_HEIGHT,
-      w: TANK_WIDTH,
-      h: TANK_HEIGHT,
-    };
   },
 };

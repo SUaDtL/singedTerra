@@ -18,6 +18,24 @@ interface RematchInfo {
   players: Array<{ id: string; name: string; color: string }>
 }
 
+/**
+ * Build the successor room's roster from the old one. Preserves id/name/color
+ * AND the `ai` CPU-difficulty flag (omitting it dropped bot designation, so a
+ * rematch of a room with CPU seats produced ghost-human seats no client drove —
+ * the game froze on bot turns). Marks everyone ready + stamps lastSeen so the
+ * room is immediately playable. Pure + exported for testing.
+ */
+export function buildRematchPlayers(players: StoredPlayer[], nowMs: number): StoredPlayer[] {
+  return players.map(p => ({
+    id: p.id,
+    name: p.name,
+    color: p.color,
+    ready: true,
+    lastSeen: nowMs,
+    ...(p.ai ? { ai: p.ai } : {}),
+  }))
+}
+
 /** Read a room by id and project it into the RematchInfo wire shape. */
 async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<RematchInfo | null> {
   const { data } = await supabase
@@ -41,6 +59,10 @@ async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<Re
   }
 }
 
+// Guard Deno.serve so importing this module in tests does not start the HTTP
+// listener (mirrors submit_action). import.meta.main is true only when Deno runs
+// this file as the program entry point.
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, playerId } = body as { roomId?: unknown; playerId?: unknown }
 
@@ -125,13 +147,7 @@ Deno.serve(withCors(async (body) => {
   // tank mapping (players[i] -> 'p{i+1}') stays identical to the old game; mark
   // everyone ready so the room is immediately playable.
   const oldOptions = (oldRoom.options ?? {}) as StoredOptions
-  const newPlayers: StoredPlayer[] = players.map(p => ({
-    id: p.id,
-    name: p.name,
-    color: p.color,
-    ready: true,
-    lastSeen: nowMs,
-  }))
+  const newPlayers: StoredPlayer[] = buildRematchPlayers(players, nowMs)
 
   // Unique code with collision retry (mirrors create_room).
   let code: string | null = null
@@ -186,3 +202,4 @@ Deno.serve(withCors(async (body) => {
 
   return json({ ok: true, ...info }, 200)
 }, { rateLimit: 'restart_game' }))
+} // end if (import.meta.main)

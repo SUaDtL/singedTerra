@@ -48,6 +48,19 @@ function bootstrap(): void {
   const audio = new AudioEngine();
   audio.unlockOnGesture();
 
+  // Global safety net (observability-004): startGame() is fire-and-forget
+  // (`void startGame`), so an unhandled rejection (failed network init, a thrown
+  // initialize()) otherwise leaves a silently frozen blank screen — invisible on
+  // mobile. Surface a reload prompt + log the reason.
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('unhandledrejection:', e.reason);
+    hud.flashMessage('Unexpected error — please reload.');
+  });
+  window.addEventListener('error', (e) => {
+    console.error('uncaught error:', e.error ?? e.message);
+    hud.flashMessage('Unexpected error — please reload.');
+  });
+
   // Render idle-skip (perf): the rAF render loop (onStateChange) fires ~60fps even
   // when a PLAYER_TURN scene is fully static (sky + sun-gradient + tanks redrawn for
   // nothing — the dominant idle cost on low-end/mobile). `renderDirty` forces a redraw
@@ -152,6 +165,10 @@ function bootstrap(): void {
     input = null;
     client?.stop();
     client = null;
+    // Release any sustained napalm loop so its source/gain nodes don't leak when a
+    // game is quit mid-burn — napalmStop is otherwise only called on the audio
+    // edge when a burn ends naturally (reliability-001).
+    audio.napalmStop();
     lastActiveId = null;
     // Force a full redraw on the next game's first frame, and clear the phase latch so
     // its opening phase counts as a change (otherwise the fresh static PLAYER_TURN
