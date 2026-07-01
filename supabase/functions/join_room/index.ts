@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, reap, isValidColor, StoredOptions, StoredPlayer } from '../_shared/mod.ts'
 
 /**
  * Pure post-reap join eligibility: capacity, then color, then name conflict (name
@@ -45,8 +45,8 @@ Deno.serve(withCors(async (body) => {
     return json({ error: 'Invalid input: playerName too long (max 20)' }, 400)
   }
 
-  // Validate color
-  if (typeof color !== 'string' || color.trim().length === 0) {
+  // Validate color (bounded hex; see isValidColor / appsec-003)
+  if (!isValidColor(color)) {
     return json({ error: 'Invalid input: color' }, 400)
   }
 

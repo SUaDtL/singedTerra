@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, UUID_REGEX, isValidColor, StoredPlayer } from '../_shared/mod.ts'
 
 export type UpdatePlayerResult =
   | { ok: false; status: number; error: string }
@@ -75,11 +75,9 @@ Deno.serve(withCors(async (body) => {
     }
   }
 
-  // Validate color if present
-  if (color !== undefined) {
-    if (typeof color !== 'string' || color.trim().length === 0) {
-      return json({ error: 'Invalid input: color' }, 400)
-    }
+  // Validate color if present (bounded hex; see isValidColor / appsec-003)
+  if (color !== undefined && !isValidColor(color)) {
+    return json({ error: 'Invalid input: color' }, 400)
   }
 
   const supabase = getServiceClient()

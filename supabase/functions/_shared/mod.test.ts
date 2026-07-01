@@ -13,6 +13,7 @@ import {
   rateWindow,
   rateLimitFor,
   RATE_LIMIT_DEFAULT,
+  isValidColor,
 } from './mod.ts'
 
 // ---------------------------------------------------------------------------
@@ -220,4 +221,34 @@ Deno.test('rateLimitFor: known buckets and default fallback', () => {
   assertEqual(rateLimitFor('join_room'), 20, 'join_room')
   assertEqual(rateLimitFor('restart_game'), 10, 'restart_game')
   assertEqual(rateLimitFor('heartbeat'), RATE_LIMIT_DEFAULT, 'unknown → default')
+})
+
+// ---------------------------------------------------------------------------
+// isValidColor — bounded hex color guard (appsec-003)
+// ---------------------------------------------------------------------------
+
+Deno.test('isValidColor: every client palette color is accepted', () => {
+  for (const c of ['#e84d4d', '#4d8ce8', '#4de87a', '#e8c84d', '#a855f7']) {
+    assertEqual(isValidColor(c), true, `palette ${c}`)
+  }
+})
+
+Deno.test('isValidColor: #rgb / #rrggbb / #rrggbbaa shorthands accepted; surrounding space trimmed', () => {
+  assertEqual(isValidColor('#fff'), true, '#rgb')
+  assertEqual(isValidColor('#ffffff'), true, '#rrggbb')
+  assertEqual(isValidColor('#ffffffff'), true, '#rrggbbaa')
+  assertEqual(isValidColor('  #abc123  '), true, 'trimmed')
+})
+
+Deno.test('isValidColor: rejects non-hex, unbounded, and non-string input', () => {
+  assertEqual(isValidColor(''), false, 'empty')
+  assertEqual(isValidColor('red'), false, 'named color')
+  assertEqual(isValidColor('#12'), false, 'too short')
+  assertEqual(isValidColor('#1234567890'), false, 'too long')
+  assertEqual(isValidColor('#gggggg'), false, 'non-hex digits')
+  assertEqual(isValidColor('#fff; background:url(x)'), false, 'injection-ish payload')
+  assertEqual(isValidColor('a'.repeat(5000)), false, 'unbounded string')
+  assertEqual(isValidColor(123), false, 'number')
+  assertEqual(isValidColor(null), false, 'null')
+  assertEqual(isValidColor(undefined), false, 'undefined')
 })

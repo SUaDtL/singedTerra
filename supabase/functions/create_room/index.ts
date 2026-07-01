@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, generateCode, DEFAULT_GRAVITY, DEFAULT_MAX_WIND } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, generateCode, isValidColor, DEFAULT_GRAVITY, DEFAULT_MAX_WIND } from '../_shared/mod.ts'
 import { coerceEconomyOptions } from './validate.ts'
 
 Deno.serve(withCors(async (body) => {
@@ -22,8 +22,8 @@ Deno.serve(withCors(async (body) => {
     return json({ error: 'Invalid input: playerName too long (max 20)' }, 400)
   }
 
-  // Validate color
-  if (typeof color !== 'string' || color.trim().length === 0) {
+  // Validate color (bounded hex; see isValidColor / appsec-003)
+  if (!isValidColor(color)) {
     return json({ error: 'Invalid input: color' }, 400)
   }
 
@@ -93,7 +93,7 @@ Deno.serve(withCors(async (body) => {
   const botSeats: Array<{ id: string; name: string; color: string; ready: boolean; lastSeen: number; ai: 'easy' | 'medium' | 'hard' }> = []
   for (let i = 0; i < botsIn.length; i++) {
     const b = botsIn[i]
-    const bColor = typeof b.color === 'string' ? b.color.trim() : ''
+    const bColor = isValidColor(b.color) ? b.color.trim() : ''
     const bAi = typeof b.ai === 'string' ? b.ai : ''
     if (!bColor || !AI_LEVELS.has(bAi)) {
       return json({ error: 'Invalid CPU opponent (needs color + difficulty)' }, 400)
