@@ -6,7 +6,7 @@ import type { GameOptions } from '@shared/types/GameOptions';
 import type { AiDifficulty } from '@shared/types/GameState';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
-import { GRAVITY } from '@shared/engine/Physics';
+import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 import { shouldBufferSeq } from '@shared/net/seqGuard';
 import { postOnceWithRetry } from './retry';
@@ -670,8 +670,8 @@ export class NetworkClient implements GameClient {
       seed:    Number(data.seed),
       options: {
         maxPlayers: opts.maxPlayers ?? players.length,
-        maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : 10,
-        gravity:    typeof opts.gravity === 'number' ? opts.gravity : 0.15,
+        maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : MAX_WIND,
+        gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
         // Carry best-of-N across a rematch so the successor match keeps the format.
         ...(typeof opts.rounds === 'number' ? { rounds: opts.rounds } : {}),
       },

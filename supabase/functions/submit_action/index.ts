@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, StoredPlayer, nextCursor } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, StoredPlayer, nextCursor, ACCESSORY_TYPES } from '../_shared/mod.ts'
 import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
 
 // ---------------------------------------------------------------------------
@@ -182,7 +182,7 @@ Deno.serve(withCors(async (body) => {
               type: 'buy',
               // Carry whichever of weapon/accessory the validated buy supplied (exactly one).
               ...(typeof a.weapon === 'string' && a.weapon.trim().length > 0 ? { weapon: a.weapon.trim() } : {}),
-              ...(a.accessory === 'battery' ? { accessory: 'battery' } : {}),
+              ...(typeof a.accessory === 'string' && ACCESSORY_TYPES.has(a.accessory) ? { accessory: a.accessory } : {}),
               ...(isRoundOver && typeof a.tankId === 'string' ? { tankId: a.tankId } : {}),
             }
           : {
