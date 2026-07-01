@@ -47,6 +47,40 @@ export type NetworkAction =
   | NetworkNextRoundAction
 
 // ---------------------------------------------------------------------------
+// Known-weapon allowlist
+//
+// MUST match the `WeaponType` union / `WEAPONS` keys in
+// shared/src/engine/WeaponSystem.ts. Re-declared here because the Deno referee
+// must not import shared/ (ADR-0005) — accepted duplication like NetworkAction.
+//
+// Why the referee validates this: a fire/buy weapon string is committed verbatim
+// to the permanent action log. If an UNKNOWN weapon string were accepted, every
+// client replaying that row would hit `getWeapon(unknown)` and crash on the
+// undefined definition — a permanent, unrecoverable room brick for all clients
+// (malicious member, or a version-skew where a newer weapon is replayed against
+// an older client). Rejecting unknown weapons at the boundary keeps a bad string
+// out of the canonical log entirely.
+// ---------------------------------------------------------------------------
+
+export const WEAPON_TYPES: ReadonlySet<string> = new Set([
+  'baby_missile',
+  'missile',
+  'heavy_missile',
+  'baby_nuke',
+  'nuke',
+  'dirt_bomb',
+  'bouncing_betty',
+  'funky_bomb',
+  'napalm',
+  'cluster_bomb',
+  'mirv',
+  'deaths_head',
+  'riot_bomb',
+  'hot_napalm',
+  'shield',
+])
+
+// ---------------------------------------------------------------------------
 // endsTurn
 // ---------------------------------------------------------------------------
 
@@ -123,6 +157,11 @@ export function validateActionShape(body: {
     if (hasWeapon && hasAccessory) {
       return { ok: false, status: 400, error: 'Invalid input: buy action must set exactly one of weapon/accessory' }
     }
+    // A weapon buy must name a KNOWN weapon (see WEAPON_TYPES) so an unknown string
+    // never reaches the log / applyBuy.
+    if (hasWeapon && !WEAPON_TYPES.has((action.weapon as string).trim())) {
+      return { ok: false, status: 400, error: 'Invalid input: buy action weapon is not a known weapon' }
+    }
   }
 
   // fire requires a finite angle, a finite non-negative power (NO upper bound — see the note
@@ -149,6 +188,11 @@ export function validateActionShape(body: {
 
     if (typeof action.weapon !== 'string' || action.weapon.trim().length === 0) {
       return { ok: false, status: 400, error: 'Invalid input: action.weapon' }
+    }
+    // Must be a KNOWN weapon (see WEAPON_TYPES) — an unknown weapon string would be
+    // committed to the log and crash getWeapon() on replay for every client.
+    if (!WEAPON_TYPES.has(action.weapon.trim())) {
+      return { ok: false, status: 400, error: 'Invalid input: action.weapon is not a known weapon' }
     }
   }
 

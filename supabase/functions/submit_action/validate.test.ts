@@ -86,6 +86,44 @@ Deno.test('validateActionShape: valid next_round passes', () => {
   assertEquals(result, { ok: true })
 })
 
+// Weapon allowlist (#56) — unknown weapon strings must be rejected at the boundary
+// so they never enter the permanent log and brick every client's replay.
+Deno.test('validateActionShape: fire with a known non-default weapon passes', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'fire', angle: 45, power: 80, weapon: 'deaths_head' },
+  })
+  assertEquals(result, { ok: true })
+})
+
+Deno.test('validateActionShape: fire with an unknown weapon returns 400', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'fire', angle: 45, power: 80, weapon: 'death_ray' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: action.weapon is not a known weapon' })
+})
+
+Deno.test('validateActionShape: fire weapon is trimmed before the allowlist check', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'fire', angle: 45, power: 80, weapon: '  nuke  ' },
+  })
+  assertEquals(result, { ok: true })
+})
+
+Deno.test('validateActionShape: buy with an unknown weapon returns 400', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'buy', weapon: 'death_ray' },
+  })
+  assertEquals(result, { ok: false, status: 400, error: 'Invalid input: buy action weapon is not a known weapon' })
+})
+
 Deno.test('validateActionShape: missing roomId returns 400', () => {
   const result = validateActionShape({
     playerId: 'player-1',
