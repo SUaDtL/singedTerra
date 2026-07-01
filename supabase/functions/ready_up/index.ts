@@ -1,5 +1,32 @@
 import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
 
+export interface ReadyUpResult {
+  updatedPlayers: StoredPlayer[]
+  /** True when the game should transition waiting -> active: every seat is ready
+   *  AND there are at least 2 players. */
+  shouldStart: boolean
+}
+
+/**
+ * Pure ready-up transition: mark `playerId` ready (bumping lastSeen) and decide
+ * whether the game should start. Returns null when the player is not in the room.
+ * Extracted for testing (the all-ready start transition is branchy state-machine
+ * logic that previously had no coverage — #61 / testcov-004).
+ */
+export function applyReadyUp(
+  existingPlayers: StoredPlayer[],
+  playerId: string,
+  nowMs: number,
+): ReadyUpResult | null {
+  if (!existingPlayers.some((p) => p.id === playerId)) return null
+  const updatedPlayers: StoredPlayer[] = existingPlayers.map((p) =>
+    p.id === playerId ? { ...p, ready: true, lastSeen: nowMs } : p,
+  )
+  const shouldStart = updatedPlayers.length >= 2 && updatedPlayers.every((p) => p.ready)
+  return { updatedPlayers, shouldStart }
+}
+
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, playerId } = body as {
     roomId?: unknown
@@ -37,22 +64,11 @@ Deno.serve(withCors(async (body) => {
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]
 
-  // Locate the player in the room
-  const playerIndex = existingPlayers.findIndex(p => p.id === playerId)
-  if (playerIndex === -1) {
+  const ready = applyReadyUp(existingPlayers, playerId, Date.now())
+  if (!ready) {
     return json({ error: 'Player not in room' }, 400)
   }
-
-  // Mark player ready (and bump lastSeen)
-  const nowMs = Date.now()
-  const updatedPlayers: StoredPlayer[] = existingPlayers.map(p =>
-    p.id === playerId ? { ...p, ready: true, lastSeen: nowMs } : p
-  )
-
-  // Determine if game should start
-  const allReady = updatedPlayers.every(p => p.ready)
-  const enoughPlayers = updatedPlayers.length >= 2
-  const shouldStart = allReady && enoughPlayers
+  const { updatedPlayers, shouldStart } = ready
 
   // Build update payload
   const updatePayload: Record<string, unknown> = { players: updatedPlayers }
@@ -72,3 +88,4 @@ Deno.serve(withCors(async (body) => {
 
   return json({ started: shouldStart, players: updatedPlayers }, 200)
 }, { rateLimit: 'ready_up' }))
+} // end if (import.meta.main)
