@@ -260,6 +260,19 @@ export class NetworkClient implements GameClient {
           // in strict order.
           this.pendingActions.set(row.seq, row.action as NetworkAction);
           this.flushPendingActions();
+          // Diagnostic (obs-008): a healthy stream buffers at most a small transient
+          // burst before nextExpectedSeq fills the gap. If the buffer STILL holds more
+          // than a few entries after a flush, a seq was likely LOST in Realtime delivery
+          // and the engine is stalling on the gap — a state the turn-stall watchdog
+          // reports to the user but which is otherwise indistinguishable in logs from a
+          // legitimately idle opponent.
+          if (this.pendingActions.size > 3) {
+            console.warn('NetworkClient: pending-action gap — actions buffered behind a missing seq', {
+              roomId: this.roomId,
+              expected: this.nextExpectedSeq,
+              buffered: [...this.pendingActions.keys()],
+            });
+          }
         }
       )
       .subscribe((status) => {

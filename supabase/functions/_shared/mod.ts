@@ -88,7 +88,11 @@ async function enforceRateLimit(req: Request, bucket: string): Promise<boolean> 
     p_window: rateWindow(Date.now()),
   })
   if (error) {
-    console.error('rate_limit rpc error:', error.message)
+    // Distinguishable fail-open signal (obs-002): a chronically-erroring limiter
+    // silently disables ALL per-IP limiting, so log with bucket/ip context so a
+    // degraded limiter is detectable in the aggregated log stream rather than
+    // indistinguishable from any other DB error.
+    console.error('rate_limit: fail-open (limiter degraded)', { bucket, ip, error: error.message })
     return true // fail open
   }
   return checkRateLimit(typeof data === 'number' ? data : 0, rateLimitFor(bucket))
