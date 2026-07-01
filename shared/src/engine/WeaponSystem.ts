@@ -585,7 +585,16 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
   },
 };
 
-/** Look up a weapon definition by type. */
+/** Look up a weapon definition by type. Fails fast on an unknown key rather than
+ *  returning `undefined` and crashing later on a `.detonation`/`.airburst` access.
+ *  The networked referee (submit_action/validate.ts) rejects unknown weapon strings
+ *  before they enter the action log, so this guard should never fire for a validated
+ *  room — it exists so a bad/legacy/skewed log row surfaces a clear error instead of
+ *  a cryptic `undefined` crash. Deterministic: every client throws identically. */
 export function getWeapon(type: WeaponType): WeaponDefinition {
-  return WEAPONS[type];
+  const def = WEAPONS[type];
+  if (!def) {
+    throw new Error(`getWeapon: unknown weapon type "${type}"`);
+  }
+  return def;
 }
