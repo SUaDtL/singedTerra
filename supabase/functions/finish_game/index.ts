@@ -1,6 +1,6 @@
 import { withCors, json, getServiceClient } from '../_shared/mod.ts'
 
-interface ScoreEntry {
+export interface ScoreEntry {
   tankId: string
   playerName: string
   roundWins: number
@@ -15,7 +15,7 @@ interface ScoreEntry {
  * clean array, or null if the payload is absent or malformed (the match still finishes
  * — persistence is best-effort, never a reason to block GAME_OVER).
  */
-function sanitizeScoreboard(raw: unknown, seatCount: number): ScoreEntry[] | null {
+export function sanitizeScoreboard(raw: unknown, seatCount: number): ScoreEntry[] | null {
   if (!Array.isArray(raw) || raw.length === 0) return null
   const out: ScoreEntry[] = []
   for (const e of raw) {
@@ -37,6 +37,9 @@ function sanitizeScoreboard(raw: unknown, seatCount: number): ScoreEntry[] | nul
   return out
 }
 
+// Guard Deno.serve so importing this module in tests does not start the HTTP
+// listener (mirrors submit_action / restart_game).
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, winnerId, playerId, rounds, scoreboard } = body as {
     roomId?: unknown
@@ -126,3 +129,4 @@ Deno.serve(withCors(async (body) => {
 
   return json({ ok: true }, 200)
 }, { rateLimit: 'finish_game' }))
+} // end if (import.meta.main)
