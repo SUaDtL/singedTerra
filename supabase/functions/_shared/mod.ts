@@ -236,6 +236,15 @@ export interface RoomRow {
 
 export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/** A player/bot color: a short hex string (#rgb .. #rrggbbaa). The client picks from
+ *  a fixed #rrggbb palette, so this accepts every legitimate value while bounding
+ *  format + length — an unbounded color string was previously accepted and persisted
+ *  to the shared room row + broadcast to every peer each render (appsec-003). Type
+ *  guard so callers keep narrowing to `string` for the downstream `.trim()`. */
+export function isValidColor(c: unknown): c is string {
+  return typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c.trim())
+}
+
 // ---------------------------------------------------------------------------
 // Determinism-duplication constants (see DECISION-0009)
 //
