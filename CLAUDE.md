@@ -66,6 +66,6 @@ supabase/functions/ (Edge Function referees, Deno)         shared/ depends on no
 
 ## Deployment
 
-- **Client:** the static Vite bundle (`client/dist`) is served by **nginx** (`nginx.conf`, SPA fallback) — or any static host. There is **no Node app server** and no socket.io proxy; the browser talks to Supabase directly.
+- **Client:** the static Vite bundle (`client/dist`) is published to **GitHub Pages** by `.github/workflows/deploy-pages.yml` on push to `main` (built with `VITE_BASE=/<repo>/` for the project-site path; `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` come from Actions secrets). Any static host at the domain root also works (base defaults to `/`); `nginx.conf` is a sample. There is **no Node app server** and no socket.io proxy; the browser talks to Supabase directly.
 - **Networked backend:** **Supabase** hosts the Edge Functions (`supabase/functions/`, deploy with `npx supabase functions deploy <name>`), Postgres (the `rooms` + `room_actions` tables, migrations under `supabase/migrations/`), and Realtime (the action-log broadcast). Project ref + auth are managed by the Supabase CLI.
 - Persistence is the Postgres tables above (rooms + their action logs). HTTPS/auth posture is handled by Supabase for the backend; the static client can sit behind any host. (Historical note: an earlier design used pm2 + a Node socket.io server on `:3000`; that stack was removed — REVIEW_BACKLOG P2-12.)

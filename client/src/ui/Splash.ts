@@ -116,7 +116,9 @@ export function mountSplash(): void {
 
   const art = document.createElement('img');
   art.className = 'st-splash__art';
-  art.src = '/banner.svg';
+  // Resolve against the Vite base URL so the banner loads under a project-site path
+  // (GitHub Pages /<repo>/) as well as at the domain root. BASE_URL always ends in '/'.
+  art.src = `${import.meta.env.BASE_URL}banner.svg`;
   art.alt = 'singedTerra — a love letter to Scorched Earth (1991)';
   art.draggable = false;
 

@@ -212,16 +212,17 @@ npm run check          # typecheck + all 41 determinism harnesses  ← run befor
 
 The client is a static Vite bundle; the backend is Supabase (no Node app server).
 
-```bash
-npm run deploy          # backend (db push + functions) THEN client — keeps both in sync
-npm run deploy:client   # build + deploy client/dist to Netlify
-npm run deploy:backend  # supabase db push + deploy all Edge Functions
-```
+- **Client** → **GitHub Pages**, published automatically by `.github/workflows/deploy-pages.yml` on every push to `main` (built with the project-site base path). One-time setup:
+  1. **Settings → Pages → Source: “GitHub Actions”.**
+  2. **Settings → Secrets and variables → Actions**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (inlined into the public bundle at build; the anon key is RLS-gated and safe to expose — ADR-0006). Without them the site still builds and hot-seat play works; networked play needs them.
 
-- **Client** → **Netlify** (`netlify.toml` + `client/public/_redirects` give the SPA fallback). Any static host works.
+  The site lands at `https://<owner>.github.io/<repo>/`. Any static host at the domain root also works (the base defaults to `/`); `nginx.conf` is a sample config.
 - **Backend** → **Supabase**: Edge Functions (`supabase/functions/`), Postgres (`rooms`, `room_actions`, `match_scores`), and Realtime (the action-log broadcast). Migrations live under `supabase/migrations/`.
 
-`npm run deploy` runs the backend first so the freshly-built client always lands on a backend that already understands it.
+```bash
+npm run deploy          # backend only: db push + deploy all Edge Functions (client ships via Pages CI)
+npm run deploy:backend  # same as above
+```
 
 ---
 
@@ -279,7 +280,7 @@ recent sprint plans live in [`docs/`](docs/) (older ones archived under [`docs/a
 ## 🛠️ Tech stack
 
 **TypeScript** (strict, throughout) · **Canvas 2D** (no game framework) · **Vite** (client) ·
-**Supabase** (Postgres + Realtime + Edge Functions, lockstep netcode) · **Netlify** (static client host) ·
+**Supabase** (Postgres + Realtime + Edge Functions, lockstep netcode) · **GitHub Pages** (static client host) ·
 **npm workspaces** monorepo · zero runtime dependencies in the game engine.
 
 ---

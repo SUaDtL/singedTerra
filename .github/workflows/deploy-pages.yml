@@ -1,0 +1,68 @@
+name: Deploy client to GitHub Pages
+
+# Builds the Vite client and publishes it to GitHub Pages on every push to main
+# (and on demand). The Supabase backend is deployed separately (npm run deploy:backend).
+#
+# One-time setup in the repo:
+#   1. Settings → Pages → Build and deployment → Source: "GitHub Actions".
+#   2. Settings → Secrets and variables → Actions → New repository secret:
+#        VITE_SUPABASE_URL       = https://<project-ref>.supabase.co
+#        VITE_SUPABASE_ANON_KEY  = <anon public key>
+#      (These are inlined into the PUBLIC client bundle at build time and are safe to
+#       expose — the anon key is RLS-gated by design, ADR-0006. Without them the site
+#       still builds and hot-seat play works; only networked play needs them.)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# GITHUB_TOKEN permissions the Pages deploy needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two Pages deploys at once; let an in-progress deploy finish (don't cancel
+# a live publish).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build (project-site base + Supabase env)
+        run: npm run build
+        env:
+          # Vite base = "/<repo>/" so a GitHub Pages project site resolves assets correctly.
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: SPA fallback (404 = index)
+        # This canvas app has no deep routes, but a 404.html copy makes any stray path
+        # under the project base serve the app instead of a GitHub 404.
+        run: cp client/dist/index.html client/dist/404.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: client/dist
+
+  deploy:
+    name: deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
