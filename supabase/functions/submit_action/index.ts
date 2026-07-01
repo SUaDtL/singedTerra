@@ -28,9 +28,15 @@ export function rpcResultToResponse(result: RpcResult): Response {
 
   if (error) {
     if (error.code === '23505') {
+      // Info-level signal (obs-003): seq-conflicts are expected + self-healing (the
+      // client retries), but with ZERO log a conflict flood (a misbehaving/looping
+      // client) is invisible until it surfaces as user-reported stuck turns.
+      console.log('submit_action: seq_conflict (client will retry)')
       return json({ ok: false, error: 'seq_conflict', retry: true }, 409)
     }
-    console.error('submit_action: rpc error', error)
+    // Log the message, not the full Supabase error object (which carries Postgres
+    // internals) — secrets-001.
+    console.error('submit_action: rpc error', error?.message ?? error)
     return json({ ok: false, error: 'Failed to submit action' }, 500)
   }
 
