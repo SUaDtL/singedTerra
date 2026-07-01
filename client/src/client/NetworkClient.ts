@@ -102,6 +102,12 @@ export class NetworkClient implements GameClient {
   // the player isn't trapped in "Sending…" forever (lost submit, dropped echo, …).
   private fireWatchdog:     ReturnType<typeof setTimeout> | null = null;
   private static readonly FIRE_TIMEOUT_MS = 9000;
+  // Hard bound on the fire-recovery log re-fetch. Without it a hung (black-holed,
+  // not erroring) connection leaves resyncLog's await pending forever, so
+  // recoverStuckFire never reaches its failFire() line and the player is trapped in
+  // "Sending…" with no recovery but a reload (reliability-005 / #57). Aborting the
+  // fetch after this deadline surfaces as an error resyncLog already handles.
+  private static readonly RESYNC_TIMEOUT_MS = 8000;
   // Seq-collision retry (P2-10). Two humans firing near-simultaneously collide on
   // UNIQUE(room_id,seq); the loser gets a 409. Retry with bounded exponential
   // backoff (40,80,160,240,240ms) so the action lands instead of being dropped
@@ -574,12 +580,27 @@ export class NetworkClient implements GameClient {
    * catch-up (rows we already have are skipped by the seq gate in flushPendingActions).
    */
   private async resyncLog(): Promise<void> {
-    const { data, error } = await this.supabase
-      .from('room_actions')
-      .select('*')
-      .eq('room_id', this.roomId)
-      .gte('seq', this.nextExpectedSeq)
-      .order('seq', { ascending: true });
+    // Bound the fetch with an AbortController so a hung connection can't leave this
+    // await pending forever (which would trap the fire watchdog — #57). An abort
+    // surfaces as a thrown error / an { error } result; both fall through to the
+    // early return below, so recoverStuckFire() still reaches its failFire().
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), NetworkClient.RESYNC_TIMEOUT_MS);
+    let data: unknown, error: { message?: string } | null;
+    try {
+      ({ data, error } = await this.supabase
+        .from('room_actions')
+        .select('*')
+        .eq('room_id', this.roomId)
+        .gte('seq', this.nextExpectedSeq)
+        .order('seq', { ascending: true })
+        .abortSignal(controller.signal));
+    } catch (e) {
+      console.error('NetworkClient.resyncLog: log re-fetch aborted/failed:', (e as Error)?.message ?? e);
+      return;
+    } finally {
+      clearTimeout(timeout);
+    }
     if (error) {
       console.error('NetworkClient.resyncLog: failed to re-fetch log:', error.message);
       return;
