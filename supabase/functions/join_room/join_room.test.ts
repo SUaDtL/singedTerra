@@ -25,7 +25,11 @@ Deno.test('checkJoinEligibility: full room -> 409 Room is full', () => {
 Deno.test('checkJoinEligibility: capacity is checked BEFORE color/name (full + clash -> full)', () => {
   const players = [P('Ana', '#f00'), P('Bo', '#0f0')]
   // color clashes too, but capacity wins
-  assertEquals(checkJoinEligibility(players, 2, 'Cy', '#f00').error, 'Room is full')
+  assertEquals(checkJoinEligibility(players, 2, 'Cy', '#f00'), {
+    ok: false,
+    status: 409,
+    error: 'Room is full',
+  })
 })
 
 Deno.test('checkJoinEligibility: color clash -> 409', () => {
@@ -46,5 +50,9 @@ Deno.test('checkJoinEligibility: name clash is trimmed + case-insensitive -> 409
 
 Deno.test('checkJoinEligibility: color takes precedence over name when both clash', () => {
   // both the color and the name clash; color is checked first
-  assertEquals(checkJoinEligibility([P('Ana', '#f00')], 4, 'ana', '#f00').error, 'That color is already taken. Choose a different color.')
+  assertEquals(checkJoinEligibility([P('Ana', '#f00')], 4, 'ana', '#f00'), {
+    ok: false,
+    status: 409,
+    error: 'That color is already taken. Choose a different color.',
+  })
 })
