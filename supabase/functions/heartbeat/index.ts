@@ -1,5 +1,17 @@
 import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
 
+/** Pure heartbeat: bump lastSeen for `playerId` only. Returns the new roster, or
+ *  null when the player is not in the room. Extracted for testing (#61). */
+export function applyHeartbeat(
+  players: StoredPlayer[],
+  playerId: string,
+  nowMs: number,
+): StoredPlayer[] | null {
+  if (!players.some((p) => p.id === playerId)) return null
+  return players.map((p) => (p.id === playerId ? { ...p, lastSeen: nowMs } : p))
+}
+
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, playerId } = body as {
     roomId?: unknown
@@ -37,18 +49,10 @@ Deno.serve(withCors(async (body) => {
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]
 
-  // Locate the player in the room
-  const playerIndex = existingPlayers.findIndex(p => p.id === playerId)
-  if (playerIndex === -1) {
+  const updatedPlayers = applyHeartbeat(existingPlayers, playerId, Date.now())
+  if (!updatedPlayers) {
     return json({ error: 'Player not in room' }, 400)
   }
-
-  const nowMs = Date.now()
-
-  // Bump lastSeen for the heartbeating player
-  const updatedPlayers: StoredPlayer[] = existingPlayers.map(p =>
-    p.id === playerId ? { ...p, lastSeen: nowMs } : p
-  )
 
   const { error: updateError } = await supabase
     .from('rooms')
@@ -62,3 +66,4 @@ Deno.serve(withCors(async (body) => {
 
   return json({ ok: true }, 200)
 }, { rateLimit: 'heartbeat' }))
+} // end if (import.meta.main)

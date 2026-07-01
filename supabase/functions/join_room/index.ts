@@ -1,5 +1,30 @@
 import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer } from '../_shared/mod.ts'
 
+/**
+ * Pure post-reap join eligibility: capacity, then color, then name conflict (name
+ * is trimmed + case-insensitive). Returns the first failing check (with the exact
+ * status/error the handler returns) or { ok: true }. Extracted for testing — this
+ * branchy gate previously had no coverage (#61 / testcov-004).
+ */
+export function checkJoinEligibility(
+  existingPlayers: StoredPlayer[],
+  maxPlayers: number,
+  playerName: string,
+  color: string,
+): { ok: true } | { ok: false; status: number; error: string } {
+  if (existingPlayers.length >= maxPlayers) {
+    return { ok: false, status: 409, error: 'Room is full' }
+  }
+  if (existingPlayers.some((p) => p.color === color.trim())) {
+    return { ok: false, status: 409, error: 'That color is already taken. Choose a different color.' }
+  }
+  if (existingPlayers.some((p) => p.name.trim().toLowerCase() === playerName.trim().toLowerCase())) {
+    return { ok: false, status: 409, error: 'That name is already taken. Choose a different name.' }
+  }
+  return { ok: true }
+}
+
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { code, playerName, color } = body as {
     code?: unknown
@@ -74,23 +99,10 @@ Deno.serve(withCors(async (body) => {
 
   const existingPlayers = fresh
 
-  // Check capacity
-  if (existingPlayers.length >= roomOptions.maxPlayers) {
-    return json({ error: 'Room is full' }, 409)
-  }
-
-  // Check for color conflict
-  const colorTaken = existingPlayers.some((p: StoredPlayer) => p.color === color.trim())
-  if (colorTaken) {
-    return json({ error: 'That color is already taken. Choose a different color.' }, 409)
-  }
-
-  // Check for name conflict (trimmed + case-insensitive)
-  const nameTaken = existingPlayers.some(
-    (p: StoredPlayer) => p.name.trim().toLowerCase() === playerName.trim().toLowerCase()
-  )
-  if (nameTaken) {
-    return json({ error: 'That name is already taken. Choose a different name.' }, 409)
+  // Capacity + color + name conflict gate (pure; see checkJoinEligibility).
+  const eligibility = checkJoinEligibility(existingPlayers, roomOptions.maxPlayers, playerName, color)
+  if (!eligibility.ok) {
+    return json({ error: eligibility.error }, eligibility.status)
   }
 
   // Generate playerId
@@ -125,3 +137,4 @@ Deno.serve(withCors(async (body) => {
     players: updatedPlayers,
   }, 200)
 }, { rateLimit: 'join_room' }))
+} // end if (import.meta.main)

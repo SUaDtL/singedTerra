@@ -1,5 +1,47 @@
 import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
 
+export type UpdatePlayerResult =
+  | { ok: false; status: number; error: string }
+  | { ok: true; updatedPlayers: StoredPlayer[] }
+
+/**
+ * Pure name/color update. Conflict checks run against OTHER seats only (self is
+ * excluded, so renaming to your own current value is allowed); name compare is
+ * trimmed + case-insensitive. `name`/`color` are the already-shape-validated inputs
+ * (undefined = leave that field unchanged). Bumps lastSeen on the target seat.
+ * Returns { ok:false, 400 } when the player is not in the room. Extracted for testing (#61).
+ */
+export function applyPlayerUpdate(
+  existingPlayers: StoredPlayer[],
+  playerId: string,
+  name: string | undefined,
+  color: string | undefined,
+  nowMs: number,
+): UpdatePlayerResult {
+  if (!existingPlayers.some((p) => p.id === playerId)) {
+    return { ok: false, status: 400, error: 'Player not in room' }
+  }
+  if (
+    name !== undefined &&
+    existingPlayers.some((p) => p.id !== playerId && p.name.trim().toLowerCase() === name.trim().toLowerCase())
+  ) {
+    return { ok: false, status: 409, error: 'That name is already taken. Choose a different name.' }
+  }
+  if (color !== undefined && existingPlayers.some((p) => p.id !== playerId && p.color === color)) {
+    return { ok: false, status: 409, error: 'That color is already taken. Choose a different color.' }
+  }
+  const updatedPlayers = existingPlayers.map((p) => {
+    if (p.id !== playerId) return p
+    const next = { ...p }
+    if (name !== undefined) next.name = name.trim()
+    if (color !== undefined) next.color = color
+    next.lastSeen = nowMs
+    return next
+  })
+  return { ok: true, updatedPlayers }
+}
+
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, playerId, name, color } = body as {
     roomId?: unknown
@@ -61,41 +103,17 @@ Deno.serve(withCors(async (body) => {
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]
 
-  // Locate the player in the room
-  const playerIndex = existingPlayers.findIndex(p => p.id === playerId)
-  if (playerIndex === -1) {
-    return json({ error: 'Player not in room' }, 400)
+  const result = applyPlayerUpdate(
+    existingPlayers,
+    playerId,
+    name as string | undefined,
+    color as string | undefined,
+    Date.now(),
+  )
+  if (!result.ok) {
+    return json({ error: result.error }, result.status)
   }
-
-  // Conflict checks against OTHER players
-  if (name !== undefined) {
-    const nameTaken = existingPlayers.some(
-      p => p.id !== playerId && p.name.trim().toLowerCase() === (name as string).trim().toLowerCase()
-    )
-    if (nameTaken) {
-      return json({ error: 'That name is already taken. Choose a different name.' }, 409)
-    }
-  }
-
-  if (color !== undefined) {
-    const colorTaken = existingPlayers.some(
-      p => p.id !== playerId && p.color === (color as string)
-    )
-    if (colorTaken) {
-      return json({ error: 'That color is already taken. Choose a different color.' }, 409)
-    }
-  }
-
-  // Apply the provided field(s), leave ready as-is, bump lastSeen
-  const nowMs = Date.now()
-  const updatedPlayers: StoredPlayer[] = existingPlayers.map(p => {
-    if (p.id !== playerId) return p
-    const next = { ...p }
-    if (name !== undefined) next.name = (name as string).trim()
-    if (color !== undefined) next.color = color as string
-    next.lastSeen = nowMs
-    return next
-  })
+  const updatedPlayers = result.updatedPlayers
 
   const { error: updateError } = await supabase
     .from('rooms')
@@ -109,3 +127,4 @@ Deno.serve(withCors(async (body) => {
 
   return json({ players: updatedPlayers }, 200)
 }, { rateLimit: 'update_player' }))
+} // end if (import.meta.main)
