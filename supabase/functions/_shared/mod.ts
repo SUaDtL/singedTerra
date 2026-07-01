@@ -232,6 +232,27 @@ export interface RoomRow {
 
 export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// ---------------------------------------------------------------------------
+// Determinism-duplication constants (see DECISION-0009)
+//
+// The Deno referee cannot import shared/ (ADR-0005), so any physics default or
+// engine enum it needs is MIRRORED here as accepted duplication. Each mirror is
+// a silent-desync hazard: a value that drifts from its shared/ source seeds a
+// client's engine differently or rejects a valid action over the network while
+// hot-seat accepts it. Keep these pinned to their shared/ source; the mirror is
+// small and guarded by MUST-match comments + tests.
+// ---------------------------------------------------------------------------
+
+/** Fallback physics options for legacy/malformed room-option rows. MUST match
+ *  GRAVITY / MAX_WIND in shared/src/engine/Physics.ts. */
+export const DEFAULT_GRAVITY = 0.15
+export const DEFAULT_MAX_WIND = 10
+
+/** Known non-weapon accessory buys. MUST match the `AccessoryType` union in
+ *  shared/src/engine/WeaponSystem.ts. Adding an accessory to the engine without
+ *  adding it here would 400/strip it over the network while hot-seat accepts it. */
+export const ACCESSORY_TYPES: ReadonlySet<string> = new Set(['battery'])
+
 /** 4-char A–Z0–9 room code from CSPRNG bytes (mod 36). */
 export function generateCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'

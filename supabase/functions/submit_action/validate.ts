@@ -10,6 +10,7 @@
 //   authorizeAction(args)     — pure 403-or-ok decision over already-fetched room data
 
 import type { StoredPlayer } from '../_shared/mod.ts'
+import { ACCESSORY_TYPES } from '../_shared/mod.ts'
 
 // ---------------------------------------------------------------------------
 // Re-declare NetworkAction locally (supabase/functions/ must NOT import from
@@ -148,7 +149,7 @@ export function validateActionShape(body: {
   // buy requires EXACTLY ONE of a non-empty weapon OR a recognized accessory (SE-parity battery).
   if (action.type === 'buy') {
     const hasWeapon = typeof action.weapon === 'string' && action.weapon.trim().length > 0
-    const hasAccessory = action.accessory === 'battery'
+    const hasAccessory = typeof action.accessory === 'string' && ACCESSORY_TYPES.has(action.accessory)
     if (!hasWeapon && !hasAccessory) {
       return { ok: false, status: 400, error: 'Invalid input: buy action requires a weapon or accessory' }
     }

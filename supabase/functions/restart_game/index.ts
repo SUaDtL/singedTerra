@@ -7,6 +7,8 @@ import {
   StoredOptions,
   StoredPlayer,
   ServiceClient,
+  DEFAULT_GRAVITY,
+  DEFAULT_MAX_WIND,
 } from '../_shared/mod.ts'
 
 /** Shape returned to the client (and broadcast-derived peers re-fetch the same). */
@@ -52,8 +54,8 @@ async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<Re
     seed: Number(data.seed),
     options: {
       maxPlayers: opts.maxPlayers ?? players.length,
-      maxWind: typeof opts.maxWind === 'number' ? opts.maxWind : 10,
-      gravity: typeof opts.gravity === 'number' ? opts.gravity : 0.15,
+      maxWind: typeof opts.maxWind === 'number' ? opts.maxWind : DEFAULT_MAX_WIND,
+      gravity: typeof opts.gravity === 'number' ? opts.gravity : DEFAULT_GRAVITY,
     },
     players: players.map(p => ({ id: p.id, name: p.name, color: p.color })),
   }
@@ -194,8 +196,8 @@ Deno.serve(withCors(async (body) => {
     seed,
     options: {
       maxPlayers: oldOptions.maxPlayers ?? newPlayers.length,
-      maxWind: typeof oldOptions.maxWind === 'number' ? oldOptions.maxWind : 10,
-      gravity: typeof oldOptions.gravity === 'number' ? oldOptions.gravity : 0.15,
+      maxWind: typeof oldOptions.maxWind === 'number' ? oldOptions.maxWind : DEFAULT_MAX_WIND,
+      gravity: typeof oldOptions.gravity === 'number' ? oldOptions.gravity : DEFAULT_GRAVITY,
     },
     players: newPlayers.map(p => ({ id: p.id, name: p.name, color: p.color })),
   }

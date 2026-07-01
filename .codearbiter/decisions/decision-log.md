@@ -219,3 +219,39 @@ are recorded with explicit revisit triggers.
 ### Implementation implication
 Governs `supabase/functions/submit_action/**`. Resolves GH #55. Revisit (supersede) on recurring desync
 reports (→ state-hash checkpoint) or rising stakes (→ authoritative replay).
+
+---
+
+## DECISION-0009 — Guard determinism-duplication points with mirrored constants + CI parity checks
+
+**Date:** 2026-07-01
+**Status:** accepted
+**Supersedes:** none (operationalizes ADR-0001/0002/0005 — single physics codebase, thin referee that can't import shared/)
+**Decided by:** SUaDtL <brennonhuff@gmail.com> (chosen while implementing the 2026-06-25 review fixes, GH #60)
+**Decision category:** architecture / determinism
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** determinism-critical values (GRAVITY 0.15, MAX_WIND 10, the `AccessoryType` set) were hand-copied as bare literals across the client + edge functions, and `GameEngine.clone()` hand-enumerated 24 fields — drift hazards flagged by the review (architecture-001/004/005).
+- **Scaffold position:** no guard existed against a copy silently diverging from its shared/ source.
+- **Status type:** open-decision-closure
+
+### Decision
+Because the Deno referee must not import `shared/` (ADR-0005), determinism-relevant values it needs are
+**mirrored once** in `supabase/functions/_shared/mod.ts` (`DEFAULT_GRAVITY`, `DEFAULT_MAX_WIND`,
+`ACCESSORY_TYPES`) with MUST-match comments, and every functional site references the single mirror
+instead of a bare literal; the client references the canonical `GRAVITY`/`MAX_WIND` imports directly
+(no literals). The residual "did a mirror/clone drift?" risk is caught in CI rather than by discipline:
+`engine_clone_parity.mjs` fails the build if `clone()` drops a field, and the referee weapon/accessory
+allowlists are exercised by the deno tests. Chosen over (a) importing `shared/` into Deno — forbidden by
+ADR-0005 — and (b) leaving the literals with only review discipline — the status quo that drifted.
+
+### SMARTS rationale
+Single-source-where-possible + a mechanical CI tripwire where a boundary forces duplication beats relying
+on reviewers to spot a literal that silently desyncs hot-seat vs networked play; the mirror stays small and
+its divergence now fails the build instead of a match.
+
+### Implementation implication
+Governs `supabase/functions/_shared/mod.ts`, `supabase/functions/{create_room,restart_game,submit_action}/**`,
+`client/src/client/NetworkClient.ts`, `shared/src/engine/GameEngine.ts`, `scripts/checks/engine_clone_parity.mjs`.
+Resolves GH #60.
