@@ -851,7 +851,21 @@ export class NetworkClient implements GameClient {
       ticks++;
     }
     if (ticks >= MAX_TICKS) {
-      console.error('NetworkClient.tickToCompletion: hit tick cap — possible corrupt engine state');
+      // Log with room context so a wedge is correlatable, not an anonymous line
+      // (observability-001).
+      console.error('NetworkClient.tickToCompletion: hit tick cap — possible corrupt engine state', {
+        roomId: this.roomId,
+        turn: this.engine.getState().turn,
+        phase: this.engine.getState().phase,
+        seq: this.nextExpectedSeq,
+      });
+      // Don't leave the client SILENTLY frozen (reliability-006). The engine is wedged
+      // in FIRING/RESOLVING, so flushPendingActions will never drain again and the board
+      // is dead. Surface a user-visible signal via the fire-failed channel (which also
+      // drops any lingering "Sending…" lock) so the player reloads instead of staring at
+      // a frozen game. We deliberately do NOT mutate engine state here — this client is
+      // already desynced; a reload re-fetches + replays the canonical log cleanly.
+      this.failFire('Game state error — please reload to continue.');
     }
   }
 
