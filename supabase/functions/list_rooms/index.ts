@@ -20,8 +20,12 @@ Deno.serve(withCors(async () => {
   const rows = (candidates ?? []) as RoomRow[]
   const nowMs = Date.now()
 
-  // Reap each room (writing back as needed), then collect the post-reap rooms.
+  // Reap each room in memory (reap() staleness logic stays single-sourced in
+  // _shared), collecting the writes so they can be flushed in ONE round-trip
+  // instead of an O(N) DELETE/UPDATE per affected room (GH #62).
   const reaped: { row: RoomRow; fresh: StoredPlayer[] }[] = []
+  const deadIds: string[] = []
+  const trims: { id: string; players: StoredPlayer[] }[] = []
   for (const row of rows) {
     const players = row.players ?? []
     const fresh = reap(players, nowMs)
@@ -30,14 +34,27 @@ Deno.serve(withCors(async () => {
       // Unchanged
     } else if (fresh.length === 0) {
       // Fully dead — delete the room row
-      await supabase.from('rooms').delete().eq('id', row.id)
+      deadIds.push(row.id)
       continue
     } else {
       // Some ghosts reaped — persist the trimmed players
-      await supabase.from('rooms').update({ players: fresh }).eq('id', row.id)
+      trims.push({ id: row.id, players: fresh })
     }
 
     reaped.push({ row, fresh })
+  }
+
+  // Flush all reap writes in a single batched RPC. Best-effort GC: the response is
+  // built from the in-memory `fresh` rosters below, so a failed reap write only
+  // delays cleanup — it never returns stale rooms.
+  if (deadIds.length > 0 || trims.length > 0) {
+    const { error: reapError } = await supabase.rpc('apply_room_reap', {
+      p_dead: deadIds,
+      p_trims: trims,
+    })
+    if (reapError) {
+      console.error('list_rooms: reap rpc error', reapError?.message ?? reapError)
+    }
   }
 
   const open = reaped.filter(({ row, fresh }) => {
