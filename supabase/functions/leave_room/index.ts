@@ -1,5 +1,19 @@
 import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
 
+export interface LeaveResult {
+  remaining: StoredPlayer[]
+  /** True when the room is now empty and should be deleted. */
+  roomDeleted: boolean
+}
+
+/** Pure leave transition: drop `playerId` from the roster (idempotent — absent is
+ *  fine) and report whether the room is now empty. Extracted for testing (#61). */
+export function applyLeave(players: StoredPlayer[], playerId: string): LeaveResult {
+  const remaining = players.filter((p) => p.id !== playerId)
+  return { remaining, roomDeleted: remaining.length === 0 }
+}
+
+if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
   const { roomId, playerId } = body as {
     roomId?: unknown
@@ -37,11 +51,10 @@ Deno.serve(withCors(async (body) => {
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]
 
-  // Remove the player (idempotent — absent is fine)
-  const remaining = existingPlayers.filter(p => p.id !== playerId)
+  const { remaining, roomDeleted } = applyLeave(existingPlayers, playerId)
 
   // If no players left, delete the room
-  if (remaining.length === 0) {
+  if (roomDeleted) {
     const { error: deleteError } = await supabase
       .from('rooms')
       .delete()
@@ -67,3 +80,4 @@ Deno.serve(withCors(async (body) => {
 
   return json({ ok: true, roomDeleted: false, players: remaining }, 200)
 }, { rateLimit: 'leave_room' }))
+} // end if (import.meta.main)
