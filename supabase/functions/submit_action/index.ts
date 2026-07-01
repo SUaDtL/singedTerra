@@ -149,6 +149,20 @@ Deno.serve(withCors(async (body) => {
     activeIndex,
   })
   if (!authResult.ok) {
+    // Desync signal (ADR-0008): a 'Not your turn' rejection is the canonical
+    // signature that the stored cursor (set from a prior submitter's reported
+    // nextActiveIndex) disagrees with this caller's engine. The referee is
+    // intentionally thin and cannot itself tell a benign race from a real desync,
+    // but logging it with room context makes a mis-gated/stalled room diagnosable
+    // from the server side (pairs with the client-side warn in NetworkClient).
+    if (authResult.error === 'Not your turn') {
+      console.warn('submit_action: turn-gate rejection (possible desync)', {
+        roomId,
+        storedActiveIndex: activeIndex,
+        storedActiveSeat: players[activeIndex]?.id,
+        actingId,
+      })
+    }
     return json({ error: authResult.error }, authResult.status)
   }
 

@@ -187,3 +187,35 @@ Postgres counter beats in-memory per-isolate (which leaks across edge instances)
 
 ### Implementation implication
 Governs `supabase/functions/_shared/mod.ts`, `supabase/migrations/005_rate_limits.sql`. Resolves CONFIRM-04.
+
+---
+
+## DECISION-0008 — ADR-0008 — Referee turn-authority (thin trust-client cursor)
+
+**Date:** 2026-06-25
+**Status:** accepted
+**Supersedes:** none (refines the risk note of ADR-0005; elaborates ADR-0006's trust-client posture)
+**Decided by:** SUaDtL <brennonhuff@gmail.com> (chosen at the 2026-06-25 deep-review decision gate)
+**Decision category:** architecture / netcode / security
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** the residual was an incidental, only-bounds-checked trust noted in passing in ADR-0005's Risks; surfaced as decision-required by the 2026-06-25 review (finding `referee-cursor-trust`, GH #55).
+- **Scaffold position:** no ADR analyzed the turn-authority gap explicitly.
+- **Status type:** open-decision-closure
+
+### Decision
+Keep the thin, trust-client referee (do NOT make it server-authoritative); turn-order authority stays
+with the clients' identical engines per ADR-0002. Accept the residual semantic-trust under ADR-0006,
+and make it observable via a structured "Not your turn" desync log in `submit_action` (server) +
+`NetworkClient` (client). Recorded as ADR-0008.
+
+### SMARTS rationale
+An authoritative-replay referee would reverse ADR-0002/0005 and couple two runtimes for a casual,
+no-PII game; the residual is bounded to the caller's own room within ADR-0006's accepted posture.
+Observability now > silent stalls; escalation paths (state-hash checkpoint, then authoritative replay)
+are recorded with explicit revisit triggers.
+
+### Implementation implication
+Governs `supabase/functions/submit_action/**`. Resolves GH #55. Revisit (supersede) on recurring desync
+reports (→ state-hash checkpoint) or rising stakes (→ authoritative replay).
