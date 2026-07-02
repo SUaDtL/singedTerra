@@ -44,4 +44,4 @@ jobs:
       - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
         with:
           deno-version: v2.x
-      - run: deno test supabase/functions/   # the referee validation/authorization cases
+      - run: deno test --allow-env supabase/functions/   # the referee validation/authorization cases (--allow-env: the rate-limit-gate test reads/clears SUPABASE_* env)
