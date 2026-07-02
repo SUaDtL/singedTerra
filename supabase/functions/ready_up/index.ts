@@ -80,6 +80,7 @@ Deno.serve(withCors(async (body) => {
     .from('rooms')
     .update(updatePayload)
     .eq('id', roomId)
+    .eq('status', 'waiting')
 
   if (updateError) {
     console.error('ready_up: update error', updateError)

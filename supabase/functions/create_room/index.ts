@@ -1,5 +1,5 @@
 import { withCors, json, getServiceClient, generateCode, isValidColor, DEFAULT_GRAVITY, DEFAULT_MAX_WIND } from '../_shared/mod.ts'
-import { coerceEconomyOptions } from './validate.ts'
+import { coerceEconomyOptions, coerceGravity, coerceMaxWind } from './validate.ts'
 
 Deno.serve(withCors(async (body) => {
   const { playerName, color, options, bots } = body as {
@@ -136,8 +136,8 @@ Deno.serve(withCors(async (body) => {
   // Build stored options
   const storedOptions = {
     maxPlayers,
-    maxWind: typeof options.maxWind === 'number' ? options.maxWind : DEFAULT_MAX_WIND,
-    gravity: typeof options.gravity === 'number' ? options.gravity : DEFAULT_GRAVITY,
+    maxWind: coerceMaxWind(options.maxWind, DEFAULT_MAX_WIND),
+    gravity: coerceGravity(options.gravity, DEFAULT_GRAVITY),
     visibility,
     ...(rounds !== undefined ? { rounds } : {}),
     // SE-parity economy — coerced + omitted-when-absent so every client builds an identical engine.

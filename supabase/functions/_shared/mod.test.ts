@@ -14,6 +14,11 @@ import {
   rateLimitFor,
   RATE_LIMIT_DEFAULT,
   isValidColor,
+  withCors,
+  json,
+  MissingEnvError,
+  reap,
+  STALE_MS,
 } from './mod.ts'
 
 // ---------------------------------------------------------------------------
@@ -251,4 +256,175 @@ Deno.test('isValidColor: rejects non-hex, unbounded, and non-string input', () =
   assertEqual(isValidColor(123), false, 'number')
   assertEqual(isValidColor(null), false, 'null')
   assertEqual(isValidColor(undefined), false, 'undefined')
+})
+
+// ---------------------------------------------------------------------------
+// withCors — request preamble shared by all 10 Edge Functions (coverage-001)
+// ---------------------------------------------------------------------------
+//
+// enforceRateLimit()'s allow/deny (429) and RPC-error fail-open branches are
+// NOT exercised here: they require a live/mocked `supabase.rpc('bump_rate_limit', ...)`
+// call reached only via the module-private getServiceClient() singleton, which
+// has no injection seam (no constructor param, no settable factory). Forcing a
+// mock would mean monkeypatching the imported `createClient` from the pinned
+// esm.sh specifier or reaching into module-internal state — both fragile and
+// disallowed by the "don't force a fragile mock" instruction. What IS covered
+// below is (a) the pure decision function `checkRateLimit` (already covered
+// above: inclusive boundary + over-limit denial) and (b) that when `rateLimit`
+// is set and the service-role env is missing, enforceRateLimit's call into
+// getServiceClient() correctly surfaces MissingEnvError through to withCors's
+// 500 mapping (proving the rate-limit gate is actually wired into the request
+// path, not skipped).
+
+function jsonReq(body: unknown, method = 'POST'): Request {
+  return new Request('https://example.test', {
+    method,
+    headers: { 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+}
+
+Deno.test('withCors: OPTIONS preflight returns 200 "ok" with CORS headers', async () => {
+  const handler = withCors(() => json({ ok: true }))
+  const res = await handler(new Request('https://example.test', { method: 'OPTIONS' }))
+  assertEqual(res.status, 200, 'status')
+  assertEqual(await res.text(), 'ok', 'body')
+  assertEqual(res.headers.get('Access-Control-Allow-Origin'), '*', 'cors origin header')
+  assertEqual(res.headers.get('Access-Control-Allow-Methods'), 'POST, OPTIONS', 'cors methods header')
+})
+
+Deno.test('withCors: non-POST method returns 405', async () => {
+  const handler = withCors(() => json({ ok: true }))
+  const res = await handler(new Request('https://example.test', { method: 'GET' }))
+  assertEqual(res.status, 405, 'status')
+  const payload = await res.json()
+  assertEqual(payload.error, 'Method not allowed', 'error message')
+})
+
+Deno.test('withCors: malformed JSON body returns 400', async () => {
+  const handler = withCors(() => json({ ok: true }))
+  const res = await handler(new Request('https://example.test', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{not valid json',
+  }))
+  assertEqual(res.status, 400, 'status')
+  const payload = await res.json()
+  assertEqual(payload.error, 'Invalid JSON body', 'error message')
+})
+
+Deno.test('withCors: optionalBody bypasses a parse failure, handler receives undefined body', async () => {
+  let received: unknown = 'not-yet-called'
+  const handler = withCors((body) => {
+    received = body
+    return json({ ok: true })
+  }, { optionalBody: true })
+  const res = await handler(new Request('https://example.test', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{not valid json',
+  }))
+  assertEqual(res.status, 200, 'status')
+  assertEqual(received, undefined, 'body passed to handler')
+})
+
+Deno.test('withCors: valid JSON body is parsed and passed through to the handler', async () => {
+  let received: unknown = 'not-yet-called'
+  const handler = withCors((body) => {
+    received = body
+    return json({ ok: true })
+  })
+  const res = await handler(jsonReq({ roomCode: 'ABCD' }))
+  assertEqual(res.status, 200, 'status')
+  assertEqual(JSON.stringify(received), JSON.stringify({ roomCode: 'ABCD' }), 'body passed to handler')
+})
+
+Deno.test('withCors: handler throwing MissingEnvError maps to 500', async () => {
+  const handler = withCors(() => { throw new MissingEnvError() })
+  const res = await handler(jsonReq({}))
+  assertEqual(res.status, 500, 'status')
+  const payload = await res.json()
+  assertEqual(payload.error, 'Server misconfiguration: missing env vars', 'error message')
+})
+
+Deno.test('withCors: non-MissingEnvError handler errors propagate unchanged (not swallowed as a 500)', async () => {
+  const handler = withCors(() => { throw new Error('boom') })
+  let threw = false
+  try {
+    await handler(jsonReq({}))
+  } catch (e) {
+    threw = true
+    assertEqual((e as Error).message, 'boom', 'propagated error message')
+  }
+  assertEqual(threw, true, 'error propagated rather than converted to a Response')
+})
+
+Deno.test('withCors: rateLimit gate reaches enforceRateLimit, whose MissingEnvError (no service-role env in test) still maps to 500', async () => {
+  // Ensure the branch is actually exercised regardless of what a prior test run
+  // may have left in the process env.
+  const prevUrl = Deno.env.get('SUPABASE_URL')
+  const prevKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  Deno.env.delete('SUPABASE_URL')
+  Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY')
+  try {
+    let handlerCalled = false
+    const handler = withCors(() => {
+      handlerCalled = true
+      return json({ ok: true })
+    }, { rateLimit: 'create_room' })
+    const res = await handler(jsonReq({}))
+    assertEqual(res.status, 500, 'status')
+    assertEqual(handlerCalled, false, 'handler must not run once the rate-limit gate throws')
+    const payload = await res.json()
+    assertEqual(payload.error, 'Server misconfiguration: missing env vars', 'error message')
+  } finally {
+    if (prevUrl !== undefined) Deno.env.set('SUPABASE_URL', prevUrl)
+    if (prevKey !== undefined) Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', prevKey)
+  }
+})
+
+// ---------------------------------------------------------------------------
+// reap — lazy-GC staleness filter (coverage-002)
+// ---------------------------------------------------------------------------
+
+Deno.test('reap: player seen within the stale window is kept', () => {
+  const now = 1_000_000
+  const players = [{ id: 'a', name: 'A', color: '#fff', ready: true, lastSeen: now - 1000 }]
+  assertEqual(reap(players, now).length, 1, 'kept')
+})
+
+Deno.test('reap: exactly at nowMs - STALE_MS is kept (inclusive boundary)', () => {
+  const now = 1_000_000
+  const players = [{ id: 'a', name: 'A', color: '#fff', ready: true, lastSeen: now - STALE_MS }]
+  assertEqual(reap(players, now).length, 1, 'kept at inclusive boundary')
+})
+
+Deno.test('reap: just past the stale window is dropped', () => {
+  const now = 1_000_000
+  const players = [{ id: 'a', name: 'A', color: '#fff', ready: true, lastSeen: now - STALE_MS - 1 }]
+  assertEqual(reap(players, now).length, 0, 'dropped')
+})
+
+Deno.test('reap: missing lastSeen (legacy row) defaults to 0 and is treated as stale', () => {
+  const now = 1_000_000
+  const players = [{ id: 'a', name: 'A', color: '#fff', ready: true }]
+  assertEqual(reap(players, now).length, 0, 'dropped legacy row')
+})
+
+Deno.test('reap: empty array returns empty array', () => {
+  assertEqual(reap([], 1_000_000).length, 0, 'empty in, empty out')
+})
+
+Deno.test('reap: mixed players filters correctly and preserves order', () => {
+  const now = 1_000_000
+  const players = [
+    { id: 'a', name: 'A', color: '#fff', ready: true, lastSeen: now - 1000 }, // kept
+    { id: 'b', name: 'B', color: '#fff', ready: true, lastSeen: now - STALE_MS - 1 }, // dropped
+    { id: 'c', name: 'C', color: '#fff', ready: true }, // dropped (legacy, no lastSeen)
+    { id: 'd', name: 'D', color: '#fff', ready: true, lastSeen: now }, // kept
+  ]
+  const result = reap(players, now)
+  assertEqual(result.length, 2, 'count')
+  assertEqual(result[0].id, 'a', 'first kept preserves order')
+  assertEqual(result[1].id, 'd', 'second kept preserves order')
 })

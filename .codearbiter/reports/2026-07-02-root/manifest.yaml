@@ -1,0 +1,39 @@
+# Machine-readable snapshot — projection of run.jsonl. Do not hand-edit.
+run_id: 2026-07-02-root
+scope: repository root
+commit: aace04b
+date: 2026-07-02
+models:
+  orchestrator: claude-opus-4-8
+  wave_1: claude-opus-4-8
+  wave_2_3: claude-sonnet-5
+tokens:
+  estimate_band: [2300000, 9000000]
+  lens_actual_sum: 853495   # summed from lens-completed events; excludes orchestrator overhead
+waves:
+  "1": [appsec, architecture, reliability]
+  "2": [secrets-supply, migration, test-fidelity]
+  "3": [coverage, infra, observability, performance, typesafety]
+lenses:
+  appsec:         { model: opus,   surface_seen: 18, findings: 2 }
+  architecture:   { model: opus,   surface_seen: 30, findings: 5 }
+  reliability:    { model: opus,   surface_seen: 42, findings: 3 }
+  secrets-supply: { model: sonnet, surface_seen: 28, findings: 1 }
+  migration:      { model: sonnet, surface_seen: 9,  findings: 3 }
+  test-fidelity:  { model: sonnet, surface_seen: 22, findings: 0 }
+  coverage:       { model: sonnet, surface_seen: 8,  findings: 4 }
+  infra:          { model: sonnet, surface_seen: 5,  findings: 2 }
+  observability:  { model: sonnet, surface_seen: 20, findings: 2 }
+  performance:    { model: sonnet, surface_seen: 14, findings: 0 }
+  typesafety:     { model: sonnet, surface_seen: 25, findings: 1 }
+skipped_lenses: []
+totals:
+  findings_written: 23
+  keep_or_combine: 16
+  fileable_issues: 14   # after 2 combines (hud-decomposition, edge-fn-test-backfill)
+  investigate: 7
+severity_calibrated:   # fileable issues by calibrated severity
+  critical: 1
+  high: 1
+  medium: 6
+  low: 6

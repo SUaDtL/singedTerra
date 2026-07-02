@@ -1,0 +1,17 @@
+# 008 creates an index on the live, write-hot rate_limits table without CONCURRENTLY
+
+**Severity:** low  |  **Confidence:** 0.75  |  **Effort:** S
+
+**Where:**
+- supabase/migrations/008_rate_limits_global_cleanup.sql:21
+
+**Evidence:** Line 21: `CREATE INDEX IF NOT EXISTS rate_limits_window_idx ON rate_limits (window_start);` — no `CONCURRENTLY`. `rate_limits` is written on every rate-limited Edge Function call (all 10 functions per security-controls.md) via `bump_rate_limit()`'s INSERT ... ON CONFLICT, so by the time 008 runs against a live deployment the table already has ongoing write traffic. A plain `CREATE INDEX` takes an ACCESS SHARE-blocking lock (SHARE lock that blocks writes) for the duration of the index build, which stalls every `bump_rate_limit` call — i.e. every Edge Function request — until the build finishes.
+
+**Impact:** On a table this small today the build is near-instantaneous, so the practical outage is sub-second. But the migration establishes a locking-DDL pattern on a table explicitly designed to be hot (rate limiting runs on every request); if `rate_limits` grows (heavier traffic, longer retention) a future non-concurrent index migration on it would cause a more visible availability blip. `CREATE INDEX CONCURRENTLY` also cannot run inside the transaction Supabase migrations execute in by default, so fixing this requires either a non-transactional migration step or accepting the trade-off explicitly.
+
+**Recommendation:** Either explicitly document why a brief write-stall on `rate_limits` is acceptable at current scale (the migration's DOWN/rationale section states other trade-offs but not this one), or split this migration so the CREATE INDEX runs CONCURRENTLY outside the standard transactional migration wrapper.
+
+**Acceptance criteria:**
+- Migration 008 (or a follow-up) either uses CREATE INDEX CONCURRENTLY for rate_limits_window_idx, or the migration file's comment explicitly accepts the brief write-lock trade-off
+
+<!-- dedup_key: migration:supabase/migrations/008_rate_limits_global_cleanup.sql:non-concurrent-index-on-hot-table · finding: migration-003 -->

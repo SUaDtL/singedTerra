@@ -96,6 +96,12 @@ export class NetworkClient implements GameClient {
   private _connection:      ConnectionState = 'connecting';
   private _everSubscribed   = false;            // distinguishes first subscribe from a reconnect
   private _closing          = false;            // set in stop() so teardown isn't reported as a drop
+  // Set true at the top of stop() and never cleared. Backstop for async work that
+  // outlives teardown — the seq-conflict retry timeout, the handleRematch poll
+  // loop, and any post-teardown failFire()/emitState() call — so a stale timer or
+  // in-flight fetch can't POST to / notify listeners of a torn-down client
+  // (reliability-003).
+  private _disposed         = false;
   private connectionListeners = new Set<(s: ConnectionState) => void>();
   private fireFailedListeners = new Set<(msg: string) => void>();
   // Watchdog: if a submitted fire/shield never echoes back, clear the input lock so
@@ -114,6 +120,9 @@ export class NetworkClient implements GameClient {
   // after a single one-shot. UNIQUE remains the corruption guard; this is liveness.
   private static readonly MAX_SEQ_RETRIES = 5;
   private static readonly SEQ_BACKOFF_MS = 40;
+  // Handle for the pending seq-conflict retry setTimeout, so stop() can cancel a
+  // scheduled retry before it fires a POST against a torn-down room.
+  private seqRetryTimer:    ReturnType<typeof setTimeout> | null = null;
 
   // --- Opponent-turn watchdog (P1-6b) --- When a REMOTE human holds the turn and
   // no action arrives, escalate a non-blocking banner: 'waiting' after WAIT_MS,
@@ -369,9 +378,14 @@ export class NetworkClient implements GameClient {
 
   stop(): void {
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
+    this._disposed = true; // backstop for async work already in flight (see field doc)
     if (this.fireWatchdog !== null) {
       clearTimeout(this.fireWatchdog);
       this.fireWatchdog = null;
+    }
+    if (this.seqRetryTimer !== null) {
+      clearTimeout(this.seqRetryTimer);
+      this.seqRetryTimer = null;
     }
     this.clearTurnWatchTimers();
     if (this.rafId !== null) {
@@ -581,6 +595,7 @@ export class NetworkClient implements GameClient {
 
   /** Release a stuck fire lock and notify the UI so the player can re-aim. */
   private failFire(message: string): void {
+    if (this._disposed) return; // client torn down — no lock to release, no one to notify
     this.setFiring(false);
     this.emitState(); // re-render so the HUD drops "Sending…" immediately
     for (const l of this.fireFailedListeners) l(message);
@@ -678,11 +693,13 @@ export class NetworkClient implements GameClient {
     // covers replication lag without hanging the UI if something truly failed.
     let data: Record<string, unknown> | null = null;
     for (let attempt = 0; attempt < 8; attempt++) {
+      if (this._disposed) return; // client torn down mid-poll — don't fetch or notify
       const res = await this.supabase
         .from('rooms')
         .select('id, code, seed, options, players')
         .eq('id', newRoomId)
         .maybeSingle();
+      if (this._disposed) return; // torn down while the fetch was in flight
       if (res.data) { data = res.data as Record<string, unknown>; break; }
       if (res.error) {
         console.warn(`NetworkClient.handleRematch: fetch attempt ${attempt + 1} failed`, res.error);
@@ -690,6 +707,7 @@ export class NetworkClient implements GameClient {
       await new Promise(resolve => setTimeout(resolve, 150));
     }
 
+    if (this._disposed) return; // torn down during the final wait
     if (!data) {
       console.error('NetworkClient.handleRematch: successor room never resolved', newRoomId);
       this._rematchHandled = false; // let a manual re-click re-drive the migration
@@ -761,6 +779,7 @@ export class NetworkClient implements GameClient {
     })
       .then(res => res.json())
       .then((data: { ok?: boolean; error?: string; retry?: boolean; seq?: number }) => {
+        if (this._disposed) return; // client torn down while this request was in flight
         if (!data.ok) {
           const isConflict = data.error === 'seq_conflict' || data.retry === true;
           if (isConflict && retryOnConflict && attempt < NetworkClient.MAX_SEQ_RETRIES) {
@@ -770,8 +789,12 @@ export class NetworkClient implements GameClient {
             // being dropped after one shot (P2-10). Jitter decorrelates the racers.
             const delay = Math.min(NetworkClient.SEQ_BACKOFF_MS * 2 ** attempt, 240)
               + Math.floor(Math.random() * 25);
-            setTimeout(
-              () => this.submitAction(networkAction, true, actingPlayerId, attempt + 1, roundOver),
+            this.seqRetryTimer = setTimeout(
+              () => {
+                this.seqRetryTimer = null;
+                if (this._disposed) return; // stop() ran while the retry was scheduled
+                this.submitAction(networkAction, true, actingPlayerId, attempt + 1, roundOver);
+              },
               delay,
             );
           } else if (isConflict && retryOnConflict) {
@@ -918,6 +941,7 @@ export class NetworkClient implements GameClient {
   }
 
   private emitState(): void {
+    if (this._disposed) return; // client torn down — nothing left to notify
     const state = this.engine.getState();
     if (state.phase === 'GAME_OVER' && !this._gameOverReported) {
       this._gameOverReported = true;

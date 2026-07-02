@@ -1,0 +1,18 @@
+# create_room accepts unvalidated maxWind/gravity (NaN, Infinity, negative, huge) that flow into the determinism-critical shared engine
+
+**Severity:** low  |  **Confidence:** 0.75  |  **Effort:** S
+
+**Where:**
+- supabase/functions/create_room/index.ts:137-145
+
+**Evidence:** storedOptions builds `maxWind: typeof options.maxWind === 'number' ? options.maxWind : DEFAULT_MAX_WIND` and `gravity: typeof options.gravity === 'number' ? options.gravity : DEFAULT_GRAVITY` (index.ts:139-140). `typeof NaN === 'number'` and `typeof Infinity === 'number'`, so NaN / Infinity / negative / arbitrarily large values pass and are persisted to the room row, then fed to every joining client's engine as physics inputs. Note the sibling economy options ARE clamped (coerceEconomyOptions clampNum + Number.isFinite) and the `rounds` option is clamped/trunc'd — maxWind/gravity are the only physics inputs left unbounded, an inconsistency.
+
+**Impact:** A crafted create_room body can seed every client's deterministic engine in that room with a pathological gravity/wind (e.g. NaN), producing NaN projectile state / broken or diverging physics for all players who join. Bounded blast radius (only that room's participants, who opted in), and no server physics runs, so severity is low — but it is an untrusted input reaching the determinism-hard-requirement engine with no boundary check.
+
+**Recommendation:** Clamp maxWind and gravity to finite in-range values at create time exactly as coerceEconomyOptions does (Number.isFinite guard + clamp to the engine's documented ranges, e.g. maxWind 0..MAX_WIND, gravity to a sane positive band), falling back to DEFAULT_* when out of range.
+
+**Acceptance criteria:**
+- A create_room request with maxWind=NaN/Infinity or gravity<=0/NaN is coerced to a finite in-range value or rejected, never persisted verbatim
+- A unit test drives the coercion for out-of-range physics inputs
+
+<!-- dedup_key: appsec:supabase/functions/create_room/index.ts:unvalidated-maxwind-gravity · finding: appsec-002 -->

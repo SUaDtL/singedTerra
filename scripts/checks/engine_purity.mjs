@@ -12,8 +12,12 @@
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ENGINE_DIR = new URL('../../shared/src/engine/', import.meta.url).pathname;
+// fileURLToPath (not URL.pathname): on Windows .pathname yields "/C:/..." which
+// readdirSync mangles into a doubled-drive "C:\C:\..." path (ENOENT), silently
+// disabling this guard for Windows contributors. fileURLToPath returns a native path.
+const ENGINE_DIR = fileURLToPath(new URL('../../shared/src/engine/', import.meta.url));
 
 // Forbidden CALL-SITE patterns (require the open paren so prose in identifiers
 // can't trip it). Checked against comment-stripped source so doc-comments that
