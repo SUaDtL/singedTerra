@@ -24,7 +24,7 @@ Both workspace packages are `private: true`.
 - **Vite** `^5.4.0` (client dev server + build).
 - **@supabase/supabase-js** `^2.45.0` (browser client); Edge Functions use `@2` via esm.sh → `2.107.0`.
 - Canvas 2D — pure browser API, no rendering lib.
-- Root tooling: `concurrently`, `netlify-cli`, `typescript`, `@types/node`.
+- Root tooling: `concurrently`, `typescript`, `@types/node`.
 - **tsx** — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step). Not declared as a dep; resolved at runtime via npx.
 
 ## Commands (root `package.json`)
@@ -36,7 +36,7 @@ Both workspace packages are `private: true`.
 | Build | `npm run build` | `typecheck && vite build` → `client/dist` |
 | **Test** | `npm run check` | `typecheck` + **19** `npx tsx scripts/checks/*.mjs` harnesses (chained `&&`) |
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
-| Deploy client | `npm run deploy:client` | `build && netlify deploy --prod --dir=client/dist --filter @singedterra/client` |
+| Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
 | Deploy backend | `npm run deploy:backend` | `npx supabase db push --yes && npx supabase functions deploy --use-api --yes` |
 | Deploy all | `npm run deploy` | backend then client |
 
