@@ -12,6 +12,25 @@ export interface EconomyOptions {
 
 const clampNum = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 
+// Coerces the room-level physics options (maxWind / gravity) into finite, in-range values.
+// typeof NaN === 'number' and typeof Infinity === 'number', so a bare typeof check lets
+// NaN/Infinity/negative/huge values through into the determinism-critical shared engine
+// (appsec-002). Mirrors coerceEconomyOptions: Number.isFinite guard + clamp, falling back
+// to the provided default when the value is missing, non-numeric, non-finite, or out of range.
+export function coerceMaxWind(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100) {
+    return value;
+  }
+  return fallback;
+}
+
+export function coerceGravity(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 10) {
+    return value;
+  }
+  return fallback;
+}
+
 export function coerceEconomyOptions(
   options:
     | { interestRate?: unknown; suddenDeathTurn?: unknown; armsLevel?: unknown; [key: string]: unknown }
