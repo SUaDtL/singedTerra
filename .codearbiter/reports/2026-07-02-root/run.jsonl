@@ -29,3 +29,4 @@
 {"schema":"run/v1","event":"wave-triaged","wave":3,"detail":"keep=4 combine=2(edge-fn-test-backfill) investigate=4; medium=3 low=1 (+performance clean)","at":"2026-07-02T14:33:13Z"}
 {"schema":"run/v1","event":"report-written","detail":"23 findings; 14 fileable issues (1 crit,1 high,6 med,6 low); 7 investigate","at":"2026-07-02T14:34:32Z"}
 {"schema":"run/v1","event":"issues-filed","detail":"12 filed (#83-#94); 2 skipped dup (typesafety-001=#59, secrets-supply-001=#67)","at":"2026-07-02T14:47:21Z"}
+{"schema":"run/v1","event":"telemetry-sent","detail":"arbiterForge/codeArbiter#200 (no label: 'telemetry' absent on external repo)","at":"2026-07-02T15:59:33Z"}
