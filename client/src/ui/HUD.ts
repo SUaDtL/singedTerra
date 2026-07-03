@@ -2255,15 +2255,19 @@ export class HUD {
   line-height: 1.1;
   white-space: nowrap;
 }
-/* On touch devices: swap dials → numeric readouts, and lift the touch controls
- * up to sit right after the players list (before the instruments) instead of
- * being pinned to the bottom of the scrollable panel (requiring a scroll to
- * reach). Every child from instruments onward gets order:1; the touch strip
- * keeps the default order:0, so — being the last DOM child of #hud — it renders
- * at the end of the order:0 group: after menu/round/players, before instruments. */
+/* Dials -> numeric readouts is driven by the ACTUAL HUD scale, not pointer type:
+ * main.ts flags #app.is-compact when the zoom drops below the dial-legibility
+ * threshold, so small / remote FINE-pointer windows get numerics too, not just
+ * touch devices (a pointer test left those users staring at dissolved dials).
+ * The compound #app.is-compact selector easily outranks the base display rules. */
+#app.is-compact .st-hud__gauge-row  { display: none; }
+#app.is-compact .st-hud__gauge-nums { display: flex; }
+/* On touch devices, lift the touch controls up to sit right after the players
+ * list (before the instruments) instead of being pinned to the bottom of the
+ * scrollable panel. Every child from instruments onward gets order:1; the touch
+ * strip keeps the default order:0, so (being the last DOM child of #hud) it
+ * renders at the end of the order:0 group: after menu/round/players. */
 @media (pointer: coarse) {
-  .st-hud__gauge-row  { display: none; }
-  .st-hud__gauge-nums { display: flex; }
   .st-hud__touch-strip { margin-top: 0; }
   .st-hud__instruments,
   .st-hud__active-row,
