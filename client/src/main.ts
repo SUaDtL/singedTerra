@@ -443,10 +443,18 @@ function bootstrap(): void {
   //
   // Cap at 2× so 4K monitors don't get an absurdly large stage.
   const appEl = document.getElementById('app');
+  // Below this scale the analog instrument dials' thin (1-3px) strokes go
+  // sub-pixel and dissolve into the panel, leaving only the "Instruments" title
+  // legible. The HUD then swaps the dials for bold numeric readouts. We key this
+  // off the ACTUAL scale, not `@media (pointer: coarse)`: a small or remote
+  // desktop window is fine-pointer yet just as scaled-down, so a pointer test
+  // would leave those users staring at dissolved dials.
+  const COMPACT_SCALE = 0.8;
   function updateScale(): void {
     if (!appEl) return;
     const s = Math.min(window.innerWidth / 1464, window.innerHeight / 600, 2);
     appEl.style.zoom = String(s);
+    appEl.classList.toggle('is-compact', s < COMPACT_SCALE);
   }
   window.addEventListener('resize', updateScale);
   // visualViewport fires separately on mobile when the address bar animates —
