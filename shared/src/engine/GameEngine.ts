@@ -710,26 +710,8 @@ export class GameEngine {
    * turn machine. Outside FIRING/RESOLVING this is a no-op.
    */
   tick(): void {
-    // RESOLVING branch (AC-02): animate the terrain collapse one step per tick.
-    // Only entered when pendingSettle is non-null (set by detonate() during the
-    // just-completed FIRING phase). Each call advances the settle by
-    // COLLAPSE_PX_PER_TICK px/column; when converged, calls resolve() to finish
-    // the turn. If pendingSettle is null (e.g. napalm-only or no deform), this
-    // branch is never reached (phase transitions to PLAYER_TURN directly).
     if (this.state.phase === 'RESOLVING') {
-      if (this.pendingSettle !== null) {
-        const stillSettling = this.settleStepAnimated();
-        if (!stillSettling) {
-          // Settle converged this tick — advance the turn machine.
-          this.resolve();
-        }
-        // else: stay in RESOLVING for the next tick.
-      }
-      // If pendingSettle is null but phase is somehow still RESOLVING (defensive),
-      // call resolve() to avoid getting stuck.
-      else {
-        this.resolve();
-      }
+      this.tickResolving();
       return;
     }
 
@@ -744,11 +726,54 @@ export class GameEngine {
       return;
     }
 
-    // Process EACH in-flight projectile this tick. A projectile may: keep
-    // flying, AIRBURST at apex (replaced by N submunitions), detonate on a
-    // ground/tank hit (removed, blast applied), or sail OOB (removed, no blast).
-    // We rebuild the in-flight list as `survivors`; any apex split injects its
-    // submunitions into the SAME list so they begin flying next tick.
+    const survivors = this.advanceProjectiles();
+    this.state.projectiles = survivors;
+    this.syncProjectileAlias();
+
+    // Burn the napalm fire field one tick (spread + DOT + decay). No-op when
+    // nothing is alight. Runs every FIRING tick so a fire ignited THIS tick by an
+    // impact above gets its first burn immediately.
+    this.processFire();
+
+    this.settleAndResolveTurn(survivors);
+  }
+
+  /**
+   * Extracted verbatim from tick() (#86) — behavior-preserving.
+   *
+   * RESOLVING branch (AC-02): animate the terrain collapse one step per tick.
+   * Only entered when pendingSettle is non-null (set by detonate() during the
+   * just-completed FIRING phase). Each call advances the settle by
+   * COLLAPSE_PX_PER_TICK px/column; when converged, calls resolve() to finish
+   * the turn. If pendingSettle is null (e.g. napalm-only or no deform), this
+   * branch is never reached (phase transitions to PLAYER_TURN directly).
+   */
+  private tickResolving(): void {
+    if (this.pendingSettle !== null) {
+      const stillSettling = this.settleStepAnimated();
+      if (!stillSettling) {
+        // Settle converged this tick — advance the turn machine.
+        this.resolve();
+      }
+      // else: stay in RESOLVING for the next tick.
+    }
+    // If pendingSettle is null but phase is somehow still RESOLVING (defensive),
+    // call resolve() to avoid getting stuck.
+    else {
+      this.resolve();
+    }
+  }
+
+  /**
+   * Extracted verbatim from tick() (#86) — behavior-preserving.
+   *
+   * Process EACH in-flight projectile this tick, returning the rebuilt
+   * in-flight `survivors` list. A projectile may: keep flying, AIRBURST at apex
+   * (replaced by N submunitions), detonate on a ground/tank hit (removed, blast
+   * applied), or sail OOB (removed, no blast). Any apex split injects its
+   * submunitions into the SAME list so they begin flying next tick.
+   */
+  private advanceProjectiles(): ProjectileState[] {
     const survivors: ProjectileState[] = [];
     const current = this.state.projectiles;
 
@@ -857,36 +882,34 @@ export class GameEngine {
       }
     }
 
-    this.state.projectiles = survivors;
-    this.syncProjectileAlias();
+    return survivors;
+  }
 
-    // Burn the napalm fire field one tick (spread + DOT + decay). No-op when
-    // nothing is alight. Runs every FIRING tick so a fire ignited THIS tick by an
-    // impact above gets its first burn immediately.
-    this.processFire();
-
-    // -----------------------------------------------------------------------
-    // POST-FIRE settle + turn-resolution decision (AC-02 deferred-final-settle)
-    //
-    // The rule:
-    //  (A) Projectiles still in flight OR fire still burning → flush instantly so
-    //      mid-flight bomblet trajectories/collisions stay byte-identical to today
-    //      ACROSS ticks. KNOWN DEVIATION: when two projectiles detonate in the SAME
-    //      tick, blast #1 is no longer compacted before blast #2's collide within that
-    //      tick (the single flush runs after the whole projectile loop), so a same-tick
-    //      #2 may collide an un-compacted overhang. This is deterministic (every client
-    //      runs identical deferred logic → no lockstep desync; replay == live); it only
-    //      shifts gameplay outcomes for rare same-tick multi-detonation seeds vs pre-
-    //      animated-collapse. Accepted as a gameplay-parity trade-off of the deferred
-    //      settle (compacting per-blast in-loop would instant-compact the FINAL blast
-    //      too and defeat the animation). See sprint-log stabilize-and-juice-2.
-    //  (B) Board already down to <= 1 alive → flush instantly and end immediately
-    //      (preserves #14: win banner must not wait for dirt).
-    //  (C) Settled + alive > 1 + no fire → leave pendingSettle for the RESOLVING
-    //      phase to animate one settleStep per tick.
-    //  (D) While fire is burning (no projectiles, fire active) → flush instantly
-    //      each tick (fire is the visual focus; collapse settles under it).
-    // -----------------------------------------------------------------------
+  /**
+   * Extracted verbatim from tick() (#86) — behavior-preserving.
+   *
+   * POST-FIRE settle + turn-resolution decision (AC-02 deferred-final-settle)
+   *
+   * The rule:
+   *  (A) Projectiles still in flight OR fire still burning → flush instantly so
+   *      mid-flight bomblet trajectories/collisions stay byte-identical to today
+   *      ACROSS ticks. KNOWN DEVIATION: when two projectiles detonate in the SAME
+   *      tick, blast #1 is no longer compacted before blast #2's collide within that
+   *      tick (the single flush runs after the whole projectile loop), so a same-tick
+   *      #2 may collide an un-compacted overhang. This is deterministic (every client
+   *      runs identical deferred logic → no lockstep desync; replay == live); it only
+   *      shifts gameplay outcomes for rare same-tick multi-detonation seeds vs pre-
+   *      animated-collapse. Accepted as a gameplay-parity trade-off of the deferred
+   *      settle (compacting per-blast in-loop would instant-compact the FINAL blast
+   *      too and defeat the animation). See sprint-log stabilize-and-juice-2.
+   *  (B) Board already down to <= 1 alive → flush instantly and end immediately
+   *      (preserves #14: win banner must not wait for dirt).
+   *  (C) Settled + alive > 1 + no fire → leave pendingSettle for the RESOLVING
+   *      phase to animate one settleStep per tick.
+   *  (D) While fire is burning (no projectiles, fire active) → flush instantly
+   *      each tick (fire is the visual focus; collapse settles under it).
+   */
+  private settleAndResolveTurn(survivors: ProjectileState[]): void {
     const aliveCount = this.state.tanks.reduce((n, t) => (t.alive ? n + 1 : n), 0);
     const settled = survivors.length === 0 && this.fire.size === 0;
 
