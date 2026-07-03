@@ -3,6 +3,29 @@ import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
 import { armsLabel, roundsLabel, botLabel } from './browseLabels';
 import { callFunction } from '../lib/edgeFunctions';
+import {
+  type LobbySettings,
+  WIND_MIN,
+  WIND_MAX,
+  GRAVITY_MIN,
+  GRAVITY_MAX,
+  ROUNDS_MIN,
+  ROUNDS_MAX,
+  ROUNDS_DEFAULT,
+  INTEREST_MIN,
+  INTEREST_MAX,
+  SUDDEN_DEATH_MIN,
+  SUDDEN_DEATH_MAX,
+  ARMS_MIN,
+  ARMS_MAX,
+  ARMS_DEFAULT,
+  parseNumber,
+  coerceSettings,
+  normalizeRoomCode,
+  isValidRoomCode,
+} from './lobbyValidation';
+
+export type { LobbySettings } from './lobbyValidation';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
 
 /** Play mode chosen in the lobby. */
@@ -17,28 +40,6 @@ export interface LobbyPlayer {
   /** CPU difficulty when this seat is a computer opponent (hot-seat only);
    *  absent => human. */
   ai?: AiDifficulty;
-}
-
-/**
- * Optional advanced engine settings chosen in the lobby. Each field is omitted
- * (undefined) when the user leaves it at default/blank, so the engine's own
- * defaults apply. Consumed by main.ts and forwarded to GameEngine.
- */
-export interface LobbySettings {
-  /** Wind cap, 0..10 (engine default 10). */
-  maxWind?: number;
-  /** Gravity in px/tick, ~0.05..0.40 (engine default 0.15). */
-  gravity?: number;
-  /** Terrain seed; blank => engine's reproducible default. */
-  seed?: number;
-  /** Best-of-N match length, odd 1..9 (engine default 1 = single round). */
-  rounds?: number;
-  /** Per-round credit interest rate, 0..0.5 (engine default 0 = no interest). */
-  interestRate?: number;
-  /** Sudden-death per-round turn threshold, integer ≥0 (engine default 0/absent = off). */
-  suddenDeathTurn?: number;
-  /** Arms-level store gate, integer 0..4 (engine default 4 = everything buyable). */
-  armsLevel?: number;
 }
 
 /** Configuration produced by the lobby once the player(s) are ready. */
@@ -94,29 +95,15 @@ const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const STYLE_ID = 'lobby-style';
 
-// Advanced-settings bounds + engine defaults (shown as placeholders so the user
-// sees the default without us actually sending it — blank/default => omitted).
-const WIND_MIN = 0;
-const WIND_MAX = 10;
+// View-only advanced-settings defaults/steps (placeholders + input granularity).
+// The bounds (WIND_MIN/MAX, GRAVITY_MIN/MAX, ROUNDS_*, INTEREST_*, SUDDEN_DEATH_*,
+// ARMS_*) live in ./lobbyValidation alongside the coercion that enforces them.
 const WIND_DEFAULT = 10;
-const GRAVITY_MIN = 0.05;
-const GRAVITY_MAX = 0.4;
 const GRAVITY_STEP = 0.01;
 const GRAVITY_DEFAULT = 0.15;
-const ROUNDS_MIN = 1;
-const ROUNDS_MAX = 9;
-const ROUNDS_DEFAULT = 1;
-// SE-parity economy bounds + engine defaults (shown as placeholders; blank/default => omitted).
-const INTEREST_MIN = 0;
-const INTEREST_MAX = 0.5;       // up to 50% per round
 const INTEREST_STEP = 0.05;
 const INTEREST_DEFAULT = 0;
-const SUDDEN_DEATH_MIN = 0;     // 0/blank => off
-const SUDDEN_DEATH_MAX = 50;
 const SUDDEN_DEATH_DEFAULT = 0;
-const ARMS_MIN = 0;
-const ARMS_MAX = 4;
-const ARMS_DEFAULT = 4;         // everything buyable (back-compat)
 
 /** Raw (string) working state for the advanced-settings inputs. */
 interface SettingsState {
@@ -940,7 +927,7 @@ export class Lobby {
     codeInput.value = this.joinCode;
     codeInput.placeholder = 'XXXX';
     codeInput.addEventListener('input', () => {
-      this.joinCode = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      this.joinCode = normalizeRoomCode(codeInput.value);
       codeInput.value = this.joinCode;
     });
     codeField.append(codeLabel, codeInput);
@@ -993,7 +980,7 @@ export class Lobby {
 
   private async handleJoinRoom(): Promise<void> {
     const code = this.joinCode.trim().toUpperCase();
-    if (code.length !== 4) {
+    if (!isValidRoomCode(code)) {
       this.onlineError = 'Enter a 4-character room code.';
       this.render();
       return;
@@ -2041,46 +2028,7 @@ export class Lobby {
    * fields (so engine defaults hold). Returns undefined if nothing is set.
    */
   private parseSettings(): LobbySettings | undefined {
-    const out: LobbySettings = {};
-
-    const maxWind = parseNumber(this.settings.maxWind);
-    if (maxWind !== undefined) {
-      out.maxWind = clamp(maxWind, WIND_MIN, WIND_MAX);
-    }
-
-    const gravity = parseNumber(this.settings.gravity);
-    if (gravity !== undefined) {
-      out.gravity = clamp(gravity, GRAVITY_MIN, GRAVITY_MAX);
-    }
-
-    const seed = parseNumber(this.settings.seed);
-    if (seed !== undefined) {
-      out.seed = Math.trunc(seed);
-    }
-
-    const rounds = parseNumber(this.settings.rounds);
-    if (rounds !== undefined) {
-      // Clamp into range, then force ODD (an even best-of-N can't break a tie cleanly).
-      const clamped = clamp(Math.trunc(rounds), ROUNDS_MIN, ROUNDS_MAX);
-      out.rounds = clamped % 2 === 0 ? clamped + 1 : clamped;
-    }
-
-    const interestRate = parseNumber(this.settings.interestRate);
-    if (interestRate !== undefined) {
-      out.interestRate = clamp(interestRate, INTEREST_MIN, INTEREST_MAX);
-    }
-
-    const suddenDeathTurn = parseNumber(this.settings.suddenDeathTurn);
-    if (suddenDeathTurn !== undefined) {
-      out.suddenDeathTurn = clamp(Math.trunc(suddenDeathTurn), SUDDEN_DEATH_MIN, SUDDEN_DEATH_MAX);
-    }
-
-    const armsLevel = parseNumber(this.settings.armsLevel);
-    if (armsLevel !== undefined) {
-      out.armsLevel = clamp(Math.trunc(armsLevel), ARMS_MIN, ARMS_MAX);
-    }
-
-    return Object.keys(out).length > 0 ? out : undefined;
+    return coerceSettings(this.settings);
   }
 
   /**
@@ -2165,13 +2113,5 @@ function defaultRow(i: number): PlayerRowState {
     name: `Player ${i + 1}`,
     color: PALETTE[i % PALETTE.length].value,
   };
-}
-
-/** Parse a trimmed numeric string; undefined for blank or non-finite input. */
-function parseNumber(raw: string): number | undefined {
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) return undefined;
-  const n = Number(trimmed);
-  return Number.isFinite(n) ? n : undefined;
 }
 
