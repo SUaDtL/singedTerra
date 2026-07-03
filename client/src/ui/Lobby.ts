@@ -2,6 +2,7 @@ import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
 import { armsLabel, roundsLabel, botLabel } from './browseLabels';
+import { callFunction } from '../lib/edgeFunctions';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
 
 /** Play mode chosen in the lobby. */
@@ -861,22 +862,10 @@ export class Lobby {
         },
       };
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create_room`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify(body),
-        },
-      );
-      const data = await res.json() as { roomId?: string; code?: string; playerId?: string; token?: string; players?: NetworkPlayer[]; error?: string };
+      const { ok, data } = await callFunction<{ roomId?: string; code?: string; playerId?: string; token?: string; players?: NetworkPlayer[]; error?: string }>('create_room', body);
 
-      if (!res.ok || data.error) {
-        this.onlineError = data.error ?? 'Failed to create room.';
+      if (!ok || data?.error) {
+        this.onlineError = data?.error ?? 'Failed to create room.';
         this.onlineBusy = false;
         this.render();
         return;
@@ -885,7 +874,7 @@ export class Lobby {
       // Guard against a structurally-wrong 200 (contract drift): without this, the
       // `!` assertions below would assign undefined-as-string and silently break the
       // Realtime subscription with no visible error (dx-007).
-      if (!data.roomId || !data.code || !data.playerId || !data.token) {
+      if (!data?.roomId || !data.code || !data.playerId || !data.token) {
         this.onlineError = 'Unexpected server response — please try again.';
         this.onlineBusy = false;
         this.render();
@@ -1030,19 +1019,7 @@ export class Lobby {
     this.render();
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/join_room`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify({ code, playerName: name, color: this.joinColor }),
-        },
-      );
-      const data = await res.json() as {
+      const { ok, data } = await callFunction<{
         roomId?: string;
         playerId?: string;
         token?: string;
@@ -1050,16 +1027,16 @@ export class Lobby {
         options?: RoomOptions;
         players?: NetworkPlayer[];
         error?: string;
-      };
+      }>('join_room', { code, playerName: name, color: this.joinColor });
 
-      if (!res.ok || data.error) {
-        this.onlineError = data.error ?? 'Failed to join room.';
+      if (!ok || data?.error) {
+        this.onlineError = data?.error ?? 'Failed to join room.';
         this.onlineBusy = false;
         this.render();
         return;
       }
 
-      if (!data.roomId || !data.playerId || !data.token) {
+      if (!data?.roomId || !data.playerId || !data.token) {
         this.onlineError = 'Unexpected server response — please try again.';
         this.onlineBusy = false;
         this.render();
@@ -1125,31 +1102,19 @@ export class Lobby {
 
   private async fetchRooms(): Promise<void> {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list_rooms`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify({}),
-        },
-      );
-      const data = await res.json() as { rooms?: BrowseRoom[]; error?: string };
+      const { ok, data } = await callFunction<{ rooms?: BrowseRoom[]; error?: string }>('list_rooms', {});
 
       // Only repaint if still on the browse view (the user may have navigated
       // away between the request and its response).
       if (this.onlineSubView !== 'browse') return;
 
-      if (!res.ok || data.error) {
-        this.onlineError = data.error ?? 'Failed to load rooms.';
+      if (!ok || data?.error) {
+        this.onlineError = data?.error ?? 'Failed to load rooms.';
         this.render();
         return;
       }
 
-      this.browseRooms = data.rooms ?? [];
+      this.browseRooms = data?.rooms ?? [];
       this.onlineError = '';
       this.render();
     } catch (err) {
@@ -1509,18 +1474,7 @@ export class Lobby {
   private startHeartbeat(): void {
     this.stopHeartbeat();
     this.waitingHeartbeatId = setInterval(() => {
-      void fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/heartbeat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }),
-        },
-      ).catch(() => {
+      void callFunction('heartbeat', { roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }).catch(() => {
         // Best-effort: a missed heartbeat just means one stale window; the next
         // tick recovers it. Never surface heartbeat errors to the UI.
       });
@@ -1576,38 +1530,26 @@ export class Lobby {
     this.render();
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ready_up`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }),
-        },
-      );
-      const data = await res.json() as {
+      const { ok, data } = await callFunction<{
         started?: boolean;
         players?: NetworkPlayer[];
         error?: string;
-      };
+      }>('ready_up', { roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken });
 
-      if (!res.ok || data.error) {
-        this.onlineError = data.error ?? 'Failed to ready up.';
+      if (!ok || data?.error) {
+        this.onlineError = data?.error ?? 'Failed to ready up.';
         this.onlineBusy = false;
         this.render();
         return;
       }
 
-      if (Array.isArray(data.players)) {
+      if (Array.isArray(data?.players)) {
         this.waitingPlayers = data.players;
       }
       this.waitingThisPlayerReady = true;
       this.onlineBusy = false;
 
-      if (data.started) {
+      if (data?.started) {
         // Game started immediately (e.g. last player readied up).
         // The Realtime UPDATE may arrive momentarily; if it hasn't yet, trigger
         // the transition directly from the ready_up response.
@@ -1757,33 +1699,21 @@ export class Lobby {
     this.render();
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update_player`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify({
-            roomId: this.waitingRoomId,
-            playerId: this.waitingPlayerId,
-            token: this.waitingToken,
-            ...fields,
-          }),
-        },
-      );
-      const data = await res.json() as { players?: NetworkPlayer[]; error?: string };
+      const { ok, data } = await callFunction<{ players?: NetworkPlayer[]; error?: string }>('update_player', {
+        roomId: this.waitingRoomId,
+        playerId: this.waitingPlayerId,
+        token: this.waitingToken,
+        ...fields,
+      });
 
-      if (!res.ok || data.error) {
-        this.onlineError = data.error ?? 'Failed to update.';
+      if (!ok || data?.error) {
+        this.onlineError = data?.error ?? 'Failed to update.';
         this.onlineBusy = false;
         this.render();
         return;
       }
 
-      if (Array.isArray(data.players)) {
+      if (Array.isArray(data?.players)) {
         this.waitingPlayers = data.players;
       }
       this.onlineBusy = false;
@@ -1805,18 +1735,7 @@ export class Lobby {
     const playerId = this.waitingPlayerId;
     const token = this.waitingToken;
     try {
-      await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/leave_room`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-          },
-          body: JSON.stringify({ roomId, playerId, token }),
-        },
-      );
+      await callFunction('leave_room', { roomId, playerId, token });
     } catch (err) {
       // Best-effort — leave the room locally regardless.
     }
