@@ -18,18 +18,29 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NetworkClient } from './NetworkClient';
 
 // requestRematch() never touches `supabase` (it only builds a fetch request from
-// roomId/playerId), so an empty stand-in is sufficient — GameEngine construction
-// in the NetworkClient constructor is what actually needs valid options.
+// roomId/playerId/token), so an empty stand-in is sufficient — GameEngine
+// construction in the NetworkClient constructor is what actually needs valid options.
+//
+// The seat token (ADR-0009 split-identity) is passed explicitly so the body-shape
+// assertion below characterizes the real credential threading rather than the
+// empty-string fallback readSeatToken() yields when localStorage is bare.
+const SEAT_TOKEN = 'seat-secret-abc';
 function makeClient(): NetworkClient {
   const fakeSupabase = {} as unknown as SupabaseClient;
-  return new NetworkClient(fakeSupabase, 'room-123', 'player-abc', {
-    maxPlayers: 2,
-    seed: 1,
-    players: [
-      { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
-      { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
-    ],
-  });
+  return new NetworkClient(
+    fakeSupabase,
+    'room-123',
+    'player-abc',
+    {
+      maxPlayers: 2,
+      seed: 1,
+      players: [
+        { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
+        { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
+      ],
+    },
+    SEAT_TOKEN,
+  );
 }
 
 describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing)', () => {
@@ -62,7 +73,12 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     expect(init.headers['Content-Type']).toBe('application/json');
     expect(init.headers['Authorization']).toBe('Bearer anon-key-test');
     expect(init.headers['apikey']).toBe('anon-key-test');
-    expect(JSON.parse(init.body as string)).toEqual({ roomId: 'room-123', playerId: 'player-abc' });
+    // ADR-0009: every mutating Edge Function POST carries the secret seat token.
+    expect(JSON.parse(init.body as string)).toEqual({
+      roomId: 'room-123',
+      playerId: 'player-abc',
+      token: SEAT_TOKEN,
+    });
   });
 
   it('surfaces the server error message when restart_game responds { ok: false }', async () => {
