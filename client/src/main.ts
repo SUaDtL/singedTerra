@@ -481,7 +481,7 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
       armsLevel:       config.settings?.armsLevel,
     };
 
-    const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions);
+    const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions, config.token);
     await nc.initialize();
     return nc;
   }

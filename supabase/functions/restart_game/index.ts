@@ -9,6 +9,7 @@ import {
   ServiceClient,
   DEFAULT_GRAVITY,
   DEFAULT_MAX_WIND,
+  verifySeatToken,
 } from '../_shared/mod.ts'
 
 /** Shape returned to the client (and broadcast-derived peers re-fetch the same). */
@@ -66,7 +67,7 @@ async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<Re
 // this file as the program entry point.
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId } = body as { roomId?: unknown; playerId?: unknown }
+  const { roomId, playerId, token } = body as { roomId?: unknown; playerId?: unknown; token?: unknown }
 
   if (typeof roomId !== 'string' || !UUID_REGEX.test(roomId)) {
     return json({ error: 'Invalid input: roomId must be a UUID' }, 400)
@@ -97,6 +98,9 @@ Deno.serve(withCors(async (body) => {
   const players = (oldRoom.players ?? []) as StoredPlayer[]
   if (!players.some(p => p.id === playerId)) {
     return json({ error: 'Player not in room' }, 403)
+  }
+  if (!(await verifySeatToken(supabase, roomId, playerId as string, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
   }
 
   // --- Atomic claim ---------------------------------------------------------
@@ -188,6 +192,34 @@ Deno.serve(withCors(async (body) => {
     // Roll back the claim so the pointer never dangles at a room that does not exist.
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
     return json({ error: 'Failed to create rematch room' }, 500)
+  }
+
+  // Copy the old room's seat tokens forward so every human keeps their credential
+  // (seat ids are preserved across rematch by buildRematchPlayers). Bot seats never
+  // had a room_seats row, so there is nothing to copy for them.
+  const { data: oldSeats, error: oldSeatsError } = await supabase
+    .from('room_seats')
+    .select('seat_id, token')
+    .eq('room_id', roomId)
+
+  if (oldSeatsError) {
+    console.error('restart_game: old seats fetch error', oldSeatsError)
+    await supabase.from('rooms').delete().eq('id', newRoomId)
+    await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
+    return json({ error: 'Failed to create rematch room' }, 500)
+  }
+
+  if (oldSeats && oldSeats.length > 0) {
+    const { error: seatCopyError } = await supabase
+      .from('room_seats')
+      .insert(oldSeats.map((s: { seat_id: string; token: string }) => ({ room_id: newRoomId, seat_id: s.seat_id, token: s.token })))
+
+    if (seatCopyError) {
+      console.error('restart_game: seat copy error', seatCopyError)
+      await supabase.from('rooms').delete().eq('id', newRoomId)
+      await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
+      return json({ error: 'Failed to create rematch room' }, 500)
+    }
   }
 
   const info: RematchInfo = {

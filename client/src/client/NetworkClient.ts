@@ -50,6 +50,35 @@ interface NetworkGameOptions extends Omit<GameOptions, 'players'> {
 
 type StateChangeListener = (state: GameState) => void;
 
+// localStorage key under which a seat's SECRET token is persisted, keyed by the
+// PUBLIC playerId (not roomId) — playerId is stable across a rematch (the server
+// copies the token to the successor room under the same seat id), so this key
+// keeps resolving to a valid token after migration. Guarded by try/catch
+// everywhere: private-mode / disabled storage must not crash the game.
+const SEAT_TOKEN_PREFIX = 'singedterra:seat:';
+
+function seatTokenKey(playerId: string): string {
+  return `${SEAT_TOKEN_PREFIX}${playerId}`;
+}
+
+/** Best-effort read of a persisted seat token; never throws. */
+function readSeatToken(playerId: string): string | undefined {
+  try {
+    return localStorage.getItem(seatTokenKey(playerId)) ?? undefined;
+  } catch {
+    return undefined; // localStorage unavailable — nothing persisted
+  }
+}
+
+/** Best-effort persist of a seat token; never throws. */
+function writeSeatToken(playerId: string, token: string): void {
+  try {
+    localStorage.setItem(seatTokenKey(playerId), token);
+  } catch {
+    /* localStorage unavailable — token just isn't persisted across reloads */
+  }
+}
+
 /**
  * NetworkClient implements GameClient for the Supabase deterministic lockstep
  * network layer (MVP2). Each player's browser runs an independent local
@@ -67,6 +96,11 @@ export class NetworkClient implements GameClient {
   private engine:           GameEngine;
   private roomId:           string;
   private playerId:         string;           // Supabase-assigned UUID for this client
+  // Secret per-seat credential (ADR-0009 split-identity). Required on every
+  // mutating POST (submit_action / restart_game / finish_game). Falls back to
+  // whatever is persisted in localStorage under this playerId if the caller
+  // didn't have one to pass in (e.g. a reload mid-room).
+  private token:            string;
   private listeners:        Set<StateChangeListener>;
   private rafId:            number | null;
   private channel:          RealtimeChannel | null;   // room_actions INSERT subscription
@@ -167,11 +201,17 @@ export class NetworkClient implements GameClient {
     supabase:  SupabaseClient,
     roomId:    string,
     playerId:  string,
-    options:   NetworkGameOptions
+    options:   NetworkGameOptions,
+    token?:    string,
   ) {
     this.supabase         = supabase;
     this.roomId           = roomId;
     this.playerId         = playerId;
+    // Prefer the token handed in (fresh from create_room/join_room); fall back to
+    // whatever this seat previously persisted (e.g. a mid-room reload). Persist
+    // whichever we end up with so it's available next time regardless of source.
+    this.token             = token ?? readSeatToken(playerId) ?? '';
+    if (this.token) writeSeatToken(playerId, this.token);
     this.options          = options;
     this.listeners        = new Set();
     this.rafId            = null;
@@ -658,7 +698,7 @@ export class NetworkClient implements GameClient {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
         },
-        body: JSON.stringify({ roomId: this.roomId, playerId: this.playerId }),
+        body: JSON.stringify({ roomId: this.roomId, playerId: this.playerId, token: this.token }),
       });
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
@@ -767,6 +807,7 @@ export class NetworkClient implements GameClient {
       body: JSON.stringify({
         roomId:   this.roomId,
         playerId: this.playerId,
+        token:    this.token,
         ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
         // roundOver: this action ends a round (the killing blow) or operates within the
         // between-rounds shop (buy / next_round). Tells the referee to skip the turn gate
@@ -1086,6 +1127,7 @@ export class NetworkClient implements GameClient {
     const body = JSON.stringify({
       roomId:   this.roomId,
       playerId: this.playerId,
+      token:    this.token,
       winnerId,
       rounds:     state.totalRounds,
       scoreboard,

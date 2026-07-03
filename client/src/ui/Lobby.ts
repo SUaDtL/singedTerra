@@ -53,8 +53,31 @@ export interface LobbyConfig {
   roomId?: string;
   /** UUID assigned to this client's player (network mode only). */
   playerId?: string;
+  /** Secret per-seat credential issued by create_room/join_room (network mode
+   *  only). Required on every mutating request; ADR-0009 split-identity. */
+  token?: string;
   /** Optional advanced engine settings; only set fields are present. */
   settings?: LobbySettings;
+}
+
+// localStorage key under which a seat's SECRET token is persisted, keyed by the
+// PUBLIC playerId (not roomId) — playerId is stable across a rematch (the
+// server copies the token to the successor room under the same seat id), so
+// this key keeps resolving to a valid token after migration. All access is
+// guarded by try/catch: private-mode / disabled storage must not crash the game.
+const SEAT_TOKEN_PREFIX = 'singedterra:seat:';
+
+function seatTokenKey(playerId: string): string {
+  return `${SEAT_TOKEN_PREFIX}${playerId}`;
+}
+
+/** Best-effort persist of a seat token; never throws. */
+function writeSeatToken(playerId: string, token: string): void {
+  try {
+    localStorage.setItem(seatTokenKey(playerId), token);
+  } catch {
+    /* localStorage unavailable — token just isn't persisted across reloads */
+  }
 }
 
 /** Fixed color palette; each player must pick a unique entry. */
@@ -219,6 +242,8 @@ export class Lobby {
   private waitingRoomId = '';
   private waitingRoomCode = '';
   private waitingPlayerId = '';
+  /** Secret per-seat credential for this room, captured from create_room/join_room. */
+  private waitingToken = '';
   private waitingPlayers: NetworkPlayer[] = [];
   private waitingSeed = 0;
   private waitingOptions: RoomOptions = {
@@ -848,7 +873,7 @@ export class Lobby {
           body: JSON.stringify(body),
         },
       );
-      const data = await res.json() as { roomId?: string; code?: string; playerId?: string; players?: NetworkPlayer[]; error?: string };
+      const data = await res.json() as { roomId?: string; code?: string; playerId?: string; token?: string; players?: NetworkPlayer[]; error?: string };
 
       if (!res.ok || data.error) {
         this.onlineError = data.error ?? 'Failed to create room.';
@@ -860,7 +885,7 @@ export class Lobby {
       // Guard against a structurally-wrong 200 (contract drift): without this, the
       // `!` assertions below would assign undefined-as-string and silently break the
       // Realtime subscription with no visible error (dx-007).
-      if (!data.roomId || !data.code || !data.playerId) {
+      if (!data.roomId || !data.code || !data.playerId || !data.token) {
         this.onlineError = 'Unexpected server response — please try again.';
         this.onlineBusy = false;
         this.render();
@@ -872,6 +897,8 @@ export class Lobby {
       this.waitingRoomId = data.roomId;
       this.waitingRoomCode = data.code;
       this.waitingPlayerId = data.playerId;
+      this.waitingToken = data.token;
+      writeSeatToken(data.playerId, data.token);
       this.waitingPlayers = data.players ?? [{
         id: data.playerId,
         name,
@@ -1018,6 +1045,7 @@ export class Lobby {
       const data = await res.json() as {
         roomId?: string;
         playerId?: string;
+        token?: string;
         seed?: number;
         options?: RoomOptions;
         players?: NetworkPlayer[];
@@ -1031,11 +1059,20 @@ export class Lobby {
         return;
       }
 
+      if (!data.roomId || !data.playerId || !data.token) {
+        this.onlineError = 'Unexpected server response — please try again.';
+        this.onlineBusy = false;
+        this.render();
+        return;
+      }
+
       // Joined successfully — stop browsing and enter the waiting room.
       this.stopBrowsePoll();
-      this.waitingRoomId = data.roomId!;
+      this.waitingRoomId = data.roomId;
       this.waitingRoomCode = code;
-      this.waitingPlayerId = data.playerId!;
+      this.waitingPlayerId = data.playerId;
+      this.waitingToken = data.token;
+      writeSeatToken(data.playerId, data.token);
       this.waitingSeed = data.seed ?? 0;
       this.waitingOptions = data.options ?? { maxPlayers: 2, maxWind: 10, gravity: 0.15 };
       this.waitingPlayers = data.players ?? [];
@@ -1481,7 +1518,7 @@ export class Lobby {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
           },
-          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId }),
+          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }),
         },
       ).catch(() => {
         // Best-effort: a missed heartbeat just means one stale window; the next
@@ -1506,6 +1543,7 @@ export class Lobby {
       roomCode: this.waitingRoomCode,
       roomId: this.waitingRoomId,
       playerId: this.waitingPlayerId,
+      token: this.waitingToken,
       settings: {
         seed: room.seed,
         maxWind: room.options.maxWind,
@@ -1547,7 +1585,7 @@ export class Lobby {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
           },
-          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId }),
+          body: JSON.stringify({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }),
         },
       );
       const data = await res.json() as {
@@ -1731,6 +1769,7 @@ export class Lobby {
           body: JSON.stringify({
             roomId: this.waitingRoomId,
             playerId: this.waitingPlayerId,
+            token: this.waitingToken,
             ...fields,
           }),
         },
@@ -1764,6 +1803,7 @@ export class Lobby {
   private async handleLeaveRoom(): Promise<void> {
     const roomId = this.waitingRoomId;
     const playerId = this.waitingPlayerId;
+    const token = this.waitingToken;
     try {
       await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/leave_room`,
@@ -1774,7 +1814,7 @@ export class Lobby {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
           },
-          body: JSON.stringify({ roomId, playerId }),
+          body: JSON.stringify({ roomId, playerId, token }),
         },
       );
     } catch (err) {
@@ -1799,6 +1839,7 @@ export class Lobby {
     this.waitingRoomId = '';
     this.waitingRoomCode = '';
     this.waitingPlayerId = '';
+    this.waitingToken = '';
     this.waitingPlayers = [];
     this.waitingThisPlayerReady = false;
     this.onlineSubView = 'create';

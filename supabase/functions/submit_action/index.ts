@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, StoredPlayer, nextCursor, ACCESSORY_TYPES } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, StoredPlayer, nextCursor, ACCESSORY_TYPES, verifySeatToken } from '../_shared/mod.ts'
 import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
 
 // ---------------------------------------------------------------------------
@@ -77,9 +77,10 @@ type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction 
 // import.meta.main is true; when it is imported by a test file it is false.
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
+  const { roomId, playerId, token, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
     roomId?: unknown
     playerId?: unknown
+    token?: unknown
     // The seat index active AFTER this turn-ending action, computed by the
     // submitting client's authoritative engine (which skips eliminated tanks AND
     // re-seats the opener at a round boundary). Used to advance the referee cursor;
@@ -131,6 +132,10 @@ Deno.serve(withCors(async (body) => {
   const isMember = players.some(p => p.id === playerId)
   if (!isMember) {
     return json({ error: 'Player not in room' }, 403)
+  }
+
+  if (!(await verifySeatToken(supabase, roomId as string, playerId as string, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
   }
 
   // The seat this action is FOR (defaults to the submitter — a human acting for

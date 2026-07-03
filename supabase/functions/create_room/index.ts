@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, generateCode, isValidColor, DEFAULT_GRAVITY, DEFAULT_MAX_WIND } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, generateCode, isValidColor, mintSeatToken, DEFAULT_GRAVITY, DEFAULT_MAX_WIND } from '../_shared/mod.ts'
 import { coerceEconomyOptions, coerceGravity, coerceMaxWind } from './validate.ts'
 
 Deno.serve(withCors(async (body) => {
@@ -164,7 +164,21 @@ Deno.serve(withCors(async (body) => {
     return json({ error: 'Failed to create room' }, 500)
   }
 
+  // Mint the creator's seat token (human seat only — bots get no room_seats row)
+  // and persist it. If this fails, roll back the just-created room so we never
+  // leave an unclaimable room behind.
+  const token = mintSeatToken()
+  const { error: seatError } = await supabase
+    .from('room_seats')
+    .insert({ room_id: room.id, seat_id: playerId, token })
+
+  if (seatError) {
+    console.error('create_room: seat insert error', seatError)
+    await supabase.from('rooms').delete().eq('id', room.id)
+    return json({ error: 'Failed to create room' }, 500)
+  }
+
   // Return the full players array so the client has the generated CPU seat ids
   // (and renders them in the waiting room) without waiting for a Realtime update.
-  return json({ roomId: room.id, code, playerId, players }, 200)
+  return json({ roomId: room.id, code, playerId, token, players }, 200)
 }, { rateLimit: 'create_room' }))

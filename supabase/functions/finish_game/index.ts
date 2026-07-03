@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, verifySeatToken } from '../_shared/mod.ts'
 
 export interface ScoreEntry {
   tankId: string
@@ -41,7 +41,7 @@ export function sanitizeScoreboard(raw: unknown, seatCount: number): ScoreEntry[
 // listener (mirrors submit_action / restart_game).
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, winnerId, playerId, rounds, scoreboard } = body as {
+  const { roomId, winnerId, playerId, rounds, scoreboard, token } = body as {
     roomId?: unknown
     winnerId?: unknown
     // The caller's Supabase id — required so only a ROOM MEMBER can finish the
@@ -51,6 +51,7 @@ Deno.serve(withCors(async (body) => {
     // when present and well-formed it is persisted to match_scores (one row per match).
     rounds?: unknown
     scoreboard?: unknown
+    token?: unknown
   }
 
   if (typeof roomId !== 'string' || roomId.trim().length === 0) {
@@ -87,6 +88,9 @@ Deno.serve(withCors(async (body) => {
   // Authorization: the caller must be a member of the room.
   if (!players.some((p) => p.id === playerId)) {
     return json({ error: 'Player not in room' }, 403)
+  }
+  if (!(await verifySeatToken(supabase, roomId.trim(), playerId, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
   }
   // Roster bound-check: winner 'pN' must map to a real seat (1..players.length).
   if (winnerId !== null) {

@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, reap, isValidColor, StoredOptions, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, reap, isValidColor, mintSeatToken, StoredOptions, StoredPlayer } from '../_shared/mod.ts'
 
 /**
  * Pure post-reap join eligibility: capacity, then color, then name conflict (name
@@ -129,9 +129,21 @@ Deno.serve(withCors(async (body) => {
     return json({ error: 'Failed to join room' }, 500)
   }
 
+  // Mint the joining player's seat token and persist it.
+  const token = mintSeatToken()
+  const { error: seatError } = await supabase
+    .from('room_seats')
+    .insert({ room_id: room.id, seat_id: playerId, token })
+
+  if (seatError) {
+    console.error('join_room: seat insert error', seatError)
+    return json({ error: 'Failed to join room' }, 500)
+  }
+
   return json({
     roomId: room.id,
     playerId,
+    token,
     seed: room.seed,
     options: roomOptions,
     players: updatedPlayers,

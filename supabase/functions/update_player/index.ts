@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, isValidColor, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, UUID_REGEX, isValidColor, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
 
 export type UpdatePlayerResult =
   | { ok: false; status: number; error: string }
@@ -43,11 +43,12 @@ export function applyPlayerUpdate(
 
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId, name, color } = body as {
+  const { roomId, playerId, name, color, token } = body as {
     roomId?: unknown
     playerId?: unknown
     name?: unknown
     color?: unknown
+    token?: unknown
   }
 
   // Validate roomId (UUID format)
@@ -97,6 +98,10 @@ Deno.serve(withCors(async (body) => {
 
   if (!room) {
     return json({ error: 'Room not found or already started' }, 404)
+  }
+
+  if (!(await verifySeatToken(supabase, roomId as string, playerId as string, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
   }
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]

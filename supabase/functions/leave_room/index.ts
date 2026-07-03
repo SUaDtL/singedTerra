@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
 
 export interface LeaveResult {
   remaining: StoredPlayer[]
@@ -15,9 +15,10 @@ export function applyLeave(players: StoredPlayer[], playerId: string): LeaveResu
 
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId } = body as {
+  const { roomId, playerId, token } = body as {
     roomId?: unknown
     playerId?: unknown
+    token?: unknown
   }
 
   // Validate roomId (UUID format)
@@ -51,6 +52,10 @@ Deno.serve(withCors(async (body) => {
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]
 
+  if (!(await verifySeatToken(supabase, roomId, playerId as string, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
+  }
+
   const { remaining, roomDeleted } = applyLeave(existingPlayers, playerId)
 
   // If no players left, delete the room
@@ -77,6 +82,10 @@ Deno.serve(withCors(async (body) => {
     console.error('leave_room: update error', updateError)
     return json({ error: 'Failed to update room' }, 500)
   }
+
+  // Best-effort: drop the seat's token row now that the seat is vacated. If the
+  // whole room was deleted above, the ON DELETE CASCADE already handled this.
+  await supabase.from('room_seats').delete().eq('room_id', roomId).eq('seat_id', playerId)
 
   return json({ ok: true, roomDeleted: false, players: remaining }, 200)
 }, { rateLimit: 'leave_room' }))

@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
 
 /** Pure heartbeat: bump lastSeen for `playerId` only. Returns the new roster, or
  *  null when the player is not in the room. Extracted for testing (#61). */
@@ -13,9 +13,10 @@ export function applyHeartbeat(
 
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId } = body as {
+  const { roomId, playerId, token } = body as {
     roomId?: unknown
     playerId?: unknown
+    token?: unknown
   }
 
   // Validate roomId (UUID format)
@@ -45,6 +46,10 @@ Deno.serve(withCors(async (body) => {
 
   if (!room) {
     return json({ error: 'Room not found or already started' }, 404)
+  }
+
+  if (!(await verifySeatToken(supabase, roomId as string, playerId as string, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
   }
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]

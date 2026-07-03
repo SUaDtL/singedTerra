@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
 
 export interface ReadyUpResult {
   updatedPlayers: StoredPlayer[]
@@ -28,9 +28,10 @@ export function applyReadyUp(
 
 if (import.meta.main) {
 Deno.serve(withCors(async (body) => {
-  const { roomId, playerId } = body as {
+  const { roomId, playerId, token } = body as {
     roomId?: unknown
     playerId?: unknown
+    token?: unknown
   }
 
   // Validate roomId (UUID format)
@@ -60,6 +61,10 @@ Deno.serve(withCors(async (body) => {
 
   if (!room) {
     return json({ error: 'Room not found or already started' }, 404)
+  }
+
+  if (!(await verifySeatToken(supabase, roomId as string, playerId as string, token))) {
+    return json({ error: 'Invalid or missing seat token' }, 403)
   }
 
   const existingPlayers = (room.players ?? []) as StoredPlayer[]

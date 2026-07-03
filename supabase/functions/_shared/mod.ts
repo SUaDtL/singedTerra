@@ -353,3 +353,45 @@ export const STALE_MS = 30000
 export function reap(players: StoredPlayer[], nowMs: number): StoredPlayer[] {
   return players.filter(p => (p.lastSeen ?? 0) >= nowMs - STALE_MS)
 }
+
+// ---------------------------------------------------------------------------
+// Seat tokens (ADR-0009 / GH #83) — authenticated actions
+//
+// The PUBLIC seat id (rooms.players[].id) is world-readable by design. The SECRET
+// per-seat token lives in room_seats (RLS: service-role only) and is what actually
+// proves seat ownership. Every mutating referee verifies the requester's token for
+// their OWN seat before acting; the action log still records only the public id, so
+// determinism/replay are untouched.
+// ---------------------------------------------------------------------------
+
+/** Mint a fresh secret seat token (128-bit CSPRNG UUID). Not the seat id — the seat
+ *  id stays public; this is the private credential that never leaves room_seats. */
+export function mintSeatToken(): string {
+  return crypto.randomUUID()
+}
+
+/**
+ * Verify that `token` authenticates ownership of seat `seatId` in `roomId`.
+ * True only when a room_seats row exists for that seat and its stored token matches.
+ * A missing/blank token, an absent row, or a mismatch all return false (caller -> 403).
+ *
+ * Note: a plain `===` compare is used. The token is a 122-bit random UUID, so a timing
+ * side-channel gives no practical guessing advantage; equality timing is not a concern
+ * at this threat level (no accounts, no money — ADR-0006/0009).
+ */
+export async function verifySeatToken(
+  supabase: ServiceClient,
+  roomId: string,
+  seatId: string,
+  token: unknown,
+): Promise<boolean> {
+  if (typeof token !== 'string' || token.length === 0) return false
+  const { data, error } = await supabase
+    .from('room_seats')
+    .select('token')
+    .eq('room_id', roomId)
+    .eq('seat_id', seatId)
+    .maybeSingle()
+  if (error || !data) return false
+  return data.token === token
+}

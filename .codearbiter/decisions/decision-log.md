@@ -255,3 +255,28 @@ its divergence now fails the build instead of a match.
 Governs `supabase/functions/_shared/mod.ts`, `supabase/functions/{create_room,restart_game,submit_action}/**`,
 `client/src/client/NetworkClient.ts`, `shared/src/engine/GameEngine.ts`, `scripts/checks/engine_clone_parity.mjs`.
 Resolves GH #60.
+
+---
+
+## DECISION-0010 — ADR-0009 — Split public seat-id from secret seat-token (authenticated actions)
+
+**Date:** 2026-07-03
+**Status:** accepted
+**Supersedes:** DECISION-0008
+**Decided by:** SUaDtL <brennonhuff@gmail.com>
+**Decision category:** security / identity
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** ADR-0006 accepted turn-action spoofing as a conscious trade-off (playerId public).
+- **Scaffold position:** tribunal finding appsec-001 (#83) surfaced a broader exposure than 0006 weighed (non-turn-gated functions authorized by the same readable id).
+- **Status type:** open-decision-closure
+
+### Decision
+Move up the seriousness ladder now: split identity into a public seat-id (unchanged, deterministic log key) and a secret per-seat token stored in a service-role-only `room_seats` table, verified by every mutating referee. Client persists the token in localStorage (also unblocks #46). Supersedes ADR-0006's accepted-spoofing stance; 0006's no-accounts posture otherwise stands.
+
+### SMARTS rationale
+Correctness/security (the documented anti-impersonation control did not hold) and the broader-than-accepted blast radius (rename/eject/record-winner as any player, no turn gate) outweigh the friction of threading a token; a VIEW is ruled out because Realtime broadcasts the base row. The seat-token is the minimal authenticated-actions step ADR-0006 itself named as its successor.
+
+### Implementation implication
+New migration (`room_seats` + RLS), shared `verifySeatToken()`, token threaded through the 6 mutating Edge Functions + create/join minting, client transport + localStorage. Recorded as ADR-0009 (proposed). GH #83.
