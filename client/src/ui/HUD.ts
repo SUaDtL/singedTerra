@@ -46,6 +46,27 @@ const STORE_WEAPONS: WeaponType[] = STRIP_WEAPONS.filter(
 const AMMO_UNLIMITED_GLYPH = '∞';
 
 /**
+ * Persist the arsenal-collapsed preference so it survives turns and reloads. UI
+ * preference only (never touches the engine / action log), and guarded because
+ * localStorage can throw in private-mode / sandboxed frames.
+ */
+const ARSENAL_COLLAPSED_KEY = 'st_arsenal_collapsed';
+function readArsenalCollapsed(): boolean {
+  try {
+    return localStorage.getItem(ARSENAL_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeArsenalCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(ARSENAL_COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    /* localStorage unavailable — preference just won't persist across reloads */
+  }
+}
+
+/**
  * Barrel-relative aim readout (P3-13b). The engine angle is a GLOBAL compass
  * value (0=right, 90=up, 180=left). Shown raw, the number doesn't track the
  * visible barrel — a left-firing tank reads "135°" while its barrel looks
@@ -140,6 +161,9 @@ export class HUD {
   /** Tank id selected in the between-rounds shop (which tank a buy targets). */
   private shopTankId: string | null = null;
   private stripEl!: HTMLElement;
+  /** Collapse/expand control for the arsenal strip + its persisted state. */
+  private stripToggleEl!: HTMLButtonElement;
+  private stripCollapsed = false;
   private storeBtnEl!: HTMLButtonElement;
   private storeEl!: HTMLElement;
   private storeCreditsEl!: HTMLElement;
@@ -182,6 +206,14 @@ export class HUD {
   // Power gauge SVG nodes:
   private gaugePowerArc!: SVGPathElement;
   private gaugePowerLabel!: SVGTextElement;
+  // Mobile numeric readouts (coarse-pointer). The analog dials' thin gold strokes
+  // dissolve to sub-pixel when the whole #app is zoom-scaled down on a phone, so on
+  // touch devices we hide the dials and show these bold numeric values instead. They
+  // mirror the SVG label strings verbatim (populated in syncWind / syncAim), so both
+  // representations always agree — CSS decides which one is visible.
+  private numElevValue!: HTMLElement;
+  private numWindValue!: HTMLElement;
+  private numPowerValue!: HTMLElement;
   // Active-player name row (replaces old aimTextEl player portion):
   private activePlayerEl!: HTMLElement;
 
@@ -463,7 +495,11 @@ export class HUD {
     // Numeric label
     this.gaugePowerLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
     this.gaugePowerLabel.setAttribute('x', '36');
-    this.gaugePowerLabel.setAttribute('y', '44');
+    // y=50 seats the number INSIDE the arch's open interior. The arc is only a 140°
+    // sweep, so near the horizontal centre the curve still descends through the ~y44
+    // band and the number collided with the stroke (hard to read); y=50 clears the
+    // stroke above and the base pivots below.
+    this.gaugePowerLabel.setAttribute('y', '50');
     this.gaugePowerLabel.setAttribute('text-anchor', 'middle');
     this.gaugePowerLabel.setAttribute('class', 'st-hud__gauge-label st-hud__gauge-label--lg');
     this.gaugePowerLabel.textContent = '0';
@@ -479,7 +515,33 @@ export class HUD {
     const gaugeRow = document.createElement('div');
     gaugeRow.className = 'st-hud__gauge-row';
     gaugeRow.append(elevCell, windCell, pwrCell);
-    instruments.append(instrTitle, gaugeRow);
+
+    // Mobile numeric readouts — same three values as bold text, shown INSTEAD of the
+    // dials on coarse-pointer (see the field comment). Each cell is a dim title + a
+    // big value node that syncWind/syncAim keep in lockstep with the SVG labels.
+    const gaugeNums = document.createElement('div');
+    gaugeNums.className = 'st-hud__gauge-nums';
+    const mkNumCell = (title: string, initial: string): { cell: HTMLElement; value: HTMLElement } => {
+      const cell = document.createElement('div');
+      cell.className = 'st-hud__gauge-num';
+      const t = document.createElement('div');
+      t.className = 'st-hud__gauge-num-title';
+      t.textContent = title;
+      const value = document.createElement('div');
+      value.className = 'st-hud__gauge-num-value';
+      value.textContent = initial;
+      cell.append(t, value);
+      return { cell, value };
+    };
+    const elevNumCell = mkNumCell('Elev', '0° ▶');
+    const windNumCell = mkNumCell('Wind', '• 0.0');
+    const powerNumCell = mkNumCell('Power', '0');
+    this.numElevValue = elevNumCell.value;
+    this.numWindValue = windNumCell.value;
+    this.numPowerValue = powerNumCell.value;
+    gaugeNums.append(elevNumCell.cell, windNumCell.cell, powerNumCell.cell);
+
+    instruments.append(instrTitle, gaugeRow, gaugeNums);
 
     // ── Active player + weapon name row (replaces aim text + old wind/weapon blocks) ──
     // This shows "PlayerName  ·  WeaponName" in one compact row. It persists below the
@@ -519,15 +581,26 @@ export class HUD {
     // Listeners attached ONCE here.
     this.stripEl = document.createElement('div');
     this.stripEl.className = 'st-hud__strip';
+    // Header row: "Arsenal" title + a collapse/expand toggle. Collapsing folds the
+    // grid away to reclaim vertical space (mobile especially); the state persists.
+    const stripHeader = document.createElement('div');
+    stripHeader.className = 'st-hud__strip-header';
     const stripTitle = document.createElement('div');
     stripTitle.className = 'st-hud__strip-title';
     stripTitle.textContent = 'Arsenal';
+    const stripToggle = document.createElement('button');
+    stripToggle.type = 'button';
+    stripToggle.className = 'st-hud__strip-toggle';
+    stripToggle.addEventListener('click', () => this.toggleStripCollapsed());
+    stripHeader.append(stripTitle, stripToggle);
+    this.stripToggleEl = stripToggle;
     const stripGrid = document.createElement('div');
     stripGrid.className = 'st-hud__strip-grid';
     for (const type of STRIP_WEAPONS) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'st-hud__weapon-btn';
+      btn.dataset['weapon'] = type; // stable hook for owned-only visibility + tests
       const nameSpan = document.createElement('span');
       nameSpan.className = 'st-hud__weapon-btn-name';
       nameSpan.textContent = WEAPONS[type].name;
@@ -539,7 +612,10 @@ export class HUD {
       this.weaponCells.set(type, { el: btn, ammo: ammoSpan });
       stripGrid.append(btn);
     }
-    this.stripEl.append(stripTitle, stripGrid);
+    this.stripEl.append(stripHeader, stripGrid);
+    // Restore the persisted collapsed state (survives turns and reloads).
+    this.stripCollapsed = readArsenalCollapsed();
+    this.applyStripCollapsed();
 
     // Store toggle button (side panel) + the store modal (on the canvas overlay).
     // Clicking the button opens/closes the modal; buying is wired per-row below.
@@ -1115,6 +1191,7 @@ export class HUD {
     const mag = windMagnitudeLabel(wind);
     const lbl = `${sym} ${mag}`;
     if (this.gaugeWindLabel.textContent !== lbl) this.gaugeWindLabel.textContent = lbl;
+    if (this.numWindValue.textContent !== lbl) this.numWindValue.textContent = lbl;
   }
 
   /** Update the active tank's SVG gauges + weapon/player name row. */
@@ -1128,12 +1205,15 @@ export class HUD {
       // Zero out gauges
       this.gaugeElevNeedle.setAttribute('transform', '');
       if (this.gaugeElevLabel.textContent !== '0° ▶') this.gaugeElevLabel.textContent = '0° ▶';
+      if (this.numElevValue.textContent !== '0° ▶') this.numElevValue.textContent = '0° ▶';
       this.gaugeWindMarker.setAttribute('x', '32');
       this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 36, 26)');
       if (this.gaugeWindLabel.textContent !== '• 0.0') this.gaugeWindLabel.textContent = '• 0.0';
+      if (this.numWindValue.textContent !== '• 0.0') this.numWindValue.textContent = '• 0.0';
       const arcLen = parseFloat(this.gaugePowerArc.dataset['arcLen'] ?? '0');
       this.gaugePowerArc.setAttribute('stroke-dasharray', `0 ${arcLen.toFixed(2)}`);
       if (this.gaugePowerLabel.textContent !== '0') this.gaugePowerLabel.textContent = '0';
+      if (this.numPowerValue.textContent !== '0') this.numPowerValue.textContent = '0';
       return;
     }
 
@@ -1161,6 +1241,7 @@ export class HUD {
     this.gaugeElevNeedle.setAttribute('transform', `rotate(${needleRot}, 36, 40)`);
     const elevLbl = `${elevationDegrees(tank.angle)}° ${aimDirectionGlyph(tank.angle)}`;
     if (this.gaugeElevLabel.textContent !== elevLbl) this.gaugeElevLabel.textContent = elevLbl;
+    if (this.numElevValue.textContent !== elevLbl) this.numElevValue.textContent = elevLbl;
 
     // ── Power gauge (arc fill) ──
     const fraction = gaugeFraction(tank.power, 0, tank.powerCap ?? 100);
@@ -1171,9 +1252,29 @@ export class HUD {
     this.gaugePowerArc.setAttribute('stroke-dasharray', dasharrayVal);
     const pwrLbl = powerLabel(tank.power);
     if (this.gaugePowerLabel.textContent !== pwrLbl) this.gaugePowerLabel.textContent = pwrLbl;
+    if (this.numPowerValue.textContent !== pwrLbl) this.numPowerValue.textContent = pwrLbl;
   }
 
-  /** Reconcile the weapon strip: active highlight + live ammo counts. No DOM rebuild. */
+  /** Flip and persist the arsenal-collapsed preference. */
+  private toggleStripCollapsed(): void {
+    this.stripCollapsed = !this.stripCollapsed;
+    writeArsenalCollapsed(this.stripCollapsed);
+    this.applyStripCollapsed();
+  }
+
+  /** Reflect the collapsed state onto the strip DOM + toggle affordance. */
+  private applyStripCollapsed(): void {
+    this.stripEl.classList.toggle('st-hud__strip--collapsed', this.stripCollapsed);
+    // ▸ points right when collapsed (click to open), ▾ down when expanded.
+    this.stripToggleEl.textContent = this.stripCollapsed ? '▸' : '▾';
+    this.stripToggleEl.setAttribute('aria-expanded', String(!this.stripCollapsed));
+    this.stripToggleEl.setAttribute(
+      'aria-label',
+      this.stripCollapsed ? 'Expand arsenal' : 'Collapse arsenal',
+    );
+  }
+
+  /** Reconcile the weapon strip: owned-only visibility, active highlight, live ammo. No DOM rebuild. */
   private syncStrip(state: GameState, isFiring: boolean): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);
     for (const [type, cell] of this.weaponCells) {
@@ -1181,11 +1282,15 @@ export class HUD {
       const unlimited = entry?.unlimited ?? false;
       const count = entry?.count ?? 0;
       const depleted = !unlimited && count <= 0; // out of ammo
+      const owned = unlimited || count > 0;
+      // Owned-only: show a button only for weapons the tank actually holds, plus
+      // whatever is currently selected (never orphan the active selection). This
+      // keeps the strip compact and scales as weapons are added.
+      const selected = !!tank && tank.selectedWeapon === type;
+      const visible = owned || selected;
+      cell.el.classList.toggle('st-hud__weapon-btn--hidden', !visible);
       cell.ammo.textContent = unlimited ? AMMO_UNLIMITED_GLYPH : `${count}`;
-      cell.el.classList.toggle(
-        'st-hud__weapon-btn--active',
-        !!tank && tank.selectedWeapon === type,
-      );
+      cell.el.classList.toggle('st-hud__weapon-btn--active', selected);
       cell.el.classList.toggle('st-hud__weapon-btn--depleted', depleted);
       // Disable while firing, when no active tank, or when depleted, so a click
       // cannot emit a select for an unusable weapon. (Engine still re-validates;
@@ -1527,6 +1632,12 @@ export class HUD {
   border-radius: 6px;
   pointer-events: auto;
 }
+.st-hud__strip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 .st-hud__strip-title {
   font-family: var(--font-display);
   font-size: 10px;
@@ -1535,11 +1646,32 @@ export class HUD {
   text-transform: uppercase;
   color: var(--text-dim);
 }
+.st-hud__strip-toggle {
+  pointer-events: auto;
+  cursor: pointer;
+  flex: 0 0 auto;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0 4px;
+  border: 1px solid rgba(255, 210, 63, 0.22);
+  border-radius: 4px;
+  background: rgba(12, 7, 22, 0.7);
+  color: var(--text-gold);
+  font-size: 11px;
+  line-height: 1;
+}
+.st-hud__strip-toggle:hover { border-color: var(--gold); color: var(--gold); }
 .st-hud__strip-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
+/* Collapsed: fold the button grid away, keep the header + toggle. */
+.st-hud__strip--collapsed .st-hud__strip-grid { display: none; }
+/* Owned-only: hide weapons the tank doesn't hold (and isn't aiming with).
+ * Compound selector (0,0,2,0) so it outranks the base .st-hud__weapon-btn
+ * display:flex regardless of source order. */
+.st-hud__weapon-btn.st-hud__weapon-btn--hidden { display: none; }
 .st-hud__weapon-btn {
   pointer-events: auto;
   cursor: pointer;
@@ -1975,6 +2107,7 @@ export class HUD {
 @media (pointer: coarse) {
   .st-hud__controls { display: none; }
   .st-hud__weapon-btn { min-height: 44px; }
+  .st-hud__strip-toggle { min-width: 44px; min-height: 44px; }
   .st-hud__store-buy  { min-height: 44px; }
   .st-hud__restart    { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
   .st-hud__menu       { min-height: 44px; }
@@ -2084,6 +2217,59 @@ export class HUD {
   font-size: 11px;
   fill: var(--gold);
   font-weight: bold;
+}
+/* ── Mobile numeric readouts (coarse-pointer alternative to the dials) ──────
+ * The analog dials' 1–3px gold strokes go sub-pixel and vanish when #app is
+ * zoom-scaled down on a phone (leaving only the bold "Instruments" title
+ * legible). On touch devices we hide the dials and show these bold numbers
+ * instead. Hidden by default so fine-pointer (desktop) keeps the dials. */
+.st-hud__gauge-nums {
+  display: none;
+  gap: 4px;
+  width: 100%;
+}
+.st-hud__gauge-num {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 2px;
+  background: rgba(255, 210, 63, 0.06);
+  border-radius: 4px;
+}
+.st-hud__gauge-num-title {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.st-hud__gauge-num-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-gold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+/* On touch devices: swap dials → numeric readouts, and lift the touch controls
+ * up to sit right after the players list (before the instruments) instead of
+ * being pinned to the bottom of the scrollable panel (requiring a scroll to
+ * reach). Every child from instruments onward gets order:1; the touch strip
+ * keeps the default order:0, so — being the last DOM child of #hud — it renders
+ * at the end of the order:0 group: after menu/round/players, before instruments. */
+@media (pointer: coarse) {
+  .st-hud__gauge-row  { display: none; }
+  .st-hud__gauge-nums { display: flex; }
+  .st-hud__touch-strip { margin-top: 0; }
+  .st-hud__instruments,
+  .st-hud__active-row,
+  .st-hud__aim,
+  .st-hud__store-btn,
+  .st-hud__strip { order: 1; }
 }
 /* Active player + weapon row (below the cluster). */
 .st-hud__active-row {
