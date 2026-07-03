@@ -2131,6 +2131,14 @@ export class HUD {
   flex-direction: column;
   gap: 4px;
   overflow: hidden;
+  /* flex-shrink:0 is load-bearing. #hud is a flex column; when the touch strip
+   * (coarse-pointer) pushes total content past the 600px panel, flex shrinks
+   * children — and overflow:hidden zeroes this panel's automatic minimum size
+   * (min-height:auto floors only overflow:visible items). Without this, the
+   * cluster is the sacrificial child: it crushes to title-height and clips the
+   * gauges AND the numeric readouts, leaving only "Instruments" visible on
+   * phones. Opting out of shrink lets #hud's own overflow-y:auto scroll instead. */
+  flex-shrink: 0;
 }
 .st-hud__instr-title {
   font-family: var(--font-display);
@@ -2281,6 +2289,10 @@ export class HUD {
   flex-direction: column;
   gap: 3px;
   overflow: hidden;
+  /* Same flex-crush guard as .st-hud__instruments: this is the only other #hud
+   * flex child with overflow:hidden, so without it the name/weapon row is the
+   * next element squeezed to zero when the panel content overflows on touch. */
+  flex-shrink: 0;
 }
 .st-hud__active-row--hidden { display: none; }
 /* The aim strip is only shown during "Sending..." (firing state). */
