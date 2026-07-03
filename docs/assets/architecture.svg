@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240" role="img" aria-label="Dependency direction: the client (Canvas renderer, input, HUD, lobby, NetworkClient) and the Supabase Edge Function referees plus Realtime both depend on shared/ — the deterministic engine and types — while shared/ depends on nothing.">
+  <defs>
+    <linearGradient id="a-box" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#241539"/>
+      <stop offset="100%" stop-color="#160d2e"/>
+    </linearGradient>
+    <linearGradient id="a-core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a1d5e"/>
+      <stop offset="100%" stop-color="#1c1030"/>
+    </linearGradient>
+    <marker id="a-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ffd23f"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="240" fill="#0e0820"/>
+
+  <!-- ===================== SOURCE: client/ ===================== -->
+  <g>
+    <rect x="34" y="30" width="300" height="76" rx="6" fill="url(#a-box)" stroke="#7fb0ff" stroke-width="1.5" opacity="0.95"/>
+    <rect x="34" y="30" width="6" height="76" rx="3" fill="#4d8ce8"/>
+    <text x="54" y="58" font-family="'Courier New',monospace" font-size="17" font-weight="bold" fill="#7fb0ff">client/</text>
+    <text x="54" y="78" font-family="'Courier New',monospace" font-size="11.5" fill="#c9bce0">Canvas renderer &#183; input &#183; HUD</text>
+    <text x="54" y="94" font-family="'Courier New',monospace" font-size="11.5" fill="#c9bce0">lobby &#183; NetworkClient</text>
+  </g>
+
+  <!-- ===================== SOURCE: supabase/ ===================== -->
+  <g>
+    <rect x="34" y="134" width="300" height="76" rx="6" fill="url(#a-box)" stroke="#3ecf8e" stroke-width="1.5" opacity="0.95"/>
+    <rect x="34" y="134" width="6" height="76" rx="3" fill="#3ecf8e"/>
+    <text x="54" y="162" font-family="'Courier New',monospace" font-size="17" font-weight="bold" fill="#3ecf8e">supabase/</text>
+    <text x="54" y="182" font-family="'Courier New',monospace" font-size="11.5" fill="#c9bce0">Edge Function referees</text>
+    <text x="54" y="198" font-family="'Courier New',monospace" font-size="11.5" fill="#c9bce0">+ Realtime broadcast</text>
+  </g>
+
+  <!-- ===================== DEPENDS-ON ARROWS ===================== -->
+  <g fill="none" stroke="#ffd23f" stroke-width="2.5" opacity="0.85">
+    <path d="M334 68 C 420 68, 430 120, 512 120" marker-end="url(#a-arrow)"/>
+    <path d="M334 172 C 420 172, 430 120, 512 120" marker-end="url(#a-arrow)"/>
+  </g>
+  <text x="410" y="112" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="bold" letter-spacing="2" fill="#ffd23f" opacity="0.9">depends on</text>
+
+  <!-- ===================== CORE: shared/ ===================== -->
+  <g>
+    <rect x="520" y="52" width="248" height="136" rx="8" fill="url(#a-core)" stroke="#ffd23f" stroke-width="3"/>
+    <text x="644" y="92" text-anchor="middle" font-family="'Courier New',monospace" font-size="22" font-weight="bold" fill="#ffd23f">shared/</text>
+    <text x="644" y="116" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#ffe9a8">the deterministic engine</text>
+    <text x="644" y="133" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#ffe9a8">+ types</text>
+    <text x="644" y="166" text-anchor="middle" font-family="'Courier New',monospace" font-size="13" font-weight="bold" letter-spacing="1.5" fill="#ff7a1f">depends on NOTHING</text>
+  </g>
+
+  <!-- frame -->
+  <rect x="1.5" y="1.5" width="797" height="237" fill="none" stroke="#ffd23f" stroke-width="2.5" opacity="0.4"/>
+</svg>
