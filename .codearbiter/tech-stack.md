@@ -34,7 +34,10 @@ Both workspace packages are `private: true`.
 | Dev server | `npm run dev` | `npm -w @singedterra/client run dev` (Vite, :5173) |
 | Typecheck | `npm run typecheck` | shared `tsc --noEmit` then client `tsc --noEmit` |
 | Build | `npm run build` | `typecheck && vite build` → `client/dist` |
-| **Test** | `npm run check` | `typecheck` + **19** `npx tsx scripts/checks/*.mjs` harnesses (chained `&&`) |
+| **Test (engine)** | `npm run check` | `typecheck` + the `npx tsx scripts/checks/*.mjs` determinism harnesses (chained `&&`) |
+| **Test (edge fns)** | `npm run check:edge` | `deno test supabase/functions/` (Deno std assert) |
+| **Test (client)** | `npm run test:client` | `vitest run` (jsdom env) — DOM + fetch-mock unit tests under `client/src/**/*.test.ts` |
+| **Coverage (client)** | `npm run coverage:client` | `vitest run --coverage` (v8 provider); the refactor gate reads this |
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
 | Deploy backend | `npm run deploy:backend` | `npx supabase db push --yes && npx supabase functions deploy --use-api --yes` |
@@ -42,9 +45,20 @@ Both workspace packages are `private: true`.
 
 ## Testing
 
-- **No test framework** (no vitest/jest/mocha). The engine is covered by **19 deterministic harnesses** in `scripts/checks/*.mjs`, run via `tsx`, asserting byte-identical replay of `(seed + ordered action log)`.
-- **No coverage tool** (no c8/nyc/istanbul) and no coverage thresholds.
-- **Edge Functions are not unit-tested** (no `*.test.ts`, no `deno.json`, no `deno test` wired into scripts). They are deployed, not tested in CI (there is no CI — see `coding-standards.md`).
+Three test layers, by runtime:
+
+- **Engine / pure helpers** — deterministic harnesses in `scripts/checks/*.mjs`, run via `tsx`
+  (`npm run check`), asserting byte-identical replay of `(seed + ordered action log)`. Cover the
+  `shared/` engine and the pure client helpers (gaugeMath, browseLabels, inputGate, ringBuffer,
+  fastForward, strata, audioEdges, …).
+- **Edge Functions** — Deno `*.test.ts` (`npm run check:edge` → `deno test`), covering the pure
+  referee logic (validate/authorize/coerce/reap) extracted from the handlers.
+- **Client (DOM + fetch)** — **Vitest** with the **jsdom** environment (`npm run test:client`),
+  giving the DOM- and `fetch`-heavy client code (Lobby, HUD, NetworkClient) a seam the tsx harnesses
+  cannot reach. **Coverage:** v8 provider via `npm run coverage:client` — this is the command the
+  `/ca:refactor` Phase-2 gate reads. Added 2026-07-03 to unblock the client refactor backlog
+  (#85/#87/#91); vitest/vite/esbuild are dev-only (not in the shipped bundle).
+- CI runs all three layers (`.github/workflows/ci.yml`).
 
 ## License
 

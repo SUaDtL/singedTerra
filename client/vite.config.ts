@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -19,5 +20,19 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+  },
+  // Vitest config (client unit tests). jsdom gives Lobby/HUD DOM code + fetch-using
+  // network code a test seam the tsx `.mjs` harnesses can't reach (those cover the
+  // pure engine + pure client helpers). Coverage is v8; thresholds are enforced
+  // per-refactor-surface by /ca:refactor, not globally here.
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
+    },
   },
 });
