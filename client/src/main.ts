@@ -429,7 +429,26 @@ function bootstrap(): void {
   hud.onTouchFire(()       => { if (touchAllowed()) input?.triggerFire(); });
   hud.onTouchWeapon(()     => { if (touchAllowed()) input?.nextWeapon(); });
 
-  lobby.show();
+  // Deterministic E2E entrypoint (rendering-guardrail suite). When the page is
+  // loaded with `?e2e=hotseat`, skip the splash/lobby and immediately start a
+  // fixed 2-player hot-seat game through the SAME startGame() path the lobby
+  // uses — so the Playwright layout tests reliably reach a running game without
+  // brittle lobby-clicking. It ships in the bundle intentionally (the post-deploy
+  // smoke drives the LIVE url with it), and is benign: it only starts a LOCAL
+  // hot-seat game (fixed seed, two human seats) — no backend, no secrets, no auth.
+  if (new URLSearchParams(location.search).get('e2e') === 'hotseat') {
+    void startGame({
+      mode: 'hotseat',
+      players: [
+        { name: 'P1', color: '#e84d4d' },
+        { name: 'P2', color: '#4d8ce8' },
+      ],
+      playerNames: ['P1', 'P2'],
+      settings: { seed: 1337 },
+    });
+  } else {
+    lobby.show();
+  }
 
   // JS-driven scale via CSS zoom (NOT transform: scale).
   //

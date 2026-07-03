@@ -63,6 +63,46 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+
+  live-smoke:
+    # Closes the loop with issue #104 ("merged but stale/clipped in prod"): after the
+    # bundle is LIVE, drive the real URL through the deterministic ?e2e=hotseat
+    # entrypoint and fail loudly if the served bundle renders the HUD instrument
+    # cluster crushed/clipped — i.e. if a broken or stale bundle reached users.
+    name: post-deploy live smoke
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}
+      - name: Install Playwright browser (+ deps)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      # E2E_LIVE_URL switches the config to no-webServer live mode; --grep @live +
+      # --project=pixel-touch run only the single live smoke on the compact viewport.
+      - name: Live render smoke
+        run: npm run test:e2e -- --grep @live --project=pixel-touch
+        env:
+          E2E_LIVE_URL: ${{ needs.deploy.outputs.page_url }}
