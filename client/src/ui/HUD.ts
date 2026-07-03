@@ -310,14 +310,47 @@ export class HUD {
     this.root.classList.add('st-hud');
     this.root.innerHTML = '';
 
+    this.buildPlayers();
+    this.buildRound();
+    const instruments = this.buildInstrumentCluster();
+    this.buildActiveRow();
+    const controls = this.buildControlsLegend();
+    this.buildArsenal();
+    this.buildStore();
+    this.buildEndScreens();
+    this.buildRoundShop();
+    const menu = this.buildMenu();
+    this.buildLiveness();
+    this.buildTouchStrip();
+
+    // Touch strip goes into the HUD side panel, NOT the canvas overlay, so it
+    // can never overlap the play field. margin-top:auto (via CSS) pushes it to
+    // the bottom of the panel column.
+    this.root.append(menu, this.roundEl, this.playersEl, instruments, this.activePlayerEl, this.aimEl, this.storeBtnEl, this.stripEl, this.touchStripEl);
+    // Controls legend + liveness widgets stay on the canvas overlay (positioned
+    // relative to the play field). The store + game-over modals go on the full-app
+    // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
+    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
+    this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
+    this.built = true;
+  }
+
+  /** Player health-bar column (top-left). */
+  private buildPlayers(): void {
     // Player health-bar column (top-left).
     this.playersEl = document.createElement('div');
     this.playersEl.className = 'st-hud__players';
+  }
 
+  /** Round indicator (side panel): "Round N of M". */
+  private buildRound(): void {
     // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
     this.roundEl = document.createElement('div');
     this.roundEl.className = 'st-hud__round st-hud__round--hidden';
+  }
 
+  /** Cockpit instrument cluster (#44): three SVG gauges + mobile numeric readouts. */
+  private buildInstrumentCluster(): HTMLElement {
     // ── Cockpit instrument cluster (#44) ────────────────────────────────
     // One framed panel holding three SVG gauges in a row: Elevation, Wind, Power.
     // All needle/fill geometry is driven by gaugeMath helpers; nothing inline here.
@@ -542,7 +575,11 @@ export class HUD {
     gaugeNums.append(elevNumCell.cell, windNumCell.cell, powerNumCell.cell);
 
     instruments.append(instrTitle, gaugeRow, gaugeNums);
+    return instruments;
+  }
 
+  /** Active-player + weapon readout row, plus the firing "Sending..." strip. */
+  private buildActiveRow(): void {
     // ── Active player + weapon name row (replaces aim text + old wind/weapon blocks) ──
     // This shows "PlayerName  ·  WeaponName" in one compact row. It persists below the
     // gauges and is hidden during the firing "Sending..." state (replaced by aimTextEl).
@@ -566,7 +603,13 @@ export class HUD {
     this.weaponValueEl = document.createElement('span');
     this.weaponValueEl.className = 'st-hud__weapon-value';
     weapon.append(weaponLabel, this.weaponValueEl);
+    // Active player row: player name + weapon readout, shown when not firing.
+    // Sits directly below the instrument cluster.
+    this.activePlayerEl.append(weapon);
+  }
 
+  /** Controls legend (bottom-right; built once, never updated). */
+  private buildControlsLegend(): HTMLElement {
     // Controls legend (bottom-right, unobtrusive; built once, never updated).
     const controls = document.createElement('div');
     controls.className = 'st-hud__controls';
@@ -575,7 +618,11 @@ export class HUD {
       '<span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> Power</span>' +
       '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
       '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
+    return controls;
+  }
 
+  /** Weapon strip ("Arsenal"): collapsible grid of per-weapon buttons. */
+  private buildArsenal(): void {
     // Weapon strip (bottom-left): a framed "Arsenal" panel with a titled header
     // and a 2-column grid of buttons, each showing name + live ammo count.
     // Listeners attached ONCE here.
@@ -616,7 +663,10 @@ export class HUD {
     // Restore the persisted collapsed state (survives turns and reloads).
     this.stripCollapsed = readArsenalCollapsed();
     this.applyStripCollapsed();
+  }
 
+  /** Store toggle button (side panel) + the store modal (on the modal layer). */
+  private buildStore(): void {
     // Store toggle button (side panel) + the store modal (on the canvas overlay).
     // Clicking the button opens/closes the modal; buying is wired per-row below.
     this.storeBtnEl = document.createElement('button');
@@ -714,7 +764,10 @@ export class HUD {
     this.storeEl.addEventListener('click', (e) => {
       if (e.target === this.storeEl) this.toggleStore(false);
     });
+  }
 
+  /** GAME_OVER overlay + the non-destructive PAUSE overlay. */
+  private buildEndScreens(): void {
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'st-hud__overlay st-hud__overlay--hidden';
@@ -768,7 +821,10 @@ export class HUD {
     pauseBtns.append(resumeBtn, pauseQuitBtn);
     pausePanel.append(pauseText, pauseBtns);
     this.pauseEl.append(pausePanel);
+  }
 
+  /** ROUND_OVER between-rounds shop modal. */
+  private buildRoundShop(): void {
     // ROUND_OVER between-rounds shop modal (hidden until phase === ROUND_OVER).
     this.roundOverEl = document.createElement('div');
     this.roundOverEl.className = 'st-hud__overlay st-hud__overlay--hidden';
@@ -847,7 +903,10 @@ export class HUD {
 
     roPanel.append(this.roundOverTitleEl, this.roundOverScoreEl, this.roundOverShopEl, nextRoundBtn);
     this.roundOverEl.append(roPanel);
+  }
 
+  /** Persistent Quit/Menu button (top of the side panel). */
+  private buildMenu(): HTMLElement {
     // Persistent Quit/Menu button (top of the side panel) — returns to the lobby.
     const menu = document.createElement('button');
     menu.type = 'button';
@@ -856,7 +915,11 @@ export class HUD {
     // Opens the non-destructive PAUSE overlay (Resume / Quit), NOT a direct quit —
     // so the player can get back into the live game (review #5).
     menu.addEventListener('click', () => this.togglePause(true));
+    return menu;
+  }
 
+  /** Networked liveness widgets: connection banner, toast, turn-watch. */
+  private buildLiveness(): void {
     // Status widgets stack in the side panel (this.root = #hud). The controls
     // legend + liveness widgets go on the canvas overlay (#game-overlay) so they
     // sit over the play field; the store + game-over modals go on #modal-layer.
@@ -868,7 +931,10 @@ export class HUD {
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
     this.turnWatchEl = document.createElement('div');
     this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
+  }
 
+  /** Touch-aim strip (M2 mobile): angle/power/weapon/fire buttons. */
+  private buildTouchStrip(): void {
     // Touch-aim strip (M2 mobile): angle, power, weapon-cycle, fire buttons along
     // the bottom of #game-overlay. Shown only on coarse-pointer (touch) devices via
     // CSS. Each stepper uses hold-to-repeat: tap = immediate step; hold 400ms = fast
@@ -925,21 +991,6 @@ export class HUD {
     });
 
     this.touchStripEl.append(touchAngleL, touchAngleR, touchPowerD, touchPowerU, this.touchWeaponBtnEl, this.touchFireBtnEl);
-
-    // Active player row: player name + weapon readout, shown when not firing.
-    // Sits directly below the instrument cluster.
-    this.activePlayerEl.append(weapon);
-
-    // Touch strip goes into the HUD side panel, NOT the canvas overlay, so it
-    // can never overlap the play field. margin-top:auto (via CSS) pushes it to
-    // the bottom of the panel column.
-    this.root.append(menu, this.roundEl, this.playersEl, instruments, this.activePlayerEl, this.aimEl, this.storeBtnEl, this.stripEl, this.touchStripEl);
-    // Controls legend + liveness widgets stay on the canvas overlay (positioned
-    // relative to the play field). The store + game-over modals go on the full-app
-    // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
-    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
-    this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
-    this.built = true;
   }
 
   /**
