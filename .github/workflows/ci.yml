@@ -46,3 +46,36 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno test --allow-env supabase/functions/   # the referee validation/authorization cases (--allow-env: the rate-limit-gate test reads/clears SUPABASE_* env)
+
+  e2e:
+    # Real-browser rendering guardrails (Playwright). The jsdom unit tests can't
+    # observe COMPUTED LAYOUT, so a HUD flex-crush shipped despite green unit tests;
+    # this job builds the PRODUCTION bundle and asserts real geometry in Chromium.
+    name: e2e · rendering guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Cache the Playwright browser binaries, keyed on the installed Playwright
+      # version, so we don't re-download Chromium on every run.
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}
+      # On a cache miss download the browser + its OS deps; on a hit just ensure the
+      # OS deps are present (the cached binary needs them but they aren't cached).
+      - name: Install Playwright browser (+ deps)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npm run test:e2e   # builds client/dist, serves it via vite preview, asserts real HUD geometry
