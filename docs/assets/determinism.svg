@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300" role="img" aria-label="Deterministic lockstep: a single seed feeds two independent clients (A and B), each running its own copy of the engine, and both produce the byte-identical scene — the same wind-bent shell arc and the same airburst crater. Fixed 16ms timestep, no Math.random, no wall-clock.">
+  <defs>
+    <linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#160d2e"/>
+      <stop offset="45%" stop-color="#3a1d5e"/>
+      <stop offset="78%" stop-color="#8e2f53"/>
+      <stop offset="100%" stop-color="#d4562a"/>
+    </linearGradient>
+    <linearGradient id="d-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a3a22"/>
+      <stop offset="100%" stop-color="#1d120b"/>
+    </linearGradient>
+    <radialGradient id="d-boom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff7d6"/>
+      <stop offset="38%" stop-color="#ffd23f"/>
+      <stop offset="72%" stop-color="#ff7a1f"/>
+      <stop offset="100%" stop-color="#ff7a1f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="d-chip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#241539"/>
+      <stop offset="100%" stop-color="#160d2e"/>
+    </linearGradient>
+
+    <!-- One mini gameplay scene, defined ONCE. Both client viewports below render
+         it via <use>, so they are byte-identical by construction — which is the
+         whole point of the illustration. -->
+    <symbol id="scene" viewBox="0 0 320 150">
+      <rect x="0" y="0" width="320" height="150" fill="url(#d-sky)"/>
+      <g fill="#fdf3c7" shape-rendering="crispEdges">
+        <rect x="26" y="18" width="3" height="3"/>
+        <rect x="118" y="30" width="2" height="2"/>
+        <rect x="210" y="16" width="3" height="3"/>
+        <rect x="286" y="34" width="2" height="2"/>
+      </g>
+      <!-- scorched, destructible terrain with a blasted notch under the airburst -->
+      <polygon points="0,112 40,104 84,98 120,108 150,112 176,96 198,92 214,108 250,112 288,102 320,110 320,150 0,150" fill="url(#d-ground)"/>
+      <polyline points="0,112 40,104 84,98 120,108 150,112 176,96 198,92 214,108 250,112 288,102 320,110" fill="none" stroke="#7a4f2e" stroke-width="1.5" opacity="0.8"/>
+      <!-- left tank (red) -->
+      <g shape-rendering="crispEdges">
+        <polygon points="40,102 68,102 64,108 44,108" fill="#2a2118"/>
+        <rect x="43" y="96" width="22" height="6" fill="#b23a3a"/>
+        <rect x="47" y="90" width="15" height="6" fill="#e84d4d"/>
+        <rect x="47" y="90" width="15" height="2" fill="#ff7a7a"/>
+        <rect x="60" y="82" width="15" height="3" fill="#f2a0a0" transform="rotate(-34 60 90)"/>
+      </g>
+      <!-- right tank (blue) -->
+      <g shape-rendering="crispEdges">
+        <polygon points="250,104 278,104 274,110 254,110" fill="#1d2230"/>
+        <rect x="253" y="98" width="22" height="6" fill="#3a64b0"/>
+        <rect x="257" y="92" width="15" height="6" fill="#4d8ce8"/>
+        <rect x="257" y="92" width="15" height="2" fill="#7fb0ff"/>
+        <rect x="246" y="84" width="15" height="3" fill="#a8c8ff" transform="rotate(-146 261 91)"/>
+      </g>
+      <!-- wind-bent shell arc + shell -->
+      <path d="M64 84 Q 168 8 208 96" fill="none" stroke="#ffd23f" stroke-width="2" stroke-dasharray="3 6" stroke-linecap="round" opacity="0.9"/>
+      <rect x="150" y="30" width="5" height="5" fill="#fff7d6" shape-rendering="crispEdges"/>
+      <!-- airburst over the right ridge -->
+      <circle cx="207" cy="96" r="26" fill="url(#d-boom)"/>
+      <g shape-rendering="crispEdges" fill="#fff7d6">
+        <rect x="204" y="66" width="5" height="9"/>
+        <rect x="230" y="82" width="9" height="5"/>
+        <rect x="178" y="94" width="9" height="5"/>
+        <rect x="204" y="116" width="5" height="9"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="800" height="300" fill="#0e0820"/>
+
+  <!-- ===================== SEED TOKEN ===================== -->
+  <g>
+    <rect x="316" y="20" width="168" height="34" rx="4" fill="url(#d-chip)" stroke="#ffd23f" stroke-width="1.5"/>
+    <text x="400" y="35" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" font-weight="bold" letter-spacing="3" fill="#9a86b8">SEED</text>
+    <text x="400" y="48" text-anchor="middle" font-family="'Courier New',monospace" font-size="13" font-weight="bold" letter-spacing="1" fill="#ffe9a8">0x9E37 · mulberry32</text>
+  </g>
+  <!-- fan-out arrows: one seed → two clients -->
+  <g fill="none" stroke="#ffd23f" stroke-width="2" opacity="0.7">
+    <path d="M356 54 C 300 74, 210 74, 200 92" stroke-dasharray="2 5"/>
+    <path d="M444 54 C 500 74, 590 74, 600 92" stroke-dasharray="2 5"/>
+  </g>
+  <g fill="#ffd23f" opacity="0.85">
+    <polygon points="200,98 194,88 207,90"/>
+    <polygon points="600,98 593,90 606,88"/>
+  </g>
+
+  <!-- ===================== CLIENT A ===================== -->
+  <g transform="translate(30 96)">
+    <rect x="-4" y="-4" width="348" height="166" rx="5" fill="none" stroke="#ffd23f" stroke-width="2" opacity="0.5"/>
+    <use href="#scene" width="340" height="158"/>
+    <rect x="6" y="6" width="96" height="18" rx="3" fill="#160d2e" opacity="0.72"/>
+    <text x="14" y="19" font-family="'Courier New',monospace" font-size="11" font-weight="bold" letter-spacing="2" fill="#7fb0ff">CLIENT A</text>
+  </g>
+
+  <!-- ===================== CLIENT B ===================== -->
+  <g transform="translate(428 96)">
+    <rect x="-4" y="-4" width="348" height="166" rx="5" fill="none" stroke="#ffd23f" stroke-width="2" opacity="0.5"/>
+    <use href="#scene" width="340" height="158"/>
+    <rect x="6" y="6" width="96" height="18" rx="3" fill="#160d2e" opacity="0.72"/>
+    <text x="14" y="19" font-family="'Courier New',monospace" font-size="11" font-weight="bold" letter-spacing="2" fill="#f2a0a0">CLIENT B</text>
+  </g>
+
+  <!-- identity glyph between the two viewports -->
+  <text x="400" y="185" text-anchor="middle" font-family="'Trebuchet MS','Segoe UI',sans-serif" font-size="34" font-weight="bold" fill="#ffd23f">=</text>
+
+  <!-- ===================== DETERMINISM CAPTION ===================== -->
+  <g text-anchor="middle" font-family="'Courier New',monospace">
+    <text x="400" y="285" font-size="12" font-weight="bold" letter-spacing="0.5" fill="#ffe9a8">fixed 16&#8201;ms timestep &#183; seeded PRNG &#183; no wall-clock &#8594; one seed, byte-identical game</text>
+  </g>
+
+  <!-- scanline overlay for CRT feel -->
+  <g fill="#000000" opacity="0.05" shape-rendering="crispEdges">
+    <rect x="0" y="0" width="800" height="2"/><rect x="0" y="6" width="800" height="2"/><rect x="0" y="12" width="800" height="2"/><rect x="0" y="18" width="800" height="2"/><rect x="0" y="24" width="800" height="2"/><rect x="0" y="30" width="800" height="2"/><rect x="0" y="36" width="800" height="2"/><rect x="0" y="42" width="800" height="2"/><rect x="0" y="48" width="800" height="2"/><rect x="0" y="54" width="800" height="2"/><rect x="0" y="60" width="800" height="2"/><rect x="0" y="66" width="800" height="2"/><rect x="0" y="72" width="800" height="2"/><rect x="0" y="78" width="800" height="2"/><rect x="0" y="84" width="800" height="2"/><rect x="0" y="90" width="800" height="2"/><rect x="0" y="96" width="800" height="2"/><rect x="0" y="102" width="800" height="2"/><rect x="0" y="108" width="800" height="2"/><rect x="0" y="114" width="800" height="2"/><rect x="0" y="120" width="800" height="2"/><rect x="0" y="126" width="800" height="2"/><rect x="0" y="132" width="800" height="2"/><rect x="0" y="138" width="800" height="2"/><rect x="0" y="144" width="800" height="2"/><rect x="0" y="150" width="800" height="2"/><rect x="0" y="156" width="800" height="2"/><rect x="0" y="162" width="800" height="2"/><rect x="0" y="168" width="800" height="2"/><rect x="0" y="174" width="800" height="2"/><rect x="0" y="180" width="800" height="2"/><rect x="0" y="186" width="800" height="2"/><rect x="0" y="192" width="800" height="2"/><rect x="0" y="198" width="800" height="2"/><rect x="0" y="204" width="800" height="2"/><rect x="0" y="210" width="800" height="2"/><rect x="0" y="216" width="800" height="2"/><rect x="0" y="222" width="800" height="2"/><rect x="0" y="228" width="800" height="2"/><rect x="0" y="234" width="800" height="2"/><rect x="0" y="240" width="800" height="2"/><rect x="0" y="246" width="800" height="2"/><rect x="0" y="252" width="800" height="2"/><rect x="0" y="258" width="800" height="2"/><rect x="0" y="264" width="800" height="2"/><rect x="0" y="270" width="800" height="2"/><rect x="0" y="276" width="800" height="2"/><rect x="0" y="282" width="800" height="2"/><rect x="0" y="288" width="800" height="2"/><rect x="0" y="294" width="800" height="2"/>
+  </g>
+
+  <!-- frame -->
+  <rect x="1.5" y="1.5" width="797" height="297" fill="none" stroke="#ffd23f" stroke-width="3" opacity="0.45"/>
+</svg>
