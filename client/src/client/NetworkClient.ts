@@ -11,6 +11,7 @@ import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFi
 import { shouldBufferSeq } from '@shared/net/seqGuard';
 import { postOnceWithRetry } from './retry';
 import { fastForwardTicks } from './fastForward';
+import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -691,18 +692,13 @@ export class NetworkClient implements GameClient {
    */
   async requestRematch(): Promise<{ ok: boolean; error?: string }> {
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/restart_game`, {
-        method:  'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-        },
-        body: JSON.stringify({ roomId: this.roomId, playerId: this.playerId, token: this.token }),
+      const { ok, data } = await callFunction<{ ok?: boolean; error?: string }>('restart_game', {
+        roomId: this.roomId,
+        playerId: this.playerId,
+        token: this.token,
       });
-      const data = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) {
-        return { ok: false, error: data.error ?? 'Failed to start rematch' };
+      if (!ok || !data?.ok) {
+        return { ok: false, error: data?.error ?? 'Failed to start rematch' };
       }
       return { ok: true };
     } catch (err) {
@@ -797,13 +793,9 @@ export class NetworkClient implements GameClient {
       nextActiveIndex = seat.index;
       endsRound = endsRound || seat.endsRound;
     }
-    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit_action`, {
+    fetch(edgeUrl('submit_action'), {
       method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-      },
+      headers: edgeHeaders(),
       body: JSON.stringify({
         roomId:   this.roomId,
         playerId: this.playerId,
@@ -1124,37 +1116,25 @@ export class NetworkClient implements GameClient {
       kills:       t.kills,
       totalDamage: t.totalDamage,
     }));
-    const body = JSON.stringify({
+    // playerId lets finish_game authorize the caller as a room member (P2-9).
+    const payload = {
       roomId:   this.roomId,
       playerId: this.playerId,
       token:    this.token,
       winnerId,
       rounds:     state.totalRounds,
       scoreboard,
-    });
+    };
     // Fire-and-forget with one retry on transient failure. The server's
     // UNIQUE(room_id) on match_scores makes a duplicate POST idempotent.
     // A non-ok HTTP response is treated as a transient failure (thrown inside
     // the fn) so the retry fires. On final failure we log and move on.
     void postOnceWithRetry(
       async () => {
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finish_game`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type':  'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              'apikey':        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-            },
-            // playerId lets finish_game authorize the caller as a room member (P2-9).
-            body,
-          },
-        );
-        if (!res.ok) {
-          throw new Error(`finish_game HTTP ${res.status}`);
+        const { ok, status } = await callFunction('finish_game', payload);
+        if (!ok) {
+          throw new Error(`finish_game HTTP ${status}`);
         }
-        return res;
       },
       2,
     ).then((result) => {
