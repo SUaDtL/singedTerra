@@ -1,0 +1,32 @@
+{"schema":"run/v1","event":"run-started","detail":"waves: 1=[appsec,architecture,reliability] 2=[secrets-supply,migration,test-fidelity] 3=[coverage,infra,observability,performance,typesafety]","at":"2026-07-02T14:14:10Z"}
+{"schema":"run/v1","event":"lens-launched","wave":1,"lens":"appsec","model":"opus","at":"2026-07-02T14:15:11Z"}
+{"schema":"run/v1","event":"lens-launched","wave":1,"lens":"architecture","model":"opus","at":"2026-07-02T14:15:11Z"}
+{"schema":"run/v1","event":"lens-launched","wave":1,"lens":"reliability","model":"opus","at":"2026-07-02T14:15:11Z"}
+{"schema":"run/v1","event":"lens-completed","wave":1,"lens":"appsec","surface_seen":18,"findings":2,"model":"opus","tokens":72873,"at":"2026-07-02T14:18:00Z"}
+{"schema":"run/v1","event":"lens-completed","wave":1,"lens":"architecture","surface_seen":30,"findings":5,"model":"opus","tokens":39489,"at":"2026-07-02T14:18:21Z"}
+{"schema":"run/v1","event":"lens-completed","wave":1,"lens":"reliability","surface_seen":42,"findings":3,"model":"opus","tokens":110782,"at":"2026-07-02T14:18:46Z"}
+{"schema":"run/v1","event":"wave-flushed","wave":1,"detail":"appsec=2 architecture=5 reliability=3","at":"2026-07-02T14:18:46Z"}
+{"schema":"run/v1","event":"wave-triaged","wave":1,"detail":"keep=6 combine=2(hud-decomposition) investigate=2; critical=1 medium=4 low=3","at":"2026-07-02T14:21:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":2,"lens":"secrets-supply","model":"sonnet","at":"2026-07-02T14:21:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":2,"lens":"migration","model":"sonnet","at":"2026-07-02T14:21:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":2,"lens":"test-fidelity","model":"sonnet","at":"2026-07-02T14:21:15Z"}
+{"schema":"run/v1","event":"lens-completed","wave":2,"lens":"test-fidelity","surface_seen":22,"findings":0,"model":"sonnet","tokens":133270,"at":"2026-07-02T14:24:02Z"}
+{"schema":"run/v1","event":"lens-completed","wave":2,"lens":"secrets-supply","surface_seen":28,"findings":1,"model":"sonnet","tokens":54850,"at":"2026-07-02T14:24:11Z"}
+{"schema":"run/v1","event":"lens-completed","wave":2,"lens":"migration","surface_seen":9,"findings":3,"model":"sonnet","tokens":71969,"at":"2026-07-02T14:25:37Z"}
+{"schema":"run/v1","event":"wave-flushed","wave":2,"detail":"secrets-supply=1 migration=3 test-fidelity=0","at":"2026-07-02T14:25:37Z"}
+{"schema":"run/v1","event":"wave-triaged","wave":2,"detail":"keep=3 investigate=1; high=1 low=2(+1 low from wave? no); test-fidelity clean","at":"2026-07-02T14:27:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":3,"lens":"coverage","model":"sonnet","at":"2026-07-02T14:27:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":3,"lens":"infra","model":"sonnet","at":"2026-07-02T14:27:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":3,"lens":"observability","model":"sonnet","at":"2026-07-02T14:27:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":3,"lens":"performance","model":"sonnet","at":"2026-07-02T14:27:15Z"}
+{"schema":"run/v1","event":"lens-launched","wave":3,"lens":"typesafety","model":"sonnet","at":"2026-07-02T14:27:15Z"}
+{"schema":"run/v1","event":"lens-completed","wave":3,"lens":"infra","surface_seen":5,"findings":2,"model":"sonnet","tokens":36463,"at":"2026-07-02T14:29:34Z"}
+{"schema":"run/v1","event":"lens-completed","wave":3,"lens":"coverage","surface_seen":8,"findings":4,"model":"sonnet","tokens":67748,"at":"2026-07-02T14:30:03Z"}
+{"schema":"run/v1","event":"lens-completed","wave":3,"lens":"performance","surface_seen":14,"findings":0,"model":"sonnet","tokens":113006,"at":"2026-07-02T14:30:46Z"}
+{"schema":"run/v1","event":"lens-completed","wave":3,"lens":"observability","surface_seen":20,"findings":2,"model":"sonnet","tokens":69189,"at":"2026-07-02T14:30:56Z"}
+{"schema":"run/v1","event":"lens-completed","wave":3,"lens":"typesafety","surface_seen":25,"findings":1,"model":"sonnet","tokens":83856,"at":"2026-07-02T14:31:25Z"}
+{"schema":"run/v1","event":"wave-flushed","wave":3,"detail":"coverage=4 infra=2 observability=2 performance=0 typesafety=1","at":"2026-07-02T14:31:25Z"}
+{"schema":"run/v1","event":"wave-triaged","wave":3,"detail":"keep=4 combine=2(edge-fn-test-backfill) investigate=4; medium=3 low=1 (+performance clean)","at":"2026-07-02T14:33:13Z"}
+{"schema":"run/v1","event":"report-written","detail":"23 findings; 14 fileable issues (1 crit,1 high,6 med,6 low); 7 investigate","at":"2026-07-02T14:34:32Z"}
+{"schema":"run/v1","event":"issues-filed","detail":"12 filed (#83-#94); 2 skipped dup (typesafety-001=#59, secrets-supply-001=#67)","at":"2026-07-02T14:47:21Z"}
+{"schema":"run/v1","event":"telemetry-sent","detail":"arbiterForge/codeArbiter#200 (no label: 'telemetry' absent on external repo)","at":"2026-07-02T15:59:33Z"}

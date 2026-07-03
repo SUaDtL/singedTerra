@@ -1,0 +1,31 @@
+name: CodeQL
+
+# Static security analysis. NOTE: uploading results to the Security tab requires a
+# PUBLIC repo (or GitHub Advanced Security). The job below is guarded on repo
+# visibility, so while the repo is private it is SKIPPED (neutral, not red) and it
+# self-activates the moment the repo is made public — no edit needed at flip time.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+
+jobs:
+  analyze:
+    name: analyze (javascript-typescript)
+    if: github.event.repository.visibility == 'public'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: github/codeql-action/init@411c4c9a36b3fca4d674f06b6396b2c6d23522c6 # v3.36.3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/autobuild@411c4c9a36b3fca4d674f06b6396b2c6d23522c6 # v3.36.3
+      - uses: github/codeql-action/analyze@411c4c9a36b3fca4d674f06b6396b2c6d23522c6 # v3.36.3
+        with:
+          category: '/language:javascript-typescript'

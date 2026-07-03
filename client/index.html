@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <!-- Baseline CSP. GitHub Pages can't set response headers, so the policy that lived
+         in netlify.toml/nginx.conf is carried here as a meta tag. connect-src allows the
+         Supabase backend the client talks to directly (Edge Functions over https + the
+         Realtime websocket). Note: frame-ancestors is header-only (ignored in a meta) —
+         clickjacking protection is not available on GitHub Pages. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; frame-ancestors 'none'"
+    />
+    <title>singedTerra</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Play field: the canvas + a small on-canvas overlay (controls + game-over). -->
+      <div id="stage">
+        <canvas id="game" width="1200" height="600"></canvas>
+        <div id="game-overlay"></div>
+      </div>
+      <!-- HUD status widgets live in a side panel beside the canvas, not over it. -->
+      <div id="hud" class="hud-panel"></div>
+      <!-- Lobby is a full-app overlay shown before/between games. -->
+      <div id="lobby" class="lobby-overlay"></div>
+      <!-- In-game modal layer (store + game-over). Full-app, ABOVE the CRT chrome
+           so panels render crisp and span the canvas+panel, not just the canvas. -->
+      <div id="modal-layer"></div>
+    </div>
+    <!-- Portrait-phone gating: shown by CSS when orientation=portrait + narrow width. -->
+    <div id="portrait-warn">
+      <div class="portrait-warn__icon">↺</div>
+      <p>Rotate your device to landscape to play singedTerra.</p>
+    </div>
+    <!-- Title / splash screen: self-contained overlay shown on load (src/ui/Splash.ts) -->
+    <script type="module" src="/src/ui/Splash.ts"></script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

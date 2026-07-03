@@ -1,0 +1,69 @@
+# Manual backend deploy — Supabase migrations (db push) + Edge Functions.
+#
+# Mirrors the local `npm run deploy:backend` script, run from CI on the linked
+# project. Manual-dispatch only (no auto-deploy of schema changes to prod).
+#
+# Requires (Settings -> Secrets and variables -> Actions):
+#   secret   SUPABASE_ACCESS_TOKEN  -- a Supabase access token (mint a dedicated
+#                                       CI token at https://supabase.com/dashboard/account/tokens)
+#   secret   SUPABASE_DB_PASSWORD   -- the project's database password (needed by `db push`)
+#   variable SUPABASE_PROJECT_REF   -- the project ref (jdvxfxjpobtyasozxauh); non-secret
+#
+# The functions' RUNTIME secrets (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL, ...) are
+# already configured on the Supabase platform and are NOT set here.
+
+name: Deploy backend (Supabase)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_migrations:
+        description: 'Run `supabase db push` (apply migrations to prod)'
+        type: boolean
+        default: true
+      deploy_functions:
+        description: 'Run `supabase functions deploy`'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: latest
+
+      - name: Preflight — required config present
+        run: |
+          missing=0
+          [ -z "$SUPABASE_ACCESS_TOKEN" ] && { echo "::error::SUPABASE_ACCESS_TOKEN secret is not set"; missing=1; }
+          [ -z "$PROJECT_REF" ] && { echo "::error::SUPABASE_PROJECT_REF variable is not set"; missing=1; }
+          if [ "${{ inputs.deploy_migrations }}" = "true" ] && [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::error::SUPABASE_DB_PASSWORD secret is required to run db push"; missing=1
+          fi
+          [ "$missing" = "1" ] && exit 1 || echo "preflight ok"
+
+      - name: Link project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Push migrations
+        if: ${{ inputs.deploy_migrations }}
+        run: supabase db push --yes
+
+      - name: Deploy Edge Functions
+        if: ${{ inputs.deploy_functions }}
+        run: supabase functions deploy --use-api --project-ref "$PROJECT_REF"

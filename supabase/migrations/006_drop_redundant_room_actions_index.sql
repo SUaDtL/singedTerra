@@ -1,0 +1,12 @@
+-- 006_drop_redundant_room_actions_index.sql
+--
+-- Remove the explicit btree index on room_actions(room_id, seq). The
+-- UNIQUE(room_id, seq) constraint added in 001_init.sql already creates an
+-- identical btree index on the same columns in the same order, which serves both
+-- the seq-allocation INSERT and the replay read path (ORDER BY seq ASC per room).
+-- Maintaining a second identical index just doubled the write cost of every
+-- room_actions INSERT with no read benefit (review 2026-06-25, migration-001).
+--
+-- Safe + forward-only: dropping a redundant secondary index takes a brief lock
+-- and loses no data; the constraint index remains as the read/uniqueness guard.
+DROP INDEX IF EXISTS room_actions_room_id_seq_idx;

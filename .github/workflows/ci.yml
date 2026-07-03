@@ -1,0 +1,48 @@
+name: CI
+
+# The determinism invariant (hot-seat and every networked client run identical
+# physics) is the project's foundation — these jobs gate it on every PR so a
+# change that breaks lockstep/determinism can't merge silently.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: typecheck · harnesses · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check         # typecheck (shared + client) + the deterministic harnesses
+      - run: npm run test:client   # vitest (jsdom) — client DOM + fetch unit tests
+      - run: npm run build
+
+  edge:
+    name: edge function tests (deno)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      # Deno type-checks the referee code, and the supabase-js import resolves
+      # @types/node from node_modules — so npm ci must run before deno test.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version: v2.x
+      - run: deno test --allow-env supabase/functions/   # the referee validation/authorization cases (--allow-env: the rate-limit-gate test reads/clears SUPABASE_* env)

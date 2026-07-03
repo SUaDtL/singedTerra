@@ -1,0 +1,291 @@
+/*
+ * Global app stylesheet (C3). Establishes a dark, centered "stage" exactly the
+ * size of the 1200x600 logical canvas, with #game and #hud overlaid pixel-for-
+ * pixel so the HUD (.st-hud { inset: 0 }) pins to the CANVAS, not the viewport.
+ * The whole stage is scaled together (never canvas/hud independently) so the
+ * HUD and canvas coordinate spaces stay in sync at any viewport size.
+ */
+
+:root {
+  /* Stage = the 1200x600 play canvas + a right-side HUD panel. */
+  --canvas-w: 1200px;
+  --canvas-h: 600px;
+  --panel-w: 264px;
+  --stage-w: 1464px; /* canvas-w + panel-w — the full app width */
+  --stage-h: 600px;
+
+  /* ===== singedTerra art tokens (Sprint 5) — mirror client/src/ui/theme.ts ===== */
+  /* dusk sky (top -> horizon) */
+  --sky-0: #160d2e; --sky-1: #3a1d5e; --sky-2: #8e2f53; --sky-3: #d4562a; --sky-4: #f2a04b;
+  /* scorched terrain ramp + lit rim */
+  --terrain-rim: #7a4f2e; --terrain-top: #5a3a22; --terrain-mid: #3c2516; --terrain-deep: #1d120b;
+  /* signature accents */
+  --gold: #ffd23f; --ember: #ff7a1f; --ember-deep: #d4562a; --sun: #ffb24a; --sun-core: #ffe9a8;
+  /* tanks */
+  --tank-red: #e84d4d; --tank-red-lite: #ff7a7a;
+  --tank-blue: #4d8ce8; --tank-blue-lite: #7fb0ff; --tread: #2a2118;
+  /* explosion burst (core -> edge) */
+  --boom-core: #fff7d6; --boom-mid: #ffd23f; --boom-edge: #ff7a1f;
+  /* text + ink + backdrop */
+  --text: #e9e4f2; --text-gold: #ffe9a8; --text-dim: #9a86b8; --ink: #160d2e;
+  --backdrop: #0c0716;
+  /* type system (D1: bundled display face + system mono/sans) */
+  --font-display: 'SingedDisplay', 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
+  --font-mono: 'Courier New', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* CRT chrome intensity (D2: subtle). These are the static fallbacks; the
+   * canonical values live in theme.ts (CRT) and are written over these at
+   * startup by crtCssVars() in main.ts, so the two can never drift again. */
+  --crt-scanline-alpha: 0.10;
+  --crt-vignette-alpha: 0.35;
+  /* Functional UI-state accent (online "ready" green) — mirrors theme.ts STATUS.ready. */
+  --ready: #6ff09a;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+html {
+  /* The ultimate backdrop. body (position:fixed + dark gradient) normally covers the
+     viewport, but the JS `zoom` scale on #app (main.ts) and any overscroll can reveal
+     html in the letterbox gutters when the window's aspect ratio differs from the
+     stage's (2:1) — and html, left unset, defaults to WHITE, which reads as white bars
+     above/below the field. Match the body backdrop so any gutter is an intentional frame. */
+  background: var(--backdrop);
+}
+
+body {
+  /* Deep dusk backdrop so the surrounding frame matches the banner/splash. */
+  background:
+    radial-gradient(120% 100% at 50% 0%, #1a1033 0%, var(--backdrop) 60%);
+  color: var(--text);
+  font-family: var(--font-sans);
+  /* position:fixed + inset:0 locks the body to the VIEWPORT coordinate system,
+     not the initial containing block (ICB). On mobile Chrome the ICB is the
+     full-screen height (address bar hidden), but window.innerHeight is shorter
+     when the address bar is shown. Using fixed positioning means the body is
+     always exactly the visible viewport, so #app (sized by zoom to match
+     window.innerHeight) centers without overflowing or being clipped. */
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/*
+ * #app is the positioned STAGE. It is exactly the canvas size and is scaled as
+ * a single unit to fit smaller viewports — keeping aspect ratio (the same
+ * scale on both axes) so canvas and HUD never desync. Larger viewports cap at
+ * native size (scale <= 1).
+ */
+#app {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  /* Drop shadow + a subtle gold inset frame echoing the banner border. */
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 2px rgba(255, 210, 63, 0.22);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/*
+ * ===== Global CRT chrome (Sprint 5 Slice 0) =====
+ * Two non-interactive overlays covering the WHOLE stage (canvas + HUD + lobby),
+ * pinned above all stage layers. Pure CSS — cheap on a t3.micro. Intensity is
+ * token-driven (--crt-* in :root) so it dials with one edit.
+ */
+#app::before {
+  /* Dusk vignette wash + faint ember bloom from the horizon. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 38%, rgba(142, 47, 83, 0.22) 0%, rgba(22, 13, 46, 0) 55%),
+    radial-gradient(140% 120% at 50% 122%, rgba(255, 122, 31, 0.16) 0%, rgba(22, 13, 46, 0) 50%);
+  mix-blend-mode: screen;
+}
+#app::after {
+  /* Scanlines + corner vignette darkening. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--crt-scanline-alpha)) 0px,
+      rgba(0, 0, 0, var(--crt-scanline-alpha)) 1px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0) 4px
+    ),
+    radial-gradient(130% 130% at 50% 50%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, var(--crt-vignette-alpha)) 100%);
+}
+
+/*
+ * #stage is the play field: the 1200x600 canvas plus its ON-canvas overlays
+ * (controls legend + game-over modal). It sits left of the HUD panel.
+ */
+#stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+}
+#game {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+  /* Nearest-neighbour upscaling keeps canvas pixels crisp at >1× on large
+     monitors — matches the retro CRT aesthetic rather than blurring them. */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges; /* Firefox fallback */
+}
+/*
+ * Detonation bloom — a brief warm light-bleed flashed over the play field on each
+ * blast (paired with the screen-shake + boom). Opacity is set instantly then
+ * transitioned to 0 from JS (renderer onExplosion), scaled by blast radius. Sits
+ * over the canvas (z 1) but under the controls legend. Honors reduced-motion (JS
+ * skips the pulse). Non-interactive.
+ */
+.boom-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    120% 90% at 50% 62%,
+    rgba(255, 170, 70, 0.9) 0%,
+    rgba(255, 90, 20, 0.28) 42%,
+    rgba(255, 90, 20, 0) 70%
+  );
+}
+/*
+ * On-canvas overlay layer — ONLY the controls legend and the game-over modal
+ * live here (kept small / transient so the tanks stay visible). Non-interactive
+ * as a layer; interactive bits opt back in.
+ */
+#game-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+/*
+ * #hud is the RIGHT SIDE PANEL — all status widgets (players, wind, weapon, aim,
+ * arsenal, menu) stack here, OFF the play field, so nothing covers the tanks.
+ */
+#hud {
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: var(--panel-w);
+  height: 100%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(18, 10, 34, 0.96), rgba(12, 7, 22, 0.96));
+  border-left: 1px solid rgba(255, 210, 63, 0.22);
+  overflow-y: auto;
+  pointer-events: auto;
+}
+#game-overlay button,
+#hud button {
+  pointer-events: auto;
+}
+
+/*
+ * The lobby is a full-APP overlay (covers canvas + panel), centered + fully
+ * interactive. Sits above the CRT chrome so the pre-game screen stays crisp.
+ */
+#lobby {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+}
+
+#lobby[hidden] {
+  display: none;
+}
+
+/*
+ * In-game modal layer (store + game-over). A full-#app overlay pinned ABOVE the
+ * CRT chrome (z 30/31) so its panels render crisp and undimmed — unlike the
+ * on-canvas #game-overlay (z 5), whose stacking context traps its children
+ * beneath the CRT. Non-interactive as a layer; the modals inside opt back in
+ * (pointer-events: auto). Because it spans the full app (canvas + HUD panel),
+ * a modal's inset:0 centers over the whole stage, near its right-panel trigger,
+ * instead of the far-left canvas. (P3-16)
+ */
+#modal-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+#modal-layer button {
+  pointer-events: auto;
+}
+
+/*
+ * ===== Portrait-phone gate =====
+ * Shown only when the primary pointer is coarse (touch) and the device is in
+ * portrait orientation — artillery needs landscape. Hides itself the moment the
+ * user rotates. Displayed above everything (z 9999) so the CRT chrome, lobby,
+ * and modals cannot bleed through.
+ */
+#portrait-warn {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--backdrop, #0c0716);
+  color: var(--text-gold, #ffe9a8);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+}
+.portrait-warn__icon {
+  font-size: 64px;
+  line-height: 1;
+  animation: portrait-warn-spin 2s ease-in-out infinite;
+}
+#portrait-warn p {
+  font-size: 18px;
+  margin: 0;
+  opacity: 0.85;
+  max-width: 300px;
+}
+/* Activate only for coarse-pointer (touch) devices in portrait orientation. */
+@media (pointer: coarse) and (orientation: portrait) {
+  #portrait-warn { display: flex; }
+}
+@keyframes portrait-warn-spin {
+  0%   { transform: rotate(0deg); }
+  40%  { transform: rotate(90deg); }
+  60%  { transform: rotate(90deg); }
+  100% { transform: rotate(90deg); }
+}

@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # npm — one entry covers the whole workspaces monorepo (root lockfile governs
+  # client + shared). Minor/patch bumps are grouped into a single PR to cut noise.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Keep the GitHub Actions used by the CI/CodeQL workflows current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
