@@ -2,7 +2,13 @@ import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
 import { armsLabel, roundsLabel, botLabel } from './browseLabels';
-import { callFunction } from '../lib/edgeFunctions';
+import {
+  LobbyTransport,
+  type NetworkPlayer,
+  type RoomOptions,
+  type BrowseRoom,
+  type RoomVisibility,
+} from '../client/LobbyTransport';
 import {
   type LobbySettings,
   WIND_MIN,
@@ -20,6 +26,8 @@ import {
   ARMS_MAX,
   ARMS_DEFAULT,
   parseNumber,
+  parseOnlineRounds,
+  parseOnlineEconomy,
   coerceSettings,
   normalizeRoomCode,
   isValidRoomCode,
@@ -125,52 +133,11 @@ interface PlayerRowState {
   ai?: AiDifficulty;
 }
 
-/** Network room player as returned by the Edge Functions. */
-interface NetworkPlayer {
-  id: string;
-  name: string;
-  color: string;
-  ready: boolean;
-  /** CPU difficulty for bot seats; absent => human. */
-  ai?: AiDifficulty;
-}
-
 /** Active tab on the lobby. */
 type LobbyTab = 'hotseat' | 'online';
 
 /** Sub-view within the Play Online tab. */
 type OnlineSubView = 'create' | 'join' | 'browse' | 'waiting';
-
-/** Room visibility for created online rooms. */
-type RoomVisibility = 'public' | 'private';
-
-/** Per-room engine options as stored on the room row / echoed by the Edge
- *  Functions. `rounds` (best-of-N) is optional for back-compat with rooms created
- *  before the match-structure feature; absent => single round. */
-type RoomOptions = {
-  maxPlayers: number;
-  maxWind: number;
-  gravity: number;
-  rounds?: number;
-  interestRate?: number;
-  suddenDeathTurn?: number;
-  armsLevel?: number;
-};
-
-/** A public room as returned by the list_rooms Edge Function. */
-interface BrowseRoom {
-  roomId: string;
-  code: string;
-  hostName: string;
-  playerCount: number;
-  maxPlayers: number;
-  /** Best-of-N match length (1 = single round). Defaulted server-side for legacy rooms. */
-  rounds: number;
-  /** Arms tier 0–4 (4 = full arsenal). Defaulted server-side for legacy rooms. */
-  armsLevel: number;
-  /** Count of CPU seats in the room's live roster. */
-  botCount: number;
-}
 
 /**
  * Lobby is the pre-game DOM overlay (SPEC §3): pick the number of players,
@@ -180,6 +147,9 @@ interface BrowseRoom {
 export class Lobby {
   private readonly root: HTMLElement;
   private readonly onReady: (config: LobbyConfig) => void;
+
+  /** Owns the seven Edge-Function calls (create/join/list/heartbeat/ready/leave/update). */
+  private readonly transport = new LobbyTransport();
 
   /** Working state for the player rows (defaults Player 1..N + palette order). */
   private players: PlayerRowState[] = [];
@@ -820,8 +790,6 @@ export class Lobby {
     this.render();
 
     try {
-      const maxWind = parseNumber(this.onlineMaxWind);
-      const gravity = parseNumber(this.onlineGravity);
       const rounds = this.parseOnlineRounds();
       const economy = this.parseOnlineEconomy();
 
@@ -835,21 +803,19 @@ export class Lobby {
         bots.push({ name: `CPU ${i + 1}`, color: c.value, ai: this.onlineBotDifficulty });
       }
 
-      const body: Record<string, unknown> = {
+      const { ok, data } = await this.transport.createRoom({
         playerName: name,
         color: this.onlineColor,
-        ...(bots.length > 0 ? { bots } : {}),
-        options: {
-          maxPlayers: this.onlineMaxPlayers,
-          visibility: this.onlineVisibility,
-          ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
-          ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
-          ...(rounds !== undefined ? { rounds } : {}),
-          ...economy,
-        },
-      };
-
-      const { ok, data } = await callFunction<{ roomId?: string; code?: string; playerId?: string; token?: string; players?: NetworkPlayer[]; error?: string }>('create_room', body);
+        bots,
+        maxPlayers: this.onlineMaxPlayers,
+        visibility: this.onlineVisibility,
+        maxWind: this.onlineMaxWind,
+        gravity: this.onlineGravity,
+        rounds: this.onlineRounds,
+        interestRate: this.onlineInterestRate,
+        suddenDeath: this.onlineSuddenDeath,
+        armsLevel: this.onlineArmsLevel,
+      });
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to create room.';
@@ -1006,15 +972,7 @@ export class Lobby {
     this.render();
 
     try {
-      const { ok, data } = await callFunction<{
-        roomId?: string;
-        playerId?: string;
-        token?: string;
-        seed?: number;
-        options?: RoomOptions;
-        players?: NetworkPlayer[];
-        error?: string;
-      }>('join_room', { code, playerName: name, color: this.joinColor });
+      const { ok, data } = await this.transport.joinRoom({ code, playerName: name, color: this.joinColor });
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to join room.';
@@ -1089,7 +1047,7 @@ export class Lobby {
 
   private async fetchRooms(): Promise<void> {
     try {
-      const { ok, data } = await callFunction<{ rooms?: BrowseRoom[]; error?: string }>('list_rooms', {});
+      const { ok, data } = await this.transport.listRooms();
 
       // Only repaint if still on the browse view (the user may have navigated
       // away between the request and its response).
@@ -1461,7 +1419,7 @@ export class Lobby {
   private startHeartbeat(): void {
     this.stopHeartbeat();
     this.waitingHeartbeatId = setInterval(() => {
-      void callFunction('heartbeat', { roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }).catch(() => {
+      void this.transport.heartbeat({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken }).catch(() => {
         // Best-effort: a missed heartbeat just means one stale window; the next
         // tick recovers it. Never surface heartbeat errors to the UI.
       });
@@ -1517,11 +1475,7 @@ export class Lobby {
     this.render();
 
     try {
-      const { ok, data } = await callFunction<{
-        started?: boolean;
-        players?: NetworkPlayer[];
-        error?: string;
-      }>('ready_up', { roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken });
+      const { ok, data } = await this.transport.readyUp({ roomId: this.waitingRoomId, playerId: this.waitingPlayerId, token: this.waitingToken });
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to ready up.';
@@ -1686,11 +1640,11 @@ export class Lobby {
     this.render();
 
     try {
-      const { ok, data } = await callFunction<{ players?: NetworkPlayer[]; error?: string }>('update_player', {
+      const { ok, data } = await this.transport.updatePlayer({
         roomId: this.waitingRoomId,
         playerId: this.waitingPlayerId,
         token: this.waitingToken,
-        ...fields,
+        fields,
       });
 
       if (!ok || data?.error) {
@@ -1722,7 +1676,7 @@ export class Lobby {
     const playerId = this.waitingPlayerId;
     const token = this.waitingToken;
     try {
-      await callFunction('leave_room', { roomId, playerId, token });
+      await this.transport.leaveRoom({ roomId, playerId, token });
     } catch (err) {
       // Best-effort — leave the room locally regardless.
     }
@@ -2037,10 +1991,7 @@ export class Lobby {
    * body and the local waitingOptions so both agree on the value sent to the room.
    */
   private parseOnlineRounds(): number | undefined {
-    const raw = parseNumber(this.onlineRounds);
-    if (raw === undefined) return undefined;
-    const clamped = clamp(Math.trunc(raw), ROUNDS_MIN, ROUNDS_MAX);
-    return clamped % 2 === 0 ? clamped + 1 : clamped;
+    return parseOnlineRounds(this.onlineRounds);
   }
 
   /**
@@ -2049,14 +2000,7 @@ export class Lobby {
    * agree on exactly what the room is created with (and thus what every client's engine builds).
    */
   private parseOnlineEconomy(): { interestRate?: number; suddenDeathTurn?: number; armsLevel?: number } {
-    const out: { interestRate?: number; suddenDeathTurn?: number; armsLevel?: number } = {};
-    const interest = parseNumber(this.onlineInterestRate);
-    if (interest !== undefined) out.interestRate = clamp(interest, INTEREST_MIN, INTEREST_MAX);
-    const sudden = parseNumber(this.onlineSuddenDeath);
-    if (sudden !== undefined) out.suddenDeathTurn = clamp(Math.trunc(sudden), SUDDEN_DEATH_MIN, SUDDEN_DEATH_MAX);
-    const arms = parseNumber(this.onlineArmsLevel);
-    if (arms !== undefined) out.armsLevel = clamp(Math.trunc(arms), ARMS_MIN, ARMS_MAX);
-    return out;
+    return parseOnlineEconomy(this.onlineInterestRate, this.onlineSuddenDeath, this.onlineArmsLevel);
   }
 
   /** Grow/shrink the working player list, assigning unique default colors. */
