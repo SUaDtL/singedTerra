@@ -19,6 +19,7 @@
 import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
+import { supabase } from '../lib/supabase';
 import {
   WIND_MIN,
   WIND_MAX,
@@ -105,6 +106,20 @@ export interface ReadyUpResponse {
 export interface UpdatePlayerResponse {
   players?: NetworkPlayer[];
   error?: string;
+}
+
+/**
+ * Public-fields shape of a `rooms` row, as read (not mutated) by `fetchRoom`.
+ * PUBLIC ONLY — never carries the secret seat token (ADR-0009 split-identity
+ * keeps the token out of every queryable column).
+ */
+export interface FetchedRoom {
+  id: string;
+  code: string;
+  seed: number;
+  options: RoomOptions;
+  players: NetworkPlayer[];
+  status: string;
 }
 
 // ---- Request params (raw form inputs; the transport builds the bodies) ----
@@ -215,5 +230,41 @@ export class LobbyTransport {
       token: params.token,
       ...params.fields,
     });
+  }
+
+  /**
+   * Direct `rooms` table read (not an Edge Function) used by the rejoin flow to
+   * validate a stored session descriptor: is the room still `active` with the
+   * stored seat present, and if so what seed/options/players/code does it need
+   * to rebuild a network config from. Mirrors the anon-SELECT pattern already
+   * used in `NetworkClient.handleRematch` — public columns only, `.maybeSingle()`
+   * so an absent room resolves to `null` data rather than throwing.
+   *
+   * NEVER throws: a Supabase error is logged at most once and folds into `null`,
+   * same as an absent room — callers can't distinguish "not found" from
+   * "read failed", which is fine here since both mean "don't offer rejoin".
+   */
+  async fetchRoom(roomId: string): Promise<FetchedRoom | null> {
+    const res = await supabase
+      .from('rooms')
+      .select('id, code, seed, options, players, status')
+      .eq('id', roomId)
+      .maybeSingle();
+
+    if (res.error) {
+      console.warn('LobbyTransport.fetchRoom: select failed', res.error);
+      return null;
+    }
+    if (!res.data) return null;
+
+    const row = res.data as Record<string, unknown>;
+    return {
+      id: row.id as string,
+      code: row.code as string,
+      seed: Number(row.seed),
+      options: row.options as RoomOptions,
+      players: (row.players ?? []) as NetworkPlayer[],
+      status: row.status as string,
+    };
   }
 }
