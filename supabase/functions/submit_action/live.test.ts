@@ -226,3 +226,81 @@ Deno.test('submitActionCore: ROUND_OVER buy for someone else’s tank is rejecte
   assertEquals(res.status, 403)
   assertEquals(rpcCalls.length, 0)
 })
+
+// ---------------------------------------------------------------------------
+// Remaining action types through the live body (use_shield / next_round /
+// normal-turn buy) — the other validatedAction-construction + cursor branches.
+// ---------------------------------------------------------------------------
+
+Deno.test('submitActionCore: active seat use_shield commits turn-ending', async () => {
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom([player('human-1'), player('p2')], 0, 2),
+    seat: seatToken('secret'),
+    rpc: { data: 4, error: null },
+  })
+  const res = await submitActionCore(
+    { roomId: 'room-1', playerId: 'human-1', token: 'secret', nextActiveIndex: 1, action: { type: 'use_shield' } },
+    client,
+  )
+  assertEquals(res.status, 200)
+  const { args } = rpcCalls[0]
+  assertEquals((args.p_action as { type: string }).type, 'use_shield')
+  assertEquals(args.p_ends_turn, true)   // use_shield ends the turn like fire
+  assertEquals(args.p_next_index, 1)
+  assertEquals(args.p_next_turn, 3)
+})
+
+Deno.test('submitActionCore: next_round passes on membership only and is turn-neutral', async () => {
+  // p2 holds the turn, but ANY member may leave the between-rounds shop with next_round
+  // (regime 1: no turn gate). It must not advance the cursor.
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom([player('human-1'), player('p2')], 1, 6),
+    seat: seatToken('secret'),
+    rpc: { data: 5, error: null },
+  })
+  const res = await submitActionCore(
+    { roomId: 'room-1', playerId: 'human-1', token: 'secret', roundOver: true, action: { type: 'next_round' } },
+    client,
+  )
+  assertEquals(res.status, 200)
+  const { args } = rpcCalls[0]
+  assertEquals((args.p_action as { type: string }).type, 'next_round')
+  assertEquals(args.p_ends_turn, false) // membership-only, cursor untouched
+  assertEquals(args.p_next_index, 1)    // active index unchanged
+  assertEquals(args.p_next_turn, 6)     // turn unchanged
+})
+
+Deno.test('submitActionCore: normal-turn buy is turn-gated and turn-neutral', async () => {
+  // A mid-turn restock (NOT the ROUND_OVER shop): the ACTIVE seat may buy, and the buy
+  // does not advance the cursor. No tankId is carried outside the shop.
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom([player('human-1'), player('p2')], 0, 1),
+    seat: seatToken('secret'),
+    rpc: { data: 8, error: null },
+  })
+  const res = await submitActionCore(
+    { roomId: 'room-1', playerId: 'human-1', token: 'secret', action: { type: 'buy', weapon: 'nuke' } },
+    client,
+  )
+  assertEquals(res.status, 200)
+  const action = rpcCalls[0].args.p_action as { type: string; weapon?: string; tankId?: string }
+  assertEquals(action.type, 'buy')
+  assertEquals(action.weapon, 'nuke')
+  assertEquals(action.tankId, undefined) // no tankId outside the ROUND_OVER shop
+  assertEquals(rpcCalls[0].args.p_ends_turn, false)
+})
+
+Deno.test('submitActionCore: normal-turn buy from an inactive seat is rejected 403', async () => {
+  // p2 holds the turn; human-1 (inactive) cannot restock mid-turn.
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom([player('human-1'), player('p2')], 1, 1),
+    seat: seatToken('secret'),
+  })
+  const res = await submitActionCore(
+    { roomId: 'room-1', playerId: 'human-1', token: 'secret', action: { type: 'buy', weapon: 'nuke' } },
+    client,
+  )
+  assertEquals(res.status, 403)
+  assertEquals((await res.json()).error, 'Not your turn')
+  assertEquals(rpcCalls.length, 0)
+})
