@@ -2,7 +2,7 @@ import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer, Ro
 import { mapListedRoom } from './mapRoom.ts'
 
 // list_rooms takes no body — optionalBody tolerates an empty/missing/invalid one.
-Deno.serve(withCors(async () => {
+export async function handleListRooms(): Promise<Response> {
   const supabase = getServiceClient()
 
   // Lazy GC replaces the old created_at "last 1 hour" filter. Fetch ALL
@@ -74,4 +74,8 @@ Deno.serve(withCors(async () => {
   const roomsOut = open.slice(0, 50).map(({ row, fresh }) => mapListedRoom(row, fresh))
 
   return json({ rooms: roomsOut }, 200)
-}, { optionalBody: true, rateLimit: 'list_rooms' }))
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleListRooms, { optionalBody: true, rateLimit: 'list_rooms' }))
+}

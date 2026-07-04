@@ -75,8 +75,7 @@ type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction 
 // Guard Deno.serve so importing this module in tests does not start the HTTP
 // listener.  When Deno executes the file as the program entry point,
 // import.meta.main is true; when it is imported by a test file it is false.
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleSubmitAction(body: unknown): Promise<Response> {
   const { roomId, playerId, token, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -235,5 +234,8 @@ Deno.serve(withCors(async (body) => {
   })
 
   return rpcResultToResponse(rpcResult)
-}, { rateLimit: 'submit_action' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleSubmitAction, { rateLimit: 'submit_action' }))
+}
