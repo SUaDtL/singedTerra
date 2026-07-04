@@ -12,6 +12,7 @@ import { shouldBufferSeq } from '@shared/net/seqGuard';
 import { postOnceWithRetry } from './retry';
 import { fastForwardTicks } from './fastForward';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
+import { clearSession } from '../lib/sessionDescriptor';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -1011,6 +1012,7 @@ export class NetworkClient implements GameClient {
     const state = this.engine.getState();
     if (state.phase === 'GAME_OVER' && !this._gameOverReported) {
       this._gameOverReported = true;
+      clearSession(); // match ended — the rejoin session descriptor is no longer valid (AC-04)
       this.callFinishGame(state.winner);
     }
     for (const listener of this.listeners) {

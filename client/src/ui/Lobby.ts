@@ -8,7 +8,9 @@ import {
   type RoomOptions,
   type BrowseRoom,
   type RoomVisibility,
+  type FetchedRoom,
 } from '../client/LobbyTransport';
+import { writeSession, clearSession, readSession, isLiveSession, type SessionDescriptor } from '../lib/sessionDescriptor';
 import {
   type LobbySettings,
   WIND_MIN,
@@ -87,6 +89,21 @@ function writeSeatToken(playerId: string, token: string): void {
     localStorage.setItem(seatTokenKey(playerId), token);
   } catch {
     /* localStorage unavailable — token just isn't persisted across reloads */
+  }
+}
+
+/**
+ * Best-effort read of a persisted seat token; never throws. Mirrors
+ * `readSeatToken` in `client/src/client/NetworkClient.ts` (same key scheme) —
+ * used by T-10's `handleRejoin()` to pass the stored secret explicitly (belt
+ * and suspenders: NetworkClient also falls back to this same localStorage
+ * read internally when the constructor's `token` param is empty).
+ */
+function readSeatToken(playerId: string): string | undefined {
+  try {
+    return localStorage.getItem(seatTokenKey(playerId)) ?? undefined;
+  } catch {
+    return undefined; // localStorage unavailable — nothing persisted
   }
 }
 
@@ -234,6 +251,15 @@ export class Lobby {
   private onlineError = '';
   private onlineBusy = false;
 
+  /**
+   * T-09 (rejoin-after-refresh, AC-05) — the validated rejoin candidate, set
+   * only once `checkRejoinCandidate()` confirms the stored session descriptor
+   * points at a still-`active` room with the stored seat present. `null` means
+   * "no affordance": either no descriptor was stored, validation hasn't
+   * resolved yet, or the room turned out to be stale/invalid.
+   */
+  private rejoinCandidate: { descriptor: SessionDescriptor; room: FetchedRoom } | null = null;
+
   constructor(root: HTMLElement, onReady: (config: LobbyConfig) => void) {
     this.root = root;
     this.onReady = onReady;
@@ -248,6 +274,34 @@ export class Lobby {
     this.injectStyle();
     this.render();
     this.root.hidden = false;
+    void this.checkRejoinCandidate();
+  }
+
+  /**
+   * T-09 (AC-05) — on lobby entry, validate any stored session descriptor
+   * against a live `rooms` read: only a descriptor whose room is `active` with
+   * the stored seat still present makes the "Rejoin your game" affordance
+   * appear. `fetchRoom` is async, so this kicks off in the background and
+   * re-renders once it resolves — mirrors the browse-rooms poll pattern
+   * (`fetchRooms` mutates state then calls `this.render()`).
+   */
+  private async checkRejoinCandidate(): Promise<void> {
+    const descriptor = readSession();
+    if (!descriptor) {
+      this.rejoinCandidate = null;
+      return;
+    }
+    const room = await this.transport.fetchRoom(descriptor.roomId);
+    if (isLiveSession(descriptor, room)) {
+      this.rejoinCandidate = { descriptor, room: room! };
+      this.render();
+    } else {
+      // T-11 (AC-07) — a stale descriptor (finished/deleted/seat-removed room)
+      // is forgotten silently on passive load: no banner, no error message,
+      // and no more re-validating a room that will never come back.
+      this.rejoinCandidate = null;
+      clearSession();
+    }
   }
 
   /** Hide the lobby overlay (e.g. once the game starts). */
@@ -334,6 +388,17 @@ export class Lobby {
       #lobby .lobby-swatch.selected { border-color: var(--gold); box-shadow: 0 0 8px rgba(255, 210, 63, 0.5); }
       #lobby .lobby-swatch.taken { opacity: 0.3; cursor: not-allowed; }
       #lobby .lobby-error { color: var(--tank-red); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
+      /* Rejoin affordance (T-09) — a prominent banner at the top of the lobby,
+         shown only when a stored session validates as still live. */
+      #lobby .lobby-rejoin-banner {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin: 0 0 18px; padding: 10px 14px;
+        background: rgba(255, 210, 63, 0.1);
+        border: 1px solid rgba(255, 210, 63, 0.35);
+        border-radius: 6px;
+      }
+      #lobby .lobby-rejoin-text { color: var(--text-gold, #ffe9b0); font-size: 13px; }
+      #lobby .lobby-rejoin-banner .lobby-btn { padding: 6px 14px; font-size: 13px; flex: 0 0 auto; }
       #lobby .lobby-start {
         width: 100%; padding: 11px; font-size: 15px; font-weight: bold; cursor: pointer;
         background: var(--gold); color: var(--ink); border: none; border-radius: 5px;
@@ -464,6 +529,13 @@ export class Lobby {
     title.textContent = 'singedTerra';
     card.append(title);
 
+    // Rejoin affordance (T-09, AC-05) — shown ONLY once a stored session
+    // descriptor has been validated live; placed at the very top so it's
+    // visible on load regardless of which tab is active.
+    if (this.rejoinCandidate) {
+      card.append(this.renderRejoinBanner());
+    }
+
     // Tab bar
     card.append(this.renderTabBar());
 
@@ -494,6 +566,87 @@ export class Lobby {
       '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
       '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
     return el;
+  }
+
+  /**
+   * T-09 (AC-05) — the "Rejoin your game" affordance. Only rendered when
+   * `checkRejoinCandidate()` has confirmed a live session. Styling mirrors the
+   * lobby's existing status/banner conventions (`.online-status`, `.lobby-btn`)
+   * rather than inventing a new visual language.
+   */
+  private renderRejoinBanner(): HTMLElement {
+    const banner = document.createElement('div');
+    banner.className = 'lobby-rejoin-banner';
+
+    const text = document.createElement('span');
+    text.className = 'lobby-rejoin-text';
+    text.textContent = 'You have a game in progress.';
+    banner.append(text);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lobby-btn';
+    btn.textContent = 'Rejoin your game';
+    btn.addEventListener('click', () => { void this.handleRejoin(); });
+    banner.append(btn);
+
+    return banner;
+  }
+
+  /**
+   * T-10 (rejoin-after-refresh, AC-06) — activate the validated rejoin
+   * candidate. Builds a network `LobbyConfig` from the validated room +
+   * the stored descriptor's playerId and hands it to `onReady`, mirroring the
+   * shape `emitNetworkReady` (below) and `rematchToConfig` (main.ts) produce.
+   * `main.ts`'s `startGame` → `createClient` owns constructing the actual
+   * `NetworkClient` and running its chunked-replay `initialize()`; this method
+   * never touches NetworkClient directly.
+   *
+   * T-11 (AC-07) — re-validates before committing: the room can go
+   * finished/deleted, or the stored seat can drop out of `players`, in the
+   * window between the banner rendering and this click. If the re-fetch shows
+   * the session is no longer live, this does NOT throw and does NOT call
+   * `onReady`: it clears the stored descriptor, surfaces a short message via
+   * the lobby's existing `onlineError` notice field, drops the candidate, and
+   * re-renders back to the normal (no-affordance) lobby.
+   */
+  private async handleRejoin(): Promise<void> {
+    if (!this.rejoinCandidate) return;
+    const { descriptor } = this.rejoinCandidate;
+
+    const room = await this.transport.fetchRoom(descriptor.roomId);
+    if (!isLiveSession(descriptor, room)) {
+      clearSession();
+      this.rejoinCandidate = null;
+      this.onlineError = 'That game is no longer available.';
+      this.render();
+      return;
+    }
+    const liveRoom = room!;
+
+    // The secret seat token never lives in the session descriptor (ADR-0009) —
+    // read it back from its own localStorage key, keyed by the public playerId.
+    const token = readSeatToken(descriptor.playerId) ?? '';
+
+    const config: LobbyConfig = {
+      mode: 'network',
+      players: liveRoom.players.map((p) => ({ id: p.id, name: p.name, color: p.color, ...(p.ai ? { ai: p.ai } : {}) })),
+      playerNames: liveRoom.players.map((p) => p.name),
+      roomCode: liveRoom.code,
+      roomId: liveRoom.id,
+      playerId: descriptor.playerId,
+      token,
+      settings: {
+        seed: liveRoom.seed,
+        maxWind: liveRoom.options.maxWind,
+        gravity: liveRoom.options.gravity,
+        ...(liveRoom.options.rounds !== undefined ? { rounds: liveRoom.options.rounds } : {}),
+        ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
+        ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
+        ...(liveRoom.options.armsLevel !== undefined ? { armsLevel: liveRoom.options.armsLevel } : {}),
+      },
+    };
+    this.onReady(config);
   }
 
   // ---- Tab bar ----
@@ -841,6 +994,7 @@ export class Lobby {
       this.waitingPlayerId = data.playerId;
       this.waitingToken = data.token;
       writeSeatToken(data.playerId, data.token);
+      writeSession({ roomId: this.waitingRoomId, roomCode: this.waitingRoomCode, playerId: this.waitingPlayerId });
       this.waitingPlayers = data.players ?? [{
         id: data.playerId,
         name,
@@ -996,6 +1150,7 @@ export class Lobby {
       this.waitingPlayerId = data.playerId;
       this.waitingToken = data.token;
       writeSeatToken(data.playerId, data.token);
+      writeSession({ roomId: this.waitingRoomId, roomCode: this.waitingRoomCode, playerId: this.waitingPlayerId });
       this.waitingSeed = data.seed ?? 0;
       this.waitingOptions = data.options ?? { maxPlayers: 2, maxWind: 10, gravity: 0.15 };
       this.waitingPlayers = data.players ?? [];
@@ -1686,6 +1841,7 @@ export class Lobby {
       console.debug('Lobby.leaveRoom: best-effort leave failed —', err);
       // Best-effort — leave the room locally regardless.
     }
+    clearSession(); // explicit leave forgets the rejoin session (AC-04) regardless of POST outcome
     this.cleanupWaitingChannel();
     this.onlineSubView = 'create';
     this.onlineError = '';

@@ -37,6 +37,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { Lobby } from './Lobby';
+import { readSession, writeSession } from '../lib/sessionDescriptor';
 
 // The waiting-room Realtime subscription lazily does `await import('../lib/supabase')`,
 // which calls createClient() at module load. Mock the SDK so that returns a fake
@@ -265,6 +266,25 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       await flush(); // settle the void-ed subscribeWaitingRoom()
     });
 
+    it('SUCCESS: T-06 — writes the session descriptor { roomId, roomCode, playerId }', async () => {
+      stubFetch({
+        json: () => ({
+          roomId: 'room-9',
+          code: 'ZZZZ',
+          playerId: 'pp',
+          token: 'tk',
+          players: [{ id: 'pp', name: 'Alice', color: '#e84d4d', ready: false }],
+        }),
+      });
+      internals(lobby).onlineName = 'Alice';
+
+      await internals(lobby).handleCreateRoom();
+
+      expect(readSession()).toEqual({ roomId: 'room-9', roomCode: 'ZZZZ', playerId: 'pp' });
+
+      await flush();
+    });
+
     it('SUCCESS: falls back to a solo player list when the response omits players', async () => {
       stubFetch({
         json: () => ({ roomId: 'r', code: 'CCCC', playerId: 'me', token: 't' }),
@@ -386,6 +406,19 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(internals(lobby).waitingPlayers).toEqual(players);
       expect(internals(lobby).onlineSubView).toBe('waiting');
       expect(localStorage.getItem('singedterra:seat:jp')).toBe('jt');
+
+      await flush();
+    });
+
+    it('SUCCESS: T-06 — writes the session descriptor { roomId, roomCode, playerId }', async () => {
+      stubFetch({
+        json: () => ({ roomId: 'jr', playerId: 'jp', token: 'jt', seed: 7 }),
+      });
+      Object.assign(internals(lobby), { joinCode: 'WXYZ', onlineName: 'Bob' });
+
+      await internals(lobby).handleJoinRoom();
+
+      expect(readSession()).toEqual({ roomId: 'jr', roomCode: 'WXYZ', playerId: 'jp' });
 
       await flush();
     });
@@ -657,6 +690,37 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       await internals(lobby).handleLeaveRoom();
 
       expect(internals(lobby).onlineSubView).toBe('create');
+    });
+
+    it('T-07: clears the session descriptor on explicit leave', async () => {
+      stubFetch({ json: () => ({}) });
+      writeSession({ roomId: 'room-1', roomCode: 'ABCD', playerId: 'p-1' });
+      Object.assign(internals(lobby), {
+        waitingRoomId: 'room-1',
+        waitingPlayerId: 'p-1',
+        waitingToken: 'tok',
+        onlineSubView: 'waiting',
+      });
+      expect(readSession()).not.toBeNull();
+
+      await internals(lobby).handleLeaveRoom();
+
+      expect(readSession()).toBeNull();
+    });
+
+    it('T-07: clears the session descriptor even when the leave POST rejects (best-effort)', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('boom')));
+      writeSession({ roomId: 'room-1', roomCode: 'ABCD', playerId: 'p-1' });
+      Object.assign(internals(lobby), {
+        waitingRoomId: 'room-1',
+        waitingPlayerId: 'p-1',
+        waitingToken: 'tok',
+        onlineSubView: 'waiting',
+      });
+
+      await internals(lobby).handleLeaveRoom();
+
+      expect(readSession()).toBeNull();
     });
   });
 
