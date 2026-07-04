@@ -41,8 +41,7 @@ export function applyPlayerUpdate(
   return { ok: true, updatedPlayers }
 }
 
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleUpdatePlayer(body: unknown): Promise<Response> {
   const { roomId, playerId, name, color, token } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -129,5 +128,8 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ players: updatedPlayers }, 200)
-}, { rateLimit: 'update_player' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleUpdatePlayer, { rateLimit: 'update_player' }))
+}

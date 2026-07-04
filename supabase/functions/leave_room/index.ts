@@ -13,8 +13,7 @@ export function applyLeave(players: StoredPlayer[], playerId: string): LeaveResu
   return { remaining, roomDeleted: remaining.length === 0 }
 }
 
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleLeaveRoom(body: unknown): Promise<Response> {
   const { roomId, playerId, token } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -88,5 +87,8 @@ Deno.serve(withCors(async (body) => {
   await supabase.from('room_seats').delete().eq('room_id', roomId).eq('seat_id', playerId)
 
   return json({ ok: true, roomDeleted: false, players: remaining }, 200)
-}, { rateLimit: 'leave_room' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleLeaveRoom, { rateLimit: 'leave_room' }))
+}

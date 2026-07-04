@@ -65,8 +65,7 @@ async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<Re
 // Guard Deno.serve so importing this module in tests does not start the HTTP
 // listener (mirrors submit_action). import.meta.main is true only when Deno runs
 // this file as the program entry point.
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleRestartGame(body: unknown): Promise<Response> {
   const { roomId, playerId, token } = body as { roomId?: unknown; playerId?: unknown; token?: unknown }
 
   if (typeof roomId !== 'string' || !UUID_REGEX.test(roomId)) {
@@ -235,5 +234,8 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ ok: true, ...info }, 200)
-}, { rateLimit: 'restart_game' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleRestartGame, { rateLimit: 'restart_game' }))
+}
