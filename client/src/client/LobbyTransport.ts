@@ -19,7 +19,6 @@
 import type { AiDifficulty } from '@shared/types/GameState';
 import { clamp } from '@shared/engine/math';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
-import { supabase } from '../lib/supabase';
 import {
   WIND_MIN,
   WIND_MAX,
@@ -245,6 +244,13 @@ export class LobbyTransport {
    * "read failed", which is fine here since both mean "don't offer rejoin".
    */
   async fetchRoom(roomId: string): Promise<FetchedRoom | null> {
+    // Lazy-import the Supabase singleton so it is NEVER constructed on the eager
+    // boot path. `../lib/supabase` calls createClient() at module eval using
+    // import.meta.env.VITE_SUPABASE_URL; a static import here would drag that
+    // through main.ts → Lobby → LobbyTransport and crash hot-seat boot (and the
+    // e2e HUD guardrails) whenever no Supabase config is present. Mirrors the
+    // `await import('../lib/supabase')` seam already used in main.ts and Lobby.ts.
+    const { supabase } = await import('../lib/supabase');
     const res = await supabase
       .from('rooms')
       .select('id, code, seed, options, players, status')
