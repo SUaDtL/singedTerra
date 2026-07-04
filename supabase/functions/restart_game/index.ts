@@ -88,7 +88,7 @@ Deno.serve(withCors(async (body) => {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('restart_game: fetch error', fetchError)
+    console.error('restart_game: fetch error', fetchError, { roomId, playerId })
     return json({ error: 'Failed to fetch room' }, 500)
   }
   if (!oldRoom) {
@@ -120,7 +120,7 @@ Deno.serve(withCors(async (body) => {
     .select('id')
 
   if (claimError) {
-    console.error('restart_game: claim error', claimError)
+    console.error('restart_game: claim error', claimError, { roomId, playerId })
     return json({ error: 'Failed to claim rematch' }, 500)
   }
 
@@ -188,7 +188,7 @@ Deno.serve(withCors(async (body) => {
     })
 
   if (insertError) {
-    console.error('restart_game: insert error', insertError)
+    console.error('restart_game: insert error', insertError, { roomId, playerId, newRoomId })
     // Roll back the claim so the pointer never dangles at a room that does not exist.
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
     return json({ error: 'Failed to create rematch room' }, 500)
@@ -203,7 +203,7 @@ Deno.serve(withCors(async (body) => {
     .eq('room_id', roomId)
 
   if (oldSeatsError) {
-    console.error('restart_game: old seats fetch error', oldSeatsError)
+    console.error('restart_game: old seats fetch error', oldSeatsError, { roomId, playerId, newRoomId })
     await supabase.from('rooms').delete().eq('id', newRoomId)
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
     return json({ error: 'Failed to create rematch room' }, 500)
@@ -215,7 +215,7 @@ Deno.serve(withCors(async (body) => {
       .insert(oldSeats.map((s: { seat_id: string; token: string }) => ({ room_id: newRoomId, seat_id: s.seat_id, token: s.token })))
 
     if (seatCopyError) {
-      console.error('restart_game: seat copy error', seatCopyError)
+      console.error('restart_game: seat copy error', seatCopyError, { roomId, playerId, newRoomId })
       await supabase.from('rooms').delete().eq('id', newRoomId)
       await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
       return json({ error: 'Failed to create rematch room' }, 500)

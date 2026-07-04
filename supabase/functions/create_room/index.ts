@@ -160,7 +160,7 @@ Deno.serve(withCors(async (body) => {
     .single()
 
   if (insertError || !room) {
-    console.error('create_room: insert error', insertError)
+    console.error('create_room: insert error', insertError, { playerId, code })
     return json({ error: 'Failed to create room' }, 500)
   }
 
@@ -173,7 +173,7 @@ Deno.serve(withCors(async (body) => {
     .insert({ room_id: room.id, seat_id: playerId, token })
 
   if (seatError) {
-    console.error('create_room: seat insert error', seatError)
+    console.error('create_room: seat insert error', seatError, { roomId: room.id, playerId })
     await supabase.from('rooms').delete().eq('id', room.id)
     return json({ error: 'Failed to create room' }, 500)
   }
