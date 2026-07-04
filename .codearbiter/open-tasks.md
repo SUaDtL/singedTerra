@@ -128,10 +128,10 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 ### Tooling & dependencies
 - `tsx` is undeclared/unversioned yet runs all 38 `npm run check` harnesses via `npx tsx` (no lockfile integrity) — the sole pre-deploy gate. Add `tsx` to root `devDependencies` (^4.19.0) to pin it. `package.json`. [H/S] **(quick-kill → sprint)**
 - Pin the floating Deno import `@supabase/supabase-js@2` → `@2.107.0` (re-resolves on any `deno cache --reload`, affects all 10 functions). `supabase/functions/_shared/mod.ts:13`. [L/S] **(quick-kill → sprint)**
-- `http-proxy-middleware@3.0.6` (dev-only, transitive via `netlify-cli`): GHSA-gcq2-9pq2-cxqm CRLF (CVSS 7.5, fixed 3.0.7); `npm update http-proxy-middleware --depth 10` or await a netlify-cli bump. [M/S]
+- Bump `http-proxy-middleware` past 3.0.6 (dev-only, transitive via `netlify-cli`): GHSA-gcq2-9pq2-cxqm CRLF (CVSS 7.5, fixed 3.0.7); `npm update http-proxy-middleware --depth 10` or await a netlify-cli bump. [M/S]
 - Remove the phantom `iceberg-js@0.8.1` entry from `deno.lock` (imported nowhere) — find+remove the originating import then `deno cache --reload`, or drop manually. [L/S]
 - Remove the extraneous `server` workspace from `package-lock.json:17827-17840` (references deleted socket.io/express/tsx); regenerate via `npm install`. [L/S]
-- `node-forge@1.4.0` dev-only transitive carries `(BSD-3-Clause OR GPL-2.0)` — acknowledge the copyleft disjunct vs MIT intent, or pursue removal via netlify-cli. [L/S]
+- Resolve the `node-forge` 1.4.0 license note (dev-only transitive): it carries `(BSD-3-Clause OR GPL-2.0)` — acknowledge the copyleft disjunct vs MIT intent, or pursue removal via netlify-cli. [L/S]
 - LOW deprecations, dev-only transitive: `postcss-values-parser@6.0.2` (MPL-2.0), `glob@10.5.0`, `node-domexception@1.0.0` — acknowledge / monitor netlify-cli updates. [L/—]
 
 ### Migrations (committed migrations are IMMUTABLE — fixes ship as a NEW migration 005 + backend deploy)
