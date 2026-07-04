@@ -865,6 +865,7 @@ export class Lobby {
       this.render();
       void this.subscribeWaitingRoom();
     } catch (err) {
+      console.error('Lobby.createRoom: network error —', err);
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
       this.render();
@@ -1005,6 +1006,7 @@ export class Lobby {
       this.render();
       void this.subscribeWaitingRoom();
     } catch (err) {
+      console.error('Lobby.joinRoom: network error —', err);
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
       this.render();
@@ -1063,6 +1065,7 @@ export class Lobby {
       this.onlineError = '';
       this.render();
     } catch (err) {
+      console.error('Lobby.fetchRooms: network error —', err);
       if (this.onlineSubView !== 'browse') return;
       this.onlineError = 'Network error. Try again.';
       this.render();
@@ -1505,6 +1508,7 @@ export class Lobby {
 
       this.render();
     } catch (err) {
+      console.error('Lobby.readyUp: network error —', err);
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
       this.render();
@@ -1660,6 +1664,7 @@ export class Lobby {
       this.onlineBusy = false;
       this.render();
     } catch (err) {
+      console.error('Lobby.updatePlayer: network error —', err);
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
       this.render();
@@ -1678,6 +1683,7 @@ export class Lobby {
     try {
       await this.transport.leaveRoom({ roomId, playerId, token });
     } catch (err) {
+      console.debug('Lobby.leaveRoom: best-effort leave failed —', err);
       // Best-effort — leave the room locally regardless.
     }
     this.cleanupWaitingChannel();
