@@ -185,8 +185,14 @@ export class NetworkClient implements GameClient {
   // Per-room gravity (for the AI's trajectory sim to match the engine).
   private gravity:          number;
   // Guards one bot submission per (turn, bot) from THIS client; the seq-unique +
-  // referee cursor make the cross-client race exactly-once regardless.
+  // referee cursor make the cross-client race exactly-once regardless. `lastBotKey`
+  // latches a phase only once it is COMMITTED (ours accepted, or a racer's identical
+  // action won); `botSubmitPendingKey` marks the phase whose POST is currently in
+  // flight, so the ~60fps emitState cadence does not spam duplicate submits while one
+  // is outstanding. A transient failure clears the pending mark WITHOUT latching, so
+  // the next frame re-attempts instead of wedging the room (#119 / reliability-002).
   private lastBotKey:       string | null = null;
+  private botSubmitPendingKey: string | null = null;
 
   // For computing the NEXT active seat after a turn-ending action (P0-3): the
   // room options (to build a throwaway engine) and the ordered log of actions
@@ -784,6 +790,12 @@ export class NetworkClient implements GameClient {
     actingPlayerId?: string,
     attempt = 0,
     roundOver = false,
+    // Terminal-outcome hook for the bot driver (#119). Called once the POST resolves:
+    // committed=true  -> the action is on the canonical log (ours accepted, a racer's
+    //                    identical action won, or the turn already advanced) — stop trying.
+    // committed=false -> a transient failure that did NOT commit — safe to re-attempt.
+    // Only the bot path passes it; human submits leave it undefined.
+    onSettle?: (committed: boolean) => void,
   ): void {
     // For TURN-ENDING actions, tell the server which seat is active NEXT (this client's
     // engine skips eliminated tanks AND re-seats the opener at a round boundary; the
@@ -850,20 +862,34 @@ export class NetworkClient implements GameClient {
               roomId: this.roomId,
               localActivePlayerId: this.engine.getState().activePlayerId,
             });
+            // For a bot proxy this means the turn already advanced (someone committed):
+            // treat as committed so the driver latches instead of re-attempting.
+            onSettle?.(true);
           } else if (!isConflict) {
-            // A bot's lost race shows up as a benign seq-conflict / turn-advanced
-            // rejection — don't log those as errors.
+            // A non-conflict rejection (e.g. a 5xx where the RPC errored) — the action
+            // did NOT commit.
             console.error('NetworkClient: submit_action rejected:', data.error);
             // A genuine rejection of OUR OWN turn-ending action (not a bot proxy):
             // release the "Sending…" lock and tell the player, so a failed shot
             // doesn't trap them (P1-6). Bot proxies don't hold the lock.
             if (!actingPlayerId) this.failFire('Shot failed — try again.');
+            // Transient for a bot proxy: clear the in-flight mark so the next frame retries.
+            onSettle?.(false);
+          } else {
+            // isConflict && !retryOnConflict: a bot's lost race. Another client committed
+            // the identical bot action, so the phase IS on the log — latch, don't retry.
+            onSettle?.(true);
           }
+        } else {
+          // Accepted: our submit is the committed row for this phase.
+          onSettle?.(true);
         }
       })
       .catch(err => {
         console.error('NetworkClient: submit_action network error:', err);
         if (!actingPlayerId) this.failFire('Connection problem — shot not sent. Try again.');
+        // Network error: nothing committed — let the bot driver re-attempt next frame.
+        onSettle?.(false);
       });
   }
 
@@ -1094,8 +1120,8 @@ export class NetworkClient implements GameClient {
     // transition deterministically, so buy and fire land as two ordered log rows.
     const phase = plan.buy ? 'buy' : 'act';
     const key = `${state.turn}:${tankId}:${phase}`;
-    if (key === this.lastBotKey) return;           // already submitted this phase
-    this.lastBotKey = key;
+    if (key === this.lastBotKey) return;           // already committed this phase
+    if (key === this.botSubmitPendingKey) return;  // a submit for this phase is in flight
 
     const actingId = this.supaIdByTank.get(tankId);
     if (!actingId) return;
@@ -1106,9 +1132,22 @@ export class NetworkClient implements GameClient {
         ? { type: 'use_shield' }
         : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
 
-    // No retry: a seq-conflict means another client already committed the (same)
-    // bot action; the referee would reject a late retry anyway (turn advanced).
-    this.submitAction(action, /* retryOnConflict */ false, actingId);
+    // Mark this phase in flight BEFORE the POST so the per-frame emitState cadence
+    // does not fire a second submit while this one is outstanding. No seq-conflict
+    // retry: a conflict means another client already committed the (same) bot action.
+    // The onSettle callback decides the phase's fate once the POST resolves:
+    //   committed (accepted, or a racer's identical action won / turn advanced) -> latch
+    //   transient failure (network error, or a non-conflict 5xx that did not commit)
+    //     -> clear the pending mark WITHOUT latching, so the next frame re-attempts.
+    // This is the self-heal (#119): a dropped bot submit no longer wedges a single-
+    // driver room. Determinism is untouched — the re-attempt is the SAME deterministic
+    // action, and the referee's seq-unique + cursor keep it exactly-once.
+    this.botSubmitPendingKey = key;
+    this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (committed) => {
+      if (this.botSubmitPendingKey !== key) return; // superseded by a newer turn/phase
+      this.botSubmitPendingKey = null;
+      if (committed) this.lastBotKey = key;
+    });
   }
 
   private callFinishGame(winnerId: string | null): void {
