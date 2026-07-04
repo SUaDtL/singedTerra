@@ -39,8 +39,7 @@ export function sanitizeScoreboard(raw: unknown, seatCount: number): ScoreEntry[
 
 // Guard Deno.serve so importing this module in tests does not start the HTTP
 // listener (mirrors submit_action / restart_game).
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleFinishGame(body: unknown): Promise<Response> {
   const { roomId, winnerId, playerId, rounds, scoreboard, token } = body as {
     roomId?: unknown
     winnerId?: unknown
@@ -132,5 +131,8 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ ok: true }, 200)
-}, { rateLimit: 'finish_game' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleFinishGame, { rateLimit: 'finish_game' }))
+}

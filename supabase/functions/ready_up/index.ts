@@ -26,8 +26,7 @@ export function applyReadyUp(
   return { updatedPlayers, shouldStart }
 }
 
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleReadyUp(body: unknown): Promise<Response> {
   const { roomId, playerId, token } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -93,5 +92,8 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ started: shouldStart, players: updatedPlayers }, 200)
-}, { rateLimit: 'ready_up' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleReadyUp, { rateLimit: 'ready_up' }))
+}

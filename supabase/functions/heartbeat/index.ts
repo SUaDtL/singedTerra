@@ -11,8 +11,7 @@ export function applyHeartbeat(
   return players.map((p) => (p.id === playerId ? { ...p, lastSeen: nowMs } : p))
 }
 
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleHeartbeat(body: unknown): Promise<Response> {
   const { roomId, playerId, token } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -70,5 +69,8 @@ Deno.serve(withCors(async (body) => {
   }
 
   return json({ ok: true }, 200)
-}, { rateLimit: 'heartbeat' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleHeartbeat, { rateLimit: 'heartbeat' }))
+}

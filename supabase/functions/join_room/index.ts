@@ -24,8 +24,7 @@ export function checkJoinEligibility(
   return { ok: true }
 }
 
-if (import.meta.main) {
-Deno.serve(withCors(async (body) => {
+export async function handleJoinRoom(body: unknown): Promise<Response> {
   const { code, playerName, color } = body as {
     code?: unknown
     playerName?: unknown
@@ -148,5 +147,8 @@ Deno.serve(withCors(async (body) => {
     options: roomOptions,
     players: updatedPlayers,
   }, 200)
-}, { rateLimit: 'join_room' }))
-} // end if (import.meta.main)
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleJoinRoom, { rateLimit: 'join_room' }))
+}

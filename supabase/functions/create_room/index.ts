@@ -1,7 +1,7 @@
 import { withCors, json, getServiceClient, generateCode, isValidColor, mintSeatToken, DEFAULT_GRAVITY, DEFAULT_MAX_WIND } from '../_shared/mod.ts'
 import { coerceEconomyOptions, coerceGravity, coerceMaxWind } from './validate.ts'
 
-Deno.serve(withCors(async (body) => {
+export async function handleCreateRoom(body: unknown): Promise<Response> {
   const { playerName, color, options, bots } = body as {
     playerName?: unknown
     color?: unknown
@@ -181,4 +181,8 @@ Deno.serve(withCors(async (body) => {
   // Return the full players array so the client has the generated CPU seat ids
   // (and renders them in the waiting room) without waiting for a Realtime update.
   return json({ roomId: room.id, code, playerId, token, players }, 200)
-}, { rateLimit: 'create_room' }))
+}
+
+if (import.meta.main) {
+  Deno.serve(withCors(handleCreateRoom, { rateLimit: 'create_room' }))
+}
