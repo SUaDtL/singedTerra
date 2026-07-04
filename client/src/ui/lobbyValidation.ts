@@ -108,6 +108,38 @@ export function coerceSettings(raw: RawSettings): LobbySettings | undefined {
 }
 
 /**
+ * Parse the online "Rounds" input into a clamped, ODD best-of-N value, or
+ * undefined when blank (engine default = single round). Shared by the create
+ * body and the local waitingOptions so both agree on the value sent to the room.
+ */
+export function parseOnlineRounds(raw: string): number | undefined {
+  const parsed = parseNumber(raw);
+  if (parsed === undefined) return undefined;
+  const clamped = clamp(Math.trunc(parsed), ROUNDS_MIN, ROUNDS_MAX);
+  return clamped % 2 === 0 ? clamped + 1 : clamped;
+}
+
+/**
+ * Parse the online SE-parity economy inputs (interest / sudden-death / arms-level) into clamped
+ * values, omitting blanks. Shared by the create-room body and the local waitingOptions so both
+ * agree on exactly what the room is created with (and thus what every client's engine builds).
+ */
+export function parseOnlineEconomy(
+  interestRaw: string,
+  suddenDeathRaw: string,
+  armsLevelRaw: string,
+): { interestRate?: number; suddenDeathTurn?: number; armsLevel?: number } {
+  const out: { interestRate?: number; suddenDeathTurn?: number; armsLevel?: number } = {};
+  const interest = parseNumber(interestRaw);
+  if (interest !== undefined) out.interestRate = clamp(interest, INTEREST_MIN, INTEREST_MAX);
+  const sudden = parseNumber(suddenDeathRaw);
+  if (sudden !== undefined) out.suddenDeathTurn = clamp(Math.trunc(sudden), SUDDEN_DEATH_MIN, SUDDEN_DEATH_MAX);
+  const arms = parseNumber(armsLevelRaw);
+  if (arms !== undefined) out.armsLevel = clamp(Math.trunc(arms), ARMS_MIN, ARMS_MAX);
+  return out;
+}
+
+/**
  * Normalize a raw room-code input as the user types: uppercase, strip anything
  * that isn't A–Z/0–9, and cap at 4 characters.
  */
