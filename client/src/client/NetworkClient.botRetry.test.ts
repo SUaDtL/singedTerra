@@ -160,4 +160,50 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
 
     client.stop();
   });
+
+  it('latches when a racer already committed the bot action (seq_conflict) — OB-4', async () => {
+    // The COMMON exactly-once outcome: another client won the race, so the referee
+    // returns seq_conflict. The action IS on the log, so the driver must latch, not retry.
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ ok: false, error: 'seq_conflict', retry: true }),
+    });
+    const client = await botTurnClient(fetchMock);
+
+    await pumpFrame();
+    await pumpFrame();
+    expect(fetchMock).toHaveBeenCalledTimes(1); // conflict = committed elsewhere -> latched
+
+    client.stop();
+  });
+
+  it('re-attempts after a network-level error (fetch rejects) — OB-5', async () => {
+    // The COMMON transient: the POST never reaches the server. Nothing committed, so
+    // the driver must clear the in-flight mark and retry on the next frame.
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
+    const client = await botTurnClient(fetchMock);
+
+    await pumpFrame();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await pumpFrame();
+    expect(fetchMock).toHaveBeenCalledTimes(2); // self-heal on the .catch path
+
+    client.stop();
+  });
+
+  it('latches when the referee says the turn already advanced ("Not your turn") — OB-6', async () => {
+    // A rare desync where the referee rejects with "Not your turn": the turn moved on
+    // (someone committed), so re-attempting is pointless — latch instead of spinning.
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ ok: false, error: 'Not your turn' }),
+    });
+    const client = await botTurnClient(fetchMock);
+
+    await pumpFrame();
+    await pumpFrame();
+    expect(fetchMock).toHaveBeenCalledTimes(1); // turn advanced -> latched, no spin
+
+    client.stop();
+  });
 });
