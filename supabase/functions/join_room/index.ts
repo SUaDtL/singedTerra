@@ -63,7 +63,7 @@ Deno.serve(withCors(async (body) => {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('join_room: fetch error', fetchError)
+    console.error('join_room: fetch error', fetchError, { code: normalizedCode })
     return json({ error: 'Failed to look up room' }, 500)
   }
 
@@ -92,7 +92,7 @@ Deno.serve(withCors(async (body) => {
       .update({ players: fresh })
       .eq('id', room.id)
     if (reapError) {
-      console.error('join_room: reap update error', reapError)
+      console.error('join_room: reap update error', reapError, { roomId: room.id })
       return json({ error: 'Failed to join room' }, 500)
     }
   }
@@ -125,7 +125,7 @@ Deno.serve(withCors(async (body) => {
     .eq('id', room.id)
 
   if (updateError) {
-    console.error('join_room: update error', updateError)
+    console.error('join_room: update error', updateError, { roomId: room.id, playerId })
     return json({ error: 'Failed to join room' }, 500)
   }
 
@@ -136,7 +136,7 @@ Deno.serve(withCors(async (body) => {
     .insert({ room_id: room.id, seat_id: playerId, token })
 
   if (seatError) {
-    console.error('join_room: seat insert error', seatError)
+    console.error('join_room: seat insert error', seatError, { roomId: room.id, playerId })
     return json({ error: 'Failed to join room' }, 500)
   }
 

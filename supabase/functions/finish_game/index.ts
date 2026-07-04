@@ -77,7 +77,7 @@ Deno.serve(withCors(async (body) => {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('finish_game: fetch error', fetchError)
+    console.error('finish_game: fetch error', fetchError, { roomId, playerId })
     return json({ error: 'Failed to fetch room' }, 500)
   }
   if (!room) {
@@ -107,7 +107,7 @@ Deno.serve(withCors(async (body) => {
     .eq('status', 'active')
 
   if (error) {
-    console.error('finish_game: update error', error)
+    console.error('finish_game: update error', error, { roomId, playerId })
     return json({ error: 'Failed to finish game' }, 500)
   }
 
@@ -127,7 +127,7 @@ Deno.serve(withCors(async (body) => {
       )
     if (scoreError) {
       // Non-fatal: the game is finished; the scoreboard is a record, not game state.
-      console.error('finish_game: score persist error', scoreError)
+      console.error('finish_game: score persist error', scoreError, { roomId, playerId })
     }
   }
 

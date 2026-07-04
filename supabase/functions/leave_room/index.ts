@@ -42,7 +42,7 @@ Deno.serve(withCors(async (body) => {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('leave_room: fetch error', fetchError)
+    console.error('leave_room: fetch error', fetchError, { roomId, playerId })
     return json({ error: 'Failed to fetch room' }, 500)
   }
 
@@ -66,7 +66,7 @@ Deno.serve(withCors(async (body) => {
       .eq('id', roomId)
 
     if (deleteError) {
-      console.error('leave_room: delete error', deleteError)
+      console.error('leave_room: delete error', deleteError, { roomId, playerId })
       return json({ error: 'Failed to delete room' }, 500)
     }
 
@@ -79,7 +79,7 @@ Deno.serve(withCors(async (body) => {
     .eq('id', roomId)
 
   if (updateError) {
-    console.error('leave_room: update error', updateError)
+    console.error('leave_room: update error', updateError, { roomId, playerId })
     return json({ error: 'Failed to update room' }, 500)
   }
 

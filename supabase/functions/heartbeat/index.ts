@@ -40,7 +40,7 @@ Deno.serve(withCors(async (body) => {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('heartbeat: fetch error', fetchError)
+    console.error('heartbeat: fetch error', fetchError, { roomId, playerId })
     return json({ error: 'Failed to fetch room' }, 500)
   }
 
@@ -65,7 +65,7 @@ Deno.serve(withCors(async (body) => {
     .eq('id', roomId)
 
   if (updateError) {
-    console.error('heartbeat: update error', updateError)
+    console.error('heartbeat: update error', updateError, { roomId, playerId })
     return json({ error: 'Failed to update heartbeat' }, 500)
   }
 
