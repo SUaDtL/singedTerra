@@ -330,12 +330,19 @@ export class NetworkClient implements GameClient {
         // the socket dropped (Supabase retries automatically and re-fires SUBSCRIBED
         // on recovery). Ignore CLOSED during our own teardown (stop()).
         if (status === 'SUBSCRIBED') {
+          const firstSubscribe = !this._everSubscribed;
           const recovered = this._everSubscribed && this._connection !== 'connected';
           this.setConnection('connected');
-          // On a RE-subscribe, fetch any actions that committed while we were down
-          // so we never miss a turn taken during the outage (deterministic catch-up).
-          if (recovered) void this.resyncLog();
           this._everSubscribed = true;
+          // Re-fetch (from nextExpectedSeq) any actions we could not have received
+          // live, and flush them in order. This idempotent catch-up covers two gaps:
+          //   - recovered: turns committed during a socket outage (re-subscribe).
+          //   - firstSubscribe: an action committed in the window between initialize()'s
+          //     initial log fetch and THIS first SUBSCRIBED (#118 / reliability-001).
+          //     The fetch snapshot missed it and the INSERT fired before the channel
+          //     was live, so without this re-fetch that seq is never delivered — and
+          //     flushPendingActions wedges on the hole forever.
+          if (firstSubscribe || recovered) void this.resyncLog();
         } else if (
           !this._closing &&
           (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')
