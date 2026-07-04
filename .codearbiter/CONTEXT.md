@@ -79,6 +79,15 @@ Stage **1** (prototype) per maintainer — despite being deployed to production 
 client + Supabase backend) and playable, it is treated as an early/experimental solo
 project with lighter gates.
 
+**Coverage-denominator policy (decided 2026-07-03, maintainer):** the stage-1 ≥60%
+client-coverage gate measures *assertable logic only*. `client/vite.config.ts`
+`coverage.exclude` drops code a unit test cannot honestly cover — canvas rendering
+(`renderer/*Renderer.ts`, `renderer/*Fx.ts`), WebAudio (`audio/AudioEngine.ts`), DOM
+bootstrap (`main.ts`), and type-only files (`GameClient.ts`, `SupabaseTypes.ts`).
+Rendering is verified by eye + Playwright, not draw-call assertions. Pure logic under
+`renderer/` (strata, ringBuffer, audioEdges) and theme colour math stay IN the
+denominator. Threshold itself is unchanged at 60%.
+
 ## License
 
 Intended **MIT** (open-source), not yet enacted — no `LICENSE`/`license` field exists and

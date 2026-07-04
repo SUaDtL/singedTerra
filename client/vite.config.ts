@@ -32,7 +32,33 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'text-summary'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
+      // The coverage DENOMINATOR is testable logic only. The excludes below are code a
+      // unit test cannot assert on without turning into draw-call theater (asserting on a
+      // mocked CanvasRenderingContext2D / AudioContext) or that carries no logic at all:
+      //   - Canvas rendering (renderer/*Renderer.ts, renderer/*Fx.ts): pure 2D drawing,
+      //     verified by eye + Playwright, not by unit tests.
+      //   - audio/AudioEngine.ts: WebAudio side-effects; jsdom has no AudioContext.
+      //   - main.ts: DOM bootstrap / wiring (integration glue, not a unit).
+      //   - lib/SupabaseTypes.ts, client/GameClient.ts: type-only (interfaces, no runtime).
+      // Pure logic that happens to live under renderer/ (strata, ringBuffer, audioEdges)
+      // and theme.ts's color math STAY in the denominator — they are genuinely testable.
+      // Rationale/decision: .codearbiter/CONTEXT.md (stage-1 coverage note, 2026-07-03).
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.d.ts',
+        'src/main.ts',
+        'src/lib/SupabaseTypes.ts',
+        'src/client/GameClient.ts',
+        'src/audio/AudioEngine.ts',
+        'src/renderer/Renderer.ts',
+        'src/renderer/EffectsRenderer.ts',
+        'src/renderer/TerrainRenderer.ts',
+        'src/renderer/TankRenderer.ts',
+        'src/renderer/ProjectileRenderer.ts',
+        'src/renderer/HUDRenderer.ts',
+        'src/renderer/explosionFx.ts',
+        'src/renderer/tankFx.ts',
+      ],
     },
   },
 });
