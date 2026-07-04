@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, StoredPlayer, nextCursor, ACCESSORY_TYPES, verifySeatToken } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, StoredPlayer, ServiceClient, nextCursor, ACCESSORY_TYPES, verifySeatToken } from '../_shared/mod.ts'
 import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
 
 // ---------------------------------------------------------------------------
@@ -75,7 +75,15 @@ type NetworkAction = NetworkFireAction | NetworkShieldAction | NetworkBuyAction 
 // Guard Deno.serve so importing this module in tests does not start the HTTP
 // listener.  When Deno executes the file as the program entry point,
 // import.meta.main is true; when it is imported by a test file it is false.
-export async function handleSubmitAction(body: unknown): Promise<Response> {
+//
+// submitActionCore is the live referee body with an INJECTABLE service client
+// (#122): the thin handleSubmitAction entry passes the real getServiceClient(),
+// while deno tests pass a fake client to exercise the turn-gate, seq allocation,
+// roundOver, and bot-proxy paths without a database. The client is resolved at its
+// original position (after the no-DB shape validation), so behavior is identical to
+// the pre-seam handler. It is NOT a second positional handler param, because withCors
+// invokes the handler as (body, req) and would pass the Request there.
+export async function submitActionCore(body: unknown, injectedClient?: ServiceClient): Promise<Response> {
   const { roomId, playerId, token, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
     roomId?: unknown
     playerId?: unknown
@@ -107,7 +115,7 @@ export async function handleSubmitAction(body: unknown): Promise<Response> {
     return json({ error: shapeResult.error }, shapeResult.status)
   }
 
-  const supabase = getServiceClient()
+  const supabase = injectedClient ?? getServiceClient()
 
   // Fetch room — must be 'active'
   const { data: room, error: fetchError } = await supabase
@@ -234,6 +242,13 @@ export async function handleSubmitAction(body: unknown): Promise<Response> {
   })
 
   return rpcResultToResponse(rpcResult)
+}
+
+/** Thin withCors-compatible entry: run the core against the real service client.
+ *  Kept as its own function so the Deno.serve wrapper stays a one-liner and the
+ *  live body (submitActionCore) is import-testable with an injected client. */
+export function handleSubmitAction(body: unknown): Promise<Response> {
+  return submitActionCore(body)
 }
 
 if (import.meta.main) {
