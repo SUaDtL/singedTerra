@@ -1,6 +1,6 @@
 <!-- singedTerra — README -->
 <p align="center">
-  <img src="docs/assets/splash-hero.png" width="820" alt="singedTerra: a love letter to Scorched Earth (1991). Two cel-shaded tanks duel across scorched desert cliffs at dusk while a shell arcs toward an airburst." />
+  <img src="docs/assets/banner.svg" width="820" alt="singedTerra: a love letter to Scorched Earth (1991). Two pixel-art tanks duel across scorched, destructible terrain at dusk while a wind-bent shell arcs toward a 16-bit airburst." />
 </p>
 
 <h1 align="center">singedTerra</h1>
