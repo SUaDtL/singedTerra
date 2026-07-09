@@ -38,10 +38,11 @@ const SHIELD_CAPACITY = getWeapon('shield').behavior.shield.capacity;
 // Aims swept against the real engine for THIS seed on the 1200×600 field: P2
 // (x=1080) lobs left and hits P1 (x=120), 960px away. The nuke/missile SHARE
 // ballistics (both plain shells), so the same aim lands for both — chosen so the
-// missile clearly damages P1 (~21) and the nuke clearly exceeds it (~78), which
-// the proportional-drain assertion requires.
-const MISSILE_AT_P1 = { angle: 117, power: 88, weapon: 'missile' };
-const NUKE_AT_P1    = { angle: 117, power: 88, weapon: 'nuke' };
+// missile clearly damages P1 (~49) and the nuke clearly exceeds it (~79), which
+// the proportional-drain assertion requires. Re-swept after the muzzle fix
+// (barrel pivot +20px, length 18->22) shifted long-lob landings ~one blast radius.
+const MISSILE_AT_P1 = { angle: 116, power: 88, weapon: 'missile' };
+const NUKE_AT_P1    = { angle: 116, power: 88, weapon: 'nuke' };
 const NAPALM_AT_P1  = { angle: 115, power: 86, weapon: 'napalm' };
 
 let failed = false;

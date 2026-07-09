@@ -27,7 +27,7 @@
 
 import { GameEngine, SUDDEN_DEATH_GRAVITY_RAMP, effectiveGravity } from '../../shared/src/engine/GameEngine.ts';
 import { GRAVITY, POWER_SCALE } from '../../shared/src/engine/Physics.ts';
-import { BARREL_LENGTH } from '../../shared/src/engine/Tank.ts';
+import { BARREL_LENGTH, BARREL_PIVOT_HEIGHT } from '../../shared/src/engine/Tank.ts';
 import { computeAiPlan } from '../../shared/src/engine/AI.ts';
 
 const SEED = 0x5eed1234;
@@ -58,8 +58,9 @@ function probeUp(opts, turn, K, P) {
   e.applyAction({ type: 'fire' });
   for (let i = 0; i < K; i++) e.tick();
   const p = e.getState().projectiles[0];
-  // y0 = barrel tip y for angle 90: tank.y - BARREL_LENGTH*sin(90deg) = tank.y - BARREL_LENGTH.
-  return { y: p ? p.y : null, y0: tankY - BARREL_LENGTH, alive: !!p };
+  // y0 = barrel tip y for angle 90: the barrel pivots BARREL_PIVOT_HEIGHT above the
+  // tank base, so tank.y - BARREL_PIVOT_HEIGHT - BARREL_LENGTH*sin(90deg).
+  return { y: p ? p.y : null, y0: tankY - BARREL_PIVOT_HEIGHT - BARREL_LENGTH, alive: !!p };
 }
 
 // Bit-faithful re-sim of the engine's vertical integration (vx=0 with wind 0), so an
