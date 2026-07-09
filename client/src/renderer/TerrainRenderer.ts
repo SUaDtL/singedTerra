@@ -182,16 +182,16 @@ export class TerrainRenderer {
             // Depth ramp: blend BASE → MID → DEEP over RAMP_DEPTH px so the
             // band color grades smoothly into the deep-rock palette.
             const t = Math.min((depth - 2) / RAMP_DEPTH, 1);
-            if (t < 0.5) {
+            if (t < 0.22) {
               const u = t * 2; // band-base → mid
-              r = baseR + (MID[0] - baseR) * u;
-              g = baseG + (MID[1] - baseG) * u;
-              b = baseB + (MID[2] - baseB) * u;
+              r = baseR;
+              g = baseG;
+              b = baseB;
             } else {
               const u = (t - 0.5) * 2; // mid → deep
-              r = MID[0] + (DEEP[0] - MID[0]) * u;
-              g = MID[1] + (DEEP[1] - MID[1]) * u;
-              b = MID[2] + (DEEP[2] - MID[2]) * u;
+              r = t < 0.58 ? MID[0] : DEEP[0];
+              g = t < 0.58 ? MID[1] : DEEP[1];
+              b = t < 0.58 ? MID[2] : DEEP[2];
             }
           }
           data[o] = r;
