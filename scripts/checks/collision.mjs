@@ -30,6 +30,7 @@ import {
   createTank,
   placeTwoTanks,
   barrelTip,
+  BARREL_LENGTH,
   TANK_WIDTH,
   TANK_HEIGHT,
 } from '../../shared/src/engine/Tank.ts';
@@ -131,7 +132,7 @@ console.log('[2] Fired straight up returns and hits GROUND near origin (not OOB 
   ok(Math.abs(v.vx) < 1e-9, 'straight-up vx ~ 0', `vx=${v.vx}`);
   ok(v.vy < 0, 'straight-up vy is upward (negative)', `vy=${v.vy}`);
 
-  const tip = barrelTip(tank, 18);
+  const tip = barrelTip(tank, BARREL_LENGTH);
   const p = mkProjectile(tip.x, tip.y, v.vx, v.vy);
 
   let result = { type: 'none' };
@@ -282,7 +283,7 @@ console.log('[5] Projectile does NOT collide with its OWN tank on the first tick
   // ON THE SHOOTER (it should still be flying, OR have hit something that is not
   // the firing tank). Easiest robust assertion: after one tick we are not back
   // in PLAYER_TURN due to colliding with our own tank at the spawn.
-  const angleUpTip = barrelTip(shooter, 18);
+  const angleUpTip = barrelTip(shooter, BARREL_LENGTH);
   ok(Math.abs(angleUpTip.x - p.x) < 1e-6 && Math.abs(angleUpTip.y - p.y) < 1e-6,
     'engine spawned projectile exactly at barrelTip');
 

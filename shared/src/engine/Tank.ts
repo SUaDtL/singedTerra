@@ -11,11 +11,19 @@ export const TANK_HEIGHT = 12;
 /**
  * Muzzle offset (px) from the barrel pivot where a shell spawns — passed to
  * barrelTip(). SINGLE SOURCE OF TRUTH: GameEngine fires from here and the AI
- * simulates from here, so they cannot drift (REVIEW_BACKLOG P3-15). NOTE: this is
- * the PHYSICS muzzle offset, distinct from the renderer's larger VISUAL barrel
- * length in TankRenderer — do not unify those.
+ * simulates from here, so they cannot drift (REVIEW_BACKLOG P3-15). Matches the
+ * renderer's VISUAL barrel length (TankRenderer BARREL_LENGTH) so the shell
+ * leaves exactly where the barrel is drawn — keep the two in sync.
  */
-export const BARREL_LENGTH = 18;
+export const BARREL_LENGTH = 22;
+
+/**
+ * Height (px) of the barrel pivot above the tank base (tank.y = tread bottom).
+ * Mirrors the renderer's turret-top pivot: tread (6) + body (10) + turret
+ * offset (4) — TankRenderer draws the barrel from this point, so physics must
+ * spawn the shell from it too, not from ground level.
+ */
+export const BARREL_PIVOT_HEIGHT = 20;
 
 /** MVP0 default aiming/loadout values. */
 const DEFAULT_ANGLE = 45;
@@ -194,16 +202,17 @@ export function placeTanks(
 }
 
 /**
- * Barrel-end point (projectile spawn) along the tank's aim vector.
+ * Barrel-end point (projectile spawn) along the tank's aim vector, from the
+ * barrel pivot at the turret top (BARREL_PIVOT_HEIGHT above the tank base).
  *
  * Angle convention (SPEC §6): degrees, 0 = right (+x), 90 = up (screen −y).
- * tip = (tank.x + len*cosθ, tank.y − len*sinθ).
+ * tip = (tank.x + len*cosθ, tank.y − BARREL_PIVOT_HEIGHT − len*sinθ).
  */
 export function barrelTip(tank: TankState, length: number): { x: number; y: number } {
   const rad = (tank.angle * Math.PI) / 180;
   return {
     x: tank.x + length * Math.cos(rad),
-    y: tank.y - length * Math.sin(rad),
+    y: tank.y - BARREL_PIVOT_HEIGHT - length * Math.sin(rad),
   };
 }
 

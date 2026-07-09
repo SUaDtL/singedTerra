@@ -93,8 +93,10 @@ const NAPALM_SPLASH_WIDTH = NAPALM_DEF.splashRadius * 2 + 1; // columns seeded o
 const FUNKY_AIM = { angle: 78, power: 60, weapon: 'funky_bomb' };
 // A flatter, lower-power lob so the full bounding-mine chain (3 hops + final)
 // stays in-bounds for THIS seed — the hopBoost leaps a high/hot shot off-field
-// before the 4th contact. Swept against the real engine (181 valid aims).
-const BETTY_AIM = { angle: 34, power: 26, weapon: 'bouncing_betty' };
+// before the 4th contact. Re-swept against the real engine after the muzzle fix
+// (barrel pivot +20px, length 18->22): 1755 valid aims; this one centers a full
+// 5x5 (angle x power) plateau of them.
+const BETTY_AIM = { angle: 25, power: 14, weapon: 'bouncing_betty' };
 const NAPALM_AIM = { angle: 65, power: 40, weapon: 'napalm' };
 // Aim that drops napalm onto/just-uphill of an opponent so the fire pools over it
 // (swept against the real engine for this seed on the 1200×600 field — a flat,
