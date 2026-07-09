@@ -327,9 +327,9 @@ export class HUD {
     // can never overlap the play field. margin-top:auto (via CSS) pushes it to
     // the bottom of the panel column.
     this.root.append(menu, this.roundEl, this.playersEl, instruments, this.activePlayerEl, this.aimEl, this.storeBtnEl, this.stripEl, this.touchStripEl);
-    // Controls legend + liveness widgets stay on the canvas overlay (positioned
-    // relative to the play field). The store + game-over modals go on the full-app
-    // modal layer ABOVE the CRT chrome so they render crisp and centered (P3-16).
+    // Controls and liveness widgets stay on the canvas overlay. The controls card
+    // is pinned to the upper-left sky so it never forces side-panel scrolling or
+    // obscures the lower terrain/tanks.
     this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
     this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
     this.built = true;
@@ -614,10 +614,10 @@ export class HUD {
     const controls = document.createElement('div');
     controls.className = 'st-hud__controls';
     controls.innerHTML =
-      '<span><kbd>&larr;</kbd>/<kbd>&rarr;</kbd> Aim</span>' +
-      '<span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> Power</span>' +
-      '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
-      '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
+      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>&larr;</kbd><kbd>&rarr;</kbd></span><span>Aim</span></span>' +
+      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>&uarr;</kbd><kbd>&darr;</kbd></span><span>Power</span></span>' +
+      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>Tab</kbd><kbd>Q</kbd></span><span>Weapon</span></span>' +
+      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>Space</kbd><kbd>Enter</kbd></span><span>Fire</span></span>';
     return controls;
   }
 
@@ -1541,17 +1541,21 @@ export class HUD {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: rgba(12, 7, 22, 0.62);
-  border: 1px solid rgba(255, 210, 63, 0.14);
+  padding: 4px 8px;
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, rgba(255, 210, 63, 0.055), rgba(12, 7, 22, 0.68) 32%),
+    rgba(12, 7, 22, 0.62);
+  border: 1px solid rgba(255, 210, 63, 0.18);
   font-size: 13px;
   transition: box-shadow 160ms ease, background 160ms ease, opacity 220ms ease;
 }
 .st-hud__player--active {
-  background: rgba(142, 47, 83, 0.42);
+  background:
+    linear-gradient(90deg, rgba(255, 210, 63, 0.16), rgba(142, 47, 83, 0.42) 42%, rgba(12, 7, 22, 0.72)),
+    rgba(142, 47, 83, 0.42);
   border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(255, 210, 63, 0.35);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 14px rgba(255, 210, 63, 0.38), inset 0 0 18px rgba(255, 122, 31, 0.10);
   animation: st-hud-pulse 1.6s ease-in-out infinite;
 }
 .st-hud__player--dead {
@@ -1602,20 +1606,22 @@ export class HUD {
   align-items: center;
   justify-content: space-between;
   gap: 7px;
-  padding: 4px 9px;
-  border-radius: 4px;
-  background: rgba(12, 7, 22, 0.55);
-  border: 1px solid rgba(255, 210, 63, 0.14);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(255, 210, 63, 0.07), rgba(12, 7, 22, 0.62) 46%),
+    rgba(12, 7, 22, 0.55);
+  border: 1px solid rgba(255, 210, 63, 0.20);
   font-size: 13px;
 }
 .st-hud__menu {
   width: 100%;
   pointer-events: auto;
   cursor: pointer;
-  padding: 6px 10px;
-  border: 1px solid rgba(255, 210, 63, 0.3);
-  border-radius: 4px;
-  background: rgba(12, 7, 22, 0.7);
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.38);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 210, 63, 0.08), rgba(12, 7, 22, 0.76));
   color: var(--text-gold);
   font-family: var(--font-sans);
   font-size: 12px;
@@ -1637,27 +1643,70 @@ export class HUD {
 }
 .st-hud__controls {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  top: 14px;
+  left: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  width: 168px;
+  box-sizing: border-box;
+  padding: 8px 9px 9px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(22, 13, 46, 0.54), rgba(12, 7, 22, 0.68)),
+    rgba(12, 7, 22, 0.62);
+  border: 1px solid rgba(255, 210, 63, 0.14);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22), inset 0 0 14px rgba(255, 122, 31, 0.04);
+  color: rgba(233, 228, 242, 0.76);
+  font-size: 10px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+}
+.st-hud__controls::before {
+  content: 'Commands';
+  grid-column: 1 / -1;
+  margin-bottom: 2px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.14);
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.st-hud__control-cell {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 5px 9px;
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px 2px;
+  border: 1px solid rgba(255, 210, 63, 0.10);
   border-radius: 4px;
-  background: rgba(12, 7, 22, 0.5);
-  color: var(--text-dim);
-  font-size: 10px;
-  line-height: 1.4;
+  background: rgba(255, 210, 63, 0.035);
+  text-align: center;
+}
+.st-hud__keypair {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
 }
 .st-hud__controls kbd {
   display: inline-block;
-  padding: 0 4px;
-  border-radius: 2px;
-  background: rgba(255, 210, 63, 0.14);
+  min-width: 12px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(255, 210, 63, 0.18);
+  border: 1px solid rgba(255, 210, 63, 0.18);
   color: var(--text-gold);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8.5px;
+  text-align: center;
 }
 .st-hud__aim {
   display: flex;
@@ -1678,8 +1727,10 @@ export class HUD {
   flex-direction: column;
   gap: 5px;
   padding: 7px 9px 8px;
-  background: rgba(12, 7, 22, 0.5);
-  border: 1px solid rgba(255, 210, 63, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 210, 63, 0.045), rgba(12, 7, 22, 0.55)),
+    rgba(12, 7, 22, 0.5);
+  border: 1px solid rgba(255, 210, 63, 0.18);
   border-radius: 6px;
   pointer-events: auto;
 }
@@ -1732,10 +1783,12 @@ export class HUD {
   gap: 6px;
   width: 100%;
   box-sizing: border-box;
-  padding: 4px 9px;
+  padding: 5px 9px;
   border: 1px solid rgba(255, 210, 63, 0.18);
-  border-radius: 4px;
-  background: rgba(12, 7, 22, 0.7);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 210, 63, 0.035), rgba(12, 7, 22, 0.74)),
+    rgba(12, 7, 22, 0.7);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 11px;
@@ -1749,7 +1802,10 @@ export class HUD {
 .st-hud__weapon-btn:active:not(:disabled) { transform: translateY(1px); }
 .st-hud__weapon-btn--active {
   border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgba(255, 210, 63, 0.35);
+  background:
+    linear-gradient(180deg, rgba(255, 210, 63, 0.22), rgba(255, 122, 31, 0.12)),
+    rgba(12, 7, 22, 0.78);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(255, 210, 63, 0.42);
   color: var(--gold);
 }
 .st-hud__weapon-btn--depleted { opacity: 0.4; }
@@ -1892,11 +1948,13 @@ export class HUD {
   width: 100%;
   pointer-events: auto;
   cursor: pointer;
-  padding: 7px 10px;
+  padding: 9px 10px;
   margin-top: 4px;
-  border: 1px solid rgba(122, 215, 255, 0.4);
-  border-radius: 4px;
-  background: rgba(12, 7, 22, 0.7);
+  border: 1px solid rgba(122, 215, 255, 0.46);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(122, 215, 255, 0.08), rgba(12, 7, 22, 0.70)),
+    rgba(12, 7, 22, 0.7);
   color: var(--tank-blue-lite, #7ad7ff);
   font-family: var(--font-sans);
   font-size: 12px;
@@ -2173,11 +2231,16 @@ export class HUD {
 .st-hud__instruments {
   box-sizing: border-box;
   width: 100%;
-  padding: 7px 8px 8px;
-  background: rgba(12, 7, 22, 0.72);
-  border: 1px solid rgba(255, 210, 63, 0.32);
-  border-radius: 6px;
-  box-shadow: inset 0 0 12px rgba(255, 122, 31, 0.08), 0 2px 8px rgba(0, 0, 0, 0.4);
+  padding: 9px 9px 10px;
+  background:
+    radial-gradient(90% 80% at 50% 0%, rgba(255, 210, 63, 0.10), rgba(255, 210, 63, 0) 58%),
+    linear-gradient(180deg, rgba(28, 16, 50, 0.88), rgba(12, 7, 22, 0.76));
+  border: 1px solid rgba(255, 210, 63, 0.40);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 16px rgba(255, 122, 31, 0.10),
+    inset 0 -14px 22px rgba(0, 0, 0, 0.22),
+    0 5px 16px rgba(0, 0, 0, 0.34);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2195,12 +2258,12 @@ export class HUD {
   font-family: var(--font-display);
   font-size: 9px;
   font-weight: bold;
-  letter-spacing: 2.5px;
+  letter-spacing: 3.2px;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: rgba(255, 233, 168, 0.66);
   text-align: center;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(255, 210, 63, 0.14);
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.18);
 }
 /* Three equal-width gauge cells in a row, no overflow. */
 .st-hud__gauge-row {

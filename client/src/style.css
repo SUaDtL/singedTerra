@@ -29,6 +29,8 @@
   /* text + ink + backdrop */
   --text: #e9e4f2; --text-gold: #ffe9a8; --text-dim: #9a86b8; --ink: #160d2e;
   --backdrop: #0c0716;
+  --line-ink: #09040d;
+  --line-gold: rgba(255, 210, 63, 0.55);
   /* type system (D1: bundled display face + system mono/sans) */
   --font-display: 'SingedDisplay', 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
   --font-mono: 'Courier New', ui-monospace, 'SFMono-Regular', monospace;
@@ -89,8 +91,11 @@ body {
   height: var(--stage-h);
   /* Drop shadow + a subtle gold inset frame echoing the banner border. */
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 2px rgba(255, 210, 63, 0.22);
+    0 18px 70px rgba(0, 0, 0, 0.72),
+    0 0 90px rgba(142, 47, 83, 0.22),
+    0 0 0 3px var(--line-ink),
+    inset 0 0 0 2px rgba(255, 210, 63, 0.34),
+    inset 0 0 34px rgba(255, 122, 31, 0.08);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -140,6 +145,16 @@ body {
   flex: 0 0 auto;
   width: var(--canvas-w);
   height: var(--canvas-h);
+}
+#stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow:
+    inset -18px 0 26px rgba(12, 7, 22, 0.34),
+    inset 0 -34px 46px rgba(12, 7, 22, 0.18);
 }
 #game {
   position: absolute;
@@ -200,10 +215,47 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  background: linear-gradient(180deg, rgba(18, 10, 34, 0.96), rgba(12, 7, 22, 0.96));
-  border-left: 1px solid rgba(255, 210, 63, 0.22);
+  background:
+    radial-gradient(100% 45% at 50% 0%, rgba(255, 210, 63, 0.08), rgba(255, 210, 63, 0) 62%),
+    radial-gradient(120% 75% at 50% 100%, rgba(255, 122, 31, 0.10), rgba(255, 122, 31, 0) 58%),
+    linear-gradient(180deg, rgba(23, 13, 42, 0.985), rgba(10, 6, 18, 0.975));
+  border-left: 3px solid var(--line-ink);
+  outline: 1px solid rgba(255, 210, 63, 0.36);
+  outline-offset: -2px;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 233, 168, 0.10),
+    inset 18px 0 28px rgba(255, 122, 31, 0.045),
+    -10px 0 24px rgba(12, 7, 22, 0.36);
   overflow-y: auto;
   pointer-events: auto;
+}
+#hud::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  z-index: 0;
+  pointer-events: none;
+  border: 1px solid rgba(255, 210, 63, 0.13);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 22px rgba(255, 210, 63, 0.045),
+    inset 0 -22px 34px rgba(255, 122, 31, 0.055);
+}
+#hud::after {
+  content: 'FIRE CONTROL';
+  position: absolute;
+  right: 13px;
+  bottom: 8px;
+  z-index: 0;
+  pointer-events: none;
+  color: rgba(255, 233, 168, 0.13);
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 2.4px;
+}
+#hud > * {
+  position: relative;
+  z-index: 1;
 }
 #game-overlay button,
 #hud button {

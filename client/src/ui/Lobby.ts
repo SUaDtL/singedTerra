@@ -322,42 +322,245 @@ export class Lobby {
          gold frame + CRT overlay still frame it; content is vertically centred,
          falling back to top-aligned + scroll when it would overflow. */
       #lobby .lobby-card {
+        position: relative;
         width: 100%;
         height: 100%;
         max-width: none;
         margin: 0;
         box-sizing: border-box;
-        padding: 16px 40px;
+        padding: 34px 56px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         justify-content: safe center;
-        background: rgba(12, 7, 22, 0.94);
+        background:
+          radial-gradient(70% 92% at 78% 42%, rgba(142, 47, 83, 0.24), rgba(142, 47, 83, 0) 54%),
+          radial-gradient(40% 80% at 18% 50%, rgba(255, 210, 63, 0.08), rgba(255, 210, 63, 0) 58%),
+          linear-gradient(90deg, rgba(12, 7, 22, 0.98) 0%, rgba(12, 7, 22, 0.94) 48%, rgba(18, 10, 34, 0.90) 100%);
         border: none;
         border-radius: 0;
         color: var(--text);
         font-family: var(--font-sans);
       }
+      #lobby .lobby-card::before {
+        content: '';
+        position: absolute;
+        top: 58px;
+        right: 52px;
+        bottom: 54px;
+        width: min(520px, 42%);
+        pointer-events: none;
+        border: 1px solid rgba(255, 210, 63, 0.20);
+        border-radius: 10px;
+        background:
+          radial-gradient(circle at 62% 46%, rgba(255, 233, 168, 0.82) 0 3%, rgba(255, 178, 74, 0.50) 7%, rgba(255, 122, 31, 0.16) 18%, rgba(255, 122, 31, 0) 26%),
+          radial-gradient(80% 42% at 50% 70%, rgba(255, 122, 31, 0.18), rgba(255, 122, 31, 0) 64%),
+          linear-gradient(180deg, rgba(22, 13, 46, 0.10) 0%, rgba(58, 29, 94, 0.16) 42%, rgba(142, 47, 83, 0.24) 62%, rgba(90, 58, 34, 0.54) 62.5%, rgba(29, 18, 11, 0.78) 100%),
+          repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 5px);
+        box-shadow:
+          0 18px 46px rgba(0, 0, 0, 0.38),
+          inset 0 0 0 1px rgba(255, 233, 168, 0.08),
+          inset 0 -42px 55px rgba(29, 18, 11, 0.50);
+        opacity: 0.78;
+      }
+      #lobby .lobby-card::after {
+        content: 'LOCKSTEP ARTILLERY';
+        position: absolute;
+        right: 74px;
+        bottom: 72px;
+        pointer-events: none;
+        color: rgba(255, 233, 168, 0.30);
+        font-family: var(--font-display);
+        font-size: 10px;
+        letter-spacing: 3px;
+      }
+      #lobby .lobby-preview {
+        position: absolute;
+        top: 58px;
+        right: 52px;
+        bottom: 54px;
+        width: min(520px, 42%);
+        max-width: none;
+        margin: 0;
+        z-index: 2;
+        pointer-events: none;
+        overflow: hidden;
+        border: 1px solid rgba(255, 210, 63, 0.24);
+        border-radius: 10px;
+        background:
+          radial-gradient(circle at 67% 45%, rgba(255, 233, 168, 0.85) 0 3%, rgba(255, 178, 74, 0.50) 8%, rgba(255, 122, 31, 0.16) 19%, rgba(255, 122, 31, 0) 30%),
+          linear-gradient(180deg, rgba(22, 13, 46, 0.20) 0%, rgba(58, 29, 94, 0.22) 45%, rgba(142, 47, 83, 0.30) 62%, rgba(90, 58, 34, 0.60) 62.5%, rgba(29, 18, 11, 0.88) 100%),
+          repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 5px);
+        box-shadow:
+          0 18px 46px rgba(0, 0, 0, 0.38),
+          inset 0 0 0 1px rgba(255, 233, 168, 0.08),
+          inset 0 -42px 55px rgba(29, 18, 11, 0.50);
+      }
+      #lobby .lobby-preview::before,
+      #lobby .lobby-preview::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+      }
+      #lobby .lobby-preview::before {
+        bottom: 132px;
+        height: 74px;
+        background:
+          linear-gradient(166deg, transparent 0 42%, rgba(22, 13, 46, 0.42) 42.4% 56%, transparent 56.4%),
+          linear-gradient(12deg, transparent 0 54%, rgba(255, 122, 31, 0.10) 54.4% 63%, transparent 63.4%);
+      }
+      #lobby .lobby-preview::after {
+        bottom: 0;
+        height: 140px;
+        background:
+          linear-gradient(170deg, transparent 0 42%, rgba(122, 79, 46, 0.44) 42.4% 47%, transparent 47.4%),
+          repeating-linear-gradient(to right, rgba(255, 210, 63, 0.045) 0 4px, transparent 4px 24px),
+          linear-gradient(180deg, rgba(122, 79, 46, 0.54), rgba(29, 18, 11, 0.92));
+        clip-path: polygon(0 24%, 18% 11%, 37% 22%, 55% 6%, 73% 18%, 100% 8%, 100% 100%, 0 100%);
+      }
+      #lobby .lobby-preview__label {
+        position: absolute;
+        left: 22px;
+        top: 18px;
+        color: rgba(255, 233, 168, 0.42);
+        font-family: var(--font-display);
+        font-size: 9px;
+        letter-spacing: 2.6px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-preview__convoy {
+        position: absolute;
+        z-index: 3;
+        left: 0;
+        right: 0;
+        bottom: 103px;
+        height: 82px;
+      }
+      #lobby .lobby-preview__tank {
+        position: absolute;
+        left: calc(var(--slot, 0) * 88px + 28px);
+        bottom: calc(var(--slot, 0) * -2px);
+        width: 70px;
+        height: 42px;
+        animation: lobby-tank-roll 2.4s ease-in-out infinite;
+        animation-delay: calc(var(--slot, 0) * -0.42s);
+        filter: drop-shadow(0 11px 12px rgba(0, 0, 0, 0.42));
+      }
+      #lobby .lobby-preview__barrel {
+        position: absolute;
+        left: 36px;
+        top: 4px;
+        width: 32px;
+        height: 7px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--tank-color) 52%, white), color-mix(in srgb, var(--tank-color) 55%, black));
+        border: 2px solid rgba(18, 8, 10, 0.95);
+        transform: rotate(-34deg);
+        transform-origin: 0 50%;
+      }
+      #lobby .lobby-preview__turret {
+        position: absolute;
+        left: 25px;
+        top: 15px;
+        width: 23px;
+        height: 12px;
+        border-radius: 10px 10px 3px 3px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--tank-color) 72%, white), color-mix(in srgb, var(--tank-color) 72%, black));
+        border: 2px solid rgba(18, 8, 10, 0.95);
+      }
+      #lobby .lobby-preview__body {
+        position: absolute;
+        left: 13px;
+        top: 23px;
+        width: 42px;
+        height: 15px;
+        border-radius: 4px 4px 2px 2px;
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--tank-color) 70%, white) 0 28%, var(--tank-color) 28% 68%, color-mix(in srgb, var(--tank-color) 62%, black) 68%);
+        border: 2px solid rgba(18, 8, 10, 0.95);
+      }
+      #lobby .lobby-preview__tread {
+        position: absolute;
+        left: 7px;
+        top: 34px;
+        width: 55px;
+        height: 13px;
+        border-radius: 4px 4px 7px 7px;
+        background:
+          radial-gradient(circle at 15px 7px, #2a2118 0 4px, transparent 4.5px),
+          radial-gradient(circle at 28px 7px, #2a2118 0 4px, transparent 4.5px),
+          radial-gradient(circle at 41px 7px, #2a2118 0 4px, transparent 4.5px),
+          linear-gradient(180deg, color-mix(in srgb, var(--tank-color) 46%, black), #130908);
+        border: 2px solid rgba(18, 8, 10, 0.98);
+      }
+      #lobby .lobby-preview__name {
+        position: absolute;
+        left: 50%;
+        top: 52px;
+        transform: translateX(-50%);
+        max-width: 80px;
+        overflow: hidden;
+        color: rgba(255, 233, 168, 0.78);
+        font: 700 10px/1 var(--font-mono);
+        text-overflow: ellipsis;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+        white-space: nowrap;
+      }
+      @keyframes lobby-tank-roll {
+        0%, 100% { translate: 0 0; }
+        45% { translate: 10px -2px; }
+        70% { translate: 18px 1px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #lobby .lobby-preview__tank { animation: none; }
+      }
       /* Keep the form readable on the wide panel: constrain content width,
          centred, while the dusk panel itself spans the full field. */
       #lobby .lobby-card > * {
+        position: relative;
+        z-index: 1;
         width: 100%;
-        max-width: 460px;
-        margin-left: auto;
+        max-width: 520px;
+        margin-left: 104px;
         margin-right: auto;
       }
-      #lobby h1 {
-        margin: 0 0 4px; font-size: 30px; letter-spacing: 0.5px;
-        font-family: var(--font-display); font-weight: bold;
-        color: var(--gold); text-shadow: 0 0 16px rgba(255, 122, 31, 0.45);
+      #lobby .lobby-card > .lobby-preview {
+        position: absolute;
+        top: 58px;
+        right: 52px;
+        bottom: 54px;
+        left: auto;
+        width: min(520px, 42%);
+        height: auto;
+        max-width: none;
+        margin: 0;
+        z-index: 2;
       }
-      #lobby .lobby-sub { margin: 0 0 18px; color: var(--text-dim); font-size: 13px; }
+      #lobby h1 {
+        margin: 0 0 2px; font-size: 48px; letter-spacing: 0.5px;
+        font-family: var(--font-display); font-weight: bold;
+        color: var(--gold);
+        text-shadow:
+          0 2px 0 rgba(12, 7, 22, 0.85),
+          0 0 20px rgba(255, 122, 31, 0.48);
+      }
+      #lobby .lobby-sub {
+        margin: 0 0 22px;
+        color: var(--text-dim);
+        font-size: 13px;
+        letter-spacing: 0.02em;
+      }
       #lobby .lobby-field { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
       #lobby .lobby-field > label { width: 92px; color: var(--text-dim); font-size: 13px; }
       #lobby select, #lobby input[type="text"] {
-        background: rgba(12, 7, 22, 0.7); color: var(--text);
-        border: 1px solid rgba(255, 210, 63, 0.2);
-        border-radius: 5px; padding: 6px 8px; font-size: 14px; font-family: var(--font-sans);
+        background:
+          linear-gradient(180deg, rgba(255, 210, 63, 0.045), rgba(12, 7, 22, 0.78)),
+          rgba(12, 7, 22, 0.78);
+        color: var(--text);
+        border: 1px solid rgba(255, 210, 63, 0.28);
+        border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--font-sans);
       }
       #lobby select:focus, #lobby input[type="text"]:focus {
         outline: none; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold);
@@ -369,10 +572,10 @@ export class Lobby {
       #lobby .lobby-swatches { display: flex; gap: 6px; }
       #lobby .lobby-control {
         flex: 0 0 auto;
-        padding: 6px 8px;
-        border: 1px solid rgba(255, 210, 63, 0.3);
-        border-radius: 4px;
-        background: rgba(12, 7, 22, 0.85);
+        padding: 8px 10px;
+        border: 1px solid rgba(255, 210, 63, 0.34);
+        border-radius: 6px;
+        background: linear-gradient(180deg, rgba(255, 210, 63, 0.06), rgba(12, 7, 22, 0.88));
         color: var(--text-gold, #ffe9b0);
         font-family: var(--font-sans, sans-serif);
         font-size: 12px;
@@ -380,9 +583,10 @@ export class Lobby {
       }
       #lobby .lobby-control:hover { border-color: var(--ember, #ff7a1f); }
       #lobby .lobby-swatch {
-        width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+        width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
         border: 2px solid transparent; padding: 0; background-clip: padding-box;
         transition: transform 80ms ease;
+        box-shadow: inset 0 -6px 8px rgba(0, 0, 0, 0.22);
       }
       #lobby .lobby-swatch:hover { transform: scale(1.12); }
       #lobby .lobby-swatch.selected { border-color: var(--gold); box-shadow: 0 0 8px rgba(255, 210, 63, 0.5); }
@@ -400,12 +604,18 @@ export class Lobby {
       #lobby .lobby-rejoin-text { color: var(--text-gold, #ffe9b0); font-size: 13px; }
       #lobby .lobby-rejoin-banner .lobby-btn { padding: 6px 14px; font-size: 13px; flex: 0 0 auto; }
       #lobby .lobby-start {
-        width: 100%; padding: 11px; font-size: 15px; font-weight: bold; cursor: pointer;
-        background: var(--gold); color: var(--ink); border: none; border-radius: 5px;
+        width: 100%; padding: 14px; font-size: 16px; font-weight: bold; cursor: pointer;
+        background:
+          linear-gradient(180deg, #ffe478, var(--gold) 52%, #d99b21);
+        color: var(--ink); border: none; border-radius: 7px;
         font-family: var(--font-display); letter-spacing: 0.5px;
-        transition: background 130ms ease, transform 80ms ease;
+        box-shadow: 0 10px 26px rgba(255, 122, 31, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        transition: background 130ms ease, transform 80ms ease, box-shadow 130ms ease;
       }
-      #lobby .lobby-start:hover:not(:disabled) { background: var(--ember); }
+      #lobby .lobby-start:hover:not(:disabled) {
+        background: linear-gradient(180deg, #ffb86c, var(--ember) 56%, var(--ember-deep));
+        box-shadow: 0 12px 30px rgba(255, 122, 31, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      }
       #lobby .lobby-start:active:not(:disabled) { transform: translateY(1px); }
       #lobby .lobby-start:disabled { background: rgba(255, 255, 255, 0.12); color: var(--text-dim); cursor: not-allowed; }
       #lobby .lobby-advanced { margin: 0 0 16px; border-top: 1px solid rgba(255, 210, 63, 0.14); padding-top: 12px; }
@@ -425,18 +635,25 @@ export class Lobby {
 
       /* Tab bar */
       #lobby .lobby-tabs {
-        display: flex; gap: 0; margin-bottom: 20px;
-        border-bottom: 1px solid rgba(255, 210, 63, 0.18);
+        display: flex; gap: 6px; margin-bottom: 20px;
+        padding: 4px;
+        border: 1px solid rgba(255, 210, 63, 0.16);
+        border-radius: 9px;
+        background: rgba(12, 7, 22, 0.58);
       }
       #lobby .lobby-tab {
-        padding: 8px 18px; font-size: 14px; font-weight: 600;
-        cursor: pointer; background: none; border: none;
-        color: var(--text-dim); border-bottom: 2px solid transparent;
-        margin-bottom: -1px; font-family: var(--font-sans);
-        transition: color 120ms ease, border-color 120ms ease;
+        flex: 1;
+        padding: 9px 18px; font-size: 14px; font-weight: 700;
+        cursor: pointer; background: none; border: 1px solid transparent;
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-family: var(--font-sans);
+        transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
       }
       #lobby .lobby-tab.active {
-        color: var(--text-gold); border-bottom-color: var(--gold);
+        color: var(--text-gold);
+        border-color: rgba(255, 210, 63, 0.36);
+        background: rgba(255, 210, 63, 0.10);
       }
       #lobby .lobby-tab:hover:not(.active) { color: var(--text); }
 
@@ -500,8 +717,10 @@ export class Lobby {
          players learn aim/power/fire before the play field is uncovered. */
       #lobby .lobby-controls {
         display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
-        margin-top: 18px; padding-top: 12px;
-        border-top: 1px solid rgba(255, 210, 63, 0.14);
+        margin-top: 20px; padding: 12px 14px;
+        border: 1px solid rgba(255, 210, 63, 0.16);
+        border-radius: 8px;
+        background: rgba(12, 7, 22, 0.50);
         color: var(--text-dim); font-size: 12px;
       }
       #lobby .lobby-controls .lobby-controls__title {
@@ -528,6 +747,7 @@ export class Lobby {
     const title = document.createElement('h1');
     title.textContent = 'singedTerra';
     card.append(title);
+    card.append(this.renderVehiclePreview());
 
     // Rejoin affordance (T-09, AC-05) — shown ONLY once a stored session
     // descriptor has been validated live; placed at the very top so it's
@@ -566,6 +786,50 @@ export class Lobby {
       '<span><kbd>Tab</kbd>/<kbd>Q</kbd> Weapon</span>' +
       '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
     return el;
+  }
+
+  /** Live color preview: the selected roster rendered as rolling vector tanks. */
+  private renderVehiclePreview(): HTMLElement {
+    const preview = document.createElement('div');
+    preview.className = 'lobby-preview';
+
+    const label = document.createElement('div');
+    label.className = 'lobby-preview__label';
+    label.textContent = this.activeTab === 'hotseat' ? 'Roster Preview' : 'Vehicle Bay';
+
+    const convoy = document.createElement('div');
+    convoy.className = 'lobby-preview__convoy';
+    const roster = this.activeTab === 'hotseat'
+      ? this.players
+      : [{ name: this.onlineName || 'You', color: this.onlineColor }];
+    roster.slice(0, MAX_PLAYERS).forEach((player, index) => {
+      convoy.append(this.renderPreviewTank(player.name || `Player ${index + 1}`, player.color, index));
+    });
+
+    preview.append(label, convoy);
+    return preview;
+  }
+
+  private renderPreviewTank(name: string, color: string, index: number): HTMLElement {
+    const tank = document.createElement('div');
+    tank.className = 'lobby-preview__tank';
+    tank.style.setProperty('--tank-color', color);
+    tank.style.setProperty('--slot', String(index));
+
+    const barrel = document.createElement('div');
+    barrel.className = 'lobby-preview__barrel';
+    const turret = document.createElement('div');
+    turret.className = 'lobby-preview__turret';
+    const body = document.createElement('div');
+    body.className = 'lobby-preview__body';
+    const tread = document.createElement('div');
+    tread.className = 'lobby-preview__tread';
+    const label = document.createElement('div');
+    label.className = 'lobby-preview__name';
+    label.textContent = name.trim() || `Player ${index + 1}`;
+
+    tank.append(barrel, turret, body, tread, label);
+    return tank;
   }
 
   /**

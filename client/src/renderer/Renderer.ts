@@ -22,7 +22,7 @@ import { damageTier } from './tankFx';
 /** Mirror TankRenderer's barrel geometry so muzzle FX sit at the VISUAL tip:
  *  pivot at (x, y − TREAD_HEIGHT(6) − BODY_HEIGHT(10)), barrel length 22. */
 const BARREL_VISUAL_LEN = 22;
-const TANK_BODY_TOP_OFFSET = 16;
+const TANK_BARREL_PIVOT_OFFSET = 20;
 
 /**
  * Frames to keep redrawing after the renderer last spawned a transient effect
@@ -594,7 +594,7 @@ export class Renderer {
     if (!shooter) return;
     const rad = (shooter.angle * Math.PI) / 180;
     const px = shooter.x + Math.cos(rad) * BARREL_VISUAL_LEN;
-    const py = shooter.y - TANK_BODY_TOP_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
+    const py = shooter.y - TANK_BARREL_PIVOT_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
     this.effects.spawnMuzzle(px, py, shooter.angle, shooter.color);
     this.effectsBusy = EFFECTS_BUSY_FRAMES; // muzzle sparks live a few frames
   }
@@ -657,7 +657,7 @@ export class Renderer {
     if (!tank || !tank.alive) return;
     const rad = (tank.angle * Math.PI) / 180;
     let x = tank.x + Math.cos(rad) * BARREL_VISUAL_LEN;
-    let y = tank.y - TANK_BODY_TOP_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
+    let y = tank.y - TANK_BARREL_PIVOT_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
     const v = launchVelocity(tank.angle, tank.power);
     let vx = v.vx;
     let vy = v.vy;
@@ -982,8 +982,11 @@ export class Renderer {
     // Oversized by SHAKE_MARGIN so the shake offset never reveals the backdrop.
     const m = 12;
     ctx.fillRect(-m, -m, CANVAS_WIDTH + 2 * m, CANVAS_HEIGHT + 2 * m);
+    this.drawCloudBanks();
     this.drawStars();
     this.drawSun();
+    this.drawHorizonHaze();
+    this.drawDistantRidges();
   }
 
   /** Pixel stars in the upper indigo band (crisp little squares). */
@@ -992,6 +995,41 @@ export class Renderer {
     ctx.save();
     ctx.fillStyle = ACCENT.sunCore;
     for (const [sx, sy] of STARS) ctx.fillRect(sx, sy, 2, 2);
+    ctx.restore();
+  }
+
+  /** Wide translucent cloud shelves keep the empty sky from feeling flat. */
+  private drawCloudBanks(): void {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(12, 7, 22, 0.18)';
+
+    ctx.beginPath();
+    ctx.moveTo(54, 146);
+    ctx.lineTo(150, 132);
+    ctx.lineTo(250, 142);
+    ctx.lineTo(360, 126);
+    ctx.lineTo(472, 140);
+    ctx.lineTo(560, 132);
+    ctx.lineTo(640, 146);
+    ctx.lineTo(640, 170);
+    ctx.lineTo(54, 170);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 233, 168, 0.045)';
+    ctx.beginPath();
+    ctx.moveTo(702, 118);
+    ctx.lineTo(808, 104);
+    ctx.lineTo(914, 116);
+    ctx.lineTo(1040, 98);
+    ctx.lineTo(1168, 112);
+    ctx.lineTo(CANVAS_WIDTH, 104);
+    ctx.lineTo(CANVAS_WIDTH, 136);
+    ctx.lineTo(702, 136);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.restore();
   }
 
@@ -1018,6 +1056,77 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+
+  /** Thin ember haze separates the sky from foreground terrain without adding noise. */
+  private drawHorizonHaze(): void {
+    const ctx = this.ctx;
+    const g = ctx.createLinearGradient(0, 252, 0, 432);
+    g.addColorStop(0, 'rgba(255, 210, 63, 0)');
+    g.addColorStop(0.46, 'rgba(255, 122, 31, 0.10)');
+    g.addColorStop(0.72, 'rgba(142, 47, 83, 0.08)');
+    g.addColorStop(1, 'rgba(22, 13, 46, 0)');
+
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 252, CANVAS_WIDTH, 180);
+
+    ctx.globalAlpha = 0.16;
+    ctx.strokeStyle = ACCENT.sunCore;
+    ctx.lineWidth = 1;
+    for (let y = 304; y <= 376; y += 18) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(CANVAS_WIDTH, y - 10);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Muted far ridgelines add depth behind the destructible foreground terrain. */
+  private drawDistantRidges(): void {
+    const ctx = this.ctx;
+    ctx.save();
+
+    ctx.fillStyle = 'rgba(22, 13, 46, 0.30)';
+    ctx.beginPath();
+    ctx.moveTo(0, 366);
+    ctx.lineTo(92, 336);
+    ctx.lineTo(168, 354);
+    ctx.lineTo(286, 321);
+    ctx.lineTo(390, 348);
+    ctx.lineTo(502, 323);
+    ctx.lineTo(612, 358);
+    ctx.lineTo(724, 329);
+    ctx.lineTo(842, 350);
+    ctx.lineTo(950, 318);
+    ctx.lineTo(1064, 346);
+    ctx.lineTo(1162, 322);
+    ctx.lineTo(CANVAS_WIDTH, 360);
+    ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.lineTo(0, CANVAS_HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 122, 31, 0.08)';
+    ctx.beginPath();
+    ctx.moveTo(0, 388);
+    ctx.lineTo(118, 365);
+    ctx.lineTo(238, 384);
+    ctx.lineTo(366, 356);
+    ctx.lineTo(520, 390);
+    ctx.lineTo(654, 360);
+    ctx.lineTo(792, 382);
+    ctx.lineTo(914, 352);
+    ctx.lineTo(1048, 378);
+    ctx.lineTo(1188, 356);
+    ctx.lineTo(CANVAS_WIDTH, 386);
+    ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.lineTo(0, CANVAS_HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.restore();
   }
 }

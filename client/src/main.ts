@@ -273,7 +273,7 @@ function bootstrap(): void {
       renderer.setAimGuide(localControls);
       // Feed the active tank's barrel-origin (logical px) so mouse drag-aim can
       // derive angle/power from the drag vector (pivot = body top, y − 16).
-      if (activeTank) newInput.setActiveTankScreenPos(activeTank.x, activeTank.y - 16);
+      if (activeTank) newInput.setActiveTankScreenPos(activeTank.x, activeTank.y - 20);
 
       // A phase change always warrants one redraw (e.g. the settling frame into a
       // static PLAYER_TURN / ROUND_OVER / GAME_OVER, which isAnimating() may already

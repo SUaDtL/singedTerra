@@ -9,7 +9,7 @@
 
 > Pulled AHEAD of Sprint 4 Slice 3 (shield), by user decision (2026-06-06). Slices 0–2
 > of Sprint 4 are shipped (8/11 weapons, 8 determinism harnesses). This sprint makes the
-> **whole game look like `docs/assets/banner.svg`** — the README banner / in-game splash.
+> **whole game look like `docs/assets/splash-hero.png`** — the README banner / in-game splash.
 
 ## Goal
 
@@ -19,7 +19,7 @@ Retro aesthetic (chunky shapes, limited palette, scanlines, pixel-crisp edges) c
 modern feel (smooth gradients, glow, eased motion, juice, readable type). The splash screen
 already sets the bar; everything else should look like it belongs in the same frame.
 
-**Guiding star:** *"that's the design, that's the vibe."* When in doubt, open `banner.svg`
+**Guiding star:** *"that's the design, that's the vibe."* When in doubt, open `splash-hero.png`
 and match it.
 
 ## Approach — DECIDED: vector-pixel hybrid

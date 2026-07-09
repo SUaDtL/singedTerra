@@ -46,6 +46,17 @@ export class TankRenderer {
       ctx.restore();
     }
 
+    const left = x - BODY_WIDTH / 2;
+
+    // Contact shadow seats the vehicle into the terrain instead of floating above it.
+    ctx.save();
+    ctx.globalAlpha = 0.38;
+    ctx.fillStyle = '#07030c';
+    ctx.beginPath();
+    ctx.ellipse(x, treadBottom + 1, BODY_WIDTH * 0.74, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     // --- Tread: trapezoid wider at the bottom for a tank-like stance. ---
     ctx.beginPath();
     ctx.moveTo(x - BODY_WIDTH / 2 - TREAD_OVERHANG, treadBottom);
@@ -53,33 +64,72 @@ export class TankRenderer {
     ctx.lineTo(x + BODY_WIDTH / 2, treadTop);
     ctx.lineTo(x - BODY_WIDTH / 2, treadTop);
     ctx.closePath();
-    ctx.fillStyle = TANK.tread;
+    ctx.fillStyle = darkenHex(color, 0.72);
     ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#120a08';
+    ctx.stroke();
+
+    ctx.fillStyle = TANK.tread;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.arc(x + i * 6, treadTop + 3.4, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = darkenHex(color, 0.52);
+    for (let px = left - 2; px <= left + BODY_WIDTH + 2; px += 6) {
+      ctx.fillRect(px, treadBottom - 1.6, 4, 1.2);
+    }
 
     // --- Body: base colour, a darker grounding line at the bottom, and a
     // lighter highlight band across the top (the banner's lit-edge look). ---
-    const left = x - BODY_WIDTH / 2;
-    ctx.fillStyle = darkenHex(color, 0.28);
-    ctx.fillRect(left, bodyTop, BODY_WIDTH, BODY_HEIGHT);
+    ctx.fillStyle = '#12080a';
+    ctx.fillRect(left - 1, bodyTop - 1, BODY_WIDTH + 2, BODY_HEIGHT + 2);
+    ctx.fillStyle = darkenHex(color, 0.34);
+    ctx.fillRect(left, bodyTop + 1, BODY_WIDTH, BODY_HEIGHT - 1);
     ctx.fillStyle = color;
-    ctx.fillRect(left, bodyTop, BODY_WIDTH, BODY_HEIGHT - 2);
+    ctx.fillRect(left + 1, bodyTop, BODY_WIDTH - 2, BODY_HEIGHT - 3);
     ctx.fillStyle = lightenHex(color, 0.4);
-    ctx.fillRect(left, bodyTop, BODY_WIDTH, HIGHLIGHT_HEIGHT);
+    ctx.fillRect(left + 2, bodyTop, BODY_WIDTH - 4, HIGHLIGHT_HEIGHT);
+    ctx.fillStyle = darkenHex(color, 0.46);
+    ctx.fillRect(left + 2, bodyBottom - 3, BODY_WIDTH - 4, 2);
+
+    const turretW = 13;
+    const turretH = 6;
+    ctx.fillStyle = '#12080a';
+    ctx.fillRect(x - turretW / 2 - 1, bodyTop - turretH + 1, turretW + 2, turretH + 1);
+    ctx.fillStyle = darkenHex(color, 0.18);
+    ctx.fillRect(x - turretW / 2, bodyTop - turretH + 1, turretW, turretH);
+    ctx.fillStyle = lightenHex(color, 0.34);
+    ctx.fillRect(x - turretW / 2 + 2, bodyTop - turretH + 1, turretW - 4, 2);
 
     // --- Barrel: rotatable line from the body's top-center along the aim
     // vector (cos θ, -sin θ), in a lightened shade so it reads off the body. ---
     const rad = (angle * Math.PI) / 180;
     const pivotX = x;
-    const pivotY = bodyTop;
+    const pivotY = bodyTop - turretH + 2;
     const tipX = pivotX + Math.cos(rad) * BARREL_LENGTH;
     const tipY = pivotY - Math.sin(rad) * BARREL_LENGTH;
 
     ctx.beginPath();
     ctx.moveTo(pivotX, pivotY);
     ctx.lineTo(tipX, tipY);
+    ctx.lineWidth = BARREL_WIDTH + 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#130809';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pivotX, pivotY);
+    ctx.lineTo(tipX, tipY);
     ctx.lineWidth = BARREL_WIDTH;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = lightenHex(color, 0.45);
+    ctx.strokeStyle = lightenHex(color, 0.48);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pivotX + Math.cos(rad + Math.PI / 2) * 1, pivotY - Math.sin(rad + Math.PI / 2) * 1);
+    ctx.lineTo(tipX + Math.cos(rad + Math.PI / 2) * 1, tipY - Math.sin(rad + Math.PI / 2) * 1);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = lightenHex(color, 0.72);
     ctx.stroke();
     // Reset to avoid leaking line state to subsequent draws.
     ctx.lineWidth = 1;
@@ -116,7 +166,15 @@ export class TankRenderer {
 
     // --- Active-player chevron above the body (gold). ---
     if (active) {
-      const cy = bodyTop - 13;
+      const cy = bodyTop - 18;
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = ACCENT.gold;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, cy + 2, 9, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
       ctx.fillStyle = ACCENT.gold;
       ctx.beginPath();
       ctx.moveTo(x - 5, cy);
