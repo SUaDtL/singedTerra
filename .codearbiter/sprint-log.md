@@ -489,3 +489,45 @@ after #32 merges; deploy + repo flip stay the user's.
   does nothing until deployed. Then a manual `curl` 429 check (live DB not in CI).
 - **ADRs (USER):** author ADR-001..007 via `/ca:adr` (I can drive them interactively).
 - **Repo flip to public (USER).**
+
+---
+
+# Sprint: ai-shot-search-performance (2026-07-20)
+
+Spec/plan: `.codearbiter/specs/ai-shot-search-performance.md`, `plans/ai-shot-search-performance.md`.
+User approved quality parity, then approved the combined spec + plan gate. Autonomous execution authorized.
+
+## Auto-decisions
+
+- **[high] Deterministic multi-basin coarse-to-fine search over fixed truncation or a Web Worker.** SMARTS: Scalable/Maintainable/Reliable/Testable favor cutting probes behind a pure seam; chosen coarse-to-fine, strength strong. Confidence high.
+- **[high] No new dependency.** SMARTS: Maintainable/Available/Testable/Securable favor existing TypeScript and physics seams; every proposed approach was dependency-free, so package state stays unchanged. Strength strong. Confidence high.
+- **[high] External worktree from current `origin/main`.** SMARTS: Reliable/Maintainable preserve the stale merged checkout and untracked `AGENTS.md`; chosen `codex/ai-shot-search-performance` in `singedTerra-worktrees`. Strength strong. Confidence high.
+- **[high] Tighten hard-mode ceiling from 1,000 to 500 probes after live issue and benchmark inspection.** SMARTS: Reliable/Testable require removing the frame stall, not merely improving throughput; 60.0-64.1 ms warmed baseline supports the stricter gate. Strength strong. Confidence high.
+- **[high] Correct the drafted TDD sequence before dispatch.** SMARTS: Reliable/Testable reject an unhandled missing-import error and a manufactured duplicate-identifier failure; chosen controlled feature-missing RED then green-refactor-green integration. Strength strong. Confidence high.
+
+## Task 3 fresh-verification receipt (2026-07-20)
+
+- Full fresh suite: `npm run check` exit 0 in 40.925 s; the command visibly included `ai_search.mjs`, whose 24 scenario/difficulty cases passed the probe, exhaustive-reference regret, resolution-parity, and repeat-determinism gates.
+- Client suite: `npm run test:client` exit 0; 20 files and 158 tests passed. Error-path logging was expected characterization output.
+- Production build: `npm run build` exit 0; shared/client typechecks passed, Vite transformed 86 modules, and the production bundle built in 481 ms.
+- Diff hygiene: `git diff --check` exit 0; only line-ending conversion warnings were emitted.
+- New paired benchmark run: `npx tsx scripts/checks/ai_search.mjs --benchmark` exit 0 on the same warmed `ridge-right` hard-mode state with 20 samples per path: optimized median **3.42 ms**, independent exhaustive median **67.42 ms**, speedup **19.70x**. This passes the enforced optimized <=8 ms and speedup >=7x gates; hard search used 276 optimized probes versus 6,966 exhaustive probes.
+- Scope/dependencies: only sprint implementation and governance files changed; `package-lock.json` has no diff, no dependency was added, and `AiShotSearch.ts` contains no `Math.random`, `Date.now`, or `performance.now` use.
+- Landing: T1/T2/T3 accepted; spec implemented and awaiting the controller-owned commit gate. No low-confidence SMARTS decisions or `[NEEDS-TRIAGE]` findings.- **[high] Fix the final review's Important oracle gap and both related Minor findings in one wave.** SMARTS: Reliable/Testable/Maintainable favor independent grids, observed probes, reachable early-exit semantics, and alternated timing; chosen fix-all, strength strong. Confidence high.
+
+- **[high] Canonical T4 decision (format correction; prior append joined the receipt line).** SMARTS: Reliable/Testable/Maintainable favor fixing the oracle gap, reachable early exit, and alternated timing together; chosen fix-all, strength strong. Confidence high.
+
+
+## T4 final-review correction receipt (2026-07-20)
+
+- **RED — observer/direct-hit seam:** after the independent harness assertions landed but before production changed, `npx tsx scripts/checks/ai_search.mjs` exited 1. The independent exhaustive grids stayed at easy **3/4 = 630**, medium **2/2 = 1,804**, and hard **1/1 = 6,966** probes; every production observer reported **0 observed calls** against nonzero reported counts, and the known `right-near-calm/hard` 5.65 px shot failed to short-circuit at 276 probes.
+- **RED — oracle-independence mutation:** changing only production base steps to 85/80 made the same harness exit 1 while its independent exhaustive counts remained **630/1,804/6,966**. It caught regret failures in `right-far-headwind/easy` (66.87 px), `right-far-headwind/hard` (26.03 px), `right-far-tailwind/hard` (4.62 px), `left-far-tailwind/hard` (4.15 px), and `ridge-left/easy` (79.91 px), plus the direct-hit score regression to 6.67 px. The mutation was restored before GREEN.
+- **GREEN — independent quality/probe oracle:** `npx tsx scripts/checks/ai_search.mjs` exit 0 across all 24 scenario/difficulty cases. The harness pins its own base steps and exact exhaustive counts, independently re-simulates the returned angle/power before regret comparison, and wraps the injected ballistic probe. Reported probes equaled observed unique calls in every case (easy 102-198, medium 138-234, hard 159-228), with no duplicate calls.
+- **Direct-hit proof:** the geometry threshold is `Math.min(TANK_WIDTH, TANK_HEIGHT) / 2` = **6 px**. The known `right-near-calm/hard` case independently scored **5.68 px**, had **0.48 px** regret within the unchanged hard limit, and short-circuited at **180 probes** versus the prior 276-probe full refinement.
+- **Alternated benchmark:** `npx tsx scripts/checks/ai_search.mjs --benchmark` exit 0 using 20 same-state pairs with optimized/exhaustive order alternated by pair: optimized median **1.96 ms**, exhaustive median **67.40 ms**, speedup **34.41x**. The unchanged <=8 ms and >=7x executable gates passed.
+- **Focused verification:** `npm -w @singedterra/shared run typecheck` exit 0; `npx tsx scripts/checks/engine_purity.mjs` exit 0 (`ENGINE PURITY CHECK: PASSED`); `git diff --check` exit 0 with only pre-existing line-ending conversion warnings.
+- **Review closure:** production search policy is no longer exported; `searchShot` has an optional per-call probe seam defaulting to `simulateImpact`, with no global test hook or mutable cross-turn cache. T4 **ACCEPTED**. Commit/PR remain behind the controller-owned codeArbiter commit gate.
+
+- **[high] Add the canonical codeArbiter state-free secrets command to `tech-stack.md` as a separate docs prerequisite.** SMARTS: Maintainable/Reliable/Securable/Testable require the commit gate to use an explicit discovered scanner rather than guess or bypass; chosen minimal governance repair before feature commit, strength strong. Confidence high.
+
+- **[high] Preserve the legacy `open-tasks.md` prose entry and close GitHub issue #63 instead.** SMARTS: Maintainable/Reliable/Testable favor the commit gate structured-transition invariant over an arbitrary legacy-board rewrite; chosen issue-backed completion with unchanged product acceptance, strength strong. Confidence high.

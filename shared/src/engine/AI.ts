@@ -20,14 +20,10 @@
  * so the bot "sees" exactly the trajectory the engine will fly.
  */
 
-import type { GameState, TankState, ProjectileState, AiDifficulty } from '../types/GameState';
-import {
-  launchVelocity,
-  stepProjectile,
-  sweepCollide,
-  GRAVITY,
-} from './Physics';
-import { barrelTip, TANK_HEIGHT, BARREL_LENGTH } from './Tank';
+import type { GameState, TankState, AiDifficulty } from '../types/GameState';
+import { GRAVITY } from './Physics';
+import { TANK_HEIGHT } from './Tank';
+import { searchShot } from './AiShotSearch';
 import { getWeapon, type WeaponType } from './WeaponSystem';
 import { createRng } from './Random';
 import { clamp } from './math';
@@ -49,23 +45,17 @@ export interface AiPlan {
   buy?: WeaponType;
 }
 
-/** Hard cap on simulated flight ticks per candidate (a high lob is ~500–900). */
-const SIM_MAX_TICKS = 1600;
-
-/** Per-difficulty search resolution + aim error. Coarser search AND larger error
- *  on easy => visibly weaker bots; fine search + tiny error on hard => sharp. */
+/** Per-difficulty aim error. */
 interface Tuning {
-  angleStep: number;  // degrees between candidate angles
-  powerStep: number;  // power units between candidate powers
   angleError: number; // ± max degrees of aim jitter
   powerError: number; // ± max power units of aim jitter
 }
 const TUNING: Record<AiDifficulty, Tuning> = {
   // easy still sprays (it's beatable), but tight enough to occasionally connect so
   // it's a real opponent, not a pushover that never threatens.
-  easy:   { angleStep: 3, powerStep: 4, angleError: 3.5, powerError: 4 },
-  medium: { angleStep: 2, powerStep: 2, angleError: 1.6, powerError: 2 },
-  hard:   { angleStep: 1, powerStep: 1, angleError: 0.5, powerError: 0.8 },
+  easy: { angleError: 3.5, powerError: 4 },
+  medium: { angleError: 1.6, powerError: 2 },
+  hard: { angleError: 0.5, powerError: 0.8 },
 };
 
 /** Stable small hash of a tank id (e.g. 'p1','p2') for seeding. */
@@ -109,7 +99,7 @@ export function computeAiPlan(
   // the ballistic search (which doesn't depend on ammo) plans the same shot now.
   const buyField = buy ? { buy } : {};
 
-  const best = searchShot(state, me, target, weapon, tune, gravity);
+  const { shot: best } = searchShot(state, me, target, difficulty, gravity);
   if (!best) {
     // No simulated shot found the target's column (heavily walled in, etc.).
     // Fall back to a sensible lob roughly toward the target.
@@ -258,83 +248,4 @@ function chooseBuy(me: TankState, target: TankState): WeaponType | null {
     })
     .sort((a, b) => AI_EFFECTIVE_DAMAGE[a]! - AI_EFFECTIVE_DAMAGE[b]!);
   return candidates.length > 0 ? candidates[0] : null;
-}
-
-/**
- * Sweep (angle, power) toward the target, simulate each shot, and return the one
- * whose impact lands nearest the target (or null if none reached its column). The
- * angle range is the half-plane toward the target plus a margin, so the search is
- * bounded; the resolution comes from the difficulty tuning.
- */
-function searchShot(
-  state: GameState,
-  me: TankState,
-  target: TankState,
-  weapon: WeaponType,
-  tune: Tuning,
-  gravity: number,
-): { angle: number; power: number } | null {
-  // Shoot toward the target: 0°=right..90°=up..180°=left. Bias the search to the
-  // correct side but allow a generous overlap (wind/terrain can favor odd angles).
-  const rightward = target.x >= me.x;
-  const angleLo = rightward ? 5 : 90;
-  const angleHi = rightward ? 90 : 175;
-
-  const tx = target.x;
-  const ty = target.y - TANK_HEIGHT / 2;
-
-  let best: { angle: number; power: number } | null = null;
-  let bestScore = Infinity;
-
-  for (let angle = angleLo; angle <= angleHi; angle += tune.angleStep) {
-    for (let power = 20; power <= 100; power += tune.powerStep) {
-      const impact = simulateImpact(state, me, angle, power, gravity);
-      if (!impact) continue;
-      const score = Math.hypot(impact.x - tx, impact.y - ty);
-      if (score < bestScore) {
-        bestScore = score;
-        best = { angle, power };
-      }
-    }
-  }
-  return best;
-}
-
-/**
- * Fly a single ballistic shell from the bot's muzzle at (angle, power) against the
- * live terrain + tanks, returning the first impact point (ground or tank) or null
- * (sailed out of bounds / never resolved). Uses the engine's own Physics so the
- * bot's mental model matches reality. Bounce/airburst/napalm behavior is IGNORED
- * here on purpose — aiming at the first impact lands those weapons near the target
- * too, and a plain ballistic probe is exact + cheap. Read-only: nothing mutates.
- */
-function simulateImpact(
-  state: GameState,
-  me: TankState,
-  angle: number,
-  power: number,
-  gravity: number,
-): { x: number; y: number } | null {
-  const v = launchVelocity(angle, power);
-  const tip = barrelTip({ ...me, angle }, BARREL_LENGTH);
-  const p: ProjectileState = {
-    x: tip.x,
-    y: tip.y,
-    vx: v.vx,
-    vy: v.vy,
-    weaponType: 'missile', // probe is plain ballistic; weaponType is irrelevant here
-    age: 0,
-    hasSplit: true, // suppress any airburst split in the probe
-    bounces: 0,     // suppress bounce in the probe — aim at first contact
-  };
-
-  for (let t = 0; t < SIM_MAX_TICKS; t++) {
-    const prevX = p.x;
-    const prevY = p.y;
-    stepProjectile(p, state.wind, gravity);
-    const hit = sweepCollide(p, prevX, prevY, state.terrain, state.tanks);
-    if (hit.type === 'ground' || hit.type === 'tank') return { x: p.x, y: p.y };
-    if (hit.type === 'oob') return null;
-  }
-  return null;
 }
