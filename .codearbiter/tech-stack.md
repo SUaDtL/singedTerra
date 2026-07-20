@@ -40,6 +40,7 @@ Both workspace packages are `private: true`.
 | **Coverage (client)** | `npm run coverage:client` | `vitest run --coverage` (v8 provider); the refactor gate reads this |
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
+| Secrets scan | `python "<active-codearbiter-plugin-root>/hooks/preview.py" secrets` | codeArbiter's state-free scanner over staged, unstaged, and untracked changed files; the host resolves the active plugin root before invocation. |
 | Deploy backend | `npm run deploy:backend` | `npx supabase db push --yes && npx supabase functions deploy --use-api --yes` |
 | Deploy all | `npm run deploy` | backend then client |
 
