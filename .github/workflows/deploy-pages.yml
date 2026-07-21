@@ -51,7 +51,7 @@ jobs:
         # This canvas app has no deep routes, but a 404.html copy makes any stray path
         # under the project base serve the app instead of a GitHub 404.
         run: cp client/dist/index.html client/dist/404.html
-      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: client/dist
