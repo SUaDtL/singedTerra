@@ -641,3 +641,28 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Production workflow content did not change. Its SHA-256 remains `7dca8ca8d9aa8947f8707946cb95bee650fa81d29f209a6538fda1197dfbb30f` (git blob `58f43c92d508af47a6244bd90e082239bd951331`). No files were staged or committed.
 
 - **[high] Harvest promoted dependency-audit residue.** SMARTS: Securable/Maintainable/Testable favor source-level triage before any audit fix or install-script approval; queued one work item in `open-tasks.md` from `sprint:pages-stale-deploy-guard`. No dependency or script authorization was granted. Confidence high.
+
+## 2026-07-21 — portrait-phone-gate sprint
+
+- **[high] Select issue #108 as the next sprint.** Compared the player-facing portrait false-positive with issue #64's allocation optimization, issue #120's stateful coverage seam, and issue #153's geometry drift guard. SMARTS: Available/Reliable/Testable favor the live input-blocking bug because it denies otherwise-playable devices and has a small real-browser oracle; chosen #108, strength strong. Confidence high.
+- **[high] Gate on layout capacity, not inferred device identity.** Compared `(orientation: portrait) and (max-width: 480px)`, retaining coarse pointer plus width, aspect ratio alone, and JavaScript device heuristics. SMARTS: Maintainable/Reliable/Testable favor one CSS width-and-orientation rule; chosen inclusive 480px boundary with pointer type irrelevant, strength strong. Confidence high.
+- **[high] Use isolated browser contexts instead of expanding the global Playwright project matrix.** Dedicated contexts cover touch and fine pointer at exact viewports without making every existing HUD test run against blocked portrait layouts; chosen focused `portrait-gate.spec.ts`, strength strong across Scalable/Testable/Maintainable. Confidence high.
+- **[high] Approval gate cleared.** The user explicitly approved the issue #108 design and plan on 2026-07-21. Phase 2 autonomous execution begins on `codex/portrait-phone-gate`. Confidence high.
+- **[high] Do not duplicate dependency-audit residue across parallel PRs.** Fresh setup reproduced the same 8 advisories and two blocked install scripts already harvested into the green, open PR #158. No audit fix, script approval, dependency edit, or duplicate board task was made here. SMARTS: Maintainable/Securable favor one canonical follow-up, strength strong. Confidence high.
+## T1 browser contract receipt (2026-07-21)
+
+- TDD RED: `npx playwright test e2e/portrait-gate.spec.ts --project=desktop-fine` exited 1 against the pre-change coarse-pointer rule with 3 failed and 1 passed. The failures were the intended fine-pointer phone, coarse-pointer 700px portrait, and 481px boundary contradictions.
+- TDD GREEN: the same focused command exited 0 after the exact CSS-only correction with 4 passed. Controller reproduction also exited 0 with 4 passed in 5.6 s.
+- Task verification: `npm run typecheck` exited 0; `npm run test:e2e` exited 0 with 30 passed and 9 intentional skips; scoped `git diff --check` exited 0.
+- Scope receipt: only `client/src/style.css`, the comment in `client/index.html`, and `e2e/portrait-gate.spec.ts` changed for implementation. No application TypeScript, shared engine, Supabase, workflow, dependency, or lockfile changed.
+- Independent task review returned spec approved and task quality approved with no Critical, Important, or Minor findings. T1 is ACCEPTED.
+## T2 pre-commit verification receipt (2026-07-21)
+
+- Whole-branch review: no Critical, Important, or Minor findings; Ready to commit: Yes.
+- Coverage audit: PASS. The 393px fine-pointer case detects restored pointer gating, the 480px assertion detects a 479px threshold, and the 481px assertion detects a 481px threshold.
+- `npm run check` exited 0 in 40.2 s after strict shared/client typecheck and the complete deterministic harness chain.
+- `npm run test:client` exited 0 with 21 files and 168 tests passed; emitted stderr is the suite's existing intentional error-path characterization output.
+- `npm run check:edge` exited 0 with 158 passed and 0 failed.
+- `npm run build` exited 0; Vite transformed 87 modules and built the production bundle in 475 ms.
+- `npm run test:e2e` exited 0 with 30 passed and 9 intentional skips across 39 project-test combinations.
+- `git diff --check` exited 0; `package-lock.json` has no diff; the intended changed set is six paths and contains no dependency, lockfile, workflow, engine, network, or Supabase change.
