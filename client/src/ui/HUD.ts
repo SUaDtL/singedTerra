@@ -13,6 +13,10 @@ import {
   windMagnitudeLabel,
   windDirectionSymbol,
 } from './gaugeMath';
+import {
+  COMPACT_TOUCH_QUERY,
+  resolveInitialArsenalCollapsed,
+} from './arsenalPreference';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -51,11 +55,11 @@ const AMMO_UNLIMITED_GLYPH = '∞';
  * localStorage can throw in private-mode / sandboxed frames.
  */
 const ARSENAL_COLLAPSED_KEY = 'st_arsenal_collapsed';
-function readArsenalCollapsed(): boolean {
+function readStoredArsenalPreference(): string | null {
   try {
-    return localStorage.getItem(ARSENAL_COLLAPSED_KEY) === '1';
+    return localStorage.getItem(ARSENAL_COLLAPSED_KEY);
   } catch {
-    return false;
+    return null;
   }
 }
 function writeArsenalCollapsed(collapsed: boolean): void {
@@ -164,6 +168,8 @@ export class HUD {
   /** Collapse/expand control for the arsenal strip + its persisted state. */
   private stripToggleEl!: HTMLButtonElement;
   private stripCollapsed = false;
+  private arsenalPreferenceExplicit = false;
+  private compactTouchMedia: MediaQueryList | null = null;
   private storeBtnEl!: HTMLButtonElement;
   private storeEl!: HTMLElement;
   private storeCreditsEl!: HTMLElement;
@@ -635,11 +641,14 @@ export class HUD {
     const stripTitle = document.createElement('div');
     stripTitle.className = 'st-hud__strip-title';
     stripTitle.textContent = 'Arsenal';
+    const scrollHint = document.createElement('span');
+    scrollHint.className = 'st-hud__strip-scroll-hint';
+    scrollHint.textContent = 'Swipe panel to scroll';
     const stripToggle = document.createElement('button');
     stripToggle.type = 'button';
     stripToggle.className = 'st-hud__strip-toggle';
     stripToggle.addEventListener('click', () => this.toggleStripCollapsed());
-    stripHeader.append(stripTitle, stripToggle);
+    stripHeader.append(stripTitle, scrollHint, stripToggle);
     this.stripToggleEl = stripToggle;
     const stripGrid = document.createElement('div');
     stripGrid.className = 'st-hud__strip-grid';
@@ -660,8 +669,20 @@ export class HUD {
       stripGrid.append(btn);
     }
     this.stripEl.append(stripHeader, stripGrid);
-    // Restore the persisted collapsed state (survives turns and reloads).
-    this.stripCollapsed = readArsenalCollapsed();
+    const stored = readStoredArsenalPreference();
+    this.arsenalPreferenceExplicit = stored === '0' || stored === '1';
+    this.compactTouchMedia = typeof matchMedia === 'function'
+      ? matchMedia(COMPACT_TOUCH_QUERY)
+      : null;
+    this.stripCollapsed = resolveInitialArsenalCollapsed(
+      stored,
+      this.compactTouchMedia?.matches ?? false,
+    );
+    this.compactTouchMedia?.addEventListener('change', (event) => {
+      if (this.arsenalPreferenceExplicit) return;
+      this.stripCollapsed = event.matches;
+      this.applyStripCollapsed();
+    });
     this.applyStripCollapsed();
   }
 
@@ -1308,6 +1329,7 @@ export class HUD {
 
   /** Flip and persist the arsenal-collapsed preference. */
   private toggleStripCollapsed(): void {
+    this.arsenalPreferenceExplicit = true;
     this.stripCollapsed = !this.stripCollapsed;
     writeArsenalCollapsed(this.stripCollapsed);
     this.applyStripCollapsed();
@@ -1748,6 +1770,7 @@ export class HUD {
   text-transform: uppercase;
   color: var(--text-dim);
 }
+.st-hud__strip-scroll-hint { display: none; }
 .st-hud__strip-toggle {
   pointer-events: auto;
   cursor: pointer;

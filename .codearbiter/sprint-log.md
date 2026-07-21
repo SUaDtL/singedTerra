@@ -531,3 +531,58 @@ User approved quality parity, then approved the combined spec + plan gate. Auton
 - **[high] Add the canonical codeArbiter state-free secrets command to `tech-stack.md` as a separate docs prerequisite.** SMARTS: Maintainable/Reliable/Securable/Testable require the commit gate to use an explicit discovered scanner rather than guess or bypass; chosen minimal governance repair before feature commit, strength strong. Confidence high.
 
 - **[high] Preserve the legacy `open-tasks.md` prose entry and close GitHub issue #63 instead.** SMARTS: Maintainable/Reliable/Testable favor the commit gate structured-transition invariant over an arbitrary legacy-board rewrite; chosen issue-backed completion with unchanged product acceptance, strength strong. Confidence high.
+
+# Sprint: mobile-hud-overflow (2026-07-20)
+
+Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobile-hud-overflow.md`. Awaiting the required approval gate.
+
+## Auto-decisions
+
+- **[high] Select issue #107 over #120 and #64.** SMARTS: Available/Reliable/Testable favor the current player-facing Pixel HUD defect with an existing Chromium reproduction; chosen mobile HUD overflow, strength strong. Confidence high.
+- **[high] Reject issue #64 as the immediate slice despite its allocation cost.** SMARTS: Reliable/Testable reject the proposed alive-seat scan because pending kills, burial, deadlock release, and round resets require post-action semantics; chosen defer for deeper prediction design, strength strong. Confidence high.
+- **[high] Responsive implicit collapse with explicit persisted override over spacing-only or a drawer.** SMARTS: Maintainable/Reliable/Testable favor one pure policy plus media-query lifecycle and Chromium geometry; chosen responsive default, strength strong. Confidence high.
+- **[high] No new dependency.** SMARTS: Maintainable/Available/Securable favor existing matchMedia, localStorage, Vitest, and Playwright surfaces; chosen platform APIs only, strength strong. Confidence high.
+- **[high] External worktree from current origin/main.** SMARTS: Reliable/Maintainable preserve the stale original checkout and its untracked AGENTS.md; chosen codex/mobile-hud-overflow at the established external worktree root, strength strong. Confidence high.
+
+- **[high] Approved gate resumed without re-brainstorming.** The user explicitly approved the existing mobile HUD overflow spec and plan; status moved to APPROVED and autonomous Phase 2 began. Confidence high.
+- **[high] Make the saved-preference and viewport-transition Playwright cases executable before dispatch.** SMARTS: Reliable/Testable/Maintainable reject leaving exact acceptance behavior implicit in prose; chosen concrete pre-navigation storage and 720px-to-412px viewport tests without changing scope, strength strong. Confidence high.
+
+## T1 preference-policy receipt (2026-07-20)
+
+- RED: the pure-policy test failed because the helper module did not exist; the HUD lifecycle test then failed the absent compact-touch default and media-change behavior.
+- GREEN: focused Vitest passed 2 files and 11 tests; client typecheck passed.
+- Independent task review: spec compliant and quality approved with no Critical, Important, or Minor findings.
+- Controller fresh verification repeated the focused 11 tests and client typecheck successfully. T1 ACCEPTED; commit remains deferred to the codeArbiter landing gate.
+
+## T2 compact-geometry receipt (2026-07-20)
+
+- RED: Pixel Playwright ran 8 tests with 7 passing and the new expanded scroll-hint assertion failing because the hint did not yet exist.
+- GREEN: Pixel production-build project passed 8/8; full desktop-fine, pixel-touch, and small-window matrix passed 16 with 8 intentional non-Pixel skips.
+- Computed geometry: the first-visit Pixel test proves hud.scrollHeight <= hud.clientHeight + 1 while collapsed; saved expansion, expanded hint visibility, ARIA state, responsive transitions, and manual override all passed.
+- Independent task review: spec compliant and quality approved with no Critical, Important, or Minor findings.
+- Controller fresh verification repeated Pixel 8/8 and the full matrix 16 passed/8 skipped. T2 ACCEPTED; no dependency or out-of-scope subsystem changed.
+
+## Superseding approval-state correction (2026-07-20)
+
+- **[high] Supersedes the earlier mobile-hud-overflow header stating that approval was awaited.** The user approved the required spec/plan gate; the sprint is now at final-review correction/landing. This append preserves the prior append-only record and corrects the current state without rewriting history.
+
+- **[high] Close the complete final-review finding set before landing.** SMARTS: Reliable/Testable/Maintainable favor direct fine-pointer state assertions, both negative hint states, append-only audit correction, and accurate task status; chosen one fix wave, strength strong. Confidence high.
+
+## T3 pre-commit verification and review receipt (2026-07-20)
+
+- Deterministic gate: npm run check exited 0 in 38.2 s after shared/client typecheck and the complete configured engine harness chain.
+- Client gate: npm run test:client exited 0 with 21 files and 164 tests passed; emitted stderr is the suite's existing intentional error-path characterization output.
+- Build gate: npm run build exited 0; Vite transformed 87 modules and built the production bundle in 487 ms.
+- Browser gate after final-review fixes: npx playwright test e2e/hud-layout.spec.ts exited 0 with 18 passed and 9 intentional project skips across 27 tests. Desktop-fine and small-window now directly prove expanded first-visit state; Pixel proves fitted collapsed geometry plus the expand-collapse hint lifecycle.
+- Scope gate: git diff --check exited 0; package-lock.json has no diff; origin/main remains df20dc3, the branch base; no engine, network, Supabase, physics, input mapping, package version, or lockfile changed.
+- Review gate: both task reviews passed without findings. Whole-branch review's one Important browser-oracle gap and three Minor governance/negative-state findings were resolved in one wave. Re-review reports no Critical or Important findings and Ready to merge: Yes; its remaining Minor receipt request is satisfied by this tracked append.
+- T3 Steps 1-3 complete. Commit, PR, and CI remain behind the controller-owned landing gates.
+
+- **[high] Close both non-blocking PR coverage gaps before opening the PR.** SMARTS: Reliable/Testable strongly favor four small HUD-boundary tests over deferring explicit saved-state and storage-failure obligations; chosen test-only follow-up, strength strong. Confidence high.
+
+## PR coverage hardening receipt (2026-07-20)
+
+- Added mutation-sensitive HUD/media tests for saved collapsed preference, invalid stored values, throwing storage reads, and throwing storage writes; test cleanup restores prototype spies before clearing browser state.
+- Controller focused verification passed 2 files and 15 tests; client typecheck and diff hygiene passed.
+- Coverage re-review verified both prior Medium findings resolved and returned PASS with no Critical, High, Medium, or Low findings.
+- Production code and dependency state remain unchanged from commit 14a1fb6; the follow-up is test plus this append-only governance receipt.
