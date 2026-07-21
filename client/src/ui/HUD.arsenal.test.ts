@@ -72,6 +72,7 @@ function installCompactTouchMedia(initial = false): MediaController {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.body.innerHTML = '';
   localStorage.clear();
@@ -135,6 +136,76 @@ describe('HUD arsenal — collapsible', () => {
     hud.update(state);
     expect(root.querySelector('.st-hud__strip')?.classList.contains('st-hud__strip--collapsed'))
       .toBe(false);
+  });
+
+  it('keeps a saved collapsed preference across compact-touch media changes', () => {
+    localStorage.setItem('st_arsenal_collapsed', '1');
+    const media = installCompactTouchMedia(true);
+    const { root, hud, state } = mount();
+    hud.update(state);
+    const strip = root.querySelector('.st-hud__strip')!;
+    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+
+    media.dispatch(false);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    media.dispatch(true);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('treats an invalid stored preference as implicit across media changes', () => {
+    localStorage.setItem('st_arsenal_collapsed', 'invalid');
+    const media = installCompactTouchMedia(false);
+    const { root, hud, state } = mount();
+    hud.update(state);
+    const strip = root.querySelector('.st-hud__strip')!;
+    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+
+    media.dispatch(true);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    media.dispatch(false);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('uses the compact-touch default after a storage read failure and keeps following media', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+    const media = installCompactTouchMedia(true);
+    const { root, hud, state } = mount();
+    hud.update(state);
+    const strip = root.querySelector('.st-hud__strip')!;
+    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(true);
+    media.dispatch(false);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    media.dispatch(true);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('keeps a manual toggle explicit when storage writes fail', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+    const media = installCompactTouchMedia(true);
+    const { root, hud, state } = mount();
+    hud.update(state);
+    const strip = root.querySelector('.st-hud__strip')!;
+    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+
+    toggle.click();
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    media.dispatch(false);
+    media.dispatch(true);
+    expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('follows media changes until the player toggles explicitly', () => {

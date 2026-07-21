@@ -577,3 +577,12 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Scope gate: git diff --check exited 0; package-lock.json has no diff; origin/main remains df20dc3, the branch base; no engine, network, Supabase, physics, input mapping, package version, or lockfile changed.
 - Review gate: both task reviews passed without findings. Whole-branch review's one Important browser-oracle gap and three Minor governance/negative-state findings were resolved in one wave. Re-review reports no Critical or Important findings and Ready to merge: Yes; its remaining Minor receipt request is satisfied by this tracked append.
 - T3 Steps 1-3 complete. Commit, PR, and CI remain behind the controller-owned landing gates.
+
+- **[high] Close both non-blocking PR coverage gaps before opening the PR.** SMARTS: Reliable/Testable strongly favor four small HUD-boundary tests over deferring explicit saved-state and storage-failure obligations; chosen test-only follow-up, strength strong. Confidence high.
+
+## PR coverage hardening receipt (2026-07-20)
+
+- Added mutation-sensitive HUD/media tests for saved collapsed preference, invalid stored values, throwing storage reads, and throwing storage writes; test cleanup restores prototype spies before clearing browser state.
+- Controller focused verification passed 2 files and 15 tests; client typecheck and diff hygiene passed.
+- Coverage re-review verified both prior Medium findings resolved and returned PASS with no Critical, High, Medium, or Low findings.
+- Production code and dependency state remain unchanged from commit 14a1fb6; the follow-up is test plus this append-only governance receipt.
