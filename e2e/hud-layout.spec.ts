@@ -71,4 +71,68 @@ test.describe('HUD layout guardrails', () => {
     expect(box!.width).toBeGreaterThan(0);
     expect(box!.height).toBeGreaterThan(4);
   });
+
+  test('compact touch starts fitted with arsenal collapsed', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch');
+    const strip = page.locator('.st-hud__strip');
+    await expect(strip).toHaveClass(/st-hud__strip--collapsed/);
+    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
+    await expect(page.locator('.st-hud__strip-scroll-hint')).toBeHidden();
+    const geometry = await page.locator('#hud').evaluate((hud) => ({
+      clientHeight: hud.clientHeight,
+      scrollHeight: hud.scrollHeight,
+    }));
+    expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight + 1);
+  });
+
+  test('compact touch expansion exposes arsenal and scroll hint', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch');
+    await page.locator('.st-hud__strip-toggle').click();
+    await expect(page.locator('.st-hud__strip-grid')).toBeVisible();
+    await expect(page.locator('.st-hud__strip-scroll-hint')).toBeVisible();
+    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
+
+    await page.locator('.st-hud__strip-toggle').click();
+    await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
+    await expect(page.locator('.st-hud__strip-scroll-hint')).toBeHidden();
+    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+test.describe('HUD arsenal responsive defaults', () => {
+  test('desktop-fine and small-window start with an expanded arsenal', async ({ page }, testInfo) => {
+    test.skip(!['desktop-fine', 'small-window'].includes(testInfo.project.name));
+    await gotoRunningGame(page);
+    await expect(page.locator('.st-hud__strip-grid')).toBeVisible();
+    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('saved expanded preference wins on compact touch', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch');
+    await page.addInitScript(() => localStorage.setItem('st_arsenal_collapsed', '0'));
+    await gotoRunningGame(page);
+    await expect(page.locator('.st-hud__strip')).not.toHaveClass(/st-hud__strip--collapsed/);
+    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('implicit default follows compact-touch changes until manually toggled', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch');
+    await page.setViewportSize({ width: 915, height: 720 });
+    await gotoRunningGame(page);
+    const strip = page.locator('.st-hud__strip');
+    const toggle = page.locator('.st-hud__strip-toggle');
+    await expect(strip).not.toHaveClass(/st-hud__strip--collapsed/);
+
+    await page.setViewportSize({ width: 915, height: 412 });
+    await expect(strip).toHaveClass(/st-hud__strip--collapsed/);
+    await toggle.click();
+    await expect(strip).not.toHaveClass(/st-hud__strip--collapsed/);
+
+    await page.setViewportSize({ width: 915, height: 720 });
+    await page.setViewportSize({ width: 915, height: 412 });
+    await expect(strip).not.toHaveClass(/st-hud__strip--collapsed/);
+  });
 });

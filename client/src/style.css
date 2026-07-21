@@ -229,6 +229,21 @@ body {
   overflow-y: auto;
   pointer-events: auto;
 }
+@media (pointer: coarse) and (max-height: 700px) {
+  #hud {
+    overscroll-behavior-y: contain;
+    scrollbar-color: var(--ember) rgba(255, 233, 168, 0.08);
+    scrollbar-width: thin;
+  }
+  #hud::-webkit-scrollbar { width: 6px; }
+  #hud::-webkit-scrollbar-thumb {
+    background: var(--ember);
+    border-radius: 999px;
+  }
+  .st-hud__strip:not(.st-hud__strip--collapsed) .st-hud__strip-scroll-hint {
+    display: inline;
+  }
+}
 #hud::before {
   content: '';
   position: absolute;
