@@ -642,6 +642,124 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 
 - **[high] Harvest promoted dependency-audit residue.** SMARTS: Securable/Maintainable/Testable favor source-level triage before any audit fix or install-script approval; queued one work item in `open-tasks.md` from `sprint:pages-stale-deploy-guard`. No dependency or script authorization was granted. Confidence high.
 
+## 2026-07-21 — portrait-phone-gate sprint
+
+- **[high] Select issue #108 as the next sprint.** Compared the player-facing portrait false-positive with issue #64's allocation optimization, issue #120's stateful coverage seam, and issue #153's geometry drift guard. SMARTS: Available/Reliable/Testable favor the live input-blocking bug because it denies otherwise-playable devices and has a small real-browser oracle; chosen #108, strength strong. Confidence high.
+- **[high] Gate on layout capacity, not inferred device identity.** Compared `(orientation: portrait) and (max-width: 480px)`, retaining coarse pointer plus width, aspect ratio alone, and JavaScript device heuristics. SMARTS: Maintainable/Reliable/Testable favor one CSS width-and-orientation rule; chosen inclusive 480px boundary with pointer type irrelevant, strength strong. Confidence high.
+- **[high] Use isolated browser contexts instead of expanding the global Playwright project matrix.** Dedicated contexts cover touch and fine pointer at exact viewports without making every existing HUD test run against blocked portrait layouts; chosen focused `portrait-gate.spec.ts`, strength strong across Scalable/Testable/Maintainable. Confidence high.
+- **[high] Approval gate cleared.** The user explicitly approved the issue #108 design and plan on 2026-07-21. Phase 2 autonomous execution begins on `codex/portrait-phone-gate`. Confidence high.
+- **[high] Do not duplicate dependency-audit residue across parallel PRs.** Fresh setup reproduced the same 8 advisories and two blocked install scripts already harvested into the green, open PR #158. No audit fix, script approval, dependency edit, or duplicate board task was made here. SMARTS: Maintainable/Securable favor one canonical follow-up, strength strong. Confidence high.
+## T1 browser contract receipt (2026-07-21)
+
+- TDD RED: `npx playwright test e2e/portrait-gate.spec.ts --project=desktop-fine` exited 1 against the pre-change coarse-pointer rule with 3 failed and 1 passed. The failures were the intended fine-pointer phone, coarse-pointer 700px portrait, and 481px boundary contradictions.
+- TDD GREEN: the same focused command exited 0 after the exact CSS-only correction with 4 passed. Controller reproduction also exited 0 with 4 passed in 5.6 s.
+- Task verification: `npm run typecheck` exited 0; `npm run test:e2e` exited 0 with 30 passed and 9 intentional skips; scoped `git diff --check` exited 0.
+- Scope receipt: only `client/src/style.css`, the comment in `client/index.html`, and `e2e/portrait-gate.spec.ts` changed for implementation. No application TypeScript, shared engine, Supabase, workflow, dependency, or lockfile changed.
+- Independent task review returned spec approved and task quality approved with no Critical, Important, or Minor findings. T1 is ACCEPTED.
+## T2 pre-commit verification receipt (2026-07-21)
+
+- Whole-branch review: no Critical, Important, or Minor findings; Ready to commit: Yes.
+- Coverage audit: PASS. The 393px fine-pointer case detects restored pointer gating, the 480px assertion detects a 479px threshold, and the 481px assertion detects a 481px threshold.
+- `npm run check` exited 0 in 40.2 s after strict shared/client typecheck and the complete deterministic harness chain.
+- `npm run test:client` exited 0 with 21 files and 168 tests passed; emitted stderr is the suite's existing intentional error-path characterization output.
+- `npm run check:edge` exited 0 with 158 passed and 0 failed.
+- `npm run build` exited 0; Vite transformed 87 modules and built the production bundle in 475 ms.
+- `npm run test:e2e` exited 0 with 30 passed and 9 intentional skips across 39 project-test combinations.
+- `git diff --check` exited 0; `package-lock.json` has no diff; the intended changed set is six paths and contains no dependency, lockfile, workflow, engine, network, or Supabase change.
+
+## 2026-07-22 — Lobby session lifecycle oracle sprint
+
+- **[high] Select issue #128's lifecycle oracle as the next independent slice.** Compared duplicating issue #134 retry/audio-edge Vitest coverage, issue #59 Supabase boundary typing, issue #109 CSS cleanup, issue #64's invalid clone-removal premise, and the missing pre-refactor Lobby oracle. SMARTS Reliable/Maintainable/Testable favor pinning Realtime subscription, heartbeat ownership, broadcast state, and terminal cleanup before the planned `LobbySession` extraction. Chosen one test-only lifecycle sprint, strength strong. Confidence high.
+- **[high] Use a focused callback-capturing jsdom test file.** Compared extending the 800-line transport-action test, extracting production first, and live Supabase E2E. SMARTS Maintainable/Testable/Available favor a distinct fake channel per subscription, captured real callbacks, and fake timers without credentials or production seams. Chosen `Lobby.sessionLifecycle.test.ts`, strength strong. Confidence high.
+- Approval gate pending: `.codearbiter/specs/lobby-session-lifecycle-oracle.md` and `.codearbiter/plans/lobby-session-lifecycle-oracle.md` are proposed; no implementation begins before explicit approval.- **[high] Approval gate cleared.** The user explicitly approved the issue #128 Lobby session lifecycle oracle spec and plan on 2026-07-22. Phase 2 autonomous execution begins on `codex/lobby-session-lifecycle-oracle`. Confidence high.
+
+- **[high] Canonical approval receipt (supersedes the joined pending/approved line immediately above).** The user explicitly approved the issue #128 Lobby session lifecycle oracle spec and plan on 2026-07-22. Phase 2 autonomous execution begins on `codex/lobby-session-lifecycle-oracle`. Confidence high.
+
+## Lobby session lifecycle oracle implementation receipt (2026-07-22)
+
+- **[high] T1 ACCEPTED: callback-driven lifecycle oracle landed without production changes.** Four focused Vitest cases capture distinct Realtime channels and real UPDATE/DELETE callbacks; assert exact room-specific filters, two handlers and one subscribe per channel; prove resubscription cleanup and the exact 10,000 ms heartbeat cadence; adopt waiting state without lastSeen-only render flicker; emit the full active-session config; and cover player-removal and room-deletion terminal teardown. Confidence high.
+- **[high] Nine independent mutation REDs prove the oracle is causal.** The focused suite failed when pre-subscribe cleanup, heartbeat start, waiting-player assignment, lastSeen de-flickering, active cleanup, or DELETE handling was removed; when the heartbeat cadence changed to 9,999 ms; when replacement filters retained room-1; and when a third handler was registered. Every mutation was restored before GREEN. Focused result: 1 file, 4 tests passed. Confidence high.
+- **[high] Review fleet cleared after two concrete test-strength fixes.** Task review required exact heartbeat cadence and then approved with zero Critical/Important/Minor findings. Whole-diff review and coverage audit required room-2 filter/cardinality assertions and rendered terminal-message proof; after correction both returned ready-to-commit with zero Critical/Important/Minor and zero Critical/High/Medium coverage findings. Confidence high.
+- **[high] Fresh full matrix GREEN.** `npm run check` exited 0; `npm run test:client` and `npm run coverage:client` passed 22 files / 172 tests; coverage was 76.73% statements and lines, 79.69% branches, and 76.36% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; `npm run test:e2e` passed 18 with 9 project-conditional skips; `git diff --check` passed. Confidence high.
+- **[high] Protected runtime and dependency surfaces are exact.** `Lobby.ts` blob c6705fa330b3cf3925c18e408da8264f89666b60, `LobbyTransport.ts` a4d4872731c664000b4a1432aab7d463a2a68f8b, root package manifest b05c4080098c755978fa0c5b10807cb7b577197a, client manifest 80bb9f4df37a1ac9071752dfaccf74c33d31b03f, shared manifest 810b077850a866e22e3fc34747a4eba41a5acf6a, and lockfile 55d3e9b15f1eda17d60ad1cb8bbca39a378b0f0b all match `origin/main`. No dependency, production, permission, secret, or deployment change occurred. Confidence high.
+- Harvest: no low-confidence decision or review residue requires promotion.
+
+## PR #159 mainline conflict-resolution receipt (2026-07-22)
+
+- **[high] Preserve both append-only sprint histories in chronological order.** Merging main at `c2fc47e` produced one EOF conflict in `.codearbiter/sprint-log.md`; the resolved file retains the complete portrait-phone-gate record, then appends the complete merged Lobby lifecycle record verbatim. No source, test, spec, plan, dependency, lockfile, workflow, migration, or deployment hunk required manual resolution. SMARTS Maintainable/Reliable/Auditable favor append union over choosing either side. Confidence high.
+- Fresh integration verification: `npm run check` exited 0; `npm run coverage:client` passed with 76.57% statements/lines, 79.32% branches, and 76.36% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; the focused portrait Playwright file passed 4/4; and `npm run test:e2e` passed 30 with 9 project-conditional skips. A deliberately concurrent Playwright invocation first collided on shared port 4173; the port was verified free and both browser gates passed serially without code changes.
+- Harvest: no low-confidence decision or review residue requires promotion.
+
+
+## 2026-07-21 — barrel-geometry-source sprint
+
+- **[high] Select issue #153 as the next sprint.** Compared the renderer/physics drift guard with issue #120's narrowed retry-coverage path, issue #109's CSS cleanup, and issue #64's invalid clone-removal premise. SMARTS: Reliable/Maintainable/Testable favor eliminating a previously shipped cross-layer drift class with a small legal client-to-shared refactor; chosen #153, strength strong. Confidence high.
+- **[high] Remove geometry copies and guard ownership structurally.** Compared shared imports plus a TypeScript-AST guard, literal equality checks, and Canvas draw-call mocks. SMARTS: shared imports remove synchronization work, while the existing independent 20/22 numerical oracle plus AST ownership checks cover both behavior and future source drift; chosen shared imports plus AST guard, strength strong. Confidence high.
+
+- **[high] Approval gate cleared.** The user explicitly approved the issue #153 shared barrel geometry spec and plan on 2026-07-21. Phase 2 autonomous execution begins on `codex/barrel-geometry-source`. Confidence high.
+
+
+## T1 shared barrel geometry receipt (2026-07-21)
+
+- Baseline: the unmodified `npx tsx scripts/checks/muzzle.mjs` exited 0 with 385 passed and 0 failed, pinning the existing 20px pivot and 22px barrel behavior.
+- TDD RED: after adding compiler-API ownership assertions before renderer edits, the same harness exited 1 with 385 numerical passes and 11 intended structural failures for missing shared imports/calls and existing mirror constants.
+- GREEN: both renderer consumers now use shared `BARREL_LENGTH`, `BARREL_PIVOT_HEIGHT`, and `barrelTip`; the focused harness exits 0 with 396 passed and 0 failed.
+- Review caught one Important bypass: name-based mirror detection and unused shared calls could satisfy the first guard. The fix binds shared-tip data to the actual `lineTo`, `spawnMuzzle`, and aim-guide sinks and rejects top-level numeric 20/22 mirrors regardless of identifier name.
+- Mutation proof: a renamed `MUZZLE_LENGTH = 22` mirror failed 395/1; inert shared calls plus restored manual arithmetic at all three consumers failed 393/3. Every mutation was restored before final GREEN.
+- Controller fresh proof: focused muzzle 396/0, strict typecheck, collision 54/0, AI determinism 36/36 plus null scenarios, sudden-death, and scoped diff hygiene all exited 0.
+- Re-review returned spec approved and task quality approved with no Critical, Important, or Minor findings. T1 is ACCEPTED. No dependency, lockfile, workflow, Supabase, or visible-art change occurred.
+
+## T1 review-driven guard redesign correction (2026-07-21)
+
+- **[high] This append supersedes the sink-bound and 396-assertion claims in the T1 receipt immediately above.** Repeated whole-branch review proved that extending the structural guard into Canvas path, effect-sink, alias, and receiver dataflow created an open-ended partial interpreter: it grew to 1,042 lines and still admitted ordinary TypeScript value-flow variants. SMARTS: Maintainable/Testable/Reliable favor the approved narrow source-ownership contract over continuing the syntax arms race; chosen TypeChecker-resolved imports, direct shared calls in the three production methods, pivot ownership, used/legacy top-level mirror rejection, and the unchanged numerical oracle. Strength strong; confidence high.
+- The compact redesign removes Canvas lifecycle, sink tracing, custom alias/dataflow, and receiver normalization. `scripts/checks/muzzle.mjs` is 369 lines and its branch diff is `+200/-1`, a 673-added-line reduction from the discarded peak while preserving 14 ownership assertions.
+- AC-4 mutation proof: missing required imports failed 390/9; replacing the three direct shared calls with the original manual arithmetic failed 396/3; replacing the pivot with `y - 20` failed 398/1; each legacy mirror failed; a referenced renamed `MUZZLE_LENGTH = 22` failed 398/1; unused unrelated 20/22 and formatting-only changes remained green; changing shared 20/22 geometry failed 390/9 in the independent oracle.
+- The final focused harness exits 0 with 399 passed and 0 failed. Deliberate inert shared calls beside live manual rendering are explicitly outside the automated ownership contract and remain a code-review concern, consistent with the approved rejection of a full Canvas mock.
+- Final whole-branch review reports no Critical or Minor findings, coverage PASS, and approves the implementation and guard as proportionate and maintainable. Its sole Important governance finding is resolved by this append-only correction. No dependency, lockfile, workflow, Supabase, physics, or visible-art change occurred.
+## T2 final verification receipt (2026-07-21)
+
+- `npm run check` exited 0 in 42.2 seconds after shared/client typecheck and the complete configured deterministic harness chain; the redesigned muzzle ownership guard passed 399/0.
+- `npm run test:client` exited 0 with 21 files and 168 tests passed. Emitted stderr/stdout is existing intentional error-path characterization output.
+- `npm run check:edge` exited 0 with 158 tests passed and 0 failed.
+- `npm run build` exited 0 after typecheck; Vite transformed 87 modules and completed the production bundle in 498 ms.
+- `npm run test:e2e` exited 0 with 18 passed and 9 intentional project skips across 27 tests.
+- `git diff --check` exited 0; `package-lock.json` is unchanged; no dependency, workflow, Supabase, migration, or generated bundle is in the diff.
+- Branch HEAD and `origin/main` both resolve to `cb39cfc`. The pre-rebase recovery stash remains preserved as `stash@{0}` and was not dropped or modified.
+- Whole-branch review and coverage audit are clear after the append-only redesign correction: no Critical, Important, or Minor implementation findings remain, and coverage is PASS. Commit, PR, and hosted CI remain behind their governed gates.
+
+## PR #160 mainline conflict-resolution receipt (2026-07-22)
+
+- **[high] Preserve both append-only sprint histories in chronological order.** Merging current main at `6552339` produced one EOF conflict in `.codearbiter/sprint-log.md`; the resolved file retains the complete current-main history verbatim, then appends the complete barrel-geometry sprint record. No source, test, spec, plan, dependency, lockfile, workflow, migration, or deployment hunk required manual resolution. SMARTS Maintainable/Reliable/Auditable favor append union over choosing either side. Confidence high.
+- Fresh integration verification: `npm run check` exited 0 with the focused muzzle guard at 399/0; `npm run coverage:client` passed with 76.57% statements/lines, 79.32% branches, and 76.36% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; and `npm run test:e2e` passed 30 with 9 project-conditional skips.
+- Harvest: no low-confidence decision or review residue requires promotion.
+## 2026-07-21 — human-seq-conflict-retry coverage sprint
+
+- **Sprint selection:** Compared issue #120 (human seq-conflict retry coverage), issue #134 (broad nonblocking coverage), issue #125 (low-value metadata migration), and issue #109 (cosmetic CSS). SMARTS verdict: **issue #120, strong**. Reliable and Testable dominate because a bounded liveness path already exists in production but lacks direct human-path proof. Confidence: **high**.
+- **Stale-premise correction:** Issue #120's broad constructor-wiring premise is already covered by lockstep, initialize-gap, rematch, session-clear, and bot-retry suites. The remaining scoped gap is the human `sendAction()` seq-conflict schedule, cap, failure unlock, and teardown cleanup.
+- **[high] Public-API fake-timer design approved.** SMARTS favors instantiating the real `NetworkClient`, fixing jitter at zero, and observing POST timing/body, failure notification, `isFiring`, and timer cleanup over extracting a production scheduler or broadening into transport refactoring. Strength strong; confidence high.
+- **[high] Approval gate cleared.** The user explicitly approved the issue #120 spec and plan on 2026-07-21. Phase 2 autonomous execution begins on `codex/human-seq-conflict-retry` at base `cb39cfc5a00e94ecf1f5d4ebab61f6dbed09d279`.
+- **[high] Teardown proof tightened during plan self-review.** The `_disposed` backstop can suppress a stale timer's POST even if `clearTimeout()` is removed, so the approved case now also requires zero pending timers immediately after `stop()`. This makes removal of retry-timer cancellation independently mutation-sensitive while retaining the post-teardown POST assertion. No production design changed.
+## T1 human seq-conflict retry coverage receipt (2026-07-21)
+
+- GREEN: `npm -w @singedterra/client exec vitest run src/client/NetworkClient.humanRetry.test.ts` passed 1 file and 3 tests. The real public human `sendAction({ type: 'fire' })` path proves the exact 40/80/160/240/240ms boundaries, identical retry body, six-POST cap, one exhaustion notification, firing-lock liveness, no seventh POST, and immediate teardown timer cleanup.
+- RED mutation A: setting `MAX_SEQ_RETRIES` from 5 to 0 failed all 3 focused cases, including the intermediate liveness assertion because failure/unlock occurred after the initial conflict. The constant was restored and focused GREEN repeated.
+- RED mutation B: removing only `clearTimeout(this.seqRetryTimer)` from `stop()` failed the teardown case with one timer still allocated immediately after stop. The line was restored and focused GREEN repeated.
+- Review correction: the first independent review found one Important gap because final-only failure/unlock assertions could miss premature recovery. The worker added no-failure and `isFiring === true` assertions after the initial conflict, before every deadline, and after each of the first four retry POSTs. Fresh re-review returned no Critical, Important, or Minor findings and approved final verification.
+- Task matrix: `npm run typecheck` passed; `npm run test:client` passed 22 files and 171 tests; focused controller rerun passed 3/3; diff hygiene passed. `client/src/client/NetworkClient.ts`, `package-lock.json`, dependencies, workflows, Supabase, and deployment state remain unchanged.
+- T1 ACCEPTED. The only implementation artifact is the new focused test; governance changes are the approved spec, plan, and append-only sprint receipts.
+## T2 final review and local verification receipt (2026-07-22)
+
+- Whole-diff review returned PASS with no Critical, Important, or Minor findings; fresh focused verification passed 3/3 and governance receipts matched the live narrowed issue scope.
+- Independent coverage audit returned PASS with no CRITICAL, HIGH, MEDIUM, or LOW findings. It confirmed mutation sensitivity for exact delay boundaries, identical payload, five-retry/six-POST cap, failure timing/count, firing-lock lifecycle, no seventh POST, prompt timer cancellation despite the `_disposed` backstop, and no post-stop POST.
+- Full matrix: `npm run check` exited 0 in 42s; `npm run test:client` passed 22 files and 171 tests; `npm run check:edge` passed 158 tests; `npm run build` typechecked and transformed 87 modules; `npm run test:e2e` passed 18 with 9 intentional project skips.
+- Final scope and hygiene: `git diff --check` passed; `package-lock.json`, production code, dependencies, workflows, Supabase, and deployment state are unchanged. Intended tracked scope is the approved spec, approved plan, append-only sprint log, and one new client test.
+- Branch/base: `codex/human-seq-conflict-retry` from `cb39cfc5a00e94ecf1f5d4ebab61f6dbed09d279`. PR #159 and PR #160 remain independent and unmerged.
+
+## PR #161 mainline conflict-resolution receipt (2026-07-22)
+
+- **[high] Preserve both append-only sprint histories in chronological order.** Merging current main at `cdef7c1` produced one EOF conflict in `.codearbiter/sprint-log.md`; the resolved file retains the complete current-main history verbatim, then appends the complete human seq-conflict retry record. The 23-line branch tail was verified as an exact append to merge-base `cb39cfc`. No production, test, spec, plan, dependency, lockfile, workflow, migration, or deployment hunk required manual resolution. SMARTS Maintainable/Reliable/Auditable favor append union over choosing either side. Confidence high.
+- Fresh integration verification: the focused human-retry suite passed 3/3; `npm run check` exited 0; `npm run coverage:client` passed with 77.32% statements/lines, 80.16% branches, and 77.27% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; and `npm run test:e2e` passed 30 with 9 project-conditional skips.
+- Harvest: no low-confidence decision or review residue requires promotion.
 ## 2026-07-22 — HotSeatClient lifecycle coverage sprint
 
 - **Sprint selection:** Compared issue #134's HotSeatClient, InputHandler, retry, and audioEdges slices; issue #59's broad Supabase type boundary; issue #109's CSS cleanup; and issue #64's stale clone optimization. SMARTS verdict: **issue #134 HotSeatClient slice, strong**. Reliable, Maintainable, and Testable dominate because this 77-line wrapper owns the complete hot-seat execution loop yet has no direct coverage, while retry/audioEdges already have root harnesses and InputHandler is a larger follow-on cell. Confidence: **high**.
@@ -664,3 +782,9 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Full matrix: `npm run check` exited 0 in 42.5s; `npm run test:client` passed 22 files and 171 tests; `npm run coverage:client` passed 171 tests with 67.85% overall statements and 100% HotSeatClient statements/branches/functions/lines; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; `npm run test:e2e` passed 18 with 9 intentional project skips.
 - Final scope and hygiene: `git diff --check` passed; `package-lock.json`, production code, dependencies, workflows, Supabase, and deployment state are unchanged. Intended tracked scope is the approved spec, approved plan, append-only sprint log, and one new client test.
 - Branch/base: `codex/hotseat-client-lifecycle-coverage` from `cb39cfc5a00e94ecf1f5d4ebab61f6dbed09d279`. This slice references but does not close issue #134.
+
+## PR #162 mainline conflict-resolution receipt (2026-07-22)
+
+- **[high] Preserve both append-only sprint histories in chronological order.** Merging current main at `aabc183` produced one EOF conflict in `.codearbiter/sprint-log.md`; the resolved file retains the complete current-main history verbatim, then appends the complete hot-seat lifecycle coverage record. The 23-line branch tail was verified as an exact append to merge-base `cb39cfc`. No production, test, spec, plan, dependency, lockfile, workflow, migration, or deployment hunk required manual resolution. SMARTS Maintainable/Reliable/Auditable favor append union over choosing either side. Confidence high.
+- Fresh integration verification: the focused HotSeatClient suite passed 3/3; `npm run check` exited 0; `npm run coverage:client` passed with 78.59% statements/lines, 80.80% branches, and 78.69% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; and `npm run test:e2e` passed 30 with 9 project-conditional skips.
+- Harvest: no low-confidence decision or review residue requires promotion.
