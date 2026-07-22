@@ -1,6 +1,6 @@
 import type { GameState, ExplosionEvent, ExplosionStyle } from '@shared/types/GameState';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
-import { TANK_WIDTH, TANK_HEIGHT } from '@shared/engine/Tank';
+import { TANK_WIDTH, TANK_HEIGHT, BARREL_LENGTH, barrelTip } from '@shared/engine/Tank';
 import { getWeapon } from '@shared/engine/WeaponSystem';
 import { launchVelocity, GRAVITY, WIND_FACTOR } from '@shared/engine/Physics';
 import { fireActiveEdge, bettyHopCount, isOobFizzle } from './audioEdges';
@@ -19,11 +19,7 @@ import { skyGradient, ACCENT, TERRAIN } from '../ui/theme';
 import { flashIntensity, scorchAlpha } from './explosionFx';
 import { damageTier } from './tankFx';
 
-/** Mirror TankRenderer's barrel geometry so muzzle FX sit at the VISUAL tip:
- *  pivot at (x, y − TREAD_HEIGHT(6) − BODY_HEIGHT(10)), barrel length 22. */
-const BARREL_VISUAL_LEN = 22;
-const TANK_BARREL_PIVOT_OFFSET = 20;
-
+/** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
  * Frames to keep redrawing after the renderer last spawned a transient effect
  * (debris/smoke/sparks/floating damage text). Must be >= the longest particle
@@ -585,16 +581,14 @@ export class Renderer {
   }
 
   /**
-   * Spawn muzzle sparks at the active shooter's barrel tip. Mirrors TankRenderer's
-   * geometry (pivot at the body top, barrel length 22) so the flash sits exactly at
-   * the visual barrel end. Purely cosmetic; reduced-motion suppresses it inside FX.
+   * Spawn muzzle sparks at the active shooter's shared barrel tip so the flash sits
+   * exactly at the visual barrel end. Purely cosmetic; reduced-motion suppresses it
+   * inside FX.
    */
   private spawnMuzzleFlash(state: GameState): void {
     const shooter = state.tanks.find((t) => t.id === state.activePlayerId);
     if (!shooter) return;
-    const rad = (shooter.angle * Math.PI) / 180;
-    const px = shooter.x + Math.cos(rad) * BARREL_VISUAL_LEN;
-    const py = shooter.y - TANK_BARREL_PIVOT_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
+    const { x: px, y: py } = barrelTip(shooter, BARREL_LENGTH);
     this.effects.spawnMuzzle(px, py, shooter.angle, shooter.color);
     this.effectsBusy = EFFECTS_BUSY_FRAMES; // muzzle sparks live a few frames
   }
@@ -655,9 +649,7 @@ export class Renderer {
   private drawAimGuide(state: GameState): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);
     if (!tank || !tank.alive) return;
-    const rad = (tank.angle * Math.PI) / 180;
-    let x = tank.x + Math.cos(rad) * BARREL_VISUAL_LEN;
-    let y = tank.y - TANK_BARREL_PIVOT_OFFSET - Math.sin(rad) * BARREL_VISUAL_LEN;
+    let { x, y } = barrelTip(tank, BARREL_LENGTH);
     const v = launchVelocity(tank.angle, tank.power);
     let vx = v.vx;
     let vy = v.vy;
