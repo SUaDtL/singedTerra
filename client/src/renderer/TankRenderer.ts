@@ -1,4 +1,5 @@
 import type { TankState } from '@shared/types/GameState';
+import { BARREL_LENGTH, BARREL_PIVOT_HEIGHT, barrelTip } from '@shared/engine/Tank';
 import { TANK, ACCENT, lightenHex, darkenHex } from '../ui/theme';
 import { damageTier } from './tankFx';
 
@@ -10,8 +11,6 @@ const HIGHLIGHT_HEIGHT = 3;
 /** Trapezoid tread sits under the body. */
 const TREAD_HEIGHT = 6;
 const TREAD_OVERHANG = 4;
-/** Barrel pivots at the top-center of the body. */
-const BARREL_LENGTH = 22;
 const BARREL_WIDTH = 4;
 
 /**
@@ -105,11 +104,13 @@ export class TankRenderer {
 
     // --- Barrel: rotatable line from the body's top-center along the aim
     // vector (cos θ, -sin θ), in a lightened shade so it reads off the body. ---
-    const rad = (angle * Math.PI) / 180;
     const pivotX = x;
-    const pivotY = bodyTop - turretH + 2;
-    const tipX = pivotX + Math.cos(rad) * BARREL_LENGTH;
-    const tipY = pivotY - Math.sin(rad) * BARREL_LENGTH;
+    const pivotY = y - BARREL_PIVOT_HEIGHT;
+    const tip = barrelTip(tank, BARREL_LENGTH);
+    const tipX = tip.x;
+    const tipY = tip.y;
+    const barrelNormalX = (tipY - pivotY) / BARREL_LENGTH;
+    const barrelNormalY = (pivotX - tipX) / BARREL_LENGTH;
 
     ctx.beginPath();
     ctx.moveTo(pivotX, pivotY);
@@ -126,8 +127,8 @@ export class TankRenderer {
     ctx.strokeStyle = lightenHex(color, 0.48);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(pivotX + Math.cos(rad + Math.PI / 2) * 1, pivotY - Math.sin(rad + Math.PI / 2) * 1);
-    ctx.lineTo(tipX + Math.cos(rad + Math.PI / 2) * 1, tipY - Math.sin(rad + Math.PI / 2) * 1);
+    ctx.moveTo(pivotX + barrelNormalX, pivotY + barrelNormalY);
+    ctx.lineTo(tipX + barrelNormalX, tipY + barrelNormalY);
     ctx.lineWidth = 1;
     ctx.strokeStyle = lightenHex(color, 0.72);
     ctx.stroke();
