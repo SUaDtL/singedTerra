@@ -689,3 +689,46 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - **[high] Preserve both append-only sprint histories in chronological order.** Merging main at `c2fc47e` produced one EOF conflict in `.codearbiter/sprint-log.md`; the resolved file retains the complete portrait-phone-gate record, then appends the complete merged Lobby lifecycle record verbatim. No source, test, spec, plan, dependency, lockfile, workflow, migration, or deployment hunk required manual resolution. SMARTS Maintainable/Reliable/Auditable favor append union over choosing either side. Confidence high.
 - Fresh integration verification: `npm run check` exited 0; `npm run coverage:client` passed with 76.57% statements/lines, 79.32% branches, and 76.36% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; the focused portrait Playwright file passed 4/4; and `npm run test:e2e` passed 30 with 9 project-conditional skips. A deliberately concurrent Playwright invocation first collided on shared port 4173; the port was verified free and both browser gates passed serially without code changes.
 - Harvest: no low-confidence decision or review residue requires promotion.
+
+
+## 2026-07-21 — barrel-geometry-source sprint
+
+- **[high] Select issue #153 as the next sprint.** Compared the renderer/physics drift guard with issue #120's narrowed retry-coverage path, issue #109's CSS cleanup, and issue #64's invalid clone-removal premise. SMARTS: Reliable/Maintainable/Testable favor eliminating a previously shipped cross-layer drift class with a small legal client-to-shared refactor; chosen #153, strength strong. Confidence high.
+- **[high] Remove geometry copies and guard ownership structurally.** Compared shared imports plus a TypeScript-AST guard, literal equality checks, and Canvas draw-call mocks. SMARTS: shared imports remove synchronization work, while the existing independent 20/22 numerical oracle plus AST ownership checks cover both behavior and future source drift; chosen shared imports plus AST guard, strength strong. Confidence high.
+
+- **[high] Approval gate cleared.** The user explicitly approved the issue #153 shared barrel geometry spec and plan on 2026-07-21. Phase 2 autonomous execution begins on `codex/barrel-geometry-source`. Confidence high.
+
+
+## T1 shared barrel geometry receipt (2026-07-21)
+
+- Baseline: the unmodified `npx tsx scripts/checks/muzzle.mjs` exited 0 with 385 passed and 0 failed, pinning the existing 20px pivot and 22px barrel behavior.
+- TDD RED: after adding compiler-API ownership assertions before renderer edits, the same harness exited 1 with 385 numerical passes and 11 intended structural failures for missing shared imports/calls and existing mirror constants.
+- GREEN: both renderer consumers now use shared `BARREL_LENGTH`, `BARREL_PIVOT_HEIGHT`, and `barrelTip`; the focused harness exits 0 with 396 passed and 0 failed.
+- Review caught one Important bypass: name-based mirror detection and unused shared calls could satisfy the first guard. The fix binds shared-tip data to the actual `lineTo`, `spawnMuzzle`, and aim-guide sinks and rejects top-level numeric 20/22 mirrors regardless of identifier name.
+- Mutation proof: a renamed `MUZZLE_LENGTH = 22` mirror failed 395/1; inert shared calls plus restored manual arithmetic at all three consumers failed 393/3. Every mutation was restored before final GREEN.
+- Controller fresh proof: focused muzzle 396/0, strict typecheck, collision 54/0, AI determinism 36/36 plus null scenarios, sudden-death, and scoped diff hygiene all exited 0.
+- Re-review returned spec approved and task quality approved with no Critical, Important, or Minor findings. T1 is ACCEPTED. No dependency, lockfile, workflow, Supabase, or visible-art change occurred.
+
+## T1 review-driven guard redesign correction (2026-07-21)
+
+- **[high] This append supersedes the sink-bound and 396-assertion claims in the T1 receipt immediately above.** Repeated whole-branch review proved that extending the structural guard into Canvas path, effect-sink, alias, and receiver dataflow created an open-ended partial interpreter: it grew to 1,042 lines and still admitted ordinary TypeScript value-flow variants. SMARTS: Maintainable/Testable/Reliable favor the approved narrow source-ownership contract over continuing the syntax arms race; chosen TypeChecker-resolved imports, direct shared calls in the three production methods, pivot ownership, used/legacy top-level mirror rejection, and the unchanged numerical oracle. Strength strong; confidence high.
+- The compact redesign removes Canvas lifecycle, sink tracing, custom alias/dataflow, and receiver normalization. `scripts/checks/muzzle.mjs` is 369 lines and its branch diff is `+200/-1`, a 673-added-line reduction from the discarded peak while preserving 14 ownership assertions.
+- AC-4 mutation proof: missing required imports failed 390/9; replacing the three direct shared calls with the original manual arithmetic failed 396/3; replacing the pivot with `y - 20` failed 398/1; each legacy mirror failed; a referenced renamed `MUZZLE_LENGTH = 22` failed 398/1; unused unrelated 20/22 and formatting-only changes remained green; changing shared 20/22 geometry failed 390/9 in the independent oracle.
+- The final focused harness exits 0 with 399 passed and 0 failed. Deliberate inert shared calls beside live manual rendering are explicitly outside the automated ownership contract and remain a code-review concern, consistent with the approved rejection of a full Canvas mock.
+- Final whole-branch review reports no Critical or Minor findings, coverage PASS, and approves the implementation and guard as proportionate and maintainable. Its sole Important governance finding is resolved by this append-only correction. No dependency, lockfile, workflow, Supabase, physics, or visible-art change occurred.
+## T2 final verification receipt (2026-07-21)
+
+- `npm run check` exited 0 in 42.2 seconds after shared/client typecheck and the complete configured deterministic harness chain; the redesigned muzzle ownership guard passed 399/0.
+- `npm run test:client` exited 0 with 21 files and 168 tests passed. Emitted stderr/stdout is existing intentional error-path characterization output.
+- `npm run check:edge` exited 0 with 158 tests passed and 0 failed.
+- `npm run build` exited 0 after typecheck; Vite transformed 87 modules and completed the production bundle in 498 ms.
+- `npm run test:e2e` exited 0 with 18 passed and 9 intentional project skips across 27 tests.
+- `git diff --check` exited 0; `package-lock.json` is unchanged; no dependency, workflow, Supabase, migration, or generated bundle is in the diff.
+- Branch HEAD and `origin/main` both resolve to `cb39cfc`. The pre-rebase recovery stash remains preserved as `stash@{0}` and was not dropped or modified.
+- Whole-branch review and coverage audit are clear after the append-only redesign correction: no Critical, Important, or Minor implementation findings remain, and coverage is PASS. Commit, PR, and hosted CI remain behind their governed gates.
+
+## PR #160 mainline conflict-resolution receipt (2026-07-22)
+
+- **[high] Preserve both append-only sprint histories in chronological order.** Merging current main at `6552339` produced one EOF conflict in `.codearbiter/sprint-log.md`; the resolved file retains the complete current-main history verbatim, then appends the complete barrel-geometry sprint record. No source, test, spec, plan, dependency, lockfile, workflow, migration, or deployment hunk required manual resolution. SMARTS Maintainable/Reliable/Auditable favor append union over choosing either side. Confidence high.
+- Fresh integration verification: `npm run check` exited 0 with the focused muzzle guard at 399/0; `npm run coverage:client` passed with 76.57% statements/lines, 79.32% branches, and 76.36% functions; `npm run check:edge` passed 158 tests; `npm run build` transformed 87 modules; and `npm run test:e2e` passed 30 with 9 project-conditional skips.
+- Harvest: no low-confidence decision or review residue requires promotion.
