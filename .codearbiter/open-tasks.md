@@ -158,3 +158,5 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - (informational, no action) `REPLICA IDENTITY FULL` on rooms/room_actions = WAL write-amplification, justified for Realtime; revisit only if WAL cost grows.
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
+## In-flight
+- [ ] Triage the 8 existing npm audit advisories and two blocked install scripts by source, exploitability, and safe remediation; do not approve scripts or upgrade dependencies without a separate dependency review.  (from sprint:pages-stale-deploy-guard)
