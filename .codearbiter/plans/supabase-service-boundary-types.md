@@ -49,7 +49,7 @@ verification commands; no new dependency or remote project requirement.
 | ID | Deliverable | Depends on | Proof | Status |
 |---|---|---|---|---|
 | T1 | Migration-derived schema and typed service boundary | — | compiler REDs, 159-test Edge GREEN | ACCEPTED |
-| T2 | Review closure, governed commit, PR, and green CI | T1 | full matrix, review fleet, commit/PR gates | IN_PROGRESS |
+| T2 | Review closure, governed commit, PR, and green CI | T1 | full matrix, review fleet, commit/PR gates | ACCEPTED |
 
 ---
 
@@ -390,7 +390,7 @@ Record SMARTS, remote-generation availability, compiler mutation REDs, GREEN cou
 protected-path hashes. Stage only the approved spec, plan, sprint receipt, schema/type files, and any
 compiler-required Edge type-consumer edits. Classify as `refactor(supabase)` and use `Closes #59`.
 
-- [ ] **Step 4: Run `$ca-pr`, PR coverage audit, and `$ca-watch`**
+- [x] **Step 4: Run `$ca-pr`, PR coverage audit, and `$ca-watch`**
 
 Open a ready PR that explains the migration-derived source and behavior-neutral boundary change.
 Resolve PR-level coverage findings, push only reviewed fixes, and watch all available checks to

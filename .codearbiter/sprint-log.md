@@ -837,3 +837,10 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Scope and hygiene: focused contract 1/1 passed; `git diff --check` passed; package manifests, lockfile, migrations, workflows, deployment configuration, and remote Supabase state are unchanged. Runtime requests, responses, SQL, authorization, RLS, and Realtime behavior remain unchanged.
 - **[high] Harvest the broader security-controls provenance drift as a separate board task.** The existing task at line 155 covers only the historical env-name mismatch and does not deduplicate omissions introduced by ADR-0007/0008/0009 and migrations 005/010. SMARTS Securable/Maintainable/Auditable favor a queued documentation refresh over expanding issue #59. Added via `$ca-task` with origin `sprint:supabase-service-boundary-types` and auth/secrets/database boundaries. Confidence high.
 - Low-confidence decisions: 0. Hard-gate conflicts: 1, resolved explicitly by the user with option A. T2 commit, PR, and hosted-CI gates remain.
+
+
+## Issue #59 PR #165 green receipt (2026-07-22)
+
+- Governed commit `381e89564f0e630c34ce3c580302041c08091d9e` was pushed and opened as PR #165 against `main`; the PR closes issue #59 and remains open and unmerged.
+- Hosted checks passed: CodeQL, JavaScript/TypeScript analysis, Edge Function tests, rendering guardrails, and typecheck/harnesses/build. Supabase Preview skipped by its configured integration rule; no deploy ran.
+- T2 ACCEPTED. The sprint ends at the merge-to-default hard gate with zero unresolved review or coverage findings, zero secret findings, zero low-confidence decisions, and the preserved issue #153 stash unchanged.
