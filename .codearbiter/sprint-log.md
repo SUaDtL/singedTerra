@@ -641,3 +641,26 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Production workflow content did not change. Its SHA-256 remains `7dca8ca8d9aa8947f8707946cb95bee650fa81d29f209a6538fda1197dfbb30f` (git blob `58f43c92d508af47a6244bd90e082239bd951331`). No files were staged or committed.
 
 - **[high] Harvest promoted dependency-audit residue.** SMARTS: Securable/Maintainable/Testable favor source-level triage before any audit fix or install-script approval; queued one work item in `open-tasks.md` from `sprint:pages-stale-deploy-guard`. No dependency or script authorization was granted. Confidence high.
+
+## 2026-07-21 — human-seq-conflict-retry coverage sprint
+
+- **Sprint selection:** Compared issue #120 (human seq-conflict retry coverage), issue #134 (broad nonblocking coverage), issue #125 (low-value metadata migration), and issue #109 (cosmetic CSS). SMARTS verdict: **issue #120, strong**. Reliable and Testable dominate because a bounded liveness path already exists in production but lacks direct human-path proof. Confidence: **high**.
+- **Stale-premise correction:** Issue #120's broad constructor-wiring premise is already covered by lockstep, initialize-gap, rematch, session-clear, and bot-retry suites. The remaining scoped gap is the human `sendAction()` seq-conflict schedule, cap, failure unlock, and teardown cleanup.
+- **[high] Public-API fake-timer design approved.** SMARTS favors instantiating the real `NetworkClient`, fixing jitter at zero, and observing POST timing/body, failure notification, `isFiring`, and timer cleanup over extracting a production scheduler or broadening into transport refactoring. Strength strong; confidence high.
+- **[high] Approval gate cleared.** The user explicitly approved the issue #120 spec and plan on 2026-07-21. Phase 2 autonomous execution begins on `codex/human-seq-conflict-retry` at base `cb39cfc5a00e94ecf1f5d4ebab61f6dbed09d279`.
+- **[high] Teardown proof tightened during plan self-review.** The `_disposed` backstop can suppress a stale timer's POST even if `clearTimeout()` is removed, so the approved case now also requires zero pending timers immediately after `stop()`. This makes removal of retry-timer cancellation independently mutation-sensitive while retaining the post-teardown POST assertion. No production design changed.
+## T1 human seq-conflict retry coverage receipt (2026-07-21)
+
+- GREEN: `npm -w @singedterra/client exec vitest run src/client/NetworkClient.humanRetry.test.ts` passed 1 file and 3 tests. The real public human `sendAction({ type: 'fire' })` path proves the exact 40/80/160/240/240ms boundaries, identical retry body, six-POST cap, one exhaustion notification, firing-lock liveness, no seventh POST, and immediate teardown timer cleanup.
+- RED mutation A: setting `MAX_SEQ_RETRIES` from 5 to 0 failed all 3 focused cases, including the intermediate liveness assertion because failure/unlock occurred after the initial conflict. The constant was restored and focused GREEN repeated.
+- RED mutation B: removing only `clearTimeout(this.seqRetryTimer)` from `stop()` failed the teardown case with one timer still allocated immediately after stop. The line was restored and focused GREEN repeated.
+- Review correction: the first independent review found one Important gap because final-only failure/unlock assertions could miss premature recovery. The worker added no-failure and `isFiring === true` assertions after the initial conflict, before every deadline, and after each of the first four retry POSTs. Fresh re-review returned no Critical, Important, or Minor findings and approved final verification.
+- Task matrix: `npm run typecheck` passed; `npm run test:client` passed 22 files and 171 tests; focused controller rerun passed 3/3; diff hygiene passed. `client/src/client/NetworkClient.ts`, `package-lock.json`, dependencies, workflows, Supabase, and deployment state remain unchanged.
+- T1 ACCEPTED. The only implementation artifact is the new focused test; governance changes are the approved spec, plan, and append-only sprint receipts.
+## T2 final review and local verification receipt (2026-07-22)
+
+- Whole-diff review returned PASS with no Critical, Important, or Minor findings; fresh focused verification passed 3/3 and governance receipts matched the live narrowed issue scope.
+- Independent coverage audit returned PASS with no CRITICAL, HIGH, MEDIUM, or LOW findings. It confirmed mutation sensitivity for exact delay boundaries, identical payload, five-retry/six-POST cap, failure timing/count, firing-lock lifecycle, no seventh POST, prompt timer cancellation despite the `_disposed` backstop, and no post-stop POST.
+- Full matrix: `npm run check` exited 0 in 42s; `npm run test:client` passed 22 files and 171 tests; `npm run check:edge` passed 158 tests; `npm run build` typechecked and transformed 87 modules; `npm run test:e2e` passed 18 with 9 intentional project skips.
+- Final scope and hygiene: `git diff --check` passed; `package-lock.json`, production code, dependencies, workflows, Supabase, and deployment state are unchanged. Intended tracked scope is the approved spec, approved plan, append-only sprint log, and one new client test.
+- Branch/base: `codex/human-seq-conflict-retry` from `cb39cfc5a00e94ecf1f5d4ebab61f6dbed09d279`. PR #159 and PR #160 remain independent and unmerged.
