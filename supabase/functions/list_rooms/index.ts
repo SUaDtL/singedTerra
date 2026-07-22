@@ -1,5 +1,6 @@
-import { withCors, json, getServiceClient, reap, StoredOptions, StoredPlayer, RoomRow } from '../_shared/mod.ts'
-import { mapListedRoom } from './mapRoom.ts'
+import { withCors, json, getServiceClient, reap } from '../_shared/mod.ts'
+import type { StoredOptions, StoredPlayer } from '../_shared/mod.ts'
+import { mapListedRoom, type ListedRoomRow } from './mapRoom.ts'
 
 // list_rooms takes no body — optionalBody tolerates an empty/missing/invalid one.
 export async function handleListRooms(): Promise<Response> {
@@ -17,13 +18,13 @@ export async function handleListRooms(): Promise<Response> {
     return json({ error: 'Failed to list rooms' }, 500)
   }
 
-  const rows = (candidates ?? []) as RoomRow[]
+  const rows: ListedRoomRow[] = candidates ?? []
   const nowMs = Date.now()
 
   // Reap each room in memory (reap() staleness logic stays single-sourced in
   // _shared), collecting the writes so they can be flushed in ONE round-trip
   // instead of an O(N) DELETE/UPDATE per affected room (GH #62).
-  const reaped: { row: RoomRow; fresh: StoredPlayer[] }[] = []
+  const reaped: { row: ListedRoomRow; fresh: StoredPlayer[] }[] = []
   const deadIds: string[] = []
   const trims: { id: string; players: StoredPlayer[] }[] = []
   for (const row of rows) {

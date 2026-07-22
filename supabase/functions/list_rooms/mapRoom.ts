@@ -22,7 +22,12 @@ export interface ListedRoom {
   botCount: number
 }
 
-export function mapListedRoom(row: RoomRow, fresh: StoredPlayer[]): ListedRoom {
+export type ListedRoomRow = Pick<
+  RoomRow,
+  'id' | 'code' | 'options' | 'players' | 'created_at'
+>
+
+export function mapListedRoom(row: ListedRoomRow, fresh: StoredPlayer[]): ListedRoom {
   const o = row.options
   return {
     roomId: row.id,

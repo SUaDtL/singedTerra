@@ -7,21 +7,21 @@
 // Run: "C:/Users/brenn/.deno/bin/deno.exe" test supabase/functions/list_rooms/list_rooms.test.ts
 
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { mapListedRoom } from './mapRoom.ts'
-import type { RoomRow, StoredPlayer } from '../_shared/mod.ts'
+import { mapListedRoom, type ListedRoomRow } from './mapRoom.ts'
+import type { StoredPlayer } from '../_shared/mod.ts'
 
 function player(name: string, ai?: StoredPlayer['ai']): StoredPlayer {
   return { id: `id-${name}`, name, color: '#fff', ready: true, ...(ai ? { ai } : {}) }
 }
 
-function room(options: Partial<RoomRow['options']>): RoomRow {
+function room(options: Partial<ListedRoomRow['options']>): ListedRoomRow {
   return {
     id: 'room-1',
     code: 'ABCD',
     created_at: '2026-06-22T00:00:00Z',
     options: { maxPlayers: 4, maxWind: 10, gravity: 0.15, ...options },
     players: [],
-  } as RoomRow
+  }
 }
 
 // AC1 — rounds carried through.

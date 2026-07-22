@@ -75,7 +75,7 @@ export async function handleReadyUp(body: unknown): Promise<Response> {
   const { updatedPlayers, shouldStart } = ready
 
   // Build update payload
-  const updatePayload: Record<string, unknown> = { players: updatedPlayers }
+  const updatePayload: { players: StoredPlayer[]; status?: 'active' } = { players: updatedPlayers }
   if (shouldStart) {
     updatePayload.status = 'active'
   }

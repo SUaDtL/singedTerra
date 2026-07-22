@@ -121,7 +121,7 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
   const { data: room, error: fetchError } = await supabase
     .from('rooms')
     .select('players, active_player_index, turn, status')
-    .eq('id', roomId)
+    .eq('id', roomId as string)
     .eq('status', 'active')
     .maybeSingle()
 
@@ -233,8 +233,8 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
     : { index: room.active_player_index ?? 0, turn: room.turn ?? 0 }
 
   const rpcResult = await supabase.rpc('submit_room_action', {
-    p_room_id: roomId,
-    p_player_id: actingId,
+    p_room_id: roomId as string,
+    p_player_id: actingId as string,
     p_action: validatedAction,
     p_ends_turn: isTurnEnding,
     p_next_index,

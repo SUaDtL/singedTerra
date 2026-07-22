@@ -12,7 +12,21 @@
 
 // Pinned to an exact version: a floating `@2` re-resolves on any `deno cache
 // --reload` and would silently advance all 10 functions to a new minor/patch.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.107.0'
+import {
+  createClient,
+  type SupabaseClient,
+} from 'https://esm.sh/@supabase/supabase-js@2.107.0'
+import type { Database, StoredPlayer } from './database.types.ts'
+
+export type {
+  Database,
+  RoomRow,
+  StoredAction,
+  StoredOptions,
+  StoredPlayer,
+  StoredScoreEntry,
+  RoomReapTrim,
+} from './database.types.ts'
 
 // ---------------------------------------------------------------------------
 // CORS + request preamble
@@ -164,8 +178,7 @@ export class MissingEnvError extends Error {
   }
 }
 
-// deno-lint-ignore no-explicit-any
-export type ServiceClient = any
+export type ServiceClient = SupabaseClient<Database>
 
 /** Cached per-isolate service client (perf-010). Lazily created on first use —
  *  NOT at module load — so importing this module in a test without env set does
@@ -184,51 +197,11 @@ export function getServiceClient(): ServiceClient {
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new MissingEnvError()
   }
-  _serviceClient = createClient(supabaseUrl, supabaseServiceKey)
+  _serviceClient = createClient<Database>(supabaseUrl, supabaseServiceKey)
   return _serviceClient
 }
 
-// ---------------------------------------------------------------------------
-// Canonical row shapes
-// ---------------------------------------------------------------------------
-
-export interface StoredPlayer {
-  id: string
-  name: string
-  color: string
-  ready: boolean
-  /** Wall-clock ms of the player's last heartbeat; absent on legacy rows. */
-  lastSeen?: number
-  /** CPU difficulty when this seat is a bot; absent => human. Lets the referee
-   *  authorize a member to proxy a bot's action. */
-  ai?: 'easy' | 'medium' | 'hard'
-}
-
-export interface StoredOptions {
-  maxPlayers: number
-  maxWind: number
-  gravity: number
-  visibility?: 'public' | 'private'
-  /** Best-of-N match length (odd, 1..9). Absent on pre-feature rooms => single
-   *  round. Stored on the room row so EVERY client builds its engine with the same
-   *  value — required for deterministic lockstep across round boundaries. */
-  rounds?: number
-  /** SE-parity economy options, persisted by `coerceEconomyOptions` at create time.
-   *  Already written to the `options` JSONB; declared here so the read path (list_rooms)
-   *  can surface them without a type error. Absent => the GameOptions engine default
-   *  holds (armsLevel 4 = full arsenal, interestRate 0, suddenDeathTurn off). */
-  armsLevel?: number
-  interestRate?: number
-  suddenDeathTurn?: number
-}
-
-export interface RoomRow {
-  id: string
-  code: string
-  options: StoredOptions
-  players: StoredPlayer[]
-  created_at: string
-}
+// Canonical row-shape types are re-exported from database.types.ts.
 
 // ---------------------------------------------------------------------------
 // Shared validation + generation primitives
