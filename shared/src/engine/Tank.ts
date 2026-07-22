@@ -10,18 +10,16 @@ export const TANK_HEIGHT = 12;
 
 /**
  * Muzzle offset (px) from the barrel pivot where a shell spawns — passed to
- * barrelTip(). SINGLE SOURCE OF TRUTH: GameEngine fires from here and the AI
- * simulates from here, so they cannot drift (REVIEW_BACKLOG P3-15). Matches the
- * renderer's VISUAL barrel length (TankRenderer BARREL_LENGTH) so the shell
- * leaves exactly where the barrel is drawn — keep the two in sync.
+ * barrelTip(). SINGLE SOURCE OF TRUTH: GameEngine, AI, and renderers use this
+ * shared geometry, so the shell leaves exactly where the barrel is drawn
+ * (REVIEW_BACKLOG P3-15).
  */
 export const BARREL_LENGTH = 22;
 
 /**
  * Height (px) of the barrel pivot above the tank base (tank.y = tread bottom).
- * Mirrors the renderer's turret-top pivot: tread (6) + body (10) + turret
- * offset (4) — TankRenderer draws the barrel from this point, so physics must
- * spawn the shell from it too, not from ground level.
+ * The shared barrel pivot is tread (6) + body (10) + turret offset (4) above
+ * the base, keeping all consumers aligned with the visual tank art.
  */
 export const BARREL_PIVOT_HEIGHT = 20;
 
