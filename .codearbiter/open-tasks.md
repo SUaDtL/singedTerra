@@ -159,4 +159,6 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [ ] Refresh .codearbiter/security-controls.md against ADR-0007, ADR-0008, ADR-0009 and migrations 005/010: document seat-token authorization, service-role-only rate_limits/room_seats, authoritative next-seat cursor, token CSPRNG use, and the accepted rate-limit ADR.  (from sprint:supabase-service-boundary-types)
+  - Boundaries: auth, secrets, database
 - [ ] Triage the 8 existing npm audit advisories and two blocked install scripts by source, exploitability, and safe remediation; do not approve scripts or upgrade dependencies without a separate dependency review.  (from sprint:pages-stale-deploy-guard)
