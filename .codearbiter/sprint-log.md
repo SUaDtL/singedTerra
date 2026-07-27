@@ -1214,3 +1214,10 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Governed behavior commit: `039be19527e6ae8d2c6a0a240d775c0680aa1117` (`feat(renderer): add impact depth parallax`).
 - Exact behavior set: bounded pure depth profile, isolated production renderer transforms, causal hostile-input and Canvas-stack tests, and public specification.
 - Commit gate evidence: focused 2 files / 30 tests, full deterministic workspace check, 63 files / 453 client coverage tests, 159 Edge tests, production build, 30-case browser matrix with 9 expected skips, clean diff hygiene, and state-free secret scan with no findings. Confidence high.
+
+
+### 2026-07-26 - Impact Depth Parallax ready PR receipt
+
+- Behavior commit `039be19527e6ae8d2c6a0a240d775c0680aa1117` and governance commit `f48a443941ca5659f6fb7956205da93452e04e87` were pushed as `codex/impact-depth-parallax`.
+- Ready PR #192: https://github.com/SUaDtL/singedTerra/pull/192
+- Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
