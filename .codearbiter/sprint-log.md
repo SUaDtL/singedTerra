@@ -1146,3 +1146,10 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 
 - Governed behavior commit: `997d468bd29ecc6584a0bf470b7baf3bfd42f781` (`feat: add turn-start wind gusts`).
 - Exact behavior set: Renderer route/lifecycle, pure bounded profile, focused tests, and public specification.
+
+
+### 2026-07-26 - Turn-Start Wind Gusts ready PR receipt
+
+- Behavior commit `997d468bd29ecc6584a0bf470b7baf3bfd42f781` and governance commit `7267485` were pushed as `codex/turn-start-wind-gusts`.
+- Ready PR #190: https://github.com/SUaDtL/singedTerra/pull/190
+- Hosted exact-head CI and CodeQL are now the active gates; merge and Pages proof remain.
