@@ -421,6 +421,7 @@ interface ProjectileState {
 - **Projectile ground shadows**: Every valid live shell casts a bounded neutral radial ellipse at the first solid pixel in its current terrain column. The cue widens and softens with altitude, is drawn between terrain and tanks, and represents present position only — never a predicted landing point or synchronized gameplay field.
 - **Weapon-signature muzzle flashes**: The launch transition derives a short-lived bounded accent, scale, spark fan, and Canvas motif from the first live projectile weapon. The effect remains anchored to shared barrel-tip geometry, is suppressed by reduced motion, and never changes recoil, velocity, replay, or Supabase state.
 - **Shield-impact feedback**: A strict positive `shieldHp` drop spawns paired cyan energy ripples, eight bounded facets, and an exact `BLOCK NN` readout around the protected tank. First observation, activation, recharge, and unchanged charge silently baseline; reduced motion retains the readout but suppresses moving decoration. This is local Canvas state only and never crosses the action log or Supabase.
+- **Weapon-weighted tank recoil**: Entering `FIRING` gives only the active living visible shooter a renderer-owned kick opposite its barrel direction, weighted by the existing bounded muzzle profile and recovered over ten rendered frames. Peak translation stays within four logical pixels, reduced motion suppresses it, and authoritative tank coordinates, muzzle/projectile geometry, replay, and Supabase remain unchanged.
 
 ---
 

@@ -3,6 +3,12 @@ import { BARREL_LENGTH, BARREL_PIVOT_HEIGHT, barrelTip } from '@shared/engine/Ta
 import { TANK, ACCENT, lightenHex, darkenHex } from '../ui/theme';
 import { damageTier } from './tankFx';
 
+export interface TankRenderPose {
+  readonly tankId: string;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}
+
 /** Tank body dimensions (logical canvas px). */
 const BODY_WIDTH = 24;
 const BODY_HEIGHT = 10;
@@ -276,9 +282,17 @@ export class TankRenderer {
     ctx: CanvasRenderingContext2D,
     tanks: TankState[],
     activeId?: string,
+    pose?: Readonly<TankRenderPose>,
   ): void {
     for (const tank of tanks) {
-      this.draw(ctx, tank, tank.id === activeId);
+      if (pose?.tankId === tank.id) {
+        ctx.save();
+        ctx.translate(pose.offsetX, pose.offsetY);
+        this.draw(ctx, tank, tank.id === activeId);
+        ctx.restore();
+      } else {
+        this.draw(ctx, tank, tank.id === activeId);
+      }
     }
   }
 

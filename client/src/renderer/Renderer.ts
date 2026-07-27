@@ -1,4 +1,9 @@
-import type { GameState, ExplosionEvent, ExplosionStyle } from '@shared/types/GameState';
+import type {
+  GameState,
+  ExplosionEvent,
+  ExplosionStyle,
+  TankState,
+} from '@shared/types/GameState';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
 import { TANK_WIDTH, TANK_HEIGHT, BARREL_LENGTH, barrelTip } from '@shared/engine/Tank';
 import { getWeapon } from '@shared/engine/WeaponSystem';
@@ -11,7 +16,7 @@ import { fireActiveEdge, bettyHopCount, isOobFizzle } from './audioEdges';
  *  player's skill and the guide can't trivialize aiming (per design constraint). */
 const AIM_GUIDE_TICKS = 16;
 import { TerrainRenderer } from './TerrainRenderer';
-import { TankRenderer } from './TankRenderer';
+import { TankRenderer, type TankRenderPose } from './TankRenderer';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { HUDRenderer } from './HUDRenderer';
 import { EffectsRenderer } from './EffectsRenderer';
@@ -25,6 +30,7 @@ import {
 } from './explosionVisuals';
 import { getBlastLightProfile } from './blastLighting';
 import { getMuzzleVisualProfile } from './muzzleVisuals';
+import { TANK_RECOIL_FRAMES, tankRecoilPose } from './tankRecoil';
 
 /** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
@@ -117,6 +123,14 @@ interface Burst {
   /** Weapon-specific, bounded presentation data derived once at event consumption. */
   visual: ExplosionVisualProfile;
   /** Frames elapsed since spawn. */
+  age: number;
+}
+
+interface TankRecoil {
+  readonly tankId: string;
+  readonly angle: number;
+  readonly launchWeight: number;
+  readonly round: number;
   age: number;
 }
 
@@ -222,6 +236,8 @@ export class Renderer {
   private events: RenderEventSink | null = null;
   /** Tracks FIRING so a launch event fires once per shot, not once per frame. */
   private wasFiring = false;
+  /** Local chassis kick for the most recent visible living shooter. */
+  private tankRecoil: TankRecoil | null = null;
 
   // ---- per-frame audio signal tracking ----------------------------------------
   /** Fire-field length last frame (for fireActiveEdge edge detection). */
@@ -332,6 +348,7 @@ export class Renderer {
     this.kickY = 0;
     this.effectsBusy = 0;
     this.wasFiring = false;
+    this.tankRecoil = null;
     this.effects.clear();
     this.projectile.clear();
     this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
@@ -429,7 +446,13 @@ export class Renderer {
     const visible = buried.length > 0
       ? state.tanks.filter((t) => !t.buried)
       : state.tanks;
-    this.tanks.drawAll(ctx, visible, state.activePlayerId);
+    const tankPose = this.currentTankRecoilPose(state, visible);
+    if (tankPose) {
+      this.tanks.drawAll(ctx, visible, state.activePlayerId, tankPose);
+    } else {
+      this.tanks.drawAll(ctx, visible, state.activePlayerId);
+    }
+    this.advanceTankRecoil();
 
     // 3.0 Buried beacons: a small surface marker over each trapped tank so the player
     // can see where to dig it out (the body itself is hidden under the dirt).
@@ -504,6 +527,7 @@ export class Renderer {
     if (this.shake > 0) return true;
     if (this.kickX !== 0 || this.kickY !== 0) return true;
     if (this.effectsBusy > 0) return true;
+    if (this.tankRecoil != null) return true;
     // Continuous damage smoke keeps emitting while any tank sits in the damaged tier,
     // so that is a live animation that must keep redrawing (and keep trackDamage's
     // throttle advancing) until the tank heals/dies/is buried.
@@ -658,12 +682,49 @@ export class Renderer {
    * inside FX.
    */
   private spawnMuzzleFlash(state: GameState): void {
+    this.tankRecoil = null;
     const shooter = state.tanks.find((t) => t.id === state.activePlayerId);
     if (!shooter) return;
     const { x: px, y: py } = barrelTip(shooter, BARREL_LENGTH);
     const profile = getMuzzleVisualProfile(state.projectiles[0]?.weaponType);
     this.effects.spawnMuzzle(px, py, shooter.angle, profile);
+    if (!this.reduceMotion && shooter.alive && !shooter.buried) {
+      this.tankRecoil = {
+        tankId: shooter.id,
+        angle: shooter.angle,
+        launchWeight: profile.scale,
+        round: state.round,
+        age: 0,
+      };
+    }
     this.effectsBusy = EFFECTS_BUSY_FRAMES; // muzzle sparks live a few frames
+  }
+
+  private currentTankRecoilPose(
+    state: GameState,
+    tanks: readonly TankState[],
+  ): TankRenderPose | undefined {
+    const recoil = this.tankRecoil;
+    if (recoil == null) return undefined;
+    if (state.round !== recoil.round) {
+      this.tankRecoil = null;
+      return undefined;
+    }
+    const shooter = tanks.find((tank) => tank.id === recoil.tankId);
+    if (!shooter?.alive || shooter.buried) return undefined;
+    const offset = tankRecoilPose(recoil.angle, recoil.launchWeight, recoil.age);
+    if (offset === null) return undefined;
+    return {
+      tankId: recoil.tankId,
+      offsetX: offset.x,
+      offsetY: offset.y,
+    };
+  }
+
+  private advanceTankRecoil(): void {
+    if (this.tankRecoil == null) return;
+    this.tankRecoil.age++;
+    if (this.tankRecoil.age >= TANK_RECOIL_FRAMES) this.tankRecoil = null;
   }
 
   /**
