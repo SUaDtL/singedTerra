@@ -5,6 +5,7 @@ import {
   type ProjectileVisualProfile,
 } from './projectileVisuals';
 import { getProjectileGroundShadow } from './projectileGroundShadow';
+import { getProjectileMotionStreak } from './projectileMotionStreak';
 import { RingBuffer } from './ringBuffer';
 
 /**
@@ -195,6 +196,7 @@ export class ProjectileRenderer {
       });
     }
 
+    this.drawMotionStreak(ctx, projectile, profile);
     ctx.globalAlpha = 1;
 
     // Weapon-colored halo.
@@ -209,6 +211,54 @@ export class ProjectileRenderer {
 
     this.drawSilhouette(ctx, x, y, profile);
 
+    ctx.restore();
+  }
+
+  /**
+   * Paint one stateless velocity ribbon behind the live payload. Unlike history,
+   * this is readable on launch and immediately after a split resets slot state.
+   */
+  private drawMotionStreak(
+    ctx: CanvasRenderingContext2D,
+    projectile: Readonly<ProjectileState>,
+    profile: Readonly<ProjectileVisualProfile>,
+  ): void {
+    if (!Number.isFinite(projectile.x) || !Number.isFinite(projectile.y)) return;
+    const streak = getProjectileMotionStreak(
+      projectile.vx,
+      projectile.vy,
+      profile.coreRadius,
+    );
+    if (streak === null) return;
+
+    const tailX = projectile.x + streak.tailOffsetX;
+    const tailY = projectile.y + streak.tailOffsetY;
+    const headX = projectile.x + streak.headOffsetX;
+    const headY = projectile.y + streak.headOffsetY;
+    const [red, green, blue] = hexToRgb(profile.accent);
+    const gradient = ctx.createLinearGradient(tailX, tailY, headX, headY);
+    gradient.addColorStop(0, `rgba(${red}, ${green}, ${blue}, 0)`);
+    gradient.addColorStop(0.6, `rgba(${red}, ${green}, ${blue}, 0.5)`);
+    gradient.addColorStop(1, profile.accent);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.strokeStyle = gradient;
+    ctx.lineCap = 'round';
+
+    ctx.globalAlpha = streak.alpha * 0.6;
+    ctx.lineWidth = streak.width;
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY);
+    ctx.lineTo(headX, headY);
+    ctx.stroke();
+
+    ctx.globalAlpha = streak.alpha;
+    ctx.lineWidth = Math.max(1, streak.width * 0.32);
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY);
+    ctx.lineTo(headX, headY);
+    ctx.stroke();
     ctx.restore();
   }
 

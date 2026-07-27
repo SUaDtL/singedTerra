@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
 import type { ProjectileState } from '@shared/types/GameState';
 import { ProjectileRenderer } from './ProjectileRenderer';
+import {
+  MAX_STREAK_SPEED,
+  getProjectileMotionStreak,
+} from './projectileMotionStreak';
 import { getProjectileVisualProfile } from './projectileVisuals';
 
 interface CanvasTrace {
@@ -15,7 +19,22 @@ interface CanvasTrace {
     fill: string;
   }>;
   fills: string[];
+  fillCalls: Array<{ style: string; composite: string }>;
   rotations: number[];
+  linearGradients: Array<{
+    points: [number, number, number, number];
+    stops: Array<[number, string]>;
+  }>;
+  strokeCalls: Array<{
+    move: [number, number];
+    line: [number, number];
+    style: string;
+    width: number;
+    alpha: number;
+    composite: string;
+    cap: CanvasLineCap;
+  }>;
+  radialGradients: Array<{ composite: string }>;
   saves: number;
   restores: number;
 }
@@ -26,19 +45,27 @@ function tracingContext(): { ctx: CanvasRenderingContext2D; trace: CanvasTrace }
     arcs: [],
     arcCalls: [],
     fills: [],
+    fillCalls: [],
     rotations: [],
+    linearGradients: [],
+    strokeCalls: [],
+    radialGradients: [],
     saves: 0,
     restores: 0,
   };
   let fillStyle = '';
   let strokeStyle = '';
   let globalAlpha = 0.37;
+  let globalCompositeOperation = 'source-over';
   let lineWidth = 7;
   let lineCap: CanvasLineCap = 'square';
+  let move: [number, number] = [0, 0];
+  let line: [number, number] = [0, 0];
   const stack: Array<{
     fillStyle: string;
     strokeStyle: string;
     globalAlpha: number;
+    globalCompositeOperation: string;
     lineWidth: number;
     lineCap: CanvasLineCap;
   }> = [];
@@ -55,6 +82,8 @@ function tracingContext(): { ctx: CanvasRenderingContext2D; trace: CanvasTrace }
     },
     get globalAlpha() { return globalAlpha; },
     set globalAlpha(value: number) { globalAlpha = value; },
+    get globalCompositeOperation() { return globalCompositeOperation; },
+    set globalCompositeOperation(value: string) { globalCompositeOperation = value; },
     get lineWidth() { return lineWidth; },
     set lineWidth(value: number) { lineWidth = value; },
     get lineCap() { return lineCap; },
@@ -62,22 +91,36 @@ function tracingContext(): { ctx: CanvasRenderingContext2D; trace: CanvasTrace }
     save() {
       trace.saves++;
       trace.operations.push('save');
-      stack.push({ fillStyle, strokeStyle, globalAlpha, lineWidth, lineCap });
+      stack.push({
+        fillStyle,
+        strokeStyle,
+        globalAlpha,
+        globalCompositeOperation,
+        lineWidth,
+        lineCap,
+      });
     },
     restore() {
       trace.restores++;
       trace.operations.push('restore');
       const saved = stack.pop();
       if (saved) {
-        ({ fillStyle, strokeStyle, globalAlpha, lineWidth, lineCap } = saved);
+        ({
+          fillStyle,
+          strokeStyle,
+          globalAlpha,
+          globalCompositeOperation,
+          lineWidth,
+          lineCap,
+        } = saved);
       }
     },
     translate() { trace.operations.push('translate'); },
     rotate(angle: number) { trace.rotations.push(angle); trace.operations.push('rotate'); },
     beginPath() { trace.operations.push('beginPath'); },
     closePath() { trace.operations.push('closePath'); },
-    moveTo() { trace.operations.push('moveTo'); },
-    lineTo() { trace.operations.push('lineTo'); },
+    moveTo(x: number, y: number) { move = [x, y]; trace.operations.push('moveTo'); },
+    lineTo(x: number, y: number) { line = [x, y]; trace.operations.push('lineTo'); },
     bezierCurveTo() { trace.operations.push('bezierCurveTo'); },
     ellipse() { trace.operations.push('ellipse'); },
     arc(x: number, y: number, radius: number) {
@@ -85,14 +128,42 @@ function tracingContext(): { ctx: CanvasRenderingContext2D; trace: CanvasTrace }
       trace.arcCalls.push({ x, y, radius, alpha: globalAlpha, fill: fillStyle });
       trace.operations.push('arc');
     },
-    fill() { trace.operations.push('fill'); },
-    stroke() { trace.operations.push('stroke'); },
+    fill() {
+      trace.fillCalls.push({ style: fillStyle, composite: globalCompositeOperation });
+      trace.operations.push('fill');
+    },
+    stroke() {
+      trace.strokeCalls.push({
+        move,
+        line,
+        style: strokeStyle,
+        width: lineWidth,
+        alpha: globalAlpha,
+        composite: globalCompositeOperation,
+        cap: lineCap,
+      });
+      trace.operations.push('stroke');
+    },
     fillRect() { trace.operations.push('fillRect'); },
     createRadialGradient() {
+      trace.radialGradients.push({ composite: globalCompositeOperation });
       trace.operations.push('createRadialGradient');
       return {
         addColorStop(_offset: number, color: string) {
           trace.fills.push(color);
+        },
+      };
+    },
+    createLinearGradient(x0: number, y0: number, x1: number, y1: number) {
+      const gradient = {
+        points: [x0, y0, x1, y1] as [number, number, number, number],
+        stops: [] as Array<[number, string]>,
+      };
+      trace.linearGradients.push(gradient);
+      trace.operations.push('createLinearGradient');
+      return {
+        addColorStop(offset: number, color: string) {
+          gradient.stops.push([offset, color]);
         },
       };
     },
@@ -130,6 +201,17 @@ function countOperation(trace: CanvasTrace, operation: string): number {
   return trace.operations.filter((candidate) => candidate === operation).length;
 }
 
+function countSilhouetteStrokes(trace: CanvasTrace): number {
+  return trace.strokeCalls.filter((call) => call.style !== '[gradient]').length;
+}
+
+function countSilhouetteLines(trace: CanvasTrace): number {
+  const motionLines = trace.strokeCalls
+    .filter((call) => call.style === '[gradient]')
+    .length;
+  return countOperation(trace, 'lineTo') - motionLines;
+}
+
 describe('ProjectileRenderer weapon signatures', () => {
   it('uses the weapon accent and profile radii for both shell and history trail', () => {
     const baby = drawTwice('baby_missile');
@@ -154,37 +236,37 @@ describe('ProjectileRenderer weapon signatures', () => {
     expect({
       ellipse: countOperation(heavy, 'ellipse'),
       fillRect: countOperation(heavy, 'fillRect'),
-      stroke: countOperation(heavy, 'stroke'),
+      stroke: countSilhouetteStrokes(heavy),
       closePath: countOperation(heavy, 'closePath'),
     }).toEqual({ ellipse: 2, fillRect: 2, stroke: 0, closePath: 0 });
     expect({
       ellipse: countOperation(nuclear, 'ellipse'),
       fillRect: countOperation(nuclear, 'fillRect'),
-      stroke: countOperation(nuclear, 'stroke'),
+      stroke: countSilhouetteStrokes(nuclear),
       closePath: countOperation(nuclear, 'closePath'),
     }).toEqual({ ellipse: 0, fillRect: 0, stroke: 2, closePath: 0 });
     expect({
-      lineTo: countOperation(earth, 'lineTo'),
+      lineTo: countSilhouetteLines(earth),
       closePath: countOperation(earth, 'closePath'),
-      stroke: countOperation(earth, 'stroke'),
+      stroke: countSilhouetteStrokes(earth),
       bezierCurveTo: countOperation(earth, 'bezierCurveTo'),
     }).toEqual({ lineTo: 8, closePath: 2, stroke: 0, bezierCurveTo: 0 });
     expect({
-      lineTo: countOperation(napalm, 'lineTo'),
+      lineTo: countSilhouetteLines(napalm),
       closePath: countOperation(napalm, 'closePath'),
-      stroke: countOperation(napalm, 'stroke'),
+      stroke: countSilhouetteStrokes(napalm),
       bezierCurveTo: countOperation(napalm, 'bezierCurveTo'),
     }).toEqual({ lineTo: 0, closePath: 2, stroke: 0, bezierCurveTo: 4 });
     expect({
-      lineTo: countOperation(mine, 'lineTo'),
+      lineTo: countSilhouetteLines(mine),
       closePath: countOperation(mine, 'closePath'),
-      stroke: countOperation(mine, 'stroke'),
+      stroke: countSilhouetteStrokes(mine),
       bezierCurveTo: countOperation(mine, 'bezierCurveTo'),
     }).toEqual({ lineTo: 4, closePath: 0, stroke: 2, bezierCurveTo: 0 });
     expect({
-      lineTo: countOperation(airburst, 'lineTo'),
+      lineTo: countSilhouetteLines(airburst),
       fillRect: countOperation(airburst, 'fillRect'),
-      stroke: countOperation(airburst, 'stroke'),
+      stroke: countSilhouetteStrokes(airburst),
       closePath: countOperation(airburst, 'closePath'),
     }).toEqual({ lineTo: 6, fillRect: 2, stroke: 0, closePath: 2 });
   });
@@ -242,10 +324,156 @@ describe('ProjectileRenderer weapon signatures', () => {
       { x: 104, y: 90, radius: 2.3, alpha: 0.52, fill: '#ff3a00' },
     ]);
     const trailArc = trace.operations.indexOf('arc');
+    const motion = trace.operations.indexOf('createLinearGradient');
     const halo = trace.operations.indexOf('createRadialGradient');
     const silhouette = trace.operations.indexOf('translate');
-    expect(trailArc).toBeLessThan(halo);
+    expect(trailArc).toBeLessThan(motion);
+    expect(motion).toBeLessThan(halo);
     expect(halo).toBeLessThan(silhouette);
+  });
+
+  it('draws one bounded velocity ribbon between history and the live payload', () => {
+    const renderer = new ProjectileRenderer();
+    const { ctx, trace } = tracingContext();
+    ctx.fillStyle = 'sentinel-fill';
+    ctx.strokeStyle = 'sentinel-stroke';
+    ctx.globalAlpha = 0.37;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'square';
+
+    renderer.draw(ctx, [projectile('nuke', { vx: 3, vy: 4, age: 0 })]);
+
+    expect(trace.linearGradients).toHaveLength(1);
+    expect(trace.linearGradients[0].stops).toEqual([
+      [0, 'rgba(255, 247, 194, 0)'],
+      [0.6, 'rgba(255, 247, 194, 0.5)'],
+      [1, '#fff7c2'],
+    ]);
+    const motionStrokes = trace.strokeCalls.filter((call) => call.style === '[gradient]');
+    expect(motionStrokes).toHaveLength(2);
+    for (const stroke of motionStrokes) {
+      expect(stroke.move[0]).toBeLessThan(stroke.line[0]);
+      expect(stroke.move[1]).toBeLessThan(stroke.line[1]);
+      expect(stroke.composite).toBe('screen');
+      expect(stroke.cap).toBe('round');
+      expect([...stroke.move, ...stroke.line, stroke.width, stroke.alpha]
+        .every(Number.isFinite)).toBe(true);
+      expect(stroke.alpha).toBeGreaterThan(0);
+      expect(stroke.alpha).toBeLessThanOrEqual(0.44);
+    }
+    expect(motionStrokes[0].width).toBe(5);
+    expect(motionStrokes[1].width).toBeCloseTo(1.6);
+    const expected = getProjectileMotionStreak(3, 4, 6)!;
+    expect(trace.linearGradients[0].points[0]).toBeCloseTo(100 + expected.tailOffsetX);
+    expect(trace.linearGradients[0].points[1]).toBeCloseTo(90 + expected.tailOffsetY);
+    expect(trace.linearGradients[0].points[2]).toBeCloseTo(100 + expected.headOffsetX);
+    expect(trace.linearGradients[0].points[3]).toBeCloseTo(90 + expected.headOffsetY);
+    const [tailX, tailY, headX, headY] = trace.linearGradients[0].points;
+    expect(Math.hypot(headX - tailX, headY - tailY)).toBeGreaterThanOrEqual(6);
+    expect(Math.hypot(headX - tailX, headY - tailY)).toBeLessThanOrEqual(28);
+    expect(Math.hypot(headX - 100, headY - 90)).toBeLessThanOrEqual(2);
+    expect(trace.radialGradients[0].composite).toBe('source-over');
+    expect(trace.fillCalls.at(-1)?.composite).toBe('source-over');
+
+    const motion = trace.operations.indexOf('createLinearGradient');
+    const halo = trace.operations.indexOf('createRadialGradient');
+    const silhouette = trace.operations.indexOf('translate');
+    expect(motion).toBeGreaterThanOrEqual(0);
+    expect(motion).toBeLessThan(halo);
+    expect(halo).toBeLessThan(silhouette);
+
+    expect(ctx.fillStyle).toBe('sentinel-fill');
+    expect(ctx.strokeStyle).toBe('sentinel-stroke');
+    expect(ctx.globalAlpha).toBe(0.37);
+    expect(ctx.globalCompositeOperation).toBe('source-over');
+    expect(ctx.lineWidth).toBe(7);
+    expect(ctx.lineCap).toBe('square');
+
+    const translated = tracingContext();
+    new ProjectileRenderer().draw(translated.ctx, [projectile('nuke', {
+      x: 407,
+      y: 311,
+      vx: 3,
+      vy: 4,
+      age: 0,
+    })]);
+    const translatedPoints = translated.trace.linearGradients[0].points;
+    expect(translatedPoints[0] - tailX).toBeCloseTo(307);
+    expect(translatedPoints[1] - tailY).toBeCloseTo(221);
+    expect(translatedPoints[2] - headX).toBeCloseTo(307);
+    expect(translatedPoints[3] - headY).toBeCloseTo(221);
+  });
+
+  it('consumes live speed/direction and scales newly split children without history', () => {
+    const renderer = new ProjectileRenderer();
+    const slow = tracingContext();
+    const fast = tracingContext();
+    const reverse = tracingContext();
+    const child = tracingContext();
+    const stopped = tracingContext();
+
+    renderer.draw(slow.ctx, [projectile('mirv', { vx: 1, vy: 0, age: 0 })]);
+    renderer.clear();
+    renderer.draw(fast.ctx, [projectile('mirv', {
+      vx: MAX_STREAK_SPEED,
+      vy: 0,
+      age: 0,
+    })]);
+    renderer.clear();
+    renderer.draw(reverse.ctx, [projectile('mirv', {
+      vx: -MAX_STREAK_SPEED,
+      vy: 0,
+      age: 0,
+    })]);
+    renderer.clear();
+    renderer.draw(child.ctx, [projectile('mirv', {
+      vx: MAX_STREAK_SPEED,
+      vy: 0,
+      age: 0,
+      hasSplit: true,
+    })]);
+    renderer.clear();
+    renderer.draw(stopped.ctx, [projectile('mirv', { vx: 0, vy: 0, age: 0 })]);
+
+    const segmentLength = (trace: CanvasTrace): number => {
+      const [x0, y0, x1, y1] = trace.linearGradients[0].points;
+      return Math.hypot(x1 - x0, y1 - y0);
+    };
+    expect(segmentLength(fast.trace)).toBeGreaterThan(segmentLength(slow.trace));
+    expect(fast.trace.strokeCalls[1].alpha)
+      .toBeGreaterThan(slow.trace.strokeCalls[1].alpha);
+    expect(fast.trace.strokeCalls.slice(0, 2).map((stroke) => stroke.alpha))
+      .toEqual([0.44 * 0.6, 0.44]);
+    expect(fast.trace.strokeCalls.slice(0, 2)
+      .every((stroke) => stroke.alpha <= 0.44)).toBe(true);
+    expect(fast.trace.linearGradients[0].points[0])
+      .toBeLessThan(fast.trace.linearGradients[0].points[2]);
+    expect(reverse.trace.linearGradients[0].points[0])
+      .toBeGreaterThan(reverse.trace.linearGradients[0].points[2]);
+    expect(child.trace.linearGradients).toHaveLength(1);
+    expect(child.trace.strokeCalls[0].width)
+      .toBeLessThan(fast.trace.strokeCalls[0].width);
+    expect(child.trace.arcs).toHaveLength(2);
+    expect(stopped.trace.linearGradients).toHaveLength(0);
+
+    for (const value of [
+      Number.NaN,
+      Number.NEGATIVE_INFINITY,
+      Number.POSITIVE_INFINITY,
+    ]) {
+      for (const coordinates of [{ x: value }, { y: value }]) {
+        renderer.clear();
+        const malformedPosition = tracingContext();
+        renderer.draw(malformedPosition.ctx, [projectile('mirv', {
+          ...coordinates,
+          vx: MAX_STREAK_SPEED,
+          vy: 0,
+          age: 0,
+        })]);
+        expect(malformedPosition.trace.linearGradients).toHaveLength(0);
+      }
+    }
   });
 
   it('wires each major family trail profile through the Canvas seam', () => {
