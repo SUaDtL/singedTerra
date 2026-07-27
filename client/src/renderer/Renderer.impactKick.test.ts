@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ExplosionEvent, GameState, ProjectileState } from '@shared/types/GameState';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { Renderer } from './Renderer';
+import { getImpactDepthParallax } from './impactDepthParallax';
 
 interface RendererImpactSeam {
   bursts: unknown[];
@@ -55,6 +56,8 @@ interface RendererImpactSeam {
   drawSun: ReturnType<typeof vi.fn>;
   drawHorizonHaze: ReturnType<typeof vi.fn>;
   drawDistantRidges: ReturnType<typeof vi.fn>;
+  drawWindGusts: ReturnType<typeof vi.fn>;
+  drawLastImpact: ReturnType<typeof vi.fn>;
   consumeExplosion(state: Pick<GameState, 'explosions' | 'lastExplosion'>): void;
   isAnimating(state: GameState): boolean;
   render(state: GameState): void;
@@ -126,6 +129,8 @@ function rendererSeam(reduceMotion = false): RendererImpactSeam {
     drawSun: vi.fn(),
     drawHorizonHaze: vi.fn(),
     drawDistantRidges: vi.fn(),
+    drawWindGusts: vi.fn(),
+    drawLastImpact: vi.fn(),
   });
   return renderer;
 }
@@ -252,6 +257,123 @@ describe('Renderer directional impact kick', () => {
     expect(renderer.effects.update.mock.calls[0]?.[0]).toBe(state.terrain);
     expect(Math.hypot(renderer.kickX, renderer.kickY)).toBeLessThan(5);
     expect(Math.hypot(renderer.kickX, renderer.kickY)).toBeGreaterThan(0);
+  });
+
+  it('routes far, middle, and battlefield art through isolated exact-ratio transforms', () => {
+    const renderer = rendererSeam();
+    const state = idleState();
+    renderer.kickX = 8;
+    renderer.kickY = -6;
+    delete (renderer as unknown as Record<string, unknown>)['drawSky'];
+
+    renderer.render(state);
+
+    const profile = getImpactDepthParallax({ x: 8, y: -6 })!;
+    expect(renderer.ctx.translate.mock.calls).toEqual([
+      [profile.far.x, profile.far.y],
+      [profile.middle.x, profile.middle.y],
+      [profile.middle.x, profile.middle.y],
+      [profile.world.x, profile.world.y],
+    ]);
+    expect(renderer.drawCloudBanks.mock.invocationCallOrder[0])
+      .toBeLessThan(renderer.drawDistantRidges.mock.invocationCallOrder[0]);
+    expect(renderer.drawDistantRidges.mock.invocationCallOrder[0])
+      .toBeLessThan(renderer.drawWindGusts.mock.invocationCallOrder[0]);
+    expect(renderer.drawWindGusts.mock.invocationCallOrder[0])
+      .toBeLessThan(renderer.terrain.draw.mock.invocationCallOrder[0]);
+    expect(renderer.ctx.save).toHaveBeenCalledTimes(4);
+    expect(renderer.ctx.restore).toHaveBeenCalledTimes(4);
+    expect(renderer.ctx.restore.mock.invocationCallOrder.at(-1))
+      .toBeLessThan(renderer.hud.draw.mock.invocationCallOrder[0]);
+  });
+
+  it('keeps every depth transform isolated on the live Canvas stack', () => {
+    const renderer = rendererSeam();
+    const trace: string[] = [];
+    const stack: Array<{ x: number; y: number }> = [];
+    let offset = { x: 0, y: 0 };
+    renderer.kickX = 8;
+    renderer.kickY = -6;
+    delete (renderer as unknown as Record<string, unknown>)['drawSky'];
+
+    renderer.ctx.save = vi.fn(() => {
+      stack.push({ ...offset });
+      trace.push('save');
+    });
+    renderer.ctx.translate = vi.fn((x: number, y: number) => {
+      offset = { x: offset.x + x, y: offset.y + y };
+      trace.push(`translate:${x},${y}`);
+    });
+    renderer.ctx.restore = vi.fn(() => {
+      offset = stack.pop()!;
+      trace.push('restore');
+    });
+    renderer.ctx.fillRect = vi.fn(() => trace.push(`sky-fill:${offset.x},${offset.y}`));
+    renderer.drawCloudBanks = vi.fn(() => trace.push(`clouds:${offset.x},${offset.y}`));
+    renderer.drawStars = vi.fn(() => trace.push(`stars:${offset.x},${offset.y}`));
+    renderer.drawSun = vi.fn(() => trace.push(`sun:${offset.x},${offset.y}`));
+    renderer.drawHorizonHaze = vi.fn(() => trace.push(`haze:${offset.x},${offset.y}`));
+    renderer.drawDistantRidges = vi.fn(() => trace.push(`ridges:${offset.x},${offset.y}`));
+    renderer.drawWindGusts = vi.fn(() => trace.push(`wind:${offset.x},${offset.y}`));
+    renderer.terrain.draw = vi.fn(() => trace.push(`terrain:${offset.x},${offset.y}`));
+    renderer.effects.draw = vi.fn(() => trace.push(`effects:${offset.x},${offset.y}`));
+    renderer.drawLastImpact = vi.fn(() => trace.push(`aiming:${offset.x},${offset.y}`));
+    renderer.hud.draw = vi.fn(() => trace.push(`hud:${offset.x},${offset.y}`));
+
+    renderer.render(idleState());
+
+    expect(trace).toEqual([
+      'save',
+      'translate:0.96,-0.72',
+      'sky-fill:0.96,-0.72',
+      'clouds:0.96,-0.72',
+      'stars:0.96,-0.72',
+      'sun:0.96,-0.72',
+      'haze:0.96,-0.72',
+      'restore',
+      'save',
+      'translate:2.8,-2.0999999999999996',
+      'ridges:2.8,-2.0999999999999996',
+      'restore',
+      'save',
+      'translate:2.8,-2.0999999999999996',
+      'wind:2.8,-2.0999999999999996',
+      'restore',
+      'save',
+      'translate:8,-6',
+      'terrain:8,-6',
+      'effects:8,-6',
+      'aiming:8,-6',
+      'restore',
+      'hud:0,0',
+    ]);
+    expect(stack).toEqual([]);
+    expect(offset).toEqual({ x: 0, y: 0 });
+  });
+
+  it('preserves existing background geometry and ordering at zero displacement', () => {
+    const renderer = rendererSeam();
+    delete (renderer as unknown as Record<string, unknown>)['drawSky'];
+
+    renderer.render(idleState());
+
+    expect(renderer.ctx.fillRect).toHaveBeenCalledWith(
+      -18,
+      -18,
+      CANVAS_WIDTH + 36,
+      CANVAS_HEIGHT + 36,
+    );
+    expect(renderer.ctx.translate.mock.calls).toEqual([
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ]);
+    expect(renderer.drawCloudBanks).toHaveBeenCalledTimes(1);
+    expect(renderer.drawStars).toHaveBeenCalledTimes(1);
+    expect(renderer.drawSun).toHaveBeenCalledTimes(1);
+    expect(renderer.drawHorizonHaze).toHaveBeenCalledTimes(1);
+    expect(renderer.drawDistantRidges).toHaveBeenCalledTimes(1);
   });
 
   it('adds random shake to recoil instead of replacing it', () => {

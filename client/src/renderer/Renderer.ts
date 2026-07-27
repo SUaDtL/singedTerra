@@ -35,6 +35,10 @@ import {
   getWindGustVisualProfile,
   type WindGustVisualProfile,
 } from './windGustVisuals';
+import {
+  getImpactDepthParallax,
+  type ImpactDepthParallax,
+} from './impactDepthParallax';
 
 /** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
@@ -54,6 +58,8 @@ const SCREEN_SHAKE_MAX = 9;
 const WORLD_TRANSLATION_MARGIN = SCREEN_SHAKE_MAX + IMPACT_KICK_MAX + 1;
 /** Bound additive work and overdraw for multi-warhead detonations. */
 const MAX_LOCAL_BLAST_LIGHTS = 3;
+/** Stable fail-closed/rest profile for a camera displacement of zero. */
+const REST_DEPTH_PARALLAX = getImpactDepthParallax({ x: 0, y: 0 })!;
 
 /**
  * Optional sink the renderer emits gameplay-feel events to (audio, etc.). Kept as
@@ -436,16 +442,20 @@ export class Renderer {
       this.shake = 0;
     }
 
-    ctx.save();
-    ctx.translate(sx, sy);
+    const depth = getImpactDepthParallax({ x: sx, y: sy }) ?? REST_DEPTH_PARALLAX;
+    // 1. Far atmosphere and middle ridges own isolated, partial transforms.
+    this.drawSky(depth);
 
-    // 1. Sky — clears the whole canvas each frame as the base layer (oversized to
-    // cover the shake offset so no backdrop bleeds in at the edges).
-    this.drawSky();
-    // 1.5 A short turn-start wind cue: above the static sky, behind every
-    // destructible/gameplay layer. It is presentation-only and bounded.
+    // 1.5 Turn-start wind ribbons share the middle-distance ridge transform.
+    ctx.save();
+    ctx.translate(depth.middle.x, depth.middle.y);
     this.drawWindGusts();
+    ctx.restore();
     this.advanceWindGust();
+
+    // 2–5.6 The destructible battlefield keeps the full camera recoil.
+    ctx.save();
+    ctx.translate(depth.world.x, depth.world.y);
 
     // 2.0 Buried tanks (#15): draw BEFORE the terrain so the risen dirt paints over
     // them — they read as submerged rather than sitting on top of the mound that buried
@@ -1414,11 +1424,16 @@ export class Renderer {
     }
   }
 
-  private drawSky(): void {
+  private drawSky(
+    depth: Readonly<ImpactDepthParallax> = REST_DEPTH_PARALLAX,
+  ): void {
     const ctx = this.ctx;
     if (this.skyGradient === null) {
       this.skyGradient = skyGradient(ctx, 0, CANVAS_HEIGHT);
     }
+
+    ctx.save();
+    ctx.translate(depth.far.x, depth.far.y);
     ctx.fillStyle = this.skyGradient;
     // Oversized by the composed shake + kick bound so no backdrop strip is exposed.
     const m = WORLD_TRANSLATION_MARGIN;
@@ -1427,7 +1442,12 @@ export class Renderer {
     this.drawStars();
     this.drawSun();
     this.drawHorizonHaze();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(depth.middle.x, depth.middle.y);
     this.drawDistantRidges();
+    ctx.restore();
   }
 
   /** Pixel stars in the upper indigo band (crisp little squares). */
