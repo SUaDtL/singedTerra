@@ -1,7 +1,8 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
-import { TERRAIN, hexToRgb } from '../ui/theme';
+import { BACKDROP, TERRAIN, hexToRgb } from '../ui/theme';
 import { bandFloatForY } from './strata';
 import { terrainEdgeAlpha } from './terrainEdges';
+import { createTerrainBevelSampler } from './terrainBevelLighting';
 
 /**
  * Scorched depth ramp (banner palette): a LIT RIM on the top 2px of every solid
@@ -12,8 +13,11 @@ import { terrainEdgeAlpha } from './terrainEdges';
 const RIM = hexToRgb(TERRAIN.rim);
 const MID = hexToRgb(TERRAIN.mid);
 const DEEP = hexToRgb(TERRAIN.deep);
+/** Cool-purple destination for the lower-right side of directional bevels. */
+const BEVEL_SHADOW = hexToRgb(BACKDROP);
 /** Depth (px below the lit rim) over which top→mid→deep fully ramps. */
 const RAMP_DEPTH = 120;
+type TerrainBevelSamplerFactory = typeof createTerrainBevelSampler;
 
 /**
  * Strata band BASE colors (T7). Each band supplies a starting RGB that the
@@ -64,6 +68,10 @@ const BAND_COLORS: [[number, number, number], [number, number, number], [number,
  *   tr.draw(ctx, state.terrain, state.terrainVersion); // blits every frame; rebuilds on change
  */
 export class TerrainRenderer {
+  constructor(
+    private readonly createBevelSampler: TerrainBevelSamplerFactory = createTerrainBevelSampler,
+  ) {}
+
   /** Lazily-created offscreen canvas holding the composited terrain (1200×600). */
   private offscreen: HTMLCanvasElement | null = null;
   /** 2D context of {@link offscreen}. */
@@ -91,10 +99,11 @@ export class TerrainRenderer {
 
     let rebuilt = false;
     if (this.forceRedraw || version !== this.lastVersion) {
-      this.rebuild(terrain);
-      this.lastVersion = version;
-      this.forceRedraw = false;
-      rebuilt = true;
+      rebuilt = this.rebuild(terrain);
+      if (rebuilt) {
+        this.lastVersion = version;
+        this.forceRedraw = false;
+      }
     }
 
     // drawImage alpha-composites: transparent air pixels reveal the sky beneath.
@@ -148,14 +157,16 @@ export class TerrainRenderer {
    * transition between strata is smooth rather than abrupt: the ramp lerps from
    * the band base instead of from a fixed `TOP`.
    */
-  private rebuild(terrain: Uint8Array): void {
+  private rebuild(terrain: Uint8Array): boolean {
     const offCtx = this.offCtx;
     const img = this.imageData;
-    if (offCtx === null || img === null) return; // ensureOffscreen ran first
+    if (offCtx === null || img === null) return false; // ensureOffscreen ran first
 
     const data = img.data;
     const W = CANVAS_WIDTH;
     const H = CANVAS_HEIGHT;
+    const bevelAt = this.createBevelSampler(terrain, W, H);
+    if (bevelAt === null) return false;
     for (let x = 0; x < W; x++) {
       let depth = -1; // -1 = in air; resets at every air gap (fresh rim per run)
       for (let y = 0; y < H; y++) {
@@ -196,6 +207,17 @@ export class TerrainRenderer {
               b = t < 0.58 ? MID[2] : DEEP[2];
             }
           }
+          const bevel = bevelAt(x, y);
+          if (bevel > 0) {
+            r += (RIM[0] - r) * bevel;
+            g += (RIM[1] - g) * bevel;
+            b += (RIM[2] - b) * bevel;
+          } else if (bevel < 0) {
+            const shade = -bevel;
+            r += (BEVEL_SHADOW[0] - r) * shade;
+            g += (BEVEL_SHADOW[1] - g) * shade;
+            b += (BEVEL_SHADOW[2] - b) * shade;
+          }
           data[o] = r;
           data[o + 1] = g;
           data[o + 2] = b;
@@ -207,5 +229,6 @@ export class TerrainRenderer {
       }
     }
     offCtx.putImageData(img, 0, 0);
+    return true;
   }
 }
