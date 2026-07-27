@@ -1176,3 +1176,8 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Governed behavior commit: `751f262` (`feat(renderer): add projectile motion streaks`).
 - Exact behavior set: pure bounded velocity profile, production projectile-renderer route, adversarial and Canvas-contract tests, and public specification.
 - Commit gate evidence: focused 2 files / 32 tests, full deterministic workspace check and strict typechecks, state-free secret scan with no findings, exact staged-set review, and no harvest residue. Confidence high.
+## 2026-07-26 - Projectile motion streaks ready PR receipt
+
+- Behavior commit `751f262` and governance commit `294e6f1` were pushed as `codex/projectile-motion-streaks`.
+- Ready PR #191: https://github.com/SUaDtL/singedTerra/pull/191
+- Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
