@@ -1255,3 +1255,8 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Governed behavior commit: `a72ad53159d0b954efb1b5528657d2ac8cdda219` (`feat(renderer): add terrain edge bevel lighting`).
 - Exact behavior set: bounded directional bitmap sampler, version-cached TerrainRenderer integration with retry-safe malformed snapshots, causal and adversarial tests, and public specification.
 - Commit gate evidence: focused 4 files / 36 tests, full deterministic workspace check, 65 files / 483 client coverage tests, 159 Edge tests, production build, 30-case browser matrix with 9 expected skips, clean diff hygiene, and state-free secret scan with no findings. Confidence high.
+### 2026-07-26 - Terrain Edge Bevel Lighting ready PR receipt
+
+- Behavior commit `a72ad53159d0b954efb1b5528657d2ac8cdda219` and governance commit `538eded0e7d22dab6854fae64b8adf685d75d978` were pushed as `codex/terrain-edge-bevel-lighting`.
+- Ready PR #193: https://github.com/SUaDtL/singedTerra/pull/193
+- Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
