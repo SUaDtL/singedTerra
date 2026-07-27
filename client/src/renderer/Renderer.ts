@@ -39,6 +39,7 @@ import {
   getImpactDepthParallax,
   type ImpactDepthParallax,
 } from './impactDepthParallax';
+import { getNapalmFirelightPools } from './napalmFirelight';
 
 /** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
@@ -1326,15 +1327,32 @@ export class Renderer {
 
     ctx.save();
 
-    // Pass 1: a soft ember glow hugging the ground (additive warmth under the
-    // flames), one low wide blob per cell — cheap and reads as a fire pool.
-    ctx.globalCompositeOperation = 'lighter';
-    for (const cell of fire) {
-      const sy = surfaceFor(cell.x);
-      const t = Math.min(1, cell.life / FULL);
-      ctx.globalAlpha = 0.05 + 0.07 * t;
-      ctx.fillStyle = '#ff5a1f';
-      ctx.fillRect(cell.x - 4, sy - 6, 8, 8);
+    // Pass 1: neighboring cells share bounded elliptical light pools. This
+    // replaces one glow rectangle per column with at most eight gradients while
+    // bathing the battlefield beneath the unchanged flames.
+    if (
+      state.terrain instanceof Uint8Array
+      && state.terrain.length === CANVAS_WIDTH * CANVAS_HEIGHT
+    ) {
+      ctx.globalCompositeOperation = 'lighter';
+      for (const pool of getNapalmFirelightPools(fire)) {
+        const sy = surfaceFor(Math.round(pool.centerX));
+        if (!Number.isFinite(sy) || sy < 0 || sy >= CANVAS_HEIGHT) continue;
+
+        ctx.save();
+        ctx.translate(pool.centerX, sy - 6);
+        ctx.scale(pool.radiusX, pool.radiusY);
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        glow.addColorStop(0, 'rgba(255, 210, 63, 0.92)');
+        glow.addColorStop(0.42, 'rgba(255, 90, 31, 0.58)');
+        glow.addColorStop(1, 'rgba(255, 90, 31, 0)');
+        ctx.globalAlpha = pool.alpha;
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
     ctx.globalCompositeOperation = 'source-over';
 
