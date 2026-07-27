@@ -20,4 +20,4 @@
 - [x] Resolve all Critical, High, Important, or coverage findings.
 - [x] Run focused tests, full checks/coverage, Edge, build, E2E, diff hygiene, and secret scan.
 - [x] Commit through the governed gate and open a ready PR.
-- [ ] Merge only after clean hosted CI/CodeQL, then prove exact-SHA Pages deployment.
+- [x] Merge only after clean hosted CI/CodeQL, then prove exact-SHA Pages deployment.
