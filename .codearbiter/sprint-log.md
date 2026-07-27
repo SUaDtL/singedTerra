@@ -1260,3 +1260,34 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Behavior commit `a72ad53159d0b954efb1b5528657d2ac8cdda219` and governance commit `538eded0e7d22dab6854fae64b8adf685d75d978` were pushed as `codex/terrain-edge-bevel-lighting`.
 - Ready PR #193: https://github.com/SUaDtL/singedTerra/pull/193
 - Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
+## Terrain edge bevel lighting mainline integration receipt (2026-07-26)
+
+- **[high] PR #193 merged and exact-SHA Pages deployment verified.** Exact-head CI run `30270144929` and CodeQL run `30270146515` passed with PR #193 clean and mergeable. Main advanced to `3db14732107eb40b19e0894b6302c29d7dc3654a`; main CI `30270323056`, CodeQL `30270321749`, and Pages `30270321698` passed build, current-main verification, deployment, provenance, and live smoke. An independent no-cache request confirmed the same SHA/run in `deploy-meta.json` and HTTP 200 from the public site. No Supabase deployment was warranted because no backend source changed. Confidence high.
+
+## 2026-07-26 - Napalm firelight bloom sprint
+
+- **[high] Select pooled napalm firelight.** Active fire is one of the game's longest-lived and most tactically dramatic effects, but its current warmth is a grid of per-column rectangles beneath the flame tongues. Against continuous sky animation, more generic explosion particles, or bitmap assets, SMARTS Meaningful/Auditable/Reversible/Testable/Securable favors grouping the already-authoritative fire cells into a handful of bounded additive pools. It enriches normal and hot napalm while reducing draw calls, adding no retained collection, gameplay signal, dependency, or Supabase surface. Confidence high.
+- **[high] Bound the presentation contract.** Each pool covers at most 32 consecutive columns, total output is capped at eight strongest pools in world-x order, remaining life controls finite capped radius/alpha, and invalid cells or terrain surfaces fail closed. The existing flame pass, fire simulation, damage, audio, replay, and idle-animation policy remain authoritative. Confidence high.
+- **[high] Napalm firelight TDD and real-browser acceptance.** The pure suite first failed before collection because `./napalmFirelight` did not exist; after the 10-test pooling oracle passed, the production Renderer suite stayed RED because the existing fire pass emitted no gradients. Production now converts sorted or unsorted valid fire cells into at most eight immutable 32-column light pools, draws each as one additive ellipse, then preserves the existing flame tongues. Focused verification passes 2 files / 15 tests, including exact Canvas geometry/restoration, malformed and all-air terrain, nonmutation, draw-before-flame order, and a 181-column hot-napalm-scale field covered by six bounded pools; the full renderer surface passes 38 files / 271 tests with typecheck and diff hygiene green. The in-app browser fired real napalm through the production hot-seat renderer: the growing field produced a continuous warm terrain bloom beneath the flame wall, followed crater slopes without block bands, retained tank/projectile contrast, and tapered back to the resting scene. Browser/server closed and port 5174 released. Confidence high.
+### 2026-07-26 - Napalm Firelight Bloom review gate
+
+- Rendering and architecture review: ACCEPT; bounded gradients, restored Canvas state, unchanged flame tongues, presentation-only scope, and browser compatibility were confirmed.
+- Coverage review identified five surviving oracle mutations: NaN life, flame compositing, nested transform isolation, center-column terrain anchoring, and authored warm stops. Independent tests now pin each contract; re-review: ACCEPT.
+- Focused gate: 2 files / 16 tests passed. Confidence high.
+
+### 2026-07-26 - Napalm Firelight Bloom final local matrix
+
+- Focused firelight gate: 2 files / 16 tests passed.
+- Deterministic workspace check, including both workspace typechecks and every engine harness: passed.
+- Client coverage: 67 files / 499 tests passed; statements 86.85%, branches 86.82%, functions 84.93%, lines 86.85%; the pure firelight helper has 97.29% statements/lines and 100% functions.
+- Supabase Edge tests: 159 passed / 0 failed.
+- Production build: passed; 104 modules transformed; main bundle 223.99 kB (60.94 kB gzip).
+- Playwright production-browser matrix: 30 passed / 9 expected project skips.
+- git diff --check: clean. State-free changed-file secret scan: no findings.
+- No dependency, lockfile, migration, action-log, or Supabase backend change; no backend deployment is required. Confidence high.
+
+### 2026-07-26 - Napalm Firelight Bloom behavior commit
+
+- Governed behavior commit: `0d3ddfdfcc5b919b55c01c0cdd28f09e98517423` (`feat(renderer): add pooled napalm firelight`).
+- Exact behavior set: bounded immutable firelight pooling, additive production renderer integration, causal Canvas and malformed-input tests, and public specification.
+- Commit gate evidence: focused 2 files / 16 tests, full deterministic workspace check, 67 files / 499 client coverage tests, 159 Edge tests, production build, 30-case browser matrix with 9 expected skips, clean diff hygiene, and state-free secret scan with no findings. Confidence high.
