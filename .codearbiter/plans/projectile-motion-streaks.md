@@ -23,5 +23,5 @@ without changing its existing history trail or deterministic state.
 - [x] Run focused tests, full checks/coverage, Edge, build, E2E, diff hygiene,
   and secret scan.
 - [x] Commit through the governed gate and open a ready PR.
-- [ ] Merge only after clean hosted CI/CodeQL, then prove exact-SHA Pages
+- [x] Merge only after clean hosted CI/CodeQL, then prove exact-SHA Pages
   deployment.

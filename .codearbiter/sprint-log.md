@@ -1181,3 +1181,36 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Behavior commit `751f262` and governance commit `294e6f1` were pushed as `codex/projectile-motion-streaks`.
 - Ready PR #191: https://github.com/SUaDtL/singedTerra/pull/191
 - Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
+## Projectile motion streaks mainline integration receipt (2026-07-26)
+
+- **[high] PR #191 merged and exact-SHA Pages deployment verified.** Exact-head CI run `30240373629` and CodeQL run `30240373621` passed with PR #191 clean and mergeable. Main advanced to `e9dbd1d289a361c79f6d9070aa77aed1fde71fae`; main CI `30240478292`, CodeQL `30240478271`, and Pages `30240478318` passed build, current-main verification, deployment, provenance, and live smoke. An independent no-cache request confirmed the same SHA/run in `deploy-meta.json` and HTTP 200 from the public site. No Supabase deployment was warranted because no backend source changed. Confidence high.
+
+## 2026-07-26 - Impact depth parallax sprint
+
+- **[high] Select impact depth parallax.** The existing scene already has strong procedural atmosphere, distant ridges, camera recoil, and a stable foreground, but explosion motion translates them as one rigid plane. Against more particles, continuous cloud drift, or new bitmap assets, SMARTS Meaningful/Auditable/Reversible/Testable/Securable favors separating already-owned art into far `0.12x`, middle `0.35x`, and battlefield `1x` camera layers. The change compounds existing art and recoil without a dependency, retained collection, idle-frame tax, gameplay signal, or Supabase surface. Confidence high.
+- **[high] Preserve rest geometry and accessibility.** Layer transforms must be isolated and become exact zero offsets at rest; current shake/kick decay, reduced-motion suppression, oversized sky coverage, draw order, and unshaken DOM HUD remain authoritative. Hostile finite displacement is capped in the pure presentation helper and malformed displacement fails closed. Confidence high.- **[high] Impact depth parallax TDD and real-browser acceptance.** The pure suite first failed before collection because `./impactDepthParallax` did not exist; after the bounded oracle passed 14 tests, the real Renderer suite remained RED because the scene still exposed only the prior single battlefield transform. Production now isolates far atmosphere at `0.12x`, distant ridges and wind ribbons at `0.35x`, and the destructible battlefield at `1x`, with exact zero-offset rest geometry and Canvas restoration. Focused verification passes 2 files / 25 tests; the full renderer set passes 34 files / 222 tests; client typecheck and diff hygiene are green. Installed Chrome exercised real hot-seat launches and an impact frame through the production renderer: the projectile, crater, and expanding detonation stayed coherent, the sky overscan exposed no backdrop strips, the adjacent HTML HUD remained stationary, and the browser reported no warnings or errors. Browser/server closed and port 5174 released. Confidence high.
+- **[high] Audit formatting correction.** The preceding impact-depth accessibility decision and TDD/browser receipt are logically separate entries even though a leading newline was omitted during the append-only write. Their evidence and decisions are unchanged; this correction is appended rather than rewriting audit history. Confidence high.
+
+### 2026-07-26 - Impact Depth Parallax review gate
+
+- Rendering/architecture review: ACCEPT. Source and 34-file renderer verification confirm bounded isolated transforms, preserved rest order/overscan, stationary HUD, unchanged reduced-motion and idle behavior, and no gameplay or Supabase boundary crossing.
+- Coverage review initially identified self-referential ratio/cap oracles, missing y-dominant and boundary cases, and transform-membership mutation gaps. Literal contract pins, exact boundary/just-over-boundary/y-dominant cases, and a stateful Canvas stack trace now prove every far, middle, world, late aiming-aid, and HUD member at its effective offset.
+- Coverage re-review: ACCEPT; focused gate is 2 files / 30 tests with client typecheck and diff hygiene green.
+
+### 2026-07-26 - Impact Depth Parallax final local matrix
+
+- Focused parallax gate: 2 files / 30 tests passed.
+- Deterministic workspace check, including both workspace typechecks and every engine harness: passed.
+- Client coverage: 63 files / 453 tests passed; statements 86.61%, branches 86.50%, functions 84.74%, lines 86.61%; the pure parallax profile is 100% covered.
+- Supabase Edge tests: 159 passed / 0 failed.
+- Production build: passed; 102 modules transformed; main bundle 221.84 kB (60.07 kB gzip).
+- Playwright production-browser matrix: 30 passed / 9 expected project skips.
+- git diff --check: clean. State-free changed-file secret scan: no findings.
+- No dependency, lockfile, migration, action-log, or Supabase backend change; no backend deployment is required.
+
+
+### 2026-07-26 - Impact Depth Parallax behavior commit
+
+- Governed behavior commit: `039be19527e6ae8d2c6a0a240d775c0680aa1117` (`feat(renderer): add impact depth parallax`).
+- Exact behavior set: bounded pure depth profile, isolated production renderer transforms, causal hostile-input and Canvas-stack tests, and public specification.
+- Commit gate evidence: focused 2 files / 30 tests, full deterministic workspace check, 63 files / 453 client coverage tests, 159 Edge tests, production build, 30-case browser matrix with 9 expected skips, clean diff hygiene, and state-free secret scan with no findings. Confidence high.
