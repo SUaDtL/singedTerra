@@ -1153,3 +1153,26 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Behavior commit `997d468bd29ecc6584a0bf470b7baf3bfd42f781` and governance commit `7267485` were pushed as `codex/turn-start-wind-gusts`.
 - Ready PR #190: https://github.com/SUaDtL/singedTerra/pull/190
 - Hosted exact-head CI and CodeQL are now the active gates; merge and Pages proof remain.
+
+
+## Turn-start wind gusts mainline integration receipt (2026-07-26)
+
+- **[high] PR #190 merged and exact-SHA Pages deployment verified.** Exact-head CI run `30239376690` and CodeQL run `30239376720` passed with PR #190 clean and mergeable. Main advanced to `ed3ee9cbbeef7e791f43a8e008b0d479791a9ffe`; main CI `30239499091`, CodeQL `30239499125`, and Pages `30239499107` passed build, current-main verification, deployment, provenance, and live smoke. An independent no-cache request confirmed the same SHA/run in `deploy-meta.json` and HTTP 200 from the public site. No Supabase deployment was warranted because no backend source changed. Confidence high.
+
+## 2026-07-26 - Projectile motion streaks sprint
+
+- **[high] Select immediate velocity-aligned projectile ribbons.** The existing bounded history trail becomes expressive only after multiple samples, leaving launch frames and newly split children without an immediate direction/speed cue. Compared with rebuilding history trails, sprite assets, or more explosion particles, SMARTS Meaningful/Auditable/Reversible/Testable/Securable favors one stateless ribbon derived from current velocity and the existing weapon profile. It enriches every moving payload while leaving physics, retained state, dependencies, and Supabase untouched. Confidence high.
+- **[high] Bound cost and visual hierarchy.** Each valid moving projectile receives one gradient plus two finite bounded strokes after history and before its halo/silhouette. Near-zero and malformed motion fail closed; no timer, collection, or extra animation liveness is introduced. Confidence high.
+
+- **[high] Projectile motion streak TDD and real-browser acceptance.** The pure suite first failed before collection because `./projectileMotionStreak` did not exist; the integrated renderer suite then failed because no linear-gradient route existed. Production now emits one immutable finite velocity profile and one two-stroke gradient between history and halo, including first-frame launch and split children, while near-zero/malformed inputs fail closed. Focused verification passes 2 files / 18 tests with client typecheck and diff hygiene green. Installed Chrome compared stopped, slow-right, fast-right, fast-left, and diagonal split-child states through the production renderer: stillness stayed clean, speed/readability scaled without overpowering the payload, reverse direction was correct, and the child remained smaller. A live `?e2e=hotseat` launch observed real bounded streak segments of 12.95px and 12.85px with zero page errors. Browser/server closed and port 5174 released. Confidence high.
+
+- **[high] Independent projectile-streak reviews accepted after causal hardening.** Rendering review returned ACCEPT. Coverage review required overflow-safe finite diagonal velocity, independent Euclidean diagonal proof, exact world anchoring/bounds, downstream Canvas containment, symmetric malformed-field tables, and an exact capped-speed Renderer alpha oracle. Each was added; removing the motion-local Canvas save/restore failed the downstream composite assertion and was restored. Coverage re-review returned ACCEPT with no remaining concrete gap. Focused verification passes 2 files / 32 tests with typecheck and diff hygiene green. Confidence high.
+
+## 2026-07-26 - Projectile motion streaks final local verification
+
+- **[high] Full governed matrix passed.** Focused renderer coverage passes 2 files / 32 tests. `npm run check` passed both workspace typechecks and every deterministic engine harness. Client coverage passes 62 files / 432 tests at 86.52% statements, 86.39% branches, 84.64% functions, and 86.52% lines; the pure projectile-motion profile is 100% covered. Supabase Edge tests pass 159 / 159. The production build passes with 101 transformed modules and a 221.29 kB (59.88 kB gzip) main bundle. Playwright passes 30 cases with 9 expected project skips. `git diff --check` is clean and the state-free secret scan reports no findings. No dependency, lockfile, migration, action-log, or Supabase backend change exists; no backend deployment is warranted. Confidence high.
+## 2026-07-26 - Projectile motion streaks behavior commit
+
+- Governed behavior commit: `751f262` (`feat(renderer): add projectile motion streaks`).
+- Exact behavior set: pure bounded velocity profile, production projectile-renderer route, adversarial and Canvas-contract tests, and public specification.
+- Commit gate evidence: focused 2 files / 32 tests, full deterministic workspace check and strict typechecks, state-free secret scan with no findings, exact staged-set review, and no harvest residue. Confidence high.
