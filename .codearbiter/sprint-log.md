@@ -1291,3 +1291,9 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Governed behavior commit: `0d3ddfdfcc5b919b55c01c0cdd28f09e98517423` (`feat(renderer): add pooled napalm firelight`).
 - Exact behavior set: bounded immutable firelight pooling, additive production renderer integration, causal Canvas and malformed-input tests, and public specification.
 - Commit gate evidence: focused 2 files / 16 tests, full deterministic workspace check, 67 files / 499 client coverage tests, 159 Edge tests, production build, 30-case browser matrix with 9 expected skips, clean diff hygiene, and state-free secret scan with no findings. Confidence high.
+
+### 2026-07-26 - Napalm Firelight Bloom ready PR receipt
+
+- Behavior commit `0d3ddfdfcc5b919b55c01c0cdd28f09e98517423` and governance commit `dded7cc938fd4f5ae3901f4ed19ceea8fb2875e9` were pushed as `codex/napalm-firelight-bloom`.
+- Ready PR #194: https://github.com/SUaDtL/singedTerra/pull/194
+- Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
