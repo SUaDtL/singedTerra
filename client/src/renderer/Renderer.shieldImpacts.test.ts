@@ -10,6 +10,7 @@ interface ShieldImpactSeam {
   shieldBaselineRound: number | null;
   smokeThrottle: Map<string, number>;
   effects: {
+    spawnArmorHit: ReturnType<typeof vi.fn>;
     spawnDamage: ReturnType<typeof vi.fn>;
     spawnKill: ReturnType<typeof vi.fn>;
     spawnWreck: ReturnType<typeof vi.fn>;
@@ -99,6 +100,7 @@ function seam(): ShieldImpactSeam {
     shieldBaselineRound: null,
     smokeThrottle: new Map(),
     effects: {
+      spawnArmorHit: vi.fn(),
       spawnDamage: vi.fn(),
       spawnKill: vi.fn(),
       spawnWreck: vi.fn(),

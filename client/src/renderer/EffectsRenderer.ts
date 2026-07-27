@@ -2,6 +2,7 @@ import { TERRAIN, BOOM, ACCENT } from '../ui/theme';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { advanceDebris, type DebrisMotion } from './debrisMotion';
 import type { MuzzleVisualProfile } from './muzzleVisuals';
+import { getArmorHitVisualProfile } from './armorHitVisuals';
 
 /**
  * EffectsRenderer — transient client-only "juice": terrain debris + dust on
@@ -24,6 +25,16 @@ interface Smoke { x: number; y: number; vy: number; r: number; grow: number; alp
 interface Spark { x: number; y: number; vx: number; vy: number; color: string; age: number; life: number; }
 interface FloatText { x: number; y: number; vy: number; text: string; color: string; size: number; age: number; life: number; }
 interface ShieldImpact { x: number; y: number; strength: number; age: number; life: number; }
+interface ArmorHit {
+  tankId: string;
+  x: number;
+  y: number;
+  color: string;
+  strength: number;
+  radius: number;
+  age: number;
+  life: number;
+}
 interface MuzzleFlash {
   x: number;
   y: number;
@@ -39,6 +50,7 @@ export class EffectsRenderer {
   private sparks: Spark[] = [];
   private texts: FloatText[] = [];
   private shieldImpacts: ShieldImpact[] = [];
+  private armorHits: ArmorHit[] = [];
   private muzzleFlashes: MuzzleFlash[] = [];
   private readonly reduce: boolean;
 
@@ -55,6 +67,7 @@ export class EffectsRenderer {
     this.sparks.length = 0;
     this.texts.length = 0;
     this.shieldImpacts.length = 0;
+    this.armorHits.length = 0;
     this.muzzleFlashes.length = 0;
   }
 
@@ -154,6 +167,67 @@ export class EffectsRenderer {
       x, y, vy: this.reduce ? 0 : -0.55, text: `-${n}`, color,
       size: 13 + Math.min(10, n * 0.12), age: 0, life: 52,
     });
+  }
+
+  /**
+   * Make a surviving tank's authoritative health loss read on the chassis itself.
+   * Repeated ticks refresh one per-tank flash without spawning another spark fan.
+   */
+  spawnArmorHit(
+    tankId: string,
+    x: number,
+    y: number,
+    amount: number,
+    color: string,
+  ): void {
+    if (
+      this.reduce
+      || tankId.length === 0
+      || !Number.isFinite(x)
+      || !Number.isFinite(y)
+      || color.length === 0
+    ) return;
+    const profile = getArmorHitVisualProfile(amount);
+    if (profile === null) return;
+
+    const existing = this.armorHits.find((hit) => hit.tankId === tankId);
+    if (existing) {
+      existing.x = x;
+      existing.y = y;
+      existing.color = color;
+      existing.strength = Math.max(existing.strength, profile.strength);
+      existing.radius = Math.max(existing.radius, profile.radius);
+      // Renderer advances effects before drawing them. Start one step before
+      // age zero so the spawn frame is painted at full strength and `life`
+      // remains the number of rendered frames, not update calls.
+      existing.age = -1;
+      existing.life = profile.life;
+      return;
+    }
+
+    this.armorHits.push({
+      tankId,
+      x,
+      y,
+      color,
+      strength: profile.strength,
+      radius: profile.radius,
+      age: -1,
+      life: profile.life,
+    });
+    for (let i = 0; i < profile.sparkCount; i++) {
+      const angle = this.rand(0, Math.PI * 2);
+      const speed = this.rand(1.6, 3.4 + profile.strength);
+      this.sparks.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 0.35,
+        color: i % 3 === 0 ? color : i % 3 === 1 ? BOOM.core : ACCENT.gold,
+        age: 0,
+        life: this.rand(8, 14),
+      });
+    }
   }
 
   /**
@@ -269,6 +343,7 @@ export class EffectsRenderer {
     for (const m of this.smoke) { m.y += m.vy; m.r += m.grow; m.age++; }
     for (const t of this.texts) { t.y += t.vy; t.age++; }
     for (const impact of this.shieldImpacts) impact.age++;
+    for (const hit of this.armorHits) hit.age++;
     for (const f of this.muzzleFlashes) f.age++;
     if (this.debris.length) this.debris = this.debris.filter((d) => d.age < d.life);
     if (this.sparks.length) this.sparks = this.sparks.filter((s) => s.age < s.life);
@@ -276,6 +351,9 @@ export class EffectsRenderer {
     if (this.texts.length) this.texts = this.texts.filter((t) => t.age < t.life);
     if (this.shieldImpacts.length) {
       this.shieldImpacts = this.shieldImpacts.filter((impact) => impact.age < impact.life);
+    }
+    if (this.armorHits.length) {
+      this.armorHits = this.armorHits.filter((hit) => hit.age < hit.life);
     }
     if (this.muzzleFlashes.length) {
       this.muzzleFlashes = this.muzzleFlashes.filter((f) => f.age < f.life);
@@ -290,6 +368,7 @@ export class EffectsRenderer {
       && !this.sparks.length
       && !this.texts.length
       && !this.shieldImpacts.length
+      && !this.armorHits.length
       && !this.muzzleFlashes.length
     ) return;
     ctx.save();
@@ -304,6 +383,9 @@ export class EffectsRenderer {
     ctx.globalAlpha = 1;
 
     for (const impact of this.shieldImpacts) this.drawShieldImpact(ctx, impact);
+    ctx.globalAlpha = 1;
+
+    for (const hit of this.armorHits) this.drawArmorHit(ctx, hit);
     ctx.globalAlpha = 1;
 
     for (const flash of this.muzzleFlashes) this.drawMuzzleFlash(ctx, flash);
@@ -342,6 +424,50 @@ export class EffectsRenderer {
     }
 
     ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  private drawArmorHit(ctx: CanvasRenderingContext2D, hit: ArmorHit): void {
+    const progress = Math.max(0, hit.age) / hit.life;
+    const fade = (1 - progress) ** 2;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = fade * (0.5 + hit.strength * 0.42);
+
+    const glow = ctx.createRadialGradient(
+      hit.x,
+      hit.y,
+      0,
+      hit.x,
+      hit.y,
+      hit.radius,
+    );
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+    glow.addColorStop(0.38, hit.color);
+    glow.addColorStop(1, 'rgba(255, 170, 60, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(hit.x, hit.y, hit.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = fade * (0.4 + hit.strength * 0.4);
+    ctx.strokeStyle = '#ffe2a0';
+    ctx.lineWidth = 1 + hit.strength * 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const angle = 0.35 + i * 2.1 + progress * 0.4;
+      const inner = hit.radius * 0.36;
+      const outer = hit.radius * (0.72 + hit.strength * 0.1);
+      ctx.moveTo(
+        hit.x + Math.cos(angle) * inner,
+        hit.y + Math.sin(angle) * inner,
+      );
+      ctx.lineTo(
+        hit.x + Math.cos(angle) * outer,
+        hit.y + Math.sin(angle) * outer,
+      );
+    }
+    ctx.stroke();
     ctx.restore();
   }
 

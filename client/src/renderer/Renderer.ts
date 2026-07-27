@@ -751,7 +751,17 @@ export class Renderer {
     for (const tank of state.tanks) {
       const prev = this.prevHealth.get(tank.id);
       if (prev !== undefined && tank.health < prev - 0.01) {
-        this.effects.spawnDamage(tank.x, tank.y - 30, prev - tank.health);
+        const damage = prev - tank.health;
+        this.effects.spawnDamage(tank.x, tank.y - 30, damage);
+        if (tank.alive && tank.health > 0 && !tank.buried) {
+          this.effects.spawnArmorHit(
+            tank.id,
+            tank.x,
+            tank.y - TANK_HEIGHT / 2,
+            damage,
+            tank.color,
+          );
+        }
         if (tank.health <= 0 && prev > 0) {
           this.effects.spawnKill(tank.x, tank.y - 18);
           // Turret-pop + wreck debris burst on the alive→dead transition.
