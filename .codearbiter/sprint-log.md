@@ -1221,3 +1221,37 @@ Spec/plan: `.codearbiter/specs/mobile-hud-overflow.md`, `.codearbiter/plans/mobi
 - Behavior commit `039be19527e6ae8d2c6a0a240d775c0680aa1117` and governance commit `f48a443941ca5659f6fb7956205da93452e04e87` were pushed as `codex/impact-depth-parallax`.
 - Ready PR #192: https://github.com/SUaDtL/singedTerra/pull/192
 - Hosted exact-head CI and CodeQL are now the active gates; merge and exact-SHA Pages proof remain. Confidence high.
+
+
+## Impact depth parallax mainline integration receipt (2026-07-26)
+
+- **[high] PR #192 merged and exact-SHA Pages deployment verified.** Exact-head CI run `30264949418` and CodeQL run `30264949343` passed with PR #192 clean and mergeable. Main advanced to `6c9ab3538b3277ebaf1a481eba8dfdde2e330db7`; main CI `30265110630`, CodeQL `30265110629`, and Pages `30265110654` passed build, current-main verification, deployment, provenance, and live smoke. An independent no-cache request confirmed the same SHA/run in `deploy-meta.json` and HTTP 200 from the public site. No Supabase deployment was warranted because no backend source changed. Confidence high.
+
+## 2026-07-26 - Terrain edge bevel lighting sprint
+
+- **[high] Select cached directional terrain bevels.** Terrain fills most of every combat frame and permanent deformation is the game's signature, yet crater walls and overhangs remain flatter than the newly enriched projectile and detonation layers. Against continuous weather, new bitmap assets, or more transient particles, SMARTS Meaningful/Auditable/Reversible/Testable/Securable favors one upper-left highlight/lower-right shadow profile derived from the existing bitmap only during terrain-version rebuilds. It compounds every hill and crater without idle work, retained state, dependencies, gameplay signals, or Supabase surface. Confidence high.
+- **[high] Bound the presentation contract.** Bevel influence reaches at most three solid pixels inward, decays monotonically, treats world boundaries as sealed, preserves existing RGB depth/strata intent and coverage alpha, and fails closed for air or malformed geometry. The source bitmap and authoritative terrain remain untouched. Confidence high.
+
+
+- **[high] Terrain bevel TDD and real-browser acceptance.** The pure suite first failed before collection because `./terrainBevelLighting` did not exist; after the bounded 14-test oracle passed, the real TerrainRenderer suite remained RED because both synthetic crater walls retained the same deep RGB. Production now validates one snapshot per version rebuild, samples a three-pixel upper-left light/lower-right shadow profile without per-pixel closure allocation, and blends only cached RGB while preserving alpha and authoritative bytes. Focused verification passes 4 files / 21 tests with client typecheck and diff hygiene green. Installed Chrome inspected live generated hills, then fired Baby and Heavy Missiles through the production renderer: natural slopes stayed restrained and band-free, fresh crater right walls caught a thin warm bevel while opposite walls fell into cool shadow, terrain/tanks/projectiles remained readable, and stable frames exposed no visual churn. No browser warning or error occurred; browser/server closed and port 5174 released. Confidence high.
+
+### 2026-07-26 - Terrain Edge Bevel Lighting review gate
+
+- Rendering review initially found that a malformed bitmap could be cached as a successful version. The renderer now commits its version and clears dirty state only after a successful rebuild; a corrected bitmap at the same version retries and rebuilds. Re-review: ACCEPT.
+- Coverage review required full downward and conflicting-corner direction cases, direct frame-validation isolation, causal one-sampler-per-rebuild proof, and malformed same-version recovery. All were added, including an independently isolating fractional-height case. Re-review: ACCEPT.
+- Focused gate: 4 files / 36 tests passed; client typecheck and diff hygiene passed. Confidence high.
+### 2026-07-26 - Terrain Edge Bevel Lighting final local matrix
+
+- Focused terrain-bevel gate: 4 files / 36 tests passed.
+- Deterministic workspace check, including both workspace typechecks and every engine harness: passed.
+- Client coverage: 65 files / 483 tests passed; statements 86.69%, branches 86.68%, functions 84.83%, lines 86.69%; the pure terrain-bevel helper has 100% statement, function, and line coverage.
+- Supabase Edge tests: 159 passed / 0 failed.
+- Production build: passed; 103 modules transformed; main bundle 222.60 kB (60.43 kB gzip).
+- Playwright production-browser matrix: 30 passed / 9 expected project skips.
+- git diff --check: clean. State-free changed-file secret scan: no findings.
+- No dependency, lockfile, migration, action-log, or Supabase backend change; no backend deployment is required. Confidence high.
+### 2026-07-26 - Terrain Edge Bevel Lighting behavior commit
+
+- Governed behavior commit: `a72ad53159d0b954efb1b5528657d2ac8cdda219` (`feat(renderer): add terrain edge bevel lighting`).
+- Exact behavior set: bounded directional bitmap sampler, version-cached TerrainRenderer integration with retry-safe malformed snapshots, causal and adversarial tests, and public specification.
+- Commit gate evidence: focused 4 files / 36 tests, full deterministic workspace check, 65 files / 483 client coverage tests, 159 Edge tests, production build, 30-case browser matrix with 9 expected skips, clean diff hygiene, and state-free secret scan with no findings. Confidence high.
