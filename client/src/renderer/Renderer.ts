@@ -31,6 +31,10 @@ import {
 import { getBlastLightProfile } from './blastLighting';
 import { getMuzzleVisualProfile } from './muzzleVisuals';
 import { TANK_RECOIL_FRAMES, tankRecoilPose } from './tankRecoil';
+import {
+  getWindGustVisualProfile,
+  type WindGustVisualProfile,
+} from './windGustVisuals';
 
 /** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
@@ -91,6 +95,11 @@ const STARS: ReadonlyArray<readonly [number, number]> = [
   [1120, 38], [1168, 82], [840, 106], [992, 98], [1104, 112],
 ];
 
+/** Fixed y lanes avoid allocating or accumulating particles per rendered frame. */
+const WIND_GUST_LANES: ReadonlyArray<number> = [
+  70, 96, 126, 158, 192, 226, 260, 294, 82, 142, 246,
+];
+
 /**
  * One live explosion burst — purely client-side visual state.
  *
@@ -131,6 +140,11 @@ interface TankRecoil {
   readonly angle: number;
   readonly launchWeight: number;
   readonly round: number;
+  age: number;
+}
+
+interface WindGust {
+  readonly profile: Readonly<WindGustVisualProfile>;
   age: number;
 }
 
@@ -238,6 +252,10 @@ export class Renderer {
   private wasFiring = false;
   /** Local chassis kick for the most recent visible living shooter. */
   private tankRecoil: TankRecoil | null = null;
+  /** One bounded sky transition for the most recently observed aiming turn. */
+  private windGust: WindGust | null = null;
+  /** `(round, turn)` key prevents per-frame snapshots from retriggering the gust. */
+  private windTurnKey: string | null = null;
 
   // ---- per-frame audio signal tracking ----------------------------------------
   /** Fire-field length last frame (for fireActiveEdge edge detection). */
@@ -349,6 +367,8 @@ export class Renderer {
     this.effectsBusy = 0;
     this.wasFiring = false;
     this.tankRecoil = null;
+    this.windGust = null;
+    this.windTurnKey = null;
     this.effects.clear();
     this.projectile.clear();
     this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
@@ -376,6 +396,7 @@ export class Renderer {
       this.spawnMuzzleFlash(state);
     }
     this.wasFiring = firing;
+    this.trackWindGust(state);
 
     // --- Per-frame audio signal pass -------------------------------------------
     // All edge-detection runs here, after consumeExplosion (so explosionIdBefore
@@ -421,6 +442,10 @@ export class Renderer {
     // 1. Sky — clears the whole canvas each frame as the base layer (oversized to
     // cover the shake offset so no backdrop bleeds in at the edges).
     this.drawSky();
+    // 1.5 A short turn-start wind cue: above the static sky, behind every
+    // destructible/gameplay layer. It is presentation-only and bounded.
+    this.drawWindGusts();
+    this.advanceWindGust();
 
     // 2.0 Buried tanks (#15): draw BEFORE the terrain so the risen dirt paints over
     // them — they read as submerged rather than sitting on top of the mound that buried
@@ -528,6 +553,7 @@ export class Renderer {
     if (this.kickX !== 0 || this.kickY !== 0) return true;
     if (this.effectsBusy > 0) return true;
     if (this.tankRecoil != null) return true;
+    if (this.windGust != null) return true;
     // Continuous damage smoke keeps emitting while any tank sits in the damaged tier,
     // so that is a live animation that must keep redrawing (and keep trackDamage's
     // throttle advancing) until the tank heals/dies/is buried.
@@ -535,6 +561,69 @@ export class Renderer {
       if (tank.alive && !tank.buried && damageTier(tank.health) === 'damaged') return true;
     }
     return false;
+  }
+
+  /**
+   * Observe the existing authoritative turn/wind tuple once. A current turn seen
+   * after reconnect may still receive its one local cue; non-PLAYER_TURN snapshots
+   * never consume the key while a shot is already in flight.
+   */
+  private trackWindGust(state: GameState): void {
+    if (
+      state.phase !== 'PLAYER_TURN'
+      || !Number.isFinite(state.round)
+      || !Number.isFinite(state.turn)
+    ) return;
+    const key = `${state.round}:${state.turn}`;
+    if (key === this.windTurnKey) return;
+    this.windTurnKey = key;
+    this.windGust = this.reduceMotion
+      ? null
+      : (() => {
+          const profile = getWindGustVisualProfile(state.wind);
+          return profile === null ? null : { profile, age: 0 };
+        })();
+  }
+
+  /** Draw fixed, wrapped sky ribbons without creating a particle collection. */
+  private drawWindGusts(): void {
+    const gust = this.windGust;
+    if (gust == null) return;
+    const { profile, age } = gust;
+    const ctx = this.ctx;
+    const margin = 80;
+    const wrapWidth = CANVAS_WIDTH + margin * 2;
+    const fade = Math.min(1, (age + 1) / 8, (profile.life - age) / 12);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.strokeStyle = 'rgba(255, 238, 194, 0.95)';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 0.8 + profile.strength * 1.2;
+
+    for (let i = 0; i < profile.streakCount; i++) {
+      const rawHead = 90 + i * 137 + profile.direction * age * profile.speed;
+      const headX = ((rawHead % wrapWidth) + wrapWidth) % wrapWidth - margin;
+      const y = WIND_GUST_LANES[i];
+      const tailX = headX - profile.direction * profile.length;
+      const bendX = headX - profile.direction * profile.length * 0.52;
+      const bendY = y + Math.sin(age * 0.22 + i * 0.9)
+        * 4 * (0.5 + profile.strength * 0.5);
+
+      ctx.globalAlpha = profile.alpha * fade * (0.65 + (i % 3) * 0.175);
+      ctx.beginPath();
+      ctx.moveTo(tailX, y);
+      ctx.quadraticCurveTo(bendX, bendY, headX, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  private advanceWindGust(): void {
+    const gust = this.windGust;
+    if (gust == null) return;
+    gust.age++;
+    if (gust.age >= gust.profile.life) this.windGust = null;
   }
 
   /**
