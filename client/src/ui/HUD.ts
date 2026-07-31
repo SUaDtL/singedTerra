@@ -123,7 +123,7 @@ export class HUD {
   /** Callback fired when the player starts the next round from the ROUND_OVER shop. */
   private nextRoundCb: (() => void) | null = null;
 
-  // Touch-aim strip callbacks (M2 mobile). Invoked by the on-screen stepper buttons;
+  // Coarse-pointer command callbacks. Invoked by the on-screen dock buttons;
   // main.ts wires these to InputHandler's public step methods.
   private touchAngleCb: ((delta: number) => void) | null = null;
   private touchPowerCb: ((delta: number) => void) | null = null;
@@ -234,9 +234,11 @@ export class HUD {
   /** Last turn actually presented in the owner row; resets between games. */
   private lastPresentedTurnKey: string | null = null;
 
-  // Touch-aim strip (M2 mobile): weapon button needs per-frame sync.
+  // Coarse-pointer dock: weapon button needs per-frame sync.
   private touchStripEl!: HTMLElement;
   private touchWeaponBtnEl!: HTMLButtonElement;
+  private touchWeaponLabelEl!: HTMLElement;
+  private touchCommandBtns: HTMLButtonElement[] = [];
 
   constructor(root: HTMLElement, overlayRoot: HTMLElement, modalRoot: HTMLElement) {
     this.root = root;
@@ -278,7 +280,7 @@ export class HUD {
     this.armsLevel = level;
   }
 
-  // Touch-aim strip registrations (M2 mobile).
+  // Coarse-pointer command registrations.
   onTouchAngle(cb: (delta: number) => void): void { this.touchAngleCb = cb; }
   onTouchPower(cb: (delta: number) => void): void { this.touchPowerCb = cb; }
   onTouchWeapon(cb: () => void): void { this.touchWeaponCb = cb; }
@@ -361,9 +363,6 @@ export class HUD {
     this.buildLiveness();
     this.buildTouchStrip();
 
-    // Touch strip goes into the HUD side panel, NOT the canvas overlay, so it
-    // can never overlap the play field. margin-top:auto (via CSS) pushes it to
-    // the bottom of the panel column.
     this.root.append(
       menu,
       this.roundEl,
@@ -371,15 +370,20 @@ export class HUD {
       instruments,
       this.commandConsoleEl,
       this.stripEl,
-      this.touchStripEl,
     );
     // buildArsenal resolves the persisted state before the rail children exist;
     // re-apply it now so a stored-open drawer also isolates covered controls.
     this.applyStripCollapsed();
-    // Controls and liveness widgets stay on the canvas overlay. The controls card
-    // is pinned to the upper-left sky so it never forces side-panel scrolling or
-    // obscures the lower terrain/tanks.
-    this.overlayRoot.append(controls, this.connBannerEl, this.toastEl, this.turnWatchEl);
+    // Pointer-specific command surfaces share the upper-left sky position. CSS
+    // shows the keyboard deck on fine pointers and the interactive dock on coarse
+    // pointers, preserving the narrow rail for live telemetry.
+    this.overlayRoot.append(
+      controls,
+      this.touchStripEl,
+      this.connBannerEl,
+      this.toastEl,
+      this.turnWatchEl,
+    );
     this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
     this.built = true;
   }
@@ -709,17 +713,52 @@ export class HUD {
     this.activePlayerEl.append(this.turnStatusEl, tactical);
   }
 
-  /** Controls legend (bottom-right; built once, never updated). */
+  /** Fine-pointer command deck (upper-left overlay; built once). */
   private buildControlsLegend(): HTMLElement {
-    // Controls legend (bottom-right, unobtrusive; built once, never updated).
     const controls = document.createElement('div');
     controls.className = 'st-hud__controls';
-    controls.innerHTML =
-      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>&larr;</kbd><kbd>&rarr;</kbd></span><span>Aim</span></span>' +
-      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>&uarr;</kbd><kbd>&darr;</kbd></span><span>Power</span></span>' +
-      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>A</kbd><kbd>D</kbd></span><span>Move</span></span>' +
-      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>Q</kbd></span><span>Weapon</span></span>' +
-      '<span class="st-hud__control-cell"><span class="st-hud__keypair"><kbd>Space</kbd><kbd>Enter</kbd></span><span>Fire</span></span>';
+    controls.setAttribute('role', 'region');
+    controls.setAttribute('aria-label', 'Keyboard commands');
+    controls.dataset['ui'] = 'command-deck';
+
+    const header = document.createElement('div');
+    header.className = 'st-hud__controls-header';
+    const title = document.createElement('span');
+    title.className = 'st-hud__controls-title';
+    title.textContent = 'Command Deck';
+    const mode = document.createElement('span');
+    mode.className = 'st-hud__controls-mode';
+    mode.textContent = 'Keyboard';
+    header.append(title, mode);
+
+    const grid = document.createElement('div');
+    grid.className = 'st-hud__control-grid';
+    const definitions = [
+      { command: 'aim', label: 'Aim', glyph: 'aim', keys: ['←', '→'] },
+      { command: 'power', label: 'Power', glyph: 'power', keys: ['↑', '↓'] },
+      { command: 'move', label: 'Move', glyph: 'move', keys: ['A', 'D'] },
+      { command: 'weapon', label: 'Weapon', glyph: 'weapon', keys: ['Q'] },
+      { command: 'fire', label: 'Fire', glyph: 'fire', keys: ['Space', 'Enter'], primary: true },
+    ] as const;
+    for (const definition of definitions) {
+      const cell = document.createElement('div');
+      cell.className = 'st-hud__control-cell';
+      if ('primary' in definition) cell.classList.add('st-hud__control-cell--primary');
+      cell.dataset['command'] = definition.command;
+      const label = document.createElement('span');
+      label.className = 'st-hud__control-label';
+      label.textContent = definition.label;
+      const keypair = document.createElement('span');
+      keypair.className = 'st-hud__keypair';
+      for (const key of definition.keys) {
+        const hint = document.createElement('kbd');
+        hint.textContent = key;
+        keypair.append(hint);
+      }
+      cell.append(makeHudGlyph(definition.glyph, 15), label, keypair);
+      grid.append(cell);
+    }
+    controls.append(header, grid);
     return controls;
   }
 
@@ -1101,20 +1140,34 @@ export class HUD {
     this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
   }
 
-  /** Touch-aim strip (M2 mobile): angle/power/weapon/fire buttons. */
+  /** Coarse-pointer command dock: angle/power steppers and weapon cycle. */
   private buildTouchStrip(): void {
-    // Touch-aim strip (M2 mobile): angle, power, weapon-cycle, fire buttons along
-    // the bottom of #game-overlay. Shown only on coarse-pointer (touch) devices via
-    // CSS. Each stepper uses hold-to-repeat: tap = immediate step; hold 400ms = fast
-    // repeat at 80ms intervals, matching keyboard auto-repeat feel.
     this.touchStripEl = document.createElement('div');
     this.touchStripEl.className = 'st-hud__touch-strip';
+    this.touchStripEl.setAttribute('role', 'toolbar');
+    this.touchStripEl.setAttribute('aria-label', 'Touch commands');
 
-    const mkTouchBtn = (label: string, extra?: string): HTMLButtonElement => {
+    const mkTouchBtn = (
+      command: string,
+      ariaLabel: string,
+      symbol: string | SVGElement,
+      label: string,
+      extra?: string,
+    ): HTMLButtonElement => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = `st-hud__touch-btn${extra ? ` ${extra}` : ''}`;
-      b.textContent = label;
+      b.dataset['command'] = command;
+      b.setAttribute('aria-label', ariaLabel);
+      const symbolEl = document.createElement('span');
+      symbolEl.className = 'st-hud__touch-symbol';
+      symbolEl.setAttribute('aria-hidden', 'true');
+      if (typeof symbol === 'string') symbolEl.textContent = symbol;
+      else symbolEl.append(symbol);
+      const labelEl = document.createElement('span');
+      labelEl.className = 'st-hud__touch-label';
+      labelEl.textContent = label;
+      b.append(symbolEl, labelEl);
       return b;
     };
 
@@ -1124,12 +1177,22 @@ export class HUD {
     const wireRepeater = (btn: HTMLButtonElement, action: () => void): void => {
       let holdTimer: ReturnType<typeof setTimeout> | null = null;
       let repeatTimer: ReturnType<typeof setInterval> | null = null;
-      const stop = (): void => {
+      let activePointerId: number | null = null;
+      const stop = (event?: PointerEvent): void => {
+        if (
+          event
+          && activePointerId !== null
+          && event.pointerId !== activePointerId
+        ) return;
         if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
         if (repeatTimer !== null) { clearInterval(repeatTimer); repeatTimer = null; }
+        activePointerId = null;
       };
       btn.addEventListener('pointerdown', (e) => {
+        if (activePointerId !== null) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         e.preventDefault();
+        activePointerId = e.pointerId;
         btn.setPointerCapture(e.pointerId);
         action();
         holdTimer = setTimeout(() => {
@@ -1139,21 +1202,43 @@ export class HUD {
       });
       btn.addEventListener('pointerup', stop);
       btn.addEventListener('pointercancel', stop);
+      btn.addEventListener('lostpointercapture', stop);
+      // Pointer taps already step on pointerdown. A synthetic click with detail 0
+      // is keyboard activation, so support it without double-stepping a tap.
+      btn.addEventListener('click', (event) => {
+        if (event.detail === 0) action();
+      });
     };
 
-    const touchAngleL = mkTouchBtn('◀\nAim');
-    const touchAngleR = mkTouchBtn('Aim\n▶');
-    const touchPowerD = mkTouchBtn('▼\nPwr');
-    const touchPowerU = mkTouchBtn('Pwr\n▲');
-    this.touchWeaponBtnEl = mkTouchBtn('⇄\nWeapon', 'st-hud__touch-weapon');
+    const touchAngleL = mkTouchBtn('aim-left', 'Aim barrel left', '◀', 'Aim');
+    const touchAngleR = mkTouchBtn('aim-right', 'Aim barrel right', '▶', 'Aim');
+    const touchPowerD = mkTouchBtn('power-down', 'Decrease power', '−', 'Power');
+    const touchPowerU = mkTouchBtn('power-up', 'Increase power', '+', 'Power');
+    this.touchWeaponBtnEl = mkTouchBtn(
+      'weapon',
+      'Cycle weapon, current Baby Missile',
+      makeHudIcon('weapon', 18),
+      'Baby Missile',
+      'st-hud__touch-weapon',
+    );
+    this.touchWeaponLabelEl = this.touchWeaponBtnEl.querySelector(
+      '.st-hud__touch-label',
+    )!;
 
-    wireRepeater(touchAngleL, () => this.touchAngleCb?.(-3));
-    wireRepeater(touchAngleR, () => this.touchAngleCb?.(3));
+    wireRepeater(touchAngleL, () => this.touchAngleCb?.(3));
+    wireRepeater(touchAngleR, () => this.touchAngleCb?.(-3));
     wireRepeater(touchPowerD, () => this.touchPowerCb?.(-3));
     wireRepeater(touchPowerU, () => this.touchPowerCb?.(3));
     this.touchWeaponBtnEl.addEventListener('click', () => this.touchWeaponCb?.());
 
-    this.touchStripEl.append(touchAngleL, touchAngleR, touchPowerD, touchPowerU, this.touchWeaponBtnEl);
+    this.touchCommandBtns = [
+      touchAngleL,
+      touchAngleR,
+      touchPowerD,
+      touchPowerU,
+      this.touchWeaponBtnEl,
+    ];
+    this.touchStripEl.append(...this.touchCommandBtns);
   }
 
   /**
@@ -1655,6 +1740,7 @@ export class HUD {
     for (const child of [...this.root.children]) {
       if (child !== this.stripEl) (child as HTMLElement).inert = !this.stripCollapsed;
     }
+    if (this.touchStripEl) this.touchStripEl.inert = !this.stripCollapsed;
   }
 
   /** Reconcile the weapon strip: owned-only visibility, active highlight, live ammo. No DOM rebuild. */
@@ -1687,7 +1773,10 @@ export class HUD {
     }
     // Sync the shared primary action and touch weapon stepper from the same
     // explicit local-ownership state.
-    this.touchWeaponBtnEl.disabled = !canAct;
+    for (const button of this.touchCommandBtns) {
+      button.disabled = !canAct;
+      button.setAttribute('aria-disabled', String(!canAct));
+    }
     const weaponName = tank ? (WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon) : 'Weapon';
     const isShield = tank?.selectedWeapon === 'shield';
     const actionLabel = isShield ? 'Activate shield' : 'Fire';
@@ -1699,10 +1788,10 @@ export class HUD {
     const canCommit = canAct && selectedUsable;
     this.primaryActionBtnEl.disabled = !canCommit;
     this.primaryActionBtnEl.setAttribute('aria-disabled', String(!canCommit));
-    const touchWeaponLabel = `⇄\n${weaponName}`;
-    if (this.touchWeaponBtnEl.textContent !== touchWeaponLabel) {
-      this.touchWeaponBtnEl.textContent = touchWeaponLabel;
+    if (this.touchWeaponLabelEl.textContent !== weaponName) {
+      this.touchWeaponLabelEl.textContent = weaponName;
     }
+    this.touchWeaponBtnEl.setAttribute('aria-label', `Cycle weapon, current ${weaponName}`);
   }
 
   /** Tracks whether the GAME_OVER panel is currently shown, so its content (winner
@@ -2066,68 +2155,119 @@ export class HUD {
   position: absolute;
   top: 14px;
   left: 14px;
+  width: 208px;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 9px;
+  background:
+    radial-gradient(110% 90% at 0% 0%, rgba(122, 215, 255, 0.10), transparent 48%),
+    linear-gradient(180deg, rgba(31, 18, 51, 0.92), rgba(9, 5, 16, 0.92));
+  border: 1px solid rgba(255, 210, 63, 0.32);
+  box-shadow:
+    inset 0 0 0 1px rgba(8, 4, 13, 0.78),
+    inset 0 0 22px rgba(255, 122, 31, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+  color: var(--ui-muted);
+}
+.st-hud__controls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 20px;
+  margin-bottom: 6px;
+  padding: 0 2px 5px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.22);
+}
+.st-hud__controls-title {
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+}
+.st-hud__controls-mode {
+  padding: 2px 5px;
+  border: 1px solid rgba(122, 215, 255, 0.25);
+  border-radius: 99px;
+  color: var(--tank-blue-lite, #7ad7ff);
+  font-family: var(--font-mono);
+  font-size: 6px;
+  letter-spacing: 0.8px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.st-hud__control-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
-  width: 168px;
-  box-sizing: border-box;
-  padding: 8px 9px 9px;
-  border-radius: 6px;
-  background:
-    linear-gradient(180deg, rgba(22, 13, 46, 0.54), rgba(12, 7, 22, 0.68)),
-    rgba(12, 7, 22, 0.62);
-  border: 1px solid rgba(255, 210, 63, 0.14);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22), inset 0 0 14px rgba(255, 122, 31, 0.04);
-  color: rgba(233, 228, 242, 0.76);
-  font-size: 10px;
-  line-height: 1.45;
-  letter-spacing: 0.02em;
-}
-.st-hud__controls::before {
-  content: 'Commands';
-  grid-column: 1 / -1;
-  margin-bottom: 2px;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(255, 210, 63, 0.14);
-  color: var(--text-dim);
-  font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: 2px;
-  text-align: center;
-  text-transform: uppercase;
 }
 .st-hud__control-cell {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 30px;
+  gap: 0 5px;
+  min-height: 38px;
   min-width: 0;
-  padding: 4px 2px;
-  border: 1px solid rgba(255, 210, 63, 0.10);
-  border-radius: 4px;
-  background: rgba(255, 210, 63, 0.035);
-  text-align: center;
+  padding: 4px 5px;
+  border: 1px solid rgba(255, 210, 63, 0.14);
+  border-radius: 5px;
+  background:
+    linear-gradient(145deg, rgba(255, 233, 168, 0.045), transparent 52%),
+    rgba(9, 5, 17, 0.68);
+  box-shadow: inset 0 1px 0 rgba(255, 233, 168, 0.04);
+}
+.st-hud__control-cell .st-ui-glyph {
+  grid-row: 1 / 3;
+  width: 25px;
+  height: 25px;
+}
+.st-hud__control-label {
+  align-self: end;
+  color: var(--ui-copy);
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.45px;
+  line-height: 1;
+  text-transform: uppercase;
 }
 .st-hud__keypair {
   display: flex;
-  justify-content: center;
-  gap: 3px;
-  width: 100%;
+  align-items: center;
+  align-self: start;
+  gap: 2px;
   min-width: 0;
 }
 .st-hud__controls kbd {
   display: inline-block;
-  min-width: 12px;
-  padding: 1px 3px;
-  border-radius: 3px;
-  background: rgba(255, 210, 63, 0.18);
-  border: 1px solid rgba(255, 210, 63, 0.18);
-  color: var(--text-gold);
+  min-width: 10px;
+  padding: 1px 2px;
+  border: 1px solid rgba(255, 210, 63, 0.22);
+  border-radius: 2px;
+  background: rgba(255, 210, 63, 0.08);
+  color: var(--ui-muted);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 6.5px;
+  line-height: 1.2;
   text-align: center;
+}
+.st-hud__control-cell--primary {
+  grid-column: 1 / -1;
+  grid-template-columns: 25px minmax(0, 1fr) auto;
+  grid-template-rows: 1fr;
+  min-height: 34px;
+  border-color: rgba(255, 122, 31, 0.34);
+  background:
+    linear-gradient(90deg, rgba(255, 122, 31, 0.13), transparent 70%),
+    rgba(9, 5, 17, 0.78);
+}
+.st-hud__control-cell--primary .st-ui-glyph { grid-row: 1; }
+.st-hud__control-cell--primary .st-hud__control-label { align-self: center; }
+.st-hud__control-cell--primary .st-hud__keypair {
+  align-self: center;
+  justify-self: end;
 }
 .st-hud__aim {
   display: flex;
@@ -2708,54 +2848,106 @@ export class HUD {
   .st-hud__player--hit::after { animation: none; opacity: 0; }
   .st-hud__bar-fill,
   .st-hud__weapon-btn,
-  .st-hud__restart { transition: none; }
+  .st-hud__restart,
+  .st-hud__touch-btn { transition: none; }
 }
 
-/* ===== Touch-aim strip (M2 mobile) ===================================== */
-/* Hidden on precise-pointer (mouse) devices; shown on coarse (touch). */
+/* ===== Coarse-pointer command dock ===================================== */
+/* Hidden on precise pointers; replaces the keyboard deck on touch. */
 .st-hud__touch-strip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
   display: none;
-  /* Push to the bottom of the #hud flex column by consuming leftover space above. */
-  margin-top: auto;
-  width: 100%;
-  flex-shrink: 0;
-  gap: 4px;
-  /* Keep the fitted 600px rail after the shared action grows enough to retain
-     a 44px rendered touch target through the stage zoom. */
-  padding: 3px 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  width: min(560px, calc(100% - 28px));
+  /* 72 logical px resolves to 45 rendered px at the supported 0.625 phone scale. */
+  padding: 6px;
   box-sizing: border-box;
-  background: rgba(12, 7, 22, 0.88);
-  border-top: 1px solid rgba(255, 210, 63, 0.22);
+  border: 1px solid rgba(255, 210, 63, 0.32);
+  border-radius: 10px;
+  background:
+    radial-gradient(100% 120% at 0% 0%, rgba(122, 215, 255, 0.10), transparent 52%),
+    linear-gradient(180deg, rgba(28, 16, 47, 0.94), rgba(8, 5, 15, 0.94));
+  box-shadow:
+    inset 0 0 0 1px rgba(8, 4, 13, 0.78),
+    0 10px 28px rgba(0, 0, 0, 0.38);
   pointer-events: auto;
   /* Prevent touch gestures (scroll, pinch) hijacking button presses. */
   touch-action: none;
 }
 @media (pointer: coarse) {
-  .st-hud__touch-strip { display: flex; }
+  .st-hud__touch-strip { display: grid; }
 }
+.st-hud__touch-strip[inert] { display: none; }
 .st-hud__touch-btn {
-  flex: 1;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  place-items: center;
+  gap: 4px;
+  min-width: 0;
   cursor: pointer;
   /* 52px ensures ~40px effective height even at 0.78× game scale on phones. */
-  min-height: 52px;
-  padding: 4px 2px;
-  border: 1px solid rgba(255, 210, 63, 0.28);
+  min-height: 72px;
+  padding: 5px 6px;
+  border: 1px solid rgba(255, 210, 63, 0.27);
   border-radius: 6px;
-  background: rgba(12, 7, 22, 0.82);
+  background:
+    linear-gradient(145deg, rgba(255, 233, 168, 0.07), transparent 50%),
+    rgba(10, 6, 18, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 233, 168, 0.06),
+    0 2px 7px rgba(0, 0, 0, 0.24);
   color: var(--text-gold);
-  font-family: var(--font-sans);
-  font-size: 10px;
-  line-height: 1.3;
-  text-align: center;
-  white-space: pre-line;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
-  transition: background 60ms ease;
+  transition:
+    background 70ms ease,
+    border-color 70ms ease,
+    transform 70ms ease;
 }
-.st-hud__touch-btn:active:not(:disabled) { background: rgba(255, 122, 31, 0.32); }
+.st-hud__touch-symbol {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 210, 63, 0.20);
+  border-radius: 5px;
+  background: rgba(255, 210, 63, 0.08);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+.st-hud__touch-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-copy);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.35px;
+  line-height: 1.05;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+.st-hud__touch-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  border-color: rgba(255, 122, 31, 0.58);
+  background:
+    linear-gradient(145deg, rgba(255, 122, 31, 0.20), transparent 58%),
+    rgba(16, 8, 24, 0.94);
+}
 .st-hud__touch-btn:disabled { opacity: 0.38; cursor: not-allowed; }
 .st-hud__touch-weapon {
-  border-color: rgba(122, 215, 255, 0.4);
+  border-color: rgba(122, 215, 255, 0.42);
+  color: var(--tank-blue-lite, #7ad7ff);
+}
+.st-hud__touch-weapon .st-hud__touch-symbol {
+  border-color: rgba(122, 215, 255, 0.30);
+  background: rgba(122, 215, 255, 0.08);
   color: var(--tank-blue-lite, #7ad7ff);
 }
 /* ===== Coarse-pointer (touch) overrides ================================ */
@@ -3166,6 +3358,15 @@ export class HUD {
 }
 #app.is-compact .st-hud__fuel-value {
   font-size: 12px;
+}
+#app.is-compact .st-hud__controls-title {
+  font-size: 9.5px;
+}
+#app.is-compact .st-hud__control-label {
+  font-size: 9px;
+}
+#app.is-compact .st-hud__controls kbd {
+  font-size: 7.5px;
 }
 @media (pointer: coarse) {
   #app .st-hud__active-row {

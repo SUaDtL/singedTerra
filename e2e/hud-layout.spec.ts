@@ -59,13 +59,28 @@ test.describe('HUD layout guardrails', () => {
   }) => {
     const icons = page.locator('svg.st-ui-icon');
     const glyphs = page.locator('.st-ui-glyph');
+    const visibleGlyphs = page.locator('.st-ui-glyph:visible');
+    const commandIcons = page.locator('.st-hud__controls svg.st-ui-icon');
+    const commandGlyphs = page.locator('.st-hud__controls .st-ui-glyph');
+    const touchIcons = page.locator('.st-hud__touch-strip svg.st-ui-icon');
+    const railIcons = page.locator('#hud svg.st-ui-icon');
+    const railGlyphs = page.locator('#hud .st-ui-glyph');
 
-    await expect(icons).toHaveCount(5);
-    await expect(glyphs).toHaveCount(4);
-    expect(await icons.evaluateAll((nodes) =>
+    await expect(icons).toHaveCount(11);
+    await expect(glyphs).toHaveCount(9);
+    expect(await commandIcons.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('data-icon')),
+    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
+    expect(await commandGlyphs.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('data-glyph')),
+    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
+    expect(await touchIcons.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('data-icon')),
+    )).toEqual(['weapon']);
+    expect(await railIcons.evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute('data-symbol')),
     )).toEqual(['menu', 'credits', 'target', 'ordnance', 'disclosure']);
-    expect(await glyphs.evaluateAll((nodes) =>
+    expect(await railGlyphs.evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute('data-glyph')),
     )).toEqual(['menu', 'store', 'fire', 'arsenal']);
 
@@ -78,7 +93,9 @@ test.describe('HUD layout guardrails', () => {
     await expect(page.getByRole('button', { name: /Fire/ })).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
-      glyphSizes: [...document.querySelectorAll<HTMLElement>('.st-ui-glyph')].map(
+      glyphSizes: [...document.querySelectorAll<HTMLElement>('.st-ui-glyph')]
+        .filter((glyph) => glyph.getBoundingClientRect().width > 0)
+        .map(
         (glyph) => {
           const glyphRect = glyph.getBoundingClientRect();
           const iconRect = glyph.querySelector('svg')!.getBoundingClientRect();
@@ -95,6 +112,7 @@ test.describe('HUD layout guardrails', () => {
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     }));
+    expect(geometry.glyphSizes).toHaveLength(await visibleGlyphs.count());
     for (const size of geometry.glyphSizes) {
       expect(size.frameWidth).toBeGreaterThanOrEqual(15);
       expect(size.frameHeight).toBeGreaterThanOrEqual(15);
@@ -103,6 +121,129 @@ test.describe('HUD layout guardrails', () => {
     }
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
     expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
+  });
+
+  test('command deck and touch dock stay causal, strong, and fitted', async ({
+    page,
+  }, testInfo) => {
+    const overlay = page.locator('#game-overlay');
+    const deck = overlay.getByRole('region', { name: 'Keyboard commands' });
+    const dock = overlay.locator('.st-hud__touch-strip');
+    const isTouch = testInfo.project.name === 'pixel-touch';
+
+    if (!isTouch) {
+      await expect(deck).toBeVisible();
+      await expect(dock).toBeHidden();
+      await expect(deck.locator('.st-hud__controls-title')).toHaveText('Command Deck');
+      await expect(deck.locator('.st-hud__controls-mode')).toHaveText('Keyboard');
+      await expect(deck.locator('.st-hud__control-cell')).toHaveCount(5);
+      expect(await deck.locator('.st-hud__control-cell').evaluateAll((items) =>
+        items.map((item) => (item as HTMLElement).dataset['command']),
+      )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
+      const cells = await deck.locator('.st-hud__control-cell').evaluateAll((items) =>
+        items.map((item) => item.getBoundingClientRect().toJSON()),
+      );
+      expect(cells.at(-1)!.width).toBeGreaterThan(cells[0]!.width * 1.8);
+      const labels = await deck.locator('.st-hud__control-label').evaluateAll((items) =>
+        items.map((item) => ({
+          fontSize: parseFloat(getComputedStyle(item).fontSize),
+          height: item.getBoundingClientRect().height,
+        })),
+      );
+      const compactDeck = testInfo.project.name === 'small-window';
+      for (const label of labels) {
+        expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 9 : 8);
+        expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
+      }
+    } else {
+      await expect(deck).toBeHidden();
+      await expect(dock).toBeVisible();
+      await expect(dock).toHaveAttribute('role', 'toolbar');
+      await expect(dock).toHaveAttribute('aria-label', 'Touch commands');
+      const buttons = dock.locator('.st-hud__touch-btn');
+      await expect(buttons).toHaveCount(5);
+      expect(await buttons.evaluateAll((items) =>
+        items.map((item) => (item as HTMLElement).dataset['command']),
+      )).toEqual(['aim-left', 'aim-right', 'power-down', 'power-up', 'weapon']);
+      const buttonBoxes = await buttons.evaluateAll((items) =>
+        items.map((item) => item.getBoundingClientRect().toJSON()),
+      );
+      for (const box of buttonBoxes) {
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+      }
+
+      const elevation = page.locator(
+        '.st-hud__gauge-cell--elevation .st-hud__gauge-label',
+      );
+      const power = page.locator('.st-hud__gauge-cell--power .st-hud__gauge-label');
+      await expect(elevation).toHaveText('45° ▶');
+      await dock.getByRole('button', { name: 'Aim barrel left' }).click();
+      await expect(elevation).toHaveText('48° ▶');
+      await dock.getByRole('button', { name: 'Aim barrel right' }).click();
+      await expect(elevation).toHaveText('45° ▶');
+      await expect(power).toHaveText('50');
+      await dock.getByRole('button', { name: 'Decrease power' }).click();
+      await expect(power).toHaveText('47');
+      await dock.getByRole('button', { name: 'Increase power' }).click();
+      await expect(power).toHaveText('50');
+      await dock.getByRole('button', { name: 'Cycle weapon, current Baby Missile' }).click();
+      await expect(dock.getByRole('button', { name: 'Cycle weapon, current Missile' }))
+        .toBeVisible();
+
+      await page.getByRole('button', { name: 'Expand arsenal' }).click();
+      await expect(dock).toBeHidden();
+      expect(await dock.evaluate((element) => (element as HTMLElement).inert)).toBe(true);
+      await page.getByRole('button', { name: 'Collapse arsenal' }).click();
+      await expect(dock).toBeVisible();
+      expect(await dock.evaluate((element) => (element as HTMLElement).inert)).toBe(false);
+    }
+
+    const labelSelector = isTouch
+      ? '.st-hud__touch-label'
+      : '.st-hud__control-label';
+    const typography = await page.evaluate((selector) => {
+      const label = document.querySelector<HTMLElement>(selector)!;
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--ui-copy)';
+      probe.style.fontFamily = 'var(--font-sans)';
+      document.body.append(probe);
+      const actual = getComputedStyle(label);
+      const expected = getComputedStyle(probe);
+      const result = {
+        color: actual.color,
+        expectedColor: expected.color,
+        family: actual.fontFamily,
+        expectedFamily: expected.fontFamily,
+      };
+      probe.remove();
+      return result;
+    }, labelSelector);
+    expect(typography.color).toBe(typography.expectedColor);
+    expect(typography.family).toBe(typography.expectedFamily);
+
+    const geometry = await page.evaluate(() => {
+      const overlayRect = document.getElementById('game-overlay')!.getBoundingClientRect();
+      const active = document.querySelector<HTMLElement>(
+        matchMedia('(pointer: coarse)').matches
+          ? '.st-hud__touch-strip'
+          : '.st-hud__controls',
+      )!.getBoundingClientRect();
+      return {
+        contained:
+          active.left >= overlayRect.left - 1
+          && active.right <= overlayRect.right + 1
+          && active.top >= overlayRect.top - 1
+          && active.bottom <= overlayRect.bottom + 1,
+        pageWidth: document.documentElement.scrollWidth,
+        pageHeight: document.documentElement.scrollHeight,
+        viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
+      };
+    });
+    expect(geometry.contained).toBe(true);
+    expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+    expect(geometry.pageHeight).toBeLessThanOrEqual(geometry.viewportHeight);
   });
 
   test('weapon-family glyphs remain visible inside Arsenal and Store', async ({

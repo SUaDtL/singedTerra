@@ -445,6 +445,22 @@ body::before {
   border-color: rgba(255, 233, 168, 0.46);
   background: rgba(9, 4, 13, 0.24);
 }
+.st-ui-glyph[data-glyph='aim'] {
+  color: var(--tank-blue-lite);
+  border-color: rgba(122, 215, 255, 0.38);
+}
+.st-ui-glyph[data-glyph='power'] {
+  color: var(--ember);
+  border-color: rgba(255, 122, 31, 0.38);
+}
+.st-ui-glyph[data-glyph='move'] {
+  color: var(--gold);
+  border-color: rgba(255, 210, 63, 0.36);
+}
+.st-ui-glyph[data-glyph='weapon'] {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.38);
+}
 .st-ui-icon[data-icon='arsenal'] circle {
   fill: rgba(255, 122, 31, 0.14);
 }

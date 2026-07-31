@@ -3,16 +3,24 @@ import {
   ChevronDown,
   Coins,
   Crosshair,
+  Gauge,
   Menu,
+  MoveHorizontal,
+  RefreshCw,
+  ScanLine,
   createElement,
 } from 'lucide';
 
 /**
  * The combat-shell icon seam. Keep this map explicit: importing Lucide's
- * all-icons registry would ship the complete catalog instead of these five
- * small SVG nodes.
+ * all-icons registry would ship the complete catalog instead of these bounded
+ * command and shell symbols.
  */
 const HUD_ICONS = {
+  aim: { icon: ScanLine, symbol: 'targeting' },
+  power: { icon: Gauge, symbol: 'velocity' },
+  move: { icon: MoveHorizontal, symbol: 'mobility' },
+  weapon: { icon: RefreshCw, symbol: 'cycle' },
   menu: { icon: Menu, symbol: 'menu' },
   store: { icon: Coins, symbol: 'credits' },
   arsenal: { icon: Bomb, symbol: 'ordnance' },

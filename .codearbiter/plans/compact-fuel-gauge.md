@@ -19,5 +19,5 @@
 
 - [x] Run focused unit/browser tests and visually inspect every viewport.
 - [x] Resolve all adversarial findings and run the complete local gate.
-- [ ] Commit, open a ready PR, prove exact-head hosted CI/CodeQL, merge, deploy,
+- [x] Commit, open a ready PR, prove exact-head hosted CI/CodeQL, merge, deploy,
   verify the public gauge, and continue the sprint.
