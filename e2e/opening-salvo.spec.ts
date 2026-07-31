@@ -44,6 +44,8 @@ async function expectGuideToggleChangesCanvas(page: Page): Promise<void> {
 interface ComposedGuideSeam {
   changedPixels: number;
   openingCrossError: number;
+  fullCrossError: number;
+  guideSpan: number;
   immediateBarrelSamples: number;
   totalBarrelSamples: number;
 }
@@ -116,6 +118,26 @@ async function composedGuideSeam(
       ))
       .sort((left, right) => left - right);
     const openingCrossError = crossErrors[Math.floor(crossErrors.length / 2)] ?? Infinity;
+    const rayPixels = changed.filter((pixel) => {
+      const dx = pixel.x - muzzle.x;
+      const dy = pixel.y - muzzle.y;
+      const forward = dx * aim.x + dy * aim.y;
+      const cross = dx * normal.x + dy * normal.y;
+      return forward >= -3 && forward <= 180 && Math.abs(cross) <= 12;
+    });
+    const fullCrossErrors = rayPixels
+      .map((pixel) => Math.abs(
+        (pixel.x - muzzle.x) * normal.x + (pixel.y - muzzle.y) * normal.y,
+      ))
+      .sort((left, right) => left - right);
+    const fullCrossError = fullCrossErrors[
+      Math.floor(fullCrossErrors.length * 0.8)
+    ] ?? Infinity;
+    const guideSpan = rayPixels.reduce((furthest, pixel) => {
+      const dx = pixel.x - muzzle.x;
+      const dy = pixel.y - muzzle.y;
+      return Math.max(furthest, dx * aim.x + dy * aim.y);
+    }, 0);
 
     const colorAt = (x: number, y: number): [number, number, number] => {
       let red = 0;
@@ -160,6 +182,8 @@ async function composedGuideSeam(
     return {
       changedPixels: changed.length,
       openingCrossError,
+      fullCrossError,
+      guideSpan,
       immediateBarrelSamples: barrelContrast.slice(0, 5)
         .filter((contrast) => contrast > 18).length,
       totalBarrelSamples: barrelContrast
@@ -240,6 +264,14 @@ test.describe('bounded aim guide', () => {
         seam.openingCrossError,
         `${direction} guide opening must stay on the rendered barrel centerline`,
       ).toBeLessThan(2.5);
+      expect(
+        seam.fullCrossError,
+        `${direction} complete guide must remain one straight muzzle ray`,
+      ).toBeLessThan(4);
+      expect(
+        seam.guideSpan,
+        `${direction} straight guide must retain its bounded readable reach`,
+      ).toBeGreaterThan(70);
       expect(
         seam.immediateBarrelSamples,
         `${direction} guide start must touch the authored barrel at the muzzle`,

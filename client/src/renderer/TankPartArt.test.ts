@@ -8,6 +8,7 @@ import {
   TANK_PART_ATLAS_HEIGHT,
   TANK_PART_ATLAS_WIDTH,
   TANK_PART_SLOTS,
+  tankPartDefinition,
   tankBarrelMount,
 } from './tankPartCatalog';
 import {
@@ -220,7 +221,8 @@ describe('TankPartArt', () => {
     expect(art.drawStatic(target, subject)).toBe(true);
     expect(art.drawBarrel(target, subject)).toBe(true);
     expect(harness.contexts.map(({ drawImage }) =>
-      drawImage.mock.calls[0][2])).toEqual([256, 128, 0, 128]);
+      drawImage.mock.calls[0][2])).toEqual(TANK_PART_SLOTS.map((slot) =>
+      tankPartDefinition(subject.loadout!, slot).source.y));
   });
 
   it.each([

@@ -7,8 +7,6 @@ import { clamp } from '@shared/engine/math';
  * direction and relative power, but never an authoritative ballistic path.
  */
 export const AIM_GUIDE_TICKS = 14;
-/** Samples 0-3 remain exactly coaxial with the visible barrel. */
-const AIM_GUIDE_STRAIGHT_POINTS = 4;
 
 export interface AimGuidePoint {
   readonly x: number;
@@ -33,9 +31,10 @@ export function getAimGuideMode(
 }
 
 /**
- * Build a local launch cue rather than a trajectory. The curve intentionally
- * ignores authoritative wind, gravity, terrain, tanks, walls, and the fixed-step
- * recurrence. It therefore cannot reveal a collision or solve a bank shot.
+ * Build a local launch cue rather than a trajectory. The bounded muzzle ray
+ * intentionally ignores authoritative wind, gravity, terrain, tanks, walls,
+ * and the fixed-step recurrence. It therefore cannot reveal a collision or
+ * solve a bank shot.
  */
 export function buildLaunchGuide(
   tank: Readonly<TankState>,
@@ -54,30 +53,17 @@ export function buildLaunchGuide(
   const radians = tank.angle * Math.PI / 180;
   const powerRatio = Math.sqrt(clamp(tank.power / 100, 0, 1));
   const length = 48 + powerRatio * 78;
-  // The first point is the exact shared muzzle. This keeps the visible barrel
-  // and launch cue continuous while the later points retain the deliberately
-  // non-ballistic flourish.
+  // The first point is the exact shared muzzle. Every later point stays on that
+  // same ray so the cue reads as one continuous extension of the barrel.
   const points: AimGuidePoint[] = [tip];
   for (let index = 1; index < AIM_GUIDE_TICKS; index++) {
     // Ease out of the muzzle so the first visible bead stays connected to the
     // barrel at gameplay scale; later beads open up into the same bounded cue.
     const progress = (index / (AIM_GUIDE_TICKS - 1)) ** 1.45;
     const distance = length * progress;
-    // Keep the opening run exactly coaxial with the visible barrel. The
-    // decorative lift starts only after the fourth sample, so the cue reads as
-    // leaving the muzzle rather than as a second, bent barrel.
-    const flourishProgress = clamp(
-      (index - (AIM_GUIDE_STRAIGHT_POINTS - 1))
-        / (AIM_GUIDE_TICKS - AIM_GUIDE_STRAIGHT_POINTS),
-      0,
-      1,
-    );
-    // A bounded graphic-design lift makes the far cue read as an open-ended
-    // vector, not as the canonical parabola.
-    const flourish = Math.sin(Math.PI * flourishProgress) * 6;
     points.push({
       x: tip.x + Math.cos(radians) * distance,
-      y: tip.y - Math.sin(radians) * distance - flourish,
+      y: tip.y - Math.sin(radians) * distance,
     });
   }
   return points;

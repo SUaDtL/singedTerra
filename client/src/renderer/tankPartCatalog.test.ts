@@ -16,7 +16,7 @@ import {
 } from './tankPartCatalog';
 
 describe('modular tank part catalog', () => {
-  it('defines one exhaustive default set with stable non-overlapping atlas cells', () => {
+  it('defines one exhaustive default set with tight occupied source crops', () => {
     expect(TANK_PART_SLOTS).toEqual([
       'treads',
       'hull',
@@ -25,31 +25,53 @@ describe('modular tank part catalog', () => {
     ]);
     expect(Object.keys(DEFAULT_TANK_PART_SET.parts)).toEqual(TANK_PART_SLOTS);
 
-    const cells = TANK_PART_SLOTS.map((slot) =>
-      DEFAULT_TANK_PART_SET.parts[slot].source);
-    expect(cells).toEqual([
-      { x: 0, y: 0, width: 256, height: 128 },
-      { x: 256, y: 0, width: 256, height: 128 },
-      { x: 512, y: 0, width: 256, height: 128 },
-      { x: 768, y: 0, width: 256, height: 128 },
-    ]);
+    for (const [column, slot] of TANK_PART_SLOTS.entries()) {
+      const crop = DEFAULT_TANK_PART_SET.parts[slot].source;
+      expect(crop.x).toBeGreaterThanOrEqual(column * 256);
+      expect(crop.y).toBeGreaterThanOrEqual(0);
+      expect(crop.x + crop.width).toBeLessThanOrEqual((column + 1) * 256);
+      expect(crop.y + crop.height).toBeLessThanOrEqual(128);
+      expect(crop.width).toBeLessThan(256);
+      expect(crop.height).toBeLessThan(128);
+    }
   });
 
-  it('defines four coherent atlas rows with one compatible part per slot', () => {
+  it('defines four coherent atlas rows with tight compatible parts', () => {
     expect(TANK_PART_ATLAS_HEIGHT).toBe(512);
     expect(Object.keys(TANK_PART_SETS)).toEqual(TANK_KIT_IDS);
 
     for (const [row, kit] of TANK_KIT_IDS.entries()) {
       expect(Object.keys(TANK_PART_SETS[kit].parts)).toEqual(TANK_PART_SLOTS);
-      expect(TANK_PART_SLOTS.map((slot) =>
-        TANK_PART_SETS[kit].parts[slot].source)).toEqual(
-        TANK_PART_SLOTS.map((_, column) => ({
-          x: column * 256,
-          y: row * 128,
-          width: 256,
-          height: 128,
-        })),
-      );
+      for (const [column, slot] of TANK_PART_SLOTS.entries()) {
+        const crop = TANK_PART_SETS[kit].parts[slot].source;
+        expect(crop.x).toBeGreaterThanOrEqual(column * 256);
+        expect(crop.y).toBeGreaterThanOrEqual(row * 128);
+        expect(crop.x + crop.width).toBeLessThanOrEqual((column + 1) * 256);
+        expect(crop.y + crop.height).toBeLessThanOrEqual((row + 1) * 128);
+        expect(crop.width).toBeLessThan(256);
+        expect(crop.height).toBeLessThan(128);
+      }
+    }
+  });
+
+  it('stacks distinct mobility, hull, and turret boxes into side-view tanks', () => {
+    for (const kit of TANK_KIT_IDS) {
+      const { treads, hull, turret } = TANK_PART_SETS[kit].parts;
+      const geometries = [treads, hull, turret].map((part) => ({
+        offsetX: part.offsetX,
+        offsetY: part.offsetY,
+        width: part.width,
+        height: part.height,
+      }));
+
+      expect(new Set(geometries.map((geometry) =>
+        JSON.stringify(geometry))).size).toBe(3);
+      expect(treads.offsetY + treads.height).toBe(0);
+      expect(hull.offsetY).toBeLessThan(treads.offsetY + treads.height);
+      expect(hull.offsetY + hull.height).toBeGreaterThan(treads.offsetY);
+      expect(turret.offsetY).toBeLessThan(hull.offsetY);
+      expect(turret.offsetY + turret.height).toBeGreaterThanOrEqual(-20);
+      expect(turret.offsetY).toBeLessThanOrEqual(-20);
     }
   });
 
@@ -62,11 +84,11 @@ describe('modular tank part catalog', () => {
     };
 
     expect(TANK_PART_SLOTS.map((slot) =>
-      tankPartDefinition(loadout, slot).source.y)).toEqual([
-      384,
-      128,
+      Math.floor(tankPartDefinition(loadout, slot).source.y / 128))).toEqual([
+      3,
+      1,
       0,
-      384,
+      3,
     ]);
     expect(tankPartDefinition(DEFAULT_TANK_LOADOUT, 'barrel')).toBe(
       DEFAULT_TANK_PART_SET.parts.barrel,
@@ -96,6 +118,7 @@ describe('modular tank part catalog', () => {
     expect(barrel.pivotX).toBe(-barrel.offsetX);
     expect(barrel.muzzleX).toBe(BARREL_LENGTH - barrel.offsetX);
     expect(barrel.muzzleX - barrel.pivotX).toBe(BARREL_LENGTH);
-    expect(barrel.height).toBeGreaterThanOrEqual(12);
+    expect(barrel.width).toBeLessThan(30);
+    expect(barrel.height).toBeLessThan(12);
   });
 });

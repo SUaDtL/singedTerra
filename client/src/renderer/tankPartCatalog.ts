@@ -45,66 +45,93 @@ export interface TankPartSet {
   readonly parts: Record<TankPartSlot, TankPartDefinition>;
 }
 
-const source = (column: number, row: number): TankPartSource => ({
-  x: column * TANK_PART_CELL_WIDTH,
-  y: row * TANK_PART_CELL_HEIGHT,
-  width: TANK_PART_CELL_WIDTH,
-  height: TANK_PART_CELL_HEIGHT,
+const source = (
+  column: number,
+  row: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): TankPartSource => ({
+  x: column * TANK_PART_CELL_WIDTH + x,
+  y: row * TANK_PART_CELL_HEIGHT + y,
+  width,
+  height,
 });
 
 /**
- * All four authored families share one gameplay footprint and mount contract.
- * Each row was composed as a complete tank before its exclusive slot partition.
+ * Tight alpha bounds measured from the authored atlas. Cropping transparent
+ * cell padding before scaling preserves the component proportions and keeps
+ * neighboring-cell bleed out of the gameplay-sized variants.
  */
-function partSet(id: TankKitId, row: number): TankPartSet {
-  return {
-    id,
-    parts: {
-    treads: {
-      source: source(0, row),
-      offsetX: -18,
-      offsetY: -24,
-      width: 36,
-      height: 24,
-      pivotX: 0,
-      muzzleX: 0,
-    },
-    hull: {
-      source: source(1, row),
-      offsetX: -18,
-      offsetY: -24,
-      width: 36,
-      height: 24,
-      pivotX: 0,
-      muzzleX: 0,
-    },
-    turret: {
-      source: source(2, row),
-      offsetX: -18,
-      offsetY: -24,
-      width: 36,
-      height: 24,
-      pivotX: 0,
-      muzzleX: 0,
-    },
-    barrel: {
-      source: source(3, row),
-      offsetX: -7,
-      offsetY: -7,
-      width: 30,
-      height: 14,
-      pivotX: 7,
-      muzzleX: 7 + BARREL_LENGTH,
-    },
-    },
-  };
-}
+const part = (
+  sourceBox: TankPartSource,
+  offsetX: number,
+  offsetY: number,
+  width: number,
+  height: number,
+  pivotX = 0,
+  muzzleX = 0,
+): TankPartDefinition => ({
+  source: sourceBox,
+  offsetX,
+  offsetY,
+  width,
+  height,
+  pivotX,
+  muzzleX,
+});
+
+const barrel = (
+  sourceBox: TankPartSource,
+  height: number,
+): TankPartDefinition => part(
+  sourceBox,
+  -4,
+  -Math.floor(height / 2),
+  26,
+  height,
+  4,
+  4 + BARREL_LENGTH,
+);
 
 export const TANK_PART_SETS: Readonly<Record<TankKitId, TankPartSet>> = {
-  foundry: partSet('foundry', 0),
-  ranger: partSet('ranger', 1),
-  bulwark: partSet('bulwark', 2),
-  jackal: partSet('jackal', 3),
+  foundry: {
+    id: 'foundry',
+    parts: {
+      treads: part(source(0, 0, 17, 49, 239, 68), -17, -10, 34, 10),
+      hull: part(source(1, 0, 32, 52, 224, 58), -16, -17, 32, 10),
+      turret: part(source(2, 0, 51, 54, 156, 46), -9, -24, 18, 8),
+      barrel: barrel(source(3, 0, 20, 43, 226, 40), 6),
+    },
+  },
+  ranger: {
+    id: 'ranger',
+    parts: {
+      treads: part(source(0, 1, 9, 27, 233, 85), -18, -15, 36, 15),
+      hull: part(source(1, 1, 32, 25, 223, 62), -16, -20, 32, 9),
+      turret: part(source(2, 1, 84, 33, 92, 55), -7, -26, 15, 9),
+      barrel: barrel(source(3, 1, 33, 46, 214, 36), 5),
+    },
+  },
+  bulwark: {
+    id: 'bulwark',
+    parts: {
+      treads: part(source(0, 2, 10, 32, 232, 57), -18, -9, 36, 9),
+      hull: part(source(1, 2, 11, 22, 245, 65), -17, -17, 34, 10),
+      turret: part(source(2, 2, 57, 32, 152, 43), -10, -24, 20, 7),
+      barrel: barrel(source(3, 2, 15, 39, 234, 49), 6),
+    },
+  },
+  jackal: {
+    id: 'jackal',
+    parts: {
+      treads: part(source(0, 3, 13, 27, 230, 90), -18, -14, 36, 14),
+      hull: part(source(1, 3, 12, 41, 232, 76), -17, -20, 34, 11),
+      turret: part(source(2, 3, 72, 43, 111, 74), -8, -27, 17, 10),
+      barrel: barrel(source(3, 3, 37, 37, 211, 56), 7),
+    },
+  },
 };
 
 export const DEFAULT_TANK_PART_SET = TANK_PART_SETS.foundry;

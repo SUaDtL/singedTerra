@@ -1,4 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
+import {
+  TANK_KIT_IDS,
+  TANK_PART_SETS,
+  TANK_PART_SLOTS,
+} from '../client/src/renderer/tankPartCatalog';
 
 async function openGarage(page: Page): Promise<void> {
   await page.goto('.');
@@ -31,12 +36,20 @@ async function closeCompactGarage(page: Page): Promise<void> {
 }
 
 async function installTankPartDrawProbe(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  const partSizes = Array.from(new Set(
+    TANK_KIT_IDS.flatMap((kit) => TANK_PART_SLOTS.map((slot) => {
+      const part = TANK_PART_SETS[kit].parts[slot];
+      return `${part.width}x${part.height}`;
+    })),
+  ));
+  await page.evaluate((knownPartSizes) => {
     const state = window as typeof window & {
       __tankPartDraws?: Array<{ target: string; hash: number }>;
       __tankPartProbeInstalled?: boolean;
+      __tankPartSizes?: Set<string>;
     };
     state.__tankPartDraws = [];
+    state.__tankPartSizes = new Set(knownPartSizes);
     if (state.__tankPartProbeInstalled) return;
     state.__tankPartProbeInstalled = true;
 
@@ -57,10 +70,7 @@ async function installTankPartDrawProbe(page: Page): Promise<void> {
       if (
         target
         && image instanceof HTMLCanvasElement
-        && (
-          (image.width === 36 && image.height === 24)
-          || (image.width === 30 && image.height === 14)
-        )
+        && state.__tankPartSizes!.has(`${image.width}x${image.height}`)
       ) {
         const source = image.getContext('2d', { willReadFrequently: true });
         if (source) {
@@ -79,7 +89,7 @@ async function installTankPartDrawProbe(page: Page): Promise<void> {
       }
       Reflect.apply(original, this, [image, ...args]);
     }) as typeof prototype.drawImage;
-  });
+  }, partSizes);
 }
 
 async function previewComponentAreas(page: Page): Promise<number[]> {
@@ -127,6 +137,63 @@ async function previewComponentAreas(page: Page): Promise<number[]> {
       if (area >= 8) componentAreas.push(area);
     }
     return componentAreas.sort((left, right) => right - left);
+  });
+}
+
+async function previewSilhouetteMetrics(page: Page): Promise<{
+  width: number;
+  height: number;
+  top: number;
+  middle: number;
+  bottom: number;
+}> {
+  return page.locator(
+    '.lobby-preview__canvas',
+  ).first().evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (context === null) {
+      return { width: 0, height: 0, top: 0, middle: 0, bottom: 0 };
+    }
+    const { data, width, height } = context.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+    let minX = width;
+    let maxX = -1;
+    let minY = height;
+    let maxY = -1;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3]! <= 24) continue;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+    }
+    if (maxX < minX || maxY < minY) {
+      return { width: 0, height: 0, top: 0, middle: 0, bottom: 0 };
+    }
+    const occupiedHeight = maxY - minY + 1;
+    const bands = [0, 0, 0];
+    for (let y = minY; y <= maxY; y++) {
+      const band = Math.min(
+        2,
+        Math.floor((y - minY) / occupiedHeight * 3),
+      );
+      for (let x = minX; x <= maxX; x++) {
+        if (data[(y * width + x) * 4 + 3]! > 24) bands[band]!++;
+      }
+    }
+    return {
+      width: maxX - minX + 1,
+      height: occupiedHeight,
+      top: bands[0]!,
+      middle: bands[1]!,
+      bottom: bands[2]!,
+    };
   });
 }
 
@@ -223,6 +290,12 @@ test.describe('tank Garage', () => {
         expect(label.textWidth + 4).toBeLessThanOrEqual(label.clientWidth);
         expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
       }
+      const silhouette = await previewSilhouetteMetrics(page);
+      expect(silhouette.width).toBeGreaterThanOrEqual(52);
+      expect(silhouette.height).toBeGreaterThanOrEqual(36);
+      expect(silhouette.top).toBeGreaterThan(20);
+      expect(silhouette.middle).toBeGreaterThan(40);
+      expect(silhouette.bottom).toBeGreaterThan(40);
     }
     await closeCompactGarage(page);
 

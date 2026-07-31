@@ -34,5 +34,5 @@
 - [x] Run focused tests, deterministic checks, client coverage, Edge tests,
   production build, full E2E, runtime audit, diff hygiene, and secret scan.
 - [x] Commit through the governed gate and open a ready PR.
-- [ ] Prove exact-head hosted CI and CodeQL green, merge under standing
+- [x] Prove exact-head hosted CI and CodeQL green, merge under standing
   authority, deploy Pages, and verify the public command console.

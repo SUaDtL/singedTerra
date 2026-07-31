@@ -976,8 +976,8 @@ export class Renderer {
   }
 
   /**
-   * Draw a short, collision-unaware launch projection. It communicates direction,
-   * power, wind, and gravity without revealing the landing point or solving a bank.
+   * Draw a short, collision-unaware muzzle ray. It communicates direction and
+   * relative power without revealing a landing point or solving a bank shot.
    */
   private drawAimGuide(state: GameState): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);

@@ -6,13 +6,6 @@ const previewArt = new TankPartArt();
 const PREVIEW_WIDTH = 84;
 const PREVIEW_HEIGHT = 48;
 const SCALE = 1.6;
-/**
- * The authored chassis cells retain transparent breathing room above their
- * silhouettes. Lower the Garage-only presentation mount so the neutral barrel
- * visibly seats in the turret instead of floating above the composed preview.
- * Battlefield geometry continues to use the authoritative shared pivot.
- */
-const PREVIEW_BARREL_MOUNT_OFFSET = 5;
 const RETRY_MS = 50;
 
 function drawFallback(
@@ -67,10 +60,7 @@ export function paintTankLoadoutPreview(
     loadout,
   } as TankState;
   const staticReady = previewArt.drawStatic(ctx, tank);
-  const barrelReady = staticReady && previewArt.drawBarrel(ctx, {
-    ...tank,
-    y: tank.y + PREVIEW_BARREL_MOUNT_OFFSET,
-  });
+  const barrelReady = staticReady && previewArt.drawBarrel(ctx, tank);
   if (!staticReady || !barrelReady) drawFallback(ctx, color);
   ctx.restore();
 
