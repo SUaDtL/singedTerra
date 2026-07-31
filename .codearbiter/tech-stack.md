@@ -4,7 +4,7 @@ Derived from manifests, lockfiles, and npm scripts (brownfield extraction 2026-0
 
 ## Languages & runtimes
 
-- **TypeScript** `^5.5.4` (`package.json`), `strict: true`, target/lib **ES2022**, `module: ESNext`, `moduleResolution: Bundler` (`tsconfig.base.json`).
+- **TypeScript** 7.0.2 is installed as `@typescript/native` and drives `tsc`; the `typescript` package name aliases Microsoft’s `@typescript/typescript6` 6.0.2 compatibility package for structural harnesses until TypeScript 7 ships its replacement API. Configuration is `strict: true`, target/lib **ES2022**, `module: ESNext`, `moduleResolution: Bundler` (`tsconfig.base.json`). Workspace path aliases are project-root-relative; TypeScript 7 removed `baseUrl`.
 - **Node** `24` LTS (`.nvmrc`, root `engines: 24.x`); `@types/node` `^24.13.3`.
 - **Deno** — runtime for Supabase Edge Functions. Not version-pinned in-repo (no `deno.json`; `deno.lock` is intentionally ignored). Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, exactly pinned to `2.110.9`).
 - **Postgres 15** (`supabase/config.toml` `major_version = 15`).
