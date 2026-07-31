@@ -2406,3 +2406,9 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - LOCAL GATES: npm run check passed every deterministic/typecheck harness; client tests passed 99 files / 675 tests; coverage passed at 88.61% statements, 78.05% branches, 79.14% functions, and 91.18% lines; Edge tests passed 184/184; production build transformed 1,888 modules; Playwright passed 104 tests with 10 intentional profile skips. Confidence high.
 - SUPPLY/DIFF GATES: npm audit --audit-level=high reports zero vulnerabilities; diff hygiene, conflict-marker scan, and state-free secret scan pass. Confidence high.
 - ADVERSARIAL REVIEW: dependency review returned CLEAN. Security review found one LOW false-pass possibility in the first URL regex; parsing actual TypeScript import declarations closed it, and focused follow-up returned CLEAN with no remaining findings. Confidence high.
+### Node 24 toolchain hosted gate receipt
+
+- Ready PR: #229, chore(deps): move toolchain to Node 24 LTS.
+- Reviewed product head: 9880c4c5142b9718bb734cdb8c147fc190ef47e2.
+- Hosted checks on that exact head: typecheck, deterministic harnesses, production build, Edge Function tests, production-browser rendering guardrails, CodeQL analysis, and CodeQL all PASS. Supabase Preview skipped as expected; the exact Edge import changed but this sprint performs no backend deployment.
+- The PR remains open, unmerged, and undeployed under the sprint boundary. The governance-only receipt commit must repeat hosted checks before final handoff.

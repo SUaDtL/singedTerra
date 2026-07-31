@@ -34,5 +34,6 @@
 - [x] Update runtime and dependency documentation.
 - [x] Append exact receipts and SMARTS decisions to the sprint log.
 - [x] Run diff hygiene, secret scan, and the commit gate.
-- [ ] Commit and open a ready PR against `main`.
-- [ ] Require exact-head hosted CI and CodeQL success; do not merge or deploy.
+- [x] Commit and open ready PR #229 against `main`.
+- [x] Require exact-head hosted CI and CodeQL success on reviewed product head
+  `9880c4c5142b9718bb734cdb8c147fc190ef47e2`; do not merge or deploy.
