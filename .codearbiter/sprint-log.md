@@ -2380,3 +2380,5 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - FINAL BUILD/SUPPLY GATE: production build transformed 1,887 modules; `npm audit --audit-level=high` found 0 vulnerabilities. Confidence high.
 - EXACT-CURRENT ADVERSARIAL VERDICT: CLEAN, with 0 Critical, High, Medium, or Low findings after exact intersection, paired-entry collision, projectile-state preservation, rematch persistence, real NetworkClient rejoin, successor fetch, and per-edge browser corrections. Confidence high.
 - HARVEST: no low-confidence wrap-sidewall decision or new `[NEEDS-TRIAGE]` finding requires promotion. Confidence high.
+
+- BOARD HARVEST: `$ca-task` queued the remaining concrete-sidewall idea as a separate `sprint:wrap-sidewalls` follow-up. The legacy uncheckboxed backlog row could not be marked done through the sanctioned task writer, so it remains historical rather than being free-hand rewritten. Confidence high.
