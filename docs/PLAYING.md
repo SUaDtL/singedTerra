@@ -18,6 +18,10 @@ Hot seat runs entirely in one browser and needs no backend.
    rounds, interest, sudden death, arms level, or the terrain seed.
 6. Start the game.
 
+Side walls default to **Open**. **Reflective** rails bounce a shot back into
+the arena; **Wrap** portals carry it across to the opposite edge without
+changing its speed or direction.
+
 ### Online
 
 Online play uses Supabase rooms. Create a public room for the room browser or a

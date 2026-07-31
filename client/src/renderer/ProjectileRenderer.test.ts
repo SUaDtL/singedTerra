@@ -587,6 +587,22 @@ describe('ProjectileRenderer weapon signatures', () => {
     expect(beyondBoundary.trace.arcs).toHaveLength(1);
   });
 
+  it('starts a fresh trail after a wrap transfer instead of crossing the arena', () => {
+    const renderer = new ProjectileRenderer();
+    renderer.draw(
+      tracingContext().ctx,
+      [projectile('baby_missile', { x: 1198, y: 90, age: 8 })],
+    );
+    const afterPortal = tracingContext();
+    renderer.draw(
+      afterPortal.ctx,
+      [projectile('baby_missile', { x: 3, y: 91, age: 9 })],
+    );
+
+    // A fresh payload halo only: the pre-transfer point cannot become a trail.
+    expect(afterPortal.trace.arcs).toHaveLength(1);
+  });
+
   it('resets all histories when split children compact or the live count changes', () => {
     const renderer = new ProjectileRenderer();
     const children = [

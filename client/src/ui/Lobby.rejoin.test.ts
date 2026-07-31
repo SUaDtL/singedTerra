@@ -218,7 +218,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'reflective', rounds: 3 },
+      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'wrap', rounds: 3 },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
@@ -259,7 +259,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
       seed: 7,
       maxWind: 12,
       gravity: 0.2,
-      walls: 'reflective',
+      walls: 'wrap',
       rounds: 3,
     });
   });
@@ -269,7 +269,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
+      options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, walls: 'wrap' },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
@@ -300,6 +300,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
         seed: config.settings?.seed,
         maxWind: config.settings?.maxWind,
         gravity: config.settings?.gravity,
+        walls: config.settings?.walls,
       },
       config.token,
     );
@@ -315,6 +316,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
     expect(state.phase).toBe('PLAYER_TURN');
     expect(state.turn).toBe(1);
     expect(state.activePlayerId).toBe('p2');
+    expect(state.walls).toBe('wrap');
   });
 });
 

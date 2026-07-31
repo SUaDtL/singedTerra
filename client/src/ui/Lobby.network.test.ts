@@ -176,7 +176,9 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       const hintId = select.getAttribute('aria-describedby');
       expect(hintId).not.toBeNull();
       expect(root.querySelector(`#${hintId}`)?.textContent)
-        .toContain('bank shots rebound');
+        .toContain('shots exit, rebound, or cross');
+      expect(Array.from(select.options, (option) => option.value))
+        .toEqual(['', 'reflective', 'wrap']);
     });
 
     it('GUARD: empty name sets the error and never calls fetch', async () => {
@@ -227,7 +229,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         onlineBotDifficulty: 'hard',
         onlineMaxWind: '5',
         onlineGravity: '0.25',
-        onlineWalls: 'reflective',
+        onlineWalls: 'wrap',
         onlineRounds: '4', // even -> forced to 5
         onlineInterestRate: '0.2',
         onlineSuddenDeath: '15',
@@ -258,7 +260,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
           visibility: 'private',
           maxWind: 5,
           gravity: 0.25,
-          walls: 'reflective',
+          walls: 'wrap',
           rounds: 5,
           interestRate: 0.2,
           suddenDeathTurn: 15,

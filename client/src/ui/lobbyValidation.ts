@@ -1,5 +1,5 @@
 import { clamp } from '@shared/engine/math';
-import type { WallMode } from '@shared/types/GameOptions';
+import { normalizeWallMode, type WallMode } from '@shared/types/GameOptions';
 
 /**
  * Optional advanced engine settings chosen in the lobby. Each field is omitted
@@ -21,7 +21,7 @@ export interface LobbySettings {
   suddenDeathTurn?: number;
   /** Arms-level store gate, integer 0..4 (engine default 4 = everything buyable). */
   armsLevel?: number;
-  /** Reflective side rails; omitted means the legacy open boundary. */
+  /** Non-open sidewall rule; omitted means the legacy open boundary. */
   walls?: WallMode;
 }
 
@@ -53,7 +53,7 @@ export interface RawSettings {
   suddenDeathTurn: string;
   /** Arms level as a select value ('' = default/4). */
   armsLevel: string;
-  /** Wall mode select value (blank/open = default, reflective = opt-in). */
+  /** Wall mode select value (blank/open = default). */
   walls: string;
 }
 
@@ -109,7 +109,8 @@ export function coerceSettings(raw: RawSettings): LobbySettings | undefined {
     out.armsLevel = clamp(Math.trunc(armsLevel), ARMS_MIN, ARMS_MAX);
   }
 
-  if (raw.walls === 'reflective') out.walls = 'reflective';
+  const walls = normalizeWallMode(raw.walls);
+  if (walls !== 'open') out.walls = walls;
 
   return Object.keys(out).length > 0 ? out : undefined;
 }

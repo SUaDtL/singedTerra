@@ -3,8 +3,12 @@
  */
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { simulateImpact } from '../../shared/src/engine/AiShotSearch.ts';
-import { CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
-import { MAX_FLIGHT_TICKS } from '../../shared/src/engine/Physics.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
+import {
+  MAX_FLIGHT_TICKS,
+  WALL_INSET,
+  wrapSideWall,
+} from '../../shared/src/engine/Physics.ts';
 
 let passed = 0;
 let failed = 0;
@@ -74,9 +78,181 @@ function engineWith(walls, p) {
 }
 
 {
-  function trace() {
+  const shot = projectile({
+    x: 1,
+    y: 80,
+    vx: -4,
+    vy: 1,
+    age: 8,
+    hasSplit: true,
+    bounces: 2,
+  });
+  const { engine, state } = engineWith('wrap', shot);
+  engine.tick();
+  check(state.projectiles.length === 1, 'left wrap keeps the shot in flight');
+  check(
+    shot.x > CANVAS_WIDTH - 10 && shot.x < CANVAS_WIDTH,
+    'left exit enters at the right rail with integrated overshoot',
+    `x=${shot.x}`,
+  );
+  check(
+    Math.abs(shot.x - (CANVAS_WIDTH - WALL_INSET - 3)) < 1e-9,
+    'left wrap preserves the exact unsampled remainder',
+    `x=${shot.x}`,
+  );
+  check(
+    Math.abs(shot.y - 81.15) < 1e-9,
+    'left wrap preserves the complete integrated vertical endpoint',
+    `y=${shot.y}`,
+  );
+  check(shot.vx === -4, 'left wrap preserves horizontal velocity', `vx=${shot.vx}`);
+  check(shot.age === 9, 'left wrap preserves the advancing flight age', `age=${shot.age}`);
+  check(shot.bounces === 2, 'left wrap preserves weapon bounce state', `bounces=${shot.bounces}`);
+  check(state.wallImpacts?.[0]?.side === 'left', 'left wrap emits an authoritative contact');
+}
+
+{
+  const shot = projectile({
+    x: CANVAS_WIDTH - 1,
+    y: 80,
+    vx: 4,
+    vy: 1,
+  });
+  const { engine, state } = engineWith('wrap', shot);
+  engine.tick();
+  check(state.projectiles.length === 1, 'right wrap keeps the shot in flight');
+  check(
+    shot.x > 0 && shot.x < 10,
+    'right exit enters at the left rail with integrated overshoot',
+    `x=${shot.x}`,
+  );
+  check(
+    Math.abs(shot.x - (WALL_INSET + 3)) < 1e-9,
+    'right wrap preserves the exact unsampled remainder',
+    `x=${shot.x}`,
+  );
+  check(shot.vx === 4, 'right wrap preserves horizontal velocity', `vx=${shot.vx}`);
+  check(state.wallImpacts?.[0]?.side === 'right', 'right wrap emits an authoritative contact');
+}
+
+{
+  const shot = projectile({ x: 1, y: 80, vx: -4, vy: 0 });
+  const { engine, state } = engineWith('wrap', shot);
+  state.tanks[1].x = CANVAS_WIDTH - 3;
+  state.tanks[1].y = 81;
+  engine.tick();
+  check(
+    state.projectiles.length === 0,
+    'wrap resolves an entry-side target in the same fixed tick',
+  );
+  check(
+    state.lastExplosion?.impactType === 'tank',
+    'entry-side swept collision preserves the tank impact material',
+    `impact=${state.lastExplosion?.impactType}`,
+  );
+}
+
+for (const side of ['left', 'right']) {
+  const terrain = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT);
+  const entryColumn = side === 'left' ? CANVAS_WIDTH - 1 : 0;
+  terrain[80 * CANVAS_WIDTH + entryColumn] = 1;
+  const shot = projectile({
+    x: side === 'left' ? -2 : CANVAS_WIDTH + 2,
+    y: 80,
+  });
+  const result = wrapSideWall(
+    shot,
+    {
+      type: 'wall',
+      side,
+      x: side === 'left' ? WALL_INSET : CANVAS_WIDTH - WALL_INSET,
+      y: 80,
+      remainingX: side === 'left' ? -2 : 2,
+      remainingY: 0,
+    },
+    terrain,
+    [],
+  );
+  check(
+    result.type === 'ground',
+    `${side} wrap collision-tests the exact paired entry pixel`,
+    `result=${JSON.stringify(result)} shot=${JSON.stringify(shot)}`,
+  );
+}
+
+{
+  const shot = projectile({
+    vx: -7.25,
+    vy: -3.5,
+    weaponType: 'mirv',
+    age: 37,
+    hasSplit: false,
+    bounces: 2,
+    burrowTicksRemaining: 11,
+  });
+  const preserved = {
+    vx: shot.vx,
+    vy: shot.vy,
+    weaponType: shot.weaponType,
+    age: shot.age,
+    hasSplit: shot.hasSplit,
+    bounces: shot.bounces,
+    burrowTicksRemaining: shot.burrowTicksRemaining,
+  };
+  wrapSideWall(
+    shot,
+    {
+      type: 'wall',
+      side: 'left',
+      x: WALL_INSET,
+      y: 80,
+      remainingX: -2,
+      remainingY: -1,
+    },
+    new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT),
+    [],
+  );
+  check(
+    JSON.stringify({
+      vx: shot.vx,
+      vy: shot.vy,
+      weaponType: shot.weaponType,
+      age: shot.age,
+      hasSplit: shot.hasSplit,
+      bounces: shot.bounces,
+      burrowTicksRemaining: shot.burrowTicksRemaining,
+    }) === JSON.stringify(preserved),
+    'wrap preserves every non-position projectile field',
+  );
+}
+
+{
+  const shot = projectile({
+    x: 1,
+    y: CANVAS_HEIGHT - 1,
+    vx: -4,
+    vy: 2,
+    weaponType: 'sandhog',
+  });
+  const { engine, state } = engineWith('wrap', shot);
+  state.terrain.fill(0);
+  engine.tick();
+  check(
+    state.projectiles.length === 0,
+    'a Sandhog that wraps into the floor resolves instead of drilling out of bounds',
+    `shot=${JSON.stringify(state.projectiles[0])} impacts=${JSON.stringify(state.wallImpacts)}`,
+  );
+  check(
+    (state.lastExplosion?.cx ?? 0) > CANVAS_WIDTH - 10,
+    'wrapped floor endpoint is clamped from the paired entry segment',
+    `cx=${state.lastExplosion?.cx}`,
+  );
+}
+
+{
+  function trace(walls) {
     const shot = projectile({ x: CANVAS_WIDTH / 2, vx: 18, vy: -8 });
-    const { engine, state } = engineWith('reflective', shot);
+    const { engine, state } = engineWith(walls, shot);
     for (let i = 0; i < 180 && state.phase === 'FIRING'; i++) engine.tick();
     return {
       contacts: state.wallImpacts,
@@ -85,19 +261,35 @@ function engineWith(walls, p) {
       explosions: state.explosions,
     };
   }
-  const a = trace();
-  const b = trace();
-  check((a.contacts?.length ?? 0) >= 2, 'one shot can bank repeatedly');
-  check(JSON.stringify(a) === JSON.stringify(b), 'multi-bank trace is byte-identical');
+  for (const walls of ['reflective', 'wrap']) {
+    const a = trace(walls);
+    const b = trace(walls);
+    check(
+      (a.contacts?.length ?? 0) >= 2,
+      `one shot can contact ${walls} rails repeatedly`,
+    );
+    check(
+      JSON.stringify(a) === JSON.stringify(b),
+      `${walls} multi-contact trace is byte-identical`,
+    );
+  }
 }
 
 {
-  const shot = projectile({ age: MAX_FLIGHT_TICKS - 2 });
-  const { engine, state } = engineWith('reflective', shot);
-  engine.tick();
-  engine.tick();
-  check(state.projectiles.length === 0, 'flight cap still resolves a repeatedly banked shot');
-  check(state.explosions.length === 1, 'flight cap keeps its existing air detonation');
+  for (const walls of ['reflective', 'wrap']) {
+    const shot = projectile({ age: MAX_FLIGHT_TICKS - 2 });
+    const { engine, state } = engineWith(walls, shot);
+    engine.tick();
+    engine.tick();
+    check(
+      state.projectiles.length === 0,
+      `flight cap still resolves a ${walls} shot`,
+    );
+    check(
+      state.explosions.length === 1,
+      `${walls} flight cap keeps its existing air detonation`,
+    );
+  }
 }
 
 {
@@ -106,21 +298,26 @@ function engineWith(walls, p) {
     { type: 'set_power', power: 90 },
     { type: 'fire' },
   ];
-  function replayBank() {
-    const engine = new GameEngine({ seed: 0x51de, walls: 'reflective' });
+  function replayBank(walls) {
+    const engine = new GameEngine({ seed: 0x51de, walls });
     for (const action of actions) engine.applyAction(action);
     for (let tick = 0; tick < MAX_FLIGHT_TICKS + 20 && engine.getState().phase === 'FIRING'; tick++) {
       engine.tick();
     }
     return engine.getState();
   }
-  const first = replayBank();
-  const replay = replayBank();
-  check(first.wallImpacts.length > 0, 'real applyAction shot banks off a reflective rail');
-  check(
-    JSON.stringify(first) === JSON.stringify(replay),
-    'fresh-engine action replay preserves the complete banked result',
-  );
+  for (const walls of ['reflective', 'wrap']) {
+    const first = replayBank(walls);
+    const replay = replayBank(walls);
+    check(
+      first.wallImpacts.length > 0,
+      `real applyAction shot contacts a ${walls} rail`,
+    );
+    check(
+      JSON.stringify(first) === JSON.stringify(replay),
+      `fresh-engine action replay preserves the complete ${walls} result`,
+    );
+  }
 }
 
 {
@@ -192,6 +389,39 @@ function engineWith(walls, p) {
       && Math.abs(predicted.x - live.cx) < 1e-9
       && Math.abs(predicted.y - live.cy) < 1e-9,
     'AI probe scores the same 240-tick cap detonation as live execution',
+    `predicted=${JSON.stringify(predicted)} live=${live ? `${live.cx},${live.cy}` : 'none'}`,
+  );
+}
+
+{
+  const engine = new GameEngine({ seed: 0x51de, walls: 'wrap', gravity: 0.05 });
+  const state = engine.getState();
+  state.wind = 0;
+  const me = { ...state.tanks[0], x: 90, angle: 150, power: 90 };
+  const predicted = simulateImpact(
+    { ...state, tanks: [me] },
+    me,
+    me.angle,
+    me.power,
+    0.05,
+  );
+
+  state.tanks[0].x = me.x;
+  state.tanks[0].angle = me.angle;
+  state.tanks[0].power = me.power;
+  engine.applyAction({ type: 'fire' });
+  for (let tick = 0; tick < MAX_FLIGHT_TICKS + 20 && state.phase === 'FIRING'; tick++) {
+    engine.tick();
+  }
+  const live = state.explosions.at(-1);
+  check(state.wallImpacts.length > 0, 'supported wrap shot crosses a portal in live execution');
+  check(live !== undefined, 'supported wrap shot resolves through the live engine');
+  check(
+    predicted !== null
+      && live !== undefined
+      && Math.abs(predicted.x - live.cx) < 1e-9
+      && Math.abs(predicted.y - live.cy) < 1e-9,
+    'AI probe scores the same wrapped endpoint as live execution',
     `predicted=${JSON.stringify(predicted)} live=${live ? `${live.cx},${live.cy}` : 'none'}`,
   );
 }

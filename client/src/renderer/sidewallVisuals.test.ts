@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GameState, WallImpactEvent } from '@shared/types/GameState';
 import {
   consumeWallContacts,
-  drawReflectiveSidewalls,
+  drawSidewalls,
 } from './sidewallVisuals';
 import { Renderer } from './Renderer';
 
@@ -37,12 +37,25 @@ function event(id: number, side: 'left' | 'right' = 'left'): WallImpactEvent {
 describe('reflective sidewall presentation', () => {
   it('draws two static rails only for reflective rooms', () => {
     const open = context();
-    drawReflectiveSidewalls(open.ctx, 'open', []);
+    drawSidewalls(open.ctx, 'open', []);
     expect(open.ops).toHaveLength(0);
 
     const reflective = context();
-    drawReflectiveSidewalls(reflective.ctx, 'reflective', []);
+    drawSidewalls(reflective.ctx, 'reflective', []);
     expect(reflective.ops.filter((op) => op === 'stroke')).toHaveLength(2);
+  });
+
+  it('draws paired wrap rails and accents both exit and entry edges', () => {
+    const wrap = context();
+    drawSidewalls(
+      wrap.ctx,
+      'wrap',
+      [{ ...event(1), age: 0 }],
+      false,
+    );
+
+    expect(wrap.ops.filter((op) => op === 'stroke')).toHaveLength(2);
+    expect(wrap.ops.filter((op) => op === 'fillRect').length).toBeGreaterThanOrEqual(2);
   });
 
   it('dedupes monotonic contacts and returns one coalesced audio edge', () => {
@@ -60,9 +73,9 @@ describe('reflective sidewall presentation', () => {
 
   it('keeps rails but suppresses animated contact accents under reduced motion', () => {
     const normal = context();
-    drawReflectiveSidewalls(normal.ctx, 'reflective', [{ ...event(1), age: 0 }], false);
+    drawSidewalls(normal.ctx, 'reflective', [{ ...event(1), age: 0 }], false);
     const reduced = context();
-    drawReflectiveSidewalls(reduced.ctx, 'reflective', [{ ...event(1), age: 0 }], true);
+    drawSidewalls(reduced.ctx, 'reflective', [{ ...event(1), age: 0 }], true);
 
     expect(normal.ops.filter((op) => op === 'fillRect').length).toBeGreaterThan(0);
     expect(reduced.ops.filter((op) => op === 'fillRect')).toHaveLength(0);
@@ -103,12 +116,12 @@ describe('reflective sidewall presentation', () => {
       consumeWallImpacts(state: GameState): void;
       reset(): void;
     };
-    const state = { wallImpacts: [event(1)] } as GameState;
+    const state = { walls: 'wrap', wallImpacts: [event(1)] } as GameState;
 
     renderer.consumeWallImpacts(state);
     renderer.consumeWallImpacts(state);
     expect(renderer.wallContacts).toEqual([{ ...event(1), age: 0 }]);
-    expect(onWallImpact).toHaveBeenCalledTimes(1);
+    expect(onWallImpact).toHaveBeenCalledWith('left', 'wrap');
 
     renderer.reset();
     expect(renderer.wallContacts).toEqual([]);

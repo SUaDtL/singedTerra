@@ -103,9 +103,11 @@ describe('coerceSettings', () => {
     expect(coerceSettings(blankRaw({ armsLevel: '2.7' }))).toEqual({ armsLevel: 2 });
   });
 
-  it('accepts only the reflective wall opt-in and otherwise keeps open default', () => {
+  it('accepts reflective and wrap wall opt-ins and otherwise keeps open default', () => {
     expect(coerceSettings(blankRaw({ walls: 'reflective' })))
       .toEqual({ walls: 'reflective' });
+    expect(coerceSettings(blankRaw({ walls: 'wrap' })))
+      .toEqual({ walls: 'wrap' });
     expect(coerceSettings(blankRaw({ walls: 'open' }))).toBeUndefined();
     expect(coerceSettings(blankRaw({ walls: 'lava' }))).toBeUndefined();
   });

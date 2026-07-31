@@ -17,7 +17,7 @@
  * the pure helpers/constants already extracted into ../ui/lobbyValidation.
  */
 import type { AiDifficulty } from '@shared/types/GameState';
-import type { WallMode } from '@shared/types/GameOptions';
+import { normalizeWallMode, type WallMode } from '@shared/types/GameOptions';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
@@ -190,7 +190,7 @@ export class LobbyTransport {
       options: {
         maxPlayers: params.maxPlayers,
         visibility: params.visibility,
-        walls: params.walls === 'reflective' ? 'reflective' : 'open',
+        walls: normalizeWallMode(params.walls),
         ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
         ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
         ...(rounds !== undefined ? { rounds } : {}),

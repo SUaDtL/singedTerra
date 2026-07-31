@@ -4,6 +4,7 @@ import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { GameState } from '@shared/types/GameState';
+import { normalizeWallMode } from '@shared/types/GameOptions';
 import { normalizeTankLoadout } from '@shared/types/TankLoadout';
 import type { GameClient, RematchInfo } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
@@ -108,7 +109,7 @@ function bootstrap(): void {
       if (impact) audio.impact(impact.impactType, impact.radius);
       flashBloom(radius);
     },
-    onWallImpact: (side) => audio.wallReflect(side),
+    onWallImpact: (side, walls) => audio.wallContact(walls, side),
     onHop: () => audio.hopTick(),
     onFireActive: (active) => {
       if (active) audio.napalmStart();
@@ -687,7 +688,9 @@ function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyConfig {
       seed: info.seed,
       maxWind: info.options.maxWind,
       gravity: info.options.gravity,
-      ...(info.options.walls === 'reflective' ? { walls: 'reflective' as const } : {}),
+      ...(normalizeWallMode(info.options.walls) !== 'open'
+        ? { walls: normalizeWallMode(info.options.walls) }
+        : {}),
       ...(info.options.rounds !== undefined ? { rounds: info.options.rounds } : {}),
     },
   };

@@ -5,6 +5,7 @@ import {
   reflectSideWall,
   stepProjectile,
   sweepCollide,
+  wrapSideWall,
 } from './Physics';
 import { BARREL_LENGTH, TANK_HEIGHT, TANK_WIDTH, barrelTip } from './Tank';
 import { clamp } from './math';
@@ -149,7 +150,7 @@ export function simulateImpact(
     if (projectile.age >= MAX_FLIGHT_TICKS) {
       return { x: projectile.x, y: projectile.y };
     }
-    const hit = sweepCollide(
+    let hit = sweepCollide(
       projectile,
       previousX,
       previousY,
@@ -159,8 +160,15 @@ export function simulateImpact(
     );
     if (hit.type === 'ground' || hit.type === 'tank') return { x: projectile.x, y: projectile.y };
     if (hit.type === 'wall') {
-      reflectSideWall(projectile, hit);
-      continue;
+      if ((state.walls ?? 'open') === 'reflective') {
+        reflectSideWall(projectile, hit);
+        continue;
+      }
+      hit = wrapSideWall(projectile, hit, state.terrain, state.tanks);
+      if (hit.type === 'ground' || hit.type === 'tank') {
+        return { x: projectile.x, y: projectile.y };
+      }
+      if (hit.type === 'none') continue;
     }
     if (hit.type === 'oob') return null;
   }

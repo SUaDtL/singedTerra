@@ -1,4 +1,5 @@
 import type { NetworkAction } from '@shared/net/replay'
+import type { WallMode } from '@shared/types/GameOptions'
 import type { TankLoadout } from '@shared/types/TankLoadout'
 
 // Matches the rooms table
@@ -7,7 +8,7 @@ export interface Room {
   code: string
   seed: number
   status: 'waiting' | 'active' | 'finished'
-  options: { maxPlayers: number; maxWind?: number; gravity?: number; walls?: 'open' | 'reflective' }
+  options: { maxPlayers: number; maxWind?: number; gravity?: number; walls?: WallMode }
   players: RoomPlayer[]
   active_player_index: number
   turn: number

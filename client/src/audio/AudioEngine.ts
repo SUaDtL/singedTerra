@@ -1,4 +1,5 @@
 import type { ExplosionImpactType } from '@shared/types/GameState';
+import type { WallMode } from '@shared/types/GameOptions';
 import { getImpactAudioProfile } from '../feel/impactMaterial';
 
 export interface WallReflectAudioProfile {
@@ -9,6 +10,8 @@ export interface WallReflectAudioProfile {
   readonly noiseDuration: number;
   readonly toneDuration: number;
 }
+
+export type WallContactAudioProfile = WallReflectAudioProfile;
 
 /** Pure bounded profile so ricochet headroom and side distinction stay testable. */
 export function getWallReflectAudioProfile(
@@ -22,6 +25,24 @@ export function getWallReflectAudioProfile(
     toneGain: 0.055,
     noiseDuration: 0.065,
     toneDuration: 0.11,
+  };
+}
+
+/** Bounded contact profile; wrap rises in pitch to read as transfer, not impact. */
+export function getWallContactAudioProfile(
+  walls: WallMode,
+  side: 'left' | 'right',
+): WallContactAudioProfile | null {
+  if (walls === 'open') return null;
+  if (walls === 'reflective') return getWallReflectAudioProfile(side);
+  const startFrequency = side === 'left' ? 460 : 540;
+  return {
+    startFrequency,
+    endFrequency: startFrequency * 1.72,
+    noiseGain: 0.045,
+    toneGain: 0.07,
+    noiseDuration: 0.055,
+    toneDuration: 0.14,
   };
 }
 
@@ -298,23 +319,24 @@ export class AudioEngine {
     tone.stop(t + profile.duration + 0.02);
   }
 
-  /** Bright rail ricochet, panned by pitch so left/right contacts stay distinct. */
-  wallReflect(side: 'left' | 'right'): void {
+  /** Sidewall contact cue, shaped by the room's boundary rule. */
+  wallContact(walls: WallMode, side: 'left' | 'right'): void {
     if (this.muted) return;
+    const profile = getWallContactAudioProfile(walls, side);
+    if (!profile) return;
     const ctx = this.ensure();
     if (!ctx || !this.master) return;
     const t = ctx.currentTime;
-    const profile = getWallReflectAudioProfile(side);
     this.noiseHit(
       t,
       profile.noiseDuration,
       profile.noiseGain,
-      'highpass',
-      2600,
-      3.5,
+      walls === 'wrap' ? 'bandpass' : 'highpass',
+      walls === 'wrap' ? 1700 : 2600,
+      walls === 'wrap' ? 2.2 : 3.5,
     );
     const tone = ctx.createOscillator();
-    tone.type = 'triangle';
+    tone.type = walls === 'wrap' ? 'sine' : 'triangle';
     tone.frequency.setValueAtTime(profile.startFrequency, t);
     tone.frequency.exponentialRampToValueAtTime(
       profile.endFrequency,
@@ -330,6 +352,11 @@ export class AudioEngine {
     tone.connect(gain).connect(this.master);
     tone.start(t);
     tone.stop(t + profile.toneDuration);
+  }
+
+  /** Compatibility entry point for the reflective-only renderer contract. */
+  wallReflect(side: 'left' | 'right'): void {
+    this.wallContact('reflective', side);
   }
 
   /** Soft tick for aim (angle/power) nudges. Throttled so held-key auto-repeat

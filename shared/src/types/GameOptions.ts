@@ -2,7 +2,12 @@ import type { AiDifficulty } from './GameState';
 import type { TankLoadout } from './TankLoadout';
 
 /** Horizontal battlefield boundary rule. */
-export type WallMode = 'open' | 'reflective';
+export type WallMode = 'open' | 'reflective' | 'wrap';
+
+/** Fail closed to the legacy open boundary at every untyped room seam. */
+export function normalizeWallMode(value: unknown): WallMode {
+  return value === 'reflective' || value === 'wrap' ? value : 'open';
+}
 
 /**
  * Per-room game configuration set at room creation. Consumed by the engine

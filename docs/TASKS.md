@@ -12,7 +12,8 @@ governed under [`.codearbiter/`](../.codearbiter/).
 
 - 2–4 player hot-seat and online matches
 - Human and deterministic CPU seats
-- Fixed-step ballistics with wind, gravity, and reflective side-wall options
+- Fixed-step ballistics with wind, gravity, and open, reflective, or wrap
+  side-wall options
 - Per-pixel destructible terrain, terrain raising, collapse, settlement, and
   burial
 - Sixteen implemented weapons, including airbursts, napalm, terrain tools,

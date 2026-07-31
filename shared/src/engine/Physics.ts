@@ -2,6 +2,7 @@ import type { ProjectileState, TankState } from '../types/GameState';
 import type { WallMode } from '../types/GameOptions';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain';
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank';
+import { clamp } from './math';
 
 /**
  * Deterministic projectile physics (SPEC §4.2). Fixed 16ms timestep so hot-seat
@@ -55,7 +56,15 @@ export type CollisionResult =
   | { type: 'none' }
   | { type: 'ground'; x: number; y: number }
   | { type: 'tank'; tankId: string; x: number; y: number }
-  | { type: 'wall'; side: 'left' | 'right'; x: number; y: number }
+  | {
+      type: 'wall';
+      side: 'left' | 'right';
+      x: number;
+      y: number;
+      /** Unconsumed integrated movement after the swept wall contact. */
+      remainingX?: number;
+      remainingY?: number;
+    }
   | { type: 'oob' };
 
 /** Authoritative explosion event payload emitted into GameState (SPEC §7). */
@@ -150,6 +159,23 @@ export function sweepCollide(
     probe.y = prevY + dy * t;
     const hit = collide(probe, terrain, tanks, walls);
     if (hit.type !== 'none') {
+      if (hit.type === 'wall' && walls === 'wrap') {
+        // The first out-of-bounds supersample can be up to SWEEP_STEP beyond
+        // the rail. Intersect the authored segment with the exact boundary so
+        // wrapping preserves the complete integrated tick instead of losing
+        // that sampled overshoot.
+        const boundaryX = hit.side === 'left' ? 0 : CANVAS_WIDTH;
+        const contactT = dx === 0
+          ? t
+          : clamp((boundaryX - prevX) / dx, 0, 1);
+        const contactY = prevY + dy * contactT;
+        hit.y = contactY;
+        hit.remainingX = endX - boundaryX;
+        hit.remainingY = endY - contactY;
+        p.x = boundaryX;
+        p.y = contactY;
+        return hit;
+      }
       // Report the impact at the interpolated point where it was detected,
       // and snap the projectile back to that point so downstream consumers
       // (explosion center) use the entry location, not the overshot endpoint.
@@ -187,7 +213,7 @@ export function collide(
   // Out of bounds (horizontal). A miss — handled before terrain/tank so an
   // off-screen projectile never indexes terrain out of range.
   if (p.x < 0 || p.x >= CANVAS_WIDTH) {
-    if (walls === 'reflective') {
+    if (walls === 'reflective' || walls === 'wrap') {
       return p.x < 0
         ? { type: 'wall', side: 'left', x: WALL_INSET, y: p.y }
         : {
@@ -237,6 +263,31 @@ export function reflectSideWall(
   p.y = hit.y;
   p.vx = hit.side === 'left' ? Math.abs(p.vx) : -Math.abs(p.vx);
   return p;
+}
+
+/**
+ * Transfer one exact wrap-wall contact to the paired rail, then sweep the
+ * unconsumed part of this fixed tick for an immediate entry-side collision.
+ * Every projectile field except position is preserved.
+ */
+export function wrapSideWall(
+  p: ProjectileState,
+  hit: Extract<CollisionResult, { type: 'wall' }>,
+  terrain: Uint8Array,
+  tanks: readonly TankState[],
+): CollisionResult {
+  const entryX = hit.side === 'left'
+    ? CANVAS_WIDTH - WALL_INSET
+    : WALL_INSET;
+  const endX = entryX + (hit.remainingX ?? 0);
+  const endY = hit.y + (hit.remainingY ?? 0);
+  p.x = entryX;
+  p.y = hit.y;
+  const entryHit = collide(p, terrain, tanks, 'open');
+  if (entryHit.type !== 'none') return entryHit;
+  p.x = endX;
+  p.y = endY;
+  return sweepCollide(p, entryX, hit.y, terrain, tanks, 'open');
 }
 
 /** Bounce tuning (named constants, not magic numbers). */

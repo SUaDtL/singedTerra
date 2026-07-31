@@ -5,6 +5,30 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { createRoomHandler, handleCreateRoom } from './index.ts'
 
+function captureRoomInsert() {
+  let insertedRoom: Record<string, unknown> | undefined
+  const rooms = {
+    select: () => rooms,
+    eq: () => rooms,
+    neq: () => rooms,
+    maybeSingle: () => Promise.resolve({ data: null }),
+    insert: (value: Record<string, unknown>) => {
+      insertedRoom = value
+      return rooms
+    },
+    single: () => Promise.resolve({ data: { id: 'room-1' }, error: null }),
+  }
+  const roomSeats = {
+    insert: () => Promise.resolve({ error: null }),
+  }
+  return {
+    serviceClient: {
+      from: (table: string) => table === 'rooms' ? rooms : roomSeats,
+    },
+    insertedRoom: () => insertedRoom,
+  }
+}
+
 Deno.test('handleCreateRoom: missing playerName returns 400 (no DB)', async () => {
   const res = await handleCreateRoom({})
   assertEquals(res.status, 400)
@@ -33,35 +57,37 @@ Deno.test('handleCreateRoom: stores the exact bounded creator loadout', async ()
     turret: 'foundry',
     barrel: 'jackal',
   } as const
-  let insertedRoom: Record<string, unknown> | undefined
-  const rooms = {
-    select: () => rooms,
-    eq: () => rooms,
-    neq: () => rooms,
-    maybeSingle: () => Promise.resolve({ data: null }),
-    insert: (value: Record<string, unknown>) => {
-      insertedRoom = value
-      return rooms
-    },
-    single: () => Promise.resolve({ data: { id: 'room-1' }, error: null }),
-  }
-  const roomSeats = {
-    insert: () => Promise.resolve({ error: null }),
-  }
-  const serviceClient = {
-    from: (table: string) => table === 'rooms' ? rooms : roomSeats,
-  }
+  const capture = captureRoomInsert()
 
   const res = await createRoomHandler({
-    serviceClient: serviceClient as never,
+    serviceClient: capture.serviceClient as never,
   })({
     playerName: 'Ana',
     color: '#e84d4d',
     loadout,
-    options: { maxPlayers: 2 },
+    options: { maxPlayers: 2, walls: 'wrap' },
   })
 
   assertEquals(res.status, 200)
+  const insertedRoom = capture.insertedRoom()
   const players = insertedRoom?.players as Array<{ loadout: unknown }>
   assertEquals(players[0].loadout, loadout)
+  assertEquals((insertedRoom?.options as { walls: string }).walls, 'wrap')
+})
+
+Deno.test('handleCreateRoom: normalizes an invalid wall value to open before insert', async () => {
+  const capture = captureRoomInsert()
+  const res = await createRoomHandler({
+    serviceClient: capture.serviceClient as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    options: { maxPlayers: 2, walls: 'invalid' },
+  })
+
+  assertEquals(res.status, 200)
+  assertEquals(
+    (capture.insertedRoom()?.options as { walls: string }).walls,
+    'open',
+  )
 })

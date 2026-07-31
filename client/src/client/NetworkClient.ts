@@ -2,7 +2,11 @@ import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, Re
 import type { GameClient, RematchInfo, ConnectionState, TurnWatch } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
-import type { GameOptions } from '@shared/types/GameOptions';
+import {
+  normalizeWallMode,
+  type GameOptions,
+  type WallMode,
+} from '@shared/types/GameOptions';
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
   normalizeTankLoadout,
@@ -783,7 +787,7 @@ export class NetworkClient implements GameClient {
       maxPlayers?: number;
       maxWind?: number;
       gravity?: number;
-      walls?: 'open' | 'reflective';
+      walls?: WallMode;
       rounds?: number;
     };
     const players = (data.players ?? []) as Array<{
@@ -800,7 +804,7 @@ export class NetworkClient implements GameClient {
         maxPlayers: opts.maxPlayers ?? players.length,
         maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : MAX_WIND,
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
-        walls:      opts.walls === 'reflective' ? 'reflective' : 'open',
+        walls:      normalizeWallMode(opts.walls),
         // Carry best-of-N across a rematch so the successor match keeps the format.
         ...(typeof opts.rounds === 'number' ? { rounds: opts.rounds } : {}),
       },

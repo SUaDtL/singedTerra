@@ -24,7 +24,7 @@ interface RematchInfo {
     maxPlayers: number
     maxWind: number
     gravity: number
-    walls: 'open' | 'reflective'
+    walls: 'open' | 'reflective' | 'wrap'
   }
   players: Array<{
     id: string
@@ -51,7 +51,19 @@ export function normalizeRematchOptions(
     maxPlayers: options.maxPlayers ?? playerCount,
     maxWind: typeof options.maxWind === 'number' ? options.maxWind : DEFAULT_MAX_WIND,
     gravity: typeof options.gravity === 'number' ? options.gravity : DEFAULT_GRAVITY,
-    walls: options.walls === 'reflective' ? 'reflective' : 'open',
+    walls: options.walls === 'reflective' || options.walls === 'wrap'
+      ? options.walls
+      : 'open',
+  }
+}
+
+/** Preserve every synchronized room option while normalizing the opaque wall value. */
+export function normalizeStoredRematchOptions(options: StoredOptions): StoredOptions {
+  return {
+    ...options,
+    walls: options.walls === 'reflective' || options.walls === 'wrap'
+      ? options.walls
+      : 'open',
   }
 }
 
@@ -219,7 +231,9 @@ export async function handleRestartGame(body: unknown): Promise<Response> {
   // Preserve roster order (id/name/color) so each client's positional engine
   // tank mapping (players[i] -> 'p{i+1}') stays identical to the old game; mark
   // everyone ready so the room is immediately playable.
-  const oldOptions = (oldRoom.options ?? {}) as StoredOptions
+  const oldOptions = normalizeStoredRematchOptions(
+    (oldRoom.options ?? {}) as StoredOptions,
+  )
   const newPlayers: StoredPlayer[] = buildRematchPlayers(players, nowMs)
 
   // Unique code with collision retry (mirrors create_room).

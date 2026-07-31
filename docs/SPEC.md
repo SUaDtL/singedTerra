@@ -138,7 +138,7 @@ The engine supports:
 - terrain-raising discs;
 - deterministic collapse;
 - tank settlement and burial;
-- open and reflective side walls.
+- open, reflective, and cross-arena wrap side walls.
 
 ### Damage and death
 

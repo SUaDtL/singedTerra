@@ -1,4 +1,5 @@
 import type { AiDifficulty } from '@shared/types/GameState';
+import { normalizeWallMode } from '@shared/types/GameOptions';
 import {
   DEFAULT_TANK_LOADOUT,
   TANK_KIT_IDS,
@@ -1409,7 +1410,9 @@ export class Lobby {
         seed: liveRoom.seed,
         maxWind: liveRoom.options.maxWind,
         gravity: liveRoom.options.gravity,
-        ...(liveRoom.options.walls === 'reflective' ? { walls: 'reflective' as const } : {}),
+        ...(normalizeWallMode(liveRoom.options.walls) !== 'open'
+          ? { walls: normalizeWallMode(liveRoom.options.walls) }
+          : {}),
         ...(liveRoom.options.rounds !== undefined ? { rounds: liveRoom.options.rounds } : {}),
         ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
         ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
@@ -1664,10 +1667,11 @@ export class Lobby {
         this.onlineWalls,
         (v) => { this.onlineWalls = v; },
         [
-          { value: '', label: 'Open' },
-          { value: 'reflective', label: 'Reflective' },
+          { value: '', label: 'Open — shots exit' },
+          { value: 'reflective', label: 'Reflective — bank shots' },
+          { value: 'wrap', label: 'Wrap — cross the arena' },
         ],
-        'bank shots rebound from the arena edges',
+        'shots exit, rebound, or cross through paired arena edges',
       ),
       this.onlineNumberField('Rounds', this.onlineRounds, (v) => { this.onlineRounds = v; }, {
         min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT),
@@ -1817,7 +1821,7 @@ export class Lobby {
         gravity: parseNumber(this.onlineGravity) !== undefined
           ? clamp(parseNumber(this.onlineGravity)!, GRAVITY_MIN, GRAVITY_MAX)
           : GRAVITY_DEFAULT,
-        walls: this.onlineWalls === 'reflective' ? 'reflective' : 'open',
+        walls: normalizeWallMode(this.onlineWalls),
         ...(rounds !== undefined ? { rounds } : {}),
         ...economy,
       };
@@ -2362,7 +2366,9 @@ export class Lobby {
         seed: room.seed,
         maxWind: room.options.maxWind,
         gravity: room.options.gravity,
-        ...(room.options.walls === 'reflective' ? { walls: 'reflective' as const } : {}),
+        ...(normalizeWallMode(room.options.walls) !== 'open'
+          ? { walls: normalizeWallMode(room.options.walls) }
+          : {}),
         // Best-of-N comes from the SYNCED room row so every client's engine agrees
         // (a per-client value would desync the deterministic lockstep). Absent on
         // pre-feature rooms => engine defaults to a single round.
@@ -2814,10 +2820,11 @@ export class Lobby {
         'Side walls',
         'walls',
         [
-          { value: '', label: 'Open' },
-          { value: 'reflective', label: 'Reflective' },
+          { value: '', label: 'Open — shots exit' },
+          { value: 'reflective', label: 'Reflective — bank shots' },
+          { value: 'wrap', label: 'Wrap — cross the arena' },
         ],
-        'bank shots rebound from the arena edges',
+        'shots exit, rebound, or cross through paired arena edges',
       ),
       this.numberField('Seed', 'seed', {
         step: 1,

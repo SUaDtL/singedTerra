@@ -24,9 +24,8 @@ import { NetworkClient } from './NetworkClient';
 // The seat token (ADR-0009 split-identity) is passed explicitly so the body-shape
 // assertion below characterizes the real credential threading rather than the
 // empty-string fallback readSeatToken() yields when localStorage is bare.
-const SEAT_TOKEN = 'seat-secret-abc';
-function makeClient(): NetworkClient {
-  const fakeSupabase = {} as unknown as SupabaseClient;
+const SEAT_FIXTURE = 'seat-fixture-abc';
+function makeClient(fakeSupabase = {} as unknown as SupabaseClient): NetworkClient {
   return new NetworkClient(
     fakeSupabase,
     'room-123',
@@ -39,7 +38,7 @@ function makeClient(): NetworkClient {
         { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
       ],
     },
-    SEAT_TOKEN,
+    SEAT_FIXTURE,
   );
 }
 
@@ -77,7 +76,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     expect(JSON.parse(init.body as string)).toEqual({
       roomId: 'room-123',
       playerId: 'player-abc',
-      token: SEAT_TOKEN,
+      token: SEAT_FIXTURE,
     });
   });
 
@@ -116,5 +115,42 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
 
     const client = makeClient();
     await expect(client.requestRematch()).resolves.toEqual({ ok: false, error: 'Network error' });
+  });
+
+  it('normalizes wrap and invalid walls when resolving the successor room', async () => {
+    async function resolveSuccessor(walls: unknown) {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        maybeSingle: () => Promise.resolve({
+          data: {
+            id: 'room-next',
+            code: 'NEXT42',
+            seed: 42,
+            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls },
+            players: [
+              { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
+              { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
+            ],
+          },
+          error: null,
+        }),
+      };
+      const client = makeClient({
+        from: () => query,
+      } as unknown as SupabaseClient);
+      const listener = vi.fn();
+      client.onRematch(listener);
+
+      await (client as unknown as {
+        handleRematch(newRoomId: string): Promise<void>;
+      }).handleRematch('room-next');
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      return listener.mock.calls[0]![0];
+    }
+
+    expect((await resolveSuccessor('wrap')).options.walls).toBe('wrap');
+    expect((await resolveSuccessor('invalid')).options.walls).toBe('open');
   });
 });

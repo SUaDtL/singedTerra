@@ -4,6 +4,7 @@ import type {
   ExplosionStyle,
   TankState,
 } from '@shared/types/GameState';
+import type { WallMode } from '@shared/types/GameOptions';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
 import { TANK_WIDTH, TANK_HEIGHT, BARREL_LENGTH, barrelTip } from '@shared/engine/Tank';
 import { getWeapon } from '@shared/engine/WeaponSystem';
@@ -43,7 +44,7 @@ import {
 } from '../feel/impactMaterial';
 import {
   consumeWallContacts,
-  drawReflectiveSidewalls,
+  drawSidewalls,
   type WallContactVisual,
 } from './sidewallVisuals';
 import { BattlefieldBackdrop } from './BattlefieldBackdrop';
@@ -81,8 +82,8 @@ export interface RenderEventSink {
   onLaunch(): void;
   /** One or more new detonations appeared this frame; `radius` is the largest. */
   onExplosion(radius: number, impact: ImpactMaterialBatch | null): void;
-  /** A projectile reflected from one of the configured energy rails. */
-  onWallImpact?(side: 'left' | 'right'): void;
+  /** A projectile contacted one of the configured energy rails. */
+  onWallImpact?(side: 'left' | 'right', walls: WallMode): void;
   /**
    * A bouncing-betty projectile hopped off terrain this frame.
    * Called once per bounce tick (i.e. once when `bounces` decrements by 1).
@@ -527,7 +528,7 @@ export class Renderer {
     // 4. Projectiles (no-op when none / not FIRING). May be several at once
     // (an airburst shell splits into multiple submunitions in flight).
     this.projectile.draw(ctx, state.projectiles);
-    drawReflectiveSidewalls(
+    drawSidewalls(
       ctx,
       state.walls ?? 'open',
       this.wallContacts,
@@ -844,7 +845,9 @@ export class Renderer {
     for (const contact of batch.contacts) {
       this.wallContacts.push({ ...contact, age: 0 });
     }
-    if (batch.audio) this.events?.onWallImpact?.(batch.audio.side);
+    if (batch.audio) {
+      this.events?.onWallImpact?.(batch.audio.side, state.walls ?? 'open');
+    }
   }
 
   /**

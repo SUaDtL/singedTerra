@@ -8,6 +8,7 @@ import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import {
   buildRematchPlayers,
   normalizeRematchOptions,
+  normalizeStoredRematchOptions,
   projectCreatedRematchInfo,
   projectExistingRematchInfo,
 } from './index.ts'
@@ -64,19 +65,19 @@ Deno.test('buildRematchPlayers preserves valid cosmetics and defaults old seats'
   assertEquals(out[1].loadout, DEFAULT_TANK_LOADOUT)
 })
 
-Deno.test('normalizeRematchOptions preserves reflective walls and rejects invalid values', () => {
+Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid values', () => {
   assertEquals(
     normalizeRematchOptions({
       maxPlayers: 2,
       maxWind: 7,
       gravity: 0.2,
-      walls: 'reflective',
+      walls: 'wrap' as never,
     }, 2),
     {
       maxPlayers: 2,
       maxWind: 7,
       gravity: 0.2,
-      walls: 'reflective',
+      walls: 'wrap' as never,
     },
   )
   assertEquals(
@@ -90,7 +91,38 @@ Deno.test('normalizeRematchOptions preserves reflective walls and rejects invali
   )
 })
 
-Deno.test('lost-claim response projector preserves reflective walls', () => {
+Deno.test('normalizeStoredRematchOptions preserves the room contract but never persists invalid walls', () => {
+  assertEquals(
+    normalizeStoredRematchOptions({
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      walls: 'wrap' as never,
+      rounds: 3,
+      interestRate: 0.1,
+    }),
+    {
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      walls: 'wrap',
+      rounds: 3,
+      interestRate: 0.1,
+    },
+  )
+  assertEquals(
+    normalizeStoredRematchOptions({
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      walls: 'invalid' as never,
+      rounds: 5,
+    }).walls,
+    'open',
+  )
+})
+
+Deno.test('lost-claim response projector preserves wrap walls', () => {
   const players: StoredPlayer[] = [
     { id: 'uid-a', name: 'Ana', color: '#f00', ready: true },
     { id: 'uid-b', name: 'Bo', color: '#00f', ready: true },
@@ -104,13 +136,13 @@ Deno.test('lost-claim response projector preserves reflective walls', () => {
       maxPlayers: 2,
       maxWind: 7,
       gravity: 0.2,
-      walls: 'reflective',
+      walls: 'wrap' as never,
     },
     players,
   })
 
   assertEquals(info.roomId, 'existing-room')
-  assertEquals(info.options.walls, 'reflective')
+  assertEquals(info.options.walls, 'wrap')
   assertEquals(info.players, [
     { id: 'uid-a', name: 'Ana', color: '#f00', loadout: DEFAULT_TANK_LOADOUT },
     { id: 'uid-b', name: 'Bo', color: '#00f', loadout: DEFAULT_TANK_LOADOUT },

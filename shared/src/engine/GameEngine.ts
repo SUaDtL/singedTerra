@@ -6,7 +6,7 @@ import type {
   TankState,
 } from '../types/GameState';
 import type { PlayerAction } from '../types/PlayerAction';
-import type { GameOptions } from '../types/GameOptions';
+import { normalizeWallMode, type GameOptions } from '../types/GameOptions';
 import {
   generate,
   buildBitmap,
@@ -37,6 +37,8 @@ import {
   surfaceNormalAt,
   reflectVelocity,
   reflectSideWall,
+  wrapSideWall,
+  WALL_INSET,
   MAX_FLIGHT_TICKS,
   MAX_WIND,
   WIND_DRIFT_STEP,
@@ -326,7 +328,7 @@ export class GameEngine {
     // Arms level: a finite level clamped to [0,4], else 4 (everything / back-compat).
     const al = options?.armsLevel;
     this.armsLevel = Number.isFinite(al) ? clamp(Math.floor(al as number), 0, 4) : 4;
-    const walls = options?.walls === 'reflective' ? 'reflective' : 'open';
+    const walls = normalizeWallMode(options?.walls);
     this.turnAtRoundStart = 0; // opening round begins at the turn-0 baseline
     this.options = options;
 
@@ -839,6 +841,8 @@ export class GameEngine {
       // terrain spike or a tank (per-tick displacement can exceed TANK_WIDTH).
       const prevX = p.x;
       const prevY = p.y;
+      let collisionStartX = prevX;
+      let collisionStartY = prevY;
       // Effective gravity rises under sudden death (pure function of the current turn);
       // identical to this.gravity when sudden death is off, so trajectories are unchanged.
       stepProjectile(p, this.state.wind, this.currentGravity());
@@ -879,7 +883,7 @@ export class GameEngine {
         }
       }
 
-      const hit = sweepCollide(
+      let hit = sweepCollide(
         p,
         prevX,
         prevY,
@@ -893,15 +897,26 @@ export class GameEngine {
         continue;
       }
       if (hit.type === 'wall') {
-        reflectSideWall(p, hit);
         this.state.wallImpacts.push({
           id: ++this.wallImpactSeq,
           side: hit.side,
           x: hit.x,
           y: hit.y,
         });
-        survivors.push(p);
-        continue;
+        if (this.state.walls === 'reflective') {
+          reflectSideWall(p, hit);
+          survivors.push(p);
+          continue;
+        }
+        collisionStartX = hit.side === 'left'
+          ? CANVAS_WIDTH - WALL_INSET
+          : WALL_INSET;
+        collisionStartY = hit.y;
+        hit = wrapSideWall(p, hit, this.terrain, this.state.tanks);
+        if (hit.type === 'none') {
+          survivors.push(p);
+          continue;
+        }
       }
 
       // This projectile resolves. A direct TANK hit always detonates. A GROUND
@@ -923,12 +938,12 @@ export class GameEngine {
           // in-bounds point along the swept segment instead.
           if (hit.y >= CANVAS_HEIGHT) {
             const endpointY = CANVAS_HEIGHT - 0.01;
-            const deltaY = hit.y - prevY;
+            const deltaY = hit.y - collisionStartY;
             const fraction = deltaY > 0
-              ? clamp((endpointY - prevY) / deltaY, 0, 1)
+              ? clamp((endpointY - collisionStartY) / deltaY, 0, 1)
               : 0;
             const endpointX = clamp(
-              prevX + (hit.x - prevX) * fraction,
+              collisionStartX + (hit.x - collisionStartX) * fraction,
               0,
               CANVAS_WIDTH - 0.01,
             );
