@@ -42,7 +42,7 @@ export interface GameOptions {
    * are played); each round regenerates terrain from a seed DERIVED from `seed` +
    * the round index, so every networked client replays the same rounds with no new
    * action. Credits + purchased inventory carry between rounds; health/shield/fuel/
-   * position reset. See docs/SPRINT6_MATCH_STRUCTURE.md.
+   * position reset. See docs/archive/SPRINT6_MATCH_STRUCTURE.md.
    */
   rounds?: number;
   /**

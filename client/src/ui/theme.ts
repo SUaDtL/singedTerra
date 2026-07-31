@@ -1,7 +1,7 @@
 /**
  * Art-direction tokens — the SINGLE SOURCE OF TRUTH for the singedTerra look
  * (Sprint 5 graphical overhaul). Every value here is pulled from the README
- * hero (docs/assets/splash-hero.png; legacy SVG preserved as docs/assets/banner.svg)
+ * hero (docs/assets/splash-hero.png)
  * so the whole game reads as one piece.
  *
  * These TS constants are consumed by the CANVAS renderers (sky/terrain/tanks/

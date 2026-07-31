@@ -25,7 +25,7 @@ export interface GameState {
    * `GameOptions.rounds` is 1 (the default / back-compat single-round mode). Bumped
    * by the engine when a round resolves and the match isn't over. Determinism: the
    * round's terrain + wind are derived from `seed` + this index, so every networked
-   * client regenerates the identical round. See docs/SPRINT6_MATCH_STRUCTURE.md.
+   * client regenerates the identical round. See docs/archive/SPRINT6_MATCH_STRUCTURE.md.
    */
   round: number;
   /** Best-of-N match length (echo of `GameOptions.rounds`, clamped to >= 1). */
@@ -233,7 +233,7 @@ export interface TankState {
    * Rounds this tank has won in the current match (V1 match structure). Starts at 0,
    * incremented when this tank is the sole survivor of a round. The match ends when a
    * tank reaches ceil(totalRounds/2). Accumulates across rounds (unlike health, which
-   * resets). Deterministic integer. See docs/SPRINT6_MATCH_STRUCTURE.md.
+   * resets). Deterministic integer. See docs/archive/SPRINT6_MATCH_STRUCTURE.md.
    */
   roundWins: number;
   /**

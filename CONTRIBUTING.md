@@ -1,73 +1,75 @@
 # Contributing to singedTerra
 
-Thanks for your interest! singedTerra is a browser-based, Scorched Earth–inspired turn-based artillery
-game — TypeScript throughout, Canvas 2D rendering, and a Supabase backend for networked play. This
-guide covers how to get set up and the one rule that matters most here: **determinism**.
+singedTerra is a browser artillery game built around deterministic replay.
+Contributions are welcome. Start with the current
+[documentation index](docs/README.md) and
+[architecture guide](docs/ARCHITECTURE.md).
 
-## Quick start
+## Set up
 
-It's an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) monorepo with two
-workspaces — `client` (the Vite/Canvas app) and `shared` (the deterministic engine + types). The
-networked backend is Supabase (Edge Functions + Postgres + Realtime), not a Node server.
+Requirements:
+
+- Node 20, matching [`.nvmrc`](.nvmrc)
+- npm
+- Deno 2 for Edge Function tests
+- Chromium through Playwright for production-browser tests
 
 ```bash
-npm install            # install all workspaces
-npm run dev            # Vite dev server on http://localhost:5173 (hot-seat works with no backend)
-npm run build          # typecheck + production build → client/dist
-npm run check          # typecheck + the deterministic engine harnesses  ← run before every PR
-npm run check:edge     # Deno tests for the Supabase Edge Functions (needs Deno installed)
+npm install
+npm run dev
 ```
 
-Use the Node version in [`.nvmrc`](.nvmrc) (`nvm use`). The same `check` / `check:edge` /
-`build` commands run in CI on every pull request.
+Hot-seat play works without environment variables. Online play needs the public
+Supabase values described in [Development and operations](docs/DEVELOPMENT.md).
 
-## The one hard rule: determinism
+## Determinism is the hard rule
 
-The whole architecture rests on **one physics codebase, two execution contexts**. All game logic lives
-in `shared/` and runs either directly in the browser (hot-seat) or as each networked client's own
-engine, seeded identically. The canonical networked game is **seed + an ordered action log** — no
-`GameState` is ever shipped over the wire; every client replays the log through the SAME engine code.
-If two clients' engines diverge by even one pixel, networked play desyncs.
+Hot-seat and every online browser run the same engine from the same ordered
+inputs. A one-pixel or one-tick divergence can desynchronize a networked match.
 
-So, in `shared/src/engine/` (especially `Physics.ts`):
+Inside `shared/src/engine/`:
 
-- **No wall-clock time** — no `Date.now()`, `performance.now()`. Physics uses a fixed 16ms timestep.
-- **No `Math.random()` mid-flight** — randomness comes from the seeded PRNG (`Random.ts`); wind and
-  terrain seeds are generated once and fed in as inputs.
-- **No floating-point nondeterminism.** Keep numeric behavior identical across runs.
-- Tunable constants (gravity, wind cap, explosion radii, damage falloff) stay **named constants**, not
-  magic numbers scattered through logic.
+- do not read wall-clock time;
+- do not use `Math.random()` for gameplay;
+- keep the fixed timestep intact;
+- preserve numeric operation order unless the behavior change is deliberate;
+- keep tunable values in named constants;
+- add or extend a deterministic harness for changed behavior.
 
-`shared/` must never import from `client/`. The Edge Functions (Deno) are thin referees — they
-validate turn ownership and allocate sequence numbers; they do **not** run physics and do not import
-`shared/`.
+`shared/` must not import from `client/`. Supabase Edge Functions are stateless
+referees and do not run projectile physics.
 
-## Tests are deterministic harnesses
+## Choose the right evidence
 
-The engine is covered by harnesses in **`scripts/checks/*.mjs`**, run via `npm run check`. If your
-change touches `shared/src/engine/`, add or extend a harness that pins the new behavior — ideally one
-that proves identical output for an identical seed.
+| Change | Evidence |
+|---|---|
+| Engine, physics, terrain, weapons, rounds | `npm run check` plus a focused harness |
+| Client state or DOM behavior | focused Vitest plus `npm run test:client` |
+| Edge Function contract | focused Deno test plus `npm run check:edge` |
+| Layout, touch, Canvas, authored art | focused Playwright profile plus `npm run test:e2e` |
+| Production bundle | `npm run build` |
+| Documentation | rendered Markdown review, link check, secret scan, and diff review |
 
-> ⚠️ **Footgun:** `npm run check` is a hardcoded `&&`-chain in `package.json`, **not** a glob. A new
-> `scripts/checks/*.mjs` file is silently never run until you append it to that chain. Always wire a
-> new harness in.
-
-Edge Function logic is tested with Deno (`npm run check:edge`) — extract pure, testable helpers
-(see `supabase/functions/*/validate.ts`) rather than testing against a live Supabase.
+New harness files under `scripts/checks/` must also be added to the explicit
+`npm run check` chain in `package.json`.
 
 ## Pull requests
 
-1. Branch off `main` (`feat/…`, `fix/…`, `chore/…`).
-2. Make `npm run check`, `npm run check:edge`, and `npm run build` all pass locally.
-3. Use [Conventional Commits](https://www.conventionalcommits.org/) for messages
-   (`feat(engine): …`, `fix(client): …`, `chore: …`).
-4. Open a PR and fill in the template — confirm the determinism impact and that the gates pass. CI
-   re-runs them on the PR.
+1. Branch from current `main`.
+2. Keep one coherent behavior or maintenance slice per pull request.
+3. Use a Conventional Commit message.
+4. Explain the player or maintainer outcome.
+5. List the exact verification performed.
+6. Resolve review findings.
+7. Wait for required CI and CodeQL checks on the exact head.
 
-## Reporting bugs & ideas
+The pull-request template asks about determinism impact. Answer it directly,
+including for UI-only changes.
 
-Use the issue templates. The project convention is to **log** bugs and investigations as issues
-(prefix `Bug:` / `Investigate:`) rather than fixing them inline during unrelated feature work.
+## Bugs, ideas, and security
 
-For anything security-related, see [`SECURITY.md`](SECURITY.md) — please don't open a public issue for
-a vulnerability.
+Use the issue templates for bugs and enhancements. Do not fix unrelated
+findings inside another change.
+
+Report vulnerabilities privately through the process in
+[SECURITY.md](SECURITY.md). Do not open a public security issue.
