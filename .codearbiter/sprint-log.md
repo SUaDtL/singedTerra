@@ -2197,3 +2197,7 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Documentation overhaul commit receipt
 
 - Governed product commit `8398879` records the visual README front door, player and contributor guides, current Supabase lockstep architecture, maintained product/UI contracts, archived historical plan, retired SVG removal, source-aligned review corrections, and complete local acceptance evidence. Confidence high.
+
+### Documentation overhaul ready PR handoff
+
+- Ready PR #225 opened from reviewed product commit `8398879` plus commit-gate receipt `68aa642`. Hosted exact-head typecheck, deterministic harnesses, build, Edge, E2E, JavaScript analysis, and CodeQL remain the delivery gate. Confidence high.
