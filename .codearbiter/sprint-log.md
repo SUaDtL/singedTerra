@@ -2325,3 +2325,9 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - `npm run build`: PASS, 1,886 modules transformed and production bundle emitted.
 - `npm audit --audit-level=high`: PASS, 0 vulnerabilities.
 - Staged diff check, conflict-marker scan, and state-free secret scan: PASS.
+### Active tank portrait hosted gate receipt
+
+- Ready PR: #227, `feat(ui): add active tank identity portrait`.
+- Reviewed product head: `0decc94233561abb1834bc2be2465f586590bf49`.
+- Hosted checks on that exact head: typecheck, deterministic harnesses, build, Edge Function tests, production-browser rendering guardrails, CodeQL analysis, and CodeQL all PASS. Supabase Preview skipped as expected because this branch changes no backend surface.
+- The PR remains open, unmerged, and undeployed under the sprint boundary.
