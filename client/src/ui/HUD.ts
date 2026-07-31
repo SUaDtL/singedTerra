@@ -688,14 +688,15 @@ export class HUD {
     fuelLabel.textContent = 'Fuel';
     this.fuelValueEl = document.createElement('span');
     this.fuelValueEl.className = 'st-hud__fuel-value';
-    fuelReadout.append(fuelLabel, this.fuelValueEl);
+    fuelReadout.append(this.fuelValueEl, fuelLabel);
     this.fuelMeterEl = document.createElement('div');
-    this.fuelMeterEl.className = 'st-hud__fuel-meter';
+    this.fuelMeterEl.className = 'st-hud__fuel-meter st-hud__fuel-dial';
     this.fuelMeterEl.setAttribute('role', 'progressbar');
     this.fuelMeterEl.setAttribute('aria-label', 'Movement fuel');
     this.fuelMeterEl.setAttribute('aria-valuemin', '0');
     this.fuelMeterEl.setAttribute('aria-valuemax', '100');
-    fuel.append(fuelReadout, this.fuelMeterEl);
+    this.fuelMeterEl.append(fuelReadout);
+    fuel.append(this.fuelMeterEl);
     mobility.append(this.moveLeftBtnEl, fuel, this.moveRightBtnEl);
 
     const tactical = document.createElement('div');
@@ -1573,17 +1574,48 @@ export class HUD {
     if (this.fuelValueEl.getAttribute('aria-label') !== fuelLabel) {
       this.fuelValueEl.setAttribute('aria-label', fuelLabel);
     }
-    const boundedFuel = Math.max(0, Math.min(100, fuel));
-    const fuelLevel = `${boundedFuel}%`;
+    const fuelTier = fuel > 0 ? Math.floor((fuel - 1) / 100) : 0;
+    const tierFuel = fuel > 0 ? fuel - fuelTier * 100 : 0;
+    const fuelLevel = `${tierFuel}%`;
     if (this.fuelMeterEl.style.getPropertyValue('--st-fuel-level') !== fuelLevel) {
       this.fuelMeterEl.style.setProperty('--st-fuel-level', fuelLevel);
     }
-    const fuelNow = String(boundedFuel);
+    const fuelFloor = String(fuelTier * 100);
+    if (this.fuelMeterEl.getAttribute('aria-valuemin') !== fuelFloor) {
+      this.fuelMeterEl.setAttribute('aria-valuemin', fuelFloor);
+    }
+    const fuelCeiling = String(Math.max(100, (fuelTier + 1) * 100));
+    if (this.fuelMeterEl.getAttribute('aria-valuemax') !== fuelCeiling) {
+      this.fuelMeterEl.setAttribute('aria-valuemax', fuelCeiling);
+    }
+    const fuelNow = String(fuel);
     if (this.fuelMeterEl.getAttribute('aria-valuenow') !== fuelNow) {
       this.fuelMeterEl.setAttribute('aria-valuenow', fuelNow);
     }
     if (this.fuelMeterEl.getAttribute('aria-valuetext') !== fuelLabel) {
       this.fuelMeterEl.setAttribute('aria-valuetext', fuelLabel);
+    }
+    const fuelBand = fuelTier > 0
+      ? 'reserve'
+      : fuel <= 0
+        ? 'empty'
+        : fuel <= 25
+          ? 'low'
+          : 'normal';
+    if (this.fuelMeterEl.dataset['fuelBand'] !== fuelBand) {
+      this.fuelMeterEl.dataset['fuelBand'] = fuelBand;
+    }
+    const fuelTierValue = String(fuelTier);
+    if (this.fuelMeterEl.dataset['fuelTier'] !== fuelTierValue) {
+      this.fuelMeterEl.dataset['fuelTier'] = fuelTierValue;
+    }
+    const fuelTone = fuelTier === 0
+      ? 'base'
+      : fuelTier === 1
+        ? 'reserve'
+        : 'deep-reserve';
+    if (this.fuelMeterEl.dataset['fuelTone'] !== fuelTone) {
+      this.fuelMeterEl.dataset['fuelTone'] = fuelTone;
     }
 
     const canMove = canControl &&
@@ -3027,57 +3059,87 @@ export class HUD {
   opacity: 0.36;
 }
 .st-hud__fuel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
+  display: grid;
+  place-items: center;
   min-width: 0;
-  padding: 4px;
-  border: 1px solid rgba(255, 210, 63, 0.18);
-  border-radius: 4px;
-  background: rgba(7, 4, 12, 0.66);
+  padding: 0 1px;
 }
 .st-hud__fuel-readout {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 3px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   min-width: 0;
+  pointer-events: none;
 }
 .st-hud__fuel-label {
   color: var(--ui-muted);
   font-family: var(--font-display);
   font-size: 6px;
   line-height: 1;
-  letter-spacing: 0.75px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 .st-hud__fuel-value {
   color: var(--gold);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 0.9;
 }
 .st-hud__fuel-meter {
   --st-fuel-level: 0%;
+  --st-fuel-color: var(--gold);
   position: relative;
-  width: 100%;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: rgba(255, 210, 63, 0.11);
-  box-shadow: inset 0 0 0 1px rgba(255, 210, 63, 0.08);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from -90deg,
+      var(--st-fuel-color) 0 var(--st-fuel-level),
+      rgba(255, 210, 63, 0.11) var(--st-fuel-level) 100%
+    );
+  box-shadow:
+    0 0 7px color-mix(in srgb, var(--st-fuel-color) 22%, transparent),
+    inset 0 0 0 1px rgba(255, 233, 168, 0.08);
+  isolation: isolate;
 }
-.st-hud__fuel-meter::after {
+.st-hud__fuel-meter::before {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--st-fuel-level);
-  border-radius: inherit;
-  background: linear-gradient(90deg, #d99b21, var(--gold));
-  box-shadow: 0 0 6px rgba(255, 210, 63, 0.38);
+  inset: 3px;
+  z-index: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(69, 39, 77, 0.92), rgba(7, 4, 12, 0.98) 72%);
+  box-shadow: inset 0 0 0 1px rgba(255, 233, 168, 0.08);
+}
+.st-hud__fuel-meter[data-fuel-band="low"] {
+  --st-fuel-color: var(--ember);
+}
+.st-hud__fuel-meter[data-fuel-band="low"] .st-hud__fuel-value {
+  color: var(--ember);
+}
+.st-hud__fuel-meter[data-fuel-band="empty"] {
+  --st-fuel-color: rgba(154, 134, 184, 0.55);
+}
+.st-hud__fuel-meter[data-fuel-band="empty"] .st-hud__fuel-value {
+  color: var(--ui-muted);
+}
+.st-hud__fuel-meter[data-fuel-tone="reserve"] {
+  --st-fuel-color: var(--tank-blue-lite, #7fb0ff);
+}
+.st-hud__fuel-meter[data-fuel-tone="deep-reserve"] {
+  --st-fuel-color: #c084fc;
 }
 .st-hud__active-row::before {
   content: '';
@@ -3097,6 +3159,13 @@ export class HUD {
 }
 #app.is-compact .st-hud__move-btn {
   min-height: 40px;
+}
+#app.is-compact .st-hud__fuel-label {
+  font-size: 7px;
+  letter-spacing: 0.35px;
+}
+#app.is-compact .st-hud__fuel-value {
+  font-size: 12px;
 }
 @media (pointer: coarse) {
   #app .st-hud__active-row {

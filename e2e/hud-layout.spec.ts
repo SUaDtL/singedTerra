@@ -316,12 +316,14 @@ test.describe('HUD layout guardrails', () => {
 
   test('mobility rocker stays fitted and spends authoritative fuel without ending the turn', async ({
     page,
-  }) => {
+  }, testInfo) => {
     const activeRow = page.locator('.st-hud__active-row');
     const mobility = activeRow.locator('.st-hud__mobility');
     const left = mobility.locator('[data-move="-8"]');
     const right = mobility.locator('[data-move="8"]');
     const fuel = mobility.locator('.st-hud__fuel-value');
+    const fuelLabel = mobility.locator('.st-hud__fuel-label');
+    const meter = mobility.getByRole('progressbar', { name: 'Movement fuel' });
 
     await expect(mobility).toBeVisible();
     await expect(mobility).toHaveAttribute('role', 'group');
@@ -329,14 +331,65 @@ test.describe('HUD layout guardrails', () => {
     await expect(left).toBeEnabled();
     await expect(right).toBeEnabled();
     await expect(fuel).toHaveText('100');
+    await expect(fuelLabel).toHaveText('Fuel');
+    await expect(meter).toHaveAttribute('data-fuel-band', 'normal');
 
     const rowBox = await activeRow.boundingBox();
     const mobilityBox = await mobility.boundingBox();
+    const meterBox = await meter.boundingBox();
+    const fuelBox = await fuel.boundingBox();
+    const fuelLabelBox = await fuelLabel.boundingBox();
     expect(rowBox).not.toBeNull();
     expect(mobilityBox).not.toBeNull();
+    expect(meterBox).not.toBeNull();
+    expect(fuelBox).not.toBeNull();
+    expect(fuelLabelBox).not.toBeNull();
     expect(mobilityBox!.x).toBeGreaterThanOrEqual(rowBox!.x - 1);
     expect(mobilityBox!.x + mobilityBox!.width)
       .toBeLessThanOrEqual(rowBox!.x + rowBox!.width + 1);
+    const authoredDialSize = await meter.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return { width: parseFloat(style.width), height: parseFloat(style.height) };
+    });
+    expect(authoredDialSize.width).toBeCloseTo(34, 1);
+    expect(authoredDialSize.height).toBeCloseTo(34, 1);
+    expect(Math.abs(meterBox!.width - meterBox!.height)).toBeLessThanOrEqual(1);
+    expect(meterBox!.width).toBeGreaterThanOrEqual(20);
+    expect(fuelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);
+    expect(fuelBox!.x + fuelBox!.width).toBeLessThanOrEqual(meterBox!.x + meterBox!.width);
+    expect(fuelLabelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);
+    expect(fuelLabelBox!.x + fuelLabelBox!.width)
+      .toBeLessThanOrEqual(meterBox!.x + meterBox!.width);
+    expect(fuelBox!.y + fuelBox!.height).toBeLessThanOrEqual(fuelLabelBox!.y + 1);
+    const fuelTypography = await meter.evaluate((node) => {
+      const value = node.querySelector<HTMLElement>('.st-hud__fuel-value')!;
+      const label = node.querySelector<HTMLElement>('.st-hud__fuel-label')!;
+      return {
+        valueFontSize: parseFloat(getComputedStyle(value).fontSize),
+        labelFontSize: parseFloat(getComputedStyle(label).fontSize),
+      };
+    });
+    const compact = testInfo.project.name !== 'desktop-fine';
+    expect(fuelTypography.valueFontSize).toBeGreaterThanOrEqual(compact ? 12 : 11);
+    expect(fuelTypography.labelFontSize).toBeGreaterThanOrEqual(compact ? 7 : 6);
+    expect(fuelBox!.height).toBeGreaterThanOrEqual(compact ? 6.5 : 9);
+    expect(fuelLabelBox!.height).toBeGreaterThanOrEqual(compact ? 4 : 5);
+    await expect.poll(() => meter.evaluate(
+      (node) => getComputedStyle(node).backgroundImage,
+    )).toContain('conic-gradient');
+    const tierColors = await meter.evaluate((node) => {
+      const color = () => getComputedStyle(node).getPropertyValue('--st-fuel-color');
+      const base = color();
+      node.dataset['fuelTone'] = 'reserve';
+      const reserve = color();
+      node.dataset['fuelTone'] = 'deep-reserve';
+      const deepReserve = color();
+      node.dataset['fuelTone'] = 'base';
+      return { base, reserve, deepReserve };
+    });
+    expect(new Set(Object.values(tierColors)).size).toBe(3);
+    await meter.evaluate((node) => { node.dataset['identityProbe'] = 'stable'; });
+    const fullRing = await meter.evaluate((node) => getComputedStyle(node).backgroundImage);
 
     await right.click();
     let remaining = Number(await fuel.textContent());
@@ -346,8 +399,11 @@ test.describe('HUD layout guardrails', () => {
     }
     expect(remaining).toBeGreaterThanOrEqual(92);
     expect(remaining).toBeLessThan(100);
-    await expect(mobility.getByRole('progressbar', { name: 'Movement fuel' }))
-      .toHaveAttribute('aria-valuenow', String(remaining));
+    await expect(meter).toHaveAttribute('aria-valuenow', String(remaining));
+    await expect(meter).toHaveAttribute('data-identity-probe', 'stable');
+    await expect.poll(() => meter.evaluate(
+      (node) => getComputedStyle(node).backgroundImage,
+    )).not.toBe(fullRing);
     await expect(activeRow.locator('.st-hud__turn-owner')).toHaveText('P1');
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
