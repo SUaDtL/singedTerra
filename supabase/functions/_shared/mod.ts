@@ -15,7 +15,7 @@
 import {
   createClient,
   type SupabaseClient,
-} from 'https://esm.sh/@supabase/supabase-js@2.107.0'
+} from 'https://esm.sh/@supabase/supabase-js@2.110.9'
 import type { Database, StoredPlayer } from './database.types.ts'
 
 export type {

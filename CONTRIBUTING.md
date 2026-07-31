@@ -9,7 +9,7 @@ Contributions are welcome. Start with the current
 
 Requirements:
 
-- Node 20, matching [`.nvmrc`](.nvmrc)
+- Node 24 LTS, matching [`.nvmrc`](.nvmrc)
 - npm
 - Deno 2 for Edge Function tests
 - Chromium through Playwright for production-browser tests

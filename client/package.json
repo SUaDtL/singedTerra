@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@singedterra/shared": "*",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "2.110.9",
     "lucide": "1.27.0"
   },
   "devDependencies": {

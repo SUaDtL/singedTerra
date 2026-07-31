@@ -5,8 +5,8 @@ Derived from manifests, lockfiles, and npm scripts (brownfield extraction 2026-0
 ## Languages & runtimes
 
 - **TypeScript** `^5.5.4` (`package.json`), `strict: true`, target/lib **ES2022**, `module: ESNext`, `moduleResolution: Bundler` (`tsconfig.base.json`).
-- **Node** `20` (`.nvmrc`); `@types/node` `^20.14.0`.
-- **Deno** — runtime for Supabase Edge Functions. Not version-pinned in-repo (no `deno.json`; `deno.lock` schema `version: 5`). Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, locked to `2.107.0`).
+- **Node** `24` LTS (`.nvmrc`, root `engines: 24.x`); `@types/node` `^24.13.3`.
+- **Deno** — runtime for Supabase Edge Functions. Not version-pinned in-repo (no `deno.json`; `deno.lock` is intentionally ignored). Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, exactly pinned to `2.110.9`).
 - **Postgres 15** (`supabase/config.toml` `major_version = 15`).
 
 ## Repo shape — npm workspaces monorepo
@@ -22,12 +22,12 @@ Both workspace packages are `private: true`.
 ## Key libraries
 
 - **Vite** `6.4.3` (client dev server + build).
-- **@supabase/supabase-js** `^2.45.0` (browser client); Edge Functions use `@2` via esm.sh → `2.107.0`.
+- **@supabase/supabase-js** `2.110.9` (browser client); Edge Functions use the same exact `2.110.9` through esm.sh.
 - **lucide** `1.27.0` (client-only exact named SVG icon nodes). The package has
   no runtime transitives; importing its all-icons registry is prohibited.
 - Canvas 2D — pure browser API, no rendering lib.
 - Root tooling: `concurrently`, `typescript`, `@types/node`.
-- **tsx** — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step). Not declared as a dep; resolved at runtime via npx.
+- **tsx** `^4.23.1` — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step).
 
 ## Commands (root `package.json`)
 

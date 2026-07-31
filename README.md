@@ -104,7 +104,7 @@ terrain model, trust boundary, and determinism rules.
 
 ## Run it locally
 
-Requirements: Node 20 and npm.
+Requirements: Node 24 LTS and npm.
 
 ```bash
 git clone https://github.com/SUaDtL/singedTerra.git

@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node 20, matching [`.nvmrc`](../.nvmrc)
+- Node 24 LTS, matching [`.nvmrc`](../.nvmrc)
 - npm
 - Deno 2 for Edge Function tests
 - Supabase CLI for local backend work or backend deployment
