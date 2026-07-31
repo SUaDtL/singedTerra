@@ -2040,3 +2040,7 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - Browser acceptance proves the full maximum-length player and Bouncing Betty labels, stable weapon glyph synchronization, live movement/fuel updates, exact Fire behavior, containment, and zero HUD scroll across desktop, compact touch, and small-window profiles.
 - Initial adversarial verdict was 0 Critical / 0 High / 1 Medium / 0 Low: coarse-pointer command targets were below 44 rendered pixels when the viewport was not compact. RED reproduced the missing contract and HUD overflow at a 1280-by-800 coarse viewport. SMARTS selected shared coarse density plus 56-logical-pixel move/Store targets while retaining the 78-pixel compact override. Follow-up verdict: 0 Critical / 0 High / 0 Medium / 0 Low, CLEAN. Confidence high.
 - Exact final local gates pass: npm run check; 95 client files / 654 tests; coverage 86.60% statements, 76.31% branches, 75.65% functions, 89.49% lines; 180 Edge tests; full Playwright 95 passed with 10 intentional project-conditional skips; production build/typecheck; npm audit with 0 vulnerabilities; diff hygiene; and secret scan. Confidence high.
+
+### Turn command console PR handoff
+
+- Ready PR #218 opened from reviewed product commit `50aef05` after the clean adversarial follow-up and exact final local matrix. Hosted exact-head CI, JavaScript analysis, and CodeQL remain the merge gate. Confidence high.
