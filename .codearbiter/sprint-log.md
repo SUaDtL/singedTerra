@@ -2193,3 +2193,7 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - CORRECTIONS: Riot Bomb is now documented as damage-free excavation; README and player controls include drag aiming and local fast-forward; UI guidance names both bounded, tree-shaken Lucide seams; and the maintained status and spec explicitly limit replay recovery to an existing seat because joins close when a room starts. Confidence high.
 - FOLLOW-UP ADVERSARIAL VERDICT: CLEAN, 0 Critical / 0 High / 0 Medium / 0 Low. The reviewer checked both client implementations of fast-forward, the complete Lucide import boundary, the room join gate, and surrounding copy. Confidence high.
 - LOCAL ACCEPTANCE: `npm run check` passed the complete typecheck and deterministic harness chain; `npm run build` produced the production Vite bundle; all three README images decode at their intended high-resolution dimensions; final diff hygiene and state-free secret scan pass. Confidence high.
+
+### Documentation overhaul commit receipt
+
+- Governed product commit `8398879` records the visual README front door, player and contributor guides, current Supabase lockstep architecture, maintained product/UI contracts, archived historical plan, retired SVG removal, source-aligned review corrections, and complete local acceptance evidence. Confidence high.
