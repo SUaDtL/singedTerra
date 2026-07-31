@@ -16,6 +16,11 @@ import {
 import { resolveInitialArsenalCollapsed } from './arsenalPreference';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
 import { makeWeaponIcon } from './weaponIcons';
+import {
+  clearTankLoadoutPreview,
+  paintTankLoadoutPreview,
+} from '../renderer/TankLoadoutPreview';
+import { tankLoadoutAccessibleLabel } from './tankPartLabels';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -225,6 +230,8 @@ export class HUD {
   private activePlayerEl!: HTMLElement;
   private turnStatusEl!: HTMLElement;
   private turnOwnerEl!: HTMLElement;
+  private tankPortraitEl!: HTMLCanvasElement;
+  private tankPortraitSignature: string | null = null;
   private weaponIconEl!: HTMLElement;
   private selectedWeaponIconType: WeaponType | null = null;
   private moveLeftBtnEl!: HTMLButtonElement;
@@ -642,6 +649,16 @@ export class HUD {
     this.turnOwnerEl = document.createElement('span');
     this.turnOwnerEl.className = 'st-hud__turn-owner';
     owner.append(ownerKicker, this.turnOwnerEl);
+    const portraitFrame = document.createElement('div');
+    portraitFrame.className = 'st-hud__tank-portrait-frame';
+    this.tankPortraitEl = document.createElement('canvas');
+    this.tankPortraitEl.className = 'st-hud__tank-portrait';
+    this.tankPortraitEl.setAttribute('role', 'img');
+    this.tankPortraitEl.setAttribute('aria-label', 'No active tank.');
+    portraitFrame.append(this.tankPortraitEl);
+    const identity = document.createElement('div');
+    identity.className = 'st-hud__identity-lockup';
+    identity.append(portraitFrame, this.turnStatusEl);
 
     const weapon = document.createElement('div');
     weapon.className = 'st-hud__weapon';
@@ -713,7 +730,7 @@ export class HUD {
     // Identity owns the full primary row. Weapon, fuel, and movement share a
     // separate tactical row instead of competing with and truncating the player.
     this.turnStatusEl.append(owner);
-    this.activePlayerEl.append(this.turnStatusEl, tactical);
+    this.activePlayerEl.append(identity, tactical);
   }
 
   /** Fine-pointer command deck (upper-left overlay; built once). */
@@ -1578,6 +1595,7 @@ export class HUD {
       if (this.activePlayerEl.style.getPropertyValue('--st-turn-color') !== '') {
         this.activePlayerEl.style.removeProperty('--st-turn-color');
       }
+      this.syncTankPortrait();
       // Zero out gauges
       this.gaugeElevNeedle.setAttribute('transform', '');
       if (this.gaugeElevLabel.textContent !== '0° ▶') this.gaugeElevLabel.textContent = '0° ▶';
@@ -1609,6 +1627,9 @@ export class HUD {
           : null;
 
     if (progress) {
+      // Shot progress still names the shooter while deterministic resolution
+      // finishes, but a destroyed vehicle must not retain an active portrait.
+      this.syncTankPortrait(tank.alive ? tank : undefined);
       if (this.aimTextEl.textContent !== progress.text) {
         this.aimTextEl.textContent = progress.text;
       }
@@ -1625,6 +1646,7 @@ export class HUD {
     this.aimEl.classList.toggle('st-hud__aim--hidden', true);
     this.activePlayerEl.classList.toggle('st-hud__active-row--hidden', false);
     const weaponName = WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon;
+    this.syncTankPortrait(tank);
     if (this.turnOwnerEl.textContent !== ownerLabel) {
       this.turnOwnerEl.textContent = ownerLabel;
     }
@@ -1673,6 +1695,39 @@ export class HUD {
     this.gaugePowerArc.setAttribute('stroke-dasharray', dasharrayVal);
     const pwrLbl = powerLabel(tank.power);
     if (this.gaugePowerLabel.textContent !== pwrLbl) this.gaugePowerLabel.textContent = pwrLbl;
+  }
+
+  /** Repaint the authored vehicle portrait only when its visible identity changes. */
+  private syncTankPortrait(tank?: TankState): void {
+    if (!tank) {
+      if (
+        this.tankPortraitSignature !== null
+        || this.tankPortraitEl.dataset['tankPreviewSignature'] !== undefined
+      ) {
+        clearTankLoadoutPreview(this.tankPortraitEl);
+      }
+      this.tankPortraitSignature = null;
+      if (this.tankPortraitEl.getAttribute('aria-label') !== 'No active tank.') {
+        this.tankPortraitEl.setAttribute('aria-label', 'No active tank.');
+      }
+      return;
+    }
+    const signature = [
+      tank.id,
+      tank.color,
+      tank.loadout.treads,
+      tank.loadout.hull,
+      tank.loadout.turret,
+      tank.loadout.barrel,
+    ].join('|');
+    const ownerLabel = HUD.playerLabel(tank);
+    const accessibleLabel = tankLoadoutAccessibleLabel(ownerLabel, tank.loadout);
+    if (this.tankPortraitEl.getAttribute('aria-label') !== accessibleLabel) {
+      this.tankPortraitEl.setAttribute('aria-label', accessibleLabel);
+    }
+    if (signature === this.tankPortraitSignature) return;
+    this.tankPortraitSignature = signature;
+    paintTankLoadoutPreview(this.tankPortraitEl, tank.color, tank.loadout);
   }
 
   /** Reconcile the authoritative fuel readout and bounded movement controls. */
@@ -2123,6 +2178,41 @@ export class HUD {
   min-width: 0;
   gap: 2px;
 }
+.st-hud__identity-lockup {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.st-hud__tank-portrait-frame {
+  position: relative;
+  width: 84px;
+  height: 48px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 210, 63, 0.2);
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 50% 82%, color-mix(in srgb, var(--st-turn-color) 22%, transparent), transparent 48%),
+    linear-gradient(180deg, rgba(122, 215, 255, 0.055), rgba(7, 4, 12, 0.8));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 0 11px color-mix(in srgb, var(--st-turn-color) 16%, transparent);
+}
+.st-hud__tank-portrait-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(105deg, transparent 28%, rgba(255, 233, 168, 0.09) 48%, transparent 66%);
+  mix-blend-mode: screen;
+}
+.st-hud__tank-portrait {
+  display: block;
+  width: 84px;
+  height: 48px;
+}
 .st-hud__turn-status {
   display: block;
   width: 100%;
@@ -2148,7 +2238,8 @@ export class HUD {
   line-height: 1.15;
   letter-spacing: 0.45px;
   text-shadow: 0 0 10px color-mix(in srgb, var(--st-turn-color) 62%, transparent);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .st-hud__menu {
   display: flex;
@@ -3431,13 +3522,16 @@ export class HUD {
     gap: 3px 5px;
     padding-block: 2px;
   }
-  #app .st-hud__turn-status {
+  #app .st-hud__identity-lockup {
     grid-column: 1;
     grid-row: 1;
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 5px;
   }
-  #app .st-hud__turn-owner {
-    white-space: normal;
-    overflow-wrap: anywhere;
+  #app .st-hud__tank-portrait-frame,
+  #app .st-hud__tank-portrait {
+    width: 70px;
+    height: 40px;
   }
   #app .st-hud__tactical-row {
     display: contents;

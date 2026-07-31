@@ -8,6 +8,22 @@ const PREVIEW_HEIGHT = 48;
 const SCALE = 1.6;
 const RETRY_MS = 50;
 
+/** Invalidate queued atlas retries and remove any stale assembled vehicle. */
+export function clearTankLoadoutPreview(canvas: HTMLCanvasElement): void {
+  delete canvas.dataset['tankPreviewSignature'];
+  if (
+    typeof navigator !== 'undefined'
+    && navigator.userAgent.toLowerCase().includes('jsdom')
+  ) return;
+  let ctx: CanvasRenderingContext2D | null = null;
+  try {
+    ctx = canvas.getContext('2d');
+  } catch {
+    // DOM-only test environments do not implement Canvas.
+  }
+  ctx?.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 function drawFallback(
   ctx: CanvasRenderingContext2D,
   color: string,
@@ -34,6 +50,14 @@ export function paintTankLoadoutPreview(
   color: string,
   loadout: TankLoadout,
 ): void {
+  const signature = [
+    color,
+    loadout.treads,
+    loadout.hull,
+    loadout.turret,
+    loadout.barrel,
+  ].join('|');
+  canvas.dataset['tankPreviewSignature'] = signature;
   canvas.width = PREVIEW_WIDTH;
   canvas.height = PREVIEW_HEIGHT;
   if (
@@ -66,7 +90,12 @@ export function paintTankLoadoutPreview(
 
   if (previewArt.state === 'loading') {
     globalThis.setTimeout(() => {
-      if (canvas.isConnected) paintTankLoadoutPreview(canvas, color, loadout);
+      if (
+        canvas.isConnected
+        && canvas.dataset['tankPreviewSignature'] === signature
+      ) {
+        paintTankLoadoutPreview(canvas, color, loadout);
+      }
     }, RETRY_MS);
   }
 }

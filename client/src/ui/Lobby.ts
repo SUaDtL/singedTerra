@@ -48,6 +48,11 @@ import {
   isValidRoomCode,
 } from './lobbyValidation';
 import { paintTankLoadoutPreview } from '../renderer/TankLoadoutPreview';
+import {
+  TANK_KIT_LABELS,
+  TANK_PART_VARIANT_LABELS,
+  TANK_SLOT_LABELS,
+} from './tankPartLabels';
 
 export type { LobbySettings } from './lobbyValidation';
 // NetworkPlayer/AiDifficulty are used across the online flow (bots in rooms).
@@ -131,48 +136,6 @@ const PALETTE: ReadonlyArray<{ name: string; value: string }> = [
   { name: 'Yellow', value: '#e8c84d' },
   { name: 'Purple', value: '#a855f7' },
 ];
-
-const TANK_KIT_LABELS: Readonly<Record<TankKitId, string>> = {
-  foundry: 'Foundry',
-  ranger: 'Ranger',
-  bulwark: 'Bulwark',
-  jackal: 'Jackal',
-};
-const TANK_SLOT_LABELS: Readonly<Record<(typeof TANK_PART_SLOTS)[number], string>> = {
-  treads: 'Mobility',
-  hull: 'Hull',
-  turret: 'Turret',
-  barrel: 'Barrel',
-};
-const TANK_PART_VARIANT_LABELS: Readonly<Record<
-  (typeof TANK_PART_SLOTS)[number],
-  Readonly<Record<TankKitId, string>>
->> = {
-  treads: {
-    foundry: 'Tracks',
-    ranger: 'Spider Legs',
-    bulwark: 'Hover',
-    jackal: 'Dune Wheels',
-  },
-  hull: {
-    foundry: 'Armor Hull',
-    ranger: 'Scout Hull',
-    bulwark: 'Siege Hull',
-    jackal: 'Raider Hull',
-  },
-  turret: {
-    foundry: 'Cupola',
-    ranger: 'Sensor Pod',
-    bulwark: 'Bunker',
-    jackal: 'Sensor Ring',
-  },
-  barrel: {
-    foundry: 'Cannon',
-    ranger: 'Railgun',
-    bulwark: 'Siege Gun',
-    jackal: 'Howitzer',
-  },
-};
 
 function presetLoadout(kit: TankKitId): TankLoadout {
   return {

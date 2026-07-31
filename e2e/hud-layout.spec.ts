@@ -424,10 +424,14 @@ test.describe('HUD layout guardrails', () => {
   });
 
   test('turn command console is coherent, complete, and fitted', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'desktop-fine') {
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
     const console = page.getByRole('region', { name: 'Turn command console' });
     const activeRow = console.locator('.st-hud__active-row');
     const player = activeRow.locator('.st-hud__turn-owner');
     const weapon = activeRow.locator('.st-hud__weapon-value');
+    const portrait = activeRow.getByRole('img', { name: /Mobility:/ });
     const meter = activeRow.getByRole('progressbar', { name: 'Movement fuel' });
     const store = console.getByRole('button', { name: /Store/ });
     const fire = console.getByRole('button', { name: /Fire/ });
@@ -436,6 +440,11 @@ test.describe('HUD layout guardrails', () => {
     await expect(activeRow).toBeVisible();
     await expect(player).toHaveText('P1');
     await expect(weapon).toHaveText('Baby Missile');
+    await expect(portrait).toHaveCount(1);
+    await expect(portrait).toHaveAttribute(
+      'aria-label',
+      "P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.",
+    );
     await expect(activeRow.locator('.st-hud__turn-kicker')).toBeVisible();
     await expect(activeRow.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'baby_missile');
@@ -458,6 +467,39 @@ test.describe('HUD layout guardrails', () => {
       'aria-label',
       "P1's turn. Weapon Sandhog. 100 fuel remaining.",
     );
+    await expect.poll(async () => portrait.evaluate((canvas) => {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx === null) return false;
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let visible = 0;
+      const colors = new Set<string>();
+      for (let index = 0; index < pixels.length; index += 4) {
+        const alpha = pixels[index + 3]!;
+        if (alpha <= 32) continue;
+        visible++;
+        colors.add(
+          `${pixels[index]},${pixels[index + 1]},${pixels[index + 2]},${alpha}`,
+        );
+      }
+      // The immediate geometric fallback occupies fewer than 1,000 pixels and
+      // has a tiny palette. These floors require the decoded authored atlas.
+      return visible > 1_000 && colors.size > 100;
+    }), {
+      message: 'the active portrait should decode and paint recognizable authored tank art',
+    }).toBe(true);
+
+    const portraitBox = await portrait.boundingBox();
+    const activeRowBox = await activeRow.boundingBox();
+    expect(portraitBox).not.toBeNull();
+    expect(activeRowBox).not.toBeNull();
+    expect(portraitBox!.width).toBeGreaterThanOrEqual(42);
+    expect(portraitBox!.height).toBeGreaterThanOrEqual(24);
+    expect(portraitBox!.x).toBeGreaterThanOrEqual(activeRowBox!.x - 1);
+    expect(portraitBox!.x + portraitBox!.width)
+      .toBeLessThanOrEqual(activeRowBox!.x + activeRowBox!.width + 1);
+    expect(portraitBox!.y).toBeGreaterThanOrEqual(activeRowBox!.y - 1);
+    expect(portraitBox!.y + portraitBox!.height)
+      .toBeLessThanOrEqual(activeRowBox!.y + activeRowBox!.height + 1);
 
     // Exercise the exact maximum-name / longest-weapon layout contract with
     // production markup and computed browser geometry.

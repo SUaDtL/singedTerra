@@ -52,10 +52,13 @@ describe('HUD mobility rocker', () => {
 
     const activeRow = root.querySelector<HTMLElement>('.st-hud__active-row')!;
     const identity = activeRow.querySelector<HTMLElement>('.st-hud__turn-status')!;
+    const lockup = activeRow.querySelector<HTMLElement>('.st-hud__identity-lockup')!;
     const tactical = activeRow.querySelector<HTMLElement>('.st-hud__tactical-row')!;
     const owner = identity.querySelector<HTMLElement>('.st-hud__turn-owner')!;
 
-    expect(identity.parentElement).toBe(activeRow);
+    expect(lockup.parentElement).toBe(activeRow);
+    expect(identity.parentElement).toBe(lockup);
+    expect(lockup.querySelector('.st-hud__tank-portrait')).not.toBeNull();
     expect(tactical.parentElement).toBe(activeRow);
     expect(tactical.querySelector('.st-hud__weapon')).not.toBeNull();
     expect(tactical.querySelector('.st-hud__mobility')).not.toBeNull();

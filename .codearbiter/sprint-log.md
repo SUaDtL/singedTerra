@@ -2270,3 +2270,58 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - LOCAL ACCEPTANCE: `npm run check` passed after the documentation corrections; the earlier combined stack run passed production build and full Playwright with 101 passes and 10 intentional skips. Relative-link validation covered 21 maintained/governed documents with 0 broken targets; diff hygiene and the state-free secret scan returned clean. Exact-head hosted CI remains required after push. Confidence high.
 - DEPENDENCY REVIEW: PR #167 cleared provenance, license, compatibility, and adversarial review; after updating onto current `main`, every exact-head hosted check passed and the PR merged as `9daca984`. PRs #215, #175, and #174 remain held for Node runtime-contract incompatibilities that green CI did not detect. Confidence high.
 - AUDIT CORRECTION: for PR #167, all required exact-head hosted checks passed; Supabase Preview skipped per configuration. The earlier "every exact-head hosted check passed" wording did not distinguish that configured skip. Confidence high.
+
+
+### Active tank identity portrait SMARTS decision and spec gate
+
+- CAUSAL FINDING: the current 1440-by-900 production view renders customized battlefield tanks at roughly 40 pixels wide. The Garage already offers Tracks, Spider Legs, Hover, Dune Wheels, four hulls, four turrets, and four barrels, but the command HUD does not present the assembled vehicle, so those authored choices lose readable identity during combat. Confidence high.
+- SMARTS DECISION (high confidence): select `active-tank-portrait` over enlarging battlefield sprites or adding another cosmetic family. Score 96/100: Scope 19/20 (one existing HUD identity seam plus the shared preview painter), User value 20/20 (directly answers customization readability), Risk 20/20 (presentation-only and no hitbox drift), Maintainability 19/20 (one atlas painter across Garage, battlefield, and HUD), Testability 18/20 (DOM, repaint, accessible naming, and viewport geometry oracles), Security 0 exposure. No dependency, engine, backend, schema, paid asset, or action-contract change.
+- SPEC GATE: `.codearbiter/specs/active-tank-portrait.md` and matching plan are approved as SUaDtL under the standing passion-project sprint authority. The slice adds one cached authored portrait to the active-turn identity and preserves every combat control and deterministic contract. Confidence high.
+
+
+### Active tank identity portrait TDD RED
+
+- TDD RED: the new focused HUD contract fails 3/3 because the active row has no portrait canvas, never calls the authored preview painter, and cannot clear or hand off portrait identity. Production-browser acceptance is also pinned for one exact default-loadout label, at least 42-by-24 rendered pixels, active-row containment, and existing no-scroll gates across all supported profiles. Confidence high.
+
+
+### Active tank identity portrait visual acceptance and adversarial correction
+
+- GREEN: the active command console now paints the exact active tank color and four-slot loadout through the shared authored atlas. The single portrait is 83-by-47 rendered pixels at 1440-by-900, 44-by-25 at 915-by-412 coarse pointer, and 52-by-30 at 900-by-520. All three profiles remain exactly viewport-sized with no HUD or page scroll, and the identity card stays contained beside owner, weapon, fuel, movement, Store, Fire, and Arsenal controls. Confidence high.
+- INITIAL ADVERSARIAL VERDICT: 0 Critical / 0 High / 0 Medium / 1 Low. The Low found that clearing only the HUD signature and accessible label left a queued atlas retry token valid, allowing a hidden stale tank repaint after terminal or missing-active state. Confidence high.
+- CORRECTION: `clearTankLoadoutPreview` now invalidates the canvas dataset signature before any Canvas operation and clears the bitmap. HUD invokes it only on active-to-none or residual-signature transitions. A fake-timer loading-to-clear regression proves the queued 50ms retry cannot re-enter drawing, and HUD coverage proves repeated inactive frames do not repeat work. Follow-up adversarial verdict is CLEAN: 0 Critical / 0 High / 0 Medium / 0 Low. Confidence high.
+
+### Active tank portrait current-main reconciliation
+
+- SMARTS DECISION (high confidence): preserve the complete tracked and untracked portrait workspace in a labeled safety stash, fast-forward the branch because its committed head is an exact ancestor of current `origin/main`, then reapply the work and retain the stash until the reapplied tree is verified. Score 98/100: Scope 20/20, User value 18/20, Risk 20/20, Maintainability 20/20, Testability 20/20; no security exposure. This avoids an artificial merge commit and preserves a recovery point for every unfinished file. Confidence high.
+
+### Active tank portrait coverage-gate prerequisite
+
+- COVERAGE RED: `npm run coverage:client` failed twice on the portrait tree because `Renderer.napalmFirelight` and `Renderer.projectileGroundShadows` exceeded Vitest's 5000ms per-test timeout. The exact canonical failure reproduced on the clean pre-portrait branch, while those two tests passed together under V8 coverage in 3.6 seconds, proving the defect predates and is independent of the portrait. Confidence high.
+- ROOT CAUSE: unrestricted file-parallel V8 coverage oversubscribes the Windows host; both failures appear only in the 97/99-file full-coverage fanout. Running the complete 99-file / 668-test coverage suite with `--maxWorkers=4` passed in 47.68 seconds at 88.15% statements, 77.27% branches, 78.63% functions, and 90.76% lines. Confidence high.
+- SMARTS DECISION (high confidence): bound only the coverage script to four workers, leaving ordinary test parallelism and the 5000ms behavioral timeout unchanged. Score 99/100: Scope 20/20, User value 19/20, Risk 20/20, Maintainability 20/20, Testability 20/20. Raising timeouts would mask slow tests; accepting a non-canonical override would leave the governed command red. No dependency or product-runtime change. Confidence high.
+### Active tank portrait coverage-gate prerequisite close
+
+- GREEN: the canonical `npm run coverage:client` now runs V8 coverage with four workers and passed 99/99 files and 668/668 tests in 44.87 seconds: 88.15% statements, 77.27% branches, 78.63% functions, and 90.76% lines. The ordinary client test command, five-second test timeout, assertions, and thresholds remain unchanged. Confidence high.
+- ADVERSARIAL VERDICT: CLEAN, 0 Critical / 0 High / 0 Medium / 0 Low. Review confirmed the two-file command/documentation fix is the minimum root-cause correction and changes no dependency, configuration outside the command, or product behavior. Confidence high.
+### 2026-07-31 — active tank portrait adversarial correction
+
+- Final whole-branch adversarial review: 0 Critical, 0 High, 2 Medium, 0 Low.
+- MEDIUM accepted: dead shooters retained stale portrait identity during FIRING/RESOLVING even though shot-progress ownership must remain visible.
+- MEDIUM accepted: production-browser coverage proved only canvas geometry, not authored non-empty pixels, and desktop-fine used 1600x900 rather than the approved 1440x900 acceptance viewport.
+- TDD RED: `npm -w @singedterra/client exec vitest run src/ui/HUD.tankPortrait.test.ts` failed 2/5 tests. Direct painted-to-dead transitions in FIRING and RESOLVING kept Alice's portrait label instead of `No active tank.`
+- SMARTS: preserve the deterministic shot-progress announcement while clearing only the dead shooter's portrait; add an authored-pixel oracle and exercise the exact 1440x900 viewport. Confidence: high. Conflict level: correctness and data integrity over developer velocity.
+### Active tank portrait adversarial correction close
+
+- GREEN: focused HUD portrait lifecycle now passes 5/5 tests; direct painted-to-dead FIRING and RESOLVING transitions clear label and retry signature while preserving the shot-progress announcement.
+- GREEN: production-browser portrait acceptance passes 3/3 at exact 1440x900 desktop, 915x412 coarse-pointer, and 900x520 small-window. The oracle requires more than 1,000 visible pixels and more than 100 RGBA values, excluding both blank Canvas and the immediate geometric fallback.
+- ADVERSARIAL FOLLOW-UP: CLEAN, 0 Critical / 0 High / 0 Medium / 0 Low. The same reviewer confirmed both prior Medium findings closed with no stale retry race, progress regression, or threshold false positive.
+### Active tank portrait final local gate
+
+- `npm run check`: PASS, including TypeScript and every deterministic engine/client harness.
+- `npm run test:client`: PASS, 99 files and 670 tests.
+- `npm run coverage:client`: PASS, 99 files and 670 tests; 88.15% statements, 77.29% branches, 78.63% functions, 90.76% lines.
+- `npm run check:edge`: PASS, 181 tests and 0 failures.
+- `npm run test:e2e`: PASS, 101 passed and 10 expected project-profile skips.
+- `npm run build`: PASS, 1,886 modules transformed and production bundle emitted.
+- `npm audit --audit-level=high`: PASS, 0 vulnerabilities.
+- Staged diff check, conflict-marker scan, and state-free secret scan: PASS.
