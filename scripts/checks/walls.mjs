@@ -321,21 +321,23 @@ for (const side of ['left', 'right']) {
 }
 
 {
-  const shot = projectile();
-  const { engine, state } = engineWith('reflective', shot);
-  engine.tick();
-  const clone = engine.clone();
-  engine.tick();
-  clone.tick();
-  check(
-    JSON.stringify(engine.getState()) === JSON.stringify(clone.getState()),
-    'clone preserves wall mode, contact sequence, and future flight',
-  );
-  clone.getState().projectiles[0].x += 10;
-  check(
-    clone.getState().projectiles[0].x !== state.projectiles[0].x,
-    'clone keeps reflected projectile state independent',
-  );
+  for (const walls of ['reflective', 'wrap']) {
+    const shot = projectile();
+    const { engine, state } = engineWith(walls, shot);
+    engine.tick();
+    const clone = engine.clone();
+    engine.tick();
+    clone.tick();
+    check(
+      JSON.stringify(engine.getState()) === JSON.stringify(clone.getState()),
+      `clone preserves ${walls} mode, contact sequence, and future flight`,
+    );
+    clone.getState().projectiles[0].x += 10;
+    check(
+      clone.getState().projectiles[0].x !== state.projectiles[0].x,
+      `clone keeps ${walls} projectile state independent`,
+    );
+  }
 }
 
 {

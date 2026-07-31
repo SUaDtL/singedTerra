@@ -7,6 +7,7 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import {
   buildRematchPlayers,
+  handleRestartGame,
   normalizeRematchOptions,
   normalizeStoredRematchOptions,
   projectCreatedRematchInfo,
@@ -120,6 +121,79 @@ Deno.test('normalizeStoredRematchOptions preserves the room contract but never p
     }).walls,
     'open',
   )
+})
+
+Deno.test('handleRestartGame persists normalized walls through the successor insert', async () => {
+  const roomId = '00000000-0000-4000-8000-000000000001'
+
+  async function insertedWalls(walls: unknown) {
+    let insertedRoom: Record<string, unknown> | null = null
+    const oldRoom = {
+      id: roomId,
+      options: {
+        maxPlayers: 2,
+        maxWind: 7,
+        gravity: 0.2,
+        walls,
+        rounds: 3,
+      },
+      players: [
+        { id: 'uid-a', name: 'Ana', color: '#f00', ready: true },
+        { id: 'uid-b', name: 'Bo', color: '#00f', ready: true },
+      ],
+    }
+    const rooms = {
+      select: (columns: string) => columns === '*'
+        ? {
+          eq: () => ({
+            maybeSingle: () => Promise.resolve({ data: oldRoom, error: null }),
+          }),
+        }
+        : {
+          eq: () => ({
+            neq: () => ({
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            }),
+          }),
+        },
+      update: () => ({
+        eq: () => ({
+          is: () => ({
+            select: () => Promise.resolve({ data: [{ id: roomId }], error: null }),
+          }),
+        }),
+      }),
+      insert: (row: Record<string, unknown>) => {
+        insertedRoom = row
+        return Promise.resolve({ error: null })
+      },
+    }
+    const roomSeats = {
+      select: () => ({
+        eq: () => Promise.resolve({ data: [], error: null }),
+      }),
+    }
+    const supabase = {
+      from: (table: string) => table === 'rooms' ? rooms : roomSeats,
+    }
+
+    const response = await handleRestartGame(
+      { roomId, playerId: 'uid-a' },
+      undefined,
+      {
+        supabase: supabase as never,
+        verifySeat: () => Promise.resolve(true),
+      },
+    )
+
+    assertEquals(response.status, 200)
+    const captured = insertedRoom as Record<string, unknown> | null
+    if (!captured) throw new Error('success path did not insert a successor room')
+    return (captured.options as { walls?: unknown }).walls
+  }
+
+  assertEquals(await insertedWalls('wrap'), 'wrap')
+  assertEquals(await insertedWalls('invalid'), 'open')
 })
 
 Deno.test('lost-claim response projector preserves wrap walls', () => {

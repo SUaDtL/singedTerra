@@ -2382,3 +2382,10 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - HARVEST: no low-confidence wrap-sidewall decision or new `[NEEDS-TRIAGE]` finding requires promotion. Confidence high.
 
 - BOARD HARVEST: `$ca-task` queued the remaining concrete-sidewall idea as a separate `sprint:wrap-sidewalls` follow-up. The legacy uncheckboxed backlog row could not be marked done through the sanctioned task writer, so it remains historical rather than being free-hand rewritten. Confidence high.
+
+### Wrap sidewalls coverage-auditor corrections
+
+- COVERAGE MEDIUM CLOSED: the clone oracle now runs reflective and wrap modes independently, proving exact future parity and post-contact projectile-state independence for both. The wall harness passes 58/58. Confidence high.
+- HANDLER-SEAM RED: a successful rematch-insert test initially failed typechecking because `handleRestartGame` exposed no injectable service seam. Confidence high.
+- HANDLER-SEAM GREEN: `handleRestartGame` retains its production `body, Request` contract and accepts test dependencies only as an optional third argument; normal HTTP execution still defaults to `getServiceClient` and `verifySeatToken`. The causal test captures the actual successor insert and proves wrap persistence plus invalid-wall normalization. Focused restart tests pass 10/10; the full Edge suite passes 184/184. Confidence high.
+- COVERAGE FOLLOW-UP: exact correction re-review returned CLEAN. Confidence high.- AUTH/SECURITY FOLLOW-UP: exact correction reviews both returned CLEAN with 0 Critical, High, Medium, or Low findings. HTTP callers cannot supply the third test-dependency argument; production defaults, membership, seat-token verification, service-role confinement, and mutation ordering remain unchanged. Confidence high.
