@@ -200,24 +200,117 @@ test.describe('HUD layout guardrails', () => {
     expect(windBox!.width).toBeGreaterThan(elevationBox!.width * 1.8);
   });
 
-  test('active player + weapon row is explicit, visible, and fitted', async ({ page }) => {
-    const activeRow = page.locator('.st-hud__active-row');
+  test('turn command console is coherent, complete, and fitted', async ({ page }, testInfo) => {
+    const console = page.getByRole('region', { name: 'Turn command console' });
+    const activeRow = console.locator('.st-hud__active-row');
+    const player = activeRow.locator('.st-hud__turn-owner');
+    const weapon = activeRow.locator('.st-hud__weapon-value');
+    const meter = activeRow.getByRole('progressbar', { name: 'Movement fuel' });
+    const store = console.getByRole('button', { name: /Store/ });
+    const fire = console.getByRole('button', { name: /Fire/ });
+
+    await expect(console).toBeVisible();
     await expect(activeRow).toBeVisible();
-    await expect(activeRow.locator('.st-hud__turn-owner')).toHaveText('P1');
-    await expect(activeRow.locator('.st-hud__weapon-value')).toHaveText('Baby Missile');
+    await expect(player).toHaveText('P1');
+    await expect(weapon).toHaveText('Baby Missile');
+    await expect(activeRow.locator('.st-hud__turn-kicker')).toBeVisible();
+    await expect(activeRow.locator('.st-hud__weapon-icon .st-weapon-icon'))
+      .toHaveAttribute('data-weapon', 'baby_missile');
+    await expect(meter).toHaveAttribute('aria-valuenow', '100');
+    await expect(store).toBeVisible();
+    await expect(fire).toBeVisible();
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
       "P1's turn. Weapon Baby Missile. 100 fuel remaining.",
     );
-    const box = await activeRow.boundingBox();
-    expect(box, 'active/weapon row should have a rendered box').not.toBeNull();
-    expect(box!.width).toBeGreaterThan(0);
-    expect(box!.height).toBeGreaterThan(4);
-    const geometry = await page.locator('#hud').evaluate((hud) => ({
-      clientHeight: hud.clientHeight,
-      scrollHeight: hud.scrollHeight,
-    }));
-    expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight + 1);
+
+    await page.getByRole('button', { name: 'Expand arsenal' }).click();
+    await page.locator('.st-hud__weapon-btn[data-weapon="bouncing_betty"]').click();
+    await page.getByRole('button', { name: 'Collapse arsenal' }).click();
+    await expect(weapon).toHaveText('Bouncing Betty');
+    await expect(activeRow.locator('.st-hud__weapon-icon .st-weapon-icon'))
+      .toHaveAttribute('data-weapon', 'bouncing_betty');
+    await expect(fire).toHaveAttribute('aria-label', 'Fire Bouncing Betty');
+    await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
+      'aria-label',
+      "P1's turn. Weapon Bouncing Betty. 100 fuel remaining.",
+    );
+
+    // Exercise the exact maximum-name / longest-weapon layout contract with
+    // production markup and computed browser geometry.
+    await player.evaluate((node) => { node.textContent = 'Commander Longname X'; });
+    const geometry = await console.evaluate((node) => {
+      const hud = document.getElementById('hud')!;
+      const playerNode = node.querySelector<HTMLElement>('.st-hud__turn-owner')!;
+      const weaponNode = node.querySelector<HTMLElement>('.st-hud__weapon-value')!;
+      const bounds = node.getBoundingClientRect();
+      const targetRects = [...node.querySelectorAll<HTMLElement>('button')]
+        .map((target) => target.getBoundingClientRect());
+      return {
+        consoleClientHeight: node.clientHeight,
+        consoleScrollHeight: node.scrollHeight,
+        consoleClientWidth: node.clientWidth,
+        consoleScrollWidth: node.scrollWidth,
+        hudClientHeight: hud.clientHeight,
+        hudScrollHeight: hud.scrollHeight,
+        playerClientWidth: playerNode.clientWidth,
+        playerScrollWidth: playerNode.scrollWidth,
+        weaponClientWidth: weaponNode.clientWidth,
+        weaponScrollWidth: weaponNode.scrollWidth,
+        targetsContained: targetRects.every((target) =>
+          target.left >= bounds.left - 1
+          && target.right <= bounds.right + 1
+          && target.top >= bounds.top - 1
+          && target.bottom <= bounds.bottom + 1),
+        targetMetrics: [...node.querySelectorAll<HTMLElement>('button')].map((target) => ({
+          className: target.className,
+          height: target.getBoundingClientRect().height,
+          minHeight: getComputedStyle(target).minHeight,
+        })),
+      };
+    });
+    expect(geometry.consoleScrollHeight).toBeLessThanOrEqual(geometry.consoleClientHeight + 1);
+    expect(geometry.consoleScrollWidth).toBeLessThanOrEqual(geometry.consoleClientWidth + 1);
+    expect(geometry.hudScrollHeight).toBeLessThanOrEqual(geometry.hudClientHeight + 1);
+    expect(geometry.playerScrollWidth).toBeLessThanOrEqual(geometry.playerClientWidth + 1);
+    expect(geometry.weaponScrollWidth).toBeLessThanOrEqual(geometry.weaponClientWidth + 1);
+    expect(geometry.targetsContained).toBe(true);
+    const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
+    for (const target of geometry.targetMetrics) {
+      expect(
+        target.height,
+        `${target.className} (${target.minHeight}) must retain a ${targetFloor}px rendered target`,
+      ).toBeGreaterThanOrEqual(targetFloor);
+    }
+  });
+
+  test('noncompact touch keeps every command target at least 44 rendered pixels', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect.poll(() => isCompact(page)).toBe(false);
+
+    const commandConsole = page.getByRole('region', { name: 'Turn command console' });
+    const geometry = await commandConsole.evaluate((node) => {
+      const hud = document.getElementById('hud')!;
+      return {
+        hudClientHeight: hud.clientHeight,
+        hudScrollHeight: hud.scrollHeight,
+        targets: [...node.querySelectorAll<HTMLElement>('button')].map((target) => ({
+          className: target.className,
+          height: target.getBoundingClientRect().height,
+        })),
+      };
+    });
+
+    expect(geometry.hudScrollHeight).toBeLessThanOrEqual(geometry.hudClientHeight + 1);
+    for (const target of geometry.targets) {
+      expect(
+        target.height,
+        `${target.className} must retain a 44px rendered target on noncompact touch`,
+      ).toBeGreaterThanOrEqual(44);
+    }
   });
 
   test('mobility rocker stays fitted and spends authoritative fuel without ending the turn', async ({
@@ -252,6 +345,8 @@ test.describe('HUD layout guardrails', () => {
     }
     expect(remaining).toBeGreaterThanOrEqual(92);
     expect(remaining).toBeLessThan(100);
+    await expect(mobility.getByRole('progressbar', { name: 'Movement fuel' }))
+      .toHaveAttribute('aria-valuenow', String(remaining));
     await expect(activeRow.locator('.st-hud__turn-owner')).toHaveText('P1');
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',

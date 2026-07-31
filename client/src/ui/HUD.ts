@@ -176,6 +176,7 @@ export class HUD {
   private stripCollapsed = false;
   private storeBtnEl!: HTMLButtonElement;
   private storeBtnLabelEl!: HTMLElement;
+  private commandConsoleEl!: HTMLElement;
   private turnActionsEl!: HTMLElement;
   private primaryActionBtnEl!: HTMLButtonElement;
   private primaryActionLabelEl!: HTMLElement;
@@ -224,9 +225,12 @@ export class HUD {
   private activePlayerEl!: HTMLElement;
   private turnStatusEl!: HTMLElement;
   private turnOwnerEl!: HTMLElement;
+  private weaponIconEl!: HTMLElement;
+  private selectedWeaponIconType: WeaponType | null = null;
   private moveLeftBtnEl!: HTMLButtonElement;
   private moveRightBtnEl!: HTMLButtonElement;
   private fuelValueEl!: HTMLElement;
+  private fuelMeterEl!: HTMLElement;
   /** Last turn actually presented in the owner row; resets between games. */
   private lastPresentedTurnKey: string | null = null;
 
@@ -350,6 +354,7 @@ export class HUD {
     this.buildArsenal();
     this.buildStore();
     this.buildTurnActions();
+    this.buildCommandConsole();
     this.buildEndScreens();
     this.buildRoundShop();
     const menu = this.buildMenu();
@@ -359,7 +364,15 @@ export class HUD {
     // Touch strip goes into the HUD side panel, NOT the canvas overlay, so it
     // can never overlap the play field. margin-top:auto (via CSS) pushes it to
     // the bottom of the panel column.
-    this.root.append(menu, this.roundEl, this.playersEl, instruments, this.activePlayerEl, this.aimEl, this.turnActionsEl, this.stripEl, this.touchStripEl);
+    this.root.append(
+      menu,
+      this.roundEl,
+      this.playersEl,
+      instruments,
+      this.commandConsoleEl,
+      this.stripEl,
+      this.touchStripEl,
+    );
     // buildArsenal resolves the persisted state before the rail children exist;
     // re-apply it now so a stored-open drawer also isolates covered controls.
     this.applyStripCollapsed();
@@ -592,8 +605,7 @@ export class HUD {
     // This shows "PlayerName  ·  WeaponName" in one compact row. It persists below the
     // gauges and is hidden while the shot-progress status is shown.
     this.activePlayerEl = document.createElement('div');
-    this.activePlayerEl.className =
-      'st-hud__active-row st-ui-section st-ui-section--active';
+    this.activePlayerEl.className = 'st-hud__active-row';
     this.turnStatusEl = document.createElement('div');
     this.turnStatusEl.className = 'st-hud__turn-status';
     this.turnStatusEl.setAttribute('role', 'status');
@@ -603,7 +615,7 @@ export class HUD {
     // aimEl announces transport, flight, and resolution progress without changing
     // the compact rail's height.
     this.aimEl = document.createElement('div');
-    this.aimEl.className = 'st-hud__aim st-ui-section st-ui-section--active';
+    this.aimEl.className = 'st-hud__aim';
     this.aimEl.setAttribute('role', 'status');
     this.aimEl.setAttribute('aria-live', 'polite');
     this.aimEl.setAttribute('aria-atomic', 'true');
@@ -626,37 +638,64 @@ export class HUD {
 
     const weapon = document.createElement('div');
     weapon.className = 'st-hud__weapon';
+    this.weaponIconEl = document.createElement('span');
+    this.weaponIconEl.className = 'st-hud__weapon-icon';
+    this.weaponIconEl.setAttribute('aria-hidden', 'true');
+    const weaponCopy = document.createElement('span');
+    weaponCopy.className = 'st-hud__weapon-copy';
     const weaponLabel = document.createElement('span');
     weaponLabel.className = 'st-hud__weapon-label';
     weaponLabel.textContent = 'Weapon';
     this.weaponValueEl = document.createElement('span');
     this.weaponValueEl.className = 'st-hud__weapon-value';
-    weapon.append(weaponLabel, this.weaponValueEl);
+    weaponCopy.append(weaponLabel, this.weaponValueEl);
+    weapon.append(this.weaponIconEl, weaponCopy);
 
     const mobility = document.createElement('div');
     mobility.className = 'st-hud__mobility';
     mobility.setAttribute('role', 'group');
     mobility.setAttribute('aria-label', 'Tank movement');
-    const makeMoveButton = (delta: -8 | 8, label: string, glyph: string): HTMLButtonElement => {
+    const makeMoveButton = (
+      delta: -8 | 8,
+      label: string,
+      direction: string,
+      key: string,
+    ): HTMLButtonElement => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'st-hud__move-btn';
       button.dataset['move'] = String(delta);
       button.setAttribute('aria-label', label);
-      button.textContent = glyph;
+      const directionEl = document.createElement('span');
+      directionEl.className = 'st-hud__move-direction';
+      directionEl.setAttribute('aria-hidden', 'true');
+      directionEl.textContent = direction;
+      const keyEl = document.createElement('kbd');
+      keyEl.setAttribute('aria-hidden', 'true');
+      keyEl.textContent = key;
+      button.append(directionEl, keyEl);
       button.addEventListener('click', () => this.moveCb?.(delta));
       return button;
     };
-    this.moveLeftBtnEl = makeMoveButton(-8, 'Move tank left, 8 fuel maximum', 'A‹');
-    this.moveRightBtnEl = makeMoveButton(8, 'Move tank right, 8 fuel maximum', '›D');
+    this.moveLeftBtnEl = makeMoveButton(-8, 'Move tank left, 8 fuel maximum', '‹', 'A');
+    this.moveRightBtnEl = makeMoveButton(8, 'Move tank right, 8 fuel maximum', '›', 'D');
     const fuel = document.createElement('div');
     fuel.className = 'st-hud__fuel';
+    const fuelReadout = document.createElement('div');
+    fuelReadout.className = 'st-hud__fuel-readout';
     const fuelLabel = document.createElement('span');
     fuelLabel.className = 'st-hud__fuel-label';
     fuelLabel.textContent = 'Fuel';
     this.fuelValueEl = document.createElement('span');
     this.fuelValueEl.className = 'st-hud__fuel-value';
-    fuel.append(fuelLabel, this.fuelValueEl);
+    fuelReadout.append(fuelLabel, this.fuelValueEl);
+    this.fuelMeterEl = document.createElement('div');
+    this.fuelMeterEl.className = 'st-hud__fuel-meter';
+    this.fuelMeterEl.setAttribute('role', 'progressbar');
+    this.fuelMeterEl.setAttribute('aria-label', 'Movement fuel');
+    this.fuelMeterEl.setAttribute('aria-valuemin', '0');
+    this.fuelMeterEl.setAttribute('aria-valuemax', '100');
+    fuel.append(fuelReadout, this.fuelMeterEl);
     mobility.append(this.moveLeftBtnEl, fuel, this.moveRightBtnEl);
 
     const tactical = document.createElement('div');
@@ -858,8 +897,7 @@ export class HUD {
   /** One bounded action row: economy on the left, turn commitment on the right. */
   private buildTurnActions(): void {
     this.turnActionsEl = document.createElement('div');
-    this.turnActionsEl.className =
-      'st-hud__turn-actions st-ui-section st-ui-section--actions';
+    this.turnActionsEl.className = 'st-hud__turn-actions';
 
     this.primaryActionBtnEl = document.createElement('button');
     this.primaryActionBtnEl.type = 'button';
@@ -876,6 +914,20 @@ export class HUD {
     this.primaryActionBtnEl.addEventListener('click', () => this.primaryActionCb?.());
 
     this.turnActionsEl.append(this.storeBtnEl, this.primaryActionBtnEl);
+  }
+
+  /** One semantic surface for identity, progress, tactics, economy, and Fire. */
+  private buildCommandConsole(): void {
+    this.commandConsoleEl = document.createElement('section');
+    this.commandConsoleEl.className =
+      'st-hud__command-console st-ui-section st-ui-section--active';
+    this.commandConsoleEl.setAttribute('role', 'region');
+    this.commandConsoleEl.setAttribute('aria-label', 'Turn command console');
+    this.commandConsoleEl.append(
+      this.activePlayerEl,
+      this.aimEl,
+      this.turnActionsEl,
+    );
   }
 
   /** GAME_OVER overlay + the non-destructive PAUSE overlay. */
@@ -1398,6 +1450,10 @@ export class HUD {
       this.aimEl.classList.toggle('st-hud__aim--hidden', true);
       if (this.turnOwnerEl.textContent !== '') this.turnOwnerEl.textContent = '';
       if (this.weaponValueEl.textContent !== '—') this.weaponValueEl.textContent = '—';
+      if (this.selectedWeaponIconType !== null) {
+        this.weaponIconEl.replaceChildren();
+        this.selectedWeaponIconType = null;
+      }
       if (this.aimTextEl.textContent !== '') this.aimTextEl.textContent = '';
       if (this.turnStatusEl.getAttribute('aria-label') !== 'No active turn.') {
         this.turnStatusEl.setAttribute('aria-label', 'No active turn.');
@@ -1464,6 +1520,10 @@ export class HUD {
     if (this.weaponValueEl.textContent !== weaponName) {
       this.weaponValueEl.textContent = weaponName;
     }
+    if (this.selectedWeaponIconType !== tank.selectedWeapon) {
+      this.weaponIconEl.replaceChildren(makeWeaponIcon(tank.selectedWeapon, 19));
+      this.selectedWeaponIconType = tank.selectedWeapon;
+    }
     if (
       this.activePlayerEl.style.getPropertyValue('--st-turn-color') !== tank.color
     ) {
@@ -1512,6 +1572,18 @@ export class HUD {
     const fuelLabel = tank ? `${fuel} fuel remaining` : 'No active fuel';
     if (this.fuelValueEl.getAttribute('aria-label') !== fuelLabel) {
       this.fuelValueEl.setAttribute('aria-label', fuelLabel);
+    }
+    const boundedFuel = Math.max(0, Math.min(100, fuel));
+    const fuelLevel = `${boundedFuel}%`;
+    if (this.fuelMeterEl.style.getPropertyValue('--st-fuel-level') !== fuelLevel) {
+      this.fuelMeterEl.style.setProperty('--st-fuel-level', fuelLevel);
+    }
+    const fuelNow = String(boundedFuel);
+    if (this.fuelMeterEl.getAttribute('aria-valuenow') !== fuelNow) {
+      this.fuelMeterEl.setAttribute('aria-valuenow', fuelNow);
+    }
+    if (this.fuelMeterEl.getAttribute('aria-valuetext') !== fuelLabel) {
+      this.fuelMeterEl.setAttribute('aria-valuetext', fuelLabel);
     }
 
     const canMove = canControl &&
@@ -1852,23 +1924,45 @@ export class HUD {
   transition: width 160ms ease;
 }
 .st-hud__weapon {
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px 4px;
+  border: 1px solid rgba(255, 210, 63, 0.16);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 210, 63, 0.055), rgba(7, 4, 12, 0.42));
+  font-size: var(--ui-type-title);
+}
+.st-hud__weapon-icon {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 4px;
+  color: var(--gold);
+  background: rgba(255, 210, 63, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 210, 63, 0.14);
+}
+.st-hud__weapon-icon .st-weapon-icon {
+  width: 17px;
+  height: 17px;
+}
+.st-hud__weapon-copy {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   justify-content: center;
   gap: 2px;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  font-size: var(--ui-type-title);
 }
 .st-hud__turn-identity {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
-  gap: 7px;
+  gap: 2px;
 }
 .st-hud__turn-status {
   display: block;
@@ -1876,21 +1970,22 @@ export class HUD {
   min-width: 0;
 }
 .st-hud__turn-kicker {
-  /* The colored rail and atomic status already communicate turn ownership.
-     Keep this label for DOM/a11y structure without spending the name's width. */
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  color: var(--ui-muted);
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 .st-hud__turn-owner {
   min-width: 0;
+  max-width: 100%;
   color: var(--ui-copy);
   font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   line-height: 1.15;
   letter-spacing: 0.45px;
   text-shadow: 0 0 10px color-mix(in srgb, var(--st-turn-color) 62%, transparent);
@@ -1917,22 +2012,22 @@ export class HUD {
 }
 .st-hud__menu:hover { background: var(--ui-surface-active); color: var(--ui-action); }
 .st-hud__weapon-label {
-  opacity: 0.65;
+  color: var(--ui-muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 8px;
+  letter-spacing: 1.2px;
+  font-size: 7px;
+  font-weight: 700;
   line-height: 1;
 }
 .st-hud__weapon-value {
-  overflow: hidden;
-  max-width: 128px;
+  display: block;
+  min-width: 0;
   font-family: var(--font-display);
   font-weight: bold;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.15;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.25px;
   color: var(--gold);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .st-hud__controls {
@@ -2288,7 +2383,11 @@ export class HUD {
 .st-hud__turn-actions {
   display: flex;
   align-items: stretch;
-  gap: 7px;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px 7px;
+  border-top: 1px solid rgba(255, 210, 63, 0.14);
+  background: rgba(6, 3, 11, 0.34);
   flex-shrink: 0;
 }
 .st-hud__turn-actions .st-hud__store-btn {
@@ -2298,7 +2397,7 @@ export class HUD {
 }
 .st-hud__primary-action {
   min-width: 0;
-  min-height: 40px;
+  min-height: 42px;
   flex: 1.35;
   display: flex;
   align-items: center;
@@ -2348,11 +2447,14 @@ export class HUD {
   width: 100%;
   pointer-events: auto;
   cursor: pointer;
-  padding: 9px 10px;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 7px 8px;
   margin: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  border: 1px solid rgba(255, 210, 63, 0.20);
+  border-radius: var(--ui-radius-md);
+  background: rgba(255, 210, 63, 0.035);
   color: var(--ui-muted);
   font-family: var(--font-sans);
   font-size: var(--ui-type-body);
@@ -2804,6 +2906,25 @@ export class HUD {
 #app.is-compact .st-hud__gauge-ticks { stroke-width: 2; }
 #app.is-compact .st-hud__gauge-needle { stroke-width: 4; }
 #app.is-compact .st-hud__gauge-label { font-size: 12px; }
+@media (pointer: coarse) {
+  #app .st-hud__instruments {
+    gap: 1px;
+    padding: 0 7px;
+  }
+  #app .st-hud__instr-title {
+    padding: 0 8px;
+  }
+  #app .st-hud__gauge-row {
+    gap: 3px;
+  }
+  #app .st-hud__gauge-cell {
+    gap: 1px;
+    padding: 2px 5px 0;
+  }
+  #app .st-hud__gauge-cell--wind {
+    padding: 1px 6px;
+  }
+}
 /* On touch devices, lift the touch controls up to sit right after the players
  * list (before the instruments) instead of being pinned to the bottom of the
  * fitted panel. Every child from instruments onward gets order:1; the touch
@@ -2812,44 +2933,44 @@ export class HUD {
 @media (pointer: coarse) {
   .st-hud__touch-strip { margin-top: 0; }
   .st-hud__instruments,
-  .st-hud__active-row,
-  .st-hud__aim,
-  .st-hud__turn-actions,
+  .st-hud__command-console,
   .st-hud__strip { order: 1; }
 }
-/* Active player module (below the cluster): identity first, tactics second. */
+/* One command surface: identity first, tactics second, commitment last. */
+.st-hud__command-console {
+  --ui-section-padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+}
 .st-hud__active-row {
-  --ui-section-padding: 5px 3px 5px 11px;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 4px;
-  min-height: 47px;
-  overflow: hidden;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 8px 6px 12px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--st-turn-color) 12%, transparent), transparent 58%);
-  /* Same flex-crush guard as .st-hud__instruments: this is the only other #hud
-   * flex child with overflow:hidden, so without it the name/weapon row is the
-   * next element squeezed to zero when the panel content overflows on touch. */
+    linear-gradient(90deg, color-mix(in srgb, var(--st-turn-color) 15%, transparent), transparent 62%);
   flex-shrink: 0;
 }
 .st-hud__tactical-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 7px;
+  grid-template-columns: minmax(0, 1fr) 94px;
+  align-items: stretch;
+  gap: 5px;
   min-width: 0;
 }
 .st-hud__tactical-row .st-hud__weapon {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
   min-width: 0;
 }
 .st-hud__mobility {
   display: grid;
-  grid-template-columns: 28px 36px 28px;
+  grid-template-columns: 27px minmax(36px, 1fr) 27px;
   align-items: stretch;
   gap: 2px;
   min-width: 0;
@@ -2857,8 +2978,13 @@ export class HUD {
 }
 .st-hud__move-btn {
   min-width: 0;
-  min-height: 24px;
-  padding: 0;
+  min-height: 34px;
+  padding: 2px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   border: 1px solid rgba(122, 215, 255, 0.32);
   border-radius: 4px;
   background:
@@ -2866,8 +2992,24 @@ export class HUD {
   color: var(--tank-blue-lite, #7ad7ff);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 9px;
   font-weight: 700;
+  line-height: 1;
+}
+.st-hud__move-direction {
+  color: var(--tank-blue-lite, #7ad7ff);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 0.8;
+}
+.st-hud__move-btn kbd {
+  min-width: 12px;
+  padding: 1px 2px;
+  border: 1px solid rgba(122, 215, 255, 0.22);
+  border-radius: 2px;
+  background: rgba(122, 215, 255, 0.08);
+  color: rgba(183, 225, 255, 0.78);
+  font-family: var(--font-mono);
+  font-size: 6px;
   line-height: 1;
 }
 .st-hud__move-btn:hover:not(:disabled) {
@@ -2886,13 +3028,20 @@ export class HUD {
 .st-hud__fuel {
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 4px;
   min-width: 0;
+  padding: 4px;
   border: 1px solid rgba(255, 210, 63, 0.18);
   border-radius: 4px;
   background: rgba(7, 4, 12, 0.66);
+}
+.st-hud__fuel-readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3px;
+  min-width: 0;
 }
 .st-hud__fuel-label {
   color: var(--ui-muted);
@@ -2910,6 +3059,25 @@ export class HUD {
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
+.st-hud__fuel-meter {
+  --st-fuel-level: 0%;
+  position: relative;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 210, 63, 0.11);
+  box-shadow: inset 0 0 0 1px rgba(255, 210, 63, 0.08);
+}
+.st-hud__fuel-meter::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--st-fuel-level);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d99b21, var(--gold));
+  box-shadow: 0 0 6px rgba(255, 210, 63, 0.38);
+}
 .st-hud__active-row::before {
   content: '';
   position: absolute;
@@ -2919,13 +3087,55 @@ export class HUD {
   background: var(--st-turn-color, var(--ui-action));
   box-shadow: 0 0 8px var(--st-turn-color, var(--ui-action));
 }
-#app.is-compact #hud > .st-ui-section.st-hud__active-row {
-  min-height: 38px;
-  gap: 2px;
+#app.is-compact .st-hud__active-row {
+  gap: 3px;
   padding-block: 2px;
 }
+#app.is-compact .st-hud__turn-actions {
+  padding: 3px 6px;
+}
 #app.is-compact .st-hud__move-btn {
-  min-height: 21px;
+  min-height: 40px;
+}
+@media (pointer: coarse) {
+  #app .st-hud__active-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 94px;
+    grid-template-rows: auto auto;
+    gap: 3px 5px;
+    padding-block: 2px;
+  }
+  #app .st-hud__turn-status {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #app .st-hud__turn-owner {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #app .st-hud__tactical-row {
+    display: contents;
+  }
+  #app .st-hud__tactical-row .st-hud__weapon {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  #app .st-hud__mobility {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  #app .st-hud__turn-actions {
+    padding: 3px 6px;
+  }
+  #app .st-hud__move-btn,
+  #app .st-hud__store-btn {
+    min-height: 56px;
+  }
+  #app.is-compact .st-hud__move-btn,
+  #app.is-compact .st-hud__store-btn,
+  #app.is-compact .st-hud__primary-action {
+    min-height: 78px;
+  }
 }
 .st-hud__active-row--handoff {
   animation: st-hud-turn-handoff 560ms ease-out;

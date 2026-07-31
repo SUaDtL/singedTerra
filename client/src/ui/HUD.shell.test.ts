@@ -42,16 +42,41 @@ afterEach(() => {
 describe('HUD single-screen combat shell', () => {
   it('marks one shell and applies the shared section rhythm to every rail region', () => {
     const root = mount();
+    const commandConsole = root.querySelector<HTMLElement>('.st-hud__command-console')!;
 
     expect(root.classList.contains('st-ui-shell')).toBe(true);
     expect(root.getAttribute('data-ui')).toBe('combat-rail');
     expect(root.querySelector('.st-hud__players')?.classList.contains('st-ui-section')).toBe(true);
     expect(root.querySelector('.st-hud__instruments')?.classList.contains('st-ui-section')).toBe(true);
-    expect(root.querySelector('.st-hud__active-row')?.classList.contains('st-ui-section')).toBe(true);
-    expect(root.querySelector('.st-hud__turn-actions')?.classList.contains('st-ui-section')).toBe(true);
+    expect(commandConsole.classList.contains('st-ui-section')).toBe(true);
+    expect(commandConsole.parentElement).toBe(root);
+    expect(commandConsole.getAttribute('role')).toBe('region');
+    expect(commandConsole.getAttribute('aria-label')).toBe('Turn command console');
+    expect(commandConsole.querySelector('.st-hud__active-row')).not.toBeNull();
+    expect(commandConsole.querySelector('.st-hud__aim')).not.toBeNull();
+    expect(commandConsole.querySelector('.st-hud__turn-actions')).not.toBeNull();
     expect(root.querySelector('.st-hud__store-btn')?.classList.contains('st-ui-action')).toBe(true);
     expect(root.querySelector('.st-hud__primary-action')?.classList.contains('st-ui-action')).toBe(true);
     expect(root.querySelector('.st-hud__strip')?.classList.contains('st-ui-section')).toBe(true);
+  });
+
+  it('keeps the selected weapon glyph synchronized inside a stable tactical tile', () => {
+    const { root, hud, state } = mountHarness();
+    const tile = root.querySelector<HTMLElement>('.st-hud__weapon')!;
+    const iconHost = tile.querySelector<HTMLElement>('.st-hud__weapon-icon')!;
+
+    expect(iconHost.querySelector('.st-weapon-icon')?.getAttribute('data-weapon'))
+      .toBe('baby_missile');
+    expect(tile.querySelector('.st-hud__weapon-value')?.textContent).toBe('Baby Missile');
+
+    state.tanks[0]!.selectedWeapon = 'bouncing_betty';
+    hud.update(state, false, true);
+
+    expect(root.querySelector('.st-hud__weapon')).toBe(tile);
+    expect(root.querySelector('.st-hud__weapon-icon')).toBe(iconHost);
+    expect(iconHost.querySelector('.st-weapon-icon')?.getAttribute('data-weapon'))
+      .toBe('bouncing_betty');
+    expect(tile.querySelector('.st-hud__weapon-value')?.textContent).toBe('Bouncing Betty');
   });
 
   it('uses exact decorative SVG icons while visible text keeps actions named', () => {

@@ -23,7 +23,7 @@
   renderer at gameplay scale without affecting deterministic state.
 - [x] Prove create, join, update-player, active Realtime, stored roster, and
   rematch paths preserve exact Jackal values.
-- [ ] Deploy every Edge Function that imports the changed Deno validator after
+- [x] Deploy every Edge Function that imports the changed Deno validator after
   the client PR is merged.
 
 ## Task 4: Review, verify, and deliver
@@ -32,6 +32,6 @@
   performance, security, and coverage findings.
 - [x] Run focused tests, deterministic checks, client coverage, Edge tests,
   production build, full E2E, runtime audit, diff hygiene, and secret scan.
-- [ ] Commit through the governed gate and open a ready PR.
-- [ ] Prove exact-head hosted CI and CodeQL green, merge under standing
+- [x] Commit through the governed gate and open a ready PR.
+- [x] Prove exact-head hosted CI and CodeQL green, merge under standing
   authority, deploy Pages and affected Edge Functions, and verify public play.

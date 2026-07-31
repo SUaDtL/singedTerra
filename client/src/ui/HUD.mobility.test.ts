@@ -66,14 +66,27 @@ describe('HUD mobility rocker', () => {
   it('fits semantic left/fuel/right controls into the active-turn row', () => {
     const { root, left, right, fuel } = mount();
     const mobility = root.querySelector<HTMLElement>('.st-hud__mobility')!;
+    const meter = root.querySelector<HTMLElement>('.st-hud__fuel-meter')!;
 
     expect(mobility).not.toBeNull();
     expect(mobility.getAttribute('role')).toBe('group');
     expect(mobility.getAttribute('aria-label')).toBe('Tank movement');
     expect(left().getAttribute('aria-label')).toBe('Move tank left, 8 fuel maximum');
     expect(right().getAttribute('aria-label')).toBe('Move tank right, 8 fuel maximum');
+    expect(left().querySelector('.st-hud__move-direction')?.textContent).toBe('‹');
+    expect(left().querySelector('kbd')?.textContent).toBe('A');
+    expect(right().querySelector('.st-hud__move-direction')?.textContent).toBe('›');
+    expect(right().querySelector('kbd')?.textContent).toBe('D');
+    expect([...left().childNodes].every((node) => node.nodeType === Node.ELEMENT_NODE)).toBe(true);
+    expect([...right().childNodes].every((node) => node.nodeType === Node.ELEMENT_NODE)).toBe(true);
     expect(fuel().textContent).toBe('100');
     expect(fuel().getAttribute('aria-label')).toBe('100 fuel remaining');
+    expect(meter.getAttribute('role')).toBe('progressbar');
+    expect(meter.getAttribute('aria-label')).toBe('Movement fuel');
+    expect(meter.getAttribute('aria-valuemin')).toBe('0');
+    expect(meter.getAttribute('aria-valuemax')).toBe('100');
+    expect(meter.getAttribute('aria-valuenow')).toBe('100');
+    expect(meter.getAttribute('aria-valuetext')).toBe('100 fuel remaining');
     expect(document.querySelector('.st-hud__controls')?.textContent).toContain('Move');
   });
 
@@ -92,13 +105,31 @@ describe('HUD mobility rocker', () => {
   it('updates authoritative fuel without rebuilding the control', () => {
     const { hud, state, fuel } = mount();
     const original = fuel();
+    const meter = document.querySelector<HTMLElement>('.st-hud__fuel-meter')!;
+    const originalMeter = meter;
     state.tanks[0]!.fuel = 37;
 
     hud.update(state, false, true);
 
     expect(fuel()).toBe(original);
+    expect(document.querySelector('.st-hud__fuel-meter')).toBe(originalMeter);
     expect(fuel().textContent).toBe('37');
     expect(fuel().getAttribute('aria-label')).toBe('37 fuel remaining');
+    expect(meter.getAttribute('aria-valuenow')).toBe('37');
+    expect(meter.getAttribute('aria-valuetext')).toBe('37 fuel remaining');
+    expect(meter.style.getPropertyValue('--st-fuel-level')).toBe('37%');
+  });
+
+  it('keeps the visual meter bounded while announcing boosted fuel exactly', () => {
+    const { hud, state } = mount();
+    const meter = document.querySelector<HTMLElement>('.st-hud__fuel-meter')!;
+    state.tanks[0]!.fuel = 175;
+
+    hud.update(state, false, true);
+
+    expect(meter.getAttribute('aria-valuenow')).toBe('100');
+    expect(meter.getAttribute('aria-valuetext')).toBe('175 fuel remaining');
+    expect(meter.style.getPropertyValue('--st-fuel-level')).toBe('100%');
   });
 
   it('disables movement without local control, fuel, life, or a playable turn', () => {
