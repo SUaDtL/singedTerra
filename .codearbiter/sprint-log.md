@@ -2145,3 +2145,6 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - Exact local gates pass: `npm run check`; 96 client files / 659 tests with coverage at 86.60% statements, 76.39% branches, 75.56% functions, and 89.45% lines; 181 Edge tests; full Playwright 98 passed with 10 intentional project-conditional skips; production build/typecheck; npm audit with 0 vulnerabilities; diff hygiene; and the state-free secret scan with `[]`. Confidence high.
 - Two default-concurrency full coverage attempts timed out the same unrelated projectile-ground-shadow orchestration test at Vitest's five-second runner limit while the other 658 tests passed. The exact covered test passed in 1.38 seconds, and the complete coverage suite passed all 659 tests with two workers. Failed attempts are retained as evidence and are not counted green. Confidence high.
+### Compact fuel gauge commit receipt
+
+- Governed product commit `076145e` records the reviewed wrapping gauge, exact tier semantics, legibility correction, RED/GREEN tests, browser oracle, approved spec/plan, and complete local acceptance evidence. Confidence high.
