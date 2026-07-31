@@ -19,4 +19,4 @@
 - [x] Run the anti-slop copy audit and correct every finding.
 - [x] Validate local Markdown links, assets, diff hygiene, and secrets.
 - [x] Resolve one adversarial documentation review.
-- [ ] Commit, open a ready PR, and prove exact-head hosted CI and CodeQL.
+- [x] Commit, open a ready PR, and prove exact-head hosted CI and CodeQL.
