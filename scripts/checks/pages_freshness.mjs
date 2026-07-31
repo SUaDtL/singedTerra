@@ -120,15 +120,15 @@ if (!process.argv.includes('--policy-only')) {
   const actionUses = [...workflow.matchAll(/^\s+(?:-\s+)?uses:\s+([^\s#]+)/gm)]
     .map((match) => match[1]);
   assert.deepEqual(actionUses, [
-    'actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
-    'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+    'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
     'actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d',
-    'actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa',
-    'actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
-    'actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
+    'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9',
+    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
     'actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128',
-    'actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5',
-    'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+    'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
     'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9',
   ]);
   assert.ok(actionUses.every((use) => /^[^/@]+\/[^/@]+@[0-9a-f]{40}$/.test(use)));
@@ -149,6 +149,7 @@ if (!process.argv.includes('--policy-only')) {
   const metadata = build.indexOf('name: Write deployment provenance');
   const upload = build.indexOf('actions/upload-pages-artifact@');
   assert.ok(metadata >= 0 && upload > metadata);
+  assert.match(build, /path: client\/dist\n          include-hidden-files: true/);
   assert.match(build, /pagesFreshness\.mjs write client\/dist\/deploy-meta\.json "\$GITHUB_SHA" "\$GITHUB_RUN_ID"/);
   assert.match(freshness, /needs: build/);
   assert.match(freshness, /name: Verify source is current main/);
