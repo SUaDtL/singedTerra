@@ -2930,3 +2930,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversarial clearance
 
 - **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, or merge blocker. It independently confirmed exact card/title/preview/optional-rejoin/tabs/content/controls order, copy, classes, button types, active classes, zero-argument callbacks, and online wrapper identity/depth. Lobby still clears the root first, constructs only the selected active view, owns tab/rerender and unchanged live rejoin validation/storage/token/transport/session/config/`onReady` effects, and applies Garage inert behavior after card insertion. The render-time ordering of synchronous detached presentation builders is non-observable. Tests are causal, the seven-file scope has no external drift, and both protected logs remain append-only after Git normalization. Confidence high.
+
+### PR #252 hosted gate and merge override
+
+- **[high] Behavior head cleared hosted CI.** PR #252 head `537ac96` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
