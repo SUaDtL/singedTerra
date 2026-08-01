@@ -48,6 +48,6 @@
 
 - [x] Run the complete Playwright suite, `npm run check`, client and Edge tests, client coverage, build, dependency audit, secret scan, and diff hygiene.
 - [x] Give one adversarial reviewer the exact spec, plan, diff, route fixtures, and evidence; correct every Critical, High, Medium, and merge blocker.
-- [ ] Commit through `$ca-commit`, open a ready PR referencing but not closing #129, and obtain exact-head hosted CI.
+- [x] Commit through `$ca-commit`, open a ready PR referencing but not closing #129, and obtain exact-head hosted CI.
 - [ ] Use the standing PR-only merge authority only after the reviewed final head is green; verify Pages exact-main provenance and live smoke.
 - [ ] Select the first bounded Lobby view extraction under the completed oracle.
