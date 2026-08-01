@@ -123,9 +123,9 @@
 - Final branch: `codex/garage-spotlight` based on current `origin/main`.
 - Delivery follows the standing exact-reviewed-head rule.
 
-- [ ] Run the codeArbiter commit gate and commit the atomic slice with a `CHANGELOG:` footer.
-- [ ] Sync with current `origin/main`; resolve conflicts without force-push and repeat affected verification/review if the head changes.
-- [ ] Push and open a ready PR with spec/plan links and exact verification evidence.
-- [ ] Wait for every required hosted check on the exact reviewed head.
+- [x] Run the codeArbiter commit gate and commit the atomic slice with a `CHANGELOG:` footer.
+- [x] Sync with current `origin/main`; resolve conflicts without force-push and repeat affected verification/review if the head changes.
+- [x] Push and open a ready PR with spec/plan links and exact verification evidence.
+- [x] Wait for every required hosted check on the exact reviewed head.
 - [ ] Merge through the PR under the maintainer's standing authority only after exact-head review is clean and CI is green.
 - [ ] Verify the GitHub Pages provenance gate and post-deploy live browser smoke before choosing the next sprint slice.

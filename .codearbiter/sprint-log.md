@@ -2489,3 +2489,9 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 #### ca-pr correction adversary — CLEAN / READY
 - The same adversary reviewed the exact tests-and-audit correction and found no false-positive geometry path, material viewport flakiness, audit-integrity issue, CRITICAL, HIGH, or merge blocker.
 - The correction is ready for its governed test-only commit; hosted exact-head checks remain required after push.
+
+#### Garage Spotlight PR and hosted gate receipt
+- Ready PR #233 opened at https://github.com/SUaDtL/singedTerra/pull/233 from the exact reviewed correction head `c45f31889a5bfbbb327658830929766399a0d93b`.
+- Hosted `typecheck · harnesses · build`, Edge Deno tests, `e2e · rendering guardrails`, CodeQL analysis, and the repository CodeQL gate all passed on that SHA. Supabase Preview skipped as configured because this client-only slice has no backend change.
+- The sprint PR-boundary and merge pause is bypassed through one distinct append-only override under the maintainer's standing passion-project authority. PR-only merge, exact-current-head hosted checks, Pages provenance, deployment, and live smoke remain enforced.
+- This governance-only closure commit changes no product or test behavior; hosted checks must rerun green on its new exact head before merge.
