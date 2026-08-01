@@ -1711,6 +1711,29 @@ export class GameEngine {
   /** Mirror the working `fire` Map into `state.fire`, sorted by x for a stable,
    *  deterministic snapshot order (renderer + serialization read this array). */
   private syncFire(): void {
+    // Most burn ticks only decrement life. Keep the published projection when
+    // it still names the same sorted column set, updating just those scalar
+    // values so decay does not allocate and sort an equivalent array. Validate
+    // ordering as well as membership: getState() intentionally exposes the live
+    // snapshot, so a malformed external mutation falls back to a clean
+    // projection instead of preserving duplicates or disorder.
+    const current = this.state.fire;
+    let canReuse = current.length === this.fire.size;
+    let previousX = -1;
+    if (canReuse) {
+      for (const cell of current) {
+        if (cell.x <= previousX || !this.fire.has(cell.x)) {
+          canReuse = false;
+          break;
+        }
+        previousX = cell.x;
+      }
+    }
+    if (canReuse) {
+      for (const cell of current) cell.life = this.fire.get(cell.x)!;
+      return;
+    }
+
     // Build the snapshot in a single pass (no intermediate spread/map arrays), then
     // sort by x. Same resulting array of {x,life} in the same ascending-x order as
     // the prior spread+map+sort — purely fewer per-tick allocations.
