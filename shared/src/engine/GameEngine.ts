@@ -1718,11 +1718,12 @@ export class GameEngine {
     // snapshot, so a malformed external mutation falls back to a clean
     // projection instead of preserving duplicates or disorder.
     const current = this.state.fire;
-    let canReuse = current.length === this.fire.size;
+    let canReuse = Array.isArray(current) && current.length === this.fire.size;
     let previousX = -1;
     if (canReuse) {
       for (const cell of current) {
-        if (cell.x <= previousX || !this.fire.has(cell.x)) {
+        if (cell == null || !Number.isInteger(cell.x)
+          || cell.x <= previousX || !this.fire.has(cell.x)) {
           canReuse = false;
           break;
         }

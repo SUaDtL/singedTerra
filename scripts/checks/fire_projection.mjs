@@ -59,7 +59,17 @@ expectRebuiltProjection(
   [{ x: 20, life: 3 }, { x: 20, life: 3 }],
   [[20, 3], [30, 2]],
 );
-console.log('projection recovery: 3/3 topology guards rebuilt sorted authoritative state');
+expectRebuiltProjection(
+  'null projection',
+  null,
+  [[20, 3], [30, 2]],
+);
+expectRebuiltProjection(
+  'null projection cell',
+  [{ x: 20, life: 3 }, null],
+  [[20, 3], [30, 2]],
+);
+console.log('projection recovery: 5/5 topology guards rebuilt sorted authoritative state');
 
 const engine = projectionEngine();
 
