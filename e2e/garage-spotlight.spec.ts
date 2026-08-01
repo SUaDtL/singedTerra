@@ -1,4 +1,137 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+interface LayoutBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+const LAYOUT_TOLERANCE = 1;
+
+async function visibleLayoutBox(locator: Locator): Promise<LayoutBox> {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThan(LAYOUT_TOLERANCE);
+  expect(box!.height).toBeGreaterThan(LAYOUT_TOLERANCE);
+  return {
+    left: box!.x,
+    top: box!.y,
+    right: box!.x + box!.width,
+    bottom: box!.y + box!.height,
+    width: box!.width,
+    height: box!.height,
+  };
+}
+
+function expectContained(inner: LayoutBox, outer: LayoutBox): void {
+  expect(inner.left).toBeGreaterThanOrEqual(outer.left - LAYOUT_TOLERANCE);
+  expect(inner.top).toBeGreaterThanOrEqual(outer.top - LAYOUT_TOLERANCE);
+  expect(inner.right).toBeLessThanOrEqual(outer.right + LAYOUT_TOLERANCE);
+  expect(inner.bottom).toBeLessThanOrEqual(outer.bottom + LAYOUT_TOLERANCE);
+}
+
+function expectSeparated(first: LayoutBox, second: LayoutBox): void {
+  const overlapWidth = Math.min(first.right, second.right)
+    - Math.max(first.left, second.left);
+  const overlapHeight = Math.min(first.bottom, second.bottom)
+    - Math.max(first.top, second.top);
+  expect(
+    overlapWidth <= LAYOUT_TOLERANCE
+      || overlapHeight <= LAYOUT_TOLERANCE,
+  ).toBe(true);
+}
+
+async function expectInViewport(page: Page, box: LayoutBox): Promise<void> {
+  const viewport = await page.evaluate(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
+  expectContained(box, {
+    left: 0,
+    top: 0,
+    right: viewport.width,
+    bottom: viewport.height,
+    width: viewport.width,
+    height: viewport.height,
+  });
+}
+
+async function expectControlInViewport(
+  page: Page,
+  control: Locator,
+): Promise<LayoutBox> {
+  const box = await visibleLayoutBox(control);
+  await expectInViewport(page, box);
+  return box;
+}
+
+async function garageEntryControl(
+  page: Page,
+  player: 1 | 2,
+): Promise<Locator> {
+  const compactTrigger = page.getByRole('button', {
+    name: `Customize Player ${player} tank`,
+  });
+  if (await compactTrigger.isVisible()) return compactTrigger;
+  return page.getByRole('button', {
+    name: `Apply Foundry preset to Player ${player}`,
+  });
+}
+
+async function expectGarageLayout(page: Page): Promise<void> {
+  const bay = await visibleLayoutBox(page.locator('.lobby-preview'));
+  await expectInViewport(page, bay);
+
+  const spotlightSelectors = [
+    '.lobby-preview__spotlight',
+    '.lobby-preview__spotlight-identity',
+    '.lobby-preview__spotlight-name',
+    '.lobby-preview__spotlight-canvas',
+    '.lobby-preview__parts',
+  ];
+  for (const selector of spotlightSelectors) {
+    const box = await visibleLayoutBox(page.locator(selector));
+    expectContained(box, bay);
+  }
+
+  const convoy = await visibleLayoutBox(page.locator('.lobby-preview__convoy'));
+  const controls = await visibleLayoutBox(page.locator('.lobby-controls'));
+  expectContained(convoy, bay);
+  expectContained(controls, bay);
+
+  const partBoxes: LayoutBox[] = [];
+  const parts = page.locator('.lobby-preview__part');
+  await expect(parts).toHaveCount(4);
+  for (let index = 0; index < await parts.count(); index++) {
+    const box = await visibleLayoutBox(parts.nth(index));
+    expectContained(box, bay);
+    expectSeparated(box, convoy);
+    expectSeparated(box, controls);
+    for (const earlier of partBoxes) expectSeparated(box, earlier);
+    partBoxes.push(box);
+  }
+
+  const start = await expectControlInViewport(
+    page,
+    page.getByRole('button', { name: 'Start Game' }),
+  );
+  expectSeparated(bay, start);
+
+  const garages = page.locator('.lobby-garage:visible');
+  await expect(garages).toHaveCount(2);
+  for (let index = 0; index < await garages.count(); index++) {
+    const garage = await visibleLayoutBox(garages.nth(index));
+    await expectInViewport(page, garage);
+    expectSeparated(bay, garage);
+  }
+
+  await expectControlInViewport(page, await garageEntryControl(page, 1));
+  await expectControlInViewport(page, await garageEntryControl(page, 2));
+}
 
 async function openLobby(page: Page): Promise<void> {
   await page.goto('.');
@@ -117,6 +250,7 @@ test.describe('Garage spotlight', () => {
     await expect(page.locator(
       '.lobby-preview__convoy .lobby-preview__tank',
     )).toHaveCount(2);
+    await expectGarageLayout(page);
 
     const canvasSizes = await page.evaluate(() => {
       const featured = document.querySelector<HTMLCanvasElement>(
@@ -144,9 +278,11 @@ test.describe('Garage spotlight', () => {
     const foundryHash = await expectSettledSpotlightHash(page);
 
     await openPlayerGarage(page, 2);
-    await page.getByRole('button', {
+    const rangerPreset = page.getByRole('button', {
       name: 'Apply Ranger preset to Player 2',
-    }).click();
+    });
+    await expectControlInViewport(page, rangerPreset);
+    await rangerPreset.click();
     await expect(spotlight).toHaveAttribute('data-owner', 'player-2');
     expect(await spotlightParts(page)).toEqual([
       ['Mobility', 'Spider Legs'],
@@ -159,6 +295,7 @@ test.describe('Garage spotlight', () => {
     const turret = page.getByRole('button', {
       name: /Change Player 2 turret/,
     });
+    await expectControlInViewport(page, turret);
     await turret.click();
     await expect(turret).toBeFocused();
     expect(await spotlightParts(page)).toEqual([
@@ -188,6 +325,7 @@ test.describe('Garage spotlight', () => {
       '.lobby-preview__tank[data-owner="player-2"] .lobby-preview__name',
     )).toHaveText('Trailblazer');
 
+    await expectGarageLayout(page);
     await expectDocumentFit(page);
     const start = page.getByRole('button', { name: 'Start Game' });
     await expect(start).toBeVisible();

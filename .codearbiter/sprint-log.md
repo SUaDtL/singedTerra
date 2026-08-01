@@ -2480,3 +2480,12 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 #### Final adversary follow-up — CLEAN / READY
 - The same adversary reviewed the corrected full package and found no remaining CRITICAL, HIGH, MEDIUM, LOW, or merge-blocking issue.
 - Remaining obligations are the governed commit/PR path, exact-reviewed-head hosted CI and CodeQL, PR merge, Pages provenance, deployment, and live smoke. No Supabase deployment is required for this client-only slice.
+
+#### ca-pr coverage gate — HIGH resolved
+- Coverage audit blocked PR staging because the browser oracle could pass when spotlight content existed off-screen or clipped. The correction now requires real visible bounding boxes, nontrivial size, viewport and bay containment, tile separation, and separation from Start Game and both Garage regions across desktop-fine, small-window, and pixel-touch. Focused Playwright is 3/3 and the coverage follow-up confirms no CRITICAL or HIGH blocker remains.
+- Non-blocking findings retained without expanding this bounded slice: waiting-room first-roster fallback lacks a direct oracle; failed-atlas fallback lacks a real browser-pixel oracle; online name identity and executed reduced-motion coverage are thinner than hot-seat coverage.
+- Exact adversarial review and the commit gate must re-clear for this tests-and-audit correction before PR push.
+
+#### ca-pr correction adversary — CLEAN / READY
+- The same adversary reviewed the exact tests-and-audit correction and found no false-positive geometry path, material viewport flakiness, audit-integrity issue, CRITICAL, HIGH, or merge blocker.
+- The correction is ready for its governed test-only commit; hosted exact-head checks remain required after push.
