@@ -2808,3 +2808,23 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #247 head `51412a9` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Waiting View Builder sprint
+
+- **[high] Extract Waiting after Browse.** The network-view browser oracle and LobbySession lifecycle seams now cover the largest remaining network view. Waiting Room is the natural next per-view cell and directly advances issue #129. Confidence high.
+- **[high] Keep identity and effects in Lobby.** Duplicate normalization, clipboard work, ready/leave requests, Realtime, heartbeat, transport, and session state already have established ownership and tests. Passing their results/callbacks avoids architectural drift while moving the complete DOM composition. Confidence high.
+- **[high] Pass exact invite elements to the callback.** The existing clipboard method mutates the button and ARIA status node asynchronously. Supplying those nodes preserves identity, timing, success/failure announcements, and existing invite tests without moving I/O into the builder. Confidence high.
+- **[high] Preserve behavior mechanically.** Visible strings, pluralization, classes, inline styles, DOM order, clash semantics, button states, and callback timing are parity obligations. The new seam receives direct red tests, while every pre-existing test file remains untouched. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, precise refactor surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Behavioral RED then GREEN.** The compile-only builder shell produced four causal failures on missing Waiting DOM/actions while all 61 pre-existing focused Lobby tests stayed green. The implementation then passed all four direct seam tests, the unchanged 61-test focused set, and the unchanged 15-case browser oracle. Confidence high.
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The unchanged Lobby browser oracle also passes 15/15 at the GitHub Pages `/singedTerra/` base. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 112 files / 799 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage improved.** Full client coverage is 91.23% statements, 81.25% branches, 81.95% functions, and 93.58% lines. `Lobby.ts` is 68.57% branches and 88.98% lines, above its 68.04% / 88.81% baseline and the stage-1 60% floor; `LobbyWaitingView.ts` is 100% lines and 94.73% branches. Confidence high.
+- **Scope and hygiene green.** No pre-existing test file changed. Clipboard implementation, Realtime, heartbeat, transport, session, CSS, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer independently confirmed parity for readiness copy, code cells, invite identity/ARIA/dispatch, roster order/styles, normalized clash cues, badges, shared-node/warning/status/action order, and action states. Lobby retains duplicate detection, clipboard, ready/leave, Realtime, heartbeat, transport, session, state, and render effects. Precomputing pure clash scans and detached shared nodes is unobservable because the call is synchronous and performs no state or I/O side effect. It found no Critical, High, Medium, Low, or merge blocker. Confidence high.

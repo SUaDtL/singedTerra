@@ -10,6 +10,7 @@ import {
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
+import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
 import {
   LobbyTransport,
@@ -2295,169 +2296,26 @@ export class Lobby {
   // ---- Waiting Room sub-view ----
 
   private renderWaitingRoom(): HTMLElement {
-    const frag = document.createElement('div');
-
-    // Sub-copy reflects HUMAN readiness, not raw seat counts (P2-11): a room of
-    // 1 human + 3 CPU is not "waiting for players" — its bots are always ready, so
-    // counting them made the room look perpetually unfilled. Show humans-ready, the
-    // CPU count, and only flag "waiting for players" when seats are genuinely open.
-    const humans = this.waitingPlayers.filter((p) => !p.ai);
-    const humansReady = humans.filter((p) => p.ready).length;
-    const cpuCount = this.waitingPlayers.length - humans.length;
-    const seatsOpen = this.waitingPlayers.length < this.waitingOptions.maxPlayers;
-    const sub = document.createElement('p');
-    sub.className = 'lobby-sub';
-    sub.textContent =
-      `${humansReady}/${humans.length} human${humans.length === 1 ? '' : 's'} ready`
-      + (cpuCount > 0 ? ` · ${cpuCount} CPU` : '')
-      + (seatsOpen ? ' · waiting for players to join' : '');
-    frag.append(sub);
-
-    // Room code display
-    const codeLabel = document.createElement('p');
-    codeLabel.style.cssText = 'color:var(--text-dim);font-size:13px;margin:0 0 6px;';
-    codeLabel.textContent = 'Share this code:';
-    frag.append(codeLabel);
-
-    const codeDisplay = document.createElement('div');
-    codeDisplay.className = 'online-code-display';
-    const codeChars = this.waitingRoomCode.padEnd(4, ' ').split('');
-    for (const ch of codeChars) {
-      const charBox = document.createElement('div');
-      charBox.className = 'online-code-char';
-      charBox.textContent = ch.trim() || ' ';
-      codeDisplay.append(charBox);
-    }
-    frag.append(codeDisplay);
-
-    const invite = document.createElement('div');
-    invite.className = 'online-invite';
-    const copyInvite = document.createElement('button');
-    copyInvite.type = 'button';
-    copyInvite.className = 'lobby-btn online-invite-copy';
-    copyInvite.textContent = 'Copy invite link';
-    const inviteStatus = document.createElement('p');
-    inviteStatus.className = 'online-invite-status';
-    inviteStatus.setAttribute('role', 'status');
-    inviteStatus.setAttribute('aria-live', 'polite');
-    copyInvite.addEventListener('click', () => {
-      void this.copyWaitingRoomInvite(copyInvite, inviteStatus);
-    });
-    invite.append(copyInvite, inviteStatus);
-    frag.append(invite);
-
-    // Player list
-    const listHeader = document.createElement('p');
-    listHeader.style.cssText = 'color:var(--text-dim);font-size:13px;margin:0 0 8px;';
-    listHeader.textContent = `Players (${this.waitingPlayers.length}/${this.waitingOptions.maxPlayers}):`;
-    frag.append(listHeader);
-
-    // Colors held by more than one player in the room. A shared color makes the
-    // two tanks visually indistinguishable in-game, so we surface it here and
-    // block the game from starting until it is resolved (see Ready-Up gate).
-    const clashColors = this.duplicateColors();
-    const clashNames = this.duplicateNames();
-
-    const playerList = document.createElement('ul');
-    playerList.className = 'online-player-list';
-    for (const p of this.waitingPlayers) {
-      const row = document.createElement('li');
-      row.className = 'online-player-row';
-
-      const dot = document.createElement('div');
-      dot.className = 'online-player-dot' + (clashColors.has(p.color) ? ' clash' : '');
-      dot.style.background = p.color;
-
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = p.name;
-
-      // Accessible clash cue (P2-11): a red ring on the dot relies on color alone
-      // and was only meaningful to the clashing client. Add a text/icon tag on ANY
-      // row sharing a color or name, so every player can see (and read) the clash.
-      const sharesColor = clashColors.has(p.color);
-      const sharesName = clashNames.has(p.name.trim().toLowerCase());
-      if (sharesColor || sharesName) {
-        const tag = document.createElement('span');
-        tag.className = 'online-clash-tag';
-        const what = sharesColor && sharesName ? 'color + name' : sharesColor ? 'color' : 'name';
-        tag.textContent = `⚠ shared ${what}`;
-        tag.style.cssText = 'color:var(--tank-red,#e8554d);font-size:11px;margin-left:6px;white-space:nowrap;';
-        nameSpan.append(tag);
-      }
-
-      const badge = document.createElement('span');
-      if (p.ai) {
-        // Bot seats are always ready; badge them as CPU + difficulty so a mostly-CPU
-        // room doesn't read as waiting on humans who will never come.
-        const diff = p.ai.charAt(0).toUpperCase() + p.ai.slice(1);
-        badge.className = 'online-badge ready';
-        badge.textContent = `🤖 ${diff}`;
-      } else {
-        badge.className = 'online-badge ' + (p.ready ? 'ready' : 'waiting');
-        badge.textContent = p.ready ? 'Ready' : 'Waiting...';
-      }
-
-      row.append(dot, nameSpan, badge);
-      playerList.append(row);
-    }
-    frag.append(playerList);
-
-    // Self-edit controls: a player can fix a name/color clash in place (via
-    // update_player) without leaving and rejoining.
-    frag.append(this.renderWaitingSelfEdit());
-
-    // If THIS player clashes on color and/or name with someone else, show an
-    // actionable warning and block ready-up. Now resolvable in place via the
-    // self-edit controls above.
     const colorClash = this.myColorClashes();
     const nameClash = this.myNameClashes();
-    const myClash = colorClash || nameClash;
-    if (myClash) {
-      const warn = document.createElement('p');
-      warn.className = 'online-status error';
-      const parts: string[] = [];
-      if (colorClash) parts.push('color');
-      if (nameClash) parts.push('name');
-      warn.textContent =
-        `Another player already has your ${parts.join(' and ')}. Change it above to start.`;
-      frag.append(warn);
-    }
-
-    // Status / error
-    frag.append(this.renderOnlineStatus());
-
-    // Ready / Leave buttons
-    const btnRow = document.createElement('div');
-    btnRow.className = 'lobby-btn-row';
-
-    const readyBtn = document.createElement('button');
-    readyBtn.type = 'button';
-    readyBtn.className = 'lobby-btn';
-    if (this.waitingThisPlayerReady) {
-      readyBtn.textContent = 'Waiting for others...';
-      readyBtn.disabled = true;
-    } else if (myClash) {
-      // Block readying up while this player's name or color clashes — prevents
-      // starting a game with two indistinguishable tanks (or duplicate names)
-      // even if the server's join-time uniqueness check is an older deploy.
-      readyBtn.textContent = 'Ready Up';
-      readyBtn.disabled = true;
-    } else {
-      readyBtn.textContent = 'Ready Up';
-      readyBtn.disabled = this.onlineBusy;
-    }
-    readyBtn.addEventListener('click', () => { void this.handleReadyUp(); });
-
-    const leaveBtn = document.createElement('button');
-    leaveBtn.type = 'button';
-    leaveBtn.className = 'lobby-btn secondary';
-    leaveBtn.textContent = 'Leave';
-    leaveBtn.addEventListener('click', () => { void this.handleLeaveRoom(); });
-
-    btnRow.append(readyBtn, leaveBtn);
-    frag.append(btnRow);
-
-    return frag;
+    return buildLobbyWaitingView({
+      roomCode: this.waitingRoomCode,
+      players: this.waitingPlayers,
+      maxPlayers: this.waitingOptions.maxPlayers,
+      busy: this.onlineBusy,
+      thisPlayerReady: this.waitingThisPlayerReady,
+      clashColors: this.duplicateColors(),
+      clashNames: this.duplicateNames(),
+      colorClash,
+      nameClash,
+      selfEdit: this.renderWaitingSelfEdit(),
+      status: this.renderOnlineStatus(),
+      onCopyInvite: (button, status) => {
+        void this.copyWaitingRoomInvite(button, status);
+      },
+      onReady: () => { void this.handleReadyUp(); },
+      onLeave: () => { void this.handleLeaveRoom(); },
+    });
   }
 
   /** Copy a public-code-only room invite and report the result without a modal. */
