@@ -34,7 +34,7 @@ through public and private Supabase rooms. Computer seats use the same
 deterministic physics as human players.
 
 <p align="center">
-  <img src="docs/assets/gameplay-command-rail.jpg" width="1200" alt="A live singedTerra match with the command deck, ballistic computer, destructible terrain, and tactical rail." />
+  <img src="docs/assets/gameplay-command-rail.jpg" width="1200" alt="A live singedTerra match with the command deck, ballistic computer, destructible terrain, and an enlarged active custom-tank portrait in the tactical rail." />
 </p>
 
 ## The battlefield changes every turn

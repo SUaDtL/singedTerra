@@ -2962,3 +2962,29 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #253 head `c323a10` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Live Gameplay README Capture
+
+### SMARTS selection and standing approval
+
+- **[high] Refresh the public gameplay capture instead of inventing another unproven runtime effect.** The live visual scout showed the current combat HUD is coherent and the apparent Arsenal clipping was false at measured crop. The README screenshot is objectively behind PR #253 and is a direct player-acquisition surface. This scores strong for Specific, Maintainable, Available, Reliable, Testable, and Securable while changing no gameplay contract. Confidence high.
+- **[high] Capture the exact deployed build at the existing 1440x720 documentation frame.** Reusing the established production hot-seat entrypoint and removing only the splash produces truthful, reproducible evidence without a localhost or production mutation. Confidence high.
+- **[high] Keep the chore to one raster replacement plus accurate alternative text.** The narrow surface is independently reviewable and avoids mixing stale-task or gameplay work after live evidence disproved both initial candidates. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, exact six-file surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### Capture and verification
+
+- **Production provenance proven.** `deploy-meta.json` returned SHA `7eb0bb0bf86d2990a80fe07e361c72434d34f3d8` and run `30718311899`, matching the successful PR #253 Pages deployment. Confidence high.
+- **Capture contract proven.** An ephemeral Chromium context loaded the production `?e2e=hotseat` entrypoint at 1440x720, removed the splash, dismissed the First Salvo coach through its real Skip control, waited for the typed 144x80 tactical canvas and authored preview signature, and found zero viewport violations across `#app`, `#game`, `#hud`, and the portrait. Confidence high.
+- **Raster integrity proven.** The final JPEG decodes as 1440x720 24-bit RGB, is 138,142 bytes, and has SHA-256 `BF50E3171224EA7B89C68FB97A6C3C34B809E359B119A4A43444462AB71AE089`. The replaced asset was 117,921 bytes with SHA-256 `2B6D7B6890A6E1A713E92228C52B0A4FFD58EDA6CE3352F388A62D0260C3692E`. Confidence high.
+- **Visual inspection green.** The frame shows the full fitted battlefield, both tanks, honest short trajectory hint, Command Deck, player status, ballistic computer, larger crisp custom-tank identity portrait with aligned barrel, movement fuel, Store, Fire, and collapsed Arsenal. No splash, tutorial, modal, scroll bar, or clipped surface is visible. Confidence high.
+- **Repository gates green.** `npm run check` passed strict typecheck and all 60 deterministic harnesses; `npm run build` passed; all 12 local README links/assets resolve; the state-free secret scan returned `[]`; `git diff --check` passed. `npm ci` installed only the existing lockfile and audited 145 packages with zero vulnerabilities; manifests and lockfile are unchanged. Confidence high.
+- **Read-only preview report.** Changed surface is the two append-only logs, README, one JPEG, and the new spec/plan. The path matrix predicts no specialist reviewer because there is no source, security, dependency, migration, or architecture path; the standing sprint still requires one generic adversarial documentation/visual review. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge blocker. It independently verified the exact six-file surface; successful deployment run `30718311899` on SHA `7eb0bb0bf86d2990a80fe07e361c72434d34f3d8`; 1440x720 24-bit JPEG integrity, 138,142-byte size, and expected SHA-256; full production composition with a crisp enlarged portrait and aligned barrel; absence of splash/tutorial/modal/scroll/clipping; truthful README alternative text; no runtime/dependency/lockfile/workflow/backend/issue/task-tracker drift; byte-exact normalized protected-log prefixes; and clean diff hygiene. Confidence high.
+
+### Capture-scope correction
+
+- **[high] Clarify the final ephemeral-browser interaction.** The initial SMARTS note described removing only the splash. The accepted final capture also dismissed the one-time First Salvo coach through its real Skip control inside the disposable browser context, as the spec, plan, capture evidence, and visual result record. No game state, durable user browser state, source, or production data changed. Confidence high.
