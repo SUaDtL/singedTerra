@@ -64,10 +64,12 @@ deployed-client compatibility. `join_room` rejects a client whose requested
 version differs before changing the roster, and `submit_action` rejects a
 verified seat's mismatch before the action-log RPC. New browser rooms use
 version `2`. A browser first joins with version `2`, then retries exactly once as
-version `1` only when the referee's HTTP 409 response identifies a legacy room;
-the pre-mutation mismatch check makes that retry safe. Lobby state, rematches,
-engine construction, and action retries use the room's authoritative version,
-so old and new browsers never interpret one committed action differently.
+version `1` only when the referee returns HTTP 409 with error
+`ruleset_mismatch` and numeric `requiredRulesetVersion: 1`; every other response
+fails closed without a retry. The pre-mutation mismatch check makes the legacy
+retry safe. Lobby state, rematches, engine construction, and action retries use
+the room's authoritative version, so old and new browsers never interpret one
+committed action differently.
 
 ## Dependency direction
 

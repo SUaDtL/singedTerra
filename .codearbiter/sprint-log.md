@@ -2668,3 +2668,5 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **Exact reviewed behavior head green.** PR #239 head `41fbd3404356f27c23d6ad193fead3859a0751fd` passed hosted typecheck/harness/build, all 200 Edge tests, 121 rendering guardrails with 11 configured skips, CodeQL analysis and gate, plus the CodeRabbit status context. Supabase Preview skipped as configured for the client-only change. Confidence high.
 - **Merge pause override logged.** The maintainer's standing passion-project authority bypasses codeArbiter's sprint PR-boundary and merge pause through one distinct append-only receipt. This governance-only change requires exact review and a fresh hosted matrix before the PR-only merge. Confidence high.
+
+- **Hosted review correction - exact legacy retry prose.** CodeRabbit's formal review correctly found that `ARCHITECTURE.md` abbreviated the retry predicate. Canonical architecture prose now requires HTTP 409, exact `ruleset_mismatch`, numeric `requiredRulesetVersion: 1`, and explicitly fails closed without retry for every other response, matching the specification and tested transport contract. Confidence high.
