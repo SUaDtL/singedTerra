@@ -34,7 +34,10 @@ import {
   parseOnlineRounds,
   parseOnlineEconomy,
 } from '../ui/lobbyValidation';
-import { CURRENT_NETWORK_RULESET_VERSION } from './networkRuleset';
+import {
+  CURRENT_NETWORK_RULESET_VERSION,
+  LEGACY_NETWORK_RULESET_VERSION,
+} from './networkRuleset';
 
 /** Room visibility for created online rooms. */
 export type RoomVisibility = 'public' | 'private';
@@ -101,6 +104,8 @@ export interface JoinRoomResponse {
   options?: RoomOptions;
   players?: NetworkPlayer[];
   error?: string;
+  /** Present only on the referee's fail-closed version mismatch response. */
+  requiredRulesetVersion?: unknown;
 }
 
 export interface ListRoomsResponse {
@@ -209,14 +214,25 @@ export class LobbyTransport {
     return callFunction<CreateRoomResponse>('create_room', body);
   }
 
-  joinRoom(params: JoinRoomParams): Promise<EdgeResult<JoinRoomResponse>> {
-    return callFunction<JoinRoomResponse>('join_room', {
-      code: params.code,
-      playerName: params.playerName,
-      color: params.color,
-      loadout: params.loadout,
-      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
-    });
+  async joinRoom(params: JoinRoomParams): Promise<EdgeResult<JoinRoomResponse>> {
+    const request = (rulesetVersion: NetworkRulesetVersion) =>
+      callFunction<JoinRoomResponse>('join_room', {
+        code: params.code,
+        playerName: params.playerName,
+        color: params.color,
+        loadout: params.loadout,
+        rulesetVersion,
+      });
+
+    const result = await request(CURRENT_NETWORK_RULESET_VERSION);
+    const requiresLegacyRoom = result.status === 409
+      && result.data?.error === 'ruleset_mismatch'
+      && result.data.requiredRulesetVersion === LEGACY_NETWORK_RULESET_VERSION;
+
+    // The referee checks this mismatch before roster mutation. A single explicit
+    // v1 retry lets a freshly deployed browser enter a still-open legacy lobby
+    // without ever downgrading a new v2 room or retrying an unrelated failure.
+    return requiresLegacyRoom ? request(LEGACY_NETWORK_RULESET_VERSION) : result;
   }
 
   listRooms(): Promise<EdgeResult<ListRoomsResponse>> {

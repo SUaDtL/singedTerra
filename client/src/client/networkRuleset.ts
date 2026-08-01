@@ -7,9 +7,9 @@ import type { NetworkRulesetVersion } from '@shared/types/GameOptions';
 export const LEGACY_NETWORK_RULESET_VERSION = 1 as const;
 export const PREPARED_NETWORK_RULESET_VERSION = 2 as const;
 
-/** The server-first Phase B1 keeps emitting legacy rooms; Phase B2 flips this constant. */
+/** New network rooms use v2; existing v1 lobbies are bridged at join time. */
 export const CURRENT_NETWORK_RULESET_VERSION: NetworkRulesetVersion =
-  LEGACY_NETWORK_RULESET_VERSION;
+  PREPARED_NETWORK_RULESET_VERSION;
 
 /**
  * Room JSON comes from a server-authoritative option object. Missing values are

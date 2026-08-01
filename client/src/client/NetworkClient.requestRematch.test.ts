@@ -117,8 +117,8 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     await expect(client.requestRematch()).resolves.toEqual({ ok: false, error: 'Network error' });
   });
 
-  it('normalizes wrap and invalid walls when resolving the successor room', async () => {
-    async function resolveSuccessor(walls: unknown) {
+  it('normalizes walls and preserves either authoritative ruleset when resolving a successor', async () => {
+    async function resolveSuccessor(walls: unknown, rulesetVersion: 1 | 2) {
       const query = {
         select: () => query,
         eq: () => query,
@@ -127,7 +127,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
             id: 'room-next',
             code: 'NEXT42',
             seed: 42,
-            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls, rulesetVersion: 2 },
+            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls, rulesetVersion },
             players: [
               { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
               { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
@@ -150,8 +150,14 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
       return listener.mock.calls[0]![0];
     }
 
-    expect((await resolveSuccessor('wrap')).options.walls).toBe('wrap');
-    expect((await resolveSuccessor('wrap')).options.rulesetVersion).toBe(2);
-    expect((await resolveSuccessor('invalid')).options.walls).toBe('open');
+    const legacy = await resolveSuccessor('wrap', 1);
+    expect(legacy.options.walls).toBe('wrap');
+    expect(legacy.options.rulesetVersion).toBe(1);
+
+    const current = await resolveSuccessor('wrap', 2);
+    expect(current.options.walls).toBe('wrap');
+    expect(current.options.rulesetVersion).toBe(2);
+
+    expect((await resolveSuccessor('invalid', 2)).options.walls).toBe('open');
   });
 });

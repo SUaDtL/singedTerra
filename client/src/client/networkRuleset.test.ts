@@ -6,9 +6,9 @@ import {
 } from './networkRuleset';
 
 describe('network ruleset client contract', () => {
-  it('keeps Phase A requests on legacy ruleset 1', () => {
+  it('keeps legacy compatibility while new requests use prepared ruleset 2', () => {
     expect(LEGACY_NETWORK_RULESET_VERSION).toBe(1);
-    expect(CURRENT_NETWORK_RULESET_VERSION).toBe(1);
+    expect(CURRENT_NETWORK_RULESET_VERSION).toBe(2);
   });
 
   it('preserves supported stored versions and fails invalid values closed to legacy', () => {

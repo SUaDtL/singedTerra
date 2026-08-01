@@ -62,10 +62,12 @@ After the server-first capability rollout, `create_room` stores and echoes an
 explicit supported version `1` or `2`, while omission remains version `1` for
 deployed-client compatibility. `join_room` rejects a client whose requested
 version differs before changing the roster, and `submit_action` rejects a
-verified seat's mismatch before the action-log RPC. The public client remains on
-version `1` until a separate client rollout, so deterministic balance changes can
-deploy without letting old and new browsers interpret one committed action
-differently.
+verified seat's mismatch before the action-log RPC. New browser rooms use
+version `2`. A browser first joins with version `2`, then retries exactly once as
+version `1` only when the referee's HTTP 409 response identifies a legacy room;
+the pre-mutation mismatch check makes that retry safe. Lobby state, rematches,
+engine construction, and action retries use the room's authoritative version,
+so old and new browsers never interpret one committed action differently.
 
 ## Dependency direction
 

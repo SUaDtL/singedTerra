@@ -82,7 +82,7 @@
 
 - [x] Run focused tests, the full Deno suite, `npm run check`, `npm run coverage:client`, `npm run build`, `npm audit`, `git diff --check`, and state-free secret/hard-surface scans.
 - [x] Dispatch one adversarial exact-diff reviewer; correct every Critical, High, Medium, and merge blocker and obtain correction re-review when needed.
-- [ ] Commit through the codeArbiter gate, push, open a ready PR, and require every hosted check green on the exact reviewed head.
-- [ ] Merge through the PR under standing logged authority; deploy only `create_room --project-ref jdvxfxjpobtyasozxauh` with no database push.
-- [ ] Verify `create_room` is ACTIVE, omission/explicit `1` create version `1`, explicit `2` creates version `2`, and a matching version `2` join succeeds; verify Pages provenance/live smoke remains green on the merge commit.
-- [ ] Record Phase B1 evidence, then begin the separately governed Phase B2 client-version flip.
+- [x] Commit through the codeArbiter gate, push, open a ready PR, and require every hosted check green on the exact reviewed head.
+- [x] Merge through the PR under standing logged authority; deploy only `create_room --project-ref jdvxfxjpobtyasozxauh` with no database push.
+- [x] Verify `create_room` is ACTIVE, omission/explicit `1` create version `1`, explicit `2` creates version `2`, and a matching version `2` join succeeds; verify Pages provenance/live smoke remains green on the merge commit.
+- [x] Record Phase B1 evidence, then begin the separately governed Phase B2 client-version flip.

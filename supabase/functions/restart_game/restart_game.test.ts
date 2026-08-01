@@ -94,6 +94,40 @@ Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid valu
   )
 })
 
+Deno.test('successor normalization and both response projectors preserve rulesets 1 and 2', () => {
+  const players: StoredPlayer[] = [
+    { id: 'uid-a', name: 'Ana', color: '#f00', ready: true },
+    { id: 'uid-b', name: 'Bo', color: '#00f', ready: true },
+  ]
+
+  for (const rulesetVersion of [1, 2] as const) {
+    const options = {
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      walls: 'wrap' as const,
+      rulesetVersion,
+    }
+
+    assertEquals(normalizeRematchOptions(options, players.length).rulesetVersion, rulesetVersion)
+    assertEquals(normalizeStoredRematchOptions(options).rulesetVersion, rulesetVersion)
+    assertEquals(projectExistingRematchInfo({
+      id: `existing-v${rulesetVersion}`,
+      code: `EXV${rulesetVersion}42`,
+      seed: 42,
+      options,
+      players,
+    }).options.rulesetVersion, rulesetVersion)
+    assertEquals(projectCreatedRematchInfo(
+      `created-v${rulesetVersion}`,
+      `CRV${rulesetVersion}42`,
+      43,
+      options,
+      players,
+    ).options.rulesetVersion, rulesetVersion)
+  }
+})
+
 Deno.test('normalizeRematchOptions fails closed for corrupt stored options', () => {
   assertThrows(
     () => normalizeRematchOptions(null as never, 2),

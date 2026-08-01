@@ -208,7 +208,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         playerName: 'Alice',
         color: '#e84d4d',
         loadout: MIXED_LOADOUT,
-        rulesetVersion: 1,
+        rulesetVersion: 2,
         options: { maxPlayers: 2, visibility: 'public', walls: 'open' },
       });
       // No conditional keys leaked into the body.
@@ -244,7 +244,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         playerName: 'Alice',
         color: '#e84d4d',
         loadout: DEFAULT_TANK_LOADOUT,
-        rulesetVersion: 1,
+        rulesetVersion: 2,
         // 1 CPU seat gets the first palette color NOT used by the creator (Blue).
         bots: [{
           name: 'CPU 1',
@@ -322,7 +322,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         maxWind: 6,
         gravity: 0.22,
         walls: 'wrap' as const,
-        rulesetVersion: 1 as const,
+        rulesetVersion: 2 as const,
       };
       stubFetch({
         json: () => ({
@@ -471,7 +471,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         playerName: 'Bob',
         color: '#4d8ce8',
         loadout: MIXED_LOADOUT,
-        rulesetVersion: 1,
+        rulesetVersion: 2,
       });
     });
 
@@ -524,7 +524,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         maxWind: 10,
         gravity: 0.15,
         walls: 'open',
-        rulesetVersion: 1,
+        rulesetVersion: 2,
       });
       expect(internals(lobby).waitingPlayers).toEqual([]);
       await flush();
@@ -654,14 +654,14 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
   // ========================================================================
   describe('ready_up', () => {
     /** Seed a clean, clash-free single-seat waiting room for THIS client. */
-    function seedWaiting(): void {
+    function seedWaiting(rulesetVersion: 1 | 2 = 2): void {
       Object.assign(internals(lobby), {
         waitingRoomId: 'room-1',
         waitingRoomCode: 'ABCD',
         waitingPlayerId: 'p-1',
         waitingToken: 'tok',
         waitingSeed: 42,
-        waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
+        waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion },
         waitingPlayers: [{ id: 'p-1', name: 'Alice', color: '#e84d4d', ready: false }],
       });
     }
@@ -765,8 +765,24 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         roomId: 'room-1',
         playerId: 'p-1',
         token: 'tok',
-        settings: { seed: 42, maxWind: 10, gravity: 0.15, rulesetVersion: 1 },
+        settings: { seed: 42, maxWind: 10, gravity: 0.15, rulesetVersion: 2 },
       });
+    });
+
+    it('SUCCESS (started): preserves an authoritative legacy room version', async () => {
+      const players = [
+        { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
+        { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
+      ];
+      stubFetch({ json: () => ({ started: true, players }) });
+      seedWaiting(1);
+
+      await internals(lobby).handleReadyUp();
+
+      expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
+        mode: 'network',
+        settings: expect.objectContaining({ rulesetVersion: 1 }),
+      }));
     });
 
     it('ERROR: { error } response surfaces the message and does NOT ready up', async () => {

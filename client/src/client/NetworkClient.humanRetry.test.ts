@@ -28,13 +28,16 @@ async function settleFetch(): Promise<void> {
   await Promise.resolve();
 }
 
-function makeClient(fetchMock: ReturnType<typeof vi.fn>): NetworkClient {
+function makeClient(
+  fetchMock: ReturnType<typeof vi.fn>,
+  rulesetVersion?: 1 | 2,
+): NetworkClient {
   vi.stubGlobal('fetch', fetchMock);
   return new NetworkClient(
     {} as unknown as SupabaseClient,
     'room-1',
     'player-abc',
-    OPTIONS,
+    { ...OPTIONS, ...(rulesetVersion === undefined ? {} : { rulesetVersion }) },
     'seat-token-test',
   );
 }
@@ -72,6 +75,24 @@ describe('NetworkClient — human seq-conflict retry (#120)', () => {
     const retryInit = fetchMock.mock.calls[1]?.[1] as RequestInit;
     expect(retryInit.body).toBe(firstInit.body);
     expect(JSON.parse(firstInit.body as string).rulesetVersion).toBe(1);
+
+    client.stop();
+  });
+
+  it('preserves an authoritative v2 room version across a human retry', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(conflict())
+      .mockResolvedValueOnce(accepted());
+    const client = makeClient(fetchMock, 2);
+
+    client.sendAction({ type: 'fire' });
+    await settleFetch();
+    await vi.advanceTimersByTimeAsync(40);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, init] of fetchMock.mock.calls as Array<[string, RequestInit]>) {
+      expect(JSON.parse(init.body as string).rulesetVersion).toBe(2);
+    }
 
     client.stop();
   });

@@ -254,9 +254,11 @@ malformed stored options fail closed. The referee accepts explicit version `1`
 or `2` room creation while an omitted version remains legacy `1`. Create returns
 the server-resolved options, join rejects a version mismatch before any room
 mutation, and action submission rejects a mismatch after seat-token validation
-but before authorization or insertion. During the server-first rollout window,
-the public client still creates version `1` rooms; switching new clients to
-version `2` is a separate deployment step.
+but before authorization or insertion. The public client creates and first
+attempts to join with version `2`. To drain already-open version-1 lobbies
+safely, it retries a join once as version `1` only when the referee returns the
+exact HTTP 409 mismatch contract requiring version `1`; all established-session
+actions continue to send the room's authoritative version.
 
 ### Replay
 

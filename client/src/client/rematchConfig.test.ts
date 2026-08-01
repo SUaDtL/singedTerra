@@ -4,7 +4,13 @@ import { buildClientEngineOptions } from './gameEngineOptions';
 import { rematchToConfig } from './rematchConfig';
 
 describe('rematchToConfig', () => {
-  it('carries a successor ruleset 2 into decisive network engine construction', () => {
+  it.each([
+    [1, 'linear'],
+    [2, 'decisive'],
+  ] as const)('carries successor ruleset %i into %s network engine construction', (
+    rulesetVersion,
+    starterWeaponFalloff,
+  ) => {
     const info: RematchInfo = {
       roomId: 'room-next',
       code: 'NEXT42',
@@ -14,7 +20,7 @@ describe('rematchToConfig', () => {
         maxWind: 8,
         gravity: 0.2,
         walls: 'wrap',
-        rulesetVersion: 2,
+        rulesetVersion,
       },
       players: [
         { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
@@ -23,7 +29,8 @@ describe('rematchToConfig', () => {
     };
 
     const config = rematchToConfig(info, 'player-abc');
-    expect(config.settings?.rulesetVersion).toBe(2);
-    expect(buildClientEngineOptions({ ...config, mode: 'network' }).starterWeaponFalloff).toBe('decisive');
+    expect(config.settings?.rulesetVersion).toBe(rulesetVersion);
+    expect(buildClientEngineOptions({ ...config, mode: 'network' }).starterWeaponFalloff)
+      .toBe(starterWeaponFalloff);
   });
 });
