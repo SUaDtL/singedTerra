@@ -13,6 +13,7 @@ import { buildLobbyHotSeatView } from './LobbyHotSeatView';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
+import { buildLobbyOnlineView, buildLobbyShellView } from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
 import {
@@ -1166,31 +1167,33 @@ export class Lobby {
   private render(): void {
     this.root.replaceChildren();
 
-    const card = document.createElement('div');
-    card.className = 'lobby-card';
-
-    const title = document.createElement('h1');
-    title.textContent = 'singedTerra';
-    card.append(title);
-    card.append(this.renderVehiclePreview());
-
-    // Rejoin affordance (T-09, AC-05) — shown ONLY once a stored session
-    // descriptor has been validated live; placed at the very top so it's
-    // visible on load regardless of which tab is active.
-    if (this.rejoinCandidate) {
-      card.append(this.renderRejoinBanner());
-    }
-
-    // Tab bar
-    card.append(this.renderTabBar());
-
+    const vehiclePreview = this.renderVehiclePreview();
+    let content: HTMLElement;
     if (this.activeTab === 'hotseat') {
-      card.append(this.renderHotSeatTab());
+      content = this.renderHotSeatTab();
     } else {
-      card.append(this.renderOnlineTab());
+      const onlineContent = this.onlineSubView === 'create'
+        ? this.renderCreateForm()
+        : this.onlineSubView === 'join'
+          ? this.renderJoinForm()
+          : this.onlineSubView === 'browse'
+            ? this.renderBrowse()
+            : this.renderWaitingRoom();
+      content = buildLobbyOnlineView(onlineContent);
     }
 
-    card.append(this.renderControlsLegend());
+    const card = buildLobbyShellView({
+      activeTab: this.activeTab,
+      rejoinAvailable: this.rejoinCandidate !== null,
+      vehiclePreview,
+      content,
+      controls: this.renderControlsLegend(),
+      onTabChange: (tab) => {
+        this.activeTab = tab;
+        this.render();
+      },
+      onRejoin: () => { void this.handleRejoin(); },
+    });
 
     this.root.append(card);
     const activeGarage = this.root.querySelector<HTMLElement>(
@@ -1536,31 +1539,6 @@ export class Lobby {
   }
 
   /**
-   * T-09 (AC-05) — the "Rejoin your game" affordance. Only rendered when
-   * `checkRejoinCandidate()` has confirmed a live session. Styling mirrors the
-   * lobby's existing status/banner conventions (`.online-status`, `.lobby-btn`)
-   * rather than inventing a new visual language.
-   */
-  private renderRejoinBanner(): HTMLElement {
-    const banner = document.createElement('div');
-    banner.className = 'lobby-rejoin-banner';
-
-    const text = document.createElement('span');
-    text.className = 'lobby-rejoin-text';
-    text.textContent = 'You have a game in progress.';
-    banner.append(text);
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'lobby-btn';
-    btn.textContent = 'Rejoin your game';
-    btn.addEventListener('click', () => { void this.handleRejoin(); });
-    banner.append(btn);
-
-    return banner;
-  }
-
-  /**
    * T-10 (rejoin-after-refresh, AC-06) — activate the validated rejoin
    * candidate. Builds a network `LobbyConfig` from the validated room +
    * the stored descriptor's playerId and hands it to `onReady`, mirroring the
@@ -1626,34 +1604,6 @@ export class Lobby {
     this.onReady(config);
   }
 
-  // ---- Tab bar ----
-
-  private renderTabBar(): HTMLElement {
-    const bar = document.createElement('div');
-    bar.className = 'lobby-tabs';
-
-    const hotSeatBtn = document.createElement('button');
-    hotSeatBtn.type = 'button';
-    hotSeatBtn.className = 'lobby-tab' + (this.activeTab === 'hotseat' ? ' active' : '');
-    hotSeatBtn.textContent = 'Hot Seat';
-    hotSeatBtn.addEventListener('click', () => {
-      this.activeTab = 'hotseat';
-      this.render();
-    });
-
-    const onlineBtn = document.createElement('button');
-    onlineBtn.type = 'button';
-    onlineBtn.className = 'lobby-tab' + (this.activeTab === 'online' ? ' active' : '');
-    onlineBtn.textContent = 'Play Online';
-    onlineBtn.addEventListener('click', () => {
-      this.activeTab = 'online';
-      this.render();
-    });
-
-    bar.append(hotSeatBtn, onlineBtn);
-    return bar;
-  }
-
   // ---- Hot Seat tab ----
 
   private renderHotSeatTab(): HTMLElement {
@@ -1682,24 +1632,6 @@ export class Lobby {
         });
       },
     });
-  }
-
-  // ---- Online tab ----
-
-  private renderOnlineTab(): HTMLElement {
-    const wrapper = document.createElement('div');
-
-    if (this.onlineSubView === 'create') {
-      wrapper.append(this.renderCreateForm());
-    } else if (this.onlineSubView === 'join') {
-      wrapper.append(this.renderJoinForm());
-    } else if (this.onlineSubView === 'browse') {
-      wrapper.append(this.renderBrowse());
-    } else {
-      wrapper.append(this.renderWaitingRoom());
-    }
-
-    return wrapper;
   }
 
   // ---- Create Room sub-view ----

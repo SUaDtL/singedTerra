@@ -2909,3 +2909,24 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #251 head `dc928ba` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Shell View Builder sprint
+
+- **[high] Extract the shell after all major per-view builders.** SMARTS scores shell composition 29/30 versus shared online fields 23/30 and hot-seat row/Advanced helpers 21/30: it directly removes four issue-named `renderX` seams, has stronger existing oracles, and avoids widening behavioral ownership. Confidence high.
+- **[high] Pass only the selected content.** Lobby chooses the active tab and current online sub-view before calling the builder, so inactive views are not constructed and existing render-time work remains identical. Confidence high.
+- **[high] Keep rejoin and navigation effects in Lobby.** The builder emits typed callbacks; Lobby retains state writes, rerendering, live revalidation, storage/token access, transport, config assembly, and `onReady`. Confidence high.
+- **[high] Preserve the online wrapper.** `buildLobbyOnlineView()` wraps only the already-selected sub-view node, maintaining exact DOM depth without prebuilding inactive network views. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, exact seven-file surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Baseline green.** Before production edits, 61 focused pre-existing tab/rejoin/network tests, the unchanged 15-case browser oracle, and 115 files / 808 client tests passed. `Lobby.ts` started at 87.31% lines and 68.29% branches, above the stage-1 60% floor. Confidence high.
+- **Behavioral RED then GREEN.** A compile-only builder shell produced three causal failures on missing shell structure, tab routes, and online wrapper while all 61 focused pre-existing tests stayed green. The implementation then passed all three direct seam tests, the unchanged focused set, strict typecheck, and the unchanged 15-case browser oracle. Confidence high.
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The unchanged Lobby browser oracle also passes 15/15 at the GitHub Pages `/singedTerra/` base. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 116 files / 811 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage improved and clears the floor.** Full client coverage is 91.50% statements, 81.54% branches, 82.35% functions, and 93.70% lines. `Lobby.ts` remains above the stage-1 floor at 67.70% branches and 86.88% lines. Confidence high.
+- **Scope and hygiene green.** No pre-existing test file changed. CSS, dependencies, lockfile, workflows, issue/task trackers, shared engine, Supabase, auth, crypto, and migrations remain unchanged. The exact seven-file scope is clean, diff hygiene passes, and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, or merge blocker. It independently confirmed exact card/title/preview/optional-rejoin/tabs/content/controls order, copy, classes, button types, active classes, zero-argument callbacks, and online wrapper identity/depth. Lobby still clears the root first, constructs only the selected active view, owns tab/rerender and unchanged live rejoin validation/storage/token/transport/session/config/`onReady` effects, and applies Garage inert behavior after card insertion. The render-time ordering of synchronous detached presentation builders is non-observable. Tests are causal, the seven-file scope has no external drift, and both protected logs remain append-only after Git normalization. Confidence high.
