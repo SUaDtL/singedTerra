@@ -9,7 +9,7 @@ import {
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
-import { armsLabel, roundsLabel, botLabel } from './browseLabels';
+import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
 import {
   LobbyTransport,
@@ -2266,98 +2266,30 @@ export class Lobby {
   }
 
   private renderBrowse(): HTMLElement {
-    const frag = document.createElement('div');
-
-    const sub = document.createElement('p');
-    sub.className = 'lobby-sub';
-    sub.textContent = 'Public rooms looking for players.';
-    frag.append(sub);
-
-    // Name + color for the joiner (no colors are pre-taken in this view).
-    frag.append(this.renderOnlineNameColor(
-      this.onlineName,
-      this.joinColor,
-      (v) => { this.onlineName = v; },
-      (v) => { this.joinColor = v; this.render(); },
-      /* takenColors */ [],
-    ));
-    frag.append(this.renderGarage(
-      'online-player',
-      'Your',
-      this.onlineLoadout,
-      (loadout) => {
-        this.onlineLoadout = loadout;
-        this.render();
-      },
-    ));
-
-    // Status / error
-    frag.append(this.renderOnlineStatus());
-
-    // Room list
-    const list = document.createElement('ul');
-    list.className = 'online-player-list';
-    if (this.browseRooms.length === 0) {
-      const empty = document.createElement('li');
-      empty.className = 'online-player-row';
-      empty.style.cssText = 'color:var(--text-dim);';
-      empty.textContent = 'No public rooms right now.';
-      list.append(empty);
-    } else {
-      for (const room of this.browseRooms) {
-        const row = document.createElement('li');
-        row.className = 'online-player-row';
-
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = room.hostName || '(unnamed host)';
-
-        // Match-shape metadata: rounds · arms tier · CPU count (each omitted when empty).
-        const metaSpan = document.createElement('span');
-        metaSpan.style.cssText = 'margin-left:8px;color:var(--text-dim);font-size:12px;';
-        metaSpan.textContent = [
-          roundsLabel(room.rounds),
-          armsLabel(room.armsLevel),
-          botLabel(room.botCount),
-        ].filter(Boolean).join(' · ');
-
-        const joinBtn = document.createElement('button');
-        joinBtn.type = 'button';
-        joinBtn.className = 'lobby-btn';
-        joinBtn.style.cssText = 'margin-left:auto;padding:4px 12px;font-size:13px;';
-        const full = room.playerCount >= room.maxPlayers;
-        joinBtn.textContent = `Join (${room.playerCount}/${room.maxPlayers})`;
-        joinBtn.disabled = full || this.onlineBusy;
-        joinBtn.addEventListener('click', () => {
-          if (full) return;
-          void this.joinByCode(room.code);
-        });
-
-        row.append(nameSpan, metaSpan, joinBtn);
-        list.append(row);
-      }
-    }
-    frag.append(list);
-
-    // Back links
-    const btnRow = document.createElement('div');
-    btnRow.className = 'lobby-btn-row';
-
-    const createLink = document.createElement('button');
-    createLink.type = 'button';
-    createLink.className = 'lobby-btn secondary';
-    createLink.textContent = 'Create instead';
-    createLink.addEventListener('click', () => { this.leaveBrowse('create'); });
-
-    const joinLink = document.createElement('button');
-    joinLink.type = 'button';
-    joinLink.className = 'lobby-btn secondary';
-    joinLink.textContent = 'Join by code';
-    joinLink.addEventListener('click', () => { this.leaveBrowse('join'); });
-
-    btnRow.append(createLink, joinLink);
-    frag.append(btnRow);
-
-    return frag;
+    return buildLobbyBrowseView({
+      nameColor: this.renderOnlineNameColor(
+        this.onlineName,
+        this.joinColor,
+        (value) => { this.onlineName = value; },
+        (value) => { this.joinColor = value; this.render(); },
+        [],
+      ),
+      garage: this.renderGarage(
+        'online-player',
+        'Your',
+        this.onlineLoadout,
+        (loadout) => {
+          this.onlineLoadout = loadout;
+          this.render();
+        },
+      ),
+      status: this.renderOnlineStatus(),
+      rooms: this.browseRooms,
+      busy: this.onlineBusy,
+      onJoin: (code) => { void this.joinByCode(code); },
+      onCreate: () => { this.leaveBrowse('create'); },
+      onJoinByCode: () => { this.leaveBrowse('join'); },
+    });
   }
 
   // ---- Waiting Room sub-view ----

@@ -2784,3 +2784,22 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #246 head `a83e71c8359dc481703ca31b95cab3de60666ec4` passed CodeQL, CodeQL analyze, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Browse View Builder sprint
+
+- **[high] Extract Browse before Waiting.** The completed network-view oracle removes issue #129's stated test blocker. Browse is the smallest network view and owns no Realtime roster lifecycle, so it is the safest first per-view extraction. Confidence high.
+- **[high] Use a stateless full-view builder.** A room-list helper would leave `renderBrowse()` responsible for the overall composition; a stateful class would duplicate Lobby lifecycle ownership. Passing prebuilt shared nodes, current data, and callbacks moves the complete view while keeping effects in Lobby. Confidence high.
+- **[high] Preserve behavior mechanically.** Visible strings, classes, inline styles, DOM order, callback timing, polling, transport, and session ownership are parity obligations. The new seam receives direct red tests, while every pre-existing test file remains untouched. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, precise refactor surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Behavioral RED then GREEN.** The compile-only builder shell produced three causal failures on missing Browse DOM and actions while all 44 pre-existing focused Lobby tests stayed green. The stateless implementation then passed all three direct seam tests, the unchanged 44-test Lobby set, and the unchanged 15-case browser oracle. Confidence high.
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The unchanged Lobby browser oracle also passes 15/15 at the GitHub Pages `/singedTerra/` base. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 111 files / 795 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage improved.** Full client coverage is 90.86% statements, 80.65% branches, 81.90% functions, and 93.26% lines. `Lobby.ts` is 68.04% branches and 88.81% lines, above its 66.66% / 85.20% baseline and the stage-1 60% floor; `LobbyBrowseView.ts` is 100% lines. Confidence high.
+- **Scope and hygiene green.** No pre-existing test file changed. Polling, transport, session, CSS, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer independently confirmed mechanical parity for DOM order, text, classes, inline styles, metadata, fallback host, full/busy disabling, and synchronous callbacks; Lobby retains every state, render effect, join/leave, polling, transport, and session responsibility. Direct tests are causal, no pre-existing test changed, governance additions are append-only, and no dependency, lockfile, CSS, backend, auth, crypto, workflow, or security scope drift exists. It found no Critical, High, Medium, Low, or merge blocker. Confidence high.
