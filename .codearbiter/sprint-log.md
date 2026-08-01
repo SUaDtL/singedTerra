@@ -2565,11 +2565,16 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **Baseline:** fresh deployed main `7d4deb8`; `npm ci` found zero vulnerabilities; `npm run check` passed; `npm run coverage:client` passed 104 files / 744 tests at 89.43% statements and 91.82% lines; no scoped localhost listeners were running. Confidence high.
 - **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override for this spec and plan only. No runtime, dependency, workflow, migration, Supabase, or deployment change is authorized. Confidence high.
 - **H-05 mechanical repair:** PowerShell's `>>` encoded the first uncommitted audit tails as UTF-16. The committed `HEAD` prefix of each append-only log was restored byte-for-byte and the intended receipts re-appended as UTF-8; the distinct repair override records the correction. No historical receipt was removed or rewritten. Confidence high.
-#### Open Issue Hygiene adversarial correction
+### Open Issue Hygiene adversarial correction
 
 - **HIGH merge blocker corrected - #104 residual rerun window.** PR #158 deliberately left #104 open because pre-guard workflow runs keep their historical unguarded workflow definition while GitHub permits reruns for up to 30 days. A green current deploy proves present provenance but does not remove that residual path. #104 now remains open and unchanged with an explicit time-bound re-audit condition. Confidence high.
 - **MEDIUM evidence corrections completed.** PR #81 and current `isValidColor` source prove #69's color bound complete while its other three security items remain; Lobby's current evidence is 3,249 lines and 18 `render*` methods, not the unsupported 45-method count. The report now states both facts exactly. Confidence high.
 - **Superseding disposition:** close four issues (#10, #64, #85, #109), narrow five (#45, #67, #68, #70, #134), and preserve seven unchanged (#47, #69, #104, #110, #111, #125, #129). Expected open inventory after exact application is 12. This supersedes the earlier close-five receipt without removing it from the append-only record. No GitHub issue has been mutated. Confidence high.
-#### Open Issue Hygiene adversarial clearance
+### Open Issue Hygiene adversarial clearance
 
 - The same adversarial reviewer re-checked the exact correction delta. #104's HIGH residual-window blocker, #69's MEDIUM completion-state error, and #129's MEDIUM method-count error are resolved. No new Critical, High, Medium, Low, or other merge blocker remains. Exact-diff verdict: CLEAN. Confidence high.
+### Hosted review correction
+
+- CodeRabbit's change request identified two merge-blocking evidence gaps and one MD001 hierarchy defect. #64 now cites the live `NetworkClient.computeNextSeat` seam, `seat_reuse.mjs`, `engine_clone_parity.mjs`, and the absence of a replacement PR; #109 now cites PR #195 and the direct `HUD.instruments.test.ts` absence oracle. Confidence high.
+- #104 now pins the controlling pre-guard Pages run `29793872670`, source commit `5d4dc6154a180259fbc9530ca74e178263070552`, initial time `2026-07-21T01:42:56Z`, and earliest 30-day re-audit time `2026-08-20T01:42:56Z`, with the current official GitHub rerun-policy source. No issue mutation has occurred. Confidence high.
+- The two new level-four headings in this unmerged tail were mechanically corrected to level three under a distinct H-05 receipt. The final diff from `origin/main` remains append-only and no receipt text changed. Exact correction re-review and a fresh hosted matrix remain required. Confidence high.
