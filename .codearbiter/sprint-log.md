@@ -2857,3 +2857,24 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #249 head `21c98d1` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Join View Builder sprint
+
+- **[high] Extract Join after Hot Seat.** SMARTS comparison against Create and the Online wrapper scores Join highest for bounded scope, reversibility, oracle strength, and low effect coupling. The 75-line complete view directly advances issue #129 while leaving the larger Create form for a later isolated cell. Confidence high.
+- **[high] Keep normalization and effects in Lobby.** The builder receives a canonicalizing callback that returns the current code plus Join/Create/Browse callbacks. Lobby retains code state, error clearing, navigation, rendering, validation, transport, session writes, polling, and waiting-room transition. Confidence high.
+- **[high] Pass detached shared nodes.** Name/color, Garage, and status already have Lobby-owned builders and effects. Passing their nodes preserves identity/order without widening the seam or duplicating behavior. Confidence high.
+- **[high] Preserve behavior mechanically.** Exact copy, attributes, classes, DOM order, input normalization timing, busy presentation, and action ordering are parity obligations. Direct causal tests supplement the unchanged 15-case browser oracle; no pre-existing test file changes. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, exact seven-file surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Baseline green.** Before production edits, 57 focused pre-existing Join/Lobby tests, the unchanged 15-case browser oracle, and 113 files / 802 client tests passed. `Lobby.ts` started at 88.56% lines and 68.31% branches, above the stage-1 60% floor. Confidence high.
+- **Behavioral RED then GREEN.** The compile-only builder shell produced three causal failures on missing Join copy/control/actions while all 57 focused pre-existing tests stayed green. The implementation then passed all three direct seam tests, the unchanged 57-test focus, strict typecheck, and the unchanged 15-case browser oracle. Confidence high.
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The Lobby browser oracle also passes 15/15 at the GitHub Pages `/singedTerra/` base. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 114 files / 805 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage clears the governed floor.** Full client coverage is 91.23% statements, 81.34% branches, 82.06% functions, and 93.53% lines. `Lobby.ts` remains above the stage-1 floor at 68.42% branches and 87.89% lines; extraction-denominator movement explains the small line-percentage shift. Confidence high.
+- **Scope and hygiene green.** No pre-existing test file changed. CSS, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge blocker. It independently confirmed exact root/copy/control attributes, shared-node and button order, classes/text, raw-to-canonical input timing, busy disabled semantics, and all action routes. Lobby retains normalization state, error clearing, sub-view/render effects, validation, transport, loadout normalization, session writes, polling, waiting-room transitions, and error handling. Prebuilt name/color, Garage, and status nodes are synchronously detached and have no state or I/O effect before later event handlers. Tests are causal and the approved seven-file scope has no pre-existing-test, dependency, CSS, backend, auth, crypto, migration, workflow, or shared-engine drift. Confidence high.

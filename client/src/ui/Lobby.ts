@@ -11,6 +11,7 @@ import {
 import { clamp } from '@shared/engine/math';
 import { buildLobbyHotSeatView } from './LobbyHotSeatView';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
+import { buildLobbyJoinView } from './LobbyJoinView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
 import {
@@ -2002,83 +2003,38 @@ export class Lobby {
   // ---- Join Room sub-view ----
 
   private renderJoinForm(): HTMLElement {
-    const frag = document.createElement('div');
-
-    const sub = document.createElement('p');
-    sub.className = 'lobby-sub';
-    sub.textContent = 'Enter the 4-character room code to join.';
-    frag.append(sub);
-
-    // Code input
-    const codeField = document.createElement('div');
-    codeField.className = 'lobby-field';
-    const codeLabel = document.createElement('label');
-    codeLabel.textContent = 'Room code';
-    const codeInput = document.createElement('input');
-    codeInput.type = 'text';
-    codeInput.className = 'lobby-code-input';
-    codeInput.maxLength = 4;
-    codeInput.value = this.joinCode;
-    codeInput.placeholder = 'XXXX';
-    codeInput.addEventListener('input', () => {
-      this.joinCode = normalizeRoomCode(codeInput.value);
-      codeInput.value = this.joinCode;
-    });
-    codeField.append(codeLabel, codeInput);
-    frag.append(codeField);
-
-    // Name + color
-    frag.append(this.renderOnlineNameColor(
-      this.onlineName,
-      this.joinColor,
-      (v) => { this.onlineName = v; },
-      (v) => { this.joinColor = v; this.render(); },
-      [],
-    ));
-    frag.append(this.renderGarage(
-      'online-player',
-      'Your',
-      this.onlineLoadout,
-      (loadout) => {
-        this.onlineLoadout = loadout;
+    return buildLobbyJoinView({
+      code: this.joinCode,
+      busy: this.onlineBusy,
+      nameColor: this.renderOnlineNameColor(
+        this.onlineName,
+        this.joinColor,
+        (value) => { this.onlineName = value; },
+        (value) => { this.joinColor = value; this.render(); },
+        [],
+      ),
+      garage: this.renderGarage(
+        'online-player',
+        'Your',
+        this.onlineLoadout,
+        (loadout) => {
+          this.onlineLoadout = loadout;
+          this.render();
+        },
+      ),
+      status: this.renderOnlineStatus(),
+      onCodeInput: (value) => {
+        this.joinCode = normalizeRoomCode(value);
+        return this.joinCode;
+      },
+      onJoin: () => { void this.handleJoinRoom(); },
+      onCreate: () => {
+        this.onlineSubView = 'create';
+        this.onlineError = '';
         this.render();
       },
-    ));
-
-    // Status / error
-    frag.append(this.renderOnlineStatus());
-
-    // Buttons
-    const btnRow = document.createElement('div');
-    btnRow.className = 'lobby-btn-row';
-
-    const joinBtn = document.createElement('button');
-    joinBtn.type = 'button';
-    joinBtn.className = 'lobby-btn';
-    joinBtn.textContent = this.onlineBusy ? 'Joining...' : 'Join Room';
-    joinBtn.disabled = this.onlineBusy;
-    joinBtn.addEventListener('click', () => { void this.handleJoinRoom(); });
-
-    const createLink = document.createElement('button');
-    createLink.type = 'button';
-    createLink.className = 'lobby-btn secondary';
-    createLink.textContent = 'Create instead';
-    createLink.addEventListener('click', () => {
-      this.onlineSubView = 'create';
-      this.onlineError = '';
-      this.render();
+      onBrowse: () => { this.enterBrowse(); },
     });
-
-    const browseLink = document.createElement('button');
-    browseLink.type = 'button';
-    browseLink.className = 'lobby-btn secondary';
-    browseLink.textContent = 'Browse public rooms';
-    browseLink.addEventListener('click', () => { this.enterBrowse(); });
-
-    btnRow.append(joinBtn, createLink, browseLink);
-    frag.append(btnRow);
-
-    return frag;
   }
 
   private async handleJoinRoom(): Promise<void> {
