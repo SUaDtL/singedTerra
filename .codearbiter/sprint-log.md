@@ -2957,3 +2957,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversarial clearance
 
 - **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge blocker. It independently confirmed the typed 144x80 direct-scale-two profile, unchanged thumbnail/spotlight and preview lifecycle, preserved HUD accessibility/caching/stale clearing, exact desktop/compact/coarse tiers, real-browser containment, unchanged world geometry and engine scope, causal tests, exact nine-file surface, and append-only protected logs after Git normalization. Confidence high.
+
+### PR #253 hosted gate and merge override
+
+- **[high] Behavior head cleared hosted CI.** PR #253 head `c323a10` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
