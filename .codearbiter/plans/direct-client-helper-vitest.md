@@ -45,6 +45,6 @@
 - [x] Prove staged protected files preserve their exact `origin/main` byte prefixes before commit.
 - [x] Run focused tests and targeted coverage, then `npm run check`, client and Edge tests, full client coverage, `npm run build`, dependency audit, secret scan, and `git diff --check`.
 - [x] Give one adversarial subagent the exact diff and evidence; correct every merge blocker and obtain a clean follow-up verdict.
-- [ ] Commit through `$ca-commit`, push, and open a ready PR through `$ca-pr` with `Closes #134`.
+- [x] Commit through `$ca-commit`, push, and open a ready PR through `$ca-pr` with `Closes #134`.
 - [ ] Require every hosted check green on the exact reviewed head, then use the standing PR-only merge authority.
 - [ ] Verify Pages exact-main provenance and live smoke, then select the next bounded sprint cell.

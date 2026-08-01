@@ -2725,3 +2725,7 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **Intermediate tail length superseded.** The preceding 3,224-byte sprint-log tail measurement was accurate before the review and prefix-evidence receipts were appended, but it is not the final staged length. The committed-prefix SHA-256 values remain correct. To avoid a self-referential receipt that changes the length it reports, final tail lengths are recomputed from the exact staged blobs and supplied to the adversarial and commit gates rather than embedded here. Confidence high.
 
 - **Chronology correction to the superseding receipt.** The 3,224-byte sprint-log tail was measured after the adversarial CLEAN review receipt had already been appended and immediately before the staged-integrity evidence receipt was appended. The earlier phrase implying it preceded both receipts was imprecise and is superseded by this exact ordering. Confidence high.
+
+### PR #244 hosted gate and merge override
+
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after reviewed behavior head `31b9d95`, this governance receipt's exact-diff review, and every hosted check is green on the final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
