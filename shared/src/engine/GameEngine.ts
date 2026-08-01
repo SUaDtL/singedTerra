@@ -312,7 +312,7 @@ export class GameEngine {
       this.surfaceCacheVersion = this.state.terrainVersion;
     }
     const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
-    const cached = this.surfaceCache[xi];
+    const cached = this.surfaceCache[xi] ?? -1;
     if (cached !== -1) return cached;
     const surf = surfaceAt(this.terrain, xi);
     this.surfaceCache[xi] = surf;
@@ -1163,7 +1163,7 @@ export class GameEngine {
     if (alive.length > 1) return false;
 
     // 1 alive => that tank won the round; 0 alive (mutual kill) => draw (no one scores).
-    const roundWinner = alive.length === 1 ? alive[0] : null;
+    const roundWinner = alive.length === 1 ? (alive[0] ?? null) : null;
     this.state.lastRoundWinnerId = roundWinner?.id ?? null;
     if (roundWinner) roundWinner.roundWins += 1;
 
@@ -1202,6 +1202,7 @@ export class GameEngine {
   private advanceTurn(): void {
     const tanks = this.state.tanks;
     const n = tanks.length;
+    if (n === 0) return;
 
     // Safety valve (#15): tick down each buried tank's trap timer; auto-free at the cap.
     for (const t of tanks) {
@@ -1218,6 +1219,7 @@ export class GameEngine {
     const start = cur < 0 ? 0 : cur;
     for (let step = 1; step <= n; step++) {
       const cand = tanks[(start + step) % n];
+      if (!cand) continue;
       if (cand.alive && !cand.buried) {
         this.state.activePlayerId = cand.id;
         return;
@@ -1228,14 +1230,19 @@ export class GameEngine {
     // tie-break by array order) and hand it the turn so the match can't stall.
     let pick = -1;
     for (let i = 0; i < n; i++) {
-      if (tanks[i].alive && (pick < 0 || tanks[i].buriedTurns > tanks[pick].buriedTurns)) {
+      const candidate = tanks[i];
+      if (!candidate || !candidate.alive) continue;
+      const selected = pick < 0 ? undefined : tanks[pick];
+      if (selected === undefined || candidate.buriedTurns > selected.buriedTurns) {
         pick = i;
       }
     }
     if (pick >= 0) {
-      tanks[pick].buried = false;
-      tanks[pick].buriedTurns = 0;
-      this.state.activePlayerId = tanks[pick].id;
+      const selected = tanks[pick];
+      if (!selected) return;
+      selected.buried = false;
+      selected.buriedTurns = 0;
+      this.state.activePlayerId = selected.id;
     }
   }
 
@@ -1249,12 +1256,15 @@ export class GameEngine {
     const tanks = this.state.tanks;
     if (tanks.length === 0) return null;
     let best = tanks[0];
+    if (!best) return null;
     let tie = false;
     for (let i = 1; i < tanks.length; i++) {
-      if (tanks[i].roundWins > best.roundWins) {
-        best = tanks[i];
+      const candidate = tanks[i];
+      if (!candidate) continue;
+      if (candidate.roundWins > best.roundWins) {
+        best = candidate;
         tie = false;
-      } else if (tanks[i].roundWins === best.roundWins) {
+      } else if (candidate.roundWins === best.roundWins) {
         tie = true;
       }
     }

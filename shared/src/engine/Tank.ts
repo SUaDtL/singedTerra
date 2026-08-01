@@ -6,7 +6,7 @@ import {
   type TankLoadout,
 } from '../types/TankLoadout';
 import { STARTING_CREDITS } from './WeaponSystem';
-import { CANVAS_WIDTH } from './Terrain';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from './Terrain';
 
 /** Tank bounding-box dimensions (px) used for collision (SPEC §4.2). */
 export const TANK_WIDTH = 20;
@@ -113,7 +113,9 @@ function defaultInventory(): Record<WeaponType, AmmoEntry> {
 /** Snap an x-position to a surface y-height from the terrain height map. */
 function surfaceY(x: number, terrain: number[]): number {
   const col = Math.min(Math.max(Math.round(x), 0), terrain.length - 1);
-  return terrain[col];
+  // A malformed empty/short height line should place the tank on the floor,
+  // rather than leaking `undefined` into deterministic state.
+  return terrain[col] ?? CANVAS_HEIGHT;
 }
 
 /**
@@ -198,7 +200,7 @@ export function placeTanks(
   void opts;
   const n = players.length;
   const tanks: TankState[] = [];
-  for (let i = 0; i < n; i++) {
+  for (const [i, player] of players.entries()) {
     // Evenly distribute across the band. With n===1 place at the band start.
     const frac =
       n <= 1
@@ -206,8 +208,9 @@ export function placeTanks(
         : SPREAD_MIN_FRACTION +
           (SPREAD_MAX_FRACTION - SPREAD_MIN_FRACTION) * (i / (n - 1));
     const x = Math.round(CANVAS_WIDTH * frac);
-    const player = players[i];
-    const color = player.color ?? MULTI_TANK_COLORS[i % MULTI_TANK_COLORS.length];
+    const color = player.color
+      ?? MULTI_TANK_COLORS[i % MULTI_TANK_COLORS.length]
+      ?? MULTI_TANK_COLORS[0];
     tanks.push(createTank(
       `p${i + 1}`,
       player.name,

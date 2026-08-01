@@ -80,8 +80,8 @@ export async function replayInChunks<A>(
   yieldFn:  () => Promise<void>,
 ): Promise<void> {
   const size = chunkSize < 1 ? 1 : Math.floor(chunkSize);
-  for (let i = 0; i < actions.length; i++) {
-    applyOne(actions[i], i);
+  for (const [i, action] of actions.entries()) {
+    applyOne(action, i);
     // After every `size` applications AND not at the very end, yield.
     // We yield when (i+1) is a multiple of size AND there are more actions to process.
     if ((i + 1) % size === 0 && i + 1 < actions.length) {

@@ -221,7 +221,7 @@ function chooseLoadout(
   }
 
   // Fall back to the strongest weapon in stock (baby_missile is always available).
-  return { weapon: ranked.length > 0 ? ranked[ranked.length - 1] : 'baby_missile' };
+  return { weapon: ranked.at(-1) ?? 'baby_missile' };
 }
 
 /**
@@ -247,5 +247,5 @@ function chooseBuy(me: TankState, target: TankState): WeaponType | null {
         && AI_EFFECTIVE_DAMAGE[w]! >= target.health; // and finishes the target
     })
     .sort((a, b) => AI_EFFECTIVE_DAMAGE[a]! - AI_EFFECTIVE_DAMAGE[b]!);
-  return candidates.length > 0 ? candidates[0] : null;
+  return candidates[0] ?? null;
 }

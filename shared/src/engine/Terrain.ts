@@ -108,6 +108,9 @@ export function generate(seed: number): Uint16Array {
     for (let i = half; i < gridLen; i += step) {
       const left = heights[i - half];
       const right = heights[i + half];
+      if (left === undefined || right === undefined) {
+        throw new RangeError('midpoint displacement sampled outside its grid');
+      }
       const avg = (left + right) / 2;
       heights[i] = avg + (rand() - 0.5) * 2 * displacement;
     }
@@ -120,7 +123,11 @@ export function generate(seed: number): Uint16Array {
     // Map column x in [0, n) onto the grid [0, gridLen-1]. gridLen is always
     // (2^k)+1 >= 2 for CANVAS_WIDTH=800, so n-1 is never 0 here.
     const gx = Math.round((x * (gridLen - 1)) / (n - 1));
-    const y = clamp(heights[gx], MIN_SURFACE_Y, MAX_SURFACE_Y);
+    const sample = heights[gx];
+    if (sample === undefined) {
+      throw new RangeError('terrain sampling exceeded the generated grid');
+    }
+    const y = clamp(sample, MIN_SURFACE_Y, MAX_SURFACE_Y);
     terrain[x] = Math.round(y);
   }
 
@@ -143,7 +150,9 @@ export const BITMAP_LEN = CANVAS_WIDTH * CANVAS_HEIGHT;
 export function buildBitmap(heightLine: Uint16Array): Uint8Array {
   const bitmap = new Uint8Array(BITMAP_LEN);
   for (let x = 0; x < CANVAS_WIDTH; x++) {
-    const s = clamp(heightLine[x], 0, CANVAS_HEIGHT);
+    // Missing columns are air down to the floor, matching the old NaN loop
+    // behavior while keeping the bitmap value contract explicit.
+    const s = clamp(heightLine[x] ?? CANVAS_HEIGHT, 0, CANVAS_HEIGHT);
     for (let y = s; y < CANVAS_HEIGHT; y++) {
       bitmap[y * CANVAS_WIDTH + x] = 1;
     }
@@ -163,7 +172,7 @@ export function generateBitmap(seed: number): Uint8Array {
  */
 export function pixelAt(bitmap: Uint8Array, x: number, y: number): number {
   if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return 0;
-  return bitmap[y * CANVAS_WIDTH + x];
+  return bitmap[y * CANVAS_WIDTH + x] ?? 0;
 }
 
 /**
