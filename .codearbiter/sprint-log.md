@@ -3044,3 +3044,19 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #256 targets `main` from `codex/shared-unchecked-indexing`; head `eb8ea3c7c37733a7ebfc810c0d8d9fcc21a3da87` is mergeable and based directly on `main@56cd67b22127865f4402adea9408ed3133f04b2d`. CI run `30723215379` passed typecheck/harness/build, 822 client tests, dependency audit, Edge tests, and the full rendering E2E suite; CodeQL run `30723215428` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01T19:36:17.4876136-04:00 — Client production unchecked indexing sprint
+
+### SMARTS selection and standing approval
+
+- **[high] Enforce strict indexed access for production before mechanical test-fixture migration.** A fresh client probe found 52 production findings across 11 files and 239 test-only findings across 119 files. An additive production TypeScript project gives runtime code the safety guarantee now while preserving the original full compile and isolating test-fixture cleanup as the next independently reviewable cell. Confidence high.
+- **[high] Reject an unenforced cleanup.** Fixing current production errors without wiring the stricter project into the normal `typecheck` script would permit immediate regression; the production pass must be a hosted CI gate, not a one-time audit. Confidence high.
+- **[high] Keep the existing full-project compile.** Excluding tests from the new strict project is a scope boundary, not reduced coverage: the current compile still typechecks all production and test sources under the existing policy. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this bounded spec and plan only. Security, auth, secrets, irreversible operations, adversarial review, exact-head hosted CI, PR-only merge, and deployment proof remain active. Confidence high.
+
+### 2026-08-01T19:49:52.3098764-04:00 — implementation and adversarial closure
+
+- **[high] Production compiler RED captured and closed.** The additive `typecheck:production` gate first failed with exactly 52 findings across the 11 classified production files and no test source, then passed after bounded iteration, explicit empty guards, and stable presentation fallbacks. The normal client typecheck still runs the original complete compile afterward. Confidence high.
+- **[high] Full local verification passed.** `npm run check` passed all 60 deterministic harnesses; `npm run test:client` passed 119 files and 823 tests; `npm run build` passed; dependency audit found zero vulnerabilities; and `git diff --check` passed. Confidence high.
+- **[high] One adversary found and closed one Medium.** The designated adversary blocked on missing direct proof for truncated terrain bitmap behavior. A focused regression now proves absent interior neighbor storage contributes neutral air (`223` alpha) rather than `undefined`/`NaN`; the same adversary re-reviewed the frozen package CLEAN/READY with zero Critical, High, Medium, Low, or merge-blocking findings. Confidence high.
+- **[high] Scope remains isolated.** No dependency, lockfile, shared engine, network contract, backend, auth, migration, workflow, asset, or gameplay tuning changed. The separately bounded 239 test-fixture findings remain the honest next cell for issue #70. Confidence high.

@@ -24,8 +24,11 @@ interface ValidCell {
 }
 
 function poolFor(cells: readonly ValidCell[]): Readonly<NapalmFirelightPool> {
-  const startX = cells[0].x;
-  const endX = cells[cells.length - 1].x;
+  const first = cells[0];
+  const last = cells.at(-1);
+  if (!first || !last) throw new RangeError('Cannot build a firelight pool from no cells');
+  const startX = first.x;
+  const endX = last.x;
   let peakLife = 0;
   for (const cell of cells) peakLife = Math.max(peakLife, cell.life);
 
@@ -82,7 +85,7 @@ export function getNapalmFirelightPools(
   for (const cell of valid) {
     const previous = chunk[chunk.length - 1];
     if (
-      chunk.length > 0
+      previous !== undefined
       && (cell.x !== previous.x + 1 || chunk.length === FIRELIGHT_CHUNK_COLUMNS)
     ) {
       pools.push(poolFor(chunk));

@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run typecheck:production && tsc --noEmit",
+    "typecheck:production": "tsc --project tsconfig.production.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage --maxWorkers=4"

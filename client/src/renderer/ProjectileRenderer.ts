@@ -118,8 +118,7 @@ export class ProjectileRenderer {
       this.previousProjectileCount = projectiles.length;
     }
 
-    for (let i = 0; i < projectiles.length; i++) {
-      const p = projectiles[i];
+    for (const [i, p] of projectiles.entries()) {
       const rb = this.getOrResetSlot(i, p);
       rb.push({ x: p.x, y: p.y });
       this.drawOne(ctx, p, rb);

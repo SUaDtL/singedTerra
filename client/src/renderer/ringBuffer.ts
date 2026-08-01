@@ -47,7 +47,9 @@ export class RingBuffer {
     // past the most recently written one, which wraps around).
     const start = this.size < this.cap ? 0 : this.head;
     for (let i = 0; i < this.size; i++) {
-      cb(this.buf[(start + i) % this.cap], i);
+      const point = this.buf[(start + i) % this.cap];
+      if (point === undefined) throw new RangeError('Ring buffer size exceeded initialized slots');
+      cb(point, i);
     }
   }
 

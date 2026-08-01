@@ -66,6 +66,14 @@ describe('terrainEdgeAlpha', () => {
     expect(terrainEdgeAlpha(terrain, 3, 3, 1, 1)).toBe(247);
   });
 
+  it('treats absent storage in a truncated interior bitmap as air', () => {
+    // Logical 3×3 center is present at index 4; the four later neighbor slots
+    // are absent rather than leaking `undefined` into the alpha calculation.
+    const truncated = Uint8Array.from([1, 1, 1, 1, 1]);
+
+    expect(terrainEdgeAlpha(truncated, 3, 3, 1, 1)).toBe(223);
+  });
+
   it('maps every local coverage level monotonically from isolated debris to interior', () => {
     const neighbors = [
       [0, 0], [1, 0], [2, 0], [0, 1],

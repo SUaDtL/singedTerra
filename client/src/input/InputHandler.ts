@@ -262,7 +262,9 @@ export class InputHandler {
   private cycleWeapon(): void {
     if (IMPLEMENTED_WEAPONS.length === 0) return; // defensive — roster is never empty
     this.weaponIndex = (this.weaponIndex + 1) % IMPLEMENTED_WEAPONS.length;
-    this.emit({ type: 'select_weapon', weapon: IMPLEMENTED_WEAPONS[this.weaponIndex] });
+    const weapon = IMPLEMENTED_WEAPONS[this.weaponIndex];
+    if (weapon === undefined) return;
+    this.emit({ type: 'select_weapon', weapon });
   }
 
   // ----- Mouse drag-aim (desktop) ------------------------------------------

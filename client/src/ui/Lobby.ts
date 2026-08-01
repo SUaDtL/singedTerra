@@ -139,13 +139,13 @@ function readSeatToken(playerId: string): string | undefined {
 }
 
 /** Fixed color palette; each player must pick a unique entry. */
-const PALETTE: ReadonlyArray<{ name: string; value: string }> = [
+const PALETTE = [
   { name: 'Red', value: '#e84d4d' },
   { name: 'Blue', value: '#4d8ce8' },
   { name: 'Green', value: '#4de87a' },
   { name: 'Yellow', value: '#e8c84d' },
   { name: 'Purple', value: '#a855f7' },
-];
+] as const satisfies ReadonlyArray<{ name: string; value: string }>;
 
 function presetLoadout(kit: TankKitId): TankLoadout {
   return {
@@ -234,7 +234,7 @@ export class Lobby {
 
   // Create form state
   private onlineName = '';
-  private onlineColor = PALETTE[0].value;
+  private onlineColor: string = PALETTE[0].value;
   private onlineLoadout: TankLoadout = { ...DEFAULT_TANK_LOADOUT };
   /** Compact layouts expose one touch-sized Garage editor at a time. */
   private openGarageOwner: string | null = null;
@@ -265,7 +265,7 @@ export class Lobby {
   private joinCode = '';
   // Name is shared with the Create form (this.onlineName) so it persists when
   // switching between online sub-views / tabs.
-  private joinColor = PALETTE[1].value;
+  private joinColor: string = PALETTE[1].value;
 
   // Browse (public rooms) sub-view state.
   private browseRooms: BrowseRoom[] = [];
@@ -2464,19 +2464,21 @@ export class Lobby {
 
   /** Render one player's row (name input + color swatches). */
   private renderRow(index: number): HTMLElement {
+    const player = this.players[index];
+    if (player === undefined) throw new RangeError(`Missing lobby player at index ${index}`);
     const row = document.createElement('div');
     row.className = 'lobby-row';
 
     const name = document.createElement('input');
     name.type = 'text';
     name.className = 'lobby-name';
-    name.value = this.players[index].name;
+    name.value = player.name;
     // Match online-room validators so hot-seat and networked player identity
     // share one visible contract.
     name.maxLength = 20;
     name.placeholder = `Player ${index + 1}`;
     name.addEventListener('input', () => {
-      this.players[index].name = name.value;
+      player.name = name.value;
       const owner = `player-${index + 1}`;
       this.activatePreviewOwner(owner);
       this.syncPreviewName(owner, name.value);
@@ -2494,12 +2496,12 @@ export class Lobby {
       const takenByOther = this.players.some(
         (p, i) => i !== index && p.color === color.value,
       );
-      if (this.players[index].color === color.value) swatch.classList.add('selected');
+      if (player.color === color.value) swatch.classList.add('selected');
       if (takenByOther) swatch.classList.add('taken');
       swatch.addEventListener('click', () => {
         if (takenByOther) return;
         this.spotlightOwner = `player-${index + 1}`;
-        this.players[index].color = color.value;
+        player.color = color.value;
         this.render();
       });
       swatches.append(swatch);
@@ -2520,15 +2522,15 @@ export class Lobby {
       const opt = document.createElement('option');
       opt.value = o.value;
       opt.textContent = o.label;
-      if ((this.players[index].ai ?? 'human') === o.value) opt.selected = true;
+      if ((player.ai ?? 'human') === o.value) opt.selected = true;
       control.append(opt);
     }
     control.addEventListener('change', () => {
       const v = control.value;
-      this.players[index].ai = v === 'human' ? undefined : (v as AiDifficulty);
+      player.ai = v === 'human' ? undefined : (v as AiDifficulty);
       // Default a friendly CPU name if the seat is still on its placeholder.
-      if (this.players[index].ai && !this.players[index].name.trim()) {
-        this.players[index].name = `CPU ${index + 1}`;
+      if (player.ai && !player.name.trim()) {
+        player.name = `CPU ${index + 1}`;
       }
       this.render();
     });
@@ -2537,9 +2539,9 @@ export class Lobby {
     row.append(this.renderGarage(
       `player-${index + 1}`,
       `Player ${index + 1}`,
-      this.players[index].loadout,
+      player.loadout,
       (loadout) => {
-        this.players[index].loadout = loadout;
+        player.loadout = loadout;
         this.render();
       },
     ));
@@ -2797,7 +2799,7 @@ export class Lobby {
 function defaultRow(i: number): PlayerRowState {
   return {
     name: `Player ${i + 1}`,
-    color: PALETTE[i % PALETTE.length].value,
+    color: (PALETTE[i % PALETTE.length] ?? PALETTE[0]).value,
     loadout: { ...DEFAULT_TANK_LOADOUT },
   };
 }

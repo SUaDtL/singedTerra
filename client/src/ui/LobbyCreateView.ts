@@ -68,7 +68,7 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
     for (const difficulty of ['easy', 'medium', 'hard'] as const) {
       const option = document.createElement('option');
       option.value = difficulty;
-      option.textContent = difficulty[0].toUpperCase() + difficulty.slice(1);
+      option.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
       if (difficulty === options.botDifficulty) option.selected = true;
       difficultySelect.append(option);
     }

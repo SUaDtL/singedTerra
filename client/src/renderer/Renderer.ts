@@ -190,16 +190,22 @@ function parseColor(color: string): [number, number, number] {
   const hex = color.trim();
   if (hex[0] === '#') {
     let h = hex.slice(1);
-    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (h.length === 3) {
+      const r = h.charAt(0);
+      const g = h.charAt(1);
+      const b = h.charAt(2);
+      h = `${r}${r}${g}${g}${b}${b}`;
+    }
     const n = parseInt(h, 16);
     if (!Number.isNaN(n) && h.length === 6) {
       return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
     }
   }
   const m = hex.match(/rgba?\(([^)]+)\)/i);
-  if (m) {
-    const parts = m[1].split(',').map((p) => parseFloat(p));
-    if (parts.length >= 3) return [parts[0], parts[1], parts[2]];
+  const channels = m?.[1];
+  if (channels) {
+    const [r, g, b] = channels.split(',').map((part) => parseFloat(part));
+    if (r !== undefined && g !== undefined && b !== undefined) return [r, g, b];
   }
   // Fallback: warm orange (matches the legacy blast palette).
   return [255, 140, 30];
@@ -684,6 +690,7 @@ export class Renderer {
       const rawHead = 90 + i * 137 + profile.direction * age * profile.speed;
       const headX = ((rawHead % wrapWidth) + wrapWidth) % wrapWidth - margin;
       const y = WIND_GUST_LANES[i];
+      if (y === undefined) break;
       const tailX = headX - profile.direction * profile.length;
       const bendX = headX - profile.direction * profile.length * 0.52;
       const bendY = y + Math.sin(age * 0.22 + i * 0.9)
@@ -729,8 +736,7 @@ export class Renderer {
     // Keyed by slot index; new projectiles in a slot start at 0 (Map miss),
     // so the first frame of a betty (bounces spikes up from 0) is ignored by
     // bettyHopCount (increase → 0 ticks).
-    for (let i = 0; i < state.projectiles.length; i++) {
-      const p = state.projectiles[i];
+    for (const [i, p] of state.projectiles.entries()) {
       const prev = this.prevBounces.get(i) ?? 0;
       const ticks = bettyHopCount(prev, p.bounces);
       for (let t = 0; t < ticks; t++) sink.onHop();
@@ -1096,8 +1102,7 @@ export class Renderer {
       ctx.stroke();
     }
 
-    for (let index = 0; index < points.length; index++) {
-      const point = points[index];
+    for (const [index, point] of points.entries()) {
       const progress = cumulative[index]! / totalLength;
       ctx.globalAlpha = 0.62 * (1 - progress) ** 1.5 + 0.015;
       ctx.fillStyle = ACCENT.gold;

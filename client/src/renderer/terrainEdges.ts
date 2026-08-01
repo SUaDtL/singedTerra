@@ -27,14 +27,14 @@ export function terrainEdgeAlpha(
   // diagonal-only exposure.
   if (x > 0 && x < width - 1 && y > 0 && y < height - 1) {
     const solidNeighbors =
-      terrain[index - width - 1]
-      + terrain[index - width]
-      + terrain[index - width + 1]
-      + terrain[index - 1]
-      + terrain[index + 1]
-      + terrain[index + width - 1]
-      + terrain[index + width]
-      + terrain[index + width + 1];
+      (terrain[index - width - 1] ?? 0)
+      + (terrain[index - width] ?? 0)
+      + (terrain[index - width + 1] ?? 0)
+      + (terrain[index - 1] ?? 0)
+      + (terrain[index + 1] ?? 0)
+      + (terrain[index + width - 1] ?? 0)
+      + (terrain[index + width] ?? 0)
+      + (terrain[index + width + 1] ?? 0);
     return MIN_SOLID_ALPHA + Math.round(ALPHA_RANGE * solidNeighbors / 8);
   }
 

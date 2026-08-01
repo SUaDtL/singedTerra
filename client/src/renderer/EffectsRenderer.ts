@@ -112,7 +112,7 @@ export class EffectsRenderer {
         vx: Math.cos(a) * speed,
         vy: Math.sin(a) * speed - this.rand(0.5, 2), // extra upward kick
         size: armor ? this.rand(1, 2.5) : this.rand(1.5, 3.5),
-        color: palette[i % palette.length],
+        color: palette[i % palette.length] ?? color,
         rot: this.rand(0, Math.PI), vr: this.rand(-0.3, 0.3),
         landed: false,
         age: 0, life: this.rand(28, 56),

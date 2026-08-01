@@ -132,7 +132,12 @@ export function skyGradient(
 /** Parse `#rgb`/`#rrggbb` into [r,g,b] 0..255 (player swatches are hex). */
 export function hexToRgb(hex: string): [number, number, number] {
   let h = hex.replace('#', '');
-  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  if (h.length === 3) {
+    const r = h.charAt(0);
+    const g = h.charAt(1);
+    const b = h.charAt(2);
+    h = `${r}${r}${g}${g}${b}${b}`;
+  }
   const n = parseInt(h, 16);
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 }

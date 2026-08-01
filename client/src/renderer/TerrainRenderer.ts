@@ -204,8 +204,8 @@ export class TerrainRenderer {
             const bf = bandFloatForY(y);      // 0..2, smooth across boundaries
             const lo = bf < 1 ? 0 : 1;        // lower of the two bands to blend
             const f = bf - lo;                // 0..1 within the pair
-            const A = BAND_COLORS[lo];
-            const Bc = BAND_COLORS[lo + 1];
+            const A = lo === 0 ? BAND_COLORS[0] : BAND_COLORS[1];
+            const Bc = lo === 0 ? BAND_COLORS[1] : BAND_COLORS[2];
             const baseR = A[0] + (Bc[0] - A[0]) * f;
             const baseG = A[1] + (Bc[1] - A[1]) * f;
             const baseB = A[2] + (Bc[2] - A[2]) * f;
