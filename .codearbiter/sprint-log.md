@@ -2689,3 +2689,5 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversary correction clearance
 
 - **Exact-package verdict CLEAN / READY.** The same reviewer confirmed equal-cardinality replacement kills removal of Map-membership validation, disorder/duplication kill removal of sorted-order validation, unconditional rebuild is killed by the 55/55 decay identity contract, and the deterministic digest plus 44/44 real topology replacements remain intact. No Critical, High, Medium, Low, governance, scope, or merge blocker remains. Confidence high.
+
+- **[high] Merge pause override logged for PR #243.** The maintainer's standing passion-project authority authorizes a PR-only merge after the reviewed behavior head 930f672, this governance receipt's exact-diff review, and every hosted check is green on the final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
