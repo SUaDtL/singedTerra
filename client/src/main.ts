@@ -16,6 +16,13 @@ import { AudioEngine } from './audio/AudioEngine';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
 import { crtCssVars } from './ui/theme';
+import {
+  FirstSalvoController,
+  canCommitFirstSalvoAction,
+  isFirstSalvoForced,
+  observeAndForwardFirstSalvoAction,
+} from './ui/firstSalvoController';
+import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 
 const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE =
   new URLSearchParams(window.location.search).get('e2e') === 'hotseat';
@@ -48,6 +55,14 @@ function bootstrap(): void {
 
   const renderer = new Renderer(canvas);
   const hud = new HUD(hudRoot, overlayRoot, modalRoot);
+  const firstSalvoStorage: FirstSalvoStorage = {
+    getItem: (key) => window.localStorage.getItem(key),
+    setItem: (key, value) => window.localStorage.setItem(key, value),
+  };
+  const firstSalvo = new FirstSalvoController({
+    storage: firstSalvoStorage,
+    force: isFirstSalvoForced(window.location.search),
+  });
 
   // Synthesized SFX (Web Audio, no files). Pure presentation — wired to the
   // renderer's event sink so detonations/launches sound off the same authoritative
@@ -146,6 +161,23 @@ function bootstrap(): void {
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
 
+  function firstSalvoEligibility(): FirstSalvoEligibility | null {
+    const state = client?.getState();
+    const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
+    if (!state || !activeTank) return null;
+    return {
+      phase: state.phase,
+      activeIsAi: !!activeTank.ai,
+      activeIsLocal,
+      activeTankAlive: activeTank.alive,
+    };
+  }
+
+  function syncFirstSalvo(): void {
+    const eligibility = firstSalvoEligibility();
+    hud.setFirstSalvoStep(eligibility ? firstSalvo.stepFor(eligibility) : null);
+  }
+
   // --- Computer-opponent (AI) driver state ---
   // Whether the active tank is CPU-controlled (gates out human input for that turn).
   let activeIsAi = false;
@@ -199,6 +231,7 @@ function bootstrap(): void {
     // otherwise clear a lingering "{winner} wins!" banner when quitting to the menu
     // (it would sit on top of the lobby) — #13.
     hud.hideEndScreens();
+    hud.setFirstSalvoStep(null);
     // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
     // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
     // mark while the fresh engine restarts explosion ids at 1, so early explosions fail
@@ -219,6 +252,7 @@ function bootstrap(): void {
 
     const newClient = await createClient(config);
     client = newClient;
+    firstSalvo.startNewGame();
 
     // Tell the store which weapons/accessories are buyable in this room (UI gate only; the engine
     // enforces it independently). Default 4 => everything buyable, matching the engine default.
@@ -246,7 +280,18 @@ function bootstrap(): void {
       if (action.type === 'set_angle' || action.type === 'set_power') audio.aimTick();
       else if (action.type === 'select_weapon') audio.weaponCycle();
       else if (action.type === 'use_shield') audio.shieldUp();
-      newClient.sendAction(action);
+      observeAndForwardFirstSalvoAction(
+        firstSalvo,
+        action,
+        firstSalvoEligibility(),
+        (() => {
+          const state = newClient.getState();
+          const tank = state?.tanks.find((candidate) => candidate.id === state.activePlayerId);
+          return tank ? canCommitFirstSalvoAction(tank, action) : false;
+        })(),
+        (forwardedAction) => newClient.sendAction(forwardedAction),
+      );
+      syncFirstSalvo();
     }, {
       initialAngle: activeTank?.angle,
       initialPower: activeTank?.power,
@@ -293,6 +338,7 @@ function bootstrap(): void {
       });
       activeIsLocal = aimGuide.visible;
       renderer.setAimGuide(aimGuide.visible, aimGuide.gravity);
+      syncFirstSalvo();
       // Feed the active tank's barrel-origin (logical px) so mouse drag-aim can
       // derive angle/power from the drag vector (pivot = body top, y − 16).
       if (activeTank) newInput.setActiveTankScreenPos(activeTank.x, activeTank.y - 20);
@@ -406,6 +452,15 @@ function bootstrap(): void {
     activeIsAi,
     activeIsLocal,
     paused: hud.isPaused(),
+  });
+
+  hud.onFirstSalvoSkip(() => {
+    firstSalvo.skip();
+    syncFirstSalvo();
+  });
+  hud.onFirstSalvoReplay(() => {
+    firstSalvo.replay();
+    syncFirstSalvo();
   });
 
   // Register the weapon-strip select callback ONCE on the persistent HUD. A

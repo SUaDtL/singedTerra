@@ -83,6 +83,14 @@ available to pause.
 Portrait phones show a rotate-device gate. The game is designed around a wide
 battlefield and a single fitted page.
 
+## First Salvo
+
+On your first eligible local turn, a compact non-modal coach walks through
+three real controls: Aim, Power while reading the Wind Vector, then Fire. It
+advances only when you use those controls. Choose Skip to hide it on this
+browser; that choice persists. In Menu, Replay First Salvo restarts the coach
+for the current match without changing the match or the saved choice.
+
 ## Weapon families
 
 The Arsenal exposes sixteen deterministic weapons. The exact prices, blast

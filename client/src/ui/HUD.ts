@@ -21,6 +21,7 @@ import {
   paintTankLoadoutPreview,
 } from '../renderer/TankLoadoutPreview';
 import { tankLoadoutAccessibleLabel } from './tankPartLabels';
+import type { FirstSalvoStep } from './firstSalvoCoach';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -128,6 +129,11 @@ export class HUD {
   /** Callback fired when the player starts the next round from the ROUND_OVER shop. */
   private nextRoundCb: (() => void) | null = null;
 
+  /** Local-only coach callbacks. Task 3 observes actions and owns progression/persistence. */
+  private firstSalvoSkipCb: (() => void) | null = null;
+  private firstSalvoReplayCb: (() => void) | null = null;
+  private firstSalvoStep: FirstSalvoStep | null = null;
+
   // Coarse-pointer command callbacks. Invoked by the on-screen dock buttons;
   // main.ts wires these to InputHandler's public step methods.
   private touchAngleCb: ((delta: number) => void) | null = null;
@@ -185,6 +191,10 @@ export class HUD {
   private turnActionsEl!: HTMLElement;
   private primaryActionBtnEl!: HTMLButtonElement;
   private primaryActionLabelEl!: HTMLElement;
+  private firstSalvoEl!: HTMLElement;
+  private firstSalvoProgressEl!: HTMLElement;
+  private firstSalvoCopyEl!: HTMLElement;
+  private firstSalvoStatusEl!: HTMLElement;
   private storeEl!: HTMLElement;
   private storeCreditsEl!: HTMLElement;
   // Networked liveness widgets (P1-6): a persistent connection banner (shown only
@@ -281,6 +291,27 @@ export class HUD {
     this.nextRoundCb = cb;
   }
 
+  /** Register the local-only First Salvo dismissal callback. */
+  onFirstSalvoSkip(cb: () => void): void {
+    this.firstSalvoSkipCb = cb;
+  }
+
+  /** Register the pause-panel callback that restarts First Salvo for the current match. */
+  onFirstSalvoReplay(cb: () => void): void {
+    this.firstSalvoReplayCb = cb;
+  }
+
+  /**
+   * Present one local coach step without touching the game client or action log.
+   * Repeating the same value is intentionally a no-op because callers may report
+   * the same frame state on every animation frame.
+   */
+  setFirstSalvoStep(step: FirstSalvoStep | null): void {
+    if (this.firstSalvoStep === step) return;
+    this.firstSalvoStep = step;
+    if (this.built) this.syncFirstSalvo();
+  }
+
   /**
    * Set the room's arms level (0–4) so the store can show above-level weapons/accessories as locked.
    * UI-only: the engine independently enforces the same gate in `applyBuy`, so a stale or unset value
@@ -372,6 +403,7 @@ export class HUD {
     const menu = this.buildMenu();
     this.buildLiveness();
     this.buildTouchStrip();
+    this.buildFirstSalvoCoach();
 
     this.root.append(
       menu,
@@ -393,9 +425,11 @@ export class HUD {
       this.connBannerEl,
       this.toastEl,
       this.turnWatchEl,
+      this.firstSalvoEl,
     );
     this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
     this.built = true;
+    this.syncFirstSalvo();
   }
 
   /** Player health-bar column (top-left). */
@@ -478,6 +512,7 @@ export class HUD {
     elevSvg.append(elevTrack, elevTicks, elevPivot, this.gaugeElevNeedle, this.gaugeElevLabel);
     const elevCell = document.createElement('div');
     elevCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--elevation';
+    elevCell.dataset['firstSalvoTarget'] = 'aim';
     const elevCellTitle = document.createElement('div');
     elevCellTitle.className = 'st-hud__gauge-cell-title';
     elevCellTitle.textContent = 'Elevation';
@@ -530,6 +565,7 @@ export class HUD {
     windSvg.append(windTrack, windTickL, windTickR, windCenter, this.gaugeWindMarker, this.gaugeWindLabel);
     const windCell = document.createElement('div');
     windCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--wind';
+    windCell.dataset['firstSalvoTarget'] = 'power-and-wind';
     const windCellTitle = document.createElement('div');
     windCellTitle.className = 'st-hud__gauge-cell-title';
     windCellTitle.textContent = 'Wind Vector';
@@ -599,6 +635,7 @@ export class HUD {
     );
     const pwrCell = document.createElement('div');
     pwrCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--power';
+    pwrCell.dataset['firstSalvoTarget'] = 'power-and-wind';
     const pwrCellTitle = document.createElement('div');
     pwrCellTitle.className = 'st-hud__gauge-cell-title';
     pwrCellTitle.textContent = 'Power';
@@ -963,6 +1000,7 @@ export class HUD {
     this.primaryActionBtnEl.type = 'button';
     this.primaryActionBtnEl.className =
       'st-hud__primary-action st-ui-action';
+    this.primaryActionBtnEl.dataset['firstSalvoTarget'] = 'fire';
     this.primaryActionLabelEl = document.createElement('span');
     this.primaryActionLabelEl.className = 'st-hud__primary-action-label';
     this.primaryActionBtnEl.append(
@@ -974,6 +1012,94 @@ export class HUD {
     this.primaryActionBtnEl.addEventListener('click', () => this.primaryActionCb?.());
 
     this.turnActionsEl.append(this.storeBtnEl, this.primaryActionBtnEl);
+  }
+
+  /** Compact, non-blocking instruction card; local action observation stays in main.ts. */
+  private buildFirstSalvoCoach(): void {
+    this.firstSalvoEl = document.createElement('aside');
+    this.firstSalvoEl.className = 'st-hud__first-salvo st-hud__first-salvo--hidden';
+    this.firstSalvoEl.dataset['ui'] = 'first-salvo-coach';
+    this.firstSalvoEl.setAttribute('role', 'region');
+    this.firstSalvoEl.setAttribute('aria-label', 'First Salvo coach');
+
+    this.firstSalvoProgressEl = document.createElement('div');
+    this.firstSalvoProgressEl.className = 'st-hud__first-salvo-progress';
+    this.firstSalvoCopyEl = document.createElement('div');
+    this.firstSalvoCopyEl.className = 'st-hud__first-salvo-copy';
+    this.firstSalvoStatusEl = document.createElement('div');
+    this.firstSalvoStatusEl.className = 'st-hud__first-salvo-status';
+    this.firstSalvoStatusEl.dataset['firstSalvoStatus'] = '';
+    this.firstSalvoStatusEl.setAttribute('role', 'status');
+    this.firstSalvoStatusEl.setAttribute('aria-live', 'polite');
+    this.firstSalvoStatusEl.setAttribute('aria-atomic', 'true');
+
+    const skipBtn = document.createElement('button');
+    skipBtn.type = 'button';
+    skipBtn.className = 'st-hud__first-salvo-skip';
+    skipBtn.textContent = 'Skip';
+    skipBtn.addEventListener('click', () => {
+      this.setFirstSalvoStep(null);
+      this.firstSalvoSkipCb?.();
+    });
+
+    this.firstSalvoEl.append(
+      this.firstSalvoProgressEl,
+      this.firstSalvoCopyEl,
+      this.firstSalvoStatusEl,
+      skipBtn,
+    );
+  }
+
+  /** Reconciles card copy and static target rings without rebuilding DOM per frame. */
+  private syncFirstSalvo(): void {
+    const copy = this.firstSalvoCopyFor(this.firstSalvoStep);
+    this.firstSalvoEl.classList.toggle('st-hud__first-salvo--hidden', copy === null);
+    for (const scope of [this.root, this.overlayRoot]) {
+      for (const target of scope.querySelectorAll<HTMLElement>('[data-first-salvo-target]')) {
+        target.classList.toggle(
+          'st-hud__first-salvo-target--active',
+          copy !== null && target.dataset['firstSalvoTarget'] === this.firstSalvoStep,
+        );
+      }
+    }
+    if (copy === null) {
+      this.firstSalvoProgressEl.textContent = '';
+      this.firstSalvoCopyEl.textContent = '';
+      this.firstSalvoStatusEl.textContent = '';
+      return;
+    }
+    if (this.firstSalvoProgressEl.textContent !== copy.progress) {
+      this.firstSalvoProgressEl.textContent = copy.progress;
+    }
+    if (this.firstSalvoCopyEl.textContent !== copy.instruction) {
+      this.firstSalvoCopyEl.textContent = copy.instruction;
+      this.firstSalvoStatusEl.textContent = `${copy.progress}. ${copy.instruction}`;
+    }
+  }
+
+  private firstSalvoCopyFor(step: FirstSalvoStep | null): {
+    progress: string;
+    instruction: string;
+  } | null {
+    switch (step) {
+      case 'aim':
+        return {
+          progress: 'First Salvo · 1 / 3 · Aim',
+          instruction: 'Set elevation with Arrow keys or the Aim controls.',
+        };
+      case 'power-and-wind':
+        return {
+          progress: 'First Salvo · 2 / 3 · Power + wind',
+          instruction: 'Set Power, then read the Wind Vector before you fire.',
+        };
+      case 'fire':
+        return {
+          progress: 'First Salvo · 3 / 3 · Primary action',
+          instruction: 'Use Space, Enter, or the highlighted primary action.',
+        };
+      default:
+        return null;
+    }
   }
 
   /** One semantic surface for identity, progress, tactics, economy, and Fire. */
@@ -1035,6 +1161,14 @@ export class HUD {
     resumeBtn.type = 'button';
     resumeBtn.textContent = 'Resume';
     resumeBtn.addEventListener('click', () => this.togglePause(false));
+    const replayFirstSalvoBtn = document.createElement('button');
+    replayFirstSalvoBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    replayFirstSalvoBtn.type = 'button';
+    replayFirstSalvoBtn.textContent = 'Replay First Salvo';
+    replayFirstSalvoBtn.addEventListener('click', () => {
+      this.togglePause(false);
+      this.firstSalvoReplayCb?.();
+    });
     const pauseQuitBtn = document.createElement('button');
     pauseQuitBtn.className = 'st-hud__restart st-hud__restart--ghost';
     pauseQuitBtn.type = 'button';
@@ -1042,7 +1176,7 @@ export class HUD {
     pauseQuitBtn.addEventListener('click', () => { this.togglePause(false); this.quitCb?.(); });
     const pauseBtns = document.createElement('div');
     pauseBtns.className = 'st-hud__overlay-btns';
-    pauseBtns.append(resumeBtn, pauseQuitBtn);
+    pauseBtns.append(resumeBtn, replayFirstSalvoBtn, pauseQuitBtn);
     pausePanel.append(pauseText, pauseBtns);
     this.pauseEl.append(pausePanel);
   }
@@ -1234,6 +1368,10 @@ export class HUD {
     const touchAngleR = mkTouchBtn('aim-right', 'Aim barrel right', '▶', 'Aim');
     const touchPowerD = mkTouchBtn('power-down', 'Decrease power', '−', 'Power');
     const touchPowerU = mkTouchBtn('power-up', 'Increase power', '+', 'Power');
+    touchAngleL.dataset['firstSalvoTarget'] = 'aim';
+    touchAngleR.dataset['firstSalvoTarget'] = 'aim';
+    touchPowerD.dataset['firstSalvoTarget'] = 'power-and-wind';
+    touchPowerU.dataset['firstSalvoTarget'] = 'power-and-wind';
     this.touchMoveLeftBtnEl = mkTouchBtn(
       'move-left',
       'Move tank left, 8 fuel maximum',
@@ -2553,6 +2691,91 @@ export class HUD {
   font-variant-numeric: tabular-nums;
   color: var(--text-gold);
   opacity: 0.9;
+}
+/* First Salvo stays compact and non-modal: the card is pointer-transparent; only Skip receives pointer input. */
+.st-hud__first-salvo {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  z-index: 22;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  width: min(244px, calc(100% - 28px));
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.68);
+  border-radius: 6px;
+  background:
+    linear-gradient(115deg, rgba(255, 210, 63, 0.13), transparent 56%),
+    rgba(15, 8, 25, 0.94);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 233, 168, 0.08);
+  color: var(--text);
+  pointer-events: none;
+}
+.st-hud__first-salvo--hidden { display: none; }
+.st-hud__first-salvo-progress {
+  grid-column: 1;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+.st-hud__first-salvo-copy {
+  grid-column: 1 / -1;
+  color: var(--ui-copy);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-align: left;
+}
+.st-hud__first-salvo-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.st-hud__first-salvo-skip {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  min-height: 24px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 210, 63, 0.34);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ui-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: auto;
+}
+.st-hud__first-salvo-skip:hover { color: var(--text-gold); border-color: var(--gold); }
+.st-hud__first-salvo-skip:focus-visible,
+.st-hud__restart:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+.st-hud__first-salvo-target--active {
+  position: relative;
+  z-index: 2;
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 122, 31, 0.58), 0 0 14px rgba(255, 210, 63, 0.42);
+  animation: st-hud-first-salvo-target 1.7s ease-in-out infinite;
+}
+@keyframes st-hud-first-salvo-target {
+  50% { box-shadow: 0 0 0 1px rgba(255, 122, 31, 0.84), 0 0 20px rgba(255, 210, 63, 0.68); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-hud__first-salvo-target--active { animation: none; }
 }
 .st-hud__overlay {
   position: absolute;
