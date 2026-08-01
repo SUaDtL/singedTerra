@@ -2495,3 +2495,46 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - Hosted `typecheck · harnesses · build`, Edge Deno tests, `e2e · rendering guardrails`, CodeQL analysis, and the repository CodeQL gate all passed on that SHA. Supabase Preview skipped as configured because this client-only slice has no backend change.
 - The sprint PR-boundary and merge pause is bypassed through one distinct append-only override under the maintainer's standing passion-project authority. PR-only merge, exact-current-head hosted checks, Pages provenance, deployment, and live smoke remain enforced.
 - This governance-only closure commit changes no product or test behavior; hosted checks must rerun green on its new exact head before merge.
+
+### Mobility Signatures SMARTS decision and bounded gate
+
+- SMARTS DECISION 2026-08-01: choose client-only mobility signatures over a Mag Deflector or team skirmish. Mobility signatures are Strong on Scalable, Maintainable, Available, Reliable, Testable, and Securable because they exhaustively extend existing cosmetic kits, fail closed, observe rather than mutate authoritative movement, need no backend/version-skew path, and admit pure plus browser-pixel oracles. Confidence high.
+- HARD-GATE SCOUT 2026-08-01: reject Mag Deflector for this autonomous cell because a genuinely selectable deflector needs a new replay payload/referee validation branch, crossing the network trust boundary reserved as a user-only stop. Team skirmish likewise widens peer-controlled room options and deterministic winner contracts. Confidence high.
+- SPEC/PLAN GATE 2026-08-01: .codearbiter/specs/mobility-signatures.md and .codearbiter/plans/mobility-signatures.md are bound under one sprint-specific logged override from the maintainer's standing authority. No security, dependency, migration, backend, merge, or deployment gate is bypassed. Confidence high.
+
+- TASK 1 SMARTS CLARIFICATION 2026-08-01: choose a reduced immutable pose/event seam importing the shared legal movement bounds over passing full TankState or duplicating constants. Strong Maintainability, Reliability, Testability, and Securability follow from narrow data, exact engine-bound drift resistance, and no mutation authority. Profiles use one exhaustive six-field record with fixed bounded values for all four existing kits. Confidence high.
+
+#### Task 1 accepted — pure movement-signature contract
+- TDD RED: the focused Vitest run failed to resolve the intentionally absent mobilitySignatures module before production code existed.
+- GREEN: the reduced pose classifier imports the authoritative movement bounds, rejects reset/reposition/dead/buried/non-finite paths, emits immutable kit/direction events, and exposes exhaustive bounded profiles plus lifecycle helpers. Focused result 14/14; full typecheck green.
+- Independent task review: spec PASS and quality APPROVED with no Critical, Important, Minor, or confirmed cannot-verify gap. The reviewer could not source the exact profile literals from its extracted brief; controller confirmed they match the pre-implementation SMARTS clarification and sprint-log receipt. Confidence high.
+
+#### Task 2 accepted — bounded battlefield mobility renderer
+- TDD RED/GREEN: real renderer lifecycle tests drove legal-delta admission, under-tank layer placement, finite expiry, reset, reduced-motion suppression, and an idle-network-move wake path. Focused/relevant result reached 35/35; movement harness and full typecheck green.
+- REVIEW FIX ROUND 1: controller review found stale removed-ID baselines, mocked-away lifecycle proof, weak motif distinctness, and nullable production seams. Real-render tests, pairwise geometry/accent signatures, roster pruning, and explicit fixtures closed three findings.
+- REVIEW FIX ROUND 2: scoped re-review caught that an absent roster snapshot itself could be idle-skipped. The non-mutating keyset mismatch now wakes exactly one prune/baseline frame; the real baseline→absence→idle→same-ID-reappearance lifecycle produces no false burst and returns idle. Final scoped verdict ALL_ADDRESSED with no Critical or Important breakage. Confidence high.
+
+#### Task 3 accepted — production mobility proof
+- FIRST HONEST BROWSER RESULT: 6/6 failed because the compact Garage modal intercepted an out-of-order seed click and a broad red-pixel centroid included terrain. These were oracle defects; modal ordering and canvas observation were corrected without production changes.
+- REVIEW FIX ROUND 1: task review found fuel-only/fixed-strip movement evidence and async-art fingerprint contamination. A pre-navigation #game Canvas observer now proves active P1 treads move exactly +8, waits for three stable hashes, isolates live-versus-expired pixels in the same moved underbody mask, binds each motif to exact profile-accent operations, and proves reduced motion emits zero operations/delta.
+- GREEN: production Playwright passes 6/6 across desktop-fine, small-window, and pixel-touch in 16.7s; typecheck and diff hygiene green; port 4173 clean. Scoped re-review returned ALL_ADDRESSED with no Critical or Important breakage. No production defect or production-code correction was required. Confidence high.
+
+- FULL-SUITE CORRECTION 2026-08-01: `npm run test:client` exposed 22 failures across nine legacy Renderer tests that bypass the constructor and lacked the new non-null mobility stores. Systematic debugging confirmed test-fixture drift, not a runtime defect. Fix round 3 added explicit inert/real mobility dependencies to only those seams; exact group 65/65 and full client 742/742 green, with movement harness and typecheck green. Scoped re-review returned ALL_ADDRESSED and confirmed no production relaxation. Confidence high.
+
+#### Mobility Signatures final local gate receipt
+- Fresh exact-worktree gates are green: `npm run check`; 104 client files / 742 tests; production build; and 6/6 production Playwright cases across desktop-fine, small-window, and pixel-touch, including reduced motion.
+- Supply-chain and hygiene gates are green: `npm audit --audit-level=high` reports zero vulnerabilities; `git diff --check` is clean; no conflict markers exist; codeArbiter's state-free changed-file scan reports no secret findings and leaves status unchanged.
+- The exact uncommitted branch package now advances to one whole-branch adversarial review covering the bound spec, plan, sprint log, tests, and final diff. Confidence high.
+
+- INCREMENTAL NUDGE 2026-08-01: the maintainer observed that many open issues may no longer apply. Queue the next bounded sprint cell as evidence-based issue hygiene against current `main` and production: close only fully satisfied issues with concrete source/test/live proof; rewrite or split partially stale issues; preserve still-actionable work. This does not interrupt Mobility Signatures delivery. Confidence high.
+
+#### Final adversary correction � reduced-motion network wake
+- MEDIUM merge blocker: the idle gate returned false for same-roster reduced-motion states before checking authoritative pose deltas. A remotely delivered same-phase move could therefore remain visually stale because `main.ts` skipped `Renderer.render`; the existing hot-seat browser oracle's synchronous dirty path masked this network-specific gap.
+- TDD RED: the new real-render lifecycle test expected one wake for an externally delivered reduced-motion move and failed at `isAnimating(moved) === false` while the other 11 focused tests passed.
+- GREEN: removing only the premature reduced-motion return lets the pure legal-delta observer wake one frame; `trackMobility` still rebases without spawning a signature or extending busy work. Focused result 12/12; full client 104 files / 743 tests; deterministic check, production build, 6/6 production Playwright, zero-vulnerability audit, diff hygiene, and state-free secret scan all green.
+- The same whole-branch adversary confirmed the correction is causal and technically clean; exact refreshed-package clearance follows. Confidence high.
+
+#### Final whole-branch adversarial clearance � CLEAN / READY
+- The same adversary verified refreshed package SHA-256 `CFA240918D32E9783377021D471D16EB9ECD9C993AF8106CCAA790DF08979FB4` against the live tracked diff and seven untracked files.
+- Verdict: no remaining Critical, High, Medium, Low, or other merge-blocking finding. Spec compliance, deterministic/network isolation, renderer lifecycle/idle cost, reduced motion, Canvas layering, browser-test fidelity, audit integrity, and security/secrets are cleared.
+- Reviewer-fresh proof passed 26/26 focused mobility tests, 104 files / 743 client tests, `npm run check`, diff/conflict hygiene, and targeted secret review. Governed commit/PR plus hosted exact-head CI remain. Confidence high.

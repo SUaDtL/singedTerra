@@ -93,6 +93,8 @@ describe('reflective sidewall presentation', () => {
       wallContacts: [],
       lastImpact: null,
       prevHealth: new Map(),
+      prevMobilityPoses: new Map(),
+      mobilityEffects: { clear: vi.fn() },
       prevShieldHp: new Map(),
       shieldBaselineRound: null,
       smokeThrottle: new Map(),

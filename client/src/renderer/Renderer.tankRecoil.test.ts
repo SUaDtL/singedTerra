@@ -26,6 +26,7 @@ interface RecoilSeam {
   shake: number;
   kickX: number;
   kickY: number;
+  prevMobilityPoses: Map<string, unknown>;
   effects: {
     spawnMuzzle: ReturnType<typeof vi.fn>;
     clear: ReturnType<typeof vi.fn>;
@@ -172,6 +173,10 @@ function seam(): RecoilSeam {
     lastSeenExplosionId: 0,
     lastImpact: null,
     prevHealth: new Map(),
+    prevMobilityPoses: new Map(),
+    mobilityEffects: {
+      spawn: vi.fn(), update: vi.fn(), draw: vi.fn(), clear: vi.fn(), isActive: false,
+    },
     prevShieldHp: new Map(),
     shieldBaselineRound: null,
     smokeThrottle: new Map(),
@@ -299,6 +304,9 @@ describe('Renderer weapon-weighted tank recoil', () => {
       projectiles: [],
       projectile: null,
     } as GameState;
+    for (const subject of idleState.tanks) {
+      renderer.prevMobilityPoses.set(subject.id, { tankId: subject.id });
+    }
     renderer.spawnMuzzleFlash(state);
     renderer.effectsBusy = 0;
 

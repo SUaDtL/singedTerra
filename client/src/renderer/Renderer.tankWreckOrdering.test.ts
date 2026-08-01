@@ -116,6 +116,10 @@ function rendererSeam(): RendererTankSeam {
     prevBounces: new Map(),
     hadProjectileLastFrame: false,
     prevHealth: new Map(),
+    prevMobilityPoses: new Map(),
+    mobilityEffects: {
+      spawn: vi.fn(), update: vi.fn(), draw: vi.fn(), clear: vi.fn(), isActive: false,
+    },
     prevShieldHp: new Map(),
     smokeThrottle: new Map(),
     showAimGuide: false,

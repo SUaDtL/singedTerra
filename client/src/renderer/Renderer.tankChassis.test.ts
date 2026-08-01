@@ -13,6 +13,8 @@ interface AnimationSeam {
   kickX: number;
   kickY: number;
   effectsBusy: number;
+  prevMobilityPoses: Map<string, unknown>;
+  mobilityEffects: { readonly isActive: boolean };
   tankRecoil: null;
   windGust: null;
   isAnimating(state: GameState): boolean;
@@ -30,6 +32,8 @@ function rendererWithChassisState(isChassisArtSettled: boolean): AnimationSeam {
     kickX: 0,
     kickY: 0,
     effectsBusy: 0,
+    prevMobilityPoses: new Map(),
+    mobilityEffects: { isActive: false },
     tankRecoil: null,
     windGust: null,
   }) as AnimationSeam;
@@ -61,14 +65,16 @@ describe('Renderer tank chassis eligibility', () => {
     expect(renderer.isAnimating(state)).toBe(true);
 
     renderer.tanks = { isChassisArtSettled: true };
+    renderer.prevMobilityPoses.set('alive', { tankId: 'alive' });
 
     expect(renderer.isAnimating(state)).toBe(false);
   });
 
   it('does not spin an all-wreck scene while unpainted chassis art loads', () => {
     const renderer = rendererWithChassisState(false);
+    renderer.prevMobilityPoses.set('dead', { tankId: 'dead' });
 
     expect(renderer.isAnimating(idleState([tank(false)]))).toBe(false);
-    expect(renderer.isAnimating(idleState([]))).toBe(false);
+    expect(rendererWithChassisState(false).isAnimating(idleState([]))).toBe(false);
   });
 });

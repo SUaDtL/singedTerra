@@ -105,6 +105,10 @@ function seam(): ArmorHitSeam {
     reduceMotion: false,
     effectsBusy: 0,
     prevHealth: new Map(),
+    prevMobilityPoses: new Map(),
+    mobilityEffects: {
+      spawn: vi.fn(), update: vi.fn(), draw: vi.fn(), clear: vi.fn(), isActive: false,
+    },
     prevShieldHp: new Map(),
     shieldBaselineRound: null,
     smokeThrottle: new Map(),

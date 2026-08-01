@@ -16,6 +16,12 @@ import { TankRenderer, type TankRenderPose } from './TankRenderer';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { HUDRenderer } from './HUDRenderer';
 import { EffectsRenderer } from './EffectsRenderer';
+import { MobilityEffectsRenderer } from './MobilityEffectsRenderer';
+import {
+  MOBILITY_SIGNATURE_PROFILES,
+  observeMobilitySignature,
+  type MobilityPoseSample,
+} from './mobilitySignatures';
 import { skyGradient, ACCENT, TERRAIN } from '../ui/theme';
 import { flashIntensity, scorchAlpha } from './explosionFx';
 import { damageTier } from './tankFx';
@@ -298,6 +304,10 @@ export class Renderer {
 
   /** Transient visual juice: debris, smoke, sparks, floating damage text. */
   private readonly effects: EffectsRenderer;
+  /** Bounded under-tank movement signatures; never alters authoritative state. */
+  private readonly mobilityEffects: MobilityEffectsRenderer;
+  /** Last observed authoritative pose for each tank, used only for presentation. */
+  private readonly prevMobilityPoses = new Map<string, MobilityPoseSample>();
   /** Per-tank health last frame, to detect damage for floating numbers. */
   private readonly prevHealth = new Map<string, number>();
   /** Per-tank shield pool last frame, to detect fully absorbed damage. */
@@ -332,6 +342,7 @@ export class Renderer {
         : false;
     this.projectile = new ProjectileRenderer(this.reduceMotion);
     this.effects = new EffectsRenderer(this.reduceMotion);
+    this.mobilityEffects = new MobilityEffectsRenderer(this.reduceMotion);
     this.aimGuideEnabled = (() => {
       try {
         return localStorage.getItem('singedterra:aimguide') !== '0';
@@ -388,6 +399,7 @@ export class Renderer {
     this.wallContacts.length = 0;
     this.lastImpact = null;
     this.prevHealth.clear();
+    this.prevMobilityPoses.clear();
     this.prevShieldHp.clear();
     this.shieldBaselineRound = null;
     this.smokeThrottle.clear();
@@ -400,6 +412,7 @@ export class Renderer {
     this.windGust = null;
     this.windTurnKey = null;
     this.effects.clear();
+    this.mobilityEffects.clear();
     this.projectile.clear();
     this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
     // Audio signal tracking: reset per-frame bookkeeping and stop any sustained
@@ -439,6 +452,8 @@ export class Renderer {
     // Floating damage numbers + K.O. flourish from per-tank health deltas (juice),
     // then advance all transient particles one frame.
     this.trackDamage(state);
+    this.trackMobility(state);
+    this.mobilityEffects.update();
     this.effects.update(state.terrain);
 
     // Tick down the transient-effects busy window. trackDamage / consumeExplosion /
@@ -500,6 +515,9 @@ export class Renderer {
     // 2.5 Terrain-projected shell shadows. These present-position depth cues sit
     // above the destructible terrain but below visible tanks and payload glyphs.
     this.projectile.drawGroundShadows(ctx, state.projectiles, state.terrain);
+
+    // Legal movement signatures lie on the terrain under each visible chassis.
+    this.mobilityEffects.draw(ctx);
 
     // 3. Tanks (active player emphasised). Buried tanks were painted under the terrain
     // above, so draw only the visible (non-buried) ones here.
@@ -609,6 +627,10 @@ export class Renderer {
     if (this.shake > 0) return true;
     if (this.kickX !== 0 || this.kickY !== 0) return true;
     if (this.effectsBusy > 0) return true;
+    if (this.mobilityEffects.isActive) return true;
+    // A networked action can update the roster or a tank during an otherwise
+    // static PLAYER_TURN. Wake one frame so trackMobility can prune/baseline it.
+    if (this.hasPendingMobilitySignature(state)) return true;
     if (this.tankRecoil != null) return true;
     if (this.windGust != null) return true;
     // Continuous damage smoke keeps emitting while any tank sits in the damaged tier,
@@ -899,6 +921,57 @@ export class Renderer {
     if (this.tankRecoil == null) return;
     this.tankRecoil.age++;
     if (this.tankRecoil.age >= TANK_RECOIL_FRAMES) this.tankRecoil = null;
+  }
+
+  /**
+   * Observe authoritative tank poses without feeding anything back into gameplay.
+   * Every snapshot becomes the next baseline, including rejected transitions, so a
+   * reconnect, round change, burial, or teleport cannot leave a stale trail behind.
+   */
+  private trackMobility(state: GameState): void {
+    const presentTankIds = new Set(state.tanks.map((tank) => tank.id));
+    for (const tankId of this.prevMobilityPoses.keys()) {
+      if (!presentTankIds.has(tankId)) this.prevMobilityPoses.delete(tankId);
+    }
+    for (const tank of state.tanks) {
+      const current = this.mobilityPose(tank, state.round);
+      const event = observeMobilitySignature(this.prevMobilityPoses.get(tank.id), current);
+      this.prevMobilityPoses.set(tank.id, current);
+
+      // Reduced motion has no residual work: do not create a burst or lengthen
+      // the renderer busy window. The observer still rebases every live snapshot.
+      if (event == null || this.reduceMotion) continue;
+      this.mobilityEffects.spawn(event);
+      this.effectsBusy = Math.max(
+        this.effectsBusy,
+        MOBILITY_SIGNATURE_PROFILES[event.kit].lifeFrames,
+      );
+    }
+  }
+
+  /** Check the render gate without consuming the next pose observation. */
+  private hasPendingMobilitySignature(state: GameState): boolean {
+    if (
+      this.prevMobilityPoses.size !== state.tanks.length
+      || state.tanks.some((tank) => !this.prevMobilityPoses.has(tank.id))
+    ) return true;
+    return state.tanks.some((tank) => observeMobilitySignature(
+      this.prevMobilityPoses.get(tank.id),
+      this.mobilityPose(tank, state.round),
+    ) != null);
+  }
+
+  private mobilityPose(tank: TankState, round: number): MobilityPoseSample {
+    return {
+      tankId: tank.id,
+      round,
+      x: tank.x,
+      y: tank.y,
+      alive: tank.alive,
+      buried: tank.buried,
+      kit: tank.loadout?.treads ?? 'foundry',
+      color: tank.color,
+    };
   }
 
   /**

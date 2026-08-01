@@ -6,6 +6,7 @@ import { Renderer } from './Renderer';
 interface ShieldImpactSeam {
   effectsBusy: number;
   prevHealth: Map<string, number>;
+  prevMobilityPoses: Map<string, unknown>;
   prevShieldHp: Map<string, number>;
   shieldBaselineRound: number | null;
   smokeThrottle: Map<string, number>;
@@ -17,6 +18,12 @@ interface ShieldImpactSeam {
     spawnShieldImpact: ReturnType<typeof vi.fn>;
     emitDamageSmoke: ReturnType<typeof vi.fn>;
     clear: ReturnType<typeof vi.fn>;
+  };
+  mobilityEffects: {
+    clear: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    draw: ReturnType<typeof vi.fn>;
+    readonly isActive: boolean;
   };
   bursts: unknown[];
   scorches: unknown[];
@@ -96,6 +103,7 @@ function seam(): ShieldImpactSeam {
   Object.assign(renderer, {
     effectsBusy: 0,
     prevHealth: new Map(),
+    prevMobilityPoses: new Map(),
     prevShieldHp: new Map(),
     shieldBaselineRound: null,
     smokeThrottle: new Map(),
@@ -108,6 +116,7 @@ function seam(): ShieldImpactSeam {
       emitDamageSmoke: vi.fn(),
       clear: vi.fn(),
     },
+    mobilityEffects: { clear: vi.fn(), update: vi.fn(), draw: vi.fn(), isActive: false },
     bursts: [],
     scorches: [],
     lastSeenExplosionId: 0,

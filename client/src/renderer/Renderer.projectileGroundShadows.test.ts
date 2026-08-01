@@ -19,6 +19,7 @@ interface RendererShadowSeam {
   prevBounces: Map<number, number>;
   hadProjectileLastFrame: boolean;
   prevHealth: Map<string, number>;
+  prevMobilityPoses: Map<string, unknown>;
   prevShieldHp: Map<string, number>;
   smokeThrottle: Map<string, number>;
   showAimGuide: boolean;
@@ -27,6 +28,11 @@ interface RendererShadowSeam {
     update: ReturnType<typeof vi.fn>;
     draw: ReturnType<typeof vi.fn>;
     spawnMuzzle: ReturnType<typeof vi.fn>;
+  };
+  mobilityEffects: {
+    update: ReturnType<typeof vi.fn>;
+    draw: ReturnType<typeof vi.fn>;
+    readonly isActive: boolean;
   };
   projectile: {
     drawGroundShadows: ReturnType<typeof vi.fn>;
@@ -96,6 +102,7 @@ function rendererSeam(): RendererShadowSeam {
     prevBounces: new Map(),
     hadProjectileLastFrame: true,
     prevHealth: new Map(),
+    prevMobilityPoses: new Map(),
     prevShieldHp: new Map(),
     smokeThrottle: new Map(),
     showAimGuide: false,
@@ -105,6 +112,7 @@ function rendererSeam(): RendererShadowSeam {
       draw: vi.fn(),
       spawnMuzzle: vi.fn(),
     },
+    mobilityEffects: { update: vi.fn(), draw: vi.fn(), isActive: false },
     projectile: {
       drawGroundShadows: vi.fn(),
       draw: vi.fn(),

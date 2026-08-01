@@ -28,6 +28,8 @@ function rendererWithMaterialState(isMaterialSettled: boolean): AnimationSeam {
     kickX: 0,
     kickY: 0,
     effectsBusy: 0,
+    prevMobilityPoses: new Map(),
+    mobilityEffects: { isActive: false },
     tankRecoil: null,
     windGust: null,
   }) as AnimationSeam;

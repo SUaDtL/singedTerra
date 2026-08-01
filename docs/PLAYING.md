@@ -135,6 +135,12 @@ Movement is turn-neutral but spends fuel based on distance actually traveled.
 Terrain, tank collision, cliffs, bounds, and the remaining reserve can shorten
 a requested move.
 
+Each Garage mobility kit leaves its own brief visual signature beneath the tank
+when it moves: Foundry stamps tracks, Ranger places leg strides, Bulwark leaves
+a hover wake, and Jackal throws wheel marks. These are presentation-only; fuel
+and final position still follow the normal movement rules. With reduced motion
+enabled, the transient signatures are suppressed.
+
 Damage dealt to opponents earns credits. The Store sells finite ammunition and
 accessories such as Batteries and Fuel Tanks. Purchases do not end the turn.
 
