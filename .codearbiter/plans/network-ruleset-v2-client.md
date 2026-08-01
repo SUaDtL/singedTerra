@@ -89,7 +89,7 @@
 
 - [x] Run focused tests, full client coverage, the complete Edge suite, `npm run check`, `npm run build`, `npm audit`, `git diff --check`, and state-free secret/hard-surface scans.
 - [x] Dispatch one adversarial exact-diff reviewer; correct every Critical, High, Medium, and merge blocker and obtain correction re-review when needed.
-- [ ] Commit through the codeArbiter gate, push, open a ready PR, and require every hosted check green on the exact reviewed head.
+- [x] Commit through the codeArbiter gate, push, open a ready PR, and require every hosted check green on the exact reviewed head.
 - [ ] Merge through the PR under standing logged authority and wait for the exact-merge Pages deployment.
 - [ ] Prove in production that a new browser creates/joins a version-2 room, starts it, and commits a version-2 action; separately prove the legacy mismatch retry contract without mutating the first request.
 - [ ] Record the evidence, close Phase B2, and immediately select the next highest-value scoped improvement.

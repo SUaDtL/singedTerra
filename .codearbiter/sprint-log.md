@@ -2663,3 +2663,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **Adversarial correction verdict CLEAN.** The same reviewer re-proved authoritative v1/v2 preservation across client successor handling, rematch configuration, engine falloff selection, server normalization, stored projection, and both winning/losing response projectors. The global-current substitution mutant now fails; no Critical, High, Medium, Low, scope, security, governance, or merge blocker remains. Confidence high.
 - **Fresh corrected-package verification:** all 200 Edge tests and 108 client files / 762 tests pass; client coverage is 89.49% statements and 91.86% lines. The full deterministic/lockstep harness, production build, 121 applicable browser guardrails with 11 configured skips, dependency audit, diff hygiene, hard-surface scan, and state-free secret scan are green. Confidence high.
+
+### PR #239 hosted gate and merge override
+
+- **Exact reviewed behavior head green.** PR #239 head `41fbd3404356f27c23d6ad193fead3859a0751fd` passed hosted typecheck/harness/build, all 200 Edge tests, 121 rendering guardrails with 11 configured skips, CodeQL analysis and gate, plus the CodeRabbit status context. Supabase Preview skipped as configured for the client-only change. Confidence high.
+- **Merge pause override logged.** The maintainer's standing passion-project authority bypasses codeArbiter's sprint PR-boundary and merge pause through one distinct append-only receipt. This governance-only change requires exact review and a fresh hosted matrix before the PR-only merge. Confidence high.
