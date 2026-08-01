@@ -355,17 +355,23 @@ export function explosionResult(
 }
 
 /**
- * Circular damage falloff (SPEC §4.2): MAX_DAMAGE * (1 - dist/radius), clamped
- * to [0, MAX_DAMAGE]. Returns 0 at/beyond the blast edge.
+ * Circular damage falloff (SPEC §4.2):
+ * MAX_DAMAGE * (1 - (dist/radius)^falloffExponent), clamped to
+ * [0, MAX_DAMAGE]. Exponent 1 preserves the default linear curve; larger
+ * exponents keep more damage inside the disc while still reaching zero at the
+ * exact edge.
  */
-export function damage(dist: number, radius: number): number {
+export function damage(dist: number, radius: number, falloffExponent = 1): number {
   // Coordinate arithmetic can place an intended edge point a few ulps inside the
   // radius (for example 600 + 32.4 - 600). Snap that negligible residue to the
   // documented zero-damage boundary instead of mutating health by ~1e-14.
   const edgeEpsilon = 1e-9;
   if (radius <= 0 || dist >= radius - edgeEpsilon) return 0;
-  const d = MAX_DAMAGE * (1 - dist / radius);
-  return d < 0 ? 0 : d > MAX_DAMAGE ? MAX_DAMAGE : d;
+  const exponent = Number.isFinite(falloffExponent) && falloffExponent > 0
+    ? falloffExponent
+    : 1;
+  const normalizedDistance = Math.max(0, dist / radius);
+  return MAX_DAMAGE * (1 - normalizedDistance ** exponent);
 }
 
 /**
@@ -377,9 +383,10 @@ export function explosionDamage(
   cy: number,
   radius: number,
   tank: TankState,
+  falloffExponent = 1,
 ): number {
   const tx = tank.x;
   const ty = tank.y - TANK_HEIGHT / 2;
   const dist = Math.hypot(cx - tx, cy - ty);
-  return damage(dist, radius);
+  return damage(dist, radius, falloffExponent);
 }

@@ -4,6 +4,9 @@ import type { TankLoadout } from './TankLoadout';
 /** Horizontal battlefield boundary rule. */
 export type WallMode = 'open' | 'reflective' | 'wrap';
 
+/** Starter-weapon damage curve selected by an execution context. */
+export type StarterWeaponFalloff = 'linear' | 'decisive';
+
 /** Fail closed to the legacy open boundary at every untyped room seam. */
 export function normalizeWallMode(value: unknown): WallMode {
   return value === 'reflective' || value === 'wrap' ? value : 'open';
@@ -40,6 +43,13 @@ export interface GameOptions {
   gravity?: number;
   /** Horizontal boundary behavior; defaults to open (legacy OOB miss). */
   walls?: WallMode;
+  /**
+   * Interior blast curve for Baby Missile and Missile. Defaults to `linear` so
+   * mixed deployed client versions remain deterministic in networked rooms.
+   * Hot-seat explicitly opts into `decisive`; network mode must stay linear
+   * until rooms have an Edge-enforced ruleset compatibility boundary.
+   */
+  starterWeaponFalloff?: StarterWeaponFalloff;
   /**
    * Best-of-N match length (V1 round system). Defaults to 1 — a single round, i.e.
    * the original "first elimination ends the game" behavior (full back-compat). For

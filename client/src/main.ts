@@ -8,6 +8,7 @@ import { normalizeWallMode } from '@shared/types/GameOptions';
 import { normalizeTankLoadout } from '@shared/types/TankLoadout';
 import type { GameClient, RematchInfo } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
+import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { InputHandler } from './input/InputHandler';
 import { shouldAcceptLocalInput } from './input/inputGate';
 import { Renderer } from './renderer/Renderer';
@@ -669,27 +670,9 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
     const { NetworkClient } = await import('./client/NetworkClient');
     const { supabase } = await import('./lib/supabase');
 
-    const gameOptions = {
-      maxPlayers: config.players.length,
-      players:    config.players.map(p => ({
-        ...p,
-        id: p.id!,
-        loadout: normalizeTankLoadout(p.loadout),
-      })),
-      seed:       config.settings?.seed,
-      maxWind:    config.settings?.maxWind,
-      gravity:    config.settings?.gravity,
-      walls:      config.settings?.walls,
-      // Best-of-N is sourced from the synced room row (see Lobby.emitNetworkReady),
-      // so every client builds an identical engine — required for deterministic
-      // lockstep across round boundaries. Undefined => single round.
-      rounds:     config.settings?.rounds,
-      // SE-parity economy options — same sourcing as `rounds`: synced via the room row so
-      // every client's engine agrees (else interest/sudden-death/arms-gate would diverge).
-      interestRate:    config.settings?.interestRate,
-      suddenDeathTurn: config.settings?.suddenDeathTurn,
-      armsLevel:       config.settings?.armsLevel,
-    };
+    // Best-of-N/economy values come from the synced room row. The builder also
+    // pins the network execution rule to the mixed-version-compatible curve.
+    const gameOptions = buildClientEngineOptions({ ...config, mode: 'network' });
 
     const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions, config.token);
     await nc.initialize();
@@ -700,26 +683,7 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
   // lobby's chosen players (2-4, unique colors) plus any advanced settings the
   // user set. Each settings field is forwarded only when present so the engine
   // defaults hold for untouched fields (e.g. omitted seed => DEFAULT_SEED).
-  const settings = config.settings;
-  const engine = new GameEngine({
-    players: config.players.map((player) => ({
-      ...player,
-      loadout: normalizeTankLoadout(player.loadout),
-    })),
-    maxPlayers: config.players.length,
-    ...(settings?.seed != null ? { seed: settings.seed } : {}),
-    ...(settings?.maxWind != null ? { maxWind: settings.maxWind } : {}),
-    ...(settings?.gravity != null ? { gravity: settings.gravity } : {}),
-    ...(settings?.walls != null ? { walls: settings.walls } : {}),
-    // Best-of-N is hot-seat-only for now: in networked lockstep `rounds` must come
-    // from the synced room row so every client's engine agrees (Slice 3), otherwise
-    // engines would diverge on when a round ends. Networked play stays single-round.
-    ...(settings?.rounds != null ? { rounds: settings.rounds } : {}),
-    // SE-parity economy options (hot-seat) — forwarded only when set, so engine defaults hold.
-    ...(settings?.interestRate != null ? { interestRate: settings.interestRate } : {}),
-    ...(settings?.suddenDeathTurn != null ? { suddenDeathTurn: settings.suddenDeathTurn } : {}),
-    ...(settings?.armsLevel != null ? { armsLevel: settings.armsLevel } : {}),
-  });
+  const engine = new GameEngine(buildClientEngineOptions({ ...config, mode: 'hotseat' }));
   return new HotSeatClient(engine);
 }
 

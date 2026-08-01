@@ -171,7 +171,11 @@ Implemented weapons:
 - Shield.
 
 Weapon definitions own blast, damage, visual style, price, bundle, arms level,
-and optional deterministic behavior.
+and optional deterministic behavior. Blast damage defaults to linear radial
+falloff; a weapon may select a positive falloff exponent, preserving its center
+peak and zero-damage edge while making interior hits more decisive. The engine
+defaults to the legacy linear curve for mixed-version network compatibility;
+hot-seat explicitly opts into the decisive Baby Missile and Missile curve.
 
 Baby Missile is the unlimited starter. Finite weapons decrement on successful
 fire. Purchases reject insufficient credits or disallowed arms level.

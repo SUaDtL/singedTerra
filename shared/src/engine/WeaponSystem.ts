@@ -37,6 +37,8 @@ export interface DetonationDef {
   radius: number;
   /** Peak damage at the center of the blast (PER-SUBMUNITION for airburst). */
   maxDamage: number;
+  /** Optional radial curve exponent; 1 is linear, 2 makes interior hits more decisive. */
+  falloffExponent?: number;
   /** Whether this weapon raises terrain instead of cratering it (e.g. dirt bomb). */
   raisesTerrain?: boolean;
   /** Visual style of the resulting explosion event(s). */
@@ -342,6 +344,7 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
     detonation: {
       radius: 18,
       maxDamage: 34, // tuned: ~3 direct hits to kill (was 25)
+      falloffExponent: 2,
       style: 'blast',
       color: '#ffb347', // soft orange
       durationFrames: 85, // ~1.4s at 60fps — slow Scorched-Earth-style bloom
@@ -355,6 +358,7 @@ export const WEAPONS: Record<WeaponType, WeaponDefinition> = {
     detonation: {
       radius: 30,
       maxDamage: 60, // tuned: ~2 direct hits to kill (was 50)
+      falloffExponent: 2,
       style: 'blast',
       color: '#ff6a2b', // hotter orange/red
       durationFrames: 100, // ~1.7s at 60fps — slow Scorched-Earth-style bloom

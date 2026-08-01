@@ -6,7 +6,11 @@ import type {
   TankState,
 } from '../types/GameState';
 import type { PlayerAction } from '../types/PlayerAction';
-import { normalizeWallMode, type GameOptions } from '../types/GameOptions';
+import {
+  normalizeWallMode,
+  type GameOptions,
+  type StarterWeaponFalloff,
+} from '../types/GameOptions';
 import {
   generate,
   buildBitmap,
@@ -256,6 +260,13 @@ export class GameEngine {
    */
   private armsLevel: number;
 
+  /**
+   * Starter-weapon interior damage rule. Linear is the compatibility default;
+   * hot-seat opts into the decisive curve while network rooms remain linear
+   * until their referee contract can enforce a shared ruleset version.
+   */
+  private starterWeaponFalloff: StarterWeaponFalloff;
+
   /** Original construction options, retained so startNextRound can re-place tanks
    *  the same way the opening round did (same player roster / layout path). */
   private options?: GameOptions;
@@ -328,6 +339,8 @@ export class GameEngine {
     // Arms level: a finite level clamped to [0,4], else 4 (everything / back-compat).
     const al = options?.armsLevel;
     this.armsLevel = Number.isFinite(al) ? clamp(Math.floor(al as number), 0, 4) : 4;
+    this.starterWeaponFalloff =
+      options?.starterWeaponFalloff === 'decisive' ? 'decisive' : 'linear';
     const walls = normalizeWallMode(options?.walls);
     this.turnAtRoundStart = 0; // opening round begins at the turn-0 baseline
     this.options = options;
@@ -453,6 +466,7 @@ export class GameEngine {
     c.suddenDeathTurn = this.suddenDeathTurn;
     c.turnAtRoundStart = this.turnAtRoundStart;
     c.armsLevel     = this.armsLevel;
+    c.starterWeaponFalloff = this.starterWeaponFalloff;
     c.options       = this.options; // GameOptions is treated as immutable config
     // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
     c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
@@ -1469,7 +1483,7 @@ export class GameEngine {
     weaponType: WeaponType,
     impactType?: ExplosionImpactType,
   ): void {
-    const { radius, maxDamage, raisesTerrain, style, color, durationFrames } =
+    const { radius, maxDamage, falloffExponent, raisesTerrain, style, color, durationFrames } =
       getWeapon(weaponType).detonation;
     const raise = raisesTerrain === true;
 
@@ -1501,7 +1515,9 @@ export class GameEngine {
     const damageRadius = blastReachRadius(radius, style);
     for (const tank of this.state.tanks) {
       if (!tank.alive) continue;
-      const baseDamage = explosionDamage(cx, cy, damageRadius, tank);
+      const selectedFalloff =
+        this.starterWeaponFalloff === 'decisive' ? falloffExponent : undefined;
+      const baseDamage = explosionDamage(cx, cy, damageRadius, tank, selectedFalloff);
       // explosionDamage() peaks at the global MAX_DAMAGE; rescale to this
       // weapon's maxDamage so the falloff shape is preserved.
       const scaled = (baseDamage / MAX_DAMAGE) * maxDamage;

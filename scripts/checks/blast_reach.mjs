@@ -7,6 +7,7 @@ import {
   blastReachRadius,
 } from '../../shared/src/engine/BlastGeometry.ts';
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
+import { damage } from '../../shared/src/engine/Physics.ts';
 import { CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
 import { getWeapon } from '../../shared/src/engine/WeaponSystem.ts';
 import { TANK_HEIGHT } from '../../shared/src/engine/Tank.ts';
@@ -29,8 +30,17 @@ check(blastReachRadius(30, 'blast') === 54, 'blast reach radius is 54');
 check(blastReachRadius(30, 'cluster') === 42, 'cluster reach radius is 42');
 check(blastReachRadius(-1, 'blast') === 0, 'negative base radius is clamped to zero');
 
-function detonateWithTarget(weaponType, distance) {
-  const engine = new GameEngine({ seed: 17 });
+close(damage(0, 10, 2), 100, 'decisive falloff preserves center damage');
+close(damage(5, 10, 2), 75, 'decisive falloff keeps 75% damage at half radius');
+close(damage(10, 10, 2), 0, 'decisive falloff preserves the zero-damage edge');
+close(damage(5, 10), 50, 'omitted falloff preserves the linear midpoint');
+close(damage(5, 10, 0), 50, 'non-positive falloff safely preserves the linear midpoint');
+close(damage(5, 10, Number.NaN), 50, 'non-finite falloff safely preserves the linear midpoint');
+close(damage(5, 10, Number.POSITIVE_INFINITY), 50, 'positive-infinite falloff safely preserves the linear midpoint');
+close(damage(5, 10, Number.NEGATIVE_INFINITY), 50, 'negative-infinite falloff safely preserves the linear midpoint');
+
+function detonateWithTarget(weaponType, distance, options = {}) {
+  const engine = new GameEngine({ seed: 17, ...options });
   const state = engine.getState();
   const target = state.tanks[1];
   const cx = 600;
@@ -44,14 +54,26 @@ function detonateWithTarget(weaponType, distance) {
   return { state, target, cx, cy };
 }
 
-for (const [weaponType, expectedAtBase, expectedPeak] of [
-  ['baby_missile', 15.1111111111, 34],
-  ['missile', 26.6666666667, 60],
-  ['mirv', 14.2857142857, 50],
+for (const [weaponType, expectedAtBase, expectedDecisiveAtBase, expectedPeak] of [
+  ['baby_missile', 15.1111111111, 23.5061728395, 34],
+  ['missile', 26.6666666667, 41.4814814815, 60],
+  ['baby_nuke', 40, 40, 90],
+  ['mirv', 14.2857142857, 14.2857142857, 50],
 ]) {
   const { radius, style } = getWeapon(weaponType).detonation;
   const atBase = detonateWithTarget(weaponType, radius).target;
   close(100 - atBase.health, expectedAtBase, `${weaponType} damages at its base-radius edge`);
+
+  const decisiveAtBase = detonateWithTarget(
+    weaponType,
+    radius,
+    { starterWeaponFalloff: 'decisive' },
+  ).target;
+  close(
+    100 - decisiveAtBase.health,
+    expectedDecisiveAtBase,
+    `${weaponType} honors the explicit hot-seat starter falloff rule`,
+  );
 
   const atVisibleEdge = detonateWithTarget(weaponType, blastReachRadius(radius, style)).target;
   check(atVisibleEdge.health === 100, `${weaponType} health is exactly unchanged at its visible edge`);
@@ -130,11 +152,8 @@ for (const weaponType of ['napalm', 'hot_napalm']) {
   check(outsideUnchanged, 'terrain bytes outside the base crater disc remain unchanged');
 }
 
-const engineSource = fs.readFileSync(new URL('../../shared/src/engine/GameEngine.ts', import.meta.url), 'utf8');
 const rendererSource = fs.readFileSync(new URL('../../client/src/renderer/Renderer.ts', import.meta.url), 'utf8');
 const explosionVisualsSource = fs.readFileSync(new URL('../../client/src/renderer/explosionVisuals.ts', import.meta.url), 'utf8');
-check(/import\s*\{\s*blastReachRadius\s*\}/.test(engineSource), 'GameEngine imports blastReachRadius');
-check(/explosionDamage\(cx, cy, damageRadius, tank\)/.test(engineSource), 'GameEngine calls blastReachRadius-derived damage radius');
 check(/import\s*\{\s*blastReachRadius\s*\}/.test(explosionVisualsSource), 'explosionVisuals imports blastReachRadius');
 check(/blastReachRadius\(event\.radius, event\.style\)/.test(explosionVisualsSource), 'explosionVisuals calls shared blast reach radius');
 check(/getExplosionVisualProfile\(ex\)/.test(rendererSource), 'Renderer caches the bounded event profile');
