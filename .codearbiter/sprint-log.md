@@ -2988,3 +2988,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Capture-scope correction
 
 - **[high] Clarify the final ephemeral-browser interaction.** The initial SMARTS note described removing only the splash. The accepted final capture also dismissed the one-time First Salvo coach through its real Skip control inside the disposable browser context, as the spec, plan, capture evidence, and visual result record. No game state, durable user browser state, source, or production data changed. Confidence high.
+
+### PR #254 hosted gate and merge override
+
+- **[high] Behavior head cleared hosted CI.** PR #254 head `69fce088e5b9729bc6899cfefb480efdc8186e7a` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, rendering E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
