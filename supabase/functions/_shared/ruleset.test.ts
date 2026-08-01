@@ -19,16 +19,17 @@ Deno.test('ruleset: explicit supported versions 1 and 2 are preserved', () => {
   assertEquals(resolveStoredRulesetVersion({ rulesetVersion: 2 }), { ok: true, version: 2 })
 })
 
-Deno.test('ruleset: Phase A only permits legacy version 1 room creation', () => {
+Deno.test('ruleset: room creation preserves every supported requested version', () => {
   assertEquals(resolveCreatableRulesetVersion(undefined), { ok: true, version: 1 })
   assertEquals(resolveCreatableRulesetVersion(1), { ok: true, version: 1 })
-  assertEquals(resolveCreatableRulesetVersion(2), { ok: false, error: 'not_creatable' })
+  assertEquals(resolveCreatableRulesetVersion(2), { ok: true, version: 2 })
   assertEquals(resolveCreatableRulesetVersion(99), { ok: false, error: 'invalid_request' })
 })
 
 Deno.test('ruleset: unsupported, fractional, and non-numeric values fail closed', () => {
   for (const value of [0, 3, 1.5, '1', null, Number.NaN, Number.POSITIVE_INFINITY]) {
     assertEquals(resolveRequestedRulesetVersion(value), { ok: false, error: 'invalid_request' })
+    assertEquals(resolveCreatableRulesetVersion(value), { ok: false, error: 'invalid_request' })
   }
   assertEquals(resolveStoredRulesetVersion({ rulesetVersion: 99 }), {
     ok: false,

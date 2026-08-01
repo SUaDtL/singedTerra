@@ -13,37 +13,33 @@ export type NetworkRulesetVersion =
   | typeof LEGACY_NETWORK_RULESET_VERSION
   | typeof PREPARED_NETWORK_RULESET_VERSION
 
-type ResolvedVersion =
+type RequestedVersion =
   | { ok: true; version: NetworkRulesetVersion }
-  | { ok: false; error: 'invalid_request' | 'invalid_stored' }
+  | { ok: false; error: 'invalid_request' }
 
-type CreatableVersion =
-  | { ok: true; version: typeof LEGACY_NETWORK_RULESET_VERSION }
-  | { ok: false; error: 'invalid_request' | 'not_creatable' }
+type StoredVersion =
+  | { ok: true; version: NetworkRulesetVersion }
+  | { ok: false; error: 'invalid_stored' }
 
 function isSupportedRulesetVersion(value: unknown): value is NetworkRulesetVersion {
   return value === LEGACY_NETWORK_RULESET_VERSION || value === PREPARED_NETWORK_RULESET_VERSION
 }
 
 /** Resolve a client request; only omission receives the legacy default. */
-export function resolveRequestedRulesetVersion(value: unknown): ResolvedVersion {
+export function resolveRequestedRulesetVersion(value: unknown): RequestedVersion {
   if (value === undefined) return { ok: true, version: LEGACY_NETWORK_RULESET_VERSION }
   return isSupportedRulesetVersion(value)
     ? { ok: true, version: value }
     : { ok: false, error: 'invalid_request' }
 }
 
-/** Phase A creation gate: understand v2 for existing rooms without minting one. */
-export function resolveCreatableRulesetVersion(value: unknown): CreatableVersion {
-  const requested = resolveRequestedRulesetVersion(value)
-  if (!requested.ok) return { ok: false, error: 'invalid_request' }
-  return requested.version === LEGACY_NETWORK_RULESET_VERSION
-    ? { ok: true, version: LEGACY_NETWORK_RULESET_VERSION }
-    : { ok: false, error: 'not_creatable' }
+/** Resolve a creation request; every supported explicit version is creatable. */
+export function resolveCreatableRulesetVersion(value: unknown): RequestedVersion {
+  return resolveRequestedRulesetVersion(value)
 }
 
 /** Resolve JSONB room options; only an absent field receives the legacy default. */
-export function resolveStoredRulesetVersion(options: unknown): ResolvedVersion {
+export function resolveStoredRulesetVersion(options: unknown): StoredVersion {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {
     return { ok: false, error: 'invalid_stored' }
   }

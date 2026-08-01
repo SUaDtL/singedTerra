@@ -58,12 +58,14 @@ room options + seed + ordered room_actions
 
 Room options also carry an integer `rulesetVersion`. A missing field in a valid
 options object means legacy version `1`; malformed stored options fail closed.
-During the Phase A compatibility rollout, `create_room` stores and echoes only
-version `1` and rejects prepared version `2` before touching the database;
-`join_room` rejects a client whose requested version differs before changing
-the roster; and `submit_action` rejects a verified seat's mismatch before the
-action-log RPC. This makes deterministic balance changes deployable without
-letting old and new browsers interpret one committed action differently.
+After the server-first capability rollout, `create_room` stores and echoes an
+explicit supported version `1` or `2`, while omission remains version `1` for
+deployed-client compatibility. `join_room` rejects a client whose requested
+version differs before changing the roster, and `submit_action` rejects a
+verified seat's mismatch before the action-log RPC. The public client remains on
+version `1` until a separate client rollout, so deterministic balance changes can
+deploy without letting old and new browsers interpret one committed action
+differently.
 
 ## Dependency direction
 

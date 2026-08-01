@@ -10,7 +10,6 @@ import {
   DEFAULT_TANK_LOADOUT,
   parseTankLoadout,
   resolveCreatableRulesetVersion,
-  LEGACY_NETWORK_RULESET_VERSION,
   type TankLoadout,
 } from '../_shared/mod.ts'
 import { coerceEconomyOptions, coerceGravity, coerceMaxWind, coerceWallMode } from './validate.ts'
@@ -81,12 +80,6 @@ async function handleCreateRoomWithDependencies(
 
   const requestedRuleset = resolveCreatableRulesetVersion(rulesetVersion)
   if (!requestedRuleset.ok) {
-    if (requestedRuleset.error === 'not_creatable') {
-      return json({
-        error: 'ruleset_not_available',
-        availableRulesetVersion: LEGACY_NETWORK_RULESET_VERSION,
-      }, 409)
-    }
     return json({ error: 'Invalid input: rulesetVersion' }, 400)
   }
 

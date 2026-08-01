@@ -84,6 +84,6 @@
 
 - [x] Run focused Edge/client tests, the full Deno suite, `npm run check`, `npm run coverage:client`, `npm run build`, `npm audit`, `git diff --check`, and state-free secret/hard-surface scans.
 - [x] Adversarially review the exact diff and correct every Critical, High, Medium, and merge-blocking finding with the same reviewer re-checking corrections.
-- [ ] Commit through the codeArbiter gate, push, open a ready PR, and require all hosted checks green on the exact reviewed head.
-- [ ] Merge through the PR under standing authority; deploy only `create_room`, `join_room`, `submit_action`, and the rematch projection in `restart_game`; verify client Pages provenance and a live legacy ruleset `1` network-compatible smoke.
-- [ ] Record Phase A evidence, then immediately begin the separately governed Phase B client-version flip.
+- [x] Commit through the codeArbiter gate, push, open a ready PR, and require all hosted checks green on the exact reviewed head.
+- [x] Merge through the PR under standing authority; deploy only `create_room`, `join_room`, `submit_action`, and the rematch projection in `restart_game`; verify client Pages provenance and a live legacy ruleset `1` network-compatible smoke.
+- [x] Record Phase A evidence, then immediately begin the separately governed Phase B client-version flip.

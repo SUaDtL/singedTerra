@@ -92,7 +92,7 @@ Deno.test('handleCreateRoom: normalizes an invalid wall value to open before ins
   )
 })
 
-Deno.test('handleCreateRoom: stores and echoes the authoritative Phase A ruleset', async () => {
+Deno.test('handleCreateRoom: stores and echoes explicit legacy ruleset 1', async () => {
   const capture = captureRoomInsert()
   const res = await createRoomHandler({
     serviceClient: capture.serviceClient as never,
@@ -110,15 +110,10 @@ Deno.test('handleCreateRoom: stores and echoes the authoritative Phase A ruleset
   assertEquals(response.options, storedOptions)
 })
 
-Deno.test('handleCreateRoom: rejects prepared ruleset 2 before DB access in Phase A', async () => {
-  let dbTouched = false
+Deno.test('handleCreateRoom: stores and echoes explicit ruleset 2', async () => {
+  const capture = captureRoomInsert()
   const res = await createRoomHandler({
-    serviceClient: {
-      from: () => {
-        dbTouched = true
-        throw new Error('DB must not be touched')
-      },
-    } as never,
+    serviceClient: capture.serviceClient as never,
   })({
     playerName: 'Ana',
     color: '#e84d4d',
@@ -126,12 +121,11 @@ Deno.test('handleCreateRoom: rejects prepared ruleset 2 before DB access in Phas
     options: { maxPlayers: 2 },
   })
 
-  assertEquals(res.status, 409)
-  assertEquals(await res.json(), {
-    error: 'ruleset_not_available',
-    availableRulesetVersion: 1,
-  })
-  assertEquals(dbTouched, false)
+  assertEquals(res.status, 200)
+  const storedOptions = capture.insertedRoom()?.options as Record<string, unknown>
+  assertEquals(storedOptions.rulesetVersion, 2)
+  const response = await res.json()
+  assertEquals(response.options, storedOptions)
 })
 
 Deno.test('handleCreateRoom: omitted ruleset stores and echoes legacy version 1', async () => {
@@ -150,23 +144,25 @@ Deno.test('handleCreateRoom: omitted ruleset stores and echoes legacy version 1'
   assertEquals(response.options.rulesetVersion, 1)
 })
 
-Deno.test('handleCreateRoom: rejects an unsupported ruleset before DB access', async () => {
-  let dbTouched = false
-  const res = await createRoomHandler({
-    serviceClient: {
-      from: () => {
-        dbTouched = true
-        throw new Error('DB must not be touched')
-      },
-    } as never,
-  })({
-    playerName: 'Ana',
-    color: '#e84d4d',
-    rulesetVersion: 99,
-    options: { maxPlayers: 2 },
-  })
+Deno.test('handleCreateRoom: rejects unsupported and malformed rulesets before DB access', async () => {
+  for (const rulesetVersion of [99, '2', null, 1.5]) {
+    let dbTouched = false
+    const res = await createRoomHandler({
+      serviceClient: {
+        from: () => {
+          dbTouched = true
+          throw new Error('DB must not be touched')
+        },
+      } as never,
+    })({
+      playerName: 'Ana',
+      color: '#e84d4d',
+      rulesetVersion,
+      options: { maxPlayers: 2 },
+    })
 
-  assertEquals(res.status, 400)
-  assertEquals(await res.json(), { error: 'Invalid input: rulesetVersion' })
-  assertEquals(dbTouched, false)
+    assertEquals(res.status, 400)
+    assertEquals(await res.json(), { error: 'Invalid input: rulesetVersion' })
+    assertEquals(dbTouched, false)
+  }
 })

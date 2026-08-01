@@ -7,7 +7,7 @@ import type { NetworkRulesetVersion } from '@shared/types/GameOptions';
 export const LEGACY_NETWORK_RULESET_VERSION = 1 as const;
 export const PREPARED_NETWORK_RULESET_VERSION = 2 as const;
 
-/** Phase A intentionally emits only legacy rooms; Phase B flips this constant. */
+/** The server-first Phase B1 keeps emitting legacy rooms; Phase B2 flips this constant. */
 export const CURRENT_NETWORK_RULESET_VERSION: NetworkRulesetVersion =
   LEGACY_NETWORK_RULESET_VERSION;
 

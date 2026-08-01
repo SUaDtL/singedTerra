@@ -250,13 +250,13 @@ They do not run projectile physics.
 
 Every online room has an integer deterministic `rulesetVersion` inside its
 stored options. A missing field in a valid options object is legacy version `1`;
-malformed stored options fail closed. Phase A room creation permits only legacy
-version `1` while the referee understands prepared version `2` for compatibility.
-Create returns the server-resolved options, join rejects a version mismatch before any room
+malformed stored options fail closed. The referee accepts explicit version `1`
+or `2` room creation while an omitted version remains legacy `1`. Create returns
+the server-resolved options, join rejects a version mismatch before any room
 mutation, and action submission rejects a mismatch after seat-token validation
-but before authorization or insertion. The current Phase A client creates
-version `1` rooms; version `2` is understood but is not emitted until its
-separate rollout.
+but before authorization or insertion. During the server-first rollout window,
+the public client still creates version `1` rooms; switching new clients to
+version `2` is a separate deployment step.
 
 ### Replay
 
