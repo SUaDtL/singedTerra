@@ -104,7 +104,7 @@
 - [x] Run `npm audit --audit-level=high`, diff hygiene, and the state-free secret scan.
 - [x] Give one adversarial subagent the spec, plan, sprint log, tests, and exact final diff.
 - [x] Resolve every Critical, High, and other merge-blocking finding; obtain exact-diff follow-up clearance.
-- [ ] Run the governed commit gate, push `codex/mobility-signatures`, and open a ready PR.
+- [x] Run the governed commit gate, push `codex/mobility-signatures`, and open a ready PR.
 - [ ] Require every hosted check green on the exact reviewed PR head.
 - [ ] Log one distinct merge-boundary override under the maintainer's standing authority, merge through the PR, and verify Pages provenance plus live production behavior.
 - [ ] Harvest any low-confidence decision or `[NEEDS-TRIAGE]` finding, then immediately select the next sprint cell.
