@@ -1,6 +1,7 @@
 import type { GameOptions } from '@shared/types/GameOptions';
 import { normalizeTankLoadout } from '@shared/types/TankLoadout';
 import type { LobbyConfig } from '../ui/Lobby';
+import { normalizeNetworkRulesetVersion } from './networkRuleset';
 
 type EnginePlayer = NonNullable<GameOptions['players']>[number];
 type NetworkEnginePlayer = EnginePlayer & { id: string };
@@ -34,6 +35,7 @@ export function buildClientEngineOptions(
   const settings = config.settings;
 
   if (config.mode === 'network') {
+    const rulesetVersion = normalizeNetworkRulesetVersion(settings?.rulesetVersion);
     const players = config.players.map((player) => ({
       ...player,
       id: player.id!,
@@ -50,7 +52,8 @@ export function buildClientEngineOptions(
       interestRate: settings?.interestRate,
       suddenDeathTurn: settings?.suddenDeathTurn,
       armsLevel: settings?.armsLevel,
-      starterWeaponFalloff: 'linear',
+      rulesetVersion,
+      starterWeaponFalloff: rulesetVersion === 2 ? 'decisive' : 'linear',
     };
   }
 

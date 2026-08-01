@@ -248,6 +248,16 @@ Supabase Edge Functions:
 
 They do not run projectile physics.
 
+Every online room has an integer deterministic `rulesetVersion` inside its
+stored options. A missing field in a valid options object is legacy version `1`;
+malformed stored options fail closed. Phase A room creation permits only legacy
+version `1` while the referee understands prepared version `2` for compatibility.
+Create returns the server-resolved options, join rejects a version mismatch before any room
+mutation, and action submission rejects a mismatch after seat-token validation
+but before authorization or insertion. The current Phase A client creates
+version `1` rooms; version `2` is understood but is not emitted until its
+separate rollout.
+
 ### Replay
 
 `NetworkClient` fetches and applies committed rows in sequence. Out-of-order

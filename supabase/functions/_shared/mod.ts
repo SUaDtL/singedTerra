@@ -33,6 +33,15 @@ export {
   TANK_PART_SLOTS,
   parseTankLoadout,
 } from './tankLoadout.ts'
+export {
+  LEGACY_NETWORK_RULESET_VERSION,
+  PREPARED_NETWORK_RULESET_VERSION,
+  resolveCreatableRulesetVersion,
+  resolveRequestedRulesetVersion,
+  resolveStoredRulesetVersion,
+  rulesetCompatibility,
+} from './ruleset.ts'
+export type { NetworkRulesetVersion } from './ruleset.ts'
 export type {
   TankKitId,
   TankLoadout,

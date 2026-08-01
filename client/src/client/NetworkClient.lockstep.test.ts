@@ -196,6 +196,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(url).toBe('https://example.supabase.co/functions/v1/submit_action');
     const body = JSON.parse(init.body as string);
     expect(body.roomId).toBe('room-1');
+    expect(body.rulesetVersion).toBe(1);
     expect(body.action).toMatchObject({ type: 'fire', angle: 30, power: 70, weapon: 'baby_missile' });
 
     // The shot is applied by the Realtime echo, NOT locally — engine stays put, input locks.

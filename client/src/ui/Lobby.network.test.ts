@@ -208,6 +208,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         playerName: 'Alice',
         color: '#e84d4d',
         loadout: MIXED_LOADOUT,
+        rulesetVersion: 1,
         options: { maxPlayers: 2, visibility: 'public', walls: 'open' },
       });
       // No conditional keys leaked into the body.
@@ -243,6 +244,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         playerName: 'Alice',
         color: '#e84d4d',
         loadout: DEFAULT_TANK_LOADOUT,
+        rulesetVersion: 1,
         // 1 CPU seat gets the first palette color NOT used by the creator (Blue).
         bots: [{
           name: 'CPU 1',
@@ -312,6 +314,32 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(localStorage.getItem('singedterra:seat:pp')).toBe('tk');
 
       await flush(); // settle the void-ed subscribeWaitingRoom()
+    });
+
+    it('SUCCESS: adopts authoritative room options echoed by create_room', async () => {
+      const options = {
+        maxPlayers: 2,
+        maxWind: 6,
+        gravity: 0.22,
+        walls: 'wrap' as const,
+        rulesetVersion: 1 as const,
+      };
+      stubFetch({
+        json: () => ({
+          roomId: 'room-9',
+          code: 'ZZZZ',
+          playerId: 'pp',
+          token: 'tk',
+          options,
+          players: [{ id: 'pp', name: 'Alice', color: '#e84d4d', ready: false }],
+        }),
+      });
+      internals(lobby).onlineName = 'Alice';
+
+      await internals(lobby).handleCreateRoom();
+
+      expect(internals(lobby).waitingOptions).toEqual(options);
+      await flush();
     });
 
     it('SUCCESS: T-06 — writes the session descriptor { roomId, roomCode, playerId }', async () => {
@@ -443,11 +471,12 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         playerName: 'Bob',
         color: '#4d8ce8',
         loadout: MIXED_LOADOUT,
+        rulesetVersion: 1,
       });
     });
 
     it('SUCCESS: adopts room/seed/options/players + local code, persists token, transitions to waiting', async () => {
-      const options = { maxPlayers: 2, maxWind: 8, gravity: 0.3, rounds: 3 };
+      const options = { maxPlayers: 2, maxWind: 8, gravity: 0.3, rounds: 3, rulesetVersion: 1 as const };
       const players = [{ id: 'jp', name: 'Bob', color: '#4d8ce8', ready: false }];
       stubFetch({
         json: () => ({ roomId: 'jr', playerId: 'jp', token: 'jt', seed: 7, options, players }),
@@ -495,6 +524,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         maxWind: 10,
         gravity: 0.15,
         walls: 'open',
+        rulesetVersion: 1,
       });
       expect(internals(lobby).waitingPlayers).toEqual([]);
       await flush();
@@ -735,7 +765,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         roomId: 'room-1',
         playerId: 'p-1',
         token: 'tok',
-        settings: { seed: 42, maxWind: 10, gravity: 0.15 },
+        settings: { seed: 42, maxWind: 10, gravity: 0.15, rulesetVersion: 1 },
       });
     });
 

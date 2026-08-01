@@ -26,6 +26,10 @@ import {
 } from '../client/LobbySession';
 import { writeSession, clearSession, readSession, isLiveSession, type SessionDescriptor } from '../lib/sessionDescriptor';
 import {
+  CURRENT_NETWORK_RULESET_VERSION,
+  normalizeNetworkRulesetVersion,
+} from '../client/networkRuleset';
+import {
   type LobbySettings,
   WIND_MIN,
   WIND_MAX,
@@ -1612,6 +1616,7 @@ export class Lobby {
         ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
         ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
         ...(liveRoom.options.armsLevel !== undefined ? { armsLevel: liveRoom.options.armsLevel } : {}),
+        rulesetVersion: normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion),
       },
     };
     this.onReady(config);
@@ -2008,7 +2013,7 @@ export class Lobby {
         ready: false,
         loadout: normalizeTankLoadout(this.onlineLoadout),
       }];
-      this.waitingOptions = {
+      const fallbackOptions: RoomOptions = {
         maxPlayers: this.onlineMaxPlayers,
         maxWind: parseNumber(this.onlineMaxWind) !== undefined
           ? clamp(parseNumber(this.onlineMaxWind)!, WIND_MIN, WIND_MAX)
@@ -2019,6 +2024,11 @@ export class Lobby {
         walls: normalizeWallMode(this.onlineWalls),
         ...(rounds !== undefined ? { rounds } : {}),
         ...economy,
+      };
+      const authoritativeOptions = data.options ?? fallbackOptions;
+      this.waitingOptions = {
+        ...authoritativeOptions,
+        rulesetVersion: normalizeNetworkRulesetVersion(authoritativeOptions.rulesetVersion),
       };
       this.waitingThisPlayerReady = false;
       this.onlineSubView = 'waiting';
@@ -2174,7 +2184,17 @@ export class Lobby {
       writeSeatToken(data.playerId, data.token);
       writeSession({ roomId: this.waitingRoomId, roomCode: this.waitingRoomCode, playerId: this.waitingPlayerId });
       this.waitingSeed = data.seed ?? 0;
-      this.waitingOptions = data.options ?? { maxPlayers: 2, maxWind: 10, gravity: 0.15, walls: 'open' };
+      const authoritativeOptions = data.options ?? {
+        maxPlayers: 2,
+        maxWind: 10,
+        gravity: 0.15,
+        walls: 'open' as const,
+        rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
+      };
+      this.waitingOptions = {
+        ...authoritativeOptions,
+        rulesetVersion: normalizeNetworkRulesetVersion(authoritativeOptions.rulesetVersion),
+      };
       this.waitingPlayers = data.players ?? [];
       this.waitingThisPlayerReady = false;
       this.onlineSubView = 'waiting';
@@ -2573,6 +2593,7 @@ export class Lobby {
         ...(room.options.interestRate !== undefined ? { interestRate: room.options.interestRate } : {}),
         ...(room.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: room.options.suddenDeathTurn } : {}),
         ...(room.options.armsLevel !== undefined ? { armsLevel: room.options.armsLevel } : {}),
+        rulesetVersion: normalizeNetworkRulesetVersion(room.options.rulesetVersion),
       },
     };
     this.onReady(config);

@@ -13,6 +13,7 @@ import {
   DEFAULT_GRAVITY,
   DEFAULT_MAX_WIND,
   verifySeatToken,
+  resolveStoredRulesetVersion,
 } from '../_shared/mod.ts'
 
 /** Shape returned to the client (and broadcast-derived peers re-fetch the same). */
@@ -24,6 +25,7 @@ interface RematchInfo {
     maxPlayers: number
     maxWind: number
     gravity: number
+    rulesetVersion: 1 | 2
     walls: 'open' | 'reflective' | 'wrap'
   }
   players: Array<{
@@ -44,15 +46,19 @@ interface ExistingRematchRecord {
 
 /** Normalize the opaque stored room JSON into the rematch wire contract. */
 export function normalizeRematchOptions(
-  options: StoredOptions,
+  options: unknown,
   playerCount: number,
 ): RematchInfo['options'] {
+  const storedRuleset = resolveStoredRulesetVersion(options)
+  if (!storedRuleset.ok) throw new Error('Invalid stored ruleset')
+  const storedOptions = options as StoredOptions
   return {
-    maxPlayers: options.maxPlayers ?? playerCount,
-    maxWind: typeof options.maxWind === 'number' ? options.maxWind : DEFAULT_MAX_WIND,
-    gravity: typeof options.gravity === 'number' ? options.gravity : DEFAULT_GRAVITY,
-    walls: options.walls === 'reflective' || options.walls === 'wrap'
-      ? options.walls
+    maxPlayers: storedOptions.maxPlayers ?? playerCount,
+    maxWind: typeof storedOptions.maxWind === 'number' ? storedOptions.maxWind : DEFAULT_MAX_WIND,
+    gravity: typeof storedOptions.gravity === 'number' ? storedOptions.gravity : DEFAULT_GRAVITY,
+    rulesetVersion: storedRuleset.version,
+    walls: storedOptions.walls === 'reflective' || storedOptions.walls === 'wrap'
+      ? storedOptions.walls
       : 'open',
   }
 }
@@ -79,7 +85,7 @@ export function projectExistingRematchInfo(room: ExistingRematchRecord): Rematch
     roomId: room.id,
     code: room.code,
     seed: Number(room.seed),
-    options: normalizeRematchOptions((room.options ?? {}) as StoredOptions, players.length),
+    options: normalizeRematchOptions(room.options, players.length),
     players: players.map(p => ({
       id: p.id,
       name: p.name,
@@ -138,13 +144,17 @@ async function fetchRematchInfo(supabase: ServiceClient, id: string): Promise<Re
     .eq('id', id)
     .maybeSingle()
   if (!data) return null
-  return projectExistingRematchInfo({
-    id: data.id as string,
-    code: data.code as string,
-    seed: Number(data.seed),
-    options: (data.options ?? {}) as StoredOptions,
-    players: (data.players ?? []) as StoredPlayer[],
-  })
+  try {
+    return projectExistingRematchInfo({
+      id: data.id as string,
+      code: data.code as string,
+      seed: Number(data.seed),
+      options: data.options as StoredOptions | null,
+      players: (data.players ?? []) as StoredPlayer[],
+    })
+  } catch {
+    return null
+  }
 }
 
 // Guard Deno.serve so importing this module in tests does not start the HTTP
@@ -190,6 +200,11 @@ export async function handleRestartGame(
   }
   if (!(await verifySeat(supabase, roomId, playerId as string, token))) {
     return json({ error: 'Invalid or missing seat token' }, 403)
+  }
+
+  const storedRuleset = resolveStoredRulesetVersion(oldRoom.options)
+  if (!storedRuleset.ok) {
+    return json({ error: 'ruleset_unavailable' }, 409)
   }
 
   // --- Atomic claim ---------------------------------------------------------
@@ -242,7 +257,7 @@ export async function handleRestartGame(
   // tank mapping (players[i] -> 'p{i+1}') stays identical to the old game; mark
   // everyone ready so the room is immediately playable.
   const oldOptions = normalizeStoredRematchOptions(
-    (oldRoom.options ?? {}) as StoredOptions,
+    oldRoom.options as StoredOptions,
   )
   const newPlayers: StoredPlayer[] = buildRematchPlayers(players, nowMs)
 

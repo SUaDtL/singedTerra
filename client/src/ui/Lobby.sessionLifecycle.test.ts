@@ -290,6 +290,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
         interestRate: 0.15,
         suddenDeathTurn: 12,
         armsLevel: 3,
+        rulesetVersion: 1,
       },
     });
   });

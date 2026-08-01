@@ -14,6 +14,7 @@ export interface StoredOptions {
   maxPlayers: number;
   maxWind: number;
   gravity: number;
+  rulesetVersion?: 1 | 2;
   walls?: "open" | "reflective" | "wrap";
   visibility?: "public" | "private";
   rounds?: number;

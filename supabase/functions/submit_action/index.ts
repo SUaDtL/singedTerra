@@ -1,4 +1,16 @@
-import { withCors, json, getServiceClient, StoredPlayer, ServiceClient, nextCursor, ACCESSORY_TYPES, verifySeatToken } from '../_shared/mod.ts'
+import {
+  withCors,
+  json,
+  getServiceClient,
+  StoredPlayer,
+  ServiceClient,
+  nextCursor,
+  ACCESSORY_TYPES,
+  verifySeatToken,
+  resolveRequestedRulesetVersion,
+  resolveStoredRulesetVersion,
+  rulesetCompatibility,
+} from '../_shared/mod.ts'
 import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
 
 // ---------------------------------------------------------------------------
@@ -94,10 +106,11 @@ type NetworkAction =
 // the pre-seam handler. It is NOT a second positional handler param, because withCors
 // invokes the handler as (body, req) and would pass the Request there.
 export async function submitActionCore(body: unknown, injectedClient?: ServiceClient): Promise<Response> {
-  const { roomId, playerId, token, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
+  const { roomId, playerId, token, rulesetVersion, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
     roomId?: unknown
     playerId?: unknown
     token?: unknown
+    rulesetVersion?: unknown
     // The seat index active AFTER this turn-ending action, computed by the
     // submitting client's authoritative engine (which skips eliminated tanks AND
     // re-seats the opener at a round boundary). Used to advance the referee cursor;
@@ -125,12 +138,17 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
     return json({ error: shapeResult.error }, shapeResult.status)
   }
 
+  const requestedRuleset = resolveRequestedRulesetVersion(rulesetVersion)
+  if (!requestedRuleset.ok) {
+    return json({ error: 'Invalid input: rulesetVersion' }, 400)
+  }
+
   const supabase = injectedClient ?? getServiceClient()
 
   // Fetch room — must be 'active'
   const { data: room, error: fetchError } = await supabase
     .from('rooms')
-    .select('players, active_player_index, turn, status')
+    .select('players, active_player_index, turn, status, options')
     .eq('id', roomId as string)
     .eq('status', 'active')
     .maybeSingle()
@@ -157,6 +175,21 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
 
   // The seat this action is FOR (defaults to the submitter — a human acting for
   // themselves). When it differs, the submitter is proxying a CPU seat.
+  // Preserve the credential boundary above: only a verified seat learns whether
+  // its deterministic client contract matches this room. Reject before the turn
+  // gate or action RPC so an incompatible client can never extend the log.
+  const storedRuleset = resolveStoredRulesetVersion(room.options)
+  if (!storedRuleset.ok) {
+    return json({ error: 'ruleset_unavailable' }, 409)
+  }
+  const compatibility = rulesetCompatibility(requestedRuleset.version, storedRuleset.version)
+  if (!compatibility.ok) {
+    return json({
+      error: compatibility.error,
+      requiredRulesetVersion: compatibility.requiredRulesetVersion,
+    }, 409)
+  }
+
   const actingId = typeof actingPlayerId === 'string' && actingPlayerId.trim().length > 0
     ? actingPlayerId
     : playerId

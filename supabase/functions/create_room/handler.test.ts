@@ -91,3 +91,82 @@ Deno.test('handleCreateRoom: normalizes an invalid wall value to open before ins
     'open',
   )
 })
+
+Deno.test('handleCreateRoom: stores and echoes the authoritative Phase A ruleset', async () => {
+  const capture = captureRoomInsert()
+  const res = await createRoomHandler({
+    serviceClient: capture.serviceClient as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    rulesetVersion: 1,
+    options: { maxPlayers: 2 },
+  })
+
+  assertEquals(res.status, 200)
+  const storedOptions = capture.insertedRoom()?.options as Record<string, unknown>
+  assertEquals(storedOptions.rulesetVersion, 1)
+  const response = await res.json()
+  assertEquals(response.options, storedOptions)
+})
+
+Deno.test('handleCreateRoom: rejects prepared ruleset 2 before DB access in Phase A', async () => {
+  let dbTouched = false
+  const res = await createRoomHandler({
+    serviceClient: {
+      from: () => {
+        dbTouched = true
+        throw new Error('DB must not be touched')
+      },
+    } as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    rulesetVersion: 2,
+    options: { maxPlayers: 2 },
+  })
+
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), {
+    error: 'ruleset_not_available',
+    availableRulesetVersion: 1,
+  })
+  assertEquals(dbTouched, false)
+})
+
+Deno.test('handleCreateRoom: omitted ruleset stores and echoes legacy version 1', async () => {
+  const capture = captureRoomInsert()
+  const res = await createRoomHandler({
+    serviceClient: capture.serviceClient as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    options: { maxPlayers: 2 },
+  })
+
+  assertEquals(res.status, 200)
+  const response = await res.json()
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).rulesetVersion, 1)
+  assertEquals(response.options.rulesetVersion, 1)
+})
+
+Deno.test('handleCreateRoom: rejects an unsupported ruleset before DB access', async () => {
+  let dbTouched = false
+  const res = await createRoomHandler({
+    serviceClient: {
+      from: () => {
+        dbTouched = true
+        throw new Error('DB must not be touched')
+      },
+    } as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    rulesetVersion: 99,
+    options: { maxPlayers: 2 },
+  })
+
+  assertEquals(res.status, 400)
+  assertEquals(await res.json(), { error: 'Invalid input: rulesetVersion' })
+  assertEquals(dbTouched, false)
+})

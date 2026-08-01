@@ -71,6 +71,7 @@ describe('NetworkClient — human seq-conflict retry (#120)', () => {
     const firstInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const retryInit = fetchMock.mock.calls[1]?.[1] as RequestInit;
     expect(retryInit.body).toBe(firstInit.body);
+    expect(JSON.parse(firstInit.body as string).rulesetVersion).toBe(1);
 
     client.stop();
   });

@@ -1,5 +1,9 @@
 import { clamp } from '@shared/engine/math';
-import { normalizeWallMode, type WallMode } from '@shared/types/GameOptions';
+import {
+  normalizeWallMode,
+  type NetworkRulesetVersion,
+  type WallMode,
+} from '@shared/types/GameOptions';
 
 /**
  * Optional advanced engine settings chosen in the lobby. Each field is omitted
@@ -23,6 +27,8 @@ export interface LobbySettings {
   armsLevel?: number;
   /** Non-open sidewall rule; omitted means the legacy open boundary. */
   walls?: WallMode;
+  /** Server-authoritative deterministic network room contract. */
+  rulesetVersion?: NetworkRulesetVersion;
 }
 
 // Advanced-settings bounds + engine defaults (shown as placeholders so the user

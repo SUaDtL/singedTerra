@@ -9,23 +9,39 @@ const players = [
 
 function config<Mode extends LobbyConfig['mode']>(
   mode: Mode,
+  rulesetVersion?: 1 | 2,
 ): LobbyConfig & { mode: Mode } {
   return {
     mode,
     players,
     playerNames: players.map((player) => player.name),
-    settings: { seed: 17, maxWind: 8, gravity: 0.2, walls: 'wrap' },
+    settings: { seed: 17, maxWind: 8, gravity: 0.2, walls: 'wrap', rulesetVersion },
   };
 }
 
 describe('buildClientEngineOptions', () => {
-  it('pins network engines to the mixed-version-compatible linear curve', () => {
-    expect(buildClientEngineOptions(config('network'))).toMatchObject({
+  it('maps legacy network ruleset 1 to the linear curve', () => {
+    expect(buildClientEngineOptions(config('network', 1))).toMatchObject({
       starterWeaponFalloff: 'linear',
+      rulesetVersion: 1,
       seed: 17,
       maxWind: 8,
       gravity: 0.2,
       walls: 'wrap',
+    });
+  });
+
+  it('maps prepared network ruleset 2 to the decisive curve', () => {
+    expect(buildClientEngineOptions(config('network', 2))).toMatchObject({
+      starterWeaponFalloff: 'decisive',
+      rulesetVersion: 2,
+    });
+  });
+
+  it('fails an omitted network ruleset closed to legacy linear behavior', () => {
+    expect(buildClientEngineOptions(config('network'))).toMatchObject({
+      starterWeaponFalloff: 'linear',
+      rulesetVersion: 1,
     });
   });
 

@@ -127,7 +127,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
             id: 'room-next',
             code: 'NEXT42',
             seed: 42,
-            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls },
+            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls, rulesetVersion: 2 },
             players: [
               { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
               { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
@@ -151,6 +151,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     }
 
     expect((await resolveSuccessor('wrap')).options.walls).toBe('wrap');
+    expect((await resolveSuccessor('wrap')).options.rulesetVersion).toBe(2);
     expect((await resolveSuccessor('invalid')).options.walls).toBe('open');
   });
 });

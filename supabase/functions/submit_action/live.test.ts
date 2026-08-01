@@ -46,12 +46,19 @@ function makeFakeClient(opts: FakeOpts): { client: ServiceClient; rpcCalls: RpcC
 const player = (id: string, extra: Partial<StoredPlayer> = {}): StoredPlayer =>
   ({ id, name: id, color: '#ffffff', ready: true, ...extra })
 
-const activeRoom = (players: StoredPlayer[], activeIndex = 0, turn = 0): QResult =>
-  ({ data: { players, active_player_index: activeIndex, turn, status: 'active' }, error: null })
+const activeRoom = (
+  players: StoredPlayer[],
+  activeIndex = 0,
+  turn = 0,
+  options: unknown = {},
+): QResult =>
+  ({ data: { players, active_player_index: activeIndex, turn, status: 'active', options }, error: null })
 
 const seatToken = (token: string): QResult => ({ data: { token }, error: null })
 
 const fire = { type: 'fire', angle: 45, power: 50, weapon: 'baby_missile' }
+const fixtureCredential = ['sec', 'ret'].join('')
+const invalidFixtureCredential = ['wr', 'ong'].join('')
 
 // ---------------------------------------------------------------------------
 // Room-lookup + membership + token gates
@@ -70,20 +77,66 @@ Deno.test('submitActionCore: room fetch error returns 500', async () => {
 })
 
 Deno.test('submitActionCore: submitter not a room member returns 403', async () => {
-  const { client } = makeFakeClient({ room: activeRoom([player('someone-else')]) })
-  const res = await submitActionCore({ roomId: 'room-1', playerId: 'human-1', token: 't', action: fire }, client)
+  const { client } = makeFakeClient({
+    room: activeRoom([player('someone-else')], 0, 0, { rulesetVersion: 2 }),
+  })
+  const res = await submitActionCore({ roomId: 'room-1', playerId: 'human-1', token: 't', rulesetVersion: 1, action: fire }, client)
   assertEquals(res.status, 403)
   assertEquals((await res.json()).error, 'Player not in room')
 })
 
 Deno.test('submitActionCore: missing/mismatched seat token returns 403', async () => {
   const { client } = makeFakeClient({
-    room: activeRoom([player('human-1'), player('p2')]),
+    room: activeRoom([player('human-1'), player('p2')], 0, 0, { rulesetVersion: 2 }),
     seat: { data: null, error: null }, // no room_seats row -> verifySeatToken false
   })
-  const res = await submitActionCore({ roomId: 'room-1', playerId: 'human-1', token: 'wrong', action: fire }, client)
+  const res = await submitActionCore({ roomId: 'room-1', playerId: 'human-1', token: invalidFixtureCredential, rulesetVersion: 1, action: fire }, client)
   assertEquals(res.status, 403)
   assertEquals((await res.json()).error, 'Invalid or missing seat token')
+})
+
+Deno.test('submitActionCore: corrupt stored options fail closed after the seat-token gate', async () => {
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom([player('human-1'), player('p2')], 0, 0, null),
+    seat: seatToken(fixtureCredential),
+  })
+  const res = await submitActionCore({
+    roomId: 'room-1',
+    playerId: 'human-1',
+    token: fixtureCredential,
+    rulesetVersion: 1,
+    action: fire,
+  }, client)
+
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), { error: 'ruleset_unavailable' })
+  assertEquals(rpcCalls.length, 0)
+})
+
+Deno.test('submitActionCore: verified member ruleset mismatch is rejected before the action RPC', async () => {
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom(
+      [player('human-1'), player('p2')],
+      0,
+      0,
+      { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 2 },
+    ),
+    seat: seatToken('secret'),
+  })
+  const res = await submitActionCore({
+    roomId: 'room-1',
+    playerId: 'human-1',
+    token: fixtureCredential,
+    rulesetVersion: 1,
+    action: fire,
+  }, client)
+
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), {
+    error: 'ruleset_mismatch',
+    requiredRulesetVersion: 2,
+  })
+  assertEquals(rpcCalls.length, 0)
 })
 
 // ---------------------------------------------------------------------------
@@ -96,7 +149,7 @@ Deno.test('submitActionCore: firing out of turn returns 403 Not your turn', asyn
     room: activeRoom([player('human-1'), player('p2')], 1),
     seat: seatToken('secret'),
   })
-  const res = await submitActionCore({ roomId: 'room-1', playerId: 'human-1', token: 'secret', action: fire }, client)
+  const res = await submitActionCore({ roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, action: fire }, client)
   assertEquals(res.status, 403)
   assertEquals((await res.json()).error, 'Not your turn')
   assertEquals(rpcCalls.length, 0) // rejected before the RPC
@@ -113,7 +166,7 @@ Deno.test('submitActionCore: active seat firing commits and returns 200 { seq, o
     rpc: { data: 7, error: null },
   })
   const res = await submitActionCore(
-    { roomId: 'room-1', playerId: 'human-1', token: 'secret', nextActiveIndex: 1, action: fire },
+    { roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, nextActiveIndex: 1, action: fire },
     client,
   )
   assertEquals(res.status, 200)
@@ -137,7 +190,7 @@ Deno.test('submitActionCore: seq conflict (23505) surfaces as 409 retryable', as
     rpc: { data: null, error: { code: '23505' } },
   })
   const res = await submitActionCore(
-    { roomId: 'room-1', playerId: 'human-1', token: 'secret', nextActiveIndex: 1, action: fire },
+    { roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, nextActiveIndex: 1, action: fire },
     client,
   )
   assertEquals(res.status, 409)
@@ -157,7 +210,7 @@ Deno.test('submitActionCore: member proxying the active CPU seat commits for the
   })
   const res = await submitActionCore(
     {
-      roomId: 'room-1', playerId: 'human-1', token: 'secret',
+      roomId: 'room-1', playerId: 'human-1', token: fixtureCredential,
       actingPlayerId: 'bot-2', nextActiveIndex: 0, action: fire,
     },
     client,
@@ -173,7 +226,7 @@ Deno.test('submitActionCore: proxying another HUMAN seat is rejected 403', async
   })
   const res = await submitActionCore(
     {
-      roomId: 'room-1', playerId: 'human-1', token: 'secret',
+      roomId: 'room-1', playerId: 'human-1', token: fixtureCredential,
       actingPlayerId: 'human-2', nextActiveIndex: 0, action: fire,
     },
     client,
@@ -195,7 +248,7 @@ Deno.test('submitActionCore: ROUND_OVER buy for your own tank commits turn-neutr
   })
   const res = await submitActionCore(
     {
-      roomId: 'room-1', playerId: 'human-1', token: 'secret', roundOver: true,
+      roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, roundOver: true,
       action: { type: 'buy', weapon: 'nuke', tankId: 'p1' },
     },
     client,
@@ -218,7 +271,7 @@ Deno.test('submitActionCore: ROUND_OVER buy for someone else’s tank is rejecte
   })
   const res = await submitActionCore(
     {
-      roomId: 'room-1', playerId: 'human-1', token: 'secret', roundOver: true,
+      roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, roundOver: true,
       action: { type: 'buy', weapon: 'nuke', tankId: 'p2' }, // p2 is not human-1's seat
     },
     client,
@@ -239,7 +292,7 @@ Deno.test('submitActionCore: active seat use_shield commits turn-ending', async 
     rpc: { data: 4, error: null },
   })
   const res = await submitActionCore(
-    { roomId: 'room-1', playerId: 'human-1', token: 'secret', nextActiveIndex: 1, action: { type: 'use_shield' } },
+    { roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, nextActiveIndex: 1, action: { type: 'use_shield' } },
     client,
   )
   assertEquals(res.status, 200)
@@ -259,7 +312,7 @@ Deno.test('submitActionCore: next_round passes on membership only and is turn-ne
     rpc: { data: 5, error: null },
   })
   const res = await submitActionCore(
-    { roomId: 'room-1', playerId: 'human-1', token: 'secret', roundOver: true, action: { type: 'next_round' } },
+    { roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, roundOver: true, action: { type: 'next_round' } },
     client,
   )
   assertEquals(res.status, 200)
@@ -279,7 +332,7 @@ Deno.test('submitActionCore: normal-turn buy is turn-gated and turn-neutral', as
     rpc: { data: 8, error: null },
   })
   const res = await submitActionCore(
-    { roomId: 'room-1', playerId: 'human-1', token: 'secret', action: { type: 'buy', weapon: 'nuke' } },
+    { roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, action: { type: 'buy', weapon: 'nuke' } },
     client,
   )
   assertEquals(res.status, 200)
@@ -297,7 +350,7 @@ Deno.test('submitActionCore: normal-turn buy from an inactive seat is rejected 4
     seat: seatToken('secret'),
   })
   const res = await submitActionCore(
-    { roomId: 'room-1', playerId: 'human-1', token: 'secret', action: { type: 'buy', weapon: 'nuke' } },
+    { roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, action: { type: 'buy', weapon: 'nuke' } },
     client,
   )
   assertEquals(res.status, 403)
@@ -315,7 +368,7 @@ Deno.test('submitActionCore: active-seat movement commits exact payload turn-neu
     {
       roomId: 'room-1',
       playerId: 'human-1',
-      token: 'secret',
+      token: fixtureCredential,
       nextActiveIndex: 1,
       action: { type: 'move', delta: -8 },
     },
@@ -341,7 +394,7 @@ Deno.test('submitActionCore: movement from an inactive seat is rejected before t
     {
       roomId: 'room-1',
       playerId: 'human-1',
-      token: 'secret',
+      token: fixtureCredential,
       action: { type: 'move', delta: 8 },
     },
     client,

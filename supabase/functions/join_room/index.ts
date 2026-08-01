@@ -7,6 +7,9 @@ import {
   mintSeatToken,
   DEFAULT_TANK_LOADOUT,
   parseTankLoadout,
+  resolveRequestedRulesetVersion,
+  resolveStoredRulesetVersion,
+  rulesetCompatibility,
   type StoredOptions,
   type StoredPlayer,
 } from '../_shared/mod.ts'
@@ -43,11 +46,12 @@ async function handleJoinRoomWithDependencies(
   body: unknown,
   dependencies: JoinRoomDependencies,
 ): Promise<Response> {
-  const { code, playerName, color, loadout } = body as {
+  const { code, playerName, color, loadout, rulesetVersion } = body as {
     code?: unknown
     playerName?: unknown
     color?: unknown
     loadout?: unknown
+    rulesetVersion?: unknown
   }
 
   // Validate code
@@ -74,6 +78,11 @@ async function handleJoinRoomWithDependencies(
     return json({ error: 'Invalid input: loadout' }, 400)
   }
 
+  const requestedRuleset = resolveRequestedRulesetVersion(rulesetVersion)
+  if (!requestedRuleset.ok) {
+    return json({ error: 'Invalid input: rulesetVersion' }, 400)
+  }
+
   const normalizedCode = code.trim().toUpperCase()
 
   const supabase = dependencies.serviceClient ?? getServiceClient()
@@ -97,6 +106,19 @@ async function handleJoinRoomWithDependencies(
 
   const roomOptions = room.options as StoredOptions
   const storedPlayers = (room.players ?? []) as StoredPlayer[]
+
+  // Reject compatibility before lazy-GC or any roster/seat mutation.
+  const storedRuleset = resolveStoredRulesetVersion(roomOptions)
+  if (!storedRuleset.ok) {
+    return json({ error: 'ruleset_unavailable' }, 409)
+  }
+  const compatibility = rulesetCompatibility(requestedRuleset.version, storedRuleset.version)
+  if (!compatibility.ok) {
+    return json({
+      error: compatibility.error,
+      requiredRulesetVersion: compatibility.requiredRulesetVersion,
+    }, 409)
+  }
 
   const nowMs = Date.now()
 

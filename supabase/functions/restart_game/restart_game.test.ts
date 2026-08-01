@@ -4,7 +4,7 @@
 // `ai` CPU-difficulty flag: a rematch of a room containing CPU seats produced a
 // successor whose bot seats looked human, so no client drove them and the game
 // froze on bot turns. buildRematchPlayers must preserve `ai`.
-import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import { assertEquals, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import {
   buildRematchPlayers,
   handleRestartGame,
@@ -73,12 +73,14 @@ Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid valu
       maxWind: 7,
       gravity: 0.2,
       walls: 'wrap' as never,
+      rulesetVersion: 2,
     }, 2),
     {
       maxPlayers: 2,
       maxWind: 7,
       gravity: 0.2,
       walls: 'wrap' as never,
+      rulesetVersion: 2,
     },
   )
   assertEquals(
@@ -89,6 +91,14 @@ Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid valu
       walls: 'invalid' as never,
     }, 2).walls,
     'open',
+  )
+})
+
+Deno.test('normalizeRematchOptions fails closed for corrupt stored options', () => {
+  assertThrows(
+    () => normalizeRematchOptions(null as never, 2),
+    Error,
+    'Invalid stored ruleset',
   )
 })
 
@@ -194,6 +204,45 @@ Deno.test('handleRestartGame persists normalized walls through the successor ins
 
   assertEquals(await insertedWalls('wrap'), 'wrap')
   assertEquals(await insertedWalls('invalid'), 'open')
+})
+
+Deno.test('handleRestartGame rejects corrupt stored options after auth and before claiming a successor', async () => {
+  const roomId = '00000000-0000-4000-8000-000000000001'
+  let mutationCalls = 0
+  const rooms = {
+    select: () => ({
+      eq: () => ({
+        maybeSingle: () => Promise.resolve({
+          data: {
+            id: roomId,
+            options: null,
+            players: [{ id: 'uid-a', name: 'Ana', color: '#f00', ready: true }],
+          },
+          error: null,
+        }),
+      }),
+    }),
+    update: () => {
+      mutationCalls += 1
+      throw new Error('must not claim a successor')
+    },
+    insert: () => {
+      mutationCalls += 1
+      throw new Error('must not insert a successor')
+    },
+  }
+  const response = await handleRestartGame(
+    { roomId, playerId: 'uid-a' },
+    undefined,
+    {
+      supabase: { from: () => rooms } as never,
+      verifySeat: () => Promise.resolve(true),
+    },
+  )
+
+  assertEquals(response.status, 409)
+  assertEquals(await response.json(), { error: 'ruleset_unavailable' })
+  assertEquals(mutationCalls, 0)
 })
 
 Deno.test('lost-claim response projector preserves wrap walls', () => {

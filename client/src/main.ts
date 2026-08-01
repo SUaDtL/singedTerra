@@ -4,11 +4,10 @@ import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { GameState } from '@shared/types/GameState';
-import { normalizeWallMode } from '@shared/types/GameOptions';
-import { normalizeTankLoadout } from '@shared/types/TankLoadout';
-import type { GameClient, RematchInfo } from './client/GameClient';
+import type { GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
+import { rematchToConfig } from './client/rematchConfig';
 import { InputHandler } from './input/InputHandler';
 import { shouldAcceptLocalInput } from './input/inputGate';
 import { Renderer } from './renderer/Renderer';
@@ -685,34 +684,6 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
   // defaults hold for untouched fields (e.g. omitted seed => DEFAULT_SEED).
   const engine = new GameEngine(buildClientEngineOptions({ ...config, mode: 'hotseat' }));
   return new HotSeatClient(engine);
-}
-
-/** Map a rematch successor-room payload into a network LobbyConfig. The local
- *  player's id is preserved across the rematch (restart_game copies the roster
- *  verbatim), so this client keeps owning the same engine tank. */
-function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyConfig {
-  return {
-    mode: 'network',
-    players: info.players.map((p) => ({
-      id: p.id,
-      name: p.name,
-      color: p.color,
-      loadout: normalizeTankLoadout(p.loadout),
-    })),
-    playerNames: info.players.map((p) => p.name),
-    roomCode: info.code,
-    roomId: info.roomId,
-    playerId: myPlayerId,
-    settings: {
-      seed: info.seed,
-      maxWind: info.options.maxWind,
-      gravity: info.options.gravity,
-      ...(normalizeWallMode(info.options.walls) !== 'open'
-        ? { walls: normalizeWallMode(info.options.walls) }
-        : {}),
-      ...(info.options.rounds !== undefined ? { rounds: info.options.rounds } : {}),
-    },
-  };
 }
 
 function requireElement(id: string): HTMLElement {

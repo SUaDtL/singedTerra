@@ -56,6 +56,15 @@ room options + seed + ordered room_actions
 
 `GameState` is not streamed between clients.
 
+Room options also carry an integer `rulesetVersion`. A missing field in a valid
+options object means legacy version `1`; malformed stored options fail closed.
+During the Phase A compatibility rollout, `create_room` stores and echoes only
+version `1` and rejects prepared version `2` before touching the database;
+`join_room` rejects a client whose requested version differs before changing
+the roster; and `submit_action` rejects a verified seat's mismatch before the
+action-log RPC. This makes deterministic balance changes deployable without
+letting old and new browsers interpret one committed action differently.
+
 ## Dependency direction
 
 ```text

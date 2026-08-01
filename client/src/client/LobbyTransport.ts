@@ -17,7 +17,11 @@
  * the pure helpers/constants already extracted into ../ui/lobbyValidation.
  */
 import type { AiDifficulty } from '@shared/types/GameState';
-import { normalizeWallMode, type WallMode } from '@shared/types/GameOptions';
+import {
+  normalizeWallMode,
+  type NetworkRulesetVersion,
+  type WallMode,
+} from '@shared/types/GameOptions';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
@@ -30,6 +34,7 @@ import {
   parseOnlineRounds,
   parseOnlineEconomy,
 } from '../ui/lobbyValidation';
+import { CURRENT_NETWORK_RULESET_VERSION } from './networkRuleset';
 
 /** Room visibility for created online rooms. */
 export type RoomVisibility = 'public' | 'private';
@@ -53,6 +58,7 @@ export type RoomOptions = {
   maxPlayers: number;
   maxWind: number;
   gravity: number;
+  rulesetVersion?: NetworkRulesetVersion;
   walls?: WallMode;
   rounds?: number;
   interestRate?: number;
@@ -82,6 +88,7 @@ export interface CreateRoomResponse {
   code?: string;
   playerId?: string;
   token?: string;
+  options?: RoomOptions;
   players?: NetworkPlayer[];
   error?: string;
 }
@@ -186,6 +193,7 @@ export class LobbyTransport {
       playerName: params.playerName,
       color: params.color,
       loadout: params.loadout,
+      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
       ...(params.bots.length > 0 ? { bots: params.bots } : {}),
       options: {
         maxPlayers: params.maxPlayers,
@@ -207,6 +215,7 @@ export class LobbyTransport {
       playerName: params.playerName,
       color: params.color,
       loadout: params.loadout,
+      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
     });
   }
 

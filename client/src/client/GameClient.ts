@@ -1,6 +1,6 @@
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
-import type { WallMode } from '@shared/types/GameOptions';
+import type { NetworkRulesetVersion, WallMode } from '@shared/types/GameOptions';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 
 /**
@@ -12,7 +12,14 @@ export interface RematchInfo {
   roomId: string;
   code: string;
   seed: number;
-  options: { maxPlayers: number; maxWind: number; gravity: number; walls?: WallMode; rounds?: number };
+  options: {
+    maxPlayers: number;
+    maxWind: number;
+    gravity: number;
+    rulesetVersion?: NetworkRulesetVersion;
+    walls?: WallMode;
+    rounds?: number;
+  };
   players: Array<{
     id: string;
     name: string;

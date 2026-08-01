@@ -7,6 +7,9 @@ export type WallMode = 'open' | 'reflective' | 'wrap';
 /** Starter-weapon damage curve selected by an execution context. */
 export type StarterWeaponFalloff = 'linear' | 'decisive';
 
+/** Deterministic network-room contract understood by the current client. */
+export type NetworkRulesetVersion = 1 | 2;
+
 /** Fail closed to the legacy open boundary at every untyped room seam. */
 export function normalizeWallMode(value: unknown): WallMode {
   return value === 'reflective' || value === 'wrap' ? value : 'open';
@@ -43,6 +46,12 @@ export interface GameOptions {
   gravity?: number;
   /** Horizontal boundary behavior; defaults to open (legacy OOB miss). */
   walls?: WallMode;
+  /**
+   * Edge-enforced deterministic contract for a network room. Missing means the
+   * deployed legacy ruleset 1. The engine itself only consumes the derived
+   * feature switches; clients carry this value for referee requests.
+   */
+  rulesetVersion?: NetworkRulesetVersion;
   /**
    * Interior blast curve for Baby Missile and Missile. Defaults to `linear` so
    * mixed deployed client versions remain deterministic in networked rooms.

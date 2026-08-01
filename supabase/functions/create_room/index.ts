@@ -9,6 +9,8 @@ import {
   DEFAULT_MAX_WIND,
   DEFAULT_TANK_LOADOUT,
   parseTankLoadout,
+  resolveCreatableRulesetVersion,
+  LEGACY_NETWORK_RULESET_VERSION,
   type TankLoadout,
 } from '../_shared/mod.ts'
 import { coerceEconomyOptions, coerceGravity, coerceMaxWind, coerceWallMode } from './validate.ts'
@@ -21,10 +23,11 @@ async function handleCreateRoomWithDependencies(
   body: unknown,
   dependencies: CreateRoomDependencies,
 ): Promise<Response> {
-  const { playerName, color, loadout, options, bots } = body as {
+  const { playerName, color, loadout, rulesetVersion, options, bots } = body as {
     playerName?: unknown
     color?: unknown
     loadout?: unknown
+    rulesetVersion?: unknown
     options?: {
       maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown; walls?: unknown
       // SE-parity economy (optional, additive). Coerced by coerceEconomyOptions.
@@ -74,6 +77,17 @@ async function handleCreateRoomWithDependencies(
       return json({ error: 'Invalid input: options.visibility' }, 400)
     }
     visibility = options.visibility
+  }
+
+  const requestedRuleset = resolveCreatableRulesetVersion(rulesetVersion)
+  if (!requestedRuleset.ok) {
+    if (requestedRuleset.error === 'not_creatable') {
+      return json({
+        error: 'ruleset_not_available',
+        availableRulesetVersion: LEGACY_NETWORK_RULESET_VERSION,
+      }, 409)
+    }
+    return json({ error: 'Invalid input: rulesetVersion' }, 400)
   }
 
   const supabase = dependencies.serviceClient ?? getServiceClient()
@@ -180,6 +194,7 @@ async function handleCreateRoomWithDependencies(
     maxPlayers,
     maxWind: coerceMaxWind(options.maxWind, DEFAULT_MAX_WIND),
     gravity: coerceGravity(options.gravity, DEFAULT_GRAVITY),
+    rulesetVersion: requestedRuleset.version,
     walls: coerceWallMode(options.walls),
     visibility,
     ...(rounds !== undefined ? { rounds } : {}),
@@ -223,7 +238,7 @@ async function handleCreateRoomWithDependencies(
 
   // Return the full players array so the client has the generated CPU seat ids
   // (and renders them in the waiting room) without waiting for a Realtime update.
-  return json({ roomId: room.id, code, playerId, token, players }, 200)
+  return json({ roomId: room.id, code, playerId, token, options: storedOptions, players }, 200)
 }
 
 export function createRoomHandler(

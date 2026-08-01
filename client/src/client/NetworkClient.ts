@@ -21,6 +21,7 @@ import { postOnceWithRetry } from './retry';
 import { fastForwardTicks } from './fastForward';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 import { clearSession } from '../lib/sessionDescriptor';
+import { normalizeNetworkRulesetVersion } from './networkRuleset';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -787,6 +788,7 @@ export class NetworkClient implements GameClient {
       maxPlayers?: number;
       maxWind?: number;
       gravity?: number;
+      rulesetVersion?: unknown;
       walls?: WallMode;
       rounds?: number;
     };
@@ -804,6 +806,7 @@ export class NetworkClient implements GameClient {
         maxPlayers: opts.maxPlayers ?? players.length,
         maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : MAX_WIND,
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
+        rulesetVersion: normalizeNetworkRulesetVersion(opts.rulesetVersion),
         walls:      normalizeWallMode(opts.walls),
         // Carry best-of-N across a rematch so the successor match keeps the format.
         ...(typeof opts.rounds === 'number' ? { rounds: opts.rounds } : {}),
@@ -857,6 +860,7 @@ export class NetworkClient implements GameClient {
         roomId:   this.roomId,
         playerId: this.playerId,
         token:    this.token,
+        rulesetVersion: normalizeNetworkRulesetVersion(this.options.rulesetVersion),
         ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
         // roundOver: this action ends a round (the killing blow) or operates within the
         // between-rounds shop (buy / next_round). Tells the referee to skip the turn gate

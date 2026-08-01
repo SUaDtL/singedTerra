@@ -77,3 +77,105 @@ Deno.test('handleJoinRoom: appends the exact bounded joiner loadout', async () =
   assertEquals(res.status, 200)
   assertEquals(updatedPlayers[1].loadout, loadout)
 })
+
+Deno.test('handleJoinRoom: rejects a ruleset mismatch before mutating the room or seat table', async () => {
+  const host = {
+    id: 'host',
+    name: 'Ana',
+    color: '#e84d4d',
+    ready: false,
+    lastSeen: Date.now(),
+  }
+  let mutations = 0
+  const rooms = {
+    select: () => rooms,
+    eq: () => rooms,
+    maybeSingle: () => Promise.resolve({
+      data: {
+        id: 'room-2',
+        seed: 42,
+        options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 2 },
+        players: [host],
+      },
+      error: null,
+    }),
+    update: () => {
+      mutations += 1
+      return rooms
+    },
+    delete: () => {
+      mutations += 1
+      return rooms
+    },
+  }
+  const roomSeats = {
+    insert: () => {
+      mutations += 1
+      return Promise.resolve({ error: null })
+    },
+  }
+
+  const res = await joinRoomHandler({
+    serviceClient: {
+      from: (table: string) => table === 'rooms' ? rooms : roomSeats,
+    } as never,
+  })({
+    code: 'ABCD',
+    playerName: 'Bo',
+    color: '#4d8ce8',
+    rulesetVersion: 1,
+  })
+
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), {
+    error: 'ruleset_mismatch',
+    requiredRulesetVersion: 2,
+  })
+  assertEquals(mutations, 0)
+})
+
+Deno.test('handleJoinRoom: rejects corrupt stored options before mutating the room or seat table', async () => {
+  let mutations = 0
+  const rooms = {
+    select: () => rooms,
+    eq: () => rooms,
+    maybeSingle: () => Promise.resolve({
+      data: {
+        id: 'room-corrupt',
+        seed: 42,
+        options: null,
+        players: [{ id: 'host', name: 'Ana', color: '#e84d4d', ready: false, lastSeen: Date.now() }],
+      },
+      error: null,
+    }),
+    update: () => {
+      mutations += 1
+      return rooms
+    },
+    delete: () => {
+      mutations += 1
+      return rooms
+    },
+  }
+  const roomSeats = {
+    insert: () => {
+      mutations += 1
+      return Promise.resolve({ error: null })
+    },
+  }
+
+  const res = await joinRoomHandler({
+    serviceClient: {
+      from: (table: string) => table === 'rooms' ? rooms : roomSeats,
+    } as never,
+  })({
+    code: 'ABCD',
+    playerName: 'Bo',
+    color: '#4d8ce8',
+    rulesetVersion: 1,
+  })
+
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), { error: 'ruleset_unavailable' })
+  assertEquals(mutations, 0)
+})
