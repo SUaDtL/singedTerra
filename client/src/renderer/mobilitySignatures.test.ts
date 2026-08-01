@@ -48,6 +48,10 @@ describe('observeMobilitySignature', () => {
     expect(observeMobilitySignature(basePose, { ...basePose, x: 109 })).toBeNull();
   });
 
+  it('rejects an implausible surface step paired with a legal horizontal delta', () => {
+    expect(observeMobilitySignature(basePose, { ...basePose, x: 102, y: 229 })).toBeNull();
+  });
+
   it('silently rebases on a round change', () => {
     expect(observeMobilitySignature(basePose, { ...basePose, round: 2, x: 104 })).toBeNull();
   });

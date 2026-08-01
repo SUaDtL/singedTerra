@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
 
 const KITS = [
-  { id: 'foundry', label: 'Foundry', accent: '#d6a15f', expectedOps: ['fillRect', 'strokeRect'] },
-  { id: 'ranger', label: 'Ranger', accent: '#c68cff', expectedOps: ['fillRect', 'strokeRect'] },
-  { id: 'bulwark', label: 'Bulwark', accent: '#6ee7ff', expectedOps: ['arc', 'lineTo'] },
-  { id: 'jackal', label: 'Jackal', accent: '#ffc857', expectedOps: ['arc', 'lineTo'] },
+  { id: 'foundry', label: 'Foundry', accent: '#d6a15f', expectedOps: ['strokeRect'] },
+  { id: 'ranger', label: 'Ranger', accent: '#c68cff', expectedOps: ['strokeRect'] },
+  { id: 'bulwark', label: 'Bulwark', accent: '#6ee7ff', expectedOps: ['arc', 'lineTo', 'stroke'] },
+  { id: 'jackal', label: 'Jackal', accent: '#ffc857', expectedOps: ['arc', 'lineTo', 'stroke'] },
 ] as const;
 
 type Kit = (typeof KITS)[number];
@@ -71,12 +71,12 @@ async function installCanvasProbe(page: Page): Promise<void> {
       ...args: number[]
     ): unknown {
       if (this.canvas.id === 'game') {
-        const style = String(this.strokeStyle).toLowerCase();
+        const style = String(kind === 'fillRect' ? this.fillStyle : this.strokeStyle).toLowerCase();
         if (accentSet.has(style)) probe.accentOps.push({ kind, style });
       }
       return Reflect.apply(original, this, args);
     };
-    for (const method of ['fillRect', 'strokeRect', 'arc', 'lineTo'] as const) {
+    for (const method of ['fillRect', 'strokeRect', 'arc', 'lineTo', 'stroke'] as const) {
       const original = context[method] as unknown as (...args: number[]) => unknown;
       (context[method] as unknown) = observe(method, original);
     }
