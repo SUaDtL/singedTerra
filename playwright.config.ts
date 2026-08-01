@@ -23,7 +23,8 @@ const PORT = 4173;
 const requestedBase = process.env['VITE_BASE'] ?? '/';
 const trimmedBase = requestedBase.replace(/^\/+|\/+$/g, '');
 const localBasePath = trimmedBase === '' ? '/' : `/${trimmedBase}/`;
-const localBaseURL = `http://localhost:${PORT}${localBasePath}`;
+const localOrigin = `http://localhost:${PORT}`;
+const localBaseURL = `${localOrigin}${localBasePath}`;
 
 export default defineConfig({
   testDir: 'e2e',
@@ -48,6 +49,10 @@ export default defineConfig({
     : {
         command: `npm run build && npm -w @singedterra/client run preview -- --port ${PORT} --strictPort`,
         url: localBaseURL,
+        env: {
+          VITE_SUPABASE_URL: localOrigin,
+          VITE_SUPABASE_ANON_KEY: 'e2e-public-anon-key',
+        },
         reuseExistingServer: !process.env['CI'],
         timeout: 180_000,
       },

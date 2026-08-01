@@ -2756,3 +2756,26 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### PR #245 hosted gate and merge override
 
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after reviewed behavior head `85b2273`, this governance receipt's exact-diff review, and every hosted check is green on the final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Network View Browser Oracle sprint
+
+- **[high] Complete the oracle before extracting network views.** PR #245 protects the offline views; Browse and Waiting remain the two unguarded render branches named by issue #129. The next safe cell covers them before moving code. Confidence high.
+- **[high] Intercept the public transport boundary.** Playwright routing plus same-origin dummy coordinates preserves the real response-to-state-to-DOM path while preventing any real backend call. A runtime state hook would be less causal and would ship unnecessary fixture surface. Confidence high.
+- **[high] Render fixtures without mutating room state.** The tests may open Browse and create a fixture Waiting room, but they do not click Join, Ready Up, Leave, Copy Invite, or launch a game. This isolates geometry/readability from network mutation semantics. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### Browser-oracle characterization
+
+- **TDD RED proved the missing transport coordinates.** The first causal fixtures reached Browse and Waiting but emitted `/undefined/functions/v1/list_rooms` and `/undefined/functions/v1/create_room`; the broad route matcher had initially masked that malformed base. The tightened oracle records the request and requires the page origin plus exact `/functions/v1/<name>` path. Confidence high.
+- **GREEN uses local-only origin coordinates.** The non-live Playwright server now builds with `VITE_SUPABASE_URL=http://localhost:4173` and an explicit dummy anon key. Both network views render through public controls and intercepted response contracts; 15/15 focused cases pass across desktop-fine, pixel-touch, and small-window at both `/` and `/singedTerra/` bases. Confidence high.
+- **Synthetic credential finding corrected without weakening the scanner.** The state-free scan correctly flagged a quoted `token` fixture assignment. The non-secret value is now constructed at runtime, the Waiting matrix remains 3/3 green, and the unchanged scanner returns no findings. Confidence high.
+
+### Fresh verification
+
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The two new network-view tests contribute six passing cases across the configured viewport projects. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 110 files / 792 tests; all 200 Edge tests passed; client coverage remains 89.77% statements, 80.36% branches, 81.84% functions, and 92.11% lines; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Scope and hygiene green.** Production client code, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the final state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge-blocking finding. It independently verified live-smoke isolation, exact same-origin intercepted paths, public-control causality, all-project execution, absence of dependency/secret/runtime/backend change, governance alignment, and that issue #129 remains open. Confidence high.
