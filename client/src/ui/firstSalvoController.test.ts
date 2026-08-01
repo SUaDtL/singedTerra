@@ -160,6 +160,18 @@ describe('FirstSalvoController', () => {
     expect(controller.stepFor(eligibleTurn)).toBeNull();
   });
 
+  it('keeps cold and replacement controllers hidden for a persisted skip', () => {
+    const storage = memoryStorage({ [FIRST_SALVO_PREFERENCE_KEY]: 'v1:skipped' });
+    const cold = new FirstSalvoController({ storage });
+
+    expect(cold.stepFor(eligibleTurn)).toBeNull();
+    cold.startNewGame();
+    expect(cold.stepFor(eligibleTurn)).toBeNull();
+
+    const replacement = new FirstSalvoController({ storage });
+    expect(replacement.stepFor(eligibleTurn)).toBeNull();
+  });
+
   it('retains completion across a same-tab replacement game when storage throws', () => {
     const controller = new FirstSalvoController({ storage: throwingStorage });
 

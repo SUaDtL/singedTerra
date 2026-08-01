@@ -113,6 +113,10 @@ describe('First Salvo coach contract', () => {
     expect(() => persistFirstSalvoPreference(unavailable, 'completed')).not.toThrow();
   });
 
+  it('loads the versioned skipped preference', () => {
+    expect(loadFirstSalvoPreference(storageWith('v1:skipped'))).toBe('skipped');
+  });
+
   it('derives the exact preference to persist from a skip or completed action result', () => {
     const coach = createFirstSalvoCoach(null);
 
