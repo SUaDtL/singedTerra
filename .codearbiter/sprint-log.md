@@ -2752,3 +2752,7 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversarial clearance
 
 - **Exact-package verdict CLEAN / READY.** The reviewer independently verified causal public navigation, the four geometry/reachability invariants across all viewports, and `page.goto('./')` under an explicit `/singedTerra/` Vite base. It found no Critical, High, Medium, or merge blocker. Browse, Waiting, and expanded configurations remain an explicit non-blocking Phase 2 limitation; this sprint advances rather than closes issue #129. Confidence high.
+
+### PR #245 hosted gate and merge override
+
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after reviewed behavior head `85b2273`, this governance receipt's exact-diff review, and every hosted check is green on the final head. Direct default-branch writes and force-push remain prohibited. Confidence high.

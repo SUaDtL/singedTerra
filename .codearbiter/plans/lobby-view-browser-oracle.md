@@ -59,6 +59,6 @@
 
 - [x] Run the full Playwright rendering suite, `npm run check`, client and Edge tests, client coverage, `npm run build`, dependency audit, secret scan, and diff hygiene.
 - [x] Give one adversarial reviewer the exact spec, plan, diff, and evidence; correct every Critical, High, Medium, and merge blocker.
-- [ ] Commit through `$ca-commit`, push, and open a ready PR through `$ca-pr` referencing issue #129 without closing it.
+- [x] Commit through `$ca-commit`, push, and open a ready PR through `$ca-pr` referencing issue #129 without closing it.
 - [ ] Require every hosted check green on the exact reviewed head, then use the standing PR-only merge authority.
 - [ ] Verify Pages exact-main provenance and live smoke, then select the next bounded sprint cell.
