@@ -665,18 +665,12 @@ test.describe('HUD layout guardrails', () => {
     await meter.evaluate((node) => { node.dataset['identityProbe'] = 'stable'; });
     const fullRing = await meter.evaluate((node) => getComputedStyle(node).backgroundImage);
 
-    const activeLeft = touch
-      ? page.locator('.st-hud__touch-strip [data-command="move-left"]')
-      : left;
     const activeRight = touch
       ? page.locator('.st-hud__touch-strip [data-command="move-right"]')
       : right;
     await activeRight.click();
-    let remaining = Number(await fuel.textContent());
-    if (remaining === 100) {
-      await activeLeft.click();
-      remaining = Number(await fuel.textContent());
-    }
+    await expect.poll(() => fuel.textContent()).not.toBe('100');
+    const remaining = Number(await fuel.textContent());
     expect(remaining).toBeGreaterThanOrEqual(92);
     expect(remaining).toBeLessThan(100);
     await expect(meter).toHaveAttribute('aria-valuenow', String(remaining));
