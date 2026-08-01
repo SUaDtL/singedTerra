@@ -2828,3 +2828,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversarial clearance
 
 - **Exact-package verdict CLEAN / READY.** The reviewer independently confirmed parity for readiness copy, code cells, invite identity/ARIA/dispatch, roster order/styles, normalized clash cues, badges, shared-node/warning/status/action order, and action states. Lobby retains duplicate detection, clipboard, ready/leave, Realtime, heartbeat, transport, session, state, and render effects. Precomputing pure clash scans and detached shared nodes is unobservable because the call is synchronous and performs no state or I/O side effect. It found no Critical, High, Medium, Low, or merge blocker. Confidence high.
+
+### PR #248 hosted gate and merge override
+
+- **[high] Behavior head cleared hosted CI.** PR #248 head `7bea592` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
