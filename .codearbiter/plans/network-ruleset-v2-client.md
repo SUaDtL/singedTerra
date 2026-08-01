@@ -90,6 +90,13 @@
 - [x] Run focused tests, full client coverage, the complete Edge suite, `npm run check`, `npm run build`, `npm audit`, `git diff --check`, and state-free secret/hard-surface scans.
 - [x] Dispatch one adversarial exact-diff reviewer; correct every Critical, High, Medium, and merge blocker and obtain correction re-review when needed.
 - [x] Commit through the codeArbiter gate, push, open a ready PR, and require every hosted check green on the exact reviewed head.
-- [ ] Merge through the PR under standing logged authority and wait for the exact-merge Pages deployment.
+- [x] Merge through the PR under standing logged authority and wait for the exact-merge Pages deployment.
 - [ ] Prove in production that a new browser creates/joins a version-2 room, starts it, and commits a version-2 action; separately prove the legacy mismatch retry contract without mutating the first request.
+  - Production creation, join, ready-up, synchronized match start, and the one-human/one-CPU path passed on merge `5f2f50d3def399697f17e5d3e58876dcdaeb35f0` / Pages run `30699918611`.
+  - The action step exposed a pre-existing regression from `80fcf8b`: `main.ts` compares the engine active ID (`p1`, `p2`, ...) with the Supabase seat UUID, so the owning human's unified command controls remain disabled.
+  - Correct under `$ca-fix`: pin the mapped-owner regression in RED, reuse `NetworkClient`'s existing UUID-to-engine mapping through the `GameClient` boundary, and re-run the live action proof.
+    - [x] Focused RED: mapped-owner gate returned false and `NetworkClient.ownsEnginePlayer` was absent; 2 targeted failures / 18 controls green.
+    - [x] Minimal boundary correction and focused GREEN: 22/22 mapped-owner, ownership-gate, aim-guide, and lockstep tests plus strict typecheck.
+    - [x] Adversary correction: mapped ownership is proven at every supported roster position (`p1`-`p4`); 25/25 focused tests and strict typecheck pass. The same reviewer returned CLEAN / READY with zero findings.
+    - [x] Corrected package: 108 client files / 768 tests at 89.49% statements, 200 Edge tests, deterministic checks, build, 121 applicable browser guardrails, dependency audit, diff hygiene, and state-free secret scan are green.
 - [ ] Record the evidence, close Phase B2, and immediately select the next highest-value scoped improvement.

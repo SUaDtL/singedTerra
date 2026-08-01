@@ -91,6 +91,31 @@ describe('NetworkClient — deterministic lockstep core', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each([
+    ['seat-a', 'p1'],
+    ['seat-b', 'p2'],
+    ['seat-c', 'p3'],
+    ['seat-d', 'p4'],
+  ] as const)('maps UUID-backed %s to engine tank %s only', (playerId, ownedTankId) => {
+    const { supabase } = makeFakeSupabase([{ data: [], error: null }]);
+    const players = [
+      { id: 'seat-a', name: 'Alpha', color: '#e84d4d' },
+      { id: 'seat-b', name: 'Bravo', color: '#4d8ce8' },
+      { id: 'seat-c', name: 'Charlie', color: '#4de87a' },
+      { id: 'seat-d', name: 'Delta', color: '#e8c84d' },
+    ];
+    const client = new NetworkClient(supabase, 'room-1', playerId, {
+      maxPlayers: 4,
+      seed: 1,
+      players,
+    });
+
+    for (let i = 1; i <= players.length; i += 1) {
+      const enginePlayerId = `p${i}`;
+      expect(client.ownsEnginePlayer(enginePlayerId)).toBe(enginePlayerId === ownedTankId);
+    }
+  });
+
   it('replays the existing action log during initialize() — a logged fire advances the turn', async () => {
     // A single committed fire by p1 (the opener). After replay the round advances to p2.
     const { supabase } = makeFakeSupabase([{ data: [row(0, fire()).new], error: null }]);

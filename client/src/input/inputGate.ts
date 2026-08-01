@@ -10,15 +10,28 @@ export interface LocalInputGate {
 
 export interface ActiveSeatOwnership {
   mode: 'hotseat' | 'network';
-  activePlayerId: string;
-  localPlayerId?: string;
+  /** Result of the active GameClient's own engine-id ownership translation. */
+  activePlayerOwned: boolean;
   activeIsAi: boolean;
+}
+
+interface EnginePlayerOwner {
+  ownsEnginePlayer?(enginePlayerId: string): boolean;
+}
+
+/** Resolve the active tank in the engine namespace owned by the current client. */
+export function resolveActivePlayerOwnership(
+  mode: 'hotseat' | 'network',
+  client: EnginePlayerOwner,
+  activePlayerId: string,
+): boolean {
+  return mode === 'hotseat' || client.ownsEnginePlayer?.(activePlayerId) === true;
 }
 
 /** Resolve whether this browser should present controls for the active seat. */
 export function isActiveSeatLocal(ownership: ActiveSeatOwnership): boolean {
   if (ownership.activeIsAi) return false;
-  return ownership.mode === 'hotseat' || ownership.activePlayerId === ownership.localPlayerId;
+  return ownership.mode === 'hotseat' || ownership.activePlayerOwned;
 }
 
 /**

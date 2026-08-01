@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isActiveSeatLocal, shouldAcceptLocalInput } from './inputGate';
+import {
+  isActiveSeatLocal,
+  resolveActivePlayerOwnership,
+  shouldAcceptLocalInput,
+  type ActiveSeatOwnership,
+} from './inputGate';
 
 describe('local input authority gate', () => {
   it.each([
@@ -36,19 +41,38 @@ describe('local input authority gate', () => {
   });
 
   it.each([
-    ['hot-seat human', 'hotseat', 'p2', undefined, false, true],
-    ['hot-seat CPU', 'hotseat', 'p2', undefined, true, false],
-    ['local network human', 'network', 'p2', 'p2', false, true],
-    ['remote network human', 'network', 'p2', 'p1', false, false],
+    ['hot-seat human', 'hotseat', false, false, true],
+    ['hot-seat CPU', 'hotseat', false, true, false],
+    ['local network human', 'network', true, false, true],
+    ['remote network human', 'network', false, false, false],
   ] as const)(
     '%s ownership => %s',
-    (_name, mode, activePlayerId, localPlayerId, activeIsAi, expected) => {
+    (_name, mode, activePlayerOwned, activeIsAi, expected) => {
       expect(isActiveSeatLocal({
         mode,
-        activePlayerId,
-        localPlayerId,
+        activePlayerOwned,
         activeIsAi,
       })).toBe(expected);
     },
   );
+
+  it('accepts the network client\'s mapped ownership instead of comparing seat and engine ids', () => {
+    const ownership = {
+      mode: 'network',
+      activePlayerOwned: true,
+      activeIsAi: false,
+    } satisfies ActiveSeatOwnership;
+
+    expect(isActiveSeatLocal(ownership)).toBe(true);
+  });
+
+  it('resolves production ownership through the active client mapping', () => {
+    const client = {
+      ownsEnginePlayer: (enginePlayerId: string) => enginePlayerId === 'p3',
+    };
+
+    expect(resolveActivePlayerOwnership('network', client, 'p3')).toBe(true);
+    expect(resolveActivePlayerOwnership('network', client, 'p1')).toBe(false);
+    expect(resolveActivePlayerOwnership('hotseat', {}, 'p2')).toBe(true);
+  });
 });

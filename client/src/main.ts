@@ -9,7 +9,10 @@ import { HotSeatClient } from './client/HotSeatClient';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { rematchToConfig } from './client/rematchConfig';
 import { InputHandler } from './input/InputHandler';
-import { shouldAcceptLocalInput } from './input/inputGate';
+import {
+  resolveActivePlayerOwnership,
+  shouldAcceptLocalInput,
+} from './input/inputGate';
 import { Renderer } from './renderer/Renderer';
 import { resolveAimGuidePresentation } from './renderer/aimGuidePresentation';
 import { AudioEngine } from './audio/AudioEngine';
@@ -328,8 +331,11 @@ function bootstrap(): void {
       const activeTank = state.tanks.find((t) => t.id === state.activePlayerId);
       const aimGuide = resolveAimGuidePresentation({
         mode: config.mode,
-        activePlayerId: state.activePlayerId,
-        localPlayerId: config.playerId,
+        activePlayerOwned: resolveActivePlayerOwnership(
+          config.mode,
+          newClient,
+          state.activePlayerId,
+        ),
         activeIsAi: !!activeTank?.ai,
       }, {
         baseGravity: config.settings?.gravity ?? GRAVITY,

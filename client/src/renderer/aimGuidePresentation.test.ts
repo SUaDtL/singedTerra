@@ -17,8 +17,7 @@ describe('aim-guide presentation wiring', () => {
 
     expect(resolveAimGuidePresentation({
       mode: 'network',
-      activePlayerId: 'p2',
-      localPlayerId: 'p1',
+      activePlayerOwned: false,
       activeIsAi: false,
     }, suddenDeathGravity)).toEqual({
       visible: false,
@@ -26,8 +25,7 @@ describe('aim-guide presentation wiring', () => {
     });
     expect(resolveAimGuidePresentation({
       mode: 'network',
-      activePlayerId: 'p1',
-      localPlayerId: 'p1',
+      activePlayerOwned: true,
       activeIsAi: false,
     }, openingGravity)).toEqual({
       visible: true,

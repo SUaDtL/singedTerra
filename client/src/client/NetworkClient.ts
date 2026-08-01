@@ -265,6 +265,11 @@ export class NetworkClient implements GameClient {
 
   // ---- GameClient interface ----
 
+  /** Resolve local ownership in the engine's positional tank-id namespace. */
+  ownsEnginePlayer(enginePlayerId: string): boolean {
+    return this.playerIndexMap.get(this.playerId) === enginePlayerId;
+  }
+
   /**
    * initialize() is NOT part of the GameClient interface but MUST be called
    * before start(). main.ts calls it via: await nc.initialize()

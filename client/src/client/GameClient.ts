@@ -76,6 +76,13 @@ export interface GameClient {
   getState(): GameState | null;
 
   /**
+   * Whether this browser owns an engine-namespace player id (network only).
+   * Network transports may use a different public seat-id namespace, so the
+   * transport that owns that translation must answer this question.
+   */
+  ownsEnginePlayer?(enginePlayerId: string): boolean;
+
+  /**
    * The engine's EFFECTIVE gravity for the current turn (SE-parity sudden death). The AI
    * driver feeds this to the shot planner so a bot aims with the gravity the engine will
    * actually fly the shot under (base gravity until sudden death escalates). Delegates to
