@@ -3039,3 +3039,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversarial clearance
 
 - **Exact-package verdict CLEAN / READY.** The single designated adversary found zero Critical, High, Medium, Low, or merge-blocking findings. It independently confirmed all 29 strictness findings are closed; valid dense-array behavior, ordering, random consumption, terrain generation, turn rotation, scoring, replay order, and serialized contracts are unchanged; malformed height/bitmap fallbacks match the documented floor/air contracts; terrain exceptions cover only mathematically unreachable bounds failures; the three focused tests are causal; the issue #70 partial-progress boundary remains honest; and both protected logs remain normalized append-only. Confidence high.
+
+### PR #256 hosted gate and merge authority
+
+- **[high] Behavior head cleared exact hosted CI.** Ready PR #256 targets `main` from `codex/shared-unchecked-indexing`; head `eb8ea3c7c37733a7ebfc810c0d8d9fcc21a3da87` is mergeable and based directly on `main@56cd67b22127865f4402adea9408ed3133f04b2d`. CI run `30723215379` passed typecheck/harness/build, 822 client tests, dependency audit, Edge tests, and the full rendering E2E suite; CodeQL run `30723215428` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
