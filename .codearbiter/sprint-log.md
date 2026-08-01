@@ -2803,3 +2803,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### Adversarial clearance
 
 - **Exact-package verdict CLEAN / READY.** The reviewer independently confirmed mechanical parity for DOM order, text, classes, inline styles, metadata, fallback host, full/busy disabling, and synchronous callbacks; Lobby retains every state, render effect, join/leave, polling, transport, and session responsibility. Direct tests are causal, no pre-existing test changed, governance additions are append-only, and no dependency, lockfile, CSS, backend, auth, crypto, workflow, or security scope drift exists. It found no Critical, High, Medium, Low, or merge blocker. Confidence high.
+
+### PR #247 hosted gate and merge override
+
+- **[high] Behavior head cleared hosted CI.** PR #247 head `51412a9` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
