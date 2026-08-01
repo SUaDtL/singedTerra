@@ -26,6 +26,70 @@ export async function gotoRunningGame(page: Page): Promise<void> {
   await expect(page.locator('.st-hud__instruments')).toBeVisible();
 }
 
+/**
+ * Open the ordinary pre-game Lobby in the production bundle. This deliberately
+ * uses the public entry path instead of an E2E query fixture so navigation,
+ * DOM construction, and bundled Lobby CSS are all under test.
+ */
+export async function gotoLobby(page: Page): Promise<void> {
+  await page.goto('./');
+  await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await expect(page.locator('#lobby')).toBeVisible();
+  await expect(page.locator('#lobby .lobby-card')).toBeVisible();
+}
+
+/**
+ * Guard the broad frame invariants shared by every Lobby view. Internal
+ * vertical scrolling is allowed for long setup forms, but the document itself
+ * must stay single-screen and the card must never overflow horizontally.
+ */
+export async function assertLobbyFrame(page: Page): Promise<void> {
+  const lobbyBox = await page.locator('#lobby').boundingBox();
+  const cardBox = await page.locator('#lobby .lobby-card').boundingBox();
+  expect(lobbyBox, 'Lobby overlay should have a rendered box').not.toBeNull();
+  expect(cardBox, 'Lobby card should have a rendered box').not.toBeNull();
+
+  expect(cardBox!.x).toBeGreaterThanOrEqual(lobbyBox!.x - 1);
+  expect(cardBox!.y).toBeGreaterThanOrEqual(lobbyBox!.y - 1);
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(lobbyBox!.x + lobbyBox!.width + 1);
+  expect(cardBox!.y + cardBox!.height).toBeLessThanOrEqual(lobbyBox!.y + lobbyBox!.height + 1);
+
+  const overflow = await page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>('#lobby .lobby-card');
+    return {
+      documentX: document.documentElement.scrollWidth - window.innerWidth,
+      documentY: document.documentElement.scrollHeight - window.innerHeight,
+      cardX: card ? card.scrollWidth - card.clientWidth : Number.POSITIVE_INFINITY,
+    };
+  });
+  expect(overflow.documentX, 'Lobby must not create horizontal page scroll').toBeLessThanOrEqual(1);
+  expect(overflow.documentY, 'Lobby must not create vertical page scroll').toBeLessThanOrEqual(1);
+  expect(overflow.cardX, 'Lobby card must not overflow horizontally').toBeLessThanOrEqual(1);
+}
+
+/**
+ * Prove a primary control is reachable inside the Lobby's own scroll region.
+ * Scrolling is intentional: long forms may use internal vertical overflow,
+ * but their actions must remain renderable and accessible.
+ */
+export async function assertLobbyControlReachable(page: Page, selector: string): Promise<void> {
+  const control = page.locator(selector);
+  await expect(control).toHaveCount(1);
+  await control.scrollIntoViewIfNeeded();
+  await expect(control).toBeVisible();
+
+  const cardBox = await page.locator('#lobby .lobby-card').boundingBox();
+  const controlBox = await control.boundingBox();
+  expect(cardBox, 'Lobby card should have a rendered box').not.toBeNull();
+  expect(controlBox, `${selector} should have a rendered box`).not.toBeNull();
+  expect(controlBox!.width).toBeGreaterThan(0);
+  expect(controlBox!.height).toBeGreaterThan(4);
+  expect(controlBox!.x).toBeGreaterThanOrEqual(cardBox!.x - 1);
+  expect(controlBox!.y).toBeGreaterThanOrEqual(cardBox!.y - 1);
+  expect(controlBox!.x + controlBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
+  expect(controlBox!.y + controlBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1);
+}
+
 /** Whether the fixed stage is rendered below its compact-scale threshold. */
 export async function isCompact(page: Page): Promise<boolean> {
   return page.evaluate(() => !!document.getElementById('app')?.classList.contains('is-compact'));

@@ -2729,3 +2729,26 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 ### PR #244 hosted gate and merge override
 
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after reviewed behavior head `31b9d95`, this governance receipt's exact-diff review, and every hosted check is green on the final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby View Browser Oracle sprint
+
+- **[high] Build the oracle before decomposing Lobby.** Issue #129 names the absence of real-browser Lobby coverage as the reason view extraction would be blind. SMARTS favors a production-bundle geometry oracle before moving any render method. Confidence high.
+- **[high] Navigate through public controls.** A private-state query hook would be faster but could bypass broken navigation and add runtime-only fixture surface. Hot Seat, Online Create, and Join by Code are reachable offline through the real UI, so Phase 1 tests exactly those paths. Confidence high.
+- **[high] Assert durable invariants, not screenshots.** Stage containment, document-scroll absence, horizontal overflow absence, visible labels, and reachable action boxes survive intentional visual evolution while catching crushed or inaccessible controls. Confidence high.
+- **[high] Defer network-owned views.** Browse and Waiting Room need deterministic transport/Realtime fixtures; forcing them into this slice would mix a network harness with the offline geometry oracle. They remain an explicit Phase 2 before their render methods move. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### Browser-oracle characterization
+
+- **Initial RED exposed a faulty oracle premise.** All 9 cases failed because the first assertion required the Lobby card to fit inside `#stage`. Current architecture intentionally defines `#lobby` as a full-app overlay covering both the 1200px battlefield and 264px HUD panel, so the stage is not its containing block. No production change was justified. Confidence high.
+- **Corrected GREEN uses the real containing block.** The invariant now proves card containment inside `#lobby`, zero document page scroll, zero horizontal card overflow, and reachable primary controls. Hot Seat, Online Create, and Join by Code pass 9/9 across desktop-fine, pixel-touch, and small-window against the production bundle. Confidence high.
+
+### Fresh verification
+
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 130 cases across the configured desktop, touch-landscape, and small-window projects with 11 intentional project/tag skips. The new Lobby oracle contributes 9/9 passing cases. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/lockstep harness chain; the client passed 110 files / 792 tests; all 200 Edge tests passed; client coverage remains 89.77% statements, 80.36% branches, 81.84% functions, and 92.11% lines; production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Scope and hygiene green.** Only the two E2E files plus governed spec/plan/audit tails changed. Production client code, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer independently verified causal public navigation, the four geometry/reachability invariants across all viewports, and `page.goto('./')` under an explicit `/singedTerra/` Vite base. It found no Critical, High, Medium, or merge blocker. Browse, Waiting, and expanded configurations remain an explicit non-blocking Phase 2 limitation; this sprint advances rather than closes issue #129. Confidence high.
