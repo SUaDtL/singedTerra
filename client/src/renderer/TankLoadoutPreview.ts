@@ -5,7 +5,7 @@ import { TankPartArt } from './TankPartArt';
 const previewArt = new TankPartArt();
 const RETRY_MS = 50;
 
-export type TankLoadoutPreviewMode = 'thumbnail' | 'spotlight';
+export type TankLoadoutPreviewMode = 'thumbnail' | 'spotlight' | 'tactical';
 
 interface TankLoadoutPreviewProfile {
   readonly width: number;
@@ -33,6 +33,14 @@ const PREVIEW_PROFILES: Readonly<
     tankY: 158,
     contextScale: 1,
     artScale: 4,
+  },
+  tactical: {
+    width: 144,
+    height: 80,
+    tankX: 72,
+    tankY: 70,
+    contextScale: 1,
+    artScale: 2,
   },
 };
 

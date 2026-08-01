@@ -2935,3 +2935,25 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #252 head `537ac96` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Combat Identity Card sprint
+
+- **[high] Prefer a tactical identity card over world-space sprite scaling.** SMARTS rates the card strong for Maintainable, Available, Reliable, Testable, and Securable because it reuses the existing preview seam and leaves deterministic geometry untouched. World scaling is weak for Reliability because the visual muzzle and collision envelope would diverge. Confidence high.
+- **[high] Use one dedicated 144x80 direct-scale-two profile.** Direct variants preserve authored detail better than enlarging the existing 84x48 bitmap, while the existing profile map keeps thumbnail and spotlight callers stable. Confidence high.
+- **[high] Preserve one-page fit with CSS presentation tiers.** Full size belongs to desktop/fine-pointer combat; compact and coarse layouts downscale the same high-resolution canvas and remain guarded by computed Chromium geometry. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, exact nine-file surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Baseline green.** Before production edits, 26 focused preview/portrait/part tests and 35 applicable HUD browser cases passed with 10 intentional project skips. Confidence high.
+- **Behavioral RED then GREEN.** The tactical profile test failed on the absent profile, and two HUD identity tests failed on the missing mode argument while 24 focused tests stayed green. The browser build also rejected the missing typed mode. The minimal two-file implementation then passed 27 focused tests and strict client typecheck. Confidence high.
+- **Responsive browser oracle green.** Direct Chromium geometry passed desktop-fine, pixel-touch, and small-window: the internal canvas stays 144x80; desktop renders full size; compact/coarse tiers remain bounded and inside the HUD. Confidence high.
+- **Live pixel inspection green.** The running local game showed a materially larger, crisp active-vehicle portrait with readable authored chassis and barrel detail, no command-rail crowding, and unchanged world muzzle/trajectory geometry. The sole localhost and agent-created inspection tab were closed afterward. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 116 files / 812 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage clears the floor.** Full client coverage is 91.51% statements, 81.54% branches, 82.37% functions, and 93.70% lines; `HUD.ts` is 80.09% branches and 95.41% lines. Confidence high.
+- **Production browser matrix green.** The complete production-bundle Playwright suite passed 139 of 150 cases with 11 intentional project/tag skips, including the new tactical card across all three projects. Confidence high.
+- **Scope and hygiene green.** The state-free secret scan returned no findings; diff hygiene passes. No dependency, lockfile, asset, engine, world renderer, input, backend, auth, crypto, migration, workflow, issue, or task-tracker file changed. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge blocker. It independently confirmed the typed 144x80 direct-scale-two profile, unchanged thumbnail/spotlight and preview lifecycle, preserved HUD accessibility/caching/stale clearing, exact desktop/compact/coarse tiers, real-browser containment, unchanged world geometry and engine scope, causal tests, exact nine-file surface, and append-only protected logs after Git normalization. Confidence high.

@@ -54,6 +54,43 @@ test.describe('HUD layout guardrails', () => {
     ).toEqual([]);
   });
 
+  test('active custom tank has a combat-readable tactical identity card', async ({
+    page,
+  }, testInfo) => {
+    const frame = page.locator('.st-hud__tank-portrait-frame');
+    const portrait = frame.locator('.st-hud__tank-portrait');
+    await expect(frame).toBeVisible();
+    await expect(portrait).toBeVisible();
+    await expect(portrait).toHaveAttribute('width', '144');
+    await expect(portrait).toHaveAttribute('height', '80');
+
+    const geometry = await frame.evaluate((node) => {
+      const frameBox = node.getBoundingClientRect();
+      const portraitBox = node.querySelector('canvas')!.getBoundingClientRect();
+      const hudBox = node.closest('#hud')!.getBoundingClientRect();
+      return {
+        frame: frameBox.toJSON(),
+        portrait: portraitBox.toJSON(),
+        hud: hudBox.toJSON(),
+      };
+    });
+    expect(Math.abs(geometry.frame.width - geometry.portrait.width)).toBeLessThan(1);
+    expect(Math.abs(geometry.frame.height - geometry.portrait.height)).toBeLessThan(1);
+    expect(geometry.frame.left).toBeGreaterThanOrEqual(geometry.hud.left);
+    expect(geometry.frame.right).toBeLessThanOrEqual(geometry.hud.right);
+
+    if (testInfo.project.name === 'desktop-fine') {
+      expect(geometry.frame.width).toBeGreaterThanOrEqual(140);
+      expect(geometry.frame.height).toBeGreaterThanOrEqual(78);
+    } else if (testInfo.project.name === 'pixel-touch') {
+      expect(geometry.frame.width).toBeLessThanOrEqual(72);
+      expect(geometry.frame.height).toBeLessThanOrEqual(40);
+    } else {
+      expect(geometry.frame.width).toBeLessThanOrEqual(90);
+      expect(geometry.frame.height).toBeLessThanOrEqual(50);
+    }
+  });
+
   test('combat command glyphs stay semantic, framed, and fitted', async ({
     page,
   }) => {

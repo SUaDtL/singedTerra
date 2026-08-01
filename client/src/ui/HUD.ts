@@ -1865,7 +1865,12 @@ export class HUD {
     }
     if (signature === this.tankPortraitSignature) return;
     this.tankPortraitSignature = signature;
-    paintTankLoadoutPreview(this.tankPortraitEl, tank.color, tank.loadout);
+    paintTankLoadoutPreview(
+      this.tankPortraitEl,
+      tank.color,
+      tank.loadout,
+      'tactical',
+    );
   }
 
   /** Reconcile the authoritative fuel readout and bounded movement controls. */
@@ -2318,22 +2323,23 @@ export class HUD {
 }
 .st-hud__identity-lockup {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
+  grid-template-columns: 144px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   min-width: 0;
 }
 .st-hud__tank-portrait-frame {
   position: relative;
-  width: 84px;
-  height: 48px;
+  width: 144px;
+  height: 80px;
   overflow: hidden;
-  border: 1px solid rgba(255, 210, 63, 0.2);
+  border: 0;
   border-radius: 5px;
   background:
     radial-gradient(circle at 50% 82%, color-mix(in srgb, var(--st-turn-color) 22%, transparent), transparent 48%),
     linear-gradient(180deg, rgba(122, 215, 255, 0.055), rgba(7, 4, 12, 0.8));
   box-shadow:
+    inset 0 0 0 1px rgba(255, 210, 63, 0.2),
     inset 0 0 0 1px rgba(255, 255, 255, 0.025),
     0 0 11px color-mix(in srgb, var(--st-turn-color) 16%, transparent);
 }
@@ -2348,8 +2354,8 @@ export class HUD {
 }
 .st-hud__tank-portrait {
   display: block;
-  width: 84px;
-  height: 48px;
+  width: 144px;
+  height: 80px;
 }
 .st-hud__turn-status {
   display: block;
@@ -3715,6 +3721,14 @@ export class HUD {
   gap: 3px;
   padding-block: 2px;
 }
+#app.is-compact .st-hud__identity-lockup {
+  grid-template-columns: 90px minmax(0, 1fr);
+}
+#app.is-compact .st-hud__tank-portrait-frame,
+#app.is-compact .st-hud__tank-portrait {
+  width: 90px;
+  height: 50px;
+}
 #app.is-compact .st-hud__turn-actions {
   padding: 3px 6px;
 }
@@ -3748,12 +3762,12 @@ export class HUD {
   #app .st-hud__identity-lockup {
     grid-column: 1;
     grid-row: 1;
-    grid-template-columns: 70px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
     gap: 5px;
   }
   #app .st-hud__tank-portrait-frame,
   #app .st-hud__tank-portrait {
-    width: 70px;
+    width: 72px;
     height: 40px;
   }
   #app .st-hud__tactical-row {

@@ -75,6 +75,7 @@ describe('HUD active tank identity portrait', () => {
       portrait,
       '#e84d4d',
       state.tanks[0]!.loadout,
+      'tactical',
     );
   });
 
@@ -94,6 +95,7 @@ describe('HUD active tank identity portrait', () => {
       portrait,
       '#4d8ce8',
       state.tanks[1]!.loadout,
+      'tactical',
     );
     expect(portrait.getAttribute('aria-label')).toBe(
       "Bob's tank. Mobility: Hover. Hull: Scout Hull. "
@@ -109,6 +111,7 @@ describe('HUD active tank identity portrait', () => {
       portrait,
       '#a855f7',
       state.tanks[1]!.loadout,
+      'tactical',
     );
     expect(portrait.getAttribute('aria-label')).toContain('Turret: Bunker.');
   });

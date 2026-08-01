@@ -96,6 +96,31 @@ describe('tank loadout preview lifecycle', () => {
     expect(art.drawBarrel.mock.calls[0]?.[2]).toBe(4);
   });
 
+  it('renders a combat-readable tactical card from direct scale-two variants', () => {
+    vi.stubGlobal('navigator', { userAgent: 'Chrome' });
+    art.state = 'ready';
+    art.drawStatic.mockReturnValue(true);
+    art.drawBarrel.mockReturnValue(true);
+    const ctx = fakeContext();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    const canvas = document.createElement('canvas');
+
+    paintTankLoadoutPreview(
+      canvas,
+      '#e84d4d',
+      DEFAULT_TANK_LOADOUT,
+      'tactical',
+    );
+
+    expect({ width: canvas.width, height: canvas.height }).toEqual({
+      width: 144,
+      height: 80,
+    });
+    expect(art.drawStatic.mock.calls[0]?.[2]).toBe(2);
+    expect(art.drawBarrel.mock.calls[0]?.[2]).toBe(2);
+    expect(ctx.scale).not.toHaveBeenCalled();
+  });
+
   it('keeps queued retries bound to the presentation mode', () => {
     vi.useFakeTimers();
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
