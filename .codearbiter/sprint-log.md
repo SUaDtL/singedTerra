@@ -2883,3 +2883,24 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #250 head `0be0efe` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Create View Builder sprint
+
+- **[high] Extract Create after Join.** SMARTS ranks the last major top-level form above tiny wrapper/banner seams for issue alignment and maintainability impact. Its stateful paths already have strong network tests plus the 15-case geometry oracle, and the DOM extraction remains reversible. Confidence high.
+- **[high] Keep field construction and effects in Lobby.** Lobby supplies detached name/color, Garage, advanced setting fields, and status nodes plus typed callbacks. It retains bot clamping, state writes, rendering, navigation/error clearing, validation, transport, sessions, subscriptions, and waiting-room transition. Confidence high.
+- **[high] Let the builder own dynamic presentation.** Player/bot/visibility options, conditional difficulty, Advanced wrapper/order, and busy/action presentation are one coherent view contract and receive direct causal tests. Confidence high.
+- **[high] Preserve behavior mechanically.** Exact copy, attributes, classes, option order/selection, DOM order, callbacks, and busy semantics are parity obligations. No existing tests or external surfaces change. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, exact seven-file surface, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Baseline green.** Before production edits, 57 focused pre-existing Lobby tests, the unchanged 15-case browser oracle, and 114 files / 805 client tests passed. `Lobby.ts` started at 87.89% lines and 68.42% branches, above the stage-1 60% floor. Confidence high.
+- **Behavioral RED then GREEN.** The compile-only builder shell produced three causal failures on missing Create copy/fields/actions while all 57 focused pre-existing tests stayed green. The implementation then passed all three direct seam tests, including exact option labels/action classes, the unchanged 57-test focus, strict typecheck, and the unchanged 15-case browser oracle. Confidence high.
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The Lobby browser oracle also passes 15/15 at the GitHub Pages `/singedTerra/` base. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 115 files / 808 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage improved and clears the floor.** Full client coverage is 91.45% statements, 81.54% branches, 82.20% functions, and 93.66% lines. `Lobby.ts` remains above the stage-1 floor at 68.29% branches and 87.31% lines. Confidence high.
+- **Scope and hygiene green.** No pre-existing test file changed. CSS, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge blocker. It independently confirmed exact copy, classes, labels, selector ranges/order/selection, conditional difficulty, Advanced wrapper and seven field contracts, shared/status/action order, busy semantics, and typed callback timing. `MIN_PLAYERS`/`MAX_PLAYERS` remain exactly the former 2/4 literals. Lobby retains bot clamping and render ordering, field writes, navigation/error clearing, validation, room creation, loadout normalization, transport, sessions, waiting transition, subscription, and errors. Prebuilt nodes are synchronously detached with no immediate state/I/O effect. Tests are causal and the seven-file scope has no external drift. Confidence high.

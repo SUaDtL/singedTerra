@@ -11,6 +11,7 @@ import {
 import { clamp } from '@shared/engine/math';
 import { buildLobbyHotSeatView } from './LobbyHotSeatView';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
+import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
@@ -1704,184 +1705,84 @@ export class Lobby {
   // ---- Create Room sub-view ----
 
   private renderCreateForm(): HTMLElement {
-    const frag = document.createElement('div');
-
-    const sub = document.createElement('p');
-    sub.className = 'lobby-sub';
-    sub.textContent = 'Create a new online room and invite friends.';
-    frag.append(sub);
-
-    // Name + color row
-    frag.append(this.renderOnlineNameColor(
-      this.onlineName,
-      this.onlineColor,
-      (v) => { this.onlineName = v; },
-      (v) => { this.onlineColor = v; this.render(); },
-      /* takenColors */ [],
-    ));
-    frag.append(this.renderGarage(
-      'online-player',
-      'Your',
-      this.onlineLoadout,
-      (loadout) => {
-        this.onlineLoadout = loadout;
+    return buildLobbyCreateView({
+      minPlayers: MIN_PLAYERS,
+      maxPlayers: MAX_PLAYERS,
+      playerCount: this.onlineMaxPlayers,
+      botCount: this.onlineBots,
+      botDifficulty: this.onlineBotDifficulty,
+      visibility: this.onlineVisibility,
+      busy: this.onlineBusy,
+      nameColor: this.renderOnlineNameColor(
+        this.onlineName,
+        this.onlineColor,
+        (value) => { this.onlineName = value; },
+        (value) => { this.onlineColor = value; this.render(); },
+        [],
+      ),
+      garage: this.renderGarage(
+        'online-player',
+        'Your',
+        this.onlineLoadout,
+        (loadout) => {
+          this.onlineLoadout = loadout;
+          this.render();
+        },
+      ),
+      advancedFields: [
+        this.onlineNumberField('Wind cap', this.onlineMaxWind, (value) => { this.onlineMaxWind = value; }, {
+          min: WIND_MIN, max: WIND_MAX, step: 1, placeholder: String(WIND_DEFAULT),
+          hint: `${WIND_MIN}–${WIND_MAX}`,
+        }),
+        this.onlineNumberField('Gravity', this.onlineGravity, (value) => { this.onlineGravity = value; }, {
+          min: GRAVITY_MIN, max: GRAVITY_MAX, step: GRAVITY_STEP, placeholder: String(GRAVITY_DEFAULT),
+          hint: `${GRAVITY_MIN}–${GRAVITY_MAX}`,
+        }),
+        this.onlineChoiceField(
+          'Side walls',
+          this.onlineWalls,
+          (value) => { this.onlineWalls = value; },
+          [
+            { value: '', label: 'Open — shots exit' },
+            { value: 'reflective', label: 'Reflective — bank shots' },
+            { value: 'wrap', label: 'Wrap — cross the arena' },
+          ],
+          'shots exit, rebound, or cross through paired arena edges',
+        ),
+        this.onlineNumberField('Rounds', this.onlineRounds, (value) => { this.onlineRounds = value; }, {
+          min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT),
+          hint: 'best-of-N, odd',
+        }),
+        this.onlineNumberField('Interest', this.onlineInterestRate, (value) => { this.onlineInterestRate = value; }, {
+          min: INTEREST_MIN, max: INTEREST_MAX, step: INTEREST_STEP, placeholder: String(INTEREST_DEFAULT),
+          hint: 'per-round credit interest (0–0.5)',
+        }),
+        this.onlineNumberField('Sudden death', this.onlineSuddenDeath, (value) => { this.onlineSuddenDeath = value; }, {
+          min: SUDDEN_DEATH_MIN, max: SUDDEN_DEATH_MAX, step: 1, placeholder: String(SUDDEN_DEATH_DEFAULT),
+          hint: 'gravity ramps past this turn (0 = off)',
+        }),
+        this.onlineNumberField('Arms level', this.onlineArmsLevel, (value) => { this.onlineArmsLevel = value; }, {
+          min: ARMS_MIN, max: ARMS_MAX, step: 1, placeholder: String(ARMS_DEFAULT),
+          hint: '0 = basic … 4 = full arsenal',
+        }),
+      ],
+      status: this.renderOnlineStatus(),
+      onPlayerCountChange: (count) => {
+        this.onlineMaxPlayers = count;
+        if (this.onlineBots > count - 1) this.onlineBots = count - 1;
         this.render();
       },
-    ));
-
-    // Max players
-    const mpField = document.createElement('div');
-    mpField.className = 'lobby-field';
-    const mpLabel = document.createElement('label');
-    mpLabel.textContent = 'Players';
-    const mpSelect = document.createElement('select');
-    for (let n = 2; n <= 4; n++) {
-      const opt = document.createElement('option');
-      opt.value = String(n);
-      opt.textContent = String(n);
-      if (n === this.onlineMaxPlayers) opt.selected = true;
-      mpSelect.append(opt);
-    }
-    mpSelect.addEventListener('change', () => {
-      this.onlineMaxPlayers = Number(mpSelect.value);
-      // Keep bot count valid (need ≥1 human seat).
-      if (this.onlineBots > this.onlineMaxPlayers - 1) this.onlineBots = this.onlineMaxPlayers - 1;
-      this.render();
+      onBotCountChange: (count) => { this.onlineBots = count; this.render(); },
+      onBotDifficultyChange: (difficulty) => { this.onlineBotDifficulty = difficulty; },
+      onVisibilityChange: (visibility) => { this.onlineVisibility = visibility; },
+      onCreate: () => { void this.handleCreateRoom(); },
+      onJoin: () => {
+        this.onlineSubView = 'join';
+        this.onlineError = '';
+        this.render();
+      },
+      onBrowse: () => { this.enterBrowse(); },
     });
-    mpField.append(mpLabel, mpSelect);
-    frag.append(mpField);
-
-    // CPU opponents: seed N bot seats (0..maxPlayers-1) at a chosen difficulty.
-    // They occupy seats immediately (always ready), so the remaining seats are
-    // the human ones friends join via the code. Driven by whichever client is
-    // connected (see NetworkClient.maybeDriveBot).
-    const botField = document.createElement('div');
-    botField.className = 'lobby-field';
-    const botLabel = document.createElement('label');
-    botLabel.textContent = 'CPU opponents';
-    const botSelect = document.createElement('select');
-    for (let n = 0; n <= this.onlineMaxPlayers - 1; n++) {
-      const opt = document.createElement('option');
-      opt.value = String(n);
-      opt.textContent = String(n);
-      if (n === this.onlineBots) opt.selected = true;
-      botSelect.append(opt);
-    }
-    botSelect.addEventListener('change', () => { this.onlineBots = Number(botSelect.value); this.render(); });
-    botField.append(botLabel, botSelect);
-    if (this.onlineBots > 0) {
-      const diffSelect = document.createElement('select');
-      for (const d of ['easy', 'medium', 'hard'] as AiDifficulty[]) {
-        const opt = document.createElement('option');
-        opt.value = d;
-        opt.textContent = d[0].toUpperCase() + d.slice(1);
-        if (d === this.onlineBotDifficulty) opt.selected = true;
-        diffSelect.append(opt);
-      }
-      diffSelect.addEventListener('change', () => { this.onlineBotDifficulty = diffSelect.value as AiDifficulty; });
-      botField.append(diffSelect);
-    }
-    frag.append(botField);
-
-    // Visibility toggle (public is listed/joinable from Browse; private is
-    // code-only). Defaults to public.
-    const visField = document.createElement('div');
-    visField.className = 'lobby-field';
-    const visLabel = document.createElement('label');
-    visLabel.textContent = 'Visibility';
-    const visSelect = document.createElement('select');
-    for (const v of ['public', 'private'] as RoomVisibility[]) {
-      const opt = document.createElement('option');
-      opt.value = v;
-      opt.textContent = v === 'public' ? 'Public' : 'Private';
-      if (v === this.onlineVisibility) opt.selected = true;
-      visSelect.append(opt);
-    }
-    visSelect.addEventListener('change', () => {
-      this.onlineVisibility = visSelect.value as RoomVisibility;
-    });
-    visField.append(visLabel, visSelect);
-    frag.append(visField);
-
-    // Advanced settings (wind cap + gravity; no seed — server-generated)
-    const details = document.createElement('details');
-    details.className = 'lobby-advanced';
-    const summary = document.createElement('summary');
-    summary.textContent = 'Advanced settings';
-    details.append(summary);
-    details.append(
-      this.onlineNumberField('Wind cap', this.onlineMaxWind, (v) => { this.onlineMaxWind = v; }, {
-        min: WIND_MIN, max: WIND_MAX, step: 1, placeholder: String(WIND_DEFAULT),
-        hint: `${WIND_MIN}–${WIND_MAX}`,
-      }),
-      this.onlineNumberField('Gravity', this.onlineGravity, (v) => { this.onlineGravity = v; }, {
-        min: GRAVITY_MIN, max: GRAVITY_MAX, step: GRAVITY_STEP, placeholder: String(GRAVITY_DEFAULT),
-        hint: `${GRAVITY_MIN}–${GRAVITY_MAX}`,
-      }),
-      this.onlineChoiceField(
-        'Side walls',
-        this.onlineWalls,
-        (v) => { this.onlineWalls = v; },
-        [
-          { value: '', label: 'Open — shots exit' },
-          { value: 'reflective', label: 'Reflective — bank shots' },
-          { value: 'wrap', label: 'Wrap — cross the arena' },
-        ],
-        'shots exit, rebound, or cross through paired arena edges',
-      ),
-      this.onlineNumberField('Rounds', this.onlineRounds, (v) => { this.onlineRounds = v; }, {
-        min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT),
-        hint: 'best-of-N, odd',
-      }),
-      this.onlineNumberField('Interest', this.onlineInterestRate, (v) => { this.onlineInterestRate = v; }, {
-        min: INTEREST_MIN, max: INTEREST_MAX, step: INTEREST_STEP, placeholder: String(INTEREST_DEFAULT),
-        hint: 'per-round credit interest (0–0.5)',
-      }),
-      this.onlineNumberField('Sudden death', this.onlineSuddenDeath, (v) => { this.onlineSuddenDeath = v; }, {
-        min: SUDDEN_DEATH_MIN, max: SUDDEN_DEATH_MAX, step: 1, placeholder: String(SUDDEN_DEATH_DEFAULT),
-        hint: 'gravity ramps past this turn (0 = off)',
-      }),
-      this.onlineNumberField('Arms level', this.onlineArmsLevel, (v) => { this.onlineArmsLevel = v; }, {
-        min: ARMS_MIN, max: ARMS_MAX, step: 1, placeholder: String(ARMS_DEFAULT),
-        hint: '0 = basic … 4 = full arsenal',
-      }),
-    );
-    frag.append(details);
-
-    // Status / error
-    frag.append(this.renderOnlineStatus());
-
-    // Buttons
-    const btnRow = document.createElement('div');
-    btnRow.className = 'lobby-btn-row';
-
-    const createBtn = document.createElement('button');
-    createBtn.type = 'button';
-    createBtn.className = 'lobby-btn';
-    createBtn.textContent = this.onlineBusy ? 'Creating...' : 'Create Room';
-    createBtn.disabled = this.onlineBusy;
-    createBtn.addEventListener('click', () => { void this.handleCreateRoom(); });
-
-    const joinLink = document.createElement('button');
-    joinLink.type = 'button';
-    joinLink.className = 'lobby-btn secondary';
-    joinLink.textContent = 'Join Room instead';
-    joinLink.addEventListener('click', () => {
-      this.onlineSubView = 'join';
-      this.onlineError = '';
-      this.render();
-    });
-
-    const browseLink = document.createElement('button');
-    browseLink.type = 'button';
-    browseLink.className = 'lobby-btn secondary';
-    browseLink.textContent = 'Browse public rooms';
-    browseLink.addEventListener('click', () => { this.enterBrowse(); });
-
-    btnRow.append(createBtn, joinLink, browseLink);
-    frag.append(btnRow);
-
-    return frag;
   }
 
   private async handleCreateRoom(): Promise<void> {
