@@ -33,9 +33,9 @@ const assert = (condition, message) => {
   assertions.push(message)
 }
 
-const checkJobMatch = ciWorkflow.match(
-  /^  check:\s*$([\s\S]*?)(?=^  [a-zA-Z0-9_-]+:\s*$)/m,
-)
+const checkJobPattern =
+  /^  check:\s*$([\s\S]*?)(?=^  [a-zA-Z0-9_-]+:\s*$|(?![\s\S]))/m
+const checkJobMatch = ciWorkflow.match(checkJobPattern)
 const checkJobSteps = (checkJobMatch?.[1] ?? '')
   .split(/(?=^      - )/m)
   .filter((step) => /^      - /m.test(step))
@@ -57,6 +57,11 @@ assert(
 assert(
   rootPackage.scripts?.['audit:deps'] === 'npm audit --audit-level=high',
   'root exposes the complete high-severity dependency audit',
+)
+assert(
+  'jobs:\n  check:\n    runs-on: ubuntu-latest\n'.match(checkJobPattern)?.[1]
+    .includes('runs-on: ubuntu-latest') === true,
+  'workflow parser accepts the primary job at end of file',
 )
 assert(
   auditStepIndex >= 0,
