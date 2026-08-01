@@ -2698,3 +2698,30 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **TDD GREEN and exact correction clearance.** Reuse now requires an actual array plus non-null cells with integer x coordinates. Null projections and null cells rebuild cleanly; the focused oracle passes 5/5 malformed/topology recovery cases, 55/55 decay-only identity reuse, 44/44 real topology replacements, and the unchanged deterministic trace digest. `npm run typecheck` and the full `npm run check` chain pass. The adversarial re-review returned CLEAN / READY with no finding at any severity. Confidence high.
 
 - **[high] Corrected-head merge authority logged for PR #243.** A superseding append-only override binds the standing PR-only merge authority to reviewed correction head 983cbba because the earlier receipt named the pre-CodeRabbit behavior head. Exact review of this governance receipt and fresh hosted checks on the final head remain required. Confidence high.
+
+## 2026-08-01 - Direct Client Helper Vitest sprint
+
+- **[high] Select issue #134's direct client coverage gap.** SMARTS favors colocated Vitest tests for the small dependency-free helpers: they join the normal client suite, make coverage visible, and avoid any production or backend change. Existing root harnesses remain independent evidence. Confidence high.
+- **[high] Pin timing and identity, not just values.** Retry coverage uses fake timers for default, custom, and zero delay, and exhaustion requires the exact final Error object. This kills delay regressions and error-cloning mutants without real wall-clock waits. Confidence high.
+- **[high] Exhaust pure audio truth tables.** Fire activation, Betty bounce deltas, and all eight OOB boolean combinations are finite and directly testable, so complete tables are clearer and stronger than sampled integration cases. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this design, spec, and plan only. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+- **Baseline:** before direct tests, retry.ts measured 58.33% statements, 62.5% branches, and 60% lines; audioEdges.ts measured 0% in all metrics. The global client report measured 89.49% statements, 79.57% branches, 81.23% functions, and 91.87% lines. Confidence high.
+- **H-05 recovery:** two discarded uncommitted worktrees demonstrated that protected-ledger overwrite and Windows PowerShell 5.1 redirection are unsafe. The slice was reconstructed from exact origin/main; the final worktree appends only new ASCII bytes with Git Bash and requires exact staged blob-prefix proof before commit. Confidence high.
+
+### Fresh verification
+
+- **Focused contracts and targeted coverage green.** The two direct files pass 24/24 tests with fake timers; retry.ts and audioEdges.ts jointly measure 100% statements (20/20), branches (21/21), functions (5/5), and lines (16/16). Exact final Error identity is asserted with `toBe`. Confidence high.
+- **Full repository matrix green.** `npm run check` passed the complete deterministic/lockstep harness; the client passed 110 files / 792 tests; all 200 Edge tests passed; production build passed; npm audit reported zero vulnerabilities. Full client coverage is 89.77% statements, 80.36% branches, 81.84% functions, and 92.11% lines. Confidence high.
+- **Scope and hygiene green.** Production helper files, package manifests, lockfile, workflows, shared engine, and Supabase code remain byte-identical to origin/main. `git diff --check` is clean; the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial correction clearance
+
+- **Exact-package verdict CLEAN / READY.** The same reviewer re-proved that exact final Error identity kills an error-cloning mutant, the complete audio truth tables are causal, and both protected working files normalize to exact origin/main prefixes with append-only tails. It found no Critical, High, Medium, Low, governance, scope, security, or merge blocker. Final staged-blob prefix proof remains required before commit. Confidence high.
+
+- **Staged audit integrity proven.** The staged overrides blob begins with the exact main blob (SHA-256 `88f31235d153923cf0299a66fe63e609fd3a95a769c18487491ac594014cae87`) before its 1,232-byte tail. The staged sprint-log blob begins with the exact main blob (SHA-256 `c2f4bbd41d19996734c375a8ba9356b2057a351deb0e9db810a433f38b651356`) before its 3,224-byte tail. Confidence high.
+
+### Audit evidence correction
+
+- **Intermediate tail length superseded.** The preceding 3,224-byte sprint-log tail measurement was accurate before the review and prefix-evidence receipts were appended, but it is not the final staged length. The committed-prefix SHA-256 values remain correct. To avoid a self-referential receipt that changes the length it reports, final tail lengths are recomputed from the exact staged blobs and supplied to the adversarial and commit gates rather than embedded here. Confidence high.
+
+- **Chronology correction to the superseding receipt.** The 3,224-byte sprint-log tail was measured after the adversarial CLEAN review receipt had already been appended and immediately before the staged-integrity evidence receipt was appended. The earlier phrase implying it preceded both receipts was imprecise and is superseded by this exact ordering. Confidence high.
