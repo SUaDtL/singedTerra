@@ -9,6 +9,7 @@ import {
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
+import { buildLobbyHotSeatView } from './LobbyHotSeatView';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
@@ -1654,78 +1655,31 @@ export class Lobby {
   // ---- Hot Seat tab ----
 
   private renderHotSeatTab(): HTMLElement {
-    const frag = document.createDocumentFragment();
-
-    const sub = document.createElement('p');
-    sub.className = 'lobby-sub';
-    sub.textContent = 'Hot-seat setup — choose 2-4 players, name them, pick a color.';
-    frag.append(sub);
-
-    // Player count selector.
-    const countField = document.createElement('div');
-    countField.className = 'lobby-field';
-    const countLabel = document.createElement('label');
-    countLabel.textContent = 'Players';
-    const countSelect = document.createElement('select');
-    for (let n = MIN_PLAYERS; n <= MAX_PLAYERS; n += 1) {
-      const opt = document.createElement('option');
-      opt.value = String(n);
-      opt.textContent = String(n);
-      if (n === this.players.length) opt.selected = true;
-      countSelect.append(opt);
-    }
-    countSelect.addEventListener('change', () => {
-      this.setPlayerCount(Number(countSelect.value));
+    return buildLobbyHotSeatView({
+      minPlayers: MIN_PLAYERS,
+      maxPlayers: MAX_PLAYERS,
+      playerCount: this.players.length,
+      playerRows: this.players.map((_, index) => this.renderRow(index)),
+      advanced: this.renderAdvanced(),
+      validationMessage: this.validationError(),
+      onPlayerCountChange: (count) => { this.setPlayerCount(count); },
+      onStart: () => {
+        if (this.validationError() !== null) return;
+        const players = this.players.map((player, index) => ({
+          name: player.name.trim() || (player.ai ? `CPU ${index + 1}` : `Player ${index + 1}`),
+          color: player.color,
+          loadout: normalizeTankLoadout(player.loadout),
+          ...(player.ai ? { ai: player.ai } : {}),
+        }));
+        const settings = this.parseSettings();
+        this.onReady({
+          mode: 'hotseat',
+          players,
+          playerNames: players.map((player) => player.name),
+          ...(settings ? { settings } : {}),
+        });
+      },
     });
-    countField.append(countLabel, countSelect);
-    frag.append(countField);
-
-    // Per-player rows.
-    const rows = document.createElement('div');
-    rows.className = 'lobby-rows';
-    rows.classList.toggle('crowded', this.players.length >= 3);
-    this.players.forEach((_, i) => rows.append(this.renderRow(i)));
-    frag.append(rows);
-
-    // Advanced (engine) settings.
-    frag.append(this.renderAdvanced());
-
-    // Validation error message.
-    const error = document.createElement('div');
-    error.className = 'lobby-error';
-    error.textContent = this.validationError() ?? '';
-    frag.append(error);
-
-    // Start button.
-    const start = document.createElement('button');
-    start.type = 'button';
-    start.className = 'lobby-start';
-    start.textContent = 'Start Game';
-    start.disabled = this.validationError() !== null;
-    start.addEventListener('click', () => {
-      if (this.validationError() !== null) return;
-      const players = this.players.map((p, i) => ({
-        name: p.name.trim() || (p.ai ? `CPU ${i + 1}` : `Player ${i + 1}`),
-        color: p.color,
-        loadout: normalizeTankLoadout(p.loadout),
-        ...(p.ai ? { ai: p.ai } : {}),
-      }));
-      const settings = this.parseSettings();
-      this.onReady({
-        mode: 'hotseat',
-        players,
-        playerNames: players.map((p) => p.name),
-        ...(settings ? { settings } : {}),
-      });
-    });
-    frag.append(start);
-
-    // Wrap in a container so we can return an Element
-    const wrapper = document.createElement('div');
-    wrapper.className =
-      `lobby-hotseat${this.players.length >= 3 ? ' crowded' : ''}`;
-    wrapper.append(frag);
-    return wrapper;
   }
 
   // ---- Online tab ----

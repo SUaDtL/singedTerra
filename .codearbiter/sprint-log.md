@@ -2833,3 +2833,22 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #248 head `7bea592` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01 - Lobby Hot Seat View Builder sprint
+
+- **[high] Extract Hot Seat next.** It is the smallest remaining complete top-level view, already protected by the browser oracle, and avoids network/session coupling. Confidence high.
+- **[high] Pass detached shared nodes.** Player rows and Advanced settings already have distinct Lobby-owned builders/effects; passing their nodes extracts complete composition without widening ownership. Confidence high.
+- **[high] Keep launch behavior in Lobby.** Player-name fallback, loadout normalization, settings parsing, and `onReady` are behavior, not presentation. The builder receives one Start callback and current validation result. Confidence high.
+- **Approval gate:** standing passion-project authority is recorded in one sprint-specific append-only override. All hard gates, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### TDD and fresh verification
+
+- **Behavioral RED then GREEN.** A compile-only builder shell produced three causal failures for the missing Hot Seat selector, classes, and Start action while all seven unchanged focused Lobby invite tests stayed green. The implementation then passed all three direct seam tests, the unchanged focused set, strict typecheck, and the unchanged 15-case browser oracle. Confidence high.
+- **Rendering matrix green.** The complete production-bundle Playwright suite passes 136 cases with 11 intentional project/tag skips. The unchanged Lobby browser oracle also passes 15/15 at the GitHub Pages `/singedTerra/` base. Confidence high.
+- **Repository matrix green.** `npm run check` passed the deterministic/typecheck harness chain; the client passed 113 files / 802 tests; all 200 Edge tests passed; the production build passed; npm audit reported zero vulnerabilities. Confidence high.
+- **Coverage clears the governed floor.** Full client coverage is 91.23% statements, 81.29% branches, 82.01% functions, and 93.58% lines. `Lobby.ts` remains above the stage-1 floor at 68.31% branches and 88.56% lines; the small percentage shift from baseline reflects extraction-denominator movement rather than a lost test. Confidence high.
+- **Scope and hygiene green.** No pre-existing test file changed. CSS, dependencies, lockfile, workflows, shared engine, Supabase, auth, crypto, and migrations remain unchanged. Diff hygiene is clean and the state-free secret scan returned no findings. Confidence high.
+
+### Adversarial clearance
+
+- **Exact-package verdict CLEAN / READY.** The reviewer found no Critical, High, Medium, Low, or merge blocker. It independently confirmed exact wrapper/crowded classes, dynamic range copy and selector state, shared-node identity/order, validation text, Start behavior, and Lobby ownership of mutation, click-time validation, name fallback, loadout normalization, settings parsing, and `onReady`. The reduced render-time validation call is safe because `validationError()` is pure and launch still revalidates; prebuilt rows and Advanced settings are synchronous detached nodes whose effects remain event-bound. Tests causally cover the extracted seam and the approved seven-file scope has no dependency, CSS, backend, auth, crypto, migration, workflow, or pre-existing-test drift. Confidence high.
