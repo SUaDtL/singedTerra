@@ -40,6 +40,7 @@ Both workspace packages are `private: true`.
 | **Test (edge fns)** | `npm run check:edge` | `deno test supabase/functions/` (Deno std assert) |
 | **Test (client)** | `npm run test:client` | `vitest run` (jsdom env) — DOM + fetch-mock unit tests under `client/src/**/*.test.ts` |
 | **Coverage (client)** | `npm run coverage:client` | `vitest run --coverage --maxWorkers=4` (v8 provider; worker bound avoids V8 coverage oversubscription); the refactor gate reads this |
+| **Dependency audit** | `npm run audit:deps` | `npm audit --audit-level=high` across runtime and build/test dependencies; the primary CI job runs it after `npm ci` |
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
 | Secrets scan | `python "<active-codearbiter-plugin-root>/hooks/preview.py" secrets` | codeArbiter's state-free scanner over staged, unstaged, and untracked changed files; the host resolves the active plugin root before invocation. |

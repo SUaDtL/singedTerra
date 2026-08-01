@@ -26,6 +26,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Audit runtime and build dependencies
+        run: npm run audit:deps
       - run: npm run check         # typecheck (shared + client) + the deterministic harnesses
       - run: npm run test:client   # vitest (jsdom) — client DOM + fetch unit tests
       - run: npm run build

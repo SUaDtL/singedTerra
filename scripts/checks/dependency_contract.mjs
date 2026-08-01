@@ -22,6 +22,10 @@ const edgeSource = readFileSync(
   resolve(root, 'supabase/functions/_shared/mod.ts'),
   'utf8',
 )
+const ciWorkflow = readFileSync(
+  resolve(root, '.github/workflows/ci.yml'),
+  'utf8',
+)
 
 const assertions = []
 const assert = (condition, message) => {
@@ -29,11 +33,50 @@ const assert = (condition, message) => {
   assertions.push(message)
 }
 
+const checkJobMatch = ciWorkflow.match(
+  /^  check:\s*$([\s\S]*?)(?=^  [a-zA-Z0-9_-]+:\s*$)/m,
+)
+const checkJobSteps = (checkJobMatch?.[1] ?? '')
+  .split(/(?=^      - )/m)
+  .filter((step) => /^      - /m.test(step))
+const installStepIndex = checkJobSteps.findIndex((step) =>
+  /^      - run: npm ci\s*$/m.test(step),
+)
+const auditStepIndex = checkJobSteps.findIndex((step) =>
+  /^        run: npm run audit:deps\s*$/m.test(step),
+)
+const installStep = checkJobSteps[installStepIndex] ?? ''
+const auditStep = checkJobSteps[auditStepIndex] ?? ''
+
 assert(nodeVersion === '24', '.nvmrc selects Node 24')
 assert(rootPackage.engines?.node === '24.x', 'package engines match Node 24')
 assert(
   /^\^24\./.test(rootPackage.devDependencies?.['@types/node'] ?? ''),
   '@types/node stays on the Node 24 line',
+)
+assert(
+  rootPackage.scripts?.['audit:deps'] === 'npm audit --audit-level=high',
+  'root exposes the complete high-severity dependency audit',
+)
+assert(
+  auditStepIndex >= 0,
+  'primary CI invokes the governed dependency audit',
+)
+assert(
+  installStepIndex >= 0 && auditStepIndex > installStepIndex,
+  'primary CI audits dependencies after its clean install',
+)
+assert(
+  !/^    (?:if|continue-on-error):/m.test(checkJobMatch?.[1] ?? ''),
+  'primary CI job is unconditional and blocking',
+)
+assert(
+  !/^        (?:if|continue-on-error):/m.test(installStep),
+  'primary CI clean install is unconditional and blocking',
+)
+assert(
+  !/^        (?:if|continue-on-error):/m.test(auditStep),
+  'primary CI dependency audit is unconditional and blocking',
 )
 
 const browserSupabase = clientPackage.dependencies?.['@supabase/supabase-js']
