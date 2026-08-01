@@ -15,6 +15,7 @@ import {
 } from './gaugeMath';
 import { resolveInitialArsenalCollapsed } from './arsenalPreference';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
+import { STORE_CATALOG } from './storeCatalog';
 import { makeWeaponIcon } from './weaponIcons';
 import {
   clearTankLoadoutPreview,
@@ -909,66 +910,24 @@ export class HUD {
     this.storeCreditsEl.className = 'st-hud__store-credits';
     storeHeader.append(storeTitle, this.storeCreditsEl);
 
-    const storeGrid = document.createElement('div');
-    storeGrid.className = 'st-hud__store-grid';
-    for (const type of STORE_WEAPONS) {
-      const def = WEAPONS[type];
-      const row = document.createElement('div');
-      row.className = 'st-hud__store-row';
-
-      const info = document.createElement('div');
-      info.className = 'st-hud__store-info';
-      const nm = document.createElement('span');
-      nm.className = 'st-hud__store-name';
-      nm.textContent = def.name;
-      const nameLine = document.createElement('div');
-      nameLine.className = 'st-hud__store-name-line';
-      nameLine.append(makeWeaponIcon(type, 16), nm);
-      const owned = document.createElement('span');
-      owned.className = 'st-hud__store-owned';
-      info.append(nameLine, owned);
-
-      const buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'st-hud__store-buy';
-      // Price line: "$1,875 ×5" (bundle). Listener attached ONCE.
-      buyBtn.innerHTML =
-        `<span class="st-hud__store-price">$${def.price.toLocaleString()}</span>` +
-        `<span class="st-hud__store-bundle">+${def.bundleSize}</span>`;
-      buyBtn.addEventListener('click', () => this.buyCb?.({ weapon: type }));
-
-      row.append(info, buyBtn);
-      storeGrid.append(row);
-      this.storeCells.set(type, { buyBtn, owned });
-    }
-
-    // Accessory rows (Battery etc.) — same row markup as weapons, but the buy emits an
-    // `accessory` purchase. The blurb (e.g. "+100 power cap") stands in for the bundle line.
-    for (const key of STORE_ACCESSORIES) {
-      const acc = ACCESSORIES[key];
-      const row = document.createElement('div');
-      row.className = 'st-hud__store-row';
-
-      const info = document.createElement('div');
-      info.className = 'st-hud__store-info';
-      const nm = document.createElement('span');
-      nm.className = 'st-hud__store-name';
-      nm.textContent = acc.name;
-      const owned = document.createElement('span');
-      owned.className = 'st-hud__store-owned';
-      info.append(nm, owned);
-
-      const buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'st-hud__store-buy';
-      buyBtn.innerHTML =
-        `<span class="st-hud__store-price">$${acc.price.toLocaleString()}</span>` +
-        `<span class="st-hud__store-bundle">${acc.blurb}</span>`;
-      buyBtn.addEventListener('click', () => this.buyCb?.({ accessory: key }));
-
-      row.append(info, buyBtn);
-      storeGrid.append(row);
-      this.storeAccessoryCells.set(key, { buyBtn, owned });
+    const catalog = document.createElement('div');
+    catalog.className = 'st-hud__store-catalog';
+    for (const catalogSection of STORE_CATALOG) {
+      const section = document.createElement('section');
+      section.className = 'st-hud__store-section';
+      const title = document.createElement('h2');
+      title.textContent = catalogSection.title;
+      const grid = document.createElement('div');
+      grid.className = 'st-hud__store-section-grid';
+      for (const entry of catalogSection.entries) {
+        grid.append(
+          entry.kind === 'weapon'
+            ? this.createStoreWeaponCard(entry.type, entry.summary)
+            : this.createStoreAccessoryCard(entry.type, entry.summary),
+        );
+      }
+      section.append(title, grid);
+      catalog.append(section);
     }
 
     const storeClose = document.createElement('button');
@@ -976,8 +935,11 @@ export class HUD {
     storeClose.className = 'st-hud__store-close';
     storeClose.textContent = 'Close';
     storeClose.addEventListener('click', () => this.toggleStore(false));
+    const storeFooter = document.createElement('div');
+    storeFooter.className = 'st-hud__store-footer';
+    storeFooter.append(storeClose);
 
-    storePanel.append(storeHeader, storeGrid, storeClose);
+    storePanel.append(storeHeader, catalog, storeFooter);
     this.storeEl.append(storePanel);
 
     // Click-outside-to-dismiss (review #8): a click on the store BACKDROP (storeEl
@@ -989,6 +951,65 @@ export class HUD {
     this.storeEl.addEventListener('click', (e) => {
       if (e.target === this.storeEl) this.toggleStore(false);
     });
+  }
+
+  private createStoreWeaponCard(type: WeaponType, summary: string): HTMLElement {
+    const def = WEAPONS[type];
+    const row = document.createElement('div');
+    row.className = 'st-hud__store-row';
+    const info = document.createElement('div');
+    info.className = 'st-hud__store-info';
+    const name = document.createElement('span');
+    name.className = 'st-hud__store-name';
+    name.textContent = def.name;
+    const nameLine = document.createElement('div');
+    nameLine.className = 'st-hud__store-name-line';
+    nameLine.append(makeWeaponIcon(type, 16), name);
+    const summaryEl = document.createElement('span');
+    summaryEl.className = 'st-hud__store-summary';
+    summaryEl.textContent = summary;
+    const owned = document.createElement('span');
+    owned.className = 'st-hud__store-owned';
+    info.append(nameLine, summaryEl, owned);
+
+    const buyBtn = document.createElement('button');
+    buyBtn.type = 'button';
+    buyBtn.className = 'st-hud__store-buy';
+    buyBtn.innerHTML =
+      `<span class="st-hud__store-price">$${def.price.toLocaleString()}</span>` +
+      `<span class="st-hud__store-bundle">+${def.bundleSize}</span>`;
+    buyBtn.addEventListener('click', () => this.buyCb?.({ weapon: type }));
+    row.append(info, buyBtn);
+    this.storeCells.set(type, { buyBtn, owned });
+    return row;
+  }
+
+  private createStoreAccessoryCard(key: AccessoryType, summary: string): HTMLElement {
+    const acc = ACCESSORIES[key];
+    const row = document.createElement('div');
+    row.className = 'st-hud__store-row';
+    const info = document.createElement('div');
+    info.className = 'st-hud__store-info';
+    const name = document.createElement('span');
+    name.className = 'st-hud__store-name';
+    name.textContent = acc.name;
+    const summaryEl = document.createElement('span');
+    summaryEl.className = 'st-hud__store-summary';
+    summaryEl.textContent = summary;
+    const owned = document.createElement('span');
+    owned.className = 'st-hud__store-owned';
+    info.append(name, summaryEl, owned);
+
+    const buyBtn = document.createElement('button');
+    buyBtn.type = 'button';
+    buyBtn.className = 'st-hud__store-buy';
+    buyBtn.innerHTML =
+      `<span class="st-hud__store-price">$${acc.price.toLocaleString()}</span>` +
+      `<span class="st-hud__store-bundle">${acc.blurb}</span>`;
+    buyBtn.addEventListener('click', () => this.buyCb?.({ accessory: key }));
+    row.append(info, buyBtn);
+    this.storeAccessoryCells.set(key, { buyBtn, owned });
+    return row;
   }
 
   /** One bounded action row: economy on the left, turn commitment on the right. */
@@ -3007,19 +3028,28 @@ export class HUD {
 }
 .st-hud__store--hidden { display: none; }
 .st-hud__store-panel {
-  width: min(440px, 86%);
+  width: min(920px, calc(100% - 36px));
+  height: min(720px, calc(100% - 28px));
   max-height: 86%;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 18px;
+  gap: 0;
   border: 1px solid rgba(122, 215, 255, 0.45);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(18, 11, 30, 0.98), rgba(10, 6, 18, 0.98));
   box-shadow: 0 0 28px rgba(122, 215, 255, 0.22);
 }
-.st-hud__store-header { display: flex; align-items: baseline; justify-content: space-between; }
+.st-hud__store-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(122, 215, 255, 0.16);
+}
 .st-hud__store-title {
   font-family: var(--font-display);
   font-size: 20px;
@@ -3033,18 +3063,52 @@ export class HUD {
   color: #7ad7ff;
   font-size: 13px;
 }
-.st-hud__store-grid { display: flex; flex-direction: column; gap: 6px; }
+.st-hud__store-catalog {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 18px 18px;
+  scrollbar-gutter: stable;
+}
+.st-hud__store-section { min-width: 0; }
+.st-hud__store-section h2 {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.st-hud__store-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
 .st-hud__store-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 6px 8px;
-  border: 1px solid rgba(255, 210, 63, 0.16);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 8px;
+  min-height: 70px;
+  padding: 8px;
+  border: 1px solid rgba(255, 210, 63, 0.18);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
 }
-.st-hud__store-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.st-hud__store-row:hover {
+  border-color: rgba(255, 210, 63, 0.42);
+  background: linear-gradient(135deg, rgba(255, 210, 63, 0.11), rgba(255, 255, 255, 0.03));
+}
+.st-hud__store-row:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(255, 210, 63, 0.2);
+}
+.st-hud__store-info { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
 .st-hud__store-name-line {
   display: flex;
   align-items: center;
@@ -3052,6 +3116,11 @@ export class HUD {
   min-width: 0;
 }
 .st-hud__store-name { color: var(--text-gold); font-size: 13px; }
+.st-hud__store-summary {
+  color: var(--ui-muted);
+  font-size: 10px;
+  line-height: 1.25;
+}
 .st-hud__store-owned {
   opacity: 0.6;
   font-size: 10px;
@@ -3074,15 +3143,34 @@ export class HUD {
   font-family: var(--font-mono);
   transition: background 120ms ease;
 }
+.st-hud__store-catalog .st-hud__store-buy {
+  flex: 0 0 auto;
+  min-width: 70px;
+  min-height: max(44px, var(--st-store-buy-target, 44px));
+  padding: 5px 8px;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
 .st-hud__store-buy:hover { background: rgba(255, 210, 63, 0.26); }
+.st-hud__store-catalog .st-hud__store-buy:focus-visible,
+.st-hud__store-close:focus-visible {
+  outline: 2px solid #7ad7ff;
+  outline-offset: 2px;
+}
 .st-hud__store-price { font-size: 12px; font-variant-numeric: tabular-nums; }
 .st-hud__store-bundle { font-size: 9px; opacity: 0.7; }
 .st-hud__store-buy--disabled { opacity: 0.32; cursor: not-allowed; }
 .st-hud__store-buy--disabled:hover { background: rgba(255, 210, 63, 0.12); }
+.st-hud__store-footer {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: 10px 18px 14px;
+  border-top: 1px solid rgba(122, 215, 255, 0.16);
+}
 .st-hud__store-close {
-  align-self: flex-end;
   pointer-events: auto;
   cursor: pointer;
+  min-height: 40px;
   padding: 7px 18px;
   border: 1px solid var(--gold);
   border-radius: 4px;
@@ -3092,6 +3180,18 @@ export class HUD {
   font-size: 13px;
 }
 .st-hud__store-close:hover { background: rgba(255, 210, 63, 0.16); }
+#app.is-compact .st-hud__store-panel {
+  width: calc(100% - 24px);
+  height: calc(100% - 20px);
+  max-height: 92%;
+}
+#app.is-compact .st-hud__store-catalog { grid-template-columns: minmax(0, 1fr); }
+#app.is-compact .st-hud__store-section-grid { grid-template-columns: minmax(0, 1fr); }
+#app.is-compact .st-hud__store-row { min-height: 64px; }
+/* Preserve the compact design floor on top of the all-scale physical target. */
+#app.is-compact .st-hud__store-catalog .st-hud__store-buy {
+  min-height: max(72px, var(--st-store-buy-target, 72px));
+}
 
 /* Round indicator (side panel) — "Round N of M". */
 .st-hud__round {
@@ -3331,7 +3431,10 @@ export class HUD {
   .st-hud__controls { display: none; }
   .st-hud__weapon-btn { min-height: 44px; }
   .st-hud__strip-toggle { min-width: 72px; min-height: 72px; }
-  .st-hud__store-buy  { min-height: 44px; }
+  .st-hud__store-buy { min-height: 44px; }
+  .st-hud__store-catalog .st-hud__store-buy {
+    min-height: max(44px, var(--st-store-buy-target, 44px));
+  }
   .st-hud__restart    { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
   #hud .st-hud__menu  { display: none; }
   .st-hud__store-btn  { min-height: 44px; }

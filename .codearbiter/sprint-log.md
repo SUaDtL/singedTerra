@@ -2993,3 +2993,25 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared hosted CI.** PR #254 head `69fce088e5b9729bc6899cfefb480efdc8186e7a` passed CodeQL, CodeQL analysis, typecheck/harness/build, Edge, rendering E2E, and CodeRabbit status; Supabase Preview was intentionally skipped. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority authorizes a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01T21:48:45.3216369Z — Store catalog grid sprint
+
+### SMARTS selection and standing approval
+
+- **[high] Replace the Store's undifferentiated list with a category-first card catalog.** Live production inspection showed that the current Store is functionally complete but forces a player to scan one long vertical list with no behavior guidance. Four always-visible categories plus concise role copy score strong for Specific, Maintainable, Available, Reliable, Testable, and Securable while leaving deterministic gameplay and economy untouched. Confidence high.
+- **[high] Keep category sections visible instead of using tabs or a carousel.** A responsive grid enables price and role comparison in one glance; tabs hide most inventory and a carousel adds turn-time interaction. The catalog becomes the only scroll owner while title, credits, and Close remain fixed. Confidence high.
+- **[high] Keep presentation metadata client-only and dependency-free.** A typed `storeCatalog.ts` boundary makes coverage and wording independently testable without expanding `WeaponSystem`'s deterministic contract or taking on new supply-chain surface. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this bounded spec and plan only. Security, auth, secrets, irreversible operations, adversarial review, exact-head hosted CI, PR-only merge, and deployment proof remain active. Confidence high.
+
+### Store catalog implementation and review
+
+- **[high] Keep behavior copy in a typed client-only catalog.** Exact coverage tests prove all 15 finite-stock weapons and both accessories appear once across Impact, Tactical, Terrain & Fire, and Systems; the HUD continues to source live name, price, bundle, lock, affordability, ownership, and purchase payloads from the existing engine definitions and callbacks. Confidence high.
+- **[high] Derive the physical Store target floor from the existing stage zoom.** Review reproduced a 32.80px target at 667x375 and 35.22px at the non-compact 0.8 boundary. A presentation-only CSS variable now rounds `44 / scale` upward, catalog-specific rules consume it at every scale, and the original between-round coarse 44px rule remains intact. Confidence high.
+- **[high] Keep the modal shell fixed and make the catalog the sole scroll owner.** Computed browser geometry proves a real catalog scroll leaves panel scroll at zero and header/footer rectangles unchanged; panel, Close, and visible buy targets remain inside the modal and viewport at wide, compact, and smaller-landscape sizes. Confidence high.
+- **Adversarial fix loop:** Task 1 cleared spec and quality review with no findings. Task 2 required three rounds: two original Mediums (smaller-scale physical target and post-scroll shell proof), then Mediums for the exact 0.8 boundary, between-round selector isolation, and modal containment, then the restored coarse-pointer round-shop minimum. Every Critical, High, Medium, Low, and merge blocker is now closed; final Task 2 verdict is SPEC COMPLIANCE PASS / CODE QUALITY APPROVED. Confidence high.
+- **Fresh controller verification at 2026-08-01T22:30:21.8791035Z:** `npm run check` passed typecheck plus all 60 deterministic harnesses; `npm run build` passed; `npm run test:client` passed 118 files / 817 tests; the Store and weapon-glyph Playwright matrix passed 9 tests with 6 intentional project skips; `git diff --check` passed. Confidence high.
+
+### Formal coverage review closure
+
+- **[high] Close the Store lock and phase-gating oracle gap before commit.** The formal coverage lens found that the new catalog cells were not directly exercised at reduced arms level or outside `PLAYER_TURN`. Two real-HUD tests now prove exact weapon/accessory lock labels and native disabled state, plus enable-disable-reenable behavior across `PLAYER_TURN -> FIRING -> PLAYER_TURN`. Fresh focused verification passed 5/5 and client typecheck; scoped re-review returned ADDRESSED and the aggregated `$ca-review` verdict is CLEAN / READY with zero findings. Confidence high.
+- **Harvest:** the current Store sprint contains no low-confidence SMARTS decision, current `[NEEDS-TRIAGE]` residue, deferred finding, or parked item to promote. Historical entries elsewhere in the append-only sprint log remain historical and are not this sprint's residue. Confidence high.

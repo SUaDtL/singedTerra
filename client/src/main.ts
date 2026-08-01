@@ -568,6 +568,11 @@ function bootstrap(): void {
     if (!appEl) return;
     const s = Math.min(window.innerWidth / 1464, window.innerHeight / 600, 2);
     appEl.style.zoom = String(s);
+    // Store buy controls need a 44px physical touch target even when the entire
+    // stage is zoomed below the compact design scale. Round upward so browser
+    // subpixel layout cannot undercut that presentation-only floor.
+    const storeBuyTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
+    appEl.style.setProperty('--st-store-buy-target', `${storeBuyTarget}px`);
     appEl.classList.toggle('is-compact', s < COMPACT_SCALE);
   }
   window.addEventListener('resize', updateScale);

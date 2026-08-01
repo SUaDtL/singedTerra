@@ -417,15 +417,242 @@ test.describe('HUD layout guardrails', () => {
         ?.getAttribute('data-weapon'),
       name: line.querySelector('.st-hud__store-name')?.textContent,
     })));
-    expect(storeCatalog).toEqual(STORE_WEAPONS.map(([weapon, name]) => ({
+    // Task 1 intentionally grouped the former flat list by catalog role. This
+    // guardrail owns glyph coverage, not the presentation order of those groups.
+    expect(storeCatalog).toHaveLength(STORE_WEAPONS.length);
+    expect(storeCatalog).toEqual(expect.arrayContaining(STORE_WEAPONS.map(([weapon, name]) => ({
       weapon,
       name,
-    })));
+    }))));
     await expect(storeIcons).toHaveCount(STORE_WEAPONS.length);
     const firstStoreIcon = await storeIcons.first().boundingBox();
     expect(firstStoreIcon).not.toBeNull();
     expect(firstStoreIcon!.width).toBeGreaterThanOrEqual(11);
     expect(firstStoreIcon!.height).toBeGreaterThanOrEqual(11);
+  });
+
+  test('Store catalog keeps its controls fixed around a responsive internal catalog', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /Store/ }).click();
+
+    const panel = page.locator('.st-hud__store-panel');
+    const catalog = panel.locator('.st-hud__store-catalog');
+    const sections = catalog.locator('.st-hud__store-section');
+    const close = panel.getByRole('button', { name: 'Close' });
+    await expect(panel.locator('.st-hud__store-header')).toBeVisible();
+    await expect(close).toBeVisible();
+    await expect(sections).toHaveCount(4);
+
+    const compact = await isCompact(page);
+    const layout = await panel.evaluate((panelNode) => {
+      const panel = panelNode as HTMLElement;
+      const store = panel.parentElement!;
+      const catalog = panel.querySelector<HTMLElement>('.st-hud__store-catalog')!;
+      const sections = [...catalog.querySelectorAll<HTMLElement>('.st-hud__store-section')];
+      const header = panel.querySelector<HTMLElement>('.st-hud__store-header')!;
+      const footer = panel.querySelector<HTMLElement>('.st-hud__store-footer')!;
+      const close = panel.querySelector<HTMLElement>('.st-hud__store-close')!;
+      const panelRect = panel.getBoundingClientRect();
+      const storeRect = store.getBoundingClientRect();
+      const headerRect = header.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      const closeRect = close.getBoundingClientRect();
+      const firstSectionRect = sections[0]!.getBoundingClientRect();
+      const secondSectionRect = sections[1]!.getBoundingClientRect();
+      const catalogRect = catalog.getBoundingClientRect();
+      const buyTargets = [...catalog.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
+        .map((button) => button.getBoundingClientRect());
+      const isContained = (inner: DOMRect, outer: DOMRect) =>
+        inner.left >= outer.left - 1
+        && inner.right <= outer.right + 1
+        && inner.top >= outer.top - 1
+        && inner.bottom <= outer.bottom + 1;
+      const visibleBuyTargets = buyTargets.filter((target) =>
+        target.top >= catalogRect.top - 1 && target.bottom <= catalogRect.bottom + 1,
+      );
+
+      return {
+        panel: panelRect.toJSON(),
+        store: storeRect.toJSON(),
+        panelOverflowY: getComputedStyle(panel).overflowY,
+        catalogOverflowY: getComputedStyle(catalog).overflowY,
+        catalogScrollHeight: catalog.scrollHeight,
+        catalogClientHeight: catalog.clientHeight,
+        firstSection: firstSectionRect.toJSON(),
+        secondSection: secondSectionRect.toJSON(),
+        headerContained: headerRect.top >= panelRect.top - 1 && headerRect.bottom <= panelRect.bottom + 1,
+        footerContained: footerRect.top >= panelRect.top - 1 && footerRect.bottom <= panelRect.bottom + 1,
+        panelContainedByStore: isContained(panelRect, storeRect),
+        panelContainedByViewport:
+          panelRect.left >= -1 && panelRect.right <= window.innerWidth + 1
+          && panelRect.top >= -1 && panelRect.bottom <= window.innerHeight + 1,
+        closeContained: isContained(closeRect, panelRect) && isContained(closeRect, storeRect),
+        visibleBuyTargets: visibleBuyTargets.map((target) => ({
+          height: target.height,
+          contained: isContained(target, panelRect) && isContained(target, storeRect),
+        })),
+        documentWidth: document.documentElement.scrollWidth,
+        documentHeight: document.documentElement.scrollHeight,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(layout.panelOverflowY).not.toBe('auto');
+    expect(layout.catalogOverflowY).toBe('auto');
+    expect(layout.catalogScrollHeight).toBeGreaterThan(layout.catalogClientHeight);
+    expect(layout.headerContained).toBe(true);
+    expect(layout.footerContained).toBe(true);
+    expect(layout.panelContainedByStore).toBe(true);
+    expect(layout.panelContainedByViewport).toBe(true);
+    expect(layout.closeContained).toBe(true);
+    expect(layout.visibleBuyTargets.length).toBeGreaterThan(0);
+    expect(layout.visibleBuyTargets.every((target) => target.contained)).toBe(true);
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.documentHeight).toBeLessThanOrEqual(layout.viewportHeight);
+
+    if (compact) {
+      expect(layout.secondSection.left).toBeCloseTo(layout.firstSection.left, 0);
+      expect(layout.secondSection.top).toBeGreaterThan(layout.firstSection.top);
+      for (const target of layout.visibleBuyTargets) {
+        expect(target.height).toBeGreaterThanOrEqual(44);
+      }
+    } else {
+      expect(layout.secondSection.left).toBeGreaterThan(layout.firstSection.left);
+      expect(layout.secondSection.top).toBeCloseTo(layout.firstSection.top, 0);
+    }
+
+    const scrolledLayout = await panel.evaluate((panelNode) => {
+      const panel = panelNode as HTMLElement;
+      const catalog = panel.querySelector<HTMLElement>('.st-hud__store-catalog')!;
+      const header = panel.querySelector<HTMLElement>('.st-hud__store-header')!;
+      const footer = panel.querySelector<HTMLElement>('.st-hud__store-footer')!;
+      const close = panel.querySelector<HTMLElement>('.st-hud__store-close')!;
+      const firstSection = catalog.querySelector<HTMLElement>('.st-hud__store-section')!;
+      const before = {
+        header: header.getBoundingClientRect().toJSON(),
+        footer: footer.getBoundingClientRect().toJSON(),
+        firstSectionTop: firstSection.getBoundingClientRect().top,
+      };
+      catalog.scrollTop = Math.min(80, catalog.scrollHeight - catalog.clientHeight);
+      const panelRect = panel.getBoundingClientRect();
+      const storeRect = panel.parentElement!.getBoundingClientRect();
+      const catalogRect = catalog.getBoundingClientRect();
+      const isContained = (inner: DOMRect, outer: DOMRect) =>
+        inner.left >= outer.left - 1
+        && inner.right <= outer.right + 1
+        && inner.top >= outer.top - 1
+        && inner.bottom <= outer.bottom + 1;
+      const visibleBuyTargets = [...catalog.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
+        .map((button) => button.getBoundingClientRect())
+        .filter((target) => target.top >= catalogRect.top - 1 && target.bottom <= catalogRect.bottom + 1);
+
+      return {
+        before,
+        header: header.getBoundingClientRect().toJSON(),
+        footer: footer.getBoundingClientRect().toJSON(),
+        firstSectionTop: firstSection.getBoundingClientRect().top,
+        panelScrollTop: panel.scrollTop,
+        catalogScrollTop: catalog.scrollTop,
+        closeContained: isContained(close.getBoundingClientRect(), panelRect)
+          && isContained(close.getBoundingClientRect(), storeRect),
+        visibleBuysContained: visibleBuyTargets.length > 0
+          && visibleBuyTargets.every((target) => isContained(target, panelRect) && isContained(target, storeRect)),
+      };
+    });
+    expect(scrolledLayout.catalogScrollTop).toBeGreaterThan(0);
+    expect(scrolledLayout.panelScrollTop).toBe(0);
+    expect(scrolledLayout.header).toEqual(scrolledLayout.before.header);
+    expect(scrolledLayout.footer).toEqual(scrolledLayout.before.footer);
+    expect(scrolledLayout.firstSectionTop).toBeLessThan(scrolledLayout.before.firstSectionTop);
+    expect(scrolledLayout.closeContained).toBe(true);
+    expect(scrolledLayout.visibleBuysContained).toBe(true);
+  });
+
+  test('Store catalog preserves 44px buy targets at the non-compact coarse scale', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
+    await page.setViewportSize({ width: 1172, height: 600 });
+    await expect.poll(() => isCompact(page)).toBe(false);
+    await page.getByRole('button', { name: /Store/ }).click();
+
+    const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
+    const heights = await targets.evaluateAll((buttons) =>
+      buttons.map((button) => button.getBoundingClientRect().height),
+    );
+    expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Store keeps the generated round-shop coarse minimum at the scale boundary', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
+    await page.setViewportSize({ width: 1172, height: 600 });
+    await expect.poll(() => isCompact(page)).toBe(false);
+
+    const roundShopMinimums = await page.locator('.st-hud__roundshop-grid .st-hud__store-buy')
+      .evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).minHeight));
+    expect(roundShopMinimums).toHaveLength(17);
+    expect(roundShopMinimums.every((minimum) => minimum === '44px')).toBe(true);
+
+    await page.getByRole('button', { name: /Store/ }).click();
+    const catalogHeights = await page.locator('.st-hud__store-catalog .st-hud__store-buy')
+      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+    expect(Math.min(...catalogHeights)).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Store catalog preserves 44px buy targets at the smaller landscape scale', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
+    await page.setViewportSize({ width: 667, height: 375 });
+    await expect.poll(() => isCompact(page)).toBe(true);
+    await page.getByRole('button', { name: /Store/ }).click();
+
+    const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
+    const heights = await targets.evaluateAll((buttons) =>
+      buttons.map((button) => button.getBoundingClientRect().height),
+    );
+    expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
+    const containment = await page.locator('.st-hud__store-panel').evaluate((panelNode) => {
+      const panel = panelNode as HTMLElement;
+      const store = panel.parentElement!;
+      const catalog = panel.querySelector<HTMLElement>('.st-hud__store-catalog')!;
+      const panelRect = panel.getBoundingClientRect();
+      const storeRect = store.getBoundingClientRect();
+      const isContained = (inner: DOMRect, outer: DOMRect) =>
+        inner.left >= outer.left - 1
+        && inner.right <= outer.right + 1
+        && inner.top >= outer.top - 1
+        && inner.bottom <= outer.bottom + 1;
+      const catalogRect = catalog.getBoundingClientRect();
+      const visibleBuys = [...catalog.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
+        .map((button) => button.getBoundingClientRect())
+        .filter((target) => target.top >= catalogRect.top - 1 && target.bottom <= catalogRect.bottom + 1);
+      return {
+        panelContainedByStore: isContained(panelRect, storeRect),
+        panelContainedByViewport:
+          panelRect.left >= -1 && panelRect.right <= window.innerWidth + 1
+          && panelRect.top >= -1 && panelRect.bottom <= window.innerHeight + 1,
+        closeContained: isContained(panel.querySelector<HTMLElement>('.st-hud__store-close')!.getBoundingClientRect(), panelRect),
+        visibleBuysContained: visibleBuys.length > 0
+          && visibleBuys.every((target) => isContained(target, panelRect) && isContained(target, storeRect)),
+      };
+    });
+    expect(containment.panelContainedByStore).toBe(true);
+    expect(containment.panelContainedByViewport).toBe(true);
+    expect(containment.closeContained).toBe(true);
+    expect(containment.visibleBuysContained).toBe(true);
+    const documentSize = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    }));
+    expect(documentSize.width).toBeLessThanOrEqual(documentSize.viewportWidth);
+    expect(documentSize.height).toBeLessThanOrEqual(documentSize.viewportHeight);
   });
 
   test('the analog console is visible, boxed, and inside #hud at every scale', async ({ page }) => {
