@@ -3,10 +3,38 @@ import type { TankLoadout } from '@shared/types/TankLoadout';
 import { TankPartArt } from './TankPartArt';
 
 const previewArt = new TankPartArt();
-const PREVIEW_WIDTH = 84;
-const PREVIEW_HEIGHT = 48;
-const SCALE = 1.6;
 const RETRY_MS = 50;
+
+export type TankLoadoutPreviewMode = 'thumbnail' | 'spotlight';
+
+interface TankLoadoutPreviewProfile {
+  readonly width: number;
+  readonly height: number;
+  readonly tankX: number;
+  readonly tankY: number;
+  readonly contextScale: number;
+  readonly artScale?: number;
+}
+
+const PREVIEW_PROFILES: Readonly<
+  Record<TankLoadoutPreviewMode, TankLoadoutPreviewProfile>
+> = {
+  thumbnail: {
+    width: 84,
+    height: 48,
+    tankX: 22,
+    tankY: 27,
+    contextScale: 1.6,
+  },
+  spotlight: {
+    width: 320,
+    height: 180,
+    tankX: 160,
+    tankY: 158,
+    contextScale: 1,
+    artScale: 4,
+  },
+};
 
 /** Invalidate queued atlas retries and remove any stale assembled vehicle. */
 export function clearTankLoadoutPreview(canvas: HTMLCanvasElement): void {
@@ -27,7 +55,16 @@ export function clearTankLoadoutPreview(canvas: HTMLCanvasElement): void {
 function drawFallback(
   ctx: CanvasRenderingContext2D,
   color: string,
+  profile: TankLoadoutPreviewProfile,
 ): void {
+  const fallbackScale = profile.artScale ?? 1;
+  if (fallbackScale !== 1) {
+    ctx.translate(
+      (profile.width - 43 * fallbackScale) / 2,
+      (profile.height - 30 * fallbackScale) / 2,
+    );
+    ctx.scale(fallbackScale, fallbackScale);
+  }
   ctx.fillStyle = '#12090b';
   ctx.fillRect(3, 20, 34, 6);
   ctx.fillStyle = color;
@@ -49,8 +86,11 @@ export function paintTankLoadoutPreview(
   canvas: HTMLCanvasElement,
   color: string,
   loadout: TankLoadout,
+  mode: TankLoadoutPreviewMode = 'thumbnail',
 ): void {
+  const profile = PREVIEW_PROFILES[mode];
   const signature = [
+    mode,
     color,
     loadout.treads,
     loadout.hull,
@@ -58,8 +98,8 @@ export function paintTankLoadoutPreview(
     loadout.barrel,
   ].join('|');
   canvas.dataset['tankPreviewSignature'] = signature;
-  canvas.width = PREVIEW_WIDTH;
-  canvas.height = PREVIEW_HEIGHT;
+  canvas.width = profile.width;
+  canvas.height = profile.height;
   if (
     typeof navigator !== 'undefined'
     && navigator.userAgent.toLowerCase().includes('jsdom')
@@ -71,21 +111,29 @@ export function paintTankLoadoutPreview(
     // DOM-only test environments do not implement Canvas; the live browser does.
   }
   if (ctx === null) return;
-  ctx.clearRect(0, 0, PREVIEW_WIDTH, PREVIEW_HEIGHT);
+  ctx.clearRect(0, 0, profile.width, profile.height);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.save();
-  ctx.scale(SCALE, SCALE);
+  if (profile.contextScale !== 1) {
+    ctx.scale(profile.contextScale, profile.contextScale);
+  }
   const tank = {
-    x: 22,
-    y: 27,
+    x: profile.tankX,
+    y: profile.tankY,
     angle: 12,
     color,
     loadout,
   } as TankState;
-  const staticReady = previewArt.drawStatic(ctx, tank);
-  const barrelReady = staticReady && previewArt.drawBarrel(ctx, tank);
-  if (!staticReady || !barrelReady) drawFallback(ctx, color);
+  const staticReady = profile.artScale === undefined
+    ? previewArt.drawStatic(ctx, tank)
+    : previewArt.drawStatic(ctx, tank, profile.artScale);
+  const barrelReady = staticReady && (
+    profile.artScale === undefined
+      ? previewArt.drawBarrel(ctx, tank)
+      : previewArt.drawBarrel(ctx, tank, profile.artScale)
+  );
+  if (!staticReady || !barrelReady) drawFallback(ctx, color, profile);
   ctx.restore();
 
   if (previewArt.state === 'loading') {
@@ -94,7 +142,7 @@ export function paintTankLoadoutPreview(
         canvas.isConnected
         && canvas.dataset['tankPreviewSignature'] === signature
       ) {
-        paintTankLoadoutPreview(canvas, color, loadout);
+        paintTankLoadoutPreview(canvas, color, loadout, mode);
       }
     }, RETRY_MS);
   }

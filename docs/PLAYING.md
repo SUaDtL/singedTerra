@@ -32,6 +32,14 @@ Online clients run the same deterministic engine locally. If a connection
 drops, the client can rebuild the match from the room seed and ordered action
 log.
 
+## Garage spotlight
+
+The Vehicle Bay spotlights the tank you are currently customizing while the
+smaller tanks keep the full roster in view. Choose a complete Garage preset or
+cycle Mobility, Hull, Turret, and Barrel independently; the large assembled
+tank and its part labels update immediately. Selecting a player's color or
+editing their name also moves the spotlight to that player.
+
 ## Read the battlefield
 
 The right tactical rail answers the questions that matter before a shot:

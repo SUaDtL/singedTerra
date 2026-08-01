@@ -2439,3 +2439,44 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - FINAL ADVERSARIAL FOLLOW-UP 2026-07-31 READY. All 4 merge-blocking Medium findings and the valid Low were corrected test-first. Exact corrected diff follow-up found 0 Critical 0 High 0 new merge-blockers and 0 outstanding notes. Commit gate may proceed. Confidence high.
 
 - CA-PR COVERAGE CORRECTION 2026-08-01: exact-head coverage review found one merge-blocking Medium gap for persisted `v1:skipped` reload behavior. Tests now prove direct decoding plus cold and replacement controller suppression; focused coach/controller verification passes 22/22 and typecheck passes. Production behavior was unchanged. Confidence high.
+
+### Garage Spotlight SMARTS decision and bounded gate
+
+- SMARTS DECISION 2026-08-01: choose a large live Garage spotlight rendered directly from the existing authored WebP atlas over scaling battlefield tanks or replacing the atlas. This is Strong on Securability, Maintainability, Availability, Reliability, Testability, and Scalability because it is client-only, reuses one scale-aware painter, preserves fallbacks and deterministic geometry, and makes 2-4 player customization visibly legible without hitbox drift. Confidence high.
+- SPEC/PLAN GATE 2026-08-01: .codearbiter/specs/garage-spotlight.md and .codearbiter/plans/garage-spotlight.md are bound under one sprint-specific logged override from the maintainer's standing authority. No security, dependency, migration, backend, merge, or deployment gate is bypassed. Confidence high.
+
+#### Task 1 accepted — scale-aware authored tank painter
+- TDD RED: after linking the existing ignored dependency install, the new scale tests failed on unchanged 1x static and barrel canvases.
+- GREEN: `TankPartArt` now supports finite positive direct-render scales, scales destination canvases and offsets, and keys the cache by normalized scale while preserving the battlefield 1x default.
+- Review: fixed profile scales only; no user-derived arbitrary scale. Focused result 16/16, full TypeScript check green, diff hygiene clean.
+
+#### Task 1 correction accepted — scaled barrel mount
+- Review found a merge-blocking detached-barrel risk: the bitmap and local offsets scaled while the shared barrel pivot remained at 1x.
+- TDD RED expected the pivot scaled about the tank surface anchor and received the 1x mount; GREEN now scales the mount displacement with the assembly while preserving the exact scale-1 pivot and shared angle.
+- Focused result 16/16, full TypeScript check green, diff hygiene clean.
+
+#### Task 2 accepted — explicit spotlight preview profile
+- TDD RED: the legacy preview stayed 84x48, passed no direct scale, bound retries without a presentation mode, and left the spotlight fallback at thumbnail scale.
+- GREEN: the default thumbnail remains exactly 84x48 with its existing 1.6 context path; spotlight is 320x180 with fixed direct atlas scale 4, a centered scale-4 fallback, and mode-bound retry identity.
+- Review: one atlas source, cache scales bounded to 1 and 4, presentation-only. Focused result 5/5, full TypeScript check green, diff hygiene clean.
+
+#### Task 3 accepted — live vehicle-bay spotlight
+- TDD RED: five bounded DOM contracts failed at the absent spotlight while existing Garage behavior remained green.
+- GREEN: one selected-player 320x180 spotlight now uses shared part vocabulary and retains the multiplayer thumbnail convoy across hot-seat and online paths; preset, slot, color, and local-seat rules select the correct owner.
+- Review correction: per-keystroke preview rebuild violated in-place identity synchronization. A new RED node-identity assertion drove owner-aware activation; subsequent name edits preserve the exact spotlight canvas and input focus.
+- Review: pointer-transparent, no remote controls, waiting-room local preference, reduced-motion convoy preserved. Focused Lobby/network/preview result 53/53, full TypeScript check green, diff hygiene clean.
+
+#### Task 4 accepted — production-browser and player-guide proof
+- The production-bundle Playwright oracle was written after the Task 3 behavior existed and passed immediately across desktop-fine, small-window, and pixel-touch; no honest browser RED or CSS correction existed.
+- The oracle proves default and selected-owner spotlight behavior, four shared labels, Player 2 preset/slot/exact Green tint/name updates, retained focus, spotlight-to-thumbnail size hierarchy, usable Garage/Start Game, transition to the game canvas, and zero document scroll.
+- Visual review: the authored tank leads the bay, four metadata tiles read as one telemetry strip, roster thumbnails remain subordinate, and touch preserves the full flow without clipping.
+- Player guidance now explains the spotlight and independent part controls. Focused browser result 3/3; deterministic check, 102 client files/717 tests, production build, state-free secret scan, and diff hygiene all green.
+
+#### Final adversary corrections — canvas causality and artifact integrity
+- MEDIUM merge blocker: metadata, geometry, and CSS tint did not prove the spotlight canvas actually repainted; live inspection also observed metadata preceding the settled canvas. The production-browser oracle now polls a nonblank visible-pixel coordinate/RGBA hash to stability and proves Foundry to Ranger, same-color Ranger to Bunker turret, and blue to Green canvas changes. Focused browser result is 3/3.
+- MEDIUM merge blocker: the mutable Task 4 checklist claimed an expected RED even though the append-only receipt truthfully recorded an immediate GREEN. The plan now names an acceptance oracle and first-run-result step without rewriting the append-only history.
+- Final adversary follow-up is pending on the corrected exact diff.
+
+#### Final adversary follow-up — CLEAN / READY
+- The same adversary reviewed the corrected full package and found no remaining CRITICAL, HIGH, MEDIUM, LOW, or merge-blocking issue.
+- Remaining obligations are the governed commit/PR path, exact-reviewed-head hosted CI and CodeQL, PR merge, Pages provenance, deployment, and live smoke. No Supabase deployment is required for this client-only slice.

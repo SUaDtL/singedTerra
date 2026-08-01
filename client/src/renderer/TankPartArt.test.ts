@@ -159,6 +159,116 @@ describe('TankPartArt', () => {
     expect(harness.canvases).toHaveLength(3);
   });
 
+  it('renders and caches static variants at the requested direct scale', () => {
+    const image = controlledImage();
+    const harness = canvasFactory();
+    const art = new TankPartArt(
+      () => image as unknown as HTMLImageElement,
+      harness.factory,
+      '/',
+    );
+    const subject = tank();
+    const drawImage = vi.fn();
+    const scale = 4;
+    settleValid(image);
+
+    expect(art.drawStatic(
+      { drawImage } as unknown as CanvasRenderingContext2D,
+      subject,
+      scale,
+    )).toBe(true);
+
+    const staticSlots = ['treads', 'hull', 'turret'] as const;
+    expect(harness.canvases.map(({ width, height }) => ({ width, height })))
+      .toEqual(staticSlots.map((slot) => {
+        const definition = tankPartDefinition(subject.loadout!, slot);
+        return {
+          width: definition.width * scale,
+          height: definition.height * scale,
+        };
+      }));
+    expect(drawImage.mock.calls.map(([, x, y]) => [x, y])).toEqual(
+      staticSlots.map((slot) => {
+        const definition = tankPartDefinition(subject.loadout!, slot);
+        return [
+          subject.x + definition.offsetX * scale,
+          subject.y + definition.offsetY * scale,
+        ];
+      }),
+    );
+    expect(harness.contexts.map(({ drawImage: sourceDraw }) =>
+      sourceDraw.mock.calls[0].slice(1))).toEqual(staticSlots.map((slot) => {
+      const definition = tankPartDefinition(subject.loadout!, slot);
+      return [
+        definition.source.x,
+        definition.source.y,
+        definition.source.width,
+        definition.source.height,
+        0,
+        0,
+        definition.width * scale,
+        definition.height * scale,
+      ];
+    }));
+
+    expect(art.drawStatic(
+      { drawImage } as unknown as CanvasRenderingContext2D,
+      subject,
+      scale,
+    )).toBe(true);
+    expect(harness.canvases).toHaveLength(3);
+
+    expect(art.drawStatic(
+      { drawImage } as unknown as CanvasRenderingContext2D,
+      subject,
+    )).toBe(true);
+    expect(harness.canvases).toHaveLength(6);
+    expect(harness.canvases.slice(3).map(({ width, height }) => ({
+      width,
+      height,
+    }))).toEqual(staticSlots.map((slot) => {
+      const definition = tankPartDefinition(subject.loadout!, slot);
+      return { width: definition.width, height: definition.height };
+    }));
+  });
+
+  it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY, 0, -2])(
+    'normalizes invalid render scale %s to battlefield scale one',
+    (scale) => {
+      const image = controlledImage();
+      const harness = canvasFactory();
+      const art = new TankPartArt(
+        () => image as unknown as HTMLImageElement,
+        harness.factory,
+        '/',
+      );
+      const subject = tank();
+      const drawImage = vi.fn();
+      settleValid(image);
+
+      expect(art.drawStatic(
+        { drawImage } as unknown as CanvasRenderingContext2D,
+        subject,
+        scale,
+      )).toBe(true);
+
+      const definition = tankPartDefinition(subject.loadout!, 'treads');
+      expect(harness.canvases[0]).toMatchObject({
+        width: definition.width,
+        height: definition.height,
+      });
+      expect(drawImage.mock.calls[0].slice(1)).toEqual([
+        subject.x + definition.offsetX,
+        subject.y + definition.offsetY,
+      ]);
+      expect(art.drawStatic(
+        { drawImage } as unknown as CanvasRenderingContext2D,
+        subject,
+      )).toBe(true);
+      expect(harness.canvases).toHaveLength(3);
+    },
+  );
+
   it('rotates the authored barrel around the shared pivot and settles', () => {
     const image = controlledImage();
     const harness = canvasFactory();
@@ -193,6 +303,44 @@ describe('TankPartArt', () => {
     expect(art.isSettled).toBe(false);
     expect(art.drawStatic(ctx, subject)).toBe(true);
     expect(art.isSettled).toBe(true);
+  });
+
+  it('scales the authored barrel bitmap and local draw offsets around its mount', () => {
+    const image = controlledImage();
+    const harness = canvasFactory();
+    const art = new TankPartArt(
+      () => image as unknown as HTMLImageElement,
+      harness.factory,
+      '/',
+    );
+    const subject = tank();
+    const definition = tankPartDefinition(subject.loadout!, 'barrel');
+    const mount = tankBarrelMount(subject);
+    const drawImage = vi.fn();
+    const translate = vi.fn();
+    const ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate,
+      rotate: vi.fn(),
+      drawImage,
+    } as unknown as CanvasRenderingContext2D;
+    settleValid(image);
+
+    expect(art.drawBarrel(ctx, subject, 4)).toBe(true);
+    expect(translate).toHaveBeenCalledWith(
+      subject.x + (mount.pivot.x - subject.x) * 4,
+      subject.y + (mount.pivot.y - subject.y) * 4,
+    );
+    expect(harness.canvases[0]).toMatchObject({
+      width: definition.width * 4,
+      height: definition.height * 4,
+    });
+    expect(drawImage).toHaveBeenCalledWith(
+      harness.canvases[0],
+      definition.offsetX * 4,
+      definition.offsetY * 4,
+    );
   });
 
   it('reads every source row from the tank mixed-slot loadout', () => {

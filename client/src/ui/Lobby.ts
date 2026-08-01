@@ -184,6 +184,13 @@ interface PlayerRowState {
   loadout: TankLoadout;
 }
 
+interface PreviewVehicle {
+  owner: string;
+  name: string;
+  color: string;
+  loadout: TankLoadout;
+}
+
 /** Active tab on the lobby. */
 type LobbyTab = 'hotseat' | 'online';
 
@@ -222,6 +229,8 @@ export class Lobby {
   private onlineLoadout: TankLoadout = { ...DEFAULT_TANK_LOADOUT };
   /** Compact layouts expose one touch-sized Garage editor at a time. */
   private openGarageOwner: string | null = null;
+  /** Garage owner currently featured in the large vehicle-bay preview. */
+  private spotlightOwner: string | null = null;
   private onlineMaxPlayers = 2;
   private onlineMaxWind = '';
   private onlineGravity = '';
@@ -520,6 +529,82 @@ export class Lobby {
         font-size: 9px;
         letter-spacing: 2.6px;
         text-transform: uppercase;
+      }
+      #lobby .lobby-preview__spotlight {
+        position: absolute;
+        z-index: 3;
+        top: 40px;
+        left: 18px;
+        right: 18px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        color: var(--text);
+        filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.34));
+      }
+      #lobby .lobby-preview__spotlight-identity {
+        position: absolute;
+        top: 6px;
+        left: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: calc(100% - 20px);
+        color: var(--text-gold);
+        font: 700 13px/1 var(--font-display);
+        letter-spacing: 0.7px;
+        text-shadow: 0 2px 7px rgba(0, 0, 0, 0.75);
+      }
+      #lobby .lobby-preview__spotlight-identity::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: var(--tank-color);
+        box-shadow: 0 0 10px var(--tank-color);
+      }
+      #lobby .lobby-preview__spotlight-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #lobby .lobby-preview__spotlight-canvas {
+        display: block;
+        width: min(320px, 82%);
+        height: auto;
+      }
+      #lobby .lobby-preview__parts {
+        width: min(440px, calc(100% - 24px));
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px;
+        margin-top: -12px;
+      }
+      #lobby .lobby-preview__part {
+        min-width: 0;
+        padding: 6px 5px;
+        border-top: 1px solid rgba(255, 210, 63, 0.25);
+        background: linear-gradient(180deg, rgba(12, 7, 22, 0.48), rgba(12, 7, 22, 0.18));
+        text-align: center;
+      }
+      #lobby .lobby-preview__part span,
+      #lobby .lobby-preview__part strong {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #lobby .lobby-preview__part span {
+        color: rgba(255, 233, 168, 0.48);
+        font: 700 8px/1.2 var(--font-sans);
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-preview__part strong {
+        margin-top: 3px;
+        color: rgba(255, 233, 168, 0.90);
+        font: 700 9px/1.15 var(--font-mono);
       }
       #lobby .lobby-preview__convoy {
         position: absolute;
@@ -1130,42 +1215,148 @@ export class Lobby {
     return el;
   }
 
-  /** Live color preview: the selected roster rendered as rolling vector tanks. */
+  private previewRoster(): PreviewVehicle[] {
+    if (this.activeTab === 'hotseat') {
+      return this.players.map((player, index) => ({
+        owner: `player-${index + 1}`,
+        name: player.name || `Player ${index + 1}`,
+        color: player.color,
+        loadout: normalizeTankLoadout(player.loadout),
+      }));
+    }
+
+    if (this.onlineSubView === 'waiting' && this.waitingPlayers.length > 0) {
+      return this.waitingPlayers.map((player) => ({
+        owner: player.id === this.waitingPlayerId
+          ? 'online-player'
+          : `network-${player.id}`,
+        name: player.name || 'Player',
+        color: player.color,
+        loadout: normalizeTankLoadout(player.loadout),
+      }));
+    }
+
+    return [{
+      owner: 'online-player',
+      name: this.onlineName || 'You',
+      color: this.onlineSubView === 'create' ? this.onlineColor : this.joinColor,
+      loadout: normalizeTankLoadout(this.onlineLoadout),
+    }];
+  }
+
+  private spotlightVehicle(
+    roster: readonly PreviewVehicle[],
+  ): PreviewVehicle | undefined {
+    if (this.spotlightOwner !== null) {
+      const selected = roster.find((vehicle) => vehicle.owner === this.spotlightOwner);
+      if (selected) return selected;
+    }
+    if (this.activeTab === 'online' && this.onlineSubView === 'waiting') {
+      const local = roster.find((vehicle) => vehicle.owner === 'online-player');
+      if (local) return local;
+    }
+    return roster[0];
+  }
+
+  /** Update preview identity only, preserving focus in the editing input. */
+  private syncPreviewName(owner: string, name: string): void {
+    const nextName = name.trim() || (owner.startsWith('player-')
+      ? `Player ${owner.slice('player-'.length)}`
+      : 'You');
+    for (const vehicle of this.root.querySelectorAll<HTMLElement>('[data-preview-owner]')) {
+      if (vehicle.dataset.previewOwner !== owner) continue;
+      const label = vehicle.querySelector<HTMLElement>(
+        vehicle.classList.contains('lobby-preview__spotlight')
+          ? '.lobby-preview__spotlight-name'
+          : '.lobby-preview__name',
+      );
+      if (label) label.textContent = nextName;
+      if (vehicle.classList.contains('lobby-preview__spotlight')) {
+        vehicle.setAttribute('aria-label', `${nextName} vehicle spotlight`);
+      }
+    }
+  }
+
+  /** Rebuild only the pointer-transparent bay, never the focused form. */
+  private refreshVehiclePreview(): void {
+    this.root.querySelector('.lobby-preview')?.replaceWith(this.renderVehiclePreview());
+  }
+
+  /** Select an editor without repainting an already-correct assembled tank. */
+  private activatePreviewOwner(owner: string): void {
+    const currentOwner = this.spotlightVehicle(this.previewRoster())?.owner;
+    this.spotlightOwner = owner;
+    if (currentOwner !== owner) this.refreshVehiclePreview();
+  }
+
+  /** Live Garage bay: one selected build at inspection scale plus roster context. */
   private renderVehiclePreview(): HTMLElement {
     const preview = document.createElement('div');
     preview.className = 'lobby-preview';
 
     const label = document.createElement('div');
     label.className = 'lobby-preview__label';
-    label.textContent = this.activeTab === 'hotseat' ? 'Roster Preview' : 'Vehicle Bay';
+    label.textContent = 'Vehicle Bay';
+
+    const roster = this.previewRoster();
+    const featured = this.spotlightVehicle(roster);
+    const spotlight = document.createElement('section');
+    spotlight.className = 'lobby-preview__spotlight';
+    if (featured) {
+      spotlight.dataset.owner = featured.owner;
+      spotlight.dataset.previewOwner = featured.owner;
+      spotlight.style.setProperty('--tank-color', featured.color);
+      spotlight.setAttribute('aria-label', `${featured.name.trim() || 'Player'} vehicle spotlight`);
+
+      const identity = document.createElement('div');
+      identity.className = 'lobby-preview__spotlight-identity';
+      const name = document.createElement('span');
+      name.className = 'lobby-preview__spotlight-name';
+      name.textContent = featured.name.trim() || 'Player';
+      identity.append(name);
+
+      const canvas = document.createElement('canvas');
+      canvas.className = 'lobby-preview__spotlight-canvas';
+      canvas.setAttribute('aria-hidden', 'true');
+      paintTankLoadoutPreview(canvas, featured.color, featured.loadout, 'spotlight');
+
+      const parts = document.createElement('div');
+      parts.className = 'lobby-preview__parts';
+      parts.setAttribute('role', 'list');
+      parts.setAttribute('aria-label', 'Selected tank parts');
+      for (const slot of TANK_PART_SLOTS) {
+        const part = document.createElement('div');
+        part.className = 'lobby-preview__part';
+        part.dataset.slot = slot;
+        part.setAttribute('role', 'listitem');
+        const role = document.createElement('span');
+        role.textContent = TANK_SLOT_LABELS[slot];
+        const variant = document.createElement('strong');
+        variant.textContent = TANK_PART_VARIANT_LABELS[slot][featured.loadout[slot]];
+        part.append(role, variant);
+        parts.append(part);
+      }
+      spotlight.append(identity, canvas, parts);
+    }
 
     const convoy = document.createElement('div');
     convoy.className = 'lobby-preview__convoy';
-    const roster = this.activeTab === 'hotseat'
-      ? this.players
-      : this.onlineSubView === 'waiting' && this.waitingPlayers.length > 0
-        ? this.waitingPlayers
-        : [{
-            name: this.onlineName || 'You',
-            color: this.onlineSubView === 'create'
-              ? this.onlineColor
-              : this.joinColor,
-            loadout: this.onlineLoadout,
-          }];
     roster.slice(0, MAX_PLAYERS).forEach((player, index) => {
       convoy.append(this.renderPreviewTank(
+        player.owner,
         player.name || `Player ${index + 1}`,
         player.color,
         index,
-        normalizeTankLoadout(player.loadout),
+        player.loadout,
       ));
     });
 
-    preview.append(label, convoy);
+    preview.append(label, spotlight, convoy);
     return preview;
   }
 
   private renderPreviewTank(
+    owner: string,
     name: string,
     color: string,
     index: number,
@@ -1173,6 +1364,8 @@ export class Lobby {
   ): HTMLElement {
     const tank = document.createElement('div');
     tank.className = 'lobby-preview__tank';
+    tank.dataset.owner = owner;
+    tank.dataset.previewOwner = owner;
     tank.style.setProperty('--tank-color', color);
     tank.style.setProperty('--slot', String(index));
 
@@ -1245,6 +1438,7 @@ export class Lobby {
         `Apply ${TANK_KIT_LABELS[kit]} preset to ${ownerLabel}`,
       );
       button.addEventListener('click', () => {
+        this.spotlightOwner = owner;
         onChange(presetLoadout(kit));
         this.focusGarageControl(owner, `[data-preset="${kit}"]`);
       });
@@ -1273,6 +1467,7 @@ export class Lobby {
       button.addEventListener('click', () => {
         const current = TANK_KIT_IDS.indexOf(loadout[slot]);
         const nextKit = TANK_KIT_IDS[(current + 1) % TANK_KIT_IDS.length]!;
+        this.spotlightOwner = owner;
         onChange({ ...loadout, [slot]: nextKit });
         this.focusGarageControl(owner, `[data-slot="${slot}"]`);
       });
@@ -2494,6 +2689,10 @@ export class Lobby {
     nameInput.maxLength = 20;
     nameInput.value = me.name;
     nameInput.placeholder = 'Name';
+    nameInput.addEventListener('input', () => {
+      this.activatePreviewOwner('online-player');
+      this.syncPreviewName('online-player', nameInput.value);
+    });
     const commitName = (): void => {
       const next = nameInput.value.trim();
       if (!next || next === me.name.trim()) return;
@@ -2532,6 +2731,7 @@ export class Lobby {
       if (taken) swatch.classList.add('taken');
       swatch.addEventListener('click', () => {
         if (taken || this.onlineBusy || color.value === me.color) return;
+        this.spotlightOwner = 'online-player';
         void this.updateMe({ color: color.value });
       });
       swatches.append(swatch);
@@ -2648,7 +2848,11 @@ export class Lobby {
     nameInput.maxLength = 20;
     nameInput.value = nameValue;
     nameInput.placeholder = 'Name';
-    nameInput.addEventListener('input', () => { onName(nameInput.value); });
+    nameInput.addEventListener('input', () => {
+      onName(nameInput.value);
+      this.activatePreviewOwner('online-player');
+      this.syncPreviewName('online-player', nameInput.value);
+    });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -2663,6 +2867,7 @@ export class Lobby {
       if (taken) swatch.classList.add('taken');
       swatch.addEventListener('click', () => {
         if (taken) return;
+        this.spotlightOwner = 'online-player';
         onColor(color.value);
       });
       swatches.append(swatch);
@@ -2718,6 +2923,9 @@ export class Lobby {
     name.placeholder = `Player ${index + 1}`;
     name.addEventListener('input', () => {
       this.players[index].name = name.value;
+      const owner = `player-${index + 1}`;
+      this.activatePreviewOwner(owner);
+      this.syncPreviewName(owner, name.value);
       this.refreshStartState();
     });
 
@@ -2736,6 +2944,7 @@ export class Lobby {
       if (takenByOther) swatch.classList.add('taken');
       swatch.addEventListener('click', () => {
         if (takenByOther) return;
+        this.spotlightOwner = `player-${index + 1}`;
         this.players[index].color = color.value;
         this.render();
       });

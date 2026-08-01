@@ -28,11 +28,19 @@ export interface TankPartPainter {
   drawStatic(
     ctx: CanvasRenderingContext2D,
     tank: Readonly<TankState>,
+    scale?: number,
   ): boolean;
   drawBarrel(
     ctx: CanvasRenderingContext2D,
     tank: Readonly<TankState>,
+    scale?: number,
   ): boolean;
+}
+
+function normalizeRenderScale(value: number | undefined): number {
+  return value !== undefined && Number.isFinite(value) && value > 0
+    ? value
+    : 1;
 }
 
 function createBrowserImage(): HTMLImageElement {
@@ -113,8 +121,10 @@ export class TankPartArt implements TankPartPainter {
   drawStatic(
     ctx: CanvasRenderingContext2D,
     tank: Readonly<TankState>,
+    scale?: number,
   ): boolean {
     if (this.currentState !== 'ready') return false;
+    const renderScale = normalizeRenderScale(scale);
     const loadout = normalizeTankLoadout(tank.loadout);
     const slots = ['treads', 'hull', 'turret'] as const;
     const prepared = slots.map((slot) => ({
@@ -125,6 +135,7 @@ export class TankPartArt implements TankPartPainter {
         slot,
         tankPartDefinition(loadout, slot),
         tank.color,
+        renderScale,
       ),
     }));
     if (prepared.some(({ variant }) => variant === null)) return false;
@@ -133,8 +144,8 @@ export class TankPartArt implements TankPartPainter {
       for (const { slot, definition, variant } of prepared) {
         ctx.drawImage(
           variant!,
-          tank.x + definition.offsetX,
-          tank.y + definition.offsetY,
+          tank.x + definition.offsetX * renderScale,
+          tank.y + definition.offsetY * renderScale,
         );
         this.paintedSlots.add(slot);
       }
@@ -148,8 +159,10 @@ export class TankPartArt implements TankPartPainter {
   drawBarrel(
     ctx: CanvasRenderingContext2D,
     tank: Readonly<TankState>,
+    scale?: number,
   ): boolean {
     if (this.currentState !== 'ready') return false;
+    const renderScale = normalizeRenderScale(scale);
     const loadout = normalizeTankLoadout(tank.loadout);
     const definition = tankPartDefinition(loadout, 'barrel');
     const variant = this.variantFor(
@@ -157,19 +170,27 @@ export class TankPartArt implements TankPartPainter {
       'barrel',
       definition,
       tank.color,
+      renderScale,
     );
     if (variant === null) return false;
     const mount = tankBarrelMount(tank);
 
     try {
       ctx.save();
-      ctx.translate(mount.pivot.x, mount.pivot.y);
+      ctx.translate(
+        tank.x + (mount.pivot.x - tank.x) * renderScale,
+        tank.y + (mount.pivot.y - tank.y) * renderScale,
+      );
       ctx.rotate(mount.radians);
       // A tight silhouette keeps red barrels readable against the red dusk sky
       // without flattening the authored rivets and muzzle detail.
       ctx.shadowColor = '#10070b';
       ctx.shadowBlur = 0.75;
-      ctx.drawImage(variant, definition.offsetX, definition.offsetY);
+      ctx.drawImage(
+        variant,
+        definition.offsetX * renderScale,
+        definition.offsetY * renderScale,
+      );
       ctx.restore();
       this.paintedSlots.add('barrel');
       return true;
@@ -190,15 +211,16 @@ export class TankPartArt implements TankPartPainter {
     slot: TankPartSlot,
     definition: TankPartDefinition,
     color: string,
+    scale: number,
   ): HTMLCanvasElement | null {
-    const key = this.cacheKey(kit, slot, color);
+    const key = this.cacheKey(kit, slot, color, scale);
     const cached = this.variants.get(key);
     if (cached !== undefined) return cached;
 
     try {
       const canvas = this.createCanvas();
-      canvas.width = definition.width;
-      canvas.height = definition.height;
+      canvas.width = definition.width * scale;
+      canvas.height = definition.height * scale;
       const ctx = canvas.getContext('2d');
       if (ctx === null) {
         this.fail();
@@ -206,7 +228,7 @@ export class TankPartArt implements TankPartPainter {
       }
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      this.drawSource(ctx, definition);
+      this.drawSource(ctx, definition, scale);
 
       // The chassis carries player identity. Keep the barrel neutral steel so
       // its authored muzzle and highlight remain legible against every sky.
@@ -224,7 +246,7 @@ export class TankPartArt implements TankPartPainter {
       // authored alpha once; the fill has made destination alpha opaque, so
       // this does not square the source edge alpha.
       ctx.globalCompositeOperation = 'destination-in';
-      this.drawSource(ctx, definition);
+      this.drawSource(ctx, definition, scale);
       ctx.globalCompositeOperation = 'source-over';
       this.variants.set(key, canvas);
       return canvas;
@@ -237,6 +259,7 @@ export class TankPartArt implements TankPartPainter {
   private drawSource(
     ctx: CanvasRenderingContext2D,
     definition: TankPartDefinition,
+    scale: number,
   ): void {
     const source = definition.source;
     ctx.drawImage(
@@ -247,8 +270,8 @@ export class TankPartArt implements TankPartPainter {
       source.height,
       0,
       0,
-      definition.width,
-      definition.height,
+      definition.width * scale,
+      definition.height * scale,
     );
   }
 
@@ -256,8 +279,9 @@ export class TankPartArt implements TankPartPainter {
     kit: TankKitId,
     slot: TankPartSlot,
     color: string,
+    scale = 1,
   ): string {
-    return `${kit}:${slot}:${color}`;
+    return `${kit}:${slot}:${color}:${normalizeRenderScale(scale)}`;
   }
 
   private fail(): void {
