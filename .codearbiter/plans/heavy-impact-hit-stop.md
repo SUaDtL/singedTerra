@@ -23,6 +23,6 @@ pausing or mutating deterministic simulation.
   finding from the designated adversary.
 - [x] Run focused tests, client suite, repository checks, Edge tests, build,
   rendering E2E, dependency audit, diff hygiene, and state-free secret scan.
-- [ ] Commit through the governed gate and open a ready PR.
+- [x] Commit through the governed gate and open a ready PR.
 - [ ] Merge only after exact-head hosted CI/CodeQL and final adversarial review;
   then prove exact-SHA Pages deployment and live smoke.
