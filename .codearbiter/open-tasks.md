@@ -161,6 +161,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] art.feature.0003 - Ship World-Matched Terrain Materials  (from SMARTS World-Matched Terrain sprint)  (done 2026-08-02)
+  - Desc: Give each authored battlefield world a distinct terrain palette and material while preserving deterministic presentation and fail-soft rendering.
+  - Boundaries: client terrain renderer, generated raster assets, tests, player/art docs; no engine, network, backend, dependencies, auth, schema, or migrations
 - [x] art.feature.0002 - Ship Authored Battlefield Worlds  (from SMARTS Authored Battlefield Worlds sprint)  (done 2026-08-02)
   - Boundaries: client renderer, generated raster assets, tests, player docs, no engine, network, backend, dependencies, auth, schema, migrations
 - [x] hud.feature.0003 - Ship the Victory After-Action Report  (from SMARTS Victory After-Action Report sprint)  (done 2026-08-02)

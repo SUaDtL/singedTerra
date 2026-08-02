@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  TERRAIN_MATERIAL_ASSET,
   TERRAIN_MATERIAL_LOAD_TIMEOUT_MS,
   TerrainMaterial,
   type TerrainMaterialCanvasFactory,
@@ -39,6 +40,121 @@ function texturePixels(): Uint8ClampedArray {
 }
 
 describe('TerrainMaterial', () => {
+  it('allocates nothing until one selected asset is requested', () => {
+    const image = controlledImage();
+    let allocations = 0;
+    let assignedSrc = '';
+    Object.defineProperty(image, 'src', {
+      get: () => assignedSrc,
+      set: (value: string) => {
+        assignedSrc = value;
+      },
+    });
+    const material = new TerrainMaterial(
+      () => {
+        allocations++;
+        return image as unknown as HTMLImageElement;
+      },
+      vi.fn(),
+      '/singedTerra/',
+    );
+
+    expect(allocations).toBe(0);
+    expect(material.state).toBe('idle');
+
+    material.select('art/terrain-material-glassstorm-expanse.webp');
+    material.select('art/terrain-material.webp');
+
+    expect(allocations).toBe(1);
+    expect(assignedSrc).toBe(
+      '/singedTerra/art/terrain-material-glassstorm-expanse.webp',
+    );
+  });
+
+  it('retires stale callbacks across reset and a fresh selection', () => {
+    const images = [controlledImage(), controlledImage()];
+    const createCanvas = vi.fn(() => ({
+      width: 0,
+      height: 0,
+      getContext: () => ({
+        drawImage: vi.fn(),
+        getImageData: () => ({ data: texturePixels() }),
+      }),
+    }) as unknown as HTMLCanvasElement);
+    const material = new TerrainMaterial(
+      () => images.shift() as unknown as HTMLImageElement,
+      createCanvas,
+      '/',
+    );
+    const first = images[0]!;
+    material.select('art/terrain-material.webp');
+    material.reset();
+    const second = images[0]!;
+    material.select('art/terrain-material-obsidian-caldera.webp');
+
+    first.naturalWidth = 256;
+    first.naturalHeight = 256;
+    first.onload?.();
+
+    expect(material.state).toBe('loading');
+    expect(createCanvas).not.toHaveBeenCalled();
+
+    second.naturalWidth = 256;
+    second.naturalHeight = 256;
+    second.onload?.();
+
+    expect(material.state).toBe('ready');
+    expect(createCanvas).toHaveBeenCalledOnce();
+  });
+
+  it('ignores retired load and error handlers for a reused image object (kills the generation-token guard)', () => {
+    const image = controlledImage();
+    const createCanvas = vi.fn();
+    const material = new TerrainMaterial(
+      () => image as unknown as HTMLImageElement,
+      createCanvas,
+      '/',
+    );
+
+    material.select('art/terrain-material.webp');
+    const retiredLoad = image.onload;
+    const retiredError = image.onerror;
+    material.reset();
+    material.select('art/terrain-material-obsidian-caldera.webp');
+
+    retiredLoad?.();
+    retiredError?.();
+
+    expect(material.state).toBe('loading');
+    expect(createCanvas).not.toHaveBeenCalled();
+  });
+
+  it('cancels a retired timeout before it can affect the new generation (kills timeout cleanup)', () => {
+    vi.useFakeTimers();
+    try {
+      const images = [controlledImage(), controlledImage()];
+      const clearTimeout = vi.spyOn(globalThis, 'clearTimeout');
+      const material = new TerrainMaterial(
+        () => images.shift() as unknown as HTMLImageElement,
+        vi.fn(),
+        '/',
+      );
+
+      material.select('art/terrain-material.webp');
+      vi.advanceTimersByTime(1);
+      material.reset();
+      material.select('art/terrain-material-obsidian-caldera.webp');
+      vi.advanceTimersByTime(TERRAIN_MATERIAL_LOAD_TIMEOUT_MS - 1);
+
+      expect(clearTimeout).toHaveBeenCalled();
+      expect(material.state).toBe('loading');
+      material.reset();
+      clearTimeout.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('decodes once, resolves through the Vite base, and wraps samples', () => {
     const image = controlledImage();
     const pixels = texturePixels();
@@ -75,6 +191,7 @@ describe('TerrainMaterial', () => {
       createCanvas,
       '/singedTerra/',
     );
+    material.select(TERRAIN_MATERIAL_ASSET);
 
     expect(imageAllocations).toBe(1);
     expect(canvasAllocations).toBe(0);
@@ -129,6 +246,7 @@ describe('TerrainMaterial', () => {
       image as unknown as HTMLImageElement;
     const createCanvas = vi.fn();
     const material = new TerrainMaterial(createImage, createCanvas, '/');
+    material.select(TERRAIN_MATERIAL_ASSET);
 
     settle(image);
 
@@ -155,6 +273,7 @@ describe('TerrainMaterial', () => {
       }) as unknown as HTMLCanvasElement,
       '/',
     );
+    material.select(TERRAIN_MATERIAL_ASSET);
 
     image.naturalWidth = 256;
     image.naturalHeight = 256;
@@ -176,6 +295,7 @@ describe('TerrainMaterial', () => {
       }) as unknown as HTMLCanvasElement,
       '/',
     );
+    material.select(TERRAIN_MATERIAL_ASSET);
 
     image.naturalWidth = 256;
     image.naturalHeight = 256;
@@ -196,6 +316,7 @@ describe('TerrainMaterial', () => {
         createCanvas,
         '/',
       );
+      material.select(TERRAIN_MATERIAL_ASSET);
 
       expect(material.state).toBe('loading');
       expect(material.isSettled).toBe(false);

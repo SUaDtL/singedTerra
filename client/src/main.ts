@@ -14,7 +14,7 @@ import {
   shouldAcceptLocalInput,
 } from './input/inputGate';
 import { Renderer } from './renderer/Renderer';
-import { selectClientBattlefieldBackdrop } from './renderer/selectClientBattlefield';
+import { selectClientBattlefieldWorld } from './renderer/selectClientBattlefield';
 import { resolveAimGuidePresentation } from './renderer/aimGuidePresentation';
 import { AudioEngine } from './audio/AudioEngine';
 import { HUD } from './ui/HUD';
@@ -297,7 +297,7 @@ function bootstrap(): void {
 
     const newClient = await createClient(config);
     client = newClient;
-    selectClientBattlefieldBackdrop(newClient, renderer);
+    selectClientBattlefieldWorld(newClient, renderer);
     firstSalvo.startNewGame();
     e2eForwardedActionCounts = { setAngle: 0, setPower: 0, fire: 0 };
 

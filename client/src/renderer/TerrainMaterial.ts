@@ -5,7 +5,7 @@ export const TERRAIN_MATERIAL_LOAD_TIMEOUT_MS = 5_000;
 const MATERIAL_MASK = TERRAIN_MATERIAL_SIZE - 1;
 const SIGNED_LUMINANCE_MAX = 127;
 
-export type TerrainMaterialState = 'loading' | 'ready' | 'failed';
+export type TerrainMaterialState = 'idle' | 'loading' | 'ready' | 'failed';
 export type TerrainMaterialImageFactory = () => HTMLImageElement;
 export type TerrainMaterialCanvasFactory = () => HTMLCanvasElement;
 
@@ -14,6 +14,8 @@ export interface TerrainMaterialSampler {
   readonly needsApplication: boolean;
   sample(x: number, y: number): number;
   acknowledgeApplied(): void;
+  select(asset: string): void;
+  reset(): void;
 }
 
 function createBrowserImage(): HTMLImageElement {
@@ -24,9 +26,9 @@ function createBrowserCanvas(): HTMLCanvasElement {
   return document.createElement('canvas');
 }
 
-function assetUrl(baseUrl: string): string {
+function assetUrl(baseUrl: string, asset: string): string {
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  return `${normalizedBase}${TERRAIN_MATERIAL_ASSET}`;
+  return `${normalizedBase}${asset}`;
 }
 
 /**
@@ -34,27 +36,39 @@ function assetUrl(baseUrl: string): string {
  * Sampling is allocation-free and wraps by a power-of-two mask.
  */
 export class TerrainMaterial implements TerrainMaterialSampler {
-  private readonly image: HTMLImageElement;
-  private currentState: TerrainMaterialState = 'loading';
+  private image: HTMLImageElement | null = null;
+  private currentState: TerrainMaterialState = 'idle';
   private luminance: Int8Array | null = null;
   private pendingApplication = false;
   private loadTimeout: ReturnType<typeof setTimeout> | null = null;
+  private generation = 0;
 
   constructor(
-    createImage: TerrainMaterialImageFactory = createBrowserImage,
+    private readonly createImage: TerrainMaterialImageFactory = createBrowserImage,
     private readonly createCanvas: TerrainMaterialCanvasFactory =
       createBrowserCanvas,
-    baseUrl: string = import.meta.env.BASE_URL,
-  ) {
-    this.image = createImage();
-    this.image.onload = () => {
-      if (this.currentState !== 'loading') return;
-      const { naturalWidth: width, naturalHeight: height } = this.image;
+    private readonly baseUrl: string = import.meta.env.BASE_URL,
+  ) {}
+
+  select(asset: string): void {
+    if (this.image !== null) return;
+
+    const image = this.createImage();
+    const generation = ++this.generation;
+    this.image = image;
+    this.currentState = 'loading';
+    this.luminance = null;
+    this.pendingApplication = false;
+    image.onload = () => {
+      if (!this.isCurrent(image, generation) || this.currentState !== 'loading') {
+        return;
+      }
+      const { naturalWidth: width, naturalHeight: height } = image;
       if (
         width !== TERRAIN_MATERIAL_SIZE
         || height !== TERRAIN_MATERIAL_SIZE
       ) {
-        this.fail();
+        this.fail(image, generation);
         return;
       }
 
@@ -64,11 +78,11 @@ export class TerrainMaterial implements TerrainMaterialSampler {
         canvas.height = TERRAIN_MATERIAL_SIZE;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (ctx === null) {
-          this.fail();
+          this.fail(image, generation);
           return;
         }
         ctx.drawImage(
-          this.image,
+          image,
           0,
           0,
           TERRAIN_MATERIAL_SIZE,
@@ -124,15 +138,24 @@ export class TerrainMaterial implements TerrainMaterialSampler {
         this.currentState = 'ready';
         this.pendingApplication = true;
       } catch {
-        this.fail();
+        this.fail(image, generation);
       }
     };
-    this.image.onerror = () => this.fail();
+    image.onerror = () => this.fail(image, generation);
     this.loadTimeout = globalThis.setTimeout(
-      () => this.fail(),
+      () => this.fail(image, generation),
       TERRAIN_MATERIAL_LOAD_TIMEOUT_MS,
     );
-    this.image.src = assetUrl(baseUrl);
+    image.src = assetUrl(this.baseUrl, asset);
+  }
+
+  reset(): void {
+    this.generation++;
+    this.clearLoadTimeout();
+    this.image = null;
+    this.luminance = null;
+    this.pendingApplication = false;
+    this.currentState = 'idle';
   }
 
   get state(): TerrainMaterialState {
@@ -145,7 +168,8 @@ export class TerrainMaterial implements TerrainMaterialSampler {
 
   get isSettled(): boolean {
     return (
-      this.currentState === 'failed'
+      this.currentState === 'idle'
+      || this.currentState === 'failed'
       || (this.currentState === 'ready' && !this.pendingApplication)
     );
   }
@@ -164,8 +188,14 @@ export class TerrainMaterial implements TerrainMaterialSampler {
     if (this.currentState === 'ready') this.pendingApplication = false;
   }
 
-  private fail(): void {
-    if (this.currentState !== 'loading') return;
+  private isCurrent(image: HTMLImageElement, generation: number): boolean {
+    return generation === this.generation && image === this.image;
+  }
+
+  private fail(image: HTMLImageElement, generation: number): void {
+    if (!this.isCurrent(image, generation) || this.currentState !== 'loading') {
+      return;
+    }
     this.clearLoadTimeout();
     this.luminance = null;
     this.pendingApplication = false;

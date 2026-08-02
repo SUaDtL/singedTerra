@@ -3,10 +3,12 @@
 ## Battlefield worlds
 
 Every new match opens on one of three authored scorched worlds: Ember Dusk,
-Obsidian Caldera, or Glassstorm Expanse. The initial terrain chooses the panorama
-deterministically, so players in the same network room see the same world. It is
-visual atmosphere only—wind, terrain, weapons, damage, and every other rule are
-unchanged—and crater deformation never switches the sky mid-match.
+Obsidian Caldera, or Glassstorm Expanse. The initial terrain chooses the complete
+visual world deterministically, so players in the same network room see the same
+panorama and ground: scorched strata for Ember, volcanic glass for Obsidian, or a
+pale crystal crust for Glassstorm. It is presentation only—wind, terrain shape,
+weapons, damage, and every other rule are unchanged—and crater deformation never
+switches the world mid-match.
 
 singedTerra is a turn-based artillery game. Each turn gives one tank control of
 the battlefield. Read the wind, choose a weapon, set angle and power, then

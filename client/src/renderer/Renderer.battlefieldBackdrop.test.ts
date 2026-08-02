@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GameState } from '@shared/types/GameState';
 import { Renderer } from './Renderer';
 import {
+  BATTLEFIELD_WORLDS,
   BattlefieldBackdrop,
   type BackdropImageFactory,
 } from './BattlefieldBackdrop';
@@ -20,7 +21,10 @@ interface BackdropSeam {
   drawHorizonHaze: ReturnType<typeof vi.fn>;
   drawDistantRidges: ReturnType<typeof vi.fn>;
   drawSky(): void;
-  selectBattlefieldBackdrop(terrain: Uint8Array): void;
+  terrain: {
+    selectWorld: ReturnType<typeof vi.fn>;
+  };
+  selectBattlefieldWorld(terrain: Uint8Array): void;
   bursts: unknown[];
   scorches: unknown[];
   wallContacts: unknown[];
@@ -102,17 +106,22 @@ function idleState(): GameState {
 }
 
 describe('Renderer authored battlefield backdrop seam', () => {
-  it('selects the backdrop from authoritative terrain before the sky paints', () => {
+  it('routes the exact selected world profile to backdrop and terrain once', () => {
     const terrain = new Uint8Array([0, 1, 1, 0]);
-    const select = vi.fn();
+    const world = BATTLEFIELD_WORLDS[1]!;
+    const select = vi.fn(() => world);
+    const selectWorld = vi.fn();
     const renderer = Object.assign(Object.create(Renderer.prototype), {
       battlefieldBackdrop: { isSettled: false, select, draw: vi.fn() },
+      terrain: { selectWorld },
     }) as BackdropSeam;
 
-    renderer.selectBattlefieldBackdrop(terrain);
+    renderer.selectBattlefieldWorld(terrain);
 
     expect(select).toHaveBeenCalledOnce();
     expect(select).toHaveBeenCalledWith(terrain);
+    expect(selectWorld).toHaveBeenCalledOnce();
+    expect(selectWorld).toHaveBeenCalledWith(world);
   });
 
   it('keeps the complete procedural atmosphere while the authored image is unavailable', () => {

@@ -1,7 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoRunningGame } from './support';
 
-const MATERIAL_PATH = 'art/terrain-material.webp';
+const MATERIAL_PATHS = [
+  'art/terrain-material.webp',
+  'art/terrain-material-obsidian-caldera.webp',
+  'art/terrain-material-glassstorm-expanse.webp',
+] as const;
+const MATERIAL_PATH = MATERIAL_PATHS[0];
 const MAX_TRANSFER_BYTES = 100_000;
 
 async function sampleDeepTerrain(page: Page): Promise<number[]> {
@@ -35,17 +40,19 @@ function meanChannelDelta(left: number[], right: number[]): number {
 }
 
 test.describe('authored terrain material asset', () => {
-  test('is a bounded opaque 256px WebP with usable grain', async ({
+  test('catalog materials are bounded opaque 256px WebPs with usable grain', async ({
     page,
     request,
   }) => {
-    const response = await request.get(MATERIAL_PATH);
-    expect(response.status()).toBe(200);
-    expect(response.headers()['content-type']).toContain('image/webp');
-    expect((await response.body()).byteLength).toBeLessThanOrEqual(MAX_TRANSFER_BYTES);
-
     await page.goto('.');
-    const decoded = await page.evaluate(async (src) => {
+    for (const path of MATERIAL_PATHS) {
+      const response = await request.get(path);
+      expect(response.status(), path).toBe(200);
+      expect(response.headers()['content-type'], path).toContain('image/webp');
+      expect((await response.body()).byteLength, path)
+        .toBeLessThanOrEqual(MAX_TRANSFER_BYTES);
+
+      const decoded = await page.evaluate(async (src) => {
       const image = new Image();
       image.src = src;
       await image.decode();
@@ -112,18 +119,80 @@ test.describe('authored terrain material asset', () => {
         luminanceDeviation: Math.sqrt(Math.max(variance, 0)),
         edgeRmse: Math.sqrt(edgeSquaredError / edgeChannelCount),
       };
-    }, MATERIAL_PATH);
+      }, path);
 
-    expect(decoded.width).toBe(256);
-    expect(decoded.height).toBe(256);
-    expect(decoded.minAlpha).toBe(255);
-    expect(decoded.luminanceRange).toBeGreaterThan(20);
-    expect(decoded.luminanceDeviation).toBeGreaterThan(4);
-    expect(decoded.edgeRmse).toBeLessThan(24);
+      expect(decoded.width, path).toBe(256);
+      expect(decoded.height, path).toBe(256);
+      expect(decoded.minAlpha, path).toBe(255);
+      expect(decoded.luminanceRange, path).toBeGreaterThan(20);
+      expect(decoded.luminanceDeviation, path).toBeGreaterThan(4);
+      expect(decoded.edgeRmse, path).toBeLessThan(24);
+    }
   });
 });
 
 test.describe('authored terrain material integration', () => {
+  test('loads only the material matched to each deterministic world fixture', async ({
+    context,
+  }) => {
+    const fixtures = [
+      { seed: 4, path: MATERIAL_PATHS[0] },
+      { seed: 8, path: MATERIAL_PATHS[1] },
+      { seed: 1, path: MATERIAL_PATHS[2] },
+    ] as const;
+
+    for (const fixture of fixtures) {
+      const page = await context.newPage();
+      const requested: string[] = [];
+      page.on('request', (request) => {
+        const path = MATERIAL_PATHS.find((candidate) =>
+          request.url().endsWith(`/${candidate}`));
+        if (path !== undefined) requested.push(path);
+      });
+      const selectedAsset = page.waitForResponse(
+        (response) => response.url().endsWith(`/${fixture.path}`),
+        { timeout: 5_000 },
+      );
+
+      await gotoRunningGame(page, `?e2e=hotseat&seed=${fixture.seed}`);
+      expect((await selectedAsset).status()).toBe(200);
+      expect(requested).toEqual([fixture.path]);
+      await page.close();
+    }
+  });
+
+  test('renders materially distinct ground for the three world fixtures', async ({
+    context,
+  }) => {
+    const fixtures = [
+      { seed: 4, path: MATERIAL_PATHS[0] },
+      { seed: 8, path: MATERIAL_PATHS[1] },
+      { seed: 1, path: MATERIAL_PATHS[2] },
+    ] as const;
+    const groundSamples: number[][] = [];
+
+    for (const fixture of fixtures) {
+      const page = await context.newPage();
+      const selectedAsset = page.waitForResponse((response) =>
+        response.url().endsWith(`/${fixture.path}`));
+      await gotoRunningGame(page, `?e2e=hotseat&seed=${fixture.seed}`);
+      expect((await selectedAsset).status()).toBe(200);
+      await expect.poll(async () => {
+        const samples = await sampleDeepTerrain(page);
+        return Math.max(...samples) - Math.min(...samples);
+      }).toBeGreaterThan(8);
+      groundSamples.push(await sampleDeepTerrain(page));
+      await page.close();
+    }
+
+    expect(meanChannelDelta(groundSamples[0]!, groundSamples[1]!))
+      .toBeGreaterThan(8);
+    expect(meanChannelDelta(groundSamples[1]!, groundSamples[2]!))
+      .toBeGreaterThan(20);
+    expect(meanChannelDelta(groundSamples[0]!, groundSamples[2]!))
+      .toBeGreaterThan(20);
+  });
+
   test('reaches the live terrain cache instead of leaving the flat fallback', async ({
     page,
     context,

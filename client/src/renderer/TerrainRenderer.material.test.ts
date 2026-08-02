@@ -2,13 +2,24 @@ import { describe, expect, it, vi } from 'vitest';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { TerrainRenderer } from './TerrainRenderer';
 import { createTerrainBevelSampler } from './terrainBevelLighting';
+import {
+  BATTLEFIELD_WORLDS,
+  type BattlefieldWorld,
+} from './BattlefieldBackdrop';
 
 interface MaterialStub {
   readonly isSettled: boolean;
   readonly needsApplication: boolean;
   sample(x: number, y: number): number;
   acknowledgeApplied(): void;
+  select(asset: string): void;
+  reset(): void;
 }
+
+const NOOP_MATERIAL_LIFECYCLE: Pick<MaterialStub, 'select' | 'reset'> = {
+  select() {},
+  reset() {},
+};
 
 interface TerrainRendererSeam {
   offscreen: HTMLCanvasElement;
@@ -80,6 +91,160 @@ const target = {
 } as unknown as CanvasRenderingContext2D;
 
 describe('TerrainRenderer authored material integration', () => {
+  it('rebuilds an already-cached frame when the first world is selected (kills missing selectWorld markDirty)', () => {
+    const select = vi.fn();
+    const material: MaterialStub = {
+      isSettled: true,
+      needsApplication: false,
+      sample: () => 0,
+      acknowledgeApplied() {},
+      select,
+      reset: vi.fn(),
+    };
+    const { renderer, pixels, rebuilds } = rendererWith(material);
+    const terrain = flatTerrain();
+
+    expect(renderer.draw(target, terrain, 30)).toBe(true);
+    const fallbackPixel = rgbaAt(pixels, 500, 120);
+    expect(renderer.draw(target, terrain, 30)).toBe(false);
+
+    renderer.selectWorld(BATTLEFIELD_WORLDS[1]!);
+
+    expect(renderer.needsRedraw(30)).toBe(true);
+    expect(renderer.draw(target, terrain, 30)).toBe(true);
+    expect(rgbaAt(pixels, 500, 120)).not.toEqual(fallbackPixel);
+    expect(select).toHaveBeenCalledOnce();
+    expect(rebuilds()).toBe(2);
+  });
+
+  it('freezes the first selected world until reset (kills the selectedWorld identity-only guard)', () => {
+    const select = vi.fn();
+    const reset = vi.fn();
+    const material: MaterialStub = {
+      isSettled: true,
+      needsApplication: false,
+      sample: () => 0,
+      acknowledgeApplied() {},
+      select,
+      reset,
+    };
+    const { renderer, pixels } = rendererWith(material);
+    const terrain = flatTerrain();
+    const beforeHash = byteHash(terrain);
+    const ember = BATTLEFIELD_WORLDS[0]!;
+    const obsidian = BATTLEFIELD_WORLDS[1]!;
+    const clonedEmber = {
+      ...ember,
+      terrainPalette: { ...ember.terrainPalette },
+    } as BattlefieldWorld;
+
+    renderer.selectWorld(ember);
+    expect(renderer.draw(target, terrain, 31)).toBe(true);
+    const emberPixel = rgbaAt(pixels, 500, 120);
+    expect(renderer.draw(target, terrain, 31)).toBe(false);
+
+    renderer.selectWorld(obsidian);
+    expect(select).toHaveBeenCalledOnce();
+    expect(renderer.draw(target, terrain, 31)).toBe(false);
+    expect(rgbaAt(pixels, 500, 120)).toEqual(emberPixel);
+
+    renderer.selectWorld(clonedEmber);
+
+    expect(select).toHaveBeenCalledOnce();
+    expect(renderer.draw(target, terrain, 31)).toBe(false);
+    expect(rgbaAt(pixels, 500, 120)).toEqual(emberPixel);
+    expect(byteHash(terrain)).toBe(beforeHash);
+
+    renderer.reset();
+    expect(reset).toHaveBeenCalledOnce();
+    renderer.selectWorld(obsidian);
+
+    expect(select).toHaveBeenCalledTimes(2);
+    expect(select).toHaveBeenLastCalledWith(obsidian.terrainMaterialAsset);
+    expect(renderer.draw(target, terrain, 31)).toBe(true);
+    expect(rgbaAt(pixels, 500, 120)).toEqual([16, 24, 32, 255]);
+  });
+
+  it('renders materially distinct literal catalog palettes without mutating terrain (kills palette routing)', () => {
+    const terrain = flatTerrain();
+    const beforeHash = byteHash(terrain);
+    const rendered = BATTLEFIELD_WORLDS.map((world) => {
+      const material: MaterialStub = {
+        isSettled: true,
+        needsApplication: false,
+        sample: () => 0,
+        acknowledgeApplied() {},
+        select() {},
+        reset() {},
+      };
+      const { renderer, pixels } = rendererWith(material);
+
+      renderer.selectWorld(world);
+      expect(renderer.draw(target, terrain, 32)).toBe(true);
+      expect(byteHash(terrain)).toBe(beforeHash);
+      return { id: world.id, rgba: rgbaAt(pixels, 500, 120) };
+    });
+
+    expect(rendered).toEqual([
+      { id: 'ember-dusk', rgba: [90, 58, 34, 255] },
+      { id: 'obsidian-caldera', rgba: [16, 24, 32, 255] },
+      { id: 'glassstorm-expanse', rgba: [128, 148, 156, 255] },
+    ]);
+  });
+
+  it.each([
+    {
+      id: 'obsidian-caldera',
+      asset: 'art/terrain-material-obsidian-caldera.webp',
+      bandSurface: '#101820',
+      expected: [16, 24, 32, 255],
+    },
+    {
+      id: 'glassstorm-expanse',
+      asset: 'art/terrain-material-glassstorm-expanse.webp',
+      bandSurface: '#80949c',
+      expected: [128, 148, 156, 255],
+    },
+  ])('applies the $id palette and matching selected material', ({
+    id,
+    asset,
+    bandSurface,
+    expected,
+  }) => {
+    const select = vi.fn();
+    const material: MaterialStub = {
+      isSettled: true,
+      needsApplication: false,
+      sample: () => 0,
+      acknowledgeApplied() {},
+      select,
+      reset: vi.fn(),
+    };
+    const { renderer, pixels } = rendererWith(material);
+    const world = {
+      id,
+      name: id,
+      asset: `art/battlefield-${id}.webp`,
+      terrainMaterialAsset: asset,
+      terrainPalette: {
+        rim: '#ffffff',
+        mid: '#405060',
+        deep: '#202830',
+        bandSurface,
+        bandMid: '#405060',
+        bandDeep: '#202830',
+        bevelShadow: '#080c10',
+      },
+    } as BattlefieldWorld;
+
+    renderer.selectWorld(world);
+    expect(renderer.draw(target, flatTerrain(), 1)).toBe(true);
+
+    expect(select).toHaveBeenCalledOnce();
+    expect(select).toHaveBeenCalledWith(asset);
+    expect(rgbaAt(pixels, 500, 120)).toEqual(expected);
+  });
+
   it('modulates only solid interior RGB within the dirty rebuild', () => {
     let sampleCalls = 0;
     let pending = true;
@@ -87,6 +252,7 @@ describe('TerrainRenderer authored material integration', () => {
       pending = false;
     });
     const material: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       get isSettled() {
         return !pending;
       },
@@ -100,6 +266,7 @@ describe('TerrainRenderer authored material integration', () => {
       acknowledgeApplied,
     };
     const fallback: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       isSettled: true,
       needsApplication: false,
       sample: () => 0,
@@ -159,6 +326,7 @@ describe('TerrainRenderer authored material integration', () => {
       settled = true;
     });
     const material: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       get isSettled() {
         return settled;
       },
@@ -191,6 +359,7 @@ describe('TerrainRenderer authored material integration', () => {
   it('reapplies material to a newly exposed wall after terrain deformation', () => {
     let sampleCalls = 0;
     const material: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       isSettled: true,
       needsApplication: false,
       sample() {
@@ -200,6 +369,7 @@ describe('TerrainRenderer authored material integration', () => {
       acknowledgeApplied() {},
     };
     const fallback: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       isSettled: true,
       needsApplication: false,
       sample: () => 0,
@@ -237,12 +407,14 @@ describe('TerrainRenderer authored material integration', () => {
 
   it('applies material before structural bevel lighting', () => {
     const material: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       isSettled: true,
       needsApplication: false,
       sample: () => 1,
       acknowledgeApplied() {},
     };
     const fallback: MaterialStub = {
+      ...NOOP_MATERIAL_LIFECYCLE,
       isSettled: true,
       needsApplication: false,
       sample: () => 0,

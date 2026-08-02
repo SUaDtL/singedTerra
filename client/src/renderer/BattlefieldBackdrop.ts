@@ -4,6 +4,18 @@ export interface BattlefieldWorld {
   readonly id: 'ember-dusk' | 'obsidian-caldera' | 'glassstorm-expanse';
   readonly name: string;
   readonly asset: string;
+  readonly terrainMaterialAsset: string;
+  readonly terrainPalette: TerrainPalette;
+}
+
+export interface TerrainPalette {
+  readonly rim: string;
+  readonly mid: string;
+  readonly deep: string;
+  readonly bandSurface: string;
+  readonly bandMid: string;
+  readonly bandDeep: string;
+  readonly bevelShadow: string;
 }
 
 export const BATTLEFIELD_WORLDS: readonly BattlefieldWorld[] = Object.freeze([
@@ -11,16 +23,46 @@ export const BATTLEFIELD_WORLDS: readonly BattlefieldWorld[] = Object.freeze([
     id: 'ember-dusk',
     name: 'Ember Dusk',
     asset: 'art/battlefield-backdrop.webp',
+    terrainMaterialAsset: 'art/terrain-material.webp',
+    terrainPalette: Object.freeze({
+      rim: '#7a4f2e',
+      mid: '#3c2516',
+      deep: '#1d120b',
+      bandSurface: '#5a3a22',
+      bandMid: '#3d2d1a',
+      bandDeep: '#2a1e2e',
+      bevelShadow: '#0c0716',
+    }),
   }),
   Object.freeze({
     id: 'obsidian-caldera',
     name: 'Obsidian Caldera',
     asset: 'art/battlefield-obsidian-caldera.webp',
+    terrainMaterialAsset: 'art/terrain-material-obsidian-caldera.webp',
+    terrainPalette: Object.freeze({
+      rim: '#4b5963',
+      mid: '#29343c',
+      deep: '#12191f',
+      bandSurface: '#101820',
+      bandMid: '#26323a',
+      bandDeep: '#161d26',
+      bevelShadow: '#080c10',
+    }),
   }),
   Object.freeze({
     id: 'glassstorm-expanse',
     name: 'Glassstorm Expanse',
     asset: 'art/battlefield-glassstorm-expanse.webp',
+    terrainMaterialAsset: 'art/terrain-material-glassstorm-expanse.webp',
+    terrainPalette: Object.freeze({
+      rim: '#c5d4d6',
+      mid: '#61727d',
+      deep: '#33424f',
+      bandSurface: '#80949c',
+      bandMid: '#536773',
+      bandDeep: '#334a5a',
+      bevelShadow: '#182936',
+    }),
   }),
 ]);
 

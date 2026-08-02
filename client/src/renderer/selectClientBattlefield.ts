@@ -1,12 +1,12 @@
 import type { GameClient } from '../client/GameClient';
 
-export interface BattlefieldBackdropSelector {
-  selectBattlefieldBackdrop(terrain: Uint8Array): void;
+export interface BattlefieldWorldSelector {
+  selectBattlefieldWorld(terrain: Uint8Array): void;
 }
 
-export function selectClientBattlefieldBackdrop(
+export function selectClientBattlefieldWorld(
   client: Pick<GameClient, 'getInitialTerrain'>,
-  renderer: BattlefieldBackdropSelector,
+  renderer: BattlefieldWorldSelector,
 ): void {
-  renderer.selectBattlefieldBackdrop(client.getInitialTerrain());
+  renderer.selectBattlefieldWorld(client.getInitialTerrain());
 }

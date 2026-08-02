@@ -438,7 +438,7 @@ export class Renderer {
     this.mobilityEffects.clear();
     this.projectile.clear();
     this.battlefieldBackdrop?.reset?.();
-    this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
+    this.terrain?.reset?.(); // retire selected material and force a fresh terrain cache
     // Audio signal tracking: reset per-frame bookkeeping and stop any sustained
     // napalm crackle so a stuck loop can't survive across rounds or games.
     this.prevFireLen = 0;
@@ -623,9 +623,10 @@ export class Renderer {
     this.hud.draw(ctx, state);
   }
 
-  /** Freeze one deterministic panorama from the client's pristine terrain. */
-  selectBattlefieldBackdrop(terrain: Uint8Array): void {
-    this.battlefieldBackdrop?.select?.(terrain);
+  /** Freeze one complete deterministic world from the client's pristine terrain. */
+  selectBattlefieldWorld(terrain: Uint8Array): void {
+    const world = this.battlefieldBackdrop?.select?.(terrain);
+    if (world) this.terrain?.selectWorld?.(world);
   }
 
   /** Copy the strongest live detonation after all world transforms are restored. */

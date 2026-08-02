@@ -65,6 +65,33 @@ describe('battlefield world catalog', () => {
     }
   });
 
+  it('binds each panorama to one immutable material and complete terrain palette', () => {
+    expect(new Set(BATTLEFIELD_WORLDS.map(
+      (world) => world.terrainMaterialAsset,
+    ))).toEqual(new Set([
+      'art/terrain-material.webp',
+      'art/terrain-material-obsidian-caldera.webp',
+      'art/terrain-material-glassstorm-expanse.webp',
+    ]));
+
+    for (const world of BATTLEFIELD_WORLDS) {
+      expect(Object.isFrozen(world)).toBe(true);
+      expect(Object.isFrozen(world.terrainPalette)).toBe(true);
+      expect(Object.keys(world.terrainPalette).sort()).toEqual([
+        'bandDeep',
+        'bandMid',
+        'bandSurface',
+        'bevelShadow',
+        'deep',
+        'mid',
+        'rim',
+      ]);
+      for (const color of Object.values(world.terrainPalette)) {
+        expect(color).toMatch(/^#[0-9a-f]{6}$/);
+      }
+    }
+  });
+
   it('selects deterministically and makes every catalog world reachable', () => {
     const seen = new Set<string>();
     for (let marker = 0; marker < 256; marker++) {

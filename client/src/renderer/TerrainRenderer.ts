@@ -3,6 +3,7 @@ import { BACKDROP, TERRAIN, hexToRgb } from '../ui/theme';
 import { bandFloatForY } from './strata';
 import { terrainEdgeAlpha } from './terrainEdges';
 import { createTerrainBevelSampler } from './terrainBevelLighting';
+import type { BattlefieldWorld, TerrainPalette } from './BattlefieldBackdrop';
 import {
   TerrainMaterial,
   type TerrainMaterialSampler,
@@ -12,13 +13,43 @@ import {
  * Scorched depth ramp (banner palette): a LIT RIM on the top 2px of every solid
  * run, then a shade from `top` → `mid` → `deep` over the first ~120px of depth.
  * Gives the terrain dimensional, scorched body + a lit surface edge instead of a
- * flat brown slab. Parsed once at module load.
+ * flat brown slab. The selected world's values are converted once per selection.
  */
-const RIM = hexToRgb(TERRAIN.rim);
-const MID = hexToRgb(TERRAIN.mid);
-const DEEP = hexToRgb(TERRAIN.deep);
-/** Cool-purple destination for the lower-right side of directional bevels. */
-const BEVEL_SHADOW = hexToRgb(BACKDROP);
+interface TerrainPaletteRgb {
+  readonly rim: [number, number, number];
+  readonly mid: [number, number, number];
+  readonly deep: [number, number, number];
+  readonly bandColors: readonly [
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+  ];
+  readonly bevelShadow: [number, number, number];
+}
+
+function rgbPalette(palette: TerrainPalette): TerrainPaletteRgb {
+  return {
+    rim: hexToRgb(palette.rim),
+    mid: hexToRgb(palette.mid),
+    deep: hexToRgb(palette.deep),
+    bandColors: [
+      hexToRgb(palette.bandSurface),
+      hexToRgb(palette.bandMid),
+      hexToRgb(palette.bandDeep),
+    ],
+    bevelShadow: hexToRgb(palette.bevelShadow),
+  };
+}
+
+const EMBER_PALETTE: TerrainPalette = Object.freeze({
+  rim: TERRAIN.rim,
+  mid: TERRAIN.mid,
+  deep: TERRAIN.deep,
+  bandSurface: TERRAIN.bandSurface,
+  bandMid: TERRAIN.bandMid,
+  bandDeep: TERRAIN.bandDeep,
+  bevelShadow: BACKDROP,
+});
 /** Depth (px below the lit rim) over which top→mid→deep fully ramps. */
 const RAMP_DEPTH = 120;
 /** Maximum authored luminance modulation applied below the two-pixel lit rim. */
@@ -37,11 +68,6 @@ type TerrainBevelSamplerFactory = typeof createTerrainBevelSampler;
  * Band 1 (mid rock): cooler sandstone-shifted brown, visible in medium craters.
  * Band 2 (deep rock): dark purple-rock, visible only in the deepest craters.
  */
-const BAND_COLORS: [[number, number, number], [number, number, number], [number, number, number]] = [
-  hexToRgb(TERRAIN.bandSurface),
-  hexToRgb(TERRAIN.bandMid),
-  hexToRgb(TERRAIN.bandDeep),
-];
 
 /**
  * TerrainRenderer paints the pixel terrain bitmap (SPEC §7 layer 2). The terrain
@@ -92,6 +118,24 @@ export class TerrainRenderer {
   private lastVersion: number | null = null;
   /** When true, the next draw() rebuilds the offscreen regardless of version. */
   private forceRedraw = true;
+  private palette = rgbPalette(EMBER_PALETTE);
+  private selectedWorld: BattlefieldWorld | null = null;
+
+  selectWorld(world: BattlefieldWorld): void {
+    if (this.selectedWorld !== null) return;
+    this.selectedWorld = world;
+    this.palette = rgbPalette(world.terrainPalette);
+    this.material.select(world.terrainMaterialAsset);
+    this.markDirty();
+  }
+
+  reset(): void {
+    this.material.reset();
+    this.selectedWorld = null;
+    this.palette = rgbPalette(EMBER_PALETTE);
+    this.lastVersion = null;
+    this.markDirty();
+  }
 
   /**
    * Composite the terrain onto ctx. The offscreen is rebuilt only if the terrain
@@ -182,6 +226,7 @@ export class TerrainRenderer {
     const data = img.data;
     const W = CANVAS_WIDTH;
     const H = CANVAS_HEIGHT;
+    const palette = this.palette;
     const bevelAt = this.createBevelSampler(terrain, W, H);
     if (bevelAt === null) return false;
     for (let x = 0; x < W; x++) {
@@ -194,7 +239,7 @@ export class TerrainRenderer {
           let g: number;
           let b: number;
           if (depth < 2) {
-            r = RIM[0]; g = RIM[1]; b = RIM[2]; // lit surface edge (unchanged)
+            r = palette.rim[0]; g = palette.rim[1]; b = palette.rim[2]; // lit surface edge (unchanged)
           } else {
             // Strata band base: a CONTINUOUS color by world-y (cross-faded across
             // the band thresholds via bandFloatForY) so horizontal earth/rock bands
@@ -204,8 +249,8 @@ export class TerrainRenderer {
             const bf = bandFloatForY(y);      // 0..2, smooth across boundaries
             const lo = bf < 1 ? 0 : 1;        // lower of the two bands to blend
             const f = bf - lo;                // 0..1 within the pair
-            const A = lo === 0 ? BAND_COLORS[0] : BAND_COLORS[1];
-            const Bc = lo === 0 ? BAND_COLORS[1] : BAND_COLORS[2];
+            const A = lo === 0 ? palette.bandColors[0] : palette.bandColors[1];
+            const Bc = lo === 0 ? palette.bandColors[1] : palette.bandColors[2];
             const baseR = A[0] + (Bc[0] - A[0]) * f;
             const baseG = A[1] + (Bc[1] - A[1]) * f;
             const baseB = A[2] + (Bc[2] - A[2]) * f;
@@ -219,9 +264,9 @@ export class TerrainRenderer {
               b = baseB;
             } else {
               const u = (t - 0.5) * 2; // mid → deep
-              r = t < 0.58 ? MID[0] : DEEP[0];
-              g = t < 0.58 ? MID[1] : DEEP[1];
-              b = t < 0.58 ? MID[2] : DEEP[2];
+              r = t < 0.58 ? palette.mid[0] : palette.deep[0];
+              g = t < 0.58 ? palette.mid[1] : palette.deep[1];
+              b = t < 0.58 ? palette.mid[2] : palette.deep[2];
             }
             const materialFactor = (
               1
@@ -236,14 +281,14 @@ export class TerrainRenderer {
           }
           const bevel = bevelAt(x, y);
           if (bevel > 0) {
-            r += (RIM[0] - r) * bevel;
-            g += (RIM[1] - g) * bevel;
-            b += (RIM[2] - b) * bevel;
+            r += (palette.rim[0] - r) * bevel;
+            g += (palette.rim[1] - g) * bevel;
+            b += (palette.rim[2] - b) * bevel;
           } else if (bevel < 0) {
             const shade = -bevel;
-            r += (BEVEL_SHADOW[0] - r) * shade;
-            g += (BEVEL_SHADOW[1] - g) * shade;
-            b += (BEVEL_SHADOW[2] - b) * shade;
+            r += (palette.bevelShadow[0] - r) * shade;
+            g += (palette.bevelShadow[1] - g) * shade;
+            b += (palette.bevelShadow[2] - b) * shade;
           }
           data[o] = r;
           data[o + 1] = g;

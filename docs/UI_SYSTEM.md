@@ -17,7 +17,7 @@ Current design dials:
 - **Register 8/10:** direct, dramatic, and game-specific.
 - **Motion 4/10:** event feedback only. No decorative idle loops.
 
-The authored dusk palette, detailed tanks, scorched terrain, gold instruments,
+The authored world palettes, detailed tanks, tactile terrain, gold instruments,
 and ember actions form one locked visual family.
 
 ## Composition
@@ -147,10 +147,20 @@ Current sources:
 ```text
 docs/assets/splash-hero.png
 client/public/art/battlefield-backdrop.webp
+client/public/art/battlefield-obsidian-caldera.webp
+client/public/art/battlefield-glassstorm-expanse.webp
 client/public/art/terrain-material.webp
+client/public/art/terrain-material-obsidian-caldera.webp
+client/public/art/terrain-material-glassstorm-expanse.webp
 client/public/art/tank-chassis.webp
 client/public/art/tank-parts.webp
 ```
+
+The deterministic `BattlefieldWorld` profile owns both panorama and terrain
+material. Keep these paired: Ember uses warm scorched strata, Obsidian uses dark
+volcanic glass, and Glassstorm uses a pale cool crystal crust. Material loading
+may add grain but must never be required for a complete, readable palette-only
+terrain fallback.
 
 ### Game-specific graphics
 
