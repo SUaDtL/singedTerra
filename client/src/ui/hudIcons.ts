@@ -1,11 +1,15 @@
 import {
+  ArrowLeft,
+  ArrowRight,
   Bomb,
   ChevronDown,
   Coins,
   Crosshair,
   Gauge,
   Menu,
+  Minus,
   MoveHorizontal,
+  Plus,
   RefreshCw,
   ScanLine,
   createElement,
@@ -18,6 +22,10 @@ import {
  */
 const HUD_ICONS = {
   aim: { icon: ScanLine, symbol: 'targeting' },
+  left: { icon: ArrowLeft, symbol: 'left' },
+  right: { icon: ArrowRight, symbol: 'right' },
+  decrease: { icon: Minus, symbol: 'decrease' },
+  increase: { icon: Plus, symbol: 'increase' },
   power: { icon: Gauge, symbol: 'velocity' },
   move: { icon: MoveHorizontal, symbol: 'mobility' },
   weapon: { icon: RefreshCw, symbol: 'cycle' },

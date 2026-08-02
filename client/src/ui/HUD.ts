@@ -1322,6 +1322,19 @@ export class HUD {
     this.touchStripEl.setAttribute('role', 'toolbar');
     this.touchStripEl.setAttribute('aria-label', 'Touch commands');
 
+    const header = document.createElement('div');
+    header.className = 'st-hud__touch-header';
+    const title = document.createElement('span');
+    title.className = 'st-hud__touch-title';
+    title.textContent = 'Command Deck';
+    const mode = document.createElement('span');
+    mode.className = 'st-hud__touch-mode';
+    mode.textContent = 'Touch';
+    header.append(title, mode);
+
+    const grid = document.createElement('div');
+    grid.className = 'st-hud__touch-grid';
+
     const mkTouchBtn = (
       command: string,
       ariaLabel: string,
@@ -1385,10 +1398,30 @@ export class HUD {
       });
     };
 
-    const touchAngleL = mkTouchBtn('aim-left', 'Aim barrel left', '◀', 'Aim');
-    const touchAngleR = mkTouchBtn('aim-right', 'Aim barrel right', '▶', 'Aim');
-    const touchPowerD = mkTouchBtn('power-down', 'Decrease power', '−', 'Power');
-    const touchPowerU = mkTouchBtn('power-up', 'Increase power', '+', 'Power');
+    const touchAngleL = mkTouchBtn(
+      'aim-left',
+      'Aim barrel left',
+      makeHudIcon('left', 18),
+      'Left',
+    );
+    const touchAngleR = mkTouchBtn(
+      'aim-right',
+      'Aim barrel right',
+      makeHudIcon('right', 18),
+      'Right',
+    );
+    const touchPowerD = mkTouchBtn(
+      'power-down',
+      'Decrease power',
+      makeHudIcon('decrease', 18),
+      'Less',
+    );
+    const touchPowerU = mkTouchBtn(
+      'power-up',
+      'Increase power',
+      makeHudIcon('increase', 18),
+      'More',
+    );
     touchAngleL.dataset['firstSalvoTarget'] = 'aim';
     touchAngleR.dataset['firstSalvoTarget'] = 'aim';
     touchPowerD.dataset['firstSalvoTarget'] = 'power-and-wind';
@@ -1396,14 +1429,14 @@ export class HUD {
     this.touchMoveLeftBtnEl = mkTouchBtn(
       'move-left',
       'Move tank left, 8 fuel maximum',
-      '‹',
-      'Move',
+      makeHudIcon('left', 18),
+      'Left',
     );
     this.touchMoveRightBtnEl = mkTouchBtn(
       'move-right',
       'Move tank right, 8 fuel maximum',
-      '›',
-      'Move',
+      makeHudIcon('right', 18),
+      'Right',
     );
     this.touchWeaponBtnEl = mkTouchBtn(
       'weapon',
@@ -1442,7 +1475,44 @@ export class HUD {
       this.touchWeaponBtnEl,
       this.touchMenuBtnEl,
     ];
-    this.touchStripEl.append(...this.touchCommandBtns);
+
+    const makeGroup = (
+      label: 'Aim' | 'Power' | 'Drive',
+      buttons: readonly HTMLButtonElement[],
+    ): HTMLElement => {
+      const group = document.createElement('div');
+      group.className = 'st-hud__touch-group';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', label);
+      const groupTitle = document.createElement('span');
+      groupTitle.className = 'st-hud__touch-group-title';
+      groupTitle.textContent = label;
+      const pair = document.createElement('div');
+      pair.className = 'st-hud__touch-pair';
+      pair.append(...buttons);
+      group.append(groupTitle, pair);
+      return group;
+    };
+
+    const utilities = document.createElement('div');
+    utilities.className = 'st-hud__touch-utilities';
+    utilities.setAttribute('role', 'group');
+    utilities.setAttribute('aria-label', 'Utilities');
+    const utilitiesTitle = document.createElement('span');
+    utilitiesTitle.className = 'st-hud__touch-group-title';
+    utilitiesTitle.textContent = 'Utilities';
+    const utilityPair = document.createElement('div');
+    utilityPair.className = 'st-hud__touch-pair';
+    utilityPair.append(this.touchWeaponBtnEl, this.touchMenuBtnEl);
+    utilities.append(utilitiesTitle, utilityPair);
+
+    grid.append(
+      makeGroup('Aim', [touchAngleL, touchAngleR]),
+      makeGroup('Power', [touchPowerD, touchPowerU]),
+      makeGroup('Drive', [this.touchMoveLeftBtnEl, this.touchMoveRightBtnEl]),
+      utilities,
+    );
+    this.touchStripEl.append(header, grid);
   }
 
   /**
@@ -3317,11 +3387,11 @@ export class HUD {
   top: 14px;
   left: 14px;
   display: none;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 3px;
   width: min(896px, calc(100% - 28px));
-  /* 72 logical px resolves to 45 rendered px at the supported 0.625 phone scale. */
-  padding: 6px;
+  max-height: 124px;
+  padding: 5px 6px 6px;
   box-sizing: border-box;
   border: 1px solid rgba(255, 210, 63, 0.32);
   border-radius: 10px;
@@ -3339,6 +3409,64 @@ export class HUD {
   .st-hud__touch-strip { display: grid; }
 }
 .st-hud__touch-strip[inert] { display: none; }
+.st-hud__touch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 17px;
+  padding: 0 2px 2px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.20);
+}
+.st-hud__touch-title,
+.st-hud__touch-group-title {
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.st-hud__touch-title {
+  font-size: 8.5px;
+  letter-spacing: 1.7px;
+}
+.st-hud__touch-mode {
+  padding: 2px 5px;
+  border: 1px solid rgba(122, 215, 255, 0.25);
+  border-radius: 99px;
+  color: var(--tank-blue-lite, #7ad7ff);
+  font-family: var(--font-mono);
+  font-size: 6px;
+  letter-spacing: 0.8px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.st-hud__touch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.05fr);
+  gap: 5px;
+  min-width: 0;
+}
+.st-hud__touch-group,
+.st-hud__touch-utilities {
+  display: grid;
+  grid-template-rows: 11px 72px;
+  gap: 2px;
+  min-width: 0;
+}
+.st-hud__touch-group-title {
+  overflow: hidden;
+  padding-left: 2px;
+  font-size: 8px;
+  letter-spacing: 1.05px;
+  line-height: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-hud__touch-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+}
 .st-hud__touch-btn {
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr);
@@ -3400,7 +3528,6 @@ export class HUD {
 }
 .st-hud__touch-btn:disabled { opacity: 0.38; cursor: not-allowed; }
 .st-hud__touch-weapon {
-  grid-column: span 2;
   border-color: rgba(122, 215, 255, 0.42);
   color: var(--tank-blue-lite, #7ad7ff);
 }
@@ -3429,6 +3556,9 @@ export class HUD {
 /* Enlarge interactive targets to ≥44px and hide the keyboard legend. */
 @media (pointer: coarse) {
   .st-hud__controls { display: none; }
+  .st-hud__conn,
+  .st-hud__toast,
+  .st-hud__turnwatch { top: 142px; }
   .st-hud__weapon-btn { min-height: 44px; }
   .st-hud__strip-toggle { min-width: 72px; min-height: 72px; }
   .st-hud__store-buy { min-height: 44px; }

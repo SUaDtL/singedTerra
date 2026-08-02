@@ -77,15 +77,36 @@ describe('HUD command input console', () => {
     expect(items.at(-1)?.classList.contains('st-hud__control-cell--primary')).toBe(true);
   });
 
-  it('places eight explicitly named touch commands in the overlay, not the narrow rail', () => {
+  it('builds one grouped Touch Command Deck with bounded directional icons', () => {
     const { root, overlay } = mount();
     const dock = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
     const buttons = [...dock.querySelectorAll<HTMLButtonElement>('.st-hud__touch-btn')];
+    const groups = [...dock.querySelectorAll<HTMLElement>('.st-hud__touch-group')];
 
     expect(dock.parentElement).toBe(overlay);
     expect(root.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(dock.getAttribute('role')).toBe('toolbar');
     expect(dock.getAttribute('aria-label')).toBe('Touch commands');
+    expect(dock.querySelector('.st-hud__touch-title')?.textContent).toBe('Command Deck');
+    expect(dock.querySelector('.st-hud__touch-mode')?.textContent).toBe('Touch');
+    expect(groups.map((group) => group.getAttribute('role'))).toEqual([
+      'group',
+      'group',
+      'group',
+    ]);
+    expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
+      'Aim',
+      'Power',
+      'Drive',
+    ]);
+    expect(groups.map((group) => group.querySelector('.st-hud__touch-group-title')?.textContent))
+      .toEqual(['Aim', 'Power', 'Drive']);
+    expect(groups.map((group) => [...group.querySelectorAll('.st-hud__touch-label')]
+      .map((label) => label.textContent))).toEqual([
+      ['Left', 'Right'],
+      ['Less', 'More'],
+      ['Left', 'Right'],
+    ]);
     expect(buttons.map((button) => button.dataset['command'])).toEqual([
       'aim-left',
       'aim-right',
@@ -107,10 +128,46 @@ describe('HUD command input console', () => {
       'Open menu',
     ]);
     expect(buttons.map((button) => button.querySelector('.st-hud__touch-label')?.textContent))
-      .toEqual(['Aim', 'Aim', 'Power', 'Power', 'Move', 'Move', 'Baby Missile', 'Menu']);
+      .toEqual(['Left', 'Right', 'Less', 'More', 'Left', 'Right', 'Baby Missile', 'Menu']);
+    expect(buttons.map((button) => button.querySelector('.st-ui-icon')?.getAttribute('data-icon')))
+      .toEqual(['left', 'right', 'decrease', 'increase', 'left', 'right', 'weapon', 'menu']);
+    expect(groups.flatMap((group) => [...group.querySelectorAll<HTMLButtonElement>('button')]
+      .map((button) => button.dataset['firstSalvoTarget'] ?? null))).toEqual([
+      'aim',
+      'aim',
+      'power-and-wind',
+      'power-and-wind',
+      null,
+      null,
+    ]);
     expect(
       buttons.at(-1)?.querySelector('.st-ui-glyph')?.getAttribute('data-glyph'),
     ).toBe('menu');
+    expect(dock.querySelectorAll('[data-command="fire"]')).toHaveLength(0);
+    expect(root.querySelectorAll('.st-hud__primary-action')).toHaveLength(1);
+  });
+
+  it('retains disabled and aria-disabled states after regrouping', () => {
+    const { overlay, hud } = mount();
+    const controlled = [...overlay.querySelectorAll<HTMLButtonElement>(
+      '.st-hud__touch-btn:not([data-command="menu"])',
+    )];
+    const state = new GameEngine({
+      players: [
+        { name: 'Alice', color: '#e84d4d' },
+        { name: 'Bob', color: '#4d8ce8' },
+      ],
+      maxPlayers: 2,
+      seed: 1,
+    }).getState();
+
+    hud.update(state, false, false);
+    expect(controlled.every((button) => button.disabled)).toBe(true);
+    expect(controlled.every((button) => button.getAttribute('aria-disabled') === 'true')).toBe(true);
+
+    hud.update(state, false, true);
+    expect(controlled.every((button) => !button.disabled)).toBe(true);
+    expect(controlled.every((button) => button.getAttribute('aria-disabled') === 'false')).toBe(true);
   });
 
   it('routes the touch Menu through the existing non-destructive pause surface', () => {
