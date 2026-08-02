@@ -2519,44 +2519,44 @@ export class HUD {
   position: absolute;
   top: 14px;
   left: 14px;
-  width: 208px;
+  width: 236px;
   box-sizing: border-box;
-  padding: 8px;
-  border-radius: 9px;
+  padding: 10px;
+  border-radius: 10px;
   background:
-    radial-gradient(110% 90% at 0% 0%, rgba(122, 215, 255, 0.10), transparent 48%),
-    linear-gradient(180deg, rgba(31, 18, 51, 0.92), rgba(9, 5, 16, 0.92));
-  border: 1px solid rgba(255, 210, 63, 0.32);
+    radial-gradient(110% 90% at 0% 0%, rgba(122, 215, 255, 0.13), transparent 48%),
+    linear-gradient(180deg, rgba(31, 18, 51, 0.96), rgba(9, 5, 16, 0.96));
+  border: 1px solid rgba(255, 210, 63, 0.42);
   box-shadow:
     inset 0 0 0 1px rgba(8, 4, 13, 0.78),
-    inset 0 0 22px rgba(255, 122, 31, 0.06),
-    0 10px 28px rgba(0, 0, 0, 0.35);
+    inset 0 0 26px rgba(255, 122, 31, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.4);
   color: var(--ui-muted);
 }
 .st-hud__controls-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 20px;
-  margin-bottom: 6px;
-  padding: 0 2px 5px;
-  border-bottom: 1px solid rgba(255, 210, 63, 0.22);
+  min-height: 24px;
+  margin-bottom: 8px;
+  padding: 0 2px 7px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.3);
 }
 .st-hud__controls-title {
-  color: var(--text-dim);
+  color: var(--text-gold);
   font-family: var(--font-display);
-  font-size: 8.5px;
+  font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 1.7px;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
 }
 .st-hud__controls-mode {
-  padding: 2px 5px;
-  border: 1px solid rgba(122, 215, 255, 0.25);
+  padding: 3px 7px;
+  border: 1px solid rgba(122, 215, 255, 0.34);
   border-radius: 99px;
   color: var(--tank-blue-lite, #7ad7ff);
   font-family: var(--font-mono);
-  font-size: 6px;
+  font-size: 7.5px;
   letter-spacing: 0.8px;
   line-height: 1;
   text-transform: uppercase;
@@ -2564,68 +2564,68 @@ export class HUD {
 .st-hud__control-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
+  gap: 6px;
 }
 .st-hud__control-cell {
   display: grid;
-  grid-template-columns: 25px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr);
   grid-template-rows: 1fr auto;
   align-items: center;
-  gap: 0 5px;
-  min-height: 38px;
+  gap: 0 7px;
+  min-height: 46px;
   min-width: 0;
-  padding: 4px 5px;
-  border: 1px solid rgba(255, 210, 63, 0.14);
-  border-radius: 5px;
+  padding: 6px 7px;
+  border: 1px solid rgba(255, 210, 63, 0.2);
+  border-radius: 6px;
   background:
-    linear-gradient(145deg, rgba(255, 233, 168, 0.045), transparent 52%),
-    rgba(9, 5, 17, 0.68);
-  box-shadow: inset 0 1px 0 rgba(255, 233, 168, 0.04);
+    linear-gradient(145deg, rgba(255, 233, 168, 0.07), transparent 52%),
+    rgba(9, 5, 17, 0.74);
+  box-shadow: inset 0 1px 0 rgba(255, 233, 168, 0.07);
 }
 .st-hud__control-cell .st-ui-glyph {
   grid-row: 1 / 3;
-  width: 25px;
-  height: 25px;
+  width: 30px;
+  height: 30px;
 }
 .st-hud__control-label {
   align-self: end;
   color: var(--ui-copy);
   font-family: var(--font-sans);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.45px;
-  line-height: 1;
+  line-height: 1.05;
   text-transform: uppercase;
 }
 .st-hud__keypair {
   display: flex;
   align-items: center;
   align-self: start;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 .st-hud__controls kbd {
   display: inline-block;
-  min-width: 10px;
-  padding: 1px 2px;
-  border: 1px solid rgba(255, 210, 63, 0.22);
-  border-radius: 2px;
-  background: rgba(255, 210, 63, 0.08);
-  color: var(--ui-muted);
+  min-width: 14px;
+  padding: 2px 4px;
+  border: 1px solid rgba(255, 210, 63, 0.34);
+  border-radius: 3px;
+  background: rgba(255, 210, 63, 0.12);
+  color: var(--text-gold);
   font-family: var(--font-mono);
-  font-size: 6.5px;
-  line-height: 1.2;
+  font-size: 8.5px;
+  line-height: 1.25;
   text-align: center;
 }
 .st-hud__control-cell--primary {
   grid-column: 1 / -1;
-  grid-template-columns: 25px minmax(0, 1fr) auto;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   grid-template-rows: 1fr;
-  min-height: 34px;
-  border-color: rgba(255, 122, 31, 0.34);
+  min-height: 42px;
+  border-color: rgba(255, 122, 31, 0.5);
   background:
-    linear-gradient(90deg, rgba(255, 122, 31, 0.13), transparent 70%),
-    rgba(9, 5, 17, 0.78);
+    linear-gradient(90deg, rgba(255, 122, 31, 0.2), transparent 70%),
+    rgba(9, 5, 17, 0.84);
 }
 .st-hud__control-cell--primary .st-ui-glyph { grid-row: 1; }
 .st-hud__control-cell--primary .st-hud__control-label { align-self: center; }
@@ -3984,13 +3984,13 @@ export class HUD {
   font-size: 15px;
 }
 #app.is-compact .st-hud__controls-title {
-  font-size: 9.5px;
+  font-size: 12px;
 }
 #app.is-compact .st-hud__control-label {
-  font-size: 9px;
+  font-size: 11px;
 }
 #app.is-compact .st-hud__controls kbd {
-  font-size: 7.5px;
+  font-size: 9.5px;
 }
 @media (pointer: coarse) {
   #app .st-hud__active-row {

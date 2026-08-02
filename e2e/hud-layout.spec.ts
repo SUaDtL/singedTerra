@@ -177,19 +177,77 @@ test.describe('HUD layout guardrails', () => {
       expect(await deck.locator('.st-hud__control-cell').evaluateAll((items) =>
         items.map((item) => (item as HTMLElement).dataset['command']),
       )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
-      const cells = await deck.locator('.st-hud__control-cell').evaluateAll((items) =>
-        items.map((item) => item.getBoundingClientRect().toJSON()),
-      );
-      expect(cells.at(-1)!.width).toBeGreaterThan(cells[0]!.width * 1.8);
-      const labels = await deck.locator('.st-hud__control-label').evaluateAll((items) =>
-        items.map((item) => ({
-          fontSize: parseFloat(getComputedStyle(item).fontSize),
-          height: item.getBoundingClientRect().height,
-        })),
-      );
+      const geometry = await deck.evaluate((node) => {
+        const deckRect = node.getBoundingClientRect();
+        const game = document.querySelector<HTMLCanvasElement>('#game')!;
+        const gameRect = game.getBoundingClientRect();
+        const gameScale = gameRect.width / game.width;
+        const impactMonitorLeft = gameRect.left + ((game.width - 220) / 2) * gameScale;
+        const title = node.querySelector<HTMLElement>('.st-hud__controls-title')!;
+        const mode = node.querySelector<HTMLElement>('.st-hud__controls-mode')!;
+        const rows = [...node.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
+        const labels = [...node.querySelectorAll<HTMLElement>('.st-hud__control-label')];
+        const keycaps = [...node.querySelectorAll<HTMLElement>('kbd')];
+        const glyphs = [...node.querySelectorAll<HTMLElement>('.st-ui-glyph')];
+        const firstStyle = getComputedStyle(rows[0]!);
+        const primaryStyle = getComputedStyle(rows.at(-1)!);
+        return {
+          width: parseFloat(getComputedStyle(node).width),
+          titleFont: parseFloat(getComputedStyle(title).fontSize),
+          modeFont: parseFloat(getComputedStyle(mode).fontSize),
+          rows: rows.map((row) => ({
+            rect: row.getBoundingClientRect().toJSON(),
+            minHeight: parseFloat(getComputedStyle(row).minHeight),
+          })),
+          labels: labels.map((label) => ({
+            fontSize: parseFloat(getComputedStyle(label).fontSize),
+            height: label.getBoundingClientRect().height,
+          })),
+          keyFonts: keycaps.map((key) => parseFloat(getComputedStyle(key).fontSize)),
+          glyphs: glyphs.map((glyph) => ({
+            logicalWidth: parseFloat(getComputedStyle(glyph).width),
+            logicalHeight: parseFloat(getComputedStyle(glyph).height),
+            rendered: glyph.getBoundingClientRect().toJSON(),
+          })),
+          ordinaryBorder: firstStyle.borderColor,
+          primaryBorder: primaryStyle.borderColor,
+          ordinaryBackground: firstStyle.backgroundImage,
+          primaryBackground: primaryStyle.backgroundImage,
+          scrollWidth: node.scrollWidth,
+          clientWidth: node.clientWidth,
+          scrollHeight: node.scrollHeight,
+          clientHeight: node.clientHeight,
+          impactClearanceLogical: (impactMonitorLeft - deckRect.right) / gameScale,
+        };
+      });
       const compactDeck = testInfo.project.name === 'small-window';
-      for (const label of labels) {
-        expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 9 : 8);
+      expect(geometry.width).toBeCloseTo(236, 1);
+      expect(geometry.titleFont).toBeGreaterThanOrEqual(10.5);
+      expect(geometry.modeFont).toBeGreaterThanOrEqual(7.5);
+      expect(geometry.rows.at(-1)!.rect.width)
+        .toBeGreaterThan(geometry.rows[0]!.rect.width * 1.8);
+      for (const row of geometry.rows.slice(0, -1)) {
+        expect(row.minHeight).toBeGreaterThanOrEqual(46);
+      }
+      expect(geometry.rows.at(-1)!.minHeight).toBeGreaterThanOrEqual(42);
+      expect(geometry.ordinaryBorder).not.toBe(geometry.primaryBorder);
+      expect(geometry.ordinaryBackground).not.toBe(geometry.primaryBackground);
+      expect(geometry.keyFonts).toHaveLength(9);
+      for (const fontSize of geometry.keyFonts) {
+        expect(fontSize).toBeGreaterThanOrEqual(8.5);
+      }
+      expect(geometry.glyphs).toHaveLength(5);
+      for (const glyph of geometry.glyphs) {
+        expect(glyph.logicalWidth).toBeCloseTo(30, 1);
+        expect(glyph.logicalHeight).toBeCloseTo(30, 1);
+        expect(glyph.rendered.width).toBeGreaterThanOrEqual(compactDeck ? 15 : 29.9);
+        expect(glyph.rendered.height).toBeGreaterThanOrEqual(compactDeck ? 15 : 29.9);
+      }
+      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+      expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
+      expect(geometry.impactClearanceLogical).toBeGreaterThanOrEqual(32);
+      for (const label of geometry.labels) {
+        expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 11 : 10);
         expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
       }
     } else {
