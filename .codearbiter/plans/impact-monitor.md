@@ -106,7 +106,7 @@
   `npm run check:edge`, `npm run build`, `npm run test:e2e`,
   `npm run audit:deps`, `git diff --check`, state-free secret scan, and watched
   localhost-port proof.
-- [ ] **Step 3: Commit through `$ca-commit` and open a ready PR through `$ca-pr`.**
+- [x] **Step 3: Commit through `$ca-commit` and open a ready PR through `$ca-pr`.**
 - [ ] **Step 4: Require exact-head hosted CI and CodeQL, log the PR-specific
   merge override, obtain final exact-head adversarial clearance, squash merge,
   and prove exact-SHA Pages provenance plus live smoke.**
