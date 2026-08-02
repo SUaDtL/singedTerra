@@ -147,7 +147,7 @@ describe('Lobby tank Garage', () => {
 
     root.querySelector<HTMLButtonElement>('.lobby-start')!.click();
 
-    const config = onReady.mock.calls[0]![0];
+    const config = required(required(onReady.mock.calls[0], 'onReady call')[0], 'emitted config');
     expect(required(config.players[0], 'first emitted player').loadout).toEqual({
       treads: 'foundry',
       hull: 'foundry',

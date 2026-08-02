@@ -240,7 +240,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
     await internals(lobby).handleRejoin();
 
     expect(onReady).toHaveBeenCalledTimes(1);
-    const config = required(onReady.mock.calls[0], 'onReady call')[0] as LobbyConfig;
+    const config = required(required(onReady.mock.calls[0], 'onReady call')[0], 'emitted config');
     expect(config.mode).toBe('network');
     expect(config.roomId).toBe('room-1');
     expect(config.roomCode).toBe('ABCD');
@@ -289,7 +289,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     await internals(lobby).handleRejoin();
     expect(onReady).toHaveBeenCalledTimes(1);
-    const config = required(onReady.mock.calls[0], 'onReady call')[0] as LobbyConfig;
+    const config = required(required(onReady.mock.calls[0], 'onReady call')[0], 'emitted config');
 
     // The room's action log already committed player p-1's fire — the "current"
     // state a rejoining client must replay up to.

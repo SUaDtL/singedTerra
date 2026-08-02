@@ -118,7 +118,7 @@ describe('Lobby pending action when the current room is gone', () => {
       token: 'room-a-token',
     })
 
-    required(realtime.channels[0], 'waiting realtime channel').delete!()
+    required(required(realtime.channels[0], 'waiting realtime channel').delete, 'waiting DELETE callback')()
 
     expect(internals(lobby).onlineSubView).toBe('create')
     expect(internals(lobby).onlineError).toBe('This room is no longer available.')
@@ -150,7 +150,7 @@ describe('Lobby pending action when the current room is gone', () => {
       fields: { name: 'Room A Alice' },
     })
 
-    required(realtime.channels[0], 'waiting realtime channel').update!({
+    required(required(realtime.channels[0], 'waiting realtime channel').update, 'waiting UPDATE callback')({
       new: { status: 'waiting', players: [{ ...players[1] }] },
     })
 

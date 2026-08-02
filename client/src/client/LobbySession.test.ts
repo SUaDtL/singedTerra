@@ -181,7 +181,7 @@ describe('LobbySession', () => {
       options: { ...roomTwo.options, gravity: 0.25 },
     }
 
-    first.update!({
+    required(first.update, 'first UPDATE callback')({
       new: { status: 'active', players: waiting.players, seed: 77, options: waiting.options },
     })
 
@@ -190,7 +190,7 @@ describe('LobbySession', () => {
     expect(realtime.removeChannel).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
 
-    second.update!({ new: { status: 'active', ...active } })
+    required(second.update, 'replacement UPDATE callback')({ new: { status: 'active', ...active } })
 
     expect(events).toEqual([{ type: 'ready', source: 'realtime', room: active }])
     expect(realtime.removeChannel).toHaveBeenLastCalledWith(second)
@@ -206,14 +206,14 @@ describe('LobbySession', () => {
     await session.subscribeWaitingRoom()
     const second = required(realtime.channels[1], 'replacement realtime channel')
 
-    first.delete!()
+    required(first.delete, 'first DELETE callback')()
 
     expect(session.waiting).toEqual(roomTwo)
     expect(events).toEqual([])
     expect(realtime.removeChannel).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
 
-    second.delete!()
+    required(second.delete, 'replacement DELETE callback')()
 
     expect(session.waiting).toMatchObject({
       roomId: '',
@@ -308,7 +308,7 @@ describe('LobbySession', () => {
   it('adopts waiting updates and suppresses changed for lastSeen-only updates', async () => {
     session.replaceWaiting(cloneWaiting())
     await session.subscribeWaitingRoom()
-    const update = required(realtime.channels[0], 'realtime channel').update!
+    const update = required(required(realtime.channels[0], 'realtime channel').update, 'waiting UPDATE callback')
     const updatedPlayers = waiting.players.map((player) => ({ ...player, lastSeen: 200 }))
 
     update({ new: { status: 'waiting', players: updatedPlayers, seed: 99, options: { ...waiting.options, maxWind: 9 } } })
@@ -326,7 +326,7 @@ describe('LobbySession', () => {
     const channel = required(realtime.channels[0], 'active realtime channel')
     const active = { players: waiting.players, seed: 77, options: { ...waiting.options, gravity: 0.3 } }
 
-    channel.update!({ new: { status: 'active', ...active } })
+    required(channel.update, 'active UPDATE callback')({ new: { status: 'active', ...active } })
 
     expect(realtime.removeChannel).toHaveBeenCalledWith(channel)
     expect(vi.getTimerCount()).toBe(0)
@@ -336,21 +336,21 @@ describe('LobbySession', () => {
   it('resets and emits each exact gone message once for roster removal and DELETE', async () => {
     session.replaceWaiting(cloneWaiting())
     await session.subscribeWaitingRoom()
-    required(realtime.channels[0], 'roster realtime channel').update!({ new: { status: 'waiting', players: [waiting.players[1]] } })
+    required(required(realtime.channels[0], 'roster realtime channel').update, 'roster UPDATE callback')({ new: { status: 'waiting', players: [waiting.players[1]] } })
 
     expect(session.waiting).toMatchObject({ roomId: '', roomCode: '', playerId: '', token: '', players: [], thisPlayerReady: false })
     expect(events).toEqual([{ type: 'gone', message: 'You are no longer in this room.' }])
-    required(realtime.channels[0], 'roster realtime channel').delete!()
+    required(required(realtime.channels[0], 'roster realtime channel').delete, 'roster DELETE callback')()
     expect(events).toHaveLength(1)
 
     session.replaceWaiting(cloneWaiting())
     await session.subscribeWaitingRoom()
-    required(realtime.channels[1], 'replacement realtime channel').delete!()
+    required(required(realtime.channels[1], 'replacement realtime channel').delete, 'replacement DELETE callback')()
     expect(events).toEqual([
       { type: 'gone', message: 'You are no longer in this room.' },
       { type: 'gone', message: 'This room is no longer available.' },
     ])
-    required(realtime.channels[1], 'replacement realtime channel').delete!()
+    required(required(realtime.channels[1], 'replacement realtime channel').delete, 'replacement DELETE callback')()
     expect(events).toHaveLength(2)
   })
 
@@ -700,7 +700,7 @@ describe('LobbySession', () => {
   it('keeps the action lifecycle closed after the room becomes active', async () => {
     session.replaceWaiting(cloneWaiting())
     await session.subscribeWaitingRoom()
-    required(realtime.channels[0], 'active lifecycle channel').update!({
+    required(required(realtime.channels[0], 'active lifecycle channel').update, 'active lifecycle UPDATE callback')({
       new: {
         status: 'active',
         players: waiting.players.map((player) => ({ ...player, ready: true })),
@@ -730,7 +730,7 @@ describe('LobbySession', () => {
     session.replaceWaiting(cloneWaiting())
     await session.subscribeWaitingRoom()
 
-    required(realtime.channels[0], 'gone lifecycle channel').delete!()
+    required(required(realtime.channels[0], 'gone lifecycle channel').delete, 'gone lifecycle DELETE callback')()
     events.length = 0
 
     await expect(session.readyUp()).resolves.toEqual({ stale: true })
@@ -792,7 +792,7 @@ describe('LobbySession', () => {
     transport.readyUp.mockReturnValueOnce(started.promise)
 
     const pendingReady = session.readyUp()
-    required(realtime.channels[0], 'ready-up realtime channel').update!({
+    required(required(realtime.channels[0], 'ready-up realtime channel').update, 'ready-up UPDATE callback')({
       new: { status: 'active', players: readyPlayers, seed: 77, options: waiting.options },
     })
     started.resolve({ ok: true, status: 200, data: { players: readyPlayers, started: true } })
@@ -816,7 +816,7 @@ describe('LobbySession', () => {
     })
 
     await session.readyUp()
-    required(realtime.channels[0], 'ready-up realtime channel').update!({
+    required(required(realtime.channels[0], 'ready-up realtime channel').update, 'ready-up UPDATE callback')({
       new: { status: 'active', players: readyPlayers, seed: 77, options: waiting.options },
     })
 
