@@ -14,12 +14,14 @@ import { fastForwardTicks } from './fastForward';
  */
 export class HotSeatClient implements GameClient {
   private readonly engine: GameEngine;
+  private readonly initialTerrain: Uint8Array;
   private readonly listeners = new Set<(state: GameState) => void>();
   private rafId: number | null = null;
   private fastForward = false;
 
   constructor(engine: GameEngine) {
     this.engine = engine;
+    this.initialTerrain = engine.getState().terrain.slice();
   }
 
   setFastForward(on: boolean): void {
@@ -60,6 +62,10 @@ export class HotSeatClient implements GameClient {
 
   getState(): GameState | null {
     return this.engine.getState();
+  }
+
+  getInitialTerrain(): Uint8Array {
+    return this.initialTerrain;
   }
 
   getEffectiveGravity(): number {

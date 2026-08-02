@@ -22,6 +22,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NetworkClient } from './NetworkClient';
 import type { NetworkAction } from '@shared/net/replay';
 import type { ConnectionState } from './GameClient';
+import { selectBattlefieldWorld } from '../renderer/BattlefieldBackdrop';
 
 const OPTIONS = {
   maxPlayers: 2,
@@ -126,6 +127,23 @@ describe('NetworkClient — deterministic lockstep core', () => {
 
     // The replayed fire ticked to completion (isReplaying path) and handed the turn to p2.
     expect(client.getState().activePlayerId).toBe('p2');
+  });
+
+  it('preserves pristine terrain when replay craters cross visual worlds', async () => {
+    const { supabase } = makeFakeSupabase([{
+      data: [row(0, fire(20, 40)).new],
+      error: null,
+    }]);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const pristine = client.getInitialTerrain();
+    const pristineWorld = selectBattlefieldWorld(pristine);
+
+    await client.initialize();
+
+    const replayedWorld = selectBattlefieldWorld(client.getState().terrain);
+    expect(replayedWorld.id).not.toBe(pristineWorld.id);
+    expect(selectBattlefieldWorld(client.getInitialTerrain())).toBe(pristineWorld);
+    expect(client.getInitialTerrain()).toEqual(pristine);
   });
 
   it('buffers an out-of-order Realtime action and applies it only once the gap fills', async () => {

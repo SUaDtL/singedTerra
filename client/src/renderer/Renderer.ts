@@ -437,6 +437,7 @@ export class Renderer {
     this.effects.clear();
     this.mobilityEffects.clear();
     this.projectile.clear();
+    this.battlefieldBackdrop?.reset?.();
     this.terrain.markDirty(); // force a terrain rebuild next frame (version may collide)
     // Audio signal tracking: reset per-frame bookkeeping and stop any sustained
     // napalm crackle so a stuck loop can't survive across rounds or games.
@@ -620,6 +621,11 @@ export class Renderer {
     // 6. HUD slot (canvas no-op; real HUD is the DOM overlay — unshaken).
     this.drawImpactMonitor(depth.world);
     this.hud.draw(ctx, state);
+  }
+
+  /** Freeze one deterministic panorama from the client's pristine terrain. */
+  selectBattlefieldBackdrop(terrain: Uint8Array): void {
+    this.battlefieldBackdrop?.select?.(terrain);
   }
 
   /** Copy the strongest live detonation after all world transforms are restored. */

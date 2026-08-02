@@ -28,7 +28,18 @@ import {
 } from './ui/firstSalvoController';
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 
-const E2E_MODE = new URLSearchParams(window.location.search).get('e2e');
+const E2E_PARAMS = new URLSearchParams(window.location.search);
+const E2E_MODE = E2E_PARAMS.get('e2e');
+const e2eSeedParam = E2E_PARAMS.get('seed');
+const e2eSeedCandidate = e2eSeedParam !== null && e2eSeedParam.trim() !== ''
+  ? Number(e2eSeedParam)
+  : Number.NaN;
+const E2E_HOT_SEAT_SEED = (
+  E2E_MODE === 'hotseat'
+  && Number.isSafeInteger(e2eSeedCandidate)
+)
+  ? e2eSeedCandidate
+  : 1337;
 const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE = E2E_MODE === 'hotseat';
 
 interface E2EForwardedActionCounts {
@@ -285,6 +296,7 @@ function bootstrap(): void {
 
     const newClient = await createClient(config);
     client = newClient;
+    renderer.selectBattlefieldBackdrop(newClient.getInitialTerrain());
     firstSalvo.startNewGame();
     e2eForwardedActionCounts = { setAngle: 0, setPower: 0, fire: 0 };
 
@@ -612,7 +624,7 @@ function bootstrap(): void {
         { name: 'P2', color: '#4d8ce8' },
       ],
       playerNames: ['P1', 'P2'],
-      settings: { seed: 1337 },
+      settings: { seed: E2E_HOT_SEAT_SEED },
     });
   } else {
     lobby.show();

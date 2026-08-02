@@ -76,6 +76,14 @@ export interface GameClient {
   getState(): GameState | null;
 
   /**
+   * Immutable-by-contract snapshot of the engine's pristine terrain, captured
+   * before any live or historical action mutates it. Presentation uses this to
+   * make a stable per-game world choice even when a network client rejoins and
+   * replays crater-producing actions before its first rendered frame.
+   */
+  getInitialTerrain(): Uint8Array;
+
+  /**
    * Whether this browser owns an engine-namespace player id (network only).
    * Network transports may use a different public seat-id namespace, so the
    * transport that owns that translation must answer this question.

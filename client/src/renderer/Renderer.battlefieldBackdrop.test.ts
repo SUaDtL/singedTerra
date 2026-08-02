@@ -11,6 +11,7 @@ interface BackdropSeam {
   skyGradient: CanvasGradient;
   battlefieldBackdrop: {
     readonly isSettled: boolean;
+    select?(terrain: Uint8Array): unknown;
     draw(ctx: CanvasRenderingContext2D, overscan?: number): boolean;
   };
   atmosphereClouds: { draw: ReturnType<typeof vi.fn> };
@@ -19,6 +20,7 @@ interface BackdropSeam {
   drawHorizonHaze: ReturnType<typeof vi.fn>;
   drawDistantRidges: ReturnType<typeof vi.fn>;
   drawSky(): void;
+  selectBattlefieldBackdrop(terrain: Uint8Array): void;
   bursts: unknown[];
   scorches: unknown[];
   wallContacts: unknown[];
@@ -100,6 +102,19 @@ function idleState(): GameState {
 }
 
 describe('Renderer authored battlefield backdrop seam', () => {
+  it('selects the backdrop from authoritative terrain before the sky paints', () => {
+    const terrain = new Uint8Array([0, 1, 1, 0]);
+    const select = vi.fn();
+    const renderer = Object.assign(Object.create(Renderer.prototype), {
+      battlefieldBackdrop: { isSettled: false, select, draw: vi.fn() },
+    }) as BackdropSeam;
+
+    renderer.selectBattlefieldBackdrop(terrain);
+
+    expect(select).toHaveBeenCalledOnce();
+    expect(select).toHaveBeenCalledWith(terrain);
+  });
+
   it('keeps the complete procedural atmosphere while the authored image is unavailable', () => {
     const renderer = skySeam(false);
 
@@ -130,6 +145,7 @@ describe('Renderer authored battlefield backdrop seam', () => {
     const { backdrop, image } = controlledBackdrop();
     const renderer = animationSeam(false);
     renderer.battlefieldBackdrop = backdrop;
+    backdrop.select(new Uint8Array([1]));
 
     expect(renderer.isAnimating(idleState())).toBe(true);
     Object.assign(image, { naturalWidth: 1_774, naturalHeight: 887 });
@@ -147,6 +163,7 @@ describe('Renderer authored battlefield backdrop seam', () => {
     const { backdrop, image } = controlledBackdrop();
     const renderer = animationSeam(false);
     renderer.battlefieldBackdrop = backdrop;
+    backdrop.select(new Uint8Array([1]));
 
     image.onerror?.(new Event('error'));
 

@@ -21,6 +21,11 @@ interface MobilityRendererSeam {
   effectsBusy: number;
   prevMobilityPoses: Map<string, unknown>;
   mobilityEffects: MobilityEffectSeam;
+  battlefieldBackdrop: {
+    reset: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
+    readonly isSettled: boolean;
+  };
   trackMobility(state: GameState): void;
   isAnimating(state: GameState): boolean;
   reset(): void;
@@ -70,7 +75,7 @@ function seam(reduceMotion = false): MobilityRendererSeam {
       clear: vi.fn(),
       isActive: false,
     },
-    battlefieldBackdrop: { isSettled: true },
+    battlefieldBackdrop: { isSettled: true, reset: vi.fn(), select: vi.fn() },
     terrain: { isMaterialSettled: true, markDirty: vi.fn() },
     tanks: { isChassisArtSettled: true },
     bursts: [],
@@ -259,6 +264,7 @@ describe('Renderer mobility-signature lifecycle', () => {
 
     expect(renderer.prevMobilityPoses.size).toBe(0);
     expect(renderer.mobilityEffects.clear).toHaveBeenCalledOnce();
+    expect(renderer.battlefieldBackdrop.reset).toHaveBeenCalledOnce();
   });
 });
 

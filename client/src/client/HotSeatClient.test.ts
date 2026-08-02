@@ -174,8 +174,10 @@ describe('HotSeatClient', () => {
 
   it('passes actions, state, and effective gravity through unchanged', () => {
     const state = makeState('PLAYER_TURN');
+    state.terrain = new Uint8Array([0, 1, 1, 0]);
     const engine = makeEngine(state, 0.23);
     const client = new HotSeatClient(engine.engine);
+    const pristineTerrain = state.terrain.slice();
     const action: PlayerAction = { type: 'set_angle', angle: 37 };
 
     client.sendAction(action);
@@ -183,6 +185,10 @@ describe('HotSeatClient', () => {
     expect(engine.applyAction).toHaveBeenCalledOnce();
     expect(engine.applyAction.mock.calls[0]?.[0]).toBe(action);
     expect(client.getState()).toBe(state);
+    expect(client.getInitialTerrain()).toEqual(pristineTerrain);
+    expect(client.getInitialTerrain()).not.toBe(state.terrain);
+    state.terrain[0] = 1;
+    expect(client.getInitialTerrain()).toEqual(pristineTerrain);
     expect(client.getEffectiveGravity()).toBe(0.23);
 
     client.stop();

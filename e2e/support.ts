@@ -11,11 +11,14 @@ import { expect, type Page } from '@playwright/test';
  * actually running (the HUD is built and the instrument cluster is on screen).
  * Dismisses the splash overlay so it can't intercept anything.
  */
-export async function gotoRunningGame(page: Page): Promise<void> {
+export async function gotoRunningGame(
+  page: Page,
+  search = '?e2e=hotseat',
+): Promise<void> {
   // Relative query (no leading '/') so it resolves against baseURL correctly for
   // BOTH the local root-served preview ('/') and the live project site served under
   // a sub-path ('/singedTerra/') — a leading-slash path would drop the sub-path.
-  await page.goto('?e2e=hotseat');
+  await page.goto(search);
   // The splash mounts on load and covers everything until dismissed; remove it so
   // it never sits over the widgets we measure. (Its own dismiss path just fades +
   // removes this node, so removing it directly is equivalent.)

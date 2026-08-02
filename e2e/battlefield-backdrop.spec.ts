@@ -1,7 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoRunningGame } from './support';
 
-const BACKDROP_PATH = 'art/battlefield-backdrop.webp';
+const BACKDROP_PATHS = [
+  'art/battlefield-backdrop.webp',
+  'art/battlefield-obsidian-caldera.webp',
+  'art/battlefield-glassstorm-expanse.webp',
+] as const;
 const MAX_TRANSFER_BYTES = 500_000;
 
 async function sampleSky(page: Page): Promise<number[]> {
@@ -28,61 +32,104 @@ function meanChannelDelta(left: number[], right: number[]): number {
 }
 
 test.describe('authored battlefield backdrop asset', () => {
-  test('is a bounded opaque 2:1 WebP that the browser can decode', async ({
+  test('catalog assets are bounded opaque 2:1 WebPs that the browser can decode', async ({
     page,
     request,
   }) => {
-    const response = await request.get(BACKDROP_PATH);
-    expect(response.status()).toBe(200);
-    expect(response.headers()['content-type']).toContain('image/webp');
-    expect((await response.body()).byteLength).toBeLessThanOrEqual(MAX_TRANSFER_BYTES);
-
     await page.goto('.');
-    const decoded = await page.evaluate(async (src) => {
-      const image = new Image();
-      image.src = src;
-      await image.decode();
+    for (const path of BACKDROP_PATHS) {
+      const response = await request.get(path);
+      expect(response.status(), path).toBe(200);
+      expect(response.headers()['content-type'], path).toContain('image/webp');
+      expect((await response.body()).byteLength, path)
+        .toBeLessThanOrEqual(MAX_TRANSFER_BYTES);
 
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-      ctx.drawImage(image, 0, 0);
+      const decoded = await page.evaluate(async (src) => {
+        const image = new Image();
+        image.src = src;
+        await image.decode();
 
-      let minAlpha = 255;
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      for (let offset = 3; offset < pixels.length; offset += 4 * 256) {
-        minAlpha = Math.min(minAlpha, pixels[offset]!);
-      }
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+        ctx.drawImage(image, 0, 0);
 
-      return {
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-        minAlpha,
-      };
-    }, BACKDROP_PATH);
+        let minAlpha = 255;
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        for (let offset = 3; offset < pixels.length; offset += 4) {
+          minAlpha = Math.min(minAlpha, pixels[offset]!);
+        }
 
-    expect(decoded.width).toBeGreaterThanOrEqual(1_536);
-    expect(decoded.width / decoded.height).toBe(2);
-    expect(decoded.minAlpha).toBe(255);
+        return {
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+          minAlpha,
+        };
+      }, path);
+
+      expect(decoded.width, path).toBeGreaterThanOrEqual(1_536);
+      expect(decoded.width / decoded.height, path).toBe(2);
+      expect(decoded.minAlpha, path).toBe(255);
+    }
   });
 });
 
 test.describe('authored battlefield backdrop integration', () => {
+  test('real deterministic seed fixtures reach every authored world', async ({
+    context,
+  }) => {
+    const fixtures = [
+      { seed: 4, path: 'art/battlefield-backdrop.webp' },
+      { seed: 8, path: 'art/battlefield-obsidian-caldera.webp' },
+      { seed: 1, path: 'art/battlefield-glassstorm-expanse.webp' },
+    ] as const;
+
+    for (const fixture of fixtures) {
+      const page = await context.newPage();
+      const selectedAsset = page.waitForResponse((response) =>
+        response.url().endsWith(fixture.path),
+      );
+      await gotoRunningGame(page, `?e2e=hotseat&seed=${fixture.seed}`);
+      expect((await selectedAsset).status()).toBe(200);
+      await page.close();
+    }
+  });
+
+  test('missing, blank, and invalid fixture seeds preserve the 1337 baseline', async ({
+    context,
+  }) => {
+    const searches = [
+      '?e2e=hotseat',
+      '?e2e=hotseat&seed=',
+      '?e2e=hotseat&seed=not-a-number',
+    ] as const;
+
+    for (const search of searches) {
+      const page = await context.newPage();
+      const selectedAsset = page.waitForResponse((response) =>
+        response.url().endsWith('art/battlefield-backdrop.webp'),
+      );
+      await gotoRunningGame(page, search);
+      expect((await selectedAsset).status()).toBe(200);
+      await page.close();
+    }
+  });
+
   test('loads through the live renderer without changing the single-page frame', async ({
     page,
   }) => {
     const assetResponse = page.waitForResponse((response) =>
-      response.url().endsWith(BACKDROP_PATH),
+      BACKDROP_PATHS.some((path) => response.url().endsWith(path)),
     );
 
     await gotoRunningGame(page);
     const response = await assetResponse;
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('image/webp');
-    expect(new URL(response.url()).pathname).toBe(
-      new URL(BACKDROP_PATH, page.url()).pathname,
-    );
+    expect(BACKDROP_PATHS.some((path) =>
+      new URL(response.url()).pathname === new URL(path, page.url()).pathname,
+    )).toBe(true);
 
     const geometry = await page.evaluate(() => {
       const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
@@ -107,13 +154,15 @@ test.describe('authored battlefield backdrop integration', () => {
     page,
     context,
   }) => {
-    await page.route(`**/${BACKDROP_PATH}`, (route) => route.abort());
+    for (const path of BACKDROP_PATHS) {
+      await page.route(`**/${path}`, (route) => route.abort());
+    }
     await gotoRunningGame(page);
     const fallbackSky = await sampleSky(page);
 
     const authoredPage = await context.newPage();
     const assetResponse = authoredPage.waitForResponse((response) =>
-      response.url().endsWith(`/${BACKDROP_PATH}`),
+      BACKDROP_PATHS.some((path) => response.url().endsWith(`/${path}`)),
     );
     await gotoRunningGame(authoredPage);
     expect((await assetResponse).status()).toBe(200);

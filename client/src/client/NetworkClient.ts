@@ -106,6 +106,7 @@ export class NetworkClient implements GameClient {
   // ---- private fields ----
   private supabase:         SupabaseClient;
   private engine:           GameEngine;
+  private readonly initialTerrain: Uint8Array;
   private roomId:           string;
   private playerId:         string;           // Supabase-assigned UUID for this client
   // Secret per-seat credential (ADR-0009 split-identity). Required on every
@@ -261,6 +262,7 @@ export class NetworkClient implements GameClient {
     // Instantiate local engine. Cast to GameOptions — the engine reads
     // { name, color, ai } from each player entry, ignoring any extra fields.
     this.engine = new GameEngine(options as GameOptions);
+    this.initialTerrain = this.engine.getState().terrain.slice();
   }
 
   // ---- GameClient interface ----
@@ -595,6 +597,10 @@ export class NetworkClient implements GameClient {
 
   getState(): GameState {
     return this.engine.getState();
+  }
+
+  getInitialTerrain(): Uint8Array {
+    return this.initialTerrain;
   }
 
   getEffectiveGravity(): number {
