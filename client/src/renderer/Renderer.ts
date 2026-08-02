@@ -56,6 +56,12 @@ import {
 } from './sidewallVisuals';
 import { BattlefieldBackdrop } from './BattlefieldBackdrop';
 import { ExplosionArt } from './ExplosionArt';
+import { ImpactMonitorPainter } from './ImpactMonitorPainter';
+import {
+  getImpactMonitorGeometry,
+  selectImpactMonitorFocus,
+  type ImpactMonitorOffset,
+} from './impactMonitor';
 
 /** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
@@ -249,6 +255,8 @@ export class Renderer {
   private readonly battlefieldBackdrop = new BattlefieldBackdrop();
   /** Fail-soft authored conventional-blast atlas; special families stay procedural. */
   private readonly explosionArt = new ExplosionArt();
+  /** Reusable screen-space tactical inset; all gameplay remains in world space. */
+  private readonly impactMonitor = new ImpactMonitorPainter();
   /** Cached static far-sky art; impact parallax moves the completed layer. */
   private readonly atmosphereClouds = new AtmosphereCloudLayer();
 
@@ -610,7 +618,18 @@ export class Renderer {
     ctx.restore();
 
     // 6. HUD slot (canvas no-op; real HUD is the DOM overlay — unshaken).
+    this.drawImpactMonitor(depth.world);
     this.hud.draw(ctx, state);
+  }
+
+  /** Copy the strongest live detonation after all world transforms are restored. */
+  private drawImpactMonitor(worldOffset: Readonly<ImpactMonitorOffset>): void {
+    if (this.reduceMotion || this.bursts.length === 0) return;
+    const focus = selectImpactMonitorFocus(this.bursts);
+    if (focus === null) return;
+    const geometry = getImpactMonitorGeometry(focus, worldOffset);
+    if (geometry === null) return;
+    this.impactMonitor?.draw(this.ctx, geometry, false);
   }
 
   /**
