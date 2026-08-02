@@ -3174,3 +3174,16 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** PR #262 head `e7612923794bc98b4426850b796dd28f8c842eb4` is mergeable on `main@28919cbd50b5d39478b1b7e6769a7f37c653c7b0`. CI run `30728277280`, CodeQL run `30728277269` and status, rendering E2E, Edge tests, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** Standing PR-only squash-merge authority applies after this governance receipt clears exact adversarial review and exact-head CI. Confidence high.
+
+## 2026-08-01T22:20:33.1929797-04:00 — Renderer integration strict test fixtures sprint
+
+- **[high] Complete the remaining renderer surface.** Ten visually coherent suites own 29 of 69 findings and pass 76 focused tests; completion leaves exactly 40 lobby/session findings across 7 files. Confidence high.
+- **[high] Preserve assertion causality.** Missing draw, light, geometry, gradient, or ordering evidence remains test-fatal through guards and narrowing. Confidence high.
+- **Approval gate:** one bounded standing-authority override covers this spec/plan; all hard review, CI, merge, and deployment gates remain active. Confidence high.
+
+### Implementation and adversarial review receipt
+
+- **[high] Exact migration proven.** The ten suites produced exactly 29 RED findings, then reached zero with assertion-fatal guards, numeric narrowing, and fixed tuples; all 76 focused tests pass. Confidence high.
+- **[high] Renderer strictness completed.** The full remainder is exactly 40 findings across 7 lobby/session files, down from 69/17, with no renderer target errors. Confidence high.
+- **[high] Full gates passed.** All harnesses, 823 client tests, Edge tests, build, dependency audit, strict compile, and diff checks passed. Confidence high.
+- **[high] Adversarial and coverage gates cleared.** The designated adversary returned READY with no findings or blockers and coverage NO BLOCK. Confidence high.

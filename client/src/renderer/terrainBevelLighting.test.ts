@@ -13,6 +13,11 @@ function bitmap(rows: string[]): Uint8Array {
   );
 }
 
+function requiredNumber(value: number | undefined, label: string): number {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('terrainBevelLight', () => {
   it('pins the authored depth and monotonic blend falloff', () => {
     expect(TERRAIN_BEVEL_DEPTH).toBe(3);
@@ -116,7 +121,11 @@ describe('terrainBevelLight', () => {
   ])('composes conflicting $label exposure by signed strongest faces', ({ air, expected }) => {
     const terrain = new Uint8Array(25);
     terrain.fill(1);
-    for (const [x, y] of air) terrain[y * 5 + x] = 0;
+    for (const point of air) {
+      const x = requiredNumber(point[0], 'air sample x');
+      const y = requiredNumber(point[1], 'air sample y');
+      terrain[y * 5 + x] = 0;
+    }
 
     expect(terrainBevelLight(terrain, 5, 5, 2, 2)).toBeCloseTo(expected, 12);
   });

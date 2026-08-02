@@ -18,6 +18,11 @@ function cells(
   );
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('getNapalmFirelightPools', () => {
   it('pins the bounded authored pooling constants', () => {
     expect(FIRELIGHT_CHUNK_COLUMNS).toBe(32);
@@ -60,8 +65,9 @@ describe('getNapalmFirelightPools', () => {
         intensity: 1,
       },
     ]);
-    expect(pools[0].radiusX).toBeGreaterThan(
-      pools[0].endX - pools[0].centerX,
+    const pool = required(pools[0], 'isolated napalm pool');
+    expect(pool.radiusX).toBeGreaterThan(
+      pool.endX - pool.centerX,
     );
   });
 

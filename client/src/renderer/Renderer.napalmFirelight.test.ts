@@ -184,7 +184,8 @@ describe('Renderer pooled napalm firelight', () => {
       { x: 102, life: 36 },
     ];
     const terrain = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT);
-    for (const [x, surfaceY] of [[100, 320], [101, 280], [102, 360]]) {
+    const surfaces: ReadonlyArray<readonly [number, number]> = [[100, 320], [101, 280], [102, 360]];
+    for (const [x, surfaceY] of surfaces) {
       for (let y = surfaceY; y < CANVAS_HEIGHT; y++) {
         terrain[y * CANVAS_WIDTH + x] = 1;
       }

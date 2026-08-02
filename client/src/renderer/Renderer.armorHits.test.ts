@@ -159,6 +159,11 @@ function seam(): ArmorHitSeam {
   return renderer;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('Renderer armor-hit transition', () => {
   it('routes a real two-frame health drop before update and front-layer drawing', () => {
     const renderer = seam();
@@ -173,10 +178,10 @@ describe('Renderer armor-hit transition', () => {
       28,
       '#00ffcc',
     );
-    expect(renderer.effects.spawnArmorHit.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.effects.update.mock.invocationCallOrder[1]);
-    expect(renderer.tanks.drawAll.mock.invocationCallOrder[1])
-      .toBeLessThan(renderer.effects.draw.mock.invocationCallOrder[1]);
+    expect(required(renderer.effects.spawnArmorHit.mock.invocationCallOrder[0], 'armor hit spawn'))
+      .toBeLessThan(required(renderer.effects.update.mock.invocationCallOrder[1], 'effects update'));
+    expect(required(renderer.tanks.drawAll.mock.invocationCallOrder[1], 'tank draw'))
+      .toBeLessThan(required(renderer.effects.draw.mock.invocationCallOrder[1], 'effects draw'));
   });
 
   it('admits only strict surviving visible health drops', () => {

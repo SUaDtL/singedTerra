@@ -154,6 +154,11 @@ function idleState(): GameState {
   } as unknown as GameState;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('Renderer directional impact kick', () => {
   it('emits one muzzle flash on the real FIRING edge and does not retrigger mid-flight', () => {
     const renderer = rendererSeam();
@@ -279,20 +284,21 @@ describe('Renderer directional impact kick', () => {
       [profile.middle.x, profile.middle.y],
       [profile.world.x, profile.world.y],
     ]);
-    expect(renderer.drawStars.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawCloudBanks.mock.invocationCallOrder[0]);
-    expect(renderer.drawCloudBanks.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawSun.mock.invocationCallOrder[0]);
-    expect(renderer.drawCloudBanks.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawDistantRidges.mock.invocationCallOrder[0]);
-    expect(renderer.drawDistantRidges.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawWindGusts.mock.invocationCallOrder[0]);
-    expect(renderer.drawWindGusts.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.terrain.draw.mock.invocationCallOrder[0]);
+    const stars = required(renderer.drawStars.mock.invocationCallOrder[0], 'stars draw');
+    const clouds = required(renderer.drawCloudBanks.mock.invocationCallOrder[0], 'cloud draw');
+    const sun = required(renderer.drawSun.mock.invocationCallOrder[0], 'sun draw');
+    const ridges = required(renderer.drawDistantRidges.mock.invocationCallOrder[0], 'ridge draw');
+    const gusts = required(renderer.drawWindGusts.mock.invocationCallOrder[0], 'gust draw');
+    const terrain = required(renderer.terrain.draw.mock.invocationCallOrder[0], 'terrain draw');
+    expect(stars).toBeLessThan(clouds);
+    expect(clouds).toBeLessThan(sun);
+    expect(clouds).toBeLessThan(ridges);
+    expect(ridges).toBeLessThan(gusts);
+    expect(gusts).toBeLessThan(terrain);
     expect(renderer.ctx.save).toHaveBeenCalledTimes(4);
     expect(renderer.ctx.restore).toHaveBeenCalledTimes(4);
-    expect(renderer.ctx.restore.mock.invocationCallOrder.at(-1))
-      .toBeLessThan(renderer.hud.draw.mock.invocationCallOrder[0]);
+    expect(required(renderer.ctx.restore.mock.invocationCallOrder.at(-1), 'final restore'))
+      .toBeLessThan(required(renderer.hud.draw.mock.invocationCallOrder[0], 'HUD draw'));
   });
 
   it('keeps every depth transform isolated on the live Canvas stack', () => {

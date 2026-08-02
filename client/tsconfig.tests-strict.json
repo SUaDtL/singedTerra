@@ -17,7 +17,17 @@
     "src/renderer/TankPartArt.test.ts",
     "src/renderer/Renderer.mobility.test.ts",
     "src/renderer/TankRenderer.wrecks.test.ts",
-    "src/renderer/tankRecoil.test.ts"
+    "src/renderer/tankRecoil.test.ts",
+    "src/renderer/Renderer.impactKick.test.ts",
+    "src/renderer/Renderer.projectileGroundShadows.test.ts",
+    "src/renderer/Renderer.napalmFirelight.test.ts",
+    "src/renderer/napalmFirelight.test.ts",
+    "src/renderer/TerrainRenderer.bevel.test.ts",
+    "src/renderer/terrainBevelLighting.test.ts",
+    "src/renderer/TerrainRenderer.edges.test.ts",
+    "src/renderer/Renderer.shieldImpacts.test.ts",
+    "src/renderer/Renderer.armorHits.test.ts",
+    "src/renderer/Renderer.muzzleSignatures.test.ts"
   ],
   "exclude": []
 }

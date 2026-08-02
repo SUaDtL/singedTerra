@@ -8,8 +8,13 @@ interface TerrainRendererSeam {
   imageData: ImageData;
 }
 
+function requiredNumber(value: number | undefined, label: string): number {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 function alphaAt(data: Uint8ClampedArray, x: number, y: number): number {
-  return data[(y * CANVAS_WIDTH + x) * 4 + 3];
+  return requiredNumber(data[(y * CANVAS_WIDTH + x) * 4 + 3], 'terrain alpha');
 }
 
 function byteHash(bytes: Uint8Array): number {

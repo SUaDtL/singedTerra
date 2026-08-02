@@ -185,6 +185,11 @@ function renderState(subject: TankState): GameState {
   } as unknown as GameState;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('Renderer shield-impact transition', () => {
   it('routes a real two-frame render drop through update and front-layer drawing', () => {
     const renderer = renderSeam();
@@ -197,10 +202,10 @@ describe('Renderer shield-impact transition', () => {
       410 - TANK_HEIGHT / 2,
       30,
     );
-    expect(renderer.effects.spawnShieldImpact.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.effects.update.mock.invocationCallOrder[1]);
-    expect(renderer.drawShields.mock.invocationCallOrder[1])
-      .toBeLessThan(renderer.effects.draw.mock.invocationCallOrder[1]);
+    expect(required(renderer.effects.spawnShieldImpact.mock.invocationCallOrder[0], 'shield impact spawn'))
+      .toBeLessThan(required(renderer.effects.update.mock.invocationCallOrder[1], 'effects update'));
+    expect(required(renderer.drawShields.mock.invocationCallOrder[1], 'shield draw'))
+      .toBeLessThan(required(renderer.effects.draw.mock.invocationCallOrder[1], 'effects draw'));
   });
 
   it('spawns exactly one centered response for a strict positive shield drop', () => {

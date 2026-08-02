@@ -49,6 +49,11 @@ function seam(): MuzzleSeam {
   return renderer;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('Renderer weapon-signature muzzle launch seam', () => {
   it('uses shared barrel-tip geometry and the first live projectile weapon profile', () => {
     const renderer = seam();
@@ -74,7 +79,7 @@ describe('Renderer weapon-signature muzzle launch seam', () => {
     const renderer = seam();
     renderer.spawnMuzzleFlash(state([]));
 
-    expect(renderer.effects.spawnMuzzle.mock.calls[0][3])
+    expect(required(renderer.effects.spawnMuzzle.mock.calls[0], 'baseline muzzle call')[3])
       .toEqual(getMuzzleVisualProfile('baby_missile'));
   });
 

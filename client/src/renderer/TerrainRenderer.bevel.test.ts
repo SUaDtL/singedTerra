@@ -9,6 +9,11 @@ interface TerrainRendererSeam {
   imageData: ImageData;
 }
 
+function requiredNumber(value: number | undefined, label: string): number {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 function rgbaAt(
   data: Uint8ClampedArray,
   x: number,
@@ -16,10 +21,10 @@ function rgbaAt(
 ): readonly [number, number, number, number] {
   const offset = (y * CANVAS_WIDTH + x) * 4;
   return [
-    data[offset],
-    data[offset + 1],
-    data[offset + 2],
-    data[offset + 3],
+    requiredNumber(data[offset], 'red channel'),
+    requiredNumber(data[offset + 1], 'green channel'),
+    requiredNumber(data[offset + 2], 'blue channel'),
+    requiredNumber(data[offset + 3], 'alpha channel'),
   ];
 }
 

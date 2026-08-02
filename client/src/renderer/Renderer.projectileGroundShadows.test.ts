@@ -133,6 +133,11 @@ function rendererSeam(): RendererShadowSeam {
   return renderer;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('Renderer projectile-ground-shadow orchestration', () => {
   it('draws shadows with live terrain after terrain and before tanks and payloads', () => {
     const renderer = rendererSeam();
@@ -142,11 +147,12 @@ describe('Renderer projectile-ground-shadow orchestration', () => {
 
     expect(renderer.projectile.drawGroundShadows)
       .toHaveBeenCalledWith(renderer.ctx, frame.projectiles, frame.terrain);
-    expect(renderer.projectile.drawGroundShadows.mock.calls[0][2]).toBe(frame.terrain);
-    const terrainOrder = renderer.terrain.draw.mock.invocationCallOrder[0];
-    const shadowOrder = renderer.projectile.drawGroundShadows.mock.invocationCallOrder[0];
-    const tankOrder = renderer.tanks.drawAll.mock.invocationCallOrder[0];
-    const payloadOrder = renderer.projectile.draw.mock.invocationCallOrder[0];
+    expect(required(renderer.projectile.drawGroundShadows.mock.calls[0], 'ground shadow call')[2])
+      .toBe(frame.terrain);
+    const terrainOrder = required(renderer.terrain.draw.mock.invocationCallOrder[0], 'terrain draw');
+    const shadowOrder = required(renderer.projectile.drawGroundShadows.mock.invocationCallOrder[0], 'ground shadow draw');
+    const tankOrder = required(renderer.tanks.drawAll.mock.invocationCallOrder[0], 'tank draw');
+    const payloadOrder = required(renderer.projectile.draw.mock.invocationCallOrder[0], 'payload draw');
     expect(terrainOrder).toBeLessThan(shadowOrder);
     expect(shadowOrder).toBeLessThan(tankOrder);
     expect(tankOrder).toBeLessThan(payloadOrder);
