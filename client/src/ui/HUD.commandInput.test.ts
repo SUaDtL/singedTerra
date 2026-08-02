@@ -48,10 +48,10 @@ describe('HUD command input console', () => {
     const items = [...deck.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
 
     expect(deck.getAttribute('role')).toBe('region');
-    expect(deck.getAttribute('aria-label')).toBe('Keyboard commands');
+    expect(deck.getAttribute('aria-label')).toBe('Keyboard and mouse commands');
     expect(deck.dataset['ui']).toBe('command-deck');
     expect(deck.querySelector('.st-hud__controls-title')?.textContent).toBe('Command Deck');
-    expect(deck.querySelector('.st-hud__controls-mode')?.textContent).toBe('Keyboard');
+    expect(deck.querySelector('.st-hud__controls-mode')?.textContent).toBe('Mouse + keys');
     expect(items.map((item) => item.dataset['command'])).toEqual([
       'aim',
       'power',
@@ -75,6 +75,147 @@ describe('HUD command input console', () => {
       ['Space', 'Enter'],
     ]);
     expect(items.at(-1)?.classList.contains('st-hud__control-cell--primary')).toBe(true);
+  });
+
+  it('routes every desktop keycap through the existing causal command callbacks', () => {
+    const { overlay, hud } = mount();
+    const angles = vi.fn();
+    const powers = vi.fn();
+    const moves = vi.fn();
+    const weapons = vi.fn();
+    const primaryActions = vi.fn();
+    hud.onTouchAngle(angles);
+    hud.onTouchPower(powers);
+    hud.onMove(moves);
+    hud.onTouchWeapon(weapons);
+    hud.onPrimaryAction(primaryActions);
+
+    const deck = overlay.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
+    const buttons = [...deck.querySelectorAll<HTMLButtonElement>(
+      '.st-hud__command-key',
+    )];
+
+    expect(deck.getAttribute('aria-label')).toBe('Keyboard and mouse commands');
+    expect(deck.querySelector('.st-hud__controls-mode')?.textContent).toBe('Mouse + keys');
+    expect(buttons.map((button) => button.dataset['commandAction'])).toEqual([
+      'aim-left',
+      'aim-right',
+      'power-up',
+      'power-down',
+      'move-left',
+      'move-right',
+      'weapon',
+      'fire-space',
+      'fire-enter',
+    ]);
+    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Aim barrel left',
+      'Aim barrel right',
+      'Increase power',
+      'Decrease power',
+      'Move tank left, 8 fuel maximum',
+      'Move tank right, 8 fuel maximum',
+      'Cycle weapon, current Baby Missile',
+      'Fire Baby Missile with Space',
+      'Fire Baby Missile with Enter',
+    ]);
+
+    for (const button of buttons) button.click();
+    expect(angles.mock.calls).toEqual([[3], [-3]]);
+    expect(powers.mock.calls).toEqual([[3], [-3]]);
+    expect(moves.mock.calls).toEqual([[-8], [8]]);
+    expect(weapons).toHaveBeenCalledTimes(1);
+    expect(primaryActions).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps desktop command availability aligned with local action and movement gates', () => {
+    const { overlay, hud } = mount();
+    const engine = new GameEngine({
+      players: [
+        { name: 'Alice', color: '#e84d4d' },
+        { name: 'Bob', color: '#4d8ce8' },
+      ],
+      maxPlayers: 2,
+      seed: 1,
+    });
+    const state = engine.getState();
+    const button = (action: string): HTMLButtonElement =>
+      overlay.querySelector<HTMLButtonElement>(
+        `.st-hud__command-key[data-command-action="${action}"]`,
+      )!;
+
+    hud.update(state, false, false);
+    const controlled = [...overlay.querySelectorAll<HTMLButtonElement>(
+      '.st-hud__command-key',
+    )];
+    expect(controlled).toHaveLength(9);
+    expect(controlled.every((entry) => entry.disabled)).toBe(true);
+    expect(controlled.every((entry) => entry.getAttribute('aria-disabled') === 'true'))
+      .toBe(true);
+
+    hud.update(state, false, true);
+    expect(controlled.every((entry) => !entry.disabled)).toBe(true);
+    expect(controlled.every((entry) => entry.getAttribute('aria-disabled') === 'false'))
+      .toBe(true);
+
+    state.tanks[0]!.fuel = 0;
+    hud.update(state, false, true);
+    expect(button('move-left').disabled).toBe(true);
+    expect(button('move-right').disabled).toBe(true);
+    expect(button('aim-left').disabled).toBe(false);
+    expect(button('fire-space').disabled).toBe(false);
+
+    state.tanks[0]!.fuel = 100;
+    state.tanks[0]!.buried = true;
+    hud.update(state, false, true);
+    expect(button('move-left').disabled).toBe(true);
+    expect(button('aim-left').disabled).toBe(false);
+
+    state.tanks[0]!.buried = false;
+    state.tanks[0]!.alive = false;
+    hud.update(state, false, true);
+    expect(controlled.every((entry) => entry.disabled)).toBe(true);
+
+    state.tanks[0]!.alive = true;
+    state.phase = 'FIRING';
+    hud.update(state, false, true);
+    expect(controlled.every((entry) => entry.disabled)).toBe(true);
+
+    state.phase = 'PLAYER_TURN';
+    hud.update(state, true, true);
+    expect(controlled.every((entry) => entry.disabled)).toBe(true);
+
+    state.tanks[0]!.selectedWeapon = 'nuke';
+    state.tanks[0]!.inventory.nuke.count = 0;
+    hud.update(state, false, true);
+    expect(button('fire-space').disabled).toBe(true);
+    expect(button('weapon').disabled).toBe(false);
+    expect(button('weapon').getAttribute('aria-label')).toBe('Cycle weapon, current Nuke');
+
+    state.tanks[0]!.selectedWeapon = 'shield';
+    state.tanks[0]!.inventory.shield.count = 1;
+    hud.update(state, false, true);
+    expect(button('fire-space').disabled).toBe(false);
+    expect(button('fire-space').getAttribute('aria-label'))
+      .toBe('Activate shield with Space');
+    expect(button('fire-enter').getAttribute('aria-label'))
+      .toBe('Activate shield with Enter');
+  });
+
+  it('isolates the desktop Command Deck while Arsenal owns interaction', () => {
+    const { root, overlay } = mount();
+    const deck = overlay.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
+    const grid = deck.querySelector<HTMLElement>('.st-hud__control-grid')!;
+    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+
+    expect(grid.inert).toBe(false);
+    expect(deck.getAttribute('aria-hidden')).toBeNull();
+    toggle.click();
+    expect(grid.inert).toBe(true);
+    expect(deck.getAttribute('aria-hidden')).toBe('true');
+    toggle.click();
+    expect(grid.inert).toBe(false);
+    expect(deck.getAttribute('aria-hidden')).toBeNull();
   });
 
   it('builds one grouped Touch Command Deck with bounded directional icons', () => {

@@ -38,7 +38,7 @@ test.describe('First Salvo browser contract', () => {
     await gotoFirstSalvo(page);
 
     const card = page.locator('[data-ui="first-salvo-coach"]');
-    const fire = page.getByRole('button', { name: 'Fire' });
+    const fire = page.locator('.st-hud__primary-action');
     await expect(card).toContainText('1 / 3');
     await expect(fire).toBeVisible();
     await expect(fire).toBeEnabled();

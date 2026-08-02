@@ -38,12 +38,14 @@ test.describe('Sandhog causal browser contract', () => {
     await page.getByRole('button', { name: 'Expand arsenal' }).click();
     await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
     await page.getByRole('button', { name: 'Collapse arsenal' }).click();
-    await expect(page.getByRole('button', { name: 'Fire Sandhog' })).toBeVisible();
+    const fire = page.locator('.st-hud__primary-action');
+    await expect(fire).toHaveAttribute('aria-label', 'Fire Sandhog');
+    await expect(fire).toBeVisible();
 
     const before = await readProbe(page);
     expect(before, 'the deterministic hot-seat entrypoint exposes a narrow read-only probe')
       .not.toBeNull();
-    await page.getByRole('button', { name: 'Fire Sandhog' }).click();
+    await fire.click();
 
     await expect.poll(async () => {
       const probe = await readProbe(page);

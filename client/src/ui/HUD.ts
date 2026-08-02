@@ -135,8 +135,8 @@ export class HUD {
   private firstSalvoReplayCb: (() => void) | null = null;
   private firstSalvoStep: FirstSalvoStep | null = null;
 
-  // Coarse-pointer command callbacks. Invoked by the on-screen dock buttons;
-  // main.ts wires these to InputHandler's public step methods.
+  // Shared command callbacks. Invoked by both the fine-pointer Command Deck and
+  // the coarse-pointer dock; main.ts wires these to InputHandler's public steps.
   private touchAngleCb: ((delta: number) => void) | null = null;
   private touchPowerCb: ((delta: number) => void) | null = null;
   private touchWeaponCb: (() => void) | null = null;
@@ -260,6 +260,13 @@ export class HUD {
   private touchMoveRightBtnEl!: HTMLButtonElement;
   private touchMenuBtnEl!: HTMLButtonElement;
   private touchCommandBtns: HTMLButtonElement[] = [];
+  /** Fine-pointer command keycaps, split by the availability gate they mirror. */
+  private desktopTurnCommandBtns: HTMLButtonElement[] = [];
+  private desktopMoveCommandBtns: HTMLButtonElement[] = [];
+  private desktopPrimaryActionBtns: HTMLButtonElement[] = [];
+  private desktopWeaponCommandBtnEl!: HTMLButtonElement;
+  private desktopCommandDeckEl!: HTMLElement;
+  private desktopCommandDeckGridEl!: HTMLElement;
 
   constructor(root: HTMLElement, overlayRoot: HTMLElement, modalRoot: HTMLElement) {
     this.root = root;
@@ -322,7 +329,7 @@ export class HUD {
     this.armsLevel = level;
   }
 
-  // Coarse-pointer command registrations.
+  // Shared fine/coarse command registrations.
   onTouchAngle(cb: (delta: number) => void): void { this.touchAngleCb = cb; }
   onTouchPower(cb: (delta: number) => void): void { this.touchPowerCb = cb; }
   onTouchWeapon(cb: () => void): void { this.touchWeaponCb = cb; }
@@ -776,8 +783,9 @@ export class HUD {
     const controls = document.createElement('div');
     controls.className = 'st-hud__controls';
     controls.setAttribute('role', 'region');
-    controls.setAttribute('aria-label', 'Keyboard commands');
+    controls.setAttribute('aria-label', 'Keyboard and mouse commands');
     controls.dataset['ui'] = 'command-deck';
+    this.desktopCommandDeckEl = controls;
 
     const header = document.createElement('div');
     header.className = 'st-hud__controls-header';
@@ -786,17 +794,50 @@ export class HUD {
     title.textContent = 'Command Deck';
     const mode = document.createElement('span');
     mode.className = 'st-hud__controls-mode';
-    mode.textContent = 'Keyboard';
+    mode.textContent = 'Mouse + keys';
     header.append(title, mode);
 
     const grid = document.createElement('div');
     grid.className = 'st-hud__control-grid';
+    this.desktopCommandDeckGridEl = grid;
     const definitions = [
-      { command: 'aim', label: 'Aim', glyph: 'aim', keys: ['←', '→'] },
-      { command: 'power', label: 'Power', glyph: 'power', keys: ['↑', '↓'] },
-      { command: 'move', label: 'Move', glyph: 'move', keys: ['A', 'D'] },
-      { command: 'weapon', label: 'Weapon', glyph: 'weapon', keys: ['Q'] },
-      { command: 'fire', label: 'Fire', glyph: 'fire', keys: ['Space', 'Enter'], primary: true },
+      {
+        command: 'aim', label: 'Aim', glyph: 'aim',
+        keys: [
+          { text: '←', action: 'aim-left', aria: 'Aim barrel left', run: () => this.touchAngleCb?.(3) },
+          { text: '→', action: 'aim-right', aria: 'Aim barrel right', run: () => this.touchAngleCb?.(-3) },
+        ],
+        firstSalvoTarget: 'aim',
+      },
+      {
+        command: 'power', label: 'Power', glyph: 'power',
+        keys: [
+          { text: '↑', action: 'power-up', aria: 'Increase power', run: () => this.touchPowerCb?.(3) },
+          { text: '↓', action: 'power-down', aria: 'Decrease power', run: () => this.touchPowerCb?.(-3) },
+        ],
+        firstSalvoTarget: 'power-and-wind',
+      },
+      {
+        command: 'move', label: 'Move', glyph: 'move',
+        keys: [
+          { text: 'A', action: 'move-left', aria: 'Move tank left, 8 fuel maximum', run: () => this.moveCb?.(-8) },
+          { text: 'D', action: 'move-right', aria: 'Move tank right, 8 fuel maximum', run: () => this.moveCb?.(8) },
+        ],
+      },
+      {
+        command: 'weapon', label: 'Weapon', glyph: 'weapon',
+        keys: [
+          { text: 'Q', action: 'weapon', aria: 'Cycle weapon', run: () => this.touchWeaponCb?.() },
+        ],
+      },
+      {
+        command: 'fire', label: 'Fire', glyph: 'fire', primary: true,
+        firstSalvoTarget: 'fire',
+        keys: [
+          { text: 'Space', action: 'fire-space', aria: 'Fire with Space', run: () => this.primaryActionCb?.() },
+          { text: 'Enter', action: 'fire-enter', aria: 'Fire with Enter', run: () => this.primaryActionCb?.() },
+        ],
+      },
     ] as const;
     for (const definition of definitions) {
       const cell = document.createElement('div');
@@ -809,9 +850,30 @@ export class HUD {
       const keypair = document.createElement('span');
       keypair.className = 'st-hud__keypair';
       for (const key of definition.keys) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'st-hud__command-key';
+        button.dataset['commandAction'] = key.action;
+        button.dataset['commandKey'] = key.text;
+        button.setAttribute('aria-label', key.aria);
+        if ('firstSalvoTarget' in definition) {
+          button.dataset['firstSalvoTarget'] = definition.firstSalvoTarget;
+        }
         const hint = document.createElement('kbd');
-        hint.textContent = key;
-        keypair.append(hint);
+        hint.setAttribute('aria-hidden', 'true');
+        hint.textContent = key.text;
+        button.append(hint);
+        button.addEventListener('click', key.run);
+        keypair.append(button);
+
+        if (key.action === 'move-left' || key.action === 'move-right') {
+          this.desktopMoveCommandBtns.push(button);
+        } else if (key.action === 'fire-space' || key.action === 'fire-enter') {
+          this.desktopPrimaryActionBtns.push(button);
+        } else {
+          this.desktopTurnCommandBtns.push(button);
+          if (key.action === 'weapon') this.desktopWeaponCommandBtnEl = button;
+        }
       }
       cell.append(makeHudGlyph(definition.glyph, 15), label, keypair);
       grid.append(cell);
@@ -2032,6 +2094,7 @@ export class HUD {
       this.moveRightBtnEl,
       this.touchMoveLeftBtnEl,
       this.touchMoveRightBtnEl,
+      ...this.desktopMoveCommandBtns,
     ]) {
       if (button.disabled !== disabled) button.disabled = disabled;
       const ariaDisabled = String(disabled);
@@ -2063,12 +2126,20 @@ export class HUD {
       if (child !== this.stripEl) (child as HTMLElement).inert = !this.stripCollapsed;
     }
     if (this.touchStripEl) this.touchStripEl.inert = !this.stripCollapsed;
+    const deckBlocked = !this.stripCollapsed;
+    this.desktopCommandDeckGridEl.inert = deckBlocked;
+    this.desktopCommandDeckEl.classList.toggle('st-hud__controls--blocked', deckBlocked);
+    if (deckBlocked) {
+      this.desktopCommandDeckEl.setAttribute('aria-hidden', 'true');
+    } else {
+      this.desktopCommandDeckEl.removeAttribute('aria-hidden');
+    }
   }
 
   /** Reconcile the weapon strip: owned-only visibility, active highlight, live ammo. No DOM rebuild. */
   private syncStrip(state: GameState, isFiring: boolean, canControl: boolean): void {
     const tank = state.tanks.find((t) => t.id === state.activePlayerId);
-    const canAct = canControl && !isFiring && !!tank && state.phase === 'PLAYER_TURN';
+    const canAct = canControl && !isFiring && !!tank?.alive && state.phase === 'PLAYER_TURN';
     const selectedInventory = tank?.inventory[tank.selectedWeapon];
     const selectedUsable = !!selectedInventory &&
       (selectedInventory.unlimited || selectedInventory.count > 0);
@@ -2104,6 +2175,10 @@ export class HUD {
       button.disabled = !canAct;
       button.setAttribute('aria-disabled', String(!canAct));
     }
+    for (const button of this.desktopTurnCommandBtns) {
+      button.disabled = !canAct;
+      button.setAttribute('aria-disabled', String(!canAct));
+    }
     const weaponName = tank ? (WEAPONS[tank.selectedWeapon]?.name ?? tank.selectedWeapon) : 'Weapon';
     const isShield = tank?.selectedWeapon === 'shield';
     const actionLabel = isShield ? 'Activate shield' : 'Fire';
@@ -2115,10 +2190,20 @@ export class HUD {
     const canCommit = canAct && selectedUsable;
     this.primaryActionBtnEl.disabled = !canCommit;
     this.primaryActionBtnEl.setAttribute('aria-disabled', String(!canCommit));
+    for (const button of this.desktopPrimaryActionBtns) {
+      button.disabled = !canCommit;
+      button.setAttribute('aria-disabled', String(!canCommit));
+      const key = button.dataset['commandKey'] ?? '';
+      button.setAttribute('aria-label', `${actionAccessibleName} with ${key}`);
+    }
     if (this.touchWeaponLabelEl.textContent !== weaponName) {
       this.touchWeaponLabelEl.textContent = weaponName;
     }
     this.touchWeaponBtnEl.setAttribute('aria-label', `Cycle weapon, current ${weaponName}`);
+    this.desktopWeaponCommandBtnEl.setAttribute(
+      'aria-label',
+      `Cycle weapon, current ${weaponName}`,
+    );
   }
 
   /** Tracks whether the GAME_OVER panel is currently shown, so its content (winner
@@ -2533,6 +2618,9 @@ export class HUD {
     0 12px 32px rgba(0, 0, 0, 0.4);
   color: var(--ui-muted);
 }
+.st-hud__controls--blocked {
+  pointer-events: auto;
+}
 .st-hud__controls-header {
   display: flex;
   align-items: center;
@@ -2604,18 +2692,54 @@ export class HUD {
   gap: 3px;
   min-width: 0;
 }
-.st-hud__controls kbd {
-  display: inline-block;
+.st-hud__command-key {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
   min-width: 14px;
-  padding: 2px 4px;
+  margin: 0;
+  padding: 0;
   border: 1px solid rgba(255, 210, 63, 0.34);
   border-radius: 3px;
   background: rgba(255, 210, 63, 0.12);
   color: var(--text-gold);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    border-color 110ms ease,
+    background 110ms ease,
+    box-shadow 110ms ease,
+    transform 80ms ease;
+}
+.st-hud__controls kbd {
+  display: block;
+  min-width: 14px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
   font-family: var(--font-mono);
   font-size: 8.5px;
   line-height: 1.25;
   text-align: center;
+  pointer-events: none;
+}
+.st-hud__command-key:hover:not(:disabled) {
+  border-color: rgba(122, 215, 255, 0.72);
+  background: rgba(122, 215, 255, 0.2);
+  box-shadow: 0 0 8px rgba(122, 215, 255, 0.2);
+}
+.st-hud__command-key:active:not(:disabled) {
+  transform: translateY(1px);
+  background: rgba(255, 210, 63, 0.25);
+}
+.st-hud__command-key:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus);
+}
+.st-hud__command-key:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
 }
 .st-hud__control-cell--primary {
   grid-column: 1 / -1;
@@ -2632,6 +2756,15 @@ export class HUD {
 .st-hud__control-cell--primary .st-hud__keypair {
   align-self: center;
   justify-self: end;
+}
+.st-hud__control-cell--primary .st-hud__command-key {
+  border-color: rgba(255, 122, 31, 0.56);
+  background: rgba(255, 122, 31, 0.16);
+}
+.st-hud__control-cell--primary .st-hud__command-key:hover:not(:disabled) {
+  border-color: var(--ui-action-hot);
+  background: rgba(255, 122, 31, 0.3);
+  box-shadow: 0 0 9px rgba(255, 122, 31, 0.28);
 }
 .st-hud__aim {
   display: flex;
@@ -3377,6 +3510,7 @@ export class HUD {
   .st-hud__bar-fill,
   .st-hud__weapon-btn,
   .st-hud__restart,
+  .st-hud__command-key,
   .st-hud__touch-btn { transition: none; }
 }
 

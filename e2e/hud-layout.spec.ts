@@ -127,7 +127,7 @@ test.describe('HUD layout guardrails', () => {
     await expect(store.locator('circle[r="6"]')).toHaveCount(1);
     await expect(page.getByText('Arsenal', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /Store/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Fire/ })).toBeVisible();
+    await expect(page.locator('.st-hud__primary-action')).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
       glyphSizes: [...document.querySelectorAll<HTMLElement>('.st-ui-glyph')]
@@ -160,23 +160,40 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
   });
 
-  test('command deck and touch dock stay causal, strong, and fitted', async ({
+  test('interactive Command Deck and touch dock stay causal, strong, and fitted', async ({
     page,
   }, testInfo) => {
     const overlay = page.locator('#game-overlay');
-    const deck = overlay.getByRole('region', { name: 'Keyboard commands' });
+    const deck = overlay.locator('[data-ui="command-deck"]');
     const dock = overlay.locator('.st-hud__touch-strip');
     const isTouch = testInfo.project.name === 'pixel-touch';
 
     if (!isTouch) {
       await expect(deck).toBeVisible();
+      await expect(deck).toHaveAttribute('role', 'region');
+      await expect(deck).toHaveAttribute('aria-label', 'Keyboard and mouse commands');
       await expect(dock).toBeHidden();
       await expect(deck.locator('.st-hud__controls-title')).toHaveText('Command Deck');
-      await expect(deck.locator('.st-hud__controls-mode')).toHaveText('Keyboard');
+      await expect(deck.locator('.st-hud__controls-mode')).toHaveText('Mouse + keys');
       await expect(deck.locator('.st-hud__control-cell')).toHaveCount(5);
       expect(await deck.locator('.st-hud__control-cell').evaluateAll((items) =>
         items.map((item) => (item as HTMLElement).dataset['command']),
       )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
+      const commandKeys = deck.locator('.st-hud__command-key');
+      await expect(commandKeys).toHaveCount(9);
+      expect(await commandKeys.evaluateAll((items) =>
+        items.map((item) => (item as HTMLElement).dataset['commandAction']),
+      )).toEqual([
+        'aim-left',
+        'aim-right',
+        'power-up',
+        'power-down',
+        'move-left',
+        'move-right',
+        'weapon',
+        'fire-space',
+        'fire-enter',
+      ]);
       const geometry = await deck.evaluate((node) => {
         const deckRect = node.getBoundingClientRect();
         const game = document.querySelector<HTMLCanvasElement>('#game')!;
@@ -250,6 +267,54 @@ test.describe('HUD layout guardrails', () => {
         expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 11 : 10);
         expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
       }
+      const elevation = page.locator(
+        '.st-hud__gauge-cell--elevation .st-hud__gauge-label',
+      );
+      const power = page.locator('.st-hud__gauge-cell--power .st-hud__gauge-label');
+      await expect(elevation).toHaveText('45° ▶');
+      const aimLeft = deck.locator(
+        '.st-hud__command-key[data-command-action="aim-left"]',
+      );
+      await expect(aimLeft).toHaveAttribute('aria-label', 'Aim barrel left');
+      await aimLeft.focus();
+      expect(await aimLeft.evaluate((button) => getComputedStyle(button).boxShadow))
+        .not.toBe('none');
+      await page.keyboard.press('Enter');
+      await expect(elevation).toHaveText('48° ▶');
+      await deck.getByRole('button', { name: 'Aim barrel right' }).click();
+      await expect(elevation).toHaveText('45° ▶');
+      await expect(power).toHaveText('50');
+      await deck.getByRole('button', { name: 'Increase power' }).click();
+      await expect(power).toHaveText('53');
+      await deck.getByRole('button', { name: 'Decrease power' }).click();
+      await expect(power).toHaveText('50');
+
+      const arsenalToggle = page.getByRole('button', { name: 'Expand arsenal' });
+      const deckGrid = deck.locator('.st-hud__control-grid');
+      await expect(deckGrid).not.toHaveAttribute('inert', '');
+      await arsenalToggle.click();
+      await expect(deckGrid).toHaveAttribute('inert', '');
+      await expect(deck).toHaveAttribute('aria-hidden', 'true');
+      await aimLeft.evaluate((button) => (button as HTMLButtonElement).focus());
+      await expect(aimLeft).not.toBeFocused();
+      const aimBounds = await aimLeft.boundingBox();
+      expect(aimBounds).not.toBeNull();
+      await page.mouse.click(
+        aimBounds!.x + aimBounds!.width / 2,
+        aimBounds!.y + aimBounds!.height / 2,
+      );
+      await expect(elevation).toHaveText('45° ▶');
+      await page.keyboard.press('Tab');
+      expect(await deck.evaluate((node) => node.contains(document.activeElement))).toBe(false);
+      await page.getByRole('button', { name: 'Collapse arsenal' }).click();
+      await expect(deckGrid).not.toHaveAttribute('inert', '');
+      await expect(deck).not.toHaveAttribute('aria-hidden', 'true');
+      await aimLeft.focus();
+      await expect(aimLeft).toBeFocused();
+
+      const fire = deck.getByRole('button', { name: 'Fire Baby Missile with Space' });
+      await fire.click();
+      await expect(fire).toBeDisabled();
     } else {
       await expect(deck).toBeHidden();
       await expect(dock).toBeVisible();

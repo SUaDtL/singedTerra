@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] hud.feature.0002 - Make the desktop Command Deck a causal mouse-and-keyboard command surface by routing its visible keycaps through existing HUD callbacks and state gates.  (from sprint:interactive-command-deck)  (done 2026-08-02)
+  - Boundaries: client HUD and tests only; no engine, network, backend, dependencies, assets, auth, schema, or migrations
 - [x] hud.feature.0001 - Make the desktop Command Deck legible and production-coherent through a bounded CSS-first hierarchy pass without changing input or gameplay behavior.  (from sprint:command-deck-legibility)  (done 2026-08-02)
   - Boundaries: client UI only; no engine, input semantics, dependencies, backend, auth, schema, or migrations
 - [x] impact.feature.0002 - Add a reduced-motion-safe top-center Impact Monitor that magnifies the strongest live detonation without changing battlefield coordinates or gameplay state.  (from sprint:impact-monitor)  (done 2026-08-02)
