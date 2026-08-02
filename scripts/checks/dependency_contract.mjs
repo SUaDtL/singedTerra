@@ -48,8 +48,11 @@ const auditStepIndex = checkJobSteps.findIndex((step) =>
 const installStep = checkJobSteps[installStepIndex] ?? ''
 const auditStep = checkJobSteps[auditStepIndex] ?? ''
 
-assert(nodeVersion === '24', '.nvmrc selects Node 24')
-assert(rootPackage.engines?.node === '24.x', 'package engines match Node 24')
+assert(nodeVersion === '24.18.0', '.nvmrc selects supported Node 24.18.0')
+assert(
+  rootPackage.engines?.node === '>=24.15.0 <25',
+  'package engines enforce the Node 24.15 compatibility floor',
+)
 assert(
   /^\^24\./.test(rootPackage.devDependencies?.['@types/node'] ?? ''),
   '@types/node stays on the Node 24 line',
