@@ -2,19 +2,22 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ExplosionEvent, GameState, ProjectileState } from '@shared/types/GameState';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { Renderer } from './Renderer';
+import type { RenderEventSink } from './Renderer';
 import { getImpactDepthParallax } from './impactDepthParallax';
 
 interface RendererImpactSeam {
-  bursts: unknown[];
-  scorches: unknown[];
+  bursts: Array<{ age: number }>;
+  scorches: Array<{ age: number }>;
+  scorchRgb: [number, number, number];
   lastSeenExplosionId: number;
   lastImpact: { x: number; y: number } | null;
   shake: number;
   kickX: number;
   kickY: number;
+  impactHoldFrames: number;
   effectsBusy: number;
   reduceMotion: boolean;
-  events: null;
+  events: RenderEventSink | null;
   wasFiring: boolean;
   prevFireLen: number;
   prevBounces: Map<number, number>;
@@ -27,6 +30,12 @@ interface RendererImpactSeam {
   effects: {
     spawnExplosion: ReturnType<typeof vi.fn>;
     spawnMuzzle: ReturnType<typeof vi.fn>;
+    spawnDamage: ReturnType<typeof vi.fn>;
+    spawnArmorHit: ReturnType<typeof vi.fn>;
+    spawnKill: ReturnType<typeof vi.fn>;
+    spawnWreck: ReturnType<typeof vi.fn>;
+    spawnShieldImpact: ReturnType<typeof vi.fn>;
+    emitDamageSmoke: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     draw: ReturnType<typeof vi.fn>;
     clear: ReturnType<typeof vi.fn>;
@@ -58,6 +67,9 @@ interface RendererImpactSeam {
   drawDistantRidges: ReturnType<typeof vi.fn>;
   drawWindGusts: ReturnType<typeof vi.fn>;
   drawLastImpact: ReturnType<typeof vi.fn>;
+  drawExplosions: ReturnType<typeof vi.fn>;
+  drawFlash: ReturnType<typeof vi.fn>;
+  drawScorches: ReturnType<typeof vi.fn>;
   consumeExplosion(state: Pick<GameState, 'explosions' | 'lastExplosion'>): void;
   isAnimating(state: GameState): boolean;
   render(state: GameState): void;
@@ -87,11 +99,13 @@ function rendererSeam(reduceMotion = false): RendererImpactSeam {
   Object.assign(renderer, {
     bursts: [],
     scorches: [],
+    scorchRgb: [44, 30, 20],
     lastSeenExplosionId: 0,
     lastImpact: null,
     shake: 0,
     kickX: 0,
     kickY: 0,
+    impactHoldFrames: 0,
     effectsBusy: 0,
     reduceMotion,
     events: null,
@@ -111,6 +125,12 @@ function rendererSeam(reduceMotion = false): RendererImpactSeam {
     effects: {
       spawnExplosion: vi.fn(),
       spawnMuzzle: vi.fn(),
+      spawnDamage: vi.fn(),
+      spawnArmorHit: vi.fn(),
+      spawnKill: vi.fn(),
+      spawnWreck: vi.fn(),
+      spawnShieldImpact: vi.fn(),
+      emitDamageSmoke: vi.fn(),
       update: vi.fn(),
       draw: vi.fn(),
       clear: vi.fn(),
@@ -135,6 +155,9 @@ function rendererSeam(reduceMotion = false): RendererImpactSeam {
     drawDistantRidges: vi.fn(),
     drawWindGusts: vi.fn(),
     drawLastImpact: vi.fn(),
+    drawExplosions: vi.fn(),
+    drawFlash: vi.fn(),
+    drawScorches: vi.fn(),
   });
   return renderer;
 }
@@ -160,6 +183,111 @@ function required<T>(value: T | undefined, label: string): T {
 }
 
 describe('Renderer directional impact kick', () => {
+  it('admits one simultaneous heavy batch, freezes its package twice, then releases it together', () => {
+    const renderer = rendererSeam();
+    const frame = idleState();
+    const onExplosion = vi.fn();
+    renderer.events = {
+      onLaunch: vi.fn(),
+      onExplosion,
+      onHop: vi.fn(),
+      onFireActive: vi.fn(),
+      onMiss: vi.fn(),
+    };
+    const tank = {
+      id: 'p1',
+      x: 300,
+      y: 400,
+      angle: 45,
+      color: '#e84d4d',
+      alive: true,
+      buried: false,
+      health: 100,
+      shieldHp: 0,
+    };
+    Object.assign(frame, { round: 1, activePlayerId: tank.id, tanks: [tank] });
+
+    // Paint/baseline the pre-impact frame, then observe a simultaneous batch and
+    // one authoritative health drop on the next snapshot.
+    renderer.render(frame);
+    vi.clearAllMocks();
+    tank.health = 60;
+    frame.explosions = [
+      explosion(1, 100, 300, 50),
+      explosion(2, 700, 300, 90),
+    ];
+
+    renderer.render(frame);
+    expect(renderer.impactHoldFrames).toBe(1);
+    expect(onExplosion).toHaveBeenCalledOnce();
+    expect(onExplosion).toHaveBeenCalledWith(90, null);
+    expect(renderer.effects.spawnExplosion).toHaveBeenCalledTimes(2);
+    expect(renderer.bursts.map((burst) => burst.age)).toEqual([0, 0]);
+    expect(renderer.scorches.map((scorch) => scorch.age)).toEqual([0, 0]);
+    expect(renderer.effects.spawnDamage).not.toHaveBeenCalled();
+    expect(renderer.terrain.draw).not.toHaveBeenCalled();
+    expect(renderer.effects.update).not.toHaveBeenCalled();
+
+    renderer.render(frame);
+    expect(renderer.impactHoldFrames).toBe(0);
+    expect(onExplosion).toHaveBeenCalledOnce();
+    expect(renderer.effects.spawnExplosion).toHaveBeenCalledTimes(2);
+    expect(renderer.bursts.map((burst) => burst.age)).toEqual([0, 0]);
+    expect(renderer.scorches.map((scorch) => scorch.age)).toEqual([0, 0]);
+    expect(renderer.effects.spawnDamage).not.toHaveBeenCalled();
+    expect(renderer.terrain.draw).not.toHaveBeenCalled();
+    expect(renderer.effects.update).not.toHaveBeenCalled();
+
+    // Restore the real age-advancing painters for the release frame. At age 0 the
+    // burst has zero radius; the scorch does draw, so provide the narrow Canvas
+    // surface it uses without replacing the production renderer path.
+    delete (renderer as unknown as Record<string, unknown>)['drawExplosions'];
+    delete (renderer as unknown as Record<string, unknown>)['drawScorches'];
+    const gradient = { addColorStop: vi.fn() } as unknown as CanvasGradient;
+    Object.assign(renderer.ctx, {
+      createRadialGradient: vi.fn(() => gradient),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      globalAlpha: 1,
+    });
+    renderer.render(frame);
+    expect(onExplosion).toHaveBeenCalledOnce();
+    expect(renderer.effects.spawnExplosion).toHaveBeenCalledTimes(2);
+    expect(renderer.bursts.map((burst) => burst.age)).toEqual([1, 1]);
+    expect(renderer.scorches.map((scorch) => scorch.age)).toEqual([1, 1]);
+    expect(renderer.effects.spawnDamage).toHaveBeenCalledOnce();
+    expect(renderer.effects.spawnDamage).toHaveBeenCalledWith(300, 370, 40);
+    expect(renderer.terrain.draw).toHaveBeenCalledTimes(1);
+    expect(renderer.effects.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not hold small or reduced-motion impacts', () => {
+    const small = rendererSeam();
+    const smallFrame = idleState();
+    smallFrame.explosions = [explosion(1, 100, 300, 49)];
+    small.render(smallFrame);
+    expect(small.impactHoldFrames).toBe(0);
+    expect(small.terrain.draw).toHaveBeenCalledTimes(1);
+
+    const reduced = rendererSeam(true);
+    const reducedFrame = idleState();
+    reducedFrame.explosions = [explosion(1, 100, 300, 90)];
+    reduced.render(reducedFrame);
+    expect(reduced.impactHoldFrames).toBe(0);
+    expect(reduced.terrain.draw).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the idle redraw gate awake for a pending hold and clears it on reset', () => {
+    const renderer = rendererSeam();
+    const state = idleState();
+    renderer.impactHoldFrames = 1;
+
+    expect(renderer.isAnimating(state)).toBe(true);
+    renderer.reset();
+    expect(renderer.impactHoldFrames).toBe(0);
+  });
+
   it('emits one muzzle flash on the real FIRING edge and does not retrigger mid-flight', () => {
     const renderer = rendererSeam();
     const frame = idleState();

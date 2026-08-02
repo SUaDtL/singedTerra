@@ -3290,3 +3290,23 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #270 targets `main` from `codex/readme-first-impression`; head `1cbec580a6a8b973e5cee307a56f7403dd6dc3f0` is mergeable and based directly on `main@3c340ca8425bbf4c877b0634d493e7704fbef6f0`. CI run `30738249180` passed typecheck, all 61 harnesses, build, Edge tests, and the complete rendering E2E suite; CodeQL run `30738249171`, its CodeQL status, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing PR-only squash-merge authority permits merge after this receipt receives designated adversarial review and every hosted check is green on the resulting final governance head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-02T05:42:39.7014476-04:00 — Heavy Impact Hit-Stop sprint
+
+- **[high] Reconcile the live product before selecting work.** The network turn-watch and coarse-pointer direction/fit contracts already ship on current `main`; rebuilding either would create duplicate churn from stale backlog text. SMARTS verdict: strong. Confidence high.
+- **[high] Complete the missing half of large-impact feedback.** Directional camera recoil, depth parallax, shake, flash, particles, and weapon-specific explosions already ship; a bounded pre-impact hold is the remaining high-notice, low-risk presentation gap. SMARTS verdict: strong. Confidence high.
+- **[high] Hold presentation, never simulation.** Two render frames at radius >= 50 preserves a readable anticipation beat while deterministic clients continue fixed-step execution. The existing canvas frame remains visible; renderer-owned effects release together afterward. No engine, replay, network, authorization, or backend surface changes. SMARTS verdict: strong. Confidence high.
+- **[high] Respect motion preferences and finite bounds.** Reduced-motion suppresses the hold; malformed inputs and smaller blasts fail closed; simultaneous blasts coalesce by largest new radius. SMARTS verdict: strong. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override. All hard review, CI, merge, and deployment gates remain active. Confidence high.
+
+### Adversarial correction receipt
+
+- **[high] Adversary caught two Medium proof/governance gaps.** The first renderer test proved the two skipped paints but not immediate single event admission, simultaneous-batch arbitration, frozen burst/scorch ages, or unified damage/effect release; the implementation plan also lagged completed Tasks 1–2. Confidence high.
+- **[high] One correction wave closed both blockers.** The real renderer path now baselines health, coalesces radius 50/90 events to one immediate radius-90 callback, proves no duplicate admission and zero age/damage/effect movement through both holds, then proves burst/scorch aging plus damage/effect release on the third render. The plan now checks only work actually completed. Confidence high.
+- **[high] Scoped re-review returned READY.** Both Medium findings are addressed with no remaining Critical, High, Medium, deterministic, coverage, or merge-blocking finding. Focused verification is green. Confidence high.
+
+### Final local gate receipt
+
+- **[high] Exact local verification is green.** The pure/helper and real-render policy tests pass 20/20; all 61 renderer files pass 433 tests; the full client passes 120 files / 832 tests with 91.88% statements, 82.09% branches, 83.38% functions, and 94.09% lines; `npm run check` passes the complete deterministic/lockstep/contract chain; Edge passes 200/200; production build passes; Playwright passes 146 with 19 intentional project-conditional skips; and npm audit reports zero vulnerabilities. Confidence high.
+- **[high] Scope and hygiene are clean.** The exact change is renderer-only production code plus causal tests and governed artifacts. Dependencies, lockfile, workflows, shared engine, physics, replay, action log, Supabase, Edge, auth, crypto, secrets, and migrations remain unchanged. Diff hygiene is clean, the state-free secret scan returns `[]`, and ports 4173, 5173, 5174, and 3000 are free after browser verification. Confidence high.
+- **[high] Follow-up harvest is empty.** Designated adversarial re-review is READY with zero Critical, High, Medium, or merge blocker; no low-confidence SMARTS decision, `[NEEDS-TRIAGE]` residue, or deferred finding remains. Confidence high.

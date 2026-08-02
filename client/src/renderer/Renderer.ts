@@ -26,6 +26,7 @@ import { skyGradient, ACCENT, TERRAIN } from '../ui/theme';
 import { flashIntensity, scorchAlpha } from './explosionFx';
 import { damageTier } from './tankFx';
 import { IMPACT_KICK_MAX, impactKick } from './impactKick';
+import { impactHitStopFrames } from './impactHitStop';
 import {
   getExplosionVisualProfile,
   type ExplosionVisualProfile,
@@ -266,6 +267,8 @@ export class Renderer {
   /** Blast-origin-aware world translation, decayed independently from random shake. */
   private kickX = 0;
   private kickY = 0;
+  /** Pre-impact canvas holds remaining; simulation and DOM HUD continue normally. */
+  private impactHoldFrames = 0;
 
   /**
    * Frame count remaining during which transient EffectsRenderer particles
@@ -412,6 +415,7 @@ export class Renderer {
     this.shake = 0;
     this.kickX = 0;
     this.kickY = 0;
+    this.impactHoldFrames = 0;
     this.effectsBusy = 0;
     this.wasFiring = false;
     this.tankRecoil = null;
@@ -453,6 +457,16 @@ export class Renderer {
     // vs lastSeenExplosionId reliably reflects whether a new explosion appeared).
     if (this.events) {
       this.emitAudioSignals(state, explosionIdBefore);
+    }
+
+    // Large-impact hit-stop: consume and signal the authoritative explosion once,
+    // then leave the already-painted pre-impact canvas untouched for a bounded
+    // presentation beat. Engine ticks, replay, networking, and the DOM HUD are not
+    // paused; renderer-owned effect ages wait so the whole impact package releases
+    // together on the next painted frame.
+    if (this.impactHoldFrames > 0) {
+      this.impactHoldFrames--;
+      return;
     }
 
     // Floating damage numbers + K.O. flourish from per-tank health deltas (juice),
@@ -632,6 +646,7 @@ export class Renderer {
     if (state.projectiles.length > 0) return true;
     if (this.shake > 0) return true;
     if (this.kickX !== 0 || this.kickY !== 0) return true;
+    if (this.impactHoldFrames > 0) return true;
     if (this.effectsBusy > 0) return true;
     if (this.mobilityEffects.isActive) return true;
     // A networked action can update the roster or a tank during an otherwise
@@ -844,6 +859,10 @@ export class Renderer {
       }
     }
     if (anyNew) {
+      this.impactHoldFrames = Math.max(
+        this.impactHoldFrames,
+        impactHitStopFrames(maxNewRadius, this.reduceMotion),
+      );
       if (Math.hypot(strongestNewKick.x, strongestNewKick.y) > 0) {
         // Arbitration is local to THIS event batch. A later, weaker heavy blast
         // still gets its own directional response instead of being masked by a
