@@ -84,6 +84,11 @@ function internals(lobby: Lobby): LobbyInternals {
   return lobby as unknown as LobbyInternals;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 // ---- Fetch mock helpers -----------------------------------------------------
 
 interface FakeResponse {
@@ -738,7 +743,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
       expect(internals(lobby).waitingThisPlayerReady).toBe(true);
       expect(onReady).toHaveBeenCalledTimes(1);
-      const config = onReady.mock.calls[0][0];
+      const config = required(onReady.mock.calls[0], 'onReady call')[0];
       expect(config).toEqual({
         mode: 'network',
         players: [

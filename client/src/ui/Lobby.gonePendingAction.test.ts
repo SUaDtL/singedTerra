@@ -10,6 +10,11 @@ type CapturedChannel = {
   delete?: () => void
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`)
+  return value
+}
+
 const realtime = vi.hoisted(() => {
   const channels: CapturedChannel[] = []
   const removeChannel = vi.fn()
@@ -113,7 +118,7 @@ describe('Lobby pending action when the current room is gone', () => {
       token: 'room-a-token',
     })
 
-    realtime.channels[0].delete!()
+    required(realtime.channels[0], 'waiting realtime channel').delete!()
 
     expect(internals(lobby).onlineSubView).toBe('create')
     expect(internals(lobby).onlineError).toBe('This room is no longer available.')
@@ -145,7 +150,7 @@ describe('Lobby pending action when the current room is gone', () => {
       fields: { name: 'Room A Alice' },
     })
 
-    realtime.channels[0].update!({
+    required(realtime.channels[0], 'waiting realtime channel').update!({
       new: { status: 'waiting', players: [{ ...players[1] }] },
     })
 

@@ -14,6 +14,11 @@ function internals(lobby: Lobby): LobbyInternals {
   return lobby as unknown as LobbyInternals;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 function spotlight(root: HTMLElement): HTMLElement {
   return root.querySelector<HTMLElement>('.lobby-preview__spotlight')!;
 }
@@ -143,13 +148,13 @@ describe('Lobby tank Garage', () => {
     root.querySelector<HTMLButtonElement>('.lobby-start')!.click();
 
     const config = onReady.mock.calls[0]![0];
-    expect(config.players[0].loadout).toEqual({
+    expect(required(config.players[0], 'first emitted player').loadout).toEqual({
       treads: 'foundry',
       hull: 'foundry',
       turret: 'foundry',
       barrel: 'foundry',
     });
-    expect(config.players[1].loadout).toEqual({
+    expect(required(config.players[1], 'second emitted player').loadout).toEqual({
       treads: 'ranger',
       hull: 'ranger',
       turret: 'bulwark',

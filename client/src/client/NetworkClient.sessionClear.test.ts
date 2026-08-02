@@ -43,6 +43,11 @@ const OPTIONS = {
 
 type QueryResult = { data: unknown; error: { message?: string } | null };
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 /** Minimal SupabaseClient stand-in (shape shared with the lockstep/initializeGap suites). */
 function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient } {
   const state = { idx: 0 };
@@ -117,9 +122,12 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
     // TEST SETUP (mirrors scripts/checks/gameover.mjs): grant napalm to the
     // shooter (P1) and lower the victim's (P2) HP so the burn is a reliable kill.
     const state = engineOf(client).getState();
-    state.tanks[0].inventory.napalm.count = 9;
-    state.tanks[0].inventory.napalm.unlimited = false;
-    state.tanks[1].health = 5;
+    const shooter = required(state.tanks[0], 'shooter tank');
+    const victim = required(state.tanks[1], 'victim tank');
+    const napalm = required(shooter.inventory.napalm, 'shooter napalm inventory');
+    napalm.count = 9;
+    napalm.unlimited = false;
+    victim.health = 5;
 
     await client.initialize();
     expect(client.getState().phase).toBe('GAME_OVER'); // the replay itself already reached it

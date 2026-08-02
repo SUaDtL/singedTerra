@@ -17,6 +17,11 @@ interface CapturedChannel {
   delete?: () => void;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 // `getSupabase()` reaches this SDK through a lazy import. Hoisting keeps that
 // import attached to this stable callback-capturing client rather than a live
 // Supabase project.
@@ -186,7 +191,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
 
     await internals(lobby).subscribeWaitingRoom();
 
-    const first = realtime.channels[0];
+    const first = required(realtime.channels[0], 'first realtime channel');
     expectRoomSubscription(first, 'room-1');
     expect(setInterval).toHaveBeenCalledWith(expect.any(Function), 10_000);
     expect(vi.getTimerCount()).toBe(1);
@@ -194,7 +199,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     internals(lobby).waitingRoomId = 'room-2';
     await internals(lobby).subscribeWaitingRoom();
 
-    const second = realtime.channels[1];
+    const second = required(realtime.channels[1], 'replacement realtime channel');
     expect(realtime.removeChannel).toHaveBeenCalledTimes(1);
     expect(realtime.removeChannel).toHaveBeenCalledWith(first);
     expectRoomSubscription(second, 'room-2');
@@ -212,7 +217,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     seedWaiting();
     await internals(lobby).subscribeWaitingRoom();
     const render = vi.spyOn(internals(lobby), 'render');
-    const update = realtime.channels[0].update;
+    const update = required(realtime.channels[0], 'waiting realtime channel').update;
     expect(update).toBeTypeOf('function');
 
     update!({ new: waitingRow() });
@@ -225,8 +230,8 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     update!({ new: waitingRow(200) });
 
     const runtimePlayers = internals(lobby).waitingPlayers as Array<NetworkPlayer & { lastSeen?: number }>;
-    expect(runtimePlayers[0].lastSeen).toBe(200);
-    expect(runtimePlayers[1].lastSeen).toBe(200);
+    expect(required(runtimePlayers[0], 'first waiting player').lastSeen).toBe(200);
+    expect(required(runtimePlayers[1], 'second waiting player').lastSeen).toBe(200);
     expect(render).toHaveBeenCalledTimes(1);
 
     const customizedLoadout = {
@@ -243,7 +248,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
       : player);
     update!({ new: { status: 'waiting', players: customizedPlayers } });
 
-    expect(internals(lobby).waitingPlayers[0].loadout).toEqual(
+    expect(required(internals(lobby).waitingPlayers[0], 'first waiting player').loadout).toEqual(
       customizedLoadout,
     );
     expect(render).toHaveBeenCalledTimes(2);
@@ -252,7 +257,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
   it('converts an active broadcast to one complete network config after lifecycle cleanup', async () => {
     seedWaiting();
     await internals(lobby).subscribeWaitingRoom();
-    const channel = realtime.channels[0];
+    const channel = required(realtime.channels[0], 'active realtime channel');
 
     channel.update!({ new: activeRow() });
 
@@ -298,7 +303,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
   it('resets after removal from an UPDATE and after a DELETE only once', async () => {
     seedWaiting();
     await internals(lobby).subscribeWaitingRoom();
-    const missingPlayerChannel = realtime.channels[0];
+    const missingPlayerChannel = required(realtime.channels[0], 'roster realtime channel');
 
     missingPlayerChannel.update!({
       new: {
@@ -314,7 +319,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     lobby = new Lobby(root, onReady);
     seedWaiting();
     await internals(lobby).subscribeWaitingRoom();
-    const deleteChannel = realtime.channels[1];
+    const deleteChannel = required(realtime.channels[1], 'delete realtime channel');
     const render = vi.spyOn(internals(lobby), 'render');
 
     deleteChannel.delete!();
