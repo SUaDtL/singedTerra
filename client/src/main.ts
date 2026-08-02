@@ -18,6 +18,7 @@ import { resolveAimGuidePresentation } from './renderer/aimGuidePresentation';
 import { AudioEngine } from './audio/AudioEngine';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
+import { mountOrientationGate } from './ui/OrientationGate';
 import { crtCssVars } from './ui/theme';
 import {
   FirstSalvoController,
@@ -52,6 +53,8 @@ let e2eForwardedActionCounts: E2EForwardedActionCounts = {
  * with the SAME players.
  */
 function bootstrap(): void {
+  mountOrientationGate();
+
   const canvasEl = document.getElementById('game');
   if (!(canvasEl instanceof HTMLCanvasElement)) {
     throw new Error('Missing #game canvas element');

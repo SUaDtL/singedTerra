@@ -29,10 +29,28 @@
            so panels render crisp and span the canvas+panel, not just the canvas. -->
       <div id="modal-layer"></div>
     </div>
-    <!-- Portrait-phone gating: CSS blocks portrait through inclusive 480px; 481px remains playable. -->
-    <div id="portrait-warn">
-      <div class="portrait-warn__icon">↺</div>
-      <p>Rotate your device to landscape to play singedTerra.</p>
+    <!-- Portrait-phone launch bay: CSS blocks portrait through inclusive 480px; 481px remains playable. -->
+    <div id="portrait-warn" role="dialog" aria-modal="true" aria-labelledby="portrait-warn-title">
+      <img
+        class="portrait-warn__art"
+        src="%BASE_URL%splash-hero.png"
+        alt=""
+        aria-hidden="true"
+      />
+      <section class="portrait-warn__panel">
+        <div class="portrait-warn__eyebrow">Mobile fire control</div>
+        <div class="portrait-warn__device" aria-hidden="true">
+          <span class="portrait-warn__device-screen"></span>
+        </div>
+        <h2 id="portrait-warn-title">Turn the battlefield sideways</h2>
+        <p class="portrait-warn__copy">
+          Landscape gives the artillery field and Touch Command Deck room to breathe.
+        </p>
+        <button id="portrait-launch" type="button">Enter fullscreen landscape</button>
+        <p id="portrait-warn-status" role="status" aria-live="polite">
+          Or rotate your device manually.
+        </p>
+      </section>
     </div>
     <!-- Title / splash screen: self-contained overlay shown on load (src/ui/Splash.ts) -->
     <script type="module" src="/src/ui/Splash.ts"></script>

@@ -161,6 +161,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] mobile.feature.0001 - Ship the Mobile Landscape Launch  (from SMARTS Mobile Landscape Launch sprint)  (done 2026-08-02)
+  - Desc: Replace the generic phone-portrait dead end with authored launch art and a failure-safe fullscreen/landscape shortcut.
+  - Boundaries: Client portrait launch UI, helper, docs, and tests only; no engine, network, backend, dependency, asset, auth, schema, or migration change.
 - [x] garage.feature.0001 - Give each hot-seat seat a distinct authored tank preset by default while preserving free per-part Garage customization.  (from sprint:distinct-seat-presets)  (done 2026-08-02)
   - Boundaries: client lobby defaults and tests only; no engine, network, backend, dependencies, assets, auth, schema, or migrations
 - [x] input.feature.0001 - Let coarse-pointer players set and refine angle and power directly on the battlefield through the existing deterministic aim input path.  (from sprint:direct-touch-aim)  (done 2026-08-02)

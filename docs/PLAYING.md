@@ -98,8 +98,10 @@ utilities. Fire, Store, fuel, and Arsenal remain in the tactical rail. Each
 control has a stable accessible name. Combat controls use the same gates as
 keyboard input; Menu remains available to pause.
 
-Portrait phones show a rotate-device gate. The game is designed around a wide
-battlefield and a single fitted page.
+Portrait phones show a mobile launch bay because the game is designed around a
+wide battlefield and a single fitted page. Its action attempts fullscreen and
+landscape mode when the browser supports them; rotating the device manually
+always remains the reliable path into the same Touch Command Deck.
 
 ## First Salvo
 
