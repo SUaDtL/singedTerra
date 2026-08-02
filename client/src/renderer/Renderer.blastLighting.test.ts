@@ -38,6 +38,11 @@ interface RendererLightingSeam {
   drawFlash(): void;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 function recordingContext() {
   const ops: Op[] = [];
   const stack: Array<Record<string, unknown>> = [];
@@ -151,13 +156,17 @@ describe('Renderer weapon-signature battlefield lighting', () => {
       && op.value.endsWith(', 0)')
     ))).toBe(true);
 
-    const gradient = ops.find((op) => op.name === 'gradient');
-    const local = ops.find((op) => op.name === 'fillRect' && op.args[2] < 1200);
-    const exposure = ops.find((op) => op.name === 'fillRect' && op.args[2] === 1200);
-    const localFill = ops.indexOf(local as Op);
-    const exposureFill = ops.indexOf(exposure as Op);
-    expect(local?.value).toBe(gradient?.value);
-    expect(exposure?.alpha).toBe(flashIntensity(
+    const gradient = required(ops.find((op) => op.name === 'gradient'), 'blast gradient');
+    const local = required(ops.find((op) => (
+      op.name === 'fillRect' && required(op.args[2], 'local fill width') < 1200
+    )), 'local-light fill');
+    const exposure = required(ops.find((op) => (
+      op.name === 'fillRect' && required(op.args[2], 'exposure width') === 1200
+    )), 'exposure fill');
+    const localFill = ops.indexOf(local);
+    const exposureFill = ops.indexOf(exposure);
+    expect(local.value).toBe(gradient.value);
+    expect(exposure.alpha).toBe(flashIntensity(
       0,
       source.durationFrames,
       source.radius,
@@ -186,7 +195,7 @@ describe('Renderer weapon-signature battlefield lighting', () => {
     expect(centers).toEqual([20, 50, 40]);
     expect(renderer.bursts.map((burst) => burst.cx)).toEqual(orderBefore);
     expect(ops.filter((op) => (
-      op.name === 'fillRect' && op.args[2] < 1200
+      op.name === 'fillRect' && required(op.args[2], 'local fill width') < 1200
     ))).toHaveLength(3);
   });
 
@@ -214,7 +223,7 @@ describe('Renderer weapon-signature battlefield lighting', () => {
   it('draws exact helper radius/bounds and current-frame decay through the Canvas seam', () => {
     const source = event(1, 'napalm', 240);
     const { ops, renderer } = rendererWith([source]);
-    const burst = renderer.bursts[0];
+    const burst = required(renderer.bursts[0], 'napalm burst');
     const assertFrame = () => {
       const expected = getBlastLightProfile({
         family: burst.visual.family,
@@ -222,9 +231,11 @@ describe('Renderer weapon-signature battlefield lighting', () => {
         age: burst.age,
         lifeFrames: burst.lifeFrames,
       });
-      const gradient = ops.find((op) => op.name === 'gradient');
-      const local = ops.find((op) => op.name === 'fillRect' && op.args[2] < 1200);
-      expect(gradient?.args).toEqual([
+      const gradient = required(ops.find((op) => op.name === 'gradient'), 'frame gradient');
+      const local = required(ops.find((op) => (
+        op.name === 'fillRect' && required(op.args[2], 'frame fill width') < 1200
+      )), 'frame local-light fill');
+      expect(gradient.args).toEqual([
         burst.cx,
         burst.cy,
         0,
@@ -232,14 +243,14 @@ describe('Renderer weapon-signature battlefield lighting', () => {
         burst.cy,
         expected.radius,
       ]);
-      expect(local?.args).toEqual([
+      expect(local.args).toEqual([
         burst.cx - expected.radius,
         burst.cy - expected.radius,
         expected.radius * 2,
         expected.radius * 2,
       ]);
-      expect(local?.value).toBe(gradient?.value);
-      expect(local?.alpha).toBe(expected.alpha);
+      expect(local.value).toBe(gradient.value);
+      expect(local.alpha).toBe(expected.alpha);
       return expected.alpha;
     };
 
@@ -268,11 +279,13 @@ describe('Renderer weapon-signature battlefield lighting', () => {
     renderer.drawFlash();
 
     const localFills = ops.filter((op) => (
-      op.name === 'fillRect' && op.args[2] < 1200
+      op.name === 'fillRect' && required(op.args[2], 'local fill width') < 1200
     ));
     expect(localFills).toHaveLength(2);
     expect(localFills.every((op) => op.composite === 'lighter')).toBe(true);
-    expect(localFills[0].alpha).toBeGreaterThan(localFills[1].alpha ?? 0);
+    const firstAlpha = required(required(localFills[0], 'first local fill').alpha, 'first local alpha');
+    const secondAlpha = required(required(localFills[1], 'second local fill').alpha, 'second local alpha');
+    expect(firstAlpha).toBeGreaterThan(secondAlpha);
     expect(ctx.fillStyle).toBe('#caller-fill');
     expect(ctx.strokeStyle).toBe('#caller-stroke');
     expect(ctx.globalAlpha).toBe(0.73);

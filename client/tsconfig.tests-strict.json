@@ -2,7 +2,9 @@
   "extends": "./tsconfig.production.json",
   "include": [
     "src/renderer/ProjectileRenderer.test.ts",
-    "src/renderer/ProjectileRenderer.groundShadow.test.ts"
+    "src/renderer/ProjectileRenderer.groundShadow.test.ts",
+    "src/renderer/Renderer.explosionSignatures.test.ts",
+    "src/renderer/Renderer.blastLighting.test.ts"
   ],
   "exclude": []
 }

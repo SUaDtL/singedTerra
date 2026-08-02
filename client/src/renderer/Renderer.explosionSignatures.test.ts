@@ -48,6 +48,15 @@ interface RendererExplosionSeam {
   reset(): void;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
+function requiredArg(op: Op, index: number): number {
+  return required(op.args[index], `${op.name} argument ${index}`);
+}
+
 function recordingContext() {
   const ops: Op[] = [];
   const snapshots: Array<Record<string, unknown>> = [];
@@ -215,17 +224,28 @@ function maxExtent(ops: Op[], cx: number, cy: number): number {
   };
   for (const op of ops) {
     if (op.name === 'gradient') {
-      point(op.args[3], op.args[4], op.args[5]);
+      point(requiredArg(op, 3), requiredArg(op, 4), requiredArg(op, 5));
     } else if (op.name === 'arc') {
-      point(op.args[0], op.args[1], op.args[2]);
+      point(requiredArg(op, 0), requiredArg(op, 1), requiredArg(op, 2));
     } else if (op.name === 'ellipse') {
-      point(op.args[0], op.args[1], Math.max(op.args[2], op.args[3]));
+      point(
+        requiredArg(op, 0),
+        requiredArg(op, 1),
+        Math.max(requiredArg(op, 2), requiredArg(op, 3)),
+      );
     } else if (op.name === 'stroke' && op.args.length >= 4) {
-      point(op.args[0], op.args[1], op.args[2] + op.args[3] / 2);
+      point(
+        requiredArg(op, 0),
+        requiredArg(op, 1),
+        requiredArg(op, 2) + requiredArg(op, 3) / 2,
+      );
     } else if (op.name === 'moveTo' || op.name === 'lineTo') {
-      point(op.args[0], op.args[1]);
+      point(requiredArg(op, 0), requiredArg(op, 1));
     } else if (op.name === 'fillRect') {
-      const [x, y, w, h] = op.args;
+      const x = requiredArg(op, 0);
+      const y = requiredArg(op, 1);
+      const w = requiredArg(op, 2);
+      const h = requiredArg(op, 3);
       point(x, y);
       point(x + w, y);
       point(x, y + h);
@@ -238,7 +258,8 @@ function maxExtent(ops: Op[], cx: number, cy: number): number {
 describe('Renderer weapon-signature detonations', () => {
   it('caches the authoritative event profile once without mutating the event', () => {
     const { renderer, source, before } = draw('nuke');
-    expect(renderer.bursts[0].visual).toMatchObject({
+    const burst = required(renderer.bursts[0], 'cached nuclear burst');
+    expect(required(burst.visual, 'cached nuclear profile')).toMatchObject({
       family: 'nuclear',
       accent: source.color,
       reachRadius: blastReachRadius(source.radius, source.style),
@@ -286,10 +307,13 @@ describe('Renderer weapon-signature detonations', () => {
       const reach = blastReachRadius(source.radius, source.style);
       expect(maxExtent(ops, source.cx, source.cy)).toBeLessThanOrEqual(reach + 1e-9);
       expect(ops.some((op) => (
-        (op.name === 'arc' && op.args[2] === reach)
-        || (op.name === 'ellipse' && op.args[2] === reach)
+        (op.name === 'arc' && requiredArg(op, 2) === reach)
+        || (op.name === 'ellipse' && requiredArg(op, 2) === reach)
         || ((op.name === 'moveTo' || op.name === 'lineTo')
-          && Math.abs(Math.hypot(op.args[0] - source.cx, op.args[1] - source.cy) - reach) < 1e-9)
+          && Math.abs(Math.hypot(
+            requiredArg(op, 0) - source.cx,
+            requiredArg(op, 1) - source.cy,
+          ) - reach) < 1e-9)
       ))).toBe(true);
     }
   });
@@ -307,7 +331,8 @@ describe('Renderer weapon-signature detonations', () => {
 
   it('paints an overridden authoritative event color into body and family detail', () => {
     const { ops, renderer } = draw('dirt_bomb', { color: '#123abc' });
-    expect(renderer.bursts[0].visual?.accent).toBe('#123abc');
+    const burst = required(renderer.bursts[0], 'overridden dirt burst');
+    expect(required(burst.visual, 'overridden dirt profile').accent).toBe('#123abc');
     expect(ops.some((op) => (
       op.name === 'colorStop' && op.value?.includes('18, 58, 188')
     ))).toBe(true);
@@ -332,7 +357,8 @@ describe('Renderer weapon-signature detonations', () => {
     renderer.consumeExplosion({ explosions: [source], lastExplosion: null });
     expect(renderer.bursts).toHaveLength(1);
 
-    renderer.bursts[0].age = renderer.bursts[0].lifeFrames - 1;
+    const burst = required(renderer.bursts[0], 'deduplicated burst');
+    burst.age = burst.lifeFrames - 1;
     renderer.drawExplosions();
     expect(renderer.bursts).toHaveLength(0);
   });
@@ -373,8 +399,8 @@ describe('Renderer weapon-signature detonations', () => {
     const bodyFills = ops.filter((op) => op.name === 'fill');
 
     expect(bodyFills).toHaveLength(2);
-    expect(bodyFills[0].alpha).toBe(0.73);
-    expect(bodyFills[1].alpha).toBe(0.73);
+    expect(required(bodyFills[0], 'first burst body fill').alpha).toBe(0.73);
+    expect(required(bodyFills[1], 'second burst body fill').alpha).toBe(0.73);
   });
 
   it('clears burst state and accepts restarted event ids after reset', () => {
