@@ -994,6 +994,19 @@ export class Lobby {
         font-weight: 800;
         background: linear-gradient(180deg, #ffe478, #d99b21);
       }
+      @media (pointer: coarse) {
+        #app.is-compact #lobby .lobby-swatch,
+        #app.is-compact #lobby .lobby-rows.crowded .lobby-swatch {
+          width: 50px;
+          height: 50px;
+        }
+        #app.is-compact #lobby .lobby-rows.crowded .lobby-row {
+          grid-template-columns: minmax(60px, 1fr) 68px 50px;
+        }
+        #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__open {
+          min-height: 50px;
+        }
+      }
       #lobby .lobby-error { color: var(--tank-red); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
       #lobby .lobby-error:empty { display: none; }
       /* Rejoin affordance (T-09) — a prominent banner at the top of the lobby,

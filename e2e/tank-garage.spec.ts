@@ -14,11 +14,20 @@ async function openGarage(page: Page): Promise<void> {
 async function expectTouchSized(locator: ReturnType<Page['locator']>): Promise<void> {
   const boxes = await locator.evaluateAll((elements) => elements.map((element) => {
     const box = element.getBoundingClientRect();
-    return { width: box.width, height: box.height };
+    const html = element as HTMLElement;
+    return {
+      selector: `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`,
+      label: html.getAttribute('aria-label') ?? html.title,
+      width: box.width,
+      height: box.height,
+    };
   }));
   expect(boxes.length).toBeGreaterThan(0);
   for (const box of boxes) {
-    expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
+    expect.soft(
+      Math.min(box.width, box.height),
+      `${box.selector} (${box.label}) must retain a 24px rendered target`,
+    ).toBeGreaterThanOrEqual(24);
   }
 }
 
