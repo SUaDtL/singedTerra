@@ -15,6 +15,11 @@ interface EffectsSeam {
   smoke: unknown[];
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface Op {
   name: string;
   args: number[];
@@ -113,13 +118,14 @@ describe('EffectsRenderer weapon-signature muzzle flashes', () => {
 
     const seam = renderer as unknown as EffectsSeam;
     expect(seam.muzzleFlashes).toHaveLength(1);
-    expect(seam.muzzleFlashes[0]).toMatchObject({
+    const flash = required(seam.muzzleFlashes[0], 'nuclear muzzle flash');
+    expect(flash).toMatchObject({
       age: 0,
       life: profile.life,
       angle: -Math.PI / 4,
       profile,
     });
-    expect(seam.muzzleFlashes[0].profile).not.toBe(profile);
+    expect(flash.profile).not.toBe(profile);
     expect(seam.sparks).toHaveLength(profile.sparkCount);
     expect(seam.smoke).toHaveLength(1);
   });
@@ -211,10 +217,12 @@ describe('EffectsRenderer weapon-signature muzzle flashes', () => {
       renderer.spawnMuzzle(10, 20, 0, profile);
       const sparks = (renderer as unknown as EffectsSeam).sparks;
       expect(sparks).toHaveLength(profile.sparkCount);
-      expect(sparks[0].vx).toBeCloseTo(Math.cos(profile.spread) * profile.speedMax);
-      expect(sparks[0].vy).toBeCloseTo(Math.sin(profile.spread) * profile.speedMax);
-      expect(sparks[0].color).toBe(profile.accent);
-      expect(sparks[1].color).not.toBe(profile.accent);
+      const firstSpark = required(sparks[0], `first ${weaponType} spark`);
+      const secondSpark = required(sparks[1], `second ${weaponType} spark`);
+      expect(firstSpark.vx).toBeCloseTo(Math.cos(profile.spread) * profile.speedMax);
+      expect(firstSpark.vy).toBeCloseTo(Math.sin(profile.spread) * profile.speedMax);
+      expect(firstSpark.color).toBe(profile.accent);
+      expect(secondSpark.color).not.toBe(profile.accent);
     }
   });
 

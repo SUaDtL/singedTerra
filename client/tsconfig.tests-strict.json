@@ -6,7 +6,11 @@
     "src/renderer/Renderer.explosionSignatures.test.ts",
     "src/renderer/Renderer.blastLighting.test.ts",
     "src/renderer/Renderer.windGusts.test.ts",
-    "src/renderer/atmosphereClouds.test.ts"
+    "src/renderer/atmosphereClouds.test.ts",
+    "src/renderer/EffectsRenderer.shieldImpacts.test.ts",
+    "src/renderer/EffectsRenderer.armorHits.test.ts",
+    "src/renderer/EffectsRenderer.muzzleSignatures.test.ts",
+    "src/renderer/EffectsRenderer.terrain.test.ts"
   ],
   "exclude": []
 }

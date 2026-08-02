@@ -37,6 +37,19 @@ interface GradientTrace {
   stops: Array<[number, string]>;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
+function requiredPoint(values: unknown[], label: string): [number, number] {
+  const [x, y] = values;
+  if (typeof x !== 'number' || typeof y !== 'number') {
+    throw new Error(`Expected ${label}`);
+  }
+  return [x, y];
+}
+
 interface Op {
   name: string;
   args: unknown[];
@@ -157,7 +170,7 @@ describe('EffectsRenderer armor-hit bursts', () => {
       '#00ffcc',
     ]);
 
-    renderer.armorHits[0].age = 7;
+    required(renderer.armorHits[0], 'first armor hit').age = 7;
     renderer.spawnArmorHit('p1', 104, 82, 100, '#ff6644');
     expect(renderer.armorHits).toEqual([{
       tankId: 'p1',
@@ -171,7 +184,7 @@ describe('EffectsRenderer armor-hit bursts', () => {
     }]);
     expect(renderer.sparks).toHaveLength(4);
 
-    renderer.armorHits[0].age = 6;
+    required(renderer.armorHits[0], 'refreshed armor hit').age = 6;
     renderer.spawnArmorHit('p1', 106, 84, 1, '#ff6644');
     expect(renderer.armorHits[0]).toMatchObject({
       x: 106,
@@ -186,8 +199,8 @@ describe('EffectsRenderer armor-hit bursts', () => {
     expect(renderer.armorHits.map((hit) => hit.tankId)).toEqual(['p1', 'p2']);
     expect(renderer.sparks).toHaveLength(8);
 
-    renderer.armorHits[1].age = 5;
-    const p2BeforeRefresh = { ...renderer.armorHits[1] };
+    required(renderer.armorHits[1], 'second tank armor hit').age = 5;
+    const p2BeforeRefresh = { ...required(renderer.armorHits[1], 'second tank armor hit') };
     renderer.spawnArmorHit('p1', 108, 86, 100, '#ff6644');
     expect(renderer.armorHits[1]).toEqual(p2BeforeRefresh);
 
@@ -239,11 +252,11 @@ describe('EffectsRenderer armor-hit bursts', () => {
     expect(flash).toBeLessThan(spark);
     expect(glintStroke).toBeLessThan(spark);
     expect(spark).toBeLessThan(text);
-    expect(ops[flash].composite).toBe('lighter');
-    expect(ops[spark].composite).toBe('source-over');
-    expect(ops[text].composite).toBe('source-over');
+    expect(required(ops[flash], 'armor flash draw').composite).toBe('lighter');
+    expect(required(ops[spark], 'armor spark draw').composite).toBe('source-over');
+    expect(required(ops[text], 'armor damage text draw').composite).toBe('source-over');
     for (const endpoint of ops.filter((op) => op.name === 'lineTo')) {
-      const [x, y] = endpoint.args as number[];
+      const [x, y] = requiredPoint(endpoint.args, 'armor glint endpoint');
       expect(Number.isFinite(x) && Number.isFinite(y)).toBe(true);
       expect(Math.hypot(x - 100, y - 80)).toBeLessThanOrEqual(28);
     }
@@ -257,14 +270,19 @@ describe('EffectsRenderer armor-hit bursts', () => {
   it('visibly decays the flash and glints through its bounded lifetime', () => {
     const renderer = seam();
     renderer.spawnArmorHit('p1', 100, 80, 100, '#00ffcc');
-    renderer.armorHits[0].age = 7;
+    required(renderer.armorHits[0], 'decaying armor hit').age = 7;
     const { ctx, ops } = context();
 
     renderer.draw(ctx);
 
-    expect(ops.find((op) => op.name === 'fill')?.alpha).toBeCloseTo(0.23);
-    expect(ops.find((op) => op.name === 'stroke')?.alpha).toBeCloseTo(0.2);
-    const firstGlint = ops.find((op) => op.name === 'moveTo')?.args as number[];
+    expect(required(ops.find((op) => op.name === 'fill'), 'decaying armor flash').alpha)
+      .toBeCloseTo(0.23);
+    expect(required(ops.find((op) => op.name === 'stroke'), 'decaying armor glint').alpha)
+      .toBeCloseTo(0.2);
+    const firstGlint = requiredPoint(
+      required(ops.find((op) => op.name === 'moveTo'), 'first armor glint').args,
+      'first armor glint point',
+    );
     expect(firstGlint[0]).toBeCloseTo(100 + Math.cos(0.55) * 10.08);
     expect(firstGlint[1]).toBeCloseTo(80 + Math.sin(0.55) * 10.08);
   });

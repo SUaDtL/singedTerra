@@ -9,6 +9,11 @@ interface ShieldImpactState {
   life: number;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface TextState {
   text: string;
   color: string;
@@ -121,13 +126,13 @@ describe('EffectsRenderer shield-impact response', () => {
     }));
 
     renderer.spawnShieldImpact(300, 220, 999);
-    expect(renderer.shieldImpacts[1].strength).toBe(1);
-    expect(renderer.texts[1].size).toBe(19);
+    expect(required(renderer.shieldImpacts[1], 'heavy shield impact').strength).toBe(1);
+    expect(required(renderer.texts[1], 'heavy block text').size).toBe(19);
     renderer.spawnShieldImpact(300, 220, 1);
-    expect(renderer.shieldImpacts[2].strength).toBe(0.25);
-    expect(renderer.texts[2].size).toBeCloseTo(12.05);
+    expect(required(renderer.shieldImpacts[2], 'light shield impact').strength).toBe(0.25);
+    expect(required(renderer.texts[2], 'light block text').size).toBeCloseTo(12.05);
     renderer.spawnShieldImpact(300, 220, 47.4);
-    expect(renderer.texts[3].text).toBe('BLOCK 47');
+    expect(required(renderer.texts[3], 'rounded block text').text).toBe('BLOCK 47');
   });
 
   it('draws paired expanding rings plus eight facets and restores caller Canvas state', () => {
@@ -153,7 +158,7 @@ describe('EffectsRenderer shield-impact response', () => {
       (op) => op.name === 'fillText' && op.args[0] === 'BLOCK 60',
     );
     expect(lastRipple).toBeLessThan(blockText);
-    expect(ops[blockText].composite).toBe('source-over');
+    expect(required(ops[blockText], 'block text draw').composite).toBe('source-over');
     expect(ctx.fillStyle).toBe('#caller-fill');
     expect(ctx.strokeStyle).toBe('#caller-stroke');
     expect(ctx.globalAlpha).toBe(0.61);
@@ -164,16 +169,16 @@ describe('EffectsRenderer shield-impact response', () => {
   it('advances ring radius/fade/facet rotation and scales light versus heavy hits', () => {
     const renderer = seam();
     renderer.spawnShieldImpact(300, 220, 60);
-    renderer.shieldImpacts[0].age = 14;
+    required(renderer.shieldImpacts[0], 'active shield impact').age = 14;
     const { ctx, ops } = context();
 
     (renderer as unknown as EffectsRenderer).draw(ctx);
 
     const strokes = ops.filter((op) => op.name === 'stroke');
     expect(strokes.map((op) => op.lineWidth)).toEqual([2, 1, 1]);
-    expect(strokes[0].alpha).toBeCloseTo(0.335);
-    expect(strokes[1].alpha).toBeCloseTo(0.1943);
-    expect(strokes[2].alpha).toBeCloseTo(0.26);
+    expect(required(strokes[0], 'outer shield ring').alpha).toBeCloseTo(0.335);
+    expect(required(strokes[1], 'inner shield ring').alpha).toBeCloseTo(0.1943);
+    expect(required(strokes[2], 'shield facets').alpha).toBeCloseTo(0.26);
     expect(ops.filter((op) => op.name === 'arc').map((op) => op.args))
       .toEqual([
         [300, 220, 33, 0, Math.PI * 2],
@@ -205,12 +210,18 @@ describe('EffectsRenderer shield-impact response', () => {
     heavy.spawnShieldImpact(0, 0, 999);
     const heavyCanvas = context();
     (heavy as unknown as EffectsRenderer).draw(heavyCanvas.ctx);
-    const lightOuter = lightCanvas.ops.find((op) => op.name === 'stroke');
-    const heavyOuter = heavyCanvas.ops.find((op) => op.name === 'stroke');
-    expect(lightOuter?.alpha).toBeCloseTo(0.545);
-    expect(lightOuter?.lineWidth).toBe(1.5);
-    expect(heavyOuter?.alpha).toBeCloseTo(0.92);
-    expect(heavyOuter?.lineWidth).toBe(3);
+    const lightOuter = required(
+      lightCanvas.ops.find((op) => op.name === 'stroke'),
+      'light outer shield ring',
+    );
+    const heavyOuter = required(
+      heavyCanvas.ops.find((op) => op.name === 'stroke'),
+      'heavy outer shield ring',
+    );
+    expect(lightOuter.alpha).toBeCloseTo(0.545);
+    expect(lightOuter.lineWidth).toBe(1.5);
+    expect(heavyOuter.alpha).toBeCloseTo(0.92);
+    expect(heavyOuter.lineWidth).toBe(3);
   });
 
   it('retains information but suppresses moving decoration under reduced motion', () => {
@@ -226,7 +237,8 @@ describe('EffectsRenderer shield-impact response', () => {
     expect(ops.filter((op) => op.name === 'stroke')).toHaveLength(0);
     expect(ops.filter((op) => op.name === 'fillText').map((op) => op.args[0]))
       .toEqual(['BLOCK 35']);
-    expect(ops.find((op) => op.name === 'fillText')?.composite).toBe('source-over');
+    expect(required(ops.find((op) => op.name === 'fillText'), 'reduced-motion block text').composite)
+      .toBe('source-over');
   });
 
   it('culls at the exact lifetime and clear removes every live impact', () => {

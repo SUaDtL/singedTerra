@@ -3129,3 +3129,21 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #260 targets `main` from `codex/client-test-indexing-atmosphere`; head `880ccf2177fee023e4330676c39477653cf87b13` is mergeable and based directly on `main@3d53a0b27f199f2d15610e542a68dfe6ac126d6a`. CI run `30726584396` passed typecheck, harnesses, build, Edge tests, and the full rendering E2E suite; CodeQL run `30726584361` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01T21:25:50.4725531-04:00 — Effects renderer strict test fixtures sprint
+
+### SMARTS selection and standing approval
+
+- **[high] Migrate the largest component-local visual cell.** The remaining 128 findings span 28 suites; four `EffectsRenderer` suites jointly own 28 across shield impacts, armor hits, muzzle signatures, and terrain effects while preserving a 4-file, 33-test baseline. Confidence high.
+- **[high] Keep lobby lifecycle work separate.** The 18-finding `LobbySession` suite is individually large but carries stateful session semantics; mixing it with renderer traces would weaken reviewability. Confidence high.
+- **[high] Extend the existing enforced include list.** This keeps every completed visual suite strict and should reduce the measured remainder to exactly 100 findings across 24 files without touching production. Confidence high.
+- **[high] Keep absent visual evidence test-fatal.** Required effects, operations, particles, coordinates, gradient endpoints, and alpha samples receive causal guards or tuples rather than optional access, assertions, or fallback values. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this bounded spec and plan only. Security, auth, secrets, irreversible operations, adversarial review, exact-head hosted CI, PR-only merge, and deployment proof remain active. Confidence high.
+
+### Implementation and adversarial review receipt
+
+- **[high] TDD and strictness evidence.** Adding all four suites produced exactly 28 compiler findings (10 shield-impact, 9 armor-hit, 5 muzzle-signature, 4 terrain-effect) while every previously migrated suite remained clean. Assertion-fatal guards and a numeric point validator reduced all targets to zero without optional access, fallback values, non-null assertions, broad unsafe casts, skipped assertions, expected-value changes, or production edits. The focused suites pass 33/33. Confidence high.
+- **[high] Inventory reduction proven.** A fresh full strict probe reports 100 findings across 24 remaining files, exactly down from 128 across 28, with zero findings in any migrated suite. Confidence high.
+- **[high] Repository gates passed.** `npm run check` passed all 60 deterministic harnesses; `npm run test:client` passed 119 files and 823 tests; Edge tests, `npm run build`, `npm run audit:deps`, the strict migrated project, and `git diff --check` all passed. Confidence high.
+- **[high] Single-adversary and coverage gates cleared.** The designated adversarial subagent reviewed the exact package and returned READY with no Critical, High, Medium, Low, or merge-blocking findings plus an explicit ca-pr coverage NO BLOCK verdict. Confidence high.
+- **[high] Follow-up harvest empty.** The exact diff and adversarial report contain no `[NEEDS-TRIAGE]` residue or low-confidence sprint decision, so no board mutation is warranted. Confidence high.

@@ -11,6 +11,11 @@ function byteHash(bytes: Uint8Array): number {
   return hash >>> 0;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface EffectsTerrainSeam {
   debris: Array<{
     x: number; y: number; vx: number; vy: number; size: number; color: string;
@@ -57,11 +62,12 @@ describe('EffectsRenderer terrain-aware debris', () => {
     expect(renderer.debris[0]).toMatchObject({
       x: 100, vx: 0, vy: 0, vr: 0, age: 1, landed: true,
     });
-    expect(renderer.debris[0].y).toBeLessThan(4);
+    expect(required(renderer.debris[0], 'settled debris').y).toBeLessThan(4);
     expect(renderer.smoke[0]).toMatchObject({ y: 19, r: 2.5, age: 1 });
     expect(renderer.sparks[0]).toMatchObject({ x: 41, age: 1 });
-    expect(renderer.sparks[0].y).toBeCloseTo(11.12, 8);
-    expect(renderer.sparks[0].vy).toBeCloseTo(1.12, 8);
+    const spark = required(renderer.sparks[0], 'advancing terrain spark');
+    expect(spark.y).toBeCloseTo(11.12, 8);
+    expect(spark.vy).toBeCloseTo(1.12, 8);
     expect(renderer.texts[0]).toMatchObject({ y: 19, age: 1 });
     expect(byteHash(terrain)).toBe(beforeTerrain);
   });
@@ -93,6 +99,6 @@ describe('EffectsRenderer terrain-aware debris', () => {
     renderer.update(new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT));
 
     expect(renderer.debris).toHaveLength(1);
-    expect(renderer.debris[0].age).toBe(19);
+    expect(required(renderer.debris[0], 'retained debris').age).toBe(19);
   });
 });
