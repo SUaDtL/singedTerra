@@ -313,6 +313,8 @@ describe('HUD command input console', () => {
 
   it('routes the touch Menu through the existing non-destructive pause surface', () => {
     const { overlay, modal, hud } = mount();
+    const pauseChanges = vi.fn<(paused: boolean) => void>();
+    hud.onPauseChange(pauseChanges);
     const pause = [...modal.querySelectorAll<HTMLElement>('.st-hud__overlay')]
       .find((element) => element.textContent?.includes('Paused'))!;
 
@@ -325,6 +327,7 @@ describe('HUD command input console', () => {
       .click();
     expect(hud.isPaused()).toBe(false);
     expect(pause.classList.contains('st-hud__overlay--hidden')).toBe(true);
+    expect(pauseChanges.mock.calls).toEqual([[true], [false]]);
   });
 
   it('maps visible touch directions to causal signed deltas and preserves repeat cadence', () => {

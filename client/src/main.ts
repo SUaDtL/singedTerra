@@ -30,6 +30,18 @@ import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCo
 const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE =
   new URLSearchParams(window.location.search).get('e2e') === 'hotseat';
 
+interface E2EForwardedActionCounts {
+  setAngle: number;
+  setPower: number;
+  fire: number;
+}
+
+let e2eForwardedActionCounts: E2EForwardedActionCounts = {
+  setAngle: 0,
+  setPower: 0,
+  fire: 0,
+};
+
 /**
  * Entry point. Grabs the canvas + overlay containers, shows the Lobby, and on
  * "ready" instantiates the appropriate GameClient (hot-seat vs network), then
@@ -181,6 +193,18 @@ function bootstrap(): void {
     hud.setFirstSalvoStep(eligibility ? firstSalvo.stepFor(eligibility) : null);
   }
 
+  function directAimAllowed(): boolean {
+    const state = client?.getState();
+    const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
+    return !!state
+      && state.phase === 'PLAYER_TURN'
+      && shouldAcceptLocalInput({
+        activeIsAi: !!activeTank?.ai,
+        activeIsLocal,
+        paused: hud.isPaused(),
+      });
+  }
+
   // --- Computer-opponent (AI) driver state ---
   // Whether the active tank is CPU-controlled (gates out human input for that turn).
   let activeIsAi = false;
@@ -256,6 +280,7 @@ function bootstrap(): void {
     const newClient = await createClient(config);
     client = newClient;
     firstSalvo.startNewGame();
+    e2eForwardedActionCounts = { setAngle: 0, setPower: 0, fire: 0 };
 
     // Tell the store which weapons/accessories are buyable in this room (UI gate only; the engine
     // enforces it independently). Default 4 => everything buyable, matching the engine default.
@@ -292,12 +317,20 @@ function bootstrap(): void {
           const tank = state?.tanks.find((candidate) => candidate.id === state.activePlayerId);
           return tank ? canCommitFirstSalvoAction(tank, action) : false;
         })(),
-        (forwardedAction) => newClient.sendAction(forwardedAction),
+        (forwardedAction) => {
+          if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) {
+            if (forwardedAction.type === 'set_angle') e2eForwardedActionCounts.setAngle += 1;
+            else if (forwardedAction.type === 'set_power') e2eForwardedActionCounts.setPower += 1;
+            else if (forwardedAction.type === 'fire') e2eForwardedActionCounts.fire += 1;
+          }
+          newClient.sendAction(forwardedAction);
+        },
       );
       syncFirstSalvo();
     }, {
       initialAngle: activeTank?.angle,
       initialPower: activeTank?.power,
+      canDirectAim: directAimAllowed,
     });
     input = newInput;
     newInput.attach();
@@ -343,11 +376,18 @@ function bootstrap(): void {
         suddenDeathTurn: config.settings?.suddenDeathTurn ?? 0,
       });
       activeIsLocal = aimGuide.visible;
+      newInput.setDirectAimEnabled(directAimAllowed());
       renderer.setAimGuide(aimGuide.visible, aimGuide.gravity);
       syncFirstSalvo();
       // Feed the active tank's barrel-origin (logical px) so mouse drag-aim can
       // derive angle/power from the drag vector (pivot = body top, y − 16).
-      if (activeTank) newInput.setActiveTankScreenPos(activeTank.x, activeTank.y - 20);
+      if (activeTank) {
+        newInput.setActiveTankScreenPos(
+          activeTank.x,
+          activeTank.y - 20,
+          state.activePlayerId,
+        );
+      }
 
       // A phase change always warrants one redraw (e.g. the settling frame into a
       // static PLAYER_TURN / ROUND_OVER / GAME_OVER, which isAnimating() may already
@@ -518,6 +558,11 @@ function bootstrap(): void {
     lobby.show();
   });
 
+  hud.onPauseChange((paused) => {
+    if (paused) input?.setDirectAimEnabled(false);
+    else input?.setDirectAimEnabled(directAimAllowed());
+  });
+
   // Touch-aim strip callbacks (M2 mobile). Registered once on the persistent HUD;
   // `input` is the mutable per-game closure var so these always drive the live handler.
   // Same gate as the keyboard path (startGame): dropped on a CPU turn or while paused (#52).
@@ -584,6 +629,10 @@ function bootstrap(): void {
 
 interface SandhogE2EProbe {
   phase: GameState['phase'];
+  turn: number;
+  activePlayerId: string;
+  projectileCount: number;
+  forwardedActions: Readonly<E2EForwardedActionCounts>;
   terrainVersion: number;
   sandhog: Readonly<{
     x: number;
@@ -652,6 +701,10 @@ function exposeDeterministicHotSeatProbe(state: GameState): void {
 
   const probe = Object.freeze<SandhogE2EProbe>({
     phase: state.phase,
+    turn: state.turn,
+    activePlayerId: state.activePlayerId,
+    projectileCount: state.projectiles.length,
+    forwardedActions: Object.freeze({ ...e2eForwardedActionCounts }),
     terrainVersion: state.terrainVersion,
     sandhog: projectile
       ? Object.freeze({

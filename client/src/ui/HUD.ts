@@ -121,6 +121,7 @@ export class HUD {
 
   /** Callback fired when the player quits a game back to the lobby (in-game Menu / game-over Main Menu). */
   private quitCb: (() => void) | null = null;
+  private pauseChangeCb: ((paused: boolean) => void) | null = null;
 
   /** Callback fired when a store Buy button is clicked. `purchase` carries exactly one of a weapon
    *  or an accessory. Optional tankId targets a specific tank (used by the ROUND_OVER between-rounds
@@ -287,6 +288,11 @@ export class HUD {
   /** Register the callback fired when the player quits a game back to the lobby. */
   onQuit(cb: () => void): void {
     this.quitCb = cb;
+  }
+
+  /** Register a local presentation-state callback for immediate input teardown. */
+  onPauseChange(cb: (paused: boolean) => void): void {
+    this.pauseChangeCb = cb;
   }
 
   /** Register the callback fired when a store Buy button is clicked. */
@@ -1655,6 +1661,7 @@ export class HUD {
   private togglePause(show: boolean): void {
     this.paused = show;
     this.pauseEl.classList.toggle('st-hud__overlay--hidden', !show);
+    this.pauseChangeCb?.(show);
   }
 
   private toggleStore(open?: boolean): void {

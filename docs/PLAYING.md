@@ -82,6 +82,11 @@ does not fire, so the shot still requires `Space`, `Enter`, or the Fire control.
 
 ### Touch
 
+Tap or drag directly on the battlefield for coarse angle and power changes.
+The contact points from the active tank: direction sets elevation and distance
+sets power. It never fires. Use the Command Deck Aim and Power controls for fine
+adjustment, then commit the shot with Fire.
+
 Landscape touch layouts place a grouped Command Deck over the battlefield: Aim, Power, and Drive groups
 handle combat controls, while Weapon and Menu are
 utilities. Fire, Store, fuel, and Arsenal remain in the tactical rail. Each

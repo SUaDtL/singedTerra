@@ -29,14 +29,36 @@ describe('InputHandler public contract', () => {
     return event;
   };
 
-  const dispatchMouse = (
-    type: 'mousedown' | 'mousemove' | 'mouseup',
-    clientX: number,
-    clientY: number,
-    button = 0,
-  ): MouseEvent => {
-    const event = new MouseEvent(type, { bubbles: true, cancelable: true, button, clientX, clientY });
-    (type === 'mousedown' ? target : window).dispatchEvent(event);
+  const dispatchPointer = (
+    type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel' | 'lostpointercapture',
+    {
+      clientX = 303.3333333333,
+      clientY = 170,
+      pointerId = 1,
+      pointerType = 'mouse',
+      isPrimary = true,
+      button = 0,
+    }: Partial<{
+      clientX: number;
+      clientY: number;
+      pointerId: number;
+      pointerType: string;
+      isPrimary: boolean;
+      button: number;
+    }> = {},
+  ): Event => {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    for (const [key, value] of Object.entries({
+      clientX,
+      clientY,
+      pointerId,
+      pointerType,
+      isPrimary,
+      button,
+    })) {
+      Object.defineProperty(event, key, { value });
+    }
+    target.dispatchEvent(event);
     return event;
   };
 
@@ -56,6 +78,10 @@ describe('InputHandler public contract', () => {
 
   beforeEach(() => {
     target = document.createElement('div');
+    const capturedPointers = new Set<number>();
+    target.setPointerCapture = vi.fn((pointerId: number) => capturedPointers.add(pointerId));
+    target.releasePointerCapture = vi.fn((pointerId: number) => capturedPointers.delete(pointerId));
+    target.hasPointerCapture = vi.fn((pointerId: number) => capturedPointers.has(pointerId));
     document.body.append(target);
     emit = vi.fn<(action: PlayerAction) => void>();
     handler = createHandler();
@@ -273,69 +299,220 @@ describe('InputHandler public contract', () => {
     button.remove();
   });
 
-  it('maps CSS mouse coordinates to logical drag angle and power', () => {
+  it('maps a primary mouse pointer to the existing logical angle and power projection', () => {
     setBounds();
     handler.setActiveTankScreenPos(600, 300);
     handler.attach();
 
-    const rightward = dispatchMouse('mousedown', 303.3333333333, 170);
+    const rightward = dispatchPointer('pointerdown');
     expect(rightward.defaultPrevented).toBe(true);
     expect(emitted()).toHaveLength(2);
     expect(emitted()[0]).toMatchObject({ type: 'set_angle' });
     expect((emitted()[0] as Extract<PlayerAction, { type: 'set_angle' }>).angle).toBeCloseTo(0);
     expect(emitted()[1]).toEqual({ type: 'set_power', power: 100 });
+    expect(target.setPointerCapture).toHaveBeenCalledOnce();
+    expect(target.setPointerCapture).toHaveBeenCalledWith(1);
 
-    dispatchMouse('mouseup', 303.3333333333, 170);
+    dispatchPointer('pointerup');
     emit.mockClear();
     handler.setAim(45, 50);
-    dispatchMouse('mousedown', 210, 30);
+    dispatchPointer('pointerdown', { clientX: 210, clientY: 30, pointerId: 2 });
     expect(emitted()).toEqual([
       { type: 'set_angle', angle: 90 },
       { type: 'set_power', power: 100 },
     ]);
   });
 
-  it('ignores invalid drag starts', () => {
+  it.each(['touch', 'pen'])('maps one primary %s contact through the same projection without firing', (pointerType) => {
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300);
+    handler.attach();
+
+    const contact = dispatchPointer('pointerdown', {
+      clientX: 210,
+      clientY: 86,
+      pointerId: 7,
+      pointerType,
+    });
+
+    expect(contact.defaultPrevented).toBe(true);
+    expect(emitted()).toEqual([
+      { type: 'set_angle', angle: 90 },
+      { type: 'set_power', power: 60 },
+    ]);
+    expect(emitted().some((action) => action.type === 'fire')).toBe(false);
+    expect(target.setPointerCapture).toHaveBeenCalledWith(7);
+  });
+
+  it('ignores invalid pointer starts', () => {
     setBounds();
     handler.attach();
 
-    const noTank = dispatchMouse('mousedown', 303.3333333333, 170);
+    const noTank = dispatchPointer('pointerdown');
     handler.setActiveTankScreenPos(600, 300);
-    const nonLeft = dispatchMouse('mousedown', 303.3333333333, 170, 1);
+    const nonLeft = dispatchPointer('pointerdown', { pointerId: 2, button: 1 });
+    const secondaryTouch = dispatchPointer('pointerdown', {
+      pointerId: 3,
+      pointerType: 'touch',
+      isPrimary: false,
+    });
 
     expect(noTank.defaultPrevented).toBe(false);
     expect(nonLeft.defaultPrevented).toBe(false);
+    expect(secondaryTouch.defaultPrevented).toBe(false);
     expect(emitted()).toEqual([]);
   });
 
-  it('stops applying moves after mouseup', () => {
+  it('keeps one gesture owner and ignores mismatched pointer tails', () => {
     setBounds();
     handler.setActiveTankScreenPos(600, 300);
     handler.attach();
 
-    dispatchMouse('mousedown', 303.3333333333, 170);
+    dispatchPointer('pointerdown', { pointerId: 11, pointerType: 'touch' });
     emit.mockClear();
-    dispatchMouse('mousemove', 210, 100);
+    const secondDown = dispatchPointer('pointerdown', {
+      clientX: 210,
+      clientY: 100,
+      pointerId: 12,
+      pointerType: 'touch',
+      isPrimary: false,
+    });
+    dispatchPointer('pointermove', { clientX: 210, clientY: 100, pointerId: 12, pointerType: 'touch' });
+    dispatchPointer('pointerup', { pointerId: 12, pointerType: 'touch' });
+    expect(secondDown.defaultPrevented).toBe(false);
+    expect(emitted()).toEqual([]);
+
+    dispatchPointer('pointermove', { clientX: 210, clientY: 100, pointerId: 11, pointerType: 'touch' });
     expect(emitted()).toEqual([
       { type: 'set_angle', angle: 90 },
       { type: 'set_power', power: 50 },
     ]);
 
-    dispatchMouse('mouseup', 303.3333333333, 170);
-    const actionCountAfterMouseup = emitted().length;
-    dispatchMouse('mousemove', 303.3333333333, 170);
+    dispatchPointer('pointerup', { pointerId: 11, pointerType: 'touch' });
+    const actionCountAfterRelease = emitted().length;
+    dispatchPointer('pointermove', { pointerId: 11, pointerType: 'touch' });
 
-    expect(emitted()).toHaveLength(actionCountAfterMouseup);
+    expect(emitted()).toHaveLength(actionCountAfterRelease);
+    expect(target.releasePointerCapture).toHaveBeenCalledWith(11);
   });
 
-  it('removes in-flight drag listeners when detached', () => {
+  it('cancels a held contact when the direct-aim game-state gate closes', () => {
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300, 'p1');
+    handler.attach();
+
+    dispatchPointer('pointerdown', { pointerId: 15, pointerType: 'touch' });
+    emit.mockClear();
+    handler.setDirectAimEnabled(false);
+    dispatchPointer('pointermove', { clientX: 210, clientY: 100, pointerId: 15, pointerType: 'touch' });
+    dispatchPointer('pointerdown', { clientX: 210, clientY: 100, pointerId: 16, pointerType: 'touch' });
+
+    expect(emitted()).toEqual([]);
+    expect(target.releasePointerCapture).toHaveBeenCalledWith(15);
+
+    handler.setDirectAimEnabled(true);
+    dispatchPointer('pointerdown', { clientX: 210, clientY: 100, pointerId: 17, pointerType: 'touch' });
+    expect(emitted()).toEqual([
+      { type: 'set_angle', angle: 90 },
+      { type: 'set_power', power: 50 },
+    ]);
+  });
+
+  it('cancels a held contact when ownership hands off to another tank', () => {
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300, 'p1');
+    handler.attach();
+
+    dispatchPointer('pointerdown', { pointerId: 18, pointerType: 'pen' });
+    emit.mockClear();
+    handler.setActiveTankScreenPos(700, 300, 'p2');
+    dispatchPointer('pointermove', { clientX: 210, clientY: 100, pointerId: 18, pointerType: 'pen' });
+
+    expect(emitted()).toEqual([]);
+    expect(target.releasePointerCapture).toHaveBeenCalledWith(18);
+  });
+
+  it('fails closed and admits a later pointer when capture acquisition throws', () => {
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300);
+    target.setPointerCapture = vi.fn(() => { throw new DOMException('ended', 'NotFoundError'); });
+    handler.attach();
+
+    const failed = dispatchPointer('pointerdown', { pointerId: 19, pointerType: 'touch' });
+    expect(failed.defaultPrevented).toBe(true);
+    expect(emitted()).toEqual([]);
+
+    target.setPointerCapture = vi.fn();
+    dispatchPointer('pointerdown', { clientX: 210, clientY: 86, pointerId: 20, pointerType: 'touch' });
+    expect(emitted()).toEqual([
+      { type: 'set_angle', angle: 90 },
+      { type: 'set_power', power: 60 },
+    ]);
+  });
+
+  it('tears down a held contact when the live gate changes between moves', () => {
+    let allowed = true;
+    createHandler({ canDirectAim: () => allowed });
     setBounds();
     handler.setActiveTankScreenPos(600, 300);
     handler.attach();
 
-    dispatchMouse('mousedown', 303.3333333333, 170);
+    dispatchPointer('pointerdown', { pointerId: 23, pointerType: 'touch' });
     emit.mockClear();
-    dispatchMouse('mousemove', 210, 100);
+    allowed = false;
+    dispatchPointer('pointermove', { clientX: 210, clientY: 100, pointerId: 23, pointerType: 'touch' });
+    expect(emitted()).toEqual([]);
+    expect(target.releasePointerCapture).toHaveBeenCalledWith(23);
+
+    allowed = true;
+    dispatchPointer('pointermove', { clientX: 210, clientY: 100, pointerId: 23, pointerType: 'touch' });
+    expect(emitted()).toEqual([]);
+  });
+
+  it.each(['pointercancel', 'lostpointercapture'] as const)(
+    'stops applying pointer moves after %s',
+    (endType) => {
+      setBounds();
+      handler.setActiveTankScreenPos(600, 300);
+      handler.attach();
+
+      dispatchPointer('pointerdown', { pointerId: 21, pointerType: 'pen' });
+      emit.mockClear();
+      dispatchPointer(endType, { pointerId: 21, pointerType: 'pen' });
+      dispatchPointer('pointermove', {
+        clientX: 210,
+        clientY: 100,
+        pointerId: 21,
+        pointerType: 'pen',
+      });
+
+      expect(emitted()).toEqual([]);
+      dispatchPointer('pointerdown', {
+        clientX: 210,
+        clientY: 100,
+        pointerId: 22,
+        pointerType: 'pen',
+      });
+      expect(emitted()).toEqual([
+        { type: 'set_angle', angle: 90 },
+        { type: 'set_power', power: 50 },
+      ]);
+    },
+  );
+
+  it('removes the pointer lifecycle and releases capture when detached', () => {
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300);
+    handler.attach();
+
+    dispatchPointer('pointerdown', { pointerId: 31, pointerType: 'touch' });
+    emit.mockClear();
+    dispatchPointer('pointermove', {
+      clientX: 210,
+      clientY: 100,
+      pointerId: 31,
+      pointerType: 'touch',
+    });
     expect(emitted()).toEqual([
       { type: 'set_angle', angle: 90 },
       { type: 'set_power', power: 50 },
@@ -343,9 +520,11 @@ describe('InputHandler public contract', () => {
 
     const actionCountBeforeDetach = emitted().length;
     handler.detach();
-    dispatchMouse('mousemove', 303.3333333333, 170);
+    dispatchPointer('pointermove', { pointerId: 31, pointerType: 'touch' });
+    dispatchPointer('pointerdown', { pointerId: 32, pointerType: 'touch' });
 
     expect(emitted()).toHaveLength(actionCountBeforeDetach);
+    expect(target.releasePointerCapture).toHaveBeenCalledWith(31);
   });
 
   it.each([
@@ -356,7 +535,7 @@ describe('InputHandler public contract', () => {
     handler.setActiveTankScreenPos(600, 300);
     handler.attach();
 
-    dispatchMouse('mousedown', 303.3333333333, 170);
+    dispatchPointer('pointerdown');
 
     expect(emitted()).toEqual([]);
   });

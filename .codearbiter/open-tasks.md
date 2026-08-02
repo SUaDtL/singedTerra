@@ -161,6 +161,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] input.feature.0001 - Let coarse-pointer players set and refine angle and power directly on the battlefield through the existing deterministic aim input path.  (from sprint:direct-touch-aim)  (done 2026-08-02)
+  - Desc: Unify the existing desktop drag-aim gesture onto primary Pointer Events so mouse, pen, and one finger share identical absolute aim semantics without firing.
+  - Boundaries: Client input, canvas CSS, docs, and tests only; no engine, action schema, network, backend, dependencies, assets, auth, schema, or migrations
 - [x] hud.feature.0002 - Make the desktop Command Deck a causal mouse-and-keyboard command surface by routing its visible keycaps through existing HUD callbacks and state gates.  (from sprint:interactive-command-deck)  (done 2026-08-02)
   - Boundaries: client HUD and tests only; no engine, network, backend, dependencies, assets, auth, schema, or migrations
 - [x] hud.feature.0001 - Make the desktop Command Deck legible and production-coherent through a bounded CSS-first hierarchy pass without changing input or gameplay behavior.  (from sprint:command-deck-legibility)  (done 2026-08-02)

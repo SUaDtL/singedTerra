@@ -222,6 +222,7 @@ body::before {
   height: 100%;
   z-index: 0;
   display: block;
+  touch-action: none;
   /* Nearest-neighbour upscaling keeps canvas pixels crisp at >1× on large
      monitors — matches the retro CRT aesthetic rather than blurring them. */
   image-rendering: pixelated;

@@ -15,6 +15,8 @@ export interface InputHandlerOptions {
   angleStep?: number;
   /** Power units changed per ArrowUp/ArrowDown event. Default 2. */
   powerStep?: number;
+  /** Live game-state gate for direct canvas aim. Defaults to enabled. */
+  canDirectAim?: () => boolean;
 }
 
 /**
@@ -67,6 +69,7 @@ export class InputHandler {
 
   private readonly angleStep: number;
   private readonly powerStep: number;
+  private readonly canDirectAim: () => boolean;
 
   /** Locally-tracked absolute aim state (the engine re-clamps on apply). */
   private angle: number;
@@ -81,12 +84,14 @@ export class InputHandler {
   private attached = false;
 
   /** Active tank's LOGICAL (canvas-space) barrel-origin position, fed by main.ts
-   *  each frame, so mouse drag-aim derives angle/power relative to the tank. */
+   *  each frame, so direct pointer aim derives angle/power relative to the tank. */
   private activeTankX = 0;
   private activeTankY = 0;
   private tankPosKnown = false;
-  /** True while a mouse button is held for a drag-aim gesture. */
-  private dragging = false;
+  private activeTankOwnerId: string | null = null;
+  private directAimEnabled = true;
+  /** Pointer that currently owns direct aim, or null when no gesture is active. */
+  private activePointerId: number | null = null;
 
   constructor(
     target: HTMLElement,
@@ -99,6 +104,7 @@ export class InputHandler {
     this.power = clamp(options.initialPower ?? DEFAULT_POWER, POWER_MIN, POWER_MAX);
     this.angleStep = options.angleStep ?? DEFAULT_ANGLE_STEP;
     this.powerStep = options.powerStep ?? DEFAULT_POWER_STEP;
+    this.canDirectAim = options.canDirectAim ?? (() => true);
   }
 
   /**
@@ -111,13 +117,24 @@ export class InputHandler {
     this.power = clamp(power, POWER_MIN, POWER_MAX);
   }
 
-  /** Feed the active tank's LOGICAL (canvas-space) barrel-origin position so mouse
-   *  drag-aim can derive angle (drag direction) + power (drag distance). Called by
+  /** Feed the active tank's LOGICAL (canvas-space) barrel-origin position so direct
+   *  pointer aim can derive angle (direction) + power (distance). Called by
    *  main.ts each frame; purely informational — never emits. */
-  setActiveTankScreenPos(x: number, y: number): void {
+  setActiveTankScreenPos(x: number, y: number, ownerId?: string): void {
+    if (ownerId !== undefined && ownerId !== this.activeTankOwnerId) {
+      this.clearActivePointer(true);
+      this.activeTankOwnerId = ownerId;
+    }
     this.activeTankX = x;
     this.activeTankY = y;
     this.tankPosKnown = true;
+  }
+
+  /** Enable direct canvas aim for the current eligible turn; disabling cancels
+   *  any held contact before another state or player can inherit it. */
+  setDirectAimEnabled(enabled: boolean): void {
+    this.directAimEnabled = enabled;
+    if (!enabled) this.clearActivePointer(true);
   }
 
   /**
@@ -167,7 +184,11 @@ export class InputHandler {
     this.attached = true;
     // Keyboard is captured at the window level so the canvas does not need focus.
     window.addEventListener('keydown', this.handleKeyDown);
-    this.target.addEventListener('mousedown', this.handleMouse);
+    this.target.addEventListener('pointerdown', this.handlePointerDown);
+    this.target.addEventListener('pointermove', this.handlePointerMove);
+    this.target.addEventListener('pointerup', this.handlePointerUp);
+    this.target.addEventListener('pointercancel', this.handlePointerCancel);
+    this.target.addEventListener('lostpointercapture', this.handleLostPointerCapture);
   }
 
   /** Remove DOM event listeners. Idempotent. */
@@ -175,8 +196,12 @@ export class InputHandler {
     if (!this.attached) return;
     this.attached = false;
     window.removeEventListener('keydown', this.handleKeyDown);
-    this.target.removeEventListener('mousedown', this.handleMouse);
-    if (this.dragging) this.handleMouseUp(); // tear down any in-flight drag
+    this.target.removeEventListener('pointerdown', this.handlePointerDown);
+    this.target.removeEventListener('pointermove', this.handlePointerMove);
+    this.target.removeEventListener('pointerup', this.handlePointerUp);
+    this.target.removeEventListener('pointercancel', this.handlePointerCancel);
+    this.target.removeEventListener('lostpointercapture', this.handleLostPointerCapture);
+    this.clearActivePointer(true);
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
@@ -267,41 +292,81 @@ export class InputHandler {
     this.emit({ type: 'select_weapon', weapon });
   }
 
-  // ----- Mouse drag-aim (desktop) ------------------------------------------
-  // Press on the field and drag FROM the tank: the drag DIRECTION sets the barrel
-  // angle, the drag DISTANCE sets power. Emits the same ABSOLUTE set_angle/set_power
-  // actions as the keyboard, so it shares the engine clamps and main.ts's emit gate
-  // (dropped while a CPU holds the turn). It NEVER fires — Space/Enter still fires,
-  // so a stray drag cannot loose a shot.
+  // ----- Direct pointer aim (mouse, pen, and touch) -------------------------
+  // Point from the tank: direction sets angle and distance sets power. The same
+  // absolute actions pass through main.ts's local-turn gate. It NEVER fires.
 
-  private handleMouse = (event: MouseEvent): void => {
-    if (event.button !== 0 || !this.tankPosKnown) return;
+  private handlePointerDown = (event: PointerEvent): void => {
+    if (
+      this.activePointerId !== null ||
+      !this.tankPosKnown ||
+      !this.directAimEnabled ||
+      !this.canDirectAim() ||
+      !event.isPrimary ||
+      (event.pointerType === 'mouse' && event.button !== 0)
+    ) {
+      return;
+    }
     event.preventDefault();
-    this.dragging = true;
-    // Track on window so a drag that leaves the canvas keeps updating / releases.
-    window.addEventListener('mousemove', this.handleMouseMove);
-    window.addEventListener('mouseup', this.handleMouseUp);
-    this.applyDragAim(event);
+    this.activePointerId = event.pointerId;
+    try {
+      this.target.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Without capture, a target-local tail is not guaranteed. Fail closed so
+      // a vanished contact cannot permanently own every later gesture.
+      this.activePointerId = null;
+      return;
+    }
+    this.applyPointerAim(event);
   };
 
-  private handleMouseMove = (event: MouseEvent): void => {
-    if (this.dragging) this.applyDragAim(event);
+  private handlePointerMove = (event: PointerEvent): void => {
+    if (event.pointerId !== this.activePointerId) return;
+    if (!this.directAimEnabled || !this.canDirectAim()) {
+      this.clearActivePointer(true);
+      return;
+    }
+    event.preventDefault();
+    this.applyPointerAim(event);
   };
 
-  private handleMouseUp = (): void => {
-    this.dragging = false;
-    window.removeEventListener('mousemove', this.handleMouseMove);
-    window.removeEventListener('mouseup', this.handleMouseUp);
+  private handlePointerUp = (event: PointerEvent): void => {
+    if (event.pointerId !== this.activePointerId) return;
+    this.clearActivePointer(true);
   };
+
+  private handlePointerCancel = (event: PointerEvent): void => {
+    if (event.pointerId !== this.activePointerId) return;
+    this.clearActivePointer(true);
+  };
+
+  private handleLostPointerCapture = (event: PointerEvent): void => {
+    if (event.pointerId !== this.activePointerId) return;
+    this.clearActivePointer(false);
+  };
+
+  private clearActivePointer(releaseCapture: boolean): void {
+    const pointerId = this.activePointerId;
+    if (pointerId === null) return;
+    this.activePointerId = null;
+    if (!releaseCapture) return;
+    try {
+      if (this.target.hasPointerCapture?.(pointerId)) {
+        this.target.releasePointerCapture?.(pointerId);
+      }
+    } catch {
+      // Native lostpointercapture can race explicit cleanup; ownership is clear.
+    }
+  }
 
   /**
-   * Map the mouse to LOGICAL canvas coords and emit aim from the drag vector.
+   * Map the pointer to LOGICAL canvas coords and emit aim from its aim vector.
    * getBoundingClientRect() returns the DISPLAYED (CSS-zoomed) size, so dividing by
    * it maps to [0,1] across the canvas regardless of the #app zoom — then scale up
    * to logical px. Angle = direction from the tank (0=right, 90=up; screen y is
    * down, hence -dy); power = drag distance / FULL_POWER_DRAG_PX.
    */
-  private applyDragAim(event: MouseEvent): void {
+  private applyPointerAim(event: Pick<PointerEvent, 'clientX' | 'clientY'>): void {
     const rect = this.target.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
     const mx = ((event.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
