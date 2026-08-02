@@ -3217,3 +3217,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **[high] Task reviews cleared.** Task 1's three Important callback/config-guard findings were corrected and approved; Task 2 received an independent zero-finding approval with complete compiler-coverage evidence. Confidence high.
 - **[high] Designated adversary cleared.** The final adversary found one Medium stale-plan-ledger issue and no implementation issue. Proven plan items were checked; scoped re-review returned READY with zero Critical, High, Medium, or merge blockers and `ca-pr` coverage `NO BLOCK`. Confidence high.
 - **[high] Follow-up harvest empty.** No low-severity finding, `[NEEDS-TRIAGE]` residue, or low-confidence sprint decision remains, so no task-board mutation is warranted. Confidence high.
+
+### Hosted exact-head and merge authorization receipt
+
+- **[high] Behavior head cleared exact hosted CI.** Ready PR #268 targets `main` from `codex/client-test-indexing-lobby-session`; head `071e9ce9f8f741d79c589b0404652d8621010a23` is mergeable and based directly on `main@e4414de7bb6506e0ab24fde92f8a53f5d425eb95`. CI run `30731417188` passed typecheck, all 61 harnesses, build, Edge tests, and rendering E2E; CodeQL run `30731417205`, its CodeQL status, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing PR-only squash-merge authority permits merge after this receipt receives designated adversarial review and every hosted check is green on the resulting final governance head. Direct default-branch writes and force-push remain prohibited. Confidence high.

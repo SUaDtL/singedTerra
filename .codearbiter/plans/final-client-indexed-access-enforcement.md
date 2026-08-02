@@ -69,5 +69,5 @@
 - [x] Run `npm run check`, `npm run test:client`, `npm run check:edge`, `npm run build`, and `npm run audit:deps`.
 - [x] Run the state-free secrets scan and protected-log prefix proofs.
 - [x] Obtain one designated adversarial review; fix every Critical, High, Medium, and merge-blocking finding.
-- [ ] Commit through `$ca-commit`, open/update the PR, and require hosted CI green on the exact final head.
+- [x] Commit through `$ca-commit`, open/update the PR, and require hosted CI green on the exact final head.
 - [ ] Under standing authority, log the PR-specific merge receipt, re-pass exact-head CI, squash merge, verify Pages provenance/live smoke, and close issue #70.
