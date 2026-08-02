@@ -946,11 +946,13 @@ test.describe('HUD layout guardrails', () => {
 
     // Exercise the exact maximum-name / longest-weapon layout contract with
     // production markup and computed browser geometry.
-    await player.evaluate((node) => { node.textContent = 'Commander Longname X'; });
     const geometry = await console.evaluate((node) => {
       const hud = document.getElementById('hud')!;
       const playerNode = node.querySelector<HTMLElement>('.st-hud__turn-owner')!;
       const weaponNode = node.querySelector<HTMLElement>('.st-hud__weapon-value')!;
+      // Mutate and measure in one browser task so the live HUD update loop
+      // cannot restore the fixture name between the probe and geometry read.
+      playerNode.textContent = 'Commander Longname X';
       const bounds = node.getBoundingClientRect();
       const visibleTargets = [...node.querySelectorAll<HTMLElement>('button')]
         .filter((target) => {

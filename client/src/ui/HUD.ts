@@ -4024,6 +4024,13 @@ export class HUD {
     grid-template-columns: 1fr;
     justify-items: center;
   }
+  #app.is-compact .st-hud__identity-lockup {
+    grid-column: 1 / -1;
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+  #app.is-compact .st-hud__mobility {
+    grid-row: 2;
+  }
   #app .st-hud__mobility > .st-hud__move-btn {
     display: none;
   }
