@@ -125,7 +125,7 @@
   regression, accessibility, responsive-layout, and governance findings. Fix
   every blocker and rerun affected gates.
 
-- [ ] **Step 3: Route commit and PR through `$ca-commit` and `$ca-pr`**
+- [x] **Step 3: Route commit and PR through `$ca-commit` and `$ca-pr`**
 
   Mark `hud.feature.0001` done only after implementation and local review pass.
   Commit only through the fresh commit gate, push the isolated branch, and open
