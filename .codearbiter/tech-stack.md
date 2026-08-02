@@ -21,7 +21,7 @@ Both workspace packages are `private: true`.
 
 ## Key libraries
 
-- **Vite** `6.4.3` (client dev server + build).
+- **Vite** `8.1.5` (Rolldown/Oxc-powered client dev server + production build).
 - **@supabase/supabase-js** `2.110.9` (browser client); Edge Functions use the same exact `2.110.9` through esm.sh.
 - **lucide** `1.27.0` (client-only exact named SVG icon nodes). The package has
   no runtime transitives; importing its all-icons registry is prohibited.
