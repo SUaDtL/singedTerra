@@ -3152,3 +3152,20 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #261 targets `main` from `codex/client-test-indexing-effects`; head `ecc9eee1aeedc3eefb5497bea7628e6711a92233` is mergeable and based directly on `main@9597ac8bd2ae24bf8d1caecd0ebcf43634c8e55c`. CI run `30727478380` passed typecheck, harnesses, build, Edge tests, and the full rendering E2E suite; CodeQL run `30727478378` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01T21:53:38.3531177-04:00 — Tank visual strict test fixtures sprint
+
+### SMARTS selection and standing approval
+
+- **[high] Migrate the largest remaining visual cell.** Seven tank suites jointly own 31 of the remaining 100 findings while protecting loadouts, modular art, recoil, mobility, and wrecks through a 57-test baseline. Confidence high.
+- **[high] Keep lobby lifecycle work separate.** Lobby session tests remain the largest stateful cluster, but mixing network lifecycle with tank rendering would weaken reviewability and rollback. Confidence high.
+- **[high] Keep absent visual evidence test-fatal.** Required parts, operations, recoil samples, mobility traces, and wreck-order entries receive causal guards or tuples rather than optional access, assertions, or fallback values. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this bounded spec and plan only. Hard gates remain active. Confidence high.
+
+### Implementation and adversarial review receipt
+
+- **[high] TDD and strictness evidence.** Adding seven suites produced exactly 31 compiler findings while prior migrated suites stayed clean. Assertion-fatal guards and numeric narrowing reduced every target to zero without optional access, fallback values, non-null assertions, test weakening, or production edits. Focused suites pass 57/57. Confidence high.
+- **[high] Inventory reduction proven.** A fresh full strict probe reports 69 findings across 17 remaining files, exactly down from 100 across 24, with zero migrated-suite errors. Confidence high.
+- **[high] Repository gates passed.** All 60 deterministic harnesses, 119 client files and 823 tests, Edge tests, build, dependency audit, strict compile, and diff checks passed. Confidence high.
+- **[high] Adversarial and coverage gates cleared.** The single designated adversary returned READY with no severity findings or merge blockers and explicit coverage NO BLOCK. Confidence high.
+- **[high] Follow-up harvest empty.** No `[NEEDS-TRIAGE]` residue or low-confidence sprint decision exists. Confidence high.

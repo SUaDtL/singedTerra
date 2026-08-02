@@ -9,6 +9,11 @@ import {
 import { placeTanks } from '@shared/engine/Tank';
 import { CANVAS_WIDTH } from '@shared/engine/Terrain';
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('tank cosmetic loadout contract', () => {
   it('defines four kits across four independently selectable slots', () => {
     expect(TANK_KIT_IDS).toEqual(['foundry', 'ranger', 'bulwark', 'jackal']);
@@ -73,10 +78,12 @@ describe('tank cosmetic loadout contract', () => {
       turret: 'jackal',
       barrel: 'jackal',
     };
-    const [custom, baseline] = placeTanks(terrain, [
+    const tanks = placeTanks(terrain, [
       { name: 'Custom', color: '#e84d4d', loadout },
       { name: 'Default', color: '#4d8ce8' },
     ]);
+    const custom = required(tanks[0], 'custom tank');
+    const baseline = required(tanks[1], 'baseline tank');
 
     expect(custom.loadout).toEqual(loadout);
     expect(custom.loadout).not.toBe(loadout);

@@ -4,6 +4,11 @@ import {
   tankRecoilPose,
 } from './tankRecoil';
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('tankRecoilPose', () => {
   it('kicks opposite the barrel direction with a grounded vertical component', () => {
     const right = tankRecoilPose(0, 1, 0);
@@ -41,7 +46,8 @@ describe('tankRecoilPose', () => {
     );
 
     for (let i = 1; i < distances.length; i++) {
-      expect(distances[i]).toBeLessThan(distances[i - 1]);
+      expect(required(distances[i], `recoil distance ${i}`))
+        .toBeLessThan(required(distances[i - 1], `recoil distance ${i - 1}`));
     }
     expect(tankRecoilPose(25, 1.3, TANK_RECOIL_FRAMES - 1)).not.toBeNull();
     expect(tankRecoilPose(25, 1.3, TANK_RECOIL_FRAMES)).toBeNull();

@@ -3,6 +3,11 @@ import type { GameState, TankState } from '@shared/types/GameState';
 import { Renderer } from './Renderer';
 import { MobilityEffectsRenderer } from './MobilityEffectsRenderer';
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface MobilityEffectSeam {
   spawn: ReturnType<typeof vi.fn>;
   update: ReturnType<typeof vi.fn>;
@@ -143,12 +148,14 @@ describe('Renderer mobility-signature lifecycle', () => {
     renderer.render(externalMove);
 
     expect(spawn).toHaveBeenCalledWith(expect.objectContaining({ tankId: 'p1', dx: 4 }));
-    expect(spawn.mock.invocationCallOrder[0])
-      .toBeLessThan(update.mock.invocationCallOrder[0]);
-    expect(renderer.projectile.drawGroundShadows.mock.invocationCallOrder[0])
-      .toBeLessThan(draw.mock.invocationCallOrder[0]);
-    expect(draw.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.tanks.drawAll.mock.invocationCallOrder[0]);
+    const spawnOrder = required(spawn.mock.invocationCallOrder[0], 'mobility spawn');
+    const updateOrder = required(update.mock.invocationCallOrder[0], 'mobility update');
+    const shadowOrder = required(renderer.projectile.drawGroundShadows.mock.invocationCallOrder[0], 'ground shadow draw');
+    const drawOrder = required(draw.mock.invocationCallOrder[0], 'mobility draw');
+    const tankOrder = required(renderer.tanks.drawAll.mock.invocationCallOrder[0], 'tank draw');
+    expect(spawnOrder).toBeLessThan(updateOrder);
+    expect(shadowOrder).toBeLessThan(drawOrder);
+    expect(drawOrder).toBeLessThan(tankOrder);
   });
 
   it('keeps the scene animating while an admitted mobility signature is alive', () => {

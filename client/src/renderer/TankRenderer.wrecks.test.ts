@@ -4,6 +4,11 @@ import { DEFAULT_TANK_LOADOUT } from '@shared/types/TankLoadout';
 import { darkenHex, lightenHex } from '../ui/theme';
 import { TankRenderer } from './TankRenderer';
 
+function requiredNumber(value: unknown, label: string): number {
+  if (typeof value !== 'number') throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface DrawOp {
   op: string;
   args: number[];
@@ -145,7 +150,10 @@ describe('TankRenderer persistent wrecks', () => {
 
       const points = trace.ops
         .filter((op) => op.op === 'moveTo' || op.op === 'lineTo')
-        .map((op) => [op.args[0] - 240, op.args[1] - 410]);
+        .map((op, index) => [
+          requiredNumber(op.args[0], `wreck point ${index} x`) - 240,
+          requiredNumber(op.args[1], `wreck point ${index} y`) - 410,
+        ]);
       expect(points).toEqual([
         [-17, 0], [15, 0], [12, -5], [-13, -4],
         [-13, -4], [-9, -11], [-2, -13], [5, -11], [13, -6], [10, -3], [-10, -3],

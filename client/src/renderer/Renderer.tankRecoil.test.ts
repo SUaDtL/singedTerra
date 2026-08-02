@@ -8,6 +8,11 @@ import {
 } from './TankRenderer';
 import { TANK_RECOIL_FRAMES } from './tankRecoil';
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface RecoilRecord {
   tankId: string;
   angle: number;
@@ -192,7 +197,8 @@ describe('Renderer weapon-weighted tank recoil', () => {
     const renderer = seam();
     const state = frame('nuke');
     const before = structuredClone(state.tanks);
-    const authoritativeTip = barrelTip(state.tanks[0], BARREL_LENGTH);
+    const shooter = required(state.tanks[0], 'recoiling shooter');
+    const authoritativeTip = barrelTip(shooter, BARREL_LENGTH);
 
     renderer.render(state);
     renderer.render(state);
@@ -200,13 +206,16 @@ describe('Renderer weapon-weighted tank recoil', () => {
     renderer.render(state);
 
     expect(renderer.effects.spawnMuzzle).toHaveBeenCalledTimes(2);
-    expect(renderer.effects.spawnMuzzle.mock.calls[0].slice(0, 3)).toEqual([
+    const firstMuzzleCall = required(renderer.effects.spawnMuzzle.mock.calls[0], 'first muzzle call');
+    expect(firstMuzzleCall.slice(0, 3)).toEqual([
       authoritativeTip.x,
       authoritativeTip.y,
-      state.tanks[0].angle,
+      shooter.angle,
     ]);
-    const firstPose = renderer.tanks.drawAll.mock.calls[0][3] as TankRenderPose;
-    const secondPose = renderer.tanks.drawAll.mock.calls[1][3] as TankRenderPose;
+    const firstDrawCall = required(renderer.tanks.drawAll.mock.calls[0], 'first tank draw');
+    const secondDrawCall = required(renderer.tanks.drawAll.mock.calls[1], 'second tank draw');
+    const firstPose = required(firstDrawCall[3], 'first recoil pose') as TankRenderPose;
+    const secondPose = required(secondDrawCall[3], 'second recoil pose') as TankRenderPose;
     expect(firstPose.tankId).toBe('p1');
     expect(firstPose.offsetX).toBeLessThan(0);
     expect(Math.hypot(secondPose.offsetX, secondPose.offsetY))

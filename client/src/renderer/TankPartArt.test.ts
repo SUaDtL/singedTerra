@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { TankState } from '@shared/types/GameState';
+
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
 import {
   DEFAULT_TANK_LOADOUT,
   type TankLoadout,
@@ -196,8 +201,8 @@ describe('TankPartArt', () => {
         ];
       }),
     );
-    expect(harness.contexts.map(({ drawImage: sourceDraw }) =>
-      sourceDraw.mock.calls[0].slice(1))).toEqual(staticSlots.map((slot) => {
+    expect(harness.contexts.map(({ drawImage: sourceDraw }, index) =>
+      required(sourceDraw.mock.calls[0], `source draw ${index}`).slice(1))).toEqual(staticSlots.map((slot) => {
       const definition = tankPartDefinition(subject.loadout!, slot);
       return [
         definition.source.x,
@@ -257,7 +262,7 @@ describe('TankPartArt', () => {
         width: definition.width,
         height: definition.height,
       });
-      expect(drawImage.mock.calls[0].slice(1)).toEqual([
+      expect(required(drawImage.mock.calls[0], 'scaled static draw').slice(1)).toEqual([
         subject.x + definition.offsetX,
         subject.y + definition.offsetY,
       ]);
@@ -295,7 +300,7 @@ describe('TankPartArt', () => {
     expect(translate).toHaveBeenCalledWith(mount.pivot.x, mount.pivot.y);
     expect(rotate).toHaveBeenCalledWith(mount.radians);
     expect(drawImage).toHaveBeenCalledOnce();
-    expect(harness.contexts[0].fillRect).not.toHaveBeenCalled();
+    expect(required(harness.contexts[0], 'barrel source context').fillRect).not.toHaveBeenCalled();
     expect(ctx.shadowColor).toBe('#10070b');
     expect(ctx.shadowBlur).toBeGreaterThan(0);
     expect(ctx.shadowBlur).toBeLessThanOrEqual(1);
@@ -368,8 +373,9 @@ describe('TankPartArt', () => {
 
     expect(art.drawStatic(target, subject)).toBe(true);
     expect(art.drawBarrel(target, subject)).toBe(true);
-    expect(harness.contexts.map(({ drawImage }) =>
-      drawImage.mock.calls[0][2])).toEqual(TANK_PART_SLOTS.map((slot) =>
+    expect(harness.contexts.map(({ drawImage }, index) =>
+      required(required(drawImage.mock.calls[0], `atlas draw ${index}`)[2], `atlas y ${index}`)))
+      .toEqual(TANK_PART_SLOTS.map((slot) =>
       tankPartDefinition(subject.loadout!, slot).source.y));
   });
 

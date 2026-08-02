@@ -10,7 +10,14 @@
     "src/renderer/EffectsRenderer.shieldImpacts.test.ts",
     "src/renderer/EffectsRenderer.armorHits.test.ts",
     "src/renderer/EffectsRenderer.muzzleSignatures.test.ts",
-    "src/renderer/EffectsRenderer.terrain.test.ts"
+    "src/renderer/EffectsRenderer.terrain.test.ts",
+    "src/renderer/Renderer.tankWreckOrdering.test.ts",
+    "src/renderer/tankLoadout.test.ts",
+    "src/renderer/Renderer.tankRecoil.test.ts",
+    "src/renderer/TankPartArt.test.ts",
+    "src/renderer/Renderer.mobility.test.ts",
+    "src/renderer/TankRenderer.wrecks.test.ts",
+    "src/renderer/tankRecoil.test.ts"
   ],
   "exclude": []
 }

@@ -4,6 +4,11 @@ import { DEFAULT_TANK_LOADOUT } from '@shared/types/TankLoadout';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { Renderer } from './Renderer';
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface RendererTankSeam {
   bursts: unknown[];
   scorches: unknown[];
@@ -139,7 +144,10 @@ describe('Renderer persistent-wreck layer routing', () => {
   it('keeps all buried silhouettes below terrain and beacons only living trapped tanks', () => {
     const renderer = rendererSeam();
     const state = frame();
-    const [visibleDead, visibleLive, buriedLive, buriedDead] = state.tanks;
+    const visibleDead = required(state.tanks[0], 'visible wreck');
+    const visibleLive = required(state.tanks[1], 'visible live tank');
+    const buriedLive = required(state.tanks[2], 'buried live tank');
+    const buriedDead = required(state.tanks[3], 'buried wreck');
 
     renderer.render(state);
 
@@ -154,13 +162,14 @@ describe('Renderer persistent-wreck layer routing', () => {
       visibleLive.id,
     ]);
     expect(renderer.tanks.drawBuriedMarker).toHaveBeenCalledTimes(1);
-    expect(renderer.tanks.drawBuriedMarker.mock.calls[0][1]).toBe(buriedLive.x);
-    expect(renderer.tanks.drawBuriedMarker.mock.calls[0][3]).toBe(buriedLive.color);
+    const markerCall = required(renderer.tanks.drawBuriedMarker.mock.calls[0], 'buried marker draw');
+    expect(markerCall[1]).toBe(buriedLive.x);
+    expect(markerCall[3]).toBe(buriedLive.color);
 
-    const buriedOrder = renderer.tanks.drawAll.mock.invocationCallOrder[0];
-    const terrainOrder = renderer.terrain.draw.mock.invocationCallOrder[0];
-    const visibleOrder = renderer.tanks.drawAll.mock.invocationCallOrder[1];
-    const beaconOrder = renderer.tanks.drawBuriedMarker.mock.invocationCallOrder[0];
+    const buriedOrder = required(renderer.tanks.drawAll.mock.invocationCallOrder[0], 'buried draw');
+    const terrainOrder = required(renderer.terrain.draw.mock.invocationCallOrder[0], 'terrain draw');
+    const visibleOrder = required(renderer.tanks.drawAll.mock.invocationCallOrder[1], 'visible draw');
+    const beaconOrder = required(renderer.tanks.drawBuriedMarker.mock.invocationCallOrder[0], 'buried marker draw');
     expect(buriedOrder).toBeLessThan(terrainOrder);
     expect(terrainOrder).toBeLessThan(visibleOrder);
     expect(visibleOrder).toBeLessThan(beaconOrder);
