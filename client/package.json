@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@singedterra/shared": "*",
-    "@supabase/supabase-js": "2.110.9",
-    "lucide": "1.27.0"
+    "@supabase/supabase-js": "2.111.0",
+    "lucide": "1.28.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.10",
