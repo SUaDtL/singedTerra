@@ -3147,3 +3147,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **[high] Repository gates passed.** `npm run check` passed all 60 deterministic harnesses; `npm run test:client` passed 119 files and 823 tests; Edge tests, `npm run build`, `npm run audit:deps`, the strict migrated project, and `git diff --check` all passed. Confidence high.
 - **[high] Single-adversary and coverage gates cleared.** The designated adversarial subagent reviewed the exact package and returned READY with no Critical, High, Medium, Low, or merge-blocking findings plus an explicit ca-pr coverage NO BLOCK verdict. Confidence high.
 - **[high] Follow-up harvest empty.** The exact diff and adversarial report contain no `[NEEDS-TRIAGE]` residue or low-confidence sprint decision, so no board mutation is warranted. Confidence high.
+
+### Hosted behavior-head and merge authorization receipt
+
+- **[high] Behavior head cleared exact hosted CI.** Ready PR #261 targets `main` from `codex/client-test-indexing-effects`; head `ecc9eee1aeedc3eefb5497bea7628e6711a92233` is mergeable and based directly on `main@9597ac8bd2ae24bf8d1caecd0ebcf43634c8e55c`. CI run `30727478380` passed typecheck, harnesses, build, Edge tests, and the full rendering E2E suite; CodeQL run `30727478378` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
+- **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
