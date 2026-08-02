@@ -39,6 +39,11 @@ interface CanvasTrace {
   restores: number;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 function tracingContext(): { ctx: CanvasRenderingContext2D; trace: CanvasTrace } {
   const trace: CanvasTrace = {
     operations: [],
@@ -384,7 +389,8 @@ describe('ProjectileRenderer weapon signatures', () => {
     renderer.draw(ctx, [projectile('nuke', { vx: 3, vy: 4, age: 0 })]);
 
     expect(trace.linearGradients).toHaveLength(1);
-    expect(trace.linearGradients[0].stops).toEqual([
+    const gradient = required(trace.linearGradients[0], 'motion gradient');
+    expect(gradient.stops).toEqual([
       [0, 'rgba(255, 247, 194, 0)'],
       [0.6, 'rgba(255, 247, 194, 0.5)'],
       [1, '#fff7c2'],
@@ -401,18 +407,19 @@ describe('ProjectileRenderer weapon signatures', () => {
       expect(stroke.alpha).toBeGreaterThan(0);
       expect(stroke.alpha).toBeLessThanOrEqual(0.44);
     }
-    expect(motionStrokes[0].width).toBe(5);
-    expect(motionStrokes[1].width).toBeCloseTo(1.6);
+    expect(required(motionStrokes[0], 'outer motion stroke').width).toBe(5);
+    expect(required(motionStrokes[1], 'inner motion stroke').width).toBeCloseTo(1.6);
     const expected = getProjectileMotionStreak(3, 4, 6)!;
-    expect(trace.linearGradients[0].points[0]).toBeCloseTo(100 + expected.tailOffsetX);
-    expect(trace.linearGradients[0].points[1]).toBeCloseTo(90 + expected.tailOffsetY);
-    expect(trace.linearGradients[0].points[2]).toBeCloseTo(100 + expected.headOffsetX);
-    expect(trace.linearGradients[0].points[3]).toBeCloseTo(90 + expected.headOffsetY);
-    const [tailX, tailY, headX, headY] = trace.linearGradients[0].points;
+    expect(gradient.points[0]).toBeCloseTo(100 + expected.tailOffsetX);
+    expect(gradient.points[1]).toBeCloseTo(90 + expected.tailOffsetY);
+    expect(gradient.points[2]).toBeCloseTo(100 + expected.headOffsetX);
+    expect(gradient.points[3]).toBeCloseTo(90 + expected.headOffsetY);
+    const [tailX, tailY, headX, headY] = gradient.points;
     expect(Math.hypot(headX - tailX, headY - tailY)).toBeGreaterThanOrEqual(6);
     expect(Math.hypot(headX - tailX, headY - tailY)).toBeLessThanOrEqual(28);
     expect(Math.hypot(headX - 100, headY - 90)).toBeLessThanOrEqual(2);
-    expect(trace.radialGradients[0].composite).toBe('source-over');
+    expect(required(trace.radialGradients[0], 'payload halo gradient').composite)
+      .toBe('source-over');
     expect(trace.fillCalls.at(-1)?.composite).toBe('source-over');
 
     const motion = trace.operations.indexOf('createLinearGradient');
@@ -437,7 +444,10 @@ describe('ProjectileRenderer weapon signatures', () => {
       vy: 4,
       age: 0,
     })]);
-    const translatedPoints = translated.trace.linearGradients[0].points;
+    const translatedPoints = required(
+      translated.trace.linearGradients[0],
+      'translated motion gradient',
+    ).points;
     expect(translatedPoints[0] - tailX).toBeCloseTo(307);
     expect(translatedPoints[1] - tailY).toBeCloseTo(221);
     expect(translatedPoints[2] - headX).toBeCloseTo(307);
@@ -476,23 +486,26 @@ describe('ProjectileRenderer weapon signatures', () => {
     renderer.draw(stopped.ctx, [projectile('mirv', { vx: 0, vy: 0, age: 0 })]);
 
     const segmentLength = (trace: CanvasTrace): number => {
-      const [x0, y0, x1, y1] = trace.linearGradients[0].points;
+      const [x0, y0, x1, y1] = required(
+        trace.linearGradients[0],
+        'motion gradient for segment length',
+      ).points;
       return Math.hypot(x1 - x0, y1 - y0);
     };
     expect(segmentLength(fast.trace)).toBeGreaterThan(segmentLength(slow.trace));
-    expect(fast.trace.strokeCalls[1].alpha)
-      .toBeGreaterThan(slow.trace.strokeCalls[1].alpha);
+    expect(required(fast.trace.strokeCalls[1], 'fast inner stroke').alpha)
+      .toBeGreaterThan(required(slow.trace.strokeCalls[1], 'slow inner stroke').alpha);
     expect(fast.trace.strokeCalls.slice(0, 2).map((stroke) => stroke.alpha))
       .toEqual([0.44 * 0.6, 0.44]);
     expect(fast.trace.strokeCalls.slice(0, 2)
       .every((stroke) => stroke.alpha <= 0.44)).toBe(true);
-    expect(fast.trace.linearGradients[0].points[0])
-      .toBeLessThan(fast.trace.linearGradients[0].points[2]);
-    expect(reverse.trace.linearGradients[0].points[0])
-      .toBeGreaterThan(reverse.trace.linearGradients[0].points[2]);
+    const fastGradient = required(fast.trace.linearGradients[0], 'fast motion gradient');
+    const reverseGradient = required(reverse.trace.linearGradients[0], 'reverse motion gradient');
+    expect(fastGradient.points[0]).toBeLessThan(fastGradient.points[2]);
+    expect(reverseGradient.points[0]).toBeGreaterThan(reverseGradient.points[2]);
     expect(child.trace.linearGradients).toHaveLength(1);
-    expect(child.trace.strokeCalls[0].width)
-      .toBeLessThan(fast.trace.strokeCalls[0].width);
+    expect(required(child.trace.strokeCalls[0], 'child outer stroke').width)
+      .toBeLessThan(required(fast.trace.strokeCalls[0], 'fast outer stroke').width);
     expect(child.trace.arcs).toHaveLength(2);
     expect(stopped.trace.linearGradients).toHaveLength(0);
 
@@ -536,12 +549,15 @@ describe('ProjectileRenderer weapon signatures', () => {
         fill: call.fill,
       }));
 
-      expect(trail[0].fill).toBe(profile.accent);
-      expect(trail[0].radius).toBeCloseTo(profile.trailRadiusMax);
-      expect(trail[0].alpha).toBeCloseTo(profile.trailAlphaOld);
-      expect(trail[1].fill).toBe(profile.accent);
-      expect(trail[1].radius).toBeCloseTo(profile.trailRadiusMin);
-      expect(trail[1].alpha).toBeCloseTo(profile.trailAlphaNew);
+      const oldTrail = required(trail[0], `${weaponType} old trail sample`);
+      const newTrail = required(trail[1], `${weaponType} new trail sample`);
+
+      expect(oldTrail.fill).toBe(profile.accent);
+      expect(oldTrail.radius).toBeCloseTo(profile.trailRadiusMax);
+      expect(oldTrail.alpha).toBeCloseTo(profile.trailAlphaOld);
+      expect(newTrail.fill).toBe(profile.accent);
+      expect(newTrail.radius).toBeCloseTo(profile.trailRadiusMin);
+      expect(newTrail.alpha).toBeCloseTo(profile.trailAlphaNew);
       signatures.add(JSON.stringify(trail.map((entry) => ({
         ...entry,
         radius: entry.radius.toFixed(3),
@@ -605,7 +621,7 @@ describe('ProjectileRenderer weapon signatures', () => {
 
   it('resets all histories when split children compact or the live count changes', () => {
     const renderer = new ProjectileRenderer();
-    const children = [
+    const children: [ProjectileState, ProjectileState] = [
       projectile('mirv', { x: 100, hasSplit: true, age: 1 }),
       projectile('mirv', { x: 150, hasSplit: true, age: 1 }),
     ];

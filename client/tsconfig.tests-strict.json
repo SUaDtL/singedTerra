@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.production.json",
+  "include": [
+    "src/renderer/ProjectileRenderer.test.ts",
+    "src/renderer/ProjectileRenderer.groundShadow.test.ts"
+  ],
+  "exclude": []
+}

@@ -3065,3 +3065,19 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #257 targets `main` from `codex/client-production-unchecked-indexing`; head `e8e9107c9e016b08612a2e77397e19aff537a45f` is mergeable and based directly on `main@7cc094d9fbb2e0c885486d1a4fd806be33087fb3`. CI run `30724220320` passed typecheck/harness/build, 823 client tests, dependency audit, Edge tests, and the full rendering E2E suite; CodeQL run `30724220319` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01T20:08:40.1818267-04:00 — Projectile renderer strict test fixtures sprint
+
+### SMARTS selection and standing approval
+
+- **[high] Migrate one coherent 43-finding renderer-test cell.** The measured 239 test-only findings span 34 files: 199 renderer, 23 client, and 17 UI. The two projectile renderer suites own 29 and 14 findings and share fixture/draw-call semantics, making them the strongest bounded first cell. Confidence high.
+- **[high] Establish an additive growing strict-test project.** An explicit include list keeps each completed fixture group enforced while the normal typecheck retains production strictness and the original complete compile. Confidence high.
+- **[high] Reject silent test fallbacks.** Missing expected fixture data must remain assertion-fatal; optional chaining or fabricated defaults would satisfy the compiler while weakening the tests. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this bounded spec and plan only. Security, auth, secrets, irreversible operations, adversarial review, exact-head hosted CI, PR-only merge, and deployment proof remain active. Confidence high.
+
+### 2026-08-01T20:19:20.0353275-04:00 — implementation and adversarial closure
+
+- **[high] Exact 43-finding RED closed behind enforcement.** `typecheck:tests-strict` first failed on 29 `ProjectileRenderer.test.ts` and 14 `ProjectileRenderer.groundShadow.test.ts` findings, then passed after assertion-backed fixture access. The two focused suites retain all 17 tests. Confidence high.
+- **[high] Measured remainder reduced without hiding coverage.** A fresh full-client strict probe now reports 196 findings across 32 files and zero in the migrated suites. Normal typecheck runs production strictness, the growing strict-test project, and the unchanged complete compile. Confidence high.
+- **[high] Full local verification passed.** `npm run check` passed all 60 deterministic harnesses; `npm run test:client` passed 119 files and 823 tests; `npm run build` passed; dependency audit found zero vulnerabilities; and `git diff --check` passed. Confidence high.
+- **[high] Single adversary cleared the frozen package.** The designated adversary verified exact config roots, causal failure semantics, preserved assertions/test counts, accurate backlog measurements, append-only governance, and zero scope drift; verdict CLEAN/READY with zero findings or merge blockers. Confidence high.

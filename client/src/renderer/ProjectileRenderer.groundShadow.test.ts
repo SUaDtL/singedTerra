@@ -12,6 +12,11 @@ interface Op {
   composite?: string;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 function recordingContext() {
   const ops: Op[] = [];
   const stack: Array<Record<string, unknown>> = [];
@@ -44,13 +49,15 @@ function recordingContext() {
       ops.push({ name: 'restore', args: [] });
     },
     translate(this: Record<string, number>, ...args: number[]) {
-      this.translateX += args[0] * this.scaleX;
-      this.translateY += args[1] * this.scaleY;
+      this.translateX = required(this.translateX, 'current translation x')
+        + required(args[0], 'translate x') * required(this.scaleX, 'current scale x');
+      this.translateY = required(this.translateY, 'current translation y')
+        + required(args[1], 'translate y') * required(this.scaleY, 'current scale y');
       ops.push({ name: 'translate', args });
     },
     scale(this: Record<string, number>, ...args: number[]) {
-      this.scaleX *= args[0];
-      this.scaleY *= args[1];
+      this.scaleX = required(this.scaleX, 'current scale x') * required(args[0], 'scale x');
+      this.scaleY = required(this.scaleY, 'current scale y') * required(args[1], 'scale y');
       ops.push({ name: 'scale', args });
     },
     createRadialGradient(...args: number[]) {
@@ -149,8 +156,10 @@ describe('ProjectileRenderer terrain-projected shadows', () => {
       [1, 'rgba(7, 3, 12, 0)'],
     ]);
     expect(fills.every((op) => op.composite === 'source-over')).toBe(true);
-    expect(fills[0].value).toBe(gradients[0].value);
-    expect(fills[1].value).toBe(gradients[1].value);
+    expect(required(fills[0], 'first shadow fill').value)
+      .toBe(required(gradients[0], 'first shadow gradient').value);
+    expect(required(fills[1], 'second shadow fill').value)
+      .toBe(required(gradients[1], 'second shadow gradient').value);
     expect(JSON.stringify(projectiles)).toBe(before);
     expect(ctx.fillStyle).toBe('#caller-fill');
     expect(ctx.globalAlpha).toBe(0.73);
