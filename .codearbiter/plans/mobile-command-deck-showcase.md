@@ -124,7 +124,7 @@ Run `npm run check`, `npm run build`, the state-free secrets scan, `git diff --c
 
 Require one adversary to inspect the exact diff and original-detail screenshot. Correct every Critical, High, Medium, and merge-blocking finding and rerun affected verification.
 
-- [ ] **Step 3: Commit and open the PR through the governed gates**
+- [x] **Step 3: Commit and open the PR through the governed gates**
 
 Stage every file explicitly, prove protected append-only prefixes, run `$ca-commit`, push `codex/readme-first-impression`, open a ready PR, and require hosted checks green on the exact current head.
 
