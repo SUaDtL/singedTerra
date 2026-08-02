@@ -26,6 +26,10 @@ const ciWorkflow = readFileSync(
   resolve(root, '.github/workflows/ci.yml'),
   'utf8',
 )
+const dependabotConfig = readFileSync(
+  resolve(root, '.github/dependabot.yml'),
+  'utf8',
+)
 
 const assertions = []
 const assert = (condition, message) => {
@@ -47,6 +51,20 @@ const auditStepIndex = checkJobSteps.findIndex((step) =>
 )
 const installStep = checkJobSteps[installStepIndex] ?? ''
 const auditStep = checkJobSteps[auditStepIndex] ?? ''
+const npmDependabotEntry = dependabotConfig
+  .split(/(?=^  - package-ecosystem:)/m)
+  .find((entry) => /^  - package-ecosystem: npm\s*$/m.test(entry)) ?? ''
+const npmIgnoreSection = npmDependabotEntry.match(
+  /^    ignore:\s*$([\s\S]*?)(?=^    [a-zA-Z0-9_-]+:\s*$|(?![\s\S]))/m,
+)?.[1] ?? ''
+const nodeTypesIgnoreEntry = npmIgnoreSection
+  .split(/(?=^      - dependency-name:)/m)
+  .find((entry) => /^      - dependency-name: ["']@types\/node["']\s*$/m.test(entry)) ?? ''
+const nodeTypesIgnoredUpdates = [
+  ...(nodeTypesIgnoreEntry.match(
+    /^        update-types:\s*$([\s\S]*?)(?=^        [a-zA-Z0-9_-]+:\s*$|(?![\s\S]))/m,
+  )?.[1] ?? '').matchAll(/^          - (\S+)\s*$/gm),
+].map((match) => match[1])
 
 assert(nodeVersion === '24.18.0', '.nvmrc selects supported Node 24.18.0')
 assert(
@@ -56,6 +74,11 @@ assert(
 assert(
   /^\^24\./.test(rootPackage.devDependencies?.['@types/node'] ?? ''),
   '@types/node stays on the Node 24 line',
+)
+assert(
+  nodeTypesIgnoredUpdates.length === 1
+    && nodeTypesIgnoredUpdates[0] === 'version-update:semver-major',
+  'Dependabot keeps @types/node major updates coupled to the Node runtime line',
 )
 assert(
   rootPackage.scripts?.['audit:deps'] === 'npm audit --audit-level=high',
