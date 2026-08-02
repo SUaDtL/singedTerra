@@ -3194,3 +3194,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **[high] Bounded retry chosen over dependency migration.** SMARTS favored a CI-only three-attempt wrapper because it is reversible, production-neutral, dependency-neutral, and preserves a persistent red; changing the Supabase import source would unnecessarily touch a production trust boundary. Confidence high.
 - **[high] Regression-first retry contract proven.** The executable workflow path was RED before extraction, then GREEN for immediate success (one attempt), transient recovery (two attempts), and persistent failure (three attempts, exit 1). It is registered in `npm run check`; Bash syntax and the full 61-harness gate pass. Confidence high.
 - **[high] Adversarial blocker closed.** The first review blocked on a regex-only fail-open gap; executable stubbed-Deno coverage replaced it. The designated adversary re-reviewed the exact diff and returned READY with zero Critical, High, or Medium findings, no merge blockers, and coverage NO BLOCK. Confidence high.
+
+### Exact-head hosted merge gate
+
+- **[high] Behavior head cleared exact hosted CI.** PR #263 head `2854b55729bb9644cb57dd32cf1bf909a6cad474` is mergeable on `main@8adaa7cda180b829c93f24c8d7cd805981c58a79`. CI run `30729721318`, CodeQL run `30729721306` and status, rendering E2E, Edge tests, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
+- **[high] Merge pause override logged.** Standing PR-only squash-merge authority applies after this governance receipt clears exact adversarial review and exact-head CI. Confidence high.
