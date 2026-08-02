@@ -162,7 +162,7 @@
   Resolve every Critical, High, Medium/Important, pointer-causality,
   accessibility, responsive-layout, governance, and merge-blocking finding.
 
-- [ ] **Step 3: Route commit and PR through `$ca-commit` and `$ca-pr`**
+- [x] **Step 3: Route commit and PR through `$ca-commit` and `$ca-pr`**
 
   Mark `input.feature.0001` done only after implementation and local review pass.
   Commit, push, and open one ready PR against `main`.
