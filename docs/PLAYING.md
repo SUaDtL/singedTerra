@@ -18,6 +18,11 @@ Hot seat runs entirely in one browser and needs no backend.
    rounds, interest, sudden death, arms level, or the terrain seed.
 6. Start the game.
 
+Fresh hot-seat seats begin with different example buildsâ€”Foundry, Ranger,
+Bulwark, then Jackalâ€”so opponents have distinct silhouettes immediately.
+These are starting choices only: every preset and individual component remains
+free to change before launch.
+
 Side walls default to **Open**. **Reflective** rails bounce a shot back into
 the arena; **Wrap** portals carry it across to the opposite edge without
 changing its speed or direction.

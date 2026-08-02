@@ -156,6 +156,12 @@ function presetLoadout(kit: TankKitId): TankLoadout {
   };
 }
 
+/** Stable authored example build for a newly constructed hot-seat row. */
+function seatPresetLoadout(index: number): TankLoadout {
+  const kit = TANK_KIT_IDS[index % TANK_KIT_IDS.length] ?? TANK_KIT_IDS[0];
+  return presetLoadout(kit);
+}
+
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const STYLE_ID = 'lobby-style';
@@ -2767,7 +2773,7 @@ export class Lobby {
         this.players.push({
           name: this.players[i]?.name ?? `Player ${i + 1}`,
           color: this.firstFreeColor(),
-          loadout: { ...DEFAULT_TANK_LOADOUT },
+          loadout: seatPresetLoadout(i),
         });
       }
     } else {
@@ -2813,6 +2819,6 @@ function defaultRow(i: number): PlayerRowState {
   return {
     name: `Player ${i + 1}`,
     color: (PALETTE[i % PALETTE.length] ?? PALETTE[0]).value,
-    loadout: { ...DEFAULT_TANK_LOADOUT },
+    loadout: seatPresetLoadout(i),
   };
 }

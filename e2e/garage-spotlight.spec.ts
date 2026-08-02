@@ -232,6 +232,42 @@ async function expectSettledSpotlightHash(
 }
 
 test.describe('Garage spotlight', () => {
+  test('carries untouched Foundry and Ranger defaults into consecutive live turns', async ({
+    page,
+  }) => {
+    await openLobby(page);
+
+    await expect(page.locator(
+      '.lobby-preview__tank[data-owner="player-1"] canvas',
+    )).toHaveAttribute(
+      'data-tank-preview-signature',
+      'thumbnail|#e84d4d|foundry|foundry|foundry|foundry',
+    );
+    await expect(page.locator(
+      '.lobby-preview__tank[data-owner="player-2"] canvas',
+    )).toHaveAttribute(
+      'data-tank-preview-signature',
+      'thumbnail|#4d8ce8|ranger|ranger|ranger|ranger',
+    );
+
+    await page.getByRole('button', { name: 'Start Game' }).click();
+    const portrait = page.locator('.st-hud__tank-portrait');
+    await expect(portrait).toHaveAttribute(
+      'aria-label',
+      "Player 1's tank. Mobility: Tracks. Hull: Armor Hull. "
+      + 'Turret: Cupola. Barrel: Cannon.',
+    );
+
+    for (let index = 0; index < 15; index++) await page.keyboard.press('KeyQ');
+    await expect(page.locator('.st-hud__weapon-value')).toHaveText('Shield');
+    await page.keyboard.press('Space');
+    await expect(portrait).toHaveAttribute(
+      'aria-label',
+      "Player 2's tank. Mobility: Spider Legs. Hull: Scout Hull. "
+      + 'Turret: Sensor Pod. Barrel: Railgun.',
+    );
+  });
+
   test('keeps customization legible, interactive, focused, and fitted', async ({
     page,
   }) => {
@@ -250,6 +286,21 @@ test.describe('Garage spotlight', () => {
     await expect(page.locator(
       '.lobby-preview__convoy .lobby-preview__tank',
     )).toHaveCount(2);
+    const untouchedSignatures = await page.locator(
+      '.lobby-preview__convoy .lobby-preview__tank canvas',
+    ).evaluateAll((canvases) => canvases.map((canvas) => (
+      (canvas as HTMLCanvasElement).dataset.tankPreviewSignature ?? ''
+    )));
+    expect(untouchedSignatures).toEqual([
+      'thumbnail|#e84d4d|foundry|foundry|foundry|foundry',
+      'thumbnail|#4d8ce8|ranger|ranger|ranger|ranger',
+    ]);
+    await expect(page.locator(
+      '.lobby-garage[data-owner="player-1"] [data-preset="foundry"]',
+    )).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator(
+      '.lobby-garage[data-owner="player-2"] [data-preset="ranger"]',
+    )).toHaveAttribute('aria-pressed', 'true');
     await expectGarageLayout(page);
 
     const canvasSizes = await page.evaluate(() => {
@@ -332,5 +383,10 @@ test.describe('Garage spotlight', () => {
     await expect(start).toBeEnabled();
     await start.click();
     await expect(page.locator('#game')).toBeVisible();
+    await expect(page.locator('.st-hud__tank-portrait')).toHaveAttribute(
+      'aria-label',
+      "Player 1's tank. Mobility: Tracks. Hull: Armor Hull. "
+      + 'Turret: Cupola. Barrel: Cannon.',
+    );
   });
 });

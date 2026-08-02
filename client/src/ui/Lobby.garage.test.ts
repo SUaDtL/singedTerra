@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TankLoadout } from '@shared/types/TankLoadout';
 import type { NetworkPlayer } from '../client/LobbyTransport';
 import { Lobby, type LobbyConfig } from './Lobby';
 
 interface LobbyInternals {
   activeTab: 'hotseat' | 'online';
   onlineSubView: 'create' | 'join' | 'browse' | 'waiting';
+  players: Array<{ loadout: TankLoadout }>;
   waitingPlayerId: string;
   waitingPlayers: NetworkPlayer[];
   render(): void;
@@ -30,6 +32,18 @@ function spotlightParts(root: HTMLElement): Record<string, string> {
       part.querySelector('strong')!.textContent!,
     ]),
   );
+}
+
+function playerPreviewSignature(root: HTMLElement, player: number): string {
+  return root.querySelector<HTMLCanvasElement>(
+    `.lobby-preview__tank[data-owner="player-${player}"] canvas`,
+  )!.dataset.tankPreviewSignature!;
+}
+
+function playerCountSelect(root: HTMLElement): HTMLSelectElement {
+  const field = Array.from(root.querySelectorAll<HTMLElement>('.lobby-field'))
+    .find((candidate) => candidate.querySelector('label')?.textContent === 'Players');
+  return field!.querySelector('select')!;
 }
 
 describe('Lobby tank Garage', () => {
@@ -70,6 +84,70 @@ describe('Lobby tank Garage', () => {
       barrel: 'Cannon',
     });
     expect(root.querySelectorAll('.lobby-preview__convoy .lobby-preview__tank')).toHaveLength(2);
+  });
+
+  it('starts fresh hot-seat opponents with distinct authored presets', () => {
+    const lobby = new Lobby(root, onReady);
+    lobby.show();
+
+    expect(playerPreviewSignature(root, 1)).toContain(
+      '|foundry|foundry|foundry|foundry',
+    );
+    expect(playerPreviewSignature(root, 2)).toContain(
+      '|ranger|ranger|ranger|ranger',
+    );
+    expect(root.querySelector(
+      '.lobby-garage[data-owner="player-1"] [data-preset="foundry"]',
+    )!.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector(
+      '.lobby-garage[data-owner="player-2"] [data-preset="ranger"]',
+    )!.getAttribute('aria-pressed')).toBe('true');
+
+    root.querySelector<HTMLButtonElement>('.lobby-start')!.click();
+    const config = required(required(onReady.mock.calls[0], 'onReady call')[0], 'emitted config');
+    expect(required(config.players[0], 'first emitted player').loadout).toEqual({
+      treads: 'foundry',
+      hull: 'foundry',
+      turret: 'foundry',
+      barrel: 'foundry',
+    });
+    expect(required(config.players[1], 'second emitted player').loadout).toEqual({
+      treads: 'ranger',
+      hull: 'ranger',
+      turret: 'ranger',
+      barrel: 'ranger',
+    });
+  });
+
+  it('gives grown seats stable presets without resetting existing Garage edits', () => {
+    const lobby = new Lobby(root, onReady);
+    lobby.show();
+
+    root.querySelector<HTMLButtonElement>(
+      '.lobby-garage[data-owner="player-1"] [data-preset="jackal"]',
+    )!.click();
+    const count = playerCountSelect(root);
+    count.value = '4';
+    count.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(playerPreviewSignature(root, 1)).toContain(
+      '|jackal|jackal|jackal|jackal',
+    );
+    expect(playerPreviewSignature(root, 2)).toContain(
+      '|ranger|ranger|ranger|ranger',
+    );
+    expect(playerPreviewSignature(root, 3)).toContain(
+      '|bulwark|bulwark|bulwark|bulwark',
+    );
+    expect(playerPreviewSignature(root, 4)).toContain(
+      '|jackal|jackal|jackal|jackal',
+    );
+
+    const rows = internals(lobby).players;
+    expect(rows[0]!.loadout).not.toBe(rows[1]!.loadout);
+    rows[0]!.loadout.turret = 'bulwark';
+    expect(rows[1]!.loadout.turret).toBe('ranger');
+    expect(rows[3]!.loadout.turret).toBe('jackal');
   });
 
   it('moves the spotlight to Player 2 and reflects preset and independent-slot changes', () => {
