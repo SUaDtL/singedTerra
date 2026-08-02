@@ -55,6 +55,7 @@ import {
   type WallContactVisual,
 } from './sidewallVisuals';
 import { BattlefieldBackdrop } from './BattlefieldBackdrop';
+import { ExplosionArt } from './ExplosionArt';
 
 /** Shared barrel geometry keeps muzzle FX at the visual tip. */
 /**
@@ -155,6 +156,8 @@ interface Burst {
   style: ExplosionStyle;
   /** Weapon-specific, bounded presentation data derived once at event consumption. */
   visual: ExplosionVisualProfile;
+  /** Eligibility is snapshotted at admission so a live burst never swaps style. */
+  authored: boolean;
   /** Frames elapsed since spawn. */
   age: number;
 }
@@ -244,6 +247,8 @@ export class Renderer {
   private readonly hud = new HUDRenderer();
   /** One project-bound panorama; procedural sky art remains its full fallback. */
   private readonly battlefieldBackdrop = new BattlefieldBackdrop();
+  /** Fail-soft authored conventional-blast atlas; special families stay procedural. */
+  private readonly explosionArt = new ExplosionArt();
   /** Cached static far-sky art; impact parallax moves the completed layer. */
   private readonly atmosphereClouds = new AtmosphereCloudLayer();
 
@@ -630,6 +635,7 @@ export class Renderer {
     // asynchronous image load settles so a cached/static turn cannot freeze on
     // the procedural fallback forever. Failed and ready loads both release idle.
     if (this.battlefieldBackdrop?.isSettled === false) return true;
+    if (this.explosionArt?.isSettled === false) return true;
     // The terrain material follows the same first-applied-frame contract. Once
     // ready, TerrainRenderer rebuilds its version cache exactly once.
     if (this.terrain?.isMaterialSettled === false) return true;
@@ -801,6 +807,7 @@ export class Renderer {
         // Parse the burst color ONCE here (not per draw frame): a cluster/MIRV puts
         // many bursts on-screen simultaneously, each re-drawn every frame of its life.
         const rgb = parseColor(ex.color);
+        const visual = getExplosionVisualProfile(ex);
         this.bursts.push({
           cx: ex.cx,
           cy: ex.cy,
@@ -810,7 +817,12 @@ export class Renderer {
           core: lighten(rgb, 0.75), // white-hot center, derived once
           lifeFrames: ex.durationFrames,
           style: ex.style,
-          visual: getExplosionVisualProfile(ex),
+          visual,
+          authored: (
+            !this.reduceMotion
+            && visual.family === 'conventional'
+            && this.explosionArt?.state === 'ready'
+          ),
           age: 0,
         });
         // Juice: bigger blast => bigger kick (capped). Reduced-motion = none.
@@ -1212,7 +1224,20 @@ export class Renderer {
         }
         ctx.fill();
 
-        this.drawExplosionSignature(b, r, grow, fade);
+        let authoredDrawn = false;
+        if (b.authored) {
+          authoredDrawn = this.explosionArt?.draw(
+            ctx,
+            b.cx,
+            b.cy,
+            r,
+            t,
+          ) ?? false;
+          // Lock the whole burst to one visual family after a paint failure.
+          // This avoids a procedural/authored flicker if the context recovers.
+          if (!authoredDrawn) b.authored = false;
+        }
+        if (!authoredDrawn) this.drawExplosionSignature(b, r, grow, fade);
       }
       b.age++;
     }
