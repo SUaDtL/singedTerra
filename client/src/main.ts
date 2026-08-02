@@ -28,8 +28,8 @@ import {
 } from './ui/firstSalvoController';
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 
-const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE =
-  new URLSearchParams(window.location.search).get('e2e') === 'hotseat';
+const E2E_MODE = new URLSearchParams(window.location.search).get('e2e');
+const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE = E2E_MODE === 'hotseat';
 
 interface E2EForwardedActionCounts {
   setAngle: number;
@@ -178,6 +178,9 @@ function bootstrap(): void {
   let lastActiveId: string | null = null;
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
+  // One-shot, local-only fixture for the production-bundle victory-report guardrail.
+  // A Play again action consumes the fixture and restarts into an ordinary match.
+  let e2eVictoryPending = E2E_MODE === 'victory';
 
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
     const state = client?.getState();
@@ -293,6 +296,25 @@ function bootstrap(): void {
     // arrow keys step from that tank's real angle/power (set_angle/set_power
     // carry ABSOLUTE values). getState() may be null before the first snapshot.
     const initial = newClient.getState();
+    if (e2eVictoryPending && initial) {
+      e2eVictoryPending = false;
+      initial.phase = 'GAME_OVER';
+      initial.winner = initial.tanks[0]!.id;
+      initial.tanks[0]!.alive = true;
+      initial.tanks[0]!.health = 72;
+      initial.tanks[0]!.kills = 2;
+      initial.tanks[0]!.totalDamage = 134;
+      initial.tanks[0]!.loadout = {
+        treads: 'ranger',
+        hull: 'bulwark',
+        turret: 'jackal',
+        barrel: 'foundry',
+      };
+      initial.tanks[1]!.alive = false;
+      initial.tanks[1]!.health = 0;
+      initial.tanks[1]!.kills = 0;
+      initial.tanks[1]!.totalDamage = 52;
+    }
     const activeTank = initial?.tanks.find((t) => t.id === initial.activePlayerId);
     lastActiveId = initial?.activePlayerId ?? null;
 
@@ -582,7 +604,7 @@ function bootstrap(): void {
   // brittle lobby-clicking. It ships in the bundle intentionally (the post-deploy
   // smoke drives the LIVE url with it), and is benign: it only starts a LOCAL
   // hot-seat game (fixed seed, two human seats) — no backend, no secrets, no auth.
-  if (new URLSearchParams(location.search).get('e2e') === 'hotseat') {
+  if (E2E_MODE === 'hotseat' || E2E_MODE === 'victory') {
     void startGame({
       mode: 'hotseat',
       players: [

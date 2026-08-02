@@ -167,6 +167,11 @@ export class HUD {
   private overlayTextEl!: HTMLElement;
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
+  private overlayStatusEl!: HTMLElement;
+  private overlayTankEl!: HTMLCanvasElement;
+  private overlayPrimaryBtnEl!: HTMLButtonElement;
+  private overlayMenuBtnEl!: HTMLButtonElement;
+  private overlayPreviousFocus: HTMLElement | null = null;
   /** Highest round number seen, to fire the one-shot round-transition banner. */
   private lastSeenRound = 1;
   // ROUND_OVER between-rounds shop modal.
@@ -1209,18 +1214,54 @@ export class HUD {
   private buildEndScreens(): void {
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
-    this.overlayEl.className = 'st-hud__overlay st-hud__overlay--hidden';
+    this.overlayEl.className =
+      'st-hud__overlay st-hud__overlay--victory st-hud__overlay--hidden';
+    this.overlayEl.setAttribute('role', 'dialog');
+    this.overlayEl.setAttribute('aria-modal', 'true');
+    this.overlayEl.setAttribute('aria-labelledby', 'st-victory-title');
+    this.overlayEl.setAttribute('aria-hidden', 'true');
+
+    const backdrop = document.createElement('img');
+    backdrop.className = 'st-hud__victory-backdrop';
+    backdrop.src = `${import.meta.env.BASE_URL}splash-hero.png`;
+    backdrop.alt = '';
+    backdrop.draggable = false;
+    backdrop.setAttribute('aria-hidden', 'true');
+
     const panel = document.createElement('div');
-    panel.className = 'st-hud__overlay-panel';
-    this.overlayTextEl = document.createElement('div');
-    this.overlayTextEl.className = 'st-hud__overlay-text';
+    panel.className = 'st-hud__overlay-panel st-hud__overlay-panel--victory';
+
+    const hero = document.createElement('section');
+    hero.className = 'st-hud__victory-hero';
+    const eyebrow = document.createElement('div');
+    eyebrow.className = 'st-hud__victory-eyebrow';
+    eyebrow.textContent = 'After action report';
+    const tankFrame = document.createElement('div');
+    tankFrame.className = 'st-hud__victory-tank-frame';
+    this.overlayTankEl = document.createElement('canvas');
+    this.overlayTankEl.className = 'st-hud__victory-tank';
+    this.overlayTankEl.setAttribute('aria-hidden', 'true');
+    this.overlayTankEl.hidden = true;
+    tankFrame.append(this.overlayTankEl);
+    hero.append(eyebrow, tankFrame);
+
+    const report = document.createElement('section');
+    report.className = 'st-hud__victory-report';
+    this.overlayStatusEl = document.createElement('div');
+    this.overlayStatusEl.className = 'st-hud__victory-status';
+    this.overlayTextEl = document.createElement('h1');
+    this.overlayTextEl.id = 'st-victory-title';
+    this.overlayTextEl.className = 'st-hud__overlay-text st-hud__victory-title';
+    const scoreLabel = document.createElement('div');
+    scoreLabel.className = 'st-hud__victory-score-label';
+    scoreLabel.textContent = 'Final standings';
     // Final scoreboard (round wins / kills / damage), populated in syncOverlay.
     this.overlayScoreEl = document.createElement('div');
     this.overlayScoreEl.className = 'st-hud__score';
     const restartBtn = document.createElement('button');
-    restartBtn.className = 'st-hud__restart';
+    restartBtn.className = 'st-hud__restart st-hud__victory-primary';
     restartBtn.type = 'button';
-    restartBtn.textContent = 'Restart';
+    restartBtn.textContent = 'Play again';
     // Listener attached ONCE here (never in update) — fires the stored callback.
     restartBtn.addEventListener('click', () => this.restartCb?.());
     const overlayMenuBtn = document.createElement('button');
@@ -1231,8 +1272,27 @@ export class HUD {
     const overlayBtns = document.createElement('div');
     overlayBtns.className = 'st-hud__overlay-btns';
     overlayBtns.append(restartBtn, overlayMenuBtn);
-    panel.append(this.overlayTextEl, this.overlayScoreEl, overlayBtns);
-    this.overlayEl.append(panel);
+    this.overlayPrimaryBtnEl = restartBtn;
+    this.overlayMenuBtnEl = overlayMenuBtn;
+    report.append(
+      this.overlayStatusEl,
+      this.overlayTextEl,
+      scoreLabel,
+      this.overlayScoreEl,
+      overlayBtns,
+    );
+    panel.append(hero, report);
+    this.overlayEl.append(backdrop, panel);
+    this.overlayEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab' || !this.overlayShown) return;
+      event.preventDefault();
+      const actions = [this.overlayPrimaryBtnEl, this.overlayMenuBtnEl];
+      const current = actions.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.shiftKey
+        ? (current <= 0 ? actions.length - 1 : current - 1)
+        : (current < 0 || current === actions.length - 1 ? 0 : current + 1);
+      actions[next]!.focus({ preventScroll: true });
+    });
 
     // PAUSE overlay — opened by the side-panel Menu button. Non-destructive: it does
     // NOT tear the game down and does NOT stop the client loop (REQUIRED for networked
@@ -2217,27 +2277,116 @@ export class HUD {
    *  text + scoreboard) builds ONCE on entry rather than every frame. */
   private overlayShown = false;
 
+  /** Isolate every full-app surface except the active terminal report. */
+  private setVictoryIsolation(active: boolean): void {
+    const appSiblings = this.modalRoot.parentElement
+      ? [...this.modalRoot.parentElement.children]
+        .filter((element): element is HTMLElement =>
+          element instanceof HTMLElement && element !== this.modalRoot)
+      : [];
+    const modalSiblings = [...this.modalRoot.children]
+      .filter((element): element is HTMLElement =>
+        element instanceof HTMLElement && element !== this.overlayEl);
+
+    for (const surface of [...appSiblings, ...modalSiblings]) {
+      if (active) {
+        if (surface.dataset['victoryPreviousInert'] !== undefined) continue;
+        surface.dataset['victoryPreviousInert'] = surface.inert ? 'true' : 'false';
+        surface.dataset['victoryPreviousAriaHidden'] =
+          surface.getAttribute('aria-hidden') ?? '__absent__';
+        surface.inert = true;
+        surface.setAttribute('aria-hidden', 'true');
+        continue;
+      }
+
+      const previousInert = surface.dataset['victoryPreviousInert'];
+      if (previousInert === undefined) continue;
+      surface.inert = previousInert === 'true';
+      const previousAria = surface.dataset['victoryPreviousAriaHidden'];
+      if (previousAria === '__absent__' || previousAria === undefined) {
+        surface.removeAttribute('aria-hidden');
+      } else {
+        surface.setAttribute('aria-hidden', previousAria);
+      }
+      delete surface.dataset['victoryPreviousInert'];
+      delete surface.dataset['victoryPreviousAriaHidden'];
+    }
+  }
+
+  private hideVictoryReport(restoreFocus = true): void {
+    this.overlayEl.classList.add('st-hud__overlay--hidden');
+    this.overlayEl.setAttribute('aria-hidden', 'true');
+    this.setVictoryIsolation(false);
+    this.overlayTankEl.hidden = true;
+    if (this.overlayTankEl.dataset['tankPreviewSignature'] !== undefined) {
+      clearTankLoadoutPreview(this.overlayTankEl);
+    }
+    this.overlayEl.style.removeProperty('--st-victory-color');
+    this.overlayShown = false;
+
+    const previousFocus = this.overlayPreviousFocus;
+    this.overlayPreviousFocus = null;
+    if (
+      restoreFocus
+      && previousFocus?.isConnected
+      && !previousFocus.closest('[inert]')
+    ) {
+      previousFocus.focus({ preventScroll: true });
+    }
+  }
+
   /** Show/hide the GAME_OVER overlay and set its winner/draw message + scoreboard. */
   private syncOverlay(state: GameState): void {
     if (state.phase !== 'GAME_OVER') {
-      this.overlayEl.classList.add('st-hud__overlay--hidden');
-      this.overlayShown = false;
+      if (this.overlayShown) this.hideVictoryReport();
       return;
     }
     if (this.overlayShown) return; // already built for this game-over screen
 
+    // A networked game keeps consuming the lockstep log while Pause is open. A
+    // remote terminal shot can therefore end the match underneath that surface;
+    // retire Pause before showing the later, authoritative terminal state.
+    if (this.paused) this.togglePause(false);
+    const focused = document.activeElement;
+    this.overlayPreviousFocus = focused instanceof HTMLElement ? focused : null;
     if (state.winner === null) {
       // 0 alive (mutual kill) / round-win tie => DRAW per engine contract.
       this.overlayTextEl.textContent = 'Draw';
+      this.overlayStatusEl.textContent = 'No tank standing';
+      this.overlayTankEl.hidden = true;
+      if (this.overlayTankEl.dataset['tankPreviewSignature'] !== undefined) {
+        clearTankLoadoutPreview(this.overlayTankEl);
+      }
+      this.overlayEl.style.setProperty('--st-victory-color', '#ffd23f');
     } else {
       const winner = state.tanks.find((t) => t.id === state.winner);
       this.overlayTextEl.textContent = winner
-        ? `${winner.playerName} wins!`
+        ? `${winner.playerName} wins`
         : 'Game Over';
+      this.overlayStatusEl.textContent = winner ? 'Match winner' : 'Match complete';
+      if (winner) {
+        this.overlayTankEl.hidden = false;
+        this.overlayEl.style.setProperty('--st-victory-color', winner.color);
+        paintTankLoadoutPreview(
+          this.overlayTankEl,
+          winner.color,
+          winner.loadout,
+          'spotlight',
+        );
+      } else {
+        this.overlayTankEl.hidden = true;
+        if (this.overlayTankEl.dataset['tankPreviewSignature'] !== undefined) {
+          clearTankLoadoutPreview(this.overlayTankEl);
+        }
+        this.overlayEl.style.setProperty('--st-victory-color', '#ffd23f');
+      }
     }
     this.buildScoreboard(state, this.overlayScoreEl);
+    this.setVictoryIsolation(true);
     this.overlayEl.classList.remove('st-hud__overlay--hidden');
+    this.overlayEl.setAttribute('aria-hidden', 'false');
     this.overlayShown = true;
+    this.overlayPrimaryBtnEl.focus({ preventScroll: true });
   }
 
   /**
@@ -2248,8 +2397,7 @@ export class HUD {
    * would bleed over the lobby. Called from the game teardown path (#13). Idempotent.
    */
   hideEndScreens(): void {
-    this.overlayEl.classList.add('st-hud__overlay--hidden');
-    this.overlayShown = false;
+    if (this.built) this.hideVictoryReport(false);
     this.roundOverEl.classList.add('st-hud__overlay--hidden');
     this.roundOverShown = false;
     this.lastPresentedTurnKey = null;
@@ -2348,11 +2496,12 @@ export class HUD {
     const rows = ranked
       .map((t) => {
         const name = `${t.ai ? '🤖 ' : ''}${t.playerName}`;
+        const winnerClass = t.id === state.winner ? ' st-hud__score-cell--winner' : '';
         return (
-          cell(name, 'st-hud__score-name') +
-          (multi ? cell(`${t.roundWins}`, 'st-hud__score-num') : '') +
-          cell(`${t.kills}`, 'st-hud__score-num') +
-          cell(`${Math.round(t.totalDamage)}`, 'st-hud__score-num')
+          cell(name, `st-hud__score-name${winnerClass}`) +
+          (multi ? cell(`${t.roundWins}`, `st-hud__score-num${winnerClass}`) : '') +
+          cell(`${t.kills}`, `st-hud__score-num${winnerClass}`) +
+          cell(`${Math.round(t.totalDamage)}`, `st-hud__score-num${winnerClass}`)
         );
       })
       .join('');
@@ -3141,6 +3290,190 @@ export class HUD {
 }
 .st-hud__restart--ghost:hover { background: rgba(255, 210, 63, 0.16); }
 
+/* ---- Victory after-action report ------------------------------------- */
+.st-hud__overlay--victory {
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 38% 48%, color-mix(in srgb, var(--st-victory-color, #ffd23f) 15%, transparent), transparent 36%),
+    rgba(5, 3, 11, 0.84);
+}
+.st-hud__victory-backdrop {
+  position: absolute;
+  inset: -3%;
+  z-index: -2;
+  width: 106%;
+  height: 106%;
+  object-fit: cover;
+  opacity: 0.25;
+  filter: saturate(0.72) contrast(1.08) brightness(0.58) blur(1px);
+  transform: scale(1.02);
+}
+.st-hud__overlay--victory::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(6, 3, 12, 0.70), transparent 42%, rgba(6, 3, 12, 0.76)),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 4px);
+  pointer-events: none;
+}
+.st-hud__overlay-panel--victory {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.92fr) minmax(360px, 1.08fr);
+  align-items: stretch;
+  gap: 0;
+  width: min(840px, calc(100% - 44px));
+  max-height: calc(100% - 36px);
+  min-height: 376px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--st-victory-color, #ffd23f) 72%, #fff 8%);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(24, 13, 39, 0.98), rgba(8, 5, 17, 0.99));
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(255, 236, 186, 0.08) inset,
+    0 0 42px color-mix(in srgb, var(--st-victory-color, #ffd23f) 24%, transparent);
+  animation: st-hud-victory-arrive 360ms cubic-bezier(.2,.82,.2,1) both;
+}
+.st-hud__victory-hero {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px 28px 26px;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 232, 179, 0.12);
+  background:
+    radial-gradient(circle at 50% 68%, color-mix(in srgb, var(--st-victory-color, #ffd23f) 24%, transparent), transparent 45%),
+    linear-gradient(155deg, rgba(255,255,255,0.035), rgba(0,0,0,0.18));
+}
+.st-hud__victory-hero::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(255, 232, 179, 0.08);
+  border-radius: 9px;
+  pointer-events: none;
+}
+.st-hud__victory-eyebrow,
+.st-hud__victory-status,
+.st-hud__victory-score-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+.st-hud__victory-eyebrow {
+  position: relative;
+  z-index: 1;
+  color: var(--text-gold);
+  font-size: 11px;
+}
+.st-hud__victory-tank-frame {
+  position: relative;
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  animation: st-hud-victory-float 3.6s ease-in-out infinite;
+}
+.st-hud__victory-tank-frame::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 32px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--st-victory-color, #ffd23f) 36%, transparent);
+  filter: blur(14px);
+  opacity: 0.72;
+}
+.st-hud__victory-tank {
+  position: relative;
+  z-index: 1;
+  width: 280px;
+  max-width: 96%;
+  height: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 18px 16px rgba(0,0,0,0.58));
+}
+.st-hud__victory-report {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding: 34px 38px 32px;
+}
+.st-hud__victory-status {
+  color: var(--st-victory-color, var(--gold));
+  font-size: 10px;
+  font-weight: 700;
+}
+.st-hud__victory-title {
+  margin: 7px 0 28px;
+  color: var(--text);
+  font-size: clamp(30px, 3.2vw, 45px);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--st-victory-color, #ffd23f) 28%, transparent);
+}
+.st-hud__victory-score-label {
+  color: var(--ui-muted);
+  font-size: 9px;
+}
+.st-hud__overlay-panel--victory .st-hud__score {
+  width: 100%;
+  margin: 8px 0 28px;
+  gap: 0;
+  font-size: 13px;
+}
+.st-hud__overlay-panel--victory .st-hud__score > * {
+  padding: 7px 9px;
+  border-bottom: 1px solid rgba(255, 232, 179, 0.08);
+}
+.st-hud__overlay-panel--victory .st-hud__score-th {
+  padding-top: 4px;
+  color: var(--ui-muted);
+  border-bottom-color: rgba(255, 232, 179, 0.16);
+}
+.st-hud__score-cell--winner {
+  color: #fff6d6;
+  background: color-mix(in srgb, var(--st-victory-color, #ffd23f) 15%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--st-victory-color, #ffd23f) 24%, transparent) !important;
+}
+.st-hud__score-name.st-hud__score-cell--winner {
+  box-shadow: 3px 0 0 var(--st-victory-color, var(--gold)) inset;
+  font-weight: 800;
+}
+.st-hud__overlay-panel--victory .st-hud__overlay-btns { width: 100%; }
+.st-hud__overlay-panel--victory .st-hud__restart {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.st-hud__victory-primary {
+  border: 1px solid color-mix(in srgb, var(--st-victory-color, #ffd23f) 74%, #fff 12%);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--st-victory-color, #ffd23f) 78%, #fff 8%),
+    color-mix(in srgb, var(--st-victory-color, #ffd23f) 72%, #000 22%));
+}
+@keyframes st-hud-victory-arrive {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes st-hud-victory-float {
+  50% { transform: translateY(-4px); }
+}
+
 /* ---- Turn actions + Store ---- */
 .st-hud__turn-actions {
   display: flex;
@@ -3510,6 +3843,8 @@ export class HUD {
   100% { filter: brightness(1); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .st-hud__overlay-panel--victory,
+  .st-hud__victory-tank-frame { animation: none; }
   .st-hud__player--active { animation: none; }
   .st-hud__player--handoff,
   .st-hud__active-row--handoff { animation: none; }

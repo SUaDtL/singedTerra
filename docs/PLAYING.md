@@ -160,6 +160,13 @@ In multi-round matches, credits, inventory, and scoreboard totals carry
 forward. Health, shield, fuel, positions, terrain, and the per-round wind
 sequence reset. A between-round shop opens before the next battlefield begins.
 
+## After the last shot
+
+The After-Action Report stages the winner's customized tank beside the final
+standings. A mutual knockout is reported as a draw without inventing a winner.
+Play again follows the existing hot-seat restart or network rematch flow; Main
+Menu exits to the lobby.
+
 ## Practical first shots
 
 1. Check whether the target is left or right of your barrel.
