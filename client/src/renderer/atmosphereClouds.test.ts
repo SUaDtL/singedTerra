@@ -6,6 +6,11 @@ import {
   AtmosphereCloudLayer,
 } from './atmosphereClouds';
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 describe('atmospheric cloud field', () => {
   it('pins one immutable, bounded far-to-near cel-shaded composition', () => {
     expect(ATMOSPHERE_CLOUD_WIDTH).toBe(1200);
@@ -72,8 +77,9 @@ describe('atmospheric cloud field', () => {
     expect(surface.getContext).toHaveBeenCalledTimes(1);
     expect(layerContext.ellipse.mock.calls.length).toBeGreaterThanOrEqual(40);
     expect(layerContext.moveTo).toHaveBeenCalledTimes(14);
-    expect(layerContext.moveTo.mock.invocationCallOrder[0])
-      .toBeLessThan(layerContext.stroke.mock.invocationCallOrder[0]);
+    const moveOrder = required(layerContext.moveTo.mock.invocationCallOrder[0], 'cloud contour move');
+    const strokeOrder = required(layerContext.stroke.mock.invocationCallOrder[0], 'cloud contour stroke');
+    expect(moveOrder).toBeLessThan(strokeOrder);
     expect(layerContext.fill).toHaveBeenCalled();
     expect(layerContext.stroke).toHaveBeenCalled();
     expect(target.drawImage).toHaveBeenCalledTimes(2);

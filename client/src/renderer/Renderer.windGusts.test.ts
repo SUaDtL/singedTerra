@@ -11,6 +11,11 @@ interface WindGustState {
   age: number;
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`Expected ${label}`);
+  return value;
+}
+
 interface WindSeam {
   reduceMotion: boolean;
   windTurnKey: string | null;
@@ -287,10 +292,11 @@ describe('Renderer turn-start wind gusts', () => {
     const renderer = renderSeam();
     renderer.render(state());
 
-    expect(renderer.drawSky.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawWindGusts.mock.invocationCallOrder[0]);
-    expect(renderer.drawWindGusts.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.terrain.draw.mock.invocationCallOrder[0]);
+    const skyOrder = required(renderer.drawSky.mock.invocationCallOrder[0], 'sky draw');
+    const gustOrder = required(renderer.drawWindGusts.mock.invocationCallOrder[0], 'gust draw');
+    const terrainOrder = required(renderer.terrain.draw.mock.invocationCallOrder[0], 'terrain draw');
+    expect(skyOrder).toBeLessThan(gustOrder);
+    expect(gustOrder).toBeLessThan(terrainOrder);
   });
 
   it('routes local aim guidance after tanks and payloads inside the world pass', () => {
@@ -299,12 +305,13 @@ describe('Renderer turn-start wind gusts', () => {
 
     renderer.render(state());
 
-    expect(renderer.tanks.drawAll.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawAimGuide.mock.invocationCallOrder[0]);
-    expect(renderer.projectile.draw.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawAimGuide.mock.invocationCallOrder[0]);
-    expect(renderer.drawLastImpact.mock.invocationCallOrder[0])
-      .toBeLessThan(renderer.drawAimGuide.mock.invocationCallOrder[0]);
+    const tankOrder = required(renderer.tanks.drawAll.mock.invocationCallOrder[0], 'tank draw');
+    const projectileOrder = required(renderer.projectile.draw.mock.invocationCallOrder[0], 'projectile draw');
+    const impactOrder = required(renderer.drawLastImpact.mock.invocationCallOrder[0], 'impact draw');
+    const guideOrder = required(renderer.drawAimGuide.mock.invocationCallOrder[0], 'aim guide draw');
+    expect(tankOrder).toBeLessThan(guideOrder);
+    expect(projectileOrder).toBeLessThan(guideOrder);
+    expect(impactOrder).toBeLessThan(guideOrder);
   });
 
   it('consumes profile count, length, and speed when drawing light and strong wind', () => {
@@ -318,13 +325,17 @@ describe('Renderer turn-start wind gusts', () => {
 
     expect(lightFirst.strokes).toHaveLength(5);
     expect(strongFirst.strokes).toHaveLength(11);
-    expect(lightFirst.strokes[0].curve[2] - lightFirst.strokes[0].move[0])
+    const lightFirstStroke = required(lightFirst.strokes[0], 'first light-wind stroke');
+    const lightLaterStroke = required(lightLater.strokes[0], 'later light-wind stroke');
+    const strongFirstStroke = required(strongFirst.strokes[0], 'first strong-wind stroke');
+    const strongLaterStroke = required(strongLater.strokes[0], 'later strong-wind stroke');
+    expect(lightFirstStroke.curve[2] - lightFirstStroke.move[0])
       .toBeCloseTo(lightProfile.length);
-    expect(strongFirst.strokes[0].curve[2] - strongFirst.strokes[0].move[0])
+    expect(strongFirstStroke.curve[2] - strongFirstStroke.move[0])
       .toBeCloseTo(strongProfile.length);
-    expect(lightLater.strokes[0].curve[2] - lightFirst.strokes[0].curve[2])
+    expect(lightLaterStroke.curve[2] - lightFirstStroke.curve[2])
       .toBeCloseTo(lightProfile.speed * 10);
-    expect(strongLater.strokes[0].curve[2] - strongFirst.strokes[0].curve[2])
+    expect(strongLaterStroke.curve[2] - strongFirstStroke.curve[2])
       .toBeCloseTo(strongProfile.speed * 10);
   });
 
@@ -364,18 +375,21 @@ describe('Renderer turn-start wind gusts', () => {
     const rightProfile = getWindGustVisualProfile(10)!;
     const rightFirst = drawWind(renderer, rightProfile, 0);
     const rightLater = drawWind(renderer, rightProfile, 10);
-    expect(rightLater.strokes[0].curve[2])
-      .toBeGreaterThan(rightFirst.strokes[0].curve[2]);
+    const rightFirstStroke = required(rightFirst.strokes[0], 'first rightward stroke');
+    const rightLaterStroke = required(rightLater.strokes[0], 'later rightward stroke');
+    expect(rightLaterStroke.curve[2]).toBeGreaterThan(rightFirstStroke.curve[2]);
 
     const leftProfile = getWindGustVisualProfile(-10)!;
     const leftFirst = drawWind(renderer, leftProfile, 0);
     const leftLater = drawWind(renderer, leftProfile, 10);
-    expect(leftLater.strokes[0].curve[2]).toBeLessThan(leftFirst.strokes[0].curve[2]);
+    const leftFirstStroke = required(leftFirst.strokes[0], 'first leftward stroke');
+    const leftLaterStroke = required(leftLater.strokes[0], 'later leftward stroke');
+    expect(leftLaterStroke.curve[2]).toBeLessThan(leftFirstStroke.curve[2]);
 
     const beforeWrap = drawWind(renderer, leftProfile, 22);
     const afterWrap = drawWind(renderer, leftProfile, 23);
-    expect(beforeWrap.strokes[0].curve[2]).toBe(-78);
-    expect(afterWrap.strokes[0].curve[2]).toBe(1278);
+    expect(required(beforeWrap.strokes[0], 'pre-wrap stroke').curve[2]).toBe(-78);
+    expect(required(afterWrap.strokes[0], 'post-wrap stroke').curve[2]).toBe(1278);
   });
 
   it('pins the fade-in, peak, and recovery alpha envelope', () => {
@@ -386,7 +400,7 @@ describe('Renderer turn-start wind gusts', () => {
       const trace = canvasContext();
       renderer.ctx = trace.ctx;
       renderer.drawWindGusts();
-      return trace.strokes[0].alpha;
+      return required(trace.strokes[0], `wind stroke at age ${age}`).alpha;
     };
 
     expect(alphaAt(0)).toBeCloseTo(0.28 * 0.125 * 0.65);

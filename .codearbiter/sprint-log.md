@@ -3107,3 +3107,20 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #259 targets `main` from `codex/client-test-indexing-explosions`; head `f744d3a71da06198d96c74fa29c7e4db169114b2` is mergeable and based directly on `main@083bbf43fd19b71fa966554b78733b7db5e7a7d9`. CI run `30725729119` passed typecheck/harness/build, 823 client tests, dependency audit, Edge tests, and the full rendering E2E suite; CodeQL run `30725729133` and its CodeQL status passed; CodeRabbit passed with automatic review disabled; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing passion-project authority permits a PR-only squash merge after this governance receipt receives exact adversarial review and every hosted check is green on the resulting final head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-01T20:55:07.2741645-04:00 — Atmosphere visual strict test fixtures sprint
+
+### SMARTS selection and standing approval
+
+- **[high] Migrate one coherent 21-finding atmosphere cell.** The remaining 149 findings span 30 suites; wind gusts own 20 and atmosphere clouds owns 1 while jointly protecting ambient sky motion. Their focused baseline is 2 files and 19 passing tests. Confidence high.
+- **[high] Extend the existing enforced include list.** This keeps all completed visual suites strict while reducing the remaining inventory without touching production. Confidence high.
+- **[high] Keep absent visual evidence test-fatal.** Required strokes, coordinates, alpha samples, gradients, and channels receive causal guards rather than optional access or fallback values. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project authority is recorded in one sprint-specific append-only override covering this bounded spec and plan only. Security, auth, secrets, irreversible operations, adversarial review, exact-head hosted CI, PR-only merge, and deployment proof remain active. Confidence high.
+
+### Implementation and adversarial review receipt
+
+- **[high] TDD and strictness evidence.** Adding both suites produced exactly 21 compiler findings (20 wind-gust, 1 cloud) while every previously migrated suite remained clean. Assertion-fatal guards reduced both targets to zero without optional access, fallbacks, test renames, expected-value changes, or production edits. The focused suites pass 19/19. Confidence high.
+- **[high] Inventory reduction proven.** A fresh full strict probe reports 128 findings across 28 remaining files, exactly down from 149 across 30, with zero findings in any migrated suite. Confidence high.
+- **[high] Repository gates passed.** `npm run check` passed all 60 deterministic harnesses; `npm run test:client` passed 119 files and 823 tests; `npm run build`, `npm run audit:deps`, the strict migrated project, and `git diff --check` all passed. Confidence high.
+- **[high] Single-adversary gate cleared.** The designated adversarial subagent reviewed the exact package and returned CLEAN / READY with zero Critical, High, Medium, Low, or merge-blocking findings. It confirmed assertion-fatal semantics, unchanged visual contracts, exact inventory accounting, scope containment, and append-only governance integrity. Confidence high.
+- **[high] Follow-up harvest empty.** The exact diff and adversarial report contain no `[NEEDS-TRIAGE]` residue or low-confidence sprint decision, so no board mutation is warranted. Confidence high.
