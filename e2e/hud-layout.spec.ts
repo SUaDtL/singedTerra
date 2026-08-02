@@ -233,6 +233,15 @@ test.describe('HUD layout guardrails', () => {
         expect(box.height).toBeGreaterThanOrEqual(44);
       }
       const dockType = await dock.evaluate((node) => ({
+        title: node.querySelector<HTMLElement>('.st-hud__touch-title')!
+          .getBoundingClientRect().toJSON(),
+        mode: node.querySelector<HTMLElement>('.st-hud__touch-mode')!
+          .getBoundingClientRect().toJSON(),
+        groupTitles: [...node.querySelectorAll<HTMLElement>('.st-hud__touch-group-title')]
+          .map((title) => ({
+            text: title.textContent,
+            box: title.getBoundingClientRect().toJSON(),
+          })),
         labels: [...node.querySelectorAll<HTMLElement>('.st-hud__touch-label')]
           .map((label) => label.getBoundingClientRect().height),
         symbols: [...node.querySelectorAll<HTMLElement>('.st-hud__touch-symbol')]
@@ -240,11 +249,29 @@ test.describe('HUD layout guardrails', () => {
             const box = symbol.getBoundingClientRect();
             return { width: box.width, height: box.height };
           }),
+        icons: [...node.querySelectorAll<SVGElement>('.st-hud__touch-symbol svg')]
+          .map((icon) => icon.getBoundingClientRect().toJSON()),
       }));
+      expect(dockType.title.height).toBeGreaterThanOrEqual(8);
+      expect(dockType.mode.height).toBeGreaterThanOrEqual(8);
+      expect(dockType.groupTitles.map((title) => title.text)).toEqual([
+        'Aim',
+        'Power',
+        'Drive',
+        'Utilities',
+      ]);
+      for (const title of dockType.groupTitles) {
+        expect(title.box.width).toBeGreaterThan(0);
+        expect(title.box.height).toBeGreaterThanOrEqual(8);
+      }
       for (const height of dockType.labels) expect(height).toBeGreaterThanOrEqual(8);
       for (const symbol of dockType.symbols) {
         expect(symbol.width).toBeGreaterThanOrEqual(18);
         expect(symbol.height).toBeGreaterThanOrEqual(18);
+      }
+      for (const icon of dockType.icons) {
+        expect(icon.width).toBeGreaterThanOrEqual(12);
+        expect(icon.height).toBeGreaterThanOrEqual(12);
       }
       await expect(page.locator('#hud .st-hud__menu')).toBeHidden();
       await dock.getByRole('button', { name: 'Open menu' }).click();
@@ -377,52 +404,94 @@ test.describe('HUD layout guardrails', () => {
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
+    const firstSalvo = page.locator('[data-ui="first-salvo-coach"]');
+    const firstSalvoChildCount = await firstSalvo.evaluate((node) => node.childElementCount);
     const geometry = await page.evaluate(() => {
       const dock = document.querySelector<HTMLElement>('.st-hud__touch-strip')!;
       const overlay = document.getElementById('game-overlay')!;
       const hud = document.getElementById('hud')!;
-      const stateNodes = [
-        document.querySelector<HTMLElement>('.st-hud__conn')!,
-        document.querySelector<HTMLElement>('.st-hud__toast')!,
-        document.querySelector<HTMLElement>('.st-hud__turnwatch')!,
-        document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!,
+      const stateEntries = [
+        { node: document.querySelector<HTMLElement>('.st-hud__conn')!, hidden: 'st-hud__conn--hidden' },
+        { node: document.querySelector<HTMLElement>('.st-hud__toast')!, hidden: 'st-hud__toast--hidden' },
+        { node: document.querySelector<HTMLElement>('.st-hud__turnwatch')!, hidden: 'st-hud__turnwatch--hidden' },
+        { node: document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!, hidden: 'st-hud__first-salvo--hidden' },
       ];
-      const snapshots = stateNodes.map((node) => ({
+      const snapshots = stateEntries.map(({ node }) => ({
         node,
         className: node.className,
-        textContent: node.textContent,
       }));
+      const fixtureNodes = stateEntries.slice(0, 3).map(({ node }, index) => {
+        const fixture = document.createElement('span');
+        fixture.dataset['layoutStateFixture'] = String(index);
+        fixture.textContent = ['Connection lost — reconnecting…', 'Shot failed — try again', 'Waiting for P2…'][index]!;
+        node.append(fixture);
+        return fixture;
+      });
       const intersects = (a: DOMRect, b: DOMRect): boolean =>
         a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      const renderedMetric = (node: HTMLElement): {
+        rendered: boolean;
+        box: DOMRect;
+      } => {
+        const style = getComputedStyle(node);
+        const box = node.getBoundingClientRect();
+        return {
+          rendered:
+            style.display !== 'none'
+            && style.visibility !== 'hidden'
+            && Number(style.opacity) > 0
+            && box.width > 0
+            && box.height > 0,
+          box,
+        };
+      };
 
       try {
-        const dockBox = dock.getBoundingClientRect();
-        const overlayBox = overlay.getBoundingClientRect();
+        for (const { node, hidden } of stateEntries) node.classList.remove(hidden);
+        const dockMetric = renderedMetric(dock);
+        const overlayMetric = renderedMetric(overlay);
         const buttons = [...dock.querySelectorAll<HTMLElement>('.st-hud__touch-btn')]
-          .map((button) => button.getBoundingClientRect().toJSON());
+          .map((button) => {
+            const metric = renderedMetric(button);
+            return { rendered: metric.rendered, box: metric.box.toJSON() };
+          });
         const groups = [...dock.querySelectorAll<HTMLElement>('.st-hud__touch-group')]
-          .map((group) => ({
-            group: group.getBoundingClientRect().toJSON(),
-            title: group.querySelector<HTMLElement>('.st-hud__touch-group-title')!
-              .getBoundingClientRect().toJSON(),
-            buttons: [...group.querySelectorAll<HTMLElement>('.st-hud__touch-btn')]
-              .map((button) => button.getBoundingClientRect().toJSON()),
-          }));
-        const stateOverlaps = stateNodes.map((node, index) => {
-          for (const candidate of stateNodes) candidate.className = snapshots[stateNodes.indexOf(candidate)]!.className;
-          if (index === 0) node.classList.remove('st-hud__conn--hidden');
-          if (index === 1) node.classList.remove('st-hud__toast--hidden');
-          if (index === 2) node.classList.remove('st-hud__turnwatch--hidden');
-          if (index === 3) node.classList.remove('st-hud__first-salvo--hidden');
-          node.textContent ||= 'Layout state fixture';
-          return intersects(dock.getBoundingClientRect(), node.getBoundingClientRect());
+          .map((group) => {
+            const groupMetric = renderedMetric(group);
+            const titleMetric = renderedMetric(
+              group.querySelector<HTMLElement>('.st-hud__touch-group-title')!,
+            );
+            return {
+              rendered: groupMetric.rendered,
+              group: groupMetric.box.toJSON(),
+              titleRendered: titleMetric.rendered,
+              title: titleMetric.box.toJSON(),
+              buttons: [...group.querySelectorAll<HTMLElement>('.st-hud__touch-btn')]
+                .map((button) => renderedMetric(button).box.toJSON()),
+            };
+          });
+        const states = stateEntries.map(({ node }) => {
+          const metric = renderedMetric(node);
+          return { rendered: metric.rendered, box: metric.box.toJSON() };
         });
+        const stateOverlaps = states.map((state) => intersects(dockMetric.box, state.box as DOMRect));
+        const noticeOverlaps = states.slice(0, 3).flatMap((state, index) =>
+          states.slice(index + 1, 3).map((candidate) =>
+            intersects(state.box as DOMRect, candidate.box as DOMRect),
+          ),
+        );
         return {
-          dock: dockBox.toJSON(),
-          overlay: overlayBox.toJSON(),
+          viewportWidth: innerWidth,
+          viewportHeight: innerHeight,
+          dockRendered: dockMetric.rendered,
+          overlayRendered: overlayMetric.rendered,
+          dock: dockMetric.box.toJSON(),
+          overlay: overlayMetric.box.toJSON(),
           buttons,
           groups,
+          states,
           stateOverlaps,
+          noticeOverlaps,
           documentOverflowX: document.documentElement.scrollWidth - innerWidth,
           documentOverflowY: document.documentElement.scrollHeight - innerHeight,
           hudOverflowX: hud.scrollWidth - hud.clientWidth,
@@ -431,30 +500,47 @@ test.describe('HUD layout guardrails', () => {
       } finally {
         for (const snapshot of snapshots) {
           snapshot.node.className = snapshot.className;
-          snapshot.node.textContent = snapshot.textContent;
         }
+        for (const fixture of fixtureNodes) fixture.remove();
       }
     });
 
+    expect(geometry.viewportWidth).toBe(802);
+    expect(geometry.viewportHeight).toBe(293);
+    expect(geometry.dockRendered).toBe(true);
+    expect(geometry.overlayRendered).toBe(true);
     expect(geometry.dock.left).toBeGreaterThanOrEqual(geometry.overlay.left - 1);
     expect(geometry.dock.right).toBeLessThanOrEqual(geometry.overlay.right + 1);
     expect(geometry.dock.top).toBeGreaterThanOrEqual(geometry.overlay.top - 1);
     expect(geometry.dock.bottom).toBeLessThanOrEqual(geometry.overlay.bottom + 1);
     expect(geometry.dock.height).toBeLessThanOrEqual(78);
     for (const button of geometry.buttons) {
-      expect(button.width).toBeGreaterThanOrEqual(44);
-      expect(button.height).toBeGreaterThanOrEqual(44);
+      expect(button.rendered).toBe(true);
+      expect(button.box.width).toBeGreaterThanOrEqual(44);
+      expect(button.box.height).toBeGreaterThanOrEqual(44);
     }
     for (const group of geometry.groups) {
+      expect(group.rendered).toBe(true);
+      expect(group.titleRendered).toBe(true);
       expect(group.title.bottom).toBeLessThanOrEqual(group.buttons[0]!.top);
       expect(group.buttons[0]!.right).toBeLessThanOrEqual(group.buttons[1]!.left);
       expect(group.buttons[0]!.top).toBe(group.buttons[1]!.top);
     }
+    expect(geometry.states.every((state) => state.rendered)).toBe(true);
     expect(geometry.stateOverlaps).toEqual([false, false, false, false]);
+    expect(geometry.noticeOverlaps).toEqual([false, false, false]);
+    for (const notice of geometry.states.slice(0, 3)) {
+      expect(notice.box.top).toBeGreaterThanOrEqual(geometry.dock.bottom);
+    }
     expect(geometry.documentOverflowX).toBeLessThanOrEqual(0);
     expect(geometry.documentOverflowY).toBeLessThanOrEqual(0);
     expect(geometry.hudOverflowX).toBeLessThanOrEqual(0);
     expect(geometry.hudOverflowY).toBeLessThanOrEqual(0);
+    await expect(firstSalvo).toHaveJSProperty('childElementCount', firstSalvoChildCount);
+    await expect(firstSalvo.locator('.st-hud__first-salvo-progress')).toHaveCount(1);
+    await expect(firstSalvo.locator('.st-hud__first-salvo-copy')).toHaveCount(1);
+    await expect(firstSalvo.locator('.st-hud__first-salvo-status')).toHaveCount(1);
+    await expect(firstSalvo.locator('.st-hud__first-salvo-skip')).toHaveCount(1);
   });
 
   test('weapon-family glyphs remain visible inside Arsenal and Store', async ({
@@ -982,8 +1068,8 @@ test.describe('HUD layout guardrails', () => {
       return { width: parseFloat(style.width), height: parseFloat(style.height) };
     });
     const touch = testInfo.project.name === 'pixel-touch';
-    expect(authoredDialSize.width).toBeCloseTo(touch ? 46 : 34, 1);
-    expect(authoredDialSize.height).toBeCloseTo(touch ? 46 : 34, 1);
+    expect(authoredDialSize.width).toBeCloseTo(touch ? 58 : 34, 1);
+    expect(authoredDialSize.height).toBeCloseTo(touch ? 58 : 34, 1);
     expect(Math.abs(meterBox!.width - meterBox!.height)).toBeLessThanOrEqual(1);
     expect(meterBox!.width).toBeGreaterThanOrEqual(touch ? 28 : 20);
     expect(fuelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);

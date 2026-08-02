@@ -74,10 +74,7 @@ export default defineConfig({
     {
       name: 'pixel-touch',
       use: {
-        ...devices['Pixel 5'],
-        viewport: { width: 915, height: 412 },
-        hasTouch: true,
-        isMobile: true,
+        ...devices['Pixel 5 landscape'],
       },
     },
     // Small FINE-pointer desktop window — also below the compact threshold.

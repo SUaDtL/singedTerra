@@ -1401,25 +1401,25 @@ export class HUD {
     const touchAngleL = mkTouchBtn(
       'aim-left',
       'Aim barrel left',
-      makeHudIcon('left', 18),
+      makeHudIcon('left', 26),
       'Left',
     );
     const touchAngleR = mkTouchBtn(
       'aim-right',
       'Aim barrel right',
-      makeHudIcon('right', 18),
+      makeHudIcon('right', 26),
       'Right',
     );
     const touchPowerD = mkTouchBtn(
       'power-down',
       'Decrease power',
-      makeHudIcon('decrease', 18),
+      makeHudIcon('decrease', 26),
       'Less',
     );
     const touchPowerU = mkTouchBtn(
       'power-up',
       'Increase power',
-      makeHudIcon('increase', 18),
+      makeHudIcon('increase', 26),
       'More',
     );
     touchAngleL.dataset['firstSalvoTarget'] = 'aim';
@@ -1429,19 +1429,19 @@ export class HUD {
     this.touchMoveLeftBtnEl = mkTouchBtn(
       'move-left',
       'Move tank left, 8 fuel maximum',
-      makeHudIcon('left', 18),
+      makeHudIcon('left', 26),
       'Left',
     );
     this.touchMoveRightBtnEl = mkTouchBtn(
       'move-right',
       'Move tank right, 8 fuel maximum',
-      makeHudIcon('right', 18),
+      makeHudIcon('right', 26),
       'Right',
     );
     this.touchWeaponBtnEl = mkTouchBtn(
       'weapon',
       'Cycle weapon, current Baby Missile',
-      makeHudIcon('weapon', 18),
+      makeHudIcon('weapon', 26),
       'Baby Missile',
       'st-hud__touch-weapon',
     );
@@ -1451,7 +1451,7 @@ export class HUD {
     this.touchMenuBtnEl = mkTouchBtn(
       'menu',
       'Open menu',
-      makeHudGlyph('menu', 18),
+      makeHudGlyph('menu', 26),
       'Menu',
       'st-hud__touch-menu',
     );
@@ -3390,7 +3390,7 @@ export class HUD {
   grid-template-rows: auto minmax(0, 1fr);
   gap: 3px;
   width: min(896px, calc(100% - 28px));
-  max-height: 124px;
+  max-height: 159px;
   padding: 5px 6px 6px;
   box-sizing: border-box;
   border: 1px solid rgba(255, 210, 63, 0.32);
@@ -3413,7 +3413,7 @@ export class HUD {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 17px;
+  min-height: 28px;
   padding: 0 2px 2px;
   border-bottom: 1px solid rgba(255, 210, 63, 0.20);
 }
@@ -3425,7 +3425,7 @@ export class HUD {
   text-transform: uppercase;
 }
 .st-hud__touch-title {
-  font-size: 8.5px;
+  font-size: 17px;
   letter-spacing: 1.7px;
 }
 .st-hud__touch-mode {
@@ -3434,7 +3434,7 @@ export class HUD {
   border-radius: 99px;
   color: var(--tank-blue-lite, #7ad7ff);
   font-family: var(--font-mono);
-  font-size: 6px;
+  font-size: 16px;
   letter-spacing: 0.8px;
   line-height: 1;
   text-transform: uppercase;
@@ -3448,16 +3448,16 @@ export class HUD {
 .st-hud__touch-group,
 .st-hud__touch-utilities {
   display: grid;
-  grid-template-rows: 11px 72px;
+  grid-template-rows: 20px 91px;
   gap: 2px;
   min-width: 0;
 }
 .st-hud__touch-group-title {
   overflow: hidden;
   padding-left: 2px;
-  font-size: 8px;
+  font-size: 17px;
   letter-spacing: 1.05px;
-  line-height: 11px;
+  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3469,13 +3469,13 @@ export class HUD {
 }
 .st-hud__touch-btn {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr);
   place-items: center;
   gap: 4px;
   min-width: 0;
   cursor: pointer;
-  /* 52px ensures ~40px effective height even at 0.78× game scale on phones. */
-  min-height: 72px;
+  /* 91 logical px stays above 44 rendered px at the supported 0.488× phone scale. */
+  min-height: 91px;
   padding: 5px 6px;
   border: 1px solid rgba(255, 210, 63, 0.27);
   border-radius: 6px;
@@ -3496,8 +3496,8 @@ export class HUD {
 .st-hud__touch-symbol {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   border: 1px solid rgba(255, 210, 63, 0.20);
   border-radius: 5px;
   background: rgba(255, 210, 63, 0.08);
@@ -3512,7 +3512,7 @@ export class HUD {
   overflow: hidden;
   color: var(--ui-copy);
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.35px;
   line-height: 1.05;
@@ -3546,21 +3546,29 @@ export class HUD {
   color: var(--ui-muted);
 }
 .st-hud__touch-menu .st-ui-glyph {
-  width: 25px;
-  height: 25px;
+  width: 38px;
+  height: 38px;
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+.st-hud__touch-menu .st-ui-glyph > .st-ui-icon {
+  width: 26px;
+  height: 26px;
 }
 /* ===== Coarse-pointer (touch) overrides ================================ */
 /* Enlarge interactive targets to ≥44px and hide the keyboard legend. */
 @media (pointer: coarse) {
   .st-hud__controls { display: none; }
-  .st-hud__conn,
-  .st-hud__toast,
-  .st-hud__turnwatch { top: 142px; }
+  #hud .st-ui-glyph { width: 31px; height: 31px; }
+  #hud .st-ui-glyph > .st-ui-icon { width: 25px; height: 25px; }
+  .st-hud__weapon-btn .st-weapon-icon,
+  .st-hud__store-name-line .st-weapon-icon { width: 23px; height: 23px; }
+  .st-hud__conn { top: 176px; }
+  .st-hud__toast { top: 214px; }
+  .st-hud__turnwatch { top: 252px; }
   .st-hud__weapon-btn { min-height: 44px; }
-  .st-hud__strip-toggle { min-width: 72px; min-height: 72px; }
+  .st-hud__strip-toggle { min-width: 91px; min-height: 91px; }
   .st-hud__store-buy { min-height: 44px; }
   .st-hud__store-catalog .st-hud__store-buy {
     min-height: max(44px, var(--st-store-buy-target, 44px));
@@ -3568,9 +3576,9 @@ export class HUD {
   .st-hud__restart    { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
   #hud .st-hud__menu  { display: none; }
   .st-hud__store-btn  { min-height: 44px; }
-  /* #app zoom reaches 0.625 at the supported phone-landscape viewport, so
-     72 logical px preserves a >=44 CSS-pixel hit target after scaling. */
-  .st-hud__primary-action { min-height: 72px; }
+  /* The supported Pixel 5 landscape viewport zooms the fixed stage to 0.488x,
+     so 91 logical px preserves a >=44 CSS-pixel hit target after scaling. */
+  .st-hud__primary-action { min-height: 91px; }
   .st-hud__store-close { min-height: 44px; }
   .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
 }
@@ -3969,11 +3977,11 @@ export class HUD {
   min-height: 40px;
 }
 #app.is-compact .st-hud__fuel-label {
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: 0.35px;
 }
 #app.is-compact .st-hud__fuel-value {
-  font-size: 12px;
+  font-size: 15px;
 }
 #app.is-compact .st-hud__controls-title {
   font-size: 9.5px;
@@ -4020,10 +4028,10 @@ export class HUD {
     display: none;
   }
   #app .st-hud__fuel-meter {
-    width: 46px;
-    height: 46px;
-    min-width: 46px;
-    min-height: 46px;
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    min-height: 58px;
   }
   #app .st-hud__turn-actions {
     padding: 3px 6px;
@@ -4035,7 +4043,7 @@ export class HUD {
   #app.is-compact .st-hud__move-btn,
   #app.is-compact .st-hud__store-btn,
   #app.is-compact .st-hud__primary-action {
-    min-height: 78px;
+    min-height: 91px;
   }
 }
 .st-hud__active-row--handoff {
