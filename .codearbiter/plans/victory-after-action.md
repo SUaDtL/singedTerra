@@ -107,7 +107,7 @@ Playwright production Chromium.
   Critical, High, Important/Medium, accessibility, responsive, interaction,
   governance, and merge-blocking finding.
 
-- [ ] **Step 3: Commit and open one ready PR**
+- [x] **Step 3: Commit and open one ready PR**
 
   Mark `hud.feature.0003` done after local review, route through `$ca-commit` and
   `$ca-pr`, and preserve the branch/worktree.
