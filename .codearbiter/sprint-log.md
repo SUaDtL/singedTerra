@@ -3199,3 +3199,21 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** PR #263 head `2854b55729bb9644cb57dd32cf1bf909a6cad474` is mergeable on `main@8adaa7cda180b829c93f24c8d7cd805981c58a79`. CI run `30729721318`, CodeQL run `30729721306` and status, rendering E2E, Edge tests, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** Standing PR-only squash-merge authority applies after this governance receipt clears exact adversarial review and exact-head CI. Confidence high.
+
+## 2026-08-01T23:12:36.0508378-04:00 — Final client indexed-access enforcement sprint
+
+- **[high] Choose canonical global enforcement.** Options were keeping enumerated test coverage, widening only the test project, or promoting the flag globally and removing both migration configs. SMARTS verdict: strong. One canonical client project is more maintainable, reliable, and testable; it automatically covers future files and removes two redundant compiler passes. Confidence high.
+- **[high] Keep the final 40 findings together.** The 7 files share one lobby/session lifecycle seam and a 100-test baseline. Splitting 18/10/12 would preserve temporary configuration and multiply PR/CI overhead without improving isolation. SMARTS verdict: strong. Confidence high.
+- **[high] Preserve missing-evidence failures.** Local causal guards and tuple narrowing beat optional chaining, defaults, non-null assertions, or broad casts because absent channels, calls, players, tanks, and configs must fail the owning test. SMARTS verdict: strong. Confidence high.
+- **Approval gate:** the maintainer's standing passion-project override approves this bounded spec/plan without another pause; all hard review, CI, merge, and deployment gates remain active. Confidence high.
+
+- **[high] Regroup enforcement with fixture migration.** Pre-flight found the original enforcement-only Task 1 would intentionally end red, conflicting with the commit gate and independently committable subagent tasks. SMARTS verdict: strong. Folding RED capture and all 40 fixes into one RED-to-GREEN task preserves TDD evidence and prevents a red commit. Confidence high.
+
+### Implementation and adversarial review receipt
+
+- **[high] Exact final migration proven.** Adding the final seven lobby/session suites produced exactly 40 indexed-access findings across the expected files. Assertion-fatal guards reduced the inventory to zero while preserving every test name and the 100/100 focused baseline; no production source changed. Confidence high.
+- **[high] Canonical enforcement completed.** `noUncheckedIndexedAccess` now lives in `client/tsconfig.json`; the canonical `tsc --noEmit` project covers all 198 tracked client TypeScript files plus future files under `client/src`. The two migration configs and their scripts are removed. Confidence high.
+- **[high] Repository gates passed.** `npm run check` passed all 61 deterministic and contract harnesses; `npm run test:client` passed 119 files and 823 tests; Edge passed 200/200; build, dependency audit with zero vulnerabilities, secrets scan, and diff checks passed. Confidence high.
+- **[high] Task reviews cleared.** Task 1's three Important callback/config-guard findings were corrected and approved; Task 2 received an independent zero-finding approval with complete compiler-coverage evidence. Confidence high.
+- **[high] Designated adversary cleared.** The final adversary found one Medium stale-plan-ledger issue and no implementation issue. Proven plan items were checked; scoped re-review returned READY with zero Critical, High, Medium, or merge blockers and `ca-pr` coverage `NO BLOCK`. Confidence high.
+- **[high] Follow-up harvest empty.** No low-severity finding, `[NEEDS-TRIAGE]` residue, or low-confidence sprint decision remains, so no task-board mutation is warranted. Confidence high.
