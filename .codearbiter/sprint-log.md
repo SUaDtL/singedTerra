@@ -3169,3 +3169,8 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 - **[high] Repository gates passed.** All 60 deterministic harnesses, 119 client files and 823 tests, Edge tests, build, dependency audit, strict compile, and diff checks passed. Confidence high.
 - **[high] Adversarial and coverage gates cleared.** The single designated adversary returned READY with no severity findings or merge blockers and explicit coverage NO BLOCK. Confidence high.
 - **[high] Follow-up harvest empty.** No `[NEEDS-TRIAGE]` residue or low-confidence sprint decision exists. Confidence high.
+
+### Hosted behavior-head and merge authorization receipt
+
+- **[high] Behavior head cleared exact hosted CI.** PR #262 head `e7612923794bc98b4426850b796dd28f8c842eb4` is mergeable on `main@28919cbd50b5d39478b1b7e6769a7f37c653c7b0`. CI run `30728277280`, CodeQL run `30728277269` and status, rendering E2E, Edge tests, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
+- **[high] Merge pause override logged.** Standing PR-only squash-merge authority applies after this governance receipt clears exact adversarial review and exact-head CI. Confidence high.
