@@ -55,6 +55,20 @@
 - [x] Run `HUD.commandInput`, `HUD.firstSalvo`, and `HUD.mobility` plus the Pixel 5 command-deck and First Salvo E2E contracts; expect green.
 - [x] Run the complete affected `e2e/hud-layout.spec.ts` Pixel 5 project so command-deck sizing cannot hide overflow in the existing turn-console and Arsenal paths.
 
+### Task 1.5: Preserve compact Garage touch targets on the real Pixel profile
+
+**Files:**
+- Modify: `client/src/ui/Lobby.ts`
+- Modify: `e2e/tank-garage.spec.ts`
+
+**Interfaces:**
+- Consumes: the existing coarse compact Lobby controls and 24-CSS-pixel Garage target contract.
+- Produces: selector-labelled target failures and fitted 50-logical-pixel swatches and closed Garage triggers under the 0.488 Pixel stage scale.
+
+- [x] Reproduce the hosted RED at 21.484375px swatches and 23.4375px closed Garage triggers across two- and four-player compact states.
+- [x] Scope the correction to coarse compact Lobby CSS without changing the open editor, desktop, wide touch, HUD, or game input.
+- [x] Run the complete Pixel Garage project, complete Pixel HUD project, desktop Garage and spotlight coverage, Garage units, full client tests, typecheck, repository harnesses, and secrets scan; expect green.
+
 ### Task 2: Verify and ship
 
 **Files:**
@@ -63,6 +77,7 @@
 
 - [x] Run `npm run check`, `npm run test:client`, `npm run check:edge`, `npm run build`, and `npm run audit:deps`.
 - [x] Run `npx playwright test e2e/hud-layout.spec.ts --project=pixel-touch --workers=1` and require the complete affected-browser suite green.
+- [x] Run `npx playwright test e2e/tank-garage.spec.ts --project=pixel-touch --workers=1` and require all compact Garage target and stage-fit contracts green.
 - [x] Run state-free secrets and protected-log prefix proofs.
 - [x] Obtain the designated adversarial review and correct every Critical, High, Medium, and merge-blocking finding.
 - [ ] Commit through `$ca-commit`, open the PR, and require hosted CI green on the exact current head.
