@@ -26,12 +26,17 @@ interface MobilityRendererSeam {
     select: ReturnType<typeof vi.fn>;
     readonly isSettled: boolean;
   };
+  terrain: {
+    readonly isMaterialSettled: boolean;
+    markDirty: ReturnType<typeof vi.fn>;
+    reset: ReturnType<typeof vi.fn>;
+  };
   trackMobility(state: GameState): void;
   isAnimating(state: GameState): boolean;
   reset(): void;
 }
 
-interface MobilityRenderSeam extends Omit<MobilityRendererSeam, 'mobilityEffects'> {
+interface MobilityRenderSeam extends Omit<MobilityRendererSeam, 'mobilityEffects' | 'terrain'> {
   render(state: GameState): void;
   mobilityEffects: MobilityEffectsRenderer;
   effects: { update: ReturnType<typeof vi.fn>; draw: ReturnType<typeof vi.fn> };
@@ -76,7 +81,7 @@ function seam(reduceMotion = false): MobilityRendererSeam {
       isActive: false,
     },
     battlefieldBackdrop: { isSettled: true, reset: vi.fn(), select: vi.fn() },
-    terrain: { isMaterialSettled: true, markDirty: vi.fn() },
+    terrain: { isMaterialSettled: true, markDirty: vi.fn(), reset: vi.fn() },
     tanks: { isChassisArtSettled: true },
     bursts: [],
     scorches: [],
@@ -265,6 +270,7 @@ describe('Renderer mobility-signature lifecycle', () => {
     expect(renderer.prevMobilityPoses.size).toBe(0);
     expect(renderer.mobilityEffects.clear).toHaveBeenCalledOnce();
     expect(renderer.battlefieldBackdrop.reset).toHaveBeenCalledOnce();
+    expect(renderer.terrain.reset).toHaveBeenCalledOnce();
   });
 });
 
