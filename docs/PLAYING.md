@@ -82,11 +82,11 @@ does not fire, so the shot still requires `Space`, `Enter`, or the Fire control.
 
 ### Touch
 
-Landscape touch layouts place an eight-control dock over the battlefield for
-aim, power, movement, weapon selection, and Menu while keeping Fire, Store,
-fuel, and Arsenal in the tactical rail. Each control has a stable accessible
-name. Combat controls use the same gates as keyboard input; Menu remains
-available to pause.
+Landscape touch layouts place a grouped Command Deck over the battlefield: Aim, Power, and Drive groups
+handle combat controls, while Weapon and Menu are
+utilities. Fire, Store, fuel, and Arsenal remain in the tactical rail. Each
+control has a stable accessible name. Combat controls use the same gates as
+keyboard input; Menu remains available to pause.
 
 Portrait phones show a rotate-device gate. The game is designed around a wide
 battlefield and a single fitted page.

@@ -115,11 +115,11 @@ the rest of the rail.
 
 ## Command surfaces
 
-Keyboard and touch present the same vocabulary:
+Keyboard and touch present aligned vocabulary:
 
 - Aim
 - Power
-- Move
+- Move / Drive (movement)
 - Weapon
 - Fire
 

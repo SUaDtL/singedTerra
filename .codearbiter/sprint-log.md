@@ -3265,3 +3265,23 @@ Spec/plan: `.codearbiter/specs/opening-salvo-assist.md`, `.codearbiter/plans/ope
 
 - **[high] Behavior head cleared exact hosted CI.** Ready PR #269 targets `main` from `codex/mobile-command-deck`; head `7dec534799cf5f7a0551227fc19b30ac6dec1041` is mergeable and based directly on `main@90b0e3d5753fc04293d251dc8ecf3fca37f06339`. CI run `30735969065` passed typecheck, all 61 harnesses, build, Edge tests, and the complete rendering E2E suite; CodeQL run `30735969070`, its CodeQL status, and CodeRabbit passed; Supabase Preview was the expected skip. Confidence high.
 - **[high] Merge pause override logged.** The maintainer's standing PR-only squash-merge authority permits merge after this receipt receives designated adversarial review and every hosted check is green on the resulting final governance head. Direct default-branch writes and force-push remain prohibited. Confidence high.
+
+## 2026-08-02 — Mobile Command Deck Showcase
+
+- **[high] Preserve the strong README and correct the actual presentation gap.** Options weighed: full README rewrite, text-only terminology correction, or one authentic mobile capture plus focused copy alignment. SMARTS verdict: strong for capture plus focused alignment because Maintainable, Reliable, and Testable favor a bounded visual proof while no runtime lens benefits from broad churn. Confidence high.
+- **[high] Use a production Pixel 5 capture rather than generated artwork.** The shipped UI is the claim being documented, the installed high-DPI device profile makes it reproducible, and an authentic capture avoids product/document drift. No new dependency or paid service is needed. Confidence high.
+- **[high] Treat standing sprint authority as this bounded design/spec/plan approval.** The maintainer explicitly authorized one logged override per SMARTS-authored passion-project slice. This approval binds only `mobile-command-deck-showcase`; security-controls, auth, crypto, secrets, spending, irreversible operations, destructive migrations, adversarial review, exact-head CI, PR-only merge, and deployment verification remain active. Confidence high.
+
+### Local verification and task-review receipt
+
+- **[high] Focused documentation contract completed RED to GREEN.** The initial check failed because `docs/assets/mobile-command-deck.jpg` did not exist; after the production capture and copy alignment, the same contract passed and proved the required asset reference and visible vocabulary. Confidence high.
+- **[high] Authentic capture meets the bounded asset contract.** The installed Playwright Pixel 5 landscape profile drove the production Vite bundle through `?e2e=hotseat`; the resulting JPEG is 2206×806 physical pixels and 210,620 bytes. Original-detail inspection found the Command Deck, tactical rail, both tanks, trajectory guide, and text sharp and unobscured. Confidence high.
+- **[high] Task-scoped review cleared the documentation package.** The independent reviewer returned spec compliant and Task quality Approved with no Critical, Important, or Minor findings. The controller resolved the reviewer's process-only cannot-verify notes by reading the ignored driver and independently confirming zero listeners on ports 4173, 5173, 5174, and 3000. Confidence high.
+- **[high] Fresh repository gates are green.** `npm run check` passed in 75.1 seconds with all 61 deterministic harnesses, `npm run build` passed, the focused contract passed, `git diff --check` found no whitespace errors, and the state-free secret scan returned `[]`. Confidence high.
+- **[high] Follow-up harvest empty.** This sprint has no low-confidence SMARTS decision, current `[NEEDS-TRIAGE]` residue, deferred review finding, or parked item, so no task-board mutation is warranted. Confidence high.
+
+### Designated adversarial review receipt
+
+- **[high] Adversary caught three Medium documentation-contract gaps.** The checked capture recipe referenced a nonexistent Hot Seat control, the UI-system guide falsely implied identical keyboard/touch movement labels, and the focused verifier did not assert the exact accessible image text claimed by its report. Confidence high.
+- **[high] One correction wave closed every blocker.** The plan now reproduces the shipped splash interaction, the UI guide records `Move / Drive (movement)`, and both the ignored verifier and checked plan assert the complete descriptive Markdown image. The focused contract passed after correction. Confidence high.
+- **[high] Scoped re-review returned READY.** All three Medium findings are ADDRESSED with no new Critical, High, Medium, Low, coverage, governance, or merge-blocking finding. Confidence high.
