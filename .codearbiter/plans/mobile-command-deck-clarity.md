@@ -80,5 +80,5 @@
 - [x] Run `npx playwright test e2e/tank-garage.spec.ts --project=pixel-touch --workers=1` and require all compact Garage target and stage-fit contracts green.
 - [x] Run state-free secrets and protected-log prefix proofs.
 - [x] Obtain the designated adversarial review and correct every Critical, High, Medium, and merge-blocking finding.
-- [ ] Commit through `$ca-commit`, open the PR, and require hosted CI green on the exact current head.
+- [x] Commit through `$ca-commit`, open the PR, and require hosted CI green on the exact current head.
 - [ ] Under standing authority, log the PR-specific merge receipt, re-pass exact-head CI, squash merge, and verify Pages provenance plus live smoke.
