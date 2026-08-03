@@ -575,7 +575,10 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
     it('SUCCESS: adopts the returned rooms and clears the error (on the browse view)', async () => {
       const rooms = [
-        { roomId: 'r1', code: 'AAAA', hostName: 'Al', playerCount: 1, maxPlayers: 2, rounds: 1, armsLevel: 4, botCount: 0 },
+        {
+          roomId: 'r1', code: 'AAAA', hostName: 'Al', playerCount: 1, maxPlayers: 2,
+          rounds: 1, armsLevel: 4, botCount: 0, interestRate: 0, suddenDeathTurn: 0,
+        },
       ];
       stubFetch({ json: () => ({ rooms }) });
       internals(lobby).onlineSubView = 'browse';

@@ -20,3 +20,17 @@ export function roundsLabel(n: number): string {
 export function botLabel(count: number): string {
   return count <= 0 ? '' : `${count} CPU`;
 }
+
+/** Interest-rate rule label; disabled/invalid values stay out of the row. */
+export function interestLabel(rate: number): string {
+  if (!Number.isFinite(rate)) return '';
+  const normalized = Math.min(0.5, Math.max(0, rate));
+  return normalized > 0 ? `Interest +${Math.round(normalized * 100)}%` : '';
+}
+
+/** Sudden-death rule label; zero/negative means the rule is disabled. */
+export function suddenDeathLabel(turn: number): string {
+  if (!Number.isFinite(turn)) return '';
+  const normalized = Math.min(50, Math.max(0, Math.trunc(turn)));
+  return normalized > 0 ? `Sudden death T${normalized}` : '';
+}

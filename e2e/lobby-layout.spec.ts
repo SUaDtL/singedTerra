@@ -88,6 +88,8 @@ test.describe('Lobby layout guardrails', () => {
         rounds: 3,
         armsLevel: 2,
         botCount: 1,
+        interestRate: 0.2,
+        suddenDeathTurn: 15,
       }],
     });
 
@@ -98,6 +100,8 @@ test.describe('Lobby layout guardrails', () => {
     await expect(room).toContainText('Best of 3');
     await expect(room).toContainText('Arms Lv 2');
     await expect(room).toContainText('1 CPU');
+    await expect(room).toContainText('Interest +20%');
+    await expect(room).toContainText('Sudden death T15');
     await expect(room.getByRole('button', { name: 'Join (1/4)', exact: true })).toBeEnabled();
     await assertSameOriginFunctionCall(page, listRoomsCalls, 'list_rooms');
 

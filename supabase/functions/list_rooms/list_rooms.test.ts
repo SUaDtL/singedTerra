@@ -57,6 +57,31 @@ Deno.test('mapListedRoom: armsLevel 0 is preserved, not defaulted', () => {
   assertEquals(out.armsLevel, 0)
 })
 
+// AC5 — economy rules carried through.
+Deno.test('mapListedRoom: surfaces interest and sudden-death rules', () => {
+  const out = mapListedRoom(room({ interestRate: 0.2, suddenDeathTurn: 15 }), [player('Host')])
+  assertEquals(out.interestRate, 0.2)
+  assertEquals(out.suddenDeathTurn, 15)
+})
+
+// AC6 — legacy rooms do not invent enabled rules.
+Deno.test('mapListedRoom: defaults missing economy rules to disabled', () => {
+  const out = mapListedRoom(room({}), [player('Host')])
+  assertEquals(out.interestRate, 0)
+  assertEquals(out.suddenDeathTurn, 0)
+})
+
+// AC-C2 — mapper clamps finite corruption and suppresses non-finite corruption.
+Deno.test('mapListedRoom: normalizes malformed economy rules', () => {
+  const clamped = mapListedRoom(room({ interestRate: 5, suddenDeathTurn: 999.9 }), [player('Host')])
+  assertEquals(clamped.interestRate, 0.5)
+  assertEquals(clamped.suddenDeathTurn, 50)
+
+  const suppressed = mapListedRoom(room({ interestRate: NaN, suddenDeathTurn: Infinity }), [player('Host')])
+  assertEquals(suppressed.interestRate, 0)
+  assertEquals(suppressed.suddenDeathTurn, 0)
+})
+
 // Identity passthrough — roomId/code/hostName/maxPlayers.
 Deno.test('mapListedRoom: passes through identity fields', () => {
   const out = mapListedRoom(room({ maxPlayers: 3 }), [player('Alice')])

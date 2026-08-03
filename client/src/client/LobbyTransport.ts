@@ -82,6 +82,10 @@ export interface BrowseRoom {
   armsLevel: number;
   /** Count of CPU seats in the room's live roster. */
   botCount: number;
+  /** Interest-rate rules; 0 means disabled for legacy rooms. */
+  interestRate: number;
+  /** Sudden-death turn threshold; 0 means disabled for legacy rooms. */
+  suddenDeathTurn: number;
 }
 
 // ---- Response shapes (kept with the methods that parse them) ----

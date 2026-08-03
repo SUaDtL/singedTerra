@@ -161,6 +161,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] lobby.feature.0001 - Show interest-rate and sudden-death settings in public room-browser rows  (from sprint:room-browser-enrichment)  (started 2026-08-03)
+  - Desc: Existing StoredOptions already carries both values; expose them in the public browse projection so players can choose a room with full rules context.
+  - Boundaries: client lobby browse labels, list_rooms mapper, tests; no auth, secrets, database, migration, or action protocol
 - [x] art.feature.0003 - Ship World-Matched Terrain Materials  (from SMARTS World-Matched Terrain sprint)  (done 2026-08-02)
   - Desc: Give each authored battlefield world a distinct terrain palette and material while preserving deterministic presentation and fail-soft rendering.
   - Boundaries: client terrain renderer, generated raster assets, tests, player/art docs; no engine, network, backend, dependencies, auth, schema, or migrations

@@ -4,7 +4,13 @@
  * coverage gate sees this logic.)
  */
 import { describe, it, expect } from 'vitest';
-import { armsLabel, roundsLabel, botLabel } from './browseLabels';
+import {
+  armsLabel,
+  botLabel,
+  interestLabel,
+  roundsLabel,
+  suddenDeathLabel,
+} from './browseLabels';
 
 describe('browseLabels', () => {
   it('armsLabel: names the tier endpoints and numbers the middle', () => {
@@ -27,5 +33,23 @@ describe('browseLabels', () => {
     expect(botLabel(0)).toBe('');
     expect(botLabel(-1)).toBe('');
     expect(botLabel(3)).toBe('3 CPU');
+  });
+
+  it('interestLabel: omits zero and formats a configured percentage', () => {
+    expect(interestLabel(0)).toBe('');
+    expect(interestLabel(-0.1)).toBe('');
+    expect(interestLabel(0.2)).toBe('Interest +20%');
+    expect(interestLabel(5)).toBe('Interest +50%');
+    expect(interestLabel(Number.NaN)).toBe('');
+    expect(interestLabel(Number.POSITIVE_INFINITY)).toBe('');
+  });
+
+  it('suddenDeathLabel: omits zero and identifies the turn threshold', () => {
+    expect(suddenDeathLabel(0)).toBe('');
+    expect(suddenDeathLabel(-1)).toBe('');
+    expect(suddenDeathLabel(15)).toBe('Sudden death T15');
+    expect(suddenDeathLabel(999)).toBe('Sudden death T50');
+    expect(suddenDeathLabel(Number.NaN)).toBe('');
+    expect(suddenDeathLabel(Number.POSITIVE_INFINITY)).toBe('');
   });
 });
