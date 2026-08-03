@@ -31,8 +31,8 @@ export function coerceGravity(value: unknown, fallback: number): number {
   return fallback;
 }
 
-export function coerceWallMode(value: unknown): 'open' | 'reflective' | 'wrap' {
-  return value === 'reflective' || value === 'wrap' ? value : 'open';
+export function coerceWallMode(value: unknown): 'open' | 'reflective' | 'wrap' | 'concrete' {
+  return value === 'reflective' || value === 'wrap' || value === 'concrete' ? value : 'open';
 }
 
 export function coerceEconomyOptions(

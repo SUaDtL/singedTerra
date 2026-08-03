@@ -2,7 +2,7 @@ import type { AiDifficulty } from './GameState';
 import type { TankLoadout } from './TankLoadout';
 
 /** Horizontal battlefield boundary rule. */
-export type WallMode = 'open' | 'reflective' | 'wrap';
+export type WallMode = 'open' | 'reflective' | 'wrap' | 'concrete';
 
 /** Starter-weapon damage curve selected by an execution context. */
 export type StarterWeaponFalloff = 'linear' | 'decisive';
@@ -12,7 +12,7 @@ export type NetworkRulesetVersion = 1 | 2;
 
 /** Fail closed to the legacy open boundary at every untyped room seam. */
 export function normalizeWallMode(value: unknown): WallMode {
-  return value === 'reflective' || value === 'wrap' ? value : 'open';
+  return value === 'reflective' || value === 'wrap' || value === 'concrete' ? value : 'open';
 }
 
 /**

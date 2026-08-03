@@ -19,7 +19,7 @@ describe('rematchToConfig', () => {
         maxPlayers: 2,
         maxWind: 8,
         gravity: 0.2,
-        walls: 'wrap',
+        walls: 'concrete',
         rulesetVersion,
       },
       players: [
@@ -30,6 +30,7 @@ describe('rematchToConfig', () => {
 
     const config = rematchToConfig(info, 'player-abc');
     expect(config.settings?.rulesetVersion).toBe(rulesetVersion);
+    expect(config.settings?.walls).toBe('concrete');
     expect(buildClientEngineOptions({ ...config, mode: 'network' }).starterWeaponFalloff)
       .toBe(starterWeaponFalloff);
   });

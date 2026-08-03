@@ -45,15 +45,20 @@ export function drawSidewalls(
   if (walls === 'open') return;
 
   const isWrap = walls === 'wrap';
+  const isConcrete = walls === 'concrete';
 
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   ctx.strokeStyle = isWrap
     ? 'rgba(199, 112, 255, 0.92)'
-    : 'rgba(104, 226, 255, 0.92)';
+    : isConcrete
+      ? 'rgba(255, 190, 74, 0.96)'
+      : 'rgba(104, 226, 255, 0.92)';
   ctx.shadowColor = isWrap
     ? 'rgba(173, 73, 255, 0.82)'
-    : 'rgba(73, 197, 255, 0.78)';
+    : isConcrete
+      ? 'rgba(255, 166, 36, 0.84)'
+      : 'rgba(73, 197, 255, 0.78)';
   ctx.shadowBlur = 9;
   ctx.lineWidth = 2;
   ctx.setLineDash([12, 7]);
@@ -68,7 +73,9 @@ export function drawSidewalls(
   if (!reduceMotion) {
     ctx.fillStyle = isWrap
       ? 'rgba(245, 218, 255, 0.96)'
-      : 'rgba(225, 251, 255, 0.96)';
+      : isConcrete
+        ? 'rgba(255, 236, 176, 0.98)'
+        : 'rgba(225, 251, 255, 0.96)';
     for (const contact of contacts) {
       const life = 18;
       if (contact.age < 0 || contact.age >= life) continue;

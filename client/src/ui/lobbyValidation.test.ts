@@ -108,6 +108,8 @@ describe('coerceSettings', () => {
       .toEqual({ walls: 'reflective' });
     expect(coerceSettings(blankRaw({ walls: 'wrap' })))
       .toEqual({ walls: 'wrap' });
+    expect(coerceSettings(blankRaw({ walls: 'concrete' })))
+      .toEqual({ walls: 'concrete' });
     expect(coerceSettings(blankRaw({ walls: 'open' }))).toBeUndefined();
     expect(coerceSettings(blankRaw({ walls: 'lava' }))).toBeUndefined();
   });

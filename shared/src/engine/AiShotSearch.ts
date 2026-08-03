@@ -164,6 +164,9 @@ export function simulateImpact(
         reflectSideWall(projectile, hit);
         continue;
       }
+      if ((state.walls ?? 'open') === 'concrete') {
+        return { x: hit.x, y: hit.y };
+      }
       hit = wrapSideWall(projectile, hit, state.terrain, state.tanks);
       if (hit.type === 'ground' || hit.type === 'tank') {
         return { x: projectile.x, y: projectile.y };

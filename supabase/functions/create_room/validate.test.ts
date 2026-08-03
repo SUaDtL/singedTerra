@@ -8,9 +8,10 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { coerceEconomyOptions, coerceGravity, coerceMaxWind, coerceWallMode } from './validate.ts'
 
-Deno.test('coerceWallMode: accepts all three modes and fails closed to open', () => {
+Deno.test('coerceWallMode: accepts all four modes and fails closed to open', () => {
   assertEquals(coerceWallMode('reflective'), 'reflective')
   assertEquals(coerceWallMode('wrap'), 'wrap')
+  assertEquals(coerceWallMode('concrete'), 'concrete')
   assertEquals(coerceWallMode('open'), 'open')
   assertEquals(coerceWallMode('lava'), 'open')
   assertEquals(coerceWallMode(undefined), 'open')

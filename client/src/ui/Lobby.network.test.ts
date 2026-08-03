@@ -183,7 +183,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(root.querySelector(`#${hintId}`)?.textContent)
         .toContain('shots exit, rebound, or cross');
       expect(Array.from(select.options, (option) => option.value))
-        .toEqual(['', 'reflective', 'wrap']);
+        .toEqual(['', 'reflective', 'wrap', 'concrete']);
     });
 
     it('GUARD: empty name sets the error and never calls fetch', async () => {

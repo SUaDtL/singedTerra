@@ -910,7 +910,9 @@ export class GameEngine {
         survivors.push(p); // still in flight
         continue;
       }
+      let concreteWallContact = false;
       if (hit.type === 'wall') {
+        concreteWallContact = this.state.walls === 'concrete';
         this.state.wallImpacts.push({
           id: ++this.wallImpactSeq,
           side: hit.side,
@@ -922,14 +924,20 @@ export class GameEngine {
           survivors.push(p);
           continue;
         }
-        collisionStartX = hit.side === 'left'
-          ? CANVAS_WIDTH - WALL_INSET
-          : WALL_INSET;
-        collisionStartY = hit.y;
-        hit = wrapSideWall(p, hit, this.terrain, this.state.tanks);
-        if (hit.type === 'none') {
-          survivors.push(p);
-          continue;
+        if (concreteWallContact) {
+          p.x = hit.x;
+          p.y = hit.y;
+          hit = { type: 'ground', x: hit.x, y: hit.y };
+        } else {
+          collisionStartX = hit.side === 'left'
+            ? CANVAS_WIDTH - WALL_INSET
+            : WALL_INSET;
+          collisionStartY = hit.y;
+          hit = wrapSideWall(p, hit, this.terrain, this.state.tanks);
+          if (hit.type === 'none') {
+            survivors.push(p);
+            continue;
+          }
         }
       }
 
@@ -945,7 +953,14 @@ export class GameEngine {
           this.detonate(hit.x, hit.y, p.weaponType, 'tank'); // direct tank hit always detonates
         }
       } else if (hit.type === 'ground') {
-        if (sandhog !== undefined) {
+        if (concreteWallContact) {
+          const napalm = getWeapon(p.weaponType).behavior?.napalm;
+          if (napalm !== undefined) {
+            this.igniteNapalm(hit.x, hit.y, napalm, p.weaponType, 'ground');
+          } else {
+            this.detonate(hit.x, hit.y, p.weaponType, 'ground');
+          }
+        } else if (sandhog !== undefined) {
           // Terrain treats y >= CANVAS_HEIGHT as an implicit solid floor. A
           // swept hit there is already outside the drawable battlefield, so it
           // cannot become a valid drill-entry point. Terminate on the final

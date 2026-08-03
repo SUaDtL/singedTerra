@@ -215,6 +215,20 @@ describe('skill-preserving honest ballistic aim guide', () => {
     expect(Math.max(...points.map((point) => point.x))).toBe(endpoint.x);
   });
 
+  it('ends a concrete guide at the first wall contact', () => {
+    const concreteTank = tank({ x: 1150, angle: 0, power: 100 });
+    const points = buildLaunchGuide(gameState(concreteTank, {
+      tanks: [concreteTank],
+      walls: 'concrete',
+    }), concreteTank, 0.15);
+    const endpoint = points.at(-1)!;
+
+    expect(points.length).toBeLessThan(AIM_GUIDE_TICKS + 2);
+    expect(endpoint.x).toBeGreaterThan(CANVAS_WIDTH - 2);
+    expect(endpoint.x).toBeLessThan(CANVAS_WIDTH);
+    expect(Math.max(...points.map((point) => point.x))).toBe(endpoint.x);
+  });
+
   it('fails closed for hidden, inactive, or invalid guidance', () => {
     const me = tank();
     const turn = { phase: 'PLAYER_TURN', turn: 0 } as GameState;

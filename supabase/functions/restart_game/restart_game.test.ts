@@ -94,6 +94,19 @@ Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid valu
   )
 })
 
+Deno.test('normalizeRematchOptions preserves concrete walls', () => {
+  assertEquals(
+    normalizeRematchOptions({
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      walls: 'concrete' as never,
+      rulesetVersion: 2,
+    }, 2).walls,
+    'concrete',
+  )
+})
+
 Deno.test('successor normalization and both response projectors preserve rulesets 1 and 2', () => {
   const players: StoredPlayer[] = [
     { id: 'uid-a', name: 'Ana', color: '#f00', ready: true },

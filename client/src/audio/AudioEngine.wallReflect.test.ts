@@ -18,7 +18,7 @@ describe('wall ricochet audio profile', () => {
     }
   });
 
-  it('provides a distinct bounded transfer profile for wrap contacts', () => {
+  it('provides distinct bounded profiles for wrap and concrete contacts', () => {
     const getWallContactAudioProfile = (
       audioProfiles as unknown as {
         getWallContactAudioProfile?: (
@@ -33,11 +33,17 @@ describe('wall ricochet audio profile', () => {
 
     const reflective = getWallContactAudioProfile('reflective', 'left');
     const wrap = getWallContactAudioProfile('wrap', 'left');
+    const concrete = getWallContactAudioProfile('concrete', 'left');
     expect(reflective).not.toBeNull();
     expect(wrap).not.toBeNull();
+    expect(concrete).not.toBeNull();
     expect(wrap).not.toEqual(reflective);
+    expect(concrete).not.toEqual(wrap);
+    expect(concrete).not.toEqual(reflective);
     expect(getWallContactAudioProfile('open', 'left')).toBeNull();
     expect((wrap?.noiseGain ?? 1) + (wrap?.toneGain ?? 1)).toBeLessThanOrEqual(0.14);
     expect(wrap?.toneDuration).toBeLessThanOrEqual(0.16);
+    expect((concrete?.noiseGain ?? 1) + (concrete?.toneGain ?? 1)).toBeLessThanOrEqual(0.14);
+    expect(concrete?.toneDuration).toBeLessThanOrEqual(0.16);
   });
 });

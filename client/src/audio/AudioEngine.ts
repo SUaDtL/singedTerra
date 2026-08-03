@@ -28,13 +28,24 @@ export function getWallReflectAudioProfile(
   };
 }
 
-/** Bounded contact profile; wrap rises in pitch to read as transfer, not impact. */
+/** Bounded contact profiles keep each sidewall mode legible without competing with impact SFX. */
 export function getWallContactAudioProfile(
   walls: WallMode,
   side: 'left' | 'right',
 ): WallContactAudioProfile | null {
   if (walls === 'open') return null;
   if (walls === 'reflective') return getWallReflectAudioProfile(side);
+  if (walls === 'concrete') {
+    const startFrequency = side === 'left' ? 300 : 360;
+    return {
+      startFrequency,
+      endFrequency: startFrequency * 0.7,
+      noiseGain: 0.05,
+      toneGain: 0.045,
+      noiseDuration: 0.06,
+      toneDuration: 0.15,
+    };
+  }
   const startFrequency = side === 'left' ? 460 : 540;
   return {
     startFrequency,

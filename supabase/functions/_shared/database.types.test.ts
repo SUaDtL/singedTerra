@@ -40,7 +40,7 @@ type ExpectedStoredOptions = {
   maxWind: number;
   gravity: number;
   rulesetVersion?: 1 | 2;
-  walls?: "open" | "reflective" | "wrap";
+  walls?: "open" | "reflective" | "wrap" | "concrete";
   visibility?: "public" | "private";
   rounds?: number;
   armsLevel?: number;

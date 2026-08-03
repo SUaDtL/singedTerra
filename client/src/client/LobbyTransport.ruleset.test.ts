@@ -53,6 +53,30 @@ describe('LobbyTransport network ruleset rollout', () => {
     });
   });
 
+  it('carries concrete through the create-room request body', async () => {
+    callFunctionMock.mockResolvedValue({ ok: false, status: 400, data: { error: 'stop' } });
+
+    await new LobbyTransport().createRoom({
+      playerName: 'Alice',
+      color: '#e84d4d',
+      loadout: DEFAULT_TANK_LOADOUT,
+      bots: [],
+      maxPlayers: 2,
+      visibility: 'public',
+      maxWind: '',
+      gravity: '',
+      walls: 'concrete',
+      rounds: '',
+      interestRate: '',
+      suddenDeath: '',
+      armsLevel: '',
+    });
+
+    expect(callFunctionMock).toHaveBeenCalledWith('create_room', expect.objectContaining({
+      options: expect.objectContaining({ walls: 'concrete' }),
+    }));
+  });
+
   it('retries exactly once as v1 when the referee identifies a legacy room', async () => {
     const mismatch = {
       ok: false,
@@ -65,7 +89,7 @@ describe('LobbyTransport network ruleset rollout', () => {
       data: {
         roomId: 'room-v1',
         playerId: 'player-2',
-        token: 'seat-token',
+        token: 'x',
         options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 1 },
       },
     };

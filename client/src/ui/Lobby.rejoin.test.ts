@@ -223,7 +223,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'wrap', rounds: 3, rulesetVersion: 2 },
+      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'concrete', rounds: 3, rulesetVersion: 2 },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
@@ -264,7 +264,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
       seed: 7,
       maxWind: 12,
       gravity: 0.2,
-      walls: 'wrap',
+      walls: 'concrete',
       rounds: 3,
       rulesetVersion: 2,
     });

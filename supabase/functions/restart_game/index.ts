@@ -26,7 +26,7 @@ interface RematchInfo {
     maxWind: number
     gravity: number
     rulesetVersion: 1 | 2
-    walls: 'open' | 'reflective' | 'wrap'
+    walls: 'open' | 'reflective' | 'wrap' | 'concrete'
   }
   players: Array<{
     id: string
@@ -57,7 +57,7 @@ export function normalizeRematchOptions(
     maxWind: typeof storedOptions.maxWind === 'number' ? storedOptions.maxWind : DEFAULT_MAX_WIND,
     gravity: typeof storedOptions.gravity === 'number' ? storedOptions.gravity : DEFAULT_GRAVITY,
     rulesetVersion: storedRuleset.version,
-    walls: storedOptions.walls === 'reflective' || storedOptions.walls === 'wrap'
+    walls: storedOptions.walls === 'reflective' || storedOptions.walls === 'wrap' || storedOptions.walls === 'concrete'
       ? storedOptions.walls
       : 'open',
   }
@@ -72,7 +72,7 @@ export interface RestartGameDependencies {
 export function normalizeStoredRematchOptions(options: StoredOptions): StoredOptions {
   return {
     ...options,
-    walls: options.walls === 'reflective' || options.walls === 'wrap'
+    walls: options.walls === 'reflective' || options.walls === 'wrap' || options.walls === 'concrete'
       ? options.walls
       : 'open',
   }

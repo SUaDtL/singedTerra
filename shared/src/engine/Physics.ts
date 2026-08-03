@@ -176,6 +176,17 @@ export function sweepCollide(
         p.y = contactY;
         return hit;
       }
+      if (hit.type === 'wall' && walls === 'concrete') {
+        const boundaryX = hit.side === 'left' ? 0 : CANVAS_WIDTH;
+        const contactT = dx === 0
+          ? t
+          : clamp((boundaryX - prevX) / dx, 0, 1);
+        const contactY = prevY + dy * contactT;
+        hit.y = contactY;
+        p.x = hit.x;
+        p.y = contactY;
+        return hit;
+      }
       // Report the impact at the interpolated point where it was detected,
       // and snap the projectile back to that point so downstream consumers
       // (explosion center) use the entry location, not the overshot endpoint.
@@ -213,7 +224,7 @@ export function collide(
   // Out of bounds (horizontal). A miss — handled before terrain/tank so an
   // off-screen projectile never indexes terrain out of range.
   if (p.x < 0 || p.x >= CANVAS_WIDTH) {
-    if (walls === 'reflective' || walls === 'wrap') {
+    if (walls === 'reflective' || walls === 'wrap' || walls === 'concrete') {
       return p.x < 0
         ? { type: 'wall', side: 'left', x: WALL_INSET, y: p.y }
         : {

@@ -58,6 +58,16 @@ describe('reflective sidewall presentation', () => {
     expect(wrap.ops.filter((op) => op === 'fillRect').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('draws concrete rails in amber with one terminating impact accent', () => {
+    const concrete = context();
+    drawSidewalls(concrete.ctx, 'concrete', [{ ...event(1), age: 0 }], false);
+
+    expect(concrete.ctx.strokeStyle).toContain('255, 190, 74');
+    expect(concrete.ctx.shadowColor).toContain('255, 166, 36');
+    expect(concrete.ops.filter((op) => op === 'stroke')).toHaveLength(2);
+    expect(concrete.ops.filter((op) => op === 'fillRect')).toHaveLength(1);
+  });
+
   it('dedupes monotonic contacts and returns one coalesced audio edge', () => {
     expect(consumeWallContacts([event(1), event(2, 'right')], 1)).toEqual({
       lastSeenId: 2,

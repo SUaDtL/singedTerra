@@ -57,6 +57,69 @@ function engineWith(walls, p) {
   check((state.wallImpacts ?? []).length === 0, 'open miss emits no wall contact');
 }
 
+for (const side of ['left', 'right']) {
+  const shot = projectile({
+    x: side === 'left' ? 1 : CANVAS_WIDTH - 1,
+    vx: side === 'left' ? -4 : 4,
+    vy: 1.15,
+  });
+  const { engine, state } = engineWith('concrete', shot);
+  engine.tick();
+  const contact = state.wallImpacts?.[0];
+  check(state.projectiles.length === 0, `${side} concrete wall resolves the projectile`);
+  check(contact?.side === side, `${side} concrete wall emits its contact`, `contact=${JSON.stringify(contact)}`);
+  check(
+    state.lastExplosion?.impactType === 'ground',
+    `${side} concrete wall detonates through the ground-impact path`,
+    `impact=${state.lastExplosion?.impactType}`,
+  );
+  check(
+    state.lastExplosion?.cx === contact?.x && state.lastExplosion?.cy === contact?.y,
+    `${side} concrete explosion is centered on the exact wall contact`,
+    `explosion=${JSON.stringify(state.lastExplosion)} contact=${JSON.stringify(contact)}`,
+  );
+  check(
+    Math.abs((contact?.y ?? 0) - 80.325) < 1e-9,
+    `${side} concrete contact interpolates the exact wall-crossing height`,
+    `y=${contact?.y}`,
+  );
+  const enemy = state.tanks[1];
+  enemy.x = side === 'left' ? 20 : CANVAS_WIDTH - 20;
+  enemy.y = contact?.y ?? 80;
+  const healthBefore = enemy.health;
+  const followUp = engineWith('concrete', projectile({
+    x: side === 'left' ? 1 : CANVAS_WIDTH - 1,
+    vx: side === 'left' ? -4 : 4,
+    vy: 0,
+  }));
+  followUp.state.tanks[1].x = enemy.x;
+  followUp.state.tanks[1].y = enemy.y;
+  followUp.engine.tick();
+  check(
+    followUp.state.tanks[1].health < healthBefore,
+    `${side} concrete detonation applies nearby damage`,
+  );
+  check(
+    followUp.state.terrainVersion > 0,
+    `${side} concrete detonation deforms terrain through the normal blast path`,
+  );
+}
+
+for (const weaponType of ['bouncing_betty', 'sandhog']) {
+  const { engine, state } = engineWith('concrete', projectile({
+    x: 1,
+    vx: -4,
+    weaponType,
+    bounces: 3,
+  }));
+  engine.tick();
+  check(state.projectiles.length === 0, `concrete consumes a ${weaponType} at the wall`);
+  check(
+    state.lastExplosion?.impactType === 'ground',
+    `concrete ${weaponType} uses the normal ground blast path`,
+  );
+}
+
 {
   const shot = projectile();
   const { engine, state } = engineWith('reflective', shot);
@@ -306,7 +369,7 @@ for (const side of ['left', 'right']) {
     }
     return engine.getState();
   }
-  for (const walls of ['reflective', 'wrap']) {
+  for (const walls of ['reflective', 'wrap', 'concrete']) {
     const first = replayBank(walls);
     const replay = replayBank(walls);
     check(
@@ -338,6 +401,23 @@ for (const side of ['left', 'right']) {
       `clone keeps ${walls} projectile state independent`,
     );
   }
+}
+
+{
+  const first = new GameEngine({ seed: 0x51de, walls: 'concrete' });
+  const second = first.clone();
+  for (const engine of [first, second]) {
+    const state = engine.getState();
+    state.projectiles = [projectile()];
+    state.projectile = state.projectiles[0];
+    state.phase = 'FIRING';
+    state.wind = 0;
+    engine.tick();
+  }
+  check(
+    JSON.stringify(first.getState()) === JSON.stringify(second.getState()),
+    'concrete clone preserves exact wall-contact resolution',
+  );
 }
 
 {
@@ -424,6 +504,40 @@ for (const side of ['left', 'right']) {
       && Math.abs(predicted.x - live.cx) < 1e-9
       && Math.abs(predicted.y - live.cy) < 1e-9,
     'AI probe scores the same wrapped endpoint as live execution',
+    `predicted=${JSON.stringify(predicted)} live=${live ? `${live.cx},${live.cy}` : 'none'}`,
+  );
+}
+
+{
+  const engine = new GameEngine({ seed: 0x51de, walls: 'concrete', gravity: 0.05 });
+  const state = engine.getState();
+  state.wind = 0;
+  const me = { ...state.tanks[0], x: 90, angle: 150, power: 90 };
+  const predicted = simulateImpact(
+    { ...state, walls: 'concrete', tanks: [me] },
+    me,
+    me.angle,
+    me.power,
+    0.05,
+  );
+
+  state.tanks[0].x = me.x;
+  state.tanks[0].angle = me.angle;
+  state.tanks[0].power = me.power;
+  engine.applyAction({ type: 'fire' });
+  for (let tick = 0; tick < MAX_FLIGHT_TICKS + 20 && state.phase === 'FIRING'; tick++) {
+    engine.tick();
+  }
+  const live = state.explosions.at(-1);
+  check(predicted !== null, 'AI concrete-wall probe predicts the terminating contact');
+  check(state.wallImpacts.length > 0, 'supported concrete shot contacts a sidewall in live execution');
+  check(live !== undefined, 'supported concrete shot resolves through the live engine');
+  check(
+    predicted !== null
+      && live !== undefined
+      && Math.abs(predicted.x - live.cx) < 1e-9
+      && Math.abs(predicted.y - live.cy) < 1e-9,
+    'AI probe scores the same concrete endpoint as live execution',
     `predicted=${JSON.stringify(predicted)} live=${live ? `${live.cx},${live.cy}` : 'none'}`,
   );
 }
