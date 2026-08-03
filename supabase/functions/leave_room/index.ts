@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, safeErrorMessage, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
 
 export interface LeaveResult {
   remaining: StoredPlayer[]
@@ -41,7 +41,7 @@ export async function handleLeaveRoom(body: unknown): Promise<Response> {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('leave_room: fetch error', fetchError, { roomId, playerId })
+    console.error('leave_room: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to fetch room' }, 500)
   }
 
@@ -65,7 +65,7 @@ export async function handleLeaveRoom(body: unknown): Promise<Response> {
       .eq('id', roomId)
 
     if (deleteError) {
-      console.error('leave_room: delete error', deleteError, { roomId, playerId })
+      console.error('leave_room: delete error', { roomId, playerId, error: safeErrorMessage(deleteError) })
       return json({ error: 'Failed to delete room' }, 500)
     }
 
@@ -78,7 +78,7 @@ export async function handleLeaveRoom(body: unknown): Promise<Response> {
     .eq('id', roomId)
 
   if (updateError) {
-    console.error('leave_room: update error', updateError, { roomId, playerId })
+    console.error('leave_room: update error', { roomId, playerId, error: safeErrorMessage(updateError) })
     return json({ error: 'Failed to update room' }, 500)
   }
 

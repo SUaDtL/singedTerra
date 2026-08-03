@@ -1,6 +1,7 @@
 import {
   withCors,
   json,
+  safeErrorMessage,
   getServiceClient,
   reap,
   isValidColor,
@@ -96,7 +97,7 @@ async function handleJoinRoomWithDependencies(
     .maybeSingle()
 
   if (fetchError) {
-    console.error('join_room: fetch error', fetchError, { code: normalizedCode })
+    console.error('join_room: fetch error', { code: normalizedCode, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to look up room' }, 500)
   }
 
@@ -138,7 +139,7 @@ async function handleJoinRoomWithDependencies(
       .update({ players: fresh })
       .eq('id', room.id)
     if (reapError) {
-      console.error('join_room: reap update error', reapError, { roomId: room.id })
+      console.error('join_room: reap update error', { roomId: room.id, error: safeErrorMessage(reapError) })
       return json({ error: 'Failed to join room' }, 500)
     }
   }
@@ -172,7 +173,7 @@ async function handleJoinRoomWithDependencies(
     .eq('id', room.id)
 
   if (updateError) {
-    console.error('join_room: update error', updateError, { roomId: room.id, playerId })
+    console.error('join_room: update error', { roomId: room.id, playerId, error: safeErrorMessage(updateError) })
     return json({ error: 'Failed to join room' }, 500)
   }
 
@@ -183,7 +184,7 @@ async function handleJoinRoomWithDependencies(
     .insert({ room_id: room.id, seat_id: playerId, token })
 
   if (seatError) {
-    console.error('join_room: seat insert error', seatError, { roomId: room.id, playerId })
+    console.error('join_room: seat insert error', { roomId: room.id, playerId, error: safeErrorMessage(seatError) })
     return json({ error: 'Failed to join room' }, 500)
   }
 

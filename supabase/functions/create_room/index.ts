@@ -1,6 +1,7 @@
 import {
   withCors,
   json,
+  safeErrorMessage,
   getServiceClient,
   generateCode,
   isValidColor,
@@ -211,7 +212,7 @@ async function handleCreateRoomWithDependencies(
     .single()
 
   if (insertError || !room) {
-    console.error('create_room: insert error', insertError, { playerId, code })
+    console.error('create_room: insert error', { playerId, error: safeErrorMessage(insertError) })
     return json({ error: 'Failed to create room' }, 500)
   }
 
@@ -224,7 +225,7 @@ async function handleCreateRoomWithDependencies(
     .insert({ room_id: room.id, seat_id: playerId, token })
 
   if (seatError) {
-    console.error('create_room: seat insert error', seatError, { roomId: room.id, playerId })
+    console.error('create_room: seat insert error', { roomId: room.id, playerId, error: safeErrorMessage(seatError) })
     await supabase.from('rooms').delete().eq('id', room.id)
     return json({ error: 'Failed to create room' }, 500)
   }

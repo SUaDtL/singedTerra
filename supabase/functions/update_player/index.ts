@@ -1,6 +1,7 @@
 import {
   withCors,
   json,
+  safeErrorMessage,
   getServiceClient,
   UUID_REGEX,
   isValidColor,
@@ -108,7 +109,7 @@ export async function handleUpdatePlayer(body: unknown): Promise<Response> {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('update_player: fetch error', fetchError, { roomId, playerId })
+    console.error('update_player: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to fetch room' }, 500)
   }
 
@@ -141,7 +142,7 @@ export async function handleUpdatePlayer(body: unknown): Promise<Response> {
     .eq('id', roomId)
 
   if (updateError) {
-    console.error('update_player: update error', updateError, { roomId, playerId })
+    console.error('update_player: update error', { roomId, playerId, error: safeErrorMessage(updateError) })
     return json({ error: 'Failed to update player' }, 500)
   }
 

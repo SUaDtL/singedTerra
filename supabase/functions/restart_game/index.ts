@@ -1,6 +1,7 @@
 import {
   withCors,
   json,
+  safeErrorMessage,
   getServiceClient,
   generateCode,
   UUID_REGEX,
@@ -187,7 +188,7 @@ export async function handleRestartGame(
     .maybeSingle()
 
   if (fetchError) {
-    console.error('restart_game: fetch error', fetchError, { roomId, playerId })
+    console.error('restart_game: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to fetch room' }, 500)
   }
   if (!oldRoom) {
@@ -224,7 +225,7 @@ export async function handleRestartGame(
     .select('id')
 
   if (claimError) {
-    console.error('restart_game: claim error', claimError, { roomId, playerId })
+    console.error('restart_game: claim error', { roomId, playerId, error: safeErrorMessage(claimError) })
     return json({ error: 'Failed to claim rematch' }, 500)
   }
 
@@ -294,7 +295,7 @@ export async function handleRestartGame(
     })
 
   if (insertError) {
-    console.error('restart_game: insert error', insertError, { roomId, playerId, newRoomId })
+    console.error('restart_game: insert error', { roomId, playerId, newRoomId, error: safeErrorMessage(insertError) })
     // Roll back the claim so the pointer never dangles at a room that does not exist.
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
     return json({ error: 'Failed to create rematch room' }, 500)
@@ -309,7 +310,7 @@ export async function handleRestartGame(
     .eq('room_id', roomId)
 
   if (oldSeatsError) {
-    console.error('restart_game: old seats fetch error', oldSeatsError, { roomId, playerId, newRoomId })
+    console.error('restart_game: old seats fetch error', { roomId, playerId, newRoomId, error: safeErrorMessage(oldSeatsError) })
     await supabase.from('rooms').delete().eq('id', newRoomId)
     await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
     return json({ error: 'Failed to create rematch room' }, 500)
@@ -321,7 +322,7 @@ export async function handleRestartGame(
       .insert(oldSeats.map((s: { seat_id: string; token: string }) => ({ room_id: newRoomId, seat_id: s.seat_id, token: s.token })))
 
     if (seatCopyError) {
-      console.error('restart_game: seat copy error', seatCopyError, { roomId, playerId, newRoomId })
+      console.error('restart_game: seat copy error', { roomId, playerId, newRoomId, error: safeErrorMessage(seatCopyError) })
       await supabase.from('rooms').delete().eq('id', newRoomId)
       await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
       return json({ error: 'Failed to create rematch room' }, 500)

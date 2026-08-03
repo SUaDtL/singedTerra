@@ -66,6 +66,15 @@ export function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), { status, headers: corsHeaders() })
 }
 
+/** Return a bounded, non-object error value suitable for operational logs. */
+export function safeErrorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.length > 0) return message.slice(0, 200)
+  }
+  return 'Unknown error'
+}
+
 // ---------------------------------------------------------------------------
 // Rate limiting (per-IP fixed window) — see migration 005_rate_limits.sql
 // ---------------------------------------------------------------------------
@@ -126,7 +135,7 @@ async function enforceRateLimit(req: Request, bucket: string): Promise<boolean> 
     // silently disables ALL per-IP limiting, so log with bucket/ip context so a
     // degraded limiter is detectable in the aggregated log stream rather than
     // indistinguishable from any other DB error.
-    console.error('rate_limit: fail-open (limiter degraded)', { bucket, ip, error: error.message })
+    console.error('rate_limit: fail-open (limiter degraded)', { bucket, ip, error: safeErrorMessage(error) })
     return true // fail open
   }
   return checkRateLimit(typeof data === 'number' ? data : 0, rateLimitFor(bucket))

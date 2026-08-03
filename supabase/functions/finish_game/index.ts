@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, verifySeatToken } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, safeErrorMessage, verifySeatToken } from '../_shared/mod.ts'
 
 export interface ScoreEntry {
   tankId: string
@@ -76,7 +76,7 @@ export async function handleFinishGame(body: unknown): Promise<Response> {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('finish_game: fetch error', fetchError, { roomId, playerId })
+    console.error('finish_game: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to fetch room' }, 500)
   }
   if (!room) {
@@ -106,7 +106,7 @@ export async function handleFinishGame(body: unknown): Promise<Response> {
     .eq('status', 'active')
 
   if (error) {
-    console.error('finish_game: update error', error, { roomId, playerId })
+    console.error('finish_game: update error', { roomId, playerId, error: safeErrorMessage(error) })
     return json({ error: 'Failed to finish game' }, 500)
   }
 
@@ -126,7 +126,7 @@ export async function handleFinishGame(body: unknown): Promise<Response> {
       )
     if (scoreError) {
       // Non-fatal: the game is finished; the scoreboard is a record, not game state.
-      console.error('finish_game: score persist error', scoreError, { roomId, playerId })
+      console.error('finish_game: score persist error', { roomId, playerId, error: safeErrorMessage(scoreError) })
     }
   }
 

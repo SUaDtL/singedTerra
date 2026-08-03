@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, reap } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, reap, safeErrorMessage } from '../_shared/mod.ts'
 import type { StoredOptions, StoredPlayer } from '../_shared/mod.ts'
 import { mapListedRoom, type ListedRoomRow } from './mapRoom.ts'
 
@@ -14,7 +14,7 @@ export async function handleListRooms(): Promise<Response> {
     .eq('status', 'waiting')
 
   if (fetchError) {
-    console.error('list_rooms: fetch error', fetchError)
+    console.error('list_rooms: fetch error', { error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to list rooms' }, 500)
   }
 
@@ -54,7 +54,7 @@ export async function handleListRooms(): Promise<Response> {
       p_trims: trims,
     })
     if (reapError) {
-      console.error('list_rooms: reap rpc error', reapError?.message ?? reapError)
+      console.error('list_rooms: reap rpc error', { error: safeErrorMessage(reapError) })
     }
   }
 

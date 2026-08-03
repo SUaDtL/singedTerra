@@ -19,6 +19,7 @@ import {
   MissingEnvError,
   reap,
   STALE_MS,
+  safeErrorMessage,
 } from './mod.ts'
 
 // ---------------------------------------------------------------------------
@@ -29,6 +30,13 @@ function assertEqual<T>(actual: T, expected: T, label: string): void {
     throw new Error(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`)
   }
 }
+
+Deno.test('safeErrorMessage: bounds Error messages and uses a safe fallback', () => {
+  assertEqual(safeErrorMessage(new Error('x'.repeat(300))).length, 200, 'bounded length')
+  assertEqual(safeErrorMessage(new Error('database unavailable')), 'database unavailable', 'message')
+  assertEqual(safeErrorMessage({ message: 42 }), 'Unknown error', 'non-string message fallback')
+  assertEqual(safeErrorMessage(null), 'Unknown error', 'null fallback')
+})
 
 // ---------------------------------------------------------------------------
 // AC5 – seat-decision branch coverage

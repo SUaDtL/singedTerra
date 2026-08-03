@@ -1,4 +1,4 @@
-import { withCors, json, getServiceClient, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
+import { withCors, json, getServiceClient, safeErrorMessage, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
 
 /** Pure heartbeat: bump lastSeen for `playerId` only. Returns the new roster, or
  *  null when the player is not in the room. Extracted for testing (#61). */
@@ -39,7 +39,7 @@ export async function handleHeartbeat(body: unknown): Promise<Response> {
     .maybeSingle()
 
   if (fetchError) {
-    console.error('heartbeat: fetch error', fetchError, { roomId, playerId })
+    console.error('heartbeat: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to fetch room' }, 500)
   }
 
@@ -64,7 +64,7 @@ export async function handleHeartbeat(body: unknown): Promise<Response> {
     .eq('id', roomId)
 
   if (updateError) {
-    console.error('heartbeat: update error', updateError, { roomId, playerId })
+    console.error('heartbeat: update error', { roomId, playerId, error: safeErrorMessage(updateError) })
     return json({ error: 'Failed to update heartbeat' }, 500)
   }
 

@@ -10,6 +10,7 @@ import {
   resolveRequestedRulesetVersion,
   resolveStoredRulesetVersion,
   rulesetCompatibility,
+  safeErrorMessage,
 } from '../_shared/mod.ts'
 import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
 
@@ -35,7 +36,12 @@ export interface RpcResult {
   error: any
 }
 
-export function rpcResultToResponse(result: RpcResult): Response {
+export interface RpcLogContext {
+  roomId?: string
+  playerId?: string
+}
+
+export function rpcResultToResponse(result: RpcResult, context: RpcLogContext = {}): Response {
   const { data, error } = result
 
   if (error) {
@@ -43,12 +49,12 @@ export function rpcResultToResponse(result: RpcResult): Response {
       // Info-level signal (obs-003): seq-conflicts are expected + self-healing (the
       // client retries), but with ZERO log a conflict flood (a misbehaving/looping
       // client) is invisible until it surfaces as user-reported stuck turns.
-      console.log('submit_action: seq_conflict (client will retry)')
+      console.log('submit_action: seq_conflict (client will retry)', context)
       return json({ ok: false, error: 'seq_conflict', retry: true }, 409)
     }
     // Log the message, not the full Supabase error object (which carries Postgres
     // internals) — secrets-001.
-    console.error('submit_action: rpc error', error?.message ?? error)
+    console.error('submit_action: rpc error', { ...context, error: safeErrorMessage(error) })
     return json({ ok: false, error: 'Failed to submit action' }, 500)
   }
 
@@ -154,7 +160,7 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
     .maybeSingle()
 
   if (fetchError) {
-    console.error('submit_action: fetch error', fetchError)
+    console.error('submit_action: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
     return json({ error: 'Failed to fetch room' }, 500)
   }
 
@@ -286,7 +292,7 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
     p_next_turn,
   })
 
-  return rpcResultToResponse(rpcResult)
+  return rpcResultToResponse(rpcResult, { roomId: roomId as string, playerId: actingId as string })
 }
 
 /** Thin withCors-compatible entry: run the core against the real service client.

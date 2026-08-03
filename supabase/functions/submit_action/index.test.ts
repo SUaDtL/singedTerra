@@ -31,10 +31,23 @@ Deno.test('rpcResultToResponse: success with scalar data returns 200 { seq, ok: 
 // ---------------------------------------------------------------------------
 
 Deno.test('rpcResultToResponse: 23505 unique violation returns 409 seq_conflict', async () => {
-  const res = rpcResultToResponse({ data: null, error: { code: '23505' } })
-  assertEquals(res.status, 409)
-  const body = await res.json()
-  assertEquals(body, { ok: false, error: 'seq_conflict', retry: true })
+  const calls: unknown[][] = []
+  const originalLog = console.log
+  console.log = (...args: unknown[]) => { calls.push(args) }
+  try {
+    const res = rpcResultToResponse(
+      { data: null, error: { code: '23505' } },
+      { roomId: 'room-7', playerId: 'player-2' },
+    )
+    assertEquals(res.status, 409)
+    const body = await res.json()
+    assertEquals(body, { ok: false, error: 'seq_conflict', retry: true })
+  } finally {
+    console.log = originalLog
+  }
+  assertEquals(calls.length, 1, 'conflict log count')
+  assertEquals(calls[0]?.[0], 'submit_action: seq_conflict (client will retry)', 'conflict log label')
+  assertEquals(calls[0]?.[1], { roomId: 'room-7', playerId: 'player-2' }, 'conflict log context')
 })
 
 // ---------------------------------------------------------------------------
