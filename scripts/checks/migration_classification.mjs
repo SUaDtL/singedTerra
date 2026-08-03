@@ -1,6 +1,7 @@
 // Contract check for the legacy-table data-classification migration (#125).
 // Run: node scripts/checks/migration_classification.mjs
 
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,7 +43,38 @@ const expectedTargets = new Set(requiredStatements.map((statement) => {
   return match?.[1];
 }));
 
-const forbiddenExecutableSql = /\b(?:CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|GRANT|REVOKE)\b/i;
+const allowedCommentStatement = /^COMMENT\s+ON\s+(?:TABLE|COLUMN)\s+[a-z_]+(?:\.[a-z_]+)?\s+IS\s+'(?:[^']|'')*'$/i;
+
+function sqlStatements(text) {
+  const withoutComments = text.replace(/^\s*--.*$/gm, '');
+  const statements = [];
+  let current = '';
+  let inString = false;
+  for (let index = 0; index < withoutComments.length; index += 1) {
+    const character = withoutComments[index];
+    const next = withoutComments[index + 1];
+    if (character === "'") {
+      current += character;
+      if (inString && next === "'") {
+        current += next;
+        index += 1;
+      } else {
+        inString = !inString;
+      }
+    } else if (character === ';' && !inString) {
+      if (current.trim()) statements.push(current.trim());
+      current = '';
+    } else {
+      current += character;
+    }
+  }
+  if (current.trim()) statements.push(current.trim());
+  return statements;
+}
+
+function hasOnlyAllowedCommentStatements(text) {
+  return sqlStatements(text).every((statement) => allowedCommentStatement.test(statement));
+}
 
 let sql;
 try {
@@ -50,6 +82,25 @@ try {
 } catch (error) {
   console.error(`FAIL: required migration is missing: ${migrationPath}`);
   console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+}
+
+const changedMigrationPaths = new Set();
+for (const gitArgs of [
+  ['diff', '--name-only', 'HEAD', '--', 'supabase/migrations'],
+  ['diff', '--name-only', 'HEAD^', 'HEAD', '--', 'supabase/migrations'],
+]) {
+  try {
+    for (const path of execFileSync('git', gitArgs, { cwd: root, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean)) {
+      changedMigrationPaths.add(path.replaceAll('\\', '/'));
+    }
+  } catch {
+    // A shallow/unborn checkout may not have HEAD^; the working-tree check still applies.
+  }
+}
+const modifiedAppliedMigrations = [...changedMigrationPaths].filter((path) => /\/0(?:0[1-9]|10)_.*\.sql$/i.test(path));
+if (modifiedAppliedMigrations.length > 0) {
+  console.error(`FAIL: applied migration(s) were modified: ${modifiedAppliedMigrations.join(', ')}`);
   process.exit(1);
 }
 
@@ -65,12 +116,27 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const executableLines = sql
-  .split(/\r?\n/)
-  .map((line) => line.trim())
-  .filter((line) => line.length > 0 && !line.startsWith('--'));
-if (executableLines.some((line) => forbiddenExecutableSql.test(line) && !/^COMMENT\s+ON\s+(?:TABLE|COLUMN)\b/i.test(line))) {
-  console.error('FAIL: migration contains executable schema/data/privilege SQL beyond COMMENT ON TABLE/COLUMN');
+if (!hasOnlyAllowedCommentStatements(sql)) {
+  console.error('FAIL: migration contains a statement beyond the exact COMMENT ON TABLE/COLUMN allowlist');
+  process.exit(1);
+}
+
+const firstStatementEnd = sql.indexOf('COMMENT ON COLUMN rooms.id');
+const mutationProbes = [
+  {
+    label: 'same-line trailing ALTER',
+    sql: `${sql.slice(0, firstStatementEnd)} ALTER TABLE rooms ADD COLUMN injected text;${sql.slice(firstStatementEnd)}`,
+  },
+  { label: 'standalone DROP', sql: `${sql}\nDROP TABLE rooms;` },
+  {
+    label: 'multiline dynamic DROP',
+    sql: `${sql}\nDO $$\nBEGIN\n  EXECUTE 'DROP TABLE rooms';\nEND\n$$;`,
+  },
+];
+const acceptedMutationProbes = mutationProbes.filter(({ sql: probe }) => hasOnlyAllowedCommentStatements(probe));
+if (acceptedMutationProbes.length > 0) {
+  console.error('FAIL: SQL allowlist mutation probe(s) were not rejected');
+  for (const { label } of acceptedMutationProbes) console.error(`  - ${label}`);
   process.exit(1);
 }
 
