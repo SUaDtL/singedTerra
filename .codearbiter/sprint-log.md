@@ -3921,3 +3921,12 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 ### 2026-08-03 - reliability.lockstep-live-drain adversarial review remediation
 - Euler review initially BLOCKED with Critical 0, High 0, Medium 1, Low 0, merge blockers 1 because the plan receipt appeared stale: Task 1 Step 5 was reported unchecked while the sprint log already recorded the full matrix GREEN.
 - Current-state verification confirmed Task 1 Step 5 is checked in `.codearbiter/plans/live-lockstep-drain.md`; the review package was refreshed and the completed review/remediation steps are now checked. No production or test behavior changed during remediation.
+
+### 2026-08-03 - reliability.lockstep-live-drain coverage remediation
+- Coverage audit initially BLOCKED with Medium 1 and Low 1: the regression reached the live handoff but did not prove action-specific ordering/duplicate prevention or RAF cancellation.
+- Remediation: the test now uses finite Missile actions, asserts p1/p2 aim ownership before and after the handoff, asserts exactly two turns and one finite round spent per seat, and asserts `stop()` cancels the queued RAF callback. The two temporary fixture failures were corrected before acceptance.
+- Fresh focused and full client verification: `NetworkClient.lockstep.test.ts` 15/15; `npm run test:client` 131 files, 953 passed; `npm run typecheck` passed; `git diff --check` passed; staged-equivalent secrets scan `[]`.
+### 2026-08-03 - reliability.lockstep-live-drain final adversarial package review
+- Euler adversarial review APPROVED: Critical 0, High 0, Medium 0, Low 0, merge blockers 0.
+- Independent coverage audit PASS: Critical 0, High 0, Medium 0, Low 0, merge blockers 0. It confirmed real RAF-driven resolution, action-specific sequence/ownership, no early or duplicate application, finite missile consumption, and stop cancellation.
+- The reviewed scope is the strengthened client regression plus append-only governance receipts. Production code, protocol, auth, persistence, dependencies, Supabase, deployment, and the protected open-tasks lock are unchanged.

@@ -166,23 +166,28 @@ describe('NetworkClient — deterministic lockstep core', () => {
   it('drains the next buffered fire after the live projectile resolves', async () => {
     const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }]);
     const rafQueue: FrameRequestCallback[] = [];
+    const cancelAnimationFrame = vi.fn();
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       rafQueue.push(cb);
       return rafQueue.length;
     });
-    vi.stubGlobal('cancelAnimationFrame', () => {});
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
 
     const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     await settle();
+    const firstFire: NetworkAction = { type: 'fire', angle: 45, power: 50, weapon: 'missile' };
+    const secondFire: NetworkAction = { type: 'fire', angle: 35, power: 45, weapon: 'missile' };
 
     // Realtime delivers the second committed action first. The first action
     // fills the gap and enters flight; the second must remain buffered until
     // the live RAF loop observes the first flight boundary.
-    captured.insertHandler?.(row(1, fire(35, 45)));
-    captured.insertHandler?.(row(0, fire(45, 50)));
+    captured.insertHandler?.(row(1, secondFire));
+    captured.insertHandler?.(row(0, firstFire));
     expect(client.getState().phase).toBe('FIRING');
+    expect(client.getState().tanks.find((tank) => tank.id === 'p1')?.angle).toBe(45);
+    expect(client.getState().tanks.find((tank) => tank.id === 'p2')?.angle).not.toBe(35);
 
     client.start();
     let frames = 0;
@@ -197,7 +202,11 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().phase).toBe('PLAYER_TURN');
     expect(client.getState().turn).toBe(2);
     expect(client.getState().activePlayerId).toBe('p1');
+    expect(client.getState().tanks.find((tank) => tank.id === 'p1')?.angle).toBe(45);
+    expect(client.getState().tanks.find((tank) => tank.id === 'p2')?.angle).toBe(35);
+    expect(client.getState().tanks.every((tank) => tank.inventory.missile.count === 3)).toBe(true);
     client.stop();
+    expect(cancelAnimationFrame).toHaveBeenCalledOnce();
   });
 
   it('drops a stale (already-applied) Realtime seq without double-applying', async () => {
