@@ -3683,3 +3683,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 ### 2026-08-03 review remediation receipt - mvp1.input.0001
 - Medium test-quality finding resolved: the stopped-bubbling descendant is now focusable, focused, and asserted as document.activeElement before Space dispatch.
 - Focused GREEN after remediation: 1/1 targeted regression and 32/32 InputHandler tests pass; no behavioral finding was waived.
+### 2026-08-03 delivery receipt - mvp1.input.0001
+- PR #302 exact reviewed head 33fd358 passed hosted CI, Edge tests, CodeQL, E2E, and CodeRabbit; merged to main as 42be1ab.
+- GitHub Pages deployment run 30805017680 passed build, current-main verification, deploy, and post-deploy live smoke. Main CI run 30805017643 passed.
+- Production evidence: Pages HTML returned 200; current JS asset returned 200 and contains the capture path; Pages API status is built.
+- No Supabase or migration deployment was associated. Task mvp1.input.0001 is complete; deferred open-tasks lock remains untouched.
