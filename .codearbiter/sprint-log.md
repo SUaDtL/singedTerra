@@ -3930,3 +3930,6 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - Euler adversarial review APPROVED: Critical 0, High 0, Medium 0, Low 0, merge blockers 0.
 - Independent coverage audit PASS: Critical 0, High 0, Medium 0, Low 0, merge blockers 0. It confirmed real RAF-driven resolution, action-specific sequence/ownership, no early or duplicate application, finite missile consumption, and stop cancellation.
 - The reviewed scope is the strengthened client regression plus append-only governance receipts. Production code, protocol, auth, persistence, dependencies, Supabase, deployment, and the protected open-tasks lock are unchanged.
+### 2026-08-03 - reliability.lockstep-live-drain exact-head review remediation
+- Euler found one Medium merge-blocking governance receipt: live-lockstep plan Task 1 Step 6 still showed commit unchecked after commit `386bf45`, strengthening commit `40c17cd`, and main-integration commit `1b5308f`.
+- Remediation: checked Task 1 Step 6; no product or test behavior changed. Task 2 Steps 3-4 remain pending until hosted PR validation, merge, and production-branch verification.
