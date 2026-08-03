@@ -1,5 +1,11 @@
 import type { BrowseRoom } from '../client/LobbyTransport';
-import { armsLabel, botLabel, roundsLabel } from './browseLabels';
+import {
+  armsLabel,
+  botLabel,
+  interestLabel,
+  roundsLabel,
+  suddenDeathLabel,
+} from './browseLabels';
 
 export interface LobbyBrowseViewOptions {
   nameColor: HTMLElement;
@@ -42,6 +48,8 @@ export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLEleme
         roundsLabel(room.rounds),
         armsLabel(room.armsLevel),
         botLabel(room.botCount),
+        interestLabel(room.interestRate),
+        suddenDeathLabel(room.suddenDeathTurn),
       ].filter(Boolean).join(' · ');
 
       const join = document.createElement('button');

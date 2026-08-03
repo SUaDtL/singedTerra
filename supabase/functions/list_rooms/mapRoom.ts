@@ -20,12 +20,28 @@ export interface ListedRoom {
   armsLevel: number
   /** Count of live roster seats that are CPU-controlled (`ai` set). */
   botCount: number
+  /** Interest-rate rules; 0 means disabled for legacy rooms. */
+  interestRate: number
+  /** Sudden-death turn threshold; 0 means disabled for legacy rooms. */
+  suddenDeathTurn: number
 }
 
 export type ListedRoomRow = Pick<
   RoomRow,
   'id' | 'code' | 'options' | 'players' | 'created_at'
 >
+
+function normalizedInterestRate(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(0.5, Math.max(0, value))
+    : 0
+}
+
+function normalizedSuddenDeathTurn(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(50, Math.max(0, Math.trunc(value)))
+    : 0
+}
 
 export function mapListedRoom(row: ListedRoomRow, fresh: StoredPlayer[]): ListedRoom {
   const o = row.options
@@ -40,5 +56,7 @@ export function mapListedRoom(row: ListedRoomRow, fresh: StoredPlayer[]): Listed
     rounds: o.rounds === undefined ? 1 : o.rounds,
     armsLevel: o.armsLevel === undefined ? 4 : o.armsLevel,
     botCount: fresh.filter((p) => p.ai !== undefined).length,
+    interestRate: normalizedInterestRate(o.interestRate),
+    suddenDeathTurn: normalizedSuddenDeathTurn(o.suddenDeathTurn),
   }
 }

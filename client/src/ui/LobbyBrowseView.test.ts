@@ -18,6 +18,8 @@ function browseRoom(overrides: Partial<BrowseRoom> = {}): BrowseRoom {
     rounds: 3,
     armsLevel: 2,
     botCount: 1,
+    interestRate: 0.2,
+    suddenDeathTurn: 15,
     ...overrides,
   };
 }
@@ -83,6 +85,8 @@ describe('buildLobbyBrowseView', () => {
     expect(availableRow.textContent).toContain('Best of 3');
     expect(availableRow.textContent).toContain('Arms Lv 2');
     expect(availableRow.textContent).toContain('1 CPU');
+    expect(availableRow.textContent).toContain('Interest +20%');
+    expect(availableRow.textContent).toContain('Sudden death T15');
 
     const available = button(root, 'Join (1/4)');
     const full = button(root, 'Join (4/4)');
