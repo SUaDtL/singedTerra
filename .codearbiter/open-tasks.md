@@ -161,7 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
-- [~] mvp2.hazard.0001 - Deterministic terrain hazards  (started 2026-08-03)
+- [x] mvp2.hazard.0001 - Deterministic terrain hazards  (done 2026-08-03)
   - Desc: Add an opt-in deterministic lava/water terrain hazard mode that preserves the existing seed-plus-action replay contract.
   - Boundaries: Shared terrain bitmap hazard value, GameOptions transport, collision and tank damage rules, renderer material, deterministic/client/Edge tests; no auth, persistence, migrations, secrets, dependencies, or new action kinds
 - [x] mvp2.social.0001 - Networked quick chat emotes  (done 2026-08-03)

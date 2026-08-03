@@ -3889,3 +3889,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - Task 3 GREEN: client ruleset/transport/options/renderer tests passed; Edge ruleset/create-room/rematch tests passed; typecheck and check:hazards passed.
 - Euler HIGH reproduced: Task 4 RED four-seat seed-0 spawn-safety assertion found lava under an initial tank; placement must avoid all supported spawn corridors.
 - Euler HIGH remediation GREEN: lava placement narrowed to a central 520..680 band clear of 2-seat and 4-seat spawn corridors; seed-0 four-seat harness now passes.
+### 2026-08-03 delivery receipt - mvp2.hazard.0001
+- PR #320 exact reviewed head 91acbdb passed hosted analyze, CodeQL, Edge, typecheck/harness/build, and E2E checks; merged to main as b64f9ec1fd3c0052dd4a3381829557527c681f25.
+- Production deployment: create_room ACTIVE v63 and restart_game ACTIVE v54 on Supabase project jdvxfxjpobtyasozxauh; no database migration deployed.
+- Production evidence: Pages HTML 200 and current JavaScript asset 200 containing the lava marker; Pages post-deploy live smoke passed; create_room and restart_game OPTIONS returned 200 with POST, OPTIONS and wildcard origin.
+- Euler final adversarial review APPROVED with zero Critical, High, Medium, Low, or merge-blocking findings after the four-seat seed-0 spawn-safety remediation. Task mvp2.hazard.0001 is complete; persistent users/progression mvp2.identity.0001 remains queued behind the auth/security/data-integrity gate; deferred open-tasks lock remains untouched.
