@@ -3933,3 +3933,10 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 ### 2026-08-03 - reliability.lockstep-live-drain exact-head review remediation
 - Euler found one Medium merge-blocking governance receipt: live-lockstep plan Task 1 Step 6 still showed commit unchecked after commit `386bf45`, strengthening commit `40c17cd`, and main-integration commit `1b5308f`.
 - Remediation: checked Task 1 Step 6; no product or test behavior changed. Task 2 Steps 3-4 remain pending until hosted PR validation, merge, and production-branch verification.
+### 2026-08-03 delivery receipt - reliability.lockstep.0001
+- PR #322 exact reviewed head `2f6d33bcf9eed69655786c2d78c72e742e8f040c` passed adversarial and coverage review with zero Critical, High, Medium, Low, or merge-blocking findings.
+- Hosted PR checks on the exact head passed: CI run `30836409916` including typecheck/harness/build, Edge tests, and E2E rendering guardrails; CodeQL run `30836410224` plus CodeQL check `91762813499`; CodeRabbit succeeded with automatic review disabled; Supabase Preview skipped because no backend files changed.
+- PR #322 merged to `main` as `f1d6614a7e2592270563c96fd4513ef8dee139c3`.
+- Post-merge main workflows passed: CI `30836768237`, CodeQL `30836768285`, and GitHub Pages deployment `30836768293`.
+- Production health: `https://suadtl.github.io/singedTerra/` returned HTTP 200; deployed asset `assets/index-D-IkERi7.js` returned HTTP 200 with length 361788 bytes. No Supabase deployment was associated because production code and backend files were unchanged.
+- Task `reliability.lockstep.0001` is complete. Persistent users/progression `mvp2.identity.0001` remains queued behind the auth/security/data-integrity gate. The protected `.codearbiter/open-tasks.md.lock` remains untouched.

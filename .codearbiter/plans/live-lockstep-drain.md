@@ -63,5 +63,5 @@
 
 - [x] **Step 1:** Give one adversarial reviewer the complete package: spec, plan, sprint log, tests, and final diff.
 - [x] **Step 2:** Resolve every Critical, High, Medium, Low, and merge-blocking finding, rerunning the affected RED/GREEN and full matrix checks.
-- [ ] **Step 3:** Open the PR, require all hosted checks green on the exact reviewed head, then merge under standing authority.
-- [ ] **Step 4:** Verify the production branch health; no client or Supabase deployment is needed for a test-only change unless the final diff gains production code.
+- [x] **Step 3:** Open the PR, require all hosted checks green on the exact reviewed head, then merge under standing authority.
+- [x] **Step 4:** Verify the production branch health; no client or Supabase deployment is needed for a test-only change unless the final diff gains production code.
