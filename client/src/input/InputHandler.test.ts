@@ -323,6 +323,28 @@ describe('InputHandler public contract', () => {
     select.remove();
   });
 
+  it('keeps Space firing when a focused HUD descendant stops bubbling keydown', () => {
+    const button = document.createElement('button');
+    const glyph = document.createElement('span');
+    glyph.tabIndex = 0;
+    button.append(glyph);
+    document.body.append(button);
+    glyph.addEventListener('keydown', (event) => event.stopPropagation());
+    handler.attach();
+    glyph.focus();
+    expect(document.activeElement).toBe(glyph);
+
+    glyph.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: ' ',
+      code: 'Space',
+    }));
+
+    expect(emitted()).toEqual([{ type: 'fire' }]);
+    button.remove();
+  });
+
   it('keeps Enter native on a focused non-fire HUD button', () => {
     const button = document.createElement('button');
     button.dataset.command = 'aim-left';

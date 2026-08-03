@@ -161,6 +161,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] mvp1.input.0001 - Restore Space fire through focus-changing HUD interactions  (started 2026-08-03)
+  - Desc: Preserve Space fire when focused HUD descendants stop bubbling keydown events
+  - Boundaries: client input handling and focused-control regression tests only
 - [x] mvp1.fall.0001 - Deterministic collapse fall damage and one-use Parachute accessory  (done 2026-08-03)
   - Boundaries: none
 - [~] governance.classification.0001 - Add data-classification comments to legacy rooms, room_actions, and match_scores tables via a new forward-only migration  (started 2026-08-03)

@@ -3668,3 +3668,18 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - PR #300 exact head `bb60890` failed one rendering guardrail because the generated round-shop count expectation remained 17 after the intentional Parachute row made it 18; 190 passed, 25 skipped.
 - Remediation: updated `e2e/hud-layout.spec.ts` to expect 18; targeted pixel-touch proof passed 1/1.
 - Final adversarial delta review: APPROVED; 0 Critical, 0 High, 0 Medium, 0 Low findings.
+
+## 2026-08-03 - mvp1.input.0001 keyboard-fire-capture
+- SMARTS decision: prioritize the user-reported Space-fire loss after UI focus; capture-phase registration is the smallest safe fix for descendants that stop bubbling keydown events.
+- Spec: .codearbiter/specs/keyboard-fire-capture.md
+- Plan: .codearbiter/plans/keyboard-fire-capture.md
+- Confidence: high; no hard gate touched.
+### 2026-08-03 verification and adversarial receipt - mvp1.input.0001
+- TDD RED was proven in the prior isolated attempt: the stopped-bubbling regression emitted [] before the capture-phase change.
+- GREEN: npm -w @singedterra/client run test -- --run src/input/InputHandler.test.ts passed 32/32.
+- Full verification: npm run typecheck passed; npm run test:client passed 128 files / 932 tests; npm run check passed; npm run build passed; staged secrets scan returned []; git diff --check passed.
+- Adversarial review package included spec, plan, sprint log, task board, tests, and final diff; review result: no Critical, High, Medium, or Low findings.
+- Exact scope remains client keyboard listener plus regression test; no dependency, auth, security-control, migration, or deployment surface changed.
+### 2026-08-03 review remediation receipt - mvp1.input.0001
+- Medium test-quality finding resolved: the stopped-bubbling descendant is now focusable, focused, and asserted as document.activeElement before Space dispatch.
+- Focused GREEN after remediation: 1/1 targeted regression and 32/32 InputHandler tests pass; no behavioral finding was waived.

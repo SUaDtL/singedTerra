@@ -183,7 +183,10 @@ export class InputHandler {
     if (this.attached) return;
     this.attached = true;
     // Keyboard is captured at the window level so the canvas does not need focus.
-    window.addEventListener('keydown', this.handleKeyDown);
+    // Capture before focused HUD descendants can stop propagation (for example,
+    // a composite control handling its own Space key). Target gating below still
+    // preserves native text entry and dedicated Fire-button activation.
+    window.addEventListener('keydown', this.handleKeyDown, { capture: true });
     this.target.addEventListener('pointerdown', this.handlePointerDown);
     this.target.addEventListener('pointermove', this.handlePointerMove);
     this.target.addEventListener('pointerup', this.handlePointerUp);
@@ -195,7 +198,7 @@ export class InputHandler {
   detach(): void {
     if (!this.attached) return;
     this.attached = false;
-    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
     this.target.removeEventListener('pointerdown', this.handlePointerDown);
     this.target.removeEventListener('pointermove', this.handlePointerMove);
     this.target.removeEventListener('pointerup', this.handlePointerUp);
