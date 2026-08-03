@@ -3953,3 +3953,6 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 ### 2026-08-03 - reliability.lockstep.0001 receipt supersession for PR #323
 - The earlier delivery receipt is scoped to PR #322 and exact head `2f6d33b`; it does not claim that the later teardown correction was hosted-validated or deployed.
 - The current production correction is scoped to PR #323. Its exact-head hosted validation, merge, Pages deployment, and production smoke are the remaining landing obligations; no completion claim is made here until those gates pass.
+### 2026-08-03 - reliability.teardown.0001 correction slice
+- SMARTS/governance correction: the original live-drain task and PR #322 remain complete as delivered; the review-found teardown defect is tracked as a separate bounded task with its own spec and plan so the original receipt is not retroactively rewritten.
+- The new task covers only the disposal guard and causal scheduler-inert regression. It has local RED/GREEN and full-matrix evidence; hosted validation, merge, Pages deployment, production smoke, and task closure remain pending for PR #323.
