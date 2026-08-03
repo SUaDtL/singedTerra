@@ -3940,3 +3940,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - Post-merge main workflows passed: CI `30836768237`, CodeQL `30836768285`, and GitHub Pages deployment `30836768293`.
 - Production health: `https://suadtl.github.io/singedTerra/` returned HTTP 200; deployed asset `assets/index-D-IkERi7.js` returned HTTP 200 with length 361788 bytes. No Supabase deployment was associated because production code and backend files were unchanged.
 - Task `reliability.lockstep.0001` is complete. Persistent users/progression `mvp2.identity.0001` remains queued behind the auth/security/data-integrity gate. The protected `.codearbiter/open-tasks.md.lock` remains untouched.
+### 2026-08-03 - reliability.lockstep.0001 closeout coverage remediation
+- Closeout coverage audit initially BLOCKED with Medium 1 and Low 1: the stale-sequence assertion did not prove state-preserving duplicate suppression, and stop cancellation counted the API call without exercising a queued callback after teardown.
+- Test-first remediation: the stale duplicate assertion now snapshots phase, turn, active seat, and both finite missile counts; the live drain test snapshots turn/ownership/ammo, captures pending RAF callbacks, calls `stop()`, and proves invoking the captured callback has no effect.
+- Mutation evidence: replacing the ordered `pendingActions.has(nextExpectedSeq)` guard with a size-based drain failed the focused suite in the out-of-order and live-handoff tests; production was restored with no runtime diff.
+- Remediation verification: focused lockstep test 15/15; full client 131 files and 953 tests; typecheck passed; `git diff --check` passed; state-free secrets scan `[]`.

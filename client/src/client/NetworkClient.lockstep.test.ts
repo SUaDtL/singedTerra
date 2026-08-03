@@ -205,8 +205,23 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().tanks.find((tank) => tank.id === 'p1')?.angle).toBe(45);
     expect(client.getState().tanks.find((tank) => tank.id === 'p2')?.angle).toBe(35);
     expect(client.getState().tanks.every((tank) => tank.inventory.missile.count === 3)).toBe(true);
+    expect(rafQueue.length).toBeGreaterThan(0);
+    const stateBeforeStop = {
+      phase: client.getState().phase,
+      turn: client.getState().turn,
+      activePlayerId: client.getState().activePlayerId,
+      missileCounts: client.getState().tanks.map((tank) => tank.inventory.missile.count),
+    };
+    const pendingFrames = rafQueue.splice(0);
     client.stop();
     expect(cancelAnimationFrame).toHaveBeenCalledOnce();
+    pendingFrames.forEach((frame) => frame(0));
+    expect({
+      phase: client.getState().phase,
+      turn: client.getState().turn,
+      activePlayerId: client.getState().activePlayerId,
+      missileCounts: client.getState().tanks.map((tank) => tank.inventory.missile.count),
+    }).toEqual(stateBeforeStop);
   });
 
   it('drops a stale (already-applied) Realtime seq without double-applying', async () => {
@@ -219,8 +234,21 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().activePlayerId).toBe('p2');
 
     // A duplicate delivery of seq=0 must be ignored (shouldBufferSeq gate) — no re-fire.
+    const beforeDuplicate = {
+      phase: client.getState().phase,
+      turn: client.getState().turn,
+      activePlayerId: client.getState().activePlayerId,
+      p1Missiles: client.getState().tanks.find((tank) => tank.id === 'p1')?.inventory.missile.count,
+      p2Missiles: client.getState().tanks.find((tank) => tank.id === 'p2')?.inventory.missile.count,
+    };
     captured.insertHandler?.(row(0, fire()));
-    expect(client.getState().activePlayerId).toBe('p2'); // unchanged, not double-applied
+    expect({
+      phase: client.getState().phase,
+      turn: client.getState().turn,
+      activePlayerId: client.getState().activePlayerId,
+      p1Missiles: client.getState().tanks.find((tank) => tank.id === 'p1')?.inventory.missile.count,
+      p2Missiles: client.getState().tanks.find((tank) => tank.id === 'p2')?.inventory.missile.count,
+    }).toEqual(beforeDuplicate);
   });
 
   it('reports connection state transitions to subscribers', async () => {
