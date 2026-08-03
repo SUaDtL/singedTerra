@@ -3970,3 +3970,7 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 ### 2026-08-03 - PR #324 receipt wording correction
 - The preceding pre-landing note is a historical checkpoint, not an exact-head claim for the current commit. The authoritative PR #324 head is the GitHub PR head reviewed and checked at landing time; its applicable contexts remain CodeRabbit success and Supabase Preview skipped, with merge pending.
 - The completed product delivery receipt above remains authoritative for PR #323 and its exact reviewed head, merge, Pages deployment, and production evidence.
+### 2026-08-03 delivery receipt - governance closeout PR #324
+- PR #324 final reviewed head `4c13488c0271a247498116518e0361dd9e43a32f` passed hosted CI `30839702433` (typecheck/harness/build, Edge tests, and E2E), CodeQL `30839699132` plus check `91773700275`, CodeRabbit success, and expected Supabase Preview skip. It merged to `main` as `5e37255219f8b2556caaa6673247badbbd5d45ce`.
+- Post-merge workflows passed: CI `30840056036`, CodeQL `30840055622`, and Pages deployment `30840055850` with live smoke `91774870894`.
+- Final production smoke after the closeout merge: Pages HTML returned HTTP 200; `assets/index-DgMKD4pH.js` returned HTTP 200 with length 361788 bytes.
