@@ -933,7 +933,7 @@ test.describe('HUD layout guardrails', () => {
 
     const roundShopMinimums = await page.locator('.st-hud__roundshop-grid .st-hud__store-buy')
       .evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).minHeight));
-    expect(roundShopMinimums).toHaveLength(17);
+    expect(roundShopMinimums).toHaveLength(18);
     expect(roundShopMinimums.every((minimum) => minimum === '44px')).toBe(true);
 
     await page.getByRole('button', { name: /Store/ }).click();

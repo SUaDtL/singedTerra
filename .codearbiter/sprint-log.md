@@ -3663,3 +3663,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - Carry/network GREEN: `npx tsx scripts/checks/rounds.mjs`; `npm run check:edge` (206 passed); `npm run typecheck`.
 - Earlier full receipts remain valid: `npm run check` passed, `npm run test:client` passed (128 files, 931 tests), and `npm run build` passed.
 - Adversarial follow-up: 0 Critical, 0 High, 0 merge-blocking findings remain. Residual Medium/Low notes are non-blocking governance metadata.
+
+### 2026-08-03 hosted E2E remediation
+- PR #300 exact head `bb60890` failed one rendering guardrail because the generated round-shop count expectation remained 17 after the intentional Parachute row made it 18; 190 passed, 25 skipped.
+- Remediation: updated `e2e/hud-layout.spec.ts` to expect 18; targeted pixel-touch proof passed 1/1.
+- Final adversarial delta review: APPROVED; 0 Critical, 0 High, 0 Medium, 0 Low findings.
