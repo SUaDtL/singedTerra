@@ -205,13 +205,21 @@ export class InputHandler {
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
-    // Let native controls own their keyboard activation. Without this guard,
-    // Space/Enter on the focused rail Fire button would emit here and then emit
-    // again when the button dispatches its semantic click.
-    if (
-      event.target instanceof Element &&
-      event.target.closest('button, input, select, textarea, a[href], [contenteditable="true"]')
-    ) {
+    const targetElement = event.target instanceof Element ? event.target : null;
+    const nativeControl = targetElement?.closest(
+      'button, input, select, textarea, a[href], [contenteditable="true"]',
+    );
+    const isSpaceKey = event.key === ' ' || event.key === 'Spacebar';
+    const isTextEntry = targetElement?.closest('input, textarea, [contenteditable="true"]');
+    const isButton = targetElement?.closest('button');
+    const isDedicatedFireControl = targetElement?.closest(
+      'button.st-hud__primary-action, button[data-command-action="fire-space"], button[data-command-action="fire-enter"]',
+    );
+
+    // HUD buttons retain focus after a click. Keep game fire keys global for
+    // those buttons, but let text entry and the dedicated Fire button retain
+    // native behavior so the latter cannot emit a duplicate action.
+    if (nativeControl && (!isSpaceKey || isTextEntry || !isButton || isDedicatedFireControl)) {
       return;
     }
     switch (event.key) {

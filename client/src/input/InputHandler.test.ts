@@ -260,8 +260,9 @@ describe('InputHandler public contract', () => {
     ]);
   });
 
-  it('lets a focused native control own Space/Enter without a second global fire', () => {
+  it('lets the dedicated Fire control own Space/Enter without a second global fire', () => {
     const button = document.createElement('button');
+    button.className = 'st-hud__primary-action';
     const clicks = vi.fn();
     button.addEventListener('click', clicks);
     document.body.append(button);
@@ -280,6 +281,61 @@ describe('InputHandler public contract', () => {
     expect(emitted()).toEqual([]);
     expect(clicks).toHaveBeenCalledTimes(2);
     button.remove();
+  });
+
+  it('keeps Space firing after a non-fire HUD button has focus', () => {
+    const button = document.createElement('button');
+    button.dataset.command = 'aim-left';
+    document.body.append(button);
+    handler.attach();
+
+    for (const key of [' ', 'Spacebar']) {
+      button.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key,
+      }));
+    }
+
+    expect(emitted()).toEqual([{ type: 'fire' }, { type: 'fire' }]);
+    button.remove();
+  });
+
+  it('keeps Enter native on a focused non-fire HUD button', () => {
+    const button = document.createElement('button');
+    button.dataset.command = 'aim-left';
+    const clicks = vi.fn();
+    button.addEventListener('click', clicks);
+    document.body.append(button);
+    handler.attach();
+
+    button.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: 'Enter',
+    }));
+    button.click();
+
+    expect(emitted()).toEqual([]);
+    expect(clicks).toHaveBeenCalledTimes(1);
+    button.remove();
+  });
+
+  it('leaves focused text entry controls outside game keyboard handling', () => {
+    const input = document.createElement('input');
+    document.body.append(input);
+    handler.attach();
+
+    for (const key of [' ', 'Enter']) {
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key,
+      }));
+    }
+
+    expect(emitted()).toEqual([]);
+    input.remove();
   });
 
   it('lets a focused native control own A/D without a global movement action', () => {

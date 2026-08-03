@@ -54,6 +54,43 @@ test.describe('HUD layout guardrails', () => {
     ).toEqual([]);
   });
 
+  test('keeps Space bound to fire after a gameplay control takes focus', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'pixel-touch', 'keyboard command deck is hidden');
+
+    const aimLeft = page.getByRole('button', { name: 'Aim barrel left' });
+    const fire = page.locator('.st-hud__primary-action');
+    await aimLeft.click();
+    await expect(aimLeft).toBeFocused();
+    await expect(fire).toBeEnabled();
+
+    await page.keyboard.press('Space');
+
+    await expect(fire).toBeDisabled();
+  });
+
+  test('does not double-fire when Space semantically activates the Fire key button', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'pixel-touch', 'keyboard command deck is hidden');
+
+    const fireKey = page.locator('[data-command-action="fire-space"]');
+    const fire = page.locator('.st-hud__primary-action');
+    await fireKey.focus();
+    await expect(fireKey).toBeFocused();
+    const before = await page.evaluate(() => (
+      window as typeof window & { __SINGED_TERRA_E2E__?: { forwardedActions: { fire: number } } }
+    ).__SINGED_TERRA_E2E__?.forwardedActions.fire ?? 0);
+
+    await page.keyboard.press('Space');
+
+    await expect(fire).toBeDisabled();
+    await expect.poll(async () => page.evaluate(() => (
+      window as typeof window & { __SINGED_TERRA_E2E__?: { forwardedActions: { fire: number } } }
+    ).__SINGED_TERRA_E2E__?.forwardedActions.fire ?? 0)).toBe(before + 1);
+  });
+
   test('active custom tank has a combat-readable tactical identity card', async ({
     page,
   }, testInfo) => {
