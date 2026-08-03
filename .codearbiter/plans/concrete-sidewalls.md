@@ -104,6 +104,6 @@ Web Audio, Vitest/jsdom, Deno tests, and Playwright.
 - [x] Package the spec, plan, sprint log, tests, and exact final diff for one
   adversarial reviewer; resolve every Critical, High, Important, and other
   merge-blocking finding and obtain a clean re-review.
-- [ ] Complete commit/PR gates, exact-head hosted CI, and deployment only if
+- [x] Complete commit/PR gates, exact-head hosted CI, and deployment only if
   this slice changes a deployed surface; merge remains governed by standing
   authority after all gates are green.
