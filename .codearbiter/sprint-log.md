@@ -3697,3 +3697,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - High affordability finding resolved: weapon restock cost is reserved before a Parachute purchase; the AI harness now proves the combined 15,000-credit case chooses the nuke only.
 - Medium arms-level finding resolved: computeAiPlan receives the authoritative room arms level and the driver passes it; the harness proves level 0 does not plan a Parachute while level 1 does.
 - Focused GREEN: npx tsx scripts/checks/ai.mjs and npm run typecheck pass; full client/check/build receipts remain valid from the pre-review implementation and will be refreshed after re-review.
+### 2026-08-03 delivery receipt - mvp1.ai.0001
+- PR #304 exact reviewed head 97b70c4 passed hosted typecheck/harness/build, Edge tests, CodeQL, E2E, and CodeRabbit; merged to main as 279260e.
+- GitHub Pages deployment run 30807475143, main CI run 30807475159, and CodeQL run 30807475211 passed on merge head 279260e.
+- Production evidence: Pages HTML and current JS asset returned 200; deployed JS contains the Parachute path.
+- No Supabase or migration deployment was associated. Task mvp1.ai.0001 is complete; deferred open-tasks lock remains untouched.

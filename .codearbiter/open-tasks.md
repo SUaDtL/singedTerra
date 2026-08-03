@@ -161,7 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
-- [~] mvp1.ai.0001 - Teach hard AI deterministic Parachute counterplay  (started 2026-08-03)
+- [x] mvp1.ai.0001 - Teach hard AI deterministic Parachute counterplay  (done 2026-08-03)
   - Desc: Let hard AI buy Parachutes through the existing accessory contract when collapse risk justifies it
   - Boundaries: shared deterministic AI planning, hot-seat AI driver, and AI harness tests only
 - [x] mvp1.input.0001 - Restore Space fire through focus-changing HUD interactions  (done 2026-08-03)
