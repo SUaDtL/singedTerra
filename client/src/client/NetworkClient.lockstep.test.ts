@@ -163,6 +163,43 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().phase).toBe('FIRING');
   });
 
+  it('drains the next buffered fire after the live projectile resolves', async () => {
+    const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }]);
+    const rafQueue: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      rafQueue.push(cb);
+      return rafQueue.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    await client.initialize();
+    captured.statusCb?.('SUBSCRIBED');
+    await settle();
+
+    // Realtime delivers the second committed action first. The first action
+    // fills the gap and enters flight; the second must remain buffered until
+    // the live RAF loop observes the first flight boundary.
+    captured.insertHandler?.(row(1, fire(35, 45)));
+    captured.insertHandler?.(row(0, fire(45, 50)));
+    expect(client.getState().phase).toBe('FIRING');
+
+    client.start();
+    let frames = 0;
+    while (rafQueue.length > 0 && frames < 2_000) {
+      const frame = rafQueue.shift()!;
+      frame(0);
+      frames++;
+      if (client.getState().phase === 'PLAYER_TURN' && client.getState().turn >= 2) break;
+    }
+
+    expect(frames).toBeLessThan(2_000);
+    expect(client.getState().phase).toBe('PLAYER_TURN');
+    expect(client.getState().turn).toBe(2);
+    expect(client.getState().activePlayerId).toBe('p1');
+    client.stop();
+  });
+
   it('drops a stale (already-applied) Realtime seq without double-applying', async () => {
     // Log already has seq=0 (a fire) → nextExpectedSeq becomes 1, engine on p2's turn.
     const { supabase, captured } = makeFakeSupabase([{ data: [row(0, fire()).new], error: null }]);

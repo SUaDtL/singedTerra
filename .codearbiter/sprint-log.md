@@ -3897,3 +3897,27 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - Closeout evidence correction: reviewed product head 91acbdb2893da683abbb619acaa7b8c85f9e92c1; PR #320 hosted runs CI 30832619990, CodeQL 30832619650, and exact-head checks analyze 91750025355, Edge 91750026241, typecheck/harness/build 91750026236, E2E 91750026260, CodeQL 91750290588; merged head b64f9ec1fd3c0052dd4a3381829557527c681f25.
 - Post-merge hosted runs: CI 30832920365, CodeQL 30832920270, Pages 30832918349 with build 91750995592, current-main verification 91751079488, Pages deploy 91751136167, and post-deploy live smoke 91751195324 all succeeded.
 - Exact production smoke: GET https://suadtl.github.io/singedTerra/ returned 200; asset https://suadtl.github.io/singedTerra/assets/index-D-IkERi7.js returned 200 and contained the Lava marker; OPTIONS https://jdvxfxjpobtyasozxauh.supabase.co/functions/v1/create_room and /restart_game each returned HTTP 200, Access-Control-Allow-Origin: *, and access-control-allow-methods: POST, OPTIONS.
+
+### 2026-08-03 - reliability.match-score-retry.0001 selection
+- SMARTS decision: persistent users/progression remains the highest long-term value but is deferred behind the documented auth/security/data-integrity gate. The next safe candidate is the bounded `finish_game` retry: a transient failure currently loses an otherwise completed match-score write, while `match_scores(room_id)` is already unique and makes the operation idempotent.
+- Options weighed: (A) begin persistent identity/progression now — highest strategic value, but hard-gated by authentication and secure persistence design; (B) fix `finish_game` retry — small, high reliability value, testable entirely at the client retry seam, no protocol/schema/auth/dependency change; (C) pursue broader network/referee or gameplay work — higher value ceiling but larger scope and risk. SMARTS verdict: B, strong, confidence high.
+- Scope boundary: one bounded retry/backoff behavior for the existing best-effort `finish_game` POST plus regression coverage; preserve single-flight/idempotent behavior and existing response handling. No auth, persistence-schema, migration, secrets, dependencies, or new action kinds.
+
+### 2026-08-03 - reliability.matchscore.0001 rescout correction
+- Current-source verification superseded the candidate: `client/src/client/NetworkClient.ts:1280-1296` already posts `finish_game` through `postOnceWithRetry` with two total attempts, and `client/src/client/retry.test.ts` plus `scripts/checks/netretry.mjs` cover retry success, exhaustion, and delay semantics. No code change was authorized or needed; the task was closed as already shipped.
+
+### 2026-08-03 - reliability.lockstep-live-drain.0001 selection
+- Source rescout corrected the prior candidate: finish_game retry is already shipped and covered, so no duplicate code will be added.
+- SMARTS decision: select a live-lockstep regression slice for the buffered back-to-back action boundary. Existing `flushPendingActions()` correctly stops while a projectile is in flight and the RAF loop resumes draining after `FIRING/RESOLVING`; current tests only assert the first action enters flight and do not exercise the live RAF handoff. This is a high-value deterministic-correctness guard for out-of-order Realtime delivery, with a small client-test-only boundary.
+- Options weighed: (A) begin persistent identity/progression — highest strategic value but hard-gated by auth/security/data-integrity design; (B) add a causal live RAF handoff regression — directly protects the canonical action-log replay invariant, small, deterministic, and no runtime/schema/auth change; (C) pursue another visual feature — player-visible but does not address the unresolved lockstep regression risk. SMARTS verdict: B, strong, confidence high.
+- Scope boundary: add a public-behavior Vitest regression proving contiguous buffered actions are applied in sequence across a live projectile-resolution boundary; no production behavior change unless the test exposes a defect, no new action kind, migration, auth, secret, dependency, or manual-only gate.
+
+### 2026-08-03 - reliability.lockstep-live-drain verification
+- TDD RED/mutation proof: with only the `wasBusy && !nowBusy` live RAF handoff temporarily disabled, `npm run test:client -- src/client/NetworkClient.lockstep.test.ts` failed exactly at the new causal test after 2,000 frames; production was restored immediately and no production diff remains.
+- Focused GREEN: `NetworkClient.lockstep.test.ts` passed 15/15.
+- Full local matrix GREEN: `npm run check`; `npm run check:edge` (216 passed); `npm run test:client` (131 files, 953 passed); `npm run typecheck`; `npm run build`; `npm run test:e2e` (191 passed, 25 skipped); `git diff --check`; state-free secrets scan `[]`.
+- Scope verification: current diff is test/governance/spec/plan only; no auth, persistence schema, migration, secret, dependency, action protocol, or deploy surface changed.
+
+### 2026-08-03 - reliability.lockstep-live-drain adversarial review remediation
+- Euler review initially BLOCKED with Critical 0, High 0, Medium 1, Low 0, merge blockers 1 because the plan receipt appeared stale: Task 1 Step 5 was reported unchecked while the sprint log already recorded the full matrix GREEN.
+- Current-state verification confirmed Task 1 Step 5 is checked in `.codearbiter/plans/live-lockstep-drain.md`; the review package was refreshed and the completed review/remediation steps are now checked. No production or test behavior changed during remediation.

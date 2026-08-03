@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] reliability.lockstep.0001 - Prove live lockstep drains buffered actions after projectile resolution  (started 2026-08-03)
+  - Desc: Add a causal client regression for the RAF handoff that prevents a buffered next action from being dropped while the prior shot resolves.
+  - Boundaries: client NetworkClient regression coverage only unless RED exposes a minimal fix; no auth, persistence schema, migrations, secrets, dependencies, or action protocol
+- [x] reliability.matchscore.0001 - Retry transient finish_game standings writes without changing the existing idempotent persistence contract  (done 2026-08-03)
+  - Desc: Retry a transient finish_game POST failure so completed match standings are not silently lost.
+  - Boundaries: client NetworkClient retry seam and deterministic/client tests only; no auth, persistence schema, migrations, secrets, dependencies, or action protocol
 - [x] mvp2.hazard.0001 - Deterministic terrain hazards  (done 2026-08-03)
   - Desc: Add an opt-in deterministic lava/water terrain hazard mode that preserves the existing seed-plus-action replay contract.
   - Boundaries: Shared terrain bitmap hazard value, GameOptions transport, collision and tank damage rules, renderer material, deterministic/client/Edge tests; no auth, persistence, migrations, secrets, dependencies, or new action kinds
