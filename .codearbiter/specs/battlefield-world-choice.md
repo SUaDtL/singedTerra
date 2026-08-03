@@ -43,4 +43,3 @@ action logs, replay state, and deterministic engine inputs remain unchanged.
 5. Focused tests fail before the implementation and pass after it; the full
    typecheck, deterministic harnesses, Edge tests, client tests, build, and
    secrets scan remain green.
-

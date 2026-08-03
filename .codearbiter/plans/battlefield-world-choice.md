@@ -38,4 +38,3 @@
 - Require exact-head hosted CI, Edge tests, CodeQL, E2E, and CodeRabbit green
   before merge. Deploy only the client if the diff remains migration- and
   Edge-free, then verify production assets.
-
