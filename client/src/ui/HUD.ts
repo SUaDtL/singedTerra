@@ -1768,7 +1768,9 @@ export class HUD {
         ? `🔒 Arms Lv ${acc.armsLevel}`
         : key === 'battery'
           ? `Cap ${active?.powerCap ?? 100}`
-          : `Fuel ${Math.max(0, Math.floor(active?.fuel ?? 0))}`;
+          : key === 'parachute'
+            ? `Parachutes ${active?.accessories.parachute ?? 0}`
+            : `Fuel ${Math.max(0, Math.floor(active?.fuel ?? 0))}`;
       if (cell.owned.textContent !== label) cell.owned.textContent = label;
       const buyable = canAct && !locked && credits >= acc.price;
       cell.buyBtn.disabled = !buyable;
@@ -2465,7 +2467,9 @@ export class HUD {
         ? `🔒 Lv ${acc.armsLevel}`
         : key === 'battery'
           ? `cap ${tank?.powerCap ?? 100}`
-          : `fuel ${Math.max(0, Math.floor(tank?.fuel ?? 0))}`;
+          : key === 'parachute'
+            ? `parachutes ${tank?.accessories.parachute ?? 0}`
+            : `fuel ${Math.max(0, Math.floor(tank?.fuel ?? 0))}`;
       cell.buyBtn.disabled = !tank || locked || tank.credits < acc.price;
     }
   }

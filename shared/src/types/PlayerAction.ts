@@ -83,8 +83,8 @@ export interface BuyAction {
    */
   weapon?: WeaponType;
   /**
-   * A non-weapon accessory to buy (SE-parity — currently `'battery'`, which raises the
-   * tank's powerCap). Present for an ACCESSORY purchase; omitted for a weapon buy. The
+   * A non-weapon accessory to buy (SE-parity: `'battery'`, `'fuel_tank'`, or `'parachute'`).
+   * Present for an ACCESSORY purchase; omitted for a weapon buy. The
    * field is optional + additive, so existing weapon-only buy rows are unchanged.
    */
   accessory?: AccessoryType;

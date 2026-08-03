@@ -63,6 +63,9 @@ import {
   FUEL_TANK_PRICE,
   FUEL_TANK_FUEL,
   FUEL_TANK_ARMS_LEVEL,
+  PARACHUTE_PRICE,
+  PARACHUTE_BUNDLE_SIZE,
+  PARACHUTE_ARMS_LEVEL,
 } from './WeaponSystem';
 import { createRng } from './Random';
 import { blastReachRadius } from './BlastGeometry';
@@ -75,6 +78,11 @@ import { resolveTankMove } from './Movement';
  * Tunable; a named constant, not a magic number.
  */
 const MAX_BURIED_TURNS = 2;
+
+/** Collapse-fall tuning. Pure integer damage after the first safe 32 pixels. */
+export const FALL_SAFE_DISTANCE = 32;
+export const FALL_DAMAGE_PER_PIXEL = 1.5;
+export const PARACHUTE_DAMAGE_FACTOR = 0.25;
 
 /**
  * Master game state machine (SPEC §4.3). Owns the authoritative `GameState` and
@@ -286,6 +294,9 @@ export class GameEngine {
    */
   private pendingSettle: { xStart: number; xEnd: number } | null = null;
 
+  /** Accumulated downward movement during the current terrain settle. */
+  private fallDistances = new Map<string, number>();
+
   /**
    * Lazily-built per-column surface cache (P2 perf): surfaceAt() is an O(H) top-down
    * scan, and processFire/canSpread/resolveTanksToTerrain call it per burning column
@@ -470,6 +481,7 @@ export class GameEngine {
     c.options       = this.options; // GameOptions is treated as immutable config
     // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
     c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
+    c.fallDistances = new Map(this.fallDistances);
 
     // Surface cache: pure derived data — give the clone its own buffer and force a
     // lazy rebuild (version -1 never matches the copied terrainVersion). Not copying
@@ -504,6 +516,7 @@ export class GameEngine {
       return {
         ...t,
         inventory: inv as typeof t.inventory,
+        accessories: { ...t.accessories },
         loadout: { ...t.loadout },
       };
     });
@@ -718,6 +731,13 @@ export class GameEngine {
       if (target.credits < FUEL_TANK_PRICE) return;
       target.credits -= FUEL_TANK_PRICE;
       target.fuel += FUEL_TANK_FUEL;
+      return;
+    }
+    if (action.accessory === 'parachute') {
+      if (PARACHUTE_ARMS_LEVEL > this.armsLevel) return;
+      if (target.credits < PARACHUTE_PRICE) return;
+      target.credits -= PARACHUTE_PRICE;
+      target.accessories.parachute += PARACHUTE_BUNDLE_SIZE;
       return;
     }
     if (!action.weapon) return; // neither a weapon nor a recognized accessory — nothing to buy
@@ -1325,6 +1345,7 @@ export class GameEngine {
         // interestRate 0 => +0 => byte-identical to the pre-interest carry (back-compat).
         tank.credits = old.credits + Math.floor(old.credits * this.interestRate); // carry + interest
         tank.inventory = old.inventory; // carry purchased ammo (and spent rounds)
+        tank.accessories = { ...old.accessories }; // carry purchased equipment
         tank.powerCap = old.powerCap; // carry bought Batteries (power cap) across rounds
         tank.roundWins = old.roundWins; // accumulate match score
         tank.kills = old.kills; // accumulate match scoreboard
@@ -1345,6 +1366,7 @@ export class GameEngine {
     this.fireScorched.clear();
     this.fireDef = null;
     this.pendingSettle = null; // clear any pending animated settle from the prior round
+    this.fallDistances.clear();
     this.windRng = createRng(roundSeed);
     this.windRngSeed = roundSeed;
     this.windRngCalls = 0;
@@ -1433,6 +1455,8 @@ export class GameEngine {
       const xi = Math.floor(tank.x);
       const surf = this.surfaceAtCached(tank.x);
       if (surf > tank.y) {
+        const distance = surf - tank.y;
+        this.fallDistances.set(tank.id, (this.fallDistances.get(tank.id) ?? 0) + distance);
         tank.y = surf; // crater opened beneath -> tank falls onto new floor
         tank.buried = false; // ...and is dug free if it had been buried
       } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) === 1) {
@@ -1442,6 +1466,23 @@ export class GameEngine {
         tank.buried = false; // mid-body is clear air -> not buried / dug out
       }
     }
+  }
+
+  /** Apply one deterministic fall result after all collapse movement has converged. */
+  private applyPendingFallDamage(): void {
+    for (const [tankId, distance] of this.fallDistances) {
+      const tank = this.state.tanks.find((candidate) => candidate.id === tankId);
+      if (!tank || !tank.alive) continue;
+      const rawDamage = Math.floor(Math.max(0, distance - FALL_SAFE_DISTANCE) * FALL_DAMAGE_PER_PIXEL);
+      if (rawDamage <= 0) continue;
+      const hasParachute = tank.accessories.parachute > 0;
+      const damage = hasParachute
+        ? Math.floor(rawDamage * PARACHUTE_DAMAGE_FACTOR)
+        : rawDamage;
+      if (hasParachute) tank.accessories.parachute -= 1;
+      Tank.applyDamage(tank, damage);
+    }
+    this.fallDistances.clear();
   }
 
   /**
@@ -1464,6 +1505,7 @@ export class GameEngine {
     this.state.terrainVersion++;
     this.resolveTanksToTerrain();
     this.pendingSettle = null;
+    this.applyPendingFallDamage();
   }
 
   /**
@@ -1484,6 +1526,7 @@ export class GameEngine {
     this.resolveTanksToTerrain();
     if (!moved) {
       this.pendingSettle = null;
+      this.applyPendingFallDamage();
     }
     return moved;
   }

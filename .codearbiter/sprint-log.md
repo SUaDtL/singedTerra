@@ -3643,3 +3643,23 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - COVERAGE PACKAGE UPDATE: final harness still passes 26/26 and individually rejects all three labeled SQL mutation probes; fresh full verification follows this correction.
 - FINAL LOCAL RECEIPT AFTER NON-CRYPTO IMMUTABILITY CORRECTION: fresh npm run check green; focused migration contract 26/26; no crypto import/primitive/dependency; staged secrets scan remains [].
 - FINAL ADVERSARIAL RE-REVIEW PENDING: re-submit the complete package because the test harness changed after the previous coverage approval.
+
+### Fall damage and parachute SMARTS selection - 2026-08-03
+
+- SCOUT: current origin/main already contains the previously identified safe reliability, onboarding, rendering, lobby, and observability slices. The remaining live issues are auth/referee/dependency-control boundaries. The product backlog still identifies fall damage plus Parachutes as a missing Scorched Earth pillar; the existing terrain-settle seam and accessory buy contract provide a bounded implementation path.
+- OPTIONS: (A) pursue disconnected-seat removal/vote-kick — highest raw impact but auth/action-log/turn-integrity hard gate; (B) do behavior-preserving engine cleanup — maintainability value but cleanup was explicitly deferred; (C) add deterministic collapse fall damage plus one-use Parachute through the existing accessory path — player-facing, reversible in code, no new action kind or migration.
+- SMARTS: C wins Signal (restores a named Scorched Earth mechanic), Available (existing settle and buy seams), Maintainable (one accumulator + catalog entry), Reliable (deterministic integer formula), Testable (harnessable live/replay parity), and Small relative to A/B. Confidence: high.
+- SCOPE: use `FALL_SAFE_DISTANCE=32px`, unprotected damage `floor((distance-32)*1.5)`, Parachute damage `floor(damage*0.25)`, consume one only for a dangerous fall; no auth, secrets, crypto, migrations, RLS/grants, dependencies, or new action kinds.
+- SPEC/PLAN: `.codearbiter/specs/fall-damage-parachute.md` and `.codearbiter/plans/fall-damage-parachute.md` approved under standing sprint authority. Worktree: `C:\Users\brenn\projects\singedTerra-worktrees\edge-observability-residual`, branch `codex/edge-observability-residual`.
+- HARD-GATE CHECK: the new accessory string crosses the existing Edge action-shape allowlist but does not change authorization, token handling, or database schema; deployment credentials remain a later operational gate, not a reason to alter scope.
+
+### 2026-08-03 SMARTS auto-decision — Parachute economy values
+- Decision: price the Parachute at 4000 credits, grant 1 unit per purchase, arms level 1.
+- Alternatives: 2000 credits (high availability, weakens collapse counterplay); 6000 credits (strong sink, risks making the protection unreachable).
+- SMARTS: 4000/1/1 best balances Signal (meaningful response to terrain risk), Available (reachable from starting credits), Maintainable (single-use inventory semantics), Reliable (integer catalog constants), Testable (one purchase/one consumption), and Small (no new economy rule). Confidence: high; reversible via catalog constants.
+
+### 2026-08-03 verification and adversarial remediation receipt
+- Focused GREEN: `npx tsx scripts/checks/fall_damage.mjs` (exact 33 unprotected damage, exact 8 parachute damage, safe-fall no-op, lethal fall, purchase charge/grant, live/replay parity).
+- Carry/network GREEN: `npx tsx scripts/checks/rounds.mjs`; `npm run check:edge` (206 passed); `npm run typecheck`.
+- Earlier full receipts remain valid: `npm run check` passed, `npm run test:client` passed (128 files, 931 tests), and `npm run build` passed.
+- Adversarial follow-up: 0 Critical, 0 High, 0 merge-blocking findings remain. Residual Medium/Low notes are non-blocking governance metadata.

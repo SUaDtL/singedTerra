@@ -253,6 +253,15 @@ Deno.test('validateActionShape: buy with battery accessory (no weapon) passes', 
   assertEquals(result, { ok: true })
 })
 
+Deno.test('validateActionShape: buy with parachute accessory (no weapon) passes', () => {
+  const result = validateActionShape({
+    roomId: 'room-1',
+    playerId: 'player-1',
+    action: { type: 'buy', accessory: 'parachute' },
+  })
+  assertEquals(result, { ok: true })
+})
+
 Deno.test('validateActionShape: buy with an unrecognized accessory and no weapon returns 400', () => {
   const result = validateActionShape({
     roomId: 'room-1',

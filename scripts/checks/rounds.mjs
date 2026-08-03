@@ -74,6 +74,7 @@ function terrainsEqual(a, b) {
   // Give p1 something to carry: spend nothing, just earn via the win path + tweak credits.
   before.tanks[0].credits = 4242;
   before.tanks[0].inventory.nuke.count = 2; // pretend a purchase carried in
+  before.tanks[0].accessories.parachute = 1; // equipment must carry with the economy
   before.tanks[1].health = 37; // p2 wounded; must reset to 100 next round
 
   p1WinsRound(e);
@@ -87,6 +88,7 @@ function terrainsEqual(a, b) {
   // TURN_STIPEND, so the carried total is 4242 + stipend, NOT a reset to STARTING_CREDITS.
   if (st.tanks[0].credits < 4242) fail(`credits should carry (>= 4242) between rounds, got ${st.tanks[0].credits} — looks reset`);
   if (st.tanks[0].inventory.nuke.count !== 2) fail(`inventory should carry between rounds, got ${st.tanks[0].inventory.nuke.count}`);
+  if (st.tanks[0].accessories.parachute !== 1) fail(`accessories should carry between rounds, got ${st.tanks[0].accessories.parachute}`);
   if (st.tanks[0].health !== 100 || st.tanks[1].health !== 100) fail(`health should reset to 100, got ${st.tanks.map((t) => t.health)}`);
   if (!st.tanks.every((t) => t.alive)) fail('all tanks should be alive again at the start of a new round');
   if (st.tanks[0].angle !== 45 || st.tanks[1].angle !== 135) {

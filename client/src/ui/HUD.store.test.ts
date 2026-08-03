@@ -50,7 +50,7 @@ describe('HUD store catalog', () => {
       ['Missile', 'Heavy Missile', 'Baby Nuke', 'Nuke'],
       ['Bouncing Betty', 'Funky Bomb', 'Cluster Bomb', 'MIRV', "Death's Head"],
       ['Dirt Bomb', 'Riot Bomb', 'Napalm', 'Hot Napalm', 'Sandhog'],
-      ['Shield', 'Battery', 'Fuel Tank'],
+      ['Shield', 'Battery', 'Fuel Tank', 'Parachute'],
     ]);
     expect([...modal.querySelectorAll('.st-hud__store-summary')].map((summary) => summary.textContent))
       .toEqual([
@@ -71,6 +71,7 @@ describe('HUD store catalog', () => {
         'Absorbs incoming damage before it reaches your tank.',
         '+100 power cap.',
         '+100 movement fuel.',
+        'Reduces one dangerous collapse fall to 25% damage.',
       ]);
   });
 

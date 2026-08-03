@@ -17,6 +17,9 @@ import {
   FUEL_TANK_BUNDLE_SIZE,
   FUEL_TANK_ARMS_LEVEL,
   FUEL_TANK_FUEL,
+  PARACHUTE_PRICE,
+  PARACHUTE_BUNDLE_SIZE,
+  PARACHUTE_ARMS_LEVEL,
 } from '../../shared/src/engine/WeaponSystem.ts';
 
 let failed = false;
@@ -31,6 +34,17 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
   if (b && b.bundleSize !== BATTERY_BUNDLE_SIZE) fail(`battery bundleSize ${b.bundleSize} != BATTERY_BUNDLE_SIZE ${BATTERY_BUNDLE_SIZE}`);
   if (b && b.armsLevel !== BATTERY_ARMS_LEVEL) fail(`battery armsLevel ${b.armsLevel} != BATTERY_ARMS_LEVEL ${BATTERY_ARMS_LEVEL}`);
   if (!failed) log('PASS: ACCESSORIES.battery price/bundle/armsLevel track the BATTERY_* constants.');
+}
+
+// --- Check 1c: Parachute catalog entry tracks its economy constants ---
+{
+  const parachute = ACCESSORIES.parachute;
+  if (!parachute) fail('ACCESSORIES.parachute is missing');
+  if (parachute && parachute.price !== PARACHUTE_PRICE) fail('parachute price drifted from PARACHUTE_PRICE');
+  if (parachute && parachute.bundleSize !== PARACHUTE_BUNDLE_SIZE) fail('parachute bundleSize drifted from PARACHUTE_BUNDLE_SIZE');
+  if (parachute && parachute.armsLevel !== PARACHUTE_ARMS_LEVEL) fail('parachute armsLevel drifted from PARACHUTE_ARMS_LEVEL');
+  if (parachute && !parachute.blurb.includes('25%')) fail('parachute blurb must describe its reduction');
+  if (!failed) log('PASS: ACCESSORIES.parachute tracks the fall-protection constants.');
 }
 
 // --- Check 1b: Fuel Tank catalog entry tracks its canonical constants ---

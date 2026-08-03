@@ -264,7 +264,7 @@ export const TURN_STIPEND = 500;        // flat income per shot fired
  * (its optional `accessory` field) but NOT held in the weapon inventory. The union is the
  * extension point for parachutes and other non-weapon equipment.
  */
-export type AccessoryType = 'battery' | 'fuel_tank';
+export type AccessoryType = 'battery' | 'fuel_tank' | 'parachute';
 
 /**
  * Battery accessory economy (SE-parity). A Battery raises a tank's `powerCap` above the 100
@@ -287,6 +287,11 @@ export const FUEL_TANK_BUNDLE_SIZE = 10;
 export const FUEL_PER_TANK = 10;
 export const FUEL_TANK_FUEL = FUEL_TANK_BUNDLE_SIZE * FUEL_PER_TANK;
 export const FUEL_TANK_ARMS_LEVEL = 3;
+
+/** One-use fall protection. A parachute reduces one dangerous collapse fall to 25% damage. */
+export const PARACHUTE_PRICE = 4000;
+export const PARACHUTE_BUNDLE_SIZE = 1;
+export const PARACHUTE_ARMS_LEVEL = 1;
 
 /**
  * Store descriptor for a purchasable accessory — the SINGLE source the store UI reads for an
@@ -327,6 +332,14 @@ export const ACCESSORIES: Record<AccessoryType, AccessoryDefinition> = {
     bundleSize: FUEL_TANK_BUNDLE_SIZE,
     armsLevel: FUEL_TANK_ARMS_LEVEL,
     blurb: `+${FUEL_TANK_FUEL} movement fuel`,
+  },
+  parachute: {
+    type: 'parachute',
+    name: 'Parachute',
+    price: PARACHUTE_PRICE,
+    bundleSize: PARACHUTE_BUNDLE_SIZE,
+    armsLevel: PARACHUTE_ARMS_LEVEL,
+    blurb: 'Reduces one dangerous fall to 25% damage',
   },
 };
 

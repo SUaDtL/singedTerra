@@ -151,6 +151,10 @@ hops.
 Shield raises a damage-absorbing field and ends the turn. It uses the same
 weapon-selection and action-log path as projectile weapons.
 
+Terrain collapse can also hurt a tank after a long drop. The first 32 pixels are
+safe; each additional pixel deals deterministic fall damage. A purchased
+Parachute reduces one dangerous fall to 25% damage, then is consumed.
+
 ## Movement, money, and rounds
 
 Movement is turn-neutral but spends fuel based on distance actually traveled.
@@ -164,7 +168,8 @@ and final position still follow the normal movement rules. With reduced motion
 enabled, the transient signatures are suppressed.
 
 Damage dealt to opponents earns credits. The Store sells finite ammunition and
-accessories such as Batteries and Fuel Tanks. Purchases do not end the turn.
+accessories such as Batteries, Fuel Tanks, and Parachutes. Purchases do not end
+the turn.
 
 In multi-round matches, credits, inventory, and scoreboard totals carry
 forward. Health, shield, fuel, positions, terrain, and the per-round wind

@@ -1,6 +1,6 @@
 import type { TankState, AmmoEntry, AiDifficulty } from '../types/GameState';
 import type { GameOptions } from '../types/GameOptions';
-import type { WeaponType } from './WeaponSystem';
+import type { AccessoryType, WeaponType } from './WeaponSystem';
 import {
   normalizeTankLoadout,
   type TankLoadout,
@@ -110,6 +110,10 @@ function defaultInventory(): Record<WeaponType, AmmoEntry> {
   };
 }
 
+export function defaultAccessories(): Record<AccessoryType, number> {
+  return { battery: 0, fuel_tank: 0, parachute: 0 };
+}
+
 /** Snap an x-position to a surface y-height from the terrain height map. */
 function surfaceY(x: number, terrain: number[]): number {
   const col = Math.min(Math.max(Math.round(x), 0), terrain.length - 1);
@@ -143,6 +147,7 @@ export function createTank(
     fuel: DEFAULT_FUEL,
     selectedWeapon: DEFAULT_WEAPON,
     inventory: defaultInventory(),
+    accessories: defaultAccessories(),
     color: color,
     loadout: normalizeTankLoadout(loadout),
     alive: true,

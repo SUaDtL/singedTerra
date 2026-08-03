@@ -30,7 +30,7 @@ describe('store catalog', () => {
       ['missile', 'heavy_missile', 'baby_nuke', 'nuke'],
       ['bouncing_betty', 'funky_bomb', 'cluster_bomb', 'mirv', 'deaths_head'],
       ['dirt_bomb', 'riot_bomb', 'napalm', 'hot_napalm', 'sandhog'],
-      ['shield', 'battery', 'fuel_tank'],
+      ['shield', 'battery', 'fuel_tank', 'parachute'],
     ]);
   });
 

@@ -116,6 +116,7 @@ function tank(overrides: Partial<TankState> = {}): TankState {
     fuel: 0,
     selectedWeapon: 'baby_missile',
     inventory: {} as TankState['inventory'],
+    accessories: { battery: 0, fuel_tank: 0, parachute: 0 },
     color: '#d65cff',
     loadout: { ...DEFAULT_TANK_LOADOUT },
     alive: true,

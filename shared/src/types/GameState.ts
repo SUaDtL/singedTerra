@@ -1,4 +1,4 @@
-import type { WeaponType } from '../engine/WeaponSystem';
+import type { AccessoryType, WeaponType } from '../engine/WeaponSystem';
 import type { WallMode } from './GameOptions';
 import type { TankLoadout } from './TankLoadout';
 
@@ -200,6 +200,8 @@ export interface TankState {
   selectedWeapon: WeaponType;
   /** V1 weapon inventory: per-weapon ammo (count + unlimited flag). */
   inventory: Record<WeaponType, AmmoEntry>;
+  /** Purchased non-weapon equipment. Parachutes are consumed by dangerous falls. */
+  accessories: Record<AccessoryType, number>;
   /** CSS color string. */
   color: string;
   /** Presentation-only authored part selection; simulation never reads it. */
