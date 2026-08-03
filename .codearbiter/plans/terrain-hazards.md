@@ -76,6 +76,6 @@
 - Modify: `.codearbiter/sprint-log.md`
 - Modify: `.codearbiter/open-tasks.md`
 
-- [ ] Run `npm run check`, `npm run check:edge`, `npm run test:client`, `npm run typecheck`, `npm run build`, `npm run test:e2e`, `git diff --check`, and the state-free secrets scan.
-- [ ] Send Euler the spec, plan, sprint log, tests, and final diff; resolve every Critical, High, Medium merge blocker, and other blocking finding.
-- [ ] Use the commit gate, open a PR, require exact-head hosted green checks, merge under standing authority, deploy no backend changes unless the existing option code actually changes, verify production health, and close the task through a governance PR.
+- [x] Run `npm run check`, `npm run check:edge`, `npm run test:client`, `npm run typecheck`, `npm run build`, `npm run test:e2e`, `git diff --check`, and the state-free secrets scan.
+- [x] Send Euler the spec, plan, sprint log, tests, and final diff; resolve every Critical, High, Medium merge blocker, and other blocking finding.
+- [x] Use the commit gate, open a PR, require exact-head hosted green checks, merge under standing authority, deploy no backend changes unless the existing option code actually changes, verify production health, and close the task through a governance PR.
