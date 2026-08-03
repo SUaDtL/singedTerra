@@ -3950,3 +3950,6 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - TDD RED: the new `rafQueue` emptiness assertion failed with one newly scheduled callback after `stop()`.
 - GREEN fix: `NetworkClient.start()` now returns before rescheduling when `_disposed` is set. No auth, persistence, protocol, dependency, or Supabase surface changed.
 - Full remediation matrix: `npm run check` passed; `npm run check:edge` passed 216; `npm run test:client` passed 131 files and 953 tests; `npm run typecheck` passed; `npm run build` passed; `npm run test:e2e` passed 191 with 25 intentional skips; `git diff --check` passed; state-free secrets scan `[]`.
+### 2026-08-03 - reliability.lockstep.0001 receipt supersession for PR #323
+- The earlier delivery receipt is scoped to PR #322 and exact head `2f6d33b`; it does not claim that the later teardown correction was hosted-validated or deployed.
+- The current production correction is scoped to PR #323. Its exact-head hosted validation, merge, Pages deployment, and production smoke are the remaining landing obligations; no completion claim is made here until those gates pass.
