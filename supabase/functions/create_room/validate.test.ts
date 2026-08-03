@@ -13,6 +13,7 @@ import {
   coerceMaxWind,
   coerceWallMode,
   coerceTeamMode,
+  coerceTerrainHazards,
 } from './validate.ts'
 
 Deno.test('coerceWallMode: accepts all four modes and fails closed to open', () => {
@@ -76,6 +77,12 @@ Deno.test('coerceEconomyOptions: integer fields are truncated', () => {
 Deno.test('coerceEconomyOptions: partial payload carries only set fields', () => {
   assertEquals(coerceEconomyOptions({ armsLevel: 1 }), { armsLevel: 1 })
   assertEquals(coerceEconomyOptions({ interestRate: 0.2 }), { interestRate: 0.2 })
+})
+
+Deno.test('coerceTerrainHazards: accepts lava and fails closed for unknown modes', () => {
+  assertEquals(coerceTerrainHazards('lava'), 'lava')
+  assertEquals(coerceTerrainHazards('water'), undefined)
+  assertEquals(coerceTerrainHazards(undefined), undefined)
 })
 
 Deno.test('coerceTeamMode: only explicit four-seat requests activate', () => {

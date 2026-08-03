@@ -8,10 +8,12 @@
  */
 export const LEGACY_NETWORK_RULESET_VERSION = 1 as const
 export const PREPARED_NETWORK_RULESET_VERSION = 2 as const
+export const TERRAIN_HAZARD_NETWORK_RULESET_VERSION = 3 as const
 
 export type NetworkRulesetVersion =
   | typeof LEGACY_NETWORK_RULESET_VERSION
   | typeof PREPARED_NETWORK_RULESET_VERSION
+  | typeof TERRAIN_HAZARD_NETWORK_RULESET_VERSION
 
 type RequestedVersion =
   | { ok: true; version: NetworkRulesetVersion }
@@ -22,7 +24,9 @@ type StoredVersion =
   | { ok: false; error: 'invalid_stored' }
 
 function isSupportedRulesetVersion(value: unknown): value is NetworkRulesetVersion {
-  return value === LEGACY_NETWORK_RULESET_VERSION || value === PREPARED_NETWORK_RULESET_VERSION
+  return value === LEGACY_NETWORK_RULESET_VERSION
+    || value === PREPARED_NETWORK_RULESET_VERSION
+    || value === TERRAIN_HAZARD_NETWORK_RULESET_VERSION
 }
 
 /** Resolve a client request; only omission receives the legacy default. */

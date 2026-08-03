@@ -14,9 +14,10 @@ export interface StoredOptions {
   maxPlayers: number;
   maxWind: number;
   gravity: number;
-  rulesetVersion?: 1 | 2;
+  rulesetVersion?: 1 | 2 | 3;
   walls?: "open" | "reflective" | "wrap" | "concrete";
   battlefieldWorld?: "ember-dusk" | "obsidian-caldera" | "glassstorm-expanse";
+  hazards?: "none" | "lava";
   visibility?: "public" | "private";
   rounds?: number;
   armsLevel?: number;

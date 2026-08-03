@@ -20,6 +20,7 @@ import {
   coerceMaxWind,
   coerceWallMode,
   coerceTeamMode,
+  coerceTerrainHazards,
 } from './validate.ts'
 
 interface CreateRoomDependencies {
@@ -38,7 +39,7 @@ async function handleCreateRoomWithDependencies(
     options?: {
       maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown; walls?: unknown; battlefieldWorld?: unknown
       // SE-parity economy (optional, additive). Coerced by coerceEconomyOptions.
-      interestRate?: unknown; suddenDeathTurn?: unknown; armsLevel?: unknown; teamMode?: unknown
+      interestRate?: unknown; suddenDeathTurn?: unknown; armsLevel?: unknown; teamMode?: unknown; hazards?: unknown
     }
     // Optional CPU seats to seed into the room (single-player / fill-a-room).
     bots?: unknown
@@ -89,6 +90,10 @@ async function handleCreateRoomWithDependencies(
   const requestedRuleset = resolveCreatableRulesetVersion(rulesetVersion)
   if (!requestedRuleset.ok) {
     return json({ error: 'Invalid input: rulesetVersion' }, 400)
+  }
+  const requestedHazards = coerceTerrainHazards(options.hazards)
+  if (requestedHazards !== undefined && requestedRuleset.version !== 3) {
+    return json({ error: 'Invalid input: lava hazards require rulesetVersion 3' }, 400)
   }
 
   const supabase = dependencies.serviceClient ?? getServiceClient()
@@ -200,6 +205,9 @@ async function handleCreateRoomWithDependencies(
     visibility,
     ...(coerceBattlefieldWorld(options.battlefieldWorld) !== undefined
       ? { battlefieldWorld: coerceBattlefieldWorld(options.battlefieldWorld) }
+      : {}),
+    ...(requestedHazards !== undefined
+      ? { hazards: requestedHazards }
       : {}),
     ...(rounds !== undefined ? { rounds } : {}),
     // SE-parity economy — coerced + omitted-when-absent so every client builds an identical engine.

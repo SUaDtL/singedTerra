@@ -6,6 +6,7 @@ import type { NetworkRulesetVersion } from '@shared/types/GameOptions';
  */
 export const LEGACY_NETWORK_RULESET_VERSION = 1 as const;
 export const PREPARED_NETWORK_RULESET_VERSION = 2 as const;
+export const TERRAIN_HAZARD_NETWORK_RULESET_VERSION = 3 as const;
 
 /** New network rooms use v2; existing v1 lobbies are bridged at join time. */
 export const CURRENT_NETWORK_RULESET_VERSION: NetworkRulesetVersion =
@@ -17,7 +18,9 @@ export const CURRENT_NETWORK_RULESET_VERSION: NetworkRulesetVersion =
  * the Edge referee on any mutation.
  */
 export function normalizeNetworkRulesetVersion(value: unknown): NetworkRulesetVersion {
-  return value === PREPARED_NETWORK_RULESET_VERSION
-    ? PREPARED_NETWORK_RULESET_VERSION
-    : LEGACY_NETWORK_RULESET_VERSION;
+  return value === TERRAIN_HAZARD_NETWORK_RULESET_VERSION
+    ? TERRAIN_HAZARD_NETWORK_RULESET_VERSION
+    : value === PREPARED_NETWORK_RULESET_VERSION
+      ? PREPARED_NETWORK_RULESET_VERSION
+      : LEGACY_NETWORK_RULESET_VERSION;
 }

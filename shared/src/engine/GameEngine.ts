@@ -15,6 +15,9 @@ import {
 import {
   generate,
   buildBitmap,
+  applyTerrainHazards,
+  normalizeTerrainHazardMode,
+  LAVA_PIXEL,
   deform,
   applyGravity,
   settleStep,
@@ -342,6 +345,7 @@ export class GameEngine {
     const seed = options?.seed ?? DEFAULT_SEED;
     const heightLine = generate(seed);
     this.terrain = buildBitmap(heightLine);
+    applyTerrainHazards(this.terrain, seed, normalizeTerrainHazardMode(options?.hazards));
     this.windRng = createRng(seed);
     this.windRngSeed = seed;
     this.maxWind = options?.maxWind ?? MAX_WIND;
@@ -965,7 +969,7 @@ export class GameEngine {
         if (concreteWallContact) {
           p.x = hit.x;
           p.y = hit.y;
-          hit = { type: 'ground', x: hit.x, y: hit.y };
+          hit = { type: 'ground', x: hit.x, y: hit.y, material: 'ground' };
         } else {
           collisionStartX = hit.side === 'left'
             ? CANVAS_WIDTH - WALL_INSET
@@ -1014,7 +1018,7 @@ export class GameEngine {
               0,
               CANVAS_WIDTH - 0.01,
             );
-            this.detonate(endpointX, endpointY, p.weaponType, 'ground');
+            this.detonate(endpointX, endpointY, p.weaponType, 'ground', hit.material);
             continue;
           }
           // Ground contact arms the underground phase without altering the
@@ -1049,7 +1053,7 @@ export class GameEngine {
           // crater + explosion event) so betty lays a line of blasts as it skips,
           // instead of bouncing silently. Done AFTER reflecting/nudging above.
           if (bounce?.detonateEachBounce) {
-            this.detonate(hit.x, hit.y, p.weaponType, 'ground');
+            this.detonate(hit.x, hit.y, p.weaponType, 'ground', hit.material);
           }
           survivors.push(p); // still in flight
         } else {
@@ -1057,7 +1061,7 @@ export class GameEngine {
           if (napalm !== undefined) {
             this.igniteNapalm(hit.x, hit.y, napalm, p.weaponType, 'ground'); // splashes burning fuel, no blast
           } else {
-            this.detonate(hit.x, hit.y, p.weaponType, 'ground'); // bounces spent -> detonate
+            this.detonate(hit.x, hit.y, p.weaponType, 'ground', hit.material); // bounces spent -> detonate
           }
         }
       }
@@ -1386,6 +1390,7 @@ export class GameEngine {
     // Fresh terrain for the new round, from the derived (deterministic) seed.
     const heightLine = generate(roundSeed);
     this.terrain = buildBitmap(heightLine);
+    applyTerrainHazards(this.terrain, roundSeed, normalizeTerrainHazardMode(this.options?.hazards));
     this.state.terrain = this.terrain;
     this.state.terrainVersion += 1; // render-only: force a terrain re-render
 
@@ -1521,7 +1526,11 @@ export class GameEngine {
         this.fallDistances.set(tank.id, (this.fallDistances.get(tank.id) ?? 0) + distance);
         tank.y = surf; // crater opened beneath -> tank falls onto new floor
         tank.buried = false; // ...and is dug free if it had been buried
-      } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) === 1) {
+      }
+      if (pixelAt(this.terrain, xi, Math.floor(tank.y)) === LAVA_PIXEL) {
+        Tank.applyDamage(tank, 100);
+        tank.buried = false;
+      } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) > 0) {
         if (!tank.buried) tank.buriedTurns = 0; // a FRESH burial starts the trap timer
         tank.buried = true; // dirt over mid-body -> trapped (no damage, no kill)
       } else {
@@ -1612,6 +1621,7 @@ export class GameEngine {
     cy: number,
     weaponType: WeaponType,
     impactType?: ExplosionImpactType,
+    terrainMaterial?: 'ground' | 'lava',
   ): void {
     const { radius, maxDamage, falloffExponent, raisesTerrain, preservesTerrain, style, color, durationFrames } =
       getWeapon(weaponType).detonation;
@@ -1665,6 +1675,7 @@ export class GameEngine {
       cy: clamp(cy, 0, CANVAS_HEIGHT),
       radius,
       ...(impactType === undefined ? {} : { impactType }),
+      ...(terrainMaterial === undefined ? {} : { terrainMaterial }),
       style,
       color,
       durationFrames,

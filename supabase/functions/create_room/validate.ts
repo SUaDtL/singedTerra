@@ -46,6 +46,11 @@ export function coerceBattlefieldWorld(value: unknown):
     : undefined;
 }
 
+/** Fail closed to legacy terrain when an unknown hazard mode crosses the JSON seam. */
+export function coerceTerrainHazards(value: unknown): 'lava' | undefined {
+  return value === 'lava' ? 'lava' : undefined
+}
+
 /** Team rules are an opt-in four-seat mode; malformed or undersized requests fail closed. */
 export function coerceTeamMode(value: unknown, maxPlayers: unknown): boolean {
   return value === true && maxPlayers === 4;

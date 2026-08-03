@@ -63,4 +63,10 @@ describe('buildClientEngineOptions', () => {
       battlefieldWorld: 'glassstorm-expanse',
     });
   });
+
+  it('carries the opt-in hazard mode through both engine-option builders', () => {
+    const withHazards = { ...config('hotseat'), settings: { ...config('hotseat').settings, hazards: 'lava' as const } };
+    expect(buildClientEngineOptions(withHazards)).toMatchObject({ hazards: 'lava' });
+    expect(buildClientEngineOptions({ ...withHazards, mode: 'network' })).toMatchObject({ hazards: 'lava' });
+  });
 });

@@ -19,6 +19,7 @@ function blankRaw(overrides: Partial<RawSettings> = {}): RawSettings {
     armsLevel: '',
     walls: '',
     battlefieldWorld: '',
+    hazards: '',
     ...overrides,
   };
 }
@@ -163,6 +164,7 @@ describe('coerceSettings', () => {
         armsLevel: '3',
         walls: 'reflective',
         battlefieldWorld: 'obsidian-caldera',
+        hazards: 'lava',
       }),
     ).toEqual({
       maxWind: 7,
@@ -174,6 +176,7 @@ describe('coerceSettings', () => {
       armsLevel: 3,
       walls: 'reflective',
       battlefieldWorld: 'obsidian-caldera',
+      hazards: 'lava',
     });
   });
 

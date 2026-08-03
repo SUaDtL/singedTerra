@@ -180,6 +180,22 @@ Deno.test('handleCreateRoom: stores and echoes explicit ruleset 2', async () => 
   assertEquals(response.options, storedOptions)
 })
 
+Deno.test('handleCreateRoom: lava requires hazard ruleset 3 and is stored', async () => {
+  const blocked = await createRoomHandler({ serviceClient: captureRoomInsert().serviceClient as never })({
+    playerName: 'Ana', color: '#e84d4d', rulesetVersion: 2,
+    options: { maxPlayers: 2, hazards: 'lava' },
+  })
+  assertEquals(blocked.status, 400)
+
+  const capture = captureRoomInsert()
+  const allowed = await createRoomHandler({ serviceClient: capture.serviceClient as never })({
+    playerName: 'Ana', color: '#e84d4d', rulesetVersion: 3,
+    options: { maxPlayers: 2, hazards: 'lava' },
+  })
+  assertEquals(allowed.status, 200)
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).hazards, 'lava')
+})
+
 Deno.test('handleCreateRoom: omitted ruleset stores and echoes legacy version 1', async () => {
   const capture = captureRoomInsert()
   const res = await createRoomHandler({

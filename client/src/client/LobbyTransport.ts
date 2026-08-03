@@ -23,7 +23,9 @@ import {
   type BattlefieldWorldId,
   type NetworkRulesetVersion,
   type WallMode,
+  type TerrainHazardMode,
 } from '@shared/types/GameOptions';
+import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
@@ -39,6 +41,7 @@ import {
 import {
   CURRENT_NETWORK_RULESET_VERSION,
   LEGACY_NETWORK_RULESET_VERSION,
+  TERRAIN_HAZARD_NETWORK_RULESET_VERSION,
 } from './networkRuleset';
 
 /** Room visibility for created online rooms. */
@@ -66,6 +69,7 @@ export type RoomOptions = {
   rulesetVersion?: NetworkRulesetVersion;
   walls?: WallMode;
   battlefieldWorld?: BattlefieldWorldId;
+  hazards?: TerrainHazardMode;
   rounds?: number;
   interestRate?: number;
   suddenDeathTurn?: number;
@@ -167,6 +171,7 @@ export interface CreateRoomParams {
   gravity: string;
   walls: string;
   battlefieldWorld?: string;
+  hazards?: string;
   rounds: string;
   interestRate: string;
   suddenDeath: string;
@@ -208,7 +213,9 @@ export class LobbyTransport {
       playerName: params.playerName,
       color: params.color,
       loadout: params.loadout,
-      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
+      rulesetVersion: params.hazards === 'lava'
+        ? TERRAIN_HAZARD_NETWORK_RULESET_VERSION
+        : CURRENT_NETWORK_RULESET_VERSION,
       ...(params.bots.length > 0 ? { bots: params.bots } : {}),
       options: {
         maxPlayers: params.maxPlayers,
@@ -216,6 +223,9 @@ export class LobbyTransport {
         walls: normalizeWallMode(params.walls),
         ...(normalizeBattlefieldWorldId(params.battlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(params.battlefieldWorld) }
+          : {}),
+        ...(normalizeTerrainHazardMode(params.hazards) !== 'none'
+          ? { hazards: normalizeTerrainHazardMode(params.hazards) }
           : {}),
         ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
         ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
@@ -239,14 +249,20 @@ export class LobbyTransport {
       });
 
     const result = await request(CURRENT_NETWORK_RULESET_VERSION);
-    const requiresLegacyRoom = result.status === 409
+    const requiredRoomVersion = result.status === 409
       && result.data?.error === 'ruleset_mismatch'
-      && result.data.requiredRulesetVersion === LEGACY_NETWORK_RULESET_VERSION;
+      ? result.data.requiredRulesetVersion
+      : undefined;
 
     // The referee checks this mismatch before roster mutation. A single explicit
     // v1 retry lets a freshly deployed browser enter a still-open legacy lobby
     // without ever downgrading a new v2 room or retrying an unrelated failure.
-    return requiresLegacyRoom ? request(LEGACY_NETWORK_RULESET_VERSION) : result;
+    return requiredRoomVersion !== CURRENT_NETWORK_RULESET_VERSION
+      && (requiredRoomVersion === LEGACY_NETWORK_RULESET_VERSION
+      || requiredRoomVersion === 2
+      || requiredRoomVersion === TERRAIN_HAZARD_NETWORK_RULESET_VERSION)
+      ? request(requiredRoomVersion)
+      : result;
   }
 
   listRooms(): Promise<EdgeResult<ListRoomsResponse>> {

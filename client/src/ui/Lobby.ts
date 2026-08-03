@@ -3,6 +3,7 @@ import {
   normalizeBattlefieldWorldId,
   normalizeWallMode,
 } from '@shared/types/GameOptions';
+import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 import {
   DEFAULT_TANK_LOADOUT,
   TANK_KIT_IDS,
@@ -187,6 +188,8 @@ interface SettingsState {
   walls: string;
   /** Authored battlefield world (blank = Automatic). */
   battlefieldWorld: string;
+  /** Terrain hazard select value (blank = none). */
+  hazards: string;
   seed: string;
   rounds: string;
   interestRate: string;
@@ -235,7 +238,7 @@ export class Lobby {
   private players: PlayerRowState[] = [];
 
   /** Raw working state for the advanced-settings inputs (blank = use default). */
-  private settings: SettingsState = { maxWind: '', gravity: '', walls: '', battlefieldWorld: '', seed: '', rounds: '', interestRate: '', suddenDeathTurn: '', armsLevel: '', teamMode: '' };
+  private settings: SettingsState = { maxWind: '', gravity: '', walls: '', battlefieldWorld: '', hazards: '', seed: '', rounds: '', interestRate: '', suddenDeathTurn: '', armsLevel: '', teamMode: '' };
 
   /** Whether the advanced-settings <details> is open (persist across renders). */
   private settingsOpen = false;
@@ -259,6 +262,8 @@ export class Lobby {
   private onlineWalls = '';
   /** Authored battlefield world (blank = Automatic). */
   private onlineBattlefieldWorld = '';
+  /** Deterministic terrain hazard mode (blank = none). */
+  private onlineHazards = '';
   private onlineRounds = '';
   private onlineInterestRate = '';
   private onlineSuddenDeath = '';
@@ -1626,6 +1631,9 @@ export class Lobby {
         ...(normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) }
           : {}),
+        ...(normalizeTerrainHazardMode(liveRoom.options.hazards) !== 'none'
+          ? { hazards: normalizeTerrainHazardMode(liveRoom.options.hazards) }
+          : {}),
         ...(liveRoom.options.rounds !== undefined ? { rounds: liveRoom.options.rounds } : {}),
         ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
         ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
@@ -1728,6 +1736,16 @@ export class Lobby {
           'visual world only; terrain and physics stay unchanged',
         ),
         this.onlineChoiceField(
+          'Terrain hazards',
+          this.onlineHazards,
+          (value) => { this.onlineHazards = value; },
+          [
+            { value: '', label: 'None — classic terrain' },
+            { value: 'lava', label: 'Lava — lethal pools' },
+          ],
+          'deterministic lava pools are solid to shells but lethal to tanks',
+        ),
+        this.onlineChoiceField(
           'Teams',
           this.onlineTeamMode ? '2v2' : '',
           (value) => { this.onlineTeamMode = value === '2v2'; },
@@ -1821,6 +1839,7 @@ export class Lobby {
         gravity: this.onlineGravity,
         walls: this.onlineWalls,
         battlefieldWorld: this.onlineBattlefieldWorld,
+        hazards: this.onlineHazards,
         rounds: this.onlineRounds,
         interestRate: this.onlineInterestRate,
         suddenDeath: this.onlineSuddenDeath,
@@ -1871,6 +1890,9 @@ export class Lobby {
         walls: normalizeWallMode(this.onlineWalls),
         ...(normalizeBattlefieldWorldId(this.onlineBattlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(this.onlineBattlefieldWorld) }
+          : {}),
+        ...(normalizeTerrainHazardMode(this.onlineHazards) !== 'none'
+          ? { hazards: normalizeTerrainHazardMode(this.onlineHazards) }
           : {}),
         ...(rounds !== undefined ? { rounds } : {}),
         ...economy,
@@ -2181,6 +2203,9 @@ export class Lobby {
           : {}),
         ...(normalizeBattlefieldWorldId(room.options.battlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(room.options.battlefieldWorld) }
+          : {}),
+        ...(normalizeTerrainHazardMode(room.options.hazards) !== 'none'
+          ? { hazards: normalizeTerrainHazardMode(room.options.hazards) }
           : {}),
         // Best-of-N comes from the SYNCED room row so every client's engine agrees
         // (a per-client value would desync the deterministic lockstep). Absent on
@@ -2668,6 +2693,15 @@ export class Lobby {
           { value: 'glassstorm-expanse', label: 'Glassstorm Expanse — ice' },
         ],
         'visual world only; terrain and physics stay unchanged',
+      ),
+      this.settingsChoiceField(
+        'Terrain hazards',
+        'hazards',
+        [
+          { value: '', label: 'None — classic terrain' },
+          { value: 'lava', label: 'Lava — lethal pools' },
+        ],
+        'deterministic lava pools are solid to shells but lethal to tanks',
       ),
       this.settingsChoiceField(
         'Teams',

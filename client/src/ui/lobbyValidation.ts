@@ -5,7 +5,9 @@ import {
   type BattlefieldWorldId,
   type NetworkRulesetVersion,
   type WallMode,
+  type TerrainHazardMode,
 } from '@shared/types/GameOptions';
+import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 
 /**
  * Optional advanced engine settings chosen in the lobby. Each field is omitted
@@ -33,6 +35,8 @@ export interface LobbySettings {
   walls?: WallMode;
   /** Presentation-only authored world; omitted means Automatic. */
   battlefieldWorld?: BattlefieldWorldId;
+  /** Opt-in deterministic terrain hazard mode; blank means none. */
+  hazards?: TerrainHazardMode;
   /** Server-authoritative deterministic network room contract. */
   rulesetVersion?: NetworkRulesetVersion;
 }
@@ -69,6 +73,7 @@ export interface RawSettings {
   walls: string;
   /** Presentation-only authored world select value (blank = Automatic). */
   battlefieldWorld: string;
+  hazards: string;
   teamMode?: string;
 }
 
@@ -129,6 +134,8 @@ export function coerceSettings(raw: RawSettings): LobbySettings | undefined {
 
   const battlefieldWorld = normalizeBattlefieldWorldId(raw.battlefieldWorld);
   if (battlefieldWorld !== undefined) out.battlefieldWorld = battlefieldWorld;
+  const hazards = normalizeTerrainHazardMode(raw.hazards);
+  if (hazards !== 'none') out.hazards = hazards;
 
   if (raw.teamMode === '2v2') out.teamMode = true;
 

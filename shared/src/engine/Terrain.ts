@@ -1,6 +1,6 @@
 /**
  * Terrain: a per-pixel BITMAP — a Uint8Array of length CANVAS_WIDTH*CANVAS_HEIGHT
- * (index y*CANVAS_WIDTH + x), 0 = air, 1 = solid. This bitmap is the canonical
+ * (index y*CANVAS_WIDTH + x), 0 = air, 1 = solid, 2 = lava. This bitmap is the canonical
  * terrain held in GameState and used for O(1) collision (SPEC §4.1). It is built
  * by rasterizing a midpoint-displacement HEIGHT-MAP SILHOUETTE (`generate()`
  * returns the per-column surface y), then deformed on explosions (craters clear
@@ -137,9 +137,65 @@ export function generate(seed: number): Uint16Array {
 /** Total pixel count of the terrain bitmap (one byte per pixel). */
 export const BITMAP_LEN = CANVAS_WIDTH * CANVAS_HEIGHT;
 
+/** Canonical terrain pixel values. Values above AIR_PIXEL are collision solids. */
+export const AIR_PIXEL = 0;
+export const SOLID_PIXEL = 1;
+export const LAVA_PIXEL = 2;
+export type TerrainHazardMode = 'none' | 'lava';
+
+/** Fail closed at every untyped option seam. */
+export function normalizeTerrainHazardMode(value: unknown): TerrainHazardMode {
+  return value === 'lava' ? 'lava' : 'none';
+}
+
+/**
+ * Paint deterministic exposed lava pools onto an existing ordinary bitmap.
+ * Placement uses only the supplied seed and avoids the initial spawn corridors.
+ * The helper is a no-op for legacy `none` mode and returns the number of pixels
+ * changed to LAVA_PIXEL.
+ */
+export function applyTerrainHazards(
+  bitmap: Uint8Array,
+  seed: number,
+  mode: TerrainHazardMode,
+): number {
+  if (mode !== 'lava') return 0;
+  const rand = mulberry32(hashSeed(seed + 0x6c617661));
+  const poolCount = 2 + Math.floor(rand() * 3);
+  let written = 0;
+  for (let pool = 0; pool < poolCount; pool++) {
+    // Keep every pool inside the central 520..680 band. This is clear of the
+    // two-seat spawn points (180/1020) and the inner four-seat points
+    // (440/760), including the tank footprint and placement interpolation.
+    const center = 520 + Math.floor(rand() * 160);
+    const halfWidth = 18 + Math.floor(rand() * 18);
+    const depth = 6 + Math.floor(rand() * 7);
+    for (let x = center - halfWidth; x <= center + halfWidth; x++) {
+      if (x < 0 || x >= CANVAS_WIDTH) continue;
+      let surface = -1;
+      for (let y = 0; y < CANVAS_HEIGHT; y++) {
+        if (bitmap[y * CANVAS_WIDTH + x] === SOLID_PIXEL) {
+          surface = y;
+          break;
+        }
+      }
+      if (surface < 0) continue;
+      const end = Math.min(CANVAS_HEIGHT, surface + depth);
+      for (let y = surface; y < end; y++) {
+        const index = y * CANVAS_WIDTH + x;
+        if (bitmap[index] === SOLID_PIXEL) {
+          bitmap[index] = LAVA_PIXEL;
+          written++;
+        }
+      }
+    }
+  }
+  return written;
+}
+
 /**
  * Build a pixel BITMAP (Uint8Array of length CANVAS_WIDTH*CANVAS_HEIGHT, index
- * y*CANVAS_WIDTH + x, 0 = air, 1 = solid) from a height LINE (one surface y per
+ * y*CANVAS_WIDTH + x, 0 = air, 1 = solid, 2 = lava) from a height LINE (one surface y per
  * column, as produced by generate()). For each column x the pixels from its
  * surface y down to the canvas floor are filled solid; everything above is air.
  *
@@ -154,7 +210,7 @@ export function buildBitmap(heightLine: Uint16Array): Uint8Array {
     // behavior while keeping the bitmap value contract explicit.
     const s = clamp(heightLine[x] ?? CANVAS_HEIGHT, 0, CANVAS_HEIGHT);
     for (let y = s; y < CANVAS_HEIGHT; y++) {
-      bitmap[y * CANVAS_WIDTH + x] = 1;
+      bitmap[y * CANVAS_WIDTH + x] = SOLID_PIXEL;
     }
   }
   return bitmap;
@@ -166,7 +222,7 @@ export function generateBitmap(seed: number): Uint8Array {
 }
 
 /**
- * Pure, bounds-checked pixel lookup: 1 if (x, y) is solid, 0 if air OR
+ * Pure, bounds-checked pixel lookup: a material value if (x, y) is solid, 0 if air OR
  * out-of-canvas. No bottom-floor synthesis here — out-of-bounds reads return
  * air; the bottom-floor collision rule lives in Physics.collide, not here.
  */
@@ -184,7 +240,7 @@ export function pixelAt(bitmap: Uint8Array, x: number, y: number): number {
 export function surfaceAt(bitmap: Uint8Array, x: number): number {
   const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
   for (let y = 0; y < CANVAS_HEIGHT; y++) {
-    if (bitmap[y * CANVAS_WIDTH + xi] === 1) return y;
+    if ((bitmap[y * CANVAS_WIDTH + xi] ?? AIR_PIXEL) > AIR_PIXEL) return y;
   }
   return CANVAS_HEIGHT;
 }
@@ -212,7 +268,7 @@ export function deform(
   if (r <= 0) return null;
 
   const r2 = r * r;
-  const value = raise ? 1 : 0;
+  const value = raise ? SOLID_PIXEL : AIR_PIXEL;
 
   let xMin = Infinity;
   let xMax = -Infinity;
@@ -295,9 +351,10 @@ export function settleStep(
       // a whole unit in a single pass (each grain clears the row below it for
       // the grain above).
       for (let y = CANVAS_HEIGHT - 2; y >= 0; y--) {
-        if (bitmap[y * CANVAS_WIDTH + x] === 1 && bitmap[(y + 1) * CANVAS_WIDTH + x] === 0) {
-          bitmap[(y + 1) * CANVAS_WIDTH + x] = 1;
-          bitmap[y * CANVAS_WIDTH + x] = 0;
+        const pixel = bitmap[y * CANVAS_WIDTH + x] ?? AIR_PIXEL;
+        if (pixel > AIR_PIXEL && (bitmap[(y + 1) * CANVAS_WIDTH + x] ?? AIR_PIXEL) === AIR_PIXEL) {
+          bitmap[(y + 1) * CANVAS_WIDTH + x] = pixel;
+          bitmap[y * CANVAS_WIDTH + x] = AIR_PIXEL;
           movedThisSubstep = true;
           anyMoved = true;
         }

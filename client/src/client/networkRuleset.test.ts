@@ -15,6 +15,7 @@ describe('network ruleset client contract', () => {
     expect(normalizeNetworkRulesetVersion(undefined)).toBe(1);
     expect(normalizeNetworkRulesetVersion(1)).toBe(1);
     expect(normalizeNetworkRulesetVersion(2)).toBe(2);
+    expect(normalizeNetworkRulesetVersion(3)).toBe(3);
     expect(normalizeNetworkRulesetVersion(99)).toBe(1);
     expect(normalizeNetworkRulesetVersion('2')).toBe(1);
   });

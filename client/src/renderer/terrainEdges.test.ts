@@ -90,4 +90,9 @@ describe('terrainEdgeAlpha', () => {
 
     expect(alphas).toEqual([191, 199, 207, 215, 223, 231, 239, 247, 255]);
   });
+
+  it('treats lava pixels as terrain for edge coverage', () => {
+    const lava = Uint8Array.from([0, 0, 0, 0, 2, 0, 0, 0, 0]);
+    expect(terrainEdgeAlpha(lava, 3, 3, 1, 1)).toBe(191);
+  });
 });

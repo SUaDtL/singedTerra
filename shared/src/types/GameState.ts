@@ -163,6 +163,8 @@ export interface ExplosionEvent {
    * collision. Air/flight-cap explosions intentionally omit this field.
    */
   impactType?: ExplosionImpactType;
+  /** Terrain material struck by a ground impact; absent for air/tank impacts. */
+  terrainMaterial?: 'ground' | 'lava';
   /** Visual style of the burst (e.g. single 'blast' vs 'cluster' bomblet). */
   style: ExplosionStyle;
   /** CSS color string for the burst (from the weapon definition). */

@@ -20,21 +20,21 @@ export function terrainEdgeAlpha(
   y: number,
 ): number {
   const index = y * width + x;
-  if (terrain[index] !== 1) return 0;
+  if ((terrain[index] ?? 0) === 0) return 0;
 
   // Nearly every solid pixel is deep interior. Unroll its in-bounds neighborhood
   // so the terrain-version rebuild avoids loop/bounds overhead without skipping
   // diagonal-only exposure.
   if (x > 0 && x < width - 1 && y > 0 && y < height - 1) {
     const solidNeighbors =
-      (terrain[index - width - 1] ?? 0)
-      + (terrain[index - width] ?? 0)
-      + (terrain[index - width + 1] ?? 0)
-      + (terrain[index - 1] ?? 0)
-      + (terrain[index + 1] ?? 0)
-      + (terrain[index + width - 1] ?? 0)
-      + (terrain[index + width] ?? 0)
-      + (terrain[index + width + 1] ?? 0);
+      Number((terrain[index - width - 1] ?? 0) > 0)
+      + Number((terrain[index - width] ?? 0) > 0)
+      + Number((terrain[index - width + 1] ?? 0) > 0)
+      + Number((terrain[index - 1] ?? 0) > 0)
+      + Number((terrain[index + 1] ?? 0) > 0)
+      + Number((terrain[index + width - 1] ?? 0) > 0)
+      + Number((terrain[index + width] ?? 0) > 0)
+      + Number((terrain[index + width + 1] ?? 0) > 0);
     return MIN_SOLID_ALPHA + Math.round(ALPHA_RANGE * solidNeighbors / 8);
   }
 
@@ -49,7 +49,7 @@ export function terrainEdgeAlpha(
         || nx >= width
         || ny < 0
         || ny >= height
-        || terrain[ny * width + nx] === 1
+        || (terrain[ny * width + nx] ?? 0) > 0
       ) {
         solidNeighbors++;
       }

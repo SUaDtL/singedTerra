@@ -91,6 +91,23 @@ const target = {
 } as unknown as CanvasRenderingContext2D;
 
 describe('TerrainRenderer authored material integration', () => {
+  it('paints lava with a distinct high-contrast material color', () => {
+    const material: MaterialStub = {
+      isSettled: true,
+      needsApplication: false,
+      sample: () => 0,
+      acknowledgeApplied() {},
+      select() {},
+      reset() {},
+    };
+    const { renderer, pixels } = rendererWith(material);
+    const terrain = flatTerrain(100);
+    terrain[120 * CANVAS_WIDTH + 500] = 2;
+    renderer.draw(target, terrain, 1);
+    expect(rgbaAt(pixels, 500, 120)).toEqual([238, 46, 18, 255]);
+    expect(rgbaAt(pixels, 500, 121)).not.toEqual([238, 46, 18, 255]);
+  });
+
   it('rebuilds an already-cached frame when the first world is selected (kills missing selectWorld markDirty)', () => {
     const select = vi.fn();
     const material: MaterialStub = {

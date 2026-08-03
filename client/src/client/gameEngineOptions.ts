@@ -49,13 +49,14 @@ export function buildClientEngineOptions(
       gravity: settings?.gravity,
       walls: settings?.walls,
       battlefieldWorld: settings?.battlefieldWorld,
+      hazards: settings?.hazards,
       rounds: settings?.rounds,
       interestRate: settings?.interestRate,
       suddenDeathTurn: settings?.suddenDeathTurn,
       armsLevel: settings?.armsLevel,
       teamMode: settings?.teamMode,
       rulesetVersion,
-      starterWeaponFalloff: rulesetVersion === 2 ? 'decisive' : 'linear',
+      starterWeaponFalloff: rulesetVersion === 2 || rulesetVersion === 3 ? 'decisive' : 'linear',
     };
   }
 
@@ -71,6 +72,7 @@ export function buildClientEngineOptions(
     ...(settings?.gravity != null ? { gravity: settings.gravity } : {}),
     ...(settings?.walls != null ? { walls: settings.walls } : {}),
     ...(settings?.battlefieldWorld != null ? { battlefieldWorld: settings.battlefieldWorld } : {}),
+    ...(settings?.hazards != null ? { hazards: settings.hazards } : {}),
     ...(settings?.rounds != null ? { rounds: settings.rounds } : {}),
     ...(settings?.interestRate != null ? { interestRate: settings.interestRate } : {}),
     ...(settings?.suddenDeathTurn != null ? { suddenDeathTurn: settings.suddenDeathTurn } : {}),

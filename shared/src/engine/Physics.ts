@@ -1,6 +1,6 @@
 import type { ProjectileState, TankState } from '../types/GameState';
 import type { WallMode } from '../types/GameOptions';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain';
+import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain';
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank';
 import { clamp } from './math';
 
@@ -57,7 +57,7 @@ const DEG_TO_RAD = Math.PI / 180;
 /** Result of a single physics step / collision check (discriminated union). */
 export type CollisionResult =
   | { type: 'none' }
-  | { type: 'ground'; x: number; y: number }
+  | { type: 'ground'; x: number; y: number; material: TerrainMaterial }
   | { type: 'tank'; tankId: string; x: number; y: number }
   | {
       type: 'wall';
@@ -69,6 +69,8 @@ export type CollisionResult =
       remainingY?: number;
     }
   | { type: 'oob' };
+
+export type TerrainMaterial = 'ground' | 'lava';
 
 /** Authoritative explosion event payload emitted into GameState (SPEC §7). */
 export interface ExplosionResult {
@@ -260,9 +262,15 @@ export function collide(
   // floor; otherwise hit when the pixel at (floor(x), floor(y)) is solid. (The
   // OOB-x check above guarantees x in [0, CANVAS_WIDTH) here.)
   const xi = Math.floor(p.x);
-  if (p.y >= CANVAS_HEIGHT) return { type: 'ground', x: p.x, y: p.y };
-  if (pixelAt(terrain, xi, Math.floor(p.y)) === 1) {
-    return { type: 'ground', x: p.x, y: p.y };
+  if (p.y >= CANVAS_HEIGHT) return { type: 'ground', x: p.x, y: p.y, material: 'ground' };
+  const pixel = pixelAt(terrain, xi, Math.floor(p.y));
+  if (pixel > AIR_PIXEL) {
+    return {
+      type: 'ground',
+      x: p.x,
+      y: p.y,
+      material: pixel === LAVA_PIXEL ? 'lava' : 'ground',
+    };
   }
 
   return { type: 'none' };

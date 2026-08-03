@@ -1,5 +1,7 @@
 import type { AiDifficulty } from './GameState';
 import type { TankLoadout } from './TankLoadout';
+import type { TerrainHazardMode } from '../engine/Terrain';
+export type { TerrainHazardMode } from '../engine/Terrain';
 
 /** Horizontal battlefield boundary rule. */
 export type WallMode = 'open' | 'reflective' | 'wrap' | 'concrete';
@@ -8,7 +10,7 @@ export type WallMode = 'open' | 'reflective' | 'wrap' | 'concrete';
 export type StarterWeaponFalloff = 'linear' | 'decisive';
 
 /** Deterministic network-room contract understood by the current client. */
-export type NetworkRulesetVersion = 1 | 2;
+export type NetworkRulesetVersion = 1 | 2 | 3;
 
 /** Stable team identifiers used by the opt-in 2v2 ruleset. */
 export type TeamId = 1 | 2;
@@ -75,6 +77,8 @@ export interface GameOptions {
   walls?: WallMode;
   /** Presentation-only authored world; omitted means terrain-derived Automatic. */
   battlefieldWorld?: BattlefieldWorldId;
+  /** Opt-in deterministic terrain hazard material; omitted means legacy terrain. */
+  hazards?: TerrainHazardMode;
   /**
    * Edge-enforced deterministic contract for a network room. Missing means the
    * deployed legacy ruleset 1. The engine itself only consumes the derived

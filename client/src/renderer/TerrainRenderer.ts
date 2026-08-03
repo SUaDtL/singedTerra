@@ -1,4 +1,5 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
+import { LAVA_PIXEL } from '@shared/engine/Terrain';
 import { BACKDROP, TERRAIN, hexToRgb } from '../ui/theme';
 import { bandFloatForY } from './strata';
 import { terrainEdgeAlpha } from './terrainEdges';
@@ -233,7 +234,8 @@ export class TerrainRenderer {
       let depth = -1; // -1 = in air; resets at every air gap (fresh rim per run)
       for (let y = 0; y < H; y++) {
         const o = (y * W + x) * 4;
-        if (terrain[y * W + x] === 1) {
+        const material = terrain[y * W + x] ?? 0;
+        if (material > 0) {
           depth++;
           let r: number;
           let g: number;
@@ -278,6 +280,12 @@ export class TerrainRenderer {
             r *= materialFactor;
             g *= materialFactor;
             b *= materialFactor;
+          }
+          if (material === LAVA_PIXEL) {
+            // Lava stays unmistakable under every authored world palette.
+            r = 238;
+            g = depth < 2 ? 106 : 46;
+            b = 18;
           }
           const bevel = bevelAt(x, y);
           if (bevel > 0) {
