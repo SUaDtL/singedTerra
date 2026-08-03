@@ -17,8 +17,8 @@
 
 - [x] Give one adversarial reviewer the complete spec, plan, sprint log, tests, and
   final diff; resolve every blocking finding.
-- [ ] Open the PR, require all hosted checks green on the exact reviewed head, and
+- [x] Open the PR, require all hosted checks green on the exact reviewed head, and
   merge under standing authority.
-- [ ] Deploy the associated client change through the normal Pages workflow and
+- [x] Deploy the associated client change through the normal Pages workflow and
   verify the production asset and health smoke.
-- [ ] Mark `reliability.teardown.0001` done and append the final delivery receipt.
+- [x] Mark `reliability.teardown.0001` done and append the final delivery receipt.
