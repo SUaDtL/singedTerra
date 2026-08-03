@@ -4,7 +4,7 @@ import type {
   ExplosionStyle,
   TankState,
 } from '@shared/types/GameState';
-import type { WallMode } from '@shared/types/GameOptions';
+import type { BattlefieldWorldId, WallMode } from '@shared/types/GameOptions';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, surfaceAt } from '@shared/engine/Terrain';
 import { TANK_WIDTH, TANK_HEIGHT, BARREL_LENGTH, barrelTip } from '@shared/engine/Tank';
 import { getWeapon } from '@shared/engine/WeaponSystem';
@@ -624,8 +624,10 @@ export class Renderer {
   }
 
   /** Freeze one complete deterministic world from the client's pristine terrain. */
-  selectBattlefieldWorld(terrain: Uint8Array): void {
-    const world = this.battlefieldBackdrop?.select?.(terrain);
+  selectBattlefieldWorld(terrain: Uint8Array, requestedWorld?: BattlefieldWorldId): void {
+    const world = requestedWorld === undefined
+      ? this.battlefieldBackdrop?.select?.(terrain)
+      : this.battlefieldBackdrop?.select?.(terrain, requestedWorld);
     if (world) this.terrain?.selectWorld?.(world);
   }
 

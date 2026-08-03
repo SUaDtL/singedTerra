@@ -1,5 +1,8 @@
 import type { AiDifficulty } from '@shared/types/GameState';
-import { normalizeWallMode } from '@shared/types/GameOptions';
+import {
+  normalizeBattlefieldWorldId,
+  normalizeWallMode,
+} from '@shared/types/GameOptions';
 import {
   DEFAULT_TANK_LOADOUT,
   TANK_KIT_IDS,
@@ -182,6 +185,8 @@ interface SettingsState {
   gravity: string;
   /** Horizontal arena boundary behavior (blank = open). */
   walls: string;
+  /** Authored battlefield world (blank = Automatic). */
+  battlefieldWorld: string;
   seed: string;
   rounds: string;
   interestRate: string;
@@ -229,7 +234,7 @@ export class Lobby {
   private players: PlayerRowState[] = [];
 
   /** Raw working state for the advanced-settings inputs (blank = use default). */
-  private settings: SettingsState = { maxWind: '', gravity: '', walls: '', seed: '', rounds: '', interestRate: '', suddenDeathTurn: '', armsLevel: '' };
+  private settings: SettingsState = { maxWind: '', gravity: '', walls: '', battlefieldWorld: '', seed: '', rounds: '', interestRate: '', suddenDeathTurn: '', armsLevel: '' };
 
   /** Whether the advanced-settings <details> is open (persist across renders). */
   private settingsOpen = false;
@@ -251,6 +256,8 @@ export class Lobby {
   private onlineGravity = '';
   /** Horizontal arena boundary behavior (blank = open). */
   private onlineWalls = '';
+  /** Authored battlefield world (blank = Automatic). */
+  private onlineBattlefieldWorld = '';
   private onlineRounds = '';
   private onlineInterestRate = '';
   private onlineSuddenDeath = '';
@@ -1613,6 +1620,9 @@ export class Lobby {
         ...(normalizeWallMode(liveRoom.options.walls) !== 'open'
           ? { walls: normalizeWallMode(liveRoom.options.walls) }
           : {}),
+        ...(normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) !== undefined
+          ? { battlefieldWorld: normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) }
+          : {}),
         ...(liveRoom.options.rounds !== undefined ? { rounds: liveRoom.options.rounds } : {}),
         ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
         ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
@@ -1701,6 +1711,18 @@ export class Lobby {
           ],
           'shots exit, rebound, or cross through paired arena edges',
         ),
+        this.onlineChoiceField(
+          'Battlefield',
+          this.onlineBattlefieldWorld,
+          (value) => { this.onlineBattlefieldWorld = value; },
+          [
+            { value: '', label: 'Automatic — terrain decides' },
+            { value: 'ember-dusk', label: 'Ember Dusk — post-apocalypse' },
+            { value: 'obsidian-caldera', label: 'Obsidian Caldera — volcanic night' },
+            { value: 'glassstorm-expanse', label: 'Glassstorm Expanse — ice' },
+          ],
+          'visual world only; terrain and physics stay unchanged',
+        ),
         this.onlineNumberField('Rounds', this.onlineRounds, (value) => { this.onlineRounds = value; }, {
           min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT),
           hint: 'best-of-N, odd',
@@ -1784,6 +1806,7 @@ export class Lobby {
         maxWind: this.onlineMaxWind,
         gravity: this.onlineGravity,
         walls: this.onlineWalls,
+        battlefieldWorld: this.onlineBattlefieldWorld,
         rounds: this.onlineRounds,
         interestRate: this.onlineInterestRate,
         suddenDeath: this.onlineSuddenDeath,
@@ -1831,6 +1854,9 @@ export class Lobby {
           ? clamp(parseNumber(this.onlineGravity)!, GRAVITY_MIN, GRAVITY_MAX)
           : GRAVITY_DEFAULT,
         walls: normalizeWallMode(this.onlineWalls),
+        ...(normalizeBattlefieldWorldId(this.onlineBattlefieldWorld) !== undefined
+          ? { battlefieldWorld: normalizeBattlefieldWorldId(this.onlineBattlefieldWorld) }
+          : {}),
         ...(rounds !== undefined ? { rounds } : {}),
         ...economy,
       };
@@ -2136,6 +2162,9 @@ export class Lobby {
         gravity: room.options.gravity,
         ...(normalizeWallMode(room.options.walls) !== 'open'
           ? { walls: normalizeWallMode(room.options.walls) }
+          : {}),
+        ...(normalizeBattlefieldWorldId(room.options.battlefieldWorld) !== undefined
+          ? { battlefieldWorld: normalizeBattlefieldWorldId(room.options.battlefieldWorld) }
           : {}),
         // Best-of-N comes from the SYNCED room row so every client's engine agrees
         // (a per-client value would desync the deterministic lockstep). Absent on
@@ -2611,6 +2640,17 @@ export class Lobby {
           { value: 'concrete', label: 'Concrete — impact at edge' },
         ],
         'shots exit, rebound, or cross through paired arena edges',
+      ),
+      this.settingsChoiceField(
+        'Battlefield',
+        'battlefieldWorld',
+        [
+          { value: '', label: 'Automatic — terrain decides' },
+          { value: 'ember-dusk', label: 'Ember Dusk — post-apocalypse' },
+          { value: 'obsidian-caldera', label: 'Obsidian Caldera — volcanic night' },
+          { value: 'glassstorm-expanse', label: 'Glassstorm Expanse — ice' },
+        ],
+        'visual world only; terrain and physics stay unchanged',
       ),
       this.numberField('Seed', 'seed', {
         step: 1,

@@ -35,6 +35,17 @@ export function coerceWallMode(value: unknown): 'open' | 'reflective' | 'wrap' |
   return value === 'reflective' || value === 'wrap' || value === 'concrete' ? value : 'open';
 }
 
+/** Presentation-only world choice; malformed or Automatic values are omitted. */
+export function coerceBattlefieldWorld(value: unknown):
+  | 'ember-dusk'
+  | 'obsidian-caldera'
+  | 'glassstorm-expanse'
+  | undefined {
+  return value === 'ember-dusk' || value === 'obsidian-caldera' || value === 'glassstorm-expanse'
+    ? value
+    : undefined;
+}
+
 export function coerceEconomyOptions(
   options:
     | { interestRate?: unknown; suddenDeathTurn?: unknown; armsLevel?: unknown; [key: string]: unknown }

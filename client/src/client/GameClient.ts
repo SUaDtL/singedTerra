@@ -1,6 +1,10 @@
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
-import type { NetworkRulesetVersion, WallMode } from '@shared/types/GameOptions';
+import type {
+  BattlefieldWorldId,
+  NetworkRulesetVersion,
+  WallMode,
+} from '@shared/types/GameOptions';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 
 /**
@@ -18,6 +22,7 @@ export interface RematchInfo {
     gravity: number;
     rulesetVersion?: NetworkRulesetVersion;
     walls?: WallMode;
+    battlefieldWorld?: BattlefieldWorldId;
     rounds?: number;
   };
   players: Array<{

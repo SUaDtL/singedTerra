@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [ ] mvp2.identity.0001 - Persistent users and progression
+  - Desc: Provide persistent users and progression without trusting client-owned progress or weakening the current seat-token/network security boundary.
+  - Boundaries: authenticated user identity, secure persistence, progression schema and rules; no implementation until auth/security controls and data-integrity design are cleared
+- [~] mvp1.world.0001 - Let lobby players choose an authored battlefield world and carry it through hot-seat and network setup  (started 2026-08-03)
+  - Desc: Let players choose among the existing authored worlds in hot-seat and network setup; keep the choice presentation-only and fail closed to the existing deterministic selection.
+  - Boundaries: shared presentation identifier, lobby UI, client option transport, deterministic renderer selection; no auth, migration, dependency, or secret changes
 - [x] mvp1.ai.0001 - Teach hard AI deterministic Parachute counterplay  (done 2026-08-03)
   - Desc: Let hard AI buy Parachutes through the existing accessory contract when collapse risk justifies it
   - Boundaries: shared deterministic AI planning, hot-seat AI driver, and AI harness tests only

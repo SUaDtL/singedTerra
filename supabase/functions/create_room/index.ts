@@ -13,7 +13,13 @@ import {
   resolveCreatableRulesetVersion,
   type TankLoadout,
 } from '../_shared/mod.ts'
-import { coerceEconomyOptions, coerceGravity, coerceMaxWind, coerceWallMode } from './validate.ts'
+import {
+  coerceBattlefieldWorld,
+  coerceEconomyOptions,
+  coerceGravity,
+  coerceMaxWind,
+  coerceWallMode,
+} from './validate.ts'
 
 interface CreateRoomDependencies {
   serviceClient?: ReturnType<typeof getServiceClient>
@@ -29,7 +35,7 @@ async function handleCreateRoomWithDependencies(
     loadout?: unknown
     rulesetVersion?: unknown
     options?: {
-      maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown; walls?: unknown
+      maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown; walls?: unknown; battlefieldWorld?: unknown
       // SE-parity economy (optional, additive). Coerced by coerceEconomyOptions.
       interestRate?: unknown; suddenDeathTurn?: unknown; armsLevel?: unknown
     }
@@ -191,6 +197,9 @@ async function handleCreateRoomWithDependencies(
     rulesetVersion: requestedRuleset.version,
     walls: coerceWallMode(options.walls),
     visibility,
+    ...(coerceBattlefieldWorld(options.battlefieldWorld) !== undefined
+      ? { battlefieldWorld: coerceBattlefieldWorld(options.battlefieldWorld) }
+      : {}),
     ...(rounds !== undefined ? { rounds } : {}),
     // SE-parity economy — coerced + omitted-when-absent so every client builds an identical engine.
     ...coerceEconomyOptions(options),

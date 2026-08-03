@@ -18,6 +18,7 @@ function blankRaw(overrides: Partial<RawSettings> = {}): RawSettings {
     suddenDeathTurn: '',
     armsLevel: '',
     walls: '',
+    battlefieldWorld: '',
     ...overrides,
   };
 }
@@ -114,6 +115,13 @@ describe('coerceSettings', () => {
     expect(coerceSettings(blankRaw({ walls: 'lava' }))).toBeUndefined();
   });
 
+  it('accepts authored battlefield worlds and omits Automatic or invalid values', () => {
+    expect(coerceSettings(blankRaw({ battlefieldWorld: 'glassstorm-expanse' })))
+      .toEqual({ battlefieldWorld: 'glassstorm-expanse' });
+    expect(coerceSettings(blankRaw({ battlefieldWorld: 'automatic' }))).toBeUndefined();
+    expect(coerceSettings(blankRaw({ battlefieldWorld: 'volcanic-moon' }))).toBeUndefined();
+  });
+
   it('clamps rounds into range then forces odd (even in-range input)', () => {
     // 4 is in range [1,9] but even -> +1 => 5
     expect(coerceSettings(blankRaw({ rounds: '4' }))).toEqual({ rounds: 5 });
@@ -149,6 +157,7 @@ describe('coerceSettings', () => {
         suddenDeathTurn: '20',
         armsLevel: '3',
         walls: 'reflective',
+        battlefieldWorld: 'obsidian-caldera',
       }),
     ).toEqual({
       maxWind: 7,
@@ -159,6 +168,7 @@ describe('coerceSettings', () => {
       suddenDeathTurn: 20,
       armsLevel: 3,
       walls: 'reflective',
+      battlefieldWorld: 'obsidian-caldera',
     });
   });
 

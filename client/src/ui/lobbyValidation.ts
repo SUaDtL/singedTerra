@@ -1,6 +1,8 @@
 import { clamp } from '@shared/engine/math';
 import {
+  normalizeBattlefieldWorldId,
   normalizeWallMode,
+  type BattlefieldWorldId,
   type NetworkRulesetVersion,
   type WallMode,
 } from '@shared/types/GameOptions';
@@ -27,6 +29,8 @@ export interface LobbySettings {
   armsLevel?: number;
   /** Non-open sidewall rule; omitted means the legacy open boundary. */
   walls?: WallMode;
+  /** Presentation-only authored world; omitted means Automatic. */
+  battlefieldWorld?: BattlefieldWorldId;
   /** Server-authoritative deterministic network room contract. */
   rulesetVersion?: NetworkRulesetVersion;
 }
@@ -61,6 +65,8 @@ export interface RawSettings {
   armsLevel: string;
   /** Wall mode select value (blank/open = default). */
   walls: string;
+  /** Presentation-only authored world select value (blank = Automatic). */
+  battlefieldWorld: string;
 }
 
 /** Parse a trimmed numeric string; undefined for blank or non-finite input. */
@@ -117,6 +123,9 @@ export function coerceSettings(raw: RawSettings): LobbySettings | undefined {
 
   const walls = normalizeWallMode(raw.walls);
   if (walls !== 'open') out.walls = walls;
+
+  const battlefieldWorld = normalizeBattlefieldWorldId(raw.battlefieldWorld);
+  if (battlefieldWorld !== undefined) out.battlefieldWorld = battlefieldWorld;
 
   return Object.keys(out).length > 0 ? out : undefined;
 }

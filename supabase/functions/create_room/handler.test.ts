@@ -92,6 +92,38 @@ Deno.test('handleCreateRoom: normalizes an invalid wall value to open before ins
   )
 })
 
+Deno.test('handleCreateRoom: stores a valid battlefield world and omits malformed values', async () => {
+  const validCapture = captureRoomInsert()
+  const validResponse = await createRoomHandler({
+    serviceClient: validCapture.serviceClient as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    options: { maxPlayers: 2, battlefieldWorld: 'glassstorm-expanse' },
+  })
+
+  assertEquals(validResponse.status, 200)
+  assertEquals(
+    (validCapture.insertedRoom()?.options as { battlefieldWorld?: string }).battlefieldWorld,
+    'glassstorm-expanse',
+  )
+
+  const invalidCapture = captureRoomInsert()
+  const invalidResponse = await createRoomHandler({
+    serviceClient: invalidCapture.serviceClient as never,
+  })({
+    playerName: 'Ana',
+    color: '#e84d4d',
+    options: { maxPlayers: 2, battlefieldWorld: 'volcanic-moon' },
+  })
+
+  assertEquals(invalidResponse.status, 200)
+  assertEquals(
+    (invalidCapture.insertedRoom()?.options as { battlefieldWorld?: string }).battlefieldWorld,
+    undefined,
+  )
+})
+
 Deno.test('handleCreateRoom: stores and echoes explicit legacy ruleset 1', async () => {
   const capture = captureRoomInsert()
   const res = await createRoomHandler({

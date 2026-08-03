@@ -1,4 +1,7 @@
-import { normalizeWallMode } from '@shared/types/GameOptions';
+import {
+  normalizeBattlefieldWorldId,
+  normalizeWallMode,
+} from '@shared/types/GameOptions';
 import { normalizeTankLoadout } from '@shared/types/TankLoadout';
 import type { LobbyConfig } from '../ui/Lobby';
 import type { RematchInfo } from './GameClient';
@@ -6,6 +9,7 @@ import type { RematchInfo } from './GameClient';
 /** Convert an authoritative successor-room payload into the next network lobby. */
 export function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyConfig {
   const walls = normalizeWallMode(info.options.walls);
+  const battlefieldWorld = normalizeBattlefieldWorldId(info.options.battlefieldWorld);
   return {
     mode: 'network',
     players: info.players.map((player) => ({
@@ -23,6 +27,7 @@ export function rematchToConfig(info: RematchInfo, myPlayerId: string): LobbyCon
       maxWind: info.options.maxWind,
       gravity: info.options.gravity,
       ...(walls !== 'open' ? { walls } : {}),
+      ...(battlefieldWorld !== undefined ? { battlefieldWorld } : {}),
       ...(info.options.rounds !== undefined ? { rounds: info.options.rounds } : {}),
       ...(info.options.rulesetVersion !== undefined
         ? { rulesetVersion: info.options.rulesetVersion }

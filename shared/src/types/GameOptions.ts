@@ -10,6 +10,21 @@ export type StarterWeaponFalloff = 'linear' | 'decisive';
 /** Deterministic network-room contract understood by the current client. */
 export type NetworkRulesetVersion = 1 | 2;
 
+/** Presentation-only authored battlefield choice; absent means automatic. */
+export type BattlefieldWorldId =
+  | 'ember-dusk'
+  | 'obsidian-caldera'
+  | 'glassstorm-expanse';
+
+/** Fail closed for legacy, Automatic, or malformed room values. */
+export function normalizeBattlefieldWorldId(value: unknown): BattlefieldWorldId | undefined {
+  return value === 'ember-dusk'
+    || value === 'obsidian-caldera'
+    || value === 'glassstorm-expanse'
+    ? value
+    : undefined;
+}
+
 /** Fail closed to the legacy open boundary at every untyped room seam. */
 export function normalizeWallMode(value: unknown): WallMode {
   return value === 'reflective' || value === 'wrap' || value === 'concrete' ? value : 'open';
@@ -46,6 +61,8 @@ export interface GameOptions {
   gravity?: number;
   /** Horizontal boundary behavior; defaults to open (legacy OOB miss). */
   walls?: WallMode;
+  /** Presentation-only authored world; omitted means terrain-derived Automatic. */
+  battlefieldWorld?: BattlefieldWorldId;
   /**
    * Edge-enforced deterministic contract for a network room. Missing means the
    * deployed legacy ruleset 1. The engine itself only consumes the derived

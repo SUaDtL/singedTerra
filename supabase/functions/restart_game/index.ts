@@ -28,6 +28,7 @@ interface RematchInfo {
     gravity: number
     rulesetVersion: 1 | 2
     walls: 'open' | 'reflective' | 'wrap' | 'concrete'
+    battlefieldWorld?: 'ember-dusk' | 'obsidian-caldera' | 'glassstorm-expanse'
   }
   players: Array<{
     id: string
@@ -61,6 +62,11 @@ export function normalizeRematchOptions(
     walls: storedOptions.walls === 'reflective' || storedOptions.walls === 'wrap' || storedOptions.walls === 'concrete'
       ? storedOptions.walls
       : 'open',
+    ...(storedOptions.battlefieldWorld === 'ember-dusk'
+      || storedOptions.battlefieldWorld === 'obsidian-caldera'
+      || storedOptions.battlefieldWorld === 'glassstorm-expanse'
+      ? { battlefieldWorld: storedOptions.battlefieldWorld }
+      : {}),
   }
 }
 

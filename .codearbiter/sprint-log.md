@@ -3702,3 +3702,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - GitHub Pages deployment run 30807475143, main CI run 30807475159, and CodeQL run 30807475211 passed on merge head 279260e.
 - Production evidence: Pages HTML and current JS asset returned 200; deployed JS contains the Parachute path.
 - No Supabase or migration deployment was associated. Task mvp1.ai.0001 is complete; deferred open-tasks lock remains untouched.
+## 2026-08-03 - mvp1.world.0001 battlefield world choice
+- SMARTS decision: choose explicit selection among the existing Ember Dusk, Obsidian Caldera, and Glassstorm Expanse worlds as the next safe player-facing slice. It scores highest on immediate player value, visual identity, bounded implementation, reversibility, testability, and no-spend/no-auth risk.
+- User nudge incorporated: the original rendered post-apocalyptic world remains in the catalog; the icy world is Glassstorm Expanse; the new slice exposes both plus the third world and Automatic in hot-seat and network setup.
+- Persistent users and progression are recorded as a follow-on track, not folded into this slice: authenticated persistence and progression rules cross the auth/security hard gate and need their own governed design.
+- Confidence: high. Standing sprint authority covers the bounded spec and plan; no separate approval pause.

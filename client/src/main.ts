@@ -297,7 +297,7 @@ function bootstrap(): void {
 
     const newClient = await createClient(config);
     client = newClient;
-    selectClientBattlefieldWorld(newClient, renderer);
+    selectClientBattlefieldWorld(newClient, renderer, currentConfig?.settings?.battlefieldWorld);
     firstSalvo.startNewGame();
     e2eForwardedActionCounts = { setAngle: 0, setPower: 0, fire: 0 };
 

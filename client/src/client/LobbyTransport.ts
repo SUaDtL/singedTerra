@@ -18,7 +18,9 @@
  */
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
+  normalizeBattlefieldWorldId,
   normalizeWallMode,
+  type BattlefieldWorldId,
   type NetworkRulesetVersion,
   type WallMode,
 } from '@shared/types/GameOptions';
@@ -63,6 +65,7 @@ export type RoomOptions = {
   gravity: number;
   rulesetVersion?: NetworkRulesetVersion;
   walls?: WallMode;
+  battlefieldWorld?: BattlefieldWorldId;
   rounds?: number;
   interestRate?: number;
   suddenDeathTurn?: number;
@@ -162,6 +165,7 @@ export interface CreateRoomParams {
   maxWind: string;
   gravity: string;
   walls: string;
+  battlefieldWorld?: string;
   rounds: string;
   interestRate: string;
   suddenDeath: string;
@@ -208,6 +212,9 @@ export class LobbyTransport {
         maxPlayers: params.maxPlayers,
         visibility: params.visibility,
         walls: normalizeWallMode(params.walls),
+        ...(normalizeBattlefieldWorldId(params.battlefieldWorld) !== undefined
+          ? { battlefieldWorld: normalizeBattlefieldWorldId(params.battlefieldWorld) }
+          : {}),
         ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
         ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
         ...(rounds !== undefined ? { rounds } : {}),

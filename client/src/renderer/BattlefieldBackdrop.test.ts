@@ -4,6 +4,7 @@ import {
   BATTLEFIELD_WORLDS,
   BattlefieldBackdrop,
   centeredCoverCrop,
+  normalizeBattlefieldWorldId,
   selectBattlefieldWorld,
   type BackdropImageFactory,
 } from './BattlefieldBackdrop';
@@ -103,6 +104,19 @@ describe('battlefield world catalog', () => {
     }
     expect(seen).toEqual(new Set(BATTLEFIELD_WORLDS.map(({ id }) => id)));
   });
+
+  it('accepts an explicit world and fails closed to automatic selection', () => {
+    const terrain = terrainFixture(19);
+    const automatic = selectBattlefieldWorld(terrain);
+
+    expect(normalizeBattlefieldWorldId('glassstorm-expanse')).toBe('glassstorm-expanse');
+    expect(normalizeBattlefieldWorldId('automatic')).toBeUndefined();
+    expect(normalizeBattlefieldWorldId('not-a-world')).toBeUndefined();
+    expect(selectBattlefieldWorld(terrain, 'glassstorm-expanse')?.id)
+      .toBe('glassstorm-expanse');
+    expect(selectBattlefieldWorld(terrain, 'automatic')?.id).toBe(automatic.id);
+    expect(selectBattlefieldWorld(terrain, 'not-a-world')?.id).toBe(automatic.id);
+  });
 });
 
 describe('centeredCoverCrop', () => {
@@ -126,6 +140,17 @@ describe('centeredCoverCrop', () => {
 });
 
 describe('BattlefieldBackdrop', () => {
+  it('freezes an explicit world instead of deriving it from terrain', () => {
+    const { factory, images } = pooledFactory();
+    const backdrop = new BattlefieldBackdrop(factory, '/');
+
+    expect(backdrop.select(terrainFixture(3), 'obsidian-caldera').id)
+      .toBe('obsidian-caldera');
+    expect(images[0]!.src).toBe('/art/battlefield-obsidian-caldera.webp');
+    expect(backdrop.select(terrainFixture(97), 'ember-dusk').id)
+      .toBe('obsidian-caldera');
+  });
+
   it('loads only the selected world and freezes it for the current game', () => {
     const { factory, images } = pooledFactory();
     const backdrop = new BattlefieldBackdrop(factory, '/singedTerra/');

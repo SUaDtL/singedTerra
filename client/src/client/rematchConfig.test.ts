@@ -20,6 +20,7 @@ describe('rematchToConfig', () => {
         maxWind: 8,
         gravity: 0.2,
         walls: 'concrete',
+        battlefieldWorld: 'glassstorm-expanse',
         rulesetVersion,
       },
       players: [
@@ -31,6 +32,7 @@ describe('rematchToConfig', () => {
     const config = rematchToConfig(info, 'player-abc');
     expect(config.settings?.rulesetVersion).toBe(rulesetVersion);
     expect(config.settings?.walls).toBe('concrete');
+    expect(config.settings?.battlefieldWorld).toBe('glassstorm-expanse');
     expect(buildClientEngineOptions({ ...config, mode: 'network' }).starterWeaponFalloff)
       .toBe(starterWeaponFalloff);
   });

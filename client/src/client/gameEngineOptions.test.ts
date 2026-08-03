@@ -15,7 +15,14 @@ function config<Mode extends LobbyConfig['mode']>(
     mode,
     players,
     playerNames: players.map((player) => player.name),
-    settings: { seed: 17, maxWind: 8, gravity: 0.2, walls: 'wrap', rulesetVersion },
+    settings: {
+      seed: 17,
+      maxWind: 8,
+      gravity: 0.2,
+      walls: 'wrap',
+      battlefieldWorld: 'glassstorm-expanse',
+      rulesetVersion,
+    },
   };
 }
 
@@ -28,6 +35,7 @@ describe('buildClientEngineOptions', () => {
       maxWind: 8,
       gravity: 0.2,
       walls: 'wrap',
+      battlefieldWorld: 'glassstorm-expanse',
     });
   });
 
@@ -52,6 +60,7 @@ describe('buildClientEngineOptions', () => {
       maxWind: 8,
       gravity: 0.2,
       walls: 'wrap',
+      battlefieldWorld: 'glassstorm-expanse',
     });
   });
 });

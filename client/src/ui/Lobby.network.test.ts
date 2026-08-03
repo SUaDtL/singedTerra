@@ -186,6 +186,23 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         .toEqual(['', 'reflective', 'wrap', 'concrete']);
     });
 
+    it('offers Automatic plus every authored battlefield world', () => {
+      lobby.show();
+      Array.from(root.querySelectorAll('button'))
+        .find((button) => button.textContent === 'Play Online')!.click();
+
+      const label = Array.from(root.querySelectorAll('label'))
+        .find((candidate) => candidate.textContent === 'Battlefield')!;
+      const select = root.querySelector<HTMLSelectElement>(`#${label.htmlFor}`)!;
+      expect(Array.from(select.options, (option) => option.value)).toEqual([
+        '',
+        'ember-dusk',
+        'obsidian-caldera',
+        'glassstorm-expanse',
+      ]);
+      expect(select.value).toBe('');
+    });
+
     it('GUARD: empty name sets the error and never calls fetch', async () => {
       const fetchMock = stubFetch();
       internals(lobby).onlineName = '   '; // whitespace trims to empty
@@ -236,6 +253,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         onlineMaxWind: '5',
         onlineGravity: '0.25',
         onlineWalls: 'wrap',
+        onlineBattlefieldWorld: 'glassstorm-expanse',
         onlineRounds: '4', // even -> forced to 5
         onlineInterestRate: '0.2',
         onlineSuddenDeath: '15',
@@ -268,6 +286,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
           maxWind: 5,
           gravity: 0.25,
           walls: 'wrap',
+          battlefieldWorld: 'glassstorm-expanse',
           rounds: 5,
           interestRate: 0.2,
           suddenDeathTurn: 15,

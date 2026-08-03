@@ -16,6 +16,7 @@ export interface StoredOptions {
   gravity: number;
   rulesetVersion?: 1 | 2;
   walls?: "open" | "reflective" | "wrap" | "concrete";
+  battlefieldWorld?: "ember-dusk" | "obsidian-caldera" | "glassstorm-expanse";
   visibility?: "public" | "private";
   rounds?: number;
   armsLevel?: number;

@@ -66,6 +66,7 @@ describe('LobbyTransport network ruleset rollout', () => {
       maxWind: '',
       gravity: '',
       walls: 'concrete',
+      battlefieldWorld: 'glassstorm-expanse',
       rounds: '',
       interestRate: '',
       suddenDeath: '',
@@ -73,7 +74,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     });
 
     expect(callFunctionMock).toHaveBeenCalledWith('create_room', expect.objectContaining({
-      options: expect.objectContaining({ walls: 'concrete' }),
+      options: expect.objectContaining({ walls: 'concrete', battlefieldWorld: 'glassstorm-expanse' }),
     }));
   });
 

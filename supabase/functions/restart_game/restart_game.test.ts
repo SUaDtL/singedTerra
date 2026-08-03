@@ -107,6 +107,27 @@ Deno.test('normalizeRematchOptions preserves concrete walls', () => {
   )
 })
 
+Deno.test('normalizeRematchOptions preserves a valid battlefield world and omits invalid values', () => {
+  assertEquals(
+    normalizeRematchOptions({
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      battlefieldWorld: 'glassstorm-expanse' as never,
+    }, 2).battlefieldWorld,
+    'glassstorm-expanse',
+  )
+  assertEquals(
+    normalizeRematchOptions({
+      maxPlayers: 2,
+      maxWind: 7,
+      gravity: 0.2,
+      battlefieldWorld: 'invalid' as never,
+    }, 2).battlefieldWorld,
+    undefined,
+  )
+})
+
 Deno.test('successor normalization and both response projectors preserve rulesets 1 and 2', () => {
   const players: StoredPlayer[] = [
     { id: 'uid-a', name: 'Ana', color: '#f00', ready: true },

@@ -1,4 +1,8 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import {
+  normalizeBattlefieldWorldId,
+  type BattlefieldWorldId,
+} from '@shared/types/GameOptions';
 
 export interface BattlefieldWorld {
   readonly id: 'ember-dusk' | 'obsidian-caldera' | 'glassstorm-expanse';
@@ -73,7 +77,14 @@ export const BATTLEFIELD_WORLDS: readonly BattlefieldWorld[] = Object.freeze([
  * full terrain bitmap. This never enters simulation or replay state; it only makes
  * clients that began from identical terrain choose the same panorama.
  */
-export function selectBattlefieldWorld(terrain: Uint8Array): BattlefieldWorld {
+export function selectBattlefieldWorld(
+  terrain: Uint8Array,
+  requestedWorld?: unknown,
+): BattlefieldWorld {
+  const explicitId = normalizeBattlefieldWorldId(requestedWorld);
+  if (explicitId !== undefined) {
+    return BATTLEFIELD_WORLDS.find((world) => world.id === explicitId)!;
+  }
   let hash = 2_166_136_261;
   for (let index = 0; index < terrain.length; index += 257) {
     hash = Math.imul(hash ^ terrain[index]!, 16_777_619);
@@ -81,6 +92,8 @@ export function selectBattlefieldWorld(terrain: Uint8Array): BattlefieldWorld {
   hash = Math.imul(hash ^ terrain.length, 16_777_619);
   return BATTLEFIELD_WORLDS[(hash >>> 0) % BATTLEFIELD_WORLDS.length]!;
 }
+
+export { normalizeBattlefieldWorldId };
 
 export type BattlefieldBackdropState = 'loading' | 'ready' | 'failed';
 export type BackdropImageFactory = () => HTMLImageElement;
@@ -161,10 +174,10 @@ export class BattlefieldBackdrop {
     );
   }
 
-  select(terrain: Uint8Array): BattlefieldWorld {
+  select(terrain: Uint8Array, requestedWorld?: BattlefieldWorldId | unknown): BattlefieldWorld {
     if (this.currentWorld !== null) return this.currentWorld;
 
-    const world = selectBattlefieldWorld(terrain);
+    const world = selectBattlefieldWorld(terrain, requestedWorld);
     const image = this.createImage();
     const generation = ++this.generation;
     this.currentWorld = world;

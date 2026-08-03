@@ -6,7 +6,13 @@
 // Run: "C:/Users/brenn/.deno/bin/deno.exe" test supabase/functions/create_room/validate.test.ts
 
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { coerceEconomyOptions, coerceGravity, coerceMaxWind, coerceWallMode } from './validate.ts'
+import {
+  coerceBattlefieldWorld,
+  coerceEconomyOptions,
+  coerceGravity,
+  coerceMaxWind,
+  coerceWallMode,
+} from './validate.ts'
 
 Deno.test('coerceWallMode: accepts all four modes and fails closed to open', () => {
   assertEquals(coerceWallMode('reflective'), 'reflective')
@@ -15,6 +21,13 @@ Deno.test('coerceWallMode: accepts all four modes and fails closed to open', () 
   assertEquals(coerceWallMode('open'), 'open')
   assertEquals(coerceWallMode('lava'), 'open')
   assertEquals(coerceWallMode(undefined), 'open')
+})
+
+Deno.test('coerceBattlefieldWorld: accepts authored worlds and omits Automatic or invalid values', () => {
+  assertEquals(coerceBattlefieldWorld('ember-dusk'), 'ember-dusk')
+  assertEquals(coerceBattlefieldWorld('glassstorm-expanse'), 'glassstorm-expanse')
+  assertEquals(coerceBattlefieldWorld('automatic'), undefined)
+  assertEquals(coerceBattlefieldWorld('volcanic-moon'), undefined)
 })
 
 // AC1.1 — present + valid => carried (clamped where applicable).
