@@ -161,6 +161,9 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] governance.classification.0001 - Add data-classification comments to legacy rooms, room_actions, and match_scores tables via a new forward-only migration  (started 2026-08-03)
+  - Desc: GH #125; preserve immutable applied migrations and make the existing classification convention explicit for legacy tables.
+  - Boundaries: New SQL comments only; no schema, data, RLS, grants, or runtime behavior changes
 - [x] reliability.rematch.0001 - Extend bounded rematch successor recovery  (from sprint:rematch-recovery)  (done 2026-08-03)
   - Desc: Keep polling for a successor room through a bounded three-second replication window so delayed room visibility does not strand the non-initiating peer.
   - Boundaries: client NetworkClient and tests only; no auth, secrets, crypto, database, migrations, action protocol, or Edge Function changes
