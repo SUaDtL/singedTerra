@@ -3974,3 +3974,7 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - PR #324 final reviewed head `4c13488c0271a247498116518e0361dd9e43a32f` passed hosted CI `30839702433` (typecheck/harness/build, Edge tests, and E2E), CodeQL `30839699132` plus check `91773700275`, CodeRabbit success, and expected Supabase Preview skip. It merged to `main` as `5e37255219f8b2556caaa6673247badbbd5d45ce`.
 - Post-merge workflows passed: CI `30840056036`, CodeQL `30840055622`, and Pages deployment `30840055850` with live smoke `91774870894`.
 - Final production smoke after the closeout merge: Pages HTML returned HTTP 200; `assets/index-DgMKD4pH.js` returned HTTP 200 with length 361788 bytes.
+### 2026-08-03 delivery receipt - governance closeout PR #325
+- PR #325 exact reviewed head `ed72864d9e85b99a260d68bd80e02fa487927083` passed CI `30840635999` (typecheck/harness/build, Edge tests, and E2E 191 passed with 25 skips), CodeQL `30840635328` plus check `91776765576`, CodeRabbit success, and expected Supabase Preview skip. It merged to `main` as `51792b29473a83f0fe7a9887e9fd6d34c942772a`.
+- Post-merge workflows passed: CI `30840973181` (including E2E 190 passed, 25 skips, one retried flaky assertion), CodeQL `30840975643`, and Pages deployment `30840973100` with live smoke `91777894733`.
+- Final production smoke after the audit merge: Pages HTML returned HTTP 200; `assets/index-DgMKD4pH.js` returned HTTP 200 with length 361788 bytes.
