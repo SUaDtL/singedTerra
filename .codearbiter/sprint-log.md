@@ -3945,3 +3945,8 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - Test-first remediation: the stale duplicate assertion now snapshots phase, turn, active seat, and both finite missile counts; the live drain test snapshots turn/ownership/ammo, captures pending RAF callbacks, calls `stop()`, and proves invoking the captured callback has no effect.
 - Mutation evidence: replacing the ordered `pendingActions.has(nextExpectedSeq)` guard with a size-based drain failed the focused suite in the out-of-order and live-handoff tests; production was restored with no runtime diff.
 - Remediation verification: focused lockstep test 15/15; full client 131 files and 953 tests; typecheck passed; `git diff --check` passed; state-free secrets scan `[]`.
+### 2026-08-03 - reliability.lockstep.0001 scheduler-liveness remediation
+- Coverage audit exposed a real teardown defect: invoking a queued RAF callback after `stop()` preserved game state but scheduled one new RAF, so the loop could be resurrected.
+- TDD RED: the new `rafQueue` emptiness assertion failed with one newly scheduled callback after `stop()`.
+- GREEN fix: `NetworkClient.start()` now returns before rescheduling when `_disposed` is set. No auth, persistence, protocol, dependency, or Supabase surface changed.
+- Full remediation matrix: `npm run check` passed; `npm run check:edge` passed 216; `npm run test:client` passed 131 files and 953 tests; `npm run typecheck` passed; `npm run build` passed; `npm run test:e2e` passed 191 with 25 intentional skips; `git diff --check` passed; state-free secrets scan `[]`.

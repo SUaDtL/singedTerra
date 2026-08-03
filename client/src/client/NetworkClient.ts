@@ -489,6 +489,7 @@ export class NetworkClient implements GameClient {
         if (!wasBusy) break; // input-accepting phase — tick() is a no-op, don't spin
       }
       this.emitState();
+      if (this._disposed) return;
       this.rafId = requestAnimationFrame(loop);
     };
     this.rafId = requestAnimationFrame(loop);

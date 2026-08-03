@@ -222,6 +222,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
       activePlayerId: client.getState().activePlayerId,
       missileCounts: client.getState().tanks.map((tank) => tank.inventory.missile.count),
     }).toEqual(stateBeforeStop);
+    expect(rafQueue).toHaveLength(0);
   });
 
   it('drops a stale (already-applied) Realtime seq without double-applying', async () => {
