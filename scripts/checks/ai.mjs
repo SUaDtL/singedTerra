@@ -17,6 +17,7 @@
 
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { computeAiPlan } from '../../shared/src/engine/AI.ts';
+import { CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
 
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
@@ -208,6 +209,51 @@ function playGame(seed, difficulty, turnCap = 120) {
   if (broke?.weapon !== 'baby_missile') fail(`a broke bot with no premium stock should fall back to baby_missile, got ${broke?.weapon}`);
 
   if (!failed) log('PASS: hard bot buys to restock a finisher when affordable, not when broke.');
+}
+
+// --- Check 7b: hard AI buys a Parachute only for a risky ledge, when affordable and unstocked. ---
+{
+  const e = engine(0x5eed1234);
+  const st = e.getState();
+  const me = st.tanks[0];
+  st.terrain.fill(0);
+  const ledgeX = Math.floor(me.x);
+  for (let x = 0; x < CANVAS_WIDTH; x++) {
+    const surface = x < ledgeX ? 220 : 340;
+    for (let y = surface; y < 500; y++) st.terrain[y * CANVAS_WIDTH + x] = 1;
+  }
+  me.y = 220;
+  me.accessories.parachute = 0;
+  me.credits = 5000;
+  const risky = computeAiPlan(st, 'p1', 'hard', undefined, 1);
+  log(`[parachute] risky plan accessory=${risky?.buyAccessory}`);
+  if (risky?.buyAccessory !== 'parachute') fail(`risky hard bot should buy a parachute, got ${risky?.buyAccessory}`);
+  me.credits = 0;
+  const broke = computeAiPlan(st, 'p1', 'hard', undefined, 1);
+  if (broke?.buyAccessory) fail(`broke hard bot must not buy a parachute, got ${broke.buyAccessory}`);
+  me.credits = 5000;
+  me.accessories.parachute = 1;
+  const stocked = computeAiPlan(st, 'p1', 'hard', undefined, 1);
+  if (stocked?.buyAccessory) fail(`stocked hard bot must not rebuy a parachute, got ${stocked.buyAccessory}`);
+  me.accessories.parachute = 0;
+  const armsLocked = computeAiPlan(st, 'p1', 'hard', undefined, 0);
+  if (armsLocked?.buyAccessory) fail(`arms-level-0 hard bot must not buy a parachute, got ${armsLocked.buyAccessory}`);
+
+  const combined = engine(0x5eed1234);
+  const combinedState = combined.getState();
+  combinedState.terrain.set(st.terrain);
+  combinedState.tanks[0].y = 220;
+  combinedState.tanks[0].accessories.parachute = 0;
+  combinedState.tanks[0].credits = 15000;
+  for (const w of Object.keys(combinedState.tanks[0].inventory)) {
+    if (!combinedState.tanks[0].inventory[w].unlimited) combinedState.tanks[0].inventory[w].count = 0;
+  }
+  combinedState.tanks[1].health = 100;
+  const combinedPlan = computeAiPlan(combinedState, 'p1', 'hard', undefined, 1);
+  if (combinedPlan?.buy !== 'nuke' || combinedPlan.buyAccessory) {
+    fail(`weapon and parachute buys must respect combined credits, got weapon=${combinedPlan?.buy} accessory=${combinedPlan?.buyAccessory}`);
+  }
+  if (!failed) log('PASS: hard AI buys one affordable parachute only for a deterministic risky ledge.');
 }
 
 // --- Check 8: a CPU-seat buy is IDEMPOTENT — duplicate bot buys (every networked

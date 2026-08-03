@@ -497,7 +497,13 @@ function bootstrap(): void {
     // so the bot aims for the arc the engine will actually fly; falls back to the configured
     // base gravity if the client can't report it.
     const gravity = client?.getEffectiveGravity() ?? currentConfig?.settings?.gravity ?? GRAVITY;
-    const plan = computeAiPlan(state, active.id, active.ai!, gravity);
+    const plan = computeAiPlan(
+      state,
+      active.id,
+      active.ai!,
+      gravity,
+      currentConfig?.settings?.armsLevel ?? 0,
+    );
     if (!plan) return; // no target (game effectively over) — nothing to do
 
     clearAiTimers();
@@ -507,6 +513,7 @@ function bootstrap(): void {
     // the just-restocked ammo. (aiActedKey already gates this to once per turn.)
     aiTimers.push(setTimeout(() => {
       if (plan.buy) client?.sendAction({ type: 'buy', weapon: plan.buy });
+      if (plan.buyAccessory) client?.sendAction({ type: 'buy', accessory: plan.buyAccessory });
       client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
       client?.sendAction({ type: 'set_angle', angle: plan.angle });
       client?.sendAction({ type: 'set_power', power: plan.power });

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Computer-opponent AI (single-player vs CPU). A PURE, DETERMINISTIC shot planner:
  * given a GameState and which tank is the bot, it returns the shot to take
  * (weapon + angle + power). It does NOT mutate the engine or drive the loop — the
@@ -24,8 +24,9 @@ import type { GameState, TankState, AiDifficulty } from '../types/GameState';
 import { GRAVITY } from './Physics';
 import { TANK_HEIGHT } from './Tank';
 import { searchShot } from './AiShotSearch';
-import { getWeapon, type WeaponType } from './WeaponSystem';
+import { ACCESSORIES, getWeapon, PARACHUTE_PRICE, type AccessoryType, type WeaponType } from './WeaponSystem';
 import { createRng } from './Random';
+import { surfaceAt } from './Terrain';
 import { clamp } from './math';
 
 // AiDifficulty is defined in types/GameState (a leaf module) and re-exported here
@@ -33,9 +34,7 @@ import { clamp } from './math';
 export type { AiDifficulty };
 
 /** The bot's chosen shot. The driver applies it as select_weapon + set_angle +
- *  set_power + fire (in that order). When `buy` is set, the driver FIRST commits a
- *  turn-neutral buy of that weapon (restocking before the shot) — see the
- *  buy-to-restock note on chooseBuy(). `buy`, when present, always equals `weapon`. */
+ *  set_power + fire (in that order). The driver commits optional turn-neutral purchases before the shot. `buy` restocks a weapon; `buyAccessory` purchases non-weapon equipment. */
 export interface AiPlan {
   weapon: WeaponType;
   angle: number;
@@ -43,6 +42,8 @@ export interface AiPlan {
   /** Restock this weapon before firing (the bot lacked an in-stock finisher but
    *  can afford one). Turn-neutral; always === weapon. Absent => no purchase. */
   buy?: WeaponType;
+  /** Buy one non-weapon accessory before the shot (turn-neutral). */
+  buyAccessory?: AccessoryType;
 }
 
 /** Per-difficulty aim error. */
@@ -78,6 +79,7 @@ export function computeAiPlan(
   aiTankId: string,
   difficulty: AiDifficulty,
   gravity: number = GRAVITY,
+  armsLevel: number = Number.POSITIVE_INFINITY,
 ): AiPlan | null {
   const me = state.tanks.find((t) => t.id === aiTankId && t.alive);
   if (!me) return null;
@@ -86,18 +88,21 @@ export function computeAiPlan(
   if (!target) return null;
 
   const tune = TUNING[difficulty];
-  const { weapon, buy } = chooseLoadout(me, target, difficulty);
+  const { weapon, buy, buyAccessory } = chooseLoadout(me, target, difficulty, state, armsLevel);
 
   // Shield is not a projectile — raise it and end the turn (both drivers map the
   // 'shield' weapon to use_shield). No ballistic search / aim error needed; the
   // aim is irrelevant, so just echo the current barrel.
   if (weapon === 'shield') {
-    return { weapon, angle: me.angle, power: me.power };
+    return { weapon, angle: me.angle, power: me.power, ...(buyAccessory ? { buyAccessory } : {}) };
   }
 
   // A buy is turn-neutral; the bot will own `weapon` once the restock applies, so
   // the ballistic search (which doesn't depend on ammo) plans the same shot now.
-  const buyField = buy ? { buy } : {};
+  const buyField = {
+    ...(buy ? { buy } : {}),
+    ...(buyAccessory ? { buyAccessory } : {}),
+  };
 
   const { shot: best } = searchShot(state, me, target, difficulty, gravity);
   if (!best) {
@@ -172,6 +177,7 @@ const HEAVY_TIER: ReadonlySet<WeaponType> = new Set<WeaponType>([
  *  blows — closes the exploit where the bot never shields and is out-traded, and
  *  makes the damage-pool shield (P1-5) actually get used defensively. */
 const SHIELD_HP_THRESHOLD = 35;
+const PARACHUTE_SLOPE_RISK = 40;
 
 /**
  * Pick a weapon (or the shield), and optionally a weapon to BUY first, for this
@@ -191,7 +197,9 @@ function chooseLoadout(
   me: TankState,
   target: TankState,
   difficulty: AiDifficulty,
-): { weapon: WeaponType; buy?: WeaponType } {
+  state: GameState,
+  armsLevel: number,
+): { weapon: WeaponType; buy?: WeaponType; buyAccessory?: AccessoryType } {
   const has = (w: WeaponType): boolean => {
     const a = me.inventory[w];
     return a.unlimited || a.count > 0;
@@ -201,6 +209,20 @@ function chooseLoadout(
   if (difficulty === 'hard' && me.health <= SHIELD_HP_THRESHOLD && has('shield')) {
     return { weapon: 'shield' };
   }
+
+  const parachuteCount = me.accessories.parachute ?? 0;
+  const leftSurface = surfaceAt(state.terrain, me.x - 24);
+  const rightSurface = surfaceAt(state.terrain, me.x + 24);
+  const riskyLedge = Math.abs(leftSurface - rightSurface) >= PARACHUTE_SLOPE_RISK;
+  const weaponBuy = difficulty === 'hard' ? chooseBuy(me, target) : null;
+  const weaponBuyCost = weaponBuy ? getWeapon(weaponBuy).price : 0;
+  const buyAccessory = difficulty === 'hard'
+    && parachuteCount === 0
+    && riskyLedge
+    && armsLevel >= ACCESSORIES.parachute.armsLevel
+    && me.credits - weaponBuyCost >= PARACHUTE_PRICE
+    ? ACCESSORIES.parachute.type
+    : undefined;
 
   if (difficulty === 'easy') return { weapon: 'baby_missile' };
 
@@ -212,16 +234,16 @@ function chooseLoadout(
 
   // Weakest in-stock one-shot finisher (don't overkill).
   const finisher = ranked.find((w) => AI_EFFECTIVE_DAMAGE[w]! >= target.health);
-  if (finisher) return { weapon: finisher };
+  if (finisher) return { weapon: finisher, ...(buyAccessory ? { buyAccessory } : {}) };
 
   // Nothing in stock one-shots. A hard bot restocks if it can afford a finisher.
   if (difficulty === 'hard') {
-    const buy = chooseBuy(me, target);
-    if (buy) return { weapon: buy, buy };
+    const buy = weaponBuy;
+    if (buy) return { weapon: buy, buy, ...(buyAccessory ? { buyAccessory } : {}) };
   }
 
   // Fall back to the strongest weapon in stock (baby_missile is always available).
-  return { weapon: ranked.at(-1) ?? 'baby_missile' };
+  return { weapon: ranked.at(-1) ?? 'baby_missile', ...(buyAccessory ? { buyAccessory } : {}) };
 }
 
 /**

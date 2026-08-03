@@ -3688,3 +3688,12 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 - GitHub Pages deployment run 30805017680 passed build, current-main verification, deploy, and post-deploy live smoke. Main CI run 30805017643 passed.
 - Production evidence: Pages HTML returned 200; current JS asset returned 200 and contains the capture path; Pages API status is built.
 - No Supabase or migration deployment was associated. Task mvp1.input.0001 is complete; deferred open-tasks lock remains untouched.
+
+## 2026-08-03 - mvp1.ai.0001 AI Parachute counterplay
+- SMARTS decision: select deterministic hard-AI Parachute counterplay over the open vote-kick/auth boundary and security-control backlog. It scores highest on player value, availability through the existing accessory buy contract, maintainability, deterministic reliability, testability, and bounded scope.
+- Scope: shared AI plan, hot-seat AI driver, and deterministic AI tests only; no new action kind, Edge authorization, migration, dependency, secret, or deployment contract.
+- Spec and plan are created under standing sprint authority; confidence high.
+### 2026-08-03 review remediation receipt - mvp1.ai.0001
+- High affordability finding resolved: weapon restock cost is reserved before a Parachute purchase; the AI harness now proves the combined 15,000-credit case chooses the nuke only.
+- Medium arms-level finding resolved: computeAiPlan receives the authoritative room arms level and the driver passes it; the harness proves level 0 does not plan a Parachute while level 1 does.
+- Focused GREEN: npx tsx scripts/checks/ai.mjs and npm run typecheck pass; full client/check/build receipts remain valid from the pre-review implementation and will be refreshed after re-review.
