@@ -32,7 +32,7 @@
 - Consumes: validated `matchesPlayed: number` and `wins: number` from the existing Auth-derived participant and score read.
 - Produces: `deriveProgression(matchesPlayed: number, wins: number): AccountProgression`, where `AccountProgression` contains `progressionVersion`, `totalXp`, `level`, `levelXp`, and `nextLevelXp`.
 
-- [ ] **Step 1: Write focused failing Edge tests**
+- [x] **Step 1: Write focused failing Edge tests**
 
 Add response assertions for these exact cases:
 
@@ -47,13 +47,13 @@ Add response assertions for these exact cases:
 
 Keep the zero-link assertion that no score query runs. Add a pure-helper boundary test for total XP 499 by calling the helper with an explicitly validated test input that reaches the boundary, or export a cumulative-XP-to-level helper if integer match rewards cannot naturally produce 499.
 
-- [ ] **Step 2: Run Edge tests and record RED**
+- [x] **Step 2: Run Edge tests and record RED**
 
 Run: `npx deno test supabase/functions/account_summary/account_summary.test.ts`
 
 Expected: FAIL because the response lacks the five progression fields and helper.
 
-- [ ] **Step 3: Implement named constants and pure calculation**
+- [x] **Step 3: Implement named constants and pure calculation**
 
 Use this contract:
 
@@ -88,7 +88,7 @@ export function deriveProgression(matchesPlayed: number, wins: number): AccountP
 
 Spread the result into both zero-link and populated successful responses. Do not alter queries, authentication, logging, or failure responses.
 
-- [ ] **Step 4: Run GREEN and mutation proofs**
+- [x] **Step 4: Run GREEN and mutation proofs**
 
 Run: `npx deno test supabase/functions/account_summary/account_summary.test.ts`
 
@@ -96,7 +96,7 @@ Expected: PASS.
 
 Temporarily change the win bonus and the level divisor one at a time. Each mutation must fail a named formula or boundary test. Restore the implementation and rerun GREEN.
 
-- [ ] **Step 5: Pin the source and security contract**
+- [x] **Step 5: Pin the source and security contract**
 
 Extend `profile_identity.mjs` and `security-controls.md` to require the versioned server-derived formula, forbid a body-owned XP/level path, and retain the current casual-result trust ceiling. Run `node scripts/checks/profile_identity.mjs` and expect PASS.
 
@@ -110,17 +110,17 @@ Extend `profile_identity.mjs` and `security-controls.md` to require the versione
 - Consumes: the exact seven-key `account_summary` response.
 - Produces: `AccountSummary` with `matchesPlayed`, `wins`, `progressionVersion`, `totalXp`, `level`, `levelXp`, and `nextLevelXp`.
 
-- [ ] **Step 1: Write failing validation tests**
+- [x] **Step 1: Write failing validation tests**
 
 Change valid fixtures to the complete version-1 response. Add table-driven rejection for an unknown version; missing or extra key; fractional, negative, `NaN`, or infinite value; `wins > matchesPlayed`; `totalXp !== matchesPlayed * 100 + wins * 100`; incorrect level; incorrect current-level XP; and `nextLevelXp !== 500`.
 
-- [ ] **Step 2: Run client tests and record RED**
+- [x] **Step 2: Run client tests and record RED**
 
 Run: `npm run test:client -- src/client/AccountSession.test.ts`
 
 Expected: FAIL because `AccountSummary` and `accountSummary()` accept only the old two-key shape.
 
-- [ ] **Step 3: Implement exact arithmetic validation**
+- [x] **Step 3: Implement exact arithmetic validation**
 
 Extend `AccountSummary`, require exactly seven response keys, require safe nonnegative integers, require version 1, and recompute:
 
@@ -132,7 +132,7 @@ const expectedLevelXp = expectedTotalXp % 500
 
 Return null unless every received value equals its expected value and `nextLevelXp === 500`. Preserve the five-second timeout and profile-preserving catch path unchanged.
 
-- [ ] **Step 4: Run GREEN and mutation proof**
+- [x] **Step 4: Run GREEN and mutation proof**
 
 Run: `npm run test:client -- src/client/AccountSession.test.ts`
 
@@ -153,11 +153,11 @@ Temporarily remove the total-XP consistency comparison. The malformed-total test
 - Consumes: a validated non-null `AccountSummary`.
 - Produces: semantic account-panel labels for `Matches`, `Recorded wins`, `Level`, and `XP`, where XP text is `<levelXp> / <nextLevelXp>`.
 
-- [ ] **Step 1: Write failing DOM and geometry tests**
+- [x] **Step 1: Write failing DOM and geometry tests**
 
 Require one semantic `dt`/`dd` pair per label, exact Level text, exact `200 / 500` XP text for a representative fixture, no ids in either rendered account subtree, and unchanged non-alert fallback when the summary is null. Extend both compact Playwright profiles to assert readable font size, containment, and no pair overlap with four values.
 
-- [ ] **Step 2: Run UI tests and record RED**
+- [x] **Step 2: Run UI tests and record RED**
 
 Run: `npm run test:client -- src/ui/AccountPanelView.test.ts src/ui/Lobby.account.test.ts`
 
@@ -165,7 +165,7 @@ Run: `npx playwright test e2e/account-progression-summary.spec.ts --project=smal
 
 Expected: unit and browser assertions FAIL because Level and XP are absent.
 
-- [ ] **Step 3: Render the two new values**
+- [x] **Step 3: Render the two new values**
 
 Append these entries to the existing semantic value list:
 
@@ -176,7 +176,7 @@ Append these entries to the existing semantic value list:
 
 Adjust only the existing account-progress layout if four values do not fit the compact profiles. Do not add a custom progress bar, ids, animation, gameplay overlay, or a new panel.
 
-- [ ] **Step 4: Run GREEN and text mutation proof**
+- [x] **Step 4: Run GREEN and text mutation proof**
 
 Rerun the focused unit and Playwright commands and expect PASS. Temporarily change the `XP` label or separator; the DOM test must fail. Restore and rerun GREEN.
 
@@ -192,11 +192,11 @@ Rerun the focused unit and Playwright commands and expect PASS. Temporarily chan
 - Consumes: the completed server, client, UI, governance, RED/GREEN, and mutation evidence.
 - Produces: one exact-diff adversarial verdict, a green PR, deployed production, and the next SMARTS-selected progression task.
 
-- [ ] **Step 1: Run full local verification**
+- [x] **Step 1: Run full local verification**
 
 Run `npm run test:client`, `npm run check:edge`, `npm run check`, `npm run build`, `npm run audit:deps`, full Playwright, `git diff --check`, and the state-free secret scan. Every command must pass; raw credential findings must be zero.
 
-- [ ] **Step 2: Assemble one adversarial review package**
+- [x] **Step 2: Assemble one adversarial review package**
 
 Include the approved spec, this plan, append-only sprint log, every RED/GREEN and mutation receipt, focused/full test outputs, security-control delta, and complete final diff. Require reviewers for auth/security, coverage, and architecture. Resolve every Critical, High, and other merge-blocking finding, then obtain exact-final-diff re-clear.
 
