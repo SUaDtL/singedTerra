@@ -12,11 +12,11 @@ export interface AccountCredentials {
 export interface AccountSummary {
   matchesPlayed: number
   wins: number
-  progressionVersion?: number
-  totalXp?: number
-  level?: number
-  levelXp?: number
-  nextLevelXp?: number
+  progressionVersion: number
+  totalXp: number
+  level: number
+  levelXp: number
+  nextLevelXp: number
 }
 
 export interface AccountProfile {
@@ -80,15 +80,7 @@ function isSafeNonnegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
-type StrictAccountSummary = AccountSummary & {
-  progressionVersion: number
-  totalXp: number
-  level: number
-  levelXp: number
-  nextLevelXp: number
-}
-
-function accountSummary(value: unknown): StrictAccountSummary | null {
+function accountSummary(value: unknown): AccountSummary | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const keys = Object.keys(value)
   const summaryKeys = [

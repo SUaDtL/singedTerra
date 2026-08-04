@@ -3,8 +3,19 @@ import {
   AccountSession,
   createSupabaseAccountBackend,
   type AccountBackend,
+  type AccountSummary,
   type AccountState,
 } from './AccountSession'
+
+type AssertTrue<T extends true> = T
+type IsRequiredKey<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
+type _accountSummaryProgressionFieldsAreRequired = [
+  AssertTrue<IsRequiredKey<AccountSummary, 'progressionVersion'>>,
+  AssertTrue<IsRequiredKey<AccountSummary, 'totalXp'>>,
+  AssertTrue<IsRequiredKey<AccountSummary, 'level'>>,
+  AssertTrue<IsRequiredKey<AccountSummary, 'levelXp'>>,
+  AssertTrue<IsRequiredKey<AccountSummary, 'nextLevelXp'>>,
+]
 
 function deferred<T>() {
   let resolve!: (value: T) => void

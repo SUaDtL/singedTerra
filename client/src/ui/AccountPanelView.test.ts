@@ -2,6 +2,16 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AccountState } from '../client/AccountSession'
 import { buildAccountPanelView, type AccountPanelViewOptions } from './AccountPanelView'
 
+const validSummary = {
+  matchesPlayed: 7,
+  wins: 3,
+  progressionVersion: 1,
+  totalXp: 1000,
+  level: 3,
+  levelXp: 0,
+  nextLevelXp: 500,
+}
+
 function options(overrides: Partial<AccountPanelViewOptions> = {}): AccountPanelViewOptions {
   return {
     state: { status: 'anonymous', busy: false, error: '' },
@@ -137,7 +147,7 @@ describe('buildAccountPanelView', () => {
       profile: {
         id: 'user-1',
         displayName: 'Ranger',
-        summary: { matchesPlayed: 7, wins: 3 },
+        summary: validSummary,
       },
     }
     const root = buildAccountPanelView(options({ state, onSignOut }))
@@ -161,7 +171,7 @@ describe('buildAccountPanelView', () => {
       profile: {
         id: 'user-1',
         displayName: 'Ranger',
-        summary: { matchesPlayed: 7, wins: 3 },
+        summary: validSummary,
       },
     }
     const first = buildAccountPanelView(options({ state }))
