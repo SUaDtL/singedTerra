@@ -1250,9 +1250,13 @@ export class Lobby {
       #lobby .account-panel input:focus-visible { outline: none; box-shadow: var(--ui-focus); }
       #lobby .account-panel__identity { color: var(--text-gold); font-weight: 700; }
       #lobby .account-panel__progress {
-        display: flex; gap: 8px; margin: 0; padding: 0 2px;
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        gap: 4px 12px;
+        margin: 0;
+        padding: 0 2px;
       }
-      #lobby .account-panel__progress-item { display: grid; justify-items: center; gap: 1px; }
+      #lobby .account-panel__progress-item { display: grid; justify-items: start; gap: 1px; }
       #lobby .account-panel__progress dt,
       #lobby .account-panel__summary-unavailable {
         color: var(--text-dim); font-size: 9px; line-height: 1.2;

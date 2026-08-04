@@ -70,6 +70,8 @@ export function buildAccountPanelView(
       const values = [
         ['Matches', options.state.profile.summary.matchesPlayed],
         ['Recorded wins', options.state.profile.summary.wins],
+        ['Level', options.state.profile.summary.level],
+        ['XP', `${options.state.profile.summary.levelXp} / ${options.state.profile.summary.nextLevelXp}`],
       ] as const
       for (const [label, value] of values) {
         const group = document.createElement('div')
