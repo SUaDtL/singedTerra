@@ -134,14 +134,16 @@ describe('NetworkClient match-completion claim wiring', () => {
     const firstFinish = deferred<ReturnType<typeof response>>();
     const secondFinish = deferred<ReturnType<typeof response>>();
     const calls: string[] = [];
+    const claimRequests: RequestInit[] = [];
     let finishAttempts = 0;
-    const fetchMock = vi.fn((url: string) => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
       const name = url.split('/').at(-1);
       calls.push(name ?? 'unknown');
       if (name === 'finish_game') {
         finishAttempts += 1;
         return finishAttempts === 1 ? firstFinish.promise : secondFinish.promise;
       }
+      if (name === 'claim_match') claimRequests.push(required(init, 'claim_match request'));
       return Promise.resolve(response(false, 503));
     });
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -168,6 +170,17 @@ describe('NetworkClient match-completion claim wiring', () => {
     secondFinish.resolve(response(false, 503));
     await settle();
     expect(calls).toEqual(['finish_game', 'finish_game', 'claim_match']);
+    const firstClaimRequest = required(claimRequests[0], 'first claim_match request');
+    expect(firstClaimRequest.headers).toEqual({
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer account-bearer-secret',
+      'apikey': 'anon-key-test',
+    });
+    expect(JSON.parse(required(firstClaimRequest.body as string | undefined, 'claim_match body'))).toEqual({
+      roomId: 'room-1',
+      playerId: 'player-abc',
+      token: 'seat-token-secret',
+    });
 
     await vi.advanceTimersByTimeAsync(200);
     await settle();
