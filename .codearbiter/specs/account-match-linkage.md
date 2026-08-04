@@ -91,7 +91,7 @@ The row records attribution only. It does not duplicate the scoreboard or calcul
 6. Migration tests prove owner-only reads, zero anonymous access, zero authenticated writes, service-only insertion, both uniqueness constraints, and immutable migration content.
 7. Focused tests fail before implementation and pass after it; `npm run check`, `npm run check:edge`, `npm run test:client`, `npm run build`, and `npm run audit:deps` pass.
 8. One adversarial subagent reviews the spec, plan, sprint log, RED/GREEN/full tests, and final diff; all Critical, High, and other merge blockers are resolved.
-9. Required hosted checks pass on the exact reviewed PR head before merge. Deploy migration 014 and `claim_match`, verify remote migration/config/function health, then verify anonymous production gameplay remains healthy. A real account claim is optional only if it can be created and removed without a user-only hard gate.
+9. Required hosted checks pass on the exact reviewed PR head before merge. After merge, deploy migration 014, `claim_match`, and the client; verify remote migration/config/function health; then verify anonymous production gameplay remains healthy. A real account claim is optional only if it can be created and removed without a user-only hard gate.
 
 ## Rollback
 
