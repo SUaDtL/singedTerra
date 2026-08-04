@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AccountState } from '../client/AccountSession'
+import type { AccountState, AccountSummary } from '../client/AccountSession'
 import { buildAccountPanelView, type AccountPanelViewOptions } from './AccountPanelView'
 
-const validSummary = {
+const validSummary: AccountSummary = {
   matchesPlayed: 8,
   wins: 4,
   progressionVersion: 1,

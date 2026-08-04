@@ -16,6 +16,7 @@ type _accountSummaryProgressionFieldsAreRequired = [
   AssertTrue<IsRequiredKey<AccountSummary, 'levelXp'>>,
   AssertTrue<IsRequiredKey<AccountSummary, 'nextLevelXp'>>,
 ]
+type _accountSummaryVersionIsLiteralOne = AssertTrue<AccountSummary['progressionVersion'] extends 1 ? true : false>
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -80,17 +81,28 @@ describe('createSupabaseAccountBackend', () => {
     expect(profile).toEqual({ id: 'user-7', displayName: 'Ash Walker', summary: null })
   })
 
-  it('loads an exact progression summary through the authenticated client without a request body', async () => {
+  it.each([
+    ['non-boundary progress', {
+      matchesPlayed: 2,
+      wins: 1,
+      progressionVersion: 1,
+      totalXp: 300,
+      level: 1,
+      levelXp: 300,
+      nextLevelXp: 500,
+    }],
+    ['level boundary', {
+      matchesPlayed: 4,
+      wins: 1,
+      progressionVersion: 1,
+      totalXp: 500,
+      level: 2,
+      levelXp: 0,
+      nextLevelXp: 500,
+    }],
+  ] as const)('loads an exact %s summary through the authenticated client without a request body', async (_label, summary) => {
     const invoke = vi.fn(async (..._args: unknown[]) => ({
-      data: {
-        matchesPlayed: 7,
-        wins: 3,
-        progressionVersion: 1,
-        totalXp: 1000,
-        level: 3,
-        levelXp: 0,
-        nextLevelXp: 500,
-      },
+      data: summary,
       error: null,
     }))
     const client = {
@@ -118,15 +130,7 @@ describe('createSupabaseAccountBackend', () => {
     await expect(gateway.loadProfile('user-7')).resolves.toEqual({
       id: 'user-7',
       displayName: 'Ash Walker',
-      summary: {
-        matchesPlayed: 7,
-        wins: 3,
-        progressionVersion: 1,
-        totalXp: 1000,
-        level: 3,
-        levelXp: 0,
-        nextLevelXp: 500,
-      },
+      summary,
     })
     expect(invoke.mock.calls).toEqual([['account_summary']])
   })
@@ -146,11 +150,36 @@ describe('createSupabaseAccountBackend', () => {
     ['an unknown progression version', { data: { ...validSummary, progressionVersion: 2 }, error: null }],
     ['a missing summary key', { data: { matchesPlayed: 7, wins: 3, progressionVersion: 1, totalXp: 1000, level: 3, levelXp: 0 }, error: null }],
     ['an extra summary key', { data: { ...validSummary, userId: 'user-7' }, error: null }],
-    ['a fractional match count', { data: { ...validSummary, matchesPlayed: 7.5 }, error: null }],
-    ['a negative win count', { data: { ...validSummary, wins: -1 }, error: null }],
+    ['a fractional match count', {
+      data: { matchesPlayed: 7.5, wins: 3, progressionVersion: 1, totalXp: 1050, level: 3, levelXp: 50, nextLevelXp: 500 },
+      error: null,
+    }],
+    ['a fractional win count', {
+      data: { matchesPlayed: 7, wins: 1.5, progressionVersion: 1, totalXp: 850, level: 2, levelXp: 350, nextLevelXp: 500 },
+      error: null,
+    }],
+    ['a negative win count', {
+      data: { matchesPlayed: 7, wins: -1, progressionVersion: 1, totalXp: 600, level: 2, levelXp: 100, nextLevelXp: 500 },
+      error: null,
+    }],
+    ['an unsafe match count and derived total', {
+      data: {
+        matchesPlayed: Number.MAX_SAFE_INTEGER,
+        wins: 0,
+        progressionVersion: 1,
+        totalXp: Number.MAX_SAFE_INTEGER * 100,
+        level: Math.floor((Number.MAX_SAFE_INTEGER * 100) / 500) + 1,
+        levelXp: (Number.MAX_SAFE_INTEGER * 100) % 500,
+        nextLevelXp: 500,
+      },
+      error: null,
+    }],
     ['a NaN total XP', { data: { ...validSummary, totalXp: Number.NaN }, error: null }],
     ['an infinite level', { data: { ...validSummary, level: Number.POSITIVE_INFINITY }, error: null }],
-    ['wins above matches', { data: { ...validSummary, wins: 8 }, error: null }],
+    ['wins above matches', {
+      data: { matchesPlayed: 7, wins: 8, progressionVersion: 1, totalXp: 1500, level: 4, levelXp: 0, nextLevelXp: 500 },
+      error: null,
+    }],
     ['an inconsistent total XP', { data: { ...validSummary, totalXp: 999 }, error: null }],
     ['an incorrect level', { data: { ...validSummary, level: 2 }, error: null }],
     ['an incorrect current-level XP', { data: { ...validSummary, levelXp: 1 }, error: null }],

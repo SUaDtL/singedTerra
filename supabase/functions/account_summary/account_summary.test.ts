@@ -28,12 +28,13 @@ function participantQuery(
   error: FakeError | null = null,
   count: number | null = Array.isArray(data) ? data.length : null,
   requireExactCount = false,
+  expectedUserId = USER_ID,
 ): QueryExpectation {
   return {
     table: 'match_participants',
     select: 'room_id, tank_id',
     selectOptions: requireExactCount ? { count: 'exact' } : undefined,
-    filter: ['eq', 'user_id', USER_ID],
+    filter: ['eq', 'user_id', expectedUserId],
     result: { data, error, count },
   }
 }
@@ -146,19 +147,36 @@ Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignore
   const { payload } = await expectResponse(
     {
       queries: [
-        participantQuery([
-          { room_id: rooms[0], tank_id: 'p2' },
-          { room_id: rooms[1], tank_id: 'p1' },
-        ]),
+        participantQuery(
+          [
+            { room_id: rooms[0], tank_id: 'p2' },
+            { room_id: rooms[1], tank_id: 'p1' },
+          ],
+          null,
+          2,
+          false,
+          OTHER_USER_ID,
+        ),
         scoreQuery(rooms, [
           { room_id: rooms[0], winner: 'p2' },
           { room_id: rooms[1], winner: 'p2' },
         ]),
       ],
+      authUserId: OTHER_USER_ID,
     },
     200,
     `Bearer ${JWT}`,
-    { userId: OTHER_USER_ID, matchesPlayed: 999, wins: 999, token: BODY_MARKER },
+    {
+      userId: USER_ID,
+      matchesPlayed: 999,
+      wins: 999,
+      progressionVersion: 999,
+      totalXp: 999,
+      level: 999,
+      levelXp: 999,
+      nextLevelXp: 999,
+      token: BODY_MARKER,
+    },
   )
   assertEquals(payload, {
     matchesPlayed: 2,

@@ -12,7 +12,7 @@ export interface AccountCredentials {
 export interface AccountSummary {
   matchesPlayed: number
   wins: number
-  progressionVersion: number
+  progressionVersion: 1
   totalXp: number
   level: number
   levelXp: number
