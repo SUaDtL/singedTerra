@@ -3,6 +3,7 @@ export type LobbyPrimaryTab = 'hotseat' | 'online';
 export interface LobbyShellViewOptions {
   activeTab: LobbyPrimaryTab;
   rejoinAvailable: boolean;
+  account: HTMLElement | null;
   vehiclePreview: HTMLElement;
   content: HTMLElement;
   controls: HTMLElement;
@@ -22,7 +23,9 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
 
   const title = document.createElement('h1');
   title.textContent = 'singedTerra';
-  card.append(title, options.vehiclePreview);
+  card.append(title);
+  if (options.account) card.append(options.account);
+  card.append(options.vehiclePreview);
 
   if (options.rejoinAvailable) {
     const banner = document.createElement('div');

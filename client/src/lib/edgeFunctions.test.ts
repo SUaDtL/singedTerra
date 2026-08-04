@@ -58,6 +58,49 @@ describe('edgeFunctions (Edge-Function transport)', () => {
     expect('signal' in init).toBe(false);
   });
 
+  it('keeps the default publishable-key HTTP boundary unchanged when no account bearer is supplied', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ linked: false }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await callFunction('claim_match', { roomId: 'room-1', playerId: 'player-1', token: 'seat-1' });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    expect(init.headers).toEqual({
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer anon-key-test',
+      'apikey': 'anon-key-test',
+    });
+    expect(init.body).toBe('{"roomId":"room-1","playerId":"player-1","token":"seat-1"}');
+    expect(result).toEqual({ ok: true, status: 200, data: { linked: false } });
+  });
+
+  it('replaces only Authorization with an account bearer without placing it in the body or result', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ linked: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await callFunction(
+      'claim_match',
+      { roomId: 'room-1', playerId: 'player-1', token: 'seat-1' },
+      { bearerToken: 'account-bearer-secret' },
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    expect(init.headers['Authorization']).toBe('Bearer account-bearer-secret');
+    expect(init.headers['apikey']).toBe('anon-key-test');
+    expect(init.headers['Content-Type']).toBe('application/json');
+    expect(init.body).toBe('{"roomId":"room-1","playerId":"player-1","token":"seat-1"}');
+    expect(JSON.stringify(init.body)).not.toContain('account-bearer-secret');
+    expect(JSON.stringify(result)).not.toContain('account-bearer-secret');
+  });
+
   it('returns ok:true / status / parsed data on a 200', async () => {
     vi.stubGlobal(
       'fetch',

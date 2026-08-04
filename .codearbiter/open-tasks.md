@@ -161,6 +161,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] mvp2.progression.0003 - Show server-derived XP and level progress for authenticated accounts  (from mvp2.identity.0001)  (done 2026-08-04)
+  - Boundaries: Supabase Auth JWT, derived progression rules, persisted match attribution, account UI
+- [ ] Add an injectable limiter seam and causal 429/fail-open tests for shared Edge request handling.  (from review:account-progression-summary)
+  - Boundaries: rate-limiting, service-role
+- [x] mvp2.progression.0002 - Show server-derived matches played and wins for authenticated accounts  (from mvp2.identity.0001)  (done 2026-08-04)
+  - Boundaries: Supabase Auth JWT, match attribution, owner-private progression read, account UI
+- [x] mvp2.progression.0001 - Link authenticated accounts to completed matches without trusting client-owned progression totals  (from mvp2.identity.0001)  (done 2026-08-04)
+  - Boundaries: Supabase Auth JWT, match attribution, finish_game, RLS, seat-token authorization
 - [x] reliability.impact.0001 - Keep the tactical impact monitor visible for reduced-motion mobile profiles with a causal renderer regression.  (done 2026-08-03)
   - Boundaries: client
 - [x] reliability.teardown.0001 - Prevent a stopped NetworkClient RAF callback from resurrecting the animation loop, with a causal regression.  (done 2026-08-03)
@@ -196,7 +204,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] mvp1.tutorial.0001 - Interactive first-shot tutorial and onboarding  (done 2026-08-03)
   - Desc: Guide a new player through one safe first shot using the existing aim, wind, power, and fire paths without blocking the normal start flow.
   - Boundaries: client tutorial overlay, aim/power/wind guidance, existing input callbacks and tests; no engine, action protocol, network, backend, migration, dependency, auth, secrets, or persistence
-- [ ] mvp2.identity.0001 - Persistent users and progression
+- [~] mvp2.identity.0001 - Persistent users and progression  (started 2026-08-04)
   - Desc: Provide persistent users and progression without trusting client-owned progress or weakening the current seat-token/network security boundary.
   - Boundaries: authenticated user identity, secure persistence, progression schema and rules; no implementation until auth/security controls and data-integrity design are cleared
 - [x] mvp1.world.0001 - Let lobby players choose an authored battlefield world and carry it through hot-seat and network setup  (done 2026-08-03)

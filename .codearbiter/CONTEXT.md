@@ -29,27 +29,30 @@ layering; `tech-stack.md` for the stack; `security-controls.md` for the backend 
 
 ## Primary users
 
-Casual players (the maintainer and friends) playing in a desktop or mobile browser. No
-accounts — players join a room by a 4-character code.
+Casual players (the maintainer and friends) playing in a desktop or mobile browser.
+Optional accounts provide durable profiles and future progression, while anonymous players
+can still play hot-seat or join an online room by its 4-character code.
 
 ## Scope
 
 Implemented and playable today: hot-seat + networked play, AI opponents, best-of-N match
 structure with a between-rounds shop/economy, multiple weapons, destructible terrain with
-burial mechanics, audio + visual juice, and mobile/touch support. An ongoing review backlog
-lives in `docs/REVIEW_BACKLOG.md`; build history in `docs/TASKS.md`; spec in `docs/SPEC.md`.
+burial mechanics, audio + visual juice, mobile/touch support, and optional Supabase password
+accounts with owner-only durable profiles. Anonymous play remains supported. An ongoing review
+backlog lives in `docs/REVIEW_BACKLOG.md`; build history in `docs/TASKS.md`; spec in `docs/SPEC.md`.
 
 ### Not building (current intent)
 
 No items are hard-excluded, but none of the following is a current priority — treat each as
-possible-future, not in scope now (confirmed with maintainer 2026-06-20):
+possible-future, not in scope now (updated with maintainer 2026-08-04):
 
-- User accounts / real authentication (identity stays ephemeral, room-code based).
-- Ranked matchmaking / global persistent leaderboards.
+- Google SSO and other federated login providers (password auth comes first per ADR-0011).
+- Magic-link, OTP, resend, SMTP, and password-recovery email infrastructure.
+- Ranked matchmaking / global persistent leaderboards (profile and trusted match linkage come first).
 - A native mobile app (browser-only, including mobile web).
 - Monetization (no payments, ads, or in-game purchases — it's a free game).
 
-## Strategic direction (decided 2026-06-20)
+## Strategic direction (decided 2026-06-20; identity updated 2026-08-04)
 
 The organizing principle is a **staged-seriousness ladder**: ship a friendly prototype
 now, and let heavier commitments *gate in together* as the project proves it's worth
@@ -70,8 +73,10 @@ mobile release). Architect so none of these is foreclosed, but build none ahead 
 - **Roadmap (CONFIRM-04):** **Gameplay parity first** — Scorched Earth mechanics
   (movement/fuel, parachutes, batteries, arms-level, shields) lead; online-social
   (room browser, teams, spectator) follows.
-- **Identity (CONFIRM-05):** Ephemeral name-on-join now; real identity + ranked profiles
-  gate in *with* cheat-protection (shared trigger). Don't half-build it.
+- **Identity (ADR-0011, supersedes CONFIRM-05):** Optional Supabase email/password accounts
+  now, with email confirmation disabled initially and anonymous room-code play preserved.
+  Account JWT identity remains separate from the per-seat gameplay token. Owner-only profiles
+  are the foundation; authenticated match linkage and progression follow, with Google SSO later.
 
 ## Maturity
 

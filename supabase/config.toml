@@ -3,7 +3,7 @@ project_id = "your-project-id"
 [api]
 enabled = true
 port = 54321
-schemas = ["public"]
+schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
@@ -26,19 +26,36 @@ pop3_port = 54326
 enabled = true
 file_size_limit = "50MiB"
 
-[auth]
-# Disabled by design: singedTerra uses no end-user auth (ephemeral identity model).
-# This block is local-dev scaffolding from `supabase init`; keep it off so it never
-# stands up an unused GoTrue surface if this config is ever applied.
+[storage.vector]
+# Keep the linked free-tier project posture explicit. Omitting this lets the CLI
+# scaffold default request vector buckets during a full config push.
 enabled = false
-site_url = "http://localhost:5173"
+
+[auth]
+# ADR-0011: optional durable accounts use password auth while anonymous play and
+# per-room seat-token authorization remain available and unchanged.
+enabled = true
+site_url = "https://suadtl.github.io/singedTerra/"
+additional_redirect_urls = ["http://localhost:5173"]
 jwt_expiry = 3600
-enable_signup = false
+enable_signup = true
+# Enforce the same minimum at the public Auth boundary as the client form.
+minimum_password_length = 8
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
+# No SMTP/provider dependency in the foundation slice. Revisit before enabling
+# email ownership claims, recovery, or magic-link/OTP flows.
 enable_confirmations = false
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+# Preserve the linked project's existing MFA posture even though the foundation
+# UI does not expose enrollment yet.
+enroll_enabled = true
+verify_enabled = true
 
 [realtime]
 enabled = true
@@ -71,4 +88,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.restart_game]
+verify_jwt = false
+
+[functions.claim_match]
+verify_jwt = false
+
+[functions.account_summary]
 verify_jwt = false

@@ -28,6 +28,7 @@ Both workspace packages are `private: true`.
 - Canvas 2D — pure browser API, no rendering lib.
 - Root tooling: `concurrently`, `typescript`, `@types/node`.
 - **tsx** `^4.23.1` — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step).
+- **Supabase CLI** `2.105.0` — exact development-only deployment tool pinned in `package-lock.json`; deploy scripts use the local binary so CLI defaults cannot drift between reviewed and applied configuration.
 
 ## Commands (root `package.json`)
 
@@ -44,7 +45,7 @@ Both workspace packages are `private: true`.
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
 | Secrets scan | `python "<active-codearbiter-plugin-root>/hooks/preview.py" secrets` | codeArbiter's state-free scanner over staged, unstaged, and untracked changed files; the host resolves the active plugin root before invocation. |
-| Deploy backend | `npm run deploy:backend` | `npx supabase db push --yes && npx supabase functions deploy --use-api --yes` |
+| Deploy backend | `npm run deploy:backend` | `supabase db push --yes && supabase config push && supabase functions deploy --use-api --yes` (lockfile-pinned CLI; config diff requires interactive confirmation) |
 | Deploy all | `npm run deploy` | backend then client |
 
 ## Testing

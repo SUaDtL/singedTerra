@@ -129,6 +129,21 @@ type ExpectedMatchScoresInsert = {
   created_at?: string;
 };
 type ExpectedMatchScoresUpdate = Partial<ExpectedMatchScoresRow>;
+type ExpectedMatchParticipantsRow = {
+  room_id: string;
+  user_id: string;
+  player_id: string;
+  tank_id: string;
+  created_at: string;
+};
+type ExpectedMatchParticipantsInsert = {
+  room_id: string;
+  user_id: string;
+  player_id: string;
+  tank_id: string;
+  created_at?: string;
+};
+type ExpectedMatchParticipantsUpdate = Partial<ExpectedMatchParticipantsRow>;
 type ExpectedRateLimitsRow = {
   bucket: string;
   window_start: number;
@@ -167,7 +182,12 @@ type Relationship<TableName extends keyof Tables> =
 type _ServiceClientMustNotBeAny = AssertFalse<IsAny<ServiceClient>>;
 type _TableKeysAreExact = AssertExact<
   keyof Tables,
-  "rooms" | "room_actions" | "match_scores" | "rate_limits" | "room_seats"
+  | "rooms"
+  | "room_actions"
+  | "match_scores"
+  | "match_participants"
+  | "rate_limits"
+  | "room_seats"
 >;
 type _RpcKeysAreExact = AssertExact<
   keyof Functions,
@@ -264,6 +284,18 @@ type _MatchScoresInsertIsExact = AssertExact<
 type _MatchScoresUpdateIsExact = AssertExact<
   Tables["match_scores"]["Update"],
   ExpectedMatchScoresUpdate
+>;
+type _MatchParticipantsRowIsExact = AssertExact<
+  Tables["match_participants"]["Row"],
+  ExpectedMatchParticipantsRow
+>;
+type _MatchParticipantsInsertIsExact = AssertExact<
+  Tables["match_participants"]["Insert"],
+  ExpectedMatchParticipantsInsert
+>;
+type _MatchParticipantsUpdateIsExact = AssertExact<
+  Tables["match_participants"]["Update"],
+  ExpectedMatchParticipantsUpdate
 >;
 type _RateLimitsRowIsExact = AssertExact<
   Tables["rate_limits"]["Row"],
@@ -390,6 +422,32 @@ type _MatchScoresRelationshipIsExact = AssertExact<
     isOneToOne: true;
   }
 >;
+type _MatchParticipantsRoomRelationshipIsExact = AssertExact<
+  Extract<
+    Relationship<"match_participants">,
+    { foreignKeyName: "match_participants_room_id_fkey" }
+  >,
+  {
+    foreignKeyName: "match_participants_room_id_fkey";
+    columns: ["room_id"];
+    referencedRelation: "match_scores";
+    referencedColumns: ["room_id"];
+    isOneToOne: false;
+  }
+>;
+type _MatchParticipantsUserRelationshipIsExact = AssertExact<
+  Extract<
+    Relationship<"match_participants">,
+    { foreignKeyName: "match_participants_user_id_fkey" }
+  >,
+  {
+    foreignKeyName: "match_participants_user_id_fkey";
+    columns: ["user_id"];
+    referencedRelation: "users";
+    referencedColumns: ["id"];
+    isOneToOne: false;
+  }
+>;
 type _RoomSeatsRelationshipIsExact = AssertExact<
   Relationship<"room_seats">,
   {
@@ -408,6 +466,12 @@ type _RoomActionsRelationshipMustMatchEveryLiteral = AssertTrue<
 >;
 type _MatchScoresRelationshipMustMatchEveryLiteral = AssertTrue<
   _MatchScoresRelationshipIsExact
+>;
+type _MatchParticipantsRoomRelationshipMustMatchEveryLiteral = AssertTrue<
+  _MatchParticipantsRoomRelationshipIsExact
+>;
+type _MatchParticipantsUserRelationshipMustMatchEveryLiteral = AssertTrue<
+  _MatchParticipantsUserRelationshipIsExact
 >;
 type _RoomSeatsRelationshipMustMatchEveryLiteral = AssertTrue<
   _RoomSeatsRelationshipIsExact
@@ -440,6 +504,9 @@ type _AllExactContracts = AssertAll<{
   matchScoresRow: _MatchScoresRowIsExact;
   matchScoresInsert: _MatchScoresInsertIsExact;
   matchScoresUpdate: _MatchScoresUpdateIsExact;
+  matchParticipantsRow: _MatchParticipantsRowIsExact;
+  matchParticipantsInsert: _MatchParticipantsInsertIsExact;
+  matchParticipantsUpdate: _MatchParticipantsUpdateIsExact;
   rateLimitsRow: _RateLimitsRowIsExact;
   rateLimitsInsert: _RateLimitsInsertIsExact;
   rateLimitsUpdate: _RateLimitsUpdateIsExact;
@@ -459,6 +526,8 @@ type _AllExactContracts = AssertAll<{
   roomsRelationship: _RoomsRelationshipIsExact;
   roomActionsRelationship: _RoomActionsRelationshipIsExact;
   matchScoresRelationship: _MatchScoresRelationshipIsExact;
+  matchParticipantsRoomRelationship: _MatchParticipantsRoomRelationshipIsExact;
+  matchParticipantsUserRelationship: _MatchParticipantsUserRelationshipIsExact;
   roomSeatsRelationship: _RoomSeatsRelationshipIsExact;
 }>;
 
@@ -473,6 +542,8 @@ function invalidDatabaseContractsAreRejected(client: ServiceClient): void {
   client.from("rooms").insert({ code: "ABCD" });
   // @ts-expect-error rooms updates retain typed column values.
   client.from("rooms").update({ turn: "not-a-number" });
+  // @ts-expect-error match participant inserts require every server-derived identity.
+  client.from("match_participants").insert({ room_id: "room" });
 }
 
 function invalidRoomPropertiesAreRejected(room: RoomRow): void {

@@ -19,6 +19,7 @@ import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
 import { buildLobbyOnlineView, buildLobbyShellView } from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
+import { buildAccountPanelView } from './AccountPanelView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
 import {
   LobbyTransport,
@@ -34,6 +35,12 @@ import {
   type LobbyWaitingState,
 } from '../client/LobbySession';
 import { writeSession, clearSession, readSession, isLiveSession, type SessionDescriptor } from '../lib/sessionDescriptor';
+import {
+  AccountSession,
+  type AccountCredentials,
+  type AccountMode,
+  type AccountState,
+} from '../client/AccountSession';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
   normalizeNetworkRulesetVersion,
@@ -221,6 +228,17 @@ type LobbyTab = 'hotseat' | 'online';
 /** Sub-view within the Play Online tab. */
 type OnlineSubView = 'create' | 'join' | 'browse' | 'waiting';
 
+export interface AccountSessionPort {
+  readonly state: AccountState;
+  initialize(): Promise<void>;
+  submit(mode: AccountMode, credentials: AccountCredentials): Promise<void>;
+  signOut(): Promise<void>;
+}
+
+type AccountSessionFactory = (
+  onChange: (state: AccountState) => void,
+) => AccountSessionPort;
+
 /**
  * Lobby is the pre-game DOM overlay (SPEC §3): pick the number of players,
  * enter names, and choose a unique color per player from a fixed palette.
@@ -233,6 +251,9 @@ export class Lobby {
   /** Owns the seven Edge-Function calls (create/join/list/heartbeat/ready/leave/update). */
   private readonly transport = new LobbyTransport();
   private readonly session: LobbySession;
+  private readonly accountSession: AccountSessionPort;
+  private accountPanelOpen = false;
+  private accountMode: AccountMode = 'sign-in';
 
   /** Working state for the player rows (defaults Player 1..N + palette order). */
   private players: PlayerRowState[] = [];
@@ -305,11 +326,16 @@ export class Lobby {
    */
   private rejoinCandidate: { descriptor: SessionDescriptor; room: FetchedRoom } | null = null;
 
-  constructor(root: HTMLElement, onReady: (config: LobbyConfig) => void) {
+  constructor(
+    root: HTMLElement,
+    onReady: (config: LobbyConfig) => void,
+    createAccountSession: AccountSessionFactory = (onChange) => new AccountSession(onChange),
+  ) {
     this.root = root;
     this.onReady = onReady;
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
+    this.accountSession = createAccountSession(() => { this.render(); });
     const inviteCode = readRoomInviteCode(window.location.href);
     if (inviteCode) {
       this.activeTab = 'online';
@@ -404,6 +430,7 @@ export class Lobby {
     this.injectStyle();
     this.render();
     this.root.hidden = false;
+    void this.accountSession.initialize();
     void this.checkRejoinCandidate();
   }
 
@@ -1193,6 +1220,65 @@ export class Lobby {
         border: 1px solid rgba(255, 210, 63, 0.25);
         border-radius: 3px; padding: 1px 5px;
       }
+      #lobby .account-panel {
+        position: absolute; top: 16px; right: 18px; z-index: 8;
+        width: auto; max-width: none; margin: 0;
+        display: flex; align-items: center; gap: 8px;
+        color: var(--text); font-family: var(--font-sans);
+      }
+      #lobby .account-panel--open {
+        width: min(330px, calc(100% - 36px)); padding: 12px;
+        display: grid; gap: 10px;
+        background: rgba(13, 8, 23, 0.98);
+        border: 1px solid var(--ui-line-strong); border-radius: 8px;
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+      }
+      #lobby .account-panel__header,
+      #lobby .account-panel__modes {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      }
+      #lobby .account-panel button,
+      #lobby .account-panel input {
+        min-height: 34px; border-radius: 5px;
+        border: 1px solid var(--ui-line-strong);
+        background: rgba(255, 255, 255, 0.05); color: var(--text);
+      }
+      #lobby .account-panel button { cursor: pointer; padding: 6px 10px; }
+      #lobby .account-panel button.active,
+      #lobby .account-panel__submit { color: var(--ink); background: var(--gold); }
+      #lobby .account-panel button:focus-visible,
+      #lobby .account-panel input:focus-visible { outline: none; box-shadow: var(--ui-focus); }
+      #lobby .account-panel__identity { color: var(--text-gold); font-weight: 700; }
+      #lobby .account-panel__progress {
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        gap: 4px 12px;
+        margin: 0;
+        padding: 0 2px;
+      }
+      #lobby .account-panel__progress-item { display: grid; justify-items: start; gap: 1px; }
+      #lobby .account-panel__progress dt,
+      #lobby .account-panel__summary-unavailable {
+        color: var(--text-dim); font-size: 9px; line-height: 1.2;
+      }
+      #lobby .account-panel__progress dd {
+        margin: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px;
+      }
+      #app.is-compact #lobby .account-panel__progress dt,
+      #app.is-compact #lobby .account-panel__summary-unavailable {
+        font-size: 14px; line-height: 1.25;
+      }
+      #app.is-compact #lobby .account-panel__progress dd {
+        font-size: 16px; line-height: 1.2;
+      }
+      #lobby .account-panel__form { display: grid; gap: 9px; }
+      #lobby .account-panel__field { display: grid; gap: 4px; font-size: 11px; color: var(--text-dim); }
+      #lobby .account-panel__field input { box-sizing: border-box; width: 100%; padding: 7px 9px; }
+      #lobby .account-panel__error { color: #ff9c9c; font-size: 11px; line-height: 1.35; }
+      @media (max-width: 700px) {
+        #lobby .account-panel { top: 10px; right: 10px; }
+        #lobby .account-panel--open { width: calc(100% - 20px); box-sizing: border-box; }
+      }
     `;
     document.head.append(style);
   }
@@ -1219,6 +1305,27 @@ export class Lobby {
     const card = buildLobbyShellView({
       activeTab: this.activeTab,
       rejoinAvailable: this.rejoinCandidate !== null,
+      account: buildAccountPanelView({
+        state: this.accountSession.state,
+        open: this.accountPanelOpen,
+        mode: this.accountMode,
+        onOpen: () => {
+          this.accountPanelOpen = true;
+          this.render();
+        },
+        onClose: () => {
+          this.accountPanelOpen = false;
+          this.render();
+        },
+        onModeChange: (mode) => {
+          this.accountMode = mode;
+          this.render();
+        },
+        onSubmit: (mode, credentials) => {
+          void this.accountSession.submit(mode, credentials);
+        },
+        onSignOut: () => { void this.accountSession.signOut(); },
+      }),
       vehiclePreview,
       content,
       controls: this.renderControlsLegend(),

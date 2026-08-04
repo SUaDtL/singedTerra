@@ -357,3 +357,27 @@ Reliable and Securable require the governing record to match the implemented cre
 
 ### Implementation implication
 ADR-0010 explicitly corrects ADR-0009's storage-key sentence and governs the new `LobbySession` owner. Reviews enforce `playerId`-keyed localStorage, exact seat credentials, generation-bound async work, and no token exposure through Realtime, URLs, or logs.
+## DECISION-0014 — ADR-0011 — Use password-based Supabase Auth before adding Google SSO
+
+**Date:** 2026-08-04
+**Status:** accepted
+**Supersedes:** DECISION-0006
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly agreed to password auth now and Google SSO later)
+**Decision category:** security / identity / persistence
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** ADR-0006 and security-controls.md define a no-account, ephemeral-identity product posture.
+- **Scaffold position:** The user has raised the product's stakes and explicitly prioritized persistent players and progression without paid email delivery.
+- **Status type:** divergent
+
+### Decision
+Use Supabase Auth email/password accounts as the first durable identity foundation, with signups enabled and email confirmation disabled initially. Keep per-room seat tokens for room and action authorization, protect durable profile/progression records with authenticated server boundaries and RLS, and defer Google SSO plus password-reset email delivery to later slices.
+
+### SMARTS rationale
+Securable and Reliable require a stable server-verifiable user id before progression can be trusted. Maintainable and Testable favor Supabase Auth's existing JWT/session boundary over custom credentials, while Available and Scalable favor retaining the existing seat-token room flow during migration. Email/password without confirmation is the only current option that meets the explicit zero-email-delivery and zero-spend constraints; Google SSO remains the preferred later onboarding extension. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0011 governs Supabase auth configuration, identity migrations/functions, and client account/session integration. The next bounded slice establishes account identity and profile ownership only; progression rules and Google OAuth remain separate follow-on slices.
+
+---

@@ -45,11 +45,13 @@ export function edgeHeaders(): Record<string, string> {
 export async function callFunction<T = unknown>(
   name: string,
   body: unknown,
-  opts?: { signal?: AbortSignal },
+  opts?: { signal?: AbortSignal; bearerToken?: string },
 ): Promise<EdgeResult<T>> {
   const res = await fetch(edgeUrl(name), {
     method: 'POST',
-    headers: edgeHeaders(),
+    headers: opts?.bearerToken === undefined
+      ? edgeHeaders()
+      : { ...edgeHeaders(), 'Authorization': `Bearer ${opts.bearerToken}` },
     body: JSON.stringify(body),
     ...(opts?.signal ? { signal: opts.signal } : {}),
   });

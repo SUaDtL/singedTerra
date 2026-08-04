@@ -15,6 +15,7 @@ function options(overrides: Partial<LobbyShellViewOptions> = {}): LobbyShellView
   return {
     activeTab: 'hotseat',
     rejoinAvailable: true,
+    account: section('account'),
     vehiclePreview: section('vehicle-preview'),
     content: section('content'),
     controls: section('controls'),
@@ -34,9 +35,10 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
 describe('buildLobbyShellView', () => {
   it('renders the exact shell order with the conditional rejoin affordance', () => {
     const vehiclePreview = section('vehicle-preview');
+    const account = section('account');
     const content = section('content');
     const controls = section('controls');
-    const root = buildLobbyShellView(options({ vehiclePreview, content, controls }));
+    const root = buildLobbyShellView(options({ account, vehiclePreview, content, controls }));
 
     expect(root.className).toBe('lobby-card');
     const title = root.querySelector('h1');
@@ -47,6 +49,7 @@ describe('buildLobbyShellView', () => {
       .toBe('You have a game in progress.');
     expect([...root.children]).toEqual([
       title,
+      account,
       vehiclePreview,
       rejoin,
       tabs,
@@ -91,5 +94,12 @@ describe('buildLobbyShellView', () => {
     expect(onlineView.tagName).toBe('DIV');
     expect(onlineView.className).toBe('');
     expect([...onlineView.children]).toEqual([subView]);
+  });
+
+  it('omits the account slot when optional accounts are unavailable', () => {
+    const root = buildLobbyShellView(options({ account: null }));
+
+    expect(root.querySelector('[data-section="account"]')).toBeNull();
+    expect(button(root, 'Hot Seat')).toBeTruthy();
   });
 });

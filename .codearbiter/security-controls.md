@@ -1,26 +1,33 @@
 # Security controls
 
-Thin, boundary-focused. This is a casual browser game with **no end-user authentication by
-design**; the controls that matter are database write-access and the Edge Function referee.
-Extracted from code 2026-06-20.
+Thin, boundary-focused. Anonymous hot-seat and online play remain supported, while ADR-0011 adds
+optional durable Supabase Auth accounts for profiles and future progression. Gameplay authorization
+continues to use the existing per-seat credential; account identity is a separate boundary.
+Originally extracted from code 2026-06-20; account transition accepted 2026-08-04.
 
 ## Auth / identity
 
-- **No account or JWT auth** — no login, no Supabase Auth (GoTrue), user sessions, or JWT verification. Each human seat instead has two server-minted values: a public `playerId`, which is safe to put in room rows and action logs, and a secret 128-bit CSPRNG UUID seat token, which is the bearer credential for that seat. `create_room` and `join_room` mint and return the token once with the new seat.
+- **Optional account auth (ADR-0011)** — Supabase Auth email/password supplies a durable user id and browser-managed JWT session for owner-only profile access. Signup begins with email confirmation disabled: no magic link, OTP, resend, SMTP, password-recovery delivery, or paid provider. Google SSO is deferred. Passwords and session tokens are handled only by Supabase Auth and MUST NOT enter repo source, logs, URLs, public tables, Realtime, or application-owned persistence.
+- **Gameplay identity remains split** — each human seat has two server-minted values: a public `playerId`, which is safe to put in room rows and action logs, and a secret 128-bit CSPRNG UUID seat token, which remains the bearer credential for that seat. `create_room` and `join_room` mint and return the token once with the new seat. An account JWT does not replace or imply ownership of a seat.
 - The client persists that secret only in its existing best-effort `localStorage` entry keyed by the public `playerId`, so it can follow the same seat through a rematch. The token is never a Realtime value, URL value, log value, or identity/display field.
-- `verify_jwt = false` on **all 10 Edge Functions** (`supabase/config.toml`). They are public POST endpoints. This is acceptable **only because** writes are locked at the database layer (below) and gated in-function.
+- The public gameplay referees retain `verify_jwt = false`; they remain public POST endpoints gated by seat token and database controls. The separately authenticated account-aware `claim_match` and `account_summary` functions also retain `verify_jwt = false` so each handler explicitly validates exactly one account bearer with Supabase Auth. `claim_match` binds that account to the independently verified seat token for the same public room/player id and derives stored user and tank identities server-side. `account_summary` ignores request-owned identity and totals, scopes private-link reads to the Auth-derived user id, and derives bounded match and recorded-win counts from persisted scores. Account profile access uses the Supabase Data API's authenticated role plus RLS, not the public gameplay functions. No account-aware function may accept a client-supplied user id as authority.
+- **Versioned progression is server-derived** â€” `account_summary` version 1 computes XP only after its Auth-scoped participant and score reads validate: 100 XP per linked completed match plus 100 XP per recorded win; level 1 begins at 0 cumulative XP and each 500 XP advances one level. The handler returns `progressionVersion`, `totalXp`, `level`, `levelXp`, and `nextLevelXp` alongside the derived counts. Request bodies MUST NOT supply or influence XP, level, cumulative totals, match outcomes, or any progression authority; there is no account progression write path.
+- **Casual-result trust ceiling remains** â€” progression reflects accepted persisted lockstep results, but `finish_game` does not independently simulate or competitively verify every outcome. XP and levels are casual account history only: this slice MUST NOT attach gameplay advantages, scarce rewards, entitlements, ranks, or anti-cheat claims to them.
+- `profiles` contains only the Supabase user id, display name, and timestamps. It MUST NOT contain email, password material, access/refresh tokens, seat tokens, or client-reported progression. RLS default-denies anonymous access and limits authenticated reads to `id = auth.uid()`; profile insertion is server-trigger-owned in the identity-foundation slice.
 
 ## Database access — the real control (RLS)
 
 The public game tables (`rooms`, `room_actions`, `match_scores`) have **RLS enabled** with a uniform posture:
 
 - **`anon` role: public SELECT (`USING (true)`), zero writes** (`INSERT/UPDATE/DELETE` all `false`). The shipped anon/publishable key can only read.
+- **`authenticated` role: the same public SELECT visibility, zero direct writes.** Migration 013 adds explicit SELECT grants and read-only policies, and explicitly revokes INSERT/UPDATE/DELETE so restoring an account session cannot break room/replay/Realtime reads or bypass the Edge Function referees.
 - **All mutations go through the Edge Functions**, which use a `service_role` client (`getServiceClient()`, `_shared/mod.ts`) that bypasses RLS. The service key remains Deno-runtime-only and must never enter client code, logs, or the bundle.
 
 The credential and limiter tables are deliberately stricter:
 
 - `room_seats` stores the secret token and has RLS with no anon policies plus revoked anon table grants: default-deny, service-role-only access.
 - `rate_limits` likewise has RLS with no anon policies: default-deny, service-role-only access through the `bump_rate_limit` RPC, whose `PUBLIC` execution grant is revoked.
+- `match_participants` is the immutable owner-private linkage table for `claim_match` and the source of account-scoped links for `account_summary`: anonymous users receive no grants or policies; authenticated users receive owner-only SELECT where `auth.uid() = user_id` and no direct writes; only the service-role claim referee may insert. The service-role summary function reads only the Auth-derived user's links, requires the exact participant count to equal the returned row count so any PostgREST truncation fails closed, then reads scores only for those linked room ids in sequential batches of at most 200 UUIDs so each Database REST URL stays conservatively below the hosted 16 KB limit. Missing, duplicate, malformed, or unrequested score data and every batch query error fail generically without partial counts. Its room, player, and tank ids remain public gameplay identifiers, while the account link is private and its timestamp internal.
 
 This is the load-bearing control: even with JWT off and CORS open, no client can write a row except via a referee function. Do not weaken these RLS policies, and do not add a client-side path that uses the service-role key.
 
@@ -53,11 +60,12 @@ Known trust observation (accepted under the replayed-log design): the next-turn 
 
 ## Rate limiting (resolves CONFIRM-04)
 
-All 10 Edge Functions enforce a **per-IP fixed-window** limit via `withCors()` (`_shared/mod.ts`),
+Every deployed Edge Function enforces a **per-IP fixed-window** limit via `withCors()` (`_shared/mod.ts`),
 backed by a **service-role-only** `rate_limits` counter table + the `bump_rate_limit` RPC (migration
 `005_rate_limits.sql`; `REVOKE … FROM PUBLIC` / `GRANT … TO service_role`, mirroring 004). The cap is
 60 requests/min/IP by default, tightened on the expensive writers (`create_room` 10, `join_room` 20,
-`restart_game` 10 — named constants in `_shared/mod.ts`, tunable without a migration). Over-limit
+`restart_game` 10); `claim_match` and `account_summary` each have an explicit 60-request bucket. These named constants live in
+`_shared/mod.ts` and are tunable without a migration. Over-limit
 returns **429**. Client IP is read from `x-forwarded-for` (first hop) / `x-real-ip`. (A formal ADR for
 this decision is owed via `/ca:adr`.)
 
