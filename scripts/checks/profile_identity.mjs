@@ -278,6 +278,22 @@ if (!/\.from\s*\(\s*['"]match_scores['"]\s*\)[\s\S]*?\.in\s*\(\s*['"]room_id['"]
 if (/\.in\s*\(\s*['"]room_id['"]\s*,\s*roomIds\s*\)/s.test(accountSummaryFunction)) {
   fail('account_summary must not issue one unbounded linked-room score query');
 }
+const requiredProgressionControls = [
+  /const\s+PROGRESSION_VERSION\s*=\s*1\b/,
+  /const\s+MATCH_XP\s*=\s*100\b/,
+  /const\s+WIN_XP\s*=\s*100\b/,
+  /const\s+XP_PER_LEVEL\s*=\s*500\b/,
+  /export\s+function\s+progressionFromTotalXp\s*\(\s*totalXp\s*:\s*number\s*\)\s*:\s*AccountProgression\s*\{[\s\S]*?progressionVersion\s*:\s*PROGRESSION_VERSION[\s\S]*?totalXp\s*,[\s\S]*?level\s*:\s*Math\.floor\s*\(\s*totalXp\s*\/\s*XP_PER_LEVEL\s*\)\s*\+\s*1[\s\S]*?levelXp\s*:\s*totalXp\s*%\s*XP_PER_LEVEL[\s\S]*?nextLevelXp\s*:\s*XP_PER_LEVEL[\s\S]*?\}/,
+  /export\s+function\s+deriveProgression\s*\(\s*matchesPlayed\s*:\s*number\s*,\s*wins\s*:\s*number\s*\)\s*:\s*AccountProgression\s*\{\s*return\s+progressionFromTotalXp\s*\(\s*matchesPlayed\s*\*\s*MATCH_XP\s*\+\s*wins\s*\*\s*WIN_XP\s*\)\s*\}/,
+  /return\s+json\s*\(\s*\{\s*matchesPlayed\s*:\s*0\s*,\s*wins\s*:\s*0\s*,\s*\.\.\.deriveProgression\s*\(\s*0\s*,\s*0\s*\)\s*\}\s*\)/,
+  /return\s+json\s*\(\s*\{\s*matchesPlayed\s*:\s*participantData\.length\s*,\s*wins\s*,\s*\.\.\.deriveProgression\s*\(\s*participantData\.length\s*,\s*wins\s*\)\s*,?\s*\}\s*\)/,
+];
+if (requiredProgressionControls.some((pattern) => !pattern.test(accountSummaryFunction))) {
+  fail('account_summary must retain the reviewed version-one server-derived progression formula');
+}
+if ((accountSummaryFunction.match(/\b_body\b/g) ?? []).length !== 1) {
+  fail('account_summary must not consume request-body identity, XP, level, or cumulative totals');
+}
 
 const deployBackend = packageJson.scripts?.['deploy:backend'] ?? '';
 if (packageJson.devDependencies?.supabase !== '2.105.0') {

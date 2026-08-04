@@ -1,10 +1,11 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import * as accountSummary from './index.ts'
 import { handleAccountSummary, type AccountSummaryDependencies } from './index.ts'
 
 const USER_ID = '00000000-0000-4000-8000-000000000004'
 const OTHER_USER_ID = '00000000-0000-4000-8000-000000000005'
 const JWT = 'account-summary-jwt-must-not-appear'
-const BODY_SECRET = 'body-secret-must-not-appear'
+const BODY_MARKER = 'body-marker-must-not-appear'
 
 type FakeError = { message: string }
 type QueryResult = { data: unknown; error: FakeError | null; count?: number | null }
@@ -157,14 +158,30 @@ Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignore
     },
     200,
     `Bearer ${JWT}`,
-    { userId: OTHER_USER_ID, matchesPlayed: 999, wins: 999, token: BODY_SECRET },
+    { userId: OTHER_USER_ID, matchesPlayed: 999, wins: 999, token: BODY_MARKER },
   )
-  assertEquals(payload, { matchesPlayed: 2, wins: 1 })
+  assertEquals(payload, {
+    matchesPlayed: 2,
+    wins: 1,
+    progressionVersion: 1,
+    totalXp: 300,
+    level: 1,
+    levelXp: 300,
+    nextLevelXp: 500,
+  })
 })
 
 Deno.test('handleAccountSummary returns exact zero counts without querying scores when no links exist (catches unnecessary broad score reads)', async () => {
   const { fixture, payload } = await expectResponse({ queries: [participantQuery([])] }, 200)
-  assertEquals(payload, { matchesPlayed: 0, wins: 0 })
+  assertEquals(payload, {
+    matchesPlayed: 0,
+    wins: 0,
+    progressionVersion: 1,
+    totalXp: 0,
+    level: 1,
+    levelXp: 0,
+    nextLevelXp: 500,
+  })
   assertEquals(fixture.queryCount(), 1)
 })
 
@@ -189,7 +206,54 @@ Deno.test('handleAccountSummary derives exact wins, losses, and draws from persi
     },
     200,
   )
-  assertEquals(payload, { matchesPlayed: 4, wins: 1 })
+  assertEquals(payload, {
+    matchesPlayed: 4,
+    wins: 1,
+    progressionVersion: 1,
+    totalXp: 500,
+    level: 2,
+    levelXp: 0,
+    nextLevelXp: 500,
+  })
+})
+
+Deno.test('progressionFromTotalXp keeps 499 total XP in level one (catches an early level divisor)', () => {
+  const progressionFromTotalXp = (accountSummary as {
+    progressionFromTotalXp?: (totalXp: number) => unknown
+  }).progressionFromTotalXp
+  assertEquals(typeof progressionFromTotalXp, 'function')
+  assertEquals(progressionFromTotalXp!(499), {
+    progressionVersion: 1,
+    totalXp: 499,
+    level: 1,
+    levelXp: 499,
+    nextLevelXp: 500,
+  })
+})
+
+Deno.test('handleAccountSummary derives version-one progression from eight matches and two recorded wins (catches a wrong win bonus)', async () => {
+  const rooms = Array.from({ length: 8 }, (_, index) => `room-${index + 1}`)
+  const { payload } = await expectResponse(
+    {
+      queries: [
+        participantQuery(rooms.map((room_id, index) => ({ room_id, tank_id: `p${index + 1}` }))),
+        scoreQuery(rooms, rooms.map((room_id, index) => ({
+          room_id,
+          winner: index < 2 ? `p${index + 1}` : null,
+        }))),
+      ],
+    },
+    200,
+  )
+  assertEquals(payload, {
+    matchesPlayed: 8,
+    wins: 2,
+    progressionVersion: 1,
+    totalXp: 1000,
+    level: 3,
+    levelXp: 0,
+    nextLevelXp: 500,
+  })
 })
 
 Deno.test('handleAccountSummary fails generically on participant query errors without leaking credentials or account ids (catches partial totals and unsafe logs)', async () => {
@@ -197,7 +261,7 @@ Deno.test('handleAccountSummary fails generically on participant query errors wi
     { queries: [participantQuery(null, { message: `participant storage down ${JWT} ${USER_ID}` })] },
     500,
     `Bearer ${JWT}`,
-    { token: BODY_SECRET },
+    { token: BODY_MARKER },
   )
   assertEquals(payload, { error: 'summary_unavailable' })
   assertEquals(fixture.logs.length, 1)
@@ -207,7 +271,7 @@ Deno.test('handleAccountSummary fails generically on participant query errors wi
   const serialized = JSON.stringify({ payload, logs: fixture.logs })
   assertEquals(serialized.includes(JWT), false)
   assertEquals(serialized.includes(USER_ID), false)
-  assertEquals(serialized.includes(BODY_SECRET), false)
+  assertEquals(serialized.includes(BODY_MARKER), false)
 })
 
 Deno.test('handleAccountSummary fails generically on score query errors rather than returning linked-match totals (catches partial success)', async () => {
@@ -328,7 +392,15 @@ Deno.test('handleAccountSummary batches realistic room UUID score filters and ag
     },
     200,
   )
-  assertEquals(payload, { matchesPlayed: 405, wins: 3 })
+  assertEquals(payload, {
+    matchesPlayed: 405,
+    wins: 3,
+    progressionVersion: 1,
+    totalXp: 40800,
+    level: 82,
+    levelXp: 300,
+    nextLevelXp: 500,
+  })
 })
 
 Deno.test('handleAccountSummary fails generically when a later bounded score batch errors (catches partial aggregate success)', async () => {

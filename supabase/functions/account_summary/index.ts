@@ -17,6 +17,32 @@ type MatchScore = {
 }
 
 const SCORE_ROOM_BATCH_SIZE = 200
+const PROGRESSION_VERSION = 1
+const MATCH_XP = 100
+const WIN_XP = 100
+const XP_PER_LEVEL = 500
+
+export interface AccountProgression {
+  progressionVersion: 1
+  totalXp: number
+  level: number
+  levelXp: number
+  nextLevelXp: number
+}
+
+export function progressionFromTotalXp(totalXp: number): AccountProgression {
+  return {
+    progressionVersion: PROGRESSION_VERSION,
+    totalXp,
+    level: Math.floor(totalXp / XP_PER_LEVEL) + 1,
+    levelXp: totalXp % XP_PER_LEVEL,
+    nextLevelXp: XP_PER_LEVEL,
+  }
+}
+
+export function deriveProgression(matchesPlayed: number, wins: number): AccountProgression {
+  return progressionFromTotalXp(matchesPlayed * MATCH_XP + wins * WIN_XP)
+}
 
 export interface AccountSummaryDependencies {
   supabase?: ServiceClient
@@ -77,7 +103,9 @@ export async function handleAccountSummary(
   if (new Set(roomIds).size !== roomIds.length) {
     return fail('participant data inconsistent', 'participants')
   }
-  if (participantData.length === 0) return json({ matchesPlayed: 0, wins: 0 })
+  if (participantData.length === 0) {
+    return json({ matchesPlayed: 0, wins: 0, ...deriveProgression(0, 0) })
+  }
 
   const scoreData: MatchScore[] = []
   for (let scoreOffset = 0; scoreOffset < roomIds.length; scoreOffset += SCORE_ROOM_BATCH_SIZE) {
@@ -111,7 +139,11 @@ export async function handleAccountSummary(
     if (!score) return fail('score data inconsistent', 'scores')
     if (score.winner === link.tank_id) wins += 1
   }
-  return json({ matchesPlayed: participantData.length, wins })
+  return json({
+    matchesPlayed: participantData.length,
+    wins,
+    ...deriveProgression(participantData.length, wins),
+  })
 }
 
 if (import.meta.main) {
