@@ -633,7 +633,7 @@ export class Renderer {
 
   /** Copy the strongest live detonation after all world transforms are restored. */
   private drawImpactMonitor(worldOffset: Readonly<ImpactMonitorOffset>): void {
-    if (this.reduceMotion || this.bursts.length === 0) return;
+    if (this.bursts.length === 0) return;
     const focus = selectImpactMonitorFocus(this.bursts);
     if (focus === null) return;
     const geometry = getImpactMonitorGeometry(focus, worldOffset);

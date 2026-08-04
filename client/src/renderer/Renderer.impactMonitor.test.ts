@@ -74,13 +74,22 @@ describe('Renderer impact monitor', () => {
     );
   });
 
-  it('suppresses the duplicated monitor for reduced-motion users', () => {
+  it('keeps the impact monitor visible for reduced-motion users', () => {
     const renderer = monitorSeam(true);
     renderer.bursts = [burst(600, 72, 0)];
 
     renderer.drawImpactMonitor({ x: 0, y: 0 });
 
-    expect(renderer.impactMonitor.draw).not.toHaveBeenCalled();
+    expect(renderer.impactMonitor.draw).toHaveBeenCalledWith(
+      renderer.ctx,
+      {
+        focus: { x: 600, y: 300 },
+        source: { x: 528, y: 256, width: 144, height: 88 },
+        content: { x: 501, y: 25, width: 198, height: 121 },
+        frame: { x: 490, y: 18, width: 220, height: 136 },
+      },
+      false,
+    );
   });
 
   it('composites after the world transform is restored and before the canvas HUD slot', () => {

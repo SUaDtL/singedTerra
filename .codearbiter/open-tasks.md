@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] reliability.impact.0001 - Keep the tactical impact monitor visible for reduced-motion mobile profiles with a causal renderer regression.  (started 2026-08-03)
+  - Boundaries: client
 - [x] reliability.teardown.0001 - Prevent a stopped NetworkClient RAF callback from resurrecting the animation loop, with a causal regression.  (done 2026-08-03)
   - Desc: Prevent a stopped NetworkClient RAF callback from resurrecting the animation loop, with a causal regression.
   - Boundaries: client NetworkClient runtime and regression tests only; no auth, persistence, migrations, secrets, dependencies, protocol, or Supabase changes
