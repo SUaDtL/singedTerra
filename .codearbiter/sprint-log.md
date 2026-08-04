@@ -4138,3 +4138,23 @@ pm run check passed the complete chain in 75.8s; state-free staged secret scan r
 ## 2026-08-04 - mvp2.identity.0001 closeout exact re-review
 
 - Adversarial reviewer Ampere reviewed the rebuilt package containing the spec, plan, sprint log, full test and deployment evidence, and final diff. Verdict CLEAR: Critical 0, High 0, Medium 0, Low 0, merge blockers 0. The reviewer confirmed both prior blockers resolved, the sprint-log change append-only, and the protected task lock untracked and excluded.
+
+## 2026-08-04 - mvp2.progression.0001 account-match linkage design
+
+- Standing approval applies to this bounded spec and plan; no separate approval pause was taken. The task remains within ADR-0011's already-decided password-auth, account-JWT, and seat-token boundaries.
+- Options weighed: (A) separate authenticated claim_match endpoint after finish_game; (B) extend public finish_game with optional account behavior; (C) link accounts at room join. SMARTS verdict: A, strong, confidence high. It isolates auth from anonymous completion, avoids first-finisher attribution races, excludes abandoned rooms, and is independently retryable/testable.
+- Threat-model verdict: PROCEED WITH CONSTRAINTS. Validate the JWT server-side with Supabase Auth and the seat token independently; derive user_id and tank_id server-side; require a finished room plus match_scores row; owner-only RLS reads; service-only writes; credential-free logs/errors; uniqueness-backed idempotency/conflict; existing per-IP limiter. No new dependency, crypto, secret, provider, or spending decision is required.
+- Scope: migration 014 match_participants, claim_match, authenticated transport override, completion claim helper, and causal NetworkClient wiring. XP, levels, totals, UI, hot-seat attribution, Google SSO, and email delivery remain out of scope.
+- Task 4 retry bound weighed: (A) reuse the existing two-attempt `postOnceWithRetry` policy; (B) one claim attempt; (C) add a new longer claim policy. SMARTS verdict: A, strong, confidence high. It is testable and maintainable through the existing primitive, tolerates one transient failure, remains bounded, and adds no timing or dependency surface.
+
+## 2026-08-04 - account-match linkage local gates
+
+- Fresh full verification passed: client Vitest 137 files / 999 tests; Edge Deno 239 tests; `npm run check` including strict typecheck and deterministic harnesses; production build; and dependency audit with 0 vulnerabilities.
+- The state-free secret scan returned 17 redacted candidates. Source inspection classified all 17 as explicit synthetic test fixtures such as `seat-1`, `seat-token-secret`, and `account-bearer-secret`; raw credential findings: 0.
+- Per-task adversarial review cleared Tasks 1 and 3 directly. Task 2 cleared two Important findings in fix round 1; Task 4 cleared two causal-test Important findings in fix round 1. No Critical, High, Important, or other merge-blocking task finding remains.
+
+## 2026-08-04 - account-match linkage commit-gate migration remediation
+
+- Migration review found a High: service_role had INSERT but claim_match needs SELECT for uniqueness diagnostics, so strict ACLs could turn idempotent retries into 500s.
+- Options weighed: (A) revoke ambient rights, grant exact SELECT plus INSERT, and assert the role matrix inside migration 014; (B) add SELECT only and rely on source inspection; (C) defer privilege proof to hosted deployment. SMARTS verdict: A, strong, confidence high. It converges legacy and strict ACLs, proves least privilege transactionally, and preserves additive deployment.
+- The fix was test-first: the old ACL, removed SELECT, and added UPDATE each failed the source contract; the restored migration passed the identity harness and 20 focused Deno tests. Local Docker was unavailable, so hosted migration execution remains the operational proof gate.

@@ -10,7 +10,7 @@ Originally extracted from code 2026-06-20; account transition accepted 2026-08-0
 - **Optional account auth (ADR-0011)** — Supabase Auth email/password supplies a durable user id and browser-managed JWT session for owner-only profile access. Signup begins with email confirmation disabled: no magic link, OTP, resend, SMTP, password-recovery delivery, or paid provider. Google SSO is deferred. Passwords and session tokens are handled only by Supabase Auth and MUST NOT enter repo source, logs, URLs, public tables, Realtime, or application-owned persistence.
 - **Gameplay identity remains split** — each human seat has two server-minted values: a public `playerId`, which is safe to put in room rows and action logs, and a secret 128-bit CSPRNG UUID seat token, which remains the bearer credential for that seat. `create_room` and `join_room` mint and return the token once with the new seat. An account JWT does not replace or imply ownership of a seat.
 - The client persists that secret only in its existing best-effort `localStorage` entry keyed by the public `playerId`, so it can follow the same seat through a rematch. The token is never a Realtime value, URL value, log value, or identity/display field.
-- The existing 10 gameplay Edge Functions retain `verify_jwt = false`; they remain public POST endpoints gated by seat token and database controls. Account profile access uses the Supabase Data API's authenticated role plus RLS, not those functions. Any future account-aware function MUST verify the JWT/`auth.uid()` boundary explicitly and MUST NOT accept a client-supplied user id as authority.
+- The public gameplay referees retain `verify_jwt = false`; they remain public POST endpoints gated by seat token and database controls. The separately authenticated account-aware `claim_match` referee also retains `verify_jwt = false` so its handler explicitly validates the account bearer with Supabase Auth, binds it to the independently verified seat token for the same public room/player id, and derives the stored user and tank identities server-side. Account profile access uses the Supabase Data API's authenticated role plus RLS, not the public gameplay functions. No account-aware function may accept a client-supplied user id as authority.
 - `profiles` contains only the Supabase user id, display name, and timestamps. It MUST NOT contain email, password material, access/refresh tokens, seat tokens, or client-reported progression. RLS default-denies anonymous access and limits authenticated reads to `id = auth.uid()`; profile insertion is server-trigger-owned in the identity-foundation slice.
 
 ## Database access — the real control (RLS)
@@ -25,6 +25,7 @@ The credential and limiter tables are deliberately stricter:
 
 - `room_seats` stores the secret token and has RLS with no anon policies plus revoked anon table grants: default-deny, service-role-only access.
 - `rate_limits` likewise has RLS with no anon policies: default-deny, service-role-only access through the `bump_rate_limit` RPC, whose `PUBLIC` execution grant is revoked.
+- `match_participants` is the immutable owner-private linkage table for `claim_match`: anonymous users receive no grants or policies; authenticated users receive owner-only SELECT where `auth.uid() = user_id` and no direct writes; only the service-role claim referee may insert. Its room, player, and tank ids remain public gameplay identifiers, while the account link is private and its timestamp internal.
 
 This is the load-bearing control: even with JWT off and CORS open, no client can write a row except via a referee function. Do not weaken these RLS policies, and do not add a client-side path that uses the service-role key.
 
@@ -57,11 +58,12 @@ Known trust observation (accepted under the replayed-log design): the next-turn 
 
 ## Rate limiting (resolves CONFIRM-04)
 
-All 10 Edge Functions enforce a **per-IP fixed-window** limit via `withCors()` (`_shared/mod.ts`),
+Every deployed Edge Function enforces a **per-IP fixed-window** limit via `withCors()` (`_shared/mod.ts`),
 backed by a **service-role-only** `rate_limits` counter table + the `bump_rate_limit` RPC (migration
 `005_rate_limits.sql`; `REVOKE … FROM PUBLIC` / `GRANT … TO service_role`, mirroring 004). The cap is
 60 requests/min/IP by default, tightened on the expensive writers (`create_room` 10, `join_room` 20,
-`restart_game` 10 — named constants in `_shared/mod.ts`, tunable without a migration). Over-limit
+`restart_game` 10); `claim_match` has an explicit 60-request bucket. These named constants live in
+`_shared/mod.ts` and are tunable without a migration. Over-limit
 returns **429**. Client IP is read from `x-forwarded-for` (first hop) / `x-real-ip`. (A formal ADR for
 this decision is owed via `/ca:adr`.)
 

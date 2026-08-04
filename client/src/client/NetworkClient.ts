@@ -18,6 +18,7 @@ import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 import { shouldBufferSeq } from '@shared/net/seqGuard';
 import { postOnceWithRetry } from './retry';
+import { claimCompletedMatch } from './matchClaim';
 import { fastForwardTicks } from './fastForward';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 import { clearSession } from '../lib/sessionDescriptor';
@@ -1293,6 +1294,18 @@ export class NetworkClient implements GameClient {
     ).then((result) => {
       if (!result.ok) {
         console.error('NetworkClient: finish_game error:', result.error);
+      }
+      return postOnceWithRetry(
+        () => claimCompletedMatch(this.supabase.auth, {
+          roomId: this.roomId,
+          playerId: this.playerId,
+          token: this.token,
+        }),
+        2,
+      );
+    }).then((result) => {
+      if (!result.ok) {
+        console.error('NetworkClient: claim_match error');
       }
     });
   }

@@ -4,14 +4,14 @@
 // their own function; they are bundled into any function that imports them via a
 // relative path (../_shared/mod.ts). This is the only sanctioned place for
 // CORS policy, the request preamble, the service client, the room row-shapes,
-// and the lazy-GC reaper — change one here and all 10 functions pick it up.
+// and the lazy-GC reaper — change one here and every deployed function picks it up.
 //
 // NOTE: this is Deno code. It MUST NOT import from client/ or shared/ (those are
 // browser/Node TypeScript with their own toolchains). The Edge Functions are thin
 // referees, not the physics engine — see CLAUDE.md "Layering / dependency direction".
 
 // Pinned to an exact version: a floating `@2` re-resolves on any `deno cache
-// --reload` and would silently advance all 10 functions to a new minor/patch.
+// --reload` and would silently advance every function to a new minor/patch.
 import {
   createClient,
   type SupabaseClient,
@@ -89,6 +89,7 @@ export const RATE_LIMITS: Record<string, number> = {
   create_room: 10,
   join_room: 20,
   restart_game: 10,
+  claim_match: 60,
 }
 /** Applied to any function bucket without a specific entry above. */
 export const RATE_LIMIT_DEFAULT = 60
@@ -228,6 +229,27 @@ export function getServiceClient(): ServiceClient {
   }
   _serviceClient = createClient<Database>(supabaseUrl, supabaseServiceKey)
   return _serviceClient
+}
+
+/**
+ * Validate one strict Bearer credential with Supabase Auth and return only the
+ * authenticated user id. This deliberately does not decode or inspect JWT
+ * claims locally: Auth is the authority for accepting the credential.
+ */
+export async function authenticateBearer(
+  req: Request,
+  supabase: Pick<ServiceClient, 'auth'>,
+): Promise<string | null> {
+  const match = /^Bearer ([^\s]+)$/.exec(req.headers.get('authorization') ?? '')
+  if (!match) return null
+  try {
+    const { data, error } = await supabase.auth.getUser(match[1])
+    return !error && typeof data.user?.id === 'string' && data.user.id.length > 0
+      ? data.user.id
+      : null
+  } catch {
+    return null
+  }
 }
 
 // Canonical row-shape types are re-exported from database.types.ts.
@@ -381,19 +403,38 @@ export function mintSeatToken(): string {
  * side-channel gives no practical guessing advantage; equality timing is not a concern
  * at this threat level (no accounts, no money — ADR-0006/0009).
  */
-export async function verifySeatToken(
+export type SeatTokenVerificationResult =
+  | { kind: 'valid' }
+  | { kind: 'invalid' }
+  | { kind: 'error'; error: unknown }
+
+/** Preserve the reason a seat check failed for callers that must distinguish a
+ * transient storage failure from an invalid credential. */
+export async function verifySeatTokenResult(
   supabase: ServiceClient,
   roomId: string,
   seatId: string,
   token: unknown,
-): Promise<boolean> {
-  if (typeof token !== 'string' || token.length === 0) return false
+): Promise<SeatTokenVerificationResult> {
+  if (typeof token !== 'string' || token.length === 0) return { kind: 'invalid' }
   const { data, error } = await supabase
     .from('room_seats')
     .select('token')
     .eq('room_id', roomId)
     .eq('seat_id', seatId)
     .maybeSingle()
-  if (error || !data) return false
-  return data.token === token
+  if (error) return { kind: 'error', error }
+  if (!data || data.token !== token) return { kind: 'invalid' }
+  return { kind: 'valid' }
+}
+
+/** Legacy boolean seat authorization for gameplay referees. Storage failures
+ * remain false here so existing callers preserve their established behavior. */
+export async function verifySeatToken(
+  supabase: ServiceClient,
+  roomId: string,
+  seatId: string,
+  token: unknown,
+): Promise<boolean> {
+  return (await verifySeatTokenResult(supabase, roomId, seatId, token)).kind === 'valid'
 }

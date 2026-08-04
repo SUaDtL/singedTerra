@@ -15,6 +15,14 @@ const gameplayReadMigrationPath = join(
   'migrations',
   '013_authenticated_gameplay_reads.sql',
 );
+const matchParticipantsMigrationPath = join(
+  root,
+  'supabase',
+  'migrations',
+  '014_match_participants.sql',
+);
+const claimMatchFunctionPath = join(root, 'supabase', 'functions', 'claim_match', 'index.ts');
+const sharedModPath = join(root, 'supabase', 'functions', '_shared', 'mod.ts');
 const packagePath = join(root, 'package.json');
 
 function fail(message) {
@@ -134,6 +142,8 @@ function normalizeStatement(statement) {
 }
 
 const config = await readFile(configPath, 'utf8');
+const claimMatchFunction = await readFile(claimMatchFunctionPath, 'utf8');
+const sharedMod = await readFile(sharedModPath, 'utf8');
 const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
 let migration;
 try {
@@ -146,6 +156,12 @@ try {
   gameplayReadMigration = await readFile(gameplayReadMigrationPath, 'utf8');
 } catch {
   fail(`required migration is missing: ${gameplayReadMigrationPath}`);
+}
+let matchParticipantsMigration;
+try {
+  matchParticipantsMigration = await readFile(matchParticipantsMigrationPath, 'utf8');
+} catch {
+  fail(`required migration is missing: ${matchParticipantsMigrationPath}`);
 }
 
 const normalizedMigration = migration.replace(/\r\n/g, '\n');
@@ -217,6 +233,21 @@ if (
 }
 if (!/^enabled\s*=\s*false\s*$/m.test(storageVectorBlock)) {
   fail('[storage.vector] must remain disabled so config push cannot request a paid feature');
+}
+if (!/^\[functions\.claim_match\]\s*$/m.test(config)) {
+  fail('[functions.claim_match] must remain registered for deployment');
+}
+if (!/^\[functions\.claim_match\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
+  fail('[functions.claim_match].verify_jwt must remain false for in-handler bearer validation');
+}
+if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleClaimMatch\s*,\s*\{\s*rateLimit\s*:\s*['"]claim_match['"]\s*\}\s*\)\s*\)/s.test(claimMatchFunction)) {
+  fail('claim_match must remain served through withCors(handleClaimMatch, { rateLimit: claim_match })');
+}
+const rateLimitsBlock = sharedMod.match(
+  /export\s+const\s+RATE_LIMITS\s*:\s*Record<string,\s*number>\s*=\s*\{([\s\S]*?)^\}/m,
+)?.[1] ?? '';
+if (!/^\s*claim_match\s*:\s*60\s*,?\s*$/m.test(rateLimitsBlock)) {
+  fail('RATE_LIMITS must retain the explicit claim_match bucket at 60 requests per minute');
 }
 
 const deployBackend = packageJson.scripts?.['deploy:backend'] ?? '';
@@ -372,4 +403,156 @@ if (!equivalentEscalations.every((probe) => forbidden.some(({ pattern }) => patt
   fail('migration guard mutation probes accepted equivalent ownership, policy, or dynamic-SQL escalation');
 }
 
-console.log('PASS: password auth config and owner-only profile migration satisfy ADR-0011.');
+const matchParticipantsSqlWithoutComments = stripSqlComments(matchParticipantsMigration);
+const matchParticipantsSqlStructure = maskSqlLiterals(matchParticipantsSqlWithoutComments);
+const requiredMatchParticipantsControls = [
+  /CREATE TABLE public\.match_participants/i,
+  /room_id\s+uuid\s+NOT NULL\s+REFERENCES public\.match_scores\s*\(room_id\)\s+ON DELETE CASCADE/i,
+  /user_id\s+uuid\s+NOT NULL\s+REFERENCES auth\.users\s*\(id\)\s+ON DELETE CASCADE/i,
+  /player_id\s+uuid\s+NOT NULL/i,
+  /created_at\s+timestamptz\s+NOT NULL\s+DEFAULT now\(\)/i,
+  /PRIMARY KEY\s*\(\s*room_id\s*,\s*user_id\s*\)/i,
+  /UNIQUE\s*\(\s*room_id\s*,\s*player_id\s*\)/i,
+  /ALTER TABLE public\.match_participants ENABLE ROW LEVEL SECURITY/i,
+  /REVOKE ALL ON TABLE public\.match_participants FROM PUBLIC, anon, authenticated/i,
+  /GRANT SELECT ON TABLE public\.match_participants TO authenticated/i,
+  /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.match_participants FROM authenticated/i,
+  /REVOKE ALL ON TABLE public\.match_participants FROM service_role/i,
+  /GRANT SELECT, INSERT ON TABLE public\.match_participants TO service_role/i,
+  /CREATE POLICY match_participants_select_own[\s\S]*FOR SELECT[\s\S]*TO authenticated[\s\S]*USING\s*\(\s*\(select auth\.uid\(\)\)\s*=\s*user_id\s*\)/i,
+];
+const requiredMatchParticipantsLiteralControls = [
+  /tank_id\s+text\s+NOT NULL\s+CHECK\s*\(\s*tank_id\s*~\s*'\^p\[1-9\]\[0-9\]\*\$'\s*\)/i,
+];
+const missingMatchParticipantsControls = [
+  ...requiredMatchParticipantsControls.filter(
+    (pattern) => !pattern.test(matchParticipantsSqlStructure),
+  ),
+  ...requiredMatchParticipantsLiteralControls.filter(
+    (pattern) => !pattern.test(matchParticipantsSqlWithoutComments),
+  ),
+];
+if (missingMatchParticipantsControls.length > 0) {
+  fail(`${missingMatchParticipantsControls.length} required match participant migration contract(s) are missing`);
+}
+
+const matchParticipantsPolicyStatements = [
+  ...matchParticipantsSqlWithoutComments.matchAll(/\bCREATE\s+POLICY\s+[^;]+;/ig),
+].map((match) => normalizeStatement(match[0]));
+if (
+  matchParticipantsPolicyStatements.length !== 1
+  || matchParticipantsPolicyStatements[0]
+    !== 'create policy match_participants_select_own on public.match_participants for select to authenticated using ((select auth.uid()) = user_id);'
+) {
+  fail('migration permits exactly the owner-only match_participants SELECT policy');
+}
+
+const matchParticipantsGrants = [
+  ...matchParticipantsSqlStructure.matchAll(/GRANT\s+([^;]+);/ig),
+].map((match) => match[0].replace(/\s+/g, ' ').trim());
+const expectedMatchParticipantsGrants = [
+  'GRANT SELECT ON TABLE public.match_participants TO authenticated;',
+  'GRANT SELECT, INSERT ON TABLE public.match_participants TO service_role;',
+];
+if (
+  matchParticipantsGrants.length !== expectedMatchParticipantsGrants.length
+  || expectedMatchParticipantsGrants.some((grant) => !matchParticipantsGrants.includes(grant))
+) {
+  fail('migration grants must allow only authenticated reads and service-role diagnostics plus insertion');
+}
+
+const matchParticipantsDoBlocks = [
+  ...matchParticipantsSqlWithoutComments.matchAll(/\bDO\s+(\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$)([\s\S]*?)\1\s*;/ig),
+].map((match) => normalizeStatement(match[0]));
+const expectedMatchParticipantsAclAssertion = normalizeStatement(`
+  DO $acl$
+  BEGIN
+    IF NOT has_table_privilege('service_role', 'public.match_participants', 'SELECT')
+      OR NOT has_table_privilege('service_role', 'public.match_participants', 'INSERT')
+      OR has_table_privilege('service_role', 'public.match_participants', 'UPDATE')
+      OR has_table_privilege('service_role', 'public.match_participants', 'DELETE')
+      OR has_table_privilege('anon', 'public.match_participants', 'SELECT')
+      OR has_table_privilege('anon', 'public.match_participants', 'INSERT')
+      OR has_table_privilege('anon', 'public.match_participants', 'UPDATE')
+      OR has_table_privilege('anon', 'public.match_participants', 'DELETE')
+      OR NOT has_table_privilege('authenticated', 'public.match_participants', 'SELECT')
+      OR has_table_privilege('authenticated', 'public.match_participants', 'INSERT')
+      OR has_table_privilege('authenticated', 'public.match_participants', 'UPDATE')
+      OR has_table_privilege('authenticated', 'public.match_participants', 'DELETE')
+    THEN
+      RAISE EXCEPTION 'match_participants ACL assertion failed';
+    END IF;
+  END
+  $acl$;
+`);
+if (
+  matchParticipantsDoBlocks.length !== 1
+  || matchParticipantsDoBlocks[0] !== expectedMatchParticipantsAclAssertion
+) {
+  fail('migration must statically assert the exact effective match participant role privileges');
+}
+
+const requiredMatchParticipantsClassifications = [
+  /(?:^|;)\s*COMMENT ON TABLE public\.match_participants IS 'classification: PRIVATE/i,
+  /(?:^|;)\s*COMMENT ON COLUMN public\.match_participants\.room_id IS 'classification: PUBLIC/i,
+  /(?:^|;)\s*COMMENT ON COLUMN public\.match_participants\.user_id IS 'classification: PRIVATE/i,
+  /(?:^|;)\s*COMMENT ON COLUMN public\.match_participants\.player_id IS 'classification: PUBLIC/i,
+  /(?:^|;)\s*COMMENT ON COLUMN public\.match_participants\.tank_id IS 'classification: PUBLIC/i,
+  /(?:^|;)\s*COMMENT ON COLUMN public\.match_participants\.created_at IS 'classification: INTERNAL/i,
+];
+if (
+  requiredMatchParticipantsClassifications.some(
+    (pattern) => !pattern.test(matchParticipantsSqlWithoutComments),
+  )
+) {
+  fail('match participant table and every stored column require an active classification statement');
+}
+
+const forbiddenMatchParticipantsControls = [
+  { label: 'destructive statement', pattern: /\b(?:DROP|TRUNCATE)\b/i },
+  { label: 'destructive data mutation', pattern: /\b(?:DELETE\s+FROM|UPDATE\s+public\.match_participants)\b/i },
+  { label: 'RLS disable', pattern: /DISABLE\s+ROW\s+LEVEL\s+SECURITY/i },
+  { label: 'credential column', pattern: /\b(?:email|password|access_token|refresh_token|seat_token|jwt)\s+[a-z]/i },
+  { label: 'public or anonymous grant', pattern: /GRANT\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)[^;]*\sTO\s+(?:PUBLIC|anon)\b/i },
+  { label: 'authenticated write grant', pattern: /GRANT\s+(?:ALL|INSERT|UPDATE|DELETE)[^;]*\sTO\s+authenticated\b/i },
+  { label: 'permissive policy', pattern: /CREATE\s+POLICY[\s\S]*?USING\s*\(\s*true\s*\)/i },
+  { label: 'write policy', pattern: /CREATE\s+POLICY[\s\S]*?FOR\s+(?:INSERT|UPDATE|DELETE|ALL)\b/i },
+  { label: 'public or anonymous policy', pattern: /CREATE\s+POLICY[\s\S]*?\bTO\s+(?:PUBLIC|anon)\b/i },
+  { label: 'table ownership change', pattern: /ALTER\s+TABLE\s+(?:ONLY\s+)?(?:public\.)?match_participants\s+OWNER\s+TO\b/i },
+  { label: 'policy alteration', pattern: /\bALTER\s+POLICY\b/i },
+  { label: 'role mutation', pattern: /\b(?:ALTER|CREATE)\s+(?:ROLE|USER)\b/i },
+  { label: 'role switching', pattern: /(?:^|;)\s*SET\s+(?:LOCAL\s+)?ROLE\b/i },
+  { label: 'dynamic SQL', pattern: /\bEXECUTE\b(?!\s+FUNCTION\b)/i },
+  { label: 'derived participant exposure', pattern: /\bCREATE\s+(?:MATERIALIZED\s+)?VIEW\b/i },
+  { label: 'default privilege mutation', pattern: /\bALTER\s+DEFAULT\s+PRIVILEGES\b/i },
+];
+for (const { label, pattern } of forbiddenMatchParticipantsControls) {
+  if (pattern.test(matchParticipantsSqlWithoutComments)) {
+    fail(`match participant migration contains forbidden ${label}`);
+  }
+}
+
+const matchParticipantsAdversarialMutations = [
+  `${matchParticipantsSqlWithoutComments}\nALTER TABLE public.match_participants DISABLE ROW LEVEL SECURITY;`,
+  `${matchParticipantsSqlWithoutComments}\nGRANT ALL ON TABLE public.match_participants TO PUBLIC;`,
+  `${matchParticipantsSqlWithoutComments}\nGRANT INSERT ON TABLE public.match_participants TO authenticated;`,
+  `${matchParticipantsSqlWithoutComments}\nCREATE POLICY match_participants_public ON public.match_participants FOR SELECT USING (true);`,
+];
+if (
+  !matchParticipantsAdversarialMutations.every((probe) =>
+    forbiddenMatchParticipantsControls.some(({ pattern }) => pattern.test(probe))
+  )
+) {
+  fail('match participant migration guard mutation probes rejected an expected escalation');
+}
+
+const normalizedMatchParticipantsMigration = matchParticipantsMigration.replace(/\r\n/g, '\n');
+const matchParticipantsMigrationDigest = createHash('sha256')
+  .update(normalizedMatchParticipantsMigration)
+  .digest('hex');
+const expectedMatchParticipantsMigrationDigest = 'dfc7861ef18737405b4926de05fc176ced19873fbc6a091f686eb42deeadf96f';
+if (matchParticipantsMigrationDigest !== expectedMatchParticipantsMigrationDigest) {
+  fail('014_match_participants.sql differs from its reviewed immutable migration digest');
+}
+
+console.log('PASS: password auth config, profiles, and owner-private match participant migrations satisfy ADR-0011.');

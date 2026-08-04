@@ -20,6 +20,9 @@ import {
   reap,
   STALE_MS,
   safeErrorMessage,
+  authenticateBearer,
+  verifySeatToken,
+  verifySeatTokenResult,
 } from './mod.ts'
 
 // ---------------------------------------------------------------------------
@@ -36,6 +39,81 @@ Deno.test('safeErrorMessage: bounds Error messages and uses a safe fallback', ()
   assertEqual(safeErrorMessage(new Error('database unavailable')), 'database unavailable', 'message')
   assertEqual(safeErrorMessage({ message: 42 }), 'Unknown error', 'non-string message fallback')
   assertEqual(safeErrorMessage(null), 'Unknown error', 'null fallback')
+})
+
+Deno.test('authenticateBearer: accepts exactly one Bearer credential and derives the id only from Supabase Auth', async () => {
+  const tokens: string[] = []
+  const userId = '00000000-0000-4000-8000-000000000004'
+  const result = await authenticateBearer(
+    new Request('https://example.test', { headers: { authorization: 'Bearer auth-token' } }),
+    { auth: { getUser: async (token: string) => {
+      tokens.push(token)
+      return { data: { user: { id: userId } }, error: null }
+    } } } as never,
+  )
+  assertEqual(result, userId, 'returned authenticated user id')
+  assertEqual(tokens.length, 1, 'Auth called exactly once')
+  assertEqual(tokens[0], 'auth-token', 'Bearer credential passed to Auth')
+})
+
+Deno.test('authenticateBearer: rejects missing, malformed, or rejected credentials without trusting a local claim', async () => {
+  let authCalls = 0
+  const client = { auth: { getUser: async () => {
+    authCalls += 1
+    return { data: { user: null }, error: { message: 'invalid jwt' } }
+  } } } as never
+  for (const authorization of [null, 'Basic token', 'Bearer too many tokens']) {
+    const headers = new Headers()
+    if (authorization !== null) headers.set('authorization', authorization)
+    assertEqual(await authenticateBearer(new Request('https://example.test', { headers }), client), null, `rejected ${authorization}`)
+  }
+  assertEqual(authCalls, 0, 'malformed headers never reach Auth')
+  assertEqual(await authenticateBearer(new Request('https://example.test', { headers: { authorization: 'Bearer rejected-token' } }), client), null, 'rejected Auth result')
+  assertEqual(authCalls, 1, 'well-formed credential validated by Auth')
+})
+
+function seatClient(response: { data: unknown; error: unknown }) {
+  const query = {
+    eq: (field: string, value: string) => {
+      if ((field === 'room_id' && value === 'room-1') || (field === 'seat_id' && value === 'seat-1')) return query
+      throw new Error(`unexpected seat filter ${field}=${value}`)
+    },
+    maybeSingle: async () => response,
+  }
+  return {
+    from: (table: string) => {
+      if (table !== 'room_seats') throw new Error(`unexpected table ${table}`)
+      return {
+        select: (columns: string) => {
+          if (columns !== 'token') throw new Error(`unexpected seat columns ${columns}`)
+          return query
+        },
+      }
+    },
+  }
+}
+
+Deno.test('verifySeatTokenResult: distinguishes a seat-table query error from an absent or mismatched credential (catches collapsed storage failures)', async () => {
+  const storageError = { message: 'seat query down' }
+  const errored = await verifySeatTokenResult(seatClient({ data: null, error: storageError }) as never, 'room-1', 'seat-1', 'seat-token')
+  assertEqual(errored.kind, 'error', 'query error outcome')
+  if (errored.kind === 'error') assertEqual(errored.error, storageError, 'preserved operational error')
+
+  const missing = await verifySeatTokenResult(seatClient({ data: null, error: null }) as never, 'room-1', 'seat-1', 'seat-token')
+  assertEqual(missing.kind, 'invalid', 'absent row outcome')
+
+  const mismatch = await verifySeatTokenResult(seatClient({ data: { token: 'other-token' }, error: null }) as never, 'room-1', 'seat-1', 'seat-token')
+  assertEqual(mismatch.kind, 'invalid', 'mismatch outcome')
+})
+
+Deno.test('verifySeatToken: preserves the boolean false result for a seat-table query error (catches gameplay boundary behavior change)', async () => {
+  const result = await verifySeatToken(
+    seatClient({ data: null, error: { message: 'seat query down' } }) as never,
+    'room-1',
+    'seat-1',
+    'seat-token',
+  )
+  assertEqual(result, false, 'existing callers still receive false')
 })
 
 // ---------------------------------------------------------------------------

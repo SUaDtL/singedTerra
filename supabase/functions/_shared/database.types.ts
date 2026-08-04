@@ -169,6 +169,45 @@ export type Database = {
           },
         ];
       };
+      match_participants: {
+        Row: {
+          room_id: string;
+          user_id: string;
+          player_id: string;
+          tank_id: string;
+          created_at: string;
+        };
+        Insert: {
+          room_id: string;
+          user_id: string;
+          player_id: string;
+          tank_id: string;
+          created_at?: string;
+        };
+        Update: {
+          room_id?: string;
+          user_id?: string;
+          player_id?: string;
+          tank_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_participants_room_id_fkey";
+            columns: ["room_id"];
+            isOneToOne: false;
+            referencedRelation: "match_scores";
+            referencedColumns: ["room_id"];
+          },
+          {
+            foreignKeyName: "match_participants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       rate_limits: {
         Row: { bucket: string; window_start: number; count: number };
         Insert: { bucket: string; window_start: number; count?: number };
