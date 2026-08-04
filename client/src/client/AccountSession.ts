@@ -12,6 +12,11 @@ export interface AccountCredentials {
 export interface AccountSummary {
   matchesPlayed: number
   wins: number
+  progressionVersion?: number
+  totalXp?: number
+  level?: number
+  levelXp?: number
+  nextLevelXp?: number
 }
 
 export interface AccountProfile {
@@ -71,23 +76,62 @@ function accountUser(user: User | null): AccountUser | null {
   return user ? { id: user.id } : null
 }
 
-function accountSummary(value: unknown): AccountSummary | null {
+function isSafeNonnegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+}
+
+type StrictAccountSummary = AccountSummary & {
+  progressionVersion: number
+  totalXp: number
+  level: number
+  levelXp: number
+  nextLevelXp: number
+}
+
+function accountSummary(value: unknown): StrictAccountSummary | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const keys = Object.keys(value)
-  if (keys.length !== 2 || !keys.includes('matchesPlayed') || !keys.includes('wins')) return null
-  const { matchesPlayed, wins } = value as Record<string, unknown>
+  const summaryKeys = [
+    'matchesPlayed',
+    'wins',
+    'progressionVersion',
+    'totalXp',
+    'level',
+    'levelXp',
+    'nextLevelXp',
+  ] as const
+  if (keys.length !== summaryKeys.length || !summaryKeys.every((key) => keys.includes(key))) return null
+  const {
+    matchesPlayed,
+    wins,
+    progressionVersion,
+    totalXp,
+    level,
+    levelXp,
+    nextLevelXp,
+  } = value as Record<string, unknown>
   if (
-    typeof matchesPlayed !== 'number'
-    || !Number.isFinite(matchesPlayed)
-    || !Number.isInteger(matchesPlayed)
-    || matchesPlayed < 0
-    || typeof wins !== 'number'
-    || !Number.isFinite(wins)
-    || !Number.isInteger(wins)
-    || wins < 0
+    !isSafeNonnegativeInteger(matchesPlayed)
+    || !isSafeNonnegativeInteger(wins)
+    || !isSafeNonnegativeInteger(progressionVersion)
+    || !isSafeNonnegativeInteger(totalXp)
+    || !isSafeNonnegativeInteger(level)
+    || !isSafeNonnegativeInteger(levelXp)
+    || !isSafeNonnegativeInteger(nextLevelXp)
     || wins > matchesPlayed
   ) return null
-  return { matchesPlayed, wins }
+  const expectedTotalXp = matchesPlayed * 100 + wins * 100
+  const expectedLevel = Math.floor(expectedTotalXp / 500) + 1
+  const expectedLevelXp = expectedTotalXp % 500
+  if (
+    !Number.isSafeInteger(expectedTotalXp)
+    || progressionVersion !== 1
+    || totalXp !== expectedTotalXp
+    || level !== expectedLevel
+    || levelXp !== expectedLevelXp
+    || nextLevelXp !== 500
+  ) return null
+  return { matchesPlayed, wins, progressionVersion, totalXp, level, levelXp, nextLevelXp }
 }
 
 export function createSupabaseAccountBackend(client: SupabaseClient): AccountBackend {

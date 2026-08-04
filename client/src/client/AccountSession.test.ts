@@ -71,7 +71,15 @@ describe('createSupabaseAccountBackend', () => {
 
   it('loads an exact progression summary through the authenticated client without a request body', async () => {
     const invoke = vi.fn(async (..._args: unknown[]) => ({
-      data: { matchesPlayed: 7, wins: 3 },
+      data: {
+        matchesPlayed: 7,
+        wins: 3,
+        progressionVersion: 1,
+        totalXp: 1000,
+        level: 3,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
       error: null,
     }))
     const client = {
@@ -99,20 +107,43 @@ describe('createSupabaseAccountBackend', () => {
     await expect(gateway.loadProfile('user-7')).resolves.toEqual({
       id: 'user-7',
       displayName: 'Ash Walker',
-      summary: { matchesPlayed: 7, wins: 3 },
+      summary: {
+        matchesPlayed: 7,
+        wins: 3,
+        progressionVersion: 1,
+        totalXp: 1000,
+        level: 3,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
     })
     expect(invoke.mock.calls).toEqual([['account_summary']])
   })
 
+  const validSummary = {
+    matchesPlayed: 7,
+    wins: 3,
+    progressionVersion: 1,
+    totalXp: 1000,
+    level: 3,
+    levelXp: 0,
+    nextLevelXp: 500,
+  }
+
   it.each([
     ['returned function error', { data: null, error: { message: 'summary unavailable' } }],
-    ['missing count', { data: { matchesPlayed: 4 }, error: null }],
-    ['extra response field', { data: { matchesPlayed: 4, wins: 2, userId: 'user-7' }, error: null }],
-    ['fractional match count', { data: { matchesPlayed: 1.5, wins: 1 }, error: null }],
-    ['fractional win count', { data: { matchesPlayed: 4, wins: 1.5 }, error: null }],
-    ['infinite win count', { data: { matchesPlayed: 4, wins: Number.POSITIVE_INFINITY }, error: null }],
-    ['negative win count', { data: { matchesPlayed: 4, wins: -1 }, error: null }],
-    ['wins above matches', { data: { matchesPlayed: 4, wins: 5 }, error: null }],
+    ['an unknown progression version', { data: { ...validSummary, progressionVersion: 2 }, error: null }],
+    ['a missing summary key', { data: { matchesPlayed: 7, wins: 3, progressionVersion: 1, totalXp: 1000, level: 3, levelXp: 0 }, error: null }],
+    ['an extra summary key', { data: { ...validSummary, userId: 'user-7' }, error: null }],
+    ['a fractional match count', { data: { ...validSummary, matchesPlayed: 7.5 }, error: null }],
+    ['a negative win count', { data: { ...validSummary, wins: -1 }, error: null }],
+    ['a NaN total XP', { data: { ...validSummary, totalXp: Number.NaN }, error: null }],
+    ['an infinite level', { data: { ...validSummary, level: Number.POSITIVE_INFINITY }, error: null }],
+    ['wins above matches', { data: { ...validSummary, wins: 8 }, error: null }],
+    ['an inconsistent total XP', { data: { ...validSummary, totalXp: 999 }, error: null }],
+    ['an incorrect level', { data: { ...validSummary, level: 2 }, error: null }],
+    ['an incorrect current-level XP', { data: { ...validSummary, levelXp: 1 }, error: null }],
+    ['an incorrect next-level XP', { data: { ...validSummary, nextLevelXp: 499 }, error: null }],
   ])('preserves the owner profile with a null summary for %s', async (_label, response) => {
     const client = {
       auth: {
