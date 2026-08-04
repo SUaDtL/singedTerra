@@ -1249,6 +1249,24 @@ export class Lobby {
       #lobby .account-panel button:focus-visible,
       #lobby .account-panel input:focus-visible { outline: none; box-shadow: var(--ui-focus); }
       #lobby .account-panel__identity { color: var(--text-gold); font-weight: 700; }
+      #lobby .account-panel__progress {
+        display: flex; gap: 8px; margin: 0; padding: 0 2px;
+      }
+      #lobby .account-panel__progress-item { display: grid; justify-items: center; gap: 1px; }
+      #lobby .account-panel__progress dt,
+      #lobby .account-panel__summary-unavailable {
+        color: var(--text-dim); font-size: 9px; line-height: 1.2;
+      }
+      #lobby .account-panel__progress dd {
+        margin: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px;
+      }
+      #app.is-compact #lobby .account-panel__progress dt,
+      #app.is-compact #lobby .account-panel__summary-unavailable {
+        font-size: 14px; line-height: 1.25;
+      }
+      #app.is-compact #lobby .account-panel__progress dd {
+        font-size: 16px; line-height: 1.2;
+      }
       #lobby .account-panel__form { display: grid; gap: 9px; }
       #lobby .account-panel__field { display: grid; gap: 4px; font-size: 11px; color: var(--text-dim); }
       #lobby .account-panel__field input { box-sizing: border-box; width: 100%; padding: 7px 9px; }

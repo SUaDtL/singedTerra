@@ -23,6 +23,21 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
   return match
 }
 
+function progressPairs(root: HTMLElement): Array<[string, string]> {
+  const list = root.querySelector('dl.account-panel__progress')
+  if (!(list instanceof HTMLDListElement)) throw new Error('Missing progress list')
+  return [...list.children].map((group) => {
+    const [term, value] = [...group.children]
+    if (!(term instanceof HTMLElement) || term.tagName !== 'DT') {
+      throw new Error('Progress item must begin with a definition term')
+    }
+    if (!(value instanceof HTMLElement) || value.tagName !== 'DD') {
+      throw new Error('Progress item must end with a definition value')
+    }
+    return [term.textContent ?? '', value.textContent ?? '']
+  })
+}
+
 describe('buildAccountPanelView', () => {
   it('omits the account surface when Supabase is unavailable', () => {
     const state: AccountState = { status: 'unavailable', busy: false, error: '' }
@@ -102,12 +117,89 @@ describe('buildAccountPanelView', () => {
       status: 'authenticated',
       busy: false,
       error: '',
-      profile: { id: 'user-1', displayName: 'Ranger' },
+      profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     }
     const root = buildAccountPanelView(options({ state, onSignOut }))
     if (!root) throw new Error('Expected authenticated account panel')
 
     expect(root.querySelector('.account-panel__identity')?.textContent).toContain('Ranger')
+    expect(root.querySelector('form')).toBeNull()
+    button(root, 'Sign out').click()
+    expect(onSignOut).toHaveBeenCalledOnce()
+  })
+
+  it('renders accessible match totals while preserving authenticated controls', () => {
+    const onSignOut = vi.fn()
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: {
+        id: 'user-1',
+        displayName: 'Ranger',
+        summary: { matchesPlayed: 7, wins: 3 },
+      },
+    }
+    const root = buildAccountPanelView(options({ state, onSignOut }))
+    if (!root) throw new Error('Expected authenticated account panel')
+
+    expect(root.querySelector('dl.account-panel__progress')).not.toBeNull()
+    expect(progressPairs(root)).toEqual([
+      ['Matches', '7'],
+      ['Recorded wins', '3'],
+    ])
+    expect(root.querySelector('form')).toBeNull()
+    button(root, 'Sign out').click()
+    expect(onSignOut).toHaveBeenCalledOnce()
+  })
+
+  it('keeps definition pairs local and id-free when two account panels coexist', () => {
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: {
+        id: 'user-1',
+        displayName: 'Ranger',
+        summary: { matchesPlayed: 7, wins: 3 },
+      },
+    }
+    const first = buildAccountPanelView(options({ state }))
+    const second = buildAccountPanelView(options({ state }))
+    if (!first || !second) throw new Error('Expected authenticated account panels')
+    document.body.append(first, second)
+
+    try {
+      expect(first.querySelectorAll('[id]')).toHaveLength(0)
+      expect(second.querySelectorAll('[id]')).toHaveLength(0)
+      expect(progressPairs(first)).toEqual([
+        ['Matches', '7'],
+        ['Recorded wins', '3'],
+      ])
+      expect(progressPairs(second)).toEqual([
+        ['Matches', '7'],
+        ['Recorded wins', '3'],
+      ])
+    } finally {
+      first.remove()
+      second.remove()
+    }
+  })
+
+  it('shows a restrained unavailable summary without losing the authenticated controls', () => {
+    const onSignOut = vi.fn()
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary: null },
+    }
+    const root = buildAccountPanelView(options({ state, onSignOut }))
+    if (!root) throw new Error('Expected authenticated account panel')
+
+    expect(root.querySelector('.account-panel__summary-unavailable')?.textContent)
+      .toBe('Progress summary unavailable')
+    expect(root.querySelector('[role="alert"]')).toBeNull()
     expect(root.querySelector('form')).toBeNull()
     button(root, 'Sign out').click()
     expect(onSignOut).toHaveBeenCalledOnce()

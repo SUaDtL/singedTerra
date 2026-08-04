@@ -63,10 +63,33 @@ export function buildAccountPanelView(
     const identity = document.createElement('span')
     identity.className = 'account-panel__identity'
     identity.textContent = `Commander ${options.state.profile.displayName}`
+    let summary: HTMLElement
+    if (options.state.profile.summary) {
+      summary = document.createElement('dl')
+      summary.className = 'account-panel__progress'
+      const values = [
+        ['Matches', options.state.profile.summary.matchesPlayed],
+        ['Recorded wins', options.state.profile.summary.wins],
+      ] as const
+      for (const [label, value] of values) {
+        const group = document.createElement('div')
+        group.className = 'account-panel__progress-item'
+        const term = document.createElement('dt')
+        term.textContent = label
+        const count = document.createElement('dd')
+        count.textContent = String(value)
+        group.append(term, count)
+        summary.append(group)
+      }
+    } else {
+      summary = document.createElement('span')
+      summary.className = 'account-panel__summary-unavailable'
+      summary.textContent = 'Progress summary unavailable'
+    }
     const signOut = actionButton('Sign out', options.onSignOut)
     signOut.className = 'account-panel__secondary'
     signOut.disabled = options.state.busy
-    root.append(identity, signOut)
+    root.append(identity, summary, signOut)
     return root
   }
 

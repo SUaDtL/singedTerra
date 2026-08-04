@@ -19,7 +19,7 @@ function backend(overrides: Partial<AccountBackend> = {}): AccountBackend {
     signUp: vi.fn(async () => ({ id: 'user-1' })),
     signIn: vi.fn(async () => ({ id: 'user-1' })),
     signOut: vi.fn(async () => undefined),
-    loadProfile: vi.fn(async () => ({ id: 'user-1', displayName: 'Ranger' })),
+    loadProfile: vi.fn(async () => ({ id: 'user-1', displayName: 'Ranger', summary: null })),
     ...overrides,
   }
 }
@@ -45,6 +45,9 @@ describe('createSupabaseAccountBackend', () => {
         signOut: vi.fn(),
       },
       from: vi.fn(() => ({ select })),
+      functions: {
+        invoke: vi.fn(async () => ({ data: null, error: { message: 'summary unavailable' } })),
+      },
     }
     const gateway = createSupabaseAccountBackend(client as never)
 
@@ -63,7 +66,175 @@ describe('createSupabaseAccountBackend', () => {
     expect(client.from).toHaveBeenCalledWith('profiles')
     expect(select).toHaveBeenCalledWith('id, display_name')
     expect(eq).toHaveBeenCalledWith('id', 'user-7')
-    expect(profile).toEqual({ id: 'user-7', displayName: 'Ash Walker' })
+    expect(profile).toEqual({ id: 'user-7', displayName: 'Ash Walker', summary: null })
+  })
+
+  it('loads an exact progression summary through the authenticated client without a request body', async () => {
+    const invoke = vi.fn(async (..._args: unknown[]) => ({
+      data: { matchesPlayed: 7, wins: 3 },
+      error: null,
+    }))
+    const client = {
+      auth: {
+        getSession: vi.fn(),
+        onAuthStateChange: vi.fn(),
+        signUp: vi.fn(),
+        signInWithPassword: vi.fn(),
+        signOut: vi.fn(),
+      },
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(async () => ({
+              data: { id: 'user-7', display_name: 'Ash Walker' },
+              error: null,
+            })),
+          })),
+        })),
+      })),
+      functions: { invoke },
+    }
+    const gateway = createSupabaseAccountBackend(client as never)
+
+    await expect(gateway.loadProfile('user-7')).resolves.toEqual({
+      id: 'user-7',
+      displayName: 'Ash Walker',
+      summary: { matchesPlayed: 7, wins: 3 },
+    })
+    expect(invoke.mock.calls).toEqual([['account_summary']])
+  })
+
+  it.each([
+    ['returned function error', { data: null, error: { message: 'summary unavailable' } }],
+    ['missing count', { data: { matchesPlayed: 4 }, error: null }],
+    ['extra response field', { data: { matchesPlayed: 4, wins: 2, userId: 'user-7' }, error: null }],
+    ['fractional match count', { data: { matchesPlayed: 1.5, wins: 1 }, error: null }],
+    ['fractional win count', { data: { matchesPlayed: 4, wins: 1.5 }, error: null }],
+    ['infinite win count', { data: { matchesPlayed: 4, wins: Number.POSITIVE_INFINITY }, error: null }],
+    ['negative win count', { data: { matchesPlayed: 4, wins: -1 }, error: null }],
+    ['wins above matches', { data: { matchesPlayed: 4, wins: 5 }, error: null }],
+  ])('preserves the owner profile with a null summary for %s', async (_label, response) => {
+    const client = {
+      auth: {
+        getSession: vi.fn(),
+        onAuthStateChange: vi.fn(),
+        signUp: vi.fn(),
+        signInWithPassword: vi.fn(),
+        signOut: vi.fn(),
+      },
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(async () => ({
+              data: { id: 'user-7', display_name: 'Ash Walker' },
+              error: null,
+            })),
+          })),
+        })),
+      })),
+      functions: { invoke: vi.fn(async () => response) },
+    }
+    const gateway = createSupabaseAccountBackend(client as never)
+
+    await expect(gateway.loadProfile('user-7')).resolves.toEqual({
+      id: 'user-7',
+      displayName: 'Ash Walker',
+      summary: null,
+    })
+  })
+
+  it('preserves the owner profile when summary invocation throws', async () => {
+    const client = {
+      auth: {
+        getSession: vi.fn(),
+        onAuthStateChange: vi.fn(),
+        signUp: vi.fn(),
+        signInWithPassword: vi.fn(),
+        signOut: vi.fn(),
+      },
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(async () => ({
+              data: { id: 'user-7', display_name: 'Ash Walker' },
+              error: null,
+            })),
+          })),
+        })),
+      })),
+      functions: {
+        invoke: vi.fn(async () => { throw new Error('summary transport failed') }),
+      },
+    }
+    const gateway = createSupabaseAccountBackend(client as never)
+
+    await expect(gateway.loadProfile('user-7')).resolves.toEqual({
+      id: 'user-7',
+      displayName: 'Ash Walker',
+      summary: null,
+    })
+  })
+
+  it('bounds a stalled optional summary so profile restoration and sign-out remain usable', async () => {
+    vi.useFakeTimers()
+    const summaryStarted = deferred<void>()
+    const signOut = vi.fn(async () => ({ error: null }))
+    const client = {
+      auth: {
+        getSession: vi.fn(async () => ({
+          data: { session: { user: { id: 'user-7' } } },
+          error: null,
+        })),
+        onAuthStateChange: vi.fn(() => ({
+          data: { subscription: { unsubscribe: vi.fn() } },
+        })),
+        signUp: vi.fn(),
+        signInWithPassword: vi.fn(),
+        signOut,
+      },
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(async () => ({
+              data: { id: 'user-7', display_name: 'Ash Walker' },
+              error: null,
+            })),
+          })),
+        })),
+      })),
+      functions: {
+        invoke: vi.fn(() => {
+          summaryStarted.resolve(undefined)
+          return new Promise<never>(() => undefined)
+        }),
+      },
+    }
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => createSupabaseAccountBackend(client as never),
+    })
+
+    try {
+      const initializing = session.initialize()
+      await summaryStarted.promise
+      expect(vi.getTimerCount()).toBe(1)
+
+      await vi.runAllTimersAsync()
+      await initializing
+      expect(session.state).toEqual({
+        status: 'authenticated',
+        busy: false,
+        error: '',
+        profile: { id: 'user-7', displayName: 'Ash Walker', summary: null },
+      })
+
+      await session.signOut()
+      expect(signOut).toHaveBeenCalledOnce()
+      expect(session.state).toEqual({ status: 'anonymous', busy: false, error: '' })
+    } finally {
+      session.dispose()
+      vi.useRealTimers()
+    }
   })
 
   it('maps restored and changed Supabase sessions and unsubscribes the listener', async () => {
@@ -205,7 +376,7 @@ describe('AccountSession', () => {
       status: 'authenticated',
       busy: false,
       error: '',
-      profile: { id: 'user-1', displayName: 'Ranger' },
+      profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     })
     session.dispose()
     expect(unsubscribe).toHaveBeenCalledOnce()
@@ -404,7 +575,7 @@ describe('AccountSession', () => {
       status: 'authenticated',
       busy: false,
       error: 'Account request failed. Try again.',
-      profile: { id: 'user-1', displayName: 'Ranger' },
+      profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     })
   })
 
@@ -432,7 +603,7 @@ describe('AccountSession', () => {
         onUser = callback
         return vi.fn()
       }),
-      loadProfile: vi.fn(async (userId) => ({ id: userId, displayName: userId })),
+      loadProfile: vi.fn(async (userId) => ({ id: userId, displayName: userId, summary: null })),
     })
     const session = new AccountSession((state) => states.push(state), {
       isConfigured: () => true,
@@ -474,7 +645,7 @@ describe('AccountSession', () => {
 
   it('does not let a stale auth-event profile load overwrite sign-out', async () => {
     let onUser: ((user: { id: string } | null) => void) | undefined
-    const profile = deferred<{ id: string; displayName: string }>()
+    const profile = deferred<{ id: string; displayName: string; summary: null }>()
     const source = backend({
       subscribe: vi.fn((callback) => {
         onUser = callback
@@ -491,7 +662,7 @@ describe('AccountSession', () => {
     onUser?.({ id: 'user-1' })
     await Promise.resolve()
     await session.signOut()
-    profile.resolve({ id: 'user-1', displayName: 'Stale Ranger' })
+    profile.resolve({ id: 'user-1', displayName: 'Stale Ranger', summary: null })
     await Promise.resolve()
 
     expect(session.state).toEqual({ status: 'anonymous', busy: false, error: '' })
@@ -499,7 +670,7 @@ describe('AccountSession', () => {
 
   it('does not emit a stale profile after disposal', async () => {
     let onUser: ((user: { id: string } | null) => void) | undefined
-    const profile = deferred<{ id: string; displayName: string }>()
+    const profile = deferred<{ id: string; displayName: string; summary: null }>()
     const source = backend({
       subscribe: vi.fn((callback) => {
         onUser = callback
@@ -517,7 +688,7 @@ describe('AccountSession', () => {
     const beforeDispose = states.length
 
     session.dispose()
-    profile.resolve({ id: 'user-1', displayName: 'Stale Ranger' })
+    profile.resolve({ id: 'user-1', displayName: 'Stale Ranger', summary: null })
     await Promise.resolve()
 
     expect(states).toHaveLength(beforeDispose)

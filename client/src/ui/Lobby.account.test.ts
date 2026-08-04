@@ -68,7 +68,7 @@ describe('Lobby account composition', () => {
       status: 'authenticated',
       busy: false,
       error: '',
-      profile: { id: 'user-1', displayName: 'Ranger' },
+      profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     })
 
     expect(root.querySelector('.account-panel__identity')?.textContent).toContain('Ranger')

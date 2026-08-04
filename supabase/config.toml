@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.claim_match]
 verify_jwt = false
+
+[functions.account_summary]
+verify_jwt = false

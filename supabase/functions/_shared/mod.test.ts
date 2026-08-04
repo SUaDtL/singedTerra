@@ -12,6 +12,7 @@ import {
   clientIp,
   rateWindow,
   rateLimitFor,
+  RATE_LIMITS,
   RATE_LIMIT_DEFAULT,
   isValidColor,
   withCors,
@@ -311,6 +312,8 @@ Deno.test('rateLimitFor: known buckets and default fallback', () => {
   assertEqual(rateLimitFor('create_room'), 10, 'create_room')
   assertEqual(rateLimitFor('join_room'), 20, 'join_room')
   assertEqual(rateLimitFor('restart_game'), 10, 'restart_game')
+  assertEqual(Object.hasOwn(RATE_LIMITS, 'account_summary'), true, 'account_summary has an explicit bucket')
+  assertEqual(rateLimitFor('account_summary'), 60, 'account_summary')
   assertEqual(rateLimitFor('heartbeat'), RATE_LIMIT_DEFAULT, 'unknown → default')
 })
 
@@ -345,7 +348,7 @@ Deno.test('isValidColor: rejects non-hex, unbounded, and non-string input', () =
 })
 
 // ---------------------------------------------------------------------------
-// withCors — request preamble shared by all 10 Edge Functions (coverage-001)
+// withCors — request preamble shared by all Edge Functions (coverage-001)
 // ---------------------------------------------------------------------------
 //
 // enforceRateLimit()'s allow/deny (429) and RPC-error fail-open branches are

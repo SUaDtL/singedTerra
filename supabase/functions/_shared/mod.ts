@@ -90,6 +90,7 @@ export const RATE_LIMITS: Record<string, number> = {
   join_room: 20,
   restart_game: 10,
   claim_match: 60,
+  account_summary: 60,
 }
 /** Applied to any function bucket without a specific entry above. */
 export const RATE_LIMIT_DEFAULT = 60
@@ -401,7 +402,7 @@ export function mintSeatToken(): string {
  *
  * Note: a plain `===` compare is used. The token is a 122-bit random UUID, so a timing
  * side-channel gives no practical guessing advantage; equality timing is not a concern
- * at this threat level (no accounts, no money — ADR-0006/0009).
+ * at this threat level (no competitive stakes or money — ADR-0006/0009).
  */
 export type SeatTokenVerificationResult =
   | { kind: 'valid' }

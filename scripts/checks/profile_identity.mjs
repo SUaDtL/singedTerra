@@ -22,6 +22,7 @@ const matchParticipantsMigrationPath = join(
   '014_match_participants.sql',
 );
 const claimMatchFunctionPath = join(root, 'supabase', 'functions', 'claim_match', 'index.ts');
+const accountSummaryFunctionPath = join(root, 'supabase', 'functions', 'account_summary', 'index.ts');
 const sharedModPath = join(root, 'supabase', 'functions', '_shared', 'mod.ts');
 const packagePath = join(root, 'package.json');
 
@@ -143,6 +144,7 @@ function normalizeStatement(statement) {
 
 const config = await readFile(configPath, 'utf8');
 const claimMatchFunction = await readFile(claimMatchFunctionPath, 'utf8');
+const accountSummaryFunction = await readFile(accountSummaryFunctionPath, 'utf8');
 const sharedMod = await readFile(sharedModPath, 'utf8');
 const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
 let migration;
@@ -240,6 +242,9 @@ if (!/^\[functions\.claim_match\]\s*$/m.test(config)) {
 if (!/^\[functions\.claim_match\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
   fail('[functions.claim_match].verify_jwt must remain false for in-handler bearer validation');
 }
+if (!/^\[functions\.account_summary\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
+  fail('[functions.account_summary].verify_jwt must be false for in-handler bearer validation');
+}
 if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleClaimMatch\s*,\s*\{\s*rateLimit\s*:\s*['"]claim_match['"]\s*\}\s*\)\s*\)/s.test(claimMatchFunction)) {
   fail('claim_match must remain served through withCors(handleClaimMatch, { rateLimit: claim_match })');
 }
@@ -248,6 +253,30 @@ const rateLimitsBlock = sharedMod.match(
 )?.[1] ?? '';
 if (!/^\s*claim_match\s*:\s*60\s*,?\s*$/m.test(rateLimitsBlock)) {
   fail('RATE_LIMITS must retain the explicit claim_match bucket at 60 requests per minute');
+}
+if (!/^\s*account_summary\s*:\s*60\s*,?\s*$/m.test(rateLimitsBlock)) {
+  fail('RATE_LIMITS must contain an explicit account_summary bucket at 60 requests per minute');
+}
+if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleAccountSummary\s*,\s*\{[\s\S]*?optionalBody\s*:\s*true[\s\S]*?rateLimit\s*:\s*['"]account_summary['"][\s\S]*?\}\s*\)\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must use optional body parsing and the named account_summary rate bucket');
+}
+if (!/authenticateBearer\s*\(\s*req\s*,\s*supabase\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must authenticate the request bearer through Supabase Auth');
+}
+if (!/\.from\s*\(\s*['"]match_participants['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]user_id['"]\s*,\s*userId\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must scope participant reads to the Auth-derived user id');
+}
+if (!/const\s+SCORE_ROOM_BATCH_SIZE\s*=\s*200\b/.test(accountSummaryFunction)) {
+  fail('account_summary must declare the reviewed conservative 200-room score batch size');
+}
+if (!/roomIds\.slice\s*\(\s*scoreOffset\s*,\s*scoreOffset\s*\+\s*SCORE_ROOM_BATCH_SIZE\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must construct bounded score-room batches');
+}
+if (!/\.from\s*\(\s*['"]match_scores['"]\s*\)[\s\S]*?\.in\s*\(\s*['"]room_id['"]\s*,\s*roomIdBatch\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must scope each score read to one bounded linked-room batch');
+}
+if (/\.in\s*\(\s*['"]room_id['"]\s*,\s*roomIds\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must not issue one unbounded linked-room score query');
 }
 
 const deployBackend = packageJson.scripts?.['deploy:backend'] ?? '';

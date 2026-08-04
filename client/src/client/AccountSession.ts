@@ -9,9 +9,15 @@ export interface AccountCredentials {
   password: string
 }
 
+export interface AccountSummary {
+  matchesPlayed: number
+  wins: number
+}
+
 export interface AccountProfile {
   id: string
   displayName: string
+  summary: AccountSummary | null
 }
 
 export type AccountState =
@@ -37,12 +43,51 @@ export interface AccountSessionOptions {
   loadBackend?: () => Promise<AccountBackend>
 }
 
+const ACCOUNT_SUMMARY_TIMEOUT_MS = 5_000
+
+function withAccountSummaryTimeout<T>(operation: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = globalThis.setTimeout(() => {
+      reject(new Error('Account summary request timed out.'))
+    }, ACCOUNT_SUMMARY_TIMEOUT_MS)
+    void operation.then(
+      (value) => {
+        globalThis.clearTimeout(timeout)
+        resolve(value)
+      },
+      (error: unknown) => {
+        globalThis.clearTimeout(timeout)
+        reject(error)
+      },
+    )
+  })
+}
+
 function throwSupabaseError(error: { message?: string } | null): void {
   if (error) throw new Error(error.message?.trim() || 'Account request failed.')
 }
 
 function accountUser(user: User | null): AccountUser | null {
   return user ? { id: user.id } : null
+}
+
+function accountSummary(value: unknown): AccountSummary | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const keys = Object.keys(value)
+  if (keys.length !== 2 || !keys.includes('matchesPlayed') || !keys.includes('wins')) return null
+  const { matchesPlayed, wins } = value as Record<string, unknown>
+  if (
+    typeof matchesPlayed !== 'number'
+    || !Number.isFinite(matchesPlayed)
+    || !Number.isInteger(matchesPlayed)
+    || matchesPlayed < 0
+    || typeof wins !== 'number'
+    || !Number.isFinite(wins)
+    || !Number.isInteger(wins)
+    || wins < 0
+    || wins > matchesPlayed
+  ) return null
+  return { matchesPlayed, wins }
 }
 
 export function createSupabaseAccountBackend(client: SupabaseClient): AccountBackend {
@@ -96,7 +141,16 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
       if (!row || typeof row.id !== 'string' || typeof row.display_name !== 'string') {
         throw new Error('Account profile is unavailable.')
       }
-      return { id: row.id, displayName: row.display_name }
+      let summary: AccountSummary | null = null
+      try {
+        const result = await withAccountSummaryTimeout(
+          client.functions.invoke('account_summary'),
+        )
+        if (!result.error) summary = accountSummary(result.data)
+      } catch {
+        // The owner profile remains usable when the optional summary is unavailable.
+      }
+      return { id: row.id, displayName: row.display_name, summary }
     },
   }
 }

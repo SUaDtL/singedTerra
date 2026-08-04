@@ -161,7 +161,11 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
-- [~] mvp2.progression.0001 - Link authenticated accounts to completed matches without trusting client-owned progression totals  (from mvp2.identity.0001)  (started 2026-08-04)
+- [ ] Add an injectable limiter seam and causal 429/fail-open tests for shared Edge request handling.  (from review:account-progression-summary)
+  - Boundaries: rate-limiting, service-role
+- [~] mvp2.progression.0002 - Show server-derived matches played and wins for authenticated accounts  (from mvp2.identity.0001)  (started 2026-08-04)
+  - Boundaries: Supabase Auth JWT, match attribution, owner-private progression read, account UI
+- [x] mvp2.progression.0001 - Link authenticated accounts to completed matches without trusting client-owned progression totals  (from mvp2.identity.0001)  (done 2026-08-04)
   - Boundaries: Supabase Auth JWT, match attribution, finish_game, RLS, seat-token authorization
 - [~] reliability.impact.0001 - Keep the tactical impact monitor visible for reduced-motion mobile profiles with a causal renderer regression.  (started 2026-08-03)
   - Boundaries: client
