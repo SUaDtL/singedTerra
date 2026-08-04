@@ -17,8 +17,8 @@ async function installSummaryFixture(page: Page, available: boolean): Promise<vo
       const summary = document.createElement('dl');
       summary.className = 'account-panel__progress';
       for (const [label, value] of [
-        ['Matches', '7'],
-        ['Recorded wins', '3'],
+        ['Matches', '8'],
+        ['Recorded wins', '4'],
         ['Level', '3'],
         ['XP', '200 / 500'],
       ]) {

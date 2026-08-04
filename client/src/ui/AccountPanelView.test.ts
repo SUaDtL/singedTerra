@@ -3,10 +3,10 @@ import type { AccountState } from '../client/AccountSession'
 import { buildAccountPanelView, type AccountPanelViewOptions } from './AccountPanelView'
 
 const validSummary = {
-  matchesPlayed: 7,
-  wins: 3,
+  matchesPlayed: 8,
+  wins: 4,
   progressionVersion: 1,
-  totalXp: 1000,
+  totalXp: 1200,
   level: 3,
   levelXp: 200,
   nextLevelXp: 500,
@@ -155,8 +155,8 @@ describe('buildAccountPanelView', () => {
 
     expect(root.querySelector('dl.account-panel__progress')).not.toBeNull()
     expect(progressPairs(root)).toEqual([
-      ['Matches', '7'],
-      ['Recorded wins', '3'],
+      ['Matches', '8'],
+      ['Recorded wins', '4'],
       ['Level', '3'],
       ['XP', '200 / 500'],
     ])
@@ -193,8 +193,8 @@ describe('buildAccountPanelView', () => {
       expect(first.querySelectorAll('[id]')).toHaveLength(0)
       expect(second.querySelectorAll('[id]')).toHaveLength(0)
       expect(progressPairs(first)).toEqual([
-        ['Matches', '7'],
-        ['Recorded wins', '3'],
+        ['Matches', '8'],
+        ['Recorded wins', '4'],
         ['Level', '3'],
         ['XP', '200 / 500'],
       ])
