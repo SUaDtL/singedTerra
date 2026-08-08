@@ -83,3 +83,12 @@ blockers resolved. Each returned Critical 0, High 0, Medium 0, Low 0, and zero
 merge blockers. The dependency manifest and lockfile remained unchanged from
 the fully tested commit; fresh graph, audit, diff-hygiene, and governance checks
 passed on the corrected branch.
+
+## Exact-head hosted gate
+
+PR #336 head `f34b8661e081a732437e3e15ce691f1a08c5fcb4` cleared CI run
+31284179117 (typecheck, deterministic harnesses, production build, Edge tests,
+and rendering E2E), CodeQL run 31284179119 plus its status check, and the
+CodeRabbit status. Supabase Preview was the expected skip. The standing
+merge-to-default authority is now logged for this PR; this audit-only authority
+head must independently re-clear exact-diff review and hosted CI before merge.

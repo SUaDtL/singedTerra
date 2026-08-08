@@ -17,7 +17,7 @@ Task: deps.audit.0002
   hygiene.
 - [x] Give one adversarial reviewer the spec, plan, sprint receipt, complete test
   evidence, and final diff; resolve every merge blocker.
-- [ ] Commit through the sanctioned gate, open a PR, and require hosted CI green
+- [x] Commit through the sanctioned gate, open a PR, and require hosted CI green
   on the exact reviewed head.
 - [ ] Merge under standing authority, verify exact-main hosted health and Pages,
   then mark deps.audit.0002 done.
