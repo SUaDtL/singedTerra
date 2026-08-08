@@ -92,3 +92,19 @@ and rendering E2E), CodeQL run 31284179119 plus its status check, and the
 CodeRabbit status. Supabase Preview was the expected skip. The standing
 merge-to-default authority is now logged for this PR; this audit-only authority
 head must independently re-clear exact-diff review and hosted CI before merge.
+
+## Merge and production closeout
+
+PR #336 exact authority head `85c12d04ad50481547c7dfd5e2e914834a903885`
+cleared designated adversarial and coverage review with Critical 0, High 0,
+Medium 0, Low 0, and zero merge blockers. CI run 31284426350, CodeQL run
+31284426337 plus its status, and CodeRabbit passed on that exact head before the
+PR was squash-merged to main as `4a44e692b5ac9c043ce94fbbd0cb55ab6cc5c33b`.
+
+Post-merge CI run 31284841763, CodeQL run 31284841795, and Pages run
+31284841748 passed on exact main. Pages verified current-main provenance and a
+live render smoke. A separate production probe returned HTTP 200 for deployment
+metadata, the page, and the current JavaScript asset; metadata identifies exact
+main SHA `4a44e692b5ac9c043ce94fbbd0cb55ab6cc5c33b` and Pages run 31284841748.
+No Supabase function, schema, configuration, secret, or backend deployment was
+part of this slice. Task deps.audit.0002 is done.
