@@ -11,6 +11,9 @@
     "client",
     "shared"
   ],
+  "overrides": {
+    "nanoid": "3.3.18"
+  },
   "scripts": {
     "dev": "npm -w @singedterra/client run dev",
     "dev:client": "npm -w @singedterra/client run dev",

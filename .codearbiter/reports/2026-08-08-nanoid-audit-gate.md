@@ -1,0 +1,67 @@
+# deps.audit.0002 sprint receipt
+
+Date: 2026-08-08
+Status: in progress
+
+## SMARTS decision
+
+Repair the newly published High nanoid advisory before the next player-facing
+slice. It is Specific to the Vite/PostCSS transitive dependency, Measurable
+through the existing zero-High audit gate, Attainable as a reviewed 3.3.x
+lockfile bump, Relevant because every feature PR otherwise starts red,
+Time-bounded to manifest and lockfile governance, and Strong because it adds no
+runtime dependency or product behavior. Confidence: high.
+
+## RED baseline and diagnosis
+
+- Unchanged `origin/main` resolves `nanoid@3.3.16`.
+- `npm run audit:deps` reports GHSA-2v37-7h3g-55p8 as one High vulnerability.
+- The package is a dev/build transitive through PostCSS and Vite. No install
+  script has been approved.
+- Supply-chain review for 3.3.17 passed, but the approved plain install
+  preserved the existing lockfile.
+- Dry-run diagnosis proved `npm update nanoid` is the narrow transitive refresh
+  path and currently proposes exactly one package change to 3.3.18.
+- The exact 3.3.18 release and mutation command require follow-up dependency
+  review before execution.
+
+## Supply-chain verdict
+
+The follow-up dependency review passed with Critical 0, High 0, Medium 0, Low
+0. It verified MIT licensing, Node 24 compatibility, no dependencies or
+lifecycle scripts, matching registry integrity, npm signature and SLSA
+provenance, no current advisory range, and the exact published delta. It
+approved the root 3.3.18 override plus the named `npm update nanoid` command
+with scripts disabled.
+
+## GREEN evidence
+
+- The guarded dry run reported exactly `nanoid 3.3.16 => 3.3.18`.
+- The actual update changed one package and reported zero vulnerabilities.
+- `npm ls` and `npm explain` resolve `nanoid@3.3.18` only through
+  PostCSS 8.5.24 and Vite 8.1.5.
+- `npm audit signatures` verified 143 registry signatures and 64 attestations.
+- `npm run audit:deps` passed with zero vulnerabilities.
+- `npm run build` passed, including strict typecheck and the Vite production
+  bundle.
+- `npm run test:client` passed 137 files and 1,021 tests.
+- `npm run check` passed the complete deterministic and contract harness chain.
+- The dependency diff contains only the root override and nanoid's version,
+  tarball, and integrity lock fields.
+
+## Governance note
+
+The historical `.codearbiter/sprint-log.md` contains legacy non-UTF-8 bytes and
+cannot be safely changed through the required patch writer. This UTF-8 receipt
+is the append-only sprint record for the bounded slice; the historical log is
+preserved byte-for-byte.
+
+## Adversarial final review
+
+The exact candidate passed adversarial review with Critical 0, High 0, Medium
+0, Low 0, and zero merge blockers. The reviewer independently reproduced both
+script-disabled and plain `npm ci`, the exact Vite/PostCSS/nanoid graph,
+signature and attestation verification, zero-vulnerability audit, production
+build, 137 client files and 1,021 tests, the complete deterministic checks, and
+diff hygiene. No product, CI, deployment, auth, database, or runtime source is
+in scope. Hosted exact-head CI remains a post-commit gate.
