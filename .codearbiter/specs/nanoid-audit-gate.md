@@ -15,7 +15,8 @@ High-severity GHSA-2v37-7h3g-55p8 advisory range. The repository's mandatory
 1. Keep the existing Vite and PostCSS versions unchanged.
 2. Constrain their transitive nanoid resolution to independently reviewed
    `nanoid@3.3.18` in the root manifest and lockfile.
-3. Run no lifecycle install scripts and add no runtime dependency.
+3. Run the reviewed dependency mutation with `--ignore-scripts`; add, approve,
+   or execute no new or changed lifecycle script, and add no runtime dependency.
 4. Preserve all product, engine, client, Edge, database, authentication, and
    deployment behavior.
 5. Require registry integrity, signature and provenance evidence, a zero-High

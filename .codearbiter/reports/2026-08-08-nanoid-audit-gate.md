@@ -52,16 +52,34 @@ with scripts disabled.
 ## Governance note
 
 The historical `.codearbiter/sprint-log.md` contains legacy non-UTF-8 bytes and
-cannot be safely changed through the required patch writer. This UTF-8 receipt
-is the append-only sprint record for the bounded slice; the historical log is
-preserved byte-for-byte.
+cannot be safely changed through the required patch writer. The sanctioned
+override in `.codearbiter/overrides.log` authorizes this UTF-8 report as the
+append-only sprint record for this slice only; the historical log is preserved
+byte-for-byte.
 
 ## Adversarial final review
 
-The exact candidate passed adversarial review with Critical 0, High 0, Medium
-0, Low 0, and zero merge blockers. The reviewer independently reproduced both
-script-disabled and plain `npm ci`, the exact Vite/PostCSS/nanoid graph,
-signature and attestation verification, zero-vulnerability audit, production
-build, 137 client files and 1,021 tests, the complete deterministic checks, and
-diff hygiene. No product, CI, deployment, auth, database, or runtime source is
-in scope. Hosted exact-head CI remains a post-commit gate.
+The initial candidate passed adversarial review with Critical 0, High 0, Medium
+0, Low 0, and zero merge blockers. The reviewer independently reproduced a
+script-disabled `npm ci`, the exact Vite/PostCSS/nanoid graph, signature and
+attestation verification, zero-vulnerability audit, production build, 137
+client files and 1,021 tests, the complete deterministic checks, and diff
+hygiene. No product, CI, deployment, auth, database, or runtime source is in
+scope. Hosted exact-head CI remains a post-commit gate.
+
+The later coverage gate correctly reopened the candidate with one High and one
+merge-blocking Medium. The High identified an imprecise statement that could be
+read as prohibiting the repository's unchanged clean-install lifecycle behavior,
+although the reviewed dependency mutation itself used `--ignore-scripts` and
+nanoid has no lifecycle script. The contract now states the exact boundary: no
+new or changed script is approved or executed by this bump. A reviewer's extra
+plain `npm ci` probe is not evidence for that no-script condition and is not
+relied upon. The Medium identified that this separate receipt needed a sanctioned
+override from the canonical sprint log. Both corrections require exact-diff
+re-review before PR creation.
+
+Coverage and designated adversarial re-review independently confirmed both
+blockers resolved. Each returned Critical 0, High 0, Medium 0, Low 0, and zero
+merge blockers. The dependency manifest and lockfile remained unchanged from
+the fully tested commit; fresh graph, audit, diff-hygiene, and governance checks
+passed on the corrected branch.
