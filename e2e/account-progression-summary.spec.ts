@@ -10,7 +10,7 @@ async function installSummaryFixture(page: Page, available: boolean): Promise<vo
 
     const identity = document.createElement('span');
     identity.className = 'account-panel__identity';
-    identity.textContent = 'Commander Ranger';
+    identity.textContent = 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
     panel.append(identity);
 
     if (hasSummary) {
@@ -91,6 +91,20 @@ function boxesOverlap(
   );
 }
 
+async function renderedTextBox(locator: Locator): Promise<{
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}> {
+  return locator.evaluate((node) => {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const box = range.getBoundingClientRect();
+    return { x: box.x, y: box.y, width: box.width, height: box.height };
+  });
+}
+
 test.describe('Account progression summary compact readability', () => {
   test.beforeEach(async ({ page }) => {
     await gotoLobby(page);
@@ -102,6 +116,9 @@ test.describe('Account progression summary compact readability', () => {
   test('available summary remains legible, contained, and non-overlapping', async ({ page }) => {
     await installSummaryFixture(page, true);
     const panel = page.locator('[data-summary-fixture="available"]');
+    await panel.evaluate((node) => {
+      node.style.width = '330px';
+    });
     const summary = panel.locator('.account-panel__progress');
     const labels = summary.locator('dt');
     const values = summary.locator('dd');
@@ -130,11 +147,30 @@ test.describe('Account progression summary compact readability', () => {
     for (const box of boxes) {
       expect(box, 'summary item should render').not.toBeNull();
     }
+    const textBoxes = [];
+    for (const item of items) {
+      const itemBox = await item.boundingBox();
+      expect(itemBox, 'summary item should render for text containment').not.toBeNull();
+      for (const text of await item.locator('dt, dd').all()) {
+        const textBox = await renderedTextBox(text);
+        expect(textBox.x).toBeGreaterThanOrEqual(itemBox!.x - 1);
+        expect(textBox.x + textBox.width).toBeLessThanOrEqual(itemBox!.x + itemBox!.width + 1);
+        textBoxes.push(textBox);
+      }
+    }
     for (let left = 0; left < boxes.length; left += 1) {
       for (let right = left + 1; right < boxes.length; right += 1) {
         expect(
           boxesOverlap(boxes[left]!, boxes[right]!),
           `summary items ${left + 1} and ${right + 1} must not overlap`,
+        ).toBe(false);
+      }
+    }
+    for (let left = 0; left < textBoxes.length; left += 1) {
+      for (let right = left + 1; right < textBoxes.length; right += 1) {
+        expect(
+          boxesOverlap(textBoxes[left]!, textBoxes[right]!),
+          `summary text ${left + 1} and ${right + 1} must not overlap`,
         ).toBe(false);
       }
     }

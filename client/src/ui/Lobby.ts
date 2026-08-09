@@ -1248,18 +1248,26 @@ export class Lobby {
       #lobby .account-panel__submit { color: var(--ink); background: var(--gold); }
       #lobby .account-panel button:focus-visible,
       #lobby .account-panel input:focus-visible { outline: none; box-shadow: var(--ui-focus); }
-      #lobby .account-panel__identity { color: var(--text-gold); font-weight: 700; }
+      #lobby .account-panel__identity {
+        grid-column: 1 / 3; min-width: 0;
+        color: var(--text-gold); font-weight: 700; overflow-wrap: anywhere;
+      }
       #lobby .account-panel--authenticated {
         width: min(410px, calc(100vw - 36px));
         display: grid; grid-template-columns: max-content 1fr max-content;
         align-items: center; gap: 8px 14px;
       }
       #lobby .account-panel__progress {
+        grid-column: 1 / -1;
         display: grid;
         grid-template-columns: repeat(3, max-content);
         gap: 4px 12px;
+        justify-content: space-between;
         margin: 0;
+        min-width: 0;
         padding: 0 2px;
+        box-sizing: border-box;
+        width: 100%;
       }
       #lobby .account-panel__progress-item { display: grid; justify-items: start; gap: 1px; }
       #lobby .account-panel__progress dt,
@@ -1279,6 +1287,10 @@ export class Lobby {
       #lobby .account-panel__xp {
         grid-column: 1 / -1; min-width: 0;
         display: grid; gap: 4px;
+      }
+      #lobby .account-panel__summary-unavailable { grid-column: 1 / -1; }
+      #lobby .account-panel--authenticated > .account-panel__secondary {
+        grid-column: 3; grid-row: 1; justify-self: end;
       }
       #lobby .account-panel__xp-header {
         display: flex; align-items: baseline; justify-content: space-between; gap: 10px;

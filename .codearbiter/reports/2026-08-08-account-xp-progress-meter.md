@@ -77,3 +77,23 @@ corrected exact diff was returned for re-review.
 The corrected-package re-review was CLEAR with zero Critical, High, Medium,
 Low, or merge-blocking findings. It confirmed the production class, DOM test,
 and compact fixture now share the same authenticated-layout contract.
+
+## Hosted CI correction
+
+PR #338 run 31286896081 exposed a Linux font-metric overflow that the Windows
+browser run did not reproduce: three intrinsic-width progress-stat columns
+exceeded the authenticated panel's middle grid track by 2.7 to 3.7 pixels in
+both compact projects. A 330-pixel constrained-panel oracle reproduced the same
+containment failure locally before the fix. An initial equal-track correction
+contained the grid but a blocking adversarial review proved `Recorded wins`
+glyphs could overflow their assigned track. The oracle now uses a valid
+24-character display name and measures rendered text ranges inside each stat.
+The final layout keeps intrinsic stat widths on a border-box full-width row,
+allows the identity to wrap beside Sign out, and passed the strengthened focused
+pixel-touch and small-window matrix 4/4.
+The CI-equivalent two-worker full browser matrix then passed 195 scenarios with
+27 intentional project skips; client 1,023/1,023, Edge 255/255, deterministic
+checks, build, audit, and secrets gates also remained green.
+
+The strengthened final-package adversarial re-review was CLEAR and the coverage
+audit PASSed, each with zero findings at every severity and zero merge blockers.
