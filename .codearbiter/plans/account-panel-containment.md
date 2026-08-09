@@ -12,5 +12,5 @@ Task: reliability.account.0001
 - [x] Run focused causal proof and the complete local verification matrix.
 - [x] Give one adversarial reviewer the spec, plan, sprint receipt, tests, and
   final diff; resolve every Critical, High, and merge-blocking finding.
-- [ ] Commit, open a PR, clear exact-head hosted checks and review, merge under
+- [x] Commit, open a PR, clear exact-head hosted checks and review, merge under
   standing authority, deploy Pages, and verify production health.

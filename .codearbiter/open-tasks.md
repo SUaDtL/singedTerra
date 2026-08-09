@@ -163,7 +163,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 ## In-flight
 - [ ] mvp2.progression.0006 - Award bounded progression for signed-in hot-seat match completion  (from user-hot-seat-progression-2026-08-08)
   - Boundaries: authenticated local outcome attribution, anti-forgery trust ceiling, account summary/progression
-- [~] reliability.account.0001 - Keep authenticated progression details from covering the lobby  (from production-screenshot-2026-08-08)  (started 2026-08-08)
+- [x] reliability.account.0001 - Keep authenticated progression details from covering the lobby  (from production-screenshot-2026-08-08)  (done 2026-08-09)
   - Boundaries: account panel DOM, lobby CSS, compact browser geometry
 - [x] mvp2.progression.0005 - Refresh authenticated progression immediately after a completed match is linked  (from mvp2.identity.0001)  (done 2026-08-08)
   - Boundaries: client match-completion signal, authenticated account-summary refresh, lobby composition

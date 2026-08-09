@@ -67,3 +67,19 @@ terminating exactly that worktree-owned listener and proving port 4173 clear,
 canonical Playwright passed 197 with 28 intentional skips. The corrected
 deterministic/typecheck harness, production build, dependency audit, 255 Edge
 tests, and 1,030-test coverage run all independently passed.
+
+## Delivery
+
+PR #346 exact final head `3e44ad4defec8ee24cffac97fff1c64ea6326b6a`
+received adversarial CLEAR with zero findings and cleared CI run `31293462561`,
+CodeQL run `31293462556` plus its success status, and CodeRabbit before squash
+merge to `main` as `d12de375d99c7064c8e05fd71f3b68ad05366342`.
+
+Post-merge CI `31293626133`, CodeQL `31293626128`, and Pages
+`31293626136` passed on that exact main SHA. The production page, deployment
+metadata, and current JavaScript asset return HTTP 200; metadata reports the
+exact main SHA and Pages run, and the live asset contains the authenticated
+account disclosure and expanded-state markers. No Supabase file changed, so no
+backend deployment was required. Task `reliability.account.0001` is done;
+`mvp2.progression.0006` remains queued as the separate signed-in hot-seat
+progression trust-boundary slice.
