@@ -161,7 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
-- [~] reliability.store.0001 - Prevent Store accessory cards from collapsing and overlapping their purchase control at compact scales  (from production-screenshot-2026-08-09)  (started 2026-08-09)
+- [x] reliability.store.0001 - Prevent Store accessory cards from collapsing and overlapping their purchase control at compact scales  (from production-screenshot-2026-08-09)  (done 2026-08-09)
   - Boundaries: Store card DOM, Store CSS, compact browser geometry
 - [ ] mvp2.progression.0006 - Award bounded progression for signed-in hot-seat match completion  (from user-hot-seat-progression-2026-08-08)
   - Boundaries: authenticated local outcome attribution, anti-forgery trust ceiling, account summary/progression

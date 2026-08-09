@@ -14,5 +14,5 @@ Task: reliability.store.0001
   the affected viewport visually.
 - [x] Give one adversarial reviewer the spec, plan, sprint receipt, tests, and
   final diff; resolve every Critical, High, and merge-blocking finding.
-- [ ] Commit through the gate, open a PR, clear exact-reviewed-head hosted CI,
+- [x] Commit through the gate, open a PR, clear exact-reviewed-head hosted CI,
   merge under standing authority, deploy Pages, and verify production health.
