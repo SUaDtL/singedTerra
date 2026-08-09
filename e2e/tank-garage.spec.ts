@@ -369,7 +369,7 @@ test.describe('tank Garage', () => {
     }
 
     await page.locator('.lobby-field select:not([id])').selectOption('2');
-    await page.getByRole('button', { name: 'Play Online' }).click();
+    await page.getByRole('tab', { name: 'Play Online' }).click();
     await expect(page.locator('.lobby-garage')).toHaveCount(1);
     const onlineFit = await page.locator('.lobby-card').evaluate((card) => ({
       clientHeight: card.clientHeight,
@@ -378,7 +378,7 @@ test.describe('tank Garage', () => {
     expect(onlineFit.scrollHeight).toBeLessThanOrEqual(
       onlineFit.clientHeight + 1,
     );
-    await page.getByRole('button', { name: 'Hot Seat' }).click();
+    await page.getByRole('tab', { name: 'Hot Seat' }).click();
 
     await openCompactGarage(page, 'Player 1');
     await page.getByRole('button', {
