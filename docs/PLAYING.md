@@ -108,7 +108,16 @@ Landscape touch layouts place a grouped Command Deck over the battlefield: Aim, 
 handle combat controls, while Weapon and Menu are
 utilities. Fire, Store, fuel, and Arsenal remain in the tactical rail. Each
 control has a stable accessible name. Combat controls use the same gates as
-keyboard input; Menu remains available to pause.
+keyboard input; Menu opens the non-pausing Command Menu.
+
+The Command Menu is the match-navigation home: Resume returns to the live
+match, First Salvo help appears only when it can restart the coach, and Return
+to Lobby is separated below the ordinary actions. Opening it closes Store, so
+there is never more than one optional match panel competing for input. It does
+not stop simulation or network updates. Store has its own Menu handoff in the
+header because the Store overlay deliberately blocks the rail and touch controls.
+While Command Menu is open, the rest of the match is unavailable to keyboard and
+assistive-technology focus until Resume returns control.
 
 Portrait phones show a mobile launch bay because the game is designed around a
 wide battlefield and a single fitted page. Its action attempts fullscreen and
@@ -120,7 +129,7 @@ always remains the reliable path into the same Touch Command Deck.
 On your first eligible local turn, a compact non-modal coach walks through
 three real controls: Aim, Power while reading the Wind Vector, then Fire. It
 advances only when you use those controls. Choose Skip to hide it on this
-browser; that choice persists. In Menu, Replay First Salvo restarts the coach
+browser; that choice persists. In Command Menu, Replay First Salvo restarts the coach
 for the current match without changing the match or the saved choice.
 
 ## Weapon families

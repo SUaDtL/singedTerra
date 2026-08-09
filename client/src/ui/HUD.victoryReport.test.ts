@@ -135,8 +135,7 @@ describe('HUD Victory After-Action Report', () => {
     hud.update(state);
 
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
-    const pause = [...modal.querySelectorAll<HTMLElement>('.st-hud__overlay')]
-      .find((surface) => surface.textContent?.includes('Paused'))!;
+    const pause = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
     expect(hud.isPaused()).toBe(true);
     expect(pause.classList.contains('st-hud__overlay--hidden')).toBe(false);
 

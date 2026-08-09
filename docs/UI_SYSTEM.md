@@ -33,7 +33,7 @@ and ember actions form one locked visual family.
   fuel, economy, Fire, and the Arsenal drawer.
 - Fine pointers receive the keyboard Command Deck over the sky.
 - Coarse pointers receive named touch controls over the sky.
-- Store, pause, round, and game-over surfaces live above the fitted stage.
+- Store, Command Menu, round, and game-over surfaces live above the fitted stage.
 - The document and HUD remain scroll-free at supported viewports.
 - Portrait phones receive a rotate-device gate instead of a crushed game.
 
@@ -130,6 +130,15 @@ phase, life, burial, firing, and fuel rules as keyboard input.
 Arsenal is a transient in-rail drawer. It starts closed unless the player saved
 it open. Opening it must not create an inner scrollbar or cover active controls
 without making them inert.
+
+Command Menu owns secondary match navigation only. It opens from either Menu
+entry point, puts Resume first, conditionally offers First Salvo help, and
+separates Return to Lobby as a leave-match action. It closes Store before it is
+shown, restores focus to its invoking Menu control when dismissed, and never
+pauses the lockstep update loop. Store exposes a header handoff because its
+modal layer deliberately blocks the underlying Menu controls. While open it
+reversibly isolates background app and sibling-modal surfaces from interaction
+and the accessibility tree.
 
 ## Asset policy
 

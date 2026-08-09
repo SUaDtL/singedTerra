@@ -437,9 +437,10 @@ test.describe('HUD layout guardrails', () => {
       }
       await expect(page.locator('#hud .st-hud__menu')).toBeHidden();
       await dock.getByRole('button', { name: 'Open menu' }).click();
-      await expect(page.getByText('Paused', { exact: true })).toBeVisible();
+      const commandMenu = page.getByRole('dialog', { name: 'Command Menu' });
+      await expect(commandMenu).toBeVisible();
       await page.getByRole('button', { name: 'Resume' }).click();
-      await expect(page.getByText('Paused', { exact: true })).toBeHidden();
+      await expect(commandMenu).toBeHidden();
       await expect(dock).toBeVisible();
 
       const elevation = page.locator(

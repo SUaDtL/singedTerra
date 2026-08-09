@@ -315,8 +315,7 @@ describe('HUD command input console', () => {
     const { overlay, modal, hud } = mount();
     const pauseChanges = vi.fn<(paused: boolean) => void>();
     hud.onPauseChange(pauseChanges);
-    const pause = [...modal.querySelectorAll<HTMLElement>('.st-hud__overlay')]
-      .find((element) => element.textContent?.includes('Paused'))!;
+    const pause = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
 
     overlay.querySelector<HTMLButtonElement>('[data-command="menu"]')!.click();
     expect(hud.isPaused()).toBe(true);

@@ -167,6 +167,10 @@ export class HUD {
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
    *  the client/engine keeps running underneath, so Resume returns to the live game. */
   private pauseEl!: HTMLElement;
+  private pauseResumeBtnEl!: HTMLButtonElement;
+  private pauseReplayFirstSalvoBtnEl!: HTMLButtonElement;
+  private pauseActionsEl!: HTMLElement;
+  private pausePreviousFocus: HTMLElement | null = null;
   private overlayTextEl!: HTMLElement;
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
@@ -1001,7 +1005,14 @@ export class HUD {
     storeTitle.textContent = 'Store';
     this.storeCreditsEl = document.createElement('div');
     this.storeCreditsEl.className = 'st-hud__store-credits';
-    storeHeader.append(storeTitle, this.storeCreditsEl);
+    const storeMenu = document.createElement('button');
+    storeMenu.type = 'button';
+    storeMenu.className = 'st-hud__store-menu';
+    storeMenu.dataset['command'] = 'open-menu';
+    storeMenu.setAttribute('aria-label', 'Open Command Menu');
+    storeMenu.textContent = 'Menu';
+    storeMenu.addEventListener('click', () => this.togglePause(true));
+    storeHeader.append(storeTitle, this.storeCreditsEl, storeMenu);
 
     const catalog = document.createElement('div');
     catalog.className = 'st-hud__store-catalog';
@@ -1328,20 +1339,27 @@ export class HUD {
     // seq sync). Resume just hides it; Quit runs the existing teardown-to-lobby path.
     this.pauseEl = document.createElement('div');
     this.pauseEl.className = 'st-hud__overlay st-hud__overlay--hidden';
+    this.pauseEl.dataset['ui'] = 'command-menu';
+    this.pauseEl.setAttribute('role', 'dialog');
+    this.pauseEl.setAttribute('aria-modal', 'true');
+    this.pauseEl.setAttribute('aria-label', 'Command Menu');
+    this.pauseEl.setAttribute('aria-hidden', 'true');
     const pausePanel = document.createElement('div');
     pausePanel.className = 'st-hud__overlay-panel';
-    const pauseText = document.createElement('div');
+    const pauseText = document.createElement('h2');
     pauseText.className = 'st-hud__overlay-text';
-    pauseText.textContent = 'Paused';
+    pauseText.textContent = 'Command Menu';
     const resumeBtn = document.createElement('button');
     resumeBtn.className = 'st-hud__restart';
     resumeBtn.type = 'button';
     resumeBtn.textContent = 'Resume';
+    this.pauseResumeBtnEl = resumeBtn;
     resumeBtn.addEventListener('click', () => this.togglePause(false));
     const replayFirstSalvoBtn = document.createElement('button');
     replayFirstSalvoBtn.className = 'st-hud__restart st-hud__restart--ghost';
     replayFirstSalvoBtn.type = 'button';
     replayFirstSalvoBtn.textContent = 'Replay First Salvo';
+    this.pauseReplayFirstSalvoBtnEl = replayFirstSalvoBtn;
     replayFirstSalvoBtn.addEventListener('click', () => {
       this.togglePause(false);
       this.firstSalvoReplayCb?.();
@@ -1349,13 +1367,31 @@ export class HUD {
     const pauseQuitBtn = document.createElement('button');
     pauseQuitBtn.className = 'st-hud__restart st-hud__restart--ghost';
     pauseQuitBtn.type = 'button';
-    pauseQuitBtn.textContent = 'Quit to Menu';
+    pauseQuitBtn.textContent = 'Return to Lobby';
     pauseQuitBtn.addEventListener('click', () => { this.togglePause(false); this.quitCb?.(); });
     const pauseBtns = document.createElement('div');
     pauseBtns.className = 'st-hud__overlay-btns';
-    pauseBtns.append(resumeBtn, replayFirstSalvoBtn, pauseQuitBtn);
-    pausePanel.append(pauseText, pauseBtns);
+    this.pauseActionsEl = pauseBtns;
+    pauseBtns.append(resumeBtn);
+    const pauseExit = document.createElement('div');
+    pauseExit.className = 'st-hud__command-menu-exit';
+    pauseExit.dataset['ui'] = 'command-menu-exit';
+    pauseExit.setAttribute('role', 'group');
+    pauseExit.setAttribute('aria-label', 'Leave this match');
+    pauseExit.append(pauseQuitBtn);
+    pausePanel.append(pauseText, pauseBtns, pauseExit);
     this.pauseEl.append(pausePanel);
+    this.pauseEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return;
+      const actions = [...this.pauseEl.querySelectorAll<HTMLButtonElement>('button')]
+        .filter((button) => !button.disabled);
+      const current = actions.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.shiftKey
+        ? (current <= 0 ? actions.length - 1 : current - 1)
+        : (current < 0 || current === actions.length - 1 ? 0 : current + 1);
+      event.preventDefault();
+      actions[next]?.focus({ preventScroll: true });
+    });
   }
 
   /** ROUND_OVER between-rounds shop modal. */
@@ -1796,9 +1832,79 @@ export class HUD {
    *  log to stay in sync), so Resume returns to the exact live game. Local human input
    *  is suppressed while open via main.ts's gate (#52), NOT by stopping the loop. */
   private togglePause(show: boolean): void {
+    if (show) {
+      const focused = document.activeElement;
+      this.pausePreviousFocus = focused instanceof HTMLElement ? focused : null;
+      this.toggleStore(false);
+      if (this.firstSalvoReplayCb) {
+        this.pauseActionsEl.append(this.pauseReplayFirstSalvoBtnEl);
+      } else {
+        this.pauseReplayFirstSalvoBtnEl.remove();
+      }
+    }
     this.paused = show;
     this.pauseEl.classList.toggle('st-hud__overlay--hidden', !show);
+    this.pauseEl.setAttribute('aria-hidden', String(!show));
+    this.setCommandMenuIsolation(show);
     this.pauseChangeCb?.(show);
+    if (show) {
+      this.pauseResumeBtnEl.focus({ preventScroll: true });
+      return;
+    }
+    const previousFocus = this.pausePreviousFocus;
+    this.pausePreviousFocus = null;
+    const isVisibleFocusTarget = (element: HTMLElement | null): element is HTMLElement => {
+      if (!element?.isConnected || element.closest('[inert]')) return false;
+      for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+      }
+      return true;
+    };
+    const fallbackMenu = [
+      this.root.querySelector<HTMLButtonElement>('.st-hud__menu'),
+      this.touchMenuBtnEl,
+    ].find(isVisibleFocusTarget);
+    const focusTarget = isVisibleFocusTarget(previousFocus) ? previousFocus : fallbackMenu;
+    if (focusTarget) {
+      focusTarget.focus({ preventScroll: true });
+    }
+  }
+
+  /** Isolate every full-app surface except the active Command Menu. */
+  private setCommandMenuIsolation(active: boolean): void {
+    const appSiblings = this.modalRoot.parentElement
+      ? [...this.modalRoot.parentElement.children]
+        .filter((element): element is HTMLElement =>
+          element instanceof HTMLElement && element !== this.modalRoot)
+      : [];
+    const modalSiblings = [...this.modalRoot.children]
+      .filter((element): element is HTMLElement =>
+        element instanceof HTMLElement && element !== this.pauseEl);
+
+    for (const surface of [...appSiblings, ...modalSiblings]) {
+      if (active) {
+        if (surface.dataset['commandMenuPreviousInert'] !== undefined) continue;
+        surface.dataset['commandMenuPreviousInert'] = surface.inert ? 'true' : 'false';
+        surface.dataset['commandMenuPreviousAriaHidden'] =
+          surface.getAttribute('aria-hidden') ?? '__absent__';
+        surface.inert = true;
+        surface.setAttribute('aria-hidden', 'true');
+        continue;
+      }
+
+      const previousInert = surface.dataset['commandMenuPreviousInert'];
+      if (previousInert === undefined) continue;
+      surface.inert = previousInert === 'true';
+      const previousAria = surface.dataset['commandMenuPreviousAriaHidden'];
+      if (previousAria === '__absent__' || previousAria === undefined) {
+        surface.removeAttribute('aria-hidden');
+      } else {
+        surface.setAttribute('aria-hidden', previousAria);
+      }
+      delete surface.dataset['commandMenuPreviousInert'];
+      delete surface.dataset['commandMenuPreviousAriaHidden'];
+    }
   }
 
   private toggleStore(open?: boolean): void {
@@ -3402,6 +3508,13 @@ export class HUD {
 .st-hud__restart:hover { background: var(--ember); }
 .st-hud__restart:active { transform: translateY(1px); }
 .st-hud__overlay-btns { display: flex; gap: 12px; }
+.st-hud__command-menu-exit {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 210, 63, 0.28);
+}
 .st-hud__restart--ghost {
   background: transparent;
   color: var(--gold);
@@ -3725,6 +3838,19 @@ export class HUD {
   color: #7ad7ff;
   font-size: 13px;
 }
+.st-hud__store-menu {
+  pointer-events: auto;
+  cursor: pointer;
+  min-height: 34px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.58);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+.st-hud__store-menu:hover { background: rgba(255, 210, 63, 0.16); }
 .st-hud__store-catalog {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3813,6 +3939,7 @@ export class HUD {
   transition: background 120ms ease, box-shadow 120ms ease;
 }
 .st-hud__store-buy:hover { background: rgba(255, 210, 63, 0.26); }
+.st-hud__store-menu:focus-visible,
 .st-hud__store-catalog .st-hud__store-buy:focus-visible,
 .st-hud__store-close:focus-visible {
   outline: 2px solid #7ad7ff;
@@ -4175,6 +4302,7 @@ export class HUD {
      so 91 logical px preserves a >=44 CSS-pixel hit target after scaling. */
   .st-hud__primary-action { min-height: 91px; }
   .st-hud__store-close { min-height: 44px; }
+  .st-hud__store-menu { min-height: 91px; }
   .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
 }
 
