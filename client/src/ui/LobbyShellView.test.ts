@@ -45,6 +45,7 @@ describe('buildLobbyShellView', () => {
     const rejoin = root.querySelector('.lobby-rejoin-banner');
     const tabs = root.querySelector('.lobby-tabs');
     const panel = root.querySelector('[role="tabpanel"]');
+    const context = panel?.querySelector('.lobby-mode-context');
     expect(title?.textContent).toBe('singedTerra');
     expect(rejoin?.querySelector('.lobby-rejoin-text')?.textContent)
       .toBe('You have a game in progress.');
@@ -57,7 +58,7 @@ describe('buildLobbyShellView', () => {
       panel,
       controls,
     ]);
-    expect([...panel!.children]).toEqual([content]);
+    expect([...panel!.children]).toEqual([context, content]);
     expect(button(root, 'Rejoin your game').type).toBe('button');
   });
 
@@ -97,6 +98,20 @@ describe('buildLobbyShellView', () => {
     expect(panel.getAttribute('aria-labelledby')).toBe(hotSeat.id);
     expect(hotSeat.getAttribute('aria-controls')).toBe(panel.id);
     expect(online.getAttribute('aria-controls')).toBe(panel.id);
+  });
+
+  it.each([
+    ['hotseat', 'Hot Seat', 'Set your crew, then start a shared-screen match.'],
+    ['online', 'Play Online', 'Create a room, join by code, or browse public games.'],
+  ] as const)('states the selected %s journey before setup controls', (activeTab, title, description) => {
+    const root = buildLobbyShellView(options({ activeTab }));
+    const panel = root.querySelector<HTMLElement>('[role="tabpanel"]')!;
+    const context = panel.querySelector<HTMLElement>('.lobby-mode-context')!;
+
+    expect(context.querySelector('h2')?.textContent).toBe(title);
+    expect(context.querySelector('p')?.textContent).toBe(description);
+    expect(context.querySelectorAll('button, input, select, a')).toHaveLength(0);
+    expect([...panel.children].indexOf(context)).toBe(0);
   });
 
   it('routes cyclic Arrow keys and Home End keys through the existing mode callback', () => {

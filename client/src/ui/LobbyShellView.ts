@@ -7,6 +7,17 @@ const TAB_IDS: Record<LobbyPrimaryTab, string> = {
 
 const MODE_PANEL_ID = 'lobby-mode-panel';
 
+const MODE_CONTEXT: Record<LobbyPrimaryTab, { title: string; description: string }> = {
+  hotseat: {
+    title: 'Hot Seat',
+    description: 'Set your crew, then start a shared-screen match.',
+  },
+  online: {
+    title: 'Play Online',
+    description: 'Create a room, join by code, or browse public games.',
+  },
+};
+
 export interface LobbyShellViewOptions {
   activeTab: LobbyPrimaryTab;
   rejoinAvailable: boolean;
@@ -99,12 +110,19 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
   online.addEventListener('keydown', (event) => { handleTabKey(event, 'online'); });
 
   tabs.append(hotSeat, online);
+  const context = document.createElement('section');
+  context.className = 'lobby-mode-context';
+  const contextTitle = document.createElement('h2');
+  contextTitle.textContent = MODE_CONTEXT[options.activeTab].title;
+  const contextDescription = document.createElement('p');
+  contextDescription.textContent = MODE_CONTEXT[options.activeTab].description;
+  context.append(contextTitle, contextDescription);
   const panel = document.createElement('section');
   panel.className = 'lobby-mode-panel';
   panel.id = MODE_PANEL_ID;
   panel.setAttribute('role', 'tabpanel');
   panel.setAttribute('aria-labelledby', TAB_IDS[options.activeTab]);
-  panel.append(options.content);
+  panel.append(context, options.content);
   card.append(tabs, panel, options.controls);
   return card;
 }

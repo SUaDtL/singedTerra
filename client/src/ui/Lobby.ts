@@ -1132,6 +1132,24 @@ export class Lobby {
         background: rgba(255, 210, 63, 0.10);
       }
       #lobby .lobby-tab:hover:not(.active) { color: var(--text); }
+      #lobby .lobby-mode-context {
+        margin: 0 0 12px;
+        padding: 0 2px 10px;
+        border-bottom: 1px solid rgba(255, 210, 63, 0.16);
+      }
+      #lobby .lobby-mode-context h2 {
+        margin: 0 0 3px;
+        color: var(--text-gold);
+        font-family: var(--font-display);
+        font-size: 19px;
+        letter-spacing: 0.04em;
+      }
+      #lobby .lobby-mode-context p {
+        margin: 0;
+        color: var(--text-dim);
+        font-size: 13px;
+        line-height: 1.35;
+      }
 
       /* Online sub-views */
       #lobby .lobby-btn {

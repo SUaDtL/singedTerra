@@ -60,6 +60,9 @@ test.describe('Lobby layout guardrails', () => {
     await expect(tabs).toHaveAttribute('aria-label', 'Choose play mode');
     await expect(hotSeat).toHaveAttribute('aria-selected', 'true');
     await expect(online).toHaveAttribute('aria-selected', 'false');
+    await expect(page.locator('.lobby-mode-context')).toContainText(
+      'Set your crew, then start a shared-screen match.',
+    );
     await expect(panel).toHaveAttribute('aria-labelledby', await hotSeat.getAttribute('id'));
     await expect(hotSeat).toHaveAttribute('aria-controls', await panel.getAttribute('id'));
     await expect(online).toHaveAttribute('aria-controls', await panel.getAttribute('id'));
@@ -68,20 +71,32 @@ test.describe('Lobby layout guardrails', () => {
     await page.keyboard.press('ArrowLeft');
     await expect(online).toHaveAttribute('aria-selected', 'true');
     await expect(online).toBeFocused();
+    await expect(page.locator('.lobby-mode-context')).toContainText(
+      'Create a room, join by code, or browse public games.',
+    );
     await expect(page.getByText('Create a new online room', { exact: false })).toBeVisible();
 
     await page.keyboard.press('ArrowRight');
     await expect(hotSeat).toHaveAttribute('aria-selected', 'true');
     await expect(hotSeat).toBeFocused();
+    await expect(page.locator('.lobby-mode-context')).toContainText(
+      'Set your crew, then start a shared-screen match.',
+    );
     await expect(page.getByText('Hot-seat setup', { exact: false })).toBeVisible();
 
     await page.keyboard.press('End');
     await expect(online).toHaveAttribute('aria-selected', 'true');
     await expect(online).toBeFocused();
+    await expect(page.locator('.lobby-mode-context')).toContainText(
+      'Create a room, join by code, or browse public games.',
+    );
 
     await page.keyboard.press('Home');
     await expect(hotSeat).toHaveAttribute('aria-selected', 'true');
     await expect(hotSeat).toBeFocused();
+    await expect(page.locator('.lobby-mode-context')).toContainText(
+      'Set your crew, then start a shared-screen match.',
+    );
 
     await page.keyboard.press('ArrowRight');
     await expect(online).toBeFocused();
