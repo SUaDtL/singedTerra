@@ -97,3 +97,13 @@ checks, build, audit, and secrets gates also remained green.
 
 The strengthened final-package adversarial re-review was CLEAR and the coverage
 audit PASSed, each with zero findings at every severity and zero merge blockers.
+
+## Exact-head authority gate
+
+Behavior head `4b6ce25c850bcd7df2dce5cd793f25ae4ef4411b` cleared CI run
+31288511360 (typecheck, deterministic harnesses, build, Edge tests, and browser
+rendering), CodeQL run 31288511367 and status, CodeRabbit, the strengthened
+adversarial review, and the coverage audit. PR #338 was cleanly mergeable. The
+maintainer's standing improvement-goal authority is logged for the sprint
+merge-to-default stop; this audit-only authority head must independently clear
+hosted CI and exact-diff adversarial review before squash merge.
