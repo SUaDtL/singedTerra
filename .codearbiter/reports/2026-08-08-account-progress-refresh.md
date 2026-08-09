@@ -1,7 +1,7 @@
 # mvp2.progression.0005 sprint receipt
 
 Date: 2026-08-08
-Status: in progress
+Status: complete
 
 ## SMARTS decision
 
@@ -71,3 +71,23 @@ adversarial review, H-10b secret-handling review, and the coverage audit. PR
 #340 is mergeable. The maintainer's standing improvement-goal authority is
 logged for the sprint merge-to-default stop; this audit-only authority head
 must independently clear hosted CI and exact-diff adversarial review.
+
+## Merge, deployment, and production verification
+
+Audit-only authority head `948bac651f3902afe6116088f707fd8d4a3f62f1`
+independently cleared CI run 31291158321, CodeQL run 31291158319 and status,
+CodeRabbit, and exact-head adversarial review with zero findings at every
+severity. PR #340 squash-merged as main commit
+`161f38f5f293b7275ddaaa45b653cf34b3c4adc3`.
+
+Post-merge CI run 31291320461, CodeQL run 31291320460, and Pages run
+31291320467 all succeeded on that exact main commit. The public page and
+`deploy-meta.json` each returned HTTP 200; deployment metadata reported the
+same main SHA and Pages run. This slice changed no Supabase surface, so no
+backend deployment was required.
+
+Task `mvp2.progression.0005` is complete. The parent
+`mvp2.identity.0001` umbrella is also complete because optional persistent
+password accounts, immutable match linkage, server-derived match/win summary,
+versioned XP/levels, accessible XP progress, and immediate post-match refresh
+are now deployed and production-verified.

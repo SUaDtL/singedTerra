@@ -161,7 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
-- [~] mvp2.progression.0005 - Refresh authenticated progression immediately after a completed match is linked  (from mvp2.identity.0001)  (started 2026-08-08)
+- [x] mvp2.progression.0005 - Refresh authenticated progression immediately after a completed match is linked  (from mvp2.identity.0001)  (done 2026-08-08)
   - Boundaries: client match-completion signal, authenticated account-summary refresh, lobby composition
 - [x] mvp2.progression.0004 - Show authenticated players an accessible XP progress meter and exact XP remaining to the next level  (from mvp2.identity.0001)  (done 2026-08-08)
   - Boundaries: client account UI
@@ -210,7 +210,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 - [x] mvp1.tutorial.0001 - Interactive first-shot tutorial and onboarding  (done 2026-08-03)
   - Desc: Guide a new player through one safe first shot using the existing aim, wind, power, and fire paths without blocking the normal start flow.
   - Boundaries: client tutorial overlay, aim/power/wind guidance, existing input callbacks and tests; no engine, action protocol, network, backend, migration, dependency, auth, secrets, or persistence
-- [~] mvp2.identity.0001 - Persistent users and progression  (started 2026-08-04)
+- [x] mvp2.identity.0001 - Persistent users and progression  (done 2026-08-08)
   - Desc: Provide persistent users and progression without trusting client-owned progress or weakening the current seat-token/network security boundary.
   - Boundaries: authenticated user identity, secure persistence, progression schema and rules; no implementation until auth/security controls and data-integrity design are cleared
 - [x] mvp1.world.0001 - Let lobby players choose an authored battlefield world and carry it through hot-seat and network setup  (done 2026-08-03)

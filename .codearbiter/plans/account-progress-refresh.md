@@ -12,6 +12,6 @@ Task: mvp2.progression.0005
 - [x] Run focused tests, causal mutation proof, and the complete local gate matrix.
 - [x] Give one adversarial reviewer the spec, plan, sprint receipt, tests, and
   final diff; resolve every Critical, High, and merge-blocking finding.
-- [ ] Commit through CodeArbiter, open a PR, require hosted CI green on the exact
+- [x] Commit through CodeArbiter, open a PR, require hosted CI green on the exact
   reviewed head, merge under standing authority, deploy Pages, and verify
   production health.
