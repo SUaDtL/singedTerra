@@ -191,6 +191,7 @@ function bootstrap(): void {
   let lastActiveId: string | null = null;
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
+  let gameGeneration = 0;
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
   let e2eVictoryPending = E2E_MODE === 'victory';
@@ -248,6 +249,7 @@ function bootstrap(): void {
 
   /** Tear down the current game's client/input/subscription (idempotent). */
   function teardown(): void {
+    gameGeneration += 1;
     clearAiTimers();
     unsubscribe?.();
     unsubscribe = null;
@@ -289,6 +291,7 @@ function bootstrap(): void {
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
     teardown();
+    const currentGameGeneration = gameGeneration;
     // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
     // callback. Restart (restartCb) and network rematch (onRematch) call startGame()
     // directly, so without this a Restart issued while the lobby is showing (i.e. after
@@ -336,6 +339,14 @@ function bootstrap(): void {
       e2eMode: E2E_MODE,
       accountTankId: accountTank && !accountTank.ai ? accountTank.id : null,
       report: (result) => lobby.recordHotSeatMatch(result),
+      onRecorded: () => {
+        if (
+          gameGeneration !== currentGameGeneration
+          || client !== newClient
+          || newClient.getState()?.phase !== 'GAME_OVER'
+        ) return;
+        hud.setProgressionReceipt();
+      },
     });
     lastActiveId = initial?.activePlayerId ?? null;
 

@@ -4,7 +4,10 @@ import type { GameState } from '@shared/types/GameState'
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
   onLobbyReady: null as null | ((config: Record<string, unknown>) => void),
+  onQuit: null as null | (() => void),
   recorded: [] as Array<{ matchId: string; won: boolean }>,
+  progressionReceipts: 0,
+  record: (_result: { matchId: string; won: boolean }) => Promise.resolve(true) as Promise<boolean>,
 }))
 
 vi.mock('@shared/engine/GameEngine', () => ({ GameEngine: class {} }))
@@ -97,12 +100,13 @@ vi.mock('./ui/HUD', () => ({
     onPauseChange() {}
     onPrimaryAction() {}
     onQuickChat() {}
-    onQuit() {}
+    onQuit(callback: () => void) { seams.onQuit = callback }
     onRestart() {}
     onTouchAngle() {}
     onTouchPower() {}
     onTouchWeapon() {}
     onWeaponSelect() {}
+    setProgressionReceipt() { seams.progressionReceipts += 1 }
     setArmsLevel() {}
     setConnection() {}
     setFirstSalvoStep() {}
@@ -122,7 +126,7 @@ vi.mock('./ui/Lobby', () => ({
     refreshAccount() { return Promise.resolve() }
     recordHotSeatMatch(result: { matchId: string; won: boolean }) {
       seams.recorded.push(result)
-      return Promise.resolve(true)
+      return seams.record(result)
     }
   },
 }))
@@ -191,7 +195,10 @@ describe('production hot-seat progression composition', () => {
     vi.resetModules()
     seams.clients.length = 0
     seams.onLobbyReady = null
+    seams.onQuit = null
     seams.recorded.length = 0
+    seams.progressionReceipts = 0
+    seams.record = () => Promise.resolve(true)
     window.history.replaceState({}, '', '/')
     mountDom()
   })
@@ -206,12 +213,14 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(first.start).toHaveBeenCalledOnce())
     first.emit(gameState())
     first.emit(gameState())
+    await vi.waitFor(() => expect(seams.progressionReceipts).toBe(1))
 
     const second = fakeClient(gameState({ winner: 'p2' }))
     seams.clients.push(second)
     seams.onLobbyReady({ mode: 'hotseat', players: [] })
     await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
     second.emit(gameState({ winner: 'p2' }))
+    await vi.waitFor(() => expect(seams.progressionReceipts).toBe(2))
 
     const ai = fakeClient(gameState({ firstAi: true }))
     seams.clients.push(ai)
@@ -230,6 +239,49 @@ describe('production hot-seat progression composition', () => {
     expect(seams.recorded[0]?.matchId).toMatch(/^[0-9a-f-]{36}$/)
     expect(seams.recorded[1]?.matchId).toMatch(/^[0-9a-f-]{36}$/)
     expect(seams.recorded[0]?.matchId).not.toBe(seams.recorded[1]?.matchId)
+  })
+
+  it('does not surface a resolved receipt after its game has been replaced', async () => {
+    let resolveRecord!: (recorded: boolean) => void
+    seams.record = () => new Promise<boolean>((resolve) => { resolveRecord = resolve })
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
+
+    const first = fakeClient(gameState())
+    seams.clients.push(first)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(first.start).toHaveBeenCalledOnce())
+    first.emit(gameState())
+    await vi.waitFor(() => expect(seams.recorded).toHaveLength(1))
+
+    const second = fakeClient(gameState())
+    seams.clients.push(second)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    resolveRecord(true)
+    await Promise.resolve()
+
+    expect(seams.progressionReceipts).toBe(0)
+  })
+
+  it('does not surface a resolved receipt after returning to the lobby', async () => {
+    let resolveRecord!: (recorded: boolean) => void
+    seams.record = () => new Promise<boolean>((resolve) => { resolveRecord = resolve })
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onQuit) throw new Error('Expected lobby wiring')
+
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(gameState())
+    await vi.waitFor(() => expect(seams.recorded).toHaveLength(1))
+
+    seams.onQuit()
+    resolveRecord(true)
+    await Promise.resolve()
+
+    expect(seams.progressionReceipts).toBe(0)
   })
 
   it('keeps the deterministic browser fixture out of progression reporting', async () => {

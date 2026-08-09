@@ -175,6 +175,7 @@ export class HUD {
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
   private overlayStatusEl!: HTMLElement;
+  private overlayProgressionReceiptEl!: HTMLElement;
   private overlayTankEl!: HTMLCanvasElement;
   private overlayPrimaryBtnEl!: HTMLButtonElement;
   private overlayMenuBtnEl!: HTMLButtonElement;
@@ -1288,6 +1289,11 @@ export class HUD {
     report.className = 'st-hud__victory-report';
     this.overlayStatusEl = document.createElement('div');
     this.overlayStatusEl.className = 'st-hud__victory-status';
+    this.overlayProgressionReceiptEl = document.createElement('div');
+    this.overlayProgressionReceiptEl.className = 'st-hud__victory-progression-receipt';
+    this.overlayProgressionReceiptEl.setAttribute('role', 'status');
+    this.overlayProgressionReceiptEl.setAttribute('aria-live', 'polite');
+    this.overlayProgressionReceiptEl.hidden = true;
     this.overlayTextEl = document.createElement('h1');
     this.overlayTextEl.id = 'st-victory-title';
     this.overlayTextEl.className = 'st-hud__overlay-text st-hud__victory-title';
@@ -1315,6 +1321,7 @@ export class HUD {
     this.overlayMenuBtnEl = overlayMenuBtn;
     report.append(
       this.overlayStatusEl,
+      this.overlayProgressionReceiptEl,
       this.overlayTextEl,
       scoreLabel,
       this.overlayScoreEl,
@@ -2507,6 +2514,8 @@ export class HUD {
       clearTankLoadoutPreview(this.overlayTankEl);
     }
     this.overlayEl.style.removeProperty('--st-victory-color');
+    this.overlayProgressionReceiptEl.hidden = true;
+    this.overlayProgressionReceiptEl.textContent = '';
     this.overlayShown = false;
 
     const previousFocus = this.overlayPreviousFocus;
@@ -2518,6 +2527,12 @@ export class HUD {
     ) {
       previousFocus.focus({ preventScroll: true });
     }
+  }
+
+  /** Acknowledge a completed server-side progression record without adding another action. */
+  setProgressionReceipt(): void {
+    this.overlayProgressionReceiptEl.textContent = 'Progression recorded';
+    this.overlayProgressionReceiptEl.hidden = false;
   }
 
   /** Show/hide the GAME_OVER overlay and set its winner/draw message + scoreboard. */
@@ -3646,6 +3661,20 @@ export class HUD {
   color: var(--st-victory-color, var(--gold));
   font-size: 10px;
   font-weight: 700;
+}
+.st-hud__victory-progression-receipt {
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 5px 8px;
+  color: #c5f0c4;
+  border: 1px solid rgba(151, 229, 149, 0.48);
+  border-radius: 4px;
+  background: rgba(78, 147, 74, 0.16);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .st-hud__victory-title {
   margin: 7px 0 28px;

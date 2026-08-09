@@ -128,6 +128,33 @@ describe('HUD Victory After-Action Report', () => {
     expect(tank.dataset['tankPreviewSignature']).toBeUndefined();
   });
 
+  it('acknowledges a confirmed progression record without adding a third action', () => {
+    const { modal, hud, state } = mount();
+    hud.update(state);
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    const receipt = report.querySelector<HTMLElement>('.st-hud__victory-progression-receipt')!;
+    const playAgain = report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')!;
+    const mainMenu = report.querySelector<HTMLButtonElement>('.st-hud__restart--ghost')!;
+
+    expect(receipt.hidden).toBe(true);
+    hud.setProgressionReceipt();
+
+    expect(receipt.hidden).toBe(false);
+    expect(receipt.textContent).toBe('Progression recorded');
+    expect(receipt.getAttribute('role')).toBe('status');
+    expect(receipt.getAttribute('aria-live')).toBe('polite');
+    expect(report.querySelectorAll('button')).toHaveLength(2);
+
+    playAgain.focus();
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(mainMenu);
+
+    state.phase = 'PLAYER_TURN';
+    hud.update(state);
+    expect(receipt.hidden).toBe(true);
+    expect(receipt.textContent).toBe('');
+  });
+
   it('supersedes an open pause surface when a live network match ends', () => {
     const { root, modal, hud, state } = mount();
     state.phase = 'PLAYER_TURN';

@@ -14,6 +14,7 @@ interface HotSeatProgressionReporterOptions {
   e2eMode: string | null
   accountTankId: string | null
   report(result: HotSeatMatchResult): Promise<boolean>
+  onRecorded?(result: HotSeatMatchResult): void
   matchId?: string
   createMatchId?: () => string
 }
@@ -33,10 +34,15 @@ export function createHotSeatProgressionReporter(
     observe(state) {
       if (reported || state.phase !== 'GAME_OVER') return
       reported = true
-      void options.report({
+      const result = {
         matchId,
         won: state.winner === options.accountTankId,
-      }).catch(() => false)
+      }
+      void options.report(result)
+        .then((recorded) => {
+          if (recorded) options.onRecorded?.(result)
+        })
+        .catch(() => undefined)
     },
   }
 }

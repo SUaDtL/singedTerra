@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] mvp2.progression.0007 - Acknowledge a server-confirmed hot-seat progression record in the After Action Report without inventing client-owned XP.  (from user-persistent-progression-and-ux-roadmap)  (done 2026-08-09)
+  - Boundaries: client, account-ui
 - [~] ux.menu.0002 - Carry the menu-system overhaul through ranked player-facing slices after Command Menu foundation.  (from user-steering-2026-08-09)  (started 2026-08-09)
   - Boundaries: client, ui
 - [x] impact.mobile.0001 - Restore the tactile Impact Monitor on landscape touch play and prove its magnified post-shot view remains visible, reachable, and non-obscuring.  (from user-mobile-impact-window)  (done 2026-08-09)

@@ -30,6 +30,52 @@ describe('createHotSeatProgressionReporter', () => {
     })
   })
 
+  it('emits one receipt only after the existing server-confirmed report succeeds', async () => {
+    let complete!: (recorded: boolean) => void
+    const report = vi.fn(() => new Promise<boolean>((resolve) => { complete = resolve }))
+    const onRecorded = vi.fn()
+    const reporter = createHotSeatProgressionReporter({
+      mode: 'hotseat',
+      e2eMode: null,
+      accountTankId: 'p1',
+      report,
+      onRecorded,
+      matchId: '00000000-0000-4000-8000-000000000074',
+    })
+    if (!reporter) throw new Error('Expected reporter')
+
+    reporter.observe(state('GAME_OVER', 'p1'))
+    expect(onRecorded).not.toHaveBeenCalled()
+
+    complete(true)
+    await vi.waitFor(() => expect(onRecorded).toHaveBeenCalledWith({
+      matchId: '00000000-0000-4000-8000-000000000074',
+      won: true,
+    }))
+    reporter.observe(state('GAME_OVER', 'p1'))
+    expect(onRecorded).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    ['a declined record', () => Promise.resolve(false)],
+    ['a failed record', () => Promise.reject(new Error('unavailable'))],
+  ])('does not emit a receipt after %s', async (_label, reportMatch) => {
+    const report = vi.fn(reportMatch)
+    const onRecorded = vi.fn()
+    const reporter = createHotSeatProgressionReporter({
+      mode: 'hotseat',
+      e2eMode: null,
+      accountTankId: 'p1',
+      report,
+      onRecorded,
+    })
+
+    reporter?.observe(state('GAME_OVER', 'p1'))
+    await vi.waitFor(() => expect(report).toHaveBeenCalledOnce())
+    await Promise.resolve()
+    expect(onRecorded).not.toHaveBeenCalled()
+  })
+
   it.each([
     ['another tank wins', 'p2'],
     ['the match draws', null],
