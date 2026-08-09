@@ -714,6 +714,130 @@ describe('AccountSession', () => {
     expect(source.loadProfile).toHaveBeenCalledWith('user-1')
   })
 
+  it('refreshes the currently authenticated profile on demand', async () => {
+    const loadProfile = vi.fn<AccountBackend['loadProfile']>(async () => ({ id: 'user-1', displayName: 'Ranger', summary: null }))
+    const source = backend({ loadProfile })
+    const session = new AccountSession((state) => states.push(state), {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    await session.submit('sign-in', {
+      email: 'ranger@example.test',
+      password: 'not-a-real-secret',
+    })
+    loadProfile.mockResolvedValueOnce({
+      id: 'user-1',
+      displayName: 'Ranger',
+      summary: {
+        matchesPlayed: 2,
+        wins: 1,
+        progressionVersion: 1,
+        totalXp: 300,
+        level: 1,
+        levelXp: 300,
+        nextLevelXp: 500,
+      },
+    })
+
+    await session.refresh()
+
+    expect(source.loadProfile).toHaveBeenLastCalledWith('user-1')
+    expect(session.state).toMatchObject({
+      status: 'authenticated',
+      profile: { summary: { matchesPlayed: 2, totalXp: 300 } },
+    })
+  })
+
+  it('does not let an in-flight refresh overwrite sign-out', async () => {
+    const loadProfile = vi.fn<AccountBackend['loadProfile']>(async () => ({ id: 'user-1', displayName: 'Ranger', summary: null }))
+    const source = backend({ loadProfile })
+    const session = new AccountSession((state) => states.push(state), {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    await session.submit('sign-in', {
+      email: 'ranger@example.test',
+      password: 'not-a-real-secret',
+    })
+    const refreshed = deferred<{ id: string; displayName: string; summary: null }>()
+    loadProfile.mockImplementationOnce(() => refreshed.promise)
+
+    const refreshing = session.refresh()
+    await Promise.resolve()
+    await session.signOut()
+    refreshed.resolve({ id: 'user-1', displayName: 'Stale Ranger', summary: null })
+    await refreshing
+
+    expect(session.state).toEqual({ status: 'anonymous', busy: false, error: '' })
+  })
+
+  it('does not let refresh supersede a sign-out that already started', async () => {
+    const signingOut = deferred<void>()
+    const loadProfile = vi.fn<AccountBackend['loadProfile']>(async () => ({
+      id: 'user-1', displayName: 'Ranger', summary: null,
+    }))
+    const source = backend({
+      loadProfile,
+      signOut: vi.fn(() => signingOut.promise),
+    })
+    const session = new AccountSession((state) => states.push(state), {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    await session.submit('sign-in', {
+      email: 'ranger@example.test',
+      password: 'not-a-real-secret',
+    })
+
+    const signOut = session.signOut()
+    await Promise.resolve()
+    await session.refresh()
+    signingOut.resolve()
+    await signOut
+
+    expect(loadProfile).toHaveBeenCalledTimes(1)
+    expect(session.state).toEqual({ status: 'anonymous', busy: false, error: '' })
+  })
+
+  it('does not let refresh supersede a newer auth-user profile load', async () => {
+    let onUser: ((user: { id: string } | null) => void) | undefined
+    const newProfile = deferred<{ id: string; displayName: string; summary: null }>()
+    const loadProfile = vi.fn<AccountBackend['loadProfile']>(async (userId) => {
+      if (userId === 'user-2') return newProfile.promise
+      return { id: 'user-1', displayName: 'Ranger', summary: null }
+    })
+    const source = backend({
+      subscribe: vi.fn((callback) => {
+        onUser = callback
+        return vi.fn()
+      }),
+      loadProfile,
+    })
+    const session = new AccountSession((state) => states.push(state), {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    onUser?.({ id: 'user-1' })
+    await vi.waitFor(() => expect(session.state.status).toBe('authenticated'))
+
+    onUser?.({ id: 'user-2' })
+    await Promise.resolve()
+    await session.refresh()
+    newProfile.resolve({ id: 'user-2', displayName: 'New Ranger', summary: null })
+    await vi.waitFor(() => {
+      expect(session.state).toMatchObject({
+        status: 'authenticated',
+        profile: { id: 'user-2', displayName: 'New Ranger' },
+      })
+    })
+
+    expect(loadProfile.mock.calls.map(([userId]) => userId)).toEqual(['user-1', 'user-2'])
+  })
+
   it('does not let a stale auth-event profile load overwrite sign-out', async () => {
     let onUser: ((user: { id: string } | null) => void) | undefined
     const profile = deferred<{ id: string; displayName: string; summary: null }>()

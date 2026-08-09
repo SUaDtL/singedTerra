@@ -11,6 +11,7 @@ class FakeAccountSession implements AccountSessionPort {
   readonly initialize = vi.fn(async () => undefined)
   readonly submit = vi.fn(async (_mode: AccountMode, _credentials: AccountCredentials) => undefined)
   readonly signOut = vi.fn(async () => undefined)
+  readonly refresh = vi.fn(async () => undefined)
 
   constructor(private readonly onChange: (state: AccountState) => void) {}
 
@@ -76,6 +77,19 @@ describe('Lobby account composition', () => {
     expect(button(root, 'Play Online')).toBeTruthy()
     button(root, 'Sign out').click()
     expect(account.signOut).toHaveBeenCalledOnce()
+  })
+
+  it('delegates a progression refresh to the persistent account owner', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange)
+      return account
+    })
+
+    await lobby.refreshAccount()
+
+    expect(account.refresh).toHaveBeenCalledOnce()
   })
 
   it('omits accounts when unavailable without blocking hot-seat', () => {

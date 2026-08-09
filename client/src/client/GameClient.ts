@@ -153,6 +153,9 @@ export interface GameClient {
    */
   onTurnWatch?(listener: (watch: TurnWatch) => void): () => void;
 
+  /** Notify that a completed match was linked and account progression may be stale. */
+  onAccountProgressChanged?(listener: () => void): () => void;
+
   /** Send and receive fixed, ephemeral networked quick-chat messages. */
   sendQuickChat?(key: QuickChatKey): boolean;
   onQuickChat?(listener: (message: QuickChatMessage) => void): () => void;

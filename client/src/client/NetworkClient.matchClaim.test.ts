@@ -151,6 +151,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.stubGlobal('fetch', fetchMock);
     const client = await gameOverClient({ access_token: 'account-bearer-secret' });
+    const onProgressChanged = vi.fn();
+    client.onAccountProgressChanged(onProgressChanged);
     const completedState = completeStateSnapshot(client);
     const actionTracking = actionTrackingSnapshot(client);
 
@@ -193,6 +195,7 @@ describe('NetworkClient match-completion claim wiring', () => {
     expect(error.mock.calls.at(-1)).toHaveLength(1);
     expect(warn).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
+    expect(onProgressChanged).not.toHaveBeenCalled();
     client.stop();
   });
 
@@ -203,12 +206,56 @@ describe('NetworkClient match-completion claim wiring', () => {
       return response(true, 200);
     }));
     const client = await gameOverClient(null);
+    const onProgressChanged = vi.fn();
+    client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
     rafCallback?.(0);
     await settle();
 
     expect(calls).toEqual(['finish_game']);
+    expect(onProgressChanged).not.toHaveBeenCalled();
     client.stop();
+  });
+
+  it('notifies once after a signed-in match is linked successfully', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url.split('/').at(-1) ?? 'unknown');
+      return response(true, 200);
+    }));
+    const client = await gameOverClient({ access_token: 'account-bearer-secret' });
+    const onProgressChanged = vi.fn();
+    client.onAccountProgressChanged(onProgressChanged);
+
+    client.start();
+    rafCallback?.(0);
+    await settle();
+
+    expect(calls).toEqual(['finish_game', 'claim_match']);
+    await vi.waitFor(() => expect(onProgressChanged).toHaveBeenCalledOnce());
+    client.stop();
+  });
+
+  it('does not notify after the client is stopped during a successful claim', async () => {
+    const claim = deferred<ReturnType<typeof response>>();
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      const name = url.split('/').at(-1);
+      return name === 'claim_match'
+        ? claim.promise
+        : Promise.resolve(response(true, 200));
+    }));
+    const client = await gameOverClient({ access_token: 'account-bearer-secret' });
+    const onProgressChanged = vi.fn();
+    client.onAccountProgressChanged(onProgressChanged);
+
+    client.start();
+    rafCallback?.(0);
+    await settle();
+    client.stop();
+    claim.resolve(response(true, 200));
+    await settle();
+
+    expect(onProgressChanged).not.toHaveBeenCalled();
   });
 });

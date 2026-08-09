@@ -184,6 +184,7 @@ export class NetworkClient implements GameClient {
   private turnWatchKey:     string | null = null;          // armed `${turn}:${activeTankId}`
   private _turnWatch:       TurnWatch = { state: 'clear' };
   private quickChatListeners = new Set<(message: QuickChatMessage) => void>();
+  private accountProgressListeners = new Set<() => void>();
   private lastQuickChatAt = -Infinity;
   private static readonly QUICK_CHAT_COOLDOWN_MS = 800;
   private static readonly TURN_WAIT_MS  = 12000;
@@ -525,6 +526,7 @@ export class NetworkClient implements GameClient {
       this.quickChatChannel = null;
     }
     this.quickChatListeners.clear();
+    this.accountProgressListeners.clear();
   }
 
   /**
@@ -686,6 +688,11 @@ export class NetworkClient implements GameClient {
   onFireFailed(listener: (message: string) => void): () => void {
     this.fireFailedListeners.add(listener);
     return () => this.fireFailedListeners.delete(listener);
+  }
+
+  onAccountProgressChanged(listener: () => void): () => void {
+    this.accountProgressListeners.add(listener);
+    return () => this.accountProgressListeners.delete(listener);
   }
 
   /** Update + broadcast the connection state (no-op if unchanged). */
@@ -1306,6 +1313,8 @@ export class NetworkClient implements GameClient {
     }).then((result) => {
       if (!result.ok) {
         console.error('NetworkClient: claim_match error');
+      } else if (result.value === 'linked' && !this._disposed) {
+        for (const listener of this.accountProgressListeners) listener();
       }
     });
   }

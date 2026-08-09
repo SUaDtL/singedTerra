@@ -234,6 +234,8 @@ export class AccountSession {
   private initializePromise: Promise<void> | null = null
   private unsubscribe: (() => void) | null = null
   private generation = 0
+  private refreshGeneration = 0
+  private authLoads = 0
   private disposed = false
 
   constructor(
@@ -321,6 +323,36 @@ export class AccountSession {
     }
   }
 
+  async refresh(): Promise<void> {
+    await this.initialize()
+    if (
+      !this.backend
+      || this.disposed
+      || this.authLoads > 0
+      || this.current.status !== 'authenticated'
+      || this.current.busy
+    ) return
+    const prior = this.current
+    const authOperation = this.generation
+    const operation = ++this.refreshGeneration
+    try {
+      const profile = await this.backend.loadProfile(prior.profile.id)
+      if (
+        this.isCurrent(authOperation)
+        && operation === this.refreshGeneration
+        && this.authLoads === 0
+        && this.current.status === 'authenticated'
+        && !this.current.busy
+        && this.current.profile.id === prior.profile.id
+      ) {
+        this.update({ status: 'authenticated', busy: false, error: '', profile })
+      }
+    } catch {
+      // Refresh is opportunistic. Keep the last trusted profile visible when the
+      // optional summary read is unavailable; a later match/auth event can retry.
+    }
+  }
+
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
@@ -335,6 +367,7 @@ export class AccountSession {
       this.update({ status: 'anonymous', busy: false, error: '' })
       return
     }
+    this.authLoads += 1
     try {
       const profile = await this.backend?.loadProfile(user.id)
       if (profile && this.isCurrent(operation)) {
@@ -349,6 +382,8 @@ export class AccountSession {
           userId: user.id,
         })
       }
+    } finally {
+      this.authLoads -= 1
     }
   }
 

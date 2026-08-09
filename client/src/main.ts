@@ -393,6 +393,7 @@ function bootstrap(): void {
     newClient.onConnectionChange?.((connState) => hud.setConnection(connState));
     newClient.onFireFailed?.((message) => hud.flashMessage(message));
     newClient.onTurnWatch?.((watch) => hud.setTurnWatch(watch));
+    newClient.onAccountProgressChanged?.(() => { void lobby.refreshAccount(); });
     const quickChatAvailable = typeof newClient.sendQuickChat === 'function'
       && typeof newClient.onQuickChat === 'function';
     hud.setQuickChatEnabled(quickChatAvailable);

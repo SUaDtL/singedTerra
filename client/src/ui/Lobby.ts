@@ -233,6 +233,7 @@ export interface AccountSessionPort {
   initialize(): Promise<void>;
   submit(mode: AccountMode, credentials: AccountCredentials): Promise<void>;
   signOut(): Promise<void>;
+  refresh(): Promise<void>;
 }
 
 type AccountSessionFactory = (
@@ -467,6 +468,10 @@ export class Lobby {
     this.stopBrowsePoll();
     this.root.replaceChildren();
     this.root.hidden = true;
+  }
+
+  refreshAccount(): Promise<void> {
+    return this.accountSession.refresh();
   }
 
   /** Inject the lobby's scoped <style> once (do NOT edit index.html). */

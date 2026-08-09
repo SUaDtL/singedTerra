@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] mvp2.progression.0005 - Refresh authenticated progression immediately after a completed match is linked  (from mvp2.identity.0001)  (started 2026-08-08)
+  - Boundaries: client match-completion signal, authenticated account-summary refresh, lobby composition
 - [x] mvp2.progression.0004 - Show authenticated players an accessible XP progress meter and exact XP remaining to the next level  (from mvp2.identity.0001)  (done 2026-08-08)
   - Boundaries: client account UI
 - [x] deps.audit.0002 - Upgrade transitive nanoid to a reviewed patched 3.3.x release and restore the zero-High dependency audit gate  (from npm-audit-2026-08-08)  (done 2026-08-08)
