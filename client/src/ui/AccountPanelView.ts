@@ -60,18 +60,20 @@ export function buildAccountPanelView(
   }
 
   if (options.state.status === 'authenticated') {
+    root.classList.add('account-panel--authenticated')
     const identity = document.createElement('span')
     identity.className = 'account-panel__identity'
     identity.textContent = `Commander ${options.state.profile.displayName}`
     let summary: HTMLElement
+    let xp: HTMLElement | null = null
     if (options.state.profile.summary) {
+      const accountSummary = options.state.profile.summary
       summary = document.createElement('dl')
       summary.className = 'account-panel__progress'
       const values = [
-        ['Matches', options.state.profile.summary.matchesPlayed],
-        ['Recorded wins', options.state.profile.summary.wins],
-        ['Level', options.state.profile.summary.level],
-        ['XP', `${options.state.profile.summary.levelXp} / ${options.state.profile.summary.nextLevelXp}`],
+        ['Matches', accountSummary.matchesPlayed],
+        ['Recorded wins', accountSummary.wins],
+        ['Level', accountSummary.level],
       ] as const
       for (const [label, value] of values) {
         const group = document.createElement('div')
@@ -83,6 +85,27 @@ export function buildAccountPanelView(
         group.append(term, count)
         summary.append(group)
       }
+
+      xp = document.createElement('div')
+      xp.className = 'account-panel__xp'
+      const xpHeader = document.createElement('div')
+      xpHeader.className = 'account-panel__xp-header'
+      const xpLabel = document.createElement('span')
+      xpLabel.className = 'account-panel__xp-label'
+      xpLabel.textContent = 'XP progress'
+      const xpValue = document.createElement('span')
+      xpValue.className = 'account-panel__xp-value'
+      xpValue.textContent = `${accountSummary.levelXp} / ${accountSummary.nextLevelXp} XP`
+      xpHeader.append(xpLabel, xpValue)
+      const meter = document.createElement('progress')
+      meter.className = 'account-panel__xp-meter'
+      meter.value = accountSummary.levelXp
+      meter.max = accountSummary.nextLevelXp
+      meter.setAttribute('aria-label', `Level ${accountSummary.level} XP progress`)
+      const remaining = document.createElement('span')
+      remaining.className = 'account-panel__xp-remaining'
+      remaining.textContent = `${accountSummary.nextLevelXp - accountSummary.levelXp} XP to Level ${accountSummary.level + 1}`
+      xp.append(xpHeader, meter, remaining)
     } else {
       summary = document.createElement('span')
       summary.className = 'account-panel__summary-unavailable'
@@ -91,7 +114,9 @@ export function buildAccountPanelView(
     const signOut = actionButton('Sign out', options.onSignOut)
     signOut.className = 'account-panel__secondary'
     signOut.disabled = options.state.busy
-    root.append(identity, summary, signOut)
+    root.append(identity, summary)
+    if (xp) root.append(xp)
+    root.append(signOut)
     return root
   }
 

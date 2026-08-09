@@ -138,7 +138,7 @@ describe('buildAccountPanelView', () => {
     expect(onSignOut).toHaveBeenCalledOnce()
   })
 
-  it('renders accessible match totals while preserving authenticated controls', () => {
+  it('renders semantic XP progress and exact remaining XP while preserving authenticated controls', () => {
     const onSignOut = vi.fn()
     const state: AccountState = {
       status: 'authenticated',
@@ -153,16 +153,57 @@ describe('buildAccountPanelView', () => {
     const root = buildAccountPanelView(options({ state, onSignOut }))
     if (!root) throw new Error('Expected authenticated account panel')
 
+    expect(root.classList.contains('account-panel--authenticated')).toBe(true)
     expect(root.querySelector('dl.account-panel__progress')).not.toBeNull()
     expect(progressPairs(root)).toEqual([
       ['Matches', '8'],
       ['Recorded wins', '4'],
       ['Level', '3'],
-      ['XP', '200 / 500'],
     ])
+    const xp = root.querySelector('.account-panel__xp')
+    const meter = xp?.querySelector('progress')
+    expect(xp?.querySelector('.account-panel__xp-value')?.textContent).toBe('200 / 500 XP')
+    expect(xp?.querySelector('.account-panel__xp-remaining')?.textContent).toBe('300 XP to Level 4')
+    expect(meter).toBeInstanceOf(HTMLProgressElement)
+    expect(meter?.value).toBe(200)
+    expect(meter?.max).toBe(500)
+    expect(meter?.getAttribute('aria-label')).toBe('Level 3 XP progress')
     expect(root.querySelector('form')).toBeNull()
     button(root, 'Sign out').click()
     expect(onSignOut).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    ['a level boundary', {
+      ...validSummary,
+      matchesPlayed: 4,
+      wins: 1,
+      totalXp: 500,
+      level: 2,
+      levelXp: 0,
+    }, '500 XP to Level 3'],
+    ['the nearest reachable step below a level boundary', {
+      ...validSummary,
+      matchesPlayed: 2,
+      wins: 2,
+      totalXp: 400,
+      level: 1,
+      levelXp: 400,
+    }, '100 XP to Level 2'],
+  ] as const)('renders exact remaining XP at %s', (_label, summary, remaining) => {
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary },
+    }
+    const root = buildAccountPanelView(options({ state }))
+    if (!root) throw new Error('Expected authenticated account panel')
+
+    const meter = root.querySelector<HTMLProgressElement>('.account-panel__xp progress')
+    expect(meter?.value).toBe(summary.levelXp)
+    expect(meter?.max).toBe(summary.nextLevelXp)
+    expect(root.querySelector('.account-panel__xp-remaining')?.textContent).toBe(remaining)
   })
 
   it('keeps definition pairs local and both account subtrees id-free when panels coexist', () => {
@@ -196,7 +237,6 @@ describe('buildAccountPanelView', () => {
         ['Matches', '8'],
         ['Recorded wins', '4'],
         ['Level', '3'],
-        ['XP', '200 / 500'],
       ])
       expect(second.querySelector('.account-panel__summary-unavailable')?.textContent)
         .toBe('Progress summary unavailable')

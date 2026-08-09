@@ -5,7 +5,7 @@ async function installSummaryFixture(page: Page, available: boolean): Promise<vo
   await page.evaluate((hasSummary) => {
     document.querySelector('#lobby .account-panel')?.remove();
     const panel = document.createElement('section');
-    panel.className = 'account-panel';
+    panel.className = 'account-panel account-panel--authenticated';
     panel.dataset['summaryFixture'] = hasSummary ? 'available' : 'unavailable';
 
     const identity = document.createElement('span');
@@ -20,7 +20,6 @@ async function installSummaryFixture(page: Page, available: boolean): Promise<vo
         ['Matches', '8'],
         ['Recorded wins', '4'],
         ['Level', '3'],
-        ['XP', '200 / 500'],
       ]) {
         const item = document.createElement('div');
         item.className = 'account-panel__progress-item';
@@ -32,6 +31,28 @@ async function installSummaryFixture(page: Page, available: boolean): Promise<vo
         summary.append(item);
       }
       panel.append(summary);
+
+      const xp = document.createElement('div');
+      xp.className = 'account-panel__xp';
+      const header = document.createElement('div');
+      header.className = 'account-panel__xp-header';
+      const label = document.createElement('span');
+      label.className = 'account-panel__xp-label';
+      label.textContent = 'XP progress';
+      const value = document.createElement('span');
+      value.className = 'account-panel__xp-value';
+      value.textContent = '200 / 500 XP';
+      header.append(label, value);
+      const meter = document.createElement('progress');
+      meter.className = 'account-panel__xp-meter';
+      meter.value = 200;
+      meter.max = 500;
+      meter.setAttribute('aria-label', 'Level 3 XP progress');
+      const remaining = document.createElement('span');
+      remaining.className = 'account-panel__xp-remaining';
+      remaining.textContent = '300 XP to Level 4';
+      xp.append(header, meter, remaining);
+      panel.append(xp);
     } else {
       const unavailable = document.createElement('span');
       unavailable.className = 'account-panel__summary-unavailable';
@@ -84,8 +105,8 @@ test.describe('Account progression summary compact readability', () => {
     const summary = panel.locator('.account-panel__progress');
     const labels = summary.locator('dt');
     const values = summary.locator('dd');
-    await expect(labels).toHaveCount(4);
-    await expect(values).toHaveCount(4);
+    await expect(labels).toHaveCount(3);
+    await expect(values).toHaveCount(3);
 
     for (const label of await labels.all()) {
       const box = await label.boundingBox();
@@ -104,7 +125,7 @@ test.describe('Account progression summary compact readability', () => {
     await expectInside(summary, panel);
 
     const items = await summary.locator('.account-panel__progress-item').all();
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(3);
     const boxes = await Promise.all(items.map((item) => item.boundingBox()));
     for (const box of boxes) {
       expect(box, 'summary item should render').not.toBeNull();
@@ -117,6 +138,34 @@ test.describe('Account progression summary compact readability', () => {
         ).toBe(false);
       }
     }
+
+    const xp = panel.locator('.account-panel__xp');
+    const xpLabel = xp.locator('.account-panel__xp-label');
+    const xpValue = xp.locator('.account-panel__xp-value');
+    const remaining = xp.locator('.account-panel__xp-remaining');
+    const meter = xp.locator('progress');
+    await expect(xpLabel).toHaveText('XP progress');
+    await expect(xpValue).toHaveText('200 / 500 XP');
+    await expect(remaining).toHaveText('300 XP to Level 4');
+    await expect(meter).toHaveAttribute('value', '200');
+    await expect(meter).toHaveAttribute('max', '500');
+    await expect(meter).toHaveAttribute('aria-label', 'Level 3 XP progress');
+    await expectInside(xp, panel);
+
+    for (const text of [xpLabel, xpValue, remaining]) {
+      const box = await text.boundingBox();
+      expect(box, 'XP copy should render').not.toBeNull();
+      expect(box!.height, 'XP copy should retain at least 8 physical pixels')
+        .toBeGreaterThanOrEqual(8);
+      expect(await text.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)))
+        .toBeGreaterThanOrEqual(12);
+    }
+
+    const summaryBox = await summary.boundingBox();
+    const xpBox = await xp.boundingBox();
+    expect(summaryBox, 'summary should render').not.toBeNull();
+    expect(xpBox, 'XP section should render').not.toBeNull();
+    expect(boxesOverlap(summaryBox!, xpBox!), 'summary and XP section must not overlap').toBe(false);
   });
 
   test('unavailable summary remains legible and contained', async ({ page }) => {
