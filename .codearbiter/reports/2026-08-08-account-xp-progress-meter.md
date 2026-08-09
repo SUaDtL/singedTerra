@@ -1,7 +1,7 @@
 # mvp2.progression.0004 sprint receipt
 
 Date: 2026-08-08
-Status: in progress
+Status: complete
 
 ## SMARTS decision
 
@@ -107,3 +107,17 @@ adversarial review, and the coverage audit. PR #338 was cleanly mergeable. The
 maintainer's standing improvement-goal authority is logged for the sprint
 merge-to-default stop; this audit-only authority head must independently clear
 hosted CI and exact-diff adversarial review before squash merge.
+
+## Merge, deployment, and production verification
+
+Audit-only authority head `75b209b12d29504f38a8f9080865c0a065643f2a`
+independently cleared CI run 31288858898, CodeQL run 31288858884 and status,
+CodeRabbit, and exact-head adversarial review with zero findings at every
+severity. PR #338 squash-merged as main commit
+`b17bd9360fa0e988f70728a4c4bab478a1857d12`.
+
+Post-merge CI run 31289022163, CodeQL run 31289022162, and Pages run
+31289022164 all succeeded on that exact main commit. The public page and
+`deploy-meta.json` each returned HTTP 200; deployment metadata reported the
+same main SHA and Pages run. The slice changed no Supabase surface, so no
+backend deployment was required.

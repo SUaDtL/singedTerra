@@ -14,6 +14,6 @@ Task: mvp2.progression.0004
   non-overlap; run focused and full local gates.
 - [x] Give one adversarial reviewer the spec, plan, sprint receipt, tests, and
   final diff; resolve every Critical, High, and merge-blocking finding.
-- [ ] Commit through CodeArbiter, open a PR, require hosted CI green on the exact
+- [x] Commit through CodeArbiter, open a PR, require hosted CI green on the exact
   reviewed head, merge under standing authority, deploy Pages, and verify
   production health.
