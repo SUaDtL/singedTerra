@@ -150,3 +150,27 @@ Critical, High, Medium, Low, Important, and merge-blocking finding. Treat Auth
 derivation, ownership/RLS/grants, idempotency races, count correctness,
 client terminal-state semantics, retries, and test mutation resistance as
 adversarial priorities. Do not modify files.
+
+## Delivery
+
+- PR #350 cleared adversarial review on behavior head
+  `8fe2b9c6efc860b7772b585372b2a3fd74cec58a`, then cleared a second exact-head
+  review after the append-only merge-authority receipt at
+  `9dbf4beea41520a74a9c1d567db7a238ffda7c14`. Both verdicts reported zero
+  Critical, High, Important, Medium, Low, and merge-blocking findings.
+- Hosted CI and CodeQL passed on the behavior head in runs `31311184993` and
+  `31311184997`, then passed again on the exact authority head in runs
+  `31311468792` and `31311468802`.
+- PR #350 was squash-merged with the expected-head guard as
+  `17948bc1b02d5cf03f222919464dd52004609df1`.
+- Migration 015 was applied remotely. `account_summary` was deployed ACTIVE at
+  version 6 and `record_hotseat_match` was deployed ACTIVE at version 2.
+- Live backend probes returned the expected missing-auth 401 responses for
+  hot-seat recording and account summary, the expected malformed-body 400,
+  and an unchanged anonymous room-list 200 response.
+- Exact-main CI, CodeQL, and Pages passed in runs `31311675354`, `31311675325`,
+  and `31311675294`. The live deployment metadata names the exact merge SHA,
+  and its served client asset contains both progression endpoint markers.
+- `mvp2.progression.0006` is done. The next SMARTS candidate is binding a
+  hot-seat match to the signed-in account present when the match begins, so an
+  account change during play cannot redirect completion credit.

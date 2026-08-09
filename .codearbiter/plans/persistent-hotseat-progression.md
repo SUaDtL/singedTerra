@@ -105,6 +105,6 @@
 
 - [x] Run focused tests, `npm run test:client`, `npm run check:edge`, `npm run check`, `npm run build`, `npm run audit:deps`, full Playwright, `git diff --check`, and state-free secret scan; require all green and zero raw-secret findings.
 - [x] Give one adversarial subagent the spec, plan, sprint log, RED/GREEN/mutation/full evidence, security-controls delta, migration, tests, and complete final diff. Resolve every Critical, High, and other merge blocker and obtain exact-final-diff CLEAR.
-- [ ] Pass `$ca-commit` and `$ca-pr`, excluding the task lock. Require all hosted checks green on the exact reviewed head.
-- [ ] Log standing merge authority, re-review the exact audit head, re-clear hosted checks, squash merge with expected-head guard, push migration 015 and deploy `record_hotseat_match`, verify remote migration/function state plus missing-auth 401 and unchanged anonymous room health.
-- [ ] Require exact-main CI, CodeQL, Pages provenance, live asset health, and production account-summary compatibility before marking `mvp2.progression.0006` done and selecting the next improvement.
+- [x] Pass `$ca-commit` and `$ca-pr`, excluding the task lock. Require all hosted checks green on the exact reviewed head.
+- [x] Log standing merge authority, re-review the exact audit head, re-clear hosted checks, squash merge with expected-head guard, push migration 015 and deploy `record_hotseat_match`, verify remote migration/function state plus missing-auth 401 and unchanged anonymous room health.
+- [x] Require exact-main CI, CodeQL, Pages provenance, live asset health, and production account-summary compatibility before marking `mvp2.progression.0006` done and selecting the next improvement.
