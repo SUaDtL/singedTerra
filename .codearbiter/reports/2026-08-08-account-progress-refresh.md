@@ -62,3 +62,12 @@ the corrected focused package passes 55/55.
 
 The corrected exact-diff re-review returned CLEAR with zero Critical, High,
 Medium, Low, or merge-blocking findings. Diff hygiene passed.
+
+## Exact-head authority gate
+
+Behavior head `b3d706a399ec8bfa33f8bdf2229c45f7f35a6f13` cleared CI run
+31290923329, CodeQL run 31290923328 and status, CodeRabbit, designated
+adversarial review, H-10b secret-handling review, and the coverage audit. PR
+#340 is mergeable. The maintainer's standing improvement-goal authority is
+logged for the sprint merge-to-default stop; this audit-only authority head
+must independently clear hosted CI and exact-diff adversarial review.
