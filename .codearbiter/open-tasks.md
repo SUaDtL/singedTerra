@@ -161,7 +161,11 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
-- [~] ux.menu.0001 - Overhaul the menu system into a coherent, planned player UX: audit navigation, information hierarchy, responsive states, and visual language; produce and ship in bounded, player-validated slices after world-atmosphere-signatures.  (from user-steering-2026-08-09)  (started 2026-08-09)
+- [~] ux.menu.0002 - Carry the menu-system overhaul through ranked player-facing slices after Command Menu foundation.  (from user-steering-2026-08-09)  (started 2026-08-09)
+  - Boundaries: client, ui
+- [x] impact.mobile.0001 - Restore the tactile Impact Monitor on landscape touch play and prove its magnified post-shot view remains visible, reachable, and non-obscuring.  (from user-mobile-impact-window)  (done 2026-08-09)
+  - Boundaries: client, rendering
+- [x] ux.menu.0001 - Overhaul the menu system into a coherent, planned player UX: audit navigation, information hierarchy, responsive states, and visual language; produce and ship in bounded, player-validated slices after world-atmosphere-signatures.  (from user-steering-2026-08-09)  (done 2026-08-09)
 - [x] reliability.store.0001 - Prevent Store accessory cards from collapsing and overlapping their purchase control at compact scales  (from production-screenshot-2026-08-09)  (done 2026-08-09)
   - Boundaries: Store card DOM, Store CSS, compact browser geometry
 - [x] mvp2.progression.0006 - Award bounded progression for signed-in hot-seat match completion  (from user-hot-seat-progression-2026-08-08)  (done 2026-08-09)

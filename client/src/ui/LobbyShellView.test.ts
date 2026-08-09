@@ -44,6 +44,7 @@ describe('buildLobbyShellView', () => {
     const title = root.querySelector('h1');
     const rejoin = root.querySelector('.lobby-rejoin-banner');
     const tabs = root.querySelector('.lobby-tabs');
+    const panel = root.querySelector('[role="tabpanel"]');
     expect(title?.textContent).toBe('singedTerra');
     expect(rejoin?.querySelector('.lobby-rejoin-text')?.textContent)
       .toBe('You have a game in progress.');
@@ -53,9 +54,10 @@ describe('buildLobbyShellView', () => {
       vehiclePreview,
       rejoin,
       tabs,
-      content,
+      panel,
       controls,
     ]);
+    expect([...panel!.children]).toEqual([content]);
     expect(button(root, 'Rejoin your game').type).toBe('button');
   });
 
@@ -77,6 +79,44 @@ describe('buildLobbyShellView', () => {
     expect(onTabChange.mock.calls).toEqual([['hotseat'], ['online']]);
     expect(onRejoin).toHaveBeenCalledOnce();
     expect(onRejoin).toHaveBeenCalledWith();
+  });
+
+  it('links the selected play mode tab to its setup panel', () => {
+    const root = buildLobbyShellView(options());
+    const tabs = root.querySelector<HTMLElement>('.lobby-tabs')!;
+    const hotSeat = button(root, 'Hot Seat');
+    const online = button(root, 'Play Online');
+    const panel = root.querySelector<HTMLElement>('[role="tabpanel"]')!;
+
+    expect(tabs.getAttribute('role')).toBe('tablist');
+    expect(tabs.getAttribute('aria-label')).toBe('Choose play mode');
+    expect(hotSeat.getAttribute('role')).toBe('tab');
+    expect(hotSeat.getAttribute('aria-selected')).toBe('true');
+    expect(online.getAttribute('role')).toBe('tab');
+    expect(online.getAttribute('aria-selected')).toBe('false');
+    expect(panel.getAttribute('aria-labelledby')).toBe(hotSeat.id);
+    expect(hotSeat.getAttribute('aria-controls')).toBe(panel.id);
+    expect(online.getAttribute('aria-controls')).toBe(panel.id);
+  });
+
+  it('routes cyclic Arrow keys and Home End keys through the existing mode callback', () => {
+    const hotSeatChange = vi.fn();
+    const hotSeatRoot = buildLobbyShellView(options({ onTabChange: hotSeatChange }));
+    const hotSeat = button(hotSeatRoot, 'Hot Seat');
+
+    hotSeat.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    hotSeat.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    hotSeat.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    hotSeat.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    expect(hotSeatChange.mock.calls).toEqual([['online'], ['online'], ['online'], ['hotseat']]);
+
+    const onlineChange = vi.fn();
+    const onlineRoot = buildLobbyShellView(options({ activeTab: 'online', onTabChange: onlineChange }));
+    const online = button(onlineRoot, 'Play Online');
+
+    online.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    online.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(onlineChange.mock.calls).toEqual([['hotseat'], ['hotseat']]);
   });
 
   it('omits rejoin, marks Online active, and preserves the online wrapper', () => {
