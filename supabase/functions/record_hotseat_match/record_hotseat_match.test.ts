@@ -200,6 +200,34 @@ Deno.test('recordHotSeatMatch re-reads a uniqueness race and preserves idempoten
   assertEquals(payload, { ok: true, recorded: false })
 })
 
+Deno.test('recordHotSeatMatch fails closed when a uniqueness-race reread is conflicting, missing, or unavailable', async () => {
+  const cases = [
+    {
+      reread: existing({ user_id: USER_ID, match_id: MATCH_ID, won: false }),
+      status: 409,
+      payload: { error: 'hotseat_match_conflict' },
+    },
+    {
+      reread: existing(),
+      status: 409,
+      payload: { error: 'hotseat_match_conflict' },
+    },
+    {
+      reread: existing(null, { message: 'race lookup unavailable' }),
+      status: 500,
+      payload: { error: 'hotseat_match_failed' },
+    },
+  ]
+  for (const testCase of cases) {
+    const { response, payload } = await invoke(
+      { matchId: MATCH_ID, won: true },
+      [existing(), insert(DUPLICATE), testCase.reread],
+    )
+    assertEquals(response.status, testCase.status)
+    assertEquals(payload, testCase.payload)
+  }
+})
+
 Deno.test('recordHotSeatMatch canonicalizes uppercase UUIDs for exact replay and uniqueness races', async () => {
   const exact = await invoke(
     { matchId: UPPERCASE_MATCH_ID, won: true },

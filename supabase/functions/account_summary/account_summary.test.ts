@@ -498,14 +498,34 @@ Deno.test('handleAccountSummary combines network and hot-seat history before der
   })
 })
 
+Deno.test('handleAccountSummary identifies a failed local-win query instead of reclassifying it as malformed count data', async () => {
+  const { fixture, payload } = await expectResponse({
+    queries: [
+      participantQuery([]),
+      hotseatCountQuery(0),
+      hotseatCountQuery(null, true, { message: 'local win count down' }),
+    ],
+  }, 500)
+  assertEquals(payload, { error: 'summary_unavailable' })
+  assertEquals(fixture.logs, [{
+    message: 'account_summary: hot-seat win count failed',
+    context: { stage: 'hotseat', error: 'query_failed' },
+  }])
+})
+
 Deno.test('handleAccountSummary fails closed on local count errors, malformed counts, or unsafe combined arithmetic', async () => {
   const cases: QueryExpectation[][] = [
     [participantQuery([]), hotseatCountQuery(null, false, { message: 'local count down' })],
+    [participantQuery([]), hotseatCountQuery(0), hotseatCountQuery(null, true, { message: 'local win count down' })],
     [participantQuery([]), hotseatCountQuery(null), hotseatCountQuery(0, true)],
     [participantQuery([]), hotseatCountQuery(-1), hotseatCountQuery(0, true)],
     [participantQuery([]), hotseatCountQuery(1.5), hotseatCountQuery(0, true)],
+    [participantQuery([]), hotseatCountQuery(1), hotseatCountQuery(null, true)],
+    [participantQuery([]), hotseatCountQuery(1), hotseatCountQuery(-1, true)],
+    [participantQuery([]), hotseatCountQuery(1), hotseatCountQuery(0.5, true)],
     [participantQuery([]), hotseatCountQuery(1), hotseatCountQuery(2, true)],
     [participantQuery([]), ...localCounts(90_071_992_547_410, 0)],
+    [participantQuery([]), ...localCounts(45_035_996_273_706, 45_035_996_273_706)],
     [participantQuery([{ room_id: 'room-one', tank_id: 'p1' }]), scoreQuery(['room-one'], [{ room_id: 'room-one', winner: null }]), ...localCounts(Number.MAX_SAFE_INTEGER, 0)],
   ]
   for (const queries of cases) {
