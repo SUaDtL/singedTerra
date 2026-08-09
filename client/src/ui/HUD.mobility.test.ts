@@ -251,7 +251,9 @@ describe('HUD mobility rocker', () => {
     expect(row).toBeDefined();
     expect(row?.querySelector('.st-hud__store-owned')?.textContent).toBe('Fuel 100');
     expect(row?.querySelector('.st-hud__store-price')?.textContent).toBe('$10,000');
+    expect(row?.querySelector('.st-hud__store-summary')?.textContent)
+      .toBe('+100 movement fuel.');
     expect(row?.querySelector('.st-hud__store-bundle')?.textContent)
-      .toBe('+100 movement fuel');
+      .toBe('+10');
   });
 });

@@ -911,6 +911,59 @@ test.describe('HUD layout guardrails', () => {
     expect(scrolledLayout.visibleBuysContained).toBe(true);
   });
 
+  test('Store cards contain their information and purchase control without overlap', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /Store/ }).click();
+
+    const violations = await page.locator('.st-hud__store-row').evaluateAll((rows) =>
+      rows.flatMap((row) => {
+        const card = row.getBoundingClientRect();
+        const info = row.querySelector<HTMLElement>('.st-hud__store-info')!
+          .getBoundingClientRect();
+        const buy = row.querySelector<HTMLButtonElement>('.st-hud__store-buy')!
+          .getBoundingClientRect();
+        const tolerance = 1;
+        const scale = card.width / (row as HTMLElement).offsetWidth;
+        const declaredGap = Number.parseFloat(getComputedStyle(row).columnGap);
+        const actualGap = buy.left - info.right;
+        const expectedGap = declaredGap * scale;
+        const infoLogicalWidth = info.width / scale;
+        const infoNode = row.querySelector<HTMLElement>('.st-hud__store-info')!;
+        const infoContentContained =
+          infoNode.scrollWidth <= infoNode.clientWidth + tolerance
+          && infoNode.scrollHeight <= infoNode.clientHeight + tolerance;
+        const contained = (child: DOMRect) =>
+          child.left >= card.left - tolerance
+          && child.right <= card.right + tolerance
+          && child.top >= card.top - tolerance
+          && child.bottom <= card.bottom + tolerance;
+        const separated = actualGap >= expectedGap - tolerance;
+        const readableInfo = infoLogicalWidth >= 48 && infoContentContained;
+        if (contained(info) && contained(buy) && separated && readableInfo) return [];
+        return [{
+          name: row.querySelector('.st-hud__store-name')?.textContent ?? 'unknown',
+          card: card.toJSON(),
+          info: info.toJSON(),
+          buy: buy.toJSON(),
+          containedInfo: contained(info),
+          containedBuy: contained(buy),
+          actualGap,
+          expectedGap,
+          infoLogicalWidth,
+          infoContentContained,
+          separated,
+          readableInfo,
+        }];
+      }),
+    );
+
+    expect(
+      violations,
+      `Store card children must stay inside their card without overlap: ${JSON.stringify(violations, null, 2)}`,
+    ).toEqual([]);
+  });
+
   test('Store catalog preserves 44px buy targets at the non-compact coarse scale', async ({
     page,
   }, testInfo) => {

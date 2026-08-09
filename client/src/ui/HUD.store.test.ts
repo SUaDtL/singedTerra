@@ -111,6 +111,30 @@ describe('HUD store catalog', () => {
     expect(purchases).toEqual([{ weapon: 'missile' }, { accessory: 'fuel_tank' }]);
   });
 
+  it('keeps accessory effects in the summary and bundle quantity in the purchase control', () => {
+    const { modal } = mount();
+    const parachute = storeRow(modal, 'Parachute');
+
+    expect(parachute.querySelector('.st-hud__store-summary')?.textContent)
+      .toBe('Reduces one dangerous collapse fall to 25% damage.');
+    expect(parachute.querySelector('.st-hud__store-price')?.textContent).toBe('$4,000');
+    expect(parachute.querySelector('.st-hud__store-bundle')?.textContent).toBe('+1');
+  });
+
+  it('names each purchase control for the item it buys', () => {
+    const { modal } = mount();
+    const rows = [...modal.querySelectorAll<HTMLElement>('.st-hud__store-row')];
+
+    for (const row of rows) {
+      const name = row.querySelector('.st-hud__store-name')?.textContent;
+      const accessibleName = row.querySelector('.st-hud__store-buy')?.getAttribute('aria-label');
+      expect(accessibleName, `${name} purchase control`).toBeTypeOf('string');
+      expect(accessibleName, `${name} purchase control`).toContain(name!);
+    }
+    expect(storeRow(modal, 'Parachute').querySelector('.st-hud__store-buy')?.getAttribute('aria-label'))
+      .toBe('Buy Parachute for $4,000, bundle of 1');
+  });
+
   it('locks above-level weapon and accessory cards while leaving affordable unlocked gear enabled', () => {
     const { hud, modal, state } = mount();
     state.tanks[0]!.credits = 30_000;

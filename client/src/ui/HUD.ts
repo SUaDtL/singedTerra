@@ -1068,6 +1068,10 @@ export class HUD {
     const buyBtn = document.createElement('button');
     buyBtn.type = 'button';
     buyBtn.className = 'st-hud__store-buy';
+    buyBtn.setAttribute(
+      'aria-label',
+      `Buy ${def.name} for $${def.price.toLocaleString()}, bundle of ${def.bundleSize}`,
+    );
     buyBtn.innerHTML =
       `<span class="st-hud__store-price">$${def.price.toLocaleString()}</span>` +
       `<span class="st-hud__store-bundle">+${def.bundleSize}</span>`;
@@ -1096,9 +1100,13 @@ export class HUD {
     const buyBtn = document.createElement('button');
     buyBtn.type = 'button';
     buyBtn.className = 'st-hud__store-buy';
+    buyBtn.setAttribute(
+      'aria-label',
+      `Buy ${acc.name} for $${acc.price.toLocaleString()}, bundle of ${acc.bundleSize}`,
+    );
     buyBtn.innerHTML =
       `<span class="st-hud__store-price">$${acc.price.toLocaleString()}</span>` +
-      `<span class="st-hud__store-bundle">${acc.blurb}</span>`;
+      `<span class="st-hud__store-bundle">+${acc.bundleSize}</span>`;
     buyBtn.addEventListener('click', () => this.buyCb?.({ accessory: key }));
     row.append(info, buyBtn);
     this.storeAccessoryCells.set(key, { buyBtn, owned });
