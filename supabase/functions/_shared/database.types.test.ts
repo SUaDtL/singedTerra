@@ -144,6 +144,19 @@ type ExpectedMatchParticipantsInsert = {
   created_at?: string;
 };
 type ExpectedMatchParticipantsUpdate = Partial<ExpectedMatchParticipantsRow>;
+type ExpectedHotseatMatchResultsRow = {
+  user_id: string;
+  match_id: string;
+  won: boolean;
+  created_at: string;
+};
+type ExpectedHotseatMatchResultsInsert = {
+  user_id: string;
+  match_id: string;
+  won: boolean;
+  created_at?: string;
+};
+type ExpectedHotseatMatchResultsUpdate = Partial<ExpectedHotseatMatchResultsRow>;
 type ExpectedRateLimitsRow = {
   bucket: string;
   window_start: number;
@@ -186,6 +199,7 @@ type _TableKeysAreExact = AssertExact<
   | "room_actions"
   | "match_scores"
   | "match_participants"
+  | "hotseat_match_results"
   | "rate_limits"
   | "room_seats"
 >;
@@ -296,6 +310,18 @@ type _MatchParticipantsInsertIsExact = AssertExact<
 type _MatchParticipantsUpdateIsExact = AssertExact<
   Tables["match_participants"]["Update"],
   ExpectedMatchParticipantsUpdate
+>;
+type _HotseatMatchResultsRowIsExact = AssertExact<
+  Tables["hotseat_match_results"]["Row"],
+  ExpectedHotseatMatchResultsRow
+>;
+type _HotseatMatchResultsInsertIsExact = AssertExact<
+  Tables["hotseat_match_results"]["Insert"],
+  ExpectedHotseatMatchResultsInsert
+>;
+type _HotseatMatchResultsUpdateIsExact = AssertExact<
+  Tables["hotseat_match_results"]["Update"],
+  ExpectedHotseatMatchResultsUpdate
 >;
 type _RateLimitsRowIsExact = AssertExact<
   Tables["rate_limits"]["Row"],
@@ -448,6 +474,16 @@ type _MatchParticipantsUserRelationshipIsExact = AssertExact<
     isOneToOne: false;
   }
 >;
+type _HotseatMatchResultsUserRelationshipIsExact = AssertExact<
+  Relationship<"hotseat_match_results">,
+  {
+    foreignKeyName: "hotseat_match_results_user_id_fkey";
+    columns: ["user_id"];
+    referencedRelation: "users";
+    referencedColumns: ["id"];
+    isOneToOne: false;
+  }
+>;
 type _RoomSeatsRelationshipIsExact = AssertExact<
   Relationship<"room_seats">,
   {
@@ -472,6 +508,9 @@ type _MatchParticipantsRoomRelationshipMustMatchEveryLiteral = AssertTrue<
 >;
 type _MatchParticipantsUserRelationshipMustMatchEveryLiteral = AssertTrue<
   _MatchParticipantsUserRelationshipIsExact
+>;
+type _HotseatMatchResultsUserRelationshipMustMatchEveryLiteral = AssertTrue<
+  _HotseatMatchResultsUserRelationshipIsExact
 >;
 type _RoomSeatsRelationshipMustMatchEveryLiteral = AssertTrue<
   _RoomSeatsRelationshipIsExact

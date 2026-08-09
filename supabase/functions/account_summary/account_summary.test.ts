@@ -10,10 +10,10 @@ const BODY_MARKER = 'body-marker-must-not-appear'
 type FakeError = { message: string }
 type QueryResult = { data: unknown; error: FakeError | null; count?: number | null }
 type QueryExpectation = {
-  table: 'match_participants' | 'match_scores'
+  table: 'match_participants' | 'match_scores' | 'hotseat_match_results'
   select: string
-  selectOptions?: { count: 'exact' }
-  filter: ['eq' | 'in', string, unknown]
+  selectOptions?: { count: 'exact'; head?: true }
+  filters: Array<['eq' | 'in', string, unknown]>
   result: QueryResult
 }
 
@@ -34,7 +34,7 @@ function participantQuery(
     table: 'match_participants',
     select: 'room_id, tank_id',
     selectOptions: requireExactCount ? { count: 'exact' } : undefined,
-    filter: ['eq', 'user_id', expectedUserId],
+    filters: [['eq', 'user_id', expectedUserId]],
     result: { data, error, count },
   }
 }
@@ -43,9 +43,34 @@ function scoreQuery(roomIds: string[], data: unknown, error: FakeError | null = 
   return {
     table: 'match_scores',
     select: 'room_id, winner',
-    filter: ['in', 'room_id', roomIds],
+    filters: [['in', 'room_id', roomIds]],
     result: { data, error },
   }
+}
+
+function hotseatCountQuery(
+  count: number | null,
+  wonOnly = false,
+  error: FakeError | null = null,
+  expectedUserId = USER_ID,
+): QueryExpectation {
+  return {
+    table: 'hotseat_match_results',
+    select: 'match_id',
+    selectOptions: { count: 'exact', head: true },
+    filters: [
+      ['eq', 'user_id', expectedUserId],
+      ...(wonOnly ? [['eq', 'won', true] as ['eq', string, unknown]] : []),
+    ],
+    result: { data: null, error, count },
+  }
+}
+
+function localCounts(matches = 0, wins = 0, expectedUserId = USER_ID): QueryExpectation[] {
+  return [
+    hotseatCountQuery(matches, false, null, expectedUserId),
+    hotseatCountQuery(wins, true, null, expectedUserId),
+  ]
 }
 
 function makeFixture(options: FakeOptions = {}) {
@@ -74,18 +99,25 @@ function makeFixture(options: FakeOptions = {}) {
           if (expected.selectOptions) {
             assertEquals(options, expected.selectOptions, `query ${queryIndex + 1} select options`)
           }
-          return {
-            eq: async (field: string, value: unknown) => {
-              assertEquals(['eq', field, value], expected.filter, `query ${queryIndex + 1} filter`)
-              queryIndex += 1
-              return expected.result
+          let filterIndex = 0
+          const query = {
+            eq: (field: string, value: unknown) => {
+              assertEquals(['eq', field, value], expected.filters[filterIndex], `query ${queryIndex + 1} filter`)
+              filterIndex += 1
+              return query
             },
-            in: async (field: string, value: unknown) => {
-              assertEquals(['in', field, value], expected.filter, `query ${queryIndex + 1} filter`)
+            in: (field: string, value: unknown) => {
+              assertEquals(['in', field, value], expected.filters[filterIndex], `query ${queryIndex + 1} filter`)
+              filterIndex += 1
+              return query
+            },
+            then: (resolve: (value: QueryResult) => unknown) => {
+              assertEquals(filterIndex, expected.filters.length, `query ${queryIndex + 1} consumed filters`)
               queryIndex += 1
-              return expected.result
+              return Promise.resolve(resolve(expected.result))
             },
           }
+          return query
         },
       }
     },
@@ -161,6 +193,7 @@ Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignore
           { room_id: rooms[0], winner: 'p2' },
           { room_id: rooms[1], winner: 'p2' },
         ]),
+        ...localCounts(0, 0, OTHER_USER_ID),
       ],
       authUserId: OTHER_USER_ID,
     },
@@ -190,7 +223,7 @@ Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignore
 })
 
 Deno.test('handleAccountSummary returns exact zero counts without querying scores when no links exist (catches unnecessary broad score reads)', async () => {
-  const { fixture, payload } = await expectResponse({ queries: [participantQuery([])] }, 200)
+  const { fixture, payload } = await expectResponse({ queries: [participantQuery([]), ...localCounts()] }, 200)
   assertEquals(payload, {
     matchesPlayed: 0,
     wins: 0,
@@ -200,7 +233,7 @@ Deno.test('handleAccountSummary returns exact zero counts without querying score
     levelXp: 0,
     nextLevelXp: 500,
   })
-  assertEquals(fixture.queryCount(), 1)
+  assertEquals(fixture.queryCount(), 3)
 })
 
 Deno.test('handleAccountSummary derives exact wins, losses, and draws from persisted winners (catches wrong winner comparison)', async () => {
@@ -220,6 +253,7 @@ Deno.test('handleAccountSummary derives exact wins, losses, and draws from persi
           { room_id: rooms[3], winner: 'p1' },
           { room_id: rooms[1], winner: 'p1' },
         ]),
+        ...localCounts(),
       ],
     },
     200,
@@ -259,6 +293,7 @@ Deno.test('handleAccountSummary derives version-one progression from eight match
           room_id,
           winner: index < 2 ? `p${index + 1}` : null,
         }))),
+        ...localCounts(),
       ],
     },
     200,
@@ -406,6 +441,7 @@ Deno.test('handleAccountSummary batches realistic room UUID score filters and ag
         scoreQuery(roomIdBatches[0], scoreBatches[0]),
         scoreQuery(roomIdBatches[1], scoreBatches[1]),
         scoreQuery(roomIdBatches[2], scoreBatches[2]),
+        ...localCounts(),
       ],
     },
     200,
@@ -419,6 +455,63 @@ Deno.test('handleAccountSummary batches realistic room UUID score filters and ag
     levelXp: 300,
     nextLevelXp: 500,
   })
+})
+
+Deno.test('handleAccountSummary awards one local win as one match, one win, and 200 XP', async () => {
+  const { payload } = await expectResponse({
+    queries: [participantQuery([]), ...localCounts(1, 1)],
+  }, 200)
+  assertEquals(payload, {
+    matchesPlayed: 1,
+    wins: 1,
+    progressionVersion: 1,
+    totalXp: 200,
+    level: 1,
+    levelXp: 200,
+    nextLevelXp: 500,
+  })
+})
+
+Deno.test('handleAccountSummary combines network and hot-seat history before deriving progression', async () => {
+  const rooms = ['room-win', 'room-loss']
+  const { payload } = await expectResponse({
+    queries: [
+      participantQuery([
+        { room_id: rooms[0], tank_id: 'p1' },
+        { room_id: rooms[1], tank_id: 'p2' },
+      ]),
+      scoreQuery(rooms, [
+        { room_id: rooms[0], winner: 'p1' },
+        { room_id: rooms[1], winner: 'p1' },
+      ]),
+      ...localCounts(3, 2),
+    ],
+  }, 200)
+  assertEquals(payload, {
+    matchesPlayed: 5,
+    wins: 3,
+    progressionVersion: 1,
+    totalXp: 800,
+    level: 2,
+    levelXp: 300,
+    nextLevelXp: 500,
+  })
+})
+
+Deno.test('handleAccountSummary fails closed on local count errors, malformed counts, or unsafe combined arithmetic', async () => {
+  const cases: QueryExpectation[][] = [
+    [participantQuery([]), hotseatCountQuery(null, false, { message: 'local count down' })],
+    [participantQuery([]), hotseatCountQuery(null), hotseatCountQuery(0, true)],
+    [participantQuery([]), hotseatCountQuery(-1), hotseatCountQuery(0, true)],
+    [participantQuery([]), hotseatCountQuery(1.5), hotseatCountQuery(0, true)],
+    [participantQuery([]), hotseatCountQuery(1), hotseatCountQuery(2, true)],
+    [participantQuery([]), ...localCounts(90_071_992_547_410, 0)],
+    [participantQuery([{ room_id: 'room-one', tank_id: 'p1' }]), scoreQuery(['room-one'], [{ room_id: 'room-one', winner: null }]), ...localCounts(Number.MAX_SAFE_INTEGER, 0)],
+  ]
+  for (const queries of cases) {
+    const { payload } = await expectResponse({ queries }, 500)
+    assertEquals(payload, { error: 'summary_unavailable' })
+  }
 })
 
 Deno.test('handleAccountSummary fails generically when a later bounded score batch errors (catches partial aggregate success)', async () => {

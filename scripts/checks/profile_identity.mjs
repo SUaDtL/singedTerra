@@ -21,9 +21,23 @@ const matchParticipantsMigrationPath = join(
   'migrations',
   '014_match_participants.sql',
 );
+const hotseatMatchResultsMigrationPath = join(
+  root,
+  'supabase',
+  'migrations',
+  '015_hotseat_match_results.sql',
+);
 const claimMatchFunctionPath = join(root, 'supabase', 'functions', 'claim_match', 'index.ts');
 const accountSummaryFunctionPath = join(root, 'supabase', 'functions', 'account_summary', 'index.ts');
+const recordHotseatMatchFunctionPath = join(root, 'supabase', 'functions', 'record_hotseat_match', 'index.ts');
 const sharedModPath = join(root, 'supabase', 'functions', '_shared', 'mod.ts');
+const securityControlsPath = join(root, '.codearbiter', 'security-controls.md');
+const casualHotseatAdrPath = join(
+  root,
+  '.codearbiter',
+  'decisions',
+  '0012-client-attested-hotseat-results.md',
+);
 const packagePath = join(root, 'package.json');
 
 function fail(message) {
@@ -145,7 +159,15 @@ function normalizeStatement(statement) {
 const config = await readFile(configPath, 'utf8');
 const claimMatchFunction = await readFile(claimMatchFunctionPath, 'utf8');
 const accountSummaryFunction = await readFile(accountSummaryFunctionPath, 'utf8');
+const recordHotseatMatchFunction = await readFile(recordHotseatMatchFunctionPath, 'utf8');
 const sharedMod = await readFile(sharedModPath, 'utf8');
+const securityControls = await readFile(securityControlsPath, 'utf8');
+let casualHotseatAdr;
+try {
+  casualHotseatAdr = await readFile(casualHotseatAdrPath, 'utf8');
+} catch {
+  fail(`required casual hot-seat progression ADR is missing: ${casualHotseatAdrPath}`);
+}
 const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
 let migration;
 try {
@@ -164,6 +186,12 @@ try {
   matchParticipantsMigration = await readFile(matchParticipantsMigrationPath, 'utf8');
 } catch {
   fail(`required migration is missing: ${matchParticipantsMigrationPath}`);
+}
+let hotseatMatchResultsMigration;
+try {
+  hotseatMatchResultsMigration = await readFile(hotseatMatchResultsMigrationPath, 'utf8');
+} catch {
+  fail(`required migration is missing: ${hotseatMatchResultsMigrationPath}`);
 }
 
 const normalizedMigration = migration.replace(/\r\n/g, '\n');
@@ -245,6 +273,9 @@ if (!/^\[functions\.claim_match\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(confi
 if (!/^\[functions\.account_summary\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
   fail('[functions.account_summary].verify_jwt must be false for in-handler bearer validation');
 }
+if (!/^\[functions\.record_hotseat_match\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
+  fail('[functions.record_hotseat_match].verify_jwt must be false for in-handler bearer validation');
+}
 if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleClaimMatch\s*,\s*\{\s*rateLimit\s*:\s*['"]claim_match['"]\s*\}\s*\)\s*\)/s.test(claimMatchFunction)) {
   fail('claim_match must remain served through withCors(handleClaimMatch, { rateLimit: claim_match })');
 }
@@ -257,6 +288,21 @@ if (!/^\s*claim_match\s*:\s*60\s*,?\s*$/m.test(rateLimitsBlock)) {
 if (!/^\s*account_summary\s*:\s*60\s*,?\s*$/m.test(rateLimitsBlock)) {
   fail('RATE_LIMITS must contain an explicit account_summary bucket at 60 requests per minute');
 }
+if (!/^\s*record_hotseat_match\s*:\s*20\s*,?\s*$/m.test(rateLimitsBlock)) {
+  fail('RATE_LIMITS must contain an explicit record_hotseat_match bucket at 20 requests per minute');
+}
+if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleRecordHotSeatMatch\s*,\s*\{[\s\S]*?rateLimit\s*:\s*['"]record_hotseat_match['"][\s\S]*?\}\s*\)\s*\)/s.test(recordHotseatMatchFunction)) {
+  fail('record_hotseat_match must use the named rate-limit bucket');
+}
+if (!/authenticateBearer\s*\(\s*req\s*,\s*supabase\s*\)/.test(recordHotseatMatchFunction)) {
+  fail('record_hotseat_match must derive its user through Supabase Auth');
+}
+if (!/Object\.keys\s*\(\s*record\s*\)\.length\s*===\s*2/.test(recordHotseatMatchFunction)) {
+  fail('record_hotseat_match must accept only its exact two-key body');
+}
+if (/\b(?:userId|user_id|xp|level|reward|entitlement)\b\s*[:=]\s*(?:body|record)\b/.test(recordHotseatMatchFunction)) {
+  fail('record_hotseat_match must not derive identity or progression authority from its body');
+}
 if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleAccountSummary\s*,\s*\{[\s\S]*?optionalBody\s*:\s*true[\s\S]*?rateLimit\s*:\s*['"]account_summary['"][\s\S]*?\}\s*\)\s*\)/s.test(accountSummaryFunction)) {
   fail('account_summary must use optional body parsing and the named account_summary rate bucket');
 }
@@ -265,6 +311,12 @@ if (!/authenticateBearer\s*\(\s*req\s*,\s*supabase\s*\)/s.test(accountSummaryFun
 }
 if (!/\.from\s*\(\s*['"]match_participants['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]user_id['"]\s*,\s*userId\s*\)/s.test(accountSummaryFunction)) {
   fail('account_summary must scope participant reads to the Auth-derived user id');
+}
+if (!/\.from\s*\(\s*['"]hotseat_match_results['"]\s*\)[\s\S]*?\.select\s*\(\s*['"]match_id['"]\s*,\s*\{\s*count\s*:\s*['"]exact['"]\s*,\s*head\s*:\s*true\s*\}\s*\)[\s\S]*?\.eq\s*\(\s*['"]user_id['"]\s*,\s*userId\s*\)/s.test(accountSummaryFunction)) {
+  fail('account_summary must use exact count-only Auth-scoped hot-seat result reads');
+}
+if (!/\.eq\s*\(\s*['"]won['"]\s*,\s*true\s*\)/.test(accountSummaryFunction)) {
+  fail('account_summary must derive hot-seat wins from stored boolean outcomes');
 }
 if (!/const\s+SCORE_ROOM_BATCH_SIZE\s*=\s*200\b/.test(accountSummaryFunction)) {
   fail('account_summary must declare the reviewed conservative 200-room score batch size');
@@ -285,8 +337,13 @@ const requiredProgressionControls = [
   /const\s+XP_PER_LEVEL\s*=\s*500\b/,
   /export\s+function\s+progressionFromTotalXp\s*\(\s*totalXp\s*:\s*number\s*\)\s*:\s*AccountProgression\s*\{[\s\S]*?progressionVersion\s*:\s*PROGRESSION_VERSION[\s\S]*?totalXp\s*,[\s\S]*?level\s*:\s*Math\.floor\s*\(\s*totalXp\s*\/\s*XP_PER_LEVEL\s*\)\s*\+\s*1[\s\S]*?levelXp\s*:\s*totalXp\s*%\s*XP_PER_LEVEL[\s\S]*?nextLevelXp\s*:\s*XP_PER_LEVEL[\s\S]*?\}/,
   /export\s+function\s+deriveProgression\s*\(\s*matchesPlayed\s*:\s*number\s*,\s*wins\s*:\s*number\s*\)\s*:\s*AccountProgression\s*\{\s*return\s+progressionFromTotalXp\s*\(\s*matchesPlayed\s*\*\s*MATCH_XP\s*\+\s*wins\s*\*\s*WIN_XP\s*\)\s*\}/,
-  /return\s+json\s*\(\s*\{\s*matchesPlayed\s*:\s*0\s*,\s*wins\s*:\s*0\s*,\s*\.\.\.deriveProgression\s*\(\s*0\s*,\s*0\s*\)\s*\}\s*\)/,
-  /return\s+json\s*\(\s*\{\s*matchesPlayed\s*:\s*participantData\.length\s*,\s*wins\s*,\s*\.\.\.deriveProgression\s*\(\s*participantData\.length\s*,\s*wins\s*\)\s*,?\s*\}\s*\)/,
+  /const\s+matchesPlayed\s*=\s*participantData\.length\s*\+\s*\(localMatches\s+as\s+number\)/,
+  /const\s+wins\s*=\s*networkWins\s*\+\s*\(localWins\s+as\s+number\)/,
+  /const\s+matchXp\s*=\s*matchesPlayed\s*\*\s*MATCH_XP/,
+  /const\s+winXp\s*=\s*wins\s*\*\s*WIN_XP/,
+  /const\s+totalXp\s*=\s*matchXp\s*\+\s*winXp/,
+  /!Number\.isSafeInteger\s*\(\s*matchXp\s*\)[\s\S]*?!Number\.isSafeInteger\s*\(\s*winXp\s*\)[\s\S]*?!Number\.isSafeInteger\s*\(\s*totalXp\s*\)/,
+  /return\s+json\s*\(\s*\{[\s\S]*?matchesPlayed\s*,[\s\S]*?wins\s*,[\s\S]*?\.\.\.progressionFromTotalXp\s*\(\s*totalXp\s*\)[\s\S]*?\}\s*\)/,
 ];
 if (requiredProgressionControls.some((pattern) => !pattern.test(accountSummaryFunction))) {
   fail('account_summary must retain the reviewed version-one server-derived progression formula');
@@ -600,4 +657,94 @@ if (matchParticipantsMigrationDigest !== expectedMatchParticipantsMigrationDiges
   fail('014_match_participants.sql differs from its reviewed immutable migration digest');
 }
 
-console.log('PASS: password auth config, profiles, and owner-private match participant migrations satisfy ADR-0011.');
+const hotseatMatchResultsSqlWithoutComments = stripSqlComments(hotseatMatchResultsMigration);
+const hotseatMatchResultsSqlStructure = maskSqlLiterals(hotseatMatchResultsSqlWithoutComments);
+const requiredHotseatMatchResultsControls = [
+  /CREATE TABLE public\.hotseat_match_results/i,
+  /user_id\s+uuid\s+NOT NULL\s+REFERENCES auth\.users\s*\(id\)\s+ON DELETE CASCADE/i,
+  /match_id\s+uuid\s+NOT NULL/i,
+  /won\s+boolean\s+NOT NULL/i,
+  /created_at\s+timestamptz\s+NOT NULL\s+DEFAULT now\(\)/i,
+  /PRIMARY KEY\s*\(\s*user_id\s*,\s*match_id\s*\)/i,
+  /ALTER TABLE public\.hotseat_match_results ENABLE ROW LEVEL SECURITY/i,
+  /REVOKE ALL ON TABLE public\.hotseat_match_results FROM PUBLIC, anon, authenticated/i,
+  /GRANT SELECT ON TABLE public\.hotseat_match_results TO authenticated/i,
+  /REVOKE INSERT, UPDATE, DELETE ON TABLE public\.hotseat_match_results FROM authenticated/i,
+  /REVOKE ALL ON TABLE public\.hotseat_match_results FROM service_role/i,
+  /GRANT SELECT, INSERT ON TABLE public\.hotseat_match_results TO service_role/i,
+  /CREATE POLICY hotseat_match_results_select_own[\s\S]*FOR SELECT[\s\S]*TO authenticated[\s\S]*USING\s*\(\s*\(select auth\.uid\(\)\)\s*=\s*user_id\s*\)/i,
+];
+if (requiredHotseatMatchResultsControls.some((pattern) => !pattern.test(hotseatMatchResultsSqlStructure))) {
+  fail('required hot-seat match result migration contract is missing');
+}
+
+const hotseatPolicies = [
+  ...hotseatMatchResultsSqlWithoutComments.matchAll(/\bCREATE\s+POLICY\s+[^;]+;/ig),
+].map((match) => normalizeStatement(match[0]));
+if (
+  hotseatPolicies.length !== 1
+  || hotseatPolicies[0]
+    !== 'create policy hotseat_match_results_select_own on public.hotseat_match_results for select to authenticated using ((select auth.uid()) = user_id);'
+) {
+  fail('migration permits exactly the owner-only hot-seat result SELECT policy');
+}
+
+const forbiddenHotseatMatchResultsControls = [
+  { label: 'destructive statement', pattern: /\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE\s+public\.hotseat_match_results)\b/i },
+  { label: 'RLS disable', pattern: /DISABLE\s+ROW\s+LEVEL\s+SECURITY/i },
+  { label: 'credential or progression column', pattern: /^\s*(?:email|password|access_token|refresh_token|seat_token|jwt|xp|level|reward|entitlement)\s+[a-z]/im },
+  { label: 'public grant', pattern: /GRANT\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)[^;]*\sTO\s+(?:PUBLIC|anon)\b/i },
+  { label: 'authenticated write grant', pattern: /GRANT\s+(?:ALL|INSERT|UPDATE|DELETE)[^;]*\sTO\s+authenticated\b/i },
+  { label: 'write policy', pattern: /CREATE\s+POLICY[\s\S]*?FOR\s+(?:INSERT|UPDATE|DELETE|ALL)\b/i },
+  { label: 'public policy', pattern: /CREATE\s+POLICY[\s\S]*?\bTO\s+(?:PUBLIC|anon)\b/i },
+  { label: 'policy alteration', pattern: /\bALTER\s+POLICY\b/i },
+  { label: 'dynamic SQL', pattern: /\bEXECUTE\b(?!\s+FUNCTION\b)/i },
+];
+for (const { label, pattern } of forbiddenHotseatMatchResultsControls) {
+  if (pattern.test(hotseatMatchResultsSqlWithoutComments)) {
+    fail(`hot-seat result migration contains forbidden ${label}`);
+  }
+}
+const hotseatMutation = `${hotseatMatchResultsSqlWithoutComments}\nGRANT INSERT ON TABLE public.hotseat_match_results TO authenticated;`;
+if (!forbiddenHotseatMatchResultsControls.some(({ pattern }) => pattern.test(hotseatMutation))) {
+  fail('hot-seat migration mutation probe accepted an authenticated write grant');
+}
+
+const requiredHotseatClassifications = [
+  /COMMENT ON TABLE public\.hotseat_match_results IS 'classification: PRIVATE/i,
+  /COMMENT ON COLUMN public\.hotseat_match_results\.user_id IS 'classification: PRIVATE/i,
+  /COMMENT ON COLUMN public\.hotseat_match_results\.match_id IS 'classification: PRIVATE/i,
+  /COMMENT ON COLUMN public\.hotseat_match_results\.won IS 'classification: PRIVATE/i,
+  /COMMENT ON COLUMN public\.hotseat_match_results\.created_at IS 'classification: INTERNAL/i,
+];
+if (requiredHotseatClassifications.some((pattern) => !pattern.test(hotseatMatchResultsSqlWithoutComments))) {
+  fail('hot-seat result table and every stored column require classification statements');
+}
+
+const normalizedHotseatMatchResultsMigration = hotseatMatchResultsMigration.replace(/\r\n/g, '\n');
+const hotseatMatchResultsMigrationDigest = createHash('sha256')
+  .update(normalizedHotseatMatchResultsMigration)
+  .digest('hex');
+const expectedHotseatMatchResultsMigrationDigest = '0aa7d21dbb9cf3f69ba08fcf01aa32d3a9f50bb8e982bd28d6327f969e83ff7e';
+if (hotseatMatchResultsMigrationDigest !== expectedHotseatMatchResultsMigrationDigest) {
+  fail('015_hotseat_match_results.sql differs from its reviewed immutable migration digest');
+}
+
+const requiredCasualHistoryControls = [
+  'client-attested hot-seat match outcome',
+  'MUST NOT supply XP, level, cumulative totals, rewards, or entitlements',
+  'MUST NOT attach gameplay advantages, scarce rewards, entitlements, ranks, or anti-cheat claims',
+];
+if (requiredCasualHistoryControls.some((control) => !securityControls.includes(control))) {
+  fail('security controls must state the narrow client-attested hot-seat exception and its non-entitlement ceiling');
+}
+if (
+  !casualHotseatAdr.includes('status: accepted')
+  || !casualHotseatAdr.includes('supersedes: 0011-password-auth-before-google-sso')
+  || !casualHotseatAdr.includes('client-attested hot-seat match outcome')
+  || !casualHotseatAdr.includes('casual history only')
+) {
+  fail('ADR-0012 must record the accepted, partial ADR-0011 exception for casual hot-seat history');
+}
+
+console.log('PASS: password auth and owner-private progression storage satisfy ADR-0011 plus its bounded ADR-0012 exception.');

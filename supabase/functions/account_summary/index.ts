@@ -76,7 +76,7 @@ export async function handleAccountSummary(
   if (!userId) return json({ error: 'summary_unavailable' }, 401)
 
   const logger = dependencies.logger ?? ((message, context) => console.error(message, context))
-  const fail = (message: string, stage: 'participants' | 'scores'): Response => {
+  const fail = (message: string, stage: 'participants' | 'scores' | 'hotseat'): Response => {
     logger(`account_summary: ${message}`, { stage, error: 'query_failed' })
     return json({ error: 'summary_unavailable' }, 500)
   }
@@ -103,10 +103,6 @@ export async function handleAccountSummary(
   if (new Set(roomIds).size !== roomIds.length) {
     return fail('participant data inconsistent', 'participants')
   }
-  if (participantData.length === 0) {
-    return json({ matchesPlayed: 0, wins: 0, ...deriveProgression(0, 0) })
-  }
-
   const scoreData: MatchScore[] = []
   for (let scoreOffset = 0; scoreOffset < roomIds.length; scoreOffset += SCORE_ROOM_BATCH_SIZE) {
     const roomIdBatch = roomIds.slice(scoreOffset, scoreOffset + SCORE_ROOM_BATCH_SIZE)
@@ -133,16 +129,57 @@ export async function handleAccountSummary(
     return fail('score data inconsistent', 'scores')
   }
 
-  let wins = 0
+  let networkWins = 0
   for (const link of participantData) {
     const score = scoresByRoom.get(link.room_id)
     if (!score) return fail('score data inconsistent', 'scores')
-    if (score.winner === link.tank_id) wins += 1
+    if (score.winner === link.tank_id) networkWins += 1
+  }
+
+  const localMatchResult = await supabase
+    .from('hotseat_match_results')
+    .select('match_id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+  if (localMatchResult.error) return fail('hot-seat match count failed', 'hotseat')
+
+  const localWinResult = await supabase
+    .from('hotseat_match_results')
+    .select('match_id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('won', true)
+  if (localWinResult.error) return fail('hot-seat win count failed', 'hotseat')
+
+  const localMatches = localMatchResult.count
+  const localWins = localWinResult.count
+  if (
+    !Number.isSafeInteger(localMatches)
+    || !Number.isSafeInteger(localWins)
+    || (localMatches as number) < 0
+    || (localWins as number) < 0
+    || (localWins as number) > (localMatches as number)
+  ) {
+    return fail('hot-seat counts inconsistent', 'hotseat')
+  }
+
+  const matchesPlayed = participantData.length + (localMatches as number)
+  const wins = networkWins + (localWins as number)
+  if (!Number.isSafeInteger(matchesPlayed) || !Number.isSafeInteger(wins)) {
+    return fail('combined counts unsafe', 'hotseat')
+  }
+  const matchXp = matchesPlayed * MATCH_XP
+  const winXp = wins * WIN_XP
+  const totalXp = matchXp + winXp
+  if (
+    !Number.isSafeInteger(matchXp)
+    || !Number.isSafeInteger(winXp)
+    || !Number.isSafeInteger(totalXp)
+  ) {
+    return fail('progression arithmetic unsafe', 'hotseat')
   }
   return json({
-    matchesPlayed: participantData.length,
+    matchesPlayed,
     wins,
-    ...deriveProgression(participantData.length, wins),
+    ...progressionFromTotalXp(totalXp),
   })
 }
 

@@ -12,6 +12,7 @@ class FakeAccountSession implements AccountSessionPort {
   readonly submit = vi.fn(async (_mode: AccountMode, _credentials: AccountCredentials) => undefined)
   readonly signOut = vi.fn(async () => undefined)
   readonly refresh = vi.fn(async () => undefined)
+  readonly recordHotSeatMatch = vi.fn(async () => true)
 
   constructor(private readonly onChange: (state: AccountState) => void) {}
 
@@ -102,6 +103,23 @@ describe('Lobby account composition', () => {
     await lobby.refreshAccount()
 
     expect(account.refresh).toHaveBeenCalledOnce()
+  })
+
+  it('delegates one hot-seat result to the persistent account owner', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange)
+      return account
+    })
+    const result = {
+      matchId: '00000000-0000-4000-8000-000000000071',
+      won: true,
+    }
+
+    await expect(lobby.recordHotSeatMatch(result)).resolves.toBe(true)
+
+    expect(account.recordHotSeatMatch).toHaveBeenCalledWith(result)
   })
 
   it('omits accounts when unavailable without blocking hot-seat', () => {

@@ -1,5 +1,7 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { hasSupabaseConfig } from '../lib/supabaseConfig'
+import type { HotSeatMatchResult } from './hotSeatProgression'
+import { postOnceWithRetry } from './retry'
 
 export type AccountMode = 'sign-in' | 'create'
 
@@ -41,6 +43,7 @@ export interface AccountBackend {
   signIn(credentials: Pick<AccountCredentials, 'email' | 'password'>): Promise<AccountUser>
   signOut(): Promise<void>
   loadProfile(userId: string): Promise<AccountProfile>
+  recordHotSeatMatch(result: HotSeatMatchResult): Promise<void>
 }
 
 export interface AccountSessionOptions {
@@ -164,6 +167,24 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
     async signOut() {
       const { error } = await client.auth.signOut()
       throwSupabaseError(error)
+    },
+
+    async recordHotSeatMatch(result) {
+      const { data, error } = await client.functions.invoke('record_hotseat_match', {
+        body: result,
+      })
+      throwSupabaseError(error)
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('Hot-seat result was not accepted.')
+      }
+      const response = data as Record<string, unknown>
+      if (
+        Object.keys(response).length !== 2
+        || response.ok !== true
+        || typeof response.recorded !== 'boolean'
+      ) {
+        throw new Error('Hot-seat result was not accepted.')
+      }
     },
 
     async loadProfile(userId) {
@@ -350,6 +371,30 @@ export class AccountSession {
     } catch {
       // Refresh is opportunistic. Keep the last trusted profile visible when the
       // optional summary read is unavailable; a later match/auth event can retry.
+    }
+  }
+
+  async recordHotSeatMatch(result: HotSeatMatchResult): Promise<boolean> {
+    await this.initialize()
+    if (
+      !this.backend
+      || this.disposed
+      || this.current.status !== 'authenticated'
+      || this.current.busy
+    ) return false
+    const backend = this.backend
+    try {
+      const delivery = await postOnceWithRetry(
+        () => backend.recordHotSeatMatch(result),
+        2,
+      )
+      if (!delivery.ok) return false
+      await this.refresh()
+      return true
+    } catch {
+      // Match reporting is opportunistic. Preserve gameplay and the last trusted
+      // account state when delivery or the follow-up summary refresh cannot complete.
+      return false
     }
   }
 

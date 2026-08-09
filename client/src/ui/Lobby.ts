@@ -41,6 +41,7 @@ import {
   type AccountMode,
   type AccountState,
 } from '../client/AccountSession';
+import type { HotSeatMatchResult } from '../client/hotSeatProgression';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
   normalizeNetworkRulesetVersion,
@@ -234,6 +235,7 @@ export interface AccountSessionPort {
   submit(mode: AccountMode, credentials: AccountCredentials): Promise<void>;
   signOut(): Promise<void>;
   refresh(): Promise<void>;
+  recordHotSeatMatch(result: HotSeatMatchResult): Promise<boolean>;
 }
 
 type AccountSessionFactory = (
@@ -472,6 +474,10 @@ export class Lobby {
 
   refreshAccount(): Promise<void> {
     return this.accountSession.refresh();
+  }
+
+  recordHotSeatMatch(result: HotSeatMatchResult): Promise<boolean> {
+    return this.accountSession.recordHotSeatMatch(result);
   }
 
   /** Inject the lobby's scoped <style> once (do NOT edit index.html). */

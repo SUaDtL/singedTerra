@@ -6,6 +6,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { GameState } from '@shared/types/GameState';
 import type { GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
+import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { rematchToConfig } from './client/rematchConfig';
 import { InputHandler } from './input/InputHandler';
@@ -329,6 +330,13 @@ function bootstrap(): void {
       initial.tanks[1]!.totalDamage = 52;
     }
     const activeTank = initial?.tanks.find((t) => t.id === initial.activePlayerId);
+    const accountTank = initial?.tanks[0];
+    const hotSeatProgression = createHotSeatProgressionReporter({
+      mode: config.mode,
+      e2eMode: E2E_MODE,
+      accountTankId: accountTank && !accountTank.ai ? accountTank.id : null,
+      report: (result) => lobby.recordHotSeatMatch(result),
+    });
     lastActiveId = initial?.activePlayerId ?? null;
 
     // Human input is dropped while a CPU tank holds the turn (its keys would
@@ -403,6 +411,7 @@ function bootstrap(): void {
     }
 
     unsubscribe = newClient.onStateChange((state) => {
+      hotSeatProgression?.observe(state);
       if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) exposeDeterministicHotSeatProbe(state);
       // Aim guide is shown only when the LOCAL human controls the active tank: a
       // human turn in hot-seat, or (networked) the active tank is THIS client's id.

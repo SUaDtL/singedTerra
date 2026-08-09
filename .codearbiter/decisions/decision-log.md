@@ -381,3 +381,28 @@ Securable and Reliable require a stable server-verifiable user id before progres
 ADR-0011 governs Supabase auth configuration, identity migrations/functions, and client account/session integration. The next bounded slice establishes account identity and profile ownership only; progression rules and Google OAuth remain separate follow-on slices.
 
 ---
+
+## DECISION-0015 - ADR-0012 - Allow client-attested hot-seat results for casual progression history
+
+**Date:** 2026-08-09
+**Status:** accepted
+**Supersedes:** DECISION-0014
+**Decided by:** SUaDtL (standing explicit approval of the bounded persistent-hotseat-progression spec and plan)
+**Decision category:** architecture / security / progression
+**Artifact-section-hash:** 423c5c26ec3b6292ab42ca1fcf3db4fcbd4d845a22cbdb7fcd9dd3968ee24903
+
+### Variance summary
+- **Artifact position:** ADR-0011 forbids trusting any client-reported progress as an account write.
+- **Scaffold position:** The user-approved persistent-hotseat-progression spec permits one Auth-owned, client-attested local outcome under a strict casual-history trust ceiling.
+- **Status type:** same-level-conflict-resolution
+
+### Decision
+Allow an authenticated browser to submit one immutable and idempotent `{matchId, won}` hot-seat result for casual progression history. The server still derives user identity, exact counts, XP, and level; client-supplied totals and every gameplay, reward, rank, entitlement, or anti-cheat consequence remain forbidden. This supersedes only ADR-0011's blanket client-input prohibition and leaves its Auth, RLS, secret, and server-owned-total controls in force.
+
+### SMARTS rationale
+Reliable and Available favor durable credit for ordinary local matches instead of silently excluding the primary offline mode. Securable bounds the weaker evidence to a validated account, immutable result shape, canonical idempotency, owner-private storage, fixed arithmetic, and a non-entitlement ceiling. Maintainable and Testable favor one additive table and thin referee over a second action-log upload/replay architecture, while Scalable remains bounded by count-only queries and rate limiting. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0012 governs migration 015, `record_hotseat_match`, hot-seat aggregation in `account_summary`, and the client terminal reporter. Security controls and mutation-resistant tests must state and enforce the narrow exception without weakening the ban on browser-owned identity, totals, benefits, or secrets.
+
+---

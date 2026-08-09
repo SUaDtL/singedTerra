@@ -208,6 +208,35 @@ export type Database = {
           },
         ];
       };
+      hotseat_match_results: {
+        Row: {
+          user_id: string;
+          match_id: string;
+          won: boolean;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          match_id: string;
+          won: boolean;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          match_id?: string;
+          won?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "hotseat_match_results_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       rate_limits: {
         Row: { bucket: string; window_start: number; count: number };
         Insert: { bucket: string; window_start: number; count?: number };

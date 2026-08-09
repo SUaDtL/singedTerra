@@ -314,6 +314,8 @@ Deno.test('rateLimitFor: known buckets and default fallback', () => {
   assertEqual(rateLimitFor('restart_game'), 10, 'restart_game')
   assertEqual(Object.hasOwn(RATE_LIMITS, 'account_summary'), true, 'account_summary has an explicit bucket')
   assertEqual(rateLimitFor('account_summary'), 60, 'account_summary')
+  assertEqual(Object.hasOwn(RATE_LIMITS, 'record_hotseat_match'), true, 'record_hotseat_match has an explicit bucket')
+  assertEqual(rateLimitFor('record_hotseat_match'), 20, 'record_hotseat_match')
   assertEqual(rateLimitFor('heartbeat'), RATE_LIMIT_DEFAULT, 'unknown → default')
 })
 

@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.account_summary]
 verify_jwt = false
+
+[functions.record_hotseat_match]
+verify_jwt = false

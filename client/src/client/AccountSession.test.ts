@@ -32,11 +32,47 @@ function backend(overrides: Partial<AccountBackend> = {}): AccountBackend {
     signIn: vi.fn(async () => ({ id: 'user-1' })),
     signOut: vi.fn(async () => undefined),
     loadProfile: vi.fn(async () => ({ id: 'user-1', displayName: 'Ranger', summary: null })),
+    recordHotSeatMatch: vi.fn(async () => undefined),
     ...overrides,
   }
 }
 
 describe('createSupabaseAccountBackend', () => {
+  it('invokes the bounded hot-seat result function with only match id and outcome', async () => {
+    const invoke = vi.fn(async () => ({ data: { ok: true, recorded: true }, error: null }))
+    const gateway = createSupabaseAccountBackend({
+      auth: {},
+      functions: { invoke },
+    } as never)
+
+    await expect(gateway.recordHotSeatMatch({
+      matchId: '00000000-0000-4000-8000-000000000071',
+      won: true,
+    })).resolves.toBeUndefined()
+    expect(invoke).toHaveBeenCalledWith('record_hotseat_match', {
+      body: {
+        matchId: '00000000-0000-4000-8000-000000000071',
+        won: true,
+      },
+    })
+  })
+
+  it.each([
+    ['function error', { data: null, error: { message: 'record unavailable' } }],
+    ['malformed success', { data: { ok: true, recorded: 'yes' }, error: null }],
+    ['extra response authority', { data: { ok: true, recorded: true, xp: 999 }, error: null }],
+  ])('rejects a %s without exposing a false progression success', async (_label, response) => {
+    const gateway = createSupabaseAccountBackend({
+      auth: {},
+      functions: { invoke: vi.fn(async () => response) },
+    } as never)
+
+    await expect(gateway.recordHotSeatMatch({
+      matchId: '00000000-0000-4000-8000-000000000071',
+      won: true,
+    })).rejects.toThrow()
+  })
+
   it('forwards exact signup fields and maps the owner profile without retaining credentials', async () => {
     const signUp = vi.fn(async () => ({
       data: { user: { id: 'user-7' }, session: { user: { id: 'user-7' } } },
@@ -411,6 +447,109 @@ describe('AccountSession', () => {
 
   beforeEach(() => {
     states = []
+  })
+
+  it('records only for an authenticated account and refreshes its summary after success', async () => {
+    const recordHotSeatMatch = vi.fn(async () => undefined)
+    const loadProfile = vi.fn(async () => ({
+      id: 'user-1',
+      displayName: 'Ranger',
+      summary: {
+        matchesPlayed: 1,
+        wins: 1,
+        progressionVersion: 1 as const,
+        totalXp: 200,
+        level: 1,
+        levelXp: 200,
+        nextLevelXp: 500,
+      },
+    }))
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      recordHotSeatMatch,
+      loadProfile,
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    loadProfile.mockClear()
+
+    await expect(session.recordHotSeatMatch({
+      matchId: '00000000-0000-4000-8000-000000000071',
+      won: true,
+    })).resolves.toBe(true)
+    expect(recordHotSeatMatch).toHaveBeenCalledOnce()
+    expect(loadProfile).toHaveBeenCalledWith('user-1')
+    expect(session.state.status === 'authenticated' && session.state.profile.summary?.totalXp).toBe(200)
+  })
+
+  it('retries one transient hot-seat result failure before refreshing progression', async () => {
+    const recordHotSeatMatch = vi.fn()
+      .mockRejectedValueOnce(new Error('temporary outage'))
+      .mockResolvedValueOnce(undefined)
+    const loadProfile = vi.fn(async () => ({
+      id: 'user-1',
+      displayName: 'Ranger',
+      summary: {
+        matchesPlayed: 1,
+        wins: 0,
+        progressionVersion: 1 as const,
+        totalXp: 100,
+        level: 1,
+        levelXp: 100,
+        nextLevelXp: 500,
+      },
+    }))
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => backend({
+        restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+        recordHotSeatMatch,
+        loadProfile,
+      }),
+    })
+    await session.initialize()
+    loadProfile.mockClear()
+
+    await expect(session.recordHotSeatMatch({
+      matchId: '00000000-0000-4000-8000-000000000073',
+      won: false,
+    })).resolves.toBe(true)
+    expect(recordHotSeatMatch).toHaveBeenCalledTimes(2)
+    expect(loadProfile).toHaveBeenCalledOnce()
+  })
+
+  it('skips anonymous results and preserves authenticated state when recording fails', async () => {
+    const recordHotSeatMatch = vi.fn(async () => { throw new Error('result unavailable') })
+    const source = backend({ recordHotSeatMatch })
+    const anonymous = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await anonymous.initialize()
+    await expect(anonymous.recordHotSeatMatch({
+      matchId: '00000000-0000-4000-8000-000000000071',
+      won: false,
+    })).resolves.toBe(false)
+    expect(recordHotSeatMatch).not.toHaveBeenCalled()
+
+    const authenticatedSource = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      recordHotSeatMatch,
+    })
+    const authenticated = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => authenticatedSource,
+    })
+    await authenticated.initialize()
+    const before = authenticated.state
+    await expect(authenticated.recordHotSeatMatch({
+      matchId: '00000000-0000-4000-8000-000000000072',
+      won: false,
+    })).resolves.toBe(false)
+    expect(authenticated.state).toEqual(before)
   })
 
   it('keeps unconfigured boot unavailable without loading Supabase', async () => {

@@ -91,6 +91,7 @@ export const RATE_LIMITS: Record<string, number> = {
   restart_game: 10,
   claim_match: 60,
   account_summary: 60,
+  record_hotseat_match: 20,
 }
 /** Applied to any function bucket without a specific entry above. */
 export const RATE_LIMIT_DEFAULT = 60
