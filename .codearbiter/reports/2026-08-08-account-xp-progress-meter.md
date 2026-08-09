@@ -54,8 +54,10 @@ green.
 ## Integrated local verification
 
 - `npm run test:client`: 137 files and 1,023 tests passed.
-- `npm run coverage:client`: 137 files and 1,023 tests passed; 92.55% statements,
-  82.65% branches, 85.44% functions, and 94.57% lines.
+- `npm run coverage:client` on Windows: 137 files and 1,023 tests passed;
+  92.55% statements, 82.65% branches, 85.44% functions, and 94.57% lines.
+  This client-only slice has no platform-specific fork, so no second-host union
+  contribution applies.
 - `npm run test:e2e`: 195 passed and 27 intentionally skipped.
 - `npm run check:edge`, `npm run check`, and `npm run build`: passed.
 - `npm run audit:deps`: zero vulnerabilities.
