@@ -1,12 +1,21 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { gotoLobby, isCompact } from './support';
 
-async function installSummaryFixture(page: Page, available: boolean): Promise<void> {
-  await page.evaluate((hasSummary) => {
+async function installSummaryFixture(page: Page, available: boolean, open = true): Promise<void> {
+  await page.evaluate(({ hasSummary, isOpen }) => {
     document.querySelector('#lobby .account-panel')?.remove();
     const panel = document.createElement('section');
     panel.className = 'account-panel account-panel--authenticated';
+    panel.classList.toggle('account-panel--open', isOpen);
     panel.dataset['summaryFixture'] = hasSummary ? 'available' : 'unavailable';
+
+    const trigger = document.createElement('button');
+    trigger.className = 'account-panel__account-trigger';
+    trigger.textContent = hasSummary
+      ? 'Commander ABCDEFGHIJKLMNOPQRSTUVWX - Level 3'
+      : 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
+    trigger.setAttribute('aria-expanded', String(isOpen));
+    panel.append(trigger);
 
     const identity = document.createElement('span');
     identity.className = 'account-panel__identity';
@@ -64,8 +73,13 @@ async function installSummaryFixture(page: Page, available: boolean): Promise<vo
     signOut.className = 'account-panel__secondary';
     signOut.textContent = 'Sign out';
     panel.append(signOut);
+
+    const close = document.createElement('button');
+    close.className = 'account-panel__secondary account-panel__close';
+    close.textContent = 'Close';
+    panel.append(close);
     document.getElementById('lobby')?.append(panel);
-  }, available);
+  }, { hasSummary: available, isOpen: open });
 }
 
 async function expectInside(inner: Locator, outer: Locator): Promise<void> {
@@ -116,9 +130,12 @@ test.describe('Account progression summary compact readability', () => {
   test('available summary remains legible, contained, and non-overlapping', async ({ page }) => {
     await installSummaryFixture(page, true);
     const panel = page.locator('[data-summary-fixture="available"]');
+    const trigger = panel.locator('.account-panel__account-trigger');
     await panel.evaluate((node) => {
       node.style.width = '330px';
     });
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     const summary = panel.locator('.account-panel__progress');
     const labels = summary.locator('dt');
     const values = summary.locator('dd');
@@ -202,6 +219,28 @@ test.describe('Account progression summary compact readability', () => {
     expect(summaryBox, 'summary should render').not.toBeNull();
     expect(xpBox, 'XP section should render').not.toBeNull();
     expect(boxesOverlap(summaryBox!, xpBox!), 'summary and XP section must not overlap').toBe(false);
+  });
+
+  test('collapsed authenticated account stays clear of the vehicle spotlight', async ({ page }) => {
+    await installSummaryFixture(page, true, false);
+    const panel = page.locator('[data-summary-fixture="available"]');
+    const trigger = panel.locator('.account-panel__account-trigger');
+    const spotlight = page.locator('.lobby-preview__spotlight');
+    const summary = panel.locator('.account-panel__progress');
+    const xp = panel.locator('.account-panel__xp');
+
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(summary).toBeHidden();
+    await expect(xp).toBeHidden();
+    const panelBox = await panel.boundingBox();
+    const spotlightBox = await spotlight.boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(spotlightBox).not.toBeNull();
+    expect(
+      boxesOverlap(panelBox!, spotlightBox!),
+      'collapsed account trigger must not cover the vehicle spotlight',
+    ).toBe(false);
   });
 
   test('unavailable summary remains legible and contained', async ({ page }) => {

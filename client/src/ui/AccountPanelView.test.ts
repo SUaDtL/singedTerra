@@ -121,21 +121,26 @@ describe('buildAccountPanelView', () => {
     expect(root.querySelector('img')).toBeNull()
   })
 
-  it('renders authenticated identity and routes sign-out without exposing a form', () => {
-    const onSignOut = vi.fn()
+  it('collapses authenticated details behind a self-identifying trigger by default', () => {
+    const onOpen = vi.fn()
     const state: AccountState = {
       status: 'authenticated',
       busy: false,
       error: '',
-      profile: { id: 'user-1', displayName: 'Ranger', summary: null },
+      profile: { id: 'user-1', displayName: 'Ranger', summary: validSummary },
     }
-    const root = buildAccountPanelView(options({ state, onSignOut }))
+    const root = buildAccountPanelView(options({ state, onOpen }))
     if (!root) throw new Error('Expected authenticated account panel')
 
-    expect(root.querySelector('.account-panel__identity')?.textContent).toContain('Ranger')
+    const trigger = button(root, 'Commander Ranger - Level 3')
+    expect(trigger.classList.contains('account-panel__account-trigger')).toBe(true)
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(root.classList.contains('account-panel--open')).toBe(false)
+    expect(root.querySelector('.account-panel__progress')).toBeNull()
+    expect([...root.querySelectorAll('button')].some((candidate) => candidate.textContent === 'Sign out')).toBe(false)
     expect(root.querySelector('form')).toBeNull()
-    button(root, 'Sign out').click()
-    expect(onSignOut).toHaveBeenCalledOnce()
+    trigger.click()
+    expect(onOpen).toHaveBeenCalledOnce()
   })
 
   it('renders semantic XP progress and exact remaining XP while preserving authenticated controls', () => {
@@ -150,10 +155,13 @@ describe('buildAccountPanelView', () => {
         summary: validSummary,
       },
     }
-    const root = buildAccountPanelView(options({ state, onSignOut }))
+    const onClose = vi.fn()
+    const root = buildAccountPanelView(options({ state, onSignOut, onClose, open: true }))
     if (!root) throw new Error('Expected authenticated account panel')
 
     expect(root.classList.contains('account-panel--authenticated')).toBe(true)
+    expect(root.classList.contains('account-panel--open')).toBe(true)
+    expect(button(root, 'Commander Ranger - Level 3').getAttribute('aria-expanded')).toBe('true')
     expect(root.querySelector('dl.account-panel__progress')).not.toBeNull()
     expect(progressPairs(root)).toEqual([
       ['Matches', '8'],
@@ -169,6 +177,8 @@ describe('buildAccountPanelView', () => {
     expect(meter?.max).toBe(500)
     expect(meter?.getAttribute('aria-label')).toBe('Level 3 XP progress')
     expect(root.querySelector('form')).toBeNull()
+    button(root, 'Close').click()
+    expect(onClose).toHaveBeenCalledOnce()
     button(root, 'Sign out').click()
     expect(onSignOut).toHaveBeenCalledOnce()
   })
@@ -197,7 +207,7 @@ describe('buildAccountPanelView', () => {
       error: '',
       profile: { id: 'user-1', displayName: 'Ranger', summary },
     }
-    const root = buildAccountPanelView(options({ state }))
+    const root = buildAccountPanelView(options({ state, open: true }))
     if (!root) throw new Error('Expected authenticated account panel')
 
     const meter = root.querySelector<HTMLProgressElement>('.account-panel__xp progress')
@@ -217,7 +227,7 @@ describe('buildAccountPanelView', () => {
         summary: validSummary,
       },
     }
-    const first = buildAccountPanelView(options({ state }))
+    const first = buildAccountPanelView(options({ state, open: true }))
     const second = buildAccountPanelView(options({
       state: {
         ...state,
@@ -226,6 +236,7 @@ describe('buildAccountPanelView', () => {
           summary: null,
         },
       },
+      open: true,
     }))
     if (!first || !second) throw new Error('Expected authenticated account panels')
     document.body.append(first, second)
@@ -255,7 +266,7 @@ describe('buildAccountPanelView', () => {
       error: '',
       profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     }
-    const root = buildAccountPanelView(options({ state, onSignOut }))
+    const root = buildAccountPanelView(options({ state, onSignOut, open: true }))
     if (!root) throw new Error('Expected authenticated account panel')
 
     expect(root.querySelector('.account-panel__summary-unavailable')?.textContent)

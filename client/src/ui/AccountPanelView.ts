@@ -61,9 +61,23 @@ export function buildAccountPanelView(
 
   if (options.state.status === 'authenticated') {
     root.classList.add('account-panel--authenticated')
-    const identity = document.createElement('span')
-    identity.className = 'account-panel__identity'
-    identity.textContent = `Commander ${options.state.profile.displayName}`
+    const accountSummary = options.state.profile.summary
+    const triggerLabel = accountSummary
+      ? `Commander ${options.state.profile.displayName} - Level ${accountSummary.level}`
+      : `Commander ${options.state.profile.displayName}`
+    const disclosure = actionButton(
+      triggerLabel,
+      options.open ? options.onClose : options.onOpen,
+    )
+    disclosure.className = 'account-panel__account-trigger'
+    disclosure.setAttribute('aria-expanded', String(options.open))
+    root.append(disclosure)
+
+    if (!options.open) {
+      return root
+    }
+
+    root.classList.add('account-panel--open')
     let summary: HTMLElement
     let xp: HTMLElement | null = null
     if (options.state.profile.summary) {
@@ -114,9 +128,11 @@ export function buildAccountPanelView(
     const signOut = actionButton('Sign out', options.onSignOut)
     signOut.className = 'account-panel__secondary'
     signOut.disabled = options.state.busy
-    root.append(identity, summary)
+    const close = actionButton('Close', options.onClose)
+    close.className = 'account-panel__secondary account-panel__close'
+    root.append(summary)
     if (xp) root.append(xp)
-    root.append(signOut)
+    root.append(close, signOut)
     return root
   }
 

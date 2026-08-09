@@ -1254,18 +1254,31 @@ export class Lobby {
       #lobby .account-panel button:focus-visible,
       #lobby .account-panel input:focus-visible { outline: none; box-shadow: var(--ui-focus); }
       #lobby .account-panel__identity {
-        grid-column: 1 / 3; min-width: 0;
+        grid-column: 1; min-width: 0;
         color: var(--text-gold); font-weight: 700; overflow-wrap: anywhere;
       }
-      #lobby .account-panel--authenticated {
+      #lobby .account-panel__account-trigger {
+        max-width: min(330px, calc(100vw - 36px));
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      #lobby .account-panel--open > .account-panel__account-trigger {
+        justify-self: start; min-width: 0; max-width: 100%;
+        padding-inline: 0; border-color: transparent; background: transparent;
+        color: var(--text-gold); font-weight: 700; text-align: left;
+      }
+      #lobby .account-panel--authenticated.account-panel--open {
         width: min(410px, calc(100vw - 36px));
-        display: grid; grid-template-columns: max-content 1fr max-content;
+        box-sizing: border-box;
+        display: grid; grid-template-columns: minmax(0, 1fr) max-content max-content;
         align-items: center; gap: 8px 14px;
+      }
+      #lobby .account-panel--authenticated:not(.account-panel--open) > :not(.account-panel__account-trigger) {
+        display: none;
       }
       #lobby .account-panel__progress {
         grid-column: 1 / -1;
         display: grid;
-        grid-template-columns: repeat(3, max-content);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 4px 12px;
         justify-content: space-between;
         margin: 0;
@@ -1294,7 +1307,10 @@ export class Lobby {
         display: grid; gap: 4px;
       }
       #lobby .account-panel__summary-unavailable { grid-column: 1 / -1; }
-      #lobby .account-panel--authenticated > .account-panel__secondary {
+      #lobby .account-panel--authenticated > .account-panel__close {
+        grid-column: 2; grid-row: 1; justify-self: end;
+      }
+      #lobby .account-panel--authenticated > .account-panel__secondary:not(.account-panel__close) {
         grid-column: 3; grid-row: 1; justify-self: end;
       }
       #lobby .account-panel__xp-header {
@@ -1324,7 +1340,8 @@ export class Lobby {
       @media (max-width: 700px) {
         #lobby .account-panel { top: 10px; right: 10px; }
         #lobby .account-panel--open { width: calc(100% - 20px); box-sizing: border-box; }
-        #lobby .account-panel--authenticated { width: calc(100% - 20px); box-sizing: border-box; }
+        #lobby .account-panel--authenticated.account-panel--open { width: calc(100% - 20px); }
+        #lobby .account-panel__account-trigger { max-width: calc(100vw - 20px); }
       }
     `;
     document.head.append(style);
@@ -1359,10 +1376,12 @@ export class Lobby {
         onOpen: () => {
           this.accountPanelOpen = true;
           this.render();
+          this.root.querySelector<HTMLButtonElement>('.account-panel__account-trigger')?.focus();
         },
         onClose: () => {
           this.accountPanelOpen = false;
           this.render();
+          this.root.querySelector<HTMLButtonElement>('.account-panel__account-trigger')?.focus();
         },
         onModeChange: (mode) => {
           this.accountMode = mode;

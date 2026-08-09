@@ -63,6 +63,7 @@ describe('Lobby account composition', () => {
       account = new FakeAccountSession(onChange)
       return account
     })
+    document.body.append(root)
     lobby.show()
 
     account.emit({
@@ -72,11 +73,22 @@ describe('Lobby account composition', () => {
       profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     })
 
-    expect(root.querySelector('.account-panel__identity')?.textContent).toContain('Ranger')
+    const accountTrigger = button(root, 'Commander Ranger')
+    expect(accountTrigger.getAttribute('aria-expanded')).toBe('false')
     expect(button(root, 'Hot Seat')).toBeTruthy()
     expect(button(root, 'Play Online')).toBeTruthy()
+    accountTrigger.click()
+    const openTrigger = button(root, 'Commander Ranger')
+    expect(openTrigger.getAttribute('aria-expanded')).toBe('true')
+    expect(document.activeElement).toBe(openTrigger)
+    button(root, 'Close').click()
+    const restoredTrigger = button(root, 'Commander Ranger')
+    expect(restoredTrigger.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(restoredTrigger)
+    restoredTrigger.click()
     button(root, 'Sign out').click()
     expect(account.signOut).toHaveBeenCalledOnce()
+    root.remove()
   })
 
   it('delegates a progression refresh to the persistent account owner', async () => {
