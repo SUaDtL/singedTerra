@@ -156,10 +156,11 @@ client/public/art/tank-chassis.webp
 client/public/art/tank-parts.webp
 ```
 
-The deterministic `BattlefieldWorld` profile owns both panorama and terrain
-material. Keep these paired: Ember uses warm scorched strata, Obsidian uses dark
-volcanic glass, and Glassstorm uses a pale cool crystal crust. Material loading
-may add grain but must never be required for a complete, readable palette-only
+The deterministic `BattlefieldWorld` profile owns panorama, terrain material, and
+a bounded atmospheric signature. Keep these paired: Ember uses warm scorched
+strata and rising ember motes, Obsidian uses dark volcanic glass and falling ash,
+and Glassstorm uses a pale cool crystal crust and diagonal cyan streaks. Material
+loading may add grain but must never be required for a complete, readable palette-only
 terrain fallback.
 
 ### Game-specific graphics

@@ -57,6 +57,7 @@ import {
 import { BattlefieldBackdrop } from './BattlefieldBackdrop';
 import { ExplosionArt } from './ExplosionArt';
 import { ImpactMonitorPainter } from './ImpactMonitorPainter';
+import { WorldAtmosphereLayer } from './worldAtmosphere';
 import {
   getImpactMonitorGeometry,
   selectImpactMonitorFocus,
@@ -253,6 +254,8 @@ export class Renderer {
   private readonly hud = new HUDRenderer();
   /** One project-bound panorama; procedural sky art remains its full fallback. */
   private readonly battlefieldBackdrop = new BattlefieldBackdrop();
+  /** Fixed, selected-world atmosphere painted behind the battlefield itself. */
+  private readonly worldAtmosphere: WorldAtmosphereLayer;
   /** Fail-soft authored conventional-blast atlas; special families stay procedural. */
   private readonly explosionArt = new ExplosionArt();
   /** Reusable screen-space tactical inset; all gameplay remains in world space. */
@@ -362,6 +365,7 @@ export class Renderer {
       typeof window !== 'undefined' && typeof window.matchMedia === 'function'
         ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
         : false;
+    this.worldAtmosphere = new WorldAtmosphereLayer(this.reduceMotion);
     this.projectile = new ProjectileRenderer(this.reduceMotion);
     this.effects = new EffectsRenderer(this.reduceMotion);
     this.mobilityEffects = new MobilityEffectsRenderer(this.reduceMotion);
@@ -438,6 +442,7 @@ export class Renderer {
     this.mobilityEffects.clear();
     this.projectile.clear();
     this.battlefieldBackdrop?.reset?.();
+    this.worldAtmosphere?.reset?.();
     this.terrain?.reset?.(); // retire selected material and force a fresh terrain cache
     // Audio signal tracking: reset per-frame bookkeeping and stop any sustained
     // napalm crackle so a stuck loop can't survive across rounds or games.
@@ -519,6 +524,8 @@ export class Renderer {
     const depth = getImpactDepthParallax({ x: sx, y: sy }) ?? REST_DEPTH_PARALLAX;
     // 1. Far atmosphere and middle ridges own isolated, partial transforms.
     this.drawSky(depth);
+    this.worldAtmosphere?.draw?.(ctx);
+    this.worldAtmosphere?.advance?.();
 
     // 1.5 Turn-start wind ribbons share the middle-distance ridge transform.
     ctx.save();
@@ -628,7 +635,10 @@ export class Renderer {
     const world = requestedWorld === undefined
       ? this.battlefieldBackdrop?.select?.(terrain)
       : this.battlefieldBackdrop?.select?.(terrain, requestedWorld);
-    if (world) this.terrain?.selectWorld?.(world);
+    if (world) {
+      this.terrain?.selectWorld?.(world);
+      this.worldAtmosphere?.select?.(world);
+    }
   }
 
   /** Copy the strongest live detonation after all world transforms are restored. */
@@ -663,6 +673,7 @@ export class Renderer {
     // asynchronous image load settles so a cached/static turn cannot freeze on
     // the procedural fallback forever. Failed and ready loads both release idle.
     if (this.battlefieldBackdrop?.isSettled === false) return true;
+    if (this.worldAtmosphere?.isActive) return true;
     if (this.explosionArt?.isSettled === false) return true;
     // The terrain material follows the same first-applied-frame contract. Once
     // ready, TerrainRenderer rebuilds its version cache exactly once.

@@ -93,6 +93,21 @@ describe('battlefield world catalog', () => {
     }
   });
 
+  it('binds every world to one immutable, bounded atmospheric signature', () => {
+    expect(BATTLEFIELD_WORLDS.map((world) => world.atmosphere.motif)).toEqual([
+      'embers',
+      'ash',
+      'crystals',
+    ]);
+
+    for (const world of BATTLEFIELD_WORLDS) {
+      expect(Object.isFrozen(world.atmosphere)).toBe(true);
+      expect(world.atmosphere.count).toBeGreaterThan(0);
+      expect(world.atmosphere.count).toBeLessThanOrEqual(28);
+      expect(world.atmosphere.color).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
   it('selects deterministically and makes every catalog world reachable', () => {
     const seen = new Set<string>();
     for (let marker = 0; marker < 256; marker++) {

@@ -10,6 +10,16 @@ export interface BattlefieldWorld {
   readonly asset: string;
   readonly terrainMaterialAsset: string;
   readonly terrainPalette: TerrainPalette;
+  readonly atmosphere: WorldAtmosphereProfile;
+}
+
+export interface WorldAtmosphereProfile {
+  readonly motif: 'embers' | 'ash' | 'crystals';
+  readonly color: string;
+  readonly count: number;
+  readonly size: readonly [number, number];
+  readonly speed: readonly [number, number];
+  readonly drift: readonly [number, number];
 }
 
 export interface TerrainPalette {
@@ -37,6 +47,14 @@ export const BATTLEFIELD_WORLDS: readonly BattlefieldWorld[] = Object.freeze([
       bandDeep: '#2a1e2e',
       bevelShadow: '#0c0716',
     }),
+    atmosphere: Object.freeze({
+      motif: 'embers',
+      color: '#ff9a4b',
+      count: 18,
+      size: Object.freeze([1, 2]) as readonly [number, number],
+      speed: Object.freeze([0.18, 0.42]) as readonly [number, number],
+      drift: Object.freeze([-0.12, 0.12]) as readonly [number, number],
+    }),
   }),
   Object.freeze({
     id: 'obsidian-caldera',
@@ -52,6 +70,14 @@ export const BATTLEFIELD_WORLDS: readonly BattlefieldWorld[] = Object.freeze([
       bandDeep: '#161d26',
       bevelShadow: '#080c10',
     }),
+    atmosphere: Object.freeze({
+      motif: 'ash',
+      color: '#a8bcc9',
+      count: 16,
+      size: Object.freeze([3, 6]) as readonly [number, number],
+      speed: Object.freeze([0.06, 0.14]) as readonly [number, number],
+      drift: Object.freeze([-0.08, 0.08]) as readonly [number, number],
+    }),
   }),
   Object.freeze({
     id: 'glassstorm-expanse',
@@ -66,6 +92,14 @@ export const BATTLEFIELD_WORLDS: readonly BattlefieldWorld[] = Object.freeze([
       bandMid: '#536773',
       bandDeep: '#334a5a',
       bevelShadow: '#182936',
+    }),
+    atmosphere: Object.freeze({
+      motif: 'crystals',
+      color: '#a9f5ff',
+      count: 22,
+      size: Object.freeze([4, 9]) as readonly [number, number],
+      speed: Object.freeze([0.42, 0.84]) as readonly [number, number],
+      drift: Object.freeze([0.18, 0.38]) as readonly [number, number],
     }),
   }),
 ]);

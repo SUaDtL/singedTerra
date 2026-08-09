@@ -12,7 +12,7 @@ interface BackdropSeam {
   skyGradient: CanvasGradient;
   battlefieldBackdrop: {
     readonly isSettled: boolean;
-    select?(terrain: Uint8Array): unknown;
+    select?(terrain: Uint8Array, requestedWorld?: string): unknown;
     draw(ctx: CanvasRenderingContext2D, overscan?: number): boolean;
   };
   atmosphereClouds: { draw: ReturnType<typeof vi.fn> };
@@ -24,7 +24,11 @@ interface BackdropSeam {
   terrain: {
     selectWorld: ReturnType<typeof vi.fn>;
   };
-  selectBattlefieldWorld(terrain: Uint8Array): void;
+  worldAtmosphere: {
+    select?: ReturnType<typeof vi.fn>;
+    readonly isActive: boolean;
+  };
+  selectBattlefieldWorld(terrain: Uint8Array, requestedWorld?: string): void;
   bursts: unknown[];
   scorches: unknown[];
   wallContacts: unknown[];
@@ -64,6 +68,7 @@ function skySeam(didDrawBackdrop: boolean): BackdropSeam {
 function animationSeam(isSettled: boolean): BackdropSeam {
   return Object.assign(Object.create(Renderer.prototype), {
     battlefieldBackdrop: { isSettled, draw: vi.fn() },
+    worldAtmosphere: { isActive: false },
     bursts: [],
     scorches: [],
     wallContacts: [],
@@ -111,9 +116,11 @@ describe('Renderer authored battlefield backdrop seam', () => {
     const world = BATTLEFIELD_WORLDS[1]!;
     const select = vi.fn(() => world);
     const selectWorld = vi.fn();
+    const selectAtmosphere = vi.fn();
     const renderer = Object.assign(Object.create(Renderer.prototype), {
       battlefieldBackdrop: { isSettled: false, select, draw: vi.fn() },
       terrain: { selectWorld },
+      worldAtmosphere: { select: selectAtmosphere },
     }) as BackdropSeam;
 
     renderer.selectBattlefieldWorld(terrain);
@@ -122,6 +129,27 @@ describe('Renderer authored battlefield backdrop seam', () => {
     expect(select).toHaveBeenCalledWith(terrain);
     expect(selectWorld).toHaveBeenCalledOnce();
     expect(selectWorld).toHaveBeenCalledWith(world);
+    expect(selectAtmosphere).toHaveBeenCalledOnce();
+    expect(selectAtmosphere).toHaveBeenCalledWith(world);
+  });
+
+  it('forwards an explicit world choice to backdrop, terrain, and atmosphere together', () => {
+    const terrain = new Uint8Array([1, 0, 0, 1]);
+    const world = BATTLEFIELD_WORLDS[2]!;
+    const select = vi.fn(() => world);
+    const selectWorld = vi.fn();
+    const selectAtmosphere = vi.fn();
+    const renderer = Object.assign(Object.create(Renderer.prototype), {
+      battlefieldBackdrop: { isSettled: false, select, draw: vi.fn() },
+      terrain: { selectWorld },
+      worldAtmosphere: { select: selectAtmosphere },
+    }) as BackdropSeam;
+
+    renderer.selectBattlefieldWorld(terrain, 'glassstorm-expanse');
+
+    expect(select).toHaveBeenCalledExactlyOnceWith(terrain, 'glassstorm-expanse');
+    expect(selectWorld).toHaveBeenCalledExactlyOnceWith(world);
+    expect(selectAtmosphere).toHaveBeenCalledExactlyOnceWith(world);
   });
 
   it('keeps the complete procedural atmosphere while the authored image is unavailable', () => {
@@ -177,6 +205,16 @@ describe('Renderer authored battlefield backdrop seam', () => {
     image.onerror?.(new Event('error'));
 
     expect(backdrop.state).toBe('failed');
+    expect(renderer.isAnimating(idleState())).toBe(false);
+  });
+
+  it('keeps an otherwise idle scene eligible only while atmosphere arrival is active', () => {
+    const renderer = animationSeam(true);
+    renderer.worldAtmosphere = { isActive: true };
+
+    expect(renderer.isAnimating(idleState())).toBe(true);
+
+    renderer.worldAtmosphere = { isActive: false };
     expect(renderer.isAnimating(idleState())).toBe(false);
   });
 });

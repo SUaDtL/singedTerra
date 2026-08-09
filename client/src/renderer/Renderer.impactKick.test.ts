@@ -49,6 +49,10 @@ interface RendererImpactSeam {
     draw: ReturnType<typeof vi.fn>;
     markDirty: ReturnType<typeof vi.fn>;
   };
+  worldAtmosphere: {
+    draw: ReturnType<typeof vi.fn>;
+    advance: ReturnType<typeof vi.fn>;
+  };
   tanks: { drawAll: ReturnType<typeof vi.fn> };
   hud: { draw: ReturnType<typeof vi.fn> };
   ctx: {
@@ -59,7 +63,7 @@ interface RendererImpactSeam {
     fillStyle: unknown;
   };
   skyGradient: CanvasGradient | null;
-  drawSky(): void;
+  drawSky: ReturnType<typeof vi.fn> & (() => void);
   drawCloudBanks: ReturnType<typeof vi.fn>;
   drawStars: ReturnType<typeof vi.fn>;
   drawSun: ReturnType<typeof vi.fn>;
@@ -137,6 +141,7 @@ function rendererSeam(reduceMotion = false): RendererImpactSeam {
     },
     projectile: { drawGroundShadows: vi.fn(), draw: vi.fn(), clear: vi.fn() },
     terrain: { draw: vi.fn(), markDirty: vi.fn() },
+    worldAtmosphere: { draw: vi.fn(), advance: vi.fn() },
     tanks: { drawAll: vi.fn() },
     hud: { draw: vi.fn() },
     ctx: {
@@ -183,6 +188,31 @@ function required<T>(value: T | undefined, label: string): T {
 }
 
 describe('Renderer directional impact kick', () => {
+  it('paints then advances world atmosphere between the sky and wind', () => {
+    const renderer = rendererSeam();
+
+    renderer.render(idleState());
+
+    expect(renderer.worldAtmosphere.draw).toHaveBeenCalledOnce();
+    expect(renderer.worldAtmosphere.advance).toHaveBeenCalledOnce();
+    const sky = required(renderer.drawSky.mock.invocationCallOrder[0], 'sky draw');
+    const atmosphereDraw = required(
+      renderer.worldAtmosphere.draw.mock.invocationCallOrder[0],
+      'atmosphere draw',
+    );
+    const atmosphereAdvance = required(
+      renderer.worldAtmosphere.advance.mock.invocationCallOrder[0],
+      'atmosphere advance',
+    );
+    const wind = required(renderer.drawWindGusts.mock.invocationCallOrder[0], 'wind draw');
+    const terrain = required(renderer.terrain.draw.mock.invocationCallOrder[0], 'terrain draw');
+
+    expect(sky).toBeLessThan(atmosphereDraw);
+    expect(atmosphereDraw).toBeLessThan(atmosphereAdvance);
+    expect(atmosphereAdvance).toBeLessThan(wind);
+    expect(wind).toBeLessThan(terrain);
+  });
+
   it('admits one simultaneous heavy batch, freezes its package twice, then releases it together', () => {
     const renderer = rendererSeam();
     const frame = idleState();
