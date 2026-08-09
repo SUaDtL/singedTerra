@@ -43,7 +43,6 @@ test.describe('Lobby layout guardrails', () => {
 
   test('Hot Seat setup stays framed and its primary action is reachable', async ({ page }) => {
     await expect(page.getByRole('tab', { name: 'Hot Seat', exact: true })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByText('Hot-seat setup', { exact: false })).toBeVisible();
     await expect(page.locator('.lobby-row')).toHaveCount(2);
     await expect(page.locator('.lobby-controls')).toContainText('Aim');
 
@@ -82,7 +81,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(page.locator('.lobby-mode-context')).toContainText(
       'Set your crew, then start a shared-screen match.',
     );
-    await expect(page.getByText('Hot-seat setup', { exact: false })).toBeVisible();
+    await expect(page.locator('.lobby-row')).toHaveCount(2);
 
     await page.keyboard.press('End');
     await expect(online).toHaveAttribute('aria-selected', 'true');

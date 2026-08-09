@@ -1150,6 +1150,18 @@ export class Lobby {
         font-size: 13px;
         line-height: 1.35;
       }
+      @media (pointer: coarse) {
+        #lobby .lobby-mode-context {
+          display: flex;
+          align-items: baseline;
+          gap: 7px;
+          margin-bottom: 5px;
+          padding-bottom: 4px;
+        }
+        #lobby .lobby-mode-context h2 { margin: 0; font-size: 16px; }
+        #lobby .lobby-mode-context p { font-size: 11px; }
+        #lobby .lobby-mode-context + .lobby-hotseat .lobby-sub { display: none; }
+      }
 
       /* Online sub-views */
       #lobby .lobby-btn {
