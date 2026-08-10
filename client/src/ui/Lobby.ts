@@ -2330,6 +2330,10 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-preview__part strong {
         font-family: var(--font-sans);
+        letter-spacing: -1.8px;
+      }
+      #app.is-compact #lobby .lobby-preview__part span {
+        letter-spacing: -0.8px;
       }
       #app.is-compact #lobby .lobby-preview__parts {
         width: calc(100% - 8px);
@@ -2340,6 +2344,44 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-preview__convoy {
         bottom: 80px;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 4px;
+        align-items: start;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online
+        .lobby-preparation-section[data-preparation-section="command-vehicle"] {
+        grid-column: 1 / -1;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online
+        .lobby-preparation-section[data-preparation-section="operation-profile"] {
+        grid-column: 1;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online
+        .lobby-preparation-section[data-preparation-section="battlefield-protocol"] {
+        grid-column: 2;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-actions {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives {
+        flex-wrap: nowrap;
+        gap: 6px;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-label {
+        display: none;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-buttons {
+        flex-wrap: nowrap;
+        gap: 8px;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-btn.secondary {
+        padding-block: 4px;
       }
       @media (pointer: coarse) {
         #app.is-compact #lobby .lobby-mode-context h2,
@@ -2357,44 +2399,6 @@ export class Lobby {
         #app.is-compact #lobby .lobby-preview__part span,
         #app.is-compact #lobby .lobby-preview__part strong {
           font-size: 21px;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          column-gap: 4px;
-          align-items: start;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online
-          .lobby-preparation-section[data-preparation-section="command-vehicle"] {
-          grid-column: 1 / -1;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online
-          .lobby-preparation-section[data-preparation-section="operation-profile"] {
-          grid-column: 1;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online
-          .lobby-preparation-section[data-preparation-section="battlefield-protocol"] {
-          grid-column: 2;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-actions {
-          display: grid;
-          grid-template-columns: max-content minmax(0, 1fr);
-          align-items: center;
-          gap: 8px;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives {
-          flex-wrap: nowrap;
-          gap: 6px;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-label {
-          display: none;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-buttons {
-          flex-wrap: nowrap;
-          gap: 8px;
-        }
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-btn.secondary {
-          padding-block: 4px;
         }
       }
     `;

@@ -76,4 +76,11 @@ Status: implementation and final adversarial review GREEN; delivery pending
   the inverse-zoom token. The corrected browser oracle directly requires the token
   to equal `ceil(24 / actualZoom)`. Removing the assignment failed both compact
   profiles with `NaN` against expected 50 and 40; restoring it returned GREEN.
+- Hosted browser CI on PR #390 exposed deterministic Linux font-metric failures:
+  `Mobility` and `Armor Hull` exceeded their compact quarter cells, and compact
+  fine-pointer Online setup reached 637px inside a 600px card. The compact
+  technical labels now use tighter explicit tracking without reducing font size,
+  and the proven two-column Online compaction applies to every compact pointer.
+  The focused cross-route set passed 47 with 4 intentional skips; the corrected
+  full matrix passed 262 with 32 intentional skips in 49.6 seconds.
 - Hosted CI, deployment, and production-health evidence remain pending.
