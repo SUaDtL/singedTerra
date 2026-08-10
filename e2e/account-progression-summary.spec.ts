@@ -16,16 +16,31 @@ async function installSummaryFixture(page: Page, available: boolean, open = true
 
     const trigger = document.createElement('button');
     trigger.className = 'account-panel__account-trigger';
-    trigger.textContent = hasSummary
-      ? 'Commander ABCDEFGHIJKLMNOPQRSTUVWX - Level 3'
-      : 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
+    if (hasSummary) {
+      const commander = document.createElement('span');
+      commander.className = 'account-panel__commander-name';
+      commander.textContent = 'ABCDEFGHIJKLMNOPQRSTUVWX';
+      const level = document.createElement('span');
+      level.className = 'account-panel__commander-level';
+      level.textContent = 'Level 3';
+      const milestone = document.createElement('span');
+      milestone.className = 'account-panel__record-milestone';
+      milestone.textContent = '300 XP to Level 4';
+      trigger.append(commander, level, milestone);
+      trigger.setAttribute(
+        'aria-label',
+        'Commander ABCDEFGHIJKLMNOPQRSTUVWX, Level 3, 300 XP to Level 4. Player account',
+      );
+    } else {
+      trigger.textContent = 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
+    }
     trigger.setAttribute('aria-expanded', String(isOpen));
     if (hasSummary && !isOpen) {
       const record = document.createElement('section');
       record.className = 'account-panel__record';
-      record.setAttribute('aria-label', 'Player record');
+      record.setAttribute('aria-label', 'Commander dossier');
       const heading = document.createElement('h2');
-      heading.textContent = 'PLAYER RECORD';
+      heading.textContent = 'COMMANDER DOSSIER';
       const meter = document.createElement('progress');
       meter.className = 'account-panel__record-xp';
       meter.value = 200;
@@ -243,10 +258,17 @@ test.describe('Account progression summary compact readability', () => {
 
   test('collapsed authenticated account stays clear of the vehicle spotlight', async ({ page }) => {
     await openLocalPreparation(page);
+    const preview = page.locator('.lobby-preview');
+    const masthead = page.locator('.lobby-deployment__masthead');
+    const baselinePreviewBox = await preview.boundingBox();
+    const baselineMastheadBox = await masthead.boundingBox();
+    expect(baselinePreviewBox, 'no-record preview should render').not.toBeNull();
+    expect(baselineMastheadBox, 'no-record masthead should render').not.toBeNull();
     await installSummaryFixture(page, true, false);
     const panel = page.locator('[data-summary-fixture="available"]');
     const trigger = panel.locator('.account-panel__account-trigger');
     const spotlight = page.locator('.lobby-preview__spotlight');
+    const missionBrief = page.locator('.lobby-deployment__mission-brief');
     const summary = panel.locator('.account-panel__progress');
     const xp = panel.locator('.account-panel__xp');
 
@@ -254,10 +276,27 @@ test.describe('Account progression summary compact readability', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     const record = panel.locator('.account-panel__record');
     await expect(record).toBeVisible();
-    await expect(record).toHaveAttribute('aria-label', 'Player record');
-    await expect(record.getByRole('heading', { name: 'PLAYER RECORD', exact: true })).toBeVisible();
+    await expect(record).toHaveAttribute('aria-label', 'Commander dossier');
+    await expect(record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true })).toBeVisible();
     await expect(record.locator('progress')).toHaveAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX Level 3 XP progress');
-    const headingBox = await record.getByRole('heading', { name: 'PLAYER RECORD', exact: true }).boundingBox();
+    const commander = trigger.locator('.account-panel__commander-name');
+    const level = trigger.locator('.account-panel__commander-level');
+    const milestone = trigger.locator('.account-panel__record-milestone');
+    await expect(commander).toHaveText('ABCDEFGHIJKLMNOPQRSTUVWX');
+    await expect(level).toHaveText('Level 3');
+    await expect(milestone).toHaveText('300 XP to Level 4');
+    expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
+    expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
+    for (const text of [commander, level, milestone]) {
+      const textBox = await renderedTextBox(text);
+      const ownerBox = await trigger.boundingBox();
+      expect(ownerBox, 'dossier disclosure should render').not.toBeNull();
+      expect(textBox.x).toBeGreaterThanOrEqual(ownerBox!.x - 1);
+      expect(textBox.y).toBeGreaterThanOrEqual(ownerBox!.y - 1);
+      expect(textBox.x + textBox.width).toBeLessThanOrEqual(ownerBox!.x + ownerBox!.width + 1);
+      expect(textBox.y + textBox.height).toBeLessThanOrEqual(ownerBox!.y + ownerBox!.height + 1);
+    }
+    const headingBox = await record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true }).boundingBox();
     const triggerBox = await trigger.boundingBox();
     const meterBox = await record.locator('progress').boundingBox();
     expect(headingBox, 'Player Record heading should render').not.toBeNull();
@@ -270,11 +309,23 @@ test.describe('Account progression summary compact readability', () => {
     await expect(xp).toBeHidden();
     const panelBox = await panel.boundingBox();
     const spotlightBox = await spotlight.boundingBox();
+    const missionBriefBox = await missionBrief.boundingBox();
+    const reservedPreviewBox = await preview.boundingBox();
+    const reservedMastheadBox = await masthead.boundingBox();
     expect(panelBox).not.toBeNull();
     expect(spotlightBox).not.toBeNull();
+    expect(missionBriefBox).not.toBeNull();
+    expect(reservedPreviewBox, 'dossier-reserved preview should render').not.toBeNull();
+    expect(reservedMastheadBox, 'dossier-reserved masthead should render').not.toBeNull();
+    expect(reservedPreviewBox!.y).toBeGreaterThan(baselinePreviewBox!.y);
+    expect(reservedMastheadBox!.height).toBeGreaterThan(baselineMastheadBox!.height);
     expect(
       boxesOverlap(panelBox!, spotlightBox!),
-      'collapsed account trigger must not cover the vehicle spotlight',
+      `collapsed account trigger must not cover the vehicle spotlight: ${JSON.stringify({ panelBox, spotlightBox })}`,
+    ).toBe(false);
+    expect(
+      boxesOverlap(panelBox!, missionBriefBox!),
+      `collapsed account trigger must not cover the mission brief: ${JSON.stringify({ panelBox, missionBriefBox })}`,
     ).toBe(false);
   });
 
@@ -287,6 +338,50 @@ test.describe('Account progression summary compact readability', () => {
     expect(box!.height, 'unavailable summary should retain at least 8 physical pixels')
       .toBeGreaterThanOrEqual(8);
     await expectInside(unavailable, panel);
+  });
+});
+
+test.describe('Collapsed commander dossier front-door geometry', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoLobby(page);
+    await installSummaryFixture(page, true, false);
+  });
+
+  test('keeps the full dossier inside the masthead and clear of deployment choices', async ({ page }) => {
+    const panel = page.locator('[data-summary-fixture="available"]');
+    const masthead = page.locator('.lobby-deployment__masthead');
+    const chooser = page.locator('.lobby-deployment-chooser');
+    const trigger = panel.locator('.account-panel__account-trigger');
+    const commander = trigger.locator('.account-panel__commander-name');
+    const level = trigger.locator('.account-panel__commander-level');
+    const milestone = trigger.locator('.account-panel__record-milestone');
+
+    await expect(trigger).toHaveAttribute(
+      'aria-label',
+      'Commander ABCDEFGHIJKLMNOPQRSTUVWX, Level 3, 300 XP to Level 4. Player account',
+    );
+    expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
+    expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
+    await expectInside(panel, masthead);
+
+    const triggerBox = await trigger.boundingBox();
+    expect(triggerBox, 'dossier disclosure should render').not.toBeNull();
+    for (const text of [commander, level, milestone]) {
+      const textBox = await renderedTextBox(text);
+      expect(textBox.x).toBeGreaterThanOrEqual(triggerBox!.x - 1);
+      expect(textBox.y).toBeGreaterThanOrEqual(triggerBox!.y - 1);
+      expect(textBox.x + textBox.width).toBeLessThanOrEqual(triggerBox!.x + triggerBox!.width + 1);
+      expect(textBox.y + textBox.height).toBeLessThanOrEqual(triggerBox!.y + triggerBox!.height + 1);
+    }
+
+    const panelBox = await panel.boundingBox();
+    const chooserBox = await chooser.boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(chooserBox).not.toBeNull();
+    expect(
+      boxesOverlap(panelBox!, chooserBox!),
+      `commander dossier must not cover deployment choices: ${JSON.stringify({ panelBox, chooserBox })}`,
+    ).toBe(false);
   });
 });
 

@@ -92,19 +92,37 @@ export function buildAccountPanelView(
     disclosure.setAttribute('aria-expanded', String(options.open))
 
     if (!options.open || options.triggerOnly) {
-      if (options.state.profile.summary) {
+      if (accountSummary) {
+        const remainingXp = accountSummary.nextLevelXp - accountSummary.levelXp
+        const nextLevel = accountSummary.level + 1
+        disclosure.textContent = ''
+        disclosure.setAttribute(
+          'aria-label',
+          `Commander ${options.state.profile.displayName}, Level ${accountSummary.level}, ${remainingXp} XP to Level ${nextLevel}. Player account`,
+        )
+        const commander = document.createElement('span')
+        commander.className = 'account-panel__commander-name'
+        commander.textContent = options.state.profile.displayName
+        const level = document.createElement('span')
+        level.className = 'account-panel__commander-level'
+        level.textContent = `Level ${accountSummary.level}`
+        const milestone = document.createElement('span')
+        milestone.className = 'account-panel__record-milestone'
+        milestone.textContent = `${remainingXp} XP to Level ${nextLevel}`
+        disclosure.append(commander, level, milestone)
+
         const record = document.createElement('section')
         record.className = 'account-panel__record'
-        record.setAttribute('aria-label', 'Player record')
+        record.setAttribute('aria-label', 'Commander dossier')
         const heading = document.createElement('h2')
-        heading.textContent = 'PLAYER RECORD'
+        heading.textContent = 'COMMANDER DOSSIER'
         const xp = document.createElement('progress')
         xp.className = 'account-panel__record-xp'
-        xp.value = options.state.profile.summary.levelXp
-        xp.max = options.state.profile.summary.nextLevelXp
+        xp.value = accountSummary.levelXp
+        xp.max = accountSummary.nextLevelXp
         xp.setAttribute(
           'aria-label',
-          `Commander ${options.state.profile.displayName} Level ${options.state.profile.summary.level} XP progress`,
+          `Commander ${options.state.profile.displayName} Level ${accountSummary.level} XP progress`,
         )
         record.append(heading, disclosure, xp)
         root.append(record)

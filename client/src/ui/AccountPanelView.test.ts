@@ -139,7 +139,7 @@ describe('buildAccountPanelView', () => {
     expect(root.querySelector('img')).toBeNull()
   })
 
-  it('keeps an accessible Player Record visible while authenticated details are collapsed', () => {
+  it('keeps the full commander dossier and next milestone visible while authenticated details are collapsed', () => {
     const onOpen = vi.fn()
     const state: AccountState = {
       status: 'authenticated',
@@ -151,12 +151,19 @@ describe('buildAccountPanelView', () => {
     if (!root) throw new Error('Expected authenticated account panel')
 
     const record = root.querySelector<HTMLElement>('section.account-panel__record')
-    const trigger = button(root, 'Commander Ranger - Level 3')
+    const trigger = record?.querySelector<HTMLButtonElement>('.account-panel__account-trigger')
     const meter = record?.querySelector<HTMLProgressElement>('progress')
+    if (!record || !trigger) throw new Error('Expected collapsed commander dossier disclosure')
     expect(trigger.classList.contains('account-panel__account-trigger')).toBe(true)
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(record?.getAttribute('aria-label')).toBe('Player record')
-    expect(record?.querySelector('h2')?.textContent).toBe('PLAYER RECORD')
+    expect(trigger.getAttribute('aria-label'))
+      .toBe('Commander Ranger, Level 3, 300 XP to Level 4. Player account')
+    expect(record?.getAttribute('aria-label')).toBe('Commander dossier')
+    expect(record?.querySelector('h2')?.textContent).toBe('COMMANDER DOSSIER')
+    expect(trigger?.querySelector('.account-panel__commander-name')?.textContent).toBe('Ranger')
+    expect(trigger?.querySelector('.account-panel__commander-level')?.textContent).toBe('Level 3')
+    expect(trigger?.querySelector('.account-panel__record-milestone')?.textContent)
+      .toBe('300 XP to Level 4')
     expect(meter?.value).toBe(200)
     expect(meter?.max).toBe(500)
     expect(meter?.getAttribute('aria-label')).toBe('Commander Ranger Level 3 XP progress')
@@ -164,8 +171,33 @@ describe('buildAccountPanelView', () => {
     expect(root.querySelector('.account-panel__progress')).toBeNull()
     expect([...root.querySelectorAll('button')].some((candidate) => candidate.textContent === 'Sign out')).toBe(false)
     expect(root.querySelector('form')).toBeNull()
-    trigger.click()
+    trigger?.click()
     expect(onOpen).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the same dossier semantics when the masthead requests trigger-only while the dialog is open', () => {
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary: validSummary },
+    }
+    const root = buildAccountPanelView(options({ state, open: true, triggerOnly: true }))
+    if (!root) throw new Error('Expected trigger-only commander dossier')
+
+    const record = root.querySelector<HTMLElement>('.account-panel__record')
+    const trigger = record?.querySelector<HTMLButtonElement>('.account-panel__account-trigger')
+    if (!record || !trigger) throw new Error('Expected trigger-only dossier disclosure')
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    expect(trigger.getAttribute('aria-label'))
+      .toBe('Commander Ranger, Level 3, 300 XP to Level 4. Player account')
+    expect(trigger.querySelector('.account-panel__commander-name')?.textContent).toBe('Ranger')
+    expect(trigger.querySelector('.account-panel__commander-level')?.textContent).toBe('Level 3')
+    expect(trigger.querySelector('.account-panel__record-milestone')?.textContent)
+      .toBe('300 XP to Level 4')
+    expect(root.querySelector('.account-panel__progress')).toBeNull()
+    expect([...root.querySelectorAll('button')].some((candidate) => candidate.textContent === 'Sign out'))
+      .toBe(false)
   })
 
   it('renders semantic XP progress and exact remaining XP while preserving authenticated sign-out', () => {

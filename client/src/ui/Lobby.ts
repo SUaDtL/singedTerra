@@ -1728,7 +1728,7 @@ export class Lobby {
       }
       #lobby .account-panel__record {
         display: grid;
-        width: min(264px, calc(100vw - 36px));
+        width: min(330px, calc(100vw - 36px));
         gap: 4px;
         padding: 7px 9px 8px;
         box-sizing: border-box;
@@ -1743,6 +1743,12 @@ export class Lobby {
         letter-spacing: 1.6px;
       }
       #lobby .account-panel__record .account-panel__account-trigger {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) max-content;
+        align-items: baseline;
+        column-gap: 8px;
+        row-gap: 3px;
+        width: 100%;
         max-width: 100%;
         min-height: 24px;
         padding: 0;
@@ -1750,6 +1756,28 @@ export class Lobby {
         border: 0;
         border-left: 0;
         background: transparent;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+      }
+      #lobby .account-panel__commander-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        color: #ffe0a0;
+        font-weight: 700;
+      }
+      #lobby .account-panel__commander-level {
+        color: rgba(255, 224, 159, 0.78);
+        font: 700 0.78em/1 var(--font-mono);
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+      }
+      #lobby .account-panel__record-milestone {
+        grid-column: 1 / -1;
+        color: rgba(216, 198, 162, 0.82);
+        font: 700 9px/1.15 var(--font-mono);
+        letter-spacing: 0.45px;
+        text-transform: uppercase;
       }
       #lobby .account-panel__record-xp {
         display: block;
@@ -1769,6 +1797,9 @@ export class Lobby {
       #app.is-compact #lobby .account-panel__record .account-panel__account-trigger {
         min-height: calc(var(--st-store-buy-target) * 0.55);
         font-size: calc(var(--st-store-buy-target) * 0.19);
+      }
+      #app.is-compact #lobby .account-panel__record-milestone {
+        font-size: calc(var(--st-store-buy-target) * 0.16);
       }
       #app.is-compact #lobby .account-panel__record-xp {
         height: calc(var(--st-store-buy-target) * 0.1);
@@ -2266,6 +2297,13 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-deployment > .lobby-controls { bottom: 56px; }
       #app.is-compact #lobby .lobby-deployment__masthead { min-height: 0; }
+      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel__record) {
+        min-height: 120px;
+      }
+      #app.is-compact #lobby .lobby-deployment:has(.account-panel__record)
+        > .lobby-preview {
+        inset-block-start: 82px;
+      }
       #app.is-compact #lobby .lobby-deployment__masthead > .account-panel,
       #app.is-compact #lobby .lobby-deployment__masthead > .account-panel--open {
         position: absolute;
