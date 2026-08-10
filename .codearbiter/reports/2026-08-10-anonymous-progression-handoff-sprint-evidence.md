@@ -104,7 +104,7 @@
 ## Landing
 
 - Feature commits: `2d8220372be9adc12e8f93c6c25a1f41a51337b2` and `8f88d0454ce669a78f74f37fe759ff8cb92b1261`.
-- PR: `#384`, merged through the guarded squash path only after every hosted check was green on exact reviewed head `8f88d0454ce669a78f74f37fe759ff8cb92b1261`.
+- PR: `#384`, merged through the guarded squash path only after every required hosted check passed on exact reviewed head `8f88d0454ce669a78f74f37fe759ff8cb92b1261`, with Supabase Preview expectedly skipped.
 - Merge commit: `7bf5f9a50e2373f5da384492cc3209b875a67231`; independently fetched `origin/main` matched exactly.
 - Hosted PR checks: CodeQL PASS; CodeQL analysis PASS; Edge tests PASS; typecheck, harnesses, client tests, and build PASS; rendering guardrails PASS; CodeRabbit PASS. Supabase Preview was the expected skipped integration.
 - Deployment: GitHub Pages run `31401972359` completed successfully at exact merge SHA `7bf5f9a50e2373f5da384492cc3209b875a67231`, including build, current-main guards, deployment provenance, and post-deploy live smoke.
