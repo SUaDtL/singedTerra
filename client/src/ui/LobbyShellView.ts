@@ -1,10 +1,5 @@
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 
-const TAB_IDS: Record<LobbyPrimaryTab, string> = {
-  hotseat: 'lobby-mode-hotseat',
-  online: 'lobby-mode-online',
-};
-
 const MODE_PANEL_ID = 'lobby-mode-panel';
 
 const MODE_CONTEXT: Record<LobbyPrimaryTab, { title: string; description: string }> = {
@@ -20,6 +15,8 @@ const MODE_CONTEXT: Record<LobbyPrimaryTab, { title: string; description: string
 
 export interface LobbyShellViewOptions {
   activeTab: LobbyPrimaryTab;
+  surface: 'chooser' | 'preparation';
+  showBack: boolean;
   rejoinAvailable: boolean;
   account: HTMLElement | null;
   vehiclePreview: HTMLElement;
@@ -28,6 +25,7 @@ export interface LobbyShellViewOptions {
   onTabChange: (tab: LobbyPrimaryTab) => void;
   onQuickDuel: () => void;
   onRejoin: () => void;
+  onBack: () => void;
 }
 
 export function buildLobbyOnlineView(content: HTMLElement): HTMLElement {
@@ -68,82 +66,63 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
 
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'lobby-btn';
+    button.className = 'lobby-btn primary';
     button.textContent = 'Rejoin your game';
     button.addEventListener('click', () => { options.onRejoin(); });
     banner.append(text, button);
     masthead.append(banner);
   }
 
-  const tabs = document.createElement('div');
-  tabs.className = 'lobby-tabs';
-  tabs.setAttribute('role', 'tablist');
-  tabs.setAttribute('aria-label', 'Choose play mode');
-  const quickDuel = document.createElement('section');
-  quickDuel.className = 'lobby-quick-duel';
-  const quickDuelBriefing = document.createElement('div');
-  quickDuelBriefing.className = 'lobby-quick-duel__briefing';
-  const quickDuelTitle = document.createElement('h2');
-  quickDuelTitle.className = 'lobby-quick-duel__title';
-  quickDuelTitle.textContent = 'Quick Duel';
-  const quickDuelDescription = document.createElement('p');
-  quickDuelDescription.className = 'lobby-quick-duel__description';
-  quickDuelDescription.textContent = 'Deploy one player against a medium CPU.';
-  quickDuelBriefing.append(quickDuelTitle, quickDuelDescription);
-  const quickDuelAction = document.createElement('button');
-  quickDuelAction.type = 'button';
-  quickDuelAction.className = 'lobby-btn primary lobby-quick-duel__action';
-  quickDuelAction.textContent = 'Quick Duel vs CPU';
-  quickDuelAction.addEventListener('click', () => { options.onQuickDuel(); });
-  quickDuel.append(quickDuelBriefing, quickDuelAction);
-  const rail = document.createElement('nav');
-  rail.className = 'lobby-deployment__mode-rail';
-  rail.setAttribute('aria-label', 'Choose deployment mode');
+  if (options.surface === 'chooser') {
+    const chooser = document.createElement('nav');
+    chooser.className = 'lobby-deployment-chooser';
+    chooser.setAttribute('aria-label', 'Choose deployment');
 
-  const selectTab = (tab: LobbyPrimaryTab): void => {
-    options.onTabChange(tab);
-    document.getElementById(TAB_IDS[tab])?.focus();
-  };
+    const choice = (
+      label: string,
+      className: string,
+      onClick: () => void,
+    ): HTMLButtonElement => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = className;
+      button.textContent = label;
+      button.addEventListener('click', onClick);
+      return button;
+    };
 
-  const handleTabKey = (event: KeyboardEvent, current: LobbyPrimaryTab): void => {
-    const target = event.key === 'Home'
-      ? 'hotseat'
-      : event.key === 'End'
-        ? 'online'
-        : event.key === 'ArrowLeft' || event.key === 'ArrowRight'
-          ? current === 'hotseat' ? 'online' : 'hotseat'
-          : null;
-    if (target === null) return;
-    event.preventDefault();
-    selectTab(target);
-  };
+    chooser.append(
+      choice(
+        'Quick Duel vs CPU',
+        options.rejoinAvailable
+          ? 'lobby-btn lobby-deployment-choice--secondary'
+          : 'lobby-btn primary',
+        () => { options.onQuickDuel(); },
+      ),
+      choice(
+        'Local Battle',
+        'lobby-btn lobby-deployment-choice--secondary',
+        () => { options.onTabChange('hotseat'); },
+      ),
+      choice(
+        'Play Online',
+        'lobby-btn lobby-deployment-choice--secondary',
+        () => { options.onTabChange('online'); },
+      ),
+    );
+    deployment.append(masthead, chooser);
+    card.append(deployment);
+    return card;
+  }
 
-  const hotSeat = document.createElement('button');
-  hotSeat.type = 'button';
-  hotSeat.className = 'lobby-tab' + (options.activeTab === 'hotseat' ? ' active' : '');
-  hotSeat.id = TAB_IDS.hotseat;
-  hotSeat.setAttribute('role', 'tab');
-  hotSeat.setAttribute('aria-selected', String(options.activeTab === 'hotseat'));
-  hotSeat.setAttribute('aria-controls', MODE_PANEL_ID);
-  hotSeat.tabIndex = options.activeTab === 'hotseat' ? 0 : -1;
-  hotSeat.textContent = 'Hot Seat';
-  hotSeat.addEventListener('click', () => { selectTab('hotseat'); });
-  hotSeat.addEventListener('keydown', (event) => { handleTabKey(event, 'hotseat'); });
+  const back = options.showBack ? document.createElement('button') : null;
+  if (back) {
+    back.type = 'button';
+    back.className = 'lobby-btn lobby-deployment__back';
+    back.textContent = 'Back to deployment choices';
+    back.addEventListener('click', () => { options.onBack(); });
+  }
 
-  const online = document.createElement('button');
-  online.type = 'button';
-  online.className = 'lobby-tab' + (options.activeTab === 'online' ? ' active' : '');
-  online.id = TAB_IDS.online;
-  online.setAttribute('role', 'tab');
-  online.setAttribute('aria-selected', String(options.activeTab === 'online'));
-  online.setAttribute('aria-controls', MODE_PANEL_ID);
-  online.tabIndex = options.activeTab === 'online' ? 0 : -1;
-  online.textContent = 'Play Online';
-  online.addEventListener('click', () => { selectTab('online'); });
-  online.addEventListener('keydown', (event) => { handleTabKey(event, 'online'); });
-
-  tabs.append(hotSeat, online);
-  rail.append(quickDuel, tabs);
   const context = document.createElement('section');
   context.className = 'lobby-mode-context lobby-deployment__mission-brief';
   const contextTitle = document.createElement('h2');
@@ -155,16 +134,11 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
   panel.className = 'lobby-mode-panel';
   panel.id = MODE_PANEL_ID;
   panel.setAttribute('role', 'tabpanel');
-  panel.setAttribute('aria-labelledby', TAB_IDS[options.activeTab]);
+  panel.setAttribute('aria-label', `${MODE_CONTEXT[options.activeTab].title} preparation`);
   panel.append(options.content);
-  deployment.append(
-    masthead,
-    rail,
-    context,
-    panel,
-    options.vehiclePreview,
-    options.controls,
-  );
+  deployment.append(masthead);
+  if (back) deployment.append(back);
+  deployment.append(context, panel, options.vehiclePreview, options.controls);
   card.append(deployment);
   return card;
 }

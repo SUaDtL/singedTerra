@@ -15,6 +15,7 @@ describe('Lobby Advanced Settings overlay', () => {
     document.body.append(root)
     lobby.show()
 
+    button(root, 'Local Battle').click()
     button(root, 'Advanced settings').click()
     const overlay = root.querySelector<HTMLElement>('.lobby-overlay')
     const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]')

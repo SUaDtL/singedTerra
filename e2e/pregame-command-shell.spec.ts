@@ -1,88 +1,37 @@
 import { expect, test } from '@playwright/test';
 import { assertLobbyControlReachable, assertLobbyFrame, gotoLobby, isCompact } from './support';
 
-async function expectBriefHeaderAboveSetup(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
-  const overlap = await page.locator('#lobby .lobby-route-brief').evaluate((brief) => {
-    const heading = brief.querySelector<HTMLElement>('.lobby-route-brief__title');
-    const firstSetupChild = brief.querySelector<HTMLElement>('.lobby-route-brief__setup > *');
-    if (!heading || !firstSetupChild) throw new Error('Expected a route heading and setup control');
-    const headingRect = heading.getBoundingClientRect();
-    const setupRect = firstSetupChild.getBoundingClientRect();
-    return {
-      headingBottom: headingRect.bottom,
-      setupTop: setupRect.top,
-    };
-  });
-
-  expect(
-    overlap.headingBottom,
-    'compact route heading must clear its first setup control',
-  ).toBeLessThanOrEqual(overlap.setupTop + 1);
+async function openLocal(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
+  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
 }
 
-async function commandStyle(page: Parameters<typeof gotoLobby>[0]): Promise<{
-  shellRule: string;
-  hotSeatRadius: string;
-}> {
-  return page.locator('#lobby .lobby-command-header').evaluate((header) => {
-    const shell = getComputedStyle(header);
-    const lobby = document.querySelector<HTMLElement>('#lobby');
-    const hotSeat = lobby?.querySelector<HTMLElement>('.lobby-start');
-    if (!hotSeat) throw new Error('Expected Hot Seat control is missing');
-    return {
-      shellRule: shell.borderBottomStyle,
-      hotSeatRadius: getComputedStyle(hotSeat).borderRadius,
-    };
-  });
+async function openOnline(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
+  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
 }
 
-async function compactCommandMetrics(page: Parameters<typeof gotoLobby>[0]): Promise<{
-  duplicatePreviewContent: string;
-  operational: Record<string, number>;
-  technical: Record<string, number>;
-  technicalOverflow: Array<{ text: string; clientWidth: number; scrollWidth: number }>;
-}> {
-  return page.locator('#lobby .lobby-card').evaluate((card) => {
-    const app = document.getElementById('app');
-    if (!app) throw new Error('Expected fixed-stage app');
-    const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
-    const renderedFont = (selector: string): number => {
-      const element = card.querySelector<HTMLElement>(selector);
-      if (!element) throw new Error(`Expected compact command element: ${selector}`);
-      return Number.parseFloat(getComputedStyle(element).fontSize) * zoom;
-    };
-    return {
-      duplicatePreviewContent: getComputedStyle(card, '::before').content,
-      operational: {
-        route: renderedFont('.lobby-mode-context h2'),
-        selectedMode: renderedFont('.lobby-tab.active'),
-        primaryAction: renderedFont('.lobby-mode-panel:not([hidden]) .lobby-btn.primary'),
-        setupSummary: renderedFont(
-          '.lobby-mode-panel:not([hidden]) .lobby-hotseat-ready h3, '
-          + '.lobby-mode-panel:not([hidden]) .lobby-route-brief--online .lobby-preparation-section__title',
-        ),
-        account: renderedFont(
-          '.account-panel > button, .account-panel__record .account-panel__account-trigger',
-        ),
-        vehicleIdentity: renderedFont('.lobby-preview__spotlight-identity'),
-      },
-      technical: {
-        commandKicker: renderedFont('.lobby-command-header__kicker'),
-        vehicleBay: renderedFont('.lobby-preview__label'),
-        partRole: renderedFont('.lobby-preview__part span'),
-        partName: renderedFont('.lobby-preview__part strong'),
-      },
-      technicalOverflow: [...card.querySelectorAll<HTMLElement>(
-        '.lobby-preview__part span, .lobby-preview__part strong',
-      )]
-        .filter((element) => element.scrollWidth > element.clientWidth + 1)
-        .map((element) => ({
-          text: element.textContent ?? '',
-          clientWidth: element.clientWidth,
-          scrollWidth: element.scrollWidth,
-        })),
-    };
+async function installLiveRejoinFixture(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
+  await page.route('**/rest/v1/rooms*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'room-rejoin-fixture',
+        code: 'BACK',
+        seed: 17,
+        options: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
+        players: [{ id: 'player-rejoin-fixture', name: 'Ranger', color: '#e84d4d', ready: true }],
+        status: 'active',
+      }),
+    });
   });
+  await page.evaluate(() => {
+    localStorage.setItem('singedterra:session', JSON.stringify({
+      roomId: 'room-rejoin-fixture',
+      roomCode: 'BACK',
+      playerId: 'player-rejoin-fixture',
+    }));
+  });
+  await gotoLobby(page);
 }
 
 test.describe('Pre-game command shell', () => {
@@ -90,333 +39,180 @@ test.describe('Pre-game command shell', () => {
     await gotoLobby(page);
   });
 
-  test('gives Hot Seat a tactical shell and squared command controls', async ({ page }) => {
-    const shell = page.locator('#lobby .lobby-command-header');
-    await expect(shell).toBeVisible();
-    await expect(shell).toHaveAttribute('aria-label', 'Pre-game command preparation');
-    await expect(shell).toHaveText('COMMAND PREPARATION');
-    await expect(page.getByRole('heading', { name: 'COMMAND PREPARATION', exact: true })).toBeVisible();
+  test('opens on one focused three-choice deployment front door', async ({ page }) => {
+    const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
+    const choices = chooser.getByRole('button');
 
-    const style = await commandStyle(page);
-    expect(style.shellRule).toBe('solid');
-    expect(style.hotSeatRadius).toBe('0px');
+    await expect(choices).toHaveCount(3);
+    await expect(choices).toHaveText([
+      'Quick Duel vs CPU',
+      'Local Battle',
+      'Play Online',
+    ]);
+    await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
+    await expect(page.locator('#lobby .lobby-online-primary')).toHaveCount(0);
+    await expect(page.locator('#lobby .lobby-preview')).toHaveCount(0);
     await assertLobbyFrame(page);
-    await assertLobbyControlReachable(page, '#lobby .lobby-start');
   });
 
-  test('launches valid Hot Seat defaults before asking for customization', async ({ page }) => {
-    const ready = page.locator('#lobby .lobby-hotseat-ready');
-    const customization = page.locator('#lobby .lobby-hotseat-customization');
-    const manifest = page.locator(
-      '#lobby [data-preparation-section="crew-manifest"]',
-    );
-    const start = page.locator('#lobby .lobby-start');
+  test('makes Quick Duel the one dominant, touch-sized deployment choice', async ({ page }) => {
+    const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
+    const quick = chooser.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
+    const local = chooser.getByRole('button', { name: 'Local Battle', exact: true });
+    const online = chooser.getByRole('button', { name: 'Play Online', exact: true });
 
-    await expect(ready).toContainText('2-player local battle');
-    await expect(ready).toContainText('Current crew and battlefield setup is ready');
-    await expect(customization).not.toHaveAttribute('open', '');
-    await expect(manifest).toBeHidden();
-    await expect(start).toBeVisible();
-    await assertLobbyControlReachable(page, '#lobby .lobby-start');
-
-    await customization.getByText('Customize crew and battlefield', { exact: true }).click();
-    await expect(customization).toHaveAttribute('open', '');
-    await expect(manifest).toBeVisible();
-    await expect(start).toBeVisible();
-    const expandedGeometry = await page.locator('#lobby .lobby-card').evaluate((card) => {
-      const launch = card.querySelector<HTMLElement>('.lobby-start');
-      if (!launch) throw new Error('Expected local launch action');
-      const cardRect = card.getBoundingClientRect();
-      const launchRect = launch.getBoundingClientRect();
+    const metrics = await chooser.evaluate((element) => {
+      const app = document.getElementById('app');
+      const quick = element.querySelector<HTMLElement>('.primary');
+      const secondary = [...element.querySelectorAll<HTMLElement>('button:not(.primary)')];
+      if (!app || !quick || secondary.length !== 2) throw new Error('Expected deployment choices');
+      const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
       return {
-        cardScrollTop: card.scrollTop,
-        launchTop: launchRect.top,
-        launchBottom: launchRect.bottom,
-        cardTop: cardRect.top,
-        cardBottom: cardRect.bottom,
+        publishedTarget: Number.parseFloat(
+          getComputedStyle(app).getPropertyValue('--st-deployment-choice-target'),
+        ),
+        expectedTarget: Math.ceil(44 / zoom),
+        quickHeight: quick.getBoundingClientRect().height,
+        quickFont: Number.parseFloat(getComputedStyle(quick).fontSize) * zoom,
+        quickBackground: getComputedStyle(quick).background,
+        secondaryHeights: secondary.map((choice) => choice.getBoundingClientRect().height),
+        secondaryBackgrounds: secondary.map((choice) => getComputedStyle(choice).backgroundColor),
+        primaryCount: element.querySelectorAll('.primary').length,
       };
     });
-    expect(expandedGeometry.cardScrollTop).toBe(0);
-    expect(expandedGeometry.launchTop).toBeGreaterThanOrEqual(expandedGeometry.cardTop - 1);
-    expect(expandedGeometry.launchBottom).toBeLessThanOrEqual(expandedGeometry.cardBottom + 1);
-    await assertLobbyFrame(page);
-    await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await customization.locator('.lobby-field select').first().selectOption('3');
-    await expect(customization).toHaveAttribute('open', '');
-    await expect(page.locator('#lobby .lobby-row')).toHaveCount(3);
+    expect(metrics.primaryCount).toBe(1);
+    expect(metrics.publishedTarget).toBe(metrics.expectedTarget);
+    expect(metrics.quickHeight).toBeGreaterThanOrEqual(52);
+    expect(metrics.quickFont).toBeGreaterThanOrEqual(14);
+    expect(metrics.quickHeight).toBeGreaterThan(Math.max(...metrics.secondaryHeights));
+    expect(metrics.secondaryBackgrounds).not.toContain('rgb(255, 210, 63)');
+    expect(new Set(metrics.secondaryBackgrounds).size).toBe(1);
+    expect(metrics.quickBackground).not.toContain(metrics.secondaryBackgrounds[0]!);
+    for (const choice of [quick, local, online]) {
+      const box = await choice.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+    await assertLobbyFrame(page);
   });
 
-  test('keeps live validation visible until the player corrects it', async ({ page }) => {
-    const customization = page.locator('#lobby .lobby-hotseat-customization');
-    const summary = customization.locator('summary');
-    const start = page.locator('#lobby .lobby-start');
-    const playerName = page.getByRole('textbox', { name: 'Player 1' });
+  test('makes a valid rejoin the sole dominant deployment action', async ({ page }) => {
+    await installLiveRejoinFixture(page);
 
-    await summary.click();
+    const deployment = page.locator('#lobby .lobby-deployment');
+    const rejoin = page.getByRole('button', { name: 'Rejoin your game', exact: true });
+    const quick = page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
+    await expect(rejoin).toBeVisible();
+    await expect(quick).toBeVisible();
+
+    const hierarchy = await deployment.evaluate((element) => {
+      const rejoin = element.querySelector<HTMLElement>('.lobby-rejoin-banner .lobby-btn');
+      const quick = element.querySelector<HTMLElement>('.lobby-deployment-chooser .lobby-btn');
+      if (!rejoin || !quick) throw new Error('Expected rejoin and Quick Duel actions');
+      const rejoinStyle = getComputedStyle(rejoin);
+      const quickStyle = getComputedStyle(quick);
+      return {
+        primaryCount: element.querySelectorAll('.lobby-btn.primary').length,
+        rejoinPrimary: rejoin.classList.contains('primary'),
+        quickPrimary: quick.classList.contains('primary'),
+        rejoinHeight: rejoin.getBoundingClientRect().height,
+        quickHeight: quick.getBoundingClientRect().height,
+        rejoinFont: Number.parseFloat(rejoinStyle.fontSize),
+        quickFont: Number.parseFloat(quickStyle.fontSize),
+      };
+    });
+
+    expect.soft(hierarchy.primaryCount, 'rejoin state must expose exactly one primary action').toBe(1);
+    expect.soft(hierarchy.rejoinPrimary, 'Rejoin must own the primary treatment').toBe(true);
+    expect.soft(hierarchy.quickPrimary, 'Quick Duel must yield primary treatment to Rejoin').toBe(false);
+    expect.soft(hierarchy.rejoinHeight, 'Rejoin must retain a 44px physical target')
+      .toBeGreaterThanOrEqual(44);
+    expect.soft(hierarchy.rejoinHeight, 'Rejoin must be at least as tall as Quick Duel')
+      .toBeGreaterThanOrEqual(hierarchy.quickHeight);
+    expect.soft(hierarchy.rejoinFont, 'Rejoin must be at least as legible as Quick Duel')
+      .toBeGreaterThanOrEqual(hierarchy.quickFont);
+    await assertLobbyControlReachable(page, '#lobby .lobby-rejoin-banner .lobby-btn');
+    await assertLobbyFrame(page);
+  });
+
+  test('opens Local preparation only after selection and returns focus to its choice', async ({ page }) => {
+    await openLocal(page);
+
+    await expect(page.getByRole('heading', { name: 'Hot Seat', exact: true })).toBeVisible();
+    await expect(page.locator('#lobby .lobby-hotseat-ready')).toContainText('2-player local battle');
+    await expect(page.locator('#lobby .lobby-start')).toBeVisible();
+    await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
+    await assertLobbyControlReachable(page, '#lobby .lobby-start');
+
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Local Battle', exact: true })).toBeFocused();
+    await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
+    await assertLobbyFrame(page);
+  });
+
+  test('keeps valid Local defaults and validation inside preparation', async ({ page }) => {
+    await openLocal(page);
+    const customization = page.locator('#lobby .lobby-hotseat-customization');
+    const start = page.locator('#lobby .lobby-start');
+
+    await expect(customization).not.toHaveAttribute('open', '');
+    await expect(start).toBeEnabled();
+    await customization.getByText('Customize crew and battlefield', { exact: true }).click();
+    const playerName = page.getByRole('textbox', { name: 'Player 1' });
     await playerName.fill('');
     await expect(start).toBeDisabled();
     await expect(page.locator('#lobby .lobby-error')).toBeVisible();
-    await summary.click();
-    await expect(customization).toHaveAttribute('open', '');
-    await expect(page.locator('#lobby .lobby-error')).toBeVisible();
-
     await playerName.fill('Player 1');
     await expect(start).toBeEnabled();
-    await summary.click();
-    await expect(customization).not.toHaveAttribute('open', '');
-    await expect(page.locator('#lobby .lobby-hotseat-ready')).toBeVisible();
+    await assertLobbyFrame(page);
   });
 
-  test('keeps compact route choices usable while customization is open', async ({ page }) => {
-    test.skip(!(await isCompact(page)), 'The compact guard applies only below the fixed-stage threshold.');
+  test('opens Online preparation and keeps all three room-entry routes reachable', async ({ page }) => {
+    await openOnline(page);
 
-    await page.locator('#lobby .lobby-hotseat-customization > summary').click();
-
-    const quickDuel = page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
-    const hotSeat = page.getByRole('tab', { name: 'Hot Seat', exact: true });
-    const online = page.getByRole('tab', { name: 'Play Online', exact: true });
-    await expect(quickDuel).toBeVisible();
-    await expect(hotSeat).toBeVisible();
-    await expect(online).toBeVisible();
-    await assertLobbyFrame(page);
-    await assertLobbyControlReachable(page, '#lobby .lobby-start');
-
-    const targetToken = await page.locator('#app').evaluate((app) => {
-      const zoom = Number.parseFloat(getComputedStyle(app).zoom) || 1;
-      return {
-        actual: Number.parseFloat(getComputedStyle(app).getPropertyValue('--st-command-choice-target')),
-        expected: Math.ceil(24 / zoom),
-      };
-    });
-    expect(targetToken.actual, 'the stage scaler must publish the inverse-zoom target')
-      .toBe(targetToken.expected);
-
-    for (const control of [quickDuel, hotSeat, online]) {
-      const box = await control.boundingBox();
-      expect(box, 'compact command choices must have measurable hit targets').not.toBeNull();
-      expect.soft(box!.height, 'compact command choices must retain a 24px physical target floor')
-        .toBeGreaterThanOrEqual(24);
-    }
-
-    await hotSeat.focus();
-    await page.keyboard.press('ArrowLeft');
-    await expect(online).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('heading', { name: 'Play Online', exact: true })).toBeVisible();
     await expect(page.locator('#lobby .lobby-online-primary')).toBeVisible();
-  });
-
-  test('carries the same command hierarchy into Online room entry', async ({ page }) => {
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
-
-    const style = await page.locator('#lobby .lobby-online-primary').evaluate((primary) => ({
-      radius: getComputedStyle(primary).borderRadius,
-      surface: getComputedStyle(primary).backgroundColor,
-    }));
-    expect(style.radius).toBe('0px');
-    expect(style.surface).not.toBe('rgb(255, 210, 63)');
-    await assertLobbyFrame(page);
     await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
     await assertLobbyControlReachable(page, '#lobby [data-online-route="join-code"]');
     await assertLobbyControlReachable(page, '#lobby [data-online-route="browse"]');
-  });
-
-  test('frames each immediate commitment as a contained deployment brief', async ({ page }) => {
-    const brief = page.locator('#lobby .lobby-route-brief');
-    await expect(brief).toBeVisible();
-    await expect(brief.getByRole('heading', { name: 'Local battery' })).toBeVisible();
-    await expect(brief.locator('.lobby-route-brief__setup')).toHaveAttribute(
-      'aria-label',
-      'Local battery setup',
-    );
-    expect(await brief.evaluate((element) => getComputedStyle(element).borderLeftStyle)).toBe('solid');
-    await assertLobbyControlReachable(page, '#lobby .lobby-start');
-
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
-    await expect(brief.getByRole('heading', { name: 'Open operation' })).toBeVisible();
-    await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
 
     await page.locator('[data-online-route="join-code"]').click();
-    await expect(brief.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
-    await expect(brief.locator('.lobby-route-brief__setup')).toHaveAttribute('aria-label', 'Rally setup');
-    await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
+    await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Play Online', exact: true })).toBeFocused();
+    await openOnline(page);
+    await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
+    await assertLobbyFrame(page);
   });
 
-  test('keeps each compact route heading above its first setup control', async ({ page }) => {
-    test.skip(!(await isCompact(page)), 'The compact guard applies only below the fixed-stage threshold.');
-
-    await expectBriefHeaderAboveSetup(page);
-
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
-    await expectBriefHeaderAboveSetup(page);
-
-    await page.locator('[data-online-route="join-code"]').click();
-    await expectBriefHeaderAboveSetup(page);
-  });
-
-  test('keeps the compact command shell legible on one intentional preview plane', async ({
-    page,
-  }) => {
-    test.skip(!(await isCompact(page)), 'The compact guard applies only below the fixed-stage threshold.');
-
-    for (const route of ['Hot Seat', 'Play Online'] as const) {
-      await page.getByRole('tab', { name: route, exact: true }).click();
-      const metrics = await compactCommandMetrics(page);
-
-      expect.soft(metrics.duplicatePreviewContent, 'the real Vehicle Bay must own the only preview plane')
-        .toBe('none');
-      for (const [label, pixels] of Object.entries(metrics.operational)) {
-        expect.soft(pixels, `${route} ${label} must render at 12 physical pixels or larger`)
-          .toBeGreaterThanOrEqual(12);
-      }
-      for (const [label, pixels] of Object.entries(metrics.technical)) {
-        expect.soft(pixels, `${route} ${label} must render at 10 physical pixels or larger`)
-          .toBeGreaterThanOrEqual(10);
-      }
-      expect.soft(metrics.technicalOverflow, `${route} Vehicle Bay labels must not be ellipsized`)
-        .toEqual([]);
-
-      await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
-      await assertLobbyFrame(page);
-      await assertLobbyControlReachable(
-        page,
-        route === 'Hot Seat' ? '#lobby .lobby-start' : '#lobby .lobby-online-primary',
-      );
-    }
-  });
-
-  test('uses one deployment grid with a dominant route action at every supported size', async ({
+  test('keeps the selected preparation hierarchy legible and contained at compact sizes', async ({
     page,
   }, testInfo) => {
-    const shell = page.locator('#lobby .lobby-deployment');
-    const hotSeatPrimary = page.locator('#lobby .lobby-start');
-    const initialLayout = await shell.evaluate((element) => {
-      const style = getComputedStyle(element);
-      const lobby = document.querySelector<HTMLElement>('#lobby')!;
-      return {
-        display: style.display,
-        columns: style.gridTemplateColumns.split(' ').filter(Boolean),
-        width: element.getBoundingClientRect().width,
-        lobbyWidth: lobby.getBoundingClientRect().width,
-      };
-    });
-    expect(initialLayout.display).toBe('grid');
-    expect(initialLayout.columns).toHaveLength(
-      testInfo.project.name === 'desktop-fine' ? 2 : 1,
-    );
-    expect(initialLayout.width / initialLayout.lobbyWidth).toBeGreaterThan(0.82);
-    await assertLobbyFrame(page);
-    await assertLobbyControlReachable(page, '#lobby .lobby-start');
+    test.skip(!(await isCompact(page)), 'The compact guard applies below the fixed-stage threshold.');
 
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
-    await expect(page.locator('#lobby .lobby-deployment__mission-brief'))
-      .toHaveText(/Play Online/);
-    await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
-    await expect(hotSeatPrimary).toBeHidden();
+    for (const route of ['Local Battle', 'Play Online'] as const) {
+      await page.getByRole('button', { name: route, exact: true }).click();
+      const metrics = await page.locator('#lobby .lobby-deployment').evaluate((deployment) => {
+        const app = document.getElementById('app');
+        const context = deployment.querySelector<HTMLElement>('.lobby-mode-context h2');
+        const back = deployment.querySelector<HTMLElement>('.lobby-deployment__back');
+        const preview = deployment.querySelector<HTMLElement>('.lobby-preview');
+        if (!app || !context || !back || !preview) throw new Error('Expected preparation hierarchy');
+        const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
+        return {
+          headingFont: Number.parseFloat(getComputedStyle(context).fontSize) * zoom,
+          backHeight: back.getBoundingClientRect().height,
+          previewVisible: getComputedStyle(preview).visibility !== 'hidden',
+        };
+      });
+      expect(metrics.headingFont).toBeGreaterThanOrEqual(12);
+      expect(metrics.backHeight).toBeGreaterThanOrEqual(
+        testInfo.project.name === 'pixel-touch' ? 44 : 32,
+      );
+      expect(metrics.previewVisible).toBe(true);
+      await assertLobbyFrame(page);
+      await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    }
   });
-
-  test('shares one contained command row between Quick Duel and the mode tabs', async ({
-    page,
-  }) => {
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
-    await expect(page.locator('#lobby .lobby-deployment__mission-brief'))
-      .toHaveText(/Play Online/);
-    const brief = page.locator('#lobby .lobby-quick-duel');
-    const action = brief.locator('.lobby-quick-duel__action');
-    await expect(brief.getByRole('heading', { name: 'Quick Duel', exact: true })).toBeVisible();
-    await expect(brief.locator('.lobby-quick-duel__description'))
-      .toHaveText('Deploy one player against a medium CPU.');
-    await expect(action).toHaveCount(1);
-    await expect(action).toHaveText('Quick Duel vs CPU');
-    await expect(action).toBeVisible();
-
-    const geometry = await page.locator('#lobby .lobby-deployment').evaluate((deployment) => {
-      const masthead = deployment.querySelector<HTMLElement>('.lobby-deployment__masthead');
-      const brief = deployment.querySelector<HTMLElement>('.lobby-quick-duel');
-      const action = deployment.querySelector<HTMLElement>('.lobby-quick-duel__action');
-      const rail = deployment.querySelector<HTMLElement>('.lobby-deployment__mode-rail');
-      const tabs = deployment.querySelector<HTMLElement>('.lobby-tabs');
-      const card = deployment.closest<HTMLElement>('.lobby-card');
-      const app = document.getElementById('app');
-      if (!masthead || !brief || !action || !rail || !tabs || !card || !app) {
-        throw new Error('Expected Quick Duel deployment grid');
-      }
-      const zoom = Number.parseFloat(getComputedStyle(app).zoom) || 1;
-      const actionRect = action.getBoundingClientRect();
-      const briefRect = brief.getBoundingClientRect();
-      const railRect = rail.getBoundingClientRect();
-      const tabsRect = tabs.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
-      return {
-        railArea: getComputedStyle(rail).gridArea,
-        briefCssHeight: briefRect.height / zoom,
-        actionRadius: getComputedStyle(action).borderRadius,
-        actionCssHeight: actionRect.height / zoom,
-        actionMinHeight: Number.parseFloat(getComputedStyle(action).minHeight),
-        mastheadBottom: masthead.getBoundingClientRect().bottom,
-        railRect: {
-          top: railRect.top,
-          bottom: railRect.bottom,
-        },
-        briefRect: {
-          top: briefRect.top,
-          right: briefRect.right,
-          bottom: briefRect.bottom,
-        },
-        tabsRect: {
-          left: tabsRect.left,
-          top: tabsRect.top,
-          bottom: tabsRect.bottom,
-        },
-        cardScrollTop: card.scrollTop,
-        actionRect: {
-          left: actionRect.left,
-          top: actionRect.top,
-          right: actionRect.right,
-          bottom: actionRect.bottom,
-        },
-        cardRect: {
-          left: cardRect.left,
-          top: cardRect.top,
-          right: cardRect.right,
-          bottom: cardRect.bottom,
-        },
-      };
-    });
-
-    expect(geometry.railArea).toBe('rail');
-    expect(Math.round(geometry.briefCssHeight)).toBe(46);
-    expect(geometry.actionRadius).toBe('0px');
-    expect(geometry.actionMinHeight).toBeGreaterThanOrEqual(46);
-    expect(Math.round(geometry.actionCssHeight)).toBeGreaterThanOrEqual(46);
-    expect(geometry.mastheadBottom).toBeLessThanOrEqual(geometry.railRect.top + 1);
-    expect(geometry.briefRect.top).toBeGreaterThanOrEqual(geometry.railRect.top - 1);
-    expect(geometry.briefRect.bottom).toBeLessThanOrEqual(geometry.railRect.bottom + 1);
-    expect(geometry.briefRect.right).toBeLessThanOrEqual(geometry.tabsRect.left + 1);
-    expect(geometry.briefRect.top).toBeLessThan(geometry.tabsRect.bottom);
-    expect(geometry.briefRect.bottom).toBeGreaterThan(geometry.tabsRect.top);
-    expect(geometry.cardScrollTop).toBe(0);
-    expect(geometry.actionRect.left).toBeGreaterThanOrEqual(geometry.cardRect.left - 1);
-    expect(geometry.actionRect.top).toBeGreaterThanOrEqual(geometry.cardRect.top - 1);
-    expect(geometry.actionRect.right).toBeLessThanOrEqual(geometry.cardRect.right + 1);
-    expect(geometry.actionRect.bottom).toBeLessThanOrEqual(geometry.cardRect.bottom + 1);
-    await assertLobbyFrame(page);
-    await assertLobbyControlReachable(page, '#lobby .lobby-quick-duel__action');
-  });
-
-  test('launches the ordinary CPU duel journey into a running HUD', async ({ page }) => {
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
-    await expect(page.locator('#lobby .lobby-deployment__mission-brief'))
-      .toHaveText(/Play Online/);
-    const brief = page.locator('#lobby .lobby-quick-duel');
-    const action = brief.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
-    await expect(brief).toBeVisible();
-    await expect(action).toBeVisible();
-    await action.click();
-
-    await expect(page.locator('#lobby')).toBeHidden();
-    await expect(page.locator('#hud.st-hud')).toBeVisible();
-    await expect(page.locator('#hud .st-hud__name').filter({ hasText: 'CPU 1' }))
-      .toHaveText('🤖 CPU 1');
-  });
-
 });

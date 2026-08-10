@@ -6,6 +6,14 @@ import {
   openHotSeatCustomization,
 } from './support';
 
+async function chooseLocalBattle(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+}
+
+async function choosePlayOnline(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+}
+
 async function assertOperationsBoardFlow(page: Page, selector: string): Promise<void> {
   const geometry = await page.locator(selector).evaluate((board) => {
     const root = board.getBoundingClientRect();
@@ -218,7 +226,7 @@ test.describe('Lobby layout guardrails', () => {
   });
 
   test('Hot Seat setup stays framed and its primary action is reachable', async ({ page }) => {
-    await expect(page.getByRole('tab', { name: 'Hot Seat', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await chooseLocalBattle(page);
     await expect(page.locator('.lobby-row')).toHaveCount(2);
     await expect(page.locator('.lobby-controls')).toContainText('Aim');
 
@@ -227,6 +235,7 @@ test.describe('Lobby layout guardrails', () => {
   });
 
   test('mission preparation keeps Local Battery and Open Operation contained', async ({ page }) => {
+    await chooseLocalBattle(page);
     await assertMissionPreparation(
       page,
       '#lobby .lobby-hotseat',
@@ -235,7 +244,8 @@ test.describe('Lobby layout guardrails', () => {
     );
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await choosePlayOnline(page);
     await assertMissionPreparation(
       page,
       '#lobby .lobby-route-brief--online',
@@ -383,61 +393,38 @@ test.describe('Lobby layout guardrails', () => {
     await expect(page.getByRole('button', { name: 'Advanced settings', exact: true })).toBeFocused();
   });
 
-  test('play mode tabs identify their selected setup and support predictable keyboard switching', async ({ page }) => {
-    const tabs = page.locator('#lobby [role="tablist"]');
-    const hotSeat = page.getByRole('tab', { name: 'Hot Seat', exact: true });
-    const online = page.getByRole('tab', { name: 'Play Online', exact: true });
+  test('deployment choices identify their setup and restore predictable keyboard focus', async ({ page }) => {
+    const chooser = page.getByRole('navigation', { name: 'Choose deployment', exact: true });
+    const localBattle = chooser.getByRole('button', { name: 'Local Battle', exact: true });
+    const playOnline = chooser.getByRole('button', { name: 'Play Online', exact: true });
     const panel = page.locator('#lobby [role="tabpanel"]');
 
-    await expect(tabs).toHaveAttribute('aria-label', 'Choose play mode');
-    await expect(hotSeat).toHaveAttribute('aria-selected', 'true');
-    await expect(online).toHaveAttribute('aria-selected', 'false');
+    await expect(chooser).toBeVisible();
+    await expect(localBattle).toBeVisible();
+    await expect(playOnline).toBeVisible();
+
+    await localBattle.click();
     await expect(page.locator('.lobby-mode-context')).toContainText(
       'Set your crew, then start a shared-screen match.',
     );
-    await expect(panel).toHaveAttribute('aria-labelledby', await hotSeat.getAttribute('id'));
-    await expect(hotSeat).toHaveAttribute('aria-controls', await panel.getAttribute('id'));
-    await expect(online).toHaveAttribute('aria-controls', await panel.getAttribute('id'));
-
-    await hotSeat.focus();
-    await page.keyboard.press('ArrowLeft');
-    await expect(online).toHaveAttribute('aria-selected', 'true');
-    await expect(online).toBeFocused();
-    await expect(page.locator('.lobby-mode-context')).toContainText(
-      'Create a room, join by code, or browse public games.',
-    );
-    await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
-
-    await page.keyboard.press('ArrowRight');
-    await expect(hotSeat).toHaveAttribute('aria-selected', 'true');
-    await expect(hotSeat).toBeFocused();
-    await expect(page.locator('.lobby-mode-context')).toContainText(
-      'Set your crew, then start a shared-screen match.',
-    );
+    await expect(panel).toHaveAttribute('aria-label', 'Hot Seat preparation');
     await expect(page.locator('.lobby-row')).toHaveCount(2);
 
-    await page.keyboard.press('End');
-    await expect(online).toHaveAttribute('aria-selected', 'true');
-    await expect(online).toBeFocused();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await expect(localBattle).toBeFocused();
+    await playOnline.click();
     await expect(page.locator('.lobby-mode-context')).toContainText(
       'Create a room, join by code, or browse public games.',
     );
+    await expect(panel).toHaveAttribute('aria-label', 'Play Online preparation');
+    await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
 
-    await page.keyboard.press('Home');
-    await expect(hotSeat).toHaveAttribute('aria-selected', 'true');
-    await expect(hotSeat).toBeFocused();
-    await expect(page.locator('.lobby-mode-context')).toContainText(
-      'Set your crew, then start a shared-screen match.',
-    );
-
-    await page.keyboard.press('ArrowRight');
-    await expect(online).toBeFocused();
-    await page.keyboard.press('ArrowLeft');
-    await expect(hotSeat).toBeFocused();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await expect(playOnline).toBeFocused();
   });
 
   test('Online Create stays framed and its primary action is reachable', async ({ page }) => {
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
+    await choosePlayOnline(page);
 
     await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create operation', exact: true })).toBeVisible();
@@ -453,7 +440,7 @@ test.describe('Lobby layout guardrails', () => {
   });
 
   test('Join by Code stays framed and its primary action is reachable', async ({ page }) => {
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
+    await choosePlayOnline(page);
     await page.getByRole('button', { name: 'Join with a code', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Rally to a signal', exact: true })).toBeVisible();
@@ -496,7 +483,7 @@ test.describe('Lobby layout guardrails', () => {
       }],
     });
 
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
+    await choosePlayOnline(page);
     await page.getByRole('button', { name: 'Browse public rooms', exact: true }).click();
 
     const board = page.locator('#lobby .lobby-operations-board--browse');
@@ -548,7 +535,7 @@ test.describe('Lobby layout guardrails', () => {
       ],
     });
 
-    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
+    await choosePlayOnline(page);
     await page.locator('#lobby .lobby-name').fill('Oracle Host');
     await page.getByRole('button', { name: 'Create operation', exact: true }).click();
 

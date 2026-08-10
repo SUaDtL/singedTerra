@@ -7,6 +7,7 @@ async function openRoom(
 ): Promise<void> {
   await page.goto('.');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
   if (walls !== 'open') {
     await openHotSeatCustomization(page);
     await page.getByRole('button', { name: 'Advanced settings', exact: true }).click();

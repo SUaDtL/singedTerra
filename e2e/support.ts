@@ -48,6 +48,10 @@ export async function gotoLobby(page: Page): Promise<void> {
  */
 export async function openHotSeatCustomization(page: Page): Promise<void> {
   const customization = page.locator('#lobby .lobby-hotseat-customization');
+  if (!(await customization.isVisible())) {
+    const localBattle = page.getByRole('button', { name: 'Local Battle', exact: true });
+    if (await localBattle.isVisible()) await localBattle.click();
+  }
   await expect(customization).toBeVisible();
   if (await customization.getAttribute('open') === null) {
     await customization.locator('summary').click();

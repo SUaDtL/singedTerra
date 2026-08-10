@@ -56,7 +56,7 @@ describe('Lobby Quick Duel', () => {
       humanColor: '#4d8ce8',
       cpuColor: '#e84d4d',
     },
-  ])('starts an exact two-seat CPU duel for human $humanColor after switching to Play Online', ({
+  ])('starts an exact two-seat CPU duel for human $humanColor from deployment choices', ({
     humanName,
     expectedHumanName,
     humanColor,
@@ -88,7 +88,6 @@ describe('Lobby Quick Duel', () => {
     ];
     lobby.show();
 
-    button(root, 'Play Online').click();
     button(root, 'Quick Duel vs CPU').click();
 
     expect(onReady).toHaveBeenCalledOnce();

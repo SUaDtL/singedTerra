@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Lobby } from './Lobby';
 
 interface LobbyInternals {
+  surface: 'chooser' | 'preparation';
   activeTab: string;
   onlineSubView: string;
   waitingRoomCode: string;
@@ -50,7 +51,8 @@ describe('Lobby shareable room invites', () => {
 
     lobby.show();
 
-    expect(root.querySelector('.lobby-tab.active')?.textContent).toBe('Play Online');
+    expect(root.querySelector('.lobby-deployment-chooser')).toBeNull();
+    expect(root.querySelector('.lobby-mode-context h2')?.textContent).toBe('Play Online');
     expect(root.querySelector<HTMLInputElement>('.lobby-code-input')?.value).toBe('AB12');
     expect(internals(lobby).onlineSubView).toBe('join');
   });
@@ -66,7 +68,8 @@ describe('Lobby shareable room invites', () => {
       history.replaceState(null, '', `/singedTerra/${query}`);
       const lobby = new Lobby(root, vi.fn());
       lobby.show();
-      expect(root.querySelector('.lobby-tab.active')?.textContent).toBe('Hot Seat');
+      expect(root.querySelectorAll('.lobby-deployment-chooser button')).toHaveLength(3);
+      expect(root.querySelector('.lobby-mode-context')).toBeNull();
       expect(root.querySelector('.lobby-code-input')).toBeNull();
     }
   });
@@ -80,6 +83,7 @@ describe('Lobby shareable room invites', () => {
     });
     const lobby = new Lobby(root, vi.fn());
     Object.assign(internals(lobby), {
+      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingRoomCode: 'ABCD',
@@ -108,6 +112,7 @@ describe('Lobby shareable room invites', () => {
     });
     const lobby = new Lobby(root, vi.fn());
     Object.assign(internals(lobby), {
+      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingRoomCode: 'WXYZ',
@@ -143,6 +148,7 @@ describe('Lobby shareable room invites', () => {
     });
     const lobby = new Lobby(root, vi.fn());
     Object.assign(internals(lobby), {
+      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingRoomCode: code,

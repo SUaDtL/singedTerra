@@ -275,6 +275,7 @@ export class Lobby {
   private hotSeatCustomizationOpen = false;
 
   // ---- Tab / online sub-view state ----
+  private surface: 'chooser' | 'preparation' = 'chooser';
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
 
@@ -348,6 +349,7 @@ export class Lobby {
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
     const inviteCode = readRoomInviteCode(window.location.href);
     if (inviteCode) {
+      this.surface = 'preparation';
       this.activeTab = 'online';
       this.onlineSubView = 'join';
       this.joinCode = inviteCode;
@@ -2148,66 +2150,52 @@ export class Lobby {
         grid-column: 1 / -1;
         margin: 8px 0 0;
       }
-      #lobby .lobby-deployment__mode-rail {
-        grid-area: rail;
-        min-width: 0;
-        display: grid;
-        grid-template-columns: minmax(0, 1.08fr) minmax(250px, 0.92fr);
-        align-items: center;
-        gap: 9px;
+      #lobby .lobby-deployment__masthead > .lobby-rejoin-banner .lobby-btn {
+        min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
+        font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
       }
-      #lobby .lobby-deployment__mode-rail > .lobby-quick-duel {
-        width: 100%;
-        height: 46px;
-        min-width: 0;
+      #lobby .lobby-deployment-chooser {
+        grid-column: 1 / -1;
+        grid-row: 2 / -1;
+        align-self: center;
+        justify-self: center;
+        width: min(780px, 72%);
         display: grid;
-        grid-template-columns: minmax(0, 1fr) max-content;
-        align-items: center;
-        gap: 8px;
-        overflow: hidden;
-        box-sizing: border-box;
-        padding-left: 8px;
-        border-left: 2px solid rgba(255, 188, 80, 0.68);
-        background: linear-gradient(90deg, rgba(32, 22, 12, 0.56), transparent);
-        justify-self: stretch;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 24px;
+        border-block: 1px solid rgba(255, 210, 63, 0.32);
+        background: linear-gradient(90deg, transparent, rgba(32, 22, 12, 0.72), transparent);
       }
-      #lobby .lobby-quick-duel__briefing { min-width: 0; }
-      #lobby .lobby-quick-duel__title {
-        margin: 0;
+      #lobby .lobby-deployment-chooser .lobby-btn {
+        min-height: var(--st-deployment-choice-target, 44px);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-deployment-chooser .lobby-btn.primary {
+        grid-column: 1 / -1;
+        min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
+        font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
+        letter-spacing: 1.4px;
+      }
+      #lobby .lobby-deployment-chooser .lobby-deployment-choice--secondary {
+        border: 1px solid rgba(170, 132, 72, 0.72);
+        background: #111416 linear-gradient(180deg, rgba(28, 30, 31, 0.96), rgba(8, 10, 12, 0.98));
+        color: #d8c6a2;
+        box-shadow: inset 0 1px 0 rgba(255, 236, 196, 0.08);
+      }
+      #lobby .lobby-deployment-chooser .lobby-deployment-choice--secondary:hover:not(:disabled) {
+        border-color: rgba(229, 161, 65, 0.9);
+        background: #171716 linear-gradient(180deg, rgba(42, 39, 33, 0.98), rgba(12, 12, 12, 0.98));
         color: #ffe0a0;
-        font: 700 11px/1 var(--font-display);
-        letter-spacing: 1px;
+      }
+      #lobby .lobby-deployment__back {
+        grid-area: rail;
+        justify-self: start;
+        min-height: 34px;
+        padding: 5px 14px;
+        letter-spacing: 0.7px;
         text-transform: uppercase;
-      }
-      #lobby .lobby-quick-duel__description {
-        margin: 3px 0 0;
-        color: rgba(225, 214, 191, 0.68);
-        font: 11px/1.2 var(--font-sans);
-      }
-      #lobby .lobby-quick-duel__action {
-        min-height: 46px;
-        letter-spacing: 0.9px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-deployment .lobby-tabs {
-        margin: 0;
-        padding: 0;
-        border-width: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow:
-          inset 0 1px rgba(229, 161, 65, 0.38),
-          inset 0 -1px rgba(229, 161, 65, 0.38);
-      }
-      #lobby .lobby-deployment .lobby-tab {
-        min-height: 46px;
-        border-radius: 0;
-        letter-spacing: 0.9px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-deployment .lobby-tab.active {
-        border-color: rgba(255, 210, 63, 0.62);
-        background: linear-gradient(90deg, rgba(255, 210, 63, 0.15), transparent);
       }
       #lobby .lobby-deployment__mission-brief {
         grid-area: brief;
@@ -2240,19 +2228,32 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-deployment {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: max-content minmax(0, 1fr);
         grid-template-areas:
-          'masthead'
-          'rail'
-          'brief'
-          'panel';
-        grid-template-rows: auto auto auto minmax(0, 1fr);
+          'rail masthead'
+          'brief brief'
+          'panel panel';
+        grid-template-rows: auto auto minmax(0, 1fr);
+        column-gap: 8px;
         row-gap: 5px;
       }
-      #app.is-compact #lobby .lobby-deployment__mode-rail,
+      #app.is-compact #lobby .lobby-deployment__back,
       #app.is-compact #lobby .lobby-deployment__mission-brief,
       #app.is-compact #lobby .lobby-deployment > .lobby-mode-panel {
         width: min(600px, 52%);
+      }
+      #app.is-compact #lobby .lobby-deployment-chooser {
+        width: min(760px, 70%);
+        gap: 8px;
+        padding: 12px;
+      }
+      #app.is-compact #lobby .lobby-deployment__back {
+        width: max-content;
+        align-self: center;
+        min-height: var(--st-deployment-choice-target, 44px);
+      }
+      #app.is-compact #lobby .lobby-card:has(.lobby-deployment__back) {
+        padding-block: 12px;
       }
       #app.is-compact #lobby .lobby-deployment > .lobby-preview {
         display: block;
@@ -2295,19 +2296,6 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open]) {
         row-gap: 0;
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mode-rail > .lobby-quick-duel,
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mode-rail .lobby-quick-duel__action,
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mode-rail .lobby-tab {
-        min-height: var(--st-command-choice-target, 50px);
-        height: var(--st-command-choice-target, 50px);
-      }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mode-rail .lobby-tab {
-        padding-block: 0;
       }
       /* The fixed game stage is intentionally zoomed as one unit. Logical
          compact sizes preserve physical legibility without overgrowing the
@@ -2452,6 +2440,8 @@ export class Lobby {
 
     const card = buildLobbyShellView({
       activeTab: this.activeTab,
+      surface: this.surface,
+      showBack: !(this.activeTab === 'online' && this.onlineSubView === 'waiting'),
       rejoinAvailable: this.rejoinCandidate !== null,
       account: buildAccountPanelView(accountOptions(this.accountPanelOpen, true)),
       vehiclePreview,
@@ -2459,10 +2449,24 @@ export class Lobby {
       controls: this.renderControlsLegend(),
       onTabChange: (tab) => {
         this.activeTab = tab;
+        this.surface = 'preparation';
         this.render();
       },
       onQuickDuel: () => { this.startQuickDuel(); },
       onRejoin: () => { void this.handleRejoin(); },
+      onBack: () => {
+        const choice = this.activeTab === 'hotseat' ? 'Local Battle' : 'Play Online';
+        if (this.activeTab === 'online' && this.onlineSubView === 'browse') {
+          this.stopBrowsePoll();
+          this.onlineSubView = 'create';
+          this.onlineError = '';
+        }
+        this.surface = 'chooser';
+        this.render();
+        [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
+          .find((button) => button.textContent === choice)
+          ?.focus();
+      },
     });
 
     this.root.append(card);

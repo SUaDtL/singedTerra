@@ -4,6 +4,7 @@ import type { NetworkPlayer } from '../client/LobbyTransport';
 import { Lobby, type LobbyConfig } from './Lobby';
 
 interface LobbyInternals {
+  surface: 'chooser' | 'preparation';
   activeTab: 'hotseat' | 'online';
   onlineSubView: 'create' | 'join' | 'browse' | 'waiting';
   players: Array<{ loadout: TankLoadout }>;
@@ -19,6 +20,14 @@ function internals(lobby: Lobby): LobbyInternals {
 function required<T>(value: T | undefined, label: string): T {
   if (value === undefined) throw new Error(`Expected ${label}`);
   return value;
+}
+
+function openLocal(lobby: Lobby, root: HTMLElement): void {
+  lobby.show();
+  const choice = Array.from(root.querySelectorAll<HTMLButtonElement>('button'))
+    .find((candidate) => candidate.textContent === 'Local Battle');
+  if (!choice) throw new Error('Expected Local Battle choice');
+  choice.click();
 }
 
 function spotlight(root: HTMLElement): HTMLElement {
@@ -66,7 +75,7 @@ describe('Lobby tank Garage', () => {
 
   it('spotlights Player 1 at Garage scale while retaining both roster thumbnails', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     const active = spotlight(root);
     expect(active.dataset.owner).toBe('player-1');
@@ -88,7 +97,7 @@ describe('Lobby tank Garage', () => {
 
   it('starts fresh hot-seat opponents with distinct authored presets', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     expect(playerPreviewSignature(root, 1)).toContain(
       '|foundry|foundry|foundry|foundry',
@@ -121,7 +130,7 @@ describe('Lobby tank Garage', () => {
 
   it('gives grown seats stable presets without resetting existing Garage edits', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     root.querySelector<HTMLButtonElement>(
       '.lobby-garage[data-owner="player-1"] [data-preset="jackal"]',
@@ -152,7 +161,7 @@ describe('Lobby tank Garage', () => {
 
   it('moves the spotlight to Player 2 and reflects preset and independent-slot changes', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     root.querySelector<HTMLButtonElement>(
       '.lobby-garage[data-owner="player-2"] [data-preset="ranger"]',
@@ -179,7 +188,7 @@ describe('Lobby tank Garage', () => {
 
   it('activates Player 2 for color and synchronizes typed identity without losing focus', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     const playerTwoRow = root.querySelectorAll<HTMLElement>('.lobby-row')[1]!;
     playerTwoRow.querySelector<HTMLButtonElement>('.lobby-swatch[title="Green"]')!.click();
@@ -206,7 +215,7 @@ describe('Lobby tank Garage', () => {
 
   it('mixes four slots per hot-seat player and submits the exact loadout', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     const garages = root.querySelectorAll<HTMLElement>('.lobby-garage');
     expect(garages).toHaveLength(2);
@@ -259,7 +268,7 @@ describe('Lobby tank Garage', () => {
 
   it('names and cycles the Jackal parts by their visible vehicle role', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     let garage = root.querySelector<HTMLElement>(
       '.lobby-garage[data-owner="player-1"]',
@@ -281,7 +290,7 @@ describe('Lobby tank Garage', () => {
 
   it('names the editing Vehicle Bay and summarizes uniform and mixed loadouts', () => {
     const lobby = new Lobby(root, onReady);
-    lobby.show();
+    openLocal(lobby, root);
 
     root.querySelector<HTMLButtonElement>(
       '.lobby-garage[data-owner="player-1"] .lobby-garage__open',
@@ -328,6 +337,7 @@ describe('Lobby tank Garage', () => {
   it('prefers the local seat in a waiting-room roster', () => {
     const lobby = new Lobby(root, onReady);
     Object.assign(internals(lobby), {
+      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingPlayerId: 'seat-local',

@@ -714,6 +714,8 @@ function bootstrap(): void {
     appEl.style.setProperty('--st-store-buy-target', `${storeBuyTarget}px`);
     const commandChoiceTarget = Math.ceil(24 / Math.max(s, Number.EPSILON));
     appEl.style.setProperty('--st-command-choice-target', `${commandChoiceTarget}px`);
+    const deploymentChoiceTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
+    appEl.style.setProperty('--st-deployment-choice-target', `${deploymentChoiceTarget}px`);
     appEl.classList.toggle('is-compact', s < COMPACT_SCALE);
   }
   window.addEventListener('resize', updateScale);

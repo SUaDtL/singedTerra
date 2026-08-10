@@ -150,7 +150,7 @@ describe('Lobby account composition', () => {
 
     const accountTrigger = button(root, 'Commander Ranger')
     expect(accountTrigger.getAttribute('aria-expanded')).toBe('false')
-    expect(button(root, 'Hot Seat')).toBeTruthy()
+    expect(button(root, 'Local Battle')).toBeTruthy()
     expect(button(root, 'Play Online')).toBeTruthy()
     accountTrigger.click()
     await Promise.resolve()
@@ -208,6 +208,7 @@ describe('Lobby account composition', () => {
     lobby.show()
 
     expect(root.querySelector('.account-panel')).toBeNull()
+    button(root, 'Local Battle').click()
     expect(button(root, 'Deploy local battle')).toBeTruthy()
   })
 

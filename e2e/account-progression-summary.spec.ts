@@ -1,6 +1,11 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { gotoLobby, isCompact } from './support';
 
+async function openLocalPreparation(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await expect(page.locator('.lobby-preview')).toBeVisible();
+}
+
 async function installSummaryFixture(page: Page, available: boolean, open = true): Promise<void> {
   await page.evaluate(({ hasSummary, isOpen }) => {
     document.querySelector('#lobby .account-panel')?.remove();
@@ -237,6 +242,7 @@ test.describe('Account progression summary compact readability', () => {
   });
 
   test('collapsed authenticated account stays clear of the vehicle spotlight', async ({ page }) => {
+    await openLocalPreparation(page);
     await installSummaryFixture(page, true, false);
     const panel = page.locator('[data-summary-fixture="available"]');
     const trigger = panel.locator('.account-panel__account-trigger');
@@ -286,6 +292,7 @@ test.describe('Account progression summary compact readability', () => {
 
 test('opened Player Account owns the lobby stage without ghosting the deployment beneath it', async ({ page }) => {
   await gotoLobby(page);
+  await openLocalPreparation(page);
   const lobby = page.locator('#lobby');
   const card = page.locator('#lobby .lobby-card');
   const masthead = page.locator('.lobby-deployment__masthead');

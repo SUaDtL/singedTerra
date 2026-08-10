@@ -62,9 +62,13 @@ interface LobbyInternals {
   waitingOptions: RoomOptions;
   waitingThisPlayerReady: boolean;
   waitingChannel: unknown;
+  surface: 'chooser' | 'preparation';
   activeTab: string;
   onlineSubView: string;
   onlineError: string;
+  transport: {
+    listRooms(): Promise<unknown>;
+  };
 }
 
 function internals(lobby: Lobby): LobbyInternals {
@@ -81,6 +85,13 @@ function expectRoomSubscription(channel: CapturedChannel, roomId: string): void 
     event: 'DELETE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}`,
   }, expect.any(Function));
   expect(channel.subscribe).toHaveBeenCalledTimes(1);
+}
+
+function clickButton(root: HTMLElement, text: string): void {
+  const match = [...root.querySelectorAll<HTMLButtonElement>('button')]
+    .find((candidate) => candidate.textContent === text);
+  if (!match) throw new Error(`Expected ${text} button`);
+  match.click();
 }
 
 const waitingPlayers = [
@@ -145,6 +156,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
       waitingSeed: 0,
       waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
       waitingThisPlayerReady: true,
+      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       onlineError: '',
@@ -334,5 +346,58 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
 
     expect(realtime.removeChannel).toHaveBeenCalledTimes(2);
     expect(render).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops Browse before returning to chooser/create and ignores its late response', async () => {
+    let resolveList!: (value: unknown) => void;
+    const pendingList = new Promise<unknown>((resolve) => { resolveList = resolve; });
+    const listRooms = vi.spyOn(internals(lobby).transport, 'listRooms')
+      .mockReturnValue(pendingList);
+    Object.assign(internals(lobby), {
+      surface: 'preparation',
+      activeTab: 'online',
+      onlineSubView: 'create',
+    });
+    const render = vi.spyOn(internals(lobby), 'render');
+    internals(lobby).render();
+
+    clickButton(root, 'Browse public rooms');
+    expect(internals(lobby).onlineSubView).toBe('browse');
+    expect(listRooms).toHaveBeenCalledOnce();
+
+    clickButton(root, 'Back to deployment choices');
+    expect.soft(internals(lobby).surface).toBe('chooser');
+    expect.soft(internals(lobby).onlineSubView).toBe('create');
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect.soft(listRooms).toHaveBeenCalledOnce();
+    const rendersAfterBack = render.mock.calls.length;
+
+    resolveList({
+      ok: true,
+      data: {
+        rooms: [{
+          roomId: 'late-room',
+          code: 'LATE',
+          hostName: 'Late response',
+          playerCount: 1,
+          maxPlayers: 2,
+        }],
+      },
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(render).toHaveBeenCalledTimes(rendersAfterBack);
+    expect(root.textContent).not.toContain('Late response');
+  });
+
+  it('does not expose generic Back from a committed waiting room', () => {
+    seedWaiting();
+    internals(lobby).render();
+    const actions = [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .map((candidate) => candidate.textContent);
+
+    expect(actions).toContain('Leave');
+    expect(actions).not.toContain('Back to deployment choices');
   });
 });
