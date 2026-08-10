@@ -37,6 +37,8 @@ import {
  */
 export type StorePurchase = { weapon?: WeaponType; accessory?: AccessoryType };
 
+type CombatFocus = 'decision' | 'outcome' | 'terminal';
+
 /** Accessories sold in the store, in stable catalog order. */
 const STORE_ACCESSORIES: AccessoryType[] = Object.keys(ACCESSORIES) as AccessoryType[];
 
@@ -387,6 +389,13 @@ export class HUD {
   update(state: GameState, isFiring = false, canControl = true): void {
     if (!this.built) this.build();
 
+    const combatFocus: CombatFocus = state.phase === 'PLAYER_TURN'
+      ? (isFiring ? 'outcome' : 'decision')
+      : state.phase === 'FIRING' || state.phase === 'RESOLVING'
+        ? 'outcome'
+        : 'terminal';
+    this.syncCombatFocus(combatFocus);
+
     const hasActiveTurn = state.phase === 'PLAYER_TURN' ||
       state.phase === 'FIRING' ||
       state.phase === 'RESOLVING';
@@ -411,6 +420,39 @@ export class HUD {
     this.syncRoundOver(state);
     this.syncOverlay(state);
     if (presentedTurnKey !== null) this.lastPresentedTurnKey = presentedTurnKey;
+  }
+
+  private syncCombatFocus(focus: CombatFocus): void {
+    this.root.dataset['combatFocus'] = focus;
+    this.overlayRoot.dataset['combatFocus'] = focus;
+    // These are mixed-interactivity regions: Store remains available in the
+    // console and Menu remains available in the touch toolbar while combat
+    // controls are disabled. Keep disabled semantics on the individual controls
+    // and describe the current mode at the region boundary instead.
+    this.commandConsoleEl.removeAttribute('aria-disabled');
+    this.touchStripEl.removeAttribute('aria-disabled');
+    if (focus === 'decision') {
+      this.commandConsoleEl.setAttribute('aria-label', 'Turn command console');
+      this.touchStripEl.setAttribute('aria-label', 'Touch commands');
+    } else if (focus === 'outcome') {
+      this.commandConsoleEl.setAttribute(
+        'aria-label',
+        'Shot outcome in progress. Combat controls unavailable; Store remains available.',
+      );
+      this.touchStripEl.setAttribute(
+        'aria-label',
+        'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
+      );
+    } else {
+      this.commandConsoleEl.setAttribute(
+        'aria-label',
+        'Turn command console outside an active turn. Combat controls inactive; Store remains available.',
+      );
+      this.touchStripEl.setAttribute(
+        'aria-label',
+        'Touch combat controls inactive outside an active turn; Menu remains available.',
+      );
+    }
   }
 
   /**
@@ -4905,6 +4947,41 @@ export class HUD {
 #app .st-hud__active-row--hidden { display: none; }
 /* Shot progress replaces the owner row during submit, flight, and resolution. */
 .st-hud__aim--hidden { display: none; }
+/* During a committed shot, progress becomes the visual entry point while the
+   unchanged command DOM remains available for the next decision state. */
+#hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__aim {
+  order: -1;
+  margin: 5px 6px 4px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.72);
+  border-radius: 4px;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255, 210, 63, 0.2), transparent 62%),
+    linear-gradient(180deg, rgba(66, 35, 24, 0.96), rgba(19, 10, 24, 0.98));
+  box-shadow:
+    0 0 18px rgba(255, 122, 31, 0.2),
+    inset 0 0 0 1px rgba(255, 233, 168, 0.1);
+  opacity: 1;
+  font-weight: 800;
+}
+#hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__instruments,
+#hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__turn-actions {
+  filter: saturate(0.55) brightness(0.72);
+}
+#hud[data-combat-focus="outcome"] > .st-hud__players,
+#hud[data-combat-focus="outcome"] > .st-hud__strip {
+  filter: saturate(0.52) brightness(0.68);
+}
+#game-overlay[data-combat-focus="outcome"] > .st-hud__controls,
+#game-overlay[data-combat-focus="outcome"] > .st-hud__touch-strip {
+  filter: saturate(0.52) brightness(0.68);
+}
+#app.is-compact #hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__aim {
+  min-height: 34px;
+  margin: 3px 4px;
+  padding: 5px 7px;
+}
 /* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by
    direct attribute mutation (transform / stroke-dasharray) with no CSS transition,
    so they snap to each new value instantly — there is nothing to suppress. */

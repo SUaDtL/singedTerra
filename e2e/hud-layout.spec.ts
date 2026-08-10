@@ -56,81 +56,128 @@ test.describe('HUD layout guardrails', () => {
     ).toEqual([]);
   });
 
-  test('keeps the decision rail ordered across shot progress and terminal states', async ({
+  test('real Fire transition prioritizes outcome progress and restores decision focus', async ({
     page,
   }) => {
-    const readGeometry = async (
-      state: 'player-turn' | 'pending' | 'firing' | 'resolving' | 'round-over' | 'game-over',
-    ) => page.evaluate((fixtureState) => {
-      const identity = document.querySelector<HTMLElement>('.st-hud__active-row')!;
-      const progress = document.querySelector<HTMLElement>('.st-hud__aim')!;
-      const progressText = document.querySelector<HTMLElement>('.st-hud__aim-text')!;
-      const progressCopy = {
-        pending: 'Player 1 · Sending shot...',
-        firing: 'Player 1 · Shot in flight...',
-        resolving: 'Player 1 · Terrain settling...',
-      } as const;
-      const showsIdentity = fixtureState === 'player-turn';
-      const showsProgress = fixtureState === 'pending'
-        || fixtureState === 'firing'
-        || fixtureState === 'resolving';
-      identity.classList.toggle('st-hud__active-row--hidden', !showsIdentity);
-      progress.classList.toggle('st-hud__aim--hidden', !showsProgress);
-      progressText.textContent = showsProgress ? progressCopy[fixtureState] : '';
-      const rect = (selector: string) =>
-        document.querySelector<HTMLElement>(selector)!.getBoundingClientRect().toJSON();
-      const consoleEl = document.querySelector<HTMLElement>('.st-hud__command-console')!;
-      const instruments = document.querySelector<HTMLElement>('.st-hud__instruments')!;
-      const actions = document.querySelector<HTMLElement>('.st-hud__turn-actions')!;
-      const roster = document.querySelector<HTMLElement>('.st-hud__players')!;
-      const arsenal = document.querySelector<HTMLElement>('.st-hud__strip')!;
-      return {
-        identity: rect('.st-hud__active-row'),
-        instruments: rect('.st-hud__instruments'),
-        progress: rect('.st-hud__aim'),
-        actions: rect('.st-hud__turn-actions'),
-        console: rect('.st-hud__command-console'),
-        roster: rect('.st-hud__players'),
-        arsenal: rect('.st-hud__strip'),
-        instrumentsOwned: instruments.parentElement === consoleEl,
-        progressOwned: progress.parentElement === consoleEl,
-        actionsOwned: actions.parentElement === consoleEl,
-        rosterAfterConsole: consoleEl.compareDocumentPosition(roster)
-          === Node.DOCUMENT_POSITION_FOLLOWING,
-        arsenalAfterRoster: roster.compareDocumentPosition(arsenal)
-          === Node.DOCUMENT_POSITION_FOLLOWING,
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const hud = page.locator('#hud');
+    const overlay = page.locator('#game-overlay');
+    const fire = page.locator('.st-hud__primary-action');
+    await expect(hud).toHaveAttribute('data-combat-focus', 'decision');
+    await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
+
+    await fire.click();
+    await expect(hud).toHaveAttribute('data-combat-focus', 'outcome');
+    await expect(overlay).toHaveAttribute('data-combat-focus', 'outcome');
+    await expect(page.locator('.st-hud__aim')).toBeVisible();
+    await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
+    await expect(page.locator('.st-hud__touch-strip')).not.toHaveAttribute('aria-disabled', /.+/);
+    await expect(page.locator('.st-hud__command-console')).toHaveAttribute(
+      'aria-label',
+      'Shot outcome in progress. Combat controls unavailable; Store remains available.',
+    );
+    await expect(page.locator('.st-hud__touch-strip')).toHaveAttribute(
+      'aria-label',
+      'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
+    );
+    await expect(page.locator('.st-hud__store-btn')).toBeEnabled();
+    await expect(page.locator('.st-hud__touch-menu')).toBeEnabled();
+
+    const outcome = await page.evaluate(() => {
+      const select = (selector: string) => document.querySelector<HTMLElement>(selector)!;
+      const rect = (node: HTMLElement) => node.getBoundingClientRect();
+      const opacity = (node: HTMLElement) => Number(getComputedStyle(node).opacity);
+      const effectiveOpacity = (node: HTMLElement) => {
+        let result = 1;
+        for (let current: HTMLElement | null = node; current; current = current.parentElement) {
+          result *= Number(getComputedStyle(current).opacity);
+        }
+        return result;
       };
-    }, state);
-
-    for (const state of ['player-turn', 'pending', 'firing', 'resolving', 'round-over', 'game-over'] as const) {
-      const geometry = await readGeometry(state);
-      const showsProgress = state === 'pending' || state === 'firing' || state === 'resolving';
-      const showsIdentity = state === 'player-turn';
-
-      expect(geometry.instrumentsOwned).toBe(true);
-      expect(geometry.progressOwned).toBe(true);
-      expect(geometry.actionsOwned).toBe(true);
-      expect(geometry.rosterAfterConsole).toBe(true);
-      expect(geometry.arsenalAfterRoster).toBe(true);
-      expect(geometry.identity.height > 0, `${state} identity visibility`).toBe(showsIdentity);
-      expect(geometry.progress.height > 0, `${state} progress visibility`).toBe(showsProgress);
-      expect(geometry.instruments.top).toBeGreaterThanOrEqual(geometry.console.top);
-      if (showsIdentity) {
-        expect(geometry.identity.top).toBeGreaterThanOrEqual(geometry.console.top);
-        expect(geometry.identity.bottom).toBeLessThanOrEqual(geometry.instruments.top + 1);
-      }
-      if (showsProgress) {
-        expect(geometry.instruments.bottom).toBeLessThanOrEqual(geometry.progress.top + 1);
-        expect(geometry.progress.bottom).toBeLessThanOrEqual(geometry.actions.top + 1);
-        expect(geometry.progress.left).toBeGreaterThanOrEqual(geometry.console.left - 1);
-        expect(geometry.progress.right).toBeLessThanOrEqual(geometry.console.right + 1);
-      } else {
-        expect(geometry.instruments.bottom).toBeLessThanOrEqual(geometry.actions.top + 1);
-      }
-      expect(geometry.actions.bottom).toBeLessThanOrEqual(geometry.console.bottom + 1);
-      expect(geometry.console.bottom).toBeLessThanOrEqual(geometry.roster.top + 1);
-      expect(geometry.roster.bottom).toBeLessThanOrEqual(geometry.arsenal.top + 1);
+      const order = (node: HTMLElement) => Number(getComputedStyle(node).order);
+      const filter = (node: HTMLElement) => getComputedStyle(node).filter;
+      const consoleEl = select('.st-hud__command-console');
+      const progress = select('.st-hud__aim');
+      const instruments = select('.st-hud__instruments');
+      const actions = select('.st-hud__turn-actions');
+      const roster = select('.st-hud__players');
+      const rosterRows = Array.from(
+        document.querySelectorAll<HTMLElement>('.st-hud__player'),
+      );
+      const arsenal = select('.st-hud__strip');
+      const fineDeck = select('.st-hud__controls');
+      const touchDeck = select('.st-hud__touch-strip');
+      const primary = select('.st-hud__primary-action');
+      const touchCombat = select('.st-hud__touch-btn[data-command="aim-left"]');
+      const fineCombat = select('.st-hud__command-key[data-command-action="aim-left"]');
+      const store = select('.st-hud__store-btn');
+      const menu = select('.st-hud__touch-menu');
+      const progressRect = rect(progress);
+      const consoleRect = rect(consoleEl);
+      return {
+        order: { progress: order(progress), instruments: order(instruments), actions: order(actions) },
+        parentOpacity: {
+          instruments: opacity(instruments), actions: opacity(actions), roster: opacity(roster),
+          arsenal: opacity(arsenal), fineDeck: opacity(fineDeck), touchDeck: opacity(touchDeck),
+        },
+        effectiveOpacity: {
+          progress: effectiveOpacity(progress), primary: effectiveOpacity(primary),
+          touchCombat: effectiveOpacity(touchCombat), fineCombat: effectiveOpacity(fineCombat),
+          rosterRows: rosterRows.map(effectiveOpacity), arsenal: effectiveOpacity(arsenal),
+          store: effectiveOpacity(store), menu: effectiveOpacity(menu),
+        },
+        filter: {
+          progress: filter(progress), instruments: filter(instruments), actions: filter(actions),
+          roster: filter(roster), arsenal: filter(arsenal), fineDeck: filter(fineDeck),
+          touchDeck: filter(touchDeck),
+        },
+        owned: progress.parentElement === consoleEl
+          && instruments.parentElement === consoleEl
+          && actions.parentElement === consoleEl,
+        contained: progressRect.left >= consoleRect.left - 1
+          && progressRect.right <= consoleRect.right + 1
+          && progressRect.top >= consoleRect.top - 1
+          && progressRect.bottom <= consoleRect.bottom + 1
+          && document.documentElement.scrollWidth <= window.innerWidth
+          && document.documentElement.scrollHeight <= window.innerHeight,
+        announcement: {
+          role: progress.getAttribute('role'),
+          live: progress.getAttribute('aria-live'),
+          text: progress.textContent,
+        },
+      };
+    });
+    expect(outcome.owned).toBe(true);
+    expect(outcome.contained).toBe(true);
+    expect(outcome.order.progress).toBeLessThan(outcome.order.instruments);
+    expect(outcome.order.progress).toBeLessThan(outcome.order.actions);
+    expect(Object.values(outcome.parentOpacity)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(outcome.effectiveOpacity.progress).toBe(1);
+    expect(outcome.effectiveOpacity.primary).toBeGreaterThanOrEqual(0.35);
+    expect(outcome.effectiveOpacity.touchCombat).toBeGreaterThanOrEqual(0.35);
+    expect(outcome.effectiveOpacity.fineCombat).toBeGreaterThanOrEqual(0.3);
+    expect(outcome.effectiveOpacity.rosterRows.length).toBeGreaterThan(0);
+    expect(Math.min(...outcome.effectiveOpacity.rosterRows)).toBeGreaterThanOrEqual(0.4);
+    expect(outcome.effectiveOpacity.arsenal).toBeGreaterThanOrEqual(0.9);
+    expect(outcome.effectiveOpacity.store).toBeGreaterThanOrEqual(0.9);
+    expect(outcome.effectiveOpacity.menu).toBeGreaterThanOrEqual(0.9);
+    expect(outcome.filter.progress).toBe('none');
+    for (const [surface, treatment] of Object.entries(outcome.filter)) {
+      if (surface === 'progress') continue;
+      expect(treatment, `${surface} should use non-alpha outcome demotion`).toContain('saturate');
+      expect(treatment, `${surface} should retain legibility with authored brightness`).toContain('brightness');
     }
+    expect(outcome.announcement.role).toBe('status');
+    expect(outcome.announcement.live).toBe('polite');
+    expect(outcome.announcement.text).toMatch(/Shot in flight|Terrain settling|Sending shot/);
+
+    await expect(hud).toHaveAttribute('data-combat-focus', 'decision', { timeout: 20_000 });
+    await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
+    await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
+    await expect(page.locator('.st-hud__touch-strip')).not.toHaveAttribute('aria-disabled', /.+/);
+    await expect(page.locator('.st-hud__command-console')).toHaveAttribute('aria-label', 'Turn command console');
+    await expect(page.locator('.st-hud__touch-strip')).toHaveAttribute('aria-label', 'Touch commands');
+    await expect(page.locator('.st-hud__active-row')).toBeVisible();
   });
 
   test('keeps Space bound to fire after a gameplay control takes focus', async ({
