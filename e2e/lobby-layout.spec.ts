@@ -245,7 +245,9 @@ test.describe('Lobby layout guardrails', () => {
     await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
   });
 
-  test('Operations Settings is a fixed aligned layer that leaves Local Battery in place', async ({ page }) => {
+  test('Operations Settings owns the lobby stage without exposing the base composition', async ({ page }) => {
+    const lobby = page.locator('#lobby');
+    const card = page.locator('#lobby .lobby-card');
     const masthead = page.locator('#lobby .lobby-deployment__masthead');
     const route = page.locator('#lobby .lobby-hotseat');
     const preview = page.locator('#lobby .lobby-preview');
@@ -255,10 +257,44 @@ test.describe('Lobby layout guardrails', () => {
     await page.getByRole('button', { name: 'Advanced settings', exact: true }).click();
     const overlay = page.locator('#lobby .lobby-overlay');
     const surface = overlay.locator('.lobby-overlay__surface');
+    const backdrop = overlay.locator('.lobby-overlay__backdrop');
     await expect(surface).toHaveAttribute('role', 'dialog');
     await expect(surface).toHaveAttribute('aria-label', 'Operations Settings');
-    expect(await overlay.evaluate((node) => getComputedStyle(node).position)).toBe('fixed');
-    expect(await surface.evaluate((node) => getComputedStyle(node).position)).toBe('fixed');
+    await expect(overlay).toHaveAttribute('data-overlay-presentation', 'stage-modal');
+    await expect(overlay).toHaveClass(/lobby-overlay--operations/);
+    expect(await overlay.evaluate((node) => getComputedStyle(node).position)).toBe('absolute');
+    expect(await surface.evaluate((node) => getComputedStyle(node).position)).toBe('absolute');
+    expect(await card.evaluate((node) => Number(getComputedStyle(node).opacity))).toBe(0);
+
+    const [lobbyBox, overlayBox, backdropBox, surfaceBox] = await Promise.all([
+      lobby.boundingBox(), overlay.boundingBox(), backdrop.boundingBox(), surface.boundingBox(),
+    ]);
+    for (const box of [lobbyBox, overlayBox, backdropBox, surfaceBox]) expect(box).not.toBeNull();
+    for (const candidate of [overlayBox!, backdropBox!]) {
+      expect(candidate.x).toBeCloseTo(lobbyBox!.x, 1);
+      expect(candidate.y).toBeCloseTo(lobbyBox!.y, 1);
+      expect(candidate.width).toBeCloseTo(lobbyBox!.width, 1);
+      expect(candidate.height).toBeCloseTo(lobbyBox!.height, 1);
+    }
+    expect(surfaceBox!.x).toBeGreaterThanOrEqual(lobbyBox!.x);
+    expect(surfaceBox!.y).toBeGreaterThanOrEqual(lobbyBox!.y);
+    expect(surfaceBox!.x + surfaceBox!.width).toBeLessThanOrEqual(lobbyBox!.x + lobbyBox!.width);
+    expect(surfaceBox!.y + surfaceBox!.height).toBeLessThanOrEqual(lobbyBox!.y + lobbyBox!.height);
+    expect(await backdrop.evaluate((node) => {
+      const color = getComputedStyle(node).backgroundColor;
+      const alpha = color.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)$/)?.[1];
+      return alpha === undefined ? 1 : Number(alpha);
+    })).toBeGreaterThanOrEqual(0.96);
+    expect(await surface.evaluate((node) => getComputedStyle(node).overflowY)).toBe('auto');
+    const controlPalette = await surface.evaluate((dialog) => {
+      const control = dialog.querySelector<HTMLInputElement>('input[type="number"]');
+      if (!control) throw new Error('Expected an operations number input');
+      const parse = (value: string) => value.match(/[\d.]+/g)?.map(Number) ?? [];
+      const style = getComputedStyle(control);
+      return { background: parse(style.backgroundColor), foreground: parse(style.color) };
+    });
+    expect(Math.max(...controlPalette.background.slice(0, 3))).toBeLessThanOrEqual(20);
+    expect(Math.min(...controlPalette.foreground.slice(0, 3))).toBeGreaterThanOrEqual(180);
 
     const after = await Promise.all([masthead.boundingBox(), route.boundingBox(), preview.boundingBox()]);
     for (let index = 0; index < before.length; index += 1) {
@@ -267,17 +303,70 @@ test.describe('Lobby layout guardrails', () => {
       expect(after[index]!.height).toBeCloseTo(before[index]!.height, 1);
     }
 
-    const field = surface.locator('.lobby-advanced-fields .lobby-field').first();
-    const [label, input, hint] = await Promise.all([
-      field.locator('label').boundingBox(),
-      field.locator('input, select').boundingBox(),
-      field.locator('.lobby-hint').boundingBox(),
+    const layout = await surface.locator('.lobby-advanced-fields').evaluate((fields) => {
+      const rect = (element: Element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          x: box.x, y: box.y, width: box.width, height: box.height,
+          right: box.right, bottom: box.bottom,
+        };
+      };
+      return {
+        compact: document.querySelector('#app')?.classList.contains('is-compact') ?? false,
+        rows: Array.from(fields.querySelectorAll('.lobby-field')).map((field) => ({
+          field: rect(field),
+          label: rect(field.querySelector('label')!),
+          control: {
+            ...rect(field.querySelector('input, select')!),
+            cssWidth: Number.parseFloat(getComputedStyle(field.querySelector('input, select')!).width),
+          },
+          hint: rect(field.querySelector('.lobby-hint')!),
+        })),
+      };
+    });
+    expect(layout.rows.length).toBeGreaterThan(1);
+    for (const row of layout.rows) {
+      for (const element of [row.label, row.control, row.hint]) {
+        expect(element.x).toBeGreaterThanOrEqual(surfaceBox!.x - 1);
+        expect(element.right).toBeLessThanOrEqual(surfaceBox!.x + surfaceBox!.width + 1);
+      }
+    }
+    for (let index = 1; index < layout.rows.length; index += 1) {
+      expect(layout.rows[index]!.field.y).toBeGreaterThanOrEqual(
+        layout.rows[index - 1]!.field.bottom - 1,
+      );
+    }
+    if (layout.compact) {
+      for (const row of layout.rows) {
+        expect(row.control.y).toBeGreaterThanOrEqual(row.label.bottom - 1);
+        expect(row.hint.y).toBeGreaterThanOrEqual(row.control.bottom - 1);
+        expect(row.control.x).toBeCloseTo(row.label.x, 1);
+        expect(row.hint.x).toBeCloseTo(row.label.x, 1);
+      }
+    } else {
+      const [first, ...rest] = layout.rows;
+      for (const row of layout.rows) {
+        expect(row.control.cssWidth).toBeLessThanOrEqual(340);
+      }
+      for (const row of rest) {
+        expect(row.label.x).toBeCloseTo(first!.label.x, 1);
+        expect(row.control.x).toBeCloseTo(first!.control.x, 1);
+        expect(row.control.width).toBeCloseTo(first!.control.width, 1);
+        expect(row.hint.x).toBeCloseTo(first!.hint.x, 1);
+      }
+    }
+
+    await surface.evaluate((node) => { node.scrollTop = node.scrollHeight; });
+    const [scrolledSurfaceBox, lastRowBox] = await Promise.all([
+      surface.boundingBox(),
+      surface.locator('.lobby-advanced-fields .lobby-field').last().boundingBox(),
     ]);
-    expect(label).not.toBeNull();
-    expect(input).not.toBeNull();
-    expect(hint).not.toBeNull();
-    expect(input!.x).toBeGreaterThan(label!.x + label!.width);
-    expect(hint!.x).toBeGreaterThan(input!.x + input!.width);
+    expect(scrolledSurfaceBox).not.toBeNull();
+    expect(lastRowBox).not.toBeNull();
+    expect(lastRowBox!.y).toBeGreaterThanOrEqual(scrolledSurfaceBox!.y - 1);
+    expect(lastRowBox!.y + lastRowBox!.height).toBeLessThanOrEqual(
+      scrolledSurfaceBox!.y + scrolledSurfaceBox!.height + 1,
+    );
 
     await page.keyboard.press('Escape');
     await expect(overlay).toHaveCount(0);

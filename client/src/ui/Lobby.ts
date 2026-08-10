@@ -1427,22 +1427,41 @@ export class Lobby {
       #lobby .account-panel__field { display: grid; gap: 4px; font-size: 11px; color: var(--text-dim); }
       #lobby .account-panel__field input { box-sizing: border-box; width: 100%; padding: 7px 9px; }
       #lobby .account-panel__error { color: #ff9c9c; font-size: 11px; line-height: 1.35; }
+      #lobby:has(> .lobby-overlay[data-overlay-presentation="stage-modal"]) > .lobby-card {
+        opacity: 0;
+        pointer-events: none;
+      }
       #lobby .lobby-overlay {
-        position: fixed; inset: 0; z-index: 40; pointer-events: auto;
+        position: absolute; inset: 0; z-index: 40; pointer-events: auto;
+        overflow: hidden;
       }
       #lobby .lobby-overlay__backdrop {
-        position: fixed; inset: 0; width: 100%; height: 100%; padding: 0;
-        border: 0; background: rgba(2, 4, 6, 0.76); cursor: default;
+        position: absolute; inset: 0; width: auto; height: auto; padding: 0;
+        border: 0;
+        background-color: rgba(4, 7, 9, 0.985);
+        background-image:
+          linear-gradient(90deg, rgba(6, 8, 10, 0.98), rgba(12, 13, 14, 0.96) 49%, rgba(27, 20, 15, 0.94)),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 5px),
+          radial-gradient(70% 92% at 78% 42%, rgba(142, 47, 83, 0.18), transparent 58%);
+        box-shadow: inset 0 0 0 1px rgba(255, 188, 80, 0.20);
+        cursor: default;
       }
       #lobby .lobby-overlay__surface {
-        position: fixed; z-index: 1; top: 50%; left: 50%;
-        width: min(760px, calc(100vw - 48px)); max-height: min(760px, calc(100vh - 48px));
-        box-sizing: border-box; overflow: auto; transform: translate(-50%, -50%);
+        position: absolute; z-index: 1; top: 50%; left: 50%;
+        width: min(760px, calc(100% - 72px)); max-height: calc(100% - 48px);
+        box-sizing: border-box; overflow-x: hidden; overflow-y: auto; transform: translate(-50%, -50%);
         border: 1px solid rgba(255, 188, 80, 0.78); border-left: 4px solid #ffbc50;
         border-radius: 0; background:
           repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px),
           linear-gradient(145deg, rgba(18, 14, 9, 0.99), rgba(4, 7, 9, 0.99));
         box-shadow: 16px 18px 0 rgba(0, 0, 0, 0.33), 0 24px 70px rgba(0, 0, 0, 0.70);
+        color-scheme: dark;
+      }
+      #lobby .lobby-overlay--account .lobby-overlay__surface {
+        width: min(720px, calc(100% - 96px));
+      }
+      #lobby .lobby-overlay--operations .lobby-overlay__surface {
+        width: min(1040px, calc(100% - 72px));
       }
       #lobby .lobby-overlay__header {
         display: flex; align-items: start; justify-content: space-between; gap: 16px;
@@ -1474,17 +1493,23 @@ export class Lobby {
       }
       #lobby .lobby-advanced-fields { display: grid; gap: 8px; }
       #lobby .lobby-overlay .lobby-advanced-fields .lobby-field {
-        display: grid; grid-template-columns: minmax(128px, 0.65fr) minmax(210px, 1fr) minmax(200px, 1.6fr);
+        display: grid; grid-template-columns: 170px minmax(260px, 340px) minmax(0, 1fr);
         align-items: center; gap: 8px 14px; margin: 0;
       }
-      #lobby .lobby-overlay .lobby-advanced-fields .lobby-field > label { width: auto; margin: 0; }
+      #lobby .lobby-overlay .lobby-advanced-fields .lobby-field > label {
+        grid-column: 1; width: auto; min-width: 0; margin: 0;
+      }
       #lobby .lobby-overlay .lobby-advanced-fields input[type="number"],
       #lobby .lobby-overlay .lobby-advanced-fields select {
-        box-sizing: border-box; width: 100%; min-height: 38px; margin: 0; padding: 7px 10px;
-        border-radius: 0; font-family: var(--font-mono);
+        grid-column: 2; box-sizing: border-box; width: 100%; min-width: 0;
+        min-height: 38px; margin: 0; padding: 7px 10px;
+        border: 1px solid rgba(229, 161, 65, 0.42); border-radius: 0;
+        background: rgba(4, 7, 9, 0.92); color: rgba(255, 239, 205, 0.94);
+        font-family: var(--font-mono);
       }
       #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint {
-        margin: 0; color: rgba(225, 214, 191, 0.68); font-size: 12px; line-height: 1.35;
+        grid-column: 3; min-width: 0; margin: 0; color: rgba(225, 214, 191, 0.68);
+        font-size: 12px; line-height: 1.35;
       }
       @media (max-width: 700px) {
         #lobby .account-panel { top: 10px; right: 10px; }
@@ -1492,7 +1517,7 @@ export class Lobby {
         #lobby .account-panel--authenticated.account-panel--open { width: calc(100% - 20px); }
         #lobby .account-panel__account-trigger { max-width: calc(100vw - 20px); }
         #lobby .lobby-overlay__surface {
-          width: calc(100vw - 24px); max-height: calc(100vh - 24px);
+          width: calc(100% - 24px); max-height: calc(100% - 24px);
         }
         #lobby .lobby-overlay__header { padding: 12px 14px 10px; }
         #lobby .lobby-overlay__title { font-size: 18px; }
@@ -1500,7 +1525,24 @@ export class Lobby {
         #lobby .lobby-overlay .lobby-advanced-fields .lobby-field {
           grid-template-columns: minmax(0, 1fr); gap: 4px;
         }
+        #lobby .lobby-overlay .lobby-advanced-fields .lobby-field > label,
+        #lobby .lobby-overlay .lobby-advanced-fields input[type="number"],
+        #lobby .lobby-overlay .lobby-advanced-fields select,
+        #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
       }
+      #app.is-compact #lobby .lobby-overlay__surface {
+        width: calc(100% - 40px);
+        max-height: calc(100% - 32px);
+      }
+      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-field {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 3px;
+      }
+      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-field > label,
+      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields input[type="number"],
+      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields select,
+      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
 
       /* Command preparation system: pre-game surfaces inherit the same
          austere field-console language as the battlefield HUD. */
@@ -2227,6 +2269,7 @@ export class Lobby {
         this.root.append(buildLobbyOverlayView({
           label: 'Player account',
           kicker: 'PLAYER RECORD',
+          variant: 'account',
           body: accountContent,
           onClose: accountOptions(true).onClose,
         }));
@@ -2238,6 +2281,7 @@ export class Lobby {
         this.root.append(buildLobbyOverlayView({
           label: 'Operations Settings',
           kicker: 'BATTLEFIELD PROTOCOL',
+          variant: 'operations',
           body: advanced,
           onClose: () => {
             this.settingsOpen = false;

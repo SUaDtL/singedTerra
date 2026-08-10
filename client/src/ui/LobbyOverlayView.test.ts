@@ -16,10 +16,13 @@ describe('buildLobbyOverlayView', () => {
     const overlay = buildLobbyOverlayView({
       label: 'Operations Settings',
       kicker: 'BATTLEFIELD PROTOCOL',
+      variant: 'operations',
       body,
       onClose,
     })
 
+    expect(overlay.classList.contains('lobby-overlay--operations')).toBe(true)
+    expect(overlay.dataset.overlayPresentation).toBe('stage-modal')
     const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]')
     expect(dialog?.getAttribute('aria-label')).toBe('Operations Settings')
     expect(dialog?.getAttribute('aria-modal')).toBe('true')
@@ -45,9 +48,11 @@ describe('buildLobbyOverlayView', () => {
     body.append(hidden, programmaticOnly, first, middle)
     const overlay = buildLobbyOverlayView({
       label: 'Player Record',
+      variant: 'account',
       body,
       onClose: vi.fn(),
     })
+    expect(overlay.classList.contains('lobby-overlay--account')).toBe(true)
     document.body.append(overlay)
     const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]')!
     const close = button(overlay, 'Close')
@@ -78,6 +83,7 @@ describe('buildLobbyOverlayView', () => {
     const onClose = vi.fn()
     const overlay = buildLobbyOverlayView({
       label: 'Player Record',
+      variant: 'account',
       body,
       onClose,
     })

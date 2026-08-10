@@ -1,6 +1,7 @@
 export interface LobbyOverlayViewOptions {
   label: string
   kicker?: string
+  variant: 'account' | 'operations'
   body: HTMLElement
   onClose: () => void
 }
@@ -22,7 +23,8 @@ function focusableControls(root: HTMLElement): HTMLElement[] {
 
 export function buildLobbyOverlayView(options: LobbyOverlayViewOptions): HTMLElement {
   const overlay = document.createElement('div')
-  overlay.className = 'lobby-overlay'
+  overlay.className = `lobby-overlay lobby-overlay--${options.variant}`
+  overlay.dataset.overlayPresentation = 'stage-modal'
   const priorInert = new Map<HTMLElement, boolean>()
   const releaseBackground = () => {
     for (const [sibling, wasInert] of priorInert) sibling.inert = wasInert

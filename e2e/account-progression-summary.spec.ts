@@ -284,8 +284,10 @@ test.describe('Account progression summary compact readability', () => {
   });
 });
 
-test('opened Player Account is a fixed layer and leaves the deployment stage in place', async ({ page }) => {
+test('opened Player Account owns the lobby stage without ghosting the deployment beneath it', async ({ page }) => {
   await gotoLobby(page);
+  const lobby = page.locator('#lobby');
+  const card = page.locator('#lobby .lobby-card');
   const masthead = page.locator('.lobby-deployment__masthead');
   const brief = page.locator('.lobby-deployment__mission-brief');
   const preview = page.locator('.lobby-preview');
@@ -294,10 +296,36 @@ test('opened Player Account is a fixed layer and leaves the deployment stage in 
 
   await page.getByRole('button', { name: 'Account' }).click();
   const panel = page.locator('#lobby .lobby-overlay .account-panel');
+  const overlay = page.locator('#lobby .lobby-overlay');
+  const backdrop = page.locator('#lobby .lobby-overlay__backdrop');
   const surface = page.locator('#lobby .lobby-overlay__surface');
   await expect(panel).toBeVisible();
   await expect(page.locator('#lobby .lobby-overlay__close')).toBeFocused();
-  expect(await surface.evaluate((node) => getComputedStyle(node).position)).toBe('fixed');
+  await expect(overlay).toHaveAttribute('data-overlay-presentation', 'stage-modal');
+  await expect(overlay).toHaveClass(/lobby-overlay--account/);
+  expect(await overlay.evaluate((node) => getComputedStyle(node).position)).toBe('absolute');
+  expect(await surface.evaluate((node) => getComputedStyle(node).position)).toBe('absolute');
+  expect(await card.evaluate((node) => Number(getComputedStyle(node).opacity))).toBe(0);
+  const [lobbyBox, overlayBox, backdropBox, surfaceBox] = await Promise.all([
+    lobby.boundingBox(), overlay.boundingBox(), backdrop.boundingBox(), surface.boundingBox(),
+  ]);
+  for (const box of [lobbyBox, overlayBox, backdropBox, surfaceBox]) expect(box).not.toBeNull();
+  for (const candidate of [overlayBox!, backdropBox!]) {
+    expect(candidate.x).toBeCloseTo(lobbyBox!.x, 1);
+    expect(candidate.y).toBeCloseTo(lobbyBox!.y, 1);
+    expect(candidate.width).toBeCloseTo(lobbyBox!.width, 1);
+    expect(candidate.height).toBeCloseTo(lobbyBox!.height, 1);
+  }
+  expect(surfaceBox!.x).toBeGreaterThanOrEqual(lobbyBox!.x);
+  expect(surfaceBox!.y).toBeGreaterThanOrEqual(lobbyBox!.y);
+  expect(surfaceBox!.x + surfaceBox!.width).toBeLessThanOrEqual(lobbyBox!.x + lobbyBox!.width);
+  expect(surfaceBox!.y + surfaceBox!.height).toBeLessThanOrEqual(lobbyBox!.y + lobbyBox!.height);
+  expect(await backdrop.evaluate((node) => {
+    const color = getComputedStyle(node).backgroundColor;
+    const alpha = color.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)$/)?.[1];
+    return alpha === undefined ? 1 : Number(alpha);
+  })).toBeGreaterThanOrEqual(0.96);
+  expect(await surface.evaluate((node) => getComputedStyle(node).overflowY)).toBe('auto');
   const after = await Promise.all([masthead.boundingBox(), brief.boundingBox(), preview.boundingBox()]);
   for (let index = 0; index < before.length; index += 1) {
     expect(after[index]!.x).toBeCloseTo(before[index]!.x, 1);
