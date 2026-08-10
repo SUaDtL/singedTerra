@@ -67,6 +67,68 @@ async function assertOperationRowsClear(page: Page, selector: string): Promise<v
   }
 }
 
+async function assertMissionPreparation(
+  page: Page,
+  routeSelector: string,
+  expectedLabels: readonly string[],
+  primarySelector: string,
+): Promise<void> {
+  const geometry = await page.locator(routeSelector).evaluate((route, primarySelector) => {
+    const root = route.getBoundingClientRect();
+    const sections = Array.from(route.querySelectorAll<HTMLElement>(
+      ':scope .lobby-preparation-section',
+    ));
+    const primary = document.querySelector<HTMLElement>(primarySelector);
+    if (!primary || sections.length === 0) {
+      throw new Error('Expected preparation sections and a deployment action');
+    }
+    const serialize = (element: HTMLElement, requireBody = false) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      const body = element.querySelector<HTMLElement>('.lobby-preparation-section__body');
+      if (requireBody && !body) throw new Error('Expected a preparation-section body');
+      const bodyRect = body?.getBoundingClientRect();
+      return {
+        label: element.querySelector('.lobby-preparation-section__title')?.textContent,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        height: rect.height,
+        bodyHeight: bodyRect?.height ?? 0,
+        borderLeft: style.borderLeftStyle,
+        radius: style.borderRadius,
+      };
+    };
+    return {
+      root: { left: root.left, right: root.right },
+      sections: sections.map((section) => serialize(section, true)),
+      primary: serialize(primary),
+    };
+  }, primarySelector);
+
+  expect(geometry.sections.map((section) => section.label)).toEqual(expectedLabels);
+  for (const section of geometry.sections) {
+    expect(section.height, `${section.label} must remain visible`).toBeGreaterThan(4);
+    expect(section.bodyHeight, `${section.label} controls must remain visible`).toBeGreaterThan(4);
+    expect(section.borderLeft, `${section.label} must use the command rule`).toBe('solid');
+    expect(section.radius, `${section.label} must stay squared`).toBe('0px');
+    expect(section.left, `${section.label} must stay inside the route`).toBeGreaterThanOrEqual(geometry.root.left - 1);
+    expect(section.right, `${section.label} must stay inside the route`).toBeLessThanOrEqual(geometry.root.right + 1);
+  }
+  for (let index = 0; index < geometry.sections.length - 1; index += 1) {
+    const current = geometry.sections[index]!;
+    const next = geometry.sections[index + 1]!;
+    const overlapHorizontally = current.left < next.right && current.right > next.left;
+    if (!overlapHorizontally) continue;
+    expect(
+      current.bottom,
+      `${current.label} must clear the next preparation section in its column`,
+    ).toBeLessThanOrEqual(next.top + 1);
+  }
+  expect(geometry.primary.height, 'deployment action must remain visible').toBeGreaterThan(4);
+}
+
 async function fulfillFunction(
   page: Page,
   name: string,
@@ -110,6 +172,25 @@ test.describe('Lobby layout guardrails', () => {
 
     await assertLobbyFrame(page);
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
+  });
+
+  test('mission preparation keeps Local Battery and Open Operation contained', async ({ page }) => {
+    await assertMissionPreparation(
+      page,
+      '#lobby .lobby-hotseat',
+      ['Crew manifest', 'Battlefield protocol'],
+      '#lobby .lobby-start',
+    );
+    await assertLobbyControlReachable(page, '#lobby .lobby-start');
+
+    await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
+    await assertMissionPreparation(
+      page,
+      '#lobby .lobby-route-brief--online',
+      ['Command vehicle', 'Operation profile', 'Battlefield protocol'],
+      '#lobby .lobby-online-primary',
+    );
+    await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
   });
 
   test('play mode tabs identify their selected setup and support predictable keyboard switching', async ({ page }) => {
@@ -169,7 +250,7 @@ test.describe('Lobby layout guardrails', () => {
     await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create Room', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create operation', exact: true })).toBeVisible();
     const alternatives = page.getByRole('navigation', { name: 'Other ways to play online', exact: true });
     await expect(alternatives).toBeVisible();
     await expect(alternatives.getByRole('button', { name: 'Join with a code', exact: true })).toBeVisible();
@@ -257,7 +338,7 @@ test.describe('Lobby layout guardrails', () => {
     await assertLobbyControlReachable(page, '#lobby [data-online-route="join-code"]');
   });
 
-  test('Create Room renders a reachable waiting-room fixture without leaving the frame', async ({ page }) => {
+  test('Create operation renders a reachable waiting-room fixture without leaving the frame', async ({ page }) => {
     const createRoomCalls = await fulfillFunction(page, 'create_room', {
       roomId: 'room-wait-oracle',
       code: 'WAIT',
@@ -279,7 +360,7 @@ test.describe('Lobby layout guardrails', () => {
 
     await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
     await page.locator('#lobby .lobby-name').fill('Oracle Host');
-    await page.getByRole('button', { name: 'Create Room', exact: true }).click();
+    await page.getByRole('button', { name: 'Create operation', exact: true }).click();
 
     const board = page.locator('#lobby .lobby-operations-board--waiting');
     await expect(board.getByRole('heading', { name: 'Staging operation', exact: true })).toBeVisible();

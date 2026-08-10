@@ -79,24 +79,28 @@ describe('buildLobbyCreateView', () => {
       .toEqual(['Public', 'Private']);
     expect(visibility.querySelector('select')?.value).toBe('public');
 
-    const advanced = root.querySelector('details.lobby-advanced')!;
+    const commandVehicle = root.querySelector<HTMLElement>('[aria-labelledby="command-vehicle-heading"]');
+    const operationProfile = root.querySelector<HTMLElement>('[aria-labelledby="operation-profile-heading"]');
+    const protocol = root.querySelector<HTMLElement>('[aria-labelledby="battlefield-protocol-heading"]');
+    expect(commandVehicle?.querySelector('.lobby-preparation-section__title')?.textContent)
+      .toBe('Command vehicle');
+    expect(commandVehicle?.querySelector('[data-section="name-color"]')).toBe(nameColor);
+    expect(commandVehicle?.querySelector('[data-section="garage"]')).toBe(garage);
+    expect(operationProfile?.querySelector('.lobby-preparation-section__title')?.textContent)
+      .toBe('Operation profile');
+    expect(operationProfile?.querySelector('.lobby-field label')?.textContent).toBe('Players');
+    const advanced = protocol?.querySelector('details.lobby-advanced')!;
     expect(advanced.querySelector('summary')?.textContent).toBe('Advanced settings');
     expect([...advanced.children].slice(1)).toEqual(advancedFields);
-    expect([...root.querySelector('.lobby-route-brief__setup')!.children]).toEqual([
-      nameColor,
-      garage,
-      players,
-      bots,
-      visibility,
-      advanced,
-      status,
-    ]);
+    expect([...operationProfile!.querySelector('.lobby-preparation-section__body')!.children])
+      .toEqual([players, bots, visibility]);
+    expect(protocol?.querySelector('[data-section="status"]')).toBe(status);
     expect([...root.querySelectorAll<HTMLButtonElement>('.lobby-online-actions button')].map((item) => ({
       text: item.textContent,
       className: item.className,
       disabled: item.disabled,
     }))).toEqual([
-      { text: 'Create Room', className: 'lobby-btn primary lobby-online-primary', disabled: false },
+      { text: 'Create operation', className: 'lobby-btn primary lobby-online-primary', disabled: false },
       { text: 'Join with a code', className: 'lobby-btn secondary', disabled: false },
       { text: 'Browse public rooms', className: 'lobby-btn secondary', disabled: false },
     ]);
@@ -128,7 +132,7 @@ describe('buildLobbyCreateView', () => {
     expect(callbacks.onBotDifficultyChange).toHaveBeenCalledWith('hard');
     expect(callbacks.onVisibilityChange).toHaveBeenCalledWith('private');
 
-    button(root, 'Create Room').click();
+    button(root, 'Create operation').click();
     button(root, 'Join with a code').click();
     button(root, 'Browse public rooms').click();
     expect(callbacks.onCreate).toHaveBeenCalledOnce();

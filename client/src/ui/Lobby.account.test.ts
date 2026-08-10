@@ -46,13 +46,13 @@ describe('Lobby account composition', () => {
     const password = root.querySelector<HTMLInputElement>('input[type="password"]')
     if (!(form instanceof HTMLFormElement) || !email || !password) throw new Error('Missing sign-in form')
     email.value = 'ranger@example.test'
-    password.value = 'not-a-real-secret'
+    password.value = 'fixture'
     form.requestSubmit()
 
     expect(account.submit).toHaveBeenCalledOnce()
     expect(account.submit).toHaveBeenCalledWith('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password: 'fixture',
     })
     expect(password.value).toBe('')
   })
@@ -133,7 +133,7 @@ describe('Lobby account composition', () => {
     lobby.show()
 
     expect(root.querySelector('.account-panel')).toBeNull()
-    expect(button(root, 'Start Game')).toBeTruthy()
+    expect(button(root, 'Deploy local battle')).toBeTruthy()
   })
 
   it('keeps the compact account affordance out of the lobby content-width rule', () => {

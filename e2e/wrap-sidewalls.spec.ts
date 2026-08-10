@@ -11,7 +11,7 @@ async function openRoom(
     await page.getByLabel('Side walls').selectOption(walls);
     await expect(page.getByLabel('Side walls')).toHaveValue(walls);
   }
-  await page.getByRole('button', { name: 'Start Game' }).click();
+  await page.getByRole('button', { name: 'Deploy local battle' }).click();
   await expect(page.locator('#hud.st-hud')).toBeVisible();
 }
 

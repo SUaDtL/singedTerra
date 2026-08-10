@@ -170,7 +170,7 @@ async function startGarageMatch(page: Page, kit: Kit): Promise<void> {
   const advanced = page.locator('.lobby-advanced');
   await advanced.locator('summary').click();
   await advanced.locator('.lobby-field').filter({ hasText: 'Seed' }).locator('input').fill('1337');
-  await page.getByRole('button', { name: 'Start Game' }).click();
+  await page.getByRole('button', { name: 'Deploy local battle' }).click();
   await expect(page.locator('#game')).toBeVisible();
   await expect(page.locator('.st-hud__fuel-value')).toHaveText('100');
 }

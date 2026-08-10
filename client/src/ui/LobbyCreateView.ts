@@ -1,5 +1,6 @@
 import type { AiDifficulty } from '@shared/types/GameState';
 import { buildOnlineRouteActions } from './LobbyOnlineRouteActions';
+import { buildLobbyPreparationSection } from './LobbyPreparationSection';
 
 export interface LobbyCreateViewOptions {
   minPlayers: number;
@@ -40,8 +41,6 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
   setup.className = 'lobby-route-brief__setup';
   setup.setAttribute('aria-label', 'Open operation setup');
 
-  setup.append(options.nameColor, options.garage);
-
   const playerField = document.createElement('div');
   playerField.className = 'lobby-field';
   const playerLabel = document.createElement('label');
@@ -58,8 +57,6 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
     options.onPlayerCountChange(Number(playerSelect.value));
   });
   playerField.append(playerLabel, playerSelect);
-  setup.append(playerField);
-
   const botField = document.createElement('div');
   botField.className = 'lobby-field';
   const botLabel = document.createElement('label');
@@ -90,8 +87,6 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
     });
     botField.append(difficultySelect);
   }
-  setup.append(botField);
-
   const visibilityField = document.createElement('div');
   visibilityField.className = 'lobby-field';
   const visibilityLabel = document.createElement('label');
@@ -108,19 +103,33 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
     options.onVisibilityChange(visibilitySelect.value as 'public' | 'private');
   });
   visibilityField.append(visibilityLabel, visibilitySelect);
-  setup.append(visibilityField);
-
   const advanced = document.createElement('details');
   advanced.className = 'lobby-advanced';
   const summary = document.createElement('summary');
   summary.textContent = 'Advanced settings';
   advanced.append(summary, ...options.advancedFields);
-  setup.append(advanced, options.status);
+  setup.append(
+    buildLobbyPreparationSection({
+      id: 'command-vehicle',
+      title: 'Command vehicle',
+      children: [options.nameColor, options.garage],
+    }),
+    buildLobbyPreparationSection({
+      id: 'operation-profile',
+      title: 'Operation profile',
+      children: [playerField, botField, visibilityField],
+    }),
+    buildLobbyPreparationSection({
+      id: 'battlefield-protocol',
+      title: 'Battlefield protocol',
+      children: [advanced, options.status],
+    }),
+  );
 
   const createButton = document.createElement('button');
   createButton.type = 'button';
   createButton.className = 'lobby-btn primary';
-  createButton.textContent = options.busy ? 'Creating...' : 'Create Room';
+  createButton.textContent = options.busy ? 'Creating...' : 'Create operation';
   createButton.disabled = options.busy;
   createButton.addEventListener('click', options.onCreate);
 

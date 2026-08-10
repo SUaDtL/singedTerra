@@ -273,7 +273,7 @@ test.describe('tank Garage', () => {
     const playerName = 'Commander Longname X';
     await page.getByRole('textbox', { name: 'Player 1' }).fill(playerName);
     await page.evaluate(() => localStorage.setItem('st_arsenal_collapsed', '1'));
-    await page.getByRole('button', { name: 'Start Game' }).click();
+    await page.getByRole('button', { name: 'Deploy local battle' }).click();
 
     const active = page.locator('.st-hud__active-row');
     const owner = active.locator('.st-hud__turn-owner');
@@ -463,6 +463,21 @@ test.describe('tank Garage', () => {
     })).toEqual({ ready: true, distinct: true });
   });
 
+  test('suppresses the live Vehicle Bay preview while the compact editor owns focus', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'desktop-fine', 'The focused editor overlay is compact-only.');
+    await openGarage(page);
+    await openCompactGarage(page, 'Player 1');
+
+    await expect(page.locator('#lobby .lobby-garage.editing')).toBeVisible();
+    await expect(page.locator('#lobby .lobby-preview')).toBeHidden();
+
+    await page.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('#lobby .lobby-garage.editing')).toBeHidden();
+    await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
+  });
+
   test('carries a mixed Jackal selection into a running game', async ({
     page,
   }) => {
@@ -496,7 +511,7 @@ test.describe('tank Garage', () => {
       }).__tankPartDraws = [];
     });
     await closeCompactGarage(page);
-    await page.getByRole('button', { name: 'Start Game' }).click();
+    await page.getByRole('button', { name: 'Deploy local battle' }).click();
 
     await expect(page.locator('#game')).toBeVisible();
     await expect(page.locator('#hud.st-hud')).toBeVisible();

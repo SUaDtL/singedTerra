@@ -47,8 +47,15 @@ describe('buildLobbyHotSeatView', () => {
     const rows = root.querySelector('.lobby-rows');
     expect(rows?.classList.contains('crowded')).toBe(true);
     expect([...rows!.children]).toEqual(playerRows);
-    const setup = root.querySelector('.lobby-route-brief__setup')!;
-    expect([...setup.children].indexOf(rows!)).toBeLessThan([...setup.children].indexOf(advanced));
+    const crew = root.querySelector<HTMLElement>('[aria-labelledby="crew-manifest-heading"]');
+    const protocol = root.querySelector<HTMLElement>('[aria-labelledby="battlefield-protocol-heading"]');
+    expect(crew?.querySelector('.lobby-preparation-section__title')?.textContent)
+      .toBe('Crew manifest');
+    expect(crew?.querySelector('select')).toBe(select);
+    expect(crew?.querySelector('.lobby-rows')).toBe(rows);
+    expect(protocol?.querySelector('.lobby-preparation-section__title')?.textContent)
+      .toBe('Battlefield protocol');
+    expect(protocol?.querySelector('[data-section="advanced"]')).toBe(advanced);
   });
 
   it('routes player-count changes and an enabled Start action', () => {
@@ -63,7 +70,7 @@ describe('buildLobbyHotSeatView', () => {
     expect(onPlayerCountChange).toHaveBeenCalledWith(4);
 
     const start = startButton(root);
-    expect(start.textContent).toBe('Start Game');
+    expect(start.textContent).toBe('Deploy local battle');
     expect(start.className).toBe('lobby-start lobby-btn primary');
     expect(start.disabled).toBe(false);
     start.click();

@@ -1754,12 +1754,66 @@ export class Lobby {
       #lobby .lobby-route-brief__setup {
         margin-top: 4px;
       }
-      #lobby .lobby-route-brief__setup > .lobby-field > label {
+      #lobby .lobby-route-brief__setup > .lobby-field > label,
+      #lobby .lobby-preparation-section__body > .lobby-field > label {
         color: rgba(255, 224, 159, 0.74);
         font-family: var(--font-mono);
         font-size: 11px;
         letter-spacing: 0.45px;
         text-transform: uppercase;
+      }
+      /* The primary setup routes describe an operation, not a loose stack of
+         browser fields. Keep the route builders' controls intact while giving
+         each player decision a consistent command-frame boundary. */
+      #lobby .lobby-preparation-section {
+        position: relative;
+        margin: 5px 0 0;
+        padding: 5px 9px 6px;
+        border-left: 2px solid rgba(255, 188, 80, 0.68);
+        border-top: 1px solid rgba(255, 210, 63, 0.22);
+        border-bottom: 1px solid rgba(255, 210, 63, 0.12);
+        border-radius: 0;
+        background: linear-gradient(90deg, rgba(37, 25, 13, 0.54), rgba(9, 11, 13, 0.14) 76%, transparent);
+      }
+      #lobby .lobby-preparation-section__title {
+        margin: 0;
+        color: #ffe0a0;
+        font: 700 10px/1 var(--font-display);
+        letter-spacing: 0.95px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-preparation-section__purpose {
+        margin: 4px 0 0;
+        color: rgba(225, 214, 191, 0.62);
+        font: 11px/1.25 var(--font-sans);
+      }
+      #lobby .lobby-preparation-section__body {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+        margin-top: 4px;
+      }
+      #lobby .lobby-preparation-section__body > .lobby-advanced {
+        margin: 0;
+        padding-top: 6px;
+      }
+      #lobby .lobby-preparation-section .lobby-rows { margin: 0; }
+      #lobby .lobby-preparation-section .lobby-field { margin: 0; }
+      #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+        display: grid;
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        column-gap: 8px;
+        align-items: start;
+      }
+      #lobby .lobby-route-brief--online .lobby-preparation-section[data-preparation-section="command-vehicle"] {
+        grid-column: 1;
+      }
+      #lobby .lobby-route-brief--online .lobby-preparation-section[data-preparation-section="operation-profile"] {
+        grid-column: 2;
+      }
+      #lobby .lobby-route-brief--online .lobby-preparation-section[data-preparation-section="battlefield-protocol"],
+      #lobby .lobby-route-brief--online .lobby-error {
+        grid-column: 1 / -1;
       }
       #app.is-compact #lobby .lobby-route-brief {
         padding-left: 5px;
@@ -1773,6 +1827,21 @@ export class Lobby {
         margin-top: 0;
       }
       #app.is-compact #lobby .lobby-route-brief__setup > .lobby-field > label { width: 78px; }
+      #app.is-compact #lobby .lobby-preparation-section {
+        margin-top: 2px;
+        padding: 2px 5px 3px;
+      }
+      #app.is-compact #lobby .lobby-preparation-section__title { font-size: 9px; }
+      #app.is-compact #lobby .lobby-preparation-section__purpose {
+        display: none;
+      }
+      #app.is-compact #lobby .lobby-preparation-section__body {
+        gap: 2px;
+        margin-top: 2px;
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+        display: block;
+      }
 
       /* One route hierarchy, shared by every pre-game screen. The route
          content beneath it keeps its established gameplay and network logic. */
@@ -1919,6 +1988,9 @@ export class Lobby {
         ~ .lobby-preview,
       #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel--open)
         ~ .lobby-controls {
+        visibility: hidden;
+      }
+      #app.is-compact #lobby:has(.lobby-garage.editing) .lobby-preview {
         visibility: hidden;
       }
       #app.is-compact #lobby .lobby-deployment__mission-brief {

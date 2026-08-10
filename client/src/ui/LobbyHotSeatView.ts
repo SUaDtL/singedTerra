@@ -44,13 +44,22 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
     options.onPlayerCountChange(Number(countSelect.value));
   });
   countField.append(countLabel, countSelect);
-  setup.append(countField);
-
   const rows = document.createElement('div');
   rows.className = 'lobby-rows';
   rows.classList.toggle('crowded', crowded);
   rows.append(...options.playerRows);
-  setup.append(rows, options.advanced);
+  setup.append(
+    buildLobbyPreparationSection({
+      id: 'crew-manifest',
+      title: 'Crew manifest',
+      children: [countField, rows],
+    }),
+    buildLobbyPreparationSection({
+      id: 'battlefield-protocol',
+      title: 'Battlefield protocol',
+      children: [options.advanced],
+    }),
+  );
 
   const error = document.createElement('div');
   error.className = 'lobby-error';
@@ -60,10 +69,11 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   const start = document.createElement('button');
   start.type = 'button';
   start.className = 'lobby-start lobby-btn primary';
-  start.textContent = 'Start Game';
+  start.textContent = 'Deploy local battle';
   start.disabled = options.validationMessage !== null;
   start.addEventListener('click', options.onStart);
   wrapper.append(brief, setup, start);
 
   return wrapper;
 }
+import { buildLobbyPreparationSection } from './LobbyPreparationSection';

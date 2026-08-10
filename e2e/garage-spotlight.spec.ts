@@ -117,7 +117,7 @@ async function expectGarageLayout(page: Page): Promise<void> {
 
   const start = await expectControlInViewport(
     page,
-    page.getByRole('button', { name: 'Start Game' }),
+    page.getByRole('button', { name: 'Deploy local battle' }),
   );
   expectSeparated(bay, start);
 
@@ -250,7 +250,7 @@ test.describe('Garage spotlight', () => {
       'thumbnail|#4d8ce8|ranger|ranger|ranger|ranger',
     );
 
-    await page.getByRole('button', { name: 'Start Game' }).click();
+    await page.getByRole('button', { name: 'Deploy local battle' }).click();
     const portrait = page.locator('.st-hud__tank-portrait');
     await expect(portrait).toHaveAttribute(
       'aria-label',
@@ -378,7 +378,7 @@ test.describe('Garage spotlight', () => {
 
     await expectGarageLayout(page);
     await expectDocumentFit(page);
-    const start = page.getByRole('button', { name: 'Start Game' });
+    const start = page.getByRole('button', { name: 'Deploy local battle' });
     await expect(start).toBeVisible();
     await expect(start).toBeEnabled();
     await start.click();
