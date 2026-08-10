@@ -326,6 +326,14 @@ test('opened Player Account owns the lobby stage without ghosting the deployment
     return alpha === undefined ? 1 : Number(alpha);
   })).toBeGreaterThanOrEqual(0.96);
   expect(await surface.evaluate((node) => getComputedStyle(node).overflowY)).toBe('auto');
+  const accountWidth = await surface.evaluate((node) => ({
+    compact: document.querySelector('#app')?.classList.contains('is-compact') ?? false,
+    cssWidth: Number.parseFloat(getComputedStyle(node).width),
+  }));
+  if (!accountWidth.compact) {
+    expect(accountWidth.cssWidth).toBeGreaterThanOrEqual(650);
+    expect(accountWidth.cssWidth).toBeLessThanOrEqual(720);
+  }
   const after = await Promise.all([masthead.boundingBox(), brief.boundingBox(), preview.boundingBox()]);
   for (let index = 0; index < before.length; index += 1) {
     expect(after[index]!.x).toBeCloseTo(before[index]!.x, 1);

@@ -105,3 +105,14 @@ desktop label/control/explanation columns, and a scroll-owned compact stack.
   three profiles. A separate first-control `width: 360px` mutation failed the
   desktop computed-width bound at the intended assertion. Both mutations were
   reverted before final verification.
+
+## PR coverage correction cycle
+
+- The PR coverage audit found one Medium merge blocker: browser tests did not
+  distinguish the focused Account surface from the wider Operations surface.
+- Desktop Account now requires a computed width from 650 through 720 CSS pixels;
+  desktop Operations requires 900 through 1040. Compact profiles continue to
+  use their stage-containment contract instead of desktop width assumptions.
+- A causal selector-value swap made Account 1040px and Operations 720px. Both
+  desktop tests failed at their intended width assertions while compact/touch
+  containment remained green. The mutation was reverted before final proof.

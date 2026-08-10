@@ -286,6 +286,14 @@ test.describe('Lobby layout guardrails', () => {
       return alpha === undefined ? 1 : Number(alpha);
     })).toBeGreaterThanOrEqual(0.96);
     expect(await surface.evaluate((node) => getComputedStyle(node).overflowY)).toBe('auto');
+    const operationsWidth = await surface.evaluate((node) => ({
+      compact: document.querySelector('#app')?.classList.contains('is-compact') ?? false,
+      cssWidth: Number.parseFloat(getComputedStyle(node).width),
+    }));
+    if (!operationsWidth.compact) {
+      expect(operationsWidth.cssWidth).toBeGreaterThanOrEqual(900);
+      expect(operationsWidth.cssWidth).toBeLessThanOrEqual(1040);
+    }
     const controlPalette = await surface.evaluate((dialog) => {
       const control = dialog.querySelector<HTMLInputElement>('input[type="number"]');
       if (!control) throw new Error('Expected an operations number input');
