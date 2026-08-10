@@ -85,23 +85,40 @@ async function assertMissionPreparation(
     const serialize = (element: HTMLElement, requireBody = false) => {
       const rect = element.getBoundingClientRect();
       const style = getComputedStyle(element);
+      const heading = element.querySelector<HTMLElement>('.lobby-preparation-section__title');
       const body = element.querySelector<HTMLElement>('.lobby-preparation-section__body');
-      if (requireBody && !body) throw new Error('Expected a preparation-section body');
+      if (requireBody && (!heading || !body)) {
+        throw new Error('Expected a preparation-section heading and body');
+      }
+      const headingRect = heading?.getBoundingClientRect();
       const bodyRect = body?.getBoundingClientRect();
       return {
-        label: element.querySelector('.lobby-preparation-section__title')?.textContent,
+        label: heading?.textContent,
         left: rect.left,
         right: rect.right,
         top: rect.top,
         bottom: rect.bottom,
         height: rect.height,
-        bodyHeight: bodyRect?.height ?? 0,
+        heading: headingRect && {
+          left: headingRect.left,
+          right: headingRect.right,
+          top: headingRect.top,
+          bottom: headingRect.bottom,
+          height: headingRect.height,
+        },
+        body: bodyRect && {
+          left: bodyRect.left,
+          right: bodyRect.right,
+          top: bodyRect.top,
+          bottom: bodyRect.bottom,
+          height: bodyRect.height,
+        },
         borderLeft: style.borderLeftStyle,
         radius: style.borderRadius,
       };
     };
     return {
-      root: { left: root.left, right: root.right },
+      root: { left: root.left, right: root.right, top: root.top, bottom: root.bottom },
       sections: sections.map((section) => serialize(section, true)),
       primary: serialize(primary),
     };
@@ -109,24 +126,62 @@ async function assertMissionPreparation(
 
   expect(geometry.sections.map((section) => section.label)).toEqual(expectedLabels);
   for (const section of geometry.sections) {
+    expect(section.heading, `${section.label} must have a heading region`).toBeTruthy();
+    expect(section.body, `${section.label} must have a body region`).toBeTruthy();
     expect(section.height, `${section.label} must remain visible`).toBeGreaterThan(4);
-    expect(section.bodyHeight, `${section.label} controls must remain visible`).toBeGreaterThan(4);
+    expect(section.heading!.height, `${section.label} heading must remain visible`).toBeGreaterThan(4);
+    expect(section.body!.height, `${section.label} controls must remain visible`).toBeGreaterThan(4);
     expect(section.borderLeft, `${section.label} must use the command rule`).toBe('solid');
     expect(section.radius, `${section.label} must stay squared`).toBe('0px');
     expect(section.left, `${section.label} must stay inside the route`).toBeGreaterThanOrEqual(geometry.root.left - 1);
     expect(section.right, `${section.label} must stay inside the route`).toBeLessThanOrEqual(geometry.root.right + 1);
+    expect(section.top, `${section.label} must stay inside the route`).toBeGreaterThanOrEqual(geometry.root.top - 1);
+    expect(section.bottom, `${section.label} must stay inside the route`).toBeLessThanOrEqual(geometry.root.bottom + 1);
+    for (const [regionName, region] of [['heading', section.heading!], ['body', section.body!]] as const) {
+      expect(region.left, `${section.label} ${regionName} must stay inside its section`).toBeGreaterThanOrEqual(section.left - 1);
+      expect(region.right, `${section.label} ${regionName} must stay inside its section`).toBeLessThanOrEqual(section.right + 1);
+      expect(region.top, `${section.label} ${regionName} must stay inside its section`).toBeGreaterThanOrEqual(section.top - 1);
+      expect(region.bottom, `${section.label} ${regionName} must stay inside its section`).toBeLessThanOrEqual(section.bottom + 1);
+    }
   }
-  for (let index = 0; index < geometry.sections.length - 1; index += 1) {
-    const current = geometry.sections[index]!;
-    const next = geometry.sections[index + 1]!;
-    const overlapHorizontally = current.left < next.right && current.right > next.left;
-    if (!overlapHorizontally) continue;
-    expect(
-      current.bottom,
-      `${current.label} must clear the next preparation section in its column`,
-    ).toBeLessThanOrEqual(next.top + 1);
+  for (let currentIndex = 0; currentIndex < geometry.sections.length; currentIndex += 1) {
+    for (let nextIndex = currentIndex + 1; nextIndex < geometry.sections.length; nextIndex += 1) {
+      const current = geometry.sections[currentIndex]!;
+      const next = geometry.sections[nextIndex]!;
+      const overlapsHorizontally = current.left < next.right - 1 && current.right > next.left + 1;
+      const overlapsVertically = current.top < next.bottom - 1 && current.bottom > next.top + 1;
+      expect(
+        overlapsHorizontally && overlapsVertically,
+        `${current.label} must not overlap ${next.label}`,
+      ).toBe(false);
+      if (overlapsHorizontally) {
+        expect(
+          current.bottom,
+          `${current.label} must precede ${next.label} vertically`,
+        ).toBeLessThanOrEqual(next.top + 1);
+      } else {
+        expect(
+          current.right,
+          `${current.label} must precede ${next.label} left to right`,
+        ).toBeLessThanOrEqual(next.left + 1);
+      }
+    }
   }
   expect(geometry.primary.height, 'deployment action must remain visible').toBeGreaterThan(4);
+  expect(geometry.primary.right - geometry.primary.left, 'deployment action must retain width')
+    .toBeGreaterThan(4);
+  expect(geometry.primary.left, 'deployment action must stay inside the route')
+    .toBeGreaterThanOrEqual(geometry.root.left - 1);
+  expect(geometry.primary.right, 'deployment action must stay inside the route')
+    .toBeLessThanOrEqual(geometry.root.right + 1);
+  expect(geometry.primary.top, 'deployment action must stay inside the route')
+    .toBeGreaterThanOrEqual(geometry.root.top - 1);
+  expect(geometry.primary.bottom, 'deployment action must stay inside the route')
+    .toBeLessThanOrEqual(geometry.root.bottom + 1);
+  expect(
+    geometry.primary.top,
+    'deployment action must follow the mission-preparation sections',
+  ).toBeGreaterThanOrEqual(Math.max(...geometry.sections.map((section) => section.bottom)) - 1);
 }
 
 async function fulfillFunction(

@@ -15,8 +15,9 @@ describe('buildLobbyPreparationSection', () => {
 
     expect(section.tagName).toBe('SECTION');
     expect(section.getAttribute('aria-labelledby')).toBe('crew-manifest-heading');
-    expect(section.querySelector('.lobby-preparation-section__title')?.textContent)
-      .toBe('Crew manifest');
+    const heading = section.querySelector('.lobby-preparation-section__title');
+    expect(heading?.textContent).toBe('Crew manifest');
+    expect(section.querySelector(`#${section.getAttribute('aria-labelledby')}`)).toBe(heading);
     expect(section.querySelector('.lobby-preparation-section__purpose')?.textContent)
       .toBe('Assign the battery before deployment.');
     expect(section.querySelector('.lobby-preparation-section__body')?.firstElementChild)

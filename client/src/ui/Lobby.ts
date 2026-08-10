@@ -1990,9 +1990,6 @@ export class Lobby {
         ~ .lobby-controls {
         visibility: hidden;
       }
-      #app.is-compact #lobby:has(.lobby-garage.editing) .lobby-preview {
-        visibility: hidden;
-      }
       #app.is-compact #lobby .lobby-deployment__mission-brief {
         display: block;
         padding: 5px 0;

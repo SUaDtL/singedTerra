@@ -463,21 +463,6 @@ test.describe('tank Garage', () => {
     })).toEqual({ ready: true, distinct: true });
   });
 
-  test('suppresses the live Vehicle Bay preview while the compact editor owns focus', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === 'desktop-fine', 'The focused editor overlay is compact-only.');
-    await openGarage(page);
-    await openCompactGarage(page, 'Player 1');
-
-    await expect(page.locator('#lobby .lobby-garage.editing')).toBeVisible();
-    await expect(page.locator('#lobby .lobby-preview')).toBeHidden();
-
-    await page.getByRole('button', { name: 'Done' }).click();
-    await expect(page.locator('#lobby .lobby-garage.editing')).toBeHidden();
-    await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
-  });
-
   test('carries a mixed Jackal selection into a running game', async ({
     page,
   }) => {
