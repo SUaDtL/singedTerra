@@ -66,6 +66,58 @@ describe('createHotSeatProgressionReporter', () => {
     expect(onRecorded).toHaveBeenCalledOnce()
   })
 
+  it('emits one unrecorded result when the existing report declines the match', async () => {
+    const onRecorded = vi.fn()
+    const onUnrecorded = vi.fn()
+    const reporter = createHotSeatProgressionReporter({
+      mode: 'hotseat',
+      e2eMode: null,
+      accountTankId: 'p1',
+      report: async () => null,
+      onRecorded,
+      onUnrecorded,
+      matchId: '00000000-0000-4000-8000-000000000075',
+    })
+    if (!reporter) throw new Error('Expected reporter')
+
+    reporter.observe(state('GAME_OVER', 'p1'))
+    reporter.observe(state('GAME_OVER', 'p1'))
+
+    await vi.waitFor(() => expect(onUnrecorded).toHaveBeenCalledWith({
+      matchId: '00000000-0000-4000-8000-000000000075',
+      won: true,
+    }))
+    expect(onUnrecorded).toHaveBeenCalledOnce()
+    expect(onRecorded).not.toHaveBeenCalled()
+  })
+
+  it('keeps recorded and unrecorded terminal callbacks mutually exclusive', async () => {
+    const summary = {
+      progressionVersion: 1 as const,
+      totalXp: 200,
+      level: 1,
+      levelXp: 200,
+      nextLevelXp: 500,
+    }
+    const onRecorded = vi.fn()
+    const onUnrecorded = vi.fn()
+    const reporter = createHotSeatProgressionReporter({
+      mode: 'hotseat',
+      e2eMode: null,
+      accountTankId: 'p1',
+      report: async () => summary,
+      onRecorded,
+      onUnrecorded,
+    })
+    if (!reporter) throw new Error('Expected reporter')
+
+    reporter.observe(state('GAME_OVER', 'p1'))
+    reporter.observe(state('GAME_OVER', 'p1'))
+
+    await vi.waitFor(() => expect(onRecorded).toHaveBeenCalledOnce())
+    expect(onUnrecorded).not.toHaveBeenCalled()
+  })
+
   it.each([
     ['a declined record', () => Promise.resolve(null)],
     ['a failed record', () => Promise.reject(new Error('unavailable'))],

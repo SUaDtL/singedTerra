@@ -192,9 +192,10 @@ function bootstrap(): void {
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
   let gameGeneration = 0;
+  let progressionSignInHandled = false;
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
-  let e2eVictoryPending = E2E_MODE === 'victory';
+  let e2eVictoryPending = E2E_MODE === 'victory' || E2E_MODE === 'victory-anonymous';
 
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
     const state = client?.getState();
@@ -291,6 +292,7 @@ function bootstrap(): void {
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
     teardown();
+    progressionSignInHandled = false;
     const currentGameGeneration = gameGeneration;
     // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
     // callback. Restart (restartCb) and network rematch (onRematch) call startGame()
@@ -336,7 +338,9 @@ function bootstrap(): void {
     const accountTank = initial?.tanks[0];
     const hotSeatProgression = createHotSeatProgressionReporter({
       mode: config.mode,
-      e2eMode: E2E_MODE,
+      // The anonymous fixture deliberately traverses the real null-result path.
+      // Ordinary deterministic fixtures remain excluded from progression reporting.
+      e2eMode: E2E_MODE === 'victory-anonymous' ? null : E2E_MODE,
       accountTankId: accountTank && !accountTank.ai ? accountTank.id : null,
       report: (result) => lobby.recordHotSeatMatch(result),
       onRecorded: (result, summary) => {
@@ -346,6 +350,15 @@ function bootstrap(): void {
           || newClient.getState()?.phase !== 'GAME_OVER'
         ) return;
         hud.setProgressionReceipt({ won: result.won, summary });
+      },
+      onUnrecorded: () => {
+        if (
+          gameGeneration !== currentGameGeneration
+          || client !== newClient
+          || newClient.getState()?.phase !== 'GAME_OVER'
+          || !lobby.isAccountAnonymous()
+        ) return;
+        hud.setAnonymousProgressionHandoff();
       },
     });
     lastActiveId = initial?.activePlayerId ?? null;
@@ -480,7 +493,6 @@ function bootstrap(): void {
           paused: hud.isPaused(),
         }),
       );
-
       // When the active player changes, re-seed the input handler's aim AND
       // weapon cursor from the new active tank so each player's arrows start
       // from their own tank's current angle/power and their Q cycles from
@@ -631,6 +643,14 @@ function bootstrap(): void {
     lobby.show();
   });
 
+  hud.onProgressionSignIn(() => {
+    if (progressionSignInHandled) return;
+    progressionSignInHandled = true;
+    teardown();
+    lobby.show();
+    lobby.showAccountSignIn();
+  });
+
   hud.onPauseChange((paused) => {
     if (paused) input?.setDirectAimEnabled(false);
     else input?.setDirectAimEnabled(directAimAllowed());
@@ -652,7 +672,8 @@ function bootstrap(): void {
   // brittle lobby-clicking. It ships in the bundle intentionally (the post-deploy
   // smoke drives the LIVE url with it), and is benign: it only starts a LOCAL
   // hot-seat game (fixed seed, two human seats) — no backend, no secrets, no auth.
-  if (E2E_MODE === 'hotseat' || E2E_MODE === 'victory') {
+  if (E2E_MODE === 'hotseat' || E2E_MODE === 'victory' || E2E_MODE === 'victory-anonymous') {
+    if (E2E_MODE === 'victory-anonymous') lobby.show();
     void startGame({
       mode: 'hotseat',
       players: [

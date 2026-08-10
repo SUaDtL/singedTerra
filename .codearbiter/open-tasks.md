@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] mvp2.progression.0009 - Guide anonymous local-match players from the After Action Report to sign in for future progression without claiming retroactive credit.  (from adversarial-player-retention-audit-2026-08-10)  (done 2026-08-10)
+  - Boundaries: client, post-match-ux
 - [x] ux.pregame.0002 - Repair Account and Operations Settings as opaque stage-owned overlays with no ghosted or reflowed pregame composition and real-browser desktop/touch proof.  (from user-overlay-containment-regression)  (done 2026-08-10)
   - Boundaries: client, pregame-ux
 - [x] mvp2.progression.0008 - Show earned post-match XP and the next visible level milestone  (from adversarial-player-experience-audit-2026-08-10)  (done 2026-08-10)

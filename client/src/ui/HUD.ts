@@ -142,6 +142,7 @@ export class HUD {
   private firstSalvoSkipCb: (() => void) | null = null;
   private firstSalvoReplayCb: (() => void) | null = null;
   private firstSalvoStep: FirstSalvoStep | null = null;
+  private progressionSignInCb: (() => void) | null = null;
 
   // Shared command callbacks. Invoked by both the fine-pointer Command Deck and
   // the coarse-pointer dock; main.ts wires these to InputHandler's public steps.
@@ -180,6 +181,8 @@ export class HUD {
   private overlayScoreEl!: HTMLElement;
   private overlayStatusEl!: HTMLElement;
   private overlayProgressionReceiptEl!: HTMLElement;
+  private overlayProgressionHandoffEl!: HTMLElement;
+  private overlayProgressionSignInBtnEl!: HTMLButtonElement;
   private overlayTankEl!: HTMLCanvasElement;
   private overlayPrimaryBtnEl!: HTMLButtonElement;
   private overlayMenuBtnEl!: HTMLButtonElement;
@@ -308,6 +311,11 @@ export class HUD {
   /** Register the callback fired when the player quits a game back to the lobby. */
   onQuit(cb: () => void): void {
     this.quitCb = cb;
+  }
+
+  /** Register the callback fired by the anonymous After Action sign-in handoff. */
+  onProgressionSignIn(cb: () => void): void {
+    this.progressionSignInCb = cb;
   }
 
   /** Register a local presentation-state callback for immediate input teardown. */
@@ -1298,6 +1306,17 @@ export class HUD {
     this.overlayProgressionReceiptEl.setAttribute('role', 'status');
     this.overlayProgressionReceiptEl.setAttribute('aria-live', 'polite');
     this.overlayProgressionReceiptEl.hidden = true;
+    this.overlayProgressionHandoffEl = document.createElement('div');
+    this.overlayProgressionHandoffEl.className = 'st-hud__victory-progression-handoff';
+    this.overlayProgressionHandoffEl.hidden = true;
+    const handoffPrompt = document.createElement('p');
+    handoffPrompt.textContent = 'Sign in to record future matches.';
+    this.overlayProgressionSignInBtnEl = document.createElement('button');
+    this.overlayProgressionSignInBtnEl.className = 'st-hud__victory-progression-sign-in';
+    this.overlayProgressionSignInBtnEl.type = 'button';
+    this.overlayProgressionSignInBtnEl.textContent = 'Sign in';
+    this.overlayProgressionSignInBtnEl.addEventListener('click', () => this.progressionSignInCb?.());
+    this.overlayProgressionHandoffEl.append(handoffPrompt);
     this.overlayTextEl = document.createElement('h1');
     this.overlayTextEl.id = 'st-victory-title';
     this.overlayTextEl.className = 'st-hud__overlay-text st-hud__victory-title';
@@ -1326,6 +1345,7 @@ export class HUD {
     report.append(
       this.overlayStatusEl,
       this.overlayProgressionReceiptEl,
+      this.overlayProgressionHandoffEl,
       this.overlayTextEl,
       scoreLabel,
       this.overlayScoreEl,
@@ -1336,7 +1356,11 @@ export class HUD {
     this.overlayEl.addEventListener('keydown', (event) => {
       if (event.key !== 'Tab' || !this.overlayShown) return;
       event.preventDefault();
-      const actions = [this.overlayPrimaryBtnEl, this.overlayMenuBtnEl];
+      const actions = [
+        ...(this.overlayProgressionHandoffEl.hidden ? [] : [this.overlayProgressionSignInBtnEl]),
+        this.overlayPrimaryBtnEl,
+        this.overlayMenuBtnEl,
+      ];
       const current = actions.indexOf(document.activeElement as HTMLButtonElement);
       const next = event.shiftKey
         ? (current <= 0 ? actions.length - 1 : current - 1)
@@ -2520,6 +2544,7 @@ export class HUD {
     this.overlayEl.style.removeProperty('--st-victory-color');
     this.overlayProgressionReceiptEl.hidden = true;
     this.overlayProgressionReceiptEl.textContent = '';
+    this.clearAnonymousProgressionHandoff();
     this.overlayShown = false;
 
     const previousFocus = this.overlayPreviousFocus;
@@ -2544,6 +2569,19 @@ export class HUD {
     this.overlayProgressionReceiptEl.textContent =
       `${outcome} · +${earnedXp} XP · ${remainingXp} XP to Level ${receipt.summary.level + 1}`;
     this.overlayProgressionReceiptEl.hidden = false;
+    this.clearAnonymousProgressionHandoff();
+  }
+
+  private clearAnonymousProgressionHandoff(): void {
+    this.overlayProgressionHandoffEl.hidden = true;
+    this.overlayProgressionSignInBtnEl.remove();
+  }
+
+  /** Show the future-only account handoff for an anonymous local match. */
+  setAnonymousProgressionHandoff(): void {
+    if (!this.overlayProgressionReceiptEl.hidden) return;
+    this.overlayProgressionHandoffEl.append(this.overlayProgressionSignInBtnEl);
+    this.overlayProgressionHandoffEl.hidden = false;
   }
 
   /** Show/hide the GAME_OVER overlay and set its winner/draw message + scoreboard. */
@@ -3686,6 +3724,34 @@ export class HUD {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+.st-hud__victory-progression-handoff {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.st-hud__victory-progression-handoff p { margin: 0; }
+.st-hud__victory-progression-sign-in {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 7px;
+  background: rgba(255, 210, 63, 0.08);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.st-hud__victory-progression-sign-in:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
 }
 .st-hud__victory-title {
   margin: 7px 0 28px;

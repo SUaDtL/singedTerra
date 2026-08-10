@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
+import type { HotSeatProgressionSummary } from './client/hotSeatProgression'
 
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
@@ -7,7 +8,12 @@ const seams = vi.hoisted(() => ({
   onQuit: null as null | (() => void),
   recorded: [] as Array<{ matchId: string; won: boolean }>,
   progressionReceipts: [] as Array<Record<string, unknown>>,
-  record: (_result: { matchId: string; won: boolean }) => Promise.resolve({
+  anonymousHandoffs: 0,
+  accountSignInShows: 0,
+  lobbyShows: 0,
+  accountAnonymous: false,
+  onProgressionSignIn: null as null | (() => void),
+  record: (_result: { matchId: string; won: boolean }): Promise<HotSeatProgressionSummary | null> => Promise.resolve({
     progressionVersion: 1 as const,
     totalXp: 200,
     level: 1,
@@ -104,6 +110,7 @@ vi.mock('./ui/HUD', () => ({
     onMove() {}
     onNextRound() {}
     onPauseChange() {}
+    onProgressionSignIn(callback: () => void) { seams.onProgressionSignIn = callback }
     onPrimaryAction() {}
     onQuickChat() {}
     onQuit(callback: () => void) { seams.onQuit = callback }
@@ -115,6 +122,7 @@ vi.mock('./ui/HUD', () => ({
     setProgressionReceipt(receipt: Record<string, unknown>) {
       seams.progressionReceipts.push(receipt)
     }
+    setAnonymousProgressionHandoff() { seams.anonymousHandoffs += 1 }
     setArmsLevel() {}
     setConnection() {}
     setFirstSalvoStep() {}
@@ -130,7 +138,9 @@ vi.mock('./ui/Lobby', () => ({
       seams.onLobbyReady = onReady
     }
     hide() {}
-    show() {}
+    show() { seams.lobbyShows += 1 }
+    isAccountAnonymous() { return seams.accountAnonymous }
+    showAccountSignIn() { seams.accountSignInShows += 1 }
     refreshAccount() { return Promise.resolve() }
     recordHotSeatMatch(result: { matchId: string; won: boolean }) {
       seams.recorded.push(result)
@@ -185,7 +195,7 @@ function fakeClient(initial: GameState) {
     },
     sendAction() {},
     start: vi.fn(),
-    stop() {},
+    stop: vi.fn(),
   }
 }
 
@@ -206,6 +216,11 @@ describe('production hot-seat progression composition', () => {
     seams.onQuit = null
     seams.recorded.length = 0
     seams.progressionReceipts.length = 0
+    seams.anonymousHandoffs = 0
+    seams.accountSignInShows = 0
+    seams.lobbyShows = 0
+    seams.accountAnonymous = false
+    seams.onProgressionSignIn = null
     seams.record = () => Promise.resolve({
       progressionVersion: 1 as const,
       totalXp: 200,
@@ -271,6 +286,22 @@ describe('production hot-seat progression composition', () => {
     expect(seams.recorded[0]?.matchId).toMatch(/^[0-9a-f-]{36}$/)
     expect(seams.recorded[1]?.matchId).toMatch(/^[0-9a-f-]{36}$/)
     expect(seams.recorded[0]?.matchId).not.toBe(seams.recorded[1]?.matchId)
+    expect(seams.anonymousHandoffs).toBe(0)
+  })
+
+  it('does not show an unrecorded handoff for a signed-in local-human result', async () => {
+    seams.record = () => Promise.resolve(null)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
+
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(gameState())
+
+    await vi.waitFor(() => expect(seams.recorded).toHaveLength(1))
+    expect(seams.anonymousHandoffs).toBe(0)
   })
 
   it('does not surface a resolved receipt after its game has been replaced', async () => {
@@ -330,6 +361,102 @@ describe('production hot-seat progression composition', () => {
     expect(seams.progressionReceipts).toHaveLength(0)
   })
 
+  it('shows one anonymous local-human handoff without recording the completed match', async () => {
+    seams.accountAnonymous = true
+    seams.record = () => Promise.resolve(null)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
+
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(gameState())
+    client.emit(gameState())
+
+    await vi.waitFor(() => expect(seams.anonymousHandoffs).toBe(1))
+    expect(seams.progressionReceipts).toEqual([])
+    expect(seams.recorded).toHaveLength(1)
+  })
+
+  it('does not surface an anonymous handoff after replacement or quit', async () => {
+    type Summary = Awaited<ReturnType<typeof seams.record>>
+    let resolveRecord!: (recorded: Summary) => void
+    seams.accountAnonymous = true
+    seams.record = () => new Promise<Summary>((resolve) => { resolveRecord = resolve })
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onQuit) throw new Error('Expected lobby wiring')
+
+    const first = fakeClient(gameState())
+    seams.clients.push(first)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(first.start).toHaveBeenCalledOnce())
+    first.emit(gameState())
+
+    const replacement = fakeClient(gameState())
+    seams.clients.push(replacement)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(replacement.start).toHaveBeenCalledOnce())
+    resolveRecord(null)
+    await Promise.resolve()
+    expect(seams.anonymousHandoffs).toBe(0)
+
+    let resolveQuitRecord!: (recorded: Summary) => void
+    seams.record = () => new Promise<Summary>((resolve) => { resolveQuitRecord = resolve })
+    replacement.emit(gameState())
+    await vi.waitFor(() => expect(seams.recorded).toHaveLength(2))
+    seams.onQuit()
+    resolveQuitRecord(null)
+    await Promise.resolve()
+    expect(seams.anonymousHandoffs).toBe(0)
+  })
+
+  it('tears down the completed game and opens the existing sign-in overlay on handoff activation', async () => {
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onProgressionSignIn) throw new Error('Expected sign-in wiring')
+
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    seams.onProgressionSignIn()
+
+    expect(client.stop).toHaveBeenCalledOnce()
+    expect(seams.accountSignInShows).toBe(1)
+    expect(seams.lobbyShows).toBe(2)
+  })
+
+  it('ignores duplicate sign-in activations after the completed game is retired', async () => {
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onProgressionSignIn) throw new Error('Expected sign-in wiring')
+
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    seams.onProgressionSignIn()
+    seams.onProgressionSignIn()
+
+    expect(client.stop).toHaveBeenCalledOnce()
+    expect(seams.accountSignInShows).toBe(1)
+    expect(seams.lobbyShows).toBe(2)
+  })
+
+  it('routes the anonymous victory fixture through the reporter and anonymous-account guard', async () => {
+    window.history.replaceState({}, '', '/?e2e=victory-anonymous')
+    seams.accountAnonymous = true
+    seams.record = () => Promise.resolve(null)
+    const fixture = fakeClient(gameState())
+    seams.clients.push(fixture)
+
+    await import('./main')
+    await vi.waitFor(() => expect(fixture.start).toHaveBeenCalledOnce())
+    fixture.emit(gameState())
+
+    await vi.waitFor(() => expect(seams.recorded).toHaveLength(1))
+    expect(seams.anonymousHandoffs).toBe(1)
+  })
+
   it('keeps the deterministic browser fixture out of progression reporting', async () => {
     window.history.replaceState({}, '', '/?e2e=hotseat')
     const fixture = fakeClient(gameState())
@@ -338,5 +465,6 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(fixture.start).toHaveBeenCalledOnce())
     fixture.emit(gameState())
     expect(seams.recorded).toEqual([])
+    expect(seams.anonymousHandoffs).toBe(0)
   })
 })

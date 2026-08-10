@@ -24,12 +24,13 @@ export interface HotSeatProgressionReporter {
   observe(state: Pick<GameState, 'phase' | 'winner'>): void
 }
 
-interface HotSeatProgressionReporterOptions {
+export interface HotSeatProgressionReporterOptions {
   mode: 'hotseat' | 'network'
   e2eMode: string | null
   accountTankId: string | null
   report(result: HotSeatMatchResult): Promise<HotSeatProgressionSummary | null>
   onRecorded?(result: HotSeatMatchResult, summary: HotSeatProgressionSummary): void
+  onUnrecorded?(result: HotSeatMatchResult): void
   matchId?: string
   createMatchId?: () => string
 }
@@ -56,6 +57,7 @@ export function createHotSeatProgressionReporter(
       void options.report(result)
         .then((summary) => {
           if (summary) options.onRecorded?.(result, summary)
+          else options.onUnrecorded?.(result)
         })
         .catch(() => undefined)
     },

@@ -183,6 +183,63 @@ describe('HUD Victory After-Action Report', () => {
     expect(receipt.textContent).toBe('Match complete · +100 XP · 400 XP to Level 2');
   });
 
+  it('keeps the future-only sign-in handoff out of the report until an anonymous match asks for it', () => {
+    const { modal, hud, state } = mount();
+    const signIn = vi.fn();
+    hud.update(state);
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    const handoff = report.querySelector<HTMLElement>('.st-hud__victory-progression-handoff')!;
+
+    expect(handoff.hidden).toBe(true);
+    expect(handoff.textContent).toContain('Sign in to record future matches.');
+    expect(report.querySelectorAll('button')).toHaveLength(2);
+
+    hud.onProgressionSignIn(signIn);
+    hud.setAnonymousProgressionHandoff();
+
+    const signInButton = report.querySelector<HTMLButtonElement>('.st-hud__victory-progression-sign-in')!;
+    const playAgain = report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')!;
+    const mainMenu = report.querySelector<HTMLButtonElement>('.st-hud__restart--ghost')!;
+    expect(handoff.hidden).toBe(false);
+    expect(signInButton.textContent).toBe('Sign in');
+    expect(report.querySelectorAll('button')).toHaveLength(3);
+
+    signInButton.focus();
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(mainMenu);
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(signInButton);
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(playAgain);
+
+    signInButton.click();
+    expect(signIn).toHaveBeenCalledOnce();
+  });
+
+  it('clears the anonymous sign-in handoff when trusted progression or report retirement wins', () => {
+    const { modal, hud, state } = mount();
+    hud.update(state);
+    const handoff = modal.querySelector<HTMLElement>('.st-hud__victory-progression-handoff')!;
+
+    hud.setAnonymousProgressionHandoff();
+    hud.setProgressionReceipt({
+      won: true,
+      summary: {
+        progressionVersion: 1,
+        totalXp: 1_200,
+        level: 3,
+        levelXp: 200,
+        nextLevelXp: 500,
+      },
+    });
+    expect(handoff.hidden).toBe(true);
+
+    hud.setAnonymousProgressionHandoff();
+    state.phase = 'PLAYER_TURN';
+    hud.update(state);
+    expect(handoff.hidden).toBe(true);
+  });
+
   it('supersedes an open pause surface when a live network match ends', () => {
     const { root, modal, hud, state } = mount();
     state.phase = 'PLAYER_TURN';

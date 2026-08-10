@@ -497,6 +497,17 @@ export class Lobby {
     return this.accountSession.recordHotSeatMatch(result);
   }
 
+  isAccountAnonymous(): boolean {
+    return this.accountSession.state.status === 'anonymous';
+  }
+
+  showAccountSignIn(): void {
+    this.accountMode = 'sign-in';
+    this.accountPanelOpen = true;
+    this.render();
+    this.focusAccountOverlay();
+  }
+
   /** Inject the lobby's scoped <style> once (do NOT edit index.html). */
   private injectStyle(): void {
     if (document.getElementById(STYLE_ID)) return;
