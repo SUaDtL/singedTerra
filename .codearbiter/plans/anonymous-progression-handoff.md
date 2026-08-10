@@ -98,3 +98,12 @@
 - [ ] **Step 13: Adversarial exact-package review and landing**
 
   Give one adversarial reviewer the spec, plan, sprint evidence, tests, and exact final diff. Resolve every Critical, High, Important, and merge-blocking finding; rerun affected proof after each correction. Then use `$ca-commit` and `$ca-pr`, wait for exact-head hosted CI, merge under standing authority, deploy Pages, verify production provenance/health, and emit the delivery receipt.
+
+### Coverage-auditor correction round 2/5
+
+- [x] Prime the existing account overlay into create-account mode and prove `showAccountSignIn()` restores visible sign-in state and email focus.
+- [x] Prove rejected progression reports invoke neither terminal callback.
+- [x] Prove the Sign in one-shot latch resets for a fresh anonymous game while remaining duplicate-safe within each game.
+- [x] Give the asynchronously revealed anonymous prompt polite status semantics without moving focus.
+- [x] Prove anonymous report panel containment within overlay and viewport, document overflow absence, and all three browser profiles through a causal layout mutation.
+- [x] Record exact round-2 RED/GREEN evidence and preserve the unrelated 4173 listener.

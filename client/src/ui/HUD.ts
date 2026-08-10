@@ -1308,6 +1308,9 @@ export class HUD {
     this.overlayProgressionReceiptEl.hidden = true;
     this.overlayProgressionHandoffEl = document.createElement('div');
     this.overlayProgressionHandoffEl.className = 'st-hud__victory-progression-handoff';
+    this.overlayProgressionHandoffEl.setAttribute('role', 'status');
+    this.overlayProgressionHandoffEl.setAttribute('aria-live', 'polite');
+    this.overlayProgressionHandoffEl.setAttribute('aria-atomic', 'true');
     this.overlayProgressionHandoffEl.hidden = true;
     const handoffPrompt = document.createElement('p');
     handoffPrompt.textContent = 'Sign in to record future matches.';

@@ -22,6 +22,13 @@ class FakeAccountSession implements AccountSessionPort {
   }
 }
 
+function button(root: HTMLElement, text: string): HTMLButtonElement {
+  const match = [...root.querySelectorAll('button')]
+    .find((candidate) => candidate.textContent === text)
+  if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`)
+  return match
+}
+
 describe('Lobby anonymous account handoff', () => {
   it('identifies only the literal anonymous account state', () => {
     const root = document.createElement('div')
@@ -43,15 +50,23 @@ describe('Lobby anonymous account handoff', () => {
     expect(lobby.isAccountAnonymous()).toBe(false)
   })
 
-  it('opens the existing account overlay in sign-in mode with email focus', () => {
+  it('switches an existing create-account overlay to sign-in mode with email focus', () => {
     const root = document.createElement('div')
     const lobby = new Lobby(root, vi.fn(), (onChange) => new FakeAccountSession(onChange))
     document.body.append(root)
     lobby.show()
 
+    button(root, 'Account').click()
+    button(root, 'Create account').click()
+    expect(root.querySelector('.account-panel__header strong')?.textContent).toBe('Create account')
+    expect(root.querySelector('input[name="displayName"]')).not.toBeNull()
+
     lobby.showAccountSignIn()
 
     expect(root.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Player account')
+    expect(root.querySelector('.account-panel__header strong')?.textContent).toBe('Sign in')
+    expect(button(root, 'Sign in').getAttribute('aria-pressed')).toBe('true')
+    expect(root.querySelector('input[name="displayName"]')).toBeNull()
     expect(root.querySelector('input[type="email"]')).toBe(document.activeElement)
     root.remove()
   })

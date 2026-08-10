@@ -138,6 +138,28 @@ describe('createHotSeatProgressionReporter', () => {
     expect(onRecorded).not.toHaveBeenCalled()
   })
 
+  it('does not classify a rejected report as an unrecorded anonymous match', async () => {
+    const report = vi.fn(() => Promise.reject(new Error('unavailable')))
+    const onRecorded = vi.fn()
+    const onUnrecorded = vi.fn()
+    const reporter = createHotSeatProgressionReporter({
+      mode: 'hotseat',
+      e2eMode: null,
+      accountTankId: 'p1',
+      report,
+      onRecorded,
+      onUnrecorded,
+    })
+    if (!reporter) throw new Error('Expected reporter')
+
+    reporter.observe(state('GAME_OVER', 'p1'))
+    await vi.waitFor(() => expect(report).toHaveBeenCalledOnce())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(onRecorded).not.toHaveBeenCalled()
+    expect(onUnrecorded).not.toHaveBeenCalled()
+  })
+
   it.each([
     ['another tank wins', 'p2'],
     ['the match draws', null],

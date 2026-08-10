@@ -201,6 +201,9 @@ describe('HUD Victory After-Action Report', () => {
     const playAgain = report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')!;
     const mainMenu = report.querySelector<HTMLButtonElement>('.st-hud__restart--ghost')!;
     expect(handoff.hidden).toBe(false);
+    expect(handoff.getAttribute('role')).toBe('status');
+    expect(handoff.getAttribute('aria-live')).toBe('polite');
+    expect(handoff.getAttribute('aria-atomic')).toBe('true');
     expect(signInButton.textContent).toBe('Sign in');
     expect(report.querySelectorAll('button')).toHaveLength(3);
 

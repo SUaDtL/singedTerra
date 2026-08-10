@@ -21,6 +21,10 @@ test.describe('Victory After-Action Report', () => {
     const mainMenu = report.getByRole('button', { name: 'Main Menu' });
 
     await expect(prompt).toBeVisible();
+    await expect(report.locator('.st-hud__victory-progression-handoff'))
+      .toHaveAttribute('role', 'status');
+    await expect(report.locator('.st-hud__victory-progression-handoff'))
+      .toHaveAttribute('aria-live', 'polite');
     await expect(signIn).toBeVisible();
     await expect(playAgain).toBeVisible();
     await expect(mainMenu).toBeVisible();
@@ -68,6 +72,32 @@ test.describe('Victory After-Action Report', () => {
     });
     expect(orderedLayout.verticalOrder).toBe(true);
     expect(orderedLayout.handoffDoesNotOverlapVictoryContent).toBe(true);
+
+    const geometry = await panel.evaluate((element) => {
+      const panelBox = element.getBoundingClientRect();
+      const overlay = element.closest<HTMLElement>('.st-hud__overlay--victory');
+      if (!overlay) throw new Error('Missing victory overlay');
+      const overlayBox = overlay.getBoundingClientRect();
+      return {
+        panel: panelBox.toJSON(),
+        overlay: overlayBox.toJSON(),
+        document: {
+          width: document.documentElement.scrollWidth,
+          height: document.documentElement.scrollHeight,
+        },
+        viewport: { width: innerWidth, height: innerHeight },
+      };
+    });
+    expect(geometry.panel.left).toBeGreaterThanOrEqual(geometry.overlay.left - 1);
+    expect(geometry.panel.top).toBeGreaterThanOrEqual(geometry.overlay.top - 1);
+    expect(geometry.panel.right).toBeLessThanOrEqual(geometry.overlay.right + 1);
+    expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.overlay.bottom + 1);
+    expect(geometry.panel.left).toBeGreaterThanOrEqual(-1);
+    expect(geometry.panel.top).toBeGreaterThanOrEqual(-1);
+    expect(geometry.panel.right).toBeLessThanOrEqual(geometry.viewport.width + 1);
+    expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.viewport.height + 1);
+    expect(geometry.document.width).toBe(geometry.viewport.width);
+    expect(geometry.document.height).toBe(geometry.viewport.height);
 
     await signIn.click();
     const account = page.getByRole('dialog', { name: 'Player account' });

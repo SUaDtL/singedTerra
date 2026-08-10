@@ -442,6 +442,35 @@ describe('production hot-seat progression composition', () => {
     expect(seams.lobbyShows).toBe(2)
   })
 
+  it('allows one sign-in transition again after a fresh anonymous game completes', async () => {
+    seams.accountAnonymous = true
+    seams.record = () => Promise.resolve(null)
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onProgressionSignIn) throw new Error('Expected sign-in wiring')
+
+    const first = fakeClient(gameState())
+    seams.clients.push(first)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(first.start).toHaveBeenCalledOnce())
+    first.emit(gameState())
+    await vi.waitFor(() => expect(seams.anonymousHandoffs).toBe(1))
+    seams.onProgressionSignIn()
+    seams.onProgressionSignIn()
+    expect(seams.accountSignInShows).toBe(1)
+
+    const second = fakeClient(gameState())
+    seams.clients.push(second)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    second.emit(gameState())
+    await vi.waitFor(() => expect(seams.anonymousHandoffs).toBe(2))
+    seams.onProgressionSignIn()
+
+    expect(seams.recorded).toHaveLength(2)
+    expect(second.stop).toHaveBeenCalledOnce()
+    expect(seams.accountSignInShows).toBe(2)
+  })
+
   it('routes the anonymous victory fixture through the reporter and anonymous-account guard', async () => {
     window.history.replaceState({}, '', '/?e2e=victory-anonymous')
     seams.accountAnonymous = true

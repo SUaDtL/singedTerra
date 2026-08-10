@@ -104,3 +104,36 @@
 ## Landing
 
 Pending commit, PR, exact-head hosted CI, merge, Pages deployment, and production verification.
+
+## Coverage-auditor correction round 2/5
+
+### Finding resolution
+
+- **Lobby create-to-sign-in state:** `Lobby.anonymousAccount.test.ts` now opens Account, selects Create account, proves that state is rendered, invokes `showAccountSignIn()`, and then proves the Sign in heading/pressed mode, absent display-name field, and focused email field. Temporarily deleting `this.accountMode = 'sign-in'` made the test fail with `expected 'Create account' to be 'Sign in'`; the line was restored.
+- **Anonymous dialog geometry:** the anonymous Playwright test now proves the report panel remains within both overlay and viewport and that document scroll width/height equal the viewport in all three configured projects. A temporary `left: 600px` panel mutation failed all 3 projects at the new right-edge assertion and was restored. Earlier width-only and 220px-offset calibration mutations remained contained and therefore were not accepted as RED evidence.
+- **Fresh-game latch reset:** main composition now drives two anonymous games through null reports and Sign in activation, proves duplicate activation is ignored in game one, and proves game two can transition once. Temporarily deleting `progressionSignInHandled = false` failed because the second client was never stopped; the reset was restored.
+- **Reporter rejection:** the reporter test explicitly proves a rejected report invokes neither `onRecorded` nor `onUnrecorded`. Temporarily routing `.catch` to `onUnrecorded` failed with one unexpected callback; swallowed rejection behavior was restored.
+- **Live-region semantics:** the asynchronously revealed handoff now has `role="status"`, `aria-live="polite"`, and `aria-atomic="true"`; focused unit and browser assertions cover the contract without moving focus.
+
+### RED evidence
+
+- `npm -w @singedterra/client exec -- vitest run src/ui/HUD.victoryReport.test.ts src/ui/Lobby.anonymousAccount.test.ts src/main.hotSeatProgression.test.ts src/client/hotSeatProgression.test.ts` - FAIL, 1 intended failure / 35 tests: the revealed handoff returned `null` for `role` instead of `status`.
+- With `this.accountMode = 'sign-in'` temporarily removed: `npm -w @singedterra/client exec -- vitest run src/ui/Lobby.anonymousAccount.test.ts` - FAIL, 1/2: Create account remained visible after the handoff.
+- With reporter rejection temporarily routed to `onUnrecorded`: `npm -w @singedterra/client exec -- vitest run src/client/hotSeatProgression.test.ts -t "does not classify a rejected report"` - FAIL, 1 targeted test: expected zero unrecorded callbacks, received one.
+- With the per-game latch reset temporarily removed: `npm -w @singedterra/client exec -- vitest run src/main.hotSeatProgression.test.ts -t "allows one sign-in transition again"` - FAIL, 1 targeted test: expected the second client stop once, received zero.
+- With `.st-hud__overlay-panel--victory { left: 600px; }` temporarily applied, `$env:VITE_SUPABASE_URL = 'http://127.0.0.1:4174'; $env:VITE_SUPABASE_ANON_KEY = 'e2e-public-anon-key'; npm run build` passed, then `$env:E2E_LIVE_URL = 'http://127.0.0.1:4174/'; npx playwright test e2e/victory-report.spec.ts --grep "anonymous future-match handoff"` - FAIL, 3/3 projects at `panel.right <= overlay.right + 1`. The mutation was restored.
+
+### GREEN evidence
+
+- `npm -w @singedterra/client exec -- vitest run src/ui/HUD.victoryReport.test.ts src/ui/Lobby.anonymousAccount.test.ts src/main.hotSeatProgression.test.ts src/client/hotSeatProgression.test.ts` - PASS, 35/35 across 4 files.
+- `$env:VITE_SUPABASE_URL = 'http://127.0.0.1:4174'; $env:VITE_SUPABASE_ANON_KEY = 'e2e-public-anon-key'; npm run build` - PASS, shared/client typecheck and production Vite build.
+- Worktree-owned preview command from `client/`: `node ..\\node_modules\\vite\\bin\\vite.js preview --host 127.0.0.1 --port 4174 --strictPort`, PID 128156. `$env:E2E_LIVE_URL = 'http://127.0.0.1:4174/'; npx playwright test e2e/victory-report.spec.ts` - PASS, 9/9 across desktop-fine, pixel-touch, and small-window.
+- Final live recheck: port 4174 has no listener; port 4173 remains owned by PID 106692 and was not stopped or reused.
+
+### Exact-final full verification
+
+- `npm run check` — PASS in 132.1 seconds, including strict typecheck and every deterministic harness.
+- `npm run coverage:client` — PASS, 1,159/1,159 tests across 149 files; 93.39% statements, 83.83% branches, 87.5% functions, and 95.41% lines.
+- `npm run check:edge` — PASS, 267/267.
+- `npm run audit:deps` — PASS, 0 vulnerabilities.
+- State-free staged secret scan — PASS, `[]`.
