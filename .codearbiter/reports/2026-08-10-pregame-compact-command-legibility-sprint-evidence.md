@@ -71,4 +71,9 @@ Status: implementation and final adversarial review GREEN; delivery pending
 - Corrected adversarial review verified staged hash `f8715da9` and returned PASS:
   no Critical, High, Medium, or merge-blocking findings. Its sole Low finding,
   duplicate acceptance-criterion numbering, is corrected in the final package.
+- The `$ca-pr` coverage audit then BLOCKED on one High finding: the 50px CSS
+  fallback let physical target assertions pass without proving `main.ts` published
+  the inverse-zoom token. The corrected browser oracle directly requires the token
+  to equal `ceil(24 / actualZoom)`. Removing the assignment failed both compact
+  profiles with `NaN` against expected 50 and 40; restoring it returned GREEN.
 - Hosted CI, deployment, and production-health evidence remain pending.

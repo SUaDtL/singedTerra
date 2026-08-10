@@ -182,6 +182,16 @@ test.describe('Pre-game command shell', () => {
     await assertLobbyFrame(page);
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
+    const targetToken = await page.locator('#app').evaluate((app) => {
+      const zoom = Number.parseFloat(getComputedStyle(app).zoom) || 1;
+      return {
+        actual: Number.parseFloat(getComputedStyle(app).getPropertyValue('--st-command-choice-target')),
+        expected: Math.ceil(24 / zoom),
+      };
+    });
+    expect(targetToken.actual, 'the stage scaler must publish the inverse-zoom target')
+      .toBe(targetToken.expected);
+
     for (const control of [quickDuel, hotSeat, online]) {
       const box = await control.boundingBox();
       expect(box, 'compact command choices must have measurable hit targets').not.toBeNull();
