@@ -712,6 +712,8 @@ function bootstrap(): void {
     // subpixel layout cannot undercut that presentation-only floor.
     const storeBuyTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
     appEl.style.setProperty('--st-store-buy-target', `${storeBuyTarget}px`);
+    const commandChoiceTarget = Math.ceil(24 / Math.max(s, Number.EPSILON));
+    appEl.style.setProperty('--st-command-choice-target', `${commandChoiceTarget}px`);
     appEl.classList.toggle('is-compact', s < COMPACT_SCALE);
   }
   window.addEventListener('resize', updateScale);

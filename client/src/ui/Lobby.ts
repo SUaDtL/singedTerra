@@ -1566,6 +1566,9 @@ export class Lobby {
           linear-gradient(90deg, rgba(6, 8, 10, 0.98), rgba(12, 13, 14, 0.95) 49%, rgba(27, 20, 15, 0.92)),
           repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px);
       }
+      /* The real Vehicle Bay now owns the battlefield preview. The older card
+         pseudo-plane shared its bounds and produced a second, ghosted frame. */
+      #lobby .lobby-card::before { content: none; }
       #lobby .lobby-card::before,
       #lobby .lobby-preview,
       #lobby .lobby-garage,
@@ -2289,6 +2292,110 @@ export class Lobby {
       #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
         > .lobby-deployment__mission-brief {
         display: none;
+      }
+      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open]) {
+        row-gap: 0;
+      }
+      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+        > .lobby-deployment__mode-rail > .lobby-quick-duel,
+      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+        > .lobby-deployment__mode-rail .lobby-quick-duel__action,
+      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+        > .lobby-deployment__mode-rail .lobby-tab {
+        min-height: var(--st-command-choice-target, 50px);
+        height: var(--st-command-choice-target, 50px);
+      }
+      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+        > .lobby-deployment__mode-rail .lobby-tab {
+        padding-block: 0;
+      }
+      /* The fixed game stage is intentionally zoomed as one unit. Logical
+         compact sizes preserve physical legibility without overgrowing the
+         Vehicle Bay; the shorter coarse-pointer viewport gets a stronger tier. */
+      #app.is-compact #lobby .lobby-mode-context h2,
+      #app.is-compact #lobby .lobby-deployment .lobby-tab,
+      #app.is-compact #lobby .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
+      #app.is-compact #lobby .lobby-hotseat-ready h3,
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-preparation-section__title,
+      #app.is-compact #lobby .account-panel > button,
+      #app.is-compact #lobby .account-panel__record .account-panel__account-trigger,
+      #app.is-compact #lobby .lobby-preview__spotlight-identity {
+        font-size: 21px;
+      }
+      #app.is-compact #lobby .lobby-command-header__kicker,
+      #app.is-compact #lobby .lobby-preview__label,
+      #app.is-compact #lobby .lobby-preview__part span,
+      #app.is-compact #lobby .lobby-preview__part strong {
+        font-size: 18px;
+      }
+      #app.is-compact #lobby .lobby-preview__part strong {
+        font-family: var(--font-sans);
+      }
+      #app.is-compact #lobby .lobby-preview__parts {
+        width: calc(100% - 8px);
+        gap: 3px;
+      }
+      #app.is-compact #lobby .lobby-preview__part {
+        padding-inline: 3px;
+      }
+      #app.is-compact #lobby .lobby-preview__convoy {
+        bottom: 80px;
+      }
+      @media (pointer: coarse) {
+        #app.is-compact #lobby .lobby-mode-context h2,
+        #app.is-compact #lobby .lobby-deployment .lobby-tab,
+        #app.is-compact #lobby .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
+        #app.is-compact #lobby .lobby-hotseat-ready h3,
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-preparation-section__title,
+        #app.is-compact #lobby .account-panel > button,
+        #app.is-compact #lobby .account-panel__record .account-panel__account-trigger,
+        #app.is-compact #lobby .lobby-preview__spotlight-identity {
+          font-size: 25px;
+        }
+        #app.is-compact #lobby .lobby-command-header__kicker,
+        #app.is-compact #lobby .lobby-preview__label,
+        #app.is-compact #lobby .lobby-preview__part span,
+        #app.is-compact #lobby .lobby-preview__part strong {
+          font-size: 21px;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          column-gap: 4px;
+          align-items: start;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online
+          .lobby-preparation-section[data-preparation-section="command-vehicle"] {
+          grid-column: 1 / -1;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online
+          .lobby-preparation-section[data-preparation-section="operation-profile"] {
+          grid-column: 1;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online
+          .lobby-preparation-section[data-preparation-section="battlefield-protocol"] {
+          grid-column: 2;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-actions {
+          display: grid;
+          grid-template-columns: max-content minmax(0, 1fr);
+          align-items: center;
+          gap: 8px;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives {
+          flex-wrap: nowrap;
+          gap: 6px;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-label {
+          display: none;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-buttons {
+          flex-wrap: nowrap;
+          gap: 8px;
+        }
+        #app.is-compact #lobby .lobby-route-brief--online .lobby-btn.secondary {
+          padding-block: 4px;
+        }
       }
     `;
     document.head.append(style);

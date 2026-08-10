@@ -36,6 +36,55 @@ async function commandStyle(page: Parameters<typeof gotoLobby>[0]): Promise<{
   });
 }
 
+async function compactCommandMetrics(page: Parameters<typeof gotoLobby>[0]): Promise<{
+  duplicatePreviewContent: string;
+  operational: Record<string, number>;
+  technical: Record<string, number>;
+  technicalOverflow: Array<{ text: string; clientWidth: number; scrollWidth: number }>;
+}> {
+  return page.locator('#lobby .lobby-card').evaluate((card) => {
+    const app = document.getElementById('app');
+    if (!app) throw new Error('Expected fixed-stage app');
+    const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
+    const renderedFont = (selector: string): number => {
+      const element = card.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Expected compact command element: ${selector}`);
+      return Number.parseFloat(getComputedStyle(element).fontSize) * zoom;
+    };
+    return {
+      duplicatePreviewContent: getComputedStyle(card, '::before').content,
+      operational: {
+        route: renderedFont('.lobby-mode-context h2'),
+        selectedMode: renderedFont('.lobby-tab.active'),
+        primaryAction: renderedFont('.lobby-mode-panel:not([hidden]) .lobby-btn.primary'),
+        setupSummary: renderedFont(
+          '.lobby-mode-panel:not([hidden]) .lobby-hotseat-ready h3, '
+          + '.lobby-mode-panel:not([hidden]) .lobby-route-brief--online .lobby-preparation-section__title',
+        ),
+        account: renderedFont(
+          '.account-panel > button, .account-panel__record .account-panel__account-trigger',
+        ),
+        vehicleIdentity: renderedFont('.lobby-preview__spotlight-identity'),
+      },
+      technical: {
+        commandKicker: renderedFont('.lobby-command-header__kicker'),
+        vehicleBay: renderedFont('.lobby-preview__label'),
+        partRole: renderedFont('.lobby-preview__part span'),
+        partName: renderedFont('.lobby-preview__part strong'),
+      },
+      technicalOverflow: [...card.querySelectorAll<HTMLElement>(
+        '.lobby-preview__part span, .lobby-preview__part strong',
+      )]
+        .filter((element) => element.scrollWidth > element.clientWidth + 1)
+        .map((element) => ({
+          text: element.textContent ?? '',
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+        })),
+    };
+  });
+}
+
 test.describe('Pre-game command shell', () => {
   test.beforeEach(async ({ page }) => {
     await gotoLobby(page);
@@ -119,6 +168,33 @@ test.describe('Pre-game command shell', () => {
     await expect(page.locator('#lobby .lobby-hotseat-ready')).toBeVisible();
   });
 
+  test('keeps compact route choices usable while customization is open', async ({ page }) => {
+    test.skip(!(await isCompact(page)), 'The compact guard applies only below the fixed-stage threshold.');
+
+    await page.locator('#lobby .lobby-hotseat-customization > summary').click();
+
+    const quickDuel = page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
+    const hotSeat = page.getByRole('tab', { name: 'Hot Seat', exact: true });
+    const online = page.getByRole('tab', { name: 'Play Online', exact: true });
+    await expect(quickDuel).toBeVisible();
+    await expect(hotSeat).toBeVisible();
+    await expect(online).toBeVisible();
+    await assertLobbyFrame(page);
+    await assertLobbyControlReachable(page, '#lobby .lobby-start');
+
+    for (const control of [quickDuel, hotSeat, online]) {
+      const box = await control.boundingBox();
+      expect(box, 'compact command choices must have measurable hit targets').not.toBeNull();
+      expect.soft(box!.height, 'compact command choices must retain a 24px physical target floor')
+        .toBeGreaterThanOrEqual(24);
+    }
+
+    await hotSeat.focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(online).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#lobby .lobby-online-primary')).toBeVisible();
+  });
+
   test('carries the same command hierarchy into Online room entry', async ({ page }) => {
     await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
 
@@ -165,6 +241,37 @@ test.describe('Pre-game command shell', () => {
 
     await page.locator('[data-online-route="join-code"]').click();
     await expectBriefHeaderAboveSetup(page);
+  });
+
+  test('keeps the compact command shell legible on one intentional preview plane', async ({
+    page,
+  }) => {
+    test.skip(!(await isCompact(page)), 'The compact guard applies only below the fixed-stage threshold.');
+
+    for (const route of ['Hot Seat', 'Play Online'] as const) {
+      await page.getByRole('tab', { name: route, exact: true }).click();
+      const metrics = await compactCommandMetrics(page);
+
+      expect.soft(metrics.duplicatePreviewContent, 'the real Vehicle Bay must own the only preview plane')
+        .toBe('none');
+      for (const [label, pixels] of Object.entries(metrics.operational)) {
+        expect.soft(pixels, `${route} ${label} must render at 12 physical pixels or larger`)
+          .toBeGreaterThanOrEqual(12);
+      }
+      for (const [label, pixels] of Object.entries(metrics.technical)) {
+        expect.soft(pixels, `${route} ${label} must render at 10 physical pixels or larger`)
+          .toBeGreaterThanOrEqual(10);
+      }
+      expect.soft(metrics.technicalOverflow, `${route} Vehicle Bay labels must not be ellipsized`)
+        .toEqual([]);
+
+      await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
+      await assertLobbyFrame(page);
+      await assertLobbyControlReachable(
+        page,
+        route === 'Hot Seat' ? '#lobby .lobby-start' : '#lobby .lobby-online-primary',
+      );
+    }
   });
 
   test('uses one deployment grid with a dominant route action at every supported size', async ({

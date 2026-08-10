@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [x] ux.pregame.0004 - Make the compact pre-game command shell legible and remove duplicate preview-plane ghosting without changing global stage scaling.  (from live-production-command-shell-audit-2026-08-10)  (done 2026-08-10)
+  - Boundaries: client, pre-game-ux
 - [x] ux.pregame.0003 - Make Hot Seat defaults immediately deployable while progressively disclosing crew and battlefield customization behind one accessible preparation control.  (from continuous-improvement-smarts-2026-08-10)  (done 2026-08-10)
   - Boundaries: client, pregame-ux
 - [x] ux.hud.0001 - Make the in-match HUD state-responsive: foreground aim, power, weapon, and fire during the player decision, then demote inactive controls and foreground shot progress and impact learning while the shot sends, flies, and resolves.  (from adversarial-player-experience-audit-2026-08-10)  (done 2026-08-10)
