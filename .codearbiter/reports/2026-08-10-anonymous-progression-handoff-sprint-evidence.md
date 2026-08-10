@@ -103,7 +103,14 @@
 
 ## Landing
 
-Pending commit, PR, exact-head hosted CI, merge, Pages deployment, and production verification.
+- Feature commits: `2d8220372be9adc12e8f93c6c25a1f41a51337b2` and `8f88d0454ce669a78f74f37fe759ff8cb92b1261`.
+- PR: `#384`, merged through the guarded squash path only after every hosted check was green on exact reviewed head `8f88d0454ce669a78f74f37fe759ff8cb92b1261`.
+- Merge commit: `7bf5f9a50e2373f5da384492cc3209b875a67231`; independently fetched `origin/main` matched exactly.
+- Hosted PR checks: CodeQL PASS; CodeQL analysis PASS; Edge tests PASS; typecheck, harnesses, client tests, and build PASS; rendering guardrails PASS; CodeRabbit PASS. Supabase Preview was the expected skipped integration.
+- Deployment: GitHub Pages run `31401972359` completed successfully at exact merge SHA `7bf5f9a50e2373f5da384492cc3209b875a67231`, including build, current-main guards, deployment provenance, and post-deploy live smoke.
+- Production provenance: `deploy-meta.json` returned SHA `7bf5f9a50e2373f5da384492cc3209b875a67231` and run ID `31401972359`.
+- Production behavior: the public Pages URL passed the complete `e2e/victory-report.spec.ts` matrix, 9/9 across desktop-fine, pixel-touch, and small-window.
+- No Supabase deployment was required because the landed diff changed no backend, configuration, schema, migration, or Edge Function surface.
 
 ## Coverage-auditor correction round 2/5
 
