@@ -3,6 +3,7 @@ import {
   assertLobbyControlReachable,
   assertLobbyFrame,
   gotoLobby,
+  openHotSeatCustomization,
 } from './support';
 
 async function assertOperationsBoardFlow(page: Page, selector: string): Promise<void> {
@@ -251,9 +252,10 @@ test.describe('Lobby layout guardrails', () => {
     const masthead = page.locator('#lobby .lobby-deployment__masthead');
     const route = page.locator('#lobby .lobby-hotseat');
     const preview = page.locator('#lobby .lobby-preview');
+
+    await openHotSeatCustomization(page);
     const before = await Promise.all([masthead.boundingBox(), route.boundingBox(), preview.boundingBox()]);
     for (const box of before) expect(box).not.toBeNull();
-
     await page.getByRole('button', { name: 'Advanced settings', exact: true }).click();
     const overlay = page.locator('#lobby .lobby-overlay');
     const surface = overlay.locator('.lobby-overlay__surface');

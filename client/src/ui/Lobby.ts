@@ -271,6 +271,9 @@ export class Lobby {
   /** Whether the Operations Settings overlay is open (persist across renders). */
   private settingsOpen = false;
 
+  /** Whether Hot Seat's optional preparation controls are expanded. */
+  private hotSeatCustomizationOpen = false;
+
   // ---- Tab / online sub-view state ----
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
@@ -1889,6 +1892,74 @@ export class Lobby {
         color: rgba(225, 214, 191, 0.66);
         font: 11px/1.2 var(--font-sans);
       }
+      #lobby .lobby-hotseat-ready {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 3px 12px;
+        margin-top: 5px;
+        padding: 8px 10px;
+        border-left: 2px solid rgba(255, 188, 80, 0.78);
+        border-top: 1px solid rgba(255, 210, 63, 0.25);
+        border-bottom: 1px solid rgba(255, 210, 63, 0.14);
+        background: linear-gradient(90deg, rgba(54, 34, 12, 0.62), rgba(9, 11, 13, 0.12));
+      }
+      #lobby .lobby-hotseat-ready h3 {
+        grid-row: 1 / span 2;
+        margin: 0;
+        color: #ffd46e;
+        font: 700 11px/1 var(--font-display);
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-hotseat-ready strong {
+        color: #ffe6af;
+        font: 700 12px/1 var(--font-display);
+      }
+      #lobby .lobby-hotseat-ready p {
+        margin: 0;
+        color: rgba(225, 214, 191, 0.68);
+        font: 11px/1.15 var(--font-sans);
+      }
+      #lobby .lobby-hotseat-customization {
+        margin-top: 5px;
+        min-width: 0;
+      }
+      #lobby .lobby-hotseat-customization > summary {
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 188, 80, 0.5);
+        background: rgba(16, 14, 12, 0.74);
+        color: rgba(255, 224, 159, 0.78);
+        cursor: pointer;
+        font: 700 11px/1 var(--font-display);
+        letter-spacing: 0.35px;
+        list-style: none;
+      }
+      #lobby .lobby-hotseat-customization > summary::-webkit-details-marker { display: none; }
+      #lobby .lobby-hotseat-customization > summary::before {
+        content: '\\25B8';
+        margin-right: 7px;
+        color: #d89a32;
+      }
+      #lobby .lobby-hotseat-customization[open] > summary::before { content: '\\25BE'; }
+      #lobby .lobby-hotseat-customization > summary:hover,
+      #lobby .lobby-hotseat-customization > summary:focus-visible {
+        border-color: rgba(255, 210, 63, 0.82);
+        color: #ffe6af;
+      }
+      #lobby .lobby-hotseat:has(.lobby-hotseat-customization[open]) .lobby-hotseat-ready {
+        display: none;
+      }
+      #lobby .lobby-hotseat:has(.lobby-hotseat-customization[open]) .lobby-route-brief__header {
+        display: none;
+      }
+      #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+        > .lobby-deployment__mission-brief {
+        display: none;
+      }
       #lobby .lobby-route-brief__setup {
         margin-top: 4px;
       }
@@ -1992,6 +2063,12 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-route-brief__title { font-size: 10px; }
       #app.is-compact #lobby .lobby-route-brief__purpose { display: none; }
+      #app.is-compact #lobby .lobby-hotseat-ready {
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 5px 7px;
+      }
+      #app.is-compact #lobby .lobby-hotseat-ready p { display: none; }
+      #app.is-compact #lobby .lobby-hotseat-customization > summary { min-height: 34px; }
       #app.is-compact #lobby .lobby-route-brief__setup {
         margin-top: 0;
       }
@@ -2208,6 +2285,10 @@ export class Lobby {
       #app.is-compact #lobby .lobby-deployment__mission-brief {
         display: block;
         padding: 5px 0;
+      }
+      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+        > .lobby-deployment__mission-brief {
+        display: none;
       }
     `;
     document.head.append(style);
@@ -2779,8 +2860,10 @@ export class Lobby {
       playerCount: this.players.length,
       playerRows: this.players.map((_, index) => this.renderRow(index)),
       advanced: this.renderAdvanced(),
+      customizationOpen: this.hotSeatCustomizationOpen,
       validationMessage: this.validationError(),
       onPlayerCountChange: (count) => { this.setPlayerCount(count); },
+      onCustomizationToggle: (open) => { this.hotSeatCustomizationOpen = open; },
       onStart: () => {
         if (this.validationError() !== null) return;
         const players = this.players.map((player, index) => ({
@@ -4010,9 +4093,19 @@ export class Lobby {
   private refreshStartState(): void {
     const error = this.root.querySelector<HTMLElement>('.lobby-error');
     const start = this.root.querySelector<HTMLButtonElement>('.lobby-start');
+    const customization = this.root.querySelector<HTMLDetailsElement>(
+      '.lobby-hotseat-customization',
+    );
     const msg = this.validationError();
     if (error) error.textContent = msg ?? '';
     if (start) start.disabled = msg !== null;
+    if (customization) {
+      customization.dataset.invalid = String(msg !== null);
+      if (msg !== null) {
+        customization.open = true;
+        this.hotSeatCustomizationOpen = true;
+      }
+    }
   }
 
   /** Return a validation error message, or null if the config is valid. */

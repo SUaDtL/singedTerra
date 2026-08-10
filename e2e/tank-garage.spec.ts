@@ -4,10 +4,12 @@ import {
   TANK_PART_SETS,
   TANK_PART_SLOTS,
 } from '../client/src/renderer/tankPartCatalog';
+import { openHotSeatCustomization } from './support';
 
 async function openGarage(page: Page): Promise<void> {
   await page.goto('.');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await openHotSeatCustomization(page);
   await expect(page.locator('.lobby-garage')).toHaveCount(2);
 }
 

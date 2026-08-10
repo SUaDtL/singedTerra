@@ -42,6 +42,20 @@ export async function gotoLobby(page: Page): Promise<void> {
 }
 
 /**
+ * Enter the optional Hot Seat preparation surface for journeys that explicitly
+ * exercise crew, Garage, or battlefield controls. The ordinary lobby helper
+ * intentionally leaves it closed so first-contact tests observe production.
+ */
+export async function openHotSeatCustomization(page: Page): Promise<void> {
+  const customization = page.locator('#lobby .lobby-hotseat-customization');
+  await expect(customization).toBeVisible();
+  if (await customization.getAttribute('open') === null) {
+    await customization.locator('summary').click();
+  }
+  await expect(customization).toHaveAttribute('open', '');
+}
+
+/**
  * Guard the broad frame invariants shared by every Lobby view. Internal
  * vertical scrolling is allowed for long setup forms, but the document itself
  * must stay single-screen and the card must never overflow horizontally.

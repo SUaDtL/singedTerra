@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openHotSeatCustomization } from './support';
 
 interface LayoutBox {
   left: number;
@@ -136,6 +137,7 @@ async function expectGarageLayout(page: Page): Promise<void> {
 async function openLobby(page: Page): Promise<void> {
   await page.goto('.');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await openHotSeatCustomization(page);
   await expect(page.locator('.lobby-garage')).toHaveCount(2);
 }
 

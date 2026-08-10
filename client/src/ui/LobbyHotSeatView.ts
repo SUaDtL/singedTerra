@@ -4,8 +4,10 @@ export interface LobbyHotSeatViewOptions {
   playerCount: number;
   playerRows: readonly HTMLElement[];
   advanced: HTMLElement;
+  customizationOpen: boolean;
   validationMessage: string | null;
   onPlayerCountChange: (count: number) => void;
+  onCustomizationToggle: (open: boolean) => void;
   onStart: () => void;
 }
 
@@ -23,6 +25,24 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   purpose.className = 'lobby-route-brief__purpose';
   purpose.textContent = 'Configure the crew sharing this battlefield.';
   brief.append(title, purpose);
+
+  const ready = document.createElement('section');
+  ready.className = 'lobby-hotseat-ready';
+  ready.setAttribute('aria-label', 'Local battery readiness');
+  const readyTitle = document.createElement('h3');
+  readyTitle.textContent = 'Battery ready';
+  const readyLoadout = document.createElement('strong');
+  readyLoadout.textContent = `${options.playerCount}-player local battle`;
+  const readyStatus = document.createElement('p');
+  readyStatus.textContent = 'Current crew and battlefield setup is ready.';
+  ready.append(readyTitle, readyLoadout, readyStatus);
+
+  const customization = document.createElement('details');
+  customization.className = 'lobby-hotseat-customization';
+  customization.dataset.invalid = String(options.validationMessage !== null);
+  customization.open = options.customizationOpen || customization.dataset.invalid === 'true';
+  const customizationSummary = document.createElement('summary');
+  customizationSummary.textContent = 'Customize crew and battlefield';
 
   const setup = document.createElement('section');
   setup.className = 'lobby-route-brief__setup';
@@ -65,6 +85,14 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   error.className = 'lobby-error';
   error.textContent = options.validationMessage ?? '';
   setup.append(error);
+  customization.append(customizationSummary, setup);
+  customization.addEventListener('toggle', () => {
+    if (customization.dataset.invalid === 'true' && !customization.open) {
+      customization.open = true;
+      return;
+    }
+    options.onCustomizationToggle(customization.open);
+  });
 
   const start = document.createElement('button');
   start.type = 'button';
@@ -72,7 +100,7 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   start.textContent = 'Deploy local battle';
   start.disabled = options.validationMessage !== null;
   start.addEventListener('click', options.onStart);
-  wrapper.append(brief, setup, start);
+  wrapper.append(brief, ready, customization, start);
 
   return wrapper;
 }

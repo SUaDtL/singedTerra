@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openHotSeatCustomization } from './support';
 
 async function openRoom(
   page: import('@playwright/test').Page,
@@ -7,6 +8,7 @@ async function openRoom(
   await page.goto('.');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   if (walls !== 'open') {
+    await openHotSeatCustomization(page);
     await page.getByRole('button', { name: 'Advanced settings', exact: true }).click();
     await page.getByLabel('Side walls').selectOption(walls);
     await expect(page.getByLabel('Side walls')).toHaveValue(walls);

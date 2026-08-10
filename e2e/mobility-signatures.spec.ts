@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
+import { openHotSeatCustomization } from './support';
 
 const KITS = [
   { id: 'foundry', label: 'Foundry', accent: '#d6a15f', expectedOps: ['strokeRect'] },
@@ -155,6 +156,7 @@ async function waitForStableCanvas(page: Page, kit: Kit): Promise<TankDraw> {
 async function startGarageMatch(page: Page, kit: Kit): Promise<void> {
   await page.goto('.');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await openHotSeatCustomization(page);
   await expect(page.locator('.lobby-garage')).toHaveCount(2);
 
   if (await page.locator('#app').evaluate((element) => element.classList.contains('is-compact'))) {

@@ -55,6 +55,70 @@ test.describe('Pre-game command shell', () => {
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
   });
 
+  test('launches valid Hot Seat defaults before asking for customization', async ({ page }) => {
+    const ready = page.locator('#lobby .lobby-hotseat-ready');
+    const customization = page.locator('#lobby .lobby-hotseat-customization');
+    const manifest = page.locator(
+      '#lobby [data-preparation-section="crew-manifest"]',
+    );
+    const start = page.locator('#lobby .lobby-start');
+
+    await expect(ready).toContainText('2-player local battle');
+    await expect(ready).toContainText('Current crew and battlefield setup is ready');
+    await expect(customization).not.toHaveAttribute('open', '');
+    await expect(manifest).toBeHidden();
+    await expect(start).toBeVisible();
+    await assertLobbyControlReachable(page, '#lobby .lobby-start');
+
+    await customization.getByText('Customize crew and battlefield', { exact: true }).click();
+    await expect(customization).toHaveAttribute('open', '');
+    await expect(manifest).toBeVisible();
+    await expect(start).toBeVisible();
+    const expandedGeometry = await page.locator('#lobby .lobby-card').evaluate((card) => {
+      const launch = card.querySelector<HTMLElement>('.lobby-start');
+      if (!launch) throw new Error('Expected local launch action');
+      const cardRect = card.getBoundingClientRect();
+      const launchRect = launch.getBoundingClientRect();
+      return {
+        cardScrollTop: card.scrollTop,
+        launchTop: launchRect.top,
+        launchBottom: launchRect.bottom,
+        cardTop: cardRect.top,
+        cardBottom: cardRect.bottom,
+      };
+    });
+    expect(expandedGeometry.cardScrollTop).toBe(0);
+    expect(expandedGeometry.launchTop).toBeGreaterThanOrEqual(expandedGeometry.cardTop - 1);
+    expect(expandedGeometry.launchBottom).toBeLessThanOrEqual(expandedGeometry.cardBottom + 1);
+    await assertLobbyFrame(page);
+    await assertLobbyControlReachable(page, '#lobby .lobby-start');
+
+    await customization.locator('.lobby-field select').first().selectOption('3');
+    await expect(customization).toHaveAttribute('open', '');
+    await expect(page.locator('#lobby .lobby-row')).toHaveCount(3);
+  });
+
+  test('keeps live validation visible until the player corrects it', async ({ page }) => {
+    const customization = page.locator('#lobby .lobby-hotseat-customization');
+    const summary = customization.locator('summary');
+    const start = page.locator('#lobby .lobby-start');
+    const playerName = page.getByRole('textbox', { name: 'Player 1' });
+
+    await summary.click();
+    await playerName.fill('');
+    await expect(start).toBeDisabled();
+    await expect(page.locator('#lobby .lobby-error')).toBeVisible();
+    await summary.click();
+    await expect(customization).toHaveAttribute('open', '');
+    await expect(page.locator('#lobby .lobby-error')).toBeVisible();
+
+    await playerName.fill('Player 1');
+    await expect(start).toBeEnabled();
+    await summary.click();
+    await expect(customization).not.toHaveAttribute('open', '');
+    await expect(page.locator('#lobby .lobby-hotseat-ready')).toBeVisible();
+  });
+
   test('carries the same command hierarchy into Online room entry', async ({ page }) => {
     await page.getByRole('tab', { name: 'Play Online', exact: true }).click();
 
