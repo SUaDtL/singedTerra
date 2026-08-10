@@ -87,7 +87,7 @@
 - Initial staged-diff review found and blocked the three issues documented above.
 - Corrected staged-diff hash `ade8eb4a6d0aa2f67579b3209a9c7e9092df4ee2` was independently verified by the same reviewer.
 - Re-review verdict: both Important blockers and the Medium terminal-semantics finding are resolved; no Critical, High, Important, or merge-blocking finding remains.
-- One new non-blocking Medium strengthening idea remains: parse and bound the computed `saturate()` and `brightness()` values so a neutral or zero-brightness mutation cannot satisfy the current token-presence assertion. Existing effective-opacity, parent-opacity, authored-filter, visual, and mutation evidence is sufficient for this slice; the bounded-filter mutation is recorded for the next appropriate HUD-test strengthening pass.
+- Three non-blocking Medium test-strengthening ideas remain. First, parse and bound computed `saturate()` and `brightness()` values so neutral or zero-brightness mutations cannot satisfy token-presence assertions. Second, assert restored decision-state filter and order values after outcome instead of relying only on focus attributes, labels, and identity visibility. Third, compare progress geometry against sibling instruments/actions so an absolute-position overlap mutation cannot pass containment alone. Existing causal, effective-opacity, parent-opacity, authored-filter, visual, and mutation evidence is sufficient for this slice; all three are recorded for the next appropriate HUD-test strengthening pass.
 - After the implementation verdict, the task board was changed from in-progress to done and this final review record was added. The reviewer receives that documentation-only delta with the final staged diff.
 
 ## Exact corrected-state gates
@@ -95,6 +95,7 @@
 - On the corrected staged implementation, `npm run check` exited 0 after 93.6 seconds.
 - On the same state, `npm run coverage:client`, `npm run check:edge` (267 passed, 0 failed), and `npm run audit:deps` (0 vulnerabilities) all exited 0.
 - The correction worker's production build and complete HUD browser run passed as documented above; controller-focused unit verification passed 10/10.
+- `$ca-pr` coverage audit passed with no Critical, High, or BLOCK finding and produced the three non-blocking Medium strengthening ideas recorded above.
 
 ## Assignment boundary
 
