@@ -3,7 +3,7 @@ import { hasSupabaseConfig } from '../lib/supabaseConfig'
 import {
   earnedHotSeatMatchXp,
   type HotSeatMatchResult,
-  type HotSeatProgressionSummary,
+  type HotSeatProgressionReceipt,
 } from './hotSeatProgression'
 import { postOnceWithRetry } from './retry'
 
@@ -16,6 +16,18 @@ export interface AccountCredentials {
 }
 
 export interface AccountSummary {
+  matchesPlayed: number
+  wins: number
+  progressionVersion: 1
+  totalXp: number
+  level: number
+  levelXp: number
+  nextLevelXp: number
+  verifiedProgression?: VerifiedAccountProgression
+}
+
+export interface VerifiedAccountProgression {
+  evidence: 'verified_replay_v1'
   matchesPlayed: number
   wins: number
   progressionVersion: 1
@@ -87,7 +99,7 @@ function isSafeNonnegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
-function accountSummary(value: unknown): AccountSummary | null {
+function progressionFields(value: unknown): Omit<AccountSummary, 'verifiedProgression'> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const keys = Object.keys(value)
   const summaryKeys = [
@@ -131,6 +143,26 @@ function accountSummary(value: unknown): AccountSummary | null {
     || nextLevelXp !== 500
   ) return null
   return { matchesPlayed, wins, progressionVersion, totalXp, level, levelXp, nextLevelXp }
+}
+
+function verifiedProgression(value: unknown): VerifiedAccountProgression | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const { evidence, ...progression } = value as Record<string, unknown>
+  if (evidence !== 'verified_replay_v1') return null
+  const parsed = progressionFields(progression)
+  return parsed ? { evidence, ...parsed } : null
+}
+
+function accountSummary(value: unknown): AccountSummary | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const record = value as Record<string, unknown>
+  const hasVerified = Object.hasOwn(record, 'verifiedProgression')
+  const { verifiedProgression: rawVerified, ...casual } = record
+  const parsed = progressionFields(casual)
+  if (!parsed) return null
+  if (!hasVerified) return parsed
+  const verified = verifiedProgression(rawVerified)
+  return verified ? { ...parsed, verifiedProgression: verified } : null
 }
 
 export function createSupabaseAccountBackend(client: SupabaseClient): AccountBackend {
@@ -381,7 +413,7 @@ export class AccountSession {
 
   async recordHotSeatMatch(
     result: HotSeatMatchResult,
-  ): Promise<HotSeatProgressionSummary | null> {
+  ): Promise<HotSeatProgressionReceipt | null> {
     await this.initialize()
     if (
       !this.backend
@@ -390,6 +422,8 @@ export class AccountSession {
       || this.current.busy
     ) return null
     const backend = this.backend
+    const accountGeneration = this.generation
+    const accountId = this.current.profile.id
     const priorSummary = this.current.profile.summary
     try {
       const delivery = await postOnceWithRetry(
@@ -397,14 +431,23 @@ export class AccountSession {
         2,
       )
       if (!delivery.ok) return null
+      if (
+        !this.isCurrent(accountGeneration)
+        || this.current.status !== 'authenticated'
+        || this.current.profile.id !== accountId
+      ) return null
       await this.refresh()
       if (!delivery.value) return null
-      if (this.current.status !== 'authenticated') return null
+      if (
+        !this.isCurrent(accountGeneration)
+        || this.current.status !== 'authenticated'
+        || this.current.profile.id !== accountId
+      ) return null
       const summary = this.current.profile.summary
       if (!priorSummary || !summary) return null
       const expectedXp = earnedHotSeatMatchXp(result.won)
       if (summary.totalXp !== priorSummary.totalXp + expectedXp) return null
-      return summary
+      return { prior: priorSummary, current: summary }
     } catch {
       // Match reporting is opportunistic. Preserve gameplay and the last trusted
       // account state when delivery or the follow-up summary refresh cannot complete.

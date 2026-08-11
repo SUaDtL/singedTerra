@@ -170,43 +170,101 @@ test.describe('Victory After-Action Report', () => {
     await expect(page.locator('.st-hud__instruments')).toBeVisible();
   });
 
-  test('keeps the complete report still under reduced motion', async ({ browser }) => {
-    const context = await browser.newContext({
-      viewport: { width: 851, height: 393 },
-      hasTouch: true,
-      reducedMotion: 'reduce',
+  test('keeps promotion identity legible, ordered, and fitted in the real project viewport', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await gotoVictory(page);
+    await page.locator('.st-hud__victory-progression-receipt').evaluate((receipt) => {
+      receipt.classList.add('st-hud__victory-progression-receipt--promotion');
+      const entry = (className: string, text: string, strong = false): HTMLElement => {
+        const node = document.createElement(strong ? 'strong' : 'span');
+        node.className = className;
+        node.textContent = text;
+        return node;
+      };
+      const insignia = entry('st-hud__victory-promotion-insignia', '▲');
+      insignia.setAttribute('role', 'img');
+      insignia.setAttribute('aria-label', 'Artillerist rank insignia: single chevron');
+      receipt.replaceChildren(
+        entry('st-hud__victory-promotion-kicker', 'PROMOTION EARNED'),
+        insignia,
+        entry('st-hud__victory-promotion-code', 'R-04'),
+        entry('st-hud__victory-promotion-title', 'ARTILLERIST', true),
+        entry('st-hud__victory-progression-summary', 'Victory · +200 XP · Level 5 reached'),
+        entry('st-hud__victory-career-next', 'NEXT RANK / BATTERY CAPTAIN / LEVEL 7'),
+      );
+      (receipt as HTMLElement).hidden = false;
     });
-    try {
-      const page = await context.newPage();
-      await gotoVictory(page);
-      await page.locator('.st-hud__victory-progression-receipt').evaluate((receipt) => {
-        receipt.textContent = 'Victory · +200 XP · 300 XP to Level 4';
-        (receipt as HTMLElement).hidden = false;
-      });
-      await expect(page.locator('.st-hud__overlay-panel--victory'))
-        .toHaveCSS('animation-name', 'none');
-      await expect(page.locator('.st-hud__victory-tank-frame'))
-        .toHaveCSS('animation-name', 'none');
-      await expect(page.getByText('Victory · +200 XP · 300 XP to Level 4')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Play again' })).toBeVisible();
-      const containment = await page.locator('.st-hud__overlay-panel--victory').evaluate((panel) => {
-        const panelBox = panel.getBoundingClientRect();
-        const receiptBox = panel.querySelector('.st-hud__victory-progression-receipt')!
-          .getBoundingClientRect();
-        return {
-          receiptLeft: receiptBox.left,
-          receiptRight: receiptBox.right,
-          panelLeft: panelBox.left,
-          panelRight: panelBox.right,
-          documentWidth: document.documentElement.scrollWidth,
-          viewportWidth: innerWidth,
-        };
-      });
-      expect(containment.receiptLeft).toBeGreaterThanOrEqual(containment.panelLeft - 1);
-      expect(containment.receiptRight).toBeLessThanOrEqual(containment.panelRight + 1);
-      expect(containment.documentWidth).toBe(containment.viewportWidth);
-    } finally {
-      await context.close();
+    await expect(page.locator('.st-hud__overlay-panel--victory'))
+      .toHaveCSS('animation-name', 'none');
+    await expect(page.locator('.st-hud__victory-tank-frame'))
+      .toHaveCSS('animation-name', 'none');
+    await expect(page.getByText('PROMOTION EARNED')).toBeVisible();
+    await expect(page.getByText('ARTILLERIST', { exact: true })).toBeVisible();
+    await expect(page.getByText('Victory · +200 XP · Level 5 reached')).toBeVisible();
+    await expect(page.getByText('NEXT RANK / BATTERY CAPTAIN / LEVEL 7')).toBeVisible();
+    await expect(page.locator('.st-hud__victory-promotion-insignia'))
+      .toHaveAttribute('aria-label', 'Artillerist rank insignia: single chevron');
+    await expect(page.getByRole('button', { name: 'Play again' })).toBeVisible();
+
+    const geometry = await page.locator('.st-hud__overlay-panel--victory').evaluate((panel) => {
+      const box = (selector: string) => {
+        const node = panel.querySelector<HTMLElement>(selector);
+        if (!node) throw new Error(`Missing ${selector}`);
+        return node.getBoundingClientRect().toJSON();
+      };
+      const overlaps = (
+        left: { left: number; right: number; top: number; bottom: number },
+        right: { left: number; right: number; top: number; bottom: number },
+      ) => left.left < right.right && left.right > right.left
+        && left.top < right.bottom && left.bottom > right.top;
+      const panelBox = panel.getBoundingClientRect().toJSON();
+      const receipt = box('.st-hud__victory-progression-receipt');
+      const title = box('.st-hud__victory-title');
+      const scoreLabel = box('.st-hud__victory-score-label');
+      const score = box('.st-hud__score');
+      const actions = box('.st-hud__overlay-btns');
+      const tank = box('.st-hud__victory-tank-frame');
+      const careerSelectors = [
+        '.st-hud__victory-promotion-kicker',
+        '.st-hud__victory-promotion-insignia',
+        '.st-hud__victory-promotion-code',
+        '.st-hud__victory-promotion-title',
+        '.st-hud__victory-progression-summary',
+        '.st-hud__victory-career-next',
+      ];
+      const career = careerSelectors.map((selector) => ({ selector, box: box(selector) }));
+      return {
+        panel: panelBox,
+        receipt,
+        career,
+        contained: career.every(({ box: child }) => child.left >= receipt.left - 1
+          && child.right <= receipt.right + 1
+          && child.top >= receipt.top - 1
+          && child.bottom <= receipt.bottom + 1),
+        ordered: [receipt, title, scoreLabel, score, actions]
+          .slice(1)
+          .every((entry, index, list) => (index === 0 ? receipt : list[index - 1]!).bottom <= entry.top),
+        disjoint: [title, scoreLabel, score, actions, tank]
+          .every((entry) => !overlaps(receipt, entry)),
+        viewport: { width: innerWidth, height: innerHeight },
+        document: {
+          width: document.documentElement.scrollWidth,
+          height: document.documentElement.scrollHeight,
+        },
+      };
+    });
+    expect(geometry.contained).toBe(true);
+    expect(geometry.ordered).toBe(true);
+    expect(geometry.disjoint).toBe(true);
+    expect(geometry.panel.left).toBeGreaterThanOrEqual(-1);
+    expect(geometry.panel.top).toBeGreaterThanOrEqual(-1);
+    expect(geometry.panel.right).toBeLessThanOrEqual(geometry.viewport.width + 1);
+    expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.viewport.height + 1);
+    expect(geometry.document.width).toBe(geometry.viewport.width);
+    expect(geometry.document.height).toBe(geometry.viewport.height);
+    for (const entry of geometry.career) {
+      expect(entry.box.height, `${entry.selector} must remain physically legible`)
+        .toBeGreaterThanOrEqual(8);
     }
   });
 });

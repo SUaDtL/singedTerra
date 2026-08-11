@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
-import type { HotSeatProgressionSummary } from './client/hotSeatProgression'
+import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
 
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
@@ -13,12 +13,9 @@ const seams = vi.hoisted(() => ({
   lobbyShows: 0,
   accountAnonymous: false,
   onProgressionSignIn: null as null | (() => void),
-  record: (_result: { matchId: string; won: boolean }): Promise<HotSeatProgressionSummary | null> => Promise.resolve({
-    progressionVersion: 1 as const,
-    totalXp: 200,
-    level: 1,
-    levelXp: 200,
-    nextLevelXp: 500,
+  record: (_result: { matchId: string; won: boolean }): Promise<HotSeatProgressionReceipt | null> => Promise.resolve({
+    prior: { progressionVersion: 1 as const, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
+    current: { progressionVersion: 1 as const, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
   }),
 }))
 
@@ -222,11 +219,8 @@ describe('production hot-seat progression composition', () => {
     seams.accountAnonymous = false
     seams.onProgressionSignIn = null
     seams.record = () => Promise.resolve({
-      progressionVersion: 1 as const,
-      totalXp: 200,
-      level: 1,
-      levelXp: 200,
-      nextLevelXp: 500,
+      prior: { progressionVersion: 1 as const, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
+      current: { progressionVersion: 1 as const, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
     })
     window.history.replaceState({}, '', '/')
     mountDom()
@@ -244,12 +238,9 @@ describe('production hot-seat progression composition', () => {
     first.emit(gameState())
     await vi.waitFor(() => expect(seams.progressionReceipts).toEqual([{
       won: true,
-      summary: {
-        progressionVersion: 1,
-        totalXp: 200,
-        level: 1,
-        levelXp: 200,
-        nextLevelXp: 500,
+      receipt: {
+        prior: { progressionVersion: 1, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
+        current: { progressionVersion: 1, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
       },
     }]))
 
@@ -260,12 +251,9 @@ describe('production hot-seat progression composition', () => {
     second.emit(gameState({ winner: 'p2' }))
     await vi.waitFor(() => expect(seams.progressionReceipts[1]).toEqual({
       won: false,
-      summary: {
-        progressionVersion: 1,
-        totalXp: 200,
-        level: 1,
-        levelXp: 200,
-        nextLevelXp: 500,
+      receipt: {
+        prior: { progressionVersion: 1, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
+        current: { progressionVersion: 1, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
       },
     }))
 
@@ -323,11 +311,8 @@ describe('production hot-seat progression composition', () => {
     seams.onLobbyReady({ mode: 'hotseat', players: [] })
     await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
     resolveRecord({
-      progressionVersion: 1,
-      totalXp: 200,
-      level: 1,
-      levelXp: 200,
-      nextLevelXp: 500,
+      prior: { progressionVersion: 1, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
+      current: { progressionVersion: 1, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
     })
     await Promise.resolve()
 
@@ -350,11 +335,8 @@ describe('production hot-seat progression composition', () => {
 
     seams.onQuit()
     resolveRecord({
-      progressionVersion: 1,
-      totalXp: 200,
-      level: 1,
-      levelXp: 200,
-      nextLevelXp: 500,
+      prior: { progressionVersion: 1, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
+      current: { progressionVersion: 1, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
     })
     await Promise.resolve()
 

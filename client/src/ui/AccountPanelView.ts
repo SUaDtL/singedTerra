@@ -1,8 +1,35 @@
 import type {
   AccountCredentials,
   AccountMode,
+  AccountSummary,
   AccountState,
 } from '../client/AccountSession'
+import {
+  commanderCareerForVerifiedProgression,
+  type CommanderCareer,
+  type CommanderRank,
+} from '../client/commanderCareer'
+
+function verifiedCareer(summary: AccountSummary): CommanderCareer | null {
+  const progression = summary.verifiedProgression
+  return commanderCareerForVerifiedProgression(progression ? {
+    evidence: progression.evidence,
+    progressionVersion: progression.progressionVersion,
+    level: progression.level,
+  } : null)
+}
+
+function rankInsignia(rank: CommanderRank, className: string): HTMLElement {
+  const insignia = document.createElement('span')
+  insignia.className = className
+  insignia.setAttribute('role', 'img')
+  insignia.setAttribute(
+    'aria-label',
+    `${rank.title} rank insignia: ${rank.insignia.label}`,
+  )
+  insignia.textContent = rank.insignia.mark
+  return insignia
+}
 
 export interface AccountPanelViewOptions {
   state: AccountState
@@ -81,8 +108,9 @@ export function buildAccountPanelView(
   if (options.state.status === 'authenticated') {
     root.classList.add('account-panel--authenticated')
     const accountSummary = options.state.profile.summary
+    const displayedProgression = accountSummary?.verifiedProgression ?? accountSummary
     const triggerLabel = accountSummary
-      ? `Commander ${options.state.profile.displayName} - Level ${accountSummary.level}`
+      ? `Commander ${options.state.profile.displayName} - Level ${displayedProgression?.level}`
       : `Commander ${options.state.profile.displayName}`
     const disclosure = actionButton(
       triggerLabel,
@@ -93,23 +121,46 @@ export function buildAccountPanelView(
 
     if (!options.open || options.triggerOnly) {
       if (accountSummary) {
-        const remainingXp = accountSummary.nextLevelXp - accountSummary.levelXp
-        const nextLevel = accountSummary.level + 1
+        const progression = accountSummary.verifiedProgression ?? accountSummary
+        const remainingXp = progression.nextLevelXp - progression.levelXp
+        const nextLevel = progression.level + 1
+        const career = verifiedCareer(accountSummary)
         disclosure.textContent = ''
         disclosure.setAttribute(
           'aria-label',
-          `Commander ${options.state.profile.displayName}, Level ${accountSummary.level}, ${remainingXp} XP to Level ${nextLevel}. Player account`,
+          career
+            ? `Commander ${options.state.profile.displayName}, ${career.current.code} ${career.current.title}, Level ${progression.level}, ${remainingXp} XP to Level ${nextLevel}, ${career.next ? `next rank ${career.next.title} at Level ${career.next.level}` : 'highest rank attained'}. Player account`
+            : `Commander ${options.state.profile.displayName}, Level ${progression.level}, ${remainingXp} XP to Level ${nextLevel}. Player account`,
         )
         const commander = document.createElement('span')
         commander.className = 'account-panel__commander-name'
         commander.textContent = options.state.profile.displayName
+        const rankRow = document.createElement('span')
+        rankRow.className = 'account-panel__commander-rank-row'
+        const rank = document.createElement('span')
+        rank.className = 'account-panel__commander-rank'
+        rank.textContent = career ? `${career.current.code} / ${career.current.title}` : ''
+        if (career) {
+          rankRow.append(
+            rankInsignia(career.current, 'account-panel__commander-insignia'),
+            rank,
+          )
+        }
         const level = document.createElement('span')
         level.className = 'account-panel__commander-level'
-        level.textContent = `Level ${accountSummary.level}`
+        level.textContent = `Level ${progression.level}`
         const milestone = document.createElement('span')
         milestone.className = 'account-panel__record-milestone'
         milestone.textContent = `${remainingXp} XP to Level ${nextLevel}`
-        disclosure.append(commander, level, milestone)
+        const nextRank = document.createElement('span')
+        nextRank.className = 'account-panel__career-next'
+        nextRank.textContent = career?.next
+          ? `NEXT RANK / ${career.next.title.toUpperCase()} / LEVEL ${career.next.level}`
+          : 'HIGHEST RANK ATTAINED'
+        disclosure.append(commander)
+        if (career) disclosure.append(rankRow)
+        disclosure.append(level, milestone)
+        if (career) disclosure.append(nextRank)
 
         const record = document.createElement('section')
         record.className = 'account-panel__record'
@@ -118,11 +169,11 @@ export function buildAccountPanelView(
         heading.textContent = 'COMMANDER DOSSIER'
         const xp = document.createElement('progress')
         xp.className = 'account-panel__record-xp'
-        xp.value = accountSummary.levelXp
-        xp.max = accountSummary.nextLevelXp
+        xp.value = progression.levelXp
+        xp.max = progression.nextLevelXp
         xp.setAttribute(
           'aria-label',
-          `Commander ${options.state.profile.displayName} Level ${accountSummary.level} XP progress`,
+          `Commander ${options.state.profile.displayName} Level ${progression.level} XP progress`,
         )
         record.append(heading, disclosure, xp)
         root.append(record)
@@ -136,14 +187,17 @@ export function buildAccountPanelView(
     root.classList.add('account-panel--open')
     let summary: HTMLElement
     let xp: HTMLElement | null = null
+    let careerPanel: HTMLElement | null = null
     if (options.state.profile.summary) {
       const accountSummary = options.state.profile.summary
+      const progression = accountSummary.verifiedProgression ?? accountSummary
+      const career = verifiedCareer(accountSummary)
       summary = document.createElement('dl')
       summary.className = 'account-panel__progress'
       const values = [
-        ['Matches', accountSummary.matchesPlayed],
-        ['Recorded wins', accountSummary.wins],
-        ['Level', accountSummary.level],
+        ['Matches', progression.matchesPlayed],
+        ['Recorded wins', progression.wins],
+        ['Level', progression.level],
       ] as const
       for (const [label, value] of values) {
         const group = document.createElement('div')
@@ -165,17 +219,35 @@ export function buildAccountPanelView(
       xpLabel.textContent = 'XP progress'
       const xpValue = document.createElement('span')
       xpValue.className = 'account-panel__xp-value'
-      xpValue.textContent = `${accountSummary.levelXp} / ${accountSummary.nextLevelXp} XP`
+      xpValue.textContent = `${progression.levelXp} / ${progression.nextLevelXp} XP`
       xpHeader.append(xpLabel, xpValue)
       const meter = document.createElement('progress')
       meter.className = 'account-panel__xp-meter'
-      meter.value = accountSummary.levelXp
-      meter.max = accountSummary.nextLevelXp
-      meter.setAttribute('aria-label', `Level ${accountSummary.level} XP progress`)
+      meter.value = progression.levelXp
+      meter.max = progression.nextLevelXp
+      meter.setAttribute('aria-label', `Level ${progression.level} XP progress`)
       const remaining = document.createElement('span')
       remaining.className = 'account-panel__xp-remaining'
-      remaining.textContent = `${accountSummary.nextLevelXp - accountSummary.levelXp} XP to Level ${accountSummary.level + 1}`
+      remaining.textContent = `${progression.nextLevelXp - progression.levelXp} XP to Level ${progression.level + 1}`
       xp.append(xpHeader, meter, remaining)
+      if (career) {
+        careerPanel = document.createElement('section')
+        careerPanel.className = 'account-panel__career'
+        careerPanel.setAttribute('aria-label', 'Commander career rank')
+        const currentRank = document.createElement('strong')
+        currentRank.className = 'account-panel__career-current'
+        currentRank.textContent = `${career.current.code} / ${career.current.title}`
+        const nextRank = document.createElement('span')
+        nextRank.className = 'account-panel__career-next'
+        nextRank.textContent = career.next
+          ? `Next rank: ${career.next.title} at Level ${career.next.level}`
+          : 'Highest rank attained'
+        careerPanel.append(
+          rankInsignia(career.current, 'account-panel__career-insignia'),
+          currentRank,
+          nextRank,
+        )
+      }
     } else {
       summary = document.createElement('span')
       summary.className = 'account-panel__summary-unavailable'
@@ -187,6 +259,7 @@ export function buildAccountPanelView(
     const close = actionButton('Close', options.onClose)
     close.className = 'account-panel__secondary account-panel__close'
     root.append(summary)
+    if (careerPanel) root.append(careerPanel)
     if (xp) root.append(xp)
     root.append(close, signOut)
     return root

@@ -31,15 +31,24 @@ describe('createHotSeatProgressionReporter', () => {
   })
 
   it('emits one receipt only after the existing server-confirmed report succeeds', async () => {
-    const summary = {
-      progressionVersion: 1 as const,
-      totalXp: 200,
-      level: 1,
-      levelXp: 200,
-      nextLevelXp: 500,
+    const receipt = {
+      prior: {
+        progressionVersion: 1 as const,
+        totalXp: 0,
+        level: 1,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
+      current: {
+        progressionVersion: 1 as const,
+        totalXp: 200,
+        level: 1,
+        levelXp: 200,
+        nextLevelXp: 500,
+      },
     }
-    let complete!: (recorded: typeof summary | null) => void
-    const report = vi.fn(() => new Promise<typeof summary | null>((resolve) => { complete = resolve }))
+    let complete!: (recorded: typeof receipt | null) => void
+    const report = vi.fn(() => new Promise<typeof receipt | null>((resolve) => { complete = resolve }))
     const onRecorded = vi.fn()
     const reporter = createHotSeatProgressionReporter({
       mode: 'hotseat',
@@ -54,13 +63,13 @@ describe('createHotSeatProgressionReporter', () => {
     reporter.observe(state('GAME_OVER', 'p1'))
     expect(onRecorded).not.toHaveBeenCalled()
 
-    complete(summary)
+    complete(receipt)
     await vi.waitFor(() => expect(onRecorded).toHaveBeenCalledWith(
       {
         matchId: '00000000-0000-4000-8000-000000000074',
         won: true,
       },
-      summary,
+      receipt,
     ))
     reporter.observe(state('GAME_OVER', 'p1'))
     expect(onRecorded).toHaveBeenCalledOnce()
@@ -92,12 +101,21 @@ describe('createHotSeatProgressionReporter', () => {
   })
 
   it('keeps recorded and unrecorded terminal callbacks mutually exclusive', async () => {
-    const summary = {
-      progressionVersion: 1 as const,
-      totalXp: 200,
-      level: 1,
-      levelXp: 200,
-      nextLevelXp: 500,
+    const receipt = {
+      prior: {
+        progressionVersion: 1 as const,
+        totalXp: 0,
+        level: 1,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
+      current: {
+        progressionVersion: 1 as const,
+        totalXp: 200,
+        level: 1,
+        levelXp: 200,
+        nextLevelXp: 500,
+      },
     }
     const onRecorded = vi.fn()
     const onUnrecorded = vi.fn()
@@ -105,7 +123,7 @@ describe('createHotSeatProgressionReporter', () => {
       mode: 'hotseat',
       e2eMode: null,
       accountTankId: 'p1',
-      report: async () => summary,
+      report: async () => receipt,
       onRecorded,
       onUnrecorded,
     })

@@ -1,7 +1,28 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameState } from '@shared/types/GameState';
+import type {
+  HotSeatProgressionReceipt,
+  HotSeatProgressionSummary,
+} from '../client/hotSeatProgression';
 import { HUD } from './HUD';
+
+function trustedReceipt(
+  current: Omit<HotSeatProgressionSummary, 'progressionVersion'>,
+): HotSeatProgressionReceipt {
+  const earned = current.totalXp >= 200 ? 200 : 100;
+  const priorTotalXp = current.totalXp - earned;
+  return {
+    prior: {
+      progressionVersion: 1,
+      totalXp: priorTotalXp,
+      level: Math.floor(priorTotalXp / 500) + 1,
+      levelXp: priorTotalXp % 500,
+      nextLevelXp: 500,
+    },
+    current: { progressionVersion: 1, ...current },
+  };
+}
 
 function mount(): {
   app: HTMLElement;
@@ -139,17 +160,20 @@ describe('HUD Victory After-Action Report', () => {
     expect(receipt.hidden).toBe(true);
     hud.setProgressionReceipt({
       won: true,
-      summary: {
-        progressionVersion: 1,
+      receipt: trustedReceipt({
         totalXp: 1_200,
         level: 3,
         levelXp: 200,
         nextLevelXp: 500,
-      },
+      }),
     });
 
     expect(receipt.hidden).toBe(false);
-    expect(receipt.textContent).toBe('Victory · +200 XP · 300 XP to Level 4');
+    expect(receipt.querySelector('.st-hud__victory-progression-summary')?.textContent)
+      .toBe('Victory · +200 XP · 300 XP to Level 4');
+    expect(receipt.querySelector('.st-hud__victory-career-current')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-career-insignia')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-career-next')).toBeNull();
     expect(receipt.getAttribute('role')).toBe('status');
     expect(receipt.getAttribute('aria-live')).toBe('polite');
     expect(report.querySelectorAll('button')).toHaveLength(2);
@@ -171,16 +195,85 @@ describe('HUD Victory After-Action Report', () => {
 
     hud.setProgressionReceipt({
       won: false,
-      summary: {
-        progressionVersion: 1,
+      receipt: trustedReceipt({
         totalXp: 100,
         level: 1,
         levelXp: 100,
         nextLevelXp: 500,
+      }),
+    });
+
+    expect(receipt.querySelector('.st-hud__victory-progression-summary')?.textContent)
+      .toBe('Match complete · +100 XP · 400 XP to Level 2');
+    expect(receipt.querySelector('.st-hud__victory-career-current')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-career-next')).toBeNull();
+  });
+
+  it('does not turn a casual hot-seat threshold crossing into a promotion claim', () => {
+    const { modal, hud, state } = mount();
+    hud.update(state);
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    const receipt = report.querySelector<HTMLElement>('.st-hud__victory-progression-receipt')!;
+
+    hud.setProgressionReceipt({
+      won: true,
+      receipt: trustedReceipt({
+        totalXp: 2_000,
+        level: 5,
+        levelXp: 0,
+        nextLevelXp: 500,
+      }),
+    });
+
+    expect(receipt.classList.contains('st-hud__victory-progression-receipt--promotion'))
+      .toBe(false);
+    expect(receipt.querySelector('.st-hud__victory-promotion-kicker')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-promotion-code')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-promotion-insignia')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-promotion-title')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-progression-summary')?.textContent)
+      .toBe('Victory · +200 XP · 500 XP to Level 6');
+    expect(receipt.querySelector('.st-hud__victory-career-next')).toBeNull();
+    expect(report.querySelectorAll('button')).toHaveLength(2);
+
+    state.phase = 'PLAYER_TURN';
+    hud.update(state);
+    expect(receipt.hidden).toBe(true);
+    expect(receipt.classList.contains('st-hud__victory-progression-receipt--promotion'))
+      .toBe(false);
+    expect(receipt.childElementCount).toBe(0);
+  });
+
+  it('does not turn casual participation XP after a loss into a promotion claim', () => {
+    const { modal, hud, state } = mount();
+    hud.update(state);
+    const receipt = modal.querySelector<HTMLElement>('.st-hud__victory-progression-receipt')!;
+
+    hud.setProgressionReceipt({
+      won: false,
+      receipt: {
+        prior: {
+          progressionVersion: 1,
+          totalXp: 1_900,
+          level: 4,
+          levelXp: 400,
+          nextLevelXp: 500,
+        },
+        current: {
+          progressionVersion: 1,
+          totalXp: 2_000,
+          level: 5,
+          levelXp: 0,
+          nextLevelXp: 500,
+        },
       },
     });
 
-    expect(receipt.textContent).toBe('Match complete · +100 XP · 400 XP to Level 2');
+    expect(receipt.querySelector('.st-hud__victory-promotion-kicker')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-promotion-title')).toBeNull();
+    expect(receipt.querySelector('.st-hud__victory-progression-summary')?.textContent)
+      .toBe('Match complete · +100 XP · 500 XP to Level 6');
+    expect(receipt.querySelector('.st-hud__victory-career-next')).toBeNull();
   });
 
   it('keeps the future-only sign-in handoff out of the report until an anonymous match asks for it', () => {
@@ -227,13 +320,12 @@ describe('HUD Victory After-Action Report', () => {
     hud.setAnonymousProgressionHandoff();
     hud.setProgressionReceipt({
       won: true,
-      summary: {
-        progressionVersion: 1,
+      receipt: trustedReceipt({
         totalXp: 1_200,
         level: 3,
         levelXp: 200,
         nextLevelXp: 500,
-      },
+      }),
     });
     expect(handoff.hidden).toBe(true);
 

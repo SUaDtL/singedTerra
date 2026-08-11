@@ -44,7 +44,7 @@ import {
 } from '../client/AccountSession';
 import type {
   HotSeatMatchResult,
-  HotSeatProgressionSummary,
+  HotSeatProgressionReceipt,
 } from '../client/hotSeatProgression';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
@@ -239,7 +239,7 @@ export interface AccountSessionPort {
   submit(mode: AccountMode, credentials: AccountCredentials): Promise<void>;
   signOut(): Promise<void>;
   refresh(): Promise<void>;
-  recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionSummary | null>;
+  recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null>;
 }
 
 type AccountSessionFactory = (
@@ -498,7 +498,7 @@ export class Lobby {
     return this.accountSession.refresh();
   }
 
-  recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionSummary | null> {
+  recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null> {
     return this.accountSession.recordHotSeatMatch(result);
   }
 
@@ -1728,7 +1728,7 @@ export class Lobby {
       }
       #lobby .account-panel__record {
         display: grid;
-        width: min(330px, calc(100vw - 36px));
+        width: min(390px, calc(100vw - 36px));
         gap: 4px;
         padding: 7px 9px 8px;
         box-sizing: border-box;
@@ -1761,23 +1761,60 @@ export class Lobby {
         white-space: normal;
       }
       #lobby .account-panel__commander-name {
+        grid-column: 1;
+        grid-row: 1;
         min-width: 0;
         overflow-wrap: anywhere;
         color: #ffe0a0;
         font-weight: 700;
       }
       #lobby .account-panel__commander-level {
+        grid-column: 2;
+        grid-row: 1;
         color: rgba(255, 224, 159, 0.78);
         font: 700 0.78em/1 var(--font-mono);
         letter-spacing: 0.4px;
         white-space: nowrap;
       }
+      #lobby .account-panel__commander-rank-row {
+        grid-column: 1;
+        grid-row: 2;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+      #lobby .account-panel__commander-rank {
+        color: #f4bc58;
+        font: 800 9px/1.1 var(--font-mono);
+        letter-spacing: 0.75px;
+        text-transform: uppercase;
+      }
+      #lobby .account-panel__commander-insignia,
+      #lobby .account-panel__career-insignia {
+        color: #ffd36f;
+        font-family: var(--font-display);
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(255, 188, 80, 0.3);
+        white-space: nowrap;
+      }
       #lobby .account-panel__record-milestone {
-        grid-column: 1 / -1;
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: end;
         color: rgba(216, 198, 162, 0.82);
         font: 700 9px/1.15 var(--font-mono);
         letter-spacing: 0.45px;
         text-transform: uppercase;
+      }
+      #lobby .account-panel__record .account-panel__career-next {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        padding-top: 3px;
+        border-top: 1px solid rgba(229, 161, 65, 0.22);
+        color: rgba(216, 198, 162, 0.76);
+        font: 700 8px/1.15 var(--font-mono);
+        letter-spacing: 0.55px;
       }
       #lobby .account-panel__record-xp {
         display: block;
@@ -1801,10 +1838,41 @@ export class Lobby {
       #app.is-compact #lobby .account-panel__record-milestone {
         font-size: calc(var(--st-store-buy-target) * 0.16);
       }
+      #app.is-compact #lobby .account-panel__commander-rank,
+      #app.is-compact #lobby .account-panel__record .account-panel__career-next {
+        font-size: calc(var(--st-store-buy-target) * 0.2);
+      }
+      #app.is-compact #lobby .account-panel__commander-insignia {
+        font-size: calc(var(--st-store-buy-target) * 0.24);
+      }
       #app.is-compact #lobby .account-panel__record-xp {
         height: calc(var(--st-store-buy-target) * 0.1);
       }
       #lobby .account-panel__xp-meter { accent-color: #d79a38; }
+      #lobby .account-panel__career {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 5px;
+        padding: 10px 12px;
+        border: 1px solid rgba(229, 161, 65, 0.32);
+        border-left: 3px solid rgba(255, 188, 80, 0.72);
+        background: linear-gradient(90deg, rgba(229, 161, 65, 0.12), rgba(5, 8, 10, 0.24));
+      }
+      #lobby .account-panel__career-current {
+        grid-column: 2;
+        color: #ffe0a0;
+        font: 800 13px/1.1 var(--font-mono);
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+      }
+      #lobby .account-panel__career > .account-panel__career-next {
+        grid-column: 1 / -1;
+        color: var(--text-dim);
+        font: 700 10px/1.25 var(--font-mono);
+        letter-spacing: 0.35px;
+      }
+      #lobby .account-panel__career-insignia { font-size: 20px; }
       #app.is-compact #lobby .lobby-command-header {
         min-height: 8px;
         margin-bottom: 0;
@@ -2298,11 +2366,11 @@ export class Lobby {
       #app.is-compact #lobby .lobby-deployment > .lobby-controls { bottom: 56px; }
       #app.is-compact #lobby .lobby-deployment__masthead { min-height: 0; }
       #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel__record) {
-        min-height: 120px;
+        min-height: 205px;
       }
       #app.is-compact #lobby .lobby-deployment:has(.account-panel__record)
         > .lobby-preview {
-        inset-block-start: 82px;
+        inset-block-start: 165px;
       }
       #app.is-compact #lobby .lobby-deployment__masthead > .account-panel,
       #app.is-compact #lobby .lobby-deployment__masthead > .account-panel--open {

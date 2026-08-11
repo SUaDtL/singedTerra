@@ -6,11 +6,16 @@ export interface HotSeatMatchResult {
 }
 
 export interface HotSeatProgressionSummary {
-  progressionVersion: 1
-  totalXp: number
-  level: number
-  levelXp: number
-  nextLevelXp: number
+  readonly progressionVersion: 1
+  readonly totalXp: number
+  readonly level: number
+  readonly levelXp: number
+  readonly nextLevelXp: number
+}
+
+export interface HotSeatProgressionReceipt {
+  readonly prior: HotSeatProgressionSummary
+  readonly current: HotSeatProgressionSummary
 }
 
 export const MATCH_PARTICIPATION_XP = 100
@@ -28,8 +33,8 @@ export interface HotSeatProgressionReporterOptions {
   mode: 'hotseat' | 'network'
   e2eMode: string | null
   accountTankId: string | null
-  report(result: HotSeatMatchResult): Promise<HotSeatProgressionSummary | null>
-  onRecorded?(result: HotSeatMatchResult, summary: HotSeatProgressionSummary): void
+  report(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null>
+  onRecorded?(result: HotSeatMatchResult, receipt: HotSeatProgressionReceipt): void
   onUnrecorded?(result: HotSeatMatchResult): void
   matchId?: string
   createMatchId?: () => string
@@ -55,8 +60,8 @@ export function createHotSeatProgressionReporter(
         won: state.winner === options.accountTankId,
       }
       void options.report(result)
-        .then((summary) => {
-          if (summary) options.onRecorded?.(result, summary)
+        .then((receipt) => {
+          if (receipt) options.onRecorded?.(result, receipt)
           else options.onUnrecorded?.(result)
         })
         .catch(() => undefined)

@@ -406,3 +406,53 @@ Reliable and Available favor durable credit for ordinary local matches instead o
 ADR-0012 governs migration 015, `record_hotseat_match`, hot-seat aggregation in `account_summary`, and the client terminal reporter. Security controls and mutation-resistant tests must state and enforce the narrow exception without weakening the ban on browser-owned identity, totals, benefits, or secrets.
 
 ---
+
+## DECISION-0016 — ADR-0013 — Add a verification-only third engine context
+
+**Date:** 2026-08-10
+**Status:** accepted
+**Supersedes:** DECISION-0001
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly accepted the recommended completion-time deterministic replay design)
+**Decision category:** architecture / security / determinism
+**Artifact-section-hash:** c0cd1e71ad75b8563bfbc615036777a69aff8e08b33520789a12d49013bc91ac
+
+### Variance summary
+- **Artifact position:** ADR-0001 requires the shared engine to run in exactly two browser contexts.
+- **Scaffold position:** Independently verified progression requires one bounded server replay context while preserving one physics source.
+- **Status type:** divergent
+
+### Decision
+Permit the existing shared engine to run in a third, verification-only Supabase Edge context for bounded post-match replay. Live hot-seat and deterministic-lockstep network play remain browser-executed. A feasibility proof must establish Deno bundling and worst-case replay bounds before product implementation proceeds; failure must not be worked around with a duplicate engine.
+
+### SMARTS rationale
+Reliable and Testable require the server to reproduce the result from canonical inputs. Securable requires evidence stronger than the client-attested ceiling in ADR-0012. Maintainable favors one engine source over a second verifier implementation. Available avoids adding a per-turn network dependency, and Scalable is protected by bounded completion-time replay. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0013 governs Deno compatibility of `shared/`, the isolated verifier import boundary, engine-version selection, and the mandatory feasibility proof. It resolves the conflict between ADR-0001's exact two-context invariant and the approved verified-progression outcome.
+
+---
+
+## DECISION-0017 — ADR-0014 — Verify completed matches by bounded deterministic replay
+
+**Date:** 2026-08-10
+**Status:** accepted
+**Supersedes:** DECISION-0005
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly accepted the recommended completion-time deterministic replay design)
+**Decision category:** architecture / security / progression
+**Artifact-section-hash:** 732d4a165aee2e8d77b6339922a90d80dddc6ec2fe7d2bb27899c76c39261b97
+
+### Variance summary
+- **Artifact position:** ADR-0005 prohibits Edge Functions from importing or running the shared engine.
+- **Scaffold position:** Rank-eligible hot-seat needs an isolated server verifier that derives outcomes rather than trusting them.
+- **Status type:** divergent
+
+### Decision
+Keep live network referees thin, but add an Auth-owned Verified Deployment lifecycle whose completion endpoint replays a bounded canonical transcript with the session's server-owned deterministic contract. The server derives the result and atomically records verified progression. Only verified XP may drive ranks; ordinary offline hot-seat remains casual under ADR-0012.
+
+### SMARTS rationale
+Securable and Reliable dominate because rank evidence must be independently derived and idempotently awarded. Available preserves offline casual play and avoids per-action round trips. Maintainable and Testable favor a start/transcript/complete boundary with explicit versions and failure modes. Scalable requires TTLs, action caps, rate limits, and one active session per account. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0014 governs additive verification sessions, start and complete endpoints, transcript validation, transactional progression writes, and the separation of verified XP from casual history. Verification proves a valid transcript's outcome, not human or unaided play.
+
+---

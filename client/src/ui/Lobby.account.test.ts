@@ -13,11 +13,20 @@ class FakeAccountSession implements AccountSessionPort {
   readonly signOut = vi.fn(async () => undefined)
   readonly refresh = vi.fn(async () => undefined)
   readonly recordHotSeatMatch = vi.fn(async () => ({
-    progressionVersion: 1 as const,
-    totalXp: 200,
-    level: 1,
-    levelXp: 200,
-    nextLevelXp: 500,
+    prior: {
+      progressionVersion: 1 as const,
+      totalXp: 0,
+      level: 1,
+      levelXp: 0,
+      nextLevelXp: 500,
+    },
+    current: {
+      progressionVersion: 1 as const,
+      totalXp: 200,
+      level: 1,
+      levelXp: 200,
+      nextLevelXp: 500,
+    },
   }))
 
   constructor(private readonly onChange: (state: AccountState) => void) {}
@@ -192,7 +201,10 @@ describe('Lobby account composition', () => {
       won: true,
     }
 
-    await expect(lobby.recordHotSeatMatch(result)).resolves.toMatchObject({ totalXp: 200 })
+    await expect(lobby.recordHotSeatMatch(result)).resolves.toMatchObject({
+      prior: { totalXp: 0 },
+      current: { totalXp: 200 },
+    })
 
     expect(account.recordHotSeatMatch).toHaveBeenCalledWith(result)
   })

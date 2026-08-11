@@ -14,6 +14,46 @@ const validSummary: AccountSummary = {
   level: 3,
   levelXp: 200,
   nextLevelXp: 500,
+  verifiedProgression: {
+    evidence: 'verified_replay_v1',
+    matchesPlayed: 7,
+    wins: 3,
+    progressionVersion: 1,
+    totalXp: 1000,
+    level: 3,
+    levelXp: 0,
+    nextLevelXp: 500,
+  },
+}
+
+const casualSummary: AccountSummary = {
+  matchesPlayed: 8,
+  wins: 4,
+  progressionVersion: 1,
+  totalXp: 1200,
+  level: 3,
+  levelXp: 200,
+  nextLevelXp: 500,
+}
+
+const divergentSummary: AccountSummary = {
+  matchesPlayed: 50,
+  wins: 45,
+  progressionVersion: 1,
+  totalXp: 9500,
+  level: 20,
+  levelXp: 0,
+  nextLevelXp: 500,
+  verifiedProgression: {
+    evidence: 'verified_replay_v1',
+    matchesPlayed: 4,
+    wins: 1,
+    progressionVersion: 1,
+    totalXp: 500,
+    level: 2,
+    levelXp: 0,
+    nextLevelXp: 500,
+  },
 }
 
 function options(overrides: Partial<AccountPanelViewOptions> = {}): AccountPanelViewOptions {
@@ -157,14 +197,22 @@ describe('buildAccountPanelView', () => {
     expect(trigger.classList.contains('account-panel__account-trigger')).toBe(true)
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     expect(trigger.getAttribute('aria-label'))
-      .toBe('Commander Ranger, Level 3, 300 XP to Level 4. Player account')
+      .toBe('Commander Ranger, R-03 Bombardier, Level 3, 500 XP to Level 4, next rank Artillerist at Level 5. Player account')
     expect(record?.getAttribute('aria-label')).toBe('Commander dossier')
     expect(record?.querySelector('h2')?.textContent).toBe('COMMANDER DOSSIER')
     expect(trigger?.querySelector('.account-panel__commander-name')?.textContent).toBe('Ranger')
+    expect(trigger?.querySelector('.account-panel__commander-rank')?.textContent)
+      .toBe('R-03 / Bombardier')
+    const insignia = trigger?.querySelector('.account-panel__commander-insignia')
+    expect(insignia?.textContent).toBe('◆◆')
+    expect(insignia?.getAttribute('role')).toBe('img')
+    expect(insignia?.getAttribute('aria-label')).toBe('Bombardier rank insignia: double diamond')
     expect(trigger?.querySelector('.account-panel__commander-level')?.textContent).toBe('Level 3')
     expect(trigger?.querySelector('.account-panel__record-milestone')?.textContent)
-      .toBe('300 XP to Level 4')
-    expect(meter?.value).toBe(200)
+      .toBe('500 XP to Level 4')
+    expect(trigger?.querySelector('.account-panel__career-next')?.textContent)
+      .toBe('NEXT RANK / ARTILLERIST / LEVEL 5')
+    expect(meter?.value).toBe(0)
     expect(meter?.max).toBe(500)
     expect(meter?.getAttribute('aria-label')).toBe('Commander Ranger Level 3 XP progress')
     expect(root.classList.contains('account-panel--open')).toBe(false)
@@ -190,14 +238,63 @@ describe('buildAccountPanelView', () => {
     if (!record || !trigger) throw new Error('Expected trigger-only dossier disclosure')
     expect(trigger.getAttribute('aria-expanded')).toBe('true')
     expect(trigger.getAttribute('aria-label'))
-      .toBe('Commander Ranger, Level 3, 300 XP to Level 4. Player account')
+      .toBe('Commander Ranger, R-03 Bombardier, Level 3, 500 XP to Level 4, next rank Artillerist at Level 5. Player account')
     expect(trigger.querySelector('.account-panel__commander-name')?.textContent).toBe('Ranger')
+    expect(trigger.querySelector('.account-panel__commander-rank')?.textContent)
+      .toBe('R-03 / Bombardier')
     expect(trigger.querySelector('.account-panel__commander-level')?.textContent).toBe('Level 3')
     expect(trigger.querySelector('.account-panel__record-milestone')?.textContent)
-      .toBe('300 XP to Level 4')
+      .toBe('500 XP to Level 4')
+    expect(trigger.querySelector('.account-panel__career-next')?.textContent)
+      .toBe('NEXT RANK / ARTILLERIST / LEVEL 5')
     expect(root.querySelector('.account-panel__progress')).toBeNull()
     expect([...root.querySelectorAll('button')].some((candidate) => candidate.textContent === 'Sign out'))
       .toBe(false)
+  })
+
+  it('never renders rank identity from casual account progression alone', () => {
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary: casualSummary },
+    }
+    const collapsed = buildAccountPanelView(options({ state }))
+    const expanded = buildAccountPanelOverlayContent(options({ state, open: true }))
+    if (!collapsed || !expanded) throw new Error('Expected both account surfaces')
+
+    expect(collapsed.querySelector('.account-panel__commander-rank')).toBeNull()
+    expect(collapsed.querySelector('.account-panel__commander-insignia')).toBeNull()
+    expect(collapsed.querySelector('.account-panel__career-next')).toBeNull()
+    expect(collapsed.textContent).not.toMatch(/Cadet|Gunner|Bombardier|rank/i)
+    expect(expanded.querySelector('.account-panel__career')).toBeNull()
+    expect(expanded.textContent).not.toMatch(/Cadet|Gunner|Bombardier|rank/i)
+  })
+
+  it('builds every rank-facing metric from verified progression when casual history diverges', () => {
+    const state: AccountState = {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary: divergentSummary },
+    }
+    const collapsed = buildAccountPanelView(options({ state }))
+    const expanded = buildAccountPanelOverlayContent(options({ state, open: true }))
+    if (!collapsed || !expanded) throw new Error('Expected both account surfaces')
+
+    const trigger = collapsed.querySelector('.account-panel__account-trigger')
+    expect(trigger?.getAttribute('aria-label'))
+      .toBe('Commander Ranger, R-02 Gunner, Level 2, 500 XP to Level 3, next rank Bombardier at Level 3. Player account')
+    expect(trigger?.textContent).toContain('Level 2')
+    expect(trigger?.textContent).not.toContain('Level 20')
+    expect(progressPairs(expanded)).toEqual([
+      ['Matches', '4'],
+      ['Recorded wins', '1'],
+      ['Level', '2'],
+    ])
+    expect(expanded.querySelector('.account-panel__xp-value')?.textContent).toBe('0 / 500 XP')
+    expect(expanded.querySelector('.account-panel__xp-remaining')?.textContent).toBe('500 XP to Level 3')
+    expect(expanded.textContent).not.toContain('20')
   })
 
   it('renders semantic XP progress and exact remaining XP while preserving authenticated sign-out', () => {
@@ -220,16 +317,24 @@ describe('buildAccountPanelView', () => {
     expect(root.querySelector('.account-panel__account-trigger')).toBeNull()
     expect(root.querySelector('dl.account-panel__progress')).not.toBeNull()
     expect(progressPairs(root)).toEqual([
-      ['Matches', '8'],
-      ['Recorded wins', '4'],
+      ['Matches', '7'],
+      ['Recorded wins', '3'],
       ['Level', '3'],
     ])
+    const career = root.querySelector<HTMLElement>('.account-panel__career')
+    expect(career?.querySelector('.account-panel__career-current')?.textContent)
+      .toBe('R-03 / Bombardier')
+    expect(career?.querySelector('.account-panel__career-insignia')?.textContent).toBe('◆◆')
+    expect(career?.querySelector('.account-panel__career-insignia')?.getAttribute('aria-label'))
+      .toBe('Bombardier rank insignia: double diamond')
+    expect(career?.querySelector('.account-panel__career-next')?.textContent)
+      .toBe('Next rank: Artillerist at Level 5')
     const xp = root.querySelector('.account-panel__xp')
     const meter = xp?.querySelector('progress')
-    expect(xp?.querySelector('.account-panel__xp-value')?.textContent).toBe('200 / 500 XP')
-    expect(xp?.querySelector('.account-panel__xp-remaining')?.textContent).toBe('300 XP to Level 4')
+    expect(xp?.querySelector('.account-panel__xp-value')?.textContent).toBe('0 / 500 XP')
+    expect(xp?.querySelector('.account-panel__xp-remaining')?.textContent).toBe('500 XP to Level 4')
     expect(meter).toBeInstanceOf(HTMLProgressElement)
-    expect(meter?.value).toBe(200)
+    expect(meter?.value).toBe(0)
     expect(meter?.max).toBe(500)
     expect(meter?.getAttribute('aria-label')).toBe('Level 3 XP progress')
     expect(root.querySelector('form')).toBeNull()
@@ -239,7 +344,7 @@ describe('buildAccountPanelView', () => {
 
   it.each([
     ['a level boundary', {
-      ...validSummary,
+      ...casualSummary,
       matchesPlayed: 4,
       wins: 1,
       totalXp: 500,
@@ -247,7 +352,7 @@ describe('buildAccountPanelView', () => {
       levelXp: 0,
     }, '500 XP to Level 3'],
     ['the nearest reachable step below a level boundary', {
-      ...validSummary,
+      ...casualSummary,
       matchesPlayed: 2,
       wins: 2,
       totalXp: 400,
@@ -299,8 +404,8 @@ describe('buildAccountPanelView', () => {
       expect(first.querySelectorAll('[id]')).toHaveLength(0)
       expect(second.querySelectorAll('[id]')).toHaveLength(0)
       expect(progressPairs(first)).toEqual([
-        ['Matches', '8'],
-        ['Recorded wins', '4'],
+        ['Matches', '7'],
+        ['Recorded wins', '3'],
         ['Level', '3'],
       ])
       expect(second.querySelector('.account-panel__summary-unavailable')?.textContent)

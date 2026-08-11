@@ -20,16 +20,30 @@ async function installSummaryFixture(page: Page, available: boolean, open = true
       const commander = document.createElement('span');
       commander.className = 'account-panel__commander-name';
       commander.textContent = 'ABCDEFGHIJKLMNOPQRSTUVWX';
+      const rankRow = document.createElement('span');
+      rankRow.className = 'account-panel__commander-rank-row';
+      const insignia = document.createElement('span');
+      insignia.className = 'account-panel__commander-insignia';
+      insignia.setAttribute('role', 'img');
+      insignia.setAttribute('aria-label', 'Bombardier rank insignia: double diamond');
+      insignia.textContent = '◆◆';
+      const rank = document.createElement('span');
+      rank.className = 'account-panel__commander-rank';
+      rank.textContent = 'R-03 / Bombardier';
+      rankRow.append(insignia, rank);
       const level = document.createElement('span');
       level.className = 'account-panel__commander-level';
       level.textContent = 'Level 3';
       const milestone = document.createElement('span');
       milestone.className = 'account-panel__record-milestone';
       milestone.textContent = '300 XP to Level 4';
-      trigger.append(commander, level, milestone);
+      const nextRank = document.createElement('span');
+      nextRank.className = 'account-panel__career-next';
+      nextRank.textContent = 'NEXT RANK / ARTILLERIST / LEVEL 5';
+      trigger.append(commander, rankRow, level, milestone, nextRank);
       trigger.setAttribute(
         'aria-label',
-        'Commander ABCDEFGHIJKLMNOPQRSTUVWX, Level 3, 300 XP to Level 4. Player account',
+        'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account',
       );
     } else {
       trigger.textContent = 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
@@ -75,6 +89,23 @@ async function installSummaryFixture(page: Page, available: boolean, open = true
         summary.append(item);
       }
       panel.append(summary);
+
+      const career = document.createElement('section');
+      career.className = 'account-panel__career';
+      career.setAttribute('aria-label', 'Commander career rank');
+      const currentRank = document.createElement('strong');
+      currentRank.className = 'account-panel__career-current';
+      currentRank.textContent = 'R-03 / Bombardier';
+      const nextRank = document.createElement('span');
+      nextRank.className = 'account-panel__career-next';
+      nextRank.textContent = 'Next rank: Artillerist at Level 5';
+      const careerInsignia = document.createElement('span');
+      careerInsignia.className = 'account-panel__career-insignia';
+      careerInsignia.setAttribute('role', 'img');
+      careerInsignia.setAttribute('aria-label', 'Bombardier rank insignia: double diamond');
+      careerInsignia.textContent = '◆◆';
+      career.append(careerInsignia, currentRank, nextRank);
+      panel.append(career);
 
       const xp = document.createElement('div');
       xp.className = 'account-panel__xp';
@@ -193,6 +224,23 @@ test.describe('Account progression summary compact readability', () => {
     }
     await expectInside(summary, panel);
 
+    const career = panel.locator('.account-panel__career');
+    await expect(career).toHaveAttribute('aria-label', 'Commander career rank');
+    await expect(career.locator('.account-panel__career-current'))
+      .toHaveText('R-03 / Bombardier');
+    await expect(career.locator('.account-panel__career-insignia'))
+      .toHaveAttribute('aria-label', 'Bombardier rank insignia: double diamond');
+    await expect(career.locator('.account-panel__career-next'))
+      .toHaveText('Next rank: Artillerist at Level 5');
+    await expectInside(career, panel);
+    for (const careerText of await career.locator(
+      '.account-panel__career-insignia, .account-panel__career-current, .account-panel__career-next',
+    ).all()) {
+      const box = await renderedTextBox(careerText);
+      expect(box.height, 'career identity should retain at least 8 physical pixels')
+        .toBeGreaterThanOrEqual(8);
+    }
+
     const items = await summary.locator('.account-panel__progress-item').all();
     expect(items).toHaveLength(3);
     const boxes = await Promise.all(items.map((item) => item.boundingBox()));
@@ -250,9 +298,13 @@ test.describe('Account progression summary compact readability', () => {
     }
 
     const summaryBox = await summary.boundingBox();
+    const careerBox = await career.boundingBox();
     const xpBox = await xp.boundingBox();
     expect(summaryBox, 'summary should render').not.toBeNull();
+    expect(careerBox, 'career rank should render').not.toBeNull();
     expect(xpBox, 'XP section should render').not.toBeNull();
+    expect(boxesOverlap(summaryBox!, careerBox!), 'summary and career rank must not overlap').toBe(false);
+    expect(boxesOverlap(careerBox!, xpBox!), 'career rank and XP section must not overlap').toBe(false);
     expect(boxesOverlap(summaryBox!, xpBox!), 'summary and XP section must not overlap').toBe(false);
   });
 
@@ -280,14 +332,21 @@ test.describe('Account progression summary compact readability', () => {
     await expect(record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true })).toBeVisible();
     await expect(record.locator('progress')).toHaveAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX Level 3 XP progress');
     const commander = trigger.locator('.account-panel__commander-name');
+    const insignia = trigger.locator('.account-panel__commander-insignia');
+    const rank = trigger.locator('.account-panel__commander-rank');
     const level = trigger.locator('.account-panel__commander-level');
     const milestone = trigger.locator('.account-panel__record-milestone');
+    const nextRank = trigger.locator('.account-panel__career-next');
     await expect(commander).toHaveText('ABCDEFGHIJKLMNOPQRSTUVWX');
+    await expect(insignia).toHaveText('◆◆');
+    await expect(insignia).toHaveAttribute('aria-label', 'Bombardier rank insignia: double diamond');
+    await expect(rank).toHaveText('R-03 / Bombardier');
     await expect(level).toHaveText('Level 3');
     await expect(milestone).toHaveText('300 XP to Level 4');
+    await expect(nextRank).toHaveText('NEXT RANK / ARTILLERIST / LEVEL 5');
     expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
     expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
-    for (const text of [commander, level, milestone]) {
+    for (const text of [commander, insignia, rank, level, milestone, nextRank]) {
       const textBox = await renderedTextBox(text);
       const ownerBox = await trigger.boundingBox();
       expect(ownerBox, 'dossier disclosure should render').not.toBeNull();
@@ -295,6 +354,7 @@ test.describe('Account progression summary compact readability', () => {
       expect(textBox.y).toBeGreaterThanOrEqual(ownerBox!.y - 1);
       expect(textBox.x + textBox.width).toBeLessThanOrEqual(ownerBox!.x + ownerBox!.width + 1);
       expect(textBox.y + textBox.height).toBeLessThanOrEqual(ownerBox!.y + ownerBox!.height + 1);
+      expect(textBox.height, 'career copy must remain physically legible').toBeGreaterThanOrEqual(8);
     }
     const headingBox = await record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true }).boundingBox();
     const triggerBox = await trigger.boundingBox();
@@ -353,12 +413,15 @@ test.describe('Collapsed commander dossier front-door geometry', () => {
     const chooser = page.locator('.lobby-deployment-chooser');
     const trigger = panel.locator('.account-panel__account-trigger');
     const commander = trigger.locator('.account-panel__commander-name');
+    const insignia = trigger.locator('.account-panel__commander-insignia');
+    const rank = trigger.locator('.account-panel__commander-rank');
     const level = trigger.locator('.account-panel__commander-level');
     const milestone = trigger.locator('.account-panel__record-milestone');
+    const nextRank = trigger.locator('.account-panel__career-next');
 
     await expect(trigger).toHaveAttribute(
       'aria-label',
-      'Commander ABCDEFGHIJKLMNOPQRSTUVWX, Level 3, 300 XP to Level 4. Player account',
+      'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account',
     );
     expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
     expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
@@ -366,12 +429,13 @@ test.describe('Collapsed commander dossier front-door geometry', () => {
 
     const triggerBox = await trigger.boundingBox();
     expect(triggerBox, 'dossier disclosure should render').not.toBeNull();
-    for (const text of [commander, level, milestone]) {
+    for (const text of [commander, insignia, rank, level, milestone, nextRank]) {
       const textBox = await renderedTextBox(text);
       expect(textBox.x).toBeGreaterThanOrEqual(triggerBox!.x - 1);
       expect(textBox.y).toBeGreaterThanOrEqual(triggerBox!.y - 1);
       expect(textBox.x + textBox.width).toBeLessThanOrEqual(triggerBox!.x + triggerBox!.width + 1);
       expect(textBox.y + textBox.height).toBeLessThanOrEqual(triggerBox!.y + triggerBox!.height + 1);
+      expect(textBox.height, 'career copy must remain physically legible').toBeGreaterThanOrEqual(8);
     }
 
     const panelBox = await panel.boundingBox();

@@ -343,13 +343,13 @@ function bootstrap(): void {
       e2eMode: E2E_MODE === 'victory-anonymous' ? null : E2E_MODE,
       accountTankId: accountTank && !accountTank.ai ? accountTank.id : null,
       report: (result) => lobby.recordHotSeatMatch(result),
-      onRecorded: (result, summary) => {
+      onRecorded: (result, receipt) => {
         if (
           gameGeneration !== currentGameGeneration
           || client !== newClient
           || newClient.getState()?.phase !== 'GAME_OVER'
         ) return;
-        hud.setProgressionReceipt({ won: result.won, summary });
+        hud.setProgressionReceipt({ won: result.won, receipt });
       },
       onUnrecorded: () => {
         if (

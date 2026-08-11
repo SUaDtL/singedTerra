@@ -161,6 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [~] career.initiative.0001 - Deliver the Commander Career Loop as a sustained initiative: earned rank identity, trusted promotion payoff, tactical objectives, and a coherent reason to return.  (from standing improvement goal)  (started 2026-08-10)
 - [x] ux.hud.0002 - Show battlefield-safe tactical intel for every arsenal weapon on focus or selection across mouse, keyboard, and touch  (from post-remediation-adversarial-player-audit-2026-08-10)  (done 2026-08-10)
   - Boundaries: client, hud, weapon-presentation
 - [x] ux.pregame.0006 - Keep the full persistent commander identity, level, and next XP milestone legible in the pre-game command header across desktop and compact layouts without changing authentication or progression rules.  (from live-production-commander-dossier-audit-2026-08-10)  (done 2026-08-10)
