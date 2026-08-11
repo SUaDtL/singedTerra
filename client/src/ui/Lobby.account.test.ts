@@ -1,13 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   AccountCredentials,
   AccountMode,
   AccountState,
 } from '../client/AccountSession'
+import type {
+  DiagnosticCheckResult,
+  ProductionDiagnostics,
+  ProductionDiagnosticsReadiness,
+  ProductionDiagnosticsState,
+} from '../client/ProductionDiagnostics'
 import { Lobby, type AccountSessionPort } from './Lobby'
 
 class FakeAccountSession implements AccountSessionPort {
-  state: AccountState = { status: 'anonymous', busy: false, error: '' }
+  state: AccountState
   readonly initialize = vi.fn(async () => undefined)
   readonly submit = vi.fn(async (_mode: AccountMode, _credentials: AccountCredentials) => undefined)
   readonly signOut = vi.fn(async () => undefined)
@@ -29,13 +35,81 @@ class FakeAccountSession implements AccountSessionPort {
     },
   }))
 
-  constructor(private readonly onChange: (state: AccountState) => void) {}
+  constructor(
+    private readonly onChange: (state: AccountState) => void,
+    initialState: AccountState = { status: 'anonymous', busy: false, error: '' },
+  ) {
+    this.state = initialState
+  }
 
   emit(state: AccountState): void {
     this.state = state
     this.onChange(state)
   }
 }
+
+const DIAGNOSTIC_ID = 'verified-replay-runtime' as const
+const DIAGNOSTIC_LABEL = 'Verified replay runtime'
+
+class FakeProductionDiagnostics implements ProductionDiagnostics {
+  state: ProductionDiagnosticsState = { status: 'loading' }
+  readonly runChecks = vi.fn(async (): Promise<DiagnosticCheckResult> => {
+    const result: DiagnosticCheckResult = {
+      id: DIAGNOSTIC_ID,
+      label: DIAGNOSTIC_LABEL,
+      status: 'FAIL',
+      code: 'request_failed',
+    }
+    this.state = result
+    return result
+  })
+  readonly setReadiness = vi.fn((readiness: ProductionDiagnosticsReadiness) => {
+    if (readiness !== 'authenticated') this.state = { status: readiness }
+    else if (this.state.status !== 'PASS' && this.state.status !== 'FAIL') this.state = { status: 'IDLE' }
+  })
+  readonly dispose = vi.fn(() => {
+    this.state = { status: 'disposed' }
+  })
+}
+
+type DiagnosticsFactory = () => ProductionDiagnostics | Promise<ProductionDiagnostics>
+type LobbyWithDiagnostics = new (
+  root: HTMLElement,
+  onReady: (config: unknown) => void,
+  createAccountSession: (onChange: (state: AccountState) => void) => AccountSessionPort,
+  createDiagnostics: DiagnosticsFactory,
+) => Lobby
+
+function createLobbyWithDiagnostics(
+  root: HTMLElement,
+  accountFactory: (onChange: (state: AccountState) => void) => AccountSessionPort,
+  diagnosticsFactory: DiagnosticsFactory,
+): Lobby {
+  // Keep Task 7 executable as runtime RED while T8 introduces the fourth seam.
+  const Constructor = Lobby as unknown as LobbyWithDiagnostics
+  return new Constructor(root, vi.fn(), accountFactory, diagnosticsFactory)
+}
+
+function authenticatedState(): AccountState {
+  return {
+    status: 'authenticated',
+    busy: false,
+    error: '',
+    profile: { id: 'user-1', displayName: 'Ranger', summary: null },
+  }
+}
+
+let initialUrl = ''
+
+beforeEach(() => {
+  initialUrl = window.location.href
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  window.history.replaceState(null, '', initialUrl)
+  document.body.replaceChildren()
+})
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
   const match = [...root.querySelectorAll('button')]
@@ -236,5 +310,210 @@ describe('Lobby account composition', () => {
     expect(style.width).toBe('auto')
     expect(style.maxWidth).toBe('none')
     expect(style.marginLeft).toBe('0px')
+  })
+
+  it('does not construct or expose diagnostics for inactive or malformed URL activation', () => {
+    for (const value of ['0', 'true', '01', '']) {
+      window.history.replaceState(null, '', `/pregame?diagnostics=${value}`)
+      const root = document.createElement('div')
+      const diagnosticsFactory = vi.fn(() => new FakeProductionDiagnostics())
+      const lobby = createLobbyWithDiagnostics(
+        root,
+        (onChange) => new FakeAccountSession(onChange),
+        diagnosticsFactory,
+      )
+
+      lobby.show()
+
+      expect(diagnosticsFactory).not.toHaveBeenCalled()
+      expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
+      expect([...root.querySelectorAll('button')].some((candidate) => /diagnostic/i.test(candidate.textContent ?? ''))).toBe(false)
+      root.replaceChildren()
+    }
+  })
+
+  it('activates only on diagnostics=1 and maps account readiness into the modal', () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    let account!: FakeAccountSession
+    const diagnostics = new FakeProductionDiagnostics()
+    const diagnosticsFactory = vi.fn(() => diagnostics)
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => {
+        account = new FakeAccountSession(onChange, { status: 'loading', busy: true, error: '' })
+        return account
+      },
+      diagnosticsFactory,
+    )
+
+    lobby.show()
+
+    expect(diagnosticsFactory).toHaveBeenCalledOnce()
+    expect(diagnostics.setReadiness).toHaveBeenLastCalledWith('loading')
+    expect(root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] .production-diagnostics')?.dataset.diagnosticsState).toBe('loading')
+
+    account.emit({ status: 'anonymous', busy: false, error: '' })
+    expect(diagnostics.setReadiness).toHaveBeenLastCalledWith('anonymous')
+    expect(root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] .production-diagnostics')?.dataset.diagnosticsState).toBe('anonymous')
+    expect(root.textContent).toContain('Open Account')
+
+    account.emit({ status: 'authenticated-error', busy: false, error: 'redacted', userId: 'user-1' })
+    expect(diagnostics.setReadiness).toHaveBeenLastCalledWith('authenticated-error')
+    expect(root.textContent).toContain('Review Account')
+
+    account.emit(authenticatedState())
+    expect(diagnostics.setReadiness).toHaveBeenLastCalledWith('authenticated')
+    expect(root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] .production-diagnostics')?.dataset.diagnosticsState).toBe('IDLE')
+  })
+
+  it('waits for authenticated readiness, autoruns once, and survives account rerenders', async () => {
+    window.history.replaceState(null, '', '/pregame?keep=1&diagnostics=1&autorun=1#deck')
+    const root = document.createElement('div')
+    document.body.append(root)
+    let account!: FakeAccountSession
+    const diagnostics = new FakeProductionDiagnostics()
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => {
+        account = new FakeAccountSession(onChange, { status: 'loading', busy: true, error: '' })
+        return account
+      },
+      () => diagnostics,
+    )
+
+    lobby.show()
+    expect(diagnostics.runChecks).not.toHaveBeenCalled()
+
+    account.emit(authenticatedState())
+    await vi.waitFor(() => expect(diagnostics.runChecks).toHaveBeenCalledOnce())
+    expect(diagnostics.runChecks).toHaveBeenCalledOnce()
+    await vi.waitFor(() => expect(
+      root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] [data-diagnostics-state]')
+        ?.dataset.diagnosticsState,
+    ).toBe('FAIL'))
+
+    account.emit(authenticatedState())
+    account.emit(authenticatedState())
+    await Promise.resolve()
+    expect(diagnostics.runChecks).toHaveBeenCalledOnce()
+    expect(diagnostics.state.status).toBe('FAIL')
+    expect(root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] [data-diagnostics-state]')
+      ?.dataset.diagnosticsState).toBe('FAIL')
+  })
+
+  it('cancels a pending autorun when diagnostics closes and restores focus to a live lobby control', () => {
+    window.history.replaceState(null, '', '/pregame?keep=1&diagnostics=1&autorun=1#deck')
+    const root = document.createElement('div')
+    document.body.append(root)
+    let account!: FakeAccountSession
+    const diagnostics = new FakeProductionDiagnostics()
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => {
+        account = new FakeAccountSession(onChange, { status: 'loading', busy: true, error: '' })
+        return account
+      },
+      () => diagnostics,
+    )
+
+    lobby.show()
+    const detachedControl = [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((candidate) => candidate.textContent === 'Local Battle')
+    if (!detachedControl) throw new Error('Missing Local Battle control')
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    root.querySelector<HTMLButtonElement>('[aria-label="Production diagnostics"] .lobby-overlay__close')?.click()
+    account.emit(authenticatedState())
+
+    expect(diagnostics.runChecks).not.toHaveBeenCalled()
+    expect(diagnostics.dispose).toHaveBeenCalledOnce()
+    expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
+    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(0)
+    expect(root.querySelector('.lobby-card')?.hasAttribute('inert')).toBe(false)
+    expect(detachedControl.isConnected).toBe(false)
+    expect(document.activeElement).toBe([...root.querySelectorAll('button')].find((candidate) => candidate.textContent === 'Local Battle'))
+    expect(window.location.pathname).toBe('/pregame')
+    expect(window.location.search).toBe('?keep=1')
+    expect(window.location.hash).toBe('#deck')
+    expect(replaceState).toHaveBeenCalledOnce()
+  })
+
+  it('supports a pending lazy diagnostics factory without duplicate overlays or base-card replacement', async () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    let resolveFactory!: (value: ProductionDiagnostics) => void
+    const factoryPromise = new Promise<ProductionDiagnostics>((resolve) => { resolveFactory = resolve })
+    const diagnosticsFactory = vi.fn(() => factoryPromise)
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+      diagnosticsFactory,
+    )
+
+    lobby.show()
+    expect(diagnosticsFactory).toHaveBeenCalledOnce()
+    resolveFactory(diagnostics)
+
+    await vi.waitFor(() => expect(root.querySelector('[aria-label="Production diagnostics"]')).not.toBeNull())
+    expect(root.querySelectorAll('.lobby-card')).toHaveLength(1)
+    expect(root.querySelectorAll('.lobby-overlay')).toHaveLength(1)
+    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+  })
+
+  it('wires the manual run and copies only the sanitized receipt through the lobby integration', async () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    const writeText = vi.fn(async (_text: string) => undefined)
+    const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+
+    try {
+      const lobby = createLobbyWithDiagnostics(
+        root,
+        (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+        () => diagnostics,
+      )
+
+      lobby.show()
+      const run = root.querySelector<HTMLButtonElement>('.production-diagnostics__run')
+      if (!run) throw new Error('Missing diagnostics run control')
+      run.click()
+
+      await vi.waitFor(() => expect(diagnostics.runChecks).toHaveBeenCalledOnce())
+      await vi.waitFor(() => expect(
+        root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] .production-diagnostics')
+          ?.dataset.diagnosticsState,
+      ).toBe('FAIL'))
+
+      const copy = root.querySelector<HTMLButtonElement>('.production-diagnostics__copy')
+      if (!copy) throw new Error('Missing diagnostics copy control')
+      copy.click()
+
+      expect(writeText).toHaveBeenCalledOnce()
+      expect(writeText).toHaveBeenCalledWith(JSON.stringify({
+        schemaVersion: 1,
+        overall: 'FAIL',
+        results: [{
+          id: DIAGNOSTIC_ID,
+          label: DIAGNOSTIC_LABEL,
+          status: 'FAIL',
+          code: 'request_failed',
+        }],
+      }, null, 2))
+    } finally {
+      if (clipboardDescriptor) {
+        Object.defineProperty(navigator, 'clipboard', clipboardDescriptor)
+      } else {
+        delete (navigator as unknown as { clipboard?: unknown }).clipboard
+      }
+    }
   })
 })

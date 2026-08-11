@@ -30,6 +30,13 @@ or a general game server (ADR-0013). No `GameState` is ever shipped over the wir
 `coding-standards.md` for the determinism rules and layering; `tech-stack.md` for the
 stack; `security-controls.md` for the backend posture.
 
+The **authenticated production diagnostics console** is a maintainer/test interface activated
+only by the exact `diagnostics=1` query parameter and absent from normal player navigation. Its
+fixed compile-time allowlist currently contains only `verified-replay-runtime` mapped to
+`verified_replay_probe`; it accepts no body, headers, arbitrary endpoint, method, or request
+composition. It reuses the browser-managed Supabase session without becoming an authorization
+or gameplay authority. A production authenticated PASS is operational runtime evidence only.
+
 ## Primary users
 
 Casual players (the maintainer and friends) playing in a desktop or mobile browser.

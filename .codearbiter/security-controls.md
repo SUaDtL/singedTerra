@@ -17,6 +17,14 @@ Originally extracted from code 2026-06-20; account transition accepted 2026-08-0
 - **Hosted replay probe is non-awarding** - `verified_replay_probe` accepts no request body, validates exactly one account Bearer through Supabase Auth, and runs only two immutable server-owned workloads through the bounded shared replay adapter. It returns versioned derived outcomes only and MUST NOT read or write player, match, verification, progression, rank, reward, or entitlement state. The only database mutation on its request path is the existing operational per-IP limiter counter. A successful probe is runtime feasibility evidence, never rank evidence.
 - `profiles` contains only the Supabase user id, display name, and timestamps. It MUST NOT contain email, password material, access/refresh tokens, seat tokens, or client-reported progression. RLS default-denies anonymous access and limits authenticated reads to `id = auth.uid()`; profile insertion is server-trigger-owned in the identity-foundation slice.
 
+## Authenticated production diagnostics console
+
+- The **authenticated production diagnostics console** is a maintainer/test interface, activated only by the exact `diagnostics=1` query parameter and absent from normal player navigation. Its fixed compile-time allowlist currently contains only `verified-replay-runtime` mapped to `verified_replay_probe`; it has no body, headers, arbitrary endpoint, method, or request-composition inputs and MUST NOT evolve into a generic request runner.
+- The console lazily reuses the existing Supabase singleton and browser-managed session. It MUST NOT inspect Auth storage, call `auth.getSession`, extract tokens, accept credentials, or construct an `Authorization` header. URL activation and client account state are usability gates only; the Edge Function remains authoritative for authorization.
+- Diagnostics state, DOM, logs, URL values, and clipboard receipts use a schema-v1 sanitized projection. They exclude identity, tokens, raw responses, raw errors, request or response headers, and timing data. Only the already-sanitized receipt may be copied.
+- The console is non-awarding and non-mutating except for the pre-existing operational limiter counter on the probe request path. It makes no rank, reward, progression, entitlement, or gameplay claim.
+- Adding a check requires governance, a compile-time descriptor, exact response validation, bounded timeout and lifecycle handling, tests, and adversarial review. An authenticated production PASS is operational runtime evidence only, not proof of unrelated account, gameplay, persistence, progression, or reward behavior.
+
 ## Database access — the real control (RLS)
 
 The public game tables (`rooms`, `room_actions`, `match_scores`) have **RLS enabled** with a uniform posture:

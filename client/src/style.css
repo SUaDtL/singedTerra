@@ -727,3 +727,221 @@ body::before {
   .portrait-warn__device { animation: none; }
   #portrait-launch { transition: none; }
 }
+
+/* ===== Authenticated production diagnostics ============================
+ * The operator console shares the lobby overlay's hard-edged modal frame,
+ * then adds a compact command-deck hierarchy inside it. Keep the surface
+ * contained: diagnostics must never resize or reflow the pre-game stage.
+ */
+#lobby .production-diagnostics {
+  box-sizing: border-box;
+  min-width: 0;
+  color: rgba(255, 239, 205, 0.92);
+  font-family: var(--font-sans);
+}
+
+#lobby .production-diagnostics,
+#lobby .production-diagnostics * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#lobby .production-diagnostics__intro {
+  max-width: 760px;
+  margin: 0 0 var(--ui-space-4);
+  color: rgba(225, 214, 191, 0.72);
+  font-size: var(--ui-type-body);
+  line-height: 1.5;
+}
+
+#lobby .production-diagnostics__console {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+  gap: var(--ui-space-4);
+  align-items: start;
+}
+
+#lobby .production-diagnostics__column {
+  display: grid;
+  min-width: 0;
+  gap: var(--ui-space-3);
+}
+
+#lobby .production-diagnostics__column--receipt {
+  align-content: start;
+}
+
+#lobby .production-diagnostics__status,
+#lobby .production-diagnostics__check,
+#lobby .production-diagnostics__receipt {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid rgba(255, 188, 80, 0.28);
+  border-left: 3px solid rgba(255, 188, 80, 0.78);
+  background-color: rgba(7, 10, 12, 0.76);
+}
+
+#lobby .production-diagnostics__status {
+  display: grid;
+  gap: 6px;
+  padding: var(--ui-space-3);
+}
+
+#lobby .production-diagnostics__status-label,
+#lobby .production-diagnostics__check h3,
+#lobby .production-diagnostics__receipt-heading {
+  margin: 0;
+  color: rgba(255, 224, 159, 0.72);
+  font: 700 var(--ui-type-label)/1.2 var(--font-mono);
+  letter-spacing: 0.16em;
+}
+
+#lobby .production-diagnostics__status-value {
+  color: #ffe0a0;
+  font: 700 16px/1.25 var(--font-mono);
+}
+
+#lobby .production-diagnostics__check {
+  padding: var(--ui-space-3);
+}
+
+#lobby .production-diagnostics__check h3 {
+  margin-bottom: var(--ui-space-2);
+}
+
+#lobby .production-diagnostics__check-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ui-space-3);
+  align-items: baseline;
+}
+
+#lobby .production-diagnostics__check-line strong {
+  color: rgba(255, 239, 205, 0.96);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#lobby .production-diagnostics__check-line code {
+  color: var(--gold);
+  font: 700 11px/1.35 var(--font-mono);
+  text-align: right;
+}
+
+#lobby .production-diagnostics__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  align-items: center;
+}
+
+#lobby .production-diagnostics__actions button {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 188, 80, 0.64);
+  border-radius: 0;
+  color: #ffe0a0;
+  background-color: rgba(7, 10, 12, 0.9);
+  font: 700 12px/1.2 var(--font-sans);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#lobby .production-diagnostics__actions .production-diagnostics__run {
+  color: #160d2e;
+  background-color: var(--gold);
+}
+
+#lobby .production-diagnostics__actions button:hover:not(:disabled) {
+  border-color: #ffe9a8;
+}
+
+#lobby .production-diagnostics__actions button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+#lobby .production-diagnostics__actions button:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus);
+}
+
+#lobby .production-diagnostics__actions button:disabled {
+  color: rgba(225, 214, 191, 0.42);
+  border-color: rgba(255, 188, 80, 0.2);
+  background-color: rgba(7, 10, 12, 0.54);
+  cursor: not-allowed;
+}
+
+#lobby .production-diagnostics__receipt-heading {
+  padding-bottom: var(--ui-space-1);
+}
+
+#lobby .production-diagnostics__receipt {
+  border-left-color: var(--gold);
+}
+
+#lobby .production-diagnostics__receipt-data {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--ui-space-3);
+  overflow-x: auto;
+  color: rgba(255, 239, 205, 0.9);
+  font: 11px/1.45 var(--font-mono);
+  white-space: pre;
+}
+
+#lobby .production-diagnostics__receipt-placeholder,
+#lobby .production-diagnostics__copy-status {
+  display: block;
+  min-height: 18px;
+  color: rgba(225, 214, 191, 0.62);
+  font: 11px/1.45 var(--font-mono);
+}
+
+#lobby .production-diagnostics__receipt-placeholder {
+  padding: var(--ui-space-3);
+}
+
+#lobby .production-diagnostics__copy-status {
+  color: var(--gold);
+}
+
+@media (max-width: 700px) {
+  #lobby .production-diagnostics__console {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  #lobby .production-diagnostics__console {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.82fr);
+    gap: var(--ui-space-3);
+  }
+
+  #lobby .production-diagnostics__column {
+    gap: var(--ui-space-2);
+  }
+
+  #lobby .production-diagnostics__intro {
+    margin-bottom: var(--ui-space-2);
+  }
+
+  #lobby .production-diagnostics__status,
+  #lobby .production-diagnostics__check {
+    padding: var(--ui-space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lobby .production-diagnostics__actions button {
+    transition: none;
+  }
+
+  #lobby .production-diagnostics,
+  #lobby .production-diagnostics__receipt,
+  #lobby .production-diagnostics__receipt-data {
+    scroll-behavior: auto;
+  }
+}

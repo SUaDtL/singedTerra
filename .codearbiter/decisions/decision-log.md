@@ -491,3 +491,35 @@ ADR-0015 governs the hosted probe function, replay import boundary, request limi
 **Corrects:** DECISION-0018 status metadata only
 
 DECISION-0018 incorrectly recorded ADR-0015 as accepted. SUaDtL explicitly approved the sanctioned ADR route and this bounded non-awarding implementation, but did not explicitly advance the ADR lifecycle. The canonical ADR frontmatter and Status section remain proposed. This correction does not withdraw the authorized feasibility slice or alter its no-write boundary; it removes the contradictory acceptance claim from the effective audit record.
+## DECISION-0019 - ADR-0016 - Provide an allowlisted authenticated production diagnostics console
+
+**Date:** 2026-08-11
+**Status:** accepted
+**Supersedes:** none
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly chose the durable testing interface over a one-use console command)
+**Decision category:** architecture / security / production verification
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** The hosted replay probe required authenticated production proof but deliberately added no player-facing client surface.
+- **Scaffold position:** The maintainer requires repeatable authenticated production checks without credential extraction and expects more checks later.
+- **Status type:** open-decision-closure
+
+### Decision
+Add a URL-activated client diagnostics console that uses the existing browser-managed Supabase session. Checks are compile-time allowlisted, body and header shapes are fixed, responses are strictly validated, and receipts are secret-free. The console is not ordinary player navigation and cannot become a generic request runner.
+
+### SMARTS rationale
+Securable rejects browser-storage extraction and arbitrary request composition. Reliable and Testable favor one repeatable application path with exact schemas, timeouts, stale-run isolation, and browser automation. Maintainable and Scalable favor a small registry that can add reviewed checks without redesign. Available improves because production verification no longer depends on the maintainer manually handling a credential.
+
+### Implementation implication
+ADR-0016 governs the diagnostics runner, modal view, lobby activation seam, Auth-state handoff, security documentation, and browser production proof. Future checks must extend the allowlist and clear the same security and review gates.
+
+---
+
+## CORRECTION-0019 - DECISION-0019 append formatting
+
+**Date:** 2026-08-11
+**Type:** audit formatting correction
+**Corrects:** DECISION-0019 record separation only
+
+DECISION-0019 was appended without a separating blank line or terminal newline. Its text and semantics remain authoritative and unchanged; this append-only correction records the formatting defect without rewriting audit history.

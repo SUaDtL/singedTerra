@@ -21,6 +21,10 @@ import { buildLobbyOnlineView, buildLobbyShellView } from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildAccountPanelOverlayContent, buildAccountPanelView } from './AccountPanelView';
 import { buildLobbyOverlayView } from './LobbyOverlayView';
+import {
+  buildProductionDiagnosticsView,
+  type ProductionDiagnosticsCopyStatus,
+} from './ProductionDiagnosticsView';
 import { buildRoomInviteUrl, readRoomInviteCode } from './roomInvite';
 import {
   LobbyTransport,
@@ -42,6 +46,15 @@ import {
   type AccountMode,
   type AccountState,
 } from '../client/AccountSession';
+import {
+  PRODUCTION_DIAGNOSTIC_CHECKS,
+  createProductionDiagnostics,
+  productionDiagnosticsReceiptForState,
+  type DiagnosticCheckResult,
+  type ProductionDiagnostics,
+  type ProductionDiagnosticsReadiness,
+  type ProductionDiagnosticsState,
+} from '../client/ProductionDiagnostics';
 import type {
   HotSeatMatchResult,
   HotSeatProgressionReceipt,
@@ -246,6 +259,21 @@ type AccountSessionFactory = (
   onChange: (state: AccountState) => void,
 ) => AccountSessionPort;
 
+export type ProductionDiagnosticsFactory = (
+) => ProductionDiagnostics | Promise<ProductionDiagnostics>;
+
+const defaultProductionDiagnosticsFactory: ProductionDiagnosticsFactory = async () => {
+  const { supabase } = await import('../lib/supabase');
+  return createProductionDiagnostics(supabase, { readiness: 'loading' });
+};
+
+const DIAGNOSTICS_LOCAL_FAILURE: DiagnosticCheckResult = Object.freeze({
+  id: PRODUCTION_DIAGNOSTIC_CHECKS[0].id,
+  label: PRODUCTION_DIAGNOSTIC_CHECKS[0].label,
+  status: 'FAIL',
+  code: 'request_failed',
+});
+
 /**
  * Lobby is the pre-game DOM overlay (SPEC §3): pick the number of players,
  * enter names, and choose a unique color per player from a fixed palette.
@@ -261,6 +289,19 @@ export class Lobby {
   private readonly accountSession: AccountSessionPort;
   private accountPanelOpen = false;
   private accountMode: AccountMode = 'sign-in';
+  private readonly createDiagnostics: ProductionDiagnosticsFactory;
+  private diagnosticsIntentActive = false;
+  private diagnosticsAutorunRequested = false;
+  private diagnosticsAutorunStarted = false;
+  private diagnosticsFactoryStarted = false;
+  private diagnosticsGeneration = 0;
+  private diagnostics: ProductionDiagnostics | undefined;
+  private diagnosticsFallbackState: ProductionDiagnosticsState | undefined;
+  private diagnosticsCopyStatus: ProductionDiagnosticsCopyStatus = 'idle';
+  private diagnosticsCopyGeneration = 0;
+  private diagnosticsRunGeneration = 0;
+  private diagnosticsLastReadiness: ProductionDiagnosticsReadiness | undefined;
+  private diagnosticsSawAuthenticatedAccount = false;
 
   /** Working state for the player rows (defaults Player 1..N + palette order). */
   private players: PlayerRowState[] = [];
@@ -341,12 +382,22 @@ export class Lobby {
     root: HTMLElement,
     onReady: (config: LobbyConfig) => void,
     createAccountSession: AccountSessionFactory = (onChange) => new AccountSession(onChange),
+    createDiagnostics: ProductionDiagnosticsFactory = defaultProductionDiagnosticsFactory,
   ) {
     this.root = root;
     this.onReady = onReady;
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
+    this.createDiagnostics = createDiagnostics;
+    const diagnosticsParams = new URL(window.location.href).searchParams;
+    this.diagnosticsIntentActive = diagnosticsParams.get('diagnostics') === '1';
+    this.diagnosticsAutorunRequested = this.diagnosticsIntentActive
+      && diagnosticsParams.get('autorun') === '1';
+    if (this.diagnosticsIntentActive) {
+      this.settingsOpen = false;
+      this.openGarageOwner = null;
+    }
     const inviteCode = readRoomInviteCode(window.location.href);
     if (inviteCode) {
       this.surface = 'preparation';
@@ -358,8 +409,237 @@ export class Lobby {
 
   private renderForAccountChange(): void {
     const restoreFocus = this.accountPanelOpen;
+    const restoreLocalBattleFocus = document.activeElement instanceof HTMLButtonElement
+      && this.root.contains(document.activeElement)
+      && document.activeElement.textContent === 'Local Battle';
+    this.syncDiagnosticsReadiness();
+    this.maybeAutorunDiagnostics();
     this.render();
     if (restoreFocus) this.focusAccountOverlay();
+    else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
+  }
+
+  private diagnosticsReadiness(): ProductionDiagnosticsReadiness {
+    const status = this.accountSession.state.status;
+    if (status === 'authenticated') {
+      this.diagnosticsSawAuthenticatedAccount = true;
+      return 'authenticated';
+    }
+    if (status === 'anonymous' && this.diagnosticsSawAuthenticatedAccount) return 'signed-out';
+    return status;
+  }
+
+  private syncDiagnosticsReadiness(): void {
+    if (!this.diagnosticsIntentActive || !this.diagnostics) return;
+    const readiness = this.diagnosticsReadiness();
+    if (readiness !== this.diagnosticsLastReadiness) {
+      this.diagnosticsLastReadiness = readiness;
+      this.diagnosticsCopyGeneration += 1;
+      this.diagnosticsCopyStatus = 'idle';
+      if (readiness !== 'authenticated') this.diagnosticsRunGeneration += 1;
+    }
+    try {
+      this.diagnostics.setReadiness(readiness);
+      this.diagnosticsFallbackState = undefined;
+    } catch {
+      this.diagnosticsRunGeneration += 1;
+      this.diagnosticsFallbackState = { status: 'unavailable' };
+    }
+  }
+
+  private startDiagnostics(): void {
+    if (!this.diagnosticsIntentActive || this.diagnosticsFactoryStarted) return;
+    this.diagnosticsFactoryStarted = true;
+    this.diagnosticsFallbackState = { status: 'loading' };
+    const generation = ++this.diagnosticsGeneration;
+
+    let created: ProductionDiagnostics | Promise<ProductionDiagnostics>;
+    try {
+      created = this.createDiagnostics();
+    } catch {
+      this.failDiagnosticsFactory(generation);
+      return;
+    }
+
+    let then: unknown;
+    try {
+      then = (created as PromiseLike<ProductionDiagnostics>).then;
+    } catch {
+      this.failDiagnosticsFactory(generation);
+      return;
+    }
+    if (typeof then !== 'function') {
+      this.acceptDiagnostics(created as ProductionDiagnostics, generation);
+      return;
+    }
+
+    void Promise.resolve(created).then(
+      (diagnostics) => { this.acceptDiagnostics(diagnostics, generation); },
+      () => { this.failDiagnosticsFactory(generation); },
+    );
+  }
+
+  private acceptDiagnostics(diagnostics: ProductionDiagnostics, generation: number): void {
+    if (!this.diagnosticsIntentActive || generation !== this.diagnosticsGeneration) {
+      try { diagnostics.dispose(); } catch { /* late diagnostics stay discarded */ }
+      return;
+    }
+    this.diagnostics = diagnostics;
+    this.diagnosticsLastReadiness = undefined;
+    this.diagnosticsFallbackState = undefined;
+    this.syncDiagnosticsReadiness();
+    this.maybeAutorunDiagnostics();
+    this.render();
+  }
+
+  private failDiagnosticsFactory(generation: number): void {
+    if (!this.diagnosticsIntentActive || generation !== this.diagnosticsGeneration) return;
+    this.diagnosticsFallbackState = { status: 'unavailable' };
+    this.render();
+  }
+
+  private diagnosticsState(): ProductionDiagnosticsState {
+    if (this.diagnosticsFallbackState) return this.diagnosticsFallbackState;
+    try {
+      return this.diagnostics?.state ?? { status: 'loading' };
+    } catch {
+      return { status: 'unavailable' };
+    }
+  }
+
+  private maybeAutorunDiagnostics(): void {
+    if (
+      !this.diagnosticsIntentActive
+      || !this.diagnosticsAutorunRequested
+      || this.diagnosticsAutorunStarted
+      || !this.diagnostics
+      || this.diagnosticsFallbackState !== undefined
+      || this.accountSession.state.status !== 'authenticated'
+    ) return;
+    this.diagnosticsAutorunStarted = true;
+    this.runDiagnostics();
+  }
+
+  private runDiagnostics(): void {
+    if (!this.diagnosticsIntentActive || !this.diagnostics) return;
+    this.diagnosticsCopyGeneration += 1;
+    this.diagnosticsCopyStatus = 'idle';
+    this.diagnosticsFallbackState = undefined;
+    const runGeneration = ++this.diagnosticsRunGeneration;
+    let run: Promise<DiagnosticCheckResult>;
+    try {
+      run = this.diagnostics.runChecks();
+    } catch {
+      this.diagnosticsFallbackState = DIAGNOSTICS_LOCAL_FAILURE;
+      this.render();
+      return;
+    }
+    this.render();
+    const generation = this.diagnosticsGeneration;
+    void Promise.resolve(run).then(
+      () => {
+        if (
+          !this.diagnosticsIntentActive
+          || generation !== this.diagnosticsGeneration
+          || runGeneration !== this.diagnosticsRunGeneration
+        ) return;
+        this.render();
+      },
+      () => {
+        if (
+          !this.diagnosticsIntentActive
+          || generation !== this.diagnosticsGeneration
+          || runGeneration !== this.diagnosticsRunGeneration
+        ) return;
+        this.diagnosticsFallbackState = DIAGNOSTICS_LOCAL_FAILURE;
+        this.render();
+      },
+    );
+  }
+
+  private copyDiagnosticsReceipt(): void {
+    const receipt = productionDiagnosticsReceiptForState(this.diagnosticsState());
+    if (!receipt) {
+      this.diagnosticsCopyStatus = 'failed';
+      this.render();
+      return;
+    }
+
+    const copyGeneration = ++this.diagnosticsCopyGeneration;
+    let copy: Promise<void>;
+    try {
+      const clipboard = navigator.clipboard;
+      if (!clipboard?.writeText) throw new Error('Clipboard unavailable');
+      copy = clipboard.writeText(JSON.stringify(receipt, null, 2));
+    } catch {
+      this.diagnosticsCopyStatus = 'failed';
+      this.render();
+      return;
+    }
+    void Promise.resolve(copy).then(
+      () => {
+        if (
+          !this.diagnosticsIntentActive
+          || copyGeneration !== this.diagnosticsCopyGeneration
+        ) return;
+        this.diagnosticsCopyStatus = 'copied';
+        this.render();
+      },
+      () => {
+        if (
+          !this.diagnosticsIntentActive
+          || copyGeneration !== this.diagnosticsCopyGeneration
+        ) return;
+        this.diagnosticsCopyStatus = 'failed';
+        this.render();
+      },
+    );
+  }
+
+  private openAccountFromDiagnostics(): void {
+    if (!this.diagnosticsIntentActive) return;
+    this.settingsOpen = false;
+    this.openGarageOwner = null;
+    this.accountMode = 'sign-in';
+    this.accountPanelOpen = true;
+    this.render();
+    this.focusAccountOverlay();
+  }
+
+  private closeDiagnostics(): void {
+    if (!this.diagnosticsIntentActive) return;
+    this.diagnosticsIntentActive = false;
+    this.diagnosticsAutorunRequested = false;
+    this.diagnosticsGeneration += 1;
+    this.diagnosticsRunGeneration += 1;
+    this.diagnosticsCopyGeneration += 1;
+    const diagnostics = this.diagnostics;
+    this.diagnostics = undefined;
+    this.diagnosticsLastReadiness = undefined;
+    this.diagnosticsFallbackState = undefined;
+    this.diagnosticsCopyStatus = 'idle';
+    try { diagnostics?.dispose(); } catch { /* disposal is terminal and local */ }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('diagnostics');
+    url.searchParams.delete('autorun');
+    try {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${url.pathname}${url.search}${url.hash}`,
+      );
+    } catch {
+      // The diagnostics lifecycle still closes if a hostile history shim fails.
+    }
+    this.render();
+  }
+
+  private diagnosticsReturnFocus(): HTMLElement | null {
+    return [...this.root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Local Battle')
+      ?? this.root.querySelector<HTMLButtonElement>('.account-panel button')
+      ?? this.root.querySelector<HTMLButtonElement>('button');
   }
 
   private focusAccountOverlay(): void {
@@ -453,6 +733,7 @@ export class Lobby {
    */
   show(): void {
     this.injectStyle();
+    this.startDiagnostics();
     this.render();
     this.root.hidden = false;
     void this.accountSession.initialize();
@@ -508,6 +789,8 @@ export class Lobby {
 
   showAccountSignIn(): void {
     this.accountMode = 'sign-in';
+    this.settingsOpen = false;
+    this.openGarageOwner = null;
     this.accountPanelOpen = true;
     this.render();
     this.focusAccountOverlay();
@@ -2530,13 +2813,16 @@ export class Lobby {
       mode: this.accountMode,
       onOpen: () => {
         this.settingsOpen = false;
+        this.openGarageOwner = null;
         this.accountPanelOpen = true;
         this.render();
       },
       onClose: () => {
         this.accountPanelOpen = false;
         this.render();
-        this.root.querySelector<HTMLButtonElement>('.account-panel button')?.focus();
+        if (!this.diagnosticsIntentActive) {
+          this.root.querySelector<HTMLButtonElement>('.account-panel button')?.focus();
+        }
       },
       onModeChange: (mode: AccountMode) => {
         this.accountMode = mode;
@@ -2549,12 +2835,15 @@ export class Lobby {
       onSignOut: () => { void this.accountSession.signOut(); },
     });
 
+    const accountPanel = buildAccountPanelView(accountOptions(this.accountPanelOpen, true));
+    if (this.diagnosticsIntentActive) accountPanel?.removeAttribute('aria-label');
+
     const card = buildLobbyShellView({
       activeTab: this.activeTab,
       surface: this.surface,
       showBack: !(this.activeTab === 'online' && this.onlineSubView === 'waiting'),
       rejoinAvailable: this.rejoinCandidate !== null,
-      account: buildAccountPanelView(accountOptions(this.accountPanelOpen, true)),
+      account: accountPanel,
       vehiclePreview,
       content,
       controls: this.renderControlsLegend(),
@@ -2592,8 +2881,17 @@ export class Lobby {
           onClose: accountOptions(true).onClose,
         }));
       }
-    }
-    if (this.settingsOpen) {
+    } else if (this.diagnosticsIntentActive) {
+      this.root.append(buildProductionDiagnosticsView({
+        state: this.diagnosticsState(),
+        copyStatus: this.diagnosticsCopyStatus,
+        onRun: () => { this.runDiagnostics(); },
+        onCopyReceipt: () => { this.copyDiagnosticsReceipt(); },
+        onOpenAccount: () => { this.openAccountFromDiagnostics(); },
+        onClose: () => { this.closeDiagnostics(); },
+        resolveReturnFocus: () => this.diagnosticsReturnFocus(),
+      }));
+    } else if (this.settingsOpen) {
       const advanced = this.renderAdvancedOverlay();
       if (advanced) {
         this.root.append(buildLobbyOverlayView({
@@ -2609,9 +2907,11 @@ export class Lobby {
         }));
       }
     }
-    const activeGarage = this.root.querySelector<HTMLElement>(
+    const activeGarage = !this.accountPanelOpen && !this.diagnosticsIntentActive
+      ? this.root.querySelector<HTMLElement>(
       '.lobby-garage.editing',
-    );
+      )
+      : null;
     if (activeGarage) {
       this.root.querySelectorAll<HTMLElement>(
         'button, input, select, textarea, summary, a[href]',
