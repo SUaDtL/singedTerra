@@ -17,6 +17,7 @@ import { resolveInitialArsenalCollapsed } from './arsenalPreference';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
 import { STORE_CATALOG } from './storeCatalog';
 import { makeWeaponIcon } from './weaponIcons';
+import { WEAPON_INTEL } from './weaponIntel';
 import {
   clearTankLoadoutPreview,
   paintTankLoadoutPreview,
@@ -208,7 +209,22 @@ export class HUD {
   /** Collapse/expand control for the arsenal strip + its persisted state. */
   private stripToggleEl!: HTMLButtonElement;
   private stripToggleLabelEl!: HTMLElement;
+  private stripBodyEl!: HTMLElement;
   private stripCollapsed = false;
+  private weaponIntelEl!: HTMLElement;
+  private weaponIntelNameEl!: HTMLElement;
+  private weaponIntelAmmoEl!: HTMLElement;
+  private weaponIntelRoleEl!: HTMLElement;
+  private weaponIntelTerrainEl!: HTMLElement;
+  private weaponIntelDamageEl!: HTMLElement;
+  private weaponIntelUseCaseEl!: HTMLElement;
+  private selectedIntelWeapon: WeaponType = 'baby_missile';
+  private focusedIntelWeapon: WeaponType | null = null;
+  private pointedIntelWeapon: WeaponType | null = null;
+  private intelInputMode: 'keyboard' | 'pointer' = 'keyboard';
+  private pointerIntelFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+  private renderedIntelWeapon: WeaponType | null = null;
+  private renderedIntelAmmo: string | null = null;
   private storeBtnEl!: HTMLButtonElement;
   private storeBtnLabelEl!: HTMLElement;
   private commandConsoleEl!: HTMLElement;
@@ -999,12 +1015,56 @@ export class HUD {
     stripHeader.append(stripTitle, stripToggle);
     this.stripToggleEl = stripToggle;
     this.stripToggleLabelEl = stripToggleLabel;
+    const stripBody = document.createElement('div');
+    stripBody.className = 'st-hud__strip-body';
+    stripBody.id = `st-hud-arsenal-drawer-${HUD.arsenalDrawerSequence++}`;
+    this.stripBodyEl = stripBody;
     const stripGrid = document.createElement('div');
     stripGrid.className = 'st-hud__strip-grid';
-    stripGrid.id = `st-hud-arsenal-drawer-${HUD.arsenalDrawerSequence++}`;
+    stripGrid.id = `${stripBody.id}-grid`;
     stripGrid.setAttribute('role', 'region');
     stripGrid.setAttribute('aria-label', 'Weapon arsenal');
-    stripToggle.setAttribute('aria-controls', stripGrid.id);
+    stripToggle.setAttribute('aria-controls', stripBody.id);
+    const intel = document.createElement('section');
+    intel.className = 'st-hud__weapon-intel';
+    intel.id = `${stripGrid.id}-intel`;
+    intel.setAttribute('role', 'status');
+    intel.setAttribute('aria-live', 'polite');
+    intel.setAttribute('aria-atomic', 'true');
+    intel.tabIndex = 0;
+    const intelHeader = document.createElement('div');
+    intelHeader.className = 'st-hud__weapon-intel-header';
+    const intelName = document.createElement('h3');
+    intelName.className = 'st-hud__weapon-intel-name';
+    intelName.id = `${intel.id}-heading`;
+    intel.setAttribute('aria-labelledby', intelName.id);
+    const intelAmmo = document.createElement('span');
+    intelAmmo.className = 'st-hud__weapon-intel-ammo';
+    intelHeader.append(intelName, intelAmmo);
+    const makeIntelField = (label: string, field: keyof typeof WEAPON_INTEL.baby_missile) => {
+      const row = document.createElement('p');
+      row.className = 'st-hud__weapon-intel-field';
+      row.dataset['intelField'] = field;
+      const term = document.createElement('span');
+      term.className = 'st-hud__weapon-intel-label';
+      term.textContent = label;
+      const value = document.createElement('span');
+      value.className = 'st-hud__weapon-intel-value';
+      row.append(term, value);
+      return { row, value };
+    };
+    const role = makeIntelField('Role', 'role');
+    const terrain = makeIntelField('Terrain', 'terrain');
+    const damage = makeIntelField('Effect', 'damage');
+    const useCase = makeIntelField('Use', 'useCase');
+    intel.append(intelHeader, role.row, terrain.row, damage.row, useCase.row);
+    this.weaponIntelEl = intel;
+    this.weaponIntelNameEl = intelName;
+    this.weaponIntelAmmoEl = intelAmmo;
+    this.weaponIntelRoleEl = role.value;
+    this.weaponIntelTerrainEl = terrain.value;
+    this.weaponIntelDamageEl = damage.value;
+    this.weaponIntelUseCaseEl = useCase.value;
     for (const type of STRIP_WEAPONS) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1016,13 +1076,52 @@ export class HUD {
       const ammoSpan = document.createElement('span');
       ammoSpan.className = 'st-hud__weapon-btn-ammo';
       btn.append(makeWeaponIcon(type, 14), nameSpan, ammoSpan);
+      btn.setAttribute('aria-describedby', intel.id);
       // Capture `type` per-iteration (for-of/const). Listener attached once.
-      btn.addEventListener('click', () => this.weaponSelectCb?.(type));
+      btn.addEventListener('focus', () => {
+        this.focusedIntelWeapon = type;
+        if (this.intelInputMode === 'keyboard') this.renderWeaponIntel();
+      });
+      btn.addEventListener('blur', () => {
+        if (this.focusedIntelWeapon === type) this.focusedIntelWeapon = null;
+        this.renderWeaponIntel();
+      });
+      btn.addEventListener('pointerdown', () => {
+        this.cancelPointerIntelFallback();
+        this.intelInputMode = 'pointer';
+        this.pointedIntelWeapon = null;
+      });
+      btn.addEventListener('pointermove', (event) => {
+        if (event.pointerType === 'touch') return;
+        this.cancelPointerIntelFallback();
+        if (this.pointedIntelWeapon === type) return;
+        this.pointedIntelWeapon = type;
+        this.renderWeaponIntel();
+      });
+      btn.addEventListener('pointerleave', (event) => {
+        if (event.pointerType === 'touch') return;
+        if (this.pointedIntelWeapon === type) this.pointedIntelWeapon = null;
+        this.cancelPointerIntelFallback();
+        this.pointerIntelFallbackTimer = setTimeout(() => {
+          this.pointerIntelFallbackTimer = null;
+          if (this.pointedIntelWeapon === null) this.renderWeaponIntel();
+        }, 0);
+      });
+      btn.addEventListener('click', () => {
+        this.selectedIntelWeapon = type;
+        this.renderWeaponIntel();
+        this.weaponSelectCb?.(type);
+      });
       this.weaponCells.set(type, { el: btn, ammo: ammoSpan });
       stripGrid.append(btn);
     }
-    this.stripEl.append(stripHeader, stripGrid);
+    stripBody.append(intel, stripGrid);
+    this.stripEl.append(stripHeader, stripBody);
     this.stripEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab' || event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
+        this.intelInputMode = 'keyboard';
+        this.renderWeaponIntel();
+      }
       if (event.key !== 'Escape' || this.stripCollapsed) return;
       event.preventDefault();
       event.stopPropagation();
@@ -1034,6 +1133,45 @@ export class HUD {
     const stored = readStoredArsenalPreference();
     this.stripCollapsed = resolveInitialArsenalCollapsed(stored);
     this.applyStripCollapsed();
+  }
+
+  /** Render the active preview without rebuilding the dossier DOM. */
+  private renderWeaponIntel(): void {
+    const type = this.intelInputMode === 'keyboard'
+      ? this.focusedIntelWeapon ?? this.pointedIntelWeapon ?? this.selectedIntelWeapon
+      : this.pointedIntelWeapon ?? this.focusedIntelWeapon ?? this.selectedIntelWeapon;
+    const definition = WEAPONS[type];
+    const intel = WEAPON_INTEL[type];
+    const ammo = `Ammo ${this.weaponCells.get(type)?.ammo.textContent ?? '0'}`;
+    if (this.renderedIntelWeapon !== type) {
+      this.weaponIntelEl.dataset['weapon'] = type;
+      this.weaponIntelNameEl.textContent = definition.name;
+      this.weaponIntelRoleEl.textContent = intel.role;
+      this.weaponIntelTerrainEl.textContent = intel.terrain;
+      this.weaponIntelDamageEl.textContent = intel.damage;
+      this.weaponIntelUseCaseEl.textContent = intel.useCase;
+      this.weaponIntelEl.scrollTop = 0;
+      this.renderedIntelWeapon = type;
+    }
+    if (this.renderedIntelAmmo !== ammo) {
+      this.weaponIntelAmmoEl.textContent = ammo;
+      this.renderedIntelAmmo = ammo;
+    }
+  }
+
+  /** Drop transient comparison state whenever the drawer or active loadout changes. */
+  private resetWeaponIntelPreview(): void {
+    this.cancelPointerIntelFallback();
+    this.focusedIntelWeapon = null;
+    this.pointedIntelWeapon = null;
+    this.intelInputMode = 'keyboard';
+  }
+
+  /** Coalesce pointerleave/pointermove into one comparison announcement. */
+  private cancelPointerIntelFallback(): void {
+    if (this.pointerIntelFallbackTimer === null) return;
+    clearTimeout(this.pointerIntelFallbackTimer);
+    this.pointerIntelFallbackTimer = null;
   }
 
   /** Store toggle button (side panel) + the store modal (on the modal layer). */
@@ -2446,6 +2584,7 @@ export class HUD {
 
   /** Reflect the collapsed state onto the strip DOM + toggle affordance. */
   private applyStripCollapsed(): void {
+    this.resetWeaponIntelPreview();
     this.stripEl.classList.toggle('st-hud__strip--collapsed', this.stripCollapsed);
     this.stripEl.classList.toggle('st-hud__strip--open', !this.stripCollapsed);
     this.stripToggleEl.setAttribute('aria-expanded', String(!this.stripCollapsed));
@@ -2454,6 +2593,9 @@ export class HUD {
       this.stripCollapsed ? 'Expand arsenal' : 'Collapse arsenal',
     );
     this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Expand' : 'Close';
+    this.stripBodyEl.hidden = this.stripCollapsed;
+    this.weaponIntelEl.hidden = this.stripCollapsed;
+    this.renderWeaponIntel();
     for (const child of [...this.root.children]) {
       if (child !== this.stripEl) (child as HTMLElement).inert = !this.stripCollapsed;
     }
@@ -2475,6 +2617,8 @@ export class HUD {
     const selectedInventory = tank?.inventory[tank.selectedWeapon];
     const selectedUsable = !!selectedInventory &&
       (selectedInventory.unlimited || selectedInventory.count > 0);
+    const previousSelected = this.selectedIntelWeapon;
+    if (tank) this.selectedIntelWeapon = tank.selectedWeapon;
     for (const [type, cell] of this.weaponCells) {
       const entry = tank?.inventory[type];
       const unlimited = entry?.unlimited ?? false;
@@ -2496,6 +2640,16 @@ export class HUD {
       // this is UX only.)
       cell.el.disabled = !canAct || depleted;
     }
+    const previewIsHidden = (type: WeaponType | null) => type !== null &&
+      this.weaponCells.get(type)?.el.classList.contains('st-hud__weapon-btn--hidden');
+    if (
+      previousSelected !== this.selectedIntelWeapon ||
+      previewIsHidden(this.focusedIntelWeapon) ||
+      previewIsHidden(this.pointedIntelWeapon)
+    ) {
+      this.resetWeaponIntelPreview();
+    }
+    this.renderWeaponIntel();
     // Sync the shared primary action and touch weapon stepper from the same
     // explicit local-ownership state.
     for (const button of this.touchCommandBtns) {
@@ -3294,10 +3448,23 @@ export class HUD {
 .st-hud__strip--open .st-hud__strip-toggle .st-ui-icon {
   transform: rotate(180deg);
 }
+.st-hud__strip-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 5px;
+  overflow: hidden;
+}
+.st-hud__strip-body[hidden] { display: none; }
 .st-hud__strip-grid {
   display: grid;
+  flex: 1 1 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 /* Collapsed: fold the button grid away, keep the header + toggle. */
 .st-hud__strip--collapsed .st-hud__strip-grid { display: none; }
@@ -3376,6 +3543,84 @@ export class HUD {
   font-variant-numeric: tabular-nums;
   color: var(--text-gold);
   opacity: 0.9;
+}
+.st-hud__weapon-intel {
+  display: grid;
+  box-sizing: border-box;
+  flex: 0 0 180px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 9px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(122, 215, 255, 0.3);
+  border-radius: var(--ui-radius-sm);
+  background:
+    linear-gradient(135deg, rgba(122, 215, 255, 0.08), transparent 52%),
+    rgba(7, 6, 13, 0.86);
+  box-shadow: inset 0 0 18px rgba(122, 215, 255, 0.04);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.st-hud__weapon-intel[hidden] { display: none; }
+.st-hud__weapon-intel-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.2);
+}
+.st-hud__weapon-intel-name {
+  color: var(--gold);
+  font-family: var(--font-display);
+  margin: 0;
+  font-size: var(--st-weapon-intel-name-size, 12px);
+  letter-spacing: 0.7px;
+}
+.st-hud__weapon-intel-ammo {
+  color: var(--tank-blue-lite, #7ad7ff);
+  font-family: var(--font-mono);
+  font-size: var(--st-weapon-intel-ammo-size, 9px);
+  white-space: nowrap;
+}
+.st-hud__weapon-intel-field {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  margin: 0;
+}
+.st-hud__weapon-intel-label {
+  color: var(--ui-muted);
+  font-family: var(--font-mono);
+  font-size: var(--st-weapon-intel-label-size, 7px);
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.st-hud__weapon-intel-value {
+  color: var(--ui-copy);
+  font-family: var(--font-sans);
+  font-size: var(--st-weapon-intel-value-size, 9px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+#app.is-compact .st-hud__weapon-intel {
+  box-sizing: border-box;
+  flex: 0 0 210px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px 7px;
+  padding: 6px 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#app.is-compact .st-hud__weapon-intel-name {
+  font-size: var(--st-weapon-intel-name-size, 12px);
+}
+#app.is-compact .st-hud__weapon-intel-value {
+  font-size: var(--st-weapon-intel-value-size, 9px);
+  line-height: 1.15;
 }
 /* First Salvo stays compact and non-modal: the card is pointer-transparent; only Skip receives pointer input. */
 .st-hud__first-salvo {
@@ -4440,7 +4685,9 @@ export class HUD {
   .st-hud__conn { top: 176px; }
   .st-hud__toast { top: 214px; }
   .st-hud__turnwatch { top: 252px; }
-  .st-hud__weapon-btn { min-height: 44px; }
+  /* The fixed stage scales to ~0.488 on Pixel 5 landscape. Match the drawer
+     toggle's authored 91px floor so weapon choices remain >=44 rendered px. */
+  .st-hud__weapon-btn { min-height: 91px; }
   .st-hud__strip-toggle { min-width: 91px; min-height: 91px; }
   .st-hud__store-buy { min-height: 44px; }
   .st-hud__store-catalog .st-hud__store-buy {

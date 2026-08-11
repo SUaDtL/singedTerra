@@ -716,6 +716,12 @@ function bootstrap(): void {
     appEl.style.setProperty('--st-command-choice-target', `${commandChoiceTarget}px`);
     const deploymentChoiceTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
     appEl.style.setProperty('--st-deployment-choice-target', `${deploymentChoiceTarget}px`);
+    // The arsenal dossier lives inside the zoomed stage. Keep its tactical copy
+    // above physical readability floors instead of shrinking it to 3-6px on phones.
+    appEl.style.setProperty('--st-weapon-intel-name-size', `${Math.max(12, Math.ceil(12 / s))}px`);
+    appEl.style.setProperty('--st-weapon-intel-ammo-size', `${Math.max(9, Math.ceil(10 / s))}px`);
+    appEl.style.setProperty('--st-weapon-intel-label-size', `${Math.max(7, Math.ceil(9 / s))}px`);
+    appEl.style.setProperty('--st-weapon-intel-value-size', `${Math.max(9, Math.ceil(11 / s))}px`);
     appEl.classList.toggle('is-compact', s < COMPACT_SCALE);
   }
   window.addEventListener('resize', updateScale);

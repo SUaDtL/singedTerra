@@ -378,6 +378,7 @@ body::before {
   left: 12px;
   z-index: 20;
   width: auto;
+  height: calc(100% - 24px);
   max-height: calc(100% - 24px);
   margin: 0;
   padding: var(--ui-space-3);

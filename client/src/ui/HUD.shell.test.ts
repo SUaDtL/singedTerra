@@ -173,14 +173,18 @@ describe('HUD single-screen combat shell', () => {
     const root = mount();
     const strip = root.querySelector<HTMLElement>('.st-hud__strip')!;
     const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+    const body = root.querySelector<HTMLElement>('.st-hud__strip-body')!;
     const grid = root.querySelector<HTMLElement>('.st-hud__strip-grid')!;
+    const intel = root.querySelector<HTMLElement>('.st-hud__weapon-intel')!;
 
     expect(strip.classList.contains('st-hud__strip--collapsed')).toBe(true);
     expect(strip.getAttribute('data-ui')).toBe('arsenal-drawer');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(toggle.getAttribute('aria-label')).toBe('Expand arsenal');
     expect(toggle.textContent).toContain('Expand');
-    expect(toggle.getAttribute('aria-controls')).toBe(grid.id);
+    expect(toggle.getAttribute('aria-controls')).toBe(body.id);
+    expect(body.contains(grid)).toBe(true);
+    expect(body.contains(intel)).toBe(true);
     expect(grid.id).not.toBe('');
     expect(grid.getAttribute('role')).toBe('region');
     expect(grid.getAttribute('aria-label')).toBe('Weapon arsenal');
@@ -213,14 +217,17 @@ describe('HUD single-screen combat shell', () => {
   it('keeps each drawer control relationship unique across HUD instances', () => {
     const first = mount();
     const second = mount();
+    const firstBody = first.querySelector<HTMLElement>('.st-hud__strip-body')!;
+    const secondBody = second.querySelector<HTMLElement>('.st-hud__strip-body')!;
     const firstGrid = first.querySelector<HTMLElement>('.st-hud__strip-grid')!;
     const secondGrid = second.querySelector<HTMLElement>('.st-hud__strip-grid')!;
 
+    expect(firstBody.id).not.toBe(secondBody.id);
     expect(firstGrid.id).not.toBe(secondGrid.id);
     expect(first.querySelector('.st-hud__strip-toggle')?.getAttribute('aria-controls'))
-      .toBe(firstGrid.id);
+      .toBe(firstBody.id);
     expect(second.querySelector('.st-hud__strip-toggle')?.getAttribute('aria-controls'))
-      .toBe(secondGrid.id);
+      .toBe(secondBody.id);
   });
 
   it('preserves weapon selection and store behavior through the shell controls', () => {
