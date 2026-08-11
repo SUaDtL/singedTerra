@@ -753,6 +753,35 @@ describe('Lobby account composition', () => {
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('')
   })
 
+  it.each([
+    ['loading', { status: 'loading', busy: false, error: '' }],
+    ['unavailable', { status: 'unavailable', busy: false, error: '' }],
+    ['anonymous', { status: 'anonymous', busy: false, error: '' }],
+    ['authenticated-error', {
+      status: 'authenticated-error', busy: false, error: 'Profile unavailable.', userId: 'user-2',
+    }],
+  ] as const)('clears profile-derived identity for %s without clearing a user override', (_label, nextState) => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    lobby.show()
+    button(root, 'Play Online').click()
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Ranger')
+
+    account.emit(nextState)
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('')
+
+    account.emit(authenticatedState())
+    const name = root.querySelector<HTMLInputElement>('.lobby-name')!
+    name.value = 'Chosen Ranger'
+    name.dispatchEvent(new Event('input', { bubbles: true }))
+    account.emit(nextState)
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Chosen Ranger')
+  })
+
   it('shows an over-limit account name intact so the player can correct it explicitly', () => {
     const root = document.createElement('div')
     const displayName = 'Commander Longname 1234'

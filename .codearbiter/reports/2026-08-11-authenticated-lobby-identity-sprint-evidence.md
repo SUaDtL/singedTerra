@@ -38,3 +38,16 @@ Leibniz returned BLOCK with two High and one Medium merge-blocking findings. Two
 Corrected exact-state verification is complete: focused Lobby/HUD 82/82 PASS; full client 156 files / 1,368 tests PASS; `npm run check` PASS; Edge 310/310 PASS; typecheck and production build PASS; dependency audit reports zero vulnerabilities; rendered victory matrix 6/6 PASS; `git diff --check` PASS with line-ending warnings only. The remaining audit-integrity blocker is addressed by reconciling these results here and in the append-only sprint log, then regenerating the complete tracked/untracked freeze for narrow exact-state re-review.
 
 Leibniz independently reproduced the audit-reconciled tracked diff object, shortstat, complete untracked set, and all non-self-referential hashes. Final verdict: PASS with zero Critical, High, Medium, Low, or merge-blocking findings. Browse provenance, authenticated-error privacy, transport behavior, authorization separation, and victory-handoff behavior remained correct. T-06 is ACCEPTED and T-07 delivery is IN PROGRESS.
+
+## Committed-head coverage correction
+
+The PR coverage auditor held delivery after commit `f070ece436d1dead069d2b2b5a92047a8a4f9f5e` because four behaviors were not directly mutation-resistant: join-form override provenance, every non-authenticated account transition, the exact 20/24-character boundaries, and authenticated create/join requests without manual name input. The correction adds only tests; production behavior is unchanged.
+
+- All four non-authenticated states now prove profile-derived data clears while user overrides survive.
+- Create and join now prove the authenticated profile name reaches transport without name input.
+- Join-form edits now prove refresh and sign-out cannot clobber user provenance before transport.
+- Exactly 20 characters now prove transport acceptance; an exact 24-character profile remains visible and is rejected locally without fetch.
+- Mutation proof changed both production guards from `> 20` to `>= 20`; the two exact-20 tests failed, then passed after restoration. `client/src/ui/Lobby.ts` has no correction diff.
+- Corrected focused Lobby/HUD result: 92/92 PASS.
+
+The coverage auditor reproduced exact correction diff object `4dff4ccb5206690f1196c24fbcb108ff404b196e` and returned PASS with zero Critical, High, Medium, Low, or merge-blocking findings. All four committed-head gaps are closed. Fresh corrected verification passed focused Lobby/HUD 92/92, full client 1,378/1,378, `npm run check`, Edge 310/310, typecheck and production build, zero-vulnerability dependency audit, and `git diff --check` with line-ending warnings only.

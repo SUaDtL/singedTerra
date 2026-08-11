@@ -132,6 +132,37 @@ async function flush(): Promise<void> {
   await Promise.resolve();
 }
 
+function accountBackedLobby(root: HTMLElement, displayName = 'Ranger'): {
+  lobby: Lobby;
+  emit: (state: AccountState) => void;
+} {
+  let state: AccountState = {
+    status: 'authenticated', busy: false, error: '',
+    profile: { id: 'user-1', displayName, summary: null },
+  };
+  let emit!: (next: AccountState) => void;
+  const lobby = new Lobby(root, vi.fn(), (onChange) => {
+    const account: AccountSessionPort = {
+      get state() { return state; },
+      initialize: vi.fn(async () => undefined),
+      submit: vi.fn(async () => undefined),
+      signOut: vi.fn(async () => undefined),
+      refresh: vi.fn(async () => undefined),
+      recordHotSeatMatch: vi.fn(async () => null),
+    };
+    emit = (next) => { state = next; onChange(next); };
+    return account;
+  });
+  return { lobby, emit };
+}
+
+function clickLobbyButton(root: HTMLElement, text: string): void {
+  const match = [...root.querySelectorAll<HTMLButtonElement>('button')]
+    .find((candidate) => candidate.textContent === text);
+  if (!match) throw new Error(`Missing ${text} button`);
+  match.click();
+}
+
 // ---- Suite ------------------------------------------------------------------
 
 describe('Lobby network layer (characterization of the 7 Edge-Function actions)', () => {
@@ -170,6 +201,19 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
   // 1. create_room  (handleCreateRoom)
   // ========================================================================
   describe('create_room', () => {
+    it('sends the authenticated profile name without requiring name input', async () => {
+      const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
+      const accountRoot = document.createElement('div');
+      const { lobby: accountLobby } = accountBackedLobby(accountRoot);
+      accountLobby.show();
+      clickLobbyButton(accountRoot, 'Play Online');
+
+      clickLobbyButton(accountRoot, 'Create operation');
+      await flush();
+
+      expect(callAt(fetchMock).body).toMatchObject({ playerName: 'Ranger' });
+    });
+
     it('associates the side-wall label and hint with its select', () => {
       lobby.show();
       const playOnline = Array.from(root.querySelectorAll('button'))
@@ -231,6 +275,30 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
       expect(fetchMock).not.toHaveBeenCalled();
       expect(internals(lobby).onlineError).toBe('Name must be 20 characters or fewer.');
+    });
+
+    it('BOUNDARY: exactly 20 characters reaches create transport', async () => {
+      const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
+      internals(lobby).onlineName = 'x'.repeat(20);
+
+      await internals(lobby).handleCreateRoom();
+
+      expect(callAt(fetchMock).body).toMatchObject({ playerName: 'x'.repeat(20) });
+    });
+
+    it('BOUNDARY: an exact 24-character profile stays intact and is rejected locally', async () => {
+      const fetchMock = stubFetch();
+      const accountRoot = document.createElement('div');
+      const displayName = 'x'.repeat(24);
+      const { lobby: accountLobby } = accountBackedLobby(accountRoot, displayName);
+      accountLobby.show();
+      clickLobbyButton(accountRoot, 'Play Online');
+
+      expect(accountRoot.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe(displayName);
+      clickLobbyButton(accountRoot, 'Create operation');
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(accountRoot.textContent).toContain('Name must be 20 characters or fewer.');
     });
 
     it('REQUEST (minimal): omits every conditional field — only maxPlayers + visibility', async () => {
@@ -473,6 +541,48 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
   // 2. join_room  (handleJoinRoom -> joinByCode)
   // ========================================================================
   describe('join_room', () => {
+    it('sends the authenticated profile name without requiring name input', async () => {
+      const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
+      const accountRoot = document.createElement('div');
+      const { lobby: accountLobby } = accountBackedLobby(accountRoot);
+      accountLobby.show();
+      clickLobbyButton(accountRoot, 'Play Online');
+      clickLobbyButton(accountRoot, 'Join with a code');
+      const code = accountRoot.querySelector<HTMLInputElement>('.lobby-code-input')!;
+      code.value = 'WXYZ';
+      code.dispatchEvent(new Event('input', { bubbles: true }));
+
+      clickLobbyButton(accountRoot, 'Join Room');
+      await flush();
+
+      expect(callAt(fetchMock).body).toMatchObject({ code: 'WXYZ', playerName: 'Ranger' });
+    });
+
+    it('keeps a join-form override through refresh and sign-out and sends it to transport', async () => {
+      const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
+      const accountRoot = document.createElement('div');
+      const { lobby: accountLobby, emit } = accountBackedLobby(accountRoot);
+      accountLobby.show();
+      clickLobbyButton(accountRoot, 'Play Online');
+      clickLobbyButton(accountRoot, 'Join with a code');
+      const name = accountRoot.querySelector<HTMLInputElement>('.lobby-name')!;
+      name.value = 'Join Ranger';
+      name.dispatchEvent(new Event('input', { bubbles: true }));
+      emit({
+        status: 'authenticated', busy: false, error: '',
+        profile: { id: 'user-1', displayName: 'Ranger Prime', summary: null },
+      });
+      emit({ status: 'anonymous', busy: false, error: '' });
+      const code = accountRoot.querySelector<HTMLInputElement>('.lobby-code-input')!;
+      code.value = 'WXYZ';
+      code.dispatchEvent(new Event('input', { bubbles: true }));
+
+      clickLobbyButton(accountRoot, 'Join Room');
+      await flush();
+
+      expect(callAt(fetchMock).body).toMatchObject({ code: 'WXYZ', playerName: 'Join Ranger' });
+    });
+
     it('GUARD: an invalid (short) code sets the error and never calls fetch', async () => {
       const fetchMock = stubFetch();
       internals(lobby).joinCode = 'AB'; // < 4 chars
@@ -504,6 +614,16 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
       expect(fetchMock).not.toHaveBeenCalled();
       expect(internals(lobby).onlineError).toBe('Name must be 20 characters or fewer.');
+    });
+
+    it('BOUNDARY: exactly 20 characters reaches join transport', async () => {
+      const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
+      internals(lobby).joinCode = 'WXYZ';
+      internals(lobby).onlineName = 'x'.repeat(20);
+
+      await internals(lobby).handleJoinRoom();
+
+      expect(callAt(fetchMock).body).toMatchObject({ playerName: 'x'.repeat(20) });
     });
 
     it('REQUEST: POSTs { code (upper-cased), playerName, color }', async () => {

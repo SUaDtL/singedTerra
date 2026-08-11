@@ -32,6 +32,10 @@ Corrected untracked artifact SHA-256 manifest, excluding only this self-referent
 
 The complete untracked set is exactly those three artifacts plus this package. The reviewer must independently reproduce the tracked diff object, shortstat, untracked set, and three non-self-referential hashes before returning a verdict.
 
+## Post-commit coverage correction target
+
+The initial implementation is commit `f070ece436d1dead069d2b2b5a92047a8a4f9f5e`. Before PR delivery, review the complete correction with `git diff HEAD -- client/src/ui/Lobby.account.test.ts client/src/ui/Lobby.network.test.ts .codearbiter/reports/2026-08-11-authenticated-lobby-identity-sprint-evidence.md .codearbiter/reports/2026-08-11-authenticated-lobby-identity-final-review-package.md .codearbiter/sprint-log.md`. This correction adds coverage and audit evidence only; production diff from that commit is empty. The focused corrected result is 92/92, and the exact-20 guard mutation fails both boundary tests before restoration. Full corrected verification passed client 1,378/1,378, `npm run check`, Edge 310/310, typecheck/build, zero-vulnerability audit, and diff hygiene. The coverage auditor returned PASS with zero findings and closed all four committed-head merge blockers. One final audit-only adversarial confirmation is required against the regenerated correction identity.
+
 ## Adversarial contract
 
 Judge as if prior approval proves nothing. Attack account/gameplay authorization confusion, name provenance races, stale account refreshes, sign-out privacy, user-override clobbering, 20-vs-24-character boundaries, create/join transport behavior, hidden-state CSS, anonymous regression, focus/layout behavior, mutation resistance, and audit integrity. Report Critical, High, Medium, Low, and an explicit merge-blocking verdict. Every Critical, High, and other merge blocker must be resolved before delivery.
