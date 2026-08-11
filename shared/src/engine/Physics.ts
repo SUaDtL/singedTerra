@@ -1,8 +1,8 @@
-import type { ProjectileState, TankState } from '../types/GameState';
-import type { WallMode } from '../types/GameOptions';
-import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain';
-import { TANK_WIDTH, TANK_HEIGHT } from './Tank';
-import { clamp } from './math';
+import type { ProjectileState, TankState } from '../types/GameState.ts';
+import type { WallMode } from '../types/GameOptions.ts';
+import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain.ts';
+import { TANK_WIDTH, TANK_HEIGHT } from './Tank.ts';
+import { clamp } from './math.ts';
 
 /**
  * Deterministic projectile physics (SPEC §4.2). Fixed 16ms timestep so hot-seat

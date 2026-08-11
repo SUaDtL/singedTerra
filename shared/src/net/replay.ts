@@ -1,5 +1,5 @@
-import type { GameEngine } from '../engine/GameEngine';
-import type { WeaponType, AccessoryType } from '../engine/WeaponSystem';
+import type { GameEngine } from '../engine/GameEngine.ts';
+import type { WeaponType, AccessoryType } from '../engine/WeaponSystem.ts';
 
 /**
  * The networked action log contract — the SHARED source of truth.

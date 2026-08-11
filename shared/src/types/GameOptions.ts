@@ -1,7 +1,7 @@
-import type { AiDifficulty } from './GameState';
-import type { TankLoadout } from './TankLoadout';
-import type { TerrainHazardMode } from '../engine/Terrain';
-export type { TerrainHazardMode } from '../engine/Terrain';
+import type { AiDifficulty } from './GameState.ts';
+import type { TankLoadout } from './TankLoadout.ts';
+import type { TerrainHazardMode } from '../engine/Terrain.ts';
+export type { TerrainHazardMode } from '../engine/Terrain.ts';
 
 /** Horizontal battlefield boundary rule. */
 export type WallMode = 'open' | 'reflective' | 'wrap' | 'concrete';

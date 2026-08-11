@@ -1,4 +1,4 @@
-import type { WeaponType, AccessoryType } from '../engine/WeaponSystem';
+import type { WeaponType, AccessoryType } from '../engine/WeaponSystem.ts';
 
 /**
  * Discriminated union of all player inputs (SPEC §4.3 / §5). Sent by clients as

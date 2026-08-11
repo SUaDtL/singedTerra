@@ -1,12 +1,12 @@
-import type { TankState, AmmoEntry, AiDifficulty } from '../types/GameState';
-import { normalizeTeamId, type GameOptions, type TeamId } from '../types/GameOptions';
-import type { AccessoryType, WeaponType } from './WeaponSystem';
+import type { TankState, AmmoEntry, AiDifficulty } from '../types/GameState.ts';
+import { normalizeTeamId, type GameOptions, type TeamId } from '../types/GameOptions.ts';
+import type { AccessoryType, WeaponType } from './WeaponSystem.ts';
 import {
   normalizeTankLoadout,
   type TankLoadout,
-} from '../types/TankLoadout';
-import { STARTING_CREDITS } from './WeaponSystem';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from './Terrain';
+} from '../types/TankLoadout.ts';
+import { STARTING_CREDITS } from './WeaponSystem.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from './Terrain.ts';
 
 /** Tank bounding-box dimensions (px) used for collision (SPEC §4.2). */
 export const TANK_WIDTH = 20;

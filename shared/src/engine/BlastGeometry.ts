@@ -1,4 +1,4 @@
-import type { ExplosionStyle } from '../types/GameState';
+import type { ExplosionStyle } from '../types/GameState.ts';
 
 export const BLAST_REACH = 1.8;
 export const CLUSTER_REACH = 1.4;

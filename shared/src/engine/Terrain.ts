@@ -16,7 +16,7 @@
  * seed always yields identical terrain.
  */
 
-import { clamp } from './math';
+import { clamp } from './math.ts';
 
 export const CANVAS_WIDTH = 1200;
 export const CANVAS_HEIGHT = 600;

@@ -4,14 +4,14 @@ import type {
   GameState,
   ProjectileState,
   TankState,
-} from '../types/GameState';
-import type { PlayerAction } from '../types/PlayerAction';
+} from '../types/GameState.ts';
+import type { PlayerAction } from '../types/PlayerAction.ts';
 import {
   normalizeWallMode,
   type GameOptions,
   type StarterWeaponFalloff,
   type TeamId,
-} from '../types/GameOptions';
+} from '../types/GameOptions.ts';
 import {
   generate,
   buildBitmap,
@@ -26,7 +26,7 @@ import {
   pixelAt,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-} from './Terrain';
+} from './Terrain.ts';
 import {
   placeTwoTanks,
   placeTanks,
@@ -35,8 +35,8 @@ import {
   TANK_HEIGHT,
   TANK_WIDTH,
   BARREL_LENGTH,
-} from './Tank';
-import { clamp } from './math';
+} from './Tank.ts';
+import { clamp } from './math.ts';
 import {
   launchVelocity,
   stepProjectile,
@@ -52,7 +52,7 @@ import {
   WIND_DRIFT_STEP,
   MAX_DAMAGE,
   GRAVITY,
-} from './Physics';
+} from './Physics.ts';
 import {
   getWeapon,
   type WeaponType,
@@ -70,10 +70,10 @@ import {
   PARACHUTE_PRICE,
   PARACHUTE_BUNDLE_SIZE,
   PARACHUTE_ARMS_LEVEL,
-} from './WeaponSystem';
-import { createRng } from './Random';
-import { blastReachRadius } from './BlastGeometry';
-import { resolveTankMove } from './Movement';
+} from './WeaponSystem.ts';
+import { createRng } from './Random.ts';
+import { blastReachRadius } from './BlastGeometry.ts';
+import { resolveTankMove } from './Movement.ts';
 
 function playersAreFour(players: GameOptions['players']): boolean {
   return Array.isArray(players) && players.length === 4;

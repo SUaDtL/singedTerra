@@ -81,3 +81,11 @@ Suppressing a false signed-out CTA and removing redundant host/join name entry f
 ## Exact-head CI, merge, deployment, and production health
 
 Pending.
+
+### Append-only delivery update — 2026-08-11
+
+- Reviewed PR head: `af5618a4e904c8cf13094765c68103aca91e2f35`.
+- Hosted checks on that exact head: typecheck/harness/build PASS; Edge PASS; E2E rendering PASS; CodeQL analysis PASS; CodeQL PASS; CodeRabbit status PASS with automated review skipped because repository auto-reviews are disabled. Supabase Preview was skipped and is not counted as an executed green check.
+- PR #399 merged by squash as `78ff8b7c9b28fa1f3b4507981f6e67a7d39400b7`. The reviewed head and merge commit both resolve to tree `1783c4f012f4b5e2539715d9b4f9ac9848e4ee2e`, proving exact content equivalence despite squash ancestry.
+- Deployment command targeted linked project `jdvxfxjpobtyasozxauh` through the authenticated local Supabase CLI. Asset upload completed, but hosted bundling rejected an extensionless relative import in `shared/src/engine/GameEngine.ts`; no function version was deployed.
+- Production success-path health remains pending until the bounded hosted-bundle correction is reviewed, merged, and deployed. The failed deployment validates the spec's named bundler-risk assumption and is being corrected test-first through `$ca-fix`.

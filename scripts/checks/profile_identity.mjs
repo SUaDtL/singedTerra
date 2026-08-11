@@ -1,9 +1,9 @@
 // Contract check for ADR-0011's password-auth and owner-only profile foundation.
 // Run: node scripts/checks/profile_identity.mjs
 
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
@@ -158,6 +158,125 @@ function normalizeStatement(statement) {
   return statement.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
+const typescriptModuleExtensions = ['.ts', '.tsx', '.mts', '.cts'];
+
+function collectRelativeModuleSpecifiers(source) {
+  const specifiers = [];
+
+  function literalModuleText(node) {
+    if (node !== undefined && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))) {
+      return node.text;
+    }
+    return undefined;
+  }
+
+  function visit(node) {
+    let specifier;
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      specifier = node.moduleSpecifier;
+    } else if (
+      ts.isCallExpression(node)
+      && node.expression.kind === ts.SyntaxKind.ImportKeyword
+      && node.arguments.length >= 1
+    ) {
+      [specifier] = node.arguments;
+    } else if (
+      ts.isImportTypeNode(node)
+      && ts.isLiteralTypeNode(node.argument)
+    ) {
+      specifier = node.argument.literal;
+    }
+
+    const specifierText = literalModuleText(specifier);
+    if (specifierText !== undefined && specifierText.startsWith('.')) {
+      specifiers.push(specifierText);
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return specifiers;
+}
+
+async function resolveTypeScriptModule(importPath) {
+  const candidates = [
+    ...typescriptModuleExtensions.map((extension) => `${importPath}${extension}`),
+    ...typescriptModuleExtensions.map((extension) => join(importPath, `index${extension}`)),
+  ];
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {
+      // Try the next TypeScript module form.
+    }
+  }
+  return undefined;
+}
+
+async function findExtensionlessRelativeImports(entryPath) {
+  const pending = [entryPath];
+  const visited = new Set();
+  const violations = [];
+
+  while (pending.length > 0) {
+    const modulePath = pending.pop();
+    if (modulePath === undefined || visited.has(modulePath)) continue;
+    visited.add(modulePath);
+
+    const sourceText = await readFile(modulePath, 'utf8');
+    const source = ts.createSourceFile(
+      modulePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+      modulePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    );
+
+    for (const specifier of collectRelativeModuleSpecifiers(source)) {
+      if (!/\.[a-z0-9]+$/i.test(specifier)) {
+        violations.push(`${modulePath}: ${specifier}`);
+        const resolvedModule = await resolveTypeScriptModule(resolve(dirname(modulePath), specifier));
+        if (resolvedModule !== undefined) pending.push(resolvedModule);
+        continue;
+      }
+      if (typescriptModuleExtensions.some((extension) => specifier.endsWith(extension))) {
+        pending.push(resolve(dirname(modulePath), specifier));
+      }
+    }
+  }
+
+  return violations;
+}
+
+const importSyntaxProbe = ts.createSourceFile(
+  'import-syntax-probe.ts',
+  `
+    import './static';
+    export * from './exported';
+    const dynamic = import('./dynamic');
+    const attributed = import('./attributed', { with: { type: 'json' } });
+    const template = import(\`./template\`);
+    type Imported = import('./type-only').Value;
+  `,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TS,
+);
+const importSyntaxProbeSpecifiers = new Set(collectRelativeModuleSpecifiers(importSyntaxProbe));
+for (const expectedSpecifier of [
+  './static',
+  './exported',
+  './dynamic',
+  './attributed',
+  './template',
+  './type-only',
+]) {
+  if (!importSyntaxProbeSpecifiers.has(expectedSpecifier)) {
+    fail(`hosted replay import guard does not inspect ${expectedSpecifier} syntax`);
+  }
+}
+
 const config = await readFile(configPath, 'utf8');
 const claimMatchFunction = await readFile(claimMatchFunctionPath, 'utf8');
 const accountSummaryFunction = await readFile(accountSummaryFunctionPath, 'utf8');
@@ -173,6 +292,12 @@ const verifiedReplayProbeSource = ts.createSourceFile(
   true,
   ts.ScriptKind.TS,
 );
+const extensionlessProbeImports = await findExtensionlessRelativeImports(
+  verifiedReplayProbeFunctionPath,
+);
+if (extensionlessProbeImports.length > 0) {
+  fail(`hosted replay probe graph contains extensionless relative imports:\n${extensionlessProbeImports.join('\n')}`);
+}
 const servedHandlerDeclarations = verifiedReplayProbeSource.statements.flatMap((statement) => {
   if (!ts.isVariableStatement(statement)) return [];
   const exported = statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);

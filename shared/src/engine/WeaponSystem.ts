@@ -6,7 +6,7 @@
  * implemented contract.
  */
 
-import type { ExplosionStyle } from '../types/GameState';
+import type { ExplosionStyle } from '../types/GameState.ts';
 
 export type WeaponType =
   | 'baby_missile'

@@ -1,6 +1,6 @@
-import type { TankState } from '../types/GameState';
-import { CANVAS_WIDTH, surfaceAt } from './Terrain';
-import { TANK_WIDTH } from './Tank';
+import type { TankState } from '../types/GameState.ts';
+import { CANVAS_WIDTH, surfaceAt } from './Terrain.ts';
+import { TANK_WIDTH } from './Tank.ts';
 
 /** Largest signed horizontal distance accepted by one committed move action. */
 export const MAX_MOVE_DELTA = 8;

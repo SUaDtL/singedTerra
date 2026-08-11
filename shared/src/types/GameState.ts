@@ -1,6 +1,6 @@
-import type { AccessoryType, WeaponType } from '../engine/WeaponSystem';
-import type { TeamId, WallMode } from './GameOptions';
-import type { TankLoadout } from './TankLoadout';
+import type { AccessoryType, WeaponType } from '../engine/WeaponSystem.ts';
+import type { TeamId, WallMode } from './GameOptions.ts';
+import type { TankLoadout } from './TankLoadout.ts';
 
 /** Turn-system phases (SPEC §4.3 / §6). */
 export type GamePhase =
