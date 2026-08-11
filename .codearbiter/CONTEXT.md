@@ -19,13 +19,16 @@ single-player vs. deterministic AI bots. Built as a personal project / technical
 
 ## How it works (one-line architecture)
 
-**One physics codebase, two execution contexts.** All game logic lives in `shared/`
-(TypeScript, deterministic, fixed 16ms timestep). Hot-seat runs that engine directly;
-networked play runs an identically-seeded copy of the *same* engine in every browser and
-stays in sync via **deterministic lockstep** — the canonical game is `seed + an ordered
-action log` (`room_actions` in Postgres), broadcast over Supabase Realtime. No `GameState`
-is ever shipped over the wire. See `coding-standards.md` for the determinism rules and
-layering; `tech-stack.md` for the stack; `security-controls.md` for the backend posture.
+**One physics codebase, two live contexts plus one verification-only context.** All game
+logic lives in `shared/` (TypeScript, deterministic, fixed 16ms timestep). Hot-seat runs
+that engine directly; networked play runs an identically-seeded copy of the *same* engine
+in every browser and stays in sync via **deterministic lockstep** — the canonical game is
+`seed + an ordered action log` (`room_actions` in Postgres), broadcast over Supabase
+Realtime. A bounded Supabase Edge verifier may replay completed transcripts through that
+same engine, but it is never in the live turn path and MUST NOT become a duplicate engine
+or a general game server (ADR-0013). No `GameState` is ever shipped over the wire. See
+`coding-standards.md` for the determinism rules and layering; `tech-stack.md` for the
+stack; `security-controls.md` for the backend posture.
 
 ## Primary users
 

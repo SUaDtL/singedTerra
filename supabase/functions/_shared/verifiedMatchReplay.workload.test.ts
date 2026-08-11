@@ -8,6 +8,25 @@ import {
   VERIFIED_REPLAY_MAX_TICKS_PER_TURN,
   VERIFIED_REPLAY_MAX_TURN_ACTIONS,
 } from './verifiedMatchReplay.ts'
+import { VERIFIED_REPLAY_PROBE_FIXTURES } from './verifiedReplayProbeFixture.ts'
+
+function assertDeepFrozen(value: unknown, path: string): void {
+  if (typeof value !== 'object' || value === null) return
+  if (!Object.isFrozen(value)) throw new Error(`${path} must be frozen`)
+  for (const [key, child] of Object.entries(value)) assertDeepFrozen(child, `${path}.${key}`)
+}
+
+Deno.test('verified replay probe fixture graph is immutable at runtime', () => {
+  assertDeepFrozen(VERIFIED_REPLAY_PROBE_FIXTURES, 'fixtures')
+})
+
+Deno.test('verified replay probe fixture graph matches its reviewed canonical digest', async () => {
+  const bytes = new TextEncoder().encode(JSON.stringify(VERIFIED_REPLAY_PROBE_FIXTURES))
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
+  const actual = Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  const expected = 'f46e750a502cb6f0aaaab1736e0b8660cca60f3dc05182d043f2af4c89a5182e'
+  if (actual !== expected) throw new Error(`fixture digest drifted: ${actual}`)
+})
 
 const CONFIG = {
   engineVersion: 1,
@@ -120,26 +139,7 @@ Deno.test('verified replay covers exact best-of-three and four-seat team lifecyc
     || multiRound.tickCount !== 190
   ) throw new Error(`multi-round replay drifted: ${JSON.stringify(multiRound)}`)
 
-  const teamConfig = {
-    ...CONFIG,
-    options: {
-      ...CONFIG.options,
-      players: [
-        { name: 'P1', color: '#e84d4d', team: 1 },
-        { name: 'P2', color: '#4d8ce8', team: 2 },
-        { name: 'P3', color: '#4de884', team: 1 },
-        { name: 'P4', color: '#e8c44d', team: 2 },
-      ],
-      maxPlayers: 4,
-      rounds: 3,
-      teamMode: true,
-    },
-  }
-  const maximumTranscript = [
-    ...selfShots(7),
-    { type: 'next_round' },
-    ...selfShots(7),
-  ]
+  const { config: teamConfig, transcript: maximumTranscript } = VERIFIED_REPLAY_PROBE_FIXTURES.maximumLifecycle
   const timings: number[] = []
   const heapBefore = Deno.memoryUsage().heapUsed
   let team = replayVerifiedTranscript(teamConfig, maximumTranscript)
@@ -171,26 +171,7 @@ Deno.test('verified replay covers exact best-of-three and four-seat team lifecyc
 })
 
 Deno.test('verified replay accepts exactly 448 total ticks and rejects a 447-tick budget', () => {
-  const teamConfig = {
-    ...CONFIG,
-    options: {
-      ...CONFIG.options,
-      players: [
-        { name: 'P1', color: '#e84d4d', team: 1 },
-        { name: 'P2', color: '#4d8ce8', team: 2 },
-        { name: 'P3', color: '#4de884', team: 1 },
-        { name: 'P4', color: '#e8c44d', team: 2 },
-      ],
-      maxPlayers: 4,
-      rounds: 3,
-      teamMode: true,
-    },
-  }
-  const maximumTranscript = [
-    ...selfShots(7),
-    { type: 'next_round' as const },
-    ...selfShots(7),
-  ]
+  const { config: teamConfig, transcript: maximumTranscript } = VERIFIED_REPLAY_PROBE_FIXTURES.maximumLifecycle
   const accepted = replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 448 })
   if (accepted.tickCount !== 448) {
     throw new Error(`exact total-tick ceiling drifted: ${JSON.stringify(accepted)}`)
@@ -208,19 +189,15 @@ Deno.test('verified replay accepts exactly 448 total ticks and rejects a 447-tic
 })
 
 Deno.test('verified replay accepts exactly 198 ticks in one turn and rejects a 197-tick budget', () => {
-  const scenario = TERMINAL_CASES[0]
-  const transcript = [
-    scenario.first,
-    ...Array.from({ length: scenario.missiles }, () => MISSILE),
-  ]
-  const accepted = replayVerifiedTranscript(CONFIG, transcript, { maxTicksPerTurn: 198 })
+  const { config, transcript } = VERIFIED_REPLAY_PROBE_FIXTURES.maximumTurn
+  const accepted = replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 198 })
   if (accepted.maxTurnTickCount !== 198) {
     throw new Error(`exact per-turn ceiling drifted: ${JSON.stringify(accepted)}`)
   }
 
   let code = ''
   try {
-    replayVerifiedTranscript(CONFIG, transcript, { maxTicksPerTurn: 197 })
+    replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 197 })
   } catch (error) {
     code = error && typeof error === 'object' && 'code' in error
       ? String((error as { code: unknown }).code)

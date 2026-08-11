@@ -316,6 +316,8 @@ Deno.test('rateLimitFor: known buckets and default fallback', () => {
   assertEqual(rateLimitFor('account_summary'), 60, 'account_summary')
   assertEqual(Object.hasOwn(RATE_LIMITS, 'record_hotseat_match'), true, 'record_hotseat_match has an explicit bucket')
   assertEqual(rateLimitFor('record_hotseat_match'), 20, 'record_hotseat_match')
+  assertEqual(Object.hasOwn(RATE_LIMITS, 'verified_replay_probe'), true, 'verified_replay_probe has an explicit bucket')
+  assertEqual(rateLimitFor('verified_replay_probe'), 10, 'verified_replay_probe')
   assertEqual(rateLimitFor('heartbeat'), RATE_LIMIT_DEFAULT, 'unknown → default')
 })
 
@@ -404,6 +406,27 @@ Deno.test('withCors: malformed JSON body returns 400', async () => {
   assertEqual(payload.error, 'Invalid JSON body', 'error message')
 })
 
+Deno.test('withCors: JSON mode rejects malformed input before invoking its limiter', async () => {
+  let limiterCalls = 0
+  const handler = withCors(() => json({ ok: true }), {
+    rateLimit: 'verified_replay_probe',
+  }, {
+    rateLimit: { bumpRateLimit: async () => {
+      limiterCalls += 1
+      return { data: 11, error: null }
+    } },
+  })
+
+  const res = await handler(new Request('https://example.test', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{not valid json',
+  }))
+
+  assertEqual(res.status, 400, 'legacy malformed-body status')
+  assertEqual(limiterCalls, 0, 'limiter must not run before required JSON parsing succeeds')
+})
+
 Deno.test('withCors: optionalBody bypasses a parse failure, handler receives undefined body', async () => {
   let received: unknown = 'not-yet-called'
   const handler = withCors((body) => {
@@ -417,6 +440,203 @@ Deno.test('withCors: optionalBody bypasses a parse failure, handler receives und
   }))
   assertEqual(res.status, 200, 'status')
   assertEqual(received, undefined, 'body passed to handler')
+})
+
+Deno.test('withCors: optional JSON parsing still precedes rate limiting', async () => {
+  const events: string[] = []
+  const req = new Request('https://example.test', { method: 'POST' })
+  Object.defineProperty(req, 'json', {
+    value: async () => {
+      events.push('parse')
+      throw new SyntaxError('malformed optional body')
+    },
+  })
+  const handler = withCors(() => {
+    events.push('handler')
+    return json({ ok: true })
+  }, {
+    optionalBody: true,
+    rateLimit: 'verified_replay_probe',
+  }, {
+    rateLimit: { bumpRateLimit: async () => {
+      events.push('limit')
+      return { data: 1, error: null }
+    } },
+  })
+
+  const res = await handler(req)
+
+  assertEqual(res.status, 200, 'status')
+  assertEqual(events.join(','), 'parse,limit,handler', 'legacy optional-body ordering')
+})
+
+Deno.test('withCors: no-body mode sends an absent body to the handler without parsing JSON', async () => {
+  let received: unknown = 'not-yet-called'
+  const handler = withCors((body) => {
+    received = body
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+
+  const res = await handler(new Request('https://example.test', { method: 'POST' }))
+
+  assertEqual(res.status, 200, 'status')
+  assertEqual(received, undefined, 'body passed to handler')
+})
+
+Deno.test('withCors: no-body mode rejects supplied JSON before the handler runs', async () => {
+  let handlerCalled = false
+  const handler = withCors(() => {
+    handlerCalled = true
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+
+  const res = await handler(jsonReq({ transcript: 'must-not-be-parsed' }))
+
+  assertEqual(handlerCalled, false, 'handler must not run for a supplied body')
+  assertEqual(res.status, 400, 'status')
+})
+
+Deno.test('withCors: no-body mode cancels a supplied stream before the handler runs', async () => {
+  let bodyCancelled = false
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"transcript":"must-not-be-parsed"}'))
+      controller.close()
+    },
+    cancel() {
+      bodyCancelled = true
+    },
+  })
+  let handlerCalled = false
+  const handler = withCors(() => {
+    handlerCalled = true
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+
+  const res = await handler(new Request('https://example.test', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body,
+  }))
+
+  assertEqual(bodyCancelled, true, 'supplied stream cancelled')
+  assertEqual(handlerCalled, false, 'handler must not run for a supplied stream')
+  assertEqual(res.status, 400, 'status')
+})
+
+Deno.test('withCors: rate-limits a supplied body before rejecting it', async () => {
+  let limiterCalls = 0
+  let handlerCalled = false
+  const handler = withCors(() => {
+    handlerCalled = true
+    return json({ ok: true })
+  }, {
+    bodyMode: 'none',
+    rateLimit: 'verified_replay_probe',
+  }, {
+    rateLimit: { bumpRateLimit: async (bucket: string) => {
+      limiterCalls += 1
+      assertEqual(bucket.startsWith('verified_replay_probe:'), true, 'limiter bucket')
+      return { data: 1, error: null }
+    } },
+  })
+
+  const res = await handler(jsonReq({ transcript: 'must-not-be-parsed' }))
+
+  assertEqual(limiterCalls, 1, 'limiter call count')
+  assertEqual(handlerCalled, false, 'handler must not run for a supplied body')
+  assertEqual(res.status, 400, 'status')
+})
+
+Deno.test('withCors: no-body production option path resolves the exact bucket through its limiter dependency', async () => {
+  const buckets: string[] = []
+  const handler = withCors(() => json({ ok: true }), {
+    bodyMode: 'none',
+    rateLimit: 'verified_replay_probe',
+  }, {
+    rateLimit: { bumpRateLimit: async (bucket: string) => {
+      buckets.push(bucket)
+      return { data: 11, error: null }
+    } },
+  })
+
+  const res = await handler(new Request('https://example.test', { method: 'POST' }))
+
+  assertEqual(res.status, 429, 'status')
+  assertEqual(buckets.length, 1, 'limiter call count')
+  assertEqual(buckets[0]?.startsWith('verified_replay_probe:'), true, 'resolved production bucket')
+})
+
+Deno.test('withCors: thrown limiter transport errors fail open and still cancel a forbidden body', async () => {
+  let cancelled = false
+  const body = new ReadableStream<Uint8Array>({ cancel: () => { cancelled = true } })
+  const handler = withCors(() => json({ ok: true }), {
+    bodyMode: 'none',
+    rateLimit: 'verified_replay_probe',
+  }, {
+    rateLimit: { bumpRateLimit: async () => { throw new Error('simulated transport rejection') } },
+  })
+
+  const res = await handler(new Request('https://example.test', { method: 'POST', body }))
+
+  assertEqual(res.status, 400, 'normal no-body rejection')
+  assertEqual(cancelled, true, 'forbidden body cancelled after limiter fail-open')
+})
+
+Deno.test('withCors: contains a supplied stream cancellation failure behind the same generic 400', async () => {
+  let handlerCalled = false
+  const handler = withCors(() => {
+    handlerCalled = true
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+  const body = new ReadableStream<Uint8Array>({
+    cancel() {
+      throw new Error('cancel failed with sensitive detail')
+    },
+  })
+
+  const res = await handler(new Request('https://example.test', {
+    method: 'POST',
+    body,
+  }))
+
+  assertEqual(handlerCalled, false, 'handler must not run after cancellation failure')
+  assertEqual(res.status, 400, 'status')
+  const payload = await res.json()
+  assertEqual(payload.error, 'Request body not allowed', 'generic response')
+})
+
+Deno.test('withCors: safely cancels an over-limit no-body request before returning 429', async () => {
+  for (const cancelRejects of [false, true]) {
+    let bodyCancelled = false
+    let handlerCalled = false
+    const body = new ReadableStream<Uint8Array>({
+      cancel() {
+        bodyCancelled = true
+        if (cancelRejects) throw new Error('cancel failure must remain contained')
+      },
+    })
+    const handler = withCors(() => {
+      handlerCalled = true
+      return json({ ok: true })
+    }, {
+      bodyMode: 'none',
+      rateLimit: 'verified_replay_probe',
+    }, {
+      rateLimit: { bumpRateLimit: async () => ({ data: 11, error: null }) },
+    })
+
+    const res = await handler(new Request('https://example.test', {
+      method: 'POST',
+      body,
+    }))
+
+    assertEqual(bodyCancelled, true, `body cancelled when rejection=${cancelRejects}`)
+    assertEqual(handlerCalled, false, `handler suppressed when rejection=${cancelRejects}`)
+    assertEqual(res.status, 429, `status when rejection=${cancelRejects}`)
+    const payload = await res.json()
+    assertEqual(payload.error, 'Too many requests. Please slow down.', `generic 429 when rejection=${cancelRejects}`)
+  }
 })
 
 Deno.test('withCors: valid JSON body is parsed and passed through to the handler', async () => {

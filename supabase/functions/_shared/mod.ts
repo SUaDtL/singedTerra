@@ -6,9 +6,10 @@
 // CORS policy, the request preamble, the service client, the room row-shapes,
 // and the lazy-GC reaper — change one here and every deployed function picks it up.
 //
-// NOTE: this is Deno code. It MUST NOT import from client/ or shared/ (those are
-// browser/Node TypeScript with their own toolchains). The Edge Functions are thin
-// referees, not the physics engine — see CLAUDE.md "Layering / dependency direction".
+// NOTE: this module is Deno infrastructure and MUST NOT import client/ or shared/.
+// Ordinary Edge Functions remain thin referees. ADR-0013 permits only the separate,
+// bounded _shared/verifiedMatchReplay.ts adapter to import the deterministic shared
+// engine for completion verification; it is not part of live gameplay.
 
 // Pinned to an exact version: a floating `@2` re-resolves on any `deno cache
 // --reload` and would silently advance every function to a new minor/patch.
@@ -92,6 +93,7 @@ export const RATE_LIMITS: Record<string, number> = {
   claim_match: 60,
   account_summary: 60,
   record_hotseat_match: 20,
+  verified_replay_probe: 10,
 }
 /** Applied to any function bucket without a specific entry above. */
 export const RATE_LIMIT_DEFAULT = 60
@@ -126,13 +128,36 @@ export function checkRateLimit(count: number, limit: number): boolean {
  * must never take the game down, so an RPC error is logged and allowed through.
  * A MissingEnvError propagates so withCors() maps it to the canonical 500.
  */
-async function enforceRateLimit(req: Request, bucket: string): Promise<boolean> {
-  const supabase = getServiceClient() // throws MissingEnvError → caught by withCors
+interface RateLimitDependencies {
+  bumpRateLimit?: (bucket: string, window: number) => Promise<{ data: unknown; error: unknown }>
+  now?: () => number
+}
+
+async function enforceRateLimit(
+  req: Request,
+  bucket: string,
+  dependencies: RateLimitDependencies = {},
+): Promise<boolean> {
   const ip = clientIp(req) || 'unknown'
-  const { data, error } = await supabase.rpc('bump_rate_limit', {
-    p_bucket: `${bucket}:${ip}`,
-    p_window: rateWindow(Date.now()),
+  const bucketWithIp = `${bucket}:${ip}`
+  const window = rateWindow((dependencies.now ?? Date.now)())
+  const bumpRateLimit = dependencies.bumpRateLimit ?? (async (pBucket, pWindow) => {
+    const supabase = getServiceClient()
+    return await supabase.rpc('bump_rate_limit', { p_bucket: pBucket, p_window: pWindow })
   })
+  let data: unknown
+  let error: unknown
+  try {
+    ({ data, error } = await bumpRateLimit(bucketWithIp, window))
+  } catch (failure) {
+    if (failure instanceof MissingEnvError) throw failure
+    console.error('rate_limit: fail-open (limiter transport degraded)', {
+      bucket,
+      ip,
+      error: safeErrorMessage(failure),
+    })
+    return true
+  }
   if (error) {
     // Distinguishable fail-open signal (obs-002): a chronically-erroring limiter
     // silently disables ALL per-IP limiting, so log with bucket/ip context so a
@@ -150,22 +175,45 @@ interface WithCorsOpts {
   /** When true, a missing/invalid JSON body yields `undefined` instead of a 400
    *  (list_rooms takes no body). Default false: parse failure => 400. */
   optionalBody?: boolean
+  /** Reject and cancel any supplied POST body before JSON parsing. Use for
+   *  fixed-work endpoints that accept no caller-controlled payload. */
+  bodyMode?: 'json' | 'none'
   /** Function bucket name to rate-limit by (per IP). The cap is resolved from
    *  RATE_LIMITS / RATE_LIMIT_DEFAULT. Omit to disable limiting for this function. */
   rateLimit?: string
+}
+
+interface WithCorsDependencies {
+  /** Test seam below the production enforcer so bucket resolution and caps remain exercised. */
+  rateLimit?: RateLimitDependencies
+}
+
+async function safelyCancelRequestBody(req: Request): Promise<void> {
+  if (req.body === null) return
+  try {
+    await req.body.cancel()
+  } catch {
+    // Cancellation errors are neither response nor log material. The caller
+    // still rejects the request with its generic contract.
+  }
 }
 
 /**
  * Wrap a POST handler with the boilerplate every function shares:
  *   - OPTIONS preflight => 200 "ok"
  *   - non-POST          => 405 "Method not allowed"
+ *   - no-body mode      => reject and cancel any supplied body before parsing
  *   - JSON body parse   => 400 "Invalid JSON body" (unless optionalBody)
  *   - MissingEnvError   => 500 "Server misconfiguration: missing env vars"
  *
  * The handler receives the already-parsed body and the raw Request. Any error
  * other than MissingEnvError propagates unchanged (same as before this refactor).
  */
-export function withCors(handler: Handler, opts: WithCorsOpts = {}): (req: Request) => Promise<Response> {
+export function withCors(
+  handler: Handler,
+  opts: WithCorsOpts = {},
+  dependencies: WithCorsDependencies = {},
+): (req: Request) => Promise<Response> {
   return async (req: Request): Promise<Response> => {
     if (req.method === 'OPTIONS') {
       return new Response('ok', { headers: corsHeaders() })
@@ -174,18 +222,32 @@ export function withCors(handler: Handler, opts: WithCorsOpts = {}): (req: Reque
       return json({ error: 'Method not allowed' }, 405)
     }
 
-    let body: unknown = undefined
     try {
-      body = await req.json()
-    } catch {
-      if (!opts.optionalBody) return json({ error: 'Invalid JSON body' }, 400)
-    }
-
-    try {
-      if (opts.rateLimit) {
-        const allowed = await enforceRateLimit(req, opts.rateLimit)
-        if (!allowed) return json({ error: 'Too many requests. Please slow down.' }, 429)
+      let body: unknown = undefined
+      if (opts.bodyMode === 'none') {
+        if (opts.rateLimit) {
+          const allowed = await enforceRateLimit(req, opts.rateLimit, dependencies.rateLimit)
+          if (!allowed) {
+            await safelyCancelRequestBody(req)
+            return json({ error: 'Too many requests. Please slow down.' }, 429)
+          }
+        }
+        if (req.body !== null) {
+          await safelyCancelRequestBody(req)
+          return json({ error: 'Request body not allowed' }, 400)
+        }
+      } else {
+        try {
+          body = await req.json()
+        } catch {
+          if (!opts.optionalBody) return json({ error: 'Invalid JSON body' }, 400)
+        }
+        if (opts.rateLimit) {
+          const allowed = await enforceRateLimit(req, opts.rateLimit, dependencies.rateLimit)
+          if (!allowed) return json({ error: 'Too many requests. Please slow down.' }, 429)
+        }
       }
+
       return await handler(body, req)
     } catch (e) {
       if (e instanceof MissingEnvError) {

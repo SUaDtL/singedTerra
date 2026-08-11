@@ -161,6 +161,8 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [ ] Carry authenticated identity coherently into online lobby flows: suppress the incorrect 'sign in to record future matches' CTA when a valid session exists, and prefill or eliminate redundant host/join name entry from the account display name while preserving an explicit override only if product policy requires it. [H/S]  (from user steering 2026-08-10)
+  - Boundaries: authentication, display-identity
 - [~] career.initiative.0001 - Deliver the Commander Career Loop as a sustained initiative: earned rank identity, trusted promotion payoff, tactical objectives, and a coherent reason to return.  (from standing improvement goal)  (started 2026-08-10)
 - [x] ux.hud.0002 - Show battlefield-safe tactical intel for every arsenal weapon on focus or selection across mouse, keyboard, and touch  (from post-remediation-adversarial-player-audit-2026-08-10)  (done 2026-08-10)
   - Boundaries: client, hud, weapon-presentation

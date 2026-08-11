@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.record_hotseat_match]
 verify_jwt = false
+
+[functions.verified_replay_probe]
+verify_jwt = false

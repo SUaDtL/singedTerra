@@ -7,12 +7,13 @@ descriptive of the existing code — follow them so new work doesn't drift.
 
 ```
 client/ (renderer, input, ui, audio, NetworkClient) ──► shared/ (engine + types)
-supabase/functions/ (Deno referees) ──► supabase/functions/_shared/mod.ts only
+supabase/functions/ (Deno referees) ──► supabase/functions/_shared/*
+verification-only Edge functions ──► _shared/verifiedMatchReplay.ts ──► shared/
 shared/ depends on nothing.
 ```
 
 - **`shared/` MUST NOT import from `client/`.** Verified: no such imports exist.
-- **`supabase/functions/` MUST NOT import `shared/` or `client/`.** They are a separate Deno runtime. `_shared/mod.ts` carries an explicit comment to this effect. Consequence: the `NetworkAction` contract is **re-declared** in `submit_action/index.ts` rather than imported from `shared/src/net/replay.ts`. Keep the two copies in sync by hand — this is a known, accepted duplication, not an accident.
+- **Ordinary `supabase/functions/` referees MUST NOT import `shared/` or `client/`.** They remain thin Deno referees. The sole exception is the bounded verification-only path accepted by ADR-0013: it may reach the real deterministic engine only through `_shared/verifiedMatchReplay.ts`; it MUST NOT duplicate physics, enter the live turn path, or become a general game server. Consequence: ordinary referee contracts such as `submit_action` remain locally declared rather than importing gameplay code.
 - `client/` imports `shared/` one-way via the `@shared/*` path alias (`../shared/src/*`).
 
 ## Determinism (HARD — the central constraint)
@@ -24,15 +25,17 @@ The whole networked design (deterministic lockstep) depends on this. When touchi
 - `terrainVersion` is render-only dirty-flag metadata — it MUST never affect physics/state.
 - The log→engine translation lives **only** in `shared/src/net/replay.ts` (`replayNetworkAction`) so the live client and the harnesses can't diverge. Don't reimplement it elsewhere.
 
-## One physics codebase, two execution contexts
+## One physics codebase, two live contexts plus verification
 
-All game logic is in `shared/`; it runs in exactly one of two places, hidden behind the
-`GameClient` interface (`client/src/client/GameClient.ts`):
+All game logic is in `shared/`; live play runs in exactly one of two places, hidden behind
+the `GameClient` interface (`client/src/client/GameClient.ts`):
 
 - **Hot-seat** (`HotSeatClient`) — runs `GameEngine` directly on rAF; zero network.
 - **Networked** (`NetworkClient`) — each browser runs its own identically-seeded `GameEngine`; the canonical game is `seed + room_actions` (ordered log). Realtime broadcasts each committed action; clients apply in `seq` order. Out-of-order delivery is buffered (`pendingActions`/`nextExpectedSeq`).
 
 New renderer/input code talks to `GameClient`, never to a concrete client or the engine directly.
+Completed transcripts may additionally run through the bounded verification-only Edge adapter
+defined by ADR-0013. That third execution context is outside `GameClient` and live gameplay.
 
 ## Module organization
 

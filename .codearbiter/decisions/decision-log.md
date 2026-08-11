@@ -456,3 +456,38 @@ Securable and Reliable dominate because rank evidence must be independently deri
 ADR-0014 governs additive verification sessions, start and complete endpoints, transcript validation, transactional progression writes, and the separation of verified XP from casual history. Verification proves a valid transcript's outcome, not human or unaided play.
 
 ---
+
+## DECISION-0018 - ADR-0015 - Stage hosted replay verification without awarding progression
+
+**Date:** 2026-08-10
+**Status:** accepted
+**Supersedes:** none
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly approved the ADR route for the hosted non-awarding replay probe)
+**Decision category:** architecture / security / progression
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** ADR-0014 defines the complete hosted verification and award lifecycle but does not require runtime feasibility and durable rewards to ship in one milestone.
+- **Scaffold position:** The approved next slice first proves authenticated replay in the hosted Supabase runtime without writes, awards, ranks, or entitlements.
+- **Status type:** open-decision-closure
+
+### Decision
+Stage the hosted replay capability as an authenticated, bounded, non-awarding Edge probe. It may derive and return a terminal outcome with bounded diagnostics, but it cannot mutate durable state or influence progression. Verified result storage and server-derived awards remain a later milestone after this probe is reviewed and proven in production.
+
+### SMARTS rationale
+Securable and Reliable favor proving the production runtime, authentication boundary, and resource limits before introducing durable rewards. Testable and Maintainable favor reusing the strict shared replay adapter behind a narrow endpoint with explicit non-mutation tests. Available and Scalable favor a bounded completion-time request with existing abuse controls rather than per-turn server execution. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0015 governs the hosted probe function, replay import boundary, request limits, tests, deployment verification, and its explicit no-write contract. A later bounded decision and slice will own verification sessions, immutable results, transactional progression, and rank eligibility.
+
+---
+
+---
+
+## CORRECTION-0018 - ADR-0015 lifecycle status
+
+**Date:** 2026-08-10
+**Type:** audit correction
+**Corrects:** DECISION-0018 status metadata only
+
+DECISION-0018 incorrectly recorded ADR-0015 as accepted. SUaDtL explicitly approved the sanctioned ADR route and this bounded non-awarding implementation, but did not explicitly advance the ADR lifecycle. The canonical ADR frontmatter and Status section remain proposed. This correction does not withdraw the authorized feasibility slice or alter its no-write boundary; it removes the contradictory acceptance claim from the effective audit record.

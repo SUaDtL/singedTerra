@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const configPath = join(root, 'supabase', 'config.toml');
@@ -30,6 +31,7 @@ const hotseatMatchResultsMigrationPath = join(
 const claimMatchFunctionPath = join(root, 'supabase', 'functions', 'claim_match', 'index.ts');
 const accountSummaryFunctionPath = join(root, 'supabase', 'functions', 'account_summary', 'index.ts');
 const recordHotseatMatchFunctionPath = join(root, 'supabase', 'functions', 'record_hotseat_match', 'index.ts');
+const verifiedReplayProbeFunctionPath = join(root, 'supabase', 'functions', 'verified_replay_probe', 'index.ts');
 const sharedModPath = join(root, 'supabase', 'functions', '_shared', 'mod.ts');
 const securityControlsPath = join(root, '.codearbiter', 'security-controls.md');
 const casualHotseatAdrPath = join(
@@ -160,6 +162,58 @@ const config = await readFile(configPath, 'utf8');
 const claimMatchFunction = await readFile(claimMatchFunctionPath, 'utf8');
 const accountSummaryFunction = await readFile(accountSummaryFunctionPath, 'utf8');
 const recordHotseatMatchFunction = await readFile(recordHotseatMatchFunctionPath, 'utf8');
+const verifiedReplayProbeFunction = await readFile(verifiedReplayProbeFunctionPath, 'utf8');
+const verifiedReplayProbeCode = verifiedReplayProbeFunction
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\/.*$/gm, '');
+const verifiedReplayProbeSource = ts.createSourceFile(
+  verifiedReplayProbeFunctionPath,
+  verifiedReplayProbeFunction,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TS,
+);
+const servedHandlerDeclarations = verifiedReplayProbeSource.statements.flatMap((statement) => {
+  if (!ts.isVariableStatement(statement)) return [];
+  const exported = statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
+  if (!exported) return [];
+  return statement.declarationList.declarations.filter(
+    (declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === 'serveVerifiedReplayProbe',
+  );
+});
+const servedHandlerInitializer = servedHandlerDeclarations[0]?.initializer;
+const servedHandlerUsesFactory = servedHandlerDeclarations.length === 1
+  && servedHandlerInitializer !== undefined
+  && ts.isCallExpression(servedHandlerInitializer)
+  && ts.isIdentifier(servedHandlerInitializer.expression)
+  && servedHandlerInitializer.expression.text === 'createVerifiedReplayProbeHandler'
+  && servedHandlerInitializer.arguments.length === 0;
+const finalProbeStatement = verifiedReplayProbeSource.statements.at(-1);
+const finalProbeCall = finalProbeStatement && ts.isExpressionStatement(finalProbeStatement)
+  ? finalProbeStatement.expression
+  : undefined;
+const probeStartsAtTopLevel = finalProbeCall !== undefined
+  && ts.isCallExpression(finalProbeCall)
+  && ts.isIdentifier(finalProbeCall.expression)
+  && finalProbeCall.expression.text === 'startVerifiedReplayProbe'
+  && finalProbeCall.arguments.length === 1
+  && ts.isPropertyAccessExpression(finalProbeCall.arguments[0])
+  && ts.isMetaProperty(finalProbeCall.arguments[0].expression)
+  && finalProbeCall.arguments[0].expression.keywordToken === ts.SyntaxKind.ImportKeyword
+  && finalProbeCall.arguments[0].name.text === 'main';
+const topLevelFunctions = verifiedReplayProbeSource.statements.filter(ts.isFunctionDeclaration);
+const registerFunction = topLevelFunctions.find((statement) => statement.name?.text === 'registerVerifiedReplayProbe');
+const registerDefault = registerFunction?.parameters[0]?.initializer;
+const registerDefaultsToDenoServe = registerDefault !== undefined
+  && ts.isPropertyAccessExpression(registerDefault)
+  && ts.isIdentifier(registerDefault.expression)
+  && registerDefault.expression.text === 'Deno'
+  && registerDefault.name.text === 'serve';
+const startFunction = topLevelFunctions.find((statement) => statement.name?.text === 'startVerifiedReplayProbe');
+const startDefault = startFunction?.parameters[1]?.initializer;
+const startDefaultsToRegister = startDefault !== undefined
+  && ts.isIdentifier(startDefault)
+  && startDefault.text === 'registerVerifiedReplayProbe';
 const sharedMod = await readFile(sharedModPath, 'utf8');
 const securityControls = await readFile(securityControlsPath, 'utf8');
 let casualHotseatAdr;
@@ -276,6 +330,9 @@ if (!/^\[functions\.account_summary\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(c
 if (!/^\[functions\.record_hotseat_match\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
   fail('[functions.record_hotseat_match].verify_jwt must be false for in-handler bearer validation');
 }
+if (!/^\[functions\.verified_replay_probe\]\s*\r?\nverify_jwt\s*=\s*false\s*$/m.test(config)) {
+  fail('[functions.verified_replay_probe].verify_jwt must be false for in-handler bearer validation');
+}
 if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleClaimMatch\s*,\s*\{\s*rateLimit\s*:\s*['"]claim_match['"]\s*\}\s*\)\s*\)/s.test(claimMatchFunction)) {
   fail('claim_match must remain served through withCors(handleClaimMatch, { rateLimit: claim_match })');
 }
@@ -290,6 +347,26 @@ if (!/^\s*account_summary\s*:\s*60\s*,?\s*$/m.test(rateLimitsBlock)) {
 }
 if (!/^\s*record_hotseat_match\s*:\s*20\s*,?\s*$/m.test(rateLimitsBlock)) {
   fail('RATE_LIMITS must contain an explicit record_hotseat_match bucket at 20 requests per minute');
+}
+if (!/^\s*verified_replay_probe\s*:\s*10\s*,?\s*$/m.test(rateLimitsBlock)) {
+  fail('RATE_LIMITS must contain an explicit verified_replay_probe bucket at 10 requests per minute');
+}
+if (
+  !/VERIFIED_REPLAY_PROBE_WRAPPER_OPTIONS\s*=\s*Object\.freeze\s*\(\s*\{[\s\S]*?bodyMode\s*:\s*['"]none['"][\s\S]*?rateLimit\s*:\s*['"]verified_replay_probe['"]/s.test(verifiedReplayProbeCode)
+  || !/wrap\s*\(\s*handleVerifiedReplayProbe\s*,\s*VERIFIED_REPLAY_PROBE_WRAPPER_OPTIONS\s*\)/s.test(verifiedReplayProbeCode)
+) {
+  fail('verified_replay_probe must retain its no-body wrapper and named rate-limit bucket');
+}
+if (!servedHandlerUsesFactory) {
+  fail('verified_replay_probe must export the handler created by its configured wrapper factory');
+}
+if (
+  !/registerVerifiedReplayProbe\s*\([\s\S]*?serve\s*\(\s*serveVerifiedReplayProbe\s*\)/s.test(verifiedReplayProbeCode)
+  || !registerDefaultsToDenoServe
+  || !startDefaultsToRegister
+  || !probeStartsAtTopLevel
+) {
+  fail('verified_replay_probe must register and start the exact configured exported handler');
 }
 if (!/Deno\.serve\s*\(\s*withCors\s*\(\s*handleRecordHotSeatMatch\s*,\s*\{[\s\S]*?rateLimit\s*:\s*['"]record_hotseat_match['"][\s\S]*?\}\s*\)\s*\)/s.test(recordHotseatMatchFunction)) {
   fail('record_hotseat_match must use the named rate-limit bucket');
@@ -737,6 +814,15 @@ const requiredCasualHistoryControls = [
 ];
 if (requiredCasualHistoryControls.some((control) => !securityControls.includes(control))) {
   fail('security controls must state the narrow client-attested hot-seat exception and its non-entitlement ceiling');
+}
+const requiredReplayProbeControls = [
+  'Hosted replay probe is non-awarding',
+  'accepts no request body',
+  'MUST NOT read or write player, match, verification, progression, rank, reward, or entitlement state',
+  'only database mutation on its request path is the existing operational per-IP limiter counter',
+];
+if (requiredReplayProbeControls.some((control) => !securityControls.includes(control))) {
+  fail('security controls must retain the authenticated, no-body, non-awarding replay-probe boundary');
 }
 if (
   !casualHotseatAdr.includes('status: accepted')
