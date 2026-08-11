@@ -322,6 +322,7 @@ export class Lobby {
 
   // Create form state
   private onlineName = '';
+  private onlineNameSource: 'none' | 'profile' | 'user' = 'none';
   private onlineColor: string = PALETTE[0].value;
   private onlineLoadout: TankLoadout = { ...DEFAULT_TANK_LOADOUT };
   /** Compact layouts expose one touch-sized Garage editor at a time. */
@@ -389,6 +390,7 @@ export class Lobby {
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
+    this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
     const diagnosticsParams = new URL(window.location.href).searchParams;
     this.diagnosticsIntentActive = diagnosticsParams.get('diagnostics') === '1';
@@ -412,11 +414,32 @@ export class Lobby {
     const restoreLocalBattleFocus = document.activeElement instanceof HTMLButtonElement
       && this.root.contains(document.activeElement)
       && document.activeElement.textContent === 'Local Battle';
+    this.syncOnlineNameFromAccount();
     this.syncDiagnosticsReadiness();
     this.maybeAutorunDiagnostics();
     this.render();
     if (restoreFocus) this.focusAccountOverlay();
     else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
+  }
+
+  private syncOnlineNameFromAccount(): void {
+    const state = this.accountSession.state;
+    if (state.status === 'authenticated') {
+      if (this.onlineNameSource !== 'user') {
+        this.onlineName = state.profile.displayName;
+        this.onlineNameSource = 'profile';
+      }
+      return;
+    }
+    if (this.onlineNameSource === 'profile') {
+      this.onlineName = '';
+      this.onlineNameSource = 'none';
+    }
+  }
+
+  private setOnlineName(value: string): void {
+    this.onlineName = value;
+    this.onlineNameSource = 'user';
   }
 
   private diagnosticsReadiness(): ProductionDiagnosticsReadiness {
@@ -3423,7 +3446,7 @@ export class Lobby {
       nameColor: this.renderOnlineNameColor(
         this.onlineName,
         this.onlineColor,
-        (value) => { this.onlineName = value; },
+        (value) => { this.setOnlineName(value); },
         (value) => { this.onlineColor = value; this.render(); },
         [],
       ),
@@ -3508,6 +3531,11 @@ export class Lobby {
     const name = this.onlineName.trim();
     if (!name) {
       this.onlineError = 'Enter your name.';
+      this.render();
+      return;
+    }
+    if (name.length > 20) {
+      this.onlineError = 'Name must be 20 characters or fewer.';
       this.render();
       return;
     }
@@ -3639,7 +3667,7 @@ export class Lobby {
       nameColor: this.renderOnlineNameColor(
         this.onlineName,
         this.joinColor,
-        (value) => { this.onlineName = value; },
+        (value) => { this.setOnlineName(value); },
         (value) => { this.joinColor = value; this.render(); },
         [],
       ),
@@ -3687,6 +3715,11 @@ export class Lobby {
     const name = this.onlineName.trim();
     if (!name) {
       this.onlineError = 'Enter your name.';
+      this.render();
+      return;
+    }
+    if (name.length > 20) {
+      this.onlineError = 'Name must be 20 characters or fewer.';
       this.render();
       return;
     }
@@ -3811,7 +3844,7 @@ export class Lobby {
       nameColor: this.renderOnlineNameColor(
         this.onlineName,
         this.joinColor,
-        (value) => { this.onlineName = value; },
+        (value) => { this.setOnlineName(value); },
         (value) => { this.joinColor = value; this.render(); },
         [],
       ),

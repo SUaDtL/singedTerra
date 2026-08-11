@@ -112,6 +112,7 @@ test.describe('Victory After-Action Report', () => {
     const panel = report.locator('.st-hud__overlay-panel--victory');
     const art = report.locator('.st-hud__victory-backdrop');
     const tank = report.locator('.st-hud__victory-tank');
+    const anonymousHandoff = report.locator('.st-hud__victory-progression-handoff');
     const playAgain = report.getByRole('button', { name: 'Play again' });
     const mainMenu = report.getByRole('button', { name: 'Main Menu' });
 
@@ -120,6 +121,9 @@ test.describe('Victory After-Action Report', () => {
     await expect(report.getByText('After action report')).toBeVisible();
     await expect(report.getByRole('heading', { name: 'P1 wins' })).toBeVisible();
     await expect(report.getByText('Match winner')).toBeVisible();
+    await expect(report.getByText('Sign in to record future matches.')).toBeHidden();
+    await expect(anonymousHandoff).toBeHidden();
+    expect(await anonymousHandoff.evaluate((element) => getComputedStyle(element).display)).toBe('none');
     await expect(art).toBeVisible();
     await expect.poll(() => art.evaluate((image: HTMLImageElement) => image.naturalWidth))
       .toBeGreaterThan(500);

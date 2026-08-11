@@ -664,4 +664,108 @@ describe('Lobby account composition', () => {
       }
     }
   })
+
+  it('prefills online create and join identity from an initially authenticated profile', () => {
+    const root = document.createElement('div')
+    const lobby = new Lobby(
+      root,
+      vi.fn(),
+      (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+    )
+    lobby.show()
+
+    button(root, 'Play Online').click()
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Ranger')
+
+    button(root, 'Join with a code').click()
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Ranger')
+  })
+
+  it('adopts a later authenticated profile but never overwrites a player-edited online name', () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange)
+      return account
+    })
+    lobby.show()
+    button(root, 'Play Online').click()
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('')
+
+    account.emit(authenticatedState())
+    const name = root.querySelector<HTMLInputElement>('.lobby-name')!
+    expect(name.value).toBe('Ranger')
+    name.value = 'Room Ranger'
+    name.dispatchEvent(new Event('input', { bubbles: true }))
+
+    account.emit({
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger Prime', summary: null },
+    })
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Room Ranger')
+
+    account.emit({ status: 'anonymous', busy: false, error: '' })
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Room Ranger')
+  })
+
+  it('tracks profile changes while derived and clears account presentation data on sign-out', () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    lobby.show()
+    button(root, 'Play Online').click()
+
+    account.emit({
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName: 'Ranger Prime', summary: null },
+    })
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Ranger Prime')
+
+    account.emit({ status: 'anonymous', busy: false, error: '' })
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('')
+  })
+
+  it('clears a profile-derived name when authenticated profile ownership becomes uncertain', () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    lobby.show()
+    button(root, 'Play Online').click()
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Ranger')
+
+    account.emit({
+      status: 'authenticated-error',
+      busy: false,
+      error: 'Profile unavailable.',
+      userId: 'user-2',
+    })
+
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('')
+  })
+
+  it('shows an over-limit account name intact so the player can correct it explicitly', () => {
+    const root = document.createElement('div')
+    const displayName = 'Commander Longname 1234'
+    const lobby = new Lobby(root, vi.fn(), (onChange) => new FakeAccountSession(onChange, {
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-1', displayName, summary: null },
+    }))
+    lobby.show()
+    button(root, 'Play Online').click()
+
+    expect(displayName.length).toBeGreaterThan(20)
+    expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe(displayName)
+  })
 })

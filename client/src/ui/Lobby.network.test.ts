@@ -41,6 +41,8 @@ import {
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { Lobby } from './Lobby';
+import type { AccountSessionPort } from './Lobby';
+import type { AccountState } from '../client/AccountSession';
 import { readSession, writeSession } from '../lib/sessionDescriptor';
 
 // The waiting-room Realtime subscription lazily does `await import('../lib/supabase')`,
@@ -67,6 +69,7 @@ interface LobbyInternals {
   handleCreateRoom(): Promise<void>;
   handleJoinRoom(): Promise<void>;
   fetchRooms(): Promise<void>;
+  joinByCode(code: string): Promise<void>;
   startHeartbeat(): void;
   stopHeartbeat(): void;
   handleReadyUp(): Promise<void>;
@@ -218,6 +221,16 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(fetchMock).not.toHaveBeenCalled();
       expect(internals(lobby).onlineError).toBe('Enter your name.');
       expect(internals(lobby).onlineSubView).toBe('create');
+    });
+
+    it('GUARD: an account name beyond the online contract stays local for correction', async () => {
+      const fetchMock = stubFetch();
+      internals(lobby).onlineName = 'x'.repeat(21);
+
+      await internals(lobby).handleCreateRoom();
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(internals(lobby).onlineError).toBe('Name must be 20 characters or fewer.');
     });
 
     it('REQUEST (minimal): omits every conditional field — only maxPlayers + visibility', async () => {
@@ -482,6 +495,17 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(internals(lobby).onlineError).toBe('Enter your name.');
     });
 
+    it('GUARD: join rejects an over-limit account name before transport', async () => {
+      const fetchMock = stubFetch();
+      internals(lobby).joinCode = 'WXYZ';
+      internals(lobby).onlineName = 'x'.repeat(21);
+
+      await internals(lobby).handleJoinRoom();
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(internals(lobby).onlineError).toBe('Name must be 20 characters or fewer.');
+    });
+
     it('REQUEST: POSTs { code (upper-cased), playerName, color }', async () => {
       const fetchMock = stubFetch({ json: () => ({ error: 'stop-here' }) });
       Object.assign(internals(lobby), {
@@ -586,6 +610,54 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
   // 3. list_rooms  (fetchRooms)
   // ========================================================================
   describe('list_rooms', () => {
+    it('keeps a browse-name override through account refresh and sign-out and sends it to join', async () => {
+      const rooms = [{
+        roomId: 'r1', code: 'AAAA', hostName: 'Al', playerCount: 1, maxPlayers: 2,
+        rounds: 1, armsLevel: 4, botCount: 0, interestRate: 0, suddenDeathTurn: 0,
+      }];
+      stubFetch({ json: () => ({ rooms }) });
+      const browseRoot = document.createElement('div');
+      let emit!: (state: AccountState) => void;
+      let state: AccountState = {
+        status: 'authenticated', busy: false, error: '',
+        profile: { id: 'user-1', displayName: 'Ranger', summary: null },
+      };
+      const browseLobby = new Lobby(browseRoot, vi.fn(), (onChange) => {
+        const account: AccountSessionPort = {
+          get state() { return state; },
+          initialize: vi.fn(async () => undefined),
+          submit: vi.fn(async () => undefined),
+          signOut: vi.fn(async () => undefined),
+          refresh: vi.fn(async () => undefined),
+          recordHotSeatMatch: vi.fn(async () => null),
+        };
+        emit = (next) => { state = next; onChange(next); };
+        return account;
+      });
+      browseLobby.show();
+      [...browseRoot.querySelectorAll('button')]
+        .find((candidate) => candidate.textContent === 'Play Online')!.click();
+      [...browseRoot.querySelectorAll('button')]
+        .find((candidate) => candidate.textContent === 'Browse public rooms')!.click();
+      await vi.waitFor(() => expect(browseRoot.querySelector('.lobby-name')).not.toBeNull());
+
+      const name = browseRoot.querySelector<HTMLInputElement>('.lobby-name')!;
+      expect(name.value).toBe('Ranger');
+      name.value = 'Browse Ranger';
+      name.dispatchEvent(new Event('input', { bubbles: true }));
+      emit({
+        status: 'authenticated', busy: false, error: '',
+        profile: { id: 'user-1', displayName: 'Ranger Prime', summary: null },
+      });
+      expect(browseRoot.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Browse Ranger');
+      emit({ status: 'anonymous', busy: false, error: '' });
+      expect(browseRoot.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Browse Ranger');
+
+      const joinFetch = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
+      await internals(browseLobby).joinByCode('AAAA');
+      expect(callAt(joinFetch).body).toMatchObject({ playerName: 'Browse Ranger' });
+    });
+
     it('REQUEST: POSTs an empty body to list_rooms', async () => {
       const fetchMock = stubFetch({ json: () => ({ rooms: [] }) });
       internals(lobby).onlineSubView = 'browse';

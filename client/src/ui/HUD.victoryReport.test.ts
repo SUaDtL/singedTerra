@@ -283,7 +283,11 @@ describe('HUD Victory After-Action Report', () => {
     const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
     const handoff = report.querySelector<HTMLElement>('.st-hud__victory-progression-handoff')!;
 
+    expect([...document.head.querySelectorAll('style')].some((style) =>
+      style.textContent?.includes('.st-hud__victory-progression-handoff[hidden]'),
+    )).toBe(true);
     expect(handoff.hidden).toBe(true);
+    expect(getComputedStyle(handoff).display).toBe('none');
     expect(handoff.textContent).toContain('Sign in to record future matches.');
     expect(report.querySelectorAll('button')).toHaveLength(2);
 
@@ -294,6 +298,7 @@ describe('HUD Victory After-Action Report', () => {
     const playAgain = report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')!;
     const mainMenu = report.querySelector<HTMLButtonElement>('.st-hud__restart--ghost')!;
     expect(handoff.hidden).toBe(false);
+    expect(getComputedStyle(handoff).display).toBe('grid');
     expect(handoff.getAttribute('role')).toBe('status');
     expect(handoff.getAttribute('aria-live')).toBe('polite');
     expect(handoff.getAttribute('aria-atomic')).toBe('true');

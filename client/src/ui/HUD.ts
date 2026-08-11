@@ -4040,6 +4040,7 @@ export class HUD {
   font-size: 12px;
   line-height: 1.35;
 }
+.st-hud__victory-progression-handoff[hidden] { display: none; }
 .st-hud__victory-progression-handoff p { margin: 0; }
 .st-hud__victory-progression-sign-in {
   min-height: 36px;
