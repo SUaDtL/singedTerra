@@ -89,3 +89,9 @@ Pending.
 - PR #399 merged by squash as `78ff8b7c9b28fa1f3b4507981f6e67a7d39400b7`. The reviewed head and merge commit both resolve to tree `1783c4f012f4b5e2539715d9b4f9ac9848e4ee2e`, proving exact content equivalence despite squash ancestry.
 - Deployment command targeted linked project `jdvxfxjpobtyasozxauh` through the authenticated local Supabase CLI. Asset upload completed, but hosted bundling rejected an extensionless relative import in `shared/src/engine/GameEngine.ts`; no function version was deployed.
 - Production success-path health remains pending until the bounded hosted-bundle correction is reviewed, merged, and deployed. The failed deployment validates the spec's named bundler-risk assumption and is being corrected test-first through `$ca-fix`.
+
+### Append-only production probe update — 2026-08-11
+
+- Bundle correction PR #400 passed exact-head hosted CI, merged with tree equivalence, and deployed successfully as active function version 1.
+- The first real zero-byte POST returned the wrapper's generic `Request body not allowed` 400 before authentication. Supabase's HTTP transport supplies a non-null but empty body stream for this request shape, unlike the direct `Request` fixture.
+- Production authentication/replay health remains pending while this newly observed transport-boundary defect is corrected test-first through `$ca-fix`.

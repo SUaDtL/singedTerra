@@ -483,6 +483,46 @@ Deno.test('withCors: no-body mode sends an absent body to the handler without pa
   assertEqual(received, undefined, 'body passed to handler')
 })
 
+Deno.test('withCors: no-body mode accepts a transport-provided empty body stream', async () => {
+  let received: unknown = 'not-yet-called'
+  const handler = withCors((body) => {
+    received = body
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+  const emptyTransportBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.close()
+    },
+  })
+
+  const res = await handler(new Request('https://example.test', {
+    method: 'POST',
+    body: emptyTransportBody,
+  }))
+
+  assertEqual(res.status, 200, 'status')
+  assertEqual(received, undefined, 'body passed to handler')
+})
+
+Deno.test('withCors: no-body mode rejects payload hidden behind an empty stream chunk', async () => {
+  let handlerCalled = false
+  const handler = withCors(() => {
+    handlerCalled = true
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array())
+      controller.enqueue(new TextEncoder().encode('payload'))
+    },
+  })
+
+  const res = await handler(new Request('https://example.test', { method: 'POST', body }))
+
+  assertEqual(res.status, 400, 'status')
+  assertEqual(handlerCalled, false, 'handler must not run for a hidden payload')
+})
+
 Deno.test('withCors: no-body mode rejects supplied JSON before the handler runs', async () => {
   let handlerCalled = false
   const handler = withCors(() => {
@@ -501,7 +541,6 @@ Deno.test('withCors: no-body mode cancels a supplied stream before the handler r
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(new TextEncoder().encode('{"transcript":"must-not-be-parsed"}'))
-      controller.close()
     },
     cancel() {
       bodyCancelled = true
@@ -604,6 +643,29 @@ Deno.test('withCors: contains a supplied stream cancellation failure behind the 
   assertEqual(res.status, 400, 'status')
   const payload = await res.json()
   assertEqual(payload.error, 'Request body not allowed', 'generic response')
+})
+
+Deno.test('withCors: bounds a body stream whose read and cancellation never settle', async () => {
+  let handlerCalled = false
+  const handler = withCors(() => {
+    handlerCalled = true
+    return json({ ok: true })
+  }, { bodyMode: 'none' })
+  const body = new ReadableStream<Uint8Array>({
+    pull: () => new Promise<void>(() => undefined),
+    cancel: () => new Promise<void>(() => undefined),
+  })
+  const timedOut = Symbol('timed-out')
+
+  const result = await Promise.race([
+    handler(new Request('https://example.test', { method: 'POST', body })),
+    new Promise<typeof timedOut>((resolveTimeout) => setTimeout(() => resolveTimeout(timedOut), 250)),
+  ])
+
+  assertEqual(result === timedOut, false, 'wrapper must settle before the external deadline')
+  if (result === timedOut) return
+  assertEqual(result.status, 400, 'status')
+  assertEqual(handlerCalled, false, 'handler must not run for an indeterminate body')
 })
 
 Deno.test('withCors: safely cancels an over-limit no-body request before returning 429', async () => {

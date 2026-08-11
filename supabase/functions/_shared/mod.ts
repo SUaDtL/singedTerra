@@ -188,13 +188,57 @@ interface WithCorsDependencies {
   rateLimit?: RateLimitDependencies
 }
 
+const MAX_EMPTY_BODY_CHUNKS = 8
+const BODY_CHUNK_READ_TIMEOUT_MS = 25
+const BODY_CANCEL_TIMEOUT_MS = 25
+
+async function settleWithin(promise: Promise<unknown>, timeoutMs: number): Promise<void> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const settled = promise.then(() => undefined, () => undefined)
+  const timeout = new Promise<void>((resolveTimeout) => {
+    timeoutId = setTimeout(resolveTimeout, timeoutMs)
+  })
+  try {
+    await Promise.race([settled, timeout])
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId)
+  }
+}
+
 async function safelyCancelRequestBody(req: Request): Promise<void> {
   if (req.body === null) return
+  await settleWithin(req.body.cancel(), BODY_CANCEL_TIMEOUT_MS)
+}
+
+async function readBodyChunk(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+): Promise<ReadableStreamReadResult<Uint8Array> | undefined> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<undefined>((resolveTimeout) => {
+    timeoutId = setTimeout(() => resolveTimeout(undefined), BODY_CHUNK_READ_TIMEOUT_MS)
+  })
   try {
-    await req.body.cancel()
+    return await Promise.race([reader.read(), timeout])
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId)
+  }
+}
+
+async function requestBodyIsEmpty(req: Request): Promise<boolean> {
+  if (req.body === null) return true
+  const reader = req.body.getReader()
+  try {
+    for (let index = 0; index < MAX_EMPTY_BODY_CHUNKS; index += 1) {
+      const chunk = await readBodyChunk(reader)
+      if (chunk === undefined) return false
+      if (chunk.done) return true
+      if ((chunk.value?.byteLength ?? 0) > 0) return false
+    }
+    return false
   } catch {
-    // Cancellation errors are neither response nor log material. The caller
-    // still rejects the request with its generic contract.
+    return false
+  } finally {
+    await settleWithin(reader.cancel(), BODY_CANCEL_TIMEOUT_MS)
   }
 }
 
@@ -232,8 +276,7 @@ export function withCors(
             return json({ error: 'Too many requests. Please slow down.' }, 429)
           }
         }
-        if (req.body !== null) {
-          await safelyCancelRequestBody(req)
+        if (!await requestBodyIsEmpty(req)) {
           return json({ error: 'Request body not allowed' }, 400)
         }
       } else {
