@@ -30,10 +30,56 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
 afterEach(() => {
   vi.doUnmock('./ProductionDiagnosticsRegistry')
   vi.resetModules()
+  vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
 describe('ProductionDiagnostics immutable registry execution', () => {
+  it('contains a throwing descriptor projector as invalid_response and still settles the run', async () => {
+    vi.useFakeTimers()
+    const consoleSpies = [
+      vi.spyOn(console, 'debug').mockImplementation(() => undefined),
+      vi.spyOn(console, 'error').mockImplementation(() => undefined),
+      vi.spyOn(console, 'info').mockImplementation(() => undefined),
+      vi.spyOn(console, 'log').mockImplementation(() => undefined),
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined),
+    ]
+    const registry = Object.freeze([
+      Object.freeze({
+        id: 'verified-replay-runtime',
+        label: 'Verified replay runtime',
+        functionName: 'verified_replay_probe',
+        validateResponse: () => true,
+        projectPublicDetails: () => { throw new Error('projector-secret') },
+      }),
+    ] as const)
+    vi.doMock('./ProductionDiagnosticsRegistry', () => ({ PRODUCTION_DIAGNOSTIC_CHECKS: registry }))
+    const {
+      createProductionDiagnostics,
+      productionDiagnosticsReceiptForState,
+    } = await import('./ProductionDiagnostics')
+    const diagnostics = createProductionDiagnostics({
+      functions: { invoke: vi.fn(async () => ({ data: {}, error: null })) },
+    } as never)
+
+    const result = await diagnostics.runChecks()
+    expect(result).toMatchObject({
+      status: 'FAIL',
+      code: 'invalid_response',
+      results: [{ status: 'FAIL', code: 'invalid_response' }],
+    })
+    expect(diagnostics.state).toMatchObject({ status: 'FAIL', code: 'invalid_response' })
+    const receipt = productionDiagnosticsReceiptForState(diagnostics.state)
+    expect(receipt).toMatchObject({
+      overall: 'FAIL',
+      results: [{ status: 'FAIL', code: 'invalid_response' }],
+    })
+    expect(JSON.stringify({ result, state: diagnostics.state, receipt })).not.toContain('projector-secret')
+    expect(consoleSpies.flatMap((spy) => spy.mock.calls).flat().map(String).join(' '))
+      .not.toContain('projector-secret')
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
   it('settles every descriptor sequentially with independent validation and a complete receipt', async () => {
     const registry = Object.freeze([
       Object.freeze({

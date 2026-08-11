@@ -385,9 +385,15 @@ export function createProductionDiagnostics(
         ) return
         if (run.timer !== undefined) globalThis.clearTimeout(run.timer)
         run.timer = undefined
-        run.results.push(inspection === 'valid'
-          ? resultForSuccess(invocationCheck)
-          : failureResult(invocationCheck, inspection))
+        let result: DiagnosticCheckResult
+        try {
+          result = inspection === 'valid'
+            ? resultForSuccess(invocationCheck)
+            : failureResult(invocationCheck, inspection)
+        } catch {
+          result = failureResult(invocationCheck, 'invalid_response')
+        }
+        run.results.push(result)
         run.index += 1
         const nextCheck = run.checks[run.index]
         if (nextCheck) {

@@ -198,6 +198,8 @@ describe('verified-replay-runtime contract', () => {
   })
 
   it.each([
+    ['a wrong root ok flag', (response: MutableResponse) => { response.ok = false }],
+    ['a missing root ok flag', (response: MutableResponse) => { delete response.ok }],
     ['a wrong probe version', (response: MutableResponse) => { response.probeVersion = 2 }],
     ['a wrong engine version', (response: MutableResponse) => { response.engineVersion = 2 }],
     ['a wrong ruleset version', (response: MutableResponse) => { response.rulesetVersion = 2 }],

@@ -2,7 +2,7 @@
 
 **Frozen:** 2026-08-11
 **Branch:** `codex/authenticated-diagnostics`
-**Base and current HEAD before commit:** `a0b64cbf2392013e9c69b7c6eb4a0aa70036b613`
+**Original branch baseline:** `a0b64cbf2392013e9c69b7c6eb4a0aa70036b613`
 **Review target:** the complete working-tree diff plus every untracked file named below
 
 ## Governing artifacts
@@ -63,3 +63,34 @@ Review as if no prior approval implies correctness. Attack authorization confusi
 ## Delivery boundary
 
 This package does not claim AC-13. After a no-blocker verdict, the exact reviewed diff must pass the commit gate, become a PR, clear hosted CI on the exact reviewed PR head, merge, publish through GitHub Pages, and produce a PASS receipt from the existing signed-in production browser session without token extraction.
+
+## Committed-head coverage correction review
+
+The first sanctioned implementation commit is `6b7cd559dcc843363d274d28ba176a566e377039`. It has not been pushed. The `$ca-pr` coverage audit blocked that head before publication because `projectPublicDetails()` could throw after the timeout was cleared, escape the completion handler, and leave `runChecks()` unresolved.
+
+The correction is test-first and remains uncommitted for exact review:
+
+- RED: a throwing descriptor projector produced an unhandled `projector-secret` test sentinel and timed out instead of settling.
+- GREEN: descriptor projection is contained and becomes a terminal `invalid_response` result; the run settles and leaves no timer.
+- Contract mutation coverage now rejects root `ok: false` and missing root `ok`.
+- Integration coverage now closes during lazy factory resolution, an active run, and pending clipboard work; late work is ignored and disposed.
+- Clipboard rejection reports local failure without mutating the terminal receipt.
+- History API failure cannot prevent close or disposal.
+- Reduced-motion behavior has an executable CSS assertion.
+
+Fresh correction verification:
+
+- focused typecheck plus diagnostics/Lobby tests: GREEN, 145/145;
+- `npm run check`: GREEN;
+- `npm run check:edge`: GREEN, 310 passed;
+- `npm run test:client`: GREEN, 156 files / 1,360 tests;
+- `npm run build`: GREEN;
+- `npm run audit:deps`: GREEN, 0 vulnerabilities;
+- isolated production-bundle Playwright diagnostics matrix: GREEN, 12/12 across `desktop-fine`, `small-window`, and `pixel-touch`.
+
+Exact correction identity, excluding this self-referential package file:
+
+- working correction over `6b7cd559dcc843363d274d28ba176a566e377039`: SHA-256 `5ee94cb895894d1720879db8eef5d101014d9eb2915bed729531eb2effa202a7`, 7 files changed, 225 insertions, 3 deletions;
+- complete prospective branch diff over `origin/main`: SHA-256 `eefe93793d0822250169e61a583d4363723a0a33b7546b50c34cfe41abbc2270`, 20 files changed, 4,612 insertions, 12 deletions.
+
+Three independent reviewers cleared the prior exact correction: adversarial PASS with zero findings, coverage PASS with zero findings, and security PASS with no blockers. The security review's nonblocking Medium requested a direct proof that the throwing projector sentinel cannot reach state, receipts, or console output; that assertion is now green. Its Low corrected the historical baseline label above. The two new hashes identify this final audit-and-test hardening delta. Reviewers MUST inspect the live `git diff HEAD` correction, the complete `git diff origin/main`, this package, the spec, plan, sprint log, tests, and sprint evidence. T-11 is ACCEPTED and T-12 is IN PROGRESS, subject to narrow confirmation of this final delta before commit.

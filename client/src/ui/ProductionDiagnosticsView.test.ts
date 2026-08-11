@@ -477,6 +477,12 @@ describe('buildProductionDiagnosticsView', () => {
     expect(landscapeRule).not.toMatch(
       /#lobby\s+\.production-diagnostics[\s\S]*?\b(?:height|min-height|max-height|max-block-size)\s*:[^;]*vh\b/,
     )
+
+    const reducedMotionRule = DIAGNOSTICS_STYLE_SOURCE.match(
+      /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[\s\S]*?#lobby\s+\.production-diagnostics__actions\s+button\s*\{[\s\S]*?transition:\s*none;[\s\S]*?scroll-behavior:\s*auto;[\s\S]*?\}/,
+    )?.[0] ?? ''
+    expect(reducedMotionRule).toContain('transition: none')
+    expect(reducedMotionRule).toContain('scroll-behavior: auto')
   })
 
   it('delegates labelled dialog semantics to LobbyOverlayView', () => {

@@ -118,6 +118,13 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
   return match
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail })
+  return { promise, resolve, reject }
+}
+
 describe('Lobby account composition', () => {
   it('initializes the account owner and delegates sign-in credentials once', async () => {
     const root = document.createElement('div')
@@ -461,6 +468,147 @@ describe('Lobby account composition', () => {
     expect(root.querySelectorAll('.lobby-card')).toHaveLength(1)
     expect(root.querySelectorAll('.lobby-overlay')).toHaveLength(1)
     expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+  })
+
+  it('disposes a lazy diagnostics instance that resolves after the console closes', async () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1&keep=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    const factory = deferred<ProductionDiagnostics>()
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+      () => factory.promise,
+    )
+
+    lobby.show()
+    button(root, 'Close').click()
+    factory.resolve(diagnostics)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(diagnostics.dispose).toHaveBeenCalledOnce()
+    expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
+    expect(window.location.search).toBe('?keep=1')
+  })
+
+  it('ignores a diagnostics run rejection after close and keeps the console disposed', async () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1&keep=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    const run = deferred<DiagnosticCheckResult>()
+    diagnostics.runChecks.mockImplementationOnce(() => {
+      diagnostics.state = { status: 'RUNNING' }
+      return run.promise
+    })
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+      () => diagnostics,
+    )
+
+    lobby.show()
+    button(root, 'Run checks').click()
+    button(root, 'Close').click()
+    run.reject(new Error('late-run-secret'))
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(diagnostics.dispose).toHaveBeenCalledOnce()
+    expect(diagnostics.state).toEqual({ status: 'disposed' })
+    expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
+    expect(window.location.search).toBe('?keep=1')
+  })
+
+  it.each(['resolve', 'reject'] as const)('ignores a pending clipboard %s after close', async (settlement) => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1&keep=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    diagnostics.state = {
+      id: DIAGNOSTIC_ID,
+      label: DIAGNOSTIC_LABEL,
+      status: 'FAIL',
+      code: 'request_failed',
+    }
+    const copy = deferred<void>()
+    const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(() => copy.promise) },
+    })
+
+    try {
+      const lobby = createLobbyWithDiagnostics(
+        root,
+        (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+        () => diagnostics,
+      )
+      lobby.show()
+      button(root, 'Copy receipt').click()
+      button(root, 'Close').click()
+      if (settlement === 'resolve') copy.resolve()
+      else copy.reject(new Error('late-clipboard-secret'))
+      await Promise.resolve()
+      await Promise.resolve()
+
+      expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
+      expect(root.textContent).not.toContain('Receipt copied')
+      expect(root.textContent).not.toContain('Receipt copy failed')
+      expect(window.location.search).toBe('?keep=1')
+    } finally {
+      if (clipboardDescriptor) Object.defineProperty(navigator, 'clipboard', clipboardDescriptor)
+      else delete (navigator as unknown as { clipboard?: unknown }).clipboard
+    }
+  })
+
+  it('reports clipboard rejection locally without changing the terminal receipt', async () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    diagnostics.state = { id: DIAGNOSTIC_ID, label: DIAGNOSTIC_LABEL, status: 'FAIL', code: 'request_failed' }
+    const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => { throw new Error('clipboard-secret') }) },
+    })
+
+    try {
+      const lobby = createLobbyWithDiagnostics(
+        root,
+        (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+        () => diagnostics,
+      )
+      lobby.show()
+      button(root, 'Copy receipt').click()
+      await vi.waitFor(() => expect(root.textContent).toContain('Receipt copy failed'))
+      expect(diagnostics.state).toMatchObject({ status: 'FAIL', code: 'request_failed' })
+    } finally {
+      if (clipboardDescriptor) Object.defineProperty(navigator, 'clipboard', clipboardDescriptor)
+      else delete (navigator as unknown as { clipboard?: unknown }).clipboard
+    }
+  })
+
+  it('closes and disposes diagnostics even when history replacement throws', () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    const diagnostics = new FakeProductionDiagnostics()
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+      () => diagnostics,
+    )
+    lobby.show()
+    vi.spyOn(window.history, 'replaceState').mockImplementationOnce(() => { throw new Error('history failure') })
+
+    button(root, 'Close').click()
+
+    expect(diagnostics.dispose).toHaveBeenCalledOnce()
+    expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
   })
 
   it('wires the manual run and copies only the sanitized receipt through the lobby integration', async () => {

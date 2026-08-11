@@ -122,3 +122,13 @@ Carson's third exact-diff review returned MERGE ELIGIBLE with no blocking findin
 ## Final adversarial verdict
 
 Carson reviewed the complete package, live tracked binary diff, and all untracked files through three correction cycles plus an exact-final type-delta confirmation. Final verdict: MERGE ELIGIBLE, with no blocking or nonblocking findings. The exact pre-delivery identity before this audit-only status transition was tracked SHA-256 c54245deae68e57768def3308b48429b87194d99a85e6af12483f2632b761be9; all 11/11 untracked manifest hashes matched. T-11 is accepted and T-12 delivery is in progress. The final package is regenerated once more to include this status record and receives a narrow exact-delta confirmation before commit.
+
+
+## Committed-head coverage correction cycle
+
+The $ca-pr coverage auditor blocked committed head 6b7cd559dcc843363d274d28ba176a566e377039 before push. It identified a real settlement defect: a descriptor public-details projector could throw after its timeout was cleared, escaping the async handler and leaving the run unresolved. A failing timeout-bound regression reproduced the hang and unhandled rejection. The runner now contains projector failure as bounded invalid_response and always settles. Coverage was also strengthened for wrong and missing root ok, close during lazy-factory/run/clipboard work, clipboard rejection feedback, hostile History API replacement, and reduced-motion CSS. Focused typecheck and 145 tests pass. T-11 is reopened until the corrected diff clears exact review; T-12 is pending.
+
+
+Fresh committed-head correction gates: `npm run check` PASS; `npm run check:edge` PASS with 310 tests; `npm run test:client` PASS with 156 files and 1,360 tests; `npm run build` PASS; `npm run audit:deps` PASS with zero vulnerabilities; production-bundle Playwright diagnostics 12/12 across desktop-fine, pixel-touch, and small-window.
+
+Three independent exact-diff reviewers reproduced correction SHA-256 `dd768a46dbb782a94440ddd98f759b4f49bc55efad6a206383b8a76858b762e6` and prospective branch SHA-256 `439ec4090f11055b8105ba11381884dd43426b50ce625f5786febfbe0ae6ca2a`. Adversarial and coverage verdicts were PASS with zero findings. Security was PASS with no blockers and requested one nonblocking defense-in-depth assertion: the projector exception sentinel must be absent from state, receipt, and console output. That assertion is now green (3/3 focused), and the stale package baseline label is corrected. T-11 is ACCEPTED; T-12 delivery is IN PROGRESS.
