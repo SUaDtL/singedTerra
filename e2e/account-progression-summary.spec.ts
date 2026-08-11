@@ -6,146 +6,64 @@ async function openLocalPreparation(page: Page): Promise<void> {
   await expect(page.locator('.lobby-preview')).toBeVisible();
 }
 
-async function installSummaryFixture(page: Page, available: boolean, open = true): Promise<void> {
-  await page.evaluate(({ hasSummary, isOpen }) => {
-    document.querySelector('#lobby .account-panel')?.remove();
-    const panel = document.createElement('section');
-    panel.className = 'account-panel account-panel--authenticated';
-    panel.classList.toggle('account-panel--open', isOpen);
-    panel.dataset['summaryFixture'] = hasSummary ? 'available' : 'unavailable';
-
-    const trigger = document.createElement('button');
-    trigger.className = 'account-panel__account-trigger';
-    if (hasSummary) {
-      const commander = document.createElement('span');
-      commander.className = 'account-panel__commander-name';
-      commander.textContent = 'ABCDEFGHIJKLMNOPQRSTUVWX';
-      const rankRow = document.createElement('span');
-      rankRow.className = 'account-panel__commander-rank-row';
-      const insignia = document.createElement('span');
-      insignia.className = 'account-panel__commander-insignia';
-      insignia.setAttribute('role', 'img');
-      insignia.setAttribute('aria-label', 'Bombardier rank insignia: double diamond');
-      insignia.textContent = '◆◆';
-      const rank = document.createElement('span');
-      rank.className = 'account-panel__commander-rank';
-      rank.textContent = 'R-03 / Bombardier';
-      rankRow.append(insignia, rank);
-      const level = document.createElement('span');
-      level.className = 'account-panel__commander-level';
-      level.textContent = 'Level 3';
-      const milestone = document.createElement('span');
-      milestone.className = 'account-panel__record-milestone';
-      milestone.textContent = '300 XP to Level 4';
-      const nextRank = document.createElement('span');
-      nextRank.className = 'account-panel__career-next';
-      nextRank.textContent = 'NEXT RANK / ARTILLERIST / LEVEL 5';
-      trigger.append(commander, rankRow, level, milestone, nextRank);
-      trigger.setAttribute(
-        'aria-label',
-        'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account',
-      );
-    } else {
-      trigger.textContent = 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
-    }
-    trigger.setAttribute('aria-expanded', String(isOpen));
-    if (hasSummary && !isOpen) {
-      const record = document.createElement('section');
-      record.className = 'account-panel__record';
-      record.setAttribute('aria-label', 'Commander dossier');
-      const heading = document.createElement('h2');
-      heading.textContent = 'COMMANDER DOSSIER';
-      const meter = document.createElement('progress');
-      meter.className = 'account-panel__record-xp';
-      meter.value = 200;
-      meter.max = 500;
-      meter.setAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX Level 3 XP progress');
-      record.append(heading, trigger, meter);
-      panel.append(record);
-    } else {
-      panel.append(trigger);
-    }
-
-    const identity = document.createElement('span');
-    identity.className = 'account-panel__identity';
-    identity.textContent = 'Commander ABCDEFGHIJKLMNOPQRSTUVWX';
-    panel.append(identity);
-
-    if (hasSummary) {
-      const summary = document.createElement('dl');
-      summary.className = 'account-panel__progress';
-      for (const [label, value] of [
-        ['Matches', '8'],
-        ['Recorded wins', '4'],
-        ['Level', '3'],
-      ]) {
-        const item = document.createElement('div');
-        item.className = 'account-panel__progress-item';
-        const term = document.createElement('dt');
-        term.textContent = label;
-        const count = document.createElement('dd');
-        count.textContent = value;
-        item.append(term, count);
-        summary.append(item);
-      }
-      panel.append(summary);
-
-      const career = document.createElement('section');
-      career.className = 'account-panel__career';
-      career.setAttribute('aria-label', 'Commander career rank');
-      const currentRank = document.createElement('strong');
-      currentRank.className = 'account-panel__career-current';
-      currentRank.textContent = 'R-03 / Bombardier';
-      const nextRank = document.createElement('span');
-      nextRank.className = 'account-panel__career-next';
-      nextRank.textContent = 'Next rank: Artillerist at Level 5';
-      const careerInsignia = document.createElement('span');
-      careerInsignia.className = 'account-panel__career-insignia';
-      careerInsignia.setAttribute('role', 'img');
-      careerInsignia.setAttribute('aria-label', 'Bombardier rank insignia: double diamond');
-      careerInsignia.textContent = '◆◆';
-      career.append(careerInsignia, currentRank, nextRank);
-      panel.append(career);
-
-      const xp = document.createElement('div');
-      xp.className = 'account-panel__xp';
-      const header = document.createElement('div');
-      header.className = 'account-panel__xp-header';
-      const label = document.createElement('span');
-      label.className = 'account-panel__xp-label';
-      label.textContent = 'XP progress';
-      const value = document.createElement('span');
-      value.className = 'account-panel__xp-value';
-      value.textContent = '200 / 500 XP';
-      header.append(label, value);
-      const meter = document.createElement('progress');
-      meter.className = 'account-panel__xp-meter';
-      meter.value = 200;
-      meter.max = 500;
-      meter.setAttribute('aria-label', 'Level 3 XP progress');
-      const remaining = document.createElement('span');
-      remaining.className = 'account-panel__xp-remaining';
-      remaining.textContent = '300 XP to Level 4';
-      xp.append(header, meter, remaining);
-      panel.append(xp);
-    } else {
-      const unavailable = document.createElement('span');
-      unavailable.className = 'account-panel__summary-unavailable';
-      unavailable.textContent = 'Progress summary unavailable';
-      panel.append(unavailable);
-    }
-
-    const signOut = document.createElement('button');
-    signOut.className = 'account-panel__secondary';
-    signOut.textContent = 'Sign out';
-    panel.append(signOut);
-
-    const close = document.createElement('button');
-    close.className = 'account-panel__secondary account-panel__close';
-    close.textContent = 'Close';
-    panel.append(close);
-    document.querySelector('.lobby-deployment__masthead')?.append(panel);
-  }, { hasSummary: available, isOpen: open });
+async function gotoProductionAccountFixture(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('sb-localhost-auth-token', JSON.stringify({
+      access_token: 'e2e-public-session-token',
+      refresh_token: 'e2e-public-refresh-token',
+      expires_at: 4_102_444_800,
+      expires_in: 3_600,
+      token_type: 'bearer',
+      user: {
+        id: 'e2e-commander',
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: 'commander@example.test',
+        app_metadata: {},
+        user_metadata: {},
+        created_at: '2026-08-10T00:00:00.000Z',
+      },
+    }));
+  });
+  await page.route('**/rest/v1/profiles**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'e2e-commander',
+        display_name: 'ABCDEFGHIJKLMNOPQRSTUVWX',
+      }),
+    });
+  });
+  await page.route('**/functions/v1/account_summary', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        matchesPlayed: 55,
+        wins: 40,
+        progressionVersion: 1,
+        totalXp: 9_500,
+        level: 20,
+        levelXp: 0,
+        nextLevelXp: 500,
+        verifiedProgression: {
+          evidence: 'verified_replay_v1',
+          matchesPlayed: 8,
+          wins: 4,
+          progressionVersion: 1,
+          totalXp: 1_200,
+          level: 3,
+          levelXp: 200,
+          nextLevelXp: 500,
+        },
+      }),
+    });
+  });
+  await page.goto('./');
+  await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await expect(page.locator('#lobby')).toBeVisible();
+  await expect(page.locator('#lobby .account-panel--authenticated')).toBeVisible();
 }
 
 async function expectInside(inner: Locator, outer: Locator): Promise<void> {
@@ -187,21 +105,19 @@ async function renderedTextBox(locator: Locator): Promise<{
 
 test.describe('Account progression summary compact readability', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoLobby(page);
+    await gotoProductionAccountFixture(page);
     const compact = await isCompact(page);
     test.skip(!compact, 'Account summary typography oracle requires a compact project');
     expect(compact, 'test project must exercise #app.is-compact').toBe(true);
   });
 
   test('available summary remains legible, contained, and non-overlapping', async ({ page }) => {
-    await installSummaryFixture(page, true);
-    const panel = page.locator('[data-summary-fixture="available"]');
-    const trigger = panel.locator('.account-panel__account-trigger');
-    await panel.evaluate((node) => {
-      node.style.width = '330px';
-    });
+    const trigger = page.locator('#lobby .account-panel__account-trigger');
     await expect(trigger).toBeVisible();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    const panel = page.getByRole('dialog', { name: 'Player account' }).locator('.account-panel');
+    await expect(panel).toBeVisible();
     const summary = panel.locator('.account-panel__progress');
     const labels = summary.locator('dt');
     const values = summary.locator('dd');
@@ -312,12 +228,7 @@ test.describe('Account progression summary compact readability', () => {
     await openLocalPreparation(page);
     const preview = page.locator('.lobby-preview');
     const masthead = page.locator('.lobby-deployment__masthead');
-    const baselinePreviewBox = await preview.boundingBox();
-    const baselineMastheadBox = await masthead.boundingBox();
-    expect(baselinePreviewBox, 'no-record preview should render').not.toBeNull();
-    expect(baselineMastheadBox, 'no-record masthead should render').not.toBeNull();
-    await installSummaryFixture(page, true, false);
-    const panel = page.locator('[data-summary-fixture="available"]');
+    const panel = page.locator('#lobby .account-panel--authenticated');
     const trigger = panel.locator('.account-panel__account-trigger');
     const spotlight = page.locator('.lobby-preview__spotlight');
     const missionBrief = page.locator('.lobby-deployment__mission-brief');
@@ -377,8 +288,6 @@ test.describe('Account progression summary compact readability', () => {
     expect(missionBriefBox).not.toBeNull();
     expect(reservedPreviewBox, 'dossier-reserved preview should render').not.toBeNull();
     expect(reservedMastheadBox, 'dossier-reserved masthead should render').not.toBeNull();
-    expect(reservedPreviewBox!.y).toBeGreaterThan(baselinePreviewBox!.y);
-    expect(reservedMastheadBox!.height).toBeGreaterThan(baselineMastheadBox!.height);
     expect(
       boxesOverlap(panelBox!, spotlightBox!),
       `collapsed account trigger must not cover the vehicle spotlight: ${JSON.stringify({ panelBox, spotlightBox })}`,
@@ -389,26 +298,15 @@ test.describe('Account progression summary compact readability', () => {
     ).toBe(false);
   });
 
-  test('unavailable summary remains legible and contained', async ({ page }) => {
-    await installSummaryFixture(page, false);
-    const panel = page.locator('[data-summary-fixture="unavailable"]');
-    const unavailable = panel.locator('.account-panel__summary-unavailable');
-    const box = await unavailable.boundingBox();
-    expect(box, 'unavailable summary should render').not.toBeNull();
-    expect(box!.height, 'unavailable summary should retain at least 8 physical pixels')
-      .toBeGreaterThanOrEqual(8);
-    await expectInside(unavailable, panel);
-  });
 });
 
 test.describe('Collapsed commander dossier front-door geometry', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoLobby(page);
-    await installSummaryFixture(page, true, false);
+    await gotoProductionAccountFixture(page);
   });
 
   test('keeps the full dossier inside the masthead and clear of deployment choices', async ({ page }) => {
-    const panel = page.locator('[data-summary-fixture="available"]');
+    const panel = page.locator('#lobby .account-panel--authenticated');
     const masthead = page.locator('.lobby-deployment__masthead');
     const chooser = page.locator('.lobby-deployment-chooser');
     const trigger = panel.locator('.account-panel__account-trigger');

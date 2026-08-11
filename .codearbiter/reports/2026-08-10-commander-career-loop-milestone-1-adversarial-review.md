@@ -8,10 +8,19 @@
 ## Findings and dispositions
 
 1. **HIGH - delayed Account A result could become an Account B receipt.** Resolved. `AccountSession` captures both account generation and profile ID and rejects before and after refresh if either identity changes. The adversarial test uses Account B with the exact XP delta that fooled the previous value-only guard.
-2. **MEDIUM / merge-blocking - promotion browser oracle did not use each real project viewport.** Resolved. The oracle now uses the supplied project page, preserves its viewport, checks horizontal and vertical ordering, disjointness from title/score/actions/tank, viewport containment, and document overflow.
-3. **MEDIUM / merge-blocking - rank and promotion copy fell below a physical legibility floor.** Resolved. Compact typography was raised and browser tests require at least eight physical pixels for every new career identity element.
-4. **MEDIUM / merge-blocking - no causal coverage for a promotion earned after a loss.** Resolved. A loss crossing Level 5 receives Artillerist promotion treatment. Temporarily gating promotion on `receipt.won` made this test fail.
-5. **MEDIUM / merge-blocking - the spec promised insignia but shipped only a textual code.** Resolved. Every rank now has a stable visible insignia mark and accessible label, rendered in the dossier, Player Record, ordinary receipt, and promotion receipt.
+2. **MEDIUM / merge-blocking - promotion browser oracle did not use each real project viewport.** Invalidated by ADR-0013/0014 and removed. The oracle fabricated an unreachable casual promotion path.
+3. **MEDIUM / merge-blocking - rank and promotion copy fell below a physical legibility floor.** Partially superseded. Reachable verified rank typography now clears the eight-physical-pixel browser floor; promotion presentation is deferred.
+4. **MEDIUM / merge-blocking - no causal coverage for a promotion earned after a loss.** Invalidated. Casual win and loss receipts are now both required to make no promotion claim.
+5. **MEDIUM / merge-blocking - the spec promised insignia but shipped only a textual code.** Resolved for reachable verified rank surfaces. The dossier and Player Record use one stable visible insignia with an accessible label; no receipt renders rank.
+
+## Superseding coverage-audit note
+
+The earlier promotion-browser resolution above was invalidated by the final coverage audit:
+its browser oracle fabricated unreachable promotion markup. Because ADR-0013 and ADR-0014
+freeze verified awards and prohibit casual rank claims, the correction removes that oracle
+instead of manufacturing a production test bypass. Current browser coverage exercises only
+reachable account rank and ordinary After Action Report behavior. Promotion presentation is
+deferred until a verified award path exists.
 
 ## Correction verification
 

@@ -1873,6 +1873,11 @@ export class Lobby {
         letter-spacing: 0.35px;
       }
       #lobby .account-panel__career-insignia { font-size: 20px; }
+      #app.is-compact #lobby .account-panel__career > .account-panel__career-next {
+        font-size: 16px;
+      }
+      #app.is-compact #lobby .account-panel__career-current { font-size: 16px; }
+      #app.is-compact #lobby .account-panel__career-insignia { font-size: 24px; }
       #app.is-compact #lobby .lobby-command-header {
         min-height: 8px;
         margin-bottom: 0;

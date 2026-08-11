@@ -2743,9 +2743,6 @@ export class HUD {
     this.overlayEl.style.removeProperty('--st-victory-color');
     this.overlayProgressionReceiptEl.hidden = true;
     this.overlayProgressionReceiptEl.textContent = '';
-    this.overlayProgressionReceiptEl.classList.remove(
-      'st-hud__victory-progression-receipt--promotion',
-    );
     this.clearAnonymousProgressionHandoff();
     this.overlayShown = false;
 
@@ -2773,9 +2770,6 @@ export class HUD {
     summaryLine.className = 'st-hud__victory-progression-summary';
     summaryLine.textContent =
       `${outcome} · +${earnedXp} XP · ${remainingXp} XP to Level ${summary.level + 1}`;
-    this.overlayProgressionReceiptEl.classList.remove(
-      'st-hud__victory-progression-receipt--promotion',
-    );
     this.overlayProgressionReceiptEl.replaceChildren(summaryLine);
     this.overlayProgressionReceiptEl.hidden = false;
     this.clearAnonymousProgressionHandoff();
@@ -4030,93 +4024,11 @@ export class HUD {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.st-hud__victory-progression-summary,
-.st-hud__victory-career-next,
-.st-hud__victory-promotion-kicker {
+.st-hud__victory-progression-summary {
   grid-column: 1 / -1;
 }
-.st-hud__victory-career-insignia {
-  grid-column: 1;
-  align-self: center;
-  color: #ffd36f;
-  font-family: var(--font-display);
-  font-size: 18px;
-  letter-spacing: 1px;
-  text-shadow: 0 0 12px rgba(255, 188, 80, 0.35);
-  white-space: nowrap;
-}
-.st-hud__victory-career-current {
-  grid-column: 2;
-  align-self: center;
-  color: #f8d78d;
-  font-size: 11px;
-}
-.st-hud__victory-career-next {
-  padding-top: 5px;
-  border-top: 1px solid currentColor;
-  color: rgba(225, 214, 191, 0.72);
-  font-size: 9px;
-}
-.st-hud__victory-progression-receipt--promotion {
-  padding: 12px 14px;
-  color: #ffe0a0;
-  border-color: rgba(255, 188, 80, 0.72);
-  border-left-width: 4px;
-  border-radius: 0;
-  background: linear-gradient(105deg, rgba(229, 161, 65, 0.24), rgba(7, 10, 12, 0.82));
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
-}
-.st-hud__victory-promotion-kicker {
-  color: rgba(255, 224, 160, 0.72);
-  font-size: 9px;
-  letter-spacing: 0.18em;
-}
-.st-hud__victory-promotion-code {
-  grid-column: 1;
-  grid-row: 3;
-  align-self: end;
-  color: #f4bc58;
-  font-size: 13px;
-}
-.st-hud__victory-promotion-insignia {
-  grid-column: 1;
-  grid-row: 2;
-  align-self: center;
-  color: #ffd36f;
-  font-family: var(--font-display);
-  font-size: 26px;
-  line-height: 1;
-  letter-spacing: 1px;
-  text-shadow: 0 0 15px rgba(255, 188, 80, 0.42);
-  white-space: nowrap;
-}
-.st-hud__victory-promotion-title {
-  grid-column: 2;
-  grid-row: 2 / span 2;
-  align-self: center;
-  min-width: 0;
-  color: #fff1c8;
-  font-family: var(--font-display);
-  font-size: clamp(18px, 2.3vw, 28px);
-  line-height: 1;
-  letter-spacing: 0.035em;
-  overflow-wrap: anywhere;
-}
-#app.is-compact .st-hud__victory-progression-summary,
-#app.is-compact .st-hud__victory-career-current,
-#app.is-compact .st-hud__victory-career-next,
-#app.is-compact .st-hud__victory-promotion-kicker {
+#app.is-compact .st-hud__victory-progression-summary {
   font-size: calc(var(--st-store-buy-target) * 0.2);
-}
-#app.is-compact .st-hud__victory-promotion-code {
-  font-size: calc(var(--st-store-buy-target) * 0.22);
-}
-#app.is-compact .st-hud__victory-career-insignia,
-#app.is-compact .st-hud__victory-promotion-insignia {
-  font-size: calc(var(--st-store-buy-target) * 0.3);
-}
-#app.is-compact .st-hud__victory-promotion-title {
-  font-size: calc(var(--st-store-buy-target) * 0.34);
 }
 .st-hud__victory-progression-handoff {
   display: grid;

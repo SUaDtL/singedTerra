@@ -170,6 +170,65 @@ Deno.test('verified replay covers exact best-of-three and four-seat team lifecyc
   }))
 })
 
+Deno.test('verified replay accepts exactly 448 total ticks and rejects a 447-tick budget', () => {
+  const teamConfig = {
+    ...CONFIG,
+    options: {
+      ...CONFIG.options,
+      players: [
+        { name: 'P1', color: '#e84d4d', team: 1 },
+        { name: 'P2', color: '#4d8ce8', team: 2 },
+        { name: 'P3', color: '#4de884', team: 1 },
+        { name: 'P4', color: '#e8c44d', team: 2 },
+      ],
+      maxPlayers: 4,
+      rounds: 3,
+      teamMode: true,
+    },
+  }
+  const maximumTranscript = [
+    ...selfShots(7),
+    { type: 'next_round' as const },
+    ...selfShots(7),
+  ]
+  const accepted = replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 448 })
+  if (accepted.tickCount !== 448) {
+    throw new Error(`exact total-tick ceiling drifted: ${JSON.stringify(accepted)}`)
+  }
+
+  let code = ''
+  try {
+    replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 447 })
+  } catch (error) {
+    code = error && typeof error === 'object' && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : ''
+  }
+  if (code !== 'tick_limit') throw new Error(`447-tick budget returned ${JSON.stringify(code)}`)
+})
+
+Deno.test('verified replay accepts exactly 198 ticks in one turn and rejects a 197-tick budget', () => {
+  const scenario = TERMINAL_CASES[0]
+  const transcript = [
+    scenario.first,
+    ...Array.from({ length: scenario.missiles }, () => MISSILE),
+  ]
+  const accepted = replayVerifiedTranscript(CONFIG, transcript, { maxTicksPerTurn: 198 })
+  if (accepted.maxTurnTickCount !== 198) {
+    throw new Error(`exact per-turn ceiling drifted: ${JSON.stringify(accepted)}`)
+  }
+
+  let code = ''
+  try {
+    replayVerifiedTranscript(CONFIG, transcript, { maxTicksPerTurn: 197 })
+  } catch (error) {
+    code = error && typeof error === 'object' && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : ''
+  }
+  if (code !== 'turn_tick_limit') throw new Error(`197-tick turn budget returned ${JSON.stringify(code)}`)
+})
+
 const MAX_COST_OPTIONS = {
   players: [
     { name: 'P1', color: '#e84d4d', team: 1 as const },

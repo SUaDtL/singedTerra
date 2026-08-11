@@ -7,31 +7,31 @@
 
 ## Outcome
 
-Milestone 1 changes progression from arithmetic-only feedback into a visible Commander career identity. A validated level now maps to one stable rank and next-rank milestone in both pre-game account surfaces. An accepted hot-seat result carries its validated prior and current summaries, allowing the After Action Report to distinguish ordinary progress from a real promotion without inventing client-owned XP.
+Milestone 1 changes verified progression from arithmetic-only feedback into a visible Commander career identity. Only nested `verified_replay_v1` progression maps to a stable rank and next-rank milestone in pre-game account surfaces. Accepted hot-seat results remain casual progression receipts and cannot render rank or promotion.
 
 No existing tank, weapon, world, mode, or Garage choice is locked. No gameplay advantage is attached to rank.
 
 ## SMARTS record
 
-Selected the additive career-rank and promotion route over content locks or a copy-only XP patch. It addresses identity and aspiration while preserving existing choice and the server-owned progression boundary. The initiative remains active after this milestone so tactical objectives and return-loop cohesion are not mislabeled as complete.
+Selected the additive verified-career route over content locks or a copy-only XP patch. The first implementation exposed that existing hot-seat XP was not strong enough evidence for rank, so ADR-0013 and ADR-0014 froze awards and narrowed this milestone to verified identity presentation plus replay feasibility. The initiative remains active.
 
 ## TDD evidence
 
 - Career model RED: focused Vitest failed to resolve the absent `commanderCareer` module.
 - Trusted receipt RED: `AccountSession` returned only the current summary; the new prior/current assertion failed causally.
 - Dossier RED: three `AccountPanelView` cases failed because rank, next-rank semantics, and career panel did not exist.
-- Promotion RED: ordinary and promotion HUD tests failed because structured career content and promotion state did not exist.
+- Invalidated RED: early promotion HUD tests assumed casual receipts could drive rank. ADR-0013/0014 rejected that premise; the final tests require casual threshold crossings to remain progression-only.
 - GREEN: 153 client files and 1,214 tests passed after implementation and review corrections.
 
 ## Mutation and adversarial evidence
 
 - Moving the Artillerist threshold from Level 5 to 6 caused four model tests to fail.
-- Replacing promotion detection with `null` caused two model tests and the promotion HUD test to fail.
-- Gating promotion recognition on `receipt.won` caused the explicit participation-XP loss promotion test to fail, proving losses cannot silently suppress a legitimately earned rank.
+- Rank-model threshold mutations still fail model tests, but no current HUD path consumes that model for promotion.
+- Win and loss receipts both prove that casual threshold crossings cannot produce rank or promotion claims.
 - Switching from Account A to Account B while a matching-XP result refresh was deferred initially produced a cross-account receipt. The corrected generation-and-profile guard made the same adversarial test green.
 - Removing semantic insignia content made the rank model and UI accessibility tests fail; each rank now owns a visible mark and accessible label.
 - The first isolated real-browser pass caught a Pixel-touch regression: the expanded dossier overlapped the vehicle spotlight and escaped the masthead reservation. Increasing the dossier-aware masthead and preview reservation made the same oracle green.
-- The review-corrected production bundle was tested in each real project viewport. New rank and promotion text retains at least eight physical pixels, remains contained, and stays disjoint from title, score, actions, tank, and deployment content.
+- The review-corrected production bundle was tested in each real project viewport. Reachable verified rank text retains at least eight physical pixels in the account composition; ordinary After Action progression remains contained and disjoint from title, score, actions, and tank content.
 - Stale, unavailable, duplicate, idempotent, wrong-delta, anonymous, AI-owned, network, E2E-fixture, and superseded-session suppression remain covered by the existing focused suites.
 
 ## Verification matrix
@@ -73,6 +73,22 @@ The adversarial milestone review blocked the original rank source because ADR-00
 - Corrected terminal RED/GREEN: empty, nonterminal, and trailing transcripts are distinct failures; `actionCount` now means accepted and applied actions only.
 - Roster RED/GREEN: verified matches accept 2-4 distinct seats, require at least one human, reject team metadata outside team mode, and require an exact 2v2 roster in team mode. Initially verified rounds are limited to one or three.
 - Rank-source RED/GREEN: casual summaries and ordinary hot-seat receipts cannot render rank, insignia, or promotion content. Only the exact nested `verified_replay_v1` progression shape reaches the career model.
+
+## Final coverage-audit correction
+
+The dedicated coverage auditor blocked the first committed head because the Playwright
+promotion oracle constructed its own markup rather than invoking reachable production
+behavior. That test overstated the slice: verified awards are deliberately not implemented,
+and casual receipts MUST NOT claim promotion. The fabricated promotion oracle was removed.
+The real account composition now receives a deterministic authenticated session through the
+Lobby factory seam, proving verified rank selection, modal rendering, accessibility, and
+geometry without replacing production DOM. The same pass raised compact next-rank typography
+after the real composition exposed a seven-physical-pixel label.
+
+Replay coverage now includes exact 448/447 total-tick and 198/197 per-turn boundaries plus
+table-driven parser and legality cases. Temporarily mutating both tick guards from `>=` to `>`
+made both adjacent-boundary tests fail; restoring production returned the focused and full
+Edge suites to green.
 - Mutation matrix: removing the total-action admission guard changed `action_limit` to `non_terminal`; disabling total/per-turn tick guards removed both expected budget failures; disabling both exact-terminal checks changed `trailing_action` to `illegal_action`; disabling exact fire keys changed an over-posted action from `invalid_action` to `non_terminal`; widening gravity admitted a rejected configuration; permitting caller-expanded ceilings removed the expected `invalid_limits`; disabling the no-state-change purchase check changed an unaffordable Nuke from `illegal_action` to `non_terminal`; replacing own-property allowlists with `in` admitted prototype names; synthesizing verified evidence from casual level exposed `R-03 / Bombardier`; and selecting outer casual metrics while retaining verified rank changed the divergent Level 2 career label to casual Level 20. Every focused mutation run failed causally. All guards were restored before final verification.
 
 ### Feasibility verification

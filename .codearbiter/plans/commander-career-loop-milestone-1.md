@@ -6,7 +6,7 @@
 
 ## Goal
 
-Ship one complete career identity and promotion loop: current rank before battle, trustworthy promotion recognition after battle, and a named next rank afterward.
+Ship the verified-only career identity boundary before battle, honest casual progression feedback after battle, and a bounded shared-engine replay proof that can support later verified awards.
 
 ## Architecture
 
@@ -32,7 +32,7 @@ Create a pure career-rank presentation model that consumes only a validated leve
 - [x] Implement the smallest pure typed rank model.
 - [x] Verify GREEN and mutate threshold ordering, boundary comparison, and terminal handling independently.
 
-### Task 2 — Pin the trusted promotion receipt RED
+### Task 2 — Pin the trusted progression receipt RED
 
 **Files:**
 - Modify: `client/src/client/hotSeatProgression.ts`
@@ -58,16 +58,16 @@ Create a pure career-rank presentation model that consumes only a validated leve
 - [x] Implement the model-backed dossier/record presentation and responsive styling.
 - [x] Verify GREEN and prove the compact containment oracle fails against the pre-correction masthead/preview reservation.
 
-### Task 4 — Pin promotion payoff RED
+### Task 4 — Pin honest After Action progression RED
 
 **Files:**
 - Modify: `client/src/ui/HUD.victoryReport.test.ts`
 - Modify: `client/src/ui/HUD.ts`
 - Modify affected composition/browser tests.
 
-- [x] Add failing tests for promotion, ordinary progress, win/loss XP, terminal-rank model behavior, reset, polite announcement, and unchanged focus actions.
+- [x] Add failing tests for ordinary progress, win/loss XP, casual threshold isolation, reset, polite announcement, and unchanged focus actions.
 - [x] Add browser geometry/accessibility assertions for the real victory report across desktop, compact, and touch layouts.
-- [x] Implement authored promotion hierarchy using the trusted receipt and shared career model.
+- [x] Keep casual receipts progression-only and structurally unable to render rank or promotion while verified awards remain frozen.
 - [x] Verify GREEN and mutate threshold detection; model and HUD tests rejected the mutation.
 
 ### Task 5 — Review and deliver the milestone
@@ -82,5 +82,15 @@ Create a pure career-rank presentation model that consumes only a validated leve
 
 - Every Milestone 1 acceptance criterion maps to Tasks 1–5.
 - The pure career model is the only owner of rank thresholds and labels.
-- The trusted result seam remains the only source of a promotion claim.
+- No current result seam can produce a promotion claim; that remains deferred to a verified award path.
 - No placeholder, entitlement, backend, or gameplay work is bundled into this milestone.
+
+## Coverage-audit correction
+
+The final coverage audit found that the browser promotion oracle fabricated DOM that no
+production path could render. ADR-0013 and ADR-0014 intentionally freeze promotion claims
+until verified awards exist, while casual hot-seat receipts remain progression-only. The
+fabricated oracle was removed instead of adding an E2E bypass. Account geometry now runs
+through a deterministic authenticated session and the real Lobby/AccountPanelView
+composition. Replay parser, legality, and exact tick-ceiling branches are locked by focused
+mutation-resistant tests.
