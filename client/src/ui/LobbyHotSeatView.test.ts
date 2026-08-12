@@ -16,6 +16,7 @@ function options(overrides: Partial<LobbyHotSeatViewOptions> = {}): LobbyHotSeat
     advanced: section('advanced'),
     customizationOpen: false,
     validationMessage: null,
+    verifiedDeployment: null,
     onPlayerCountChange: vi.fn(),
     onCustomizationToggle: vi.fn(),
     onStart: vi.fn(),
@@ -141,5 +142,95 @@ describe('buildLobbyHotSeatView', () => {
 
     expect(root.querySelector<HTMLDetailsElement>('.lobby-hotseat-customization')?.open)
       .toBe(true);
+  });
+
+  it('keeps casual deployment primary while disclosing one authenticated verified start', () => {
+    const onLaunch = vi.fn();
+    const root = buildLobbyHotSeatView(options({
+      verifiedDeployment: {
+        action: 'start',
+        commanderName: 'Ranger',
+        busy: false,
+        message: null,
+        abandonIntent: false,
+        onLaunch,
+        onRequestAbandon: vi.fn(),
+        onConfirmAbandon: vi.fn(),
+        onCancelAbandon: vi.fn(),
+      },
+    }));
+    const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment');
+
+    expect(startButton(root).textContent).toBe('Deploy local battle');
+    expect(verified?.getAttribute('aria-label')).toBe('Verified deployment');
+    expect(verified?.querySelector('h3')?.textContent).toBe('Verified deployment');
+    expect(verified?.textContent).toContain('Commander Ranger versus deterministic CPU');
+    expect(verified?.textContent).toContain('Baby Missile only');
+    expect(verified?.textContent).toContain('6 human / 6 CPU salvos maximum');
+    expect(verified?.textContent).toContain('Fixed battlefield rules');
+    expect(verified?.textContent).toContain('Verified XP stakes');
+    expect(verified?.textContent).toContain('30-minute deadline');
+    expect(verified?.querySelector('input')).toBeNull();
+    const launch = [...verified!.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === 'Start verified deployment');
+    expect(launch).toBeInstanceOf(HTMLButtonElement);
+    launch!.click();
+    expect(onLaunch).toHaveBeenCalledOnce();
+  });
+
+  it('renders a contained resume and requires a separate abandon confirmation', () => {
+    const onLaunch = vi.fn();
+    const onRequestAbandon = vi.fn();
+    const onConfirmAbandon = vi.fn();
+    const onCancelAbandon = vi.fn();
+    const root = buildLobbyHotSeatView(options({
+      verifiedDeployment: {
+        action: 'resume',
+        commanderName: 'Ranger',
+        busy: false,
+        message: 'Recovered 2 of 6 human salvos.',
+        abandonIntent: true,
+        onLaunch,
+        onRequestAbandon,
+        onConfirmAbandon,
+        onCancelAbandon,
+      },
+    }));
+    const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment')!;
+
+    expect(root.contains(verified)).toBe(true);
+    expect(verified.textContent).toContain('Recovered 2 of 6 human salvos.');
+    expect(verified.querySelector('input')).toBeNull();
+    expect([...verified.querySelectorAll('button')].map((candidate) => candidate.textContent))
+      .toEqual([
+        'Resume verified deployment',
+        'Abandon verified deployment',
+        'Confirm abandon',
+        'Keep deployment',
+      ]);
+
+    [...verified.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === 'Resume verified deployment')!
+      .click();
+    [...verified.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === 'Abandon verified deployment')!
+      .click();
+    [...verified.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === 'Confirm abandon')!
+      .click();
+    [...verified.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === 'Keep deployment')!
+      .click();
+    expect(onLaunch).toHaveBeenCalledOnce();
+    expect(onRequestAbandon).toHaveBeenCalledOnce();
+    expect(onConfirmAbandon).toHaveBeenCalledOnce();
+    expect(onCancelAbandon).toHaveBeenCalledOnce();
+  });
+
+  it('does not expose a false verified action without authenticated view state', () => {
+    const root = buildLobbyHotSeatView(options({ verifiedDeployment: null }));
+
+    expect(root.querySelector('.lobby-verified-deployment')).toBeNull();
+    expect(startButton(root).disabled).toBe(false);
   });
 });

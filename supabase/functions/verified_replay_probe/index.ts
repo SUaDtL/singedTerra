@@ -15,6 +15,7 @@ import {
   VERIFIED_REPLAY_PROBE_RULESET_VERSION,
   VERIFIED_REPLAY_PROBE_VERSION,
 } from '../_shared/verifiedReplayProbeFixture.ts'
+import { replayVerifiedDuel } from '../../../shared/src/net/verifiedDuel.ts'
 
 export interface VerifiedReplayProbeDependencies {
   supabase?: Pick<ServiceClient, 'auth'>
@@ -47,6 +48,10 @@ export async function handleVerifiedReplayProbe(
         maximumTurn: replay(
           VERIFIED_REPLAY_PROBE_FIXTURES.maximumTurn.config,
           VERIFIED_REPLAY_PROBE_FIXTURES.maximumTurn.transcript,
+        ),
+        verifiedDuel: replayVerifiedDuel(
+          VERIFIED_REPLAY_PROBE_FIXTURES.verifiedDuel.seed,
+          VERIFIED_REPLAY_PROBE_FIXTURES.verifiedDuel.transcript,
         ),
       },
     })

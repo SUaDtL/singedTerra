@@ -211,7 +211,7 @@ export function sweepCollide(
  * be <= the smallest collidable feature (a single 1px terrain pixel) so nothing
  * tunnels.
  */
-const SWEEP_STEP = 1;
+export const SWEEP_STEP = 1;
 
 /**
  * Test a projectile against bounds, tanks, and terrain for this tick. Checked

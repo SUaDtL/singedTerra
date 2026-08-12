@@ -24,7 +24,7 @@ Deno.test('verified replay probe fixture graph matches its reviewed canonical di
   const bytes = new TextEncoder().encode(JSON.stringify(VERIFIED_REPLAY_PROBE_FIXTURES))
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
   const actual = Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('')
-  const expected = 'f46e750a502cb6f0aaaab1736e0b8660cca60f3dc05182d043f2af4c89a5182e'
+  const expected = '6de7dc423d2493d4b1e58dbe2c3c331dcbbcc279b700549fc026f003f33380ab'
   if (actual !== expected) throw new Error(`fixture digest drifted: ${actual}`)
 })
 

@@ -6,6 +6,20 @@ import {
   type HotSeatProgressionReceipt,
 } from './hotSeatProgression'
 import { postOnceWithRetry } from './retry'
+import {
+  parseVerifiedDeploymentAbandonResponse,
+  parseVerifiedDeploymentCompletionResponse,
+  parseVerifiedDeploymentDescriptor,
+  parseVerifiedDeploymentStartResponse,
+  parseVerifiedTranscript,
+  normalizeVerifiedDeploymentSessionId,
+  type VerifiedDeploymentProgressionCounts,
+  type VerifiedDeploymentProgressionSnapshot,
+  type VerifiedDeploymentReceipt,
+  type VerifiedDeploymentServerReceipt,
+  type VerifiedDeploymentStart,
+} from './verifiedDeployment'
+import type { VerifiedHumanFire } from '@shared/net/verifiedDuel'
 
 export type AccountMode = 'sign-in' | 'create'
 
@@ -23,7 +37,7 @@ export interface AccountSummary {
   level: number
   levelXp: number
   nextLevelXp: number
-  verifiedProgression?: VerifiedAccountProgression
+  verifiedProgression: VerifiedAccountProgression
 }
 
 export interface VerifiedAccountProgression {
@@ -60,6 +74,12 @@ export interface AccountBackend {
   signOut(): Promise<void>
   loadProfile(userId: string): Promise<AccountProfile>
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<boolean>
+  startVerifiedDeployment(): Promise<VerifiedDeploymentStart>
+  abandonVerifiedDeployment(sessionId: string): Promise<boolean>
+  completeVerifiedDeployment(
+    sessionId: string,
+    transcript: readonly VerifiedHumanFire[],
+  ): Promise<VerifiedDeploymentServerReceipt>
 }
 
 export interface AccountSessionOptions {
@@ -68,12 +88,17 @@ export interface AccountSessionOptions {
 }
 
 const ACCOUNT_SUMMARY_TIMEOUT_MS = 5_000
+const VERIFIED_DEPLOYMENT_TIMEOUT_MS = 5_000
 
-function withAccountSummaryTimeout<T>(operation: Promise<T>): Promise<T> {
+function withBoundedAccountTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const timeout = globalThis.setTimeout(() => {
-      reject(new Error('Account summary request timed out.'))
-    }, ACCOUNT_SUMMARY_TIMEOUT_MS)
+      reject(new Error(timeoutMessage))
+    }, timeoutMs)
     void operation.then(
       (value) => {
         globalThis.clearTimeout(timeout)
@@ -85,6 +110,22 @@ function withAccountSummaryTimeout<T>(operation: Promise<T>): Promise<T> {
       },
     )
   })
+}
+
+function withAccountSummaryTimeout<T>(operation: Promise<T>): Promise<T> {
+  return withBoundedAccountTimeout(
+    operation,
+    ACCOUNT_SUMMARY_TIMEOUT_MS,
+    'Account summary request timed out.',
+  )
+}
+
+function withVerifiedDeploymentTimeout<T>(operation: Promise<T>): Promise<T> {
+  return withBoundedAccountTimeout(
+    operation,
+    VERIFIED_DEPLOYMENT_TIMEOUT_MS,
+    'Verified deployment request timed out.',
+  )
 }
 
 function throwSupabaseError(error: { message?: string } | null): void {
@@ -156,11 +197,9 @@ function verifiedProgression(value: unknown): VerifiedAccountProgression | null 
 function accountSummary(value: unknown): AccountSummary | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const record = value as Record<string, unknown>
-  const hasVerified = Object.hasOwn(record, 'verifiedProgression')
   const { verifiedProgression: rawVerified, ...casual } = record
   const parsed = progressionFields(casual)
   if (!parsed) return null
-  if (!hasVerified) return parsed
   const verified = verifiedProgression(rawVerified)
   return verified ? { ...parsed, verifiedProgression: verified } : null
 }
@@ -224,6 +263,46 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
       return response.recorded
     },
 
+    async startVerifiedDeployment() {
+      const result = await withVerifiedDeploymentTimeout(
+        client.functions.invoke('start_verified_deployment'),
+      )
+      if (result.error) throw new Error('Verified deployment is unavailable.')
+      const parsed = parseVerifiedDeploymentStartResponse(result.data)
+      if (!parsed) throw new Error('Verified deployment is unavailable.')
+      return parsed
+    },
+
+    async abandonVerifiedDeployment(sessionId) {
+      const result = await withVerifiedDeploymentTimeout(
+        client.functions.invoke('abandon_verified_deployment', {
+          body: { sessionId },
+        }),
+      )
+      if (result.error) throw new Error('Verified deployment is unavailable.')
+      const parsed = parseVerifiedDeploymentAbandonResponse(result.data)
+      if (!parsed || parsed.sessionId !== sessionId.toLowerCase()) {
+        throw new Error('Verified deployment is unavailable.')
+      }
+      return true
+    },
+
+    async completeVerifiedDeployment(sessionId, transcript) {
+      const canonical = parseVerifiedTranscript(transcript, false)
+      if (!canonical) throw new Error('Verified deployment is unavailable.')
+      const result = await withVerifiedDeploymentTimeout(
+        client.functions.invoke('complete_verified_deployment', {
+          body: { sessionId, transcript: canonical },
+        }),
+      )
+      if (result.error) throw new Error('Verified deployment is unavailable.')
+      const parsed = parseVerifiedDeploymentCompletionResponse(result.data)
+      if (!parsed || parsed.result.sessionId !== sessionId.toLowerCase()) {
+        throw new Error('Verified deployment is unavailable.')
+      }
+      return parsed
+    },
+
     async loadProfile(userId) {
       const { data, error } = await client
         .from('profiles')
@@ -280,6 +359,53 @@ function normalizeCredentials(
   }
 }
 
+function exactRecord(value: unknown, keys: readonly string[]): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const actual = Object.keys(value).sort()
+  const expected = [...keys].sort()
+  return actual.length === expected.length && actual.every((key, index) => key === expected[index])
+}
+
+function exactVerifiedStart(value: unknown): VerifiedDeploymentStart | null {
+  if (!exactRecord(value, ['resumed', 'descriptor']) || typeof value.resumed !== 'boolean') return null
+  const descriptor = parseVerifiedDeploymentDescriptor(value.descriptor)
+  return descriptor ? Object.freeze({ resumed: value.resumed, descriptor }) : null
+}
+
+function progressionSnapshot(
+  counts: VerifiedDeploymentProgressionCounts,
+): VerifiedDeploymentProgressionSnapshot | null {
+  const totalXp = counts.matchesPlayed * 100 + counts.wins * 100
+  if (!Number.isSafeInteger(counts.matchesPlayed) || counts.matchesPlayed < 0
+    || !Number.isSafeInteger(counts.wins) || counts.wins < 0 || counts.wins > counts.matchesPlayed
+    || !Number.isSafeInteger(counts.totalXp) || counts.totalXp !== totalXp) return null
+  return Object.freeze({
+    evidence: 'verified_replay_v1',
+    matchesPlayed: counts.matchesPlayed,
+    wins: counts.wins,
+    progressionVersion: 1,
+    totalXp,
+    level: Math.floor(totalXp / 500) + 1,
+    levelXp: totalXp % 500,
+    nextLevelXp: 500,
+  })
+}
+
+function containsVerifiedProgression(
+  actual: VerifiedAccountProgression,
+  expected: VerifiedDeploymentProgressionSnapshot,
+): boolean {
+  return actual.evidence === expected.evidence
+    && actual.matchesPlayed >= expected.matchesPlayed
+    && actual.wins >= expected.wins
+    && actual.progressionVersion === expected.progressionVersion
+    && actual.totalXp >= expected.totalXp
+    && actual.totalXp === actual.matchesPlayed * 100 + actual.wins * 100
+    && actual.level === Math.floor(actual.totalXp / 500) + 1
+    && actual.levelXp === actual.totalXp % 500
+    && actual.nextLevelXp === expected.nextLevelXp
+}
+
 export class AccountSession {
   private current: AccountState = {
     status: 'unavailable',
@@ -295,6 +421,11 @@ export class AccountSession {
   private refreshGeneration = 0
   private authLoads = 0
   private disposed = false
+  private readonly verifiedCompletionRuns = new Map<string, Promise<VerifiedDeploymentReceipt | null>>()
+  private readonly verifiedCompletionReceipts = new Map<
+    string,
+    { readonly transcriptKey: string; readonly receipt: VerifiedDeploymentReceipt }
+  >()
 
   constructor(
     private readonly onChange: (state: AccountState) => void,
@@ -367,6 +498,7 @@ export class AccountSession {
   async signOut(): Promise<void> {
     await this.initialize()
     if (!this.backend || this.current.busy || this.disposed) return
+    this.clearVerifiedCompletionState()
     this.update({ ...this.current, busy: true, error: '' })
     const operation = ++this.generation
     try {
@@ -455,16 +587,114 @@ export class AccountSession {
     }
   }
 
+  async startVerifiedDeployment(): Promise<VerifiedDeploymentStart | null> {
+    if (!this.initializePromise) await this.initialize()
+    if (!this.backend || this.disposed || this.current.status !== 'authenticated' || this.current.busy) {
+      return null
+    }
+    const backend = this.backend
+    const accountGeneration = this.generation
+    const accountId = this.current.profile.id
+    try {
+      const start = exactVerifiedStart(await backend.startVerifiedDeployment())
+      if (!start || !this.isAuthenticatedAccount(accountGeneration, accountId)) return null
+      return start
+    } catch {
+      return null
+    }
+  }
+
+  async abandonVerifiedDeployment(sessionId: string): Promise<boolean> {
+    if (!this.initializePromise) await this.initialize()
+    const acceptedSessionId = normalizeVerifiedDeploymentSessionId(sessionId)
+    if (!acceptedSessionId || !this.backend || this.disposed
+      || this.current.status !== 'authenticated' || this.current.busy) return false
+    const backend = this.backend
+    const accountGeneration = this.generation
+    const accountId = this.current.profile.id
+    try {
+      const abandoned = await backend.abandonVerifiedDeployment(acceptedSessionId)
+      if (!abandoned || !this.isAuthenticatedAccount(accountGeneration, accountId)) return false
+      const cached = this.verifiedCompletionReceipts.get(acceptedSessionId)
+      if (cached) this.verifiedCompletionReceipts.delete(acceptedSessionId)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async completeVerifiedDeployment(
+    sessionId: string,
+    transcript: readonly VerifiedHumanFire[],
+  ): Promise<VerifiedDeploymentReceipt | null> {
+    if (!this.initializePromise) await this.initialize()
+    const acceptedSessionId = normalizeVerifiedDeploymentSessionId(sessionId)
+    const canonical = parseVerifiedTranscript(transcript, false)
+    if (!acceptedSessionId || !canonical || !this.backend || this.disposed
+      || this.current.status !== 'authenticated' || this.current.busy) return null
+    const transcriptKey = JSON.stringify(canonical)
+    const completed = this.verifiedCompletionReceipts.get(acceptedSessionId)
+    if (completed) return completed.transcriptKey === transcriptKey ? completed.receipt : null
+    const runKey = `${acceptedSessionId}:${transcriptKey}`
+    const existing = this.verifiedCompletionRuns.get(runKey)
+    if (existing) return existing
+    const backend = this.backend
+    const accountGeneration = this.generation
+    const accountId = this.current.profile.id
+    const run = (async (): Promise<VerifiedDeploymentReceipt | null> => {
+      try {
+        const serverReceipt = parseVerifiedDeploymentCompletionResponse(
+          await backend.completeVerifiedDeployment(acceptedSessionId, canonical),
+        )
+        if (!serverReceipt || serverReceipt.result.sessionId !== acceptedSessionId
+          || !this.isAuthenticatedAccount(accountGeneration, accountId)) return null
+        const prior = progressionSnapshot(serverReceipt.progression.prior)
+        const current = progressionSnapshot(serverReceipt.progression.current)
+        const expectedWinDelta = serverReceipt.result.won ? 1 : 0
+        if (!prior || !current
+          || current.matchesPlayed !== prior.matchesPlayed + 1
+          || current.wins !== prior.wins + expectedWinDelta
+          || current.totalXp !== prior.totalXp + serverReceipt.result.verifiedXp) return null
+        await this.refresh()
+        if (!this.isAuthenticatedAccount(accountGeneration, accountId)) return null
+        const refreshedVerified = this.current.status === 'authenticated'
+          ? this.current.profile.summary?.verifiedProgression
+          : undefined
+        if (!refreshedVerified || !containsVerifiedProgression(refreshedVerified, current)) return null
+        const receipt: VerifiedDeploymentReceipt = Object.freeze({
+          result: serverReceipt.result,
+          progression: Object.freeze({
+            evidence: 'verified_replay_v1' as const,
+            prior,
+            current,
+          }),
+        })
+        this.verifiedCompletionReceipts.set(acceptedSessionId, { transcriptKey, receipt })
+        return receipt
+      } catch {
+        return null
+      }
+    })()
+    this.verifiedCompletionRuns.set(runKey, run)
+    try {
+      return await run
+    } finally {
+      if (this.verifiedCompletionRuns.get(runKey) === run) this.verifiedCompletionRuns.delete(runKey)
+    }
+  }
+
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
     this.generation += 1
+    this.clearVerifiedCompletionState()
     this.unsubscribe?.()
     this.unsubscribe = null
   }
 
   private async applyAuthUser(user: AccountUser | null, operation = ++this.generation): Promise<void> {
     if (!this.isCurrent(operation)) return
+    this.clearVerifiedCompletionState()
     if (!user) {
       this.update({ status: 'anonymous', busy: false, error: '' })
       return
@@ -491,6 +721,17 @@ export class AccountSession {
 
   private isCurrent(operation: number): boolean {
     return !this.disposed && operation === this.generation
+  }
+
+  private isAuthenticatedAccount(operation: number, accountId: string): boolean {
+    return this.isCurrent(operation)
+      && this.current.status === 'authenticated'
+      && this.current.profile.id === accountId
+  }
+
+  private clearVerifiedCompletionState(): void {
+    this.verifiedCompletionRuns.clear()
+    this.verifiedCompletionReceipts.clear()
   }
 
   private update(next: AccountState): void {

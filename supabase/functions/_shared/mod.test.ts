@@ -318,6 +318,9 @@ Deno.test('rateLimitFor: known buckets and default fallback', () => {
   assertEqual(rateLimitFor('record_hotseat_match'), 20, 'record_hotseat_match')
   assertEqual(Object.hasOwn(RATE_LIMITS, 'verified_replay_probe'), true, 'verified_replay_probe has an explicit bucket')
   assertEqual(rateLimitFor('verified_replay_probe'), 10, 'verified_replay_probe')
+  assertEqual(rateLimitFor('start_verified_deployment'), 30, 'start_verified_deployment')
+  assertEqual(rateLimitFor('abandon_verified_deployment'), 30, 'abandon_verified_deployment')
+  assertEqual(rateLimitFor('complete_verified_deployment'), 30, 'complete_verified_deployment')
   assertEqual(rateLimitFor('heartbeat'), RATE_LIMIT_DEFAULT, 'unknown → default')
 })
 

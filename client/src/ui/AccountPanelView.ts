@@ -12,11 +12,11 @@ import {
 
 function verifiedCareer(summary: AccountSummary): CommanderCareer | null {
   const progression = summary.verifiedProgression
-  return commanderCareerForVerifiedProgression(progression ? {
+  return commanderCareerForVerifiedProgression({
     evidence: progression.evidence,
     progressionVersion: progression.progressionVersion,
     level: progression.level,
-  } : null)
+  })
 }
 
 function rankInsignia(rank: CommanderRank, className: string): HTMLElement {
@@ -108,7 +108,7 @@ export function buildAccountPanelView(
   if (options.state.status === 'authenticated') {
     root.classList.add('account-panel--authenticated')
     const accountSummary = options.state.profile.summary
-    const displayedProgression = accountSummary?.verifiedProgression ?? accountSummary
+    const displayedProgression = accountSummary?.verifiedProgression
     const triggerLabel = accountSummary
       ? `Commander ${options.state.profile.displayName} - Level ${displayedProgression?.level}`
       : `Commander ${options.state.profile.displayName}`
@@ -121,7 +121,7 @@ export function buildAccountPanelView(
 
     if (!options.open || options.triggerOnly) {
       if (accountSummary) {
-        const progression = accountSummary.verifiedProgression ?? accountSummary
+        const progression = accountSummary.verifiedProgression
         const remainingXp = progression.nextLevelXp - progression.levelXp
         const nextLevel = progression.level + 1
         const career = verifiedCareer(accountSummary)
@@ -190,7 +190,7 @@ export function buildAccountPanelView(
     let careerPanel: HTMLElement | null = null
     if (options.state.profile.summary) {
       const accountSummary = options.state.profile.summary
-      const progression = accountSummary.verifiedProgression ?? accountSummary
+      const progression = accountSummary.verifiedProgression
       const career = verifiedCareer(accountSummary)
       summary = document.createElement('dl')
       summary.className = 'account-panel__progress'

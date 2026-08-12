@@ -202,10 +202,19 @@ type _TableKeysAreExact = AssertExact<
   | "hotseat_match_results"
   | "rate_limits"
   | "room_seats"
+  | "profiles"
+  | "verified_deployments"
 >;
 type _RpcKeysAreExact = AssertExact<
   keyof Functions,
-  "apply_room_reap" | "bump_rate_limit" | "submit_room_action"
+  | "apply_room_reap"
+  | "bump_rate_limit"
+  | "submit_room_action"
+  | "start_verified_deployment"
+  | "abandon_verified_deployment"
+  | "complete_verified_deployment"
+  | "verified_progression_summary"
+  | "verified_deployment_completion_context"
 >;
 type _ViewKeysAreExact = AssertExact<keyof PublicSchema["Views"], never>;
 type _EnumKeysAreExact = AssertExact<keyof PublicSchema["Enums"], never>;
@@ -238,6 +247,83 @@ type _BumpRateLimitArgsAreExact = AssertExact<
 type _BumpRateLimitReturnsAreExact = AssertExact<
   Functions["bump_rate_limit"]["Returns"],
   number
+>;
+type _StartVerifiedDeploymentArgsAreExact = AssertExact<
+  Functions["start_verified_deployment"]["Args"],
+  { p_user_id: string; p_config: Record<string, unknown>; p_expires_at: string }
+>;
+type _StartVerifiedDeploymentReturnsAuthoritativeResumed = AssertExact<
+  Functions["start_verified_deployment"]["Returns"][number]["resumed"],
+  boolean
+>;
+type _AbandonVerifiedDeploymentArgsAreExact = AssertExact<
+  Functions["abandon_verified_deployment"]["Args"],
+  { p_user_id: string; p_session_id: string }
+>;
+type _CompleteVerifiedDeploymentArgsAreExact = AssertExact<
+  Functions["complete_verified_deployment"]["Args"],
+  {
+    p_user_id: string;
+    p_session_id: string;
+    p_transcript: Array<{ angle: number; power: number }>;
+    p_won: boolean;
+    p_outcome: "win" | "loss" | "draw";
+    p_verified_xp: number;
+  }
+>;
+type _CompleteVerifiedDeploymentReturnsAreExact = AssertExact<
+  Functions["complete_verified_deployment"]["Returns"],
+  Array<{
+    session_id: string;
+    user_id: string;
+    transcript: Array<{ angle: number; power: number }>;
+    won: boolean;
+    outcome: "win" | "loss" | "draw";
+    verified_xp: number;
+    prior_verified_matches: number;
+    prior_verified_wins: number;
+    prior_total_xp: number;
+    current_verified_matches: number;
+    current_verified_wins: number;
+    current_total_xp: number;
+    created_at: string;
+  }>
+>;
+type _VerifiedProgressionSummaryArgsAreExact = AssertExact<
+  Functions["verified_progression_summary"]["Args"],
+  { p_user_id: string }
+>;
+type _VerifiedProgressionSummaryReturnsAreExact = AssertExact<
+  Functions["verified_progression_summary"]["Returns"],
+  Array<{ verified_matches: number; verified_wins: number; total_xp: number }>
+>;
+type _CompletionContextArgsAreExact = AssertExact<
+  Functions["verified_deployment_completion_context"]["Args"],
+  { p_user_id: string; p_session_id: string }
+>;
+type _CompletionContextReturnsAreExact = AssertExact<
+  Functions["verified_deployment_completion_context"]["Returns"],
+  Array<{
+    session_id: string;
+    user_id: string;
+    config: Record<string, unknown>;
+    contract_version: number;
+    engine_version: number;
+    ruleset_version: number;
+    status: "active" | "completed" | "expired" | "abandoned";
+    expires_at: string;
+    transcript: Array<{ angle: number; power: number }> | null;
+    won: boolean | null;
+    outcome: "win" | "loss" | "draw" | null;
+    verified_xp: number | null;
+    prior_verified_matches: number | null;
+    prior_verified_wins: number | null;
+    prior_total_xp: number | null;
+    current_verified_matches: number | null;
+    current_verified_wins: number | null;
+    current_total_xp: number | null;
+    result_created_at: string | null;
+  }>
 >;
 type _SubmitRoomActionArgsAreExact = AssertExact<
   Functions["submit_room_action"]["Args"],
@@ -531,6 +617,15 @@ type _AllExactContracts = AssertAll<{
   applyRoomReapReturns: _ApplyRoomReapReturnsAreExact;
   bumpRateLimitArgs: _BumpRateLimitArgsAreExact;
   bumpRateLimitReturns: _BumpRateLimitReturnsAreExact;
+  startVerifiedDeploymentArgs: _StartVerifiedDeploymentArgsAreExact;
+  startVerifiedDeploymentReturnsResumed: _StartVerifiedDeploymentReturnsAuthoritativeResumed;
+  abandonVerifiedDeploymentArgs: _AbandonVerifiedDeploymentArgsAreExact;
+  completeVerifiedDeploymentArgs: _CompleteVerifiedDeploymentArgsAreExact;
+  completeVerifiedDeploymentReturns: _CompleteVerifiedDeploymentReturnsAreExact;
+  verifiedProgressionSummaryArgs: _VerifiedProgressionSummaryArgsAreExact;
+  verifiedProgressionSummaryReturns: _VerifiedProgressionSummaryReturnsAreExact;
+  completionContextArgs: _CompletionContextArgsAreExact;
+  completionContextReturns: _CompletionContextReturnsAreExact;
   submitRoomActionArgs: _SubmitRoomActionArgsAreExact;
   submitRoomActionReturns: _SubmitRoomActionReturnsAreExact;
   roomsRowKeys: _RoomsRowKeysAreExact;

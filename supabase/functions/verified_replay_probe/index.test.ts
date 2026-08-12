@@ -56,6 +56,18 @@ const EXPECTED_PROBE_RESPONSE = {
       tickCount: 293,
       maxTurnTickCount: 198,
     },
+    verifiedDuel: {
+      seed: 17,
+      outcome: 'human_win',
+      winnerId: 'p1',
+      reason: 'health',
+      humanSalvos: 6,
+      cpuSalvos: 6,
+      liveTicks: 625,
+      cpuSimulationTicks: 24564,
+      maximumProbeCount: 59,
+      transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })),
+    },
   },
 }
 
@@ -214,7 +226,7 @@ Deno.test('verified replay probe contains a thrown Auth lookup as a generic 401 
   assertEquals(replayCalls, 0)
 })
 
-Deno.test('verified replay probe returns the exact two-fixture deterministic result', async () => {
+Deno.test('verified replay probe returns the exact legacy and maximum-workload duel result', async () => {
   const test = authenticatedDependencies()
   const response = await invokeProbe(
     undefined,
@@ -250,6 +262,7 @@ Deno.test('verified replay probe invokes both exact production fixtures and retu
   assertEquals(payload.fixtures, {
     maximumLifecycle: sentinels[0],
     maximumTurn: sentinels[1],
+    verifiedDuel: EXPECTED_PROBE_RESPONSE.fixtures.verifiedDuel,
   })
   assertEquals(calls.length, 2)
   if (calls[0]?.[0] !== VERIFIED_REPLAY_PROBE_FIXTURES.maximumLifecycle.config) {

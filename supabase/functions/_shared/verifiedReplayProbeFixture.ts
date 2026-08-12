@@ -77,4 +77,8 @@ export const VERIFIED_REPLAY_PROBE_FIXTURES = deepFreeze({
       MISSILE,
     ],
   },
+  verifiedDuel: {
+    seed: 17,
+    transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 } as const)),
+  },
 } as const)

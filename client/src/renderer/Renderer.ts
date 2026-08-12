@@ -743,6 +743,23 @@ export class Renderer {
   }
 
   /**
+   * Whether the decisive shot still has transient presentation work to finish.
+   * Persistent scene dressing (scorches, smoke, atmosphere, loaded assets) must
+   * not hold the GAME_OVER report open forever after a recovered replay.
+   */
+  isTerminalImpactAnimating(state: GameState): boolean {
+    return state.phase === 'FIRING'
+      || state.phase === 'RESOLVING'
+      || state.projectiles.length > 0
+      || this.bursts.length > 0
+      || this.shake > 0
+      || this.kickX !== 0
+      || this.kickY !== 0
+      || this.impactHoldFrames > 0
+      || this.effectsBusy > 0;
+  }
+
+  /**
    * Observe the existing authoritative turn/wind tuple once. A current turn seen
    * after reconnect may still receive its one local cue; non-PLAYER_TURN snapshots
    * never consume the key while a shot is already in flight.

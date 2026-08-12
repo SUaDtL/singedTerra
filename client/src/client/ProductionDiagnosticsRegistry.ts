@@ -1,5 +1,3 @@
-import type { VerifiedReplayPublicDetails } from './ProductionDiagnostics'
-
 const VERIFIED_REPLAY_RESPONSE_CONTRACT = {
   ok: true,
   probeVersion: 1,
@@ -14,10 +12,19 @@ const VERIFIED_REPLAY_RESPONSE_CONTRACT = {
       phase: 'GAME_OVER', winner: 'p1', winnerTeam: null, turn: 3,
       actionCount: 4, tickCount: 293, maxTurnTickCount: 198,
     },
+    verifiedDuel: {
+      seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
+      humanSalvos: 6, cpuSalvos: 6, liveTicks: 625, cpuSimulationTicks: 24564,
+      maximumProbeCount: 59,
+      transcript: [
+        { angle: 0, power: 5 }, { angle: 0, power: 5 }, { angle: 0, power: 5 },
+        { angle: 0, power: 5 }, { angle: 0, power: 5 }, { angle: 0, power: 5 },
+      ],
+    },
   },
 } as const
 
-const VERIFIED_REPLAY_PUBLIC_DETAILS: VerifiedReplayPublicDetails = Object.freeze({
+const VERIFIED_REPLAY_PUBLIC_DETAILS = Object.freeze({
   ok: true,
   probeVersion: 1,
   engineVersion: 1,
@@ -30,6 +37,12 @@ const VERIFIED_REPLAY_PUBLIC_DETAILS: VerifiedReplayPublicDetails = Object.freez
     maximumTurn: Object.freeze({
       phase: 'GAME_OVER', winner: 'p1', winnerTeam: null, turn: 3,
       actionCount: 4, tickCount: 293, maxTurnTickCount: 198,
+    }),
+    verifiedDuel: Object.freeze({
+      seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
+      humanSalvos: 6, cpuSalvos: 6, liveTicks: 625, cpuSimulationTicks: 24564,
+      maximumProbeCount: 59,
+      transcript: Object.freeze(Array.from({ length: 6 }, () => Object.freeze({ angle: 0, power: 5 }))),
     }),
   }),
 })
@@ -45,6 +58,11 @@ function matchesExactDataContract(value: unknown, expected: unknown): boolean {
     return typeof value === 'number' && Number.isSafeInteger(value) && Object.is(value, expected)
   }
   if (expected === null || typeof expected !== 'object') return Object.is(value, expected)
+  if (Array.isArray(expected)) {
+    return Array.isArray(value)
+      && value.length === expected.length
+      && value.every((entry, index) => matchesExactDataContract(entry, expected[index]))
+  }
   if (!isPlainRecord(value) || !isPlainRecord(expected)) return false
 
   const expectedKeys = Reflect.ownKeys(expected)
@@ -76,12 +94,16 @@ export const validateVerifiedReplayProbeResponse = (value: unknown): boolean => 
   }
 }
 
-const projectVerifiedReplayPublicDetails = (): VerifiedReplayPublicDetails => {
+const projectVerifiedReplayPublicDetails = (): WidenedVerifiedReplayPublicDetails => {
   return Object.freeze({
     ...VERIFIED_REPLAY_PUBLIC_DETAILS,
     fixtures: Object.freeze({
       maximumLifecycle: Object.freeze({ ...VERIFIED_REPLAY_PUBLIC_DETAILS.fixtures.maximumLifecycle }),
       maximumTurn: Object.freeze({ ...VERIFIED_REPLAY_PUBLIC_DETAILS.fixtures.maximumTurn }),
+      verifiedDuel: Object.freeze({
+        ...VERIFIED_REPLAY_PUBLIC_DETAILS.fixtures.verifiedDuel,
+        transcript: Object.freeze(VERIFIED_REPLAY_PUBLIC_DETAILS.fixtures.verifiedDuel.transcript.map((entry) => Object.freeze({ ...entry }))),
+      }),
     }),
   })
 }
@@ -105,3 +127,21 @@ export const PRODUCTION_DIAGNOSTIC_CHECKS = Object.freeze(CHECKS)
 
 export type RegisteredDiagnosticId = typeof PRODUCTION_DIAGNOSTIC_CHECKS[number]['id']
 export type ProductionDiagnosticDescriptor = (typeof PRODUCTION_DIAGNOSTIC_CHECKS)[number]
+import type { VerifiedReplayPublicDetails } from './ProductionDiagnostics'
+
+type WidenedVerifiedReplayPublicDetails = VerifiedReplayPublicDetails & {
+  readonly fixtures: VerifiedReplayPublicDetails['fixtures'] & {
+    readonly verifiedDuel?: {
+      readonly seed: number
+      readonly outcome: 'human_win' | 'cpu_win' | 'draw'
+      readonly winnerId: string | null
+      readonly reason: 'terminal' | 'alive' | 'health' | 'total_damage' | 'draw'
+      readonly humanSalvos: number
+      readonly cpuSalvos: number
+      readonly liveTicks: number
+      readonly cpuSimulationTicks: number
+      readonly maximumProbeCount: number
+      readonly transcript: readonly { readonly angle: number; readonly power: number }[]
+    }
+  }
+}

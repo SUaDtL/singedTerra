@@ -49,6 +49,29 @@ export interface RoomReapTrim {
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: { id: string; display_name: string; created_at: string; updated_at: string };
+        Insert: { id: string; display_name: string; created_at?: string; updated_at?: string };
+        Update: { display_name?: string; updated_at?: string };
+        Relationships: [];
+      };
+      verified_deployments: {
+        Row: {
+          id: string;
+          user_id: string;
+          config: Record<string, unknown>;
+          contract_version: number;
+          engine_version: number;
+          ruleset_version: number;
+          status: "active" | "completed" | "expired" | "abandoned";
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       rooms: {
         Row: {
           id: string;
@@ -282,6 +305,71 @@ export type Database = {
       bump_rate_limit: {
         Args: { p_bucket: string; p_window: number };
         Returns: number;
+      };
+      start_verified_deployment: {
+        Args: { p_user_id: string; p_config: Record<string, unknown>; p_expires_at: string };
+        Returns: Array<Database["public"]["Tables"]["verified_deployments"]["Row"] & { resumed: boolean }>;
+      };
+      abandon_verified_deployment: {
+        Args: { p_user_id: string; p_session_id: string };
+        Returns: Database["public"]["Tables"]["verified_deployments"]["Row"][];
+      };
+      complete_verified_deployment: {
+        Args: {
+          p_user_id: string;
+          p_session_id: string;
+          p_transcript: Array<{ angle: number; power: number }>;
+          p_won: boolean;
+          p_outcome: "win" | "loss" | "draw";
+          p_verified_xp: number;
+        };
+        Returns: Array<{
+          session_id: string;
+          user_id: string;
+          transcript: Array<{ angle: number; power: number }>;
+          won: boolean;
+          outcome: "win" | "loss" | "draw";
+          verified_xp: number;
+          prior_verified_matches: number;
+          prior_verified_wins: number;
+          prior_total_xp: number;
+          current_verified_matches: number;
+          current_verified_wins: number;
+          current_total_xp: number;
+          created_at: string;
+        }>;
+      };
+      verified_progression_summary: {
+        Args: { p_user_id: string };
+        Returns: Array<{
+          verified_matches: number;
+          verified_wins: number;
+          total_xp: number;
+        }>;
+      };
+      verified_deployment_completion_context: {
+        Args: { p_user_id: string; p_session_id: string };
+        Returns: Array<{
+          session_id: string;
+          user_id: string;
+          config: Record<string, unknown>;
+          contract_version: number;
+          engine_version: number;
+          ruleset_version: number;
+          status: "active" | "completed" | "expired" | "abandoned";
+          expires_at: string;
+          transcript: Array<{ angle: number; power: number }> | null;
+          won: boolean | null;
+          outcome: "win" | "loss" | "draw" | null;
+          verified_xp: number | null;
+          prior_verified_matches: number | null;
+          prior_verified_wins: number | null;
+          prior_total_xp: number | null;
+          current_verified_matches: number | null;
+          current_verified_wins: number | null;
+          current_total_xp: number | null;
+          result_created_at: string | null;
+        }>;
       };
       submit_room_action: {
         Args: {

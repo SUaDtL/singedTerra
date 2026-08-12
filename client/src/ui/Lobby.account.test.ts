@@ -5,12 +5,16 @@ import type {
   AccountState,
 } from '../client/AccountSession'
 import type {
+  VerifiedDeploymentReceipt,
+  VerifiedDeploymentStart,
+} from '../client/verifiedDeployment'
+import type {
   DiagnosticCheckResult,
   ProductionDiagnostics,
   ProductionDiagnosticsReadiness,
   ProductionDiagnosticsState,
 } from '../client/ProductionDiagnostics'
-import { Lobby, type AccountSessionPort } from './Lobby'
+import { Lobby, type AccountSessionPort, type LobbyConfig } from './Lobby'
 
 class FakeAccountSession implements AccountSessionPort {
   state: AccountState
@@ -18,6 +22,9 @@ class FakeAccountSession implements AccountSessionPort {
   readonly submit = vi.fn(async (_mode: AccountMode, _credentials: AccountCredentials) => undefined)
   readonly signOut = vi.fn(async () => undefined)
   readonly refresh = vi.fn(async () => undefined)
+  readonly startVerifiedDeployment = vi.fn(async (): Promise<VerifiedDeploymentStart | null> => verifiedStart)
+  readonly abandonVerifiedDeployment = vi.fn(async () => true)
+  readonly completeVerifiedDeployment = vi.fn(async (): Promise<VerifiedDeploymentReceipt | null> => verifiedReceipt)
   readonly recordHotSeatMatch = vi.fn(async () => ({
     prior: {
       progressionVersion: 1 as const,
@@ -46,6 +53,60 @@ class FakeAccountSession implements AccountSessionPort {
     this.state = state
     this.onChange(state)
   }
+}
+
+const verifiedSessionId = '00000000-0000-4000-8000-000000000061'
+
+const verifiedStart: VerifiedDeploymentStart = {
+  resumed: false,
+  descriptor: {
+    sessionId: verifiedSessionId,
+    expiresAt: '2026-08-12T13:30:00.000Z',
+    contractVersion: 1,
+    engineVersion: 1,
+    rulesetVersion: 3,
+    limits: {
+      humanSalvos: 6,
+      cpuSalvos: 6,
+      angle: { min: 0, max: 180 },
+      power: { min: 0, max: 100 },
+    },
+    config: {
+      seed: 17,
+      options: {
+        maxPlayers: 2,
+        maxWind: 6,
+        gravity: 0.15,
+        walls: 'open',
+        hazards: 'none',
+        rounds: 1,
+        interestRate: 0,
+        suddenDeathTurn: 0,
+        armsLevel: 0,
+        starterWeaponFalloff: 'decisive',
+        teamMode: false,
+        players: [
+          { name: 'Ranger', color: '#e8554d' },
+          { name: 'CPU 1', color: '#3f78b8', ai: 'hard' },
+        ],
+      },
+    },
+  },
+}
+
+const verifiedReceipt: VerifiedDeploymentReceipt = {
+  result: { sessionId: verifiedSessionId, won: true, outcome: 'win', verifiedXp: 200 },
+  progression: {
+    evidence: 'verified_replay_v1',
+    prior: {
+      evidence: 'verified_replay_v1', matchesPlayed: 0, wins: 0, progressionVersion: 1,
+      totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500,
+    },
+    current: {
+      evidence: 'verified_replay_v1', matchesPlayed: 1, wins: 1, progressionVersion: 1,
+      totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500,
+    },
+  },
 }
 
 const DIAGNOSTIC_ID = 'verified-replay-runtime' as const
@@ -103,9 +164,11 @@ let initialUrl = ''
 
 beforeEach(() => {
   initialUrl = window.location.href
+  localStorage.clear()
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.restoreAllMocks()
   window.history.replaceState(null, '', initialUrl)
   document.body.replaceChildren()
@@ -796,5 +859,551 @@ describe('Lobby account composition', () => {
 
     expect(displayName.length).toBeGreaterThan(20)
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe(displayName)
+  })
+
+  it('owns the active countdown and derives exact five-minute and one-minute warnings from server expiry', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+
+    await expect(lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:24:59.999Z')))
+      .resolves.toEqual(verifiedStart)
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active',
+      transcript: [],
+      deadline: { remainingMs: 300_001, warning: 'none', acceptsInput: true, canComplete: true },
+    })
+
+    lobby.refreshVerifiedDeploymentDeadline(Date.parse('2026-08-12T13:25:00.000Z'))
+    expect(lobby.verifiedDeployment).toMatchObject({ status: 'active', deadline: { warning: 'five-minutes' } })
+    lobby.refreshVerifiedDeploymentDeadline(Date.parse('2026-08-12T13:29:00.000Z'))
+    expect(lobby.verifiedDeployment).toMatchObject({ status: 'active', deadline: { warning: 'one-minute' } })
+    expect(account.startVerifiedDeployment).toHaveBeenCalledOnce()
+  })
+
+  it('retains terminal evidence and retries completion only before expiry', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      account.completeVerifiedDeployment
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(verifiedReceipt)
+      return account
+    })
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    expect(lobby.recordVerifiedDeploymentFire(
+      { angle: 37, power: 64 },
+      Date.parse('2026-08-12T13:01:00.000Z'),
+    )).toBe(true)
+
+    await expect(lobby.completeVerifiedDeployment(Date.parse('2026-08-12T13:10:00.000Z')))
+      .resolves.toBeNull()
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'retryable',
+      transcript: [{ angle: 37, power: 64 }],
+      error: 'Verification is pending. Retry before the deployment deadline.',
+    })
+    expect(JSON.parse(localStorage.getItem('singedterra:verified-deployment')!)).toMatchObject({
+      storageVersion: 2,
+      deployments: [{
+        transcript: [{ angle: 37, power: 64 }],
+        terminal: true,
+      }],
+    })
+
+    await expect(lobby.retryVerifiedDeploymentCompletion(Date.parse('2026-08-12T13:20:00.000Z')))
+      .resolves.toEqual(verifiedReceipt)
+    expect(lobby.verifiedDeployment).toEqual({ status: 'verified', receipt: verifiedReceipt })
+    expect(account.completeVerifiedDeployment).toHaveBeenCalledTimes(2)
+    expect(account.completeVerifiedDeployment).toHaveBeenNthCalledWith(
+      1,
+      verifiedSessionId,
+      [{ angle: 37, power: 64 }],
+    )
+  })
+
+  it('freezes a failed deferred completion when Date.now crosses expiry during the request', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:29:59.000Z'))
+    const completion = deferred<VerifiedDeploymentReceipt | null>()
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      account.completeVerifiedDeployment.mockReturnValueOnce(completion.promise)
+      return account
+    })
+    await lobby.startVerifiedDeployment()
+    expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
+
+    const pending = lobby.completeVerifiedDeployment()
+    await Promise.resolve()
+    expect(lobby.verifiedDeployment.status).toBe('completion-pending')
+    vi.setSystemTime(Date.parse(verifiedStart.descriptor.expiresAt))
+    completion.resolve(null)
+
+    await expect(pending).resolves.toBeNull()
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'expired',
+      transcript: [{ angle: 37, power: 64 }],
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+      choices: ['continue-casual', 'return-to-battery'],
+    })
+    await expect(lobby.retryVerifiedDeploymentCompletion()).resolves.toBeNull()
+    expect(account.completeVerifiedDeployment).toHaveBeenCalledOnce()
+  })
+
+  it('freezes a failed deferred abandon when Date.now crosses expiry during the request', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:29:59.000Z'))
+    const abandonment = deferred<boolean>()
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      account.abandonVerifiedDeployment
+        .mockReturnValueOnce(abandonment.promise)
+        .mockResolvedValue(false)
+      return account
+    })
+    await lobby.startVerifiedDeployment()
+    expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
+
+    const pending = lobby.abandonVerifiedDeployment()
+    await Promise.resolve()
+    vi.setSystemTime(Date.parse(verifiedStart.descriptor.expiresAt))
+    abandonment.resolve(false)
+
+    await expect(pending).resolves.toBe(false)
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'expired',
+      transcript: [{ angle: 37, power: 64 }],
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+      choices: ['continue-casual', 'return-to-battery'],
+    })
+    await expect(lobby.abandonVerifiedDeployment()).resolves.toBe(false)
+    expect(account.abandonVerifiedDeployment).toHaveBeenCalledOnce()
+  })
+
+  it('freezes verified input and completion at expiry with only explicit casual or Battery choices', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    expect(lobby.recordVerifiedDeploymentFire(
+      { angle: 37, power: 64 },
+      Date.parse('2026-08-12T13:01:00.000Z'),
+    )).toBe(true)
+
+    lobby.refreshVerifiedDeploymentDeadline(Date.parse(verifiedStart.descriptor.expiresAt))
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'expired',
+      transcript: [{ angle: 37, power: 64 }],
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+      choices: ['continue-casual', 'return-to-battery'],
+    })
+    expect(lobby.recordVerifiedDeploymentFire(
+      { angle: 91, power: 100 },
+      Date.parse(verifiedStart.descriptor.expiresAt),
+    )).toBe(false)
+    await expect(lobby.completeVerifiedDeployment(Date.parse(verifiedStart.descriptor.expiresAt)))
+      .resolves.toBeNull()
+    expect(account.completeVerifiedDeployment).not.toHaveBeenCalled()
+
+    expect(lobby.continueVerifiedDeploymentCasually()).toBe(true)
+    expect(lobby.verifiedDeployment).toEqual({ status: 'casual' })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBeNull()
+  })
+
+  it('returns an expired deployment to the Battery only through the explicit choice', async () => {
+    const root = document.createElement('div')
+    const lobby = new Lobby(
+      root,
+      vi.fn(),
+      (onChange) => new FakeAccountSession(onChange, authenticatedState()),
+    )
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    lobby.refreshVerifiedDeploymentDeadline(Date.parse(verifiedStart.descriptor.expiresAt))
+
+    expect(lobby.returnVerifiedDeploymentToBattery()).toBe(true)
+    expect(lobby.verifiedDeployment).toEqual({ status: 'idle' })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBeNull()
+  })
+
+  it('freezes an owner deployment across sign-out or account switch and never completes it as the new account', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 }, Date.parse('2026-08-12T13:01:00.000Z'))
+
+    account.emit({
+      status: 'authenticated',
+      busy: false,
+      error: '',
+      profile: { id: 'user-2', displayName: 'Other Ranger', summary: null },
+    })
+
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'frozen',
+      descriptor: verifiedStart.descriptor,
+      transcript: [{ angle: 37, power: 64 }],
+      error: 'Return to the deployment owner account to resume verification.',
+    })
+    expect(localStorage.getItem('singedterra:verified-deployment')).not.toBeNull()
+    await expect(lobby.completeVerifiedDeployment(Date.parse('2026-08-12T13:10:00.000Z')))
+      .resolves.toBeNull()
+    expect(account.completeVerifiedDeployment).not.toHaveBeenCalled()
+  })
+
+  it('recovers account A after account B refreshes and starts a separate deployment', async () => {
+    const ownerDescriptor = verifiedStart.descriptor
+    const otherDescriptor = {
+      ...ownerDescriptor,
+      sessionId: '00000000-0000-4000-8000-000000000062',
+      config: { ...ownerDescriptor.config, seed: 42 as const },
+    }
+    const ownerRoot = document.createElement('div')
+    let ownerAccount!: FakeAccountSession
+    const ownerLobby = new Lobby(ownerRoot, vi.fn(), (onChange) => {
+      ownerAccount = new FakeAccountSession(onChange, authenticatedState())
+      return ownerAccount
+    })
+    await ownerLobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    expect(ownerLobby.recordVerifiedDeploymentFire(
+      { angle: 37, power: 64 },
+      Date.parse('2026-08-12T13:01:00.000Z'),
+    )).toBe(true)
+
+    const otherRoot = document.createElement('div')
+    let otherAccount!: FakeAccountSession
+    const otherLobby = new Lobby(otherRoot, vi.fn(), (onChange) => {
+      otherAccount = new FakeAccountSession(onChange, {
+        status: 'authenticated', busy: false, error: '',
+        profile: { id: 'user-2', displayName: 'Other Ranger', summary: null },
+      })
+      otherAccount.startVerifiedDeployment.mockResolvedValue({
+        resumed: false,
+        descriptor: otherDescriptor,
+      })
+      return otherAccount
+    })
+    await otherLobby.startVerifiedDeployment(Date.parse('2026-08-12T13:02:00.000Z'))
+    expect(otherLobby.recordVerifiedDeploymentFire(
+      { angle: 91, power: 80 },
+      Date.parse('2026-08-12T13:03:00.000Z'),
+    )).toBe(true)
+
+    const refreshedOwnerRoot = document.createElement('div')
+    let refreshedOwnerAccount!: FakeAccountSession
+    const refreshedOwnerLobby = new Lobby(refreshedOwnerRoot, vi.fn(), (onChange) => {
+      refreshedOwnerAccount = new FakeAccountSession(onChange, authenticatedState())
+      refreshedOwnerAccount.startVerifiedDeployment.mockResolvedValue({
+        resumed: true,
+        descriptor: ownerDescriptor,
+      })
+      return refreshedOwnerAccount
+    })
+    await refreshedOwnerLobby.startVerifiedDeployment(Date.parse('2026-08-12T13:04:00.000Z'))
+
+    expect(refreshedOwnerLobby.verifiedDeployment).toMatchObject({
+      status: 'active',
+      descriptor: ownerDescriptor,
+      transcript: [{ angle: 37, power: 64 }],
+    })
+    expect(otherLobby.verifiedDeployment).toMatchObject({
+      status: 'active',
+      descriptor: otherDescriptor,
+      transcript: [{ angle: 91, power: 80 }],
+    })
+  })
+
+  it('revalidates and unfreezes only the rightful owner with the exact resumed server descriptor', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment()
+    lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })
+    const persisted = localStorage.getItem('singedterra:verified-deployment')
+
+    account.emit({
+      status: 'authenticated', busy: false, error: '',
+      profile: { id: 'user-2', displayName: 'Other Ranger', summary: null },
+    })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBe(persisted)
+    account.startVerifiedDeployment.mockResolvedValueOnce({ ...verifiedStart, resumed: true })
+    vi.setSystemTime(Date.parse('2026-08-12T13:10:00.000Z'))
+    account.emit(authenticatedState())
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(account.startVerifiedDeployment).toHaveBeenCalledTimes(2)
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active',
+      descriptor: verifiedStart.descriptor,
+      transcript: [{ angle: 37, power: 64 }],
+      deadline: { remainingMs: 1_200_000, warning: 'none', acceptsInput: true, canComplete: true },
+    })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBe(persisted)
+  })
+
+  it.each([
+    ['session', { ...verifiedStart.descriptor, sessionId: '00000000-0000-4000-8000-000000000062' }],
+    ['config', { ...verifiedStart.descriptor, config: { ...verifiedStart.descriptor.config, seed: 42 } }],
+    ['version', { ...verifiedStart.descriptor, engineVersion: 2 }],
+    ['expiry', { ...verifiedStart.descriptor, expiresAt: '2026-08-12T13:31:00.000Z' }],
+  ])('keeps the rightful owner frozen when fresh resume has a mismatched %s identity', async (_label, descriptor) => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment()
+    lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })
+    const persisted = localStorage.getItem('singedterra:verified-deployment')
+    account.emit({
+      status: 'authenticated', busy: false, error: '',
+      profile: { id: 'user-2', displayName: 'Other Ranger', summary: null },
+    })
+    account.startVerifiedDeployment.mockResolvedValueOnce({ resumed: true, descriptor } as never)
+    account.emit(authenticatedState())
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(account.startVerifiedDeployment).toHaveBeenCalledTimes(2)
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'frozen',
+      descriptor: verifiedStart.descriptor,
+      transcript: [{ angle: 37, power: 64 }],
+      error: 'Return to the deployment owner account to resume verification.',
+    })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBe(persisted)
+  })
+
+  it('keeps the rightful owner frozen and contains a fresh resume error', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment()
+    lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })
+    const persisted = localStorage.getItem('singedterra:verified-deployment')
+    account.emit({
+      status: 'authenticated', busy: false, error: '',
+      profile: { id: 'user-2', displayName: 'Other Ranger', summary: null },
+    })
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    account.startVerifiedDeployment.mockRejectedValueOnce(
+      new Error('supabase echoed Bearer private-token and user id'),
+    )
+    account.emit(authenticatedState())
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(account.startVerifiedDeployment).toHaveBeenCalledTimes(2)
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'frozen',
+      descriptor: verifiedStart.descriptor,
+      transcript: [{ angle: 37, power: 64 }],
+      error: 'Return to the deployment owner account to resume verification.',
+    })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBe(persisted)
+    expect(log).not.toHaveBeenCalled()
+  })
+
+  it('refuses unsupported descriptor versions before persistence or completion', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      account.startVerifiedDeployment.mockResolvedValue({
+        ...verifiedStart,
+        descriptor: { ...verifiedStart.descriptor, contractVersion: 2 },
+      } as never)
+      return account
+    })
+
+    await expect(lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z')))
+      .resolves.toBeNull()
+    expect(lobby.verifiedDeployment).toEqual({
+      status: 'failed',
+      error: 'Verified deployment is unavailable. Try again.',
+    })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBeNull()
+    await expect(lobby.completeVerifiedDeployment(Date.parse('2026-08-12T13:10:00.000Z')))
+      .resolves.toBeNull()
+    expect(account.completeVerifiedDeployment).not.toHaveBeenCalled()
+  })
+
+  it('abandons only the exact active owner session and clears local recovery after acceptance', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 }, Date.parse('2026-08-12T13:01:00.000Z'))
+
+    await expect(lobby.abandonVerifiedDeployment()).resolves.toBe(true)
+    expect(account.abandonVerifiedDeployment).toHaveBeenCalledWith(verifiedSessionId)
+    expect(lobby.verifiedDeployment).toEqual({ status: 'idle' })
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBeNull()
+  })
+
+  it.each([
+    { status: 'anonymous', busy: false, error: '' },
+    { status: 'loading', busy: false, error: '' },
+    { status: 'unavailable', busy: false, error: '' },
+    { status: 'authenticated-error', busy: false, error: 'Account unavailable.', userId: 'user-1' },
+  ] as const)('keeps casual deployment but exposes no false verified launch for $status', (state) => {
+    const root = document.createElement('div')
+    const lobby = new Lobby(
+      root,
+      vi.fn(),
+      (onChange) => new FakeAccountSession(onChange, state),
+    )
+    lobby.show()
+    button(root, 'Local Battle').click()
+
+    expect(button(root, 'Deploy local battle').disabled).toBe(false)
+    expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
+    expect([...root.querySelectorAll('button')].some((candidate) =>
+      candidate.textContent?.toLowerCase().includes('verified deployment'))).toBe(false)
+  })
+
+  it('launches authenticated verified play from the server descriptor without identity re-entry or local-setting leakage', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
+    const root = document.createElement('div')
+    const onReady = vi.fn<(config: LobbyConfig) => void>()
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, onReady, (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    const localSettings = (lobby as unknown as { settings: Record<string, string> }).settings
+    Object.assign(localSettings, {
+      maxWind: '10', gravity: '0.4', walls: 'wrap', hazards: 'sinkholes', seed: '999',
+      rounds: '9', interestRate: '0.5', suddenDeathTurn: '2', armsLevel: '4', teamMode: 'true',
+    })
+    lobby.show()
+    button(root, 'Local Battle').click()
+
+    const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment')!
+    expect(verified.querySelector('input')).toBeNull()
+    expect(verified.textContent).toContain('Commander Ranger versus deterministic CPU')
+    button(root, 'Start verified deployment').click()
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce())
+
+    expect(account.startVerifiedDeployment).toHaveBeenCalledOnce()
+    expect(onReady).toHaveBeenCalledWith({
+      mode: 'hotseat',
+      players: verifiedStart.descriptor.config.options.players,
+      playerNames: ['Ranger', 'CPU 1'],
+      settings: {
+        seed: 17,
+        maxWind: 6,
+        gravity: 0.15,
+        walls: 'open',
+        hazards: 'none',
+        rounds: 1,
+        interestRate: 0,
+        suddenDeathTurn: 0,
+        armsLevel: 0,
+        teamMode: false,
+        rulesetVersion: 3,
+      },
+      verifiedDeployment: {
+        descriptor: verifiedStart.descriptor,
+        transcript: [],
+      },
+    })
+  })
+
+  it('offers one recovered resume and requires explicit abandon confirmation', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
+    const root = document.createElement('div')
+    const onReady = vi.fn<(config: LobbyConfig) => void>()
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, onReady, (onChange) => {
+      account = new FakeAccountSession(onChange, authenticatedState())
+      return account
+    })
+    await lobby.startVerifiedDeployment()
+    expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
+    lobby.show()
+    button(root, 'Local Battle').click()
+
+    expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+      .toContain('Recovered 1 of 6 human salvos.')
+    button(root, 'Resume verified deployment').click()
+    expect(onReady.mock.calls[0]?.[0].verifiedDeployment?.transcript)
+      .toEqual([{ angle: 37, power: 64 }])
+
+    button(root, 'Abandon verified deployment').click()
+    expect(account.abandonVerifiedDeployment).not.toHaveBeenCalled()
+    expect(button(root, 'Confirm abandon')).toBeInstanceOf(HTMLButtonElement)
+    button(root, 'Keep deployment').click()
+    expect(account.abandonVerifiedDeployment).not.toHaveBeenCalled()
+    button(root, 'Abandon verified deployment').click()
+    button(root, 'Confirm abandon').click()
+    await vi.waitFor(() => {
+      expect(account.abandonVerifiedDeployment).toHaveBeenCalledOnce()
+      expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+        .toContain('Start verified deployment')
+    })
+  })
+
+  it('keeps an authenticated busy state disabled and contains launch refusal copy', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, {
+        ...authenticatedState(),
+        busy: true,
+      })
+      return account
+    })
+    lobby.show()
+    button(root, 'Local Battle').click()
+
+    expect(button(root, 'Verified deployment busy').disabled).toBe(true)
+    expect(button(root, 'Deploy local battle').disabled).toBe(false)
+    expect(account.startVerifiedDeployment).not.toHaveBeenCalled()
+
+    account.emit(authenticatedState())
+    account.startVerifiedDeployment.mockRejectedValueOnce(
+      new Error('Bearer private-token database detail'),
+    )
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    button(root, 'Start verified deployment').click()
+    await vi.waitFor(() => expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+      .toContain('Verified deployment is unavailable. Try again.'))
+    expect(root.textContent).not.toContain('private-token')
+    expect(consoleError).not.toHaveBeenCalled()
   })
 })

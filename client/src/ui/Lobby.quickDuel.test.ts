@@ -62,7 +62,8 @@ describe('Lobby Quick Duel', () => {
     humanColor,
     cpuColor,
   }) => {
-    const lobby = new Lobby(root, onReady);
+    const generateQuickDuelSeed = vi.fn(() => 0xfedcba98);
+    const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
     internals(lobby).players = [
       {
         name: humanName,
@@ -118,8 +119,28 @@ describe('Lobby Quick Duel', () => {
         },
       ],
       playerNames: [expectedHumanName, 'CPU 1'],
+      settings: { seed: 0xfedcba98 },
     });
+    expect(generateQuickDuelSeed).toHaveBeenCalledOnce();
     expect(emitted.players[0]).not.toHaveProperty('ai');
-    expect(emitted).not.toHaveProperty('settings');
+  });
+
+  it('requests exactly one fresh unsigned seed for each redeployment in one Lobby', () => {
+    const supplied = [0, 0xffff_ffff];
+    const generateQuickDuelSeed = vi.fn(() => supplied.shift()!);
+    const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
+    lobby.show();
+
+    button(root, 'Quick Duel vs CPU').click();
+    button(root, 'Quick Duel vs CPU').click();
+
+    expect(generateQuickDuelSeed).toHaveBeenCalledTimes(2);
+    expect(onReady.mock.calls.map(([config]) => config.settings?.seed))
+      .toEqual([0, 0xffff_ffff]);
+    for (const [config] of onReady.mock.calls) {
+      expect(config.settings).toEqual({ seed: expect.any(Number) });
+      expect(config.settings!.seed).toBeGreaterThanOrEqual(0);
+      expect(config.settings!.seed).toBeLessThanOrEqual(0xffff_ffff);
+    }
   });
 });

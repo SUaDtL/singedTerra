@@ -16,9 +16,15 @@ type QueryExpectation = {
   filters: Array<['eq' | 'in', string, unknown]>
   result: QueryResult
 }
+type RpcExpectation = {
+  name: 'verified_progression_summary'
+  args: { p_user_id: string }
+  result: QueryResult
+}
 
 interface FakeOptions {
   queries?: QueryExpectation[]
+  rpc?: RpcExpectation
   authUserId?: string | null
   authError?: FakeError | null
 }
@@ -73,11 +79,39 @@ function localCounts(matches = 0, wins = 0, expectedUserId = USER_ID): QueryExpe
   ]
 }
 
+function verifiedSummary(
+  data: unknown = [{ verified_matches: 0, verified_wins: 0, total_xp: 0 }],
+  error: FakeError | null = null,
+  expectedUserId = USER_ID,
+): RpcExpectation {
+  return {
+    name: 'verified_progression_summary',
+    args: { p_user_id: expectedUserId },
+    result: { data, error },
+  }
+}
+
+function withVerifiedProgression(casual: Record<string, unknown>, verified: Record<string, unknown> = {
+  matchesPlayed: 0,
+  wins: 0,
+  progressionVersion: 1,
+  totalXp: 0,
+  level: 1,
+  levelXp: 0,
+  nextLevelXp: 500,
+}): Record<string, unknown> {
+  return {
+    ...casual,
+    verifiedProgression: { evidence: 'verified_replay_v1', ...verified },
+  }
+}
+
 function makeFixture(options: FakeOptions = {}) {
   const queries = options.queries ?? []
   const authTokens: string[] = []
   const logs: Array<{ message: string; context: Record<string, unknown> }> = []
   let queryIndex = 0
+  let rpcCalls = 0
 
   const supabase = {
     auth: {
@@ -88,6 +122,18 @@ function makeFixture(options: FakeOptions = {}) {
           error: options.authError ?? null,
         }
       },
+    },
+    rpc: (name: string, args: unknown) => {
+      const expected = options.rpc
+      if (expected) {
+        assertEquals(name, expected.name, 'RPC name')
+        assertEquals(args, expected.args, 'RPC arguments')
+      }
+      rpcCalls += 1
+      return Promise.resolve(expected?.result ?? {
+        data: [{ verified_matches: 0, verified_wins: 0, total_xp: 0 }],
+        error: null,
+      })
     },
     from: (table: string) => {
       const expected = queries[queryIndex]
@@ -133,6 +179,7 @@ function makeFixture(options: FakeOptions = {}) {
     logs,
     queryCount: () => queryIndex,
     assertQueriesConsumed: () => assertEquals(queryIndex, queries.length, 'all expected queries consumed'),
+    assertRpcConsumed: () => options.rpc && assertEquals(rpcCalls, 1, 'bounded verified summary RPC call'),
   }
 }
 
@@ -152,6 +199,7 @@ async function expectResponse(
   const response = await handleAccountSummary(body, request(authorization), fixture.dependencies)
   assertEquals(response.status, expectedStatus)
   fixture.assertQueriesConsumed()
+  fixture.assertRpcConsumed()
   return { fixture, payload: await response.json() }
 }
 
@@ -172,6 +220,76 @@ Deno.test('handleAccountSummary rejects a bearer Supabase Auth rejected before p
   assertEquals(payload, { error: 'summary_unavailable' })
   assertEquals(fixture.authTokens, [JWT])
   assertEquals(fixture.queryCount(), 0)
+})
+
+Deno.test('handleAccountSummary scopes the bounded verified summary RPC to the Auth user and keeps casual totals separate (catches casual promotion)', async () => {
+  const { payload } = await expectResponse(
+    {
+      authUserId: OTHER_USER_ID,
+      rpc: verifiedSummary([{ verified_matches: 4, verified_wins: 1, total_xp: 500 }], null, OTHER_USER_ID),
+      queries: [participantQuery([], null, 0, false, OTHER_USER_ID), ...localCounts(7, 3, OTHER_USER_ID)],
+    },
+    200,
+    `Bearer ${JWT}`,
+    { userId: USER_ID, matchesPlayed: 999, wins: 999, totalXp: 999 },
+  )
+  assertEquals(payload, withVerifiedProgression({
+    matchesPlayed: 7,
+    wins: 3,
+    progressionVersion: 1,
+    totalXp: 1000,
+    level: 3,
+    levelXp: 0,
+    nextLevelXp: 500,
+  }, {
+    matchesPlayed: 4,
+    wins: 1,
+    progressionVersion: 1,
+    totalXp: 500,
+    level: 2,
+    levelXp: 0,
+    nextLevelXp: 500,
+  }))
+})
+
+Deno.test('handleAccountSummary returns the exact verified zero baseline (catches missing zero-history authority)', async () => {
+  const { payload } = await expectResponse({
+    rpc: verifiedSummary(),
+    queries: [participantQuery([]), ...localCounts()],
+  }, 200)
+  assertEquals(payload, withVerifiedProgression({
+    matchesPlayed: 0,
+    wins: 0,
+    progressionVersion: 1,
+    totalXp: 0,
+    level: 1,
+    levelXp: 0,
+    nextLevelXp: 500,
+  }))
+})
+
+Deno.test('handleAccountSummary refuses malformed, truncated, duplicate, widened, inconsistent, and failed verified summary RPC results (catches unverified authority)', async () => {
+  const invalidResults: Array<QueryResult> = [
+    { data: null, error: null },
+    { data: [], error: null },
+    { data: [{ verified_matches: 1, verified_wins: 0, total_xp: 100 }, { verified_matches: 1, verified_wins: 0, total_xp: 100 }], error: null },
+    { data: [{ verified_matches: 1, verified_wins: 0, total_xp: 100, widened: true }], error: null },
+    { data: [{ verified_matches: 1, verified_wins: 2, total_xp: 300 }], error: null },
+    { data: [{ verified_matches: 1, verified_wins: 0, total_xp: 200 }], error: null },
+    { data: [{ verified_matches: 1.5, verified_wins: 0, total_xp: 150 }], error: null },
+    { data: [{ verified_matches: 1, verified_wins: 0, total_xp: 100 }], error: { message: 'rpc detail must not escape' } },
+  ]
+  for (const result of invalidResults) {
+    const { fixture, payload } = await expectResponse({
+      rpc: { ...verifiedSummary(), result },
+      queries: [],
+    }, 500)
+    assertEquals(payload, { error: 'summary_unavailable' })
+    assertEquals(fixture.logs, [{
+      message: 'account_summary: verified progression summary unavailable',
+      context: { stage: 'verified', error: 'query_failed' },
+    }])
+  }
 })
 
 Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignores body identity and totals (catches client-owned progression)', async () => {
@@ -211,7 +329,7 @@ Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignore
       token: BODY_MARKER,
     },
   )
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 2,
     wins: 1,
     progressionVersion: 1,
@@ -219,12 +337,12 @@ Deno.test('handleAccountSummary scopes links to the Auth-derived user and ignore
     level: 1,
     levelXp: 300,
     nextLevelXp: 500,
-  })
+  }))
 })
 
 Deno.test('handleAccountSummary returns exact zero counts without querying scores when no links exist (catches unnecessary broad score reads)', async () => {
   const { fixture, payload } = await expectResponse({ queries: [participantQuery([]), ...localCounts()] }, 200)
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 0,
     wins: 0,
     progressionVersion: 1,
@@ -232,7 +350,7 @@ Deno.test('handleAccountSummary returns exact zero counts without querying score
     level: 1,
     levelXp: 0,
     nextLevelXp: 500,
-  })
+  }))
   assertEquals(fixture.queryCount(), 3)
 })
 
@@ -258,7 +376,7 @@ Deno.test('handleAccountSummary derives exact wins, losses, and draws from persi
     },
     200,
   )
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 4,
     wins: 1,
     progressionVersion: 1,
@@ -266,7 +384,7 @@ Deno.test('handleAccountSummary derives exact wins, losses, and draws from persi
     level: 2,
     levelXp: 0,
     nextLevelXp: 500,
-  })
+  }))
 })
 
 Deno.test('progressionFromTotalXp keeps 499 total XP in level one (catches an early level divisor)', () => {
@@ -298,7 +416,7 @@ Deno.test('handleAccountSummary derives version-one progression from eight match
     },
     200,
   )
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 8,
     wins: 2,
     progressionVersion: 1,
@@ -306,7 +424,7 @@ Deno.test('handleAccountSummary derives version-one progression from eight match
     level: 3,
     levelXp: 0,
     nextLevelXp: 500,
-  })
+  }))
 })
 
 Deno.test('handleAccountSummary fails generically on participant query errors without leaking credentials or account ids (catches partial totals and unsafe logs)', async () => {
@@ -446,7 +564,7 @@ Deno.test('handleAccountSummary batches realistic room UUID score filters and ag
     },
     200,
   )
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 405,
     wins: 3,
     progressionVersion: 1,
@@ -454,14 +572,14 @@ Deno.test('handleAccountSummary batches realistic room UUID score filters and ag
     level: 82,
     levelXp: 300,
     nextLevelXp: 500,
-  })
+  }))
 })
 
 Deno.test('handleAccountSummary awards one local win as one match, one win, and 200 XP', async () => {
   const { payload } = await expectResponse({
     queries: [participantQuery([]), ...localCounts(1, 1)],
   }, 200)
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 1,
     wins: 1,
     progressionVersion: 1,
@@ -469,7 +587,7 @@ Deno.test('handleAccountSummary awards one local win as one match, one win, and 
     level: 1,
     levelXp: 200,
     nextLevelXp: 500,
-  })
+  }))
 })
 
 Deno.test('handleAccountSummary combines network and hot-seat history before deriving progression', async () => {
@@ -487,7 +605,7 @@ Deno.test('handleAccountSummary combines network and hot-seat history before der
       ...localCounts(3, 2),
     ],
   }, 200)
-  assertEquals(payload, {
+  assertEquals(payload, withVerifiedProgression({
     matchesPlayed: 5,
     wins: 3,
     progressionVersion: 1,
@@ -495,7 +613,7 @@ Deno.test('handleAccountSummary combines network and hot-seat history before der
     level: 2,
     levelXp: 300,
     nextLevelXp: 500,
-  })
+  }))
 })
 
 Deno.test('handleAccountSummary identifies a failed local-win query instead of reclassifying it as malformed count data', async () => {

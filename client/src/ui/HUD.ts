@@ -29,6 +29,14 @@ import {
   earnedHotSeatMatchXp,
   type HotSeatProgressionReceipt,
 } from '../client/hotSeatProgression';
+import type {
+  VerifiedDeploymentDeadline,
+  VerifiedDeploymentReceipt,
+} from '../client/verifiedDeployment';
+import {
+  commanderCareerForVerifiedProgression,
+  commanderPromotionBetweenVerified,
+} from '../client/commanderCareer';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -37,6 +45,20 @@ import {
  * action/transport layer.
  */
 export type StorePurchase = { weapon?: WeaponType; accessory?: AccessoryType };
+
+interface HUDVerifiedDeploymentDetails {
+  readonly humanSalvos: number;
+  readonly cpuSalvos: number;
+  readonly humanLimit: number;
+  readonly cpuLimit: number;
+  readonly deadline: VerifiedDeploymentDeadline;
+}
+
+export type HUDVerifiedDeploymentState =
+  | ({ readonly status: 'active' | 'cap-adjudicating' | 'completion-pending' | 'retryable' }
+    & HUDVerifiedDeploymentDetails)
+  | ({ readonly status: 'expired' } & HUDVerifiedDeploymentDetails)
+  | { readonly status: 'policy-refused' | 'failed' };
 
 type CombatFocus = 'decision' | 'outcome' | 'terminal';
 
@@ -146,6 +168,9 @@ export class HUD {
   private firstSalvoReplayCb: (() => void) | null = null;
   private firstSalvoStep: FirstSalvoStep | null = null;
   private progressionSignInCb: (() => void) | null = null;
+  private verifiedRetryCb: (() => void) | null = null;
+  private verifiedContinueCasualCb: (() => void) | null = null;
+  private verifiedReturnToBatteryCb: (() => void) | null = null;
 
   // Shared command callbacks. Invoked by both the fine-pointer Command Deck and
   // the coarse-pointer dock; main.ts wires these to InputHandler's public steps.
@@ -190,6 +215,22 @@ export class HUD {
   private overlayPrimaryBtnEl!: HTMLButtonElement;
   private overlayMenuBtnEl!: HTMLButtonElement;
   private overlayPreviousFocus: HTMLElement | null = null;
+  private terminalPayoffStatusEl!: HTMLElement;
+  private terminalState: GameState | null = null;
+  private terminalImpactComplete = false;
+  private terminalPayoffTimer: ReturnType<typeof setTimeout> | null = null;
+  private terminalPayoffLocked = false;
+  private terminalPayoffRootWasInert = false;
+  private terminalPayoffOverlayWasInert = false;
+  private readonly reduceMotion: boolean;
+  private verifiedStatusEl!: HTMLElement;
+  private verifiedBudgetEl!: HTMLElement;
+  private verifiedDeadlineEl!: HTMLElement;
+  private verifiedStateEl!: HTMLElement;
+  private verifiedRetryBtnEl!: HTMLButtonElement;
+  private verifiedExpiryEl!: HTMLElement;
+  private verifiedContinueBtnEl!: HTMLButtonElement;
+  private verifiedBatteryBtnEl!: HTMLButtonElement;
   /** Highest round number seen, to fire the one-shot round-transition banner. */
   private lastSeenRound = 1;
   // ROUND_OVER between-rounds shop modal.
@@ -314,6 +355,8 @@ export class HUD {
     this.root = root;
     this.overlayRoot = overlayRoot;
     this.modalRoot = modalRoot;
+    this.reduceMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
   /** Register the restart callback fired when the GAME_OVER Restart button is clicked. */
@@ -335,6 +378,10 @@ export class HUD {
   onProgressionSignIn(cb: () => void): void {
     this.progressionSignInCb = cb;
   }
+
+  onVerifiedRetry(cb: () => void): void { this.verifiedRetryCb = cb; }
+  onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
+  onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
 
   /** Register a local presentation-state callback for immediate input teardown. */
   onPauseChange(cb: (paused: boolean) => void): void {
@@ -503,6 +550,7 @@ export class HUD {
     this.root.innerHTML = '';
 
     this.buildPlayers();
+    this.buildVerifiedDeployment();
     this.buildRound();
     const instruments = this.buildInstrumentCluster();
     this.buildActiveRow();
@@ -539,7 +587,14 @@ export class HUD {
       this.turnWatchEl,
       this.firstSalvoEl,
     );
-    this.modalRoot.append(this.storeEl, this.overlayEl, this.roundOverEl, this.pauseEl);
+    this.modalRoot.append(
+      this.terminalPayoffStatusEl,
+      this.storeEl,
+      this.overlayEl,
+      this.roundOverEl,
+      this.pauseEl,
+      this.verifiedExpiryEl,
+    );
     this.built = true;
     this.syncFirstSalvo();
     this.syncQuickChatAvailability();
@@ -558,6 +613,87 @@ export class HUD {
     this.roundEl = document.createElement('div');
     this.roundEl.className =
       'st-hud__round st-hud__round--hidden st-ui-section st-ui-section--round';
+  }
+
+  /** Compact, in-shell status for an authenticated verified deployment. */
+  private buildVerifiedDeployment(): void {
+    this.verifiedStatusEl = document.createElement('section');
+    this.verifiedStatusEl.className =
+      'st-hud__verified-deployment st-ui-section st-ui-section--verified';
+    this.verifiedStatusEl.setAttribute('role', 'status');
+    this.verifiedStatusEl.setAttribute('aria-live', 'polite');
+    this.verifiedStatusEl.setAttribute('aria-atomic', 'true');
+    this.verifiedStatusEl.hidden = true;
+
+    const title = document.createElement('div');
+    title.className = 'st-hud__verified-title';
+    title.textContent = 'Verified deployment';
+    this.verifiedBudgetEl = document.createElement('div');
+    this.verifiedBudgetEl.className = 'st-hud__verified-budget';
+    this.verifiedDeadlineEl = document.createElement('div');
+    this.verifiedDeadlineEl.className = 'st-hud__verified-deadline';
+    this.verifiedStateEl = document.createElement('div');
+    this.verifiedStateEl.className = 'st-hud__verified-state';
+    this.verifiedRetryBtnEl = document.createElement('button');
+    this.verifiedRetryBtnEl.type = 'button';
+    this.verifiedRetryBtnEl.className = 'st-hud__verified-retry';
+    this.verifiedRetryBtnEl.textContent = 'Retry verification';
+    this.verifiedRetryBtnEl.hidden = true;
+    this.verifiedRetryBtnEl.addEventListener('click', () => {
+      if (!this.verifiedRetryBtnEl.hidden && !this.verifiedRetryBtnEl.disabled) {
+        this.verifiedRetryCb?.();
+      }
+    });
+    this.verifiedStatusEl.append(
+      title,
+      this.verifiedBudgetEl,
+      this.verifiedDeadlineEl,
+      this.verifiedStateEl,
+      this.verifiedRetryBtnEl,
+    );
+
+    this.verifiedExpiryEl = document.createElement('section');
+    this.verifiedExpiryEl.className = 'st-hud__verified-expiry';
+    this.verifiedExpiryEl.setAttribute('role', 'dialog');
+    this.verifiedExpiryEl.setAttribute('aria-modal', 'true');
+    this.verifiedExpiryEl.setAttribute('aria-labelledby', 'st-verified-expiry-title');
+    this.verifiedExpiryEl.hidden = true;
+    const panel = document.createElement('div');
+    panel.className = 'st-hud__verified-expiry-panel';
+    const expiryTitle = document.createElement('h2');
+    expiryTitle.id = 'st-verified-expiry-title';
+    expiryTitle.textContent = 'Verification expired';
+    const expiryCopy = document.createElement('p');
+    expiryCopy.textContent = 'Choose how to continue this battle.';
+    const actions = document.createElement('div');
+    actions.className = 'st-hud__verified-expiry-actions';
+    this.verifiedContinueBtnEl = document.createElement('button');
+    this.verifiedContinueBtnEl.type = 'button';
+    this.verifiedContinueBtnEl.className = 'st-hud__verified-continue';
+    this.verifiedContinueBtnEl.textContent = 'Continue casually';
+    this.verifiedContinueBtnEl.addEventListener('click', () => {
+      if (!this.verifiedExpiryEl.hidden) this.verifiedContinueCasualCb?.();
+    });
+    this.verifiedBatteryBtnEl = document.createElement('button');
+    this.verifiedBatteryBtnEl.type = 'button';
+    this.verifiedBatteryBtnEl.className = 'st-hud__verified-battery';
+    this.verifiedBatteryBtnEl.textContent = 'Return to Battery';
+    this.verifiedBatteryBtnEl.addEventListener('click', () => {
+      if (!this.verifiedExpiryEl.hidden) this.verifiedReturnToBatteryCb?.();
+    });
+    actions.append(this.verifiedContinueBtnEl, this.verifiedBatteryBtnEl);
+    panel.append(expiryTitle, expiryCopy, actions);
+    this.verifiedExpiryEl.append(panel);
+    this.verifiedExpiryEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab' || this.verifiedExpiryEl.hidden) return;
+      event.preventDefault();
+      const actions = [this.verifiedContinueBtnEl, this.verifiedBatteryBtnEl];
+      const current = actions.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.shiftKey
+        ? (current <= 0 ? actions.length - 1 : current - 1)
+        : (current < 0 || current === actions.length - 1 ? 0 : current + 1);
+      actions[next]!.focus({ preventScroll: true });
+    });
   }
 
   /** Responsive analog fire-control console (#44). */
@@ -1444,6 +1580,12 @@ export class HUD {
 
   /** GAME_OVER overlay + the non-destructive PAUSE overlay. */
   private buildEndScreens(): void {
+    this.terminalPayoffStatusEl = document.createElement('div');
+    this.terminalPayoffStatusEl.className = 'st-hud__terminal-payoff-status';
+    this.terminalPayoffStatusEl.setAttribute('role', 'status');
+    this.terminalPayoffStatusEl.setAttribute('aria-live', 'polite');
+    this.terminalPayoffStatusEl.setAttribute('aria-atomic', 'true');
+
     // GAME_OVER overlay (hidden until phase === GAME_OVER).
     this.overlayEl = document.createElement('div');
     this.overlayEl.className =
@@ -1514,12 +1656,16 @@ export class HUD {
     restartBtn.type = 'button';
     restartBtn.textContent = 'Play again';
     // Listener attached ONCE here (never in update) — fires the stored callback.
-    restartBtn.addEventListener('click', () => this.restartCb?.());
+    restartBtn.addEventListener('click', () => {
+      if (this.overlayShown) this.restartCb?.();
+    });
     const overlayMenuBtn = document.createElement('button');
     overlayMenuBtn.className = 'st-hud__restart st-hud__restart--ghost';
     overlayMenuBtn.type = 'button';
     overlayMenuBtn.textContent = 'Main Menu';
-    overlayMenuBtn.addEventListener('click', () => this.quitCb?.());
+    overlayMenuBtn.addEventListener('click', () => {
+      if (this.overlayShown) this.quitCb?.();
+    });
     const overlayBtns = document.createElement('div');
     overlayBtns.className = 'st-hud__overlay-btns';
     overlayBtns.append(restartBtn, overlayMenuBtn);
@@ -2696,6 +2842,112 @@ export class HUD {
    *  text + scoreboard) builds ONCE on entry rather than every frame. */
   private overlayShown = false;
 
+  private verifiedCountdown(remainingMs: number): string {
+    const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1_000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} remaining`;
+  }
+
+  private setVerifiedExpiryIsolation(active: boolean): void {
+    const appSiblings = this.modalRoot.parentElement
+      ? [...this.modalRoot.parentElement.children]
+        .filter((element): element is HTMLElement =>
+          element instanceof HTMLElement && element !== this.modalRoot)
+      : [];
+    const modalSiblings = [...this.modalRoot.children]
+      .filter((element): element is HTMLElement =>
+        element instanceof HTMLElement && element !== this.verifiedExpiryEl);
+    for (const surface of [...appSiblings, ...modalSiblings]) {
+      if (active) {
+        if (surface.dataset['verifiedExpiryPreviousInert'] !== undefined) continue;
+        surface.dataset['verifiedExpiryPreviousInert'] = surface.inert ? 'true' : 'false';
+        surface.dataset['verifiedExpiryPreviousAriaHidden'] =
+          surface.getAttribute('aria-hidden') ?? '__absent__';
+        surface.inert = true;
+        surface.setAttribute('aria-hidden', 'true');
+        continue;
+      }
+      const previousInert = surface.dataset['verifiedExpiryPreviousInert'];
+      if (previousInert === undefined) continue;
+      surface.inert = previousInert === 'true';
+      const previousAria = surface.dataset['verifiedExpiryPreviousAriaHidden'];
+      if (previousAria === '__absent__' || previousAria === undefined) {
+        surface.removeAttribute('aria-hidden');
+      } else {
+        surface.setAttribute('aria-hidden', previousAria);
+      }
+      delete surface.dataset['verifiedExpiryPreviousInert'];
+      delete surface.dataset['verifiedExpiryPreviousAriaHidden'];
+    }
+  }
+
+  private hideVerifiedExpiry(): void {
+    this.verifiedExpiryEl.hidden = true;
+    this.setVerifiedExpiryIsolation(false);
+  }
+
+  /** Present only server-backed verified state; null retires every verified surface. */
+  setVerifiedDeployment(state: HUDVerifiedDeploymentState | null): void {
+    if (!this.built) this.build();
+    this.verifiedRetryBtnEl.hidden = true;
+    this.verifiedRetryBtnEl.disabled = true;
+    if (state === null) {
+      this.verifiedStatusEl.hidden = true;
+      this.verifiedStatusEl.remove();
+      this.verifiedBudgetEl.textContent = '';
+      this.verifiedDeadlineEl.textContent = '';
+      this.verifiedStateEl.textContent = '';
+      this.hideVerifiedExpiry();
+      return;
+    }
+
+    if (!this.verifiedStatusEl.isConnected) {
+      this.root.insertBefore(this.verifiedStatusEl, this.roundEl);
+    }
+    this.verifiedStatusEl.hidden = false;
+    if (!('deadline' in state)) {
+      this.verifiedBudgetEl.textContent = '';
+      this.verifiedDeadlineEl.textContent = '';
+      this.verifiedStateEl.textContent = state.status === 'policy-refused'
+        ? 'That action is not permitted in verified deployment.'
+        : 'Verified deployment is unavailable. Return to the Battery.';
+      this.hideVerifiedExpiry();
+      return;
+    }
+
+    this.verifiedBudgetEl.textContent =
+      `Salvos · You ${state.humanSalvos} / ${state.humanLimit} · CPU ${state.cpuSalvos} / ${state.cpuLimit}`;
+    this.verifiedDeadlineEl.textContent = this.verifiedCountdown(state.deadline.remainingMs);
+    if (state.status === 'cap-adjudicating') {
+      this.verifiedStateEl.textContent = 'Salvo cap reached. Adjudicating verified result.';
+    } else if (state.status === 'completion-pending') {
+      this.verifiedStateEl.textContent = 'Verification pending';
+    } else if (state.status === 'retryable') {
+      this.verifiedStateEl.textContent = 'Verification needs another attempt.';
+      this.verifiedRetryBtnEl.hidden = false;
+      this.verifiedRetryBtnEl.disabled = false;
+    } else if (state.status === 'expired') {
+      this.verifiedStateEl.textContent = 'Verification expired.';
+    } else if (state.deadline.warning === 'five-minutes') {
+      this.verifiedStateEl.textContent = 'Five minutes remain';
+    } else if (state.deadline.warning === 'one-minute') {
+      this.verifiedStateEl.textContent = 'One minute remains';
+    } else {
+      this.verifiedStateEl.textContent = 'Deployment active';
+    }
+
+    if (state.status !== 'expired') {
+      this.hideVerifiedExpiry();
+      return;
+    }
+    if (this.paused) this.togglePause(false);
+    const openingExpiryDecision = this.verifiedExpiryEl.hidden;
+    this.verifiedExpiryEl.hidden = false;
+    this.setVerifiedExpiryIsolation(true);
+    if (openingExpiryDecision) this.verifiedContinueBtnEl.focus({ preventScroll: true });
+  }
+
   /** Isolate every full-app surface except the active terminal report. */
   private setVictoryIsolation(active: boolean): void {
     const appSiblings = this.modalRoot.parentElement
@@ -2705,7 +2957,9 @@ export class HUD {
       : [];
     const modalSiblings = [...this.modalRoot.children]
       .filter((element): element is HTMLElement =>
-        element instanceof HTMLElement && element !== this.overlayEl);
+        element instanceof HTMLElement
+          && element !== this.overlayEl
+          && element !== this.terminalPayoffStatusEl);
 
     for (const surface of [...appSiblings, ...modalSiblings]) {
       if (active) {
@@ -2733,6 +2987,11 @@ export class HUD {
   }
 
   private hideVictoryReport(restoreFocus = true): void {
+    if (this.terminalPayoffTimer !== null) {
+      clearTimeout(this.terminalPayoffTimer);
+      this.terminalPayoffTimer = null;
+    }
+    this.unlockTerminalPayoff();
     this.overlayEl.classList.add('st-hud__overlay--hidden');
     this.overlayEl.setAttribute('aria-hidden', 'true');
     this.setVictoryIsolation(false);
@@ -2743,8 +3002,17 @@ export class HUD {
     this.overlayEl.style.removeProperty('--st-victory-color');
     this.overlayProgressionReceiptEl.hidden = true;
     this.overlayProgressionReceiptEl.textContent = '';
+    this.overlayProgressionReceiptEl.classList.remove(
+      'st-hud__victory-progression-receipt--promotion',
+    );
     this.clearAnonymousProgressionHandoff();
     this.overlayShown = false;
+    this.terminalState = null;
+    this.terminalImpactComplete = false;
+    delete this.terminalPayoffStatusEl.dataset['payoffStartedAt'];
+    delete this.terminalPayoffStatusEl.dataset['impactCompletedAt'];
+    delete this.terminalPayoffStatusEl.dataset['payoffReadyAt'];
+    this.terminalPayoffStatusEl.textContent = '';
 
     const previousFocus = this.overlayPreviousFocus;
     this.overlayPreviousFocus = null;
@@ -2766,11 +3034,82 @@ export class HUD {
     const summary = receipt.receipt.current;
     const remainingXp = summary.nextLevelXp - summary.levelXp;
     const outcome = receipt.won ? 'Victory' : 'Match complete';
+    this.overlayProgressionReceiptEl.classList.remove(
+      'st-hud__victory-progression-receipt--promotion',
+    );
     const summaryLine = document.createElement('span');
     summaryLine.className = 'st-hud__victory-progression-summary';
     summaryLine.textContent =
       `${outcome} · +${earnedXp} XP · ${remainingXp} XP to Level ${summary.level + 1}`;
     this.overlayProgressionReceiptEl.replaceChildren(summaryLine);
+    this.overlayProgressionReceiptEl.hidden = false;
+    this.clearAnonymousProgressionHandoff();
+  }
+
+  /** Render rank language only from the accepted verified-replay receipt. */
+  setVerifiedProgressionReceipt(receipt: VerifiedDeploymentReceipt): void {
+    if (!this.built) this.build();
+    const current = receipt.progression.current;
+    const promotion = commanderPromotionBetweenVerified(
+      {
+        evidence: receipt.progression.prior.evidence,
+        progressionVersion: receipt.progression.prior.progressionVersion,
+        level: receipt.progression.prior.level,
+      },
+      {
+        evidence: current.evidence,
+        progressionVersion: current.progressionVersion,
+        level: current.level,
+      },
+    );
+    const career = commanderCareerForVerifiedProgression({
+      evidence: current.evidence,
+      progressionVersion: current.progressionVersion,
+      level: current.level,
+    });
+    const outcome = receipt.result.outcome === 'win'
+      ? 'victory'
+      : receipt.result.outcome;
+    const summaryLine = document.createElement('span');
+    summaryLine.className = 'st-hud__victory-progression-summary';
+    summaryLine.textContent =
+      `Verified ${outcome} · +${receipt.result.verifiedXp} XP · Level ${current.level} · ${current.levelXp} / ${current.nextLevelXp} XP`;
+    const children: HTMLElement[] = [summaryLine];
+    this.overlayProgressionReceiptEl.classList.toggle(
+      'st-hud__victory-progression-receipt--promotion',
+      promotion !== null,
+    );
+    if (promotion) {
+      const promotionCard = document.createElement('section');
+      promotionCard.className = 'st-hud__victory-promotion';
+      const kicker = document.createElement('div');
+      kicker.className = 'st-hud__victory-promotion-kicker';
+      kicker.textContent = 'Commander promoted';
+      const code = document.createElement('div');
+      code.className = 'st-hud__victory-promotion-code';
+      code.textContent = promotion.code;
+      const insignia = document.createElement('div');
+      insignia.className = 'st-hud__victory-promotion-insignia';
+      insignia.setAttribute('aria-label', promotion.insignia.label);
+      insignia.textContent = promotion.insignia.mark;
+      const title = document.createElement('div');
+      title.className = 'st-hud__victory-promotion-title';
+      title.textContent = promotion.title;
+      promotionCard.append(kicker, code, insignia, title);
+      children.push(promotionCard);
+    }
+    if (career?.next) {
+      const next = document.createElement('div');
+      next.className = 'st-hud__victory-career-next';
+      const xpToNext = Math.max(
+        0,
+        (career.next.level - current.level) * current.nextLevelXp - current.levelXp,
+      );
+      next.textContent =
+        `${xpToNext.toLocaleString('en-US')} XP to ${career.next.code} ${career.next.title} at Level ${career.next.level}`;
+      children.push(next);
+    }
+    this.overlayProgressionReceiptEl.replaceChildren(...children);
     this.overlayProgressionReceiptEl.hidden = false;
     this.clearAnonymousProgressionHandoff();
   }
@@ -2787,20 +3126,51 @@ export class HUD {
     this.overlayProgressionHandoffEl.hidden = false;
   }
 
-  /** Show/hide the GAME_OVER overlay and set its winner/draw message + scoreboard. */
-  private syncOverlay(state: GameState): void {
-    if (state.phase !== 'GAME_OVER') {
-      if (this.overlayShown) this.hideVictoryReport();
-      return;
-    }
-    if (this.overlayShown) return; // already built for this game-over screen
+  private lockTerminalPayoff(): void {
+    if (this.terminalPayoffLocked) return;
+    this.setVictoryIsolation(true);
+    this.terminalPayoffRootWasInert = this.root.inert;
+    this.terminalPayoffOverlayWasInert = this.overlayRoot.inert;
+    this.root.inert = true;
+    this.overlayRoot.inert = true;
+    this.terminalPayoffLocked = true;
+    this.terminalPayoffStatusEl.dataset['payoffStartedAt'] = String(performance.now());
+    delete this.terminalPayoffStatusEl.dataset['payoffReadyAt'];
+    this.terminalPayoffStatusEl.textContent =
+      'Terminal impact resolving. After action report incoming.';
+  }
 
-    // A networked game keeps consuming the lockstep log while Pause is open. A
-    // remote terminal shot can therefore end the match underneath that surface;
-    // retire Pause before showing the later, authoritative terminal state.
-    if (this.paused) this.togglePause(false);
-    const focused = document.activeElement;
-    this.overlayPreviousFocus = focused instanceof HTMLElement ? focused : null;
+  private unlockTerminalPayoff(): void {
+    if (!this.terminalPayoffLocked) return;
+    this.root.inert = this.terminalPayoffRootWasInert;
+    this.overlayRoot.inert = this.terminalPayoffOverlayWasInert;
+    this.terminalPayoffLocked = false;
+  }
+
+  private scheduleTerminalReport(): void {
+    if (
+      !this.terminalImpactComplete
+      || this.terminalState === null
+      || this.terminalPayoffTimer !== null
+      || this.overlayShown
+    ) return;
+    this.terminalPayoffTimer = setTimeout(() => {
+      this.terminalPayoffTimer = null;
+      const terminalState = this.terminalState;
+      if (!terminalState || terminalState.phase !== 'GAME_OVER') return;
+      this.showVictoryReport(terminalState);
+    }, this.reduceMotion ? 120 : 420);
+  }
+
+  /** Begin the readable payoff beat only after the renderer says the impact has settled. */
+  notifyTerminalImpactComplete(): void {
+    this.terminalImpactComplete = true;
+    this.terminalPayoffStatusEl.dataset['impactCompletedAt'] = String(performance.now());
+    this.scheduleTerminalReport();
+  }
+
+  private showVictoryReport(state: GameState): void {
+    this.unlockTerminalPayoff();
     if (state.winner === null) {
       // 0 alive (mutual kill) / round-win tie => DRAW per engine contract.
       this.overlayTextEl.textContent = 'Draw';
@@ -2838,7 +3208,27 @@ export class HUD {
     this.overlayEl.classList.remove('st-hud__overlay--hidden');
     this.overlayEl.setAttribute('aria-hidden', 'false');
     this.overlayShown = true;
+    this.terminalPayoffStatusEl.dataset['payoffReadyAt'] = String(performance.now());
+    this.terminalPayoffStatusEl.textContent = 'After action report ready.';
     this.overlayPrimaryBtnEl.focus({ preventScroll: true });
+  }
+
+  /** Show/hide the GAME_OVER overlay, sequenced after terminal impact completion. */
+  private syncOverlay(state: GameState): void {
+    if (state.phase !== 'GAME_OVER') {
+      if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport();
+      return;
+    }
+    if (this.overlayShown) return;
+    if (this.terminalState === null) {
+      // A networked game may end beneath Pause; terminal state supersedes it.
+      if (this.paused) this.togglePause(false);
+      const focused = document.activeElement;
+      this.overlayPreviousFocus = focused instanceof HTMLElement ? focused : null;
+      this.terminalState = state;
+      this.lockTerminalPayoff();
+    }
+    this.scheduleTerminalReport();
   }
 
   /**
@@ -4027,6 +4417,36 @@ export class HUD {
 .st-hud__victory-progression-summary {
   grid-column: 1 / -1;
 }
+.st-hud__victory-progression-receipt[hidden] { display: none; }
+.st-hud__victory-progression-receipt--promotion {
+  border-color: rgba(255, 210, 63, 0.72);
+  background: linear-gradient(135deg, rgba(255, 210, 63, 0.16), rgba(78, 147, 74, 0.14));
+}
+.st-hud__victory-promotion {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 10px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 210, 63, 0.28);
+}
+.st-hud__victory-promotion-kicker {
+  grid-column: 1 / -1;
+  color: var(--gold);
+  font-size: 9px;
+}
+.st-hud__victory-promotion-code,
+.st-hud__victory-promotion-insignia {
+  color: var(--gold);
+  font-size: 17px;
+}
+.st-hud__victory-promotion-title { color: var(--text); }
+.st-hud__victory-career-next {
+  grid-column: 1 / -1;
+  color: var(--text-dim);
+  font-size: 9px;
+}
 #app.is-compact .st-hud__victory-progression-summary {
   font-size: calc(var(--st-store-buy-target) * 0.2);
 }
@@ -4406,6 +4826,90 @@ export class HUD {
   border-bottom: 1px solid rgba(255, 210, 63, 0.18);
 }
 .st-hud__round--hidden { display: none; }
+
+.st-hud__verified-deployment {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid rgba(91, 190, 255, 0.34);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(34, 79, 112, 0.28), rgba(15, 18, 32, 0.78));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.st-hud__verified-deployment[hidden] { display: none; }
+.st-hud__verified-title {
+  color: #8dd6ff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.st-hud__verified-budget { color: var(--text); }
+.st-hud__verified-deadline { color: var(--gold); }
+.st-hud__verified-state { color: var(--text-dim); }
+.st-hud__verified-retry {
+  min-height: 36px;
+  margin-top: 3px;
+  border: 1px solid rgba(141, 214, 255, 0.62);
+  border-radius: 4px;
+  background: rgba(63, 120, 184, 0.22);
+  color: #bfe8ff;
+  font: 700 10px var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.st-hud__verified-retry[hidden] { display: none; }
+.st-hud__verified-expiry {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 8, 16, 0.84);
+  backdrop-filter: blur(5px);
+}
+.st-hud__verified-expiry[hidden] { display: none; }
+.st-hud__verified-expiry-panel {
+  width: min(100%, 430px);
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid rgba(255, 210, 63, 0.54);
+  border-radius: 8px;
+  background: linear-gradient(160deg, rgba(46, 29, 44, 0.98), rgba(15, 14, 27, 0.98));
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.62);
+  color: var(--text);
+}
+.st-hud__verified-expiry-panel h2 { margin: 0 0 8px; color: var(--gold); }
+.st-hud__verified-expiry-panel p { margin: 0; color: var(--text-dim); }
+.st-hud__verified-expiry-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+.st-hud__verified-expiry-actions button {
+  min-height: 44px;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 5px;
+  background: rgba(255, 210, 63, 0.09);
+  color: var(--text);
+  font: 700 11px var(--font-display);
+}
+.st-hud__terminal-payoff-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+#app.is-compact .st-hud__verified-expiry-actions { grid-template-columns: 1fr; }
 
 /* Per-player round-win pips (●/○ slots up to the clinch count). */
 .st-hud__pips {

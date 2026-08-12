@@ -30,6 +30,18 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       tickCount: 293,
       maxTurnTickCount: 198,
     },
+    verifiedDuel: {
+      seed: 17,
+      outcome: 'human_win',
+      winnerId: 'p1',
+      reason: 'health',
+      humanSalvos: 6,
+      cpuSalvos: 6,
+      liveTicks: 625,
+      cpuSimulationTicks: 24564,
+      maximumProbeCount: 59,
+      transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })),
+    },
   },
 } as const
 
@@ -221,6 +233,8 @@ describe('verified-replay-runtime contract', () => {
     ['an extra root field', (response: MutableResponse) => { response.requestEcho = 'operator-controlled' }],
     ['an extra fixture field', (response: MutableResponse) => { response.fixtures.maximumLifecycle.progression = 99 }],
     ['an unsafe tick count', (response: MutableResponse) => { response.fixtures.maximumTurn.tickCount = Number.MAX_SAFE_INTEGER + 1 }],
+    ['a widened duel salvo cap', (response: MutableResponse) => { response.fixtures.verifiedDuel.cpuSalvos = 7 }],
+    ['an awarding probe field', (response: MutableResponse) => { response.fixtures.verifiedDuel.xpAwarded = 200 }],
   ])('routes %s through runChecks() as invalid_response', async (_label, mutate) => {
     const response = copyExactResponse()
     mutate(response)
@@ -436,6 +450,7 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
       fixtures: {
         maximumLifecycle: EXACT_VERIFIED_REPLAY_RESPONSE.fixtures.maximumLifecycle,
         maximumTurn: EXACT_VERIFIED_REPLAY_RESPONSE.fixtures.maximumTurn,
+        verifiedDuel: EXACT_VERIFIED_REPLAY_RESPONSE.fixtures.verifiedDuel,
       },
     })
     expect(Reflect.ownKeys(details)).toEqual([
@@ -450,6 +465,8 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
     expect(details.fixtures).not.toBe(response.fixtures)
     expect(details.fixtures.maximumLifecycle).not.toBe(response.fixtures.maximumLifecycle)
     expect(details.fixtures.maximumTurn).not.toBe(response.fixtures.maximumTurn)
+    expect(details.fixtures.verifiedDuel).not.toBe(response.fixtures.verifiedDuel)
+    expect(details.fixtures.verifiedDuel!.transcript).not.toBe(response.fixtures.verifiedDuel.transcript)
 
     response.fixtures.maximumLifecycle.tickCount = 999
     response.fixtures.maximumTurn.phase = 'PLAYER_TURN'

@@ -6,6 +6,11 @@ import {
   type AccountSummary,
   type AccountState,
 } from './AccountSession'
+import type {
+  VerifiedDeploymentDescriptor,
+  VerifiedDeploymentServerReceipt,
+  VerifiedDeploymentStart,
+} from './verifiedDeployment'
 
 type AssertTrue<T extends true> = T
 type IsRequiredKey<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
@@ -15,8 +20,20 @@ type _accountSummaryProgressionFieldsAreRequired = [
   AssertTrue<IsRequiredKey<AccountSummary, 'level'>>,
   AssertTrue<IsRequiredKey<AccountSummary, 'levelXp'>>,
   AssertTrue<IsRequiredKey<AccountSummary, 'nextLevelXp'>>,
+  AssertTrue<IsRequiredKey<AccountSummary, 'verifiedProgression'>>,
 ]
 type _accountSummaryVersionIsLiteralOne = AssertTrue<AccountSummary['progressionVersion'] extends 1 ? true : false>
+
+const verifiedZeroProgression = {
+  evidence: 'verified_replay_v1' as const,
+  matchesPlayed: 0,
+  wins: 0,
+  progressionVersion: 1 as const,
+  totalXp: 0,
+  level: 1,
+  levelXp: 0,
+  nextLevelXp: 500,
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -33,7 +50,77 @@ function backend(overrides: Partial<AccountBackend> = {}): AccountBackend {
     signOut: vi.fn(async () => undefined),
     loadProfile: vi.fn(async () => ({ id: 'user-1', displayName: 'Ranger', summary: null })),
     recordHotSeatMatch: vi.fn(async () => true),
+    startVerifiedDeployment: vi.fn(async () => verifiedStart),
+    abandonVerifiedDeployment: vi.fn(async () => true),
+    completeVerifiedDeployment: vi.fn(async () => verifiedServerReceipt),
     ...overrides,
+  }
+}
+
+const verifiedSessionId = '00000000-0000-4000-8000-000000000061'
+
+const verifiedDescriptor: VerifiedDeploymentDescriptor = {
+  sessionId: verifiedSessionId,
+  expiresAt: '2026-08-12T13:30:00.000Z',
+  contractVersion: 1,
+  engineVersion: 1,
+  rulesetVersion: 3,
+  limits: {
+    humanSalvos: 6,
+    cpuSalvos: 6,
+    angle: { min: 0, max: 180 },
+    power: { min: 0, max: 100 },
+  },
+  config: {
+    seed: 17,
+    options: {
+      maxPlayers: 2,
+      maxWind: 6,
+      gravity: 0.15,
+      walls: 'open',
+      hazards: 'none',
+      rounds: 1,
+      interestRate: 0,
+      suddenDeathTurn: 0,
+      armsLevel: 0,
+      starterWeaponFalloff: 'decisive',
+      teamMode: false,
+      players: [
+        { name: 'Ranger', color: '#e8554d' },
+        { name: 'CPU 1', color: '#3f78b8', ai: 'hard' },
+      ],
+    },
+  },
+}
+
+const verifiedStart: VerifiedDeploymentStart = {
+  resumed: false,
+  descriptor: verifiedDescriptor,
+}
+
+const verifiedServerReceipt: VerifiedDeploymentServerReceipt = {
+  result: { sessionId: verifiedSessionId, won: true, outcome: 'win', verifiedXp: 200 },
+  progression: {
+    evidence: 'verified_replay_v1',
+    prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
+    current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
+  },
+}
+
+function exactSummary(
+  verified = verifiedZeroProgression,
+  casual: Pick<AccountSummary, 'matchesPlayed' | 'wins'> = { matchesPlayed: 0, wins: 0 },
+): AccountSummary {
+  const totalXp = casual.matchesPlayed * 100 + casual.wins * 100
+  return {
+    matchesPlayed: casual.matchesPlayed,
+    wins: casual.wins,
+    progressionVersion: 1,
+    totalXp,
+    level: Math.floor(totalXp / 500) + 1,
+    levelXp: totalXp % 500,
+    nextLevelXp: 500,
+    verifiedProgression: verified,
   }
 }
 
@@ -126,6 +213,16 @@ describe('createSupabaseAccountBackend', () => {
       level: 1,
       levelXp: 300,
       nextLevelXp: 500,
+      verifiedProgression: {
+        evidence: 'verified_replay_v1',
+        matchesPlayed: 0,
+        wins: 0,
+        progressionVersion: 1,
+        totalXp: 0,
+        level: 1,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
     }],
     ['level boundary', {
       matchesPlayed: 4,
@@ -135,6 +232,16 @@ describe('createSupabaseAccountBackend', () => {
       level: 2,
       levelXp: 0,
       nextLevelXp: 500,
+      verifiedProgression: {
+        evidence: 'verified_replay_v1',
+        matchesPlayed: 0,
+        wins: 0,
+        progressionVersion: 1,
+        totalXp: 0,
+        level: 1,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
     }],
     ['separate verified replay progression', {
       matchesPlayed: 7,
@@ -198,6 +305,16 @@ describe('createSupabaseAccountBackend', () => {
     level: 3,
     levelXp: 0,
     nextLevelXp: 500,
+    verifiedProgression: {
+      evidence: 'verified_replay_v1',
+      matchesPlayed: 4,
+      wins: 1,
+      progressionVersion: 1,
+      totalXp: 500,
+      level: 2,
+      levelXp: 0,
+      nextLevelXp: 500,
+    },
   }
 
   it.each([
@@ -205,6 +322,18 @@ describe('createSupabaseAccountBackend', () => {
     ['an unknown progression version', { data: { ...validSummary, progressionVersion: 2 }, error: null }],
     ['a missing summary key', { data: { matchesPlayed: 7, wins: 3, progressionVersion: 1, totalXp: 1000, level: 3, levelXp: 0 }, error: null }],
     ['an extra summary key', { data: { ...validSummary, userId: 'user-7' }, error: null }],
+    ['a missing required verified progression cannot fall back to casual progression', {
+      data: {
+        matchesPlayed: 7,
+        wins: 3,
+        progressionVersion: 1,
+        totalXp: 1000,
+        level: 3,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
+      error: null,
+    }],
     ['forged verified evidence', {
       data: {
         ...validSummary,
@@ -219,6 +348,45 @@ describe('createSupabaseAccountBackend', () => {
           nextLevelXp: 500,
         },
       },
+      error: null,
+    }],
+    ['missing verified evidence', {
+      data: {
+        ...validSummary,
+        verifiedProgression: {
+          matchesPlayed: 4,
+          wins: 1,
+          progressionVersion: 1,
+          totalXp: 500,
+          level: 2,
+          levelXp: 0,
+          nextLevelXp: 500,
+        },
+      },
+      error: null,
+    }],
+    ['a verified progression with an unknown key', {
+      data: { ...validSummary, verifiedProgression: { ...validSummary.verifiedProgression, widened: true } },
+      error: null,
+    }],
+    ['a verified progression with a missing key', {
+      data: { ...validSummary, verifiedProgression: { evidence: 'verified_replay_v1', matchesPlayed: 4, wins: 1, progressionVersion: 1, totalXp: 500, level: 2, levelXp: 0 } },
+      error: null,
+    }],
+    ['an unknown verified progression version', {
+      data: { ...validSummary, verifiedProgression: { ...validSummary.verifiedProgression, progressionVersion: 2 } },
+      error: null,
+    }],
+    ['a fractional verified match count', {
+      data: { ...validSummary, verifiedProgression: { ...validSummary.verifiedProgression, matchesPlayed: 4.5, totalXp: 550, level: 2, levelXp: 50 } },
+      error: null,
+    }],
+    ['verified wins above verified matches', {
+      data: { ...validSummary, verifiedProgression: { ...validSummary.verifiedProgression, wins: 5, totalXp: 900, level: 2, levelXp: 400 } },
+      error: null,
+    }],
+    ['inconsistent verified total XP and level arithmetic', {
+      data: { ...validSummary, verifiedProgression: { ...validSummary.verifiedProgression, totalXp: 499, level: 1, levelXp: 499 } },
       error: null,
     }],
     ['a fractional match count', {
@@ -498,6 +666,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 0,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
       .mockResolvedValueOnce({
@@ -511,6 +680,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 200,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
     const source = backend({
@@ -537,6 +707,7 @@ describe('AccountSession', () => {
         level: 1,
         levelXp: 0,
         nextLevelXp: 500,
+        verifiedProgression: verifiedZeroProgression,
       },
       current: {
         matchesPlayed: 1,
@@ -546,6 +717,7 @@ describe('AccountSession', () => {
         level: 1,
         levelXp: 200,
         nextLevelXp: 500,
+        verifiedProgression: verifiedZeroProgression,
       },
     })
     expect(recordHotSeatMatch).toHaveBeenCalledOnce()
@@ -569,6 +741,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 0,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
       .mockResolvedValueOnce({
@@ -582,6 +755,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 100,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
     const session = new AccountSession(() => undefined, {
@@ -621,6 +795,7 @@ describe('AccountSession', () => {
             level: 4,
             levelXp: 300,
             nextLevelXp: 500,
+            verifiedProgression: verifiedZeroProgression,
           },
         }
       : {
@@ -634,6 +809,7 @@ describe('AccountSession', () => {
             level: 5,
             levelXp: 0,
             nextLevelXp: 500,
+            verifiedProgression: verifiedZeroProgression,
           },
         })
     const session = new AccountSession(() => undefined, {
@@ -709,6 +885,7 @@ describe('AccountSession', () => {
         level: 1,
         levelXp: 0,
         nextLevelXp: 500,
+        verifiedProgression: verifiedZeroProgression,
       },
     }
     const session = new AccountSession(() => undefined, {
@@ -742,6 +919,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 200,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
     const session = new AccountSession(() => undefined, {
@@ -777,6 +955,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 0,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
       .mockResolvedValueOnce({
@@ -790,6 +969,7 @@ describe('AccountSession', () => {
           level: 1,
           levelXp: 200,
           nextLevelXp: 500,
+          verifiedProgression: verifiedZeroProgression,
         },
       })
     const session = new AccountSession(() => undefined, {
@@ -1150,6 +1330,7 @@ describe('AccountSession', () => {
         level: 1,
         levelXp: 300,
         nextLevelXp: 500,
+        verifiedProgression: verifiedZeroProgression,
       },
     })
 
@@ -1300,5 +1481,382 @@ describe('AccountSession', () => {
     await Promise.resolve()
 
     expect(states).toHaveLength(beforeDispose)
+  })
+})
+
+describe('verified deployment Supabase adapter', () => {
+  const rawStart = {
+    sessionId: verifiedSessionId,
+    resumed: false,
+    expiresAt: verifiedDescriptor.expiresAt,
+    contractVersion: 1,
+    engineVersion: 1,
+    rulesetVersion: 3,
+    limits: verifiedDescriptor.limits,
+    config: verifiedDescriptor.config,
+  }
+
+  it('invokes start without a body and abandon/complete with only their exact accepted bodies', async () => {
+    const invoke = vi.fn(async (name: string) => {
+      if (name === 'start_verified_deployment') return { data: rawStart, error: null }
+      if (name === 'abandon_verified_deployment') {
+        return { data: { ok: true, sessionId: verifiedSessionId, status: 'abandoned' }, error: null }
+      }
+      return { data: verifiedServerReceipt, error: null }
+    })
+    const gateway = createSupabaseAccountBackend({ auth: {}, functions: { invoke } } as never)
+    const transcript = [{ angle: 37, power: 64 }]
+
+    await expect(gateway.startVerifiedDeployment()).resolves.toEqual(verifiedStart)
+    await expect(gateway.abandonVerifiedDeployment(verifiedSessionId)).resolves.toBe(true)
+    await expect(gateway.completeVerifiedDeployment(verifiedSessionId, transcript))
+      .resolves.toEqual(verifiedServerReceipt)
+    expect(invoke.mock.calls).toEqual([
+      ['start_verified_deployment'],
+      ['abandon_verified_deployment', { body: { sessionId: verifiedSessionId } }],
+      ['complete_verified_deployment', { body: { sessionId: verifiedSessionId, transcript } }],
+    ])
+  })
+
+  it.each([
+    ['start', 'startVerifiedDeployment', { ...rawStart, accessToken: 'private-token' }],
+    ['abandon', 'abandonVerifiedDeployment', { ok: true, sessionId: verifiedSessionId, status: 'abandoned', userId: 'private-user' }],
+    ['complete', 'completeVerifiedDeployment', { ...verifiedServerReceipt, casualTotalXp: 200 }],
+  ] as const)('refuses a widened %s response', async (_label, method, data) => {
+    const gateway = createSupabaseAccountBackend({
+      auth: {},
+      functions: { invoke: vi.fn(async () => ({ data, error: null })) },
+    } as never)
+
+    const invocation = method === 'startVerifiedDeployment'
+      ? gateway.startVerifiedDeployment()
+      : method === 'abandonVerifiedDeployment'
+        ? gateway.abandonVerifiedDeployment(verifiedSessionId)
+        : gateway.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }])
+    await expect(invocation).rejects.toThrow('Verified deployment is unavailable.')
+  })
+
+  it('bounds a stalled lifecycle invocation with safe copy', async () => {
+    vi.useFakeTimers()
+    const gateway = createSupabaseAccountBackend({
+      auth: {},
+      functions: { invoke: vi.fn(() => new Promise<never>(() => undefined)) },
+    } as never)
+    try {
+      const pending = gateway.startVerifiedDeployment()
+      let settled = false
+      const observed = pending.then(
+        () => ({ ok: true as const, error: null }),
+        (error: unknown) => ({ ok: false as const, error }),
+      ).finally(() => { settled = true })
+      await vi.advanceTimersByTimeAsync(4_999)
+      await Promise.resolve()
+      expect(settled).toBe(false)
+      await vi.advanceTimersByTimeAsync(1)
+      const result = await observed
+      expect(result.ok).toBe(false)
+      expect(result.error).toEqual(new Error('Verified deployment request timed out.'))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('AccountSession verified deployment lifecycle', () => {
+  it('refuses loading and anonymous invocation without touching lifecycle handlers', async () => {
+    const restored = deferred<{ id: string } | null>()
+    const source = backend({ restoreUser: vi.fn(() => restored.promise) })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    const initializing = session.initialize()
+    await Promise.resolve()
+    const starting = session.startVerifiedDeployment()
+    await Promise.resolve()
+    expect(source.startVerifiedDeployment).not.toHaveBeenCalled()
+    restored.resolve(null)
+    await initializing
+    await expect(starting).resolves.toBeNull()
+    await expect(session.startVerifiedDeployment()).resolves.toBeNull()
+    await expect(session.abandonVerifiedDeployment(verifiedSessionId)).resolves.toBe(false)
+    await expect(session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }]))
+      .resolves.toBeNull()
+    expect(source.startVerifiedDeployment).not.toHaveBeenCalled()
+    expect(source.abandonVerifiedDeployment).not.toHaveBeenCalled()
+    expect(source.completeVerifiedDeployment).not.toHaveBeenCalled()
+  })
+
+  it('returns the exact immutable start/resume descriptor only for the current authenticated generation', async () => {
+    const first = deferred<VerifiedDeploymentStart>()
+    let onUser: ((user: { id: string } | null) => void) | undefined
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      subscribe: vi.fn((callback) => { onUser = callback; return vi.fn() }),
+      loadProfile: vi.fn(async (userId) => ({ id: userId, displayName: userId, summary: exactSummary() })),
+      startVerifiedDeployment: vi.fn(() => first.promise),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    const stale = session.startVerifiedDeployment()
+    await Promise.resolve()
+    onUser?.({ id: 'user-2' })
+    await vi.waitFor(() => expect(session.state).toMatchObject({
+      status: 'authenticated', profile: { id: 'user-2' },
+    }))
+    first.resolve(verifiedStart)
+    await expect(stale).resolves.toBeNull()
+
+    source.startVerifiedDeployment = vi.fn(async () => ({ ...verifiedStart, resumed: true }))
+    await expect(session.startVerifiedDeployment()).resolves.toEqual({ ...verifiedStart, resumed: true })
+  })
+
+  it('invalidates an in-flight abandon when sign-out starts', async () => {
+    const abandoned = deferred<boolean>()
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadProfile: vi.fn(async () => ({ id: 'user-1', displayName: 'Ranger', summary: exactSummary() })),
+      abandonVerifiedDeployment: vi.fn(() => abandoned.promise),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    const pending = session.abandonVerifiedDeployment(verifiedSessionId)
+    await Promise.resolve()
+    await session.signOut()
+    abandoned.resolve(true)
+
+    await expect(pending).resolves.toBe(false)
+    expect(session.state.status).toBe('anonymous')
+  })
+
+  it('accepts completion once only when server arithmetic and refreshed verified progression both agree', async () => {
+    const completed = deferred<VerifiedDeploymentServerReceipt>()
+    const verifiedCurrent = {
+      evidence: 'verified_replay_v1' as const,
+      matchesPlayed: 1,
+      wins: 1,
+      progressionVersion: 1 as const,
+      totalXp: 200,
+      level: 1,
+      levelXp: 200,
+      nextLevelXp: 500,
+    }
+    const loadProfile = vi.fn()
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary() })
+      .mockResolvedValueOnce({
+        id: 'user-1',
+        displayName: 'Ranger',
+        summary: exactSummary(verifiedCurrent, { matchesPlayed: 17, wins: 8 }),
+      })
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadProfile,
+      completeVerifiedDeployment: vi.fn(() => completed.promise),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    const transcript = [{ angle: 37, power: 64 }]
+
+    const first = session.completeVerifiedDeployment(verifiedSessionId, transcript)
+    const duplicate = session.completeVerifiedDeployment(verifiedSessionId, transcript)
+    await Promise.resolve()
+    expect(source.completeVerifiedDeployment).toHaveBeenCalledOnce()
+    completed.resolve(verifiedServerReceipt)
+
+    const expected = {
+      result: verifiedServerReceipt.result,
+      progression: {
+        evidence: 'verified_replay_v1',
+        prior: verifiedZeroProgression,
+        current: verifiedCurrent,
+      },
+    }
+    await expect(first).resolves.toEqual(expected)
+    await expect(duplicate).resolves.toEqual(expected)
+    await expect(session.completeVerifiedDeployment(verifiedSessionId, transcript)).resolves.toEqual(expected)
+    expect(source.completeVerifiedDeployment).toHaveBeenCalledOnce()
+    expect(loadProfile).toHaveBeenCalledTimes(2)
+  })
+
+  it('never substitutes compatible casual totals for stale verified evidence', async () => {
+    const loadProfile = vi.fn()
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary() })
+      .mockResolvedValueOnce({
+        id: 'user-1',
+        displayName: 'Ranger',
+        summary: exactSummary(verifiedZeroProgression, { matchesPlayed: 1, wins: 1 }),
+      })
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadProfile,
+      completeVerifiedDeployment: vi.fn(async () => verifiedServerReceipt),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    await expect(session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }]))
+      .resolves.toBeNull()
+    expect(session.state).toMatchObject({
+      status: 'authenticated',
+      profile: { summary: { totalXp: 200, verifiedProgression: verifiedZeroProgression } },
+    })
+  })
+
+  it('accepts an immutable result-specific receipt when this browser began from stale verified progression', async () => {
+    const staleLocal = {
+      ...verifiedZeroProgression,
+      matchesPlayed: 1,
+      wins: 0,
+      totalXp: 100,
+      levelXp: 100,
+    }
+    const receipt = {
+      result: verifiedServerReceipt.result,
+      progression: {
+        evidence: 'verified_replay_v1' as const,
+        prior: { matchesPlayed: 2, wins: 1, totalXp: 300 },
+        current: { matchesPlayed: 3, wins: 2, totalXp: 500 },
+      },
+    }
+    const authoritativeCurrent = {
+      evidence: 'verified_replay_v1' as const,
+      matchesPlayed: 3,
+      wins: 2,
+      progressionVersion: 1 as const,
+      totalXp: 500,
+      level: 2,
+      levelXp: 0,
+      nextLevelXp: 500,
+    }
+    const loadProfile = vi.fn()
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary(staleLocal) })
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary(authoritativeCurrent) })
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadProfile,
+      completeVerifiedDeployment: vi.fn(async () => receipt),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    await expect(session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }]))
+      .resolves.toEqual({
+        result: receipt.result,
+        progression: {
+          evidence: 'verified_replay_v1',
+          prior: { evidence: 'verified_replay_v1', ...receipt.progression.prior, progressionVersion: 1, level: 1, levelXp: 300, nextLevelXp: 500 },
+          current: authoritativeCurrent,
+        },
+      })
+    expect(loadProfile).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not suppress an authoritative completion receipt when the pre-match account summary is unavailable', async () => {
+    const authoritativeCurrent = {
+      evidence: 'verified_replay_v1' as const,
+      matchesPlayed: 1,
+      wins: 1,
+      progressionVersion: 1 as const,
+      totalXp: 200,
+      level: 1,
+      levelXp: 200,
+      nextLevelXp: 500,
+    }
+    const loadProfile = vi.fn()
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: null })
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary(authoritativeCurrent) })
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadProfile,
+      completeVerifiedDeployment: vi.fn(async () => verifiedServerReceipt),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    await expect(session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }]))
+      .resolves.toEqual({
+        result: verifiedServerReceipt.result,
+        progression: {
+          evidence: 'verified_replay_v1',
+          prior: verifiedZeroProgression,
+          current: authoritativeCurrent,
+        },
+      })
+  })
+
+  it('discards completion when the account switches before the response and does not refresh the new owner', async () => {
+    const completed = deferred<VerifiedDeploymentServerReceipt>()
+    let onUser: ((user: { id: string } | null) => void) | undefined
+    const loadProfile = vi.fn(async (userId: string) => ({
+      id: userId,
+      displayName: userId,
+      summary: exactSummary(),
+    }))
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      subscribe: vi.fn((callback) => { onUser = callback; return vi.fn() }),
+      loadProfile,
+      completeVerifiedDeployment: vi.fn(() => completed.promise),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    const pending = session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }])
+    await Promise.resolve()
+    onUser?.({ id: 'user-2' })
+    await vi.waitFor(() => expect(session.state).toMatchObject({ status: 'authenticated', profile: { id: 'user-2' } }))
+    completed.resolve(verifiedServerReceipt)
+
+    await expect(pending).resolves.toBeNull()
+    expect(loadProfile.mock.calls.map(([userId]) => userId)).toEqual(['user-1', 'user-2'])
+  })
+
+  it('contains lifecycle failures without raw errors, tokens, or credentials in state, copy, or logs', async () => {
+    const states: AccountState[] = []
+    const error = 'supabase echoed Bearer private-token and password not-a-real-secret'
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadProfile: vi.fn(async () => ({ id: 'user-1', displayName: 'Ranger', summary: exactSummary() })),
+      startVerifiedDeployment: vi.fn(async () => { throw new Error(error) }),
+      abandonVerifiedDeployment: vi.fn(async () => { throw new Error(error) }),
+      completeVerifiedDeployment: vi.fn(async () => { throw new Error(error) }),
+    })
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const session = new AccountSession((state) => states.push(state), {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    await expect(session.startVerifiedDeployment()).resolves.toBeNull()
+    await expect(session.abandonVerifiedDeployment(verifiedSessionId)).resolves.toBe(false)
+    await expect(session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }]))
+      .resolves.toBeNull()
+    expect(JSON.stringify(states)).not.toContain('private-token')
+    expect(JSON.stringify(states)).not.toContain('not-a-real-secret')
+    expect(log).not.toHaveBeenCalled()
   })
 })

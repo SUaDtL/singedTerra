@@ -34,6 +34,16 @@ const casualSummary: AccountSummary = {
   level: 3,
   levelXp: 200,
   nextLevelXp: 500,
+  verifiedProgression: {
+    evidence: 'verified_replay_v1',
+    matchesPlayed: 0,
+    wins: 0,
+    progressionVersion: 1,
+    totalXp: 0,
+    level: 1,
+    levelXp: 0,
+    nextLevelXp: 500,
+  },
 }
 
 const divergentSummary: AccountSummary = {
@@ -252,7 +262,7 @@ describe('buildAccountPanelView', () => {
       .toBe(false)
   })
 
-  it('never renders rank identity from casual account progression alone', () => {
+  it('renders the exact verified zero baseline instead of casual account progression', () => {
     const state: AccountState = {
       status: 'authenticated',
       busy: false,
@@ -263,12 +273,16 @@ describe('buildAccountPanelView', () => {
     const expanded = buildAccountPanelOverlayContent(options({ state, open: true }))
     if (!collapsed || !expanded) throw new Error('Expected both account surfaces')
 
-    expect(collapsed.querySelector('.account-panel__commander-rank')).toBeNull()
-    expect(collapsed.querySelector('.account-panel__commander-insignia')).toBeNull()
-    expect(collapsed.querySelector('.account-panel__career-next')).toBeNull()
-    expect(collapsed.textContent).not.toMatch(/Cadet|Gunner|Bombardier|rank/i)
-    expect(expanded.querySelector('.account-panel__career')).toBeNull()
-    expect(expanded.textContent).not.toMatch(/Cadet|Gunner|Bombardier|rank/i)
+    expect(collapsed.querySelector('.account-panel__commander-rank')?.textContent).toBe('R-01 / Cadet')
+    expect(collapsed.querySelector('.account-panel__commander-insignia')?.textContent).toBe('◇')
+    expect(collapsed.textContent).toContain('Level 1')
+    expect(collapsed.textContent).not.toContain('Level 3')
+    expect(expanded.querySelector('.account-panel__career-current')?.textContent).toBe('R-01 / Cadet')
+    expect(progressPairs(expanded)).toEqual([
+      ['Matches', '0'],
+      ['Recorded wins', '0'],
+      ['Level', '1'],
+    ])
   })
 
   it('builds every rank-facing metric from verified progression when casual history diverges', () => {
@@ -350,6 +364,16 @@ describe('buildAccountPanelView', () => {
       totalXp: 500,
       level: 2,
       levelXp: 0,
+      verifiedProgression: {
+        evidence: 'verified_replay_v1',
+        matchesPlayed: 4,
+        wins: 1,
+        progressionVersion: 1,
+        totalXp: 500,
+        level: 2,
+        levelXp: 0,
+        nextLevelXp: 500,
+      },
     }, '500 XP to Level 3'],
     ['the nearest reachable step below a level boundary', {
       ...casualSummary,
@@ -358,6 +382,16 @@ describe('buildAccountPanelView', () => {
       totalXp: 400,
       level: 1,
       levelXp: 400,
+      verifiedProgression: {
+        evidence: 'verified_replay_v1',
+        matchesPlayed: 2,
+        wins: 2,
+        progressionVersion: 1,
+        totalXp: 400,
+        level: 1,
+        levelXp: 400,
+        nextLevelXp: 500,
+      },
     }, '100 XP to Level 2'],
   ] as const)('renders exact remaining XP at %s', (_label, summary, remaining) => {
     const state: AccountState = {
@@ -370,8 +404,8 @@ describe('buildAccountPanelView', () => {
     if (!root) throw new Error('Expected authenticated account panel')
 
     const meter = root.querySelector<HTMLProgressElement>('.account-panel__xp progress')
-    expect(meter?.value).toBe(summary.levelXp)
-    expect(meter?.max).toBe(summary.nextLevelXp)
+    expect(meter?.value).toBe(summary.verifiedProgression.levelXp)
+    expect(meter?.max).toBe(summary.verifiedProgression.nextLevelXp)
     expect(root.querySelector('.account-panel__xp-remaining')?.textContent).toBe(remaining)
   })
 

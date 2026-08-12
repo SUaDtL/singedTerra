@@ -46,6 +46,19 @@ import {
   type AccountMode,
   type AccountState,
 } from '../client/AccountSession';
+import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
+import {
+  parseVerifiedDeploymentDescriptor,
+  sameVerifiedDeploymentDescriptor,
+  verifiedDeploymentDeadline,
+  type VerifiedDeploymentDeadline,
+  type VerifiedDeploymentDescriptor,
+  type VerifiedDeploymentReceipt,
+  type VerifiedDeploymentStart,
+} from '../client/verifiedDeployment';
+import {
+  VerifiedDeploymentStorage,
+} from '../client/verifiedDeploymentStorage';
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
   createProductionDiagnostics,
@@ -130,6 +143,11 @@ export interface LobbyConfig {
   token?: string;
   /** Optional advanced engine settings; only set fields are present. */
   settings?: LobbySettings;
+  /** Auth-owned verified execution context. Server config and recovery transcript stay immutable. */
+  verifiedDeployment?: {
+    readonly descriptor: VerifiedDeploymentDescriptor;
+    readonly transcript: readonly VerifiedHumanFire[];
+  };
 }
 
 // localStorage key under which a seat's SECRET token is persisted, keyed by the
@@ -195,6 +213,12 @@ const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const STYLE_ID = 'lobby-style';
 
+function browserQuickDuelSeed(): number {
+  const word = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(word);
+  return word[0]!;
+}
+
 // View-only advanced-settings defaults/steps (placeholders + input granularity).
 // The bounds (WIND_MIN/MAX, GRAVITY_MIN/MAX, ROUNDS_*, INTEREST_*, SUDDEN_DEATH_*,
 // ARMS_*) live in ./lobbyValidation alongside the coercion that enforces them.
@@ -253,7 +277,41 @@ export interface AccountSessionPort {
   signOut(): Promise<void>;
   refresh(): Promise<void>;
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null>;
+  startVerifiedDeployment?(): Promise<VerifiedDeploymentStart | null>;
+  abandonVerifiedDeployment?(sessionId: string): Promise<boolean>;
+  completeVerifiedDeployment?(
+    sessionId: string,
+    transcript: readonly VerifiedHumanFire[],
+  ): Promise<VerifiedDeploymentReceipt | null>;
 }
+
+interface LobbyVerifiedDeploymentDetails {
+  readonly descriptor: VerifiedDeploymentDescriptor;
+  readonly transcript: readonly VerifiedHumanFire[];
+  readonly deadline: VerifiedDeploymentDeadline;
+}
+
+export type LobbyVerifiedDeploymentState =
+  | { readonly status: 'idle' }
+  | ({ readonly status: 'active' | 'completion-pending' } & LobbyVerifiedDeploymentDetails)
+  | ({
+      readonly status: 'retryable';
+      readonly error: 'Verification is pending. Retry before the deployment deadline.';
+    } & LobbyVerifiedDeploymentDetails)
+  | ({
+      readonly status: 'expired';
+      readonly choices: readonly ['continue-casual', 'return-to-battery'];
+    } & LobbyVerifiedDeploymentDetails)
+  | { readonly status: 'verified'; readonly receipt: VerifiedDeploymentReceipt }
+  | { readonly status: 'casual' }
+  | ({
+      readonly status: 'frozen';
+      readonly error: 'Return to the deployment owner account to resume verification.';
+    } & LobbyVerifiedDeploymentDetails)
+  | {
+      readonly status: 'failed';
+      readonly error: 'Verified deployment is unavailable. Try again.';
+    };
 
 type AccountSessionFactory = (
   onChange: (state: AccountState) => void,
@@ -287,6 +345,15 @@ export class Lobby {
   private readonly transport = new LobbyTransport();
   private readonly session: LobbySession;
   private readonly accountSession: AccountSessionPort;
+  private readonly verifiedStorage: VerifiedDeploymentStorage;
+  private verifiedNow = Date.now();
+  private verifiedOwnerId: string | null = null;
+  private verifiedCurrent: LobbyVerifiedDeploymentState = Object.freeze({ status: 'idle' as const });
+  private verifiedAccountIdentity: string | null = null;
+  private verifiedAccountGeneration = 0;
+  private verifiedRecoveryGeneration = 0;
+  private verifiedLaunchBusy = false;
+  private verifiedAbandonIntent = false;
   private accountPanelOpen = false;
   private accountMode: AccountMode = 'sign-in';
   private readonly createDiagnostics: ProductionDiagnosticsFactory;
@@ -384,12 +451,15 @@ export class Lobby {
     onReady: (config: LobbyConfig) => void,
     createAccountSession: AccountSessionFactory = (onChange) => new AccountSession(onChange),
     createDiagnostics: ProductionDiagnosticsFactory = defaultProductionDiagnosticsFactory,
+    private readonly generateQuickDuelSeed: () => number = browserQuickDuelSeed,
   ) {
     this.root = root;
     this.onReady = onReady;
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
+    this.verifiedAccountIdentity = this.authenticatedAccountId();
+    this.verifiedStorage = new VerifiedDeploymentStorage(localStorage, () => this.verifiedNow);
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
     const diagnosticsParams = new URL(window.location.href).searchParams;
@@ -410,16 +480,24 @@ export class Lobby {
   }
 
   private renderForAccountChange(): void {
+    const accountIdentity = this.authenticatedAccountId();
+    if (accountIdentity !== this.verifiedAccountIdentity) {
+      this.verifiedAccountIdentity = accountIdentity;
+      this.verifiedAccountGeneration += 1;
+    }
+    const recoveryGeneration = ++this.verifiedRecoveryGeneration;
     const restoreFocus = this.accountPanelOpen;
     const restoreLocalBattleFocus = document.activeElement instanceof HTMLButtonElement
       && this.root.contains(document.activeElement)
       && document.activeElement.textContent === 'Local Battle';
+    this.freezeVerifiedDeploymentForAccountChange();
     this.syncOnlineNameFromAccount();
     this.syncDiagnosticsReadiness();
     this.maybeAutorunDiagnostics();
     this.render();
     if (restoreFocus) this.focusAccountOverlay();
     else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
+    void this.revalidateFrozenVerifiedDeployment(recoveryGeneration);
   }
 
   private syncOnlineNameFromAccount(): void {
@@ -806,8 +884,274 @@ export class Lobby {
     return this.accountSession.recordHotSeatMatch(result);
   }
 
+  get verifiedDeployment(): LobbyVerifiedDeploymentState {
+    return this.verifiedCurrent;
+  }
+
+  async startVerifiedDeployment(now = Date.now()): Promise<VerifiedDeploymentStart | null> {
+    this.verifiedNow = now;
+    const account = this.accountSession.state;
+    if (account.status !== 'authenticated' || account.busy) return null;
+    if (!this.accountSession.startVerifiedDeployment) return null;
+    const accountId = account.profile.id;
+    const accountGeneration = this.verifiedAccountGeneration;
+    let started: VerifiedDeploymentStart | null;
+    try {
+      started = await this.accountSession.startVerifiedDeployment();
+    } catch {
+      if (accountGeneration === this.verifiedAccountGeneration) {
+        this.verifiedCurrent = Object.freeze({
+          status: 'failed',
+          error: 'Verified deployment is unavailable. Try again.',
+        });
+      }
+      return null;
+    }
+    if (accountGeneration !== this.verifiedAccountGeneration
+      || this.accountSession.state.status !== 'authenticated'
+      || this.accountSession.state.profile.id !== accountId) return null;
+    const descriptor = parseVerifiedDeploymentDescriptor(started?.descriptor);
+    if (!started || typeof started.resumed !== 'boolean' || !descriptor) {
+      this.verifiedCurrent = Object.freeze({
+        status: 'failed',
+        error: 'Verified deployment is unavailable. Try again.',
+      });
+      return null;
+    }
+    const deadline = verifiedDeploymentDeadline(descriptor.expiresAt, now);
+    if (!deadline.canComplete) {
+      this.verifiedStorage.clear(descriptor);
+      this.verifiedCurrent = Object.freeze({
+        status: 'failed',
+        error: 'Verified deployment is unavailable. Try again.',
+      });
+      return null;
+    }
+    const recovered = this.verifiedStorage.recover(descriptor);
+    if (!recovered && !this.verifiedStorage.begin(descriptor)) {
+      this.verifiedCurrent = Object.freeze({
+        status: 'failed',
+        error: 'Verified deployment is unavailable. Try again.',
+      });
+      return null;
+    }
+    const transcript = recovered?.transcript ?? Object.freeze([]);
+    this.verifiedOwnerId = accountId;
+    this.verifiedCurrent = recovered?.terminal
+      ? Object.freeze({
+          status: 'retryable',
+          descriptor,
+          transcript,
+          deadline,
+          error: 'Verification is pending. Retry before the deployment deadline.',
+        })
+      : Object.freeze({ status: 'active', descriptor, transcript, deadline });
+    return Object.freeze({ resumed: started.resumed, descriptor });
+  }
+
+  recordVerifiedDeploymentFire(value: VerifiedHumanFire, now = Date.now()): boolean {
+    this.refreshVerifiedDeploymentDeadline(now);
+    const current = this.verifiedCurrent;
+    if (current.status !== 'active' || !this.ownsVerifiedDeployment()) return false;
+    if (!this.verifiedStorage.recordAcceptedFire(current.descriptor, value)) return false;
+    const recovered = this.verifiedStorage.recover(current.descriptor);
+    if (!recovered) {
+      this.verifiedCurrent = Object.freeze({
+        status: 'failed',
+        error: 'Verified deployment is unavailable. Try again.',
+      });
+      return false;
+    }
+    this.verifiedCurrent = Object.freeze({
+      status: 'active',
+      descriptor: current.descriptor,
+      transcript: recovered.transcript,
+      deadline: verifiedDeploymentDeadline(current.descriptor.expiresAt, now),
+    });
+    return true;
+  }
+
+  refreshVerifiedDeploymentDeadline(now = Date.now()): LobbyVerifiedDeploymentState {
+    this.verifiedNow = now;
+    const current = this.verifiedCurrent;
+    if (current.status !== 'active' && current.status !== 'completion-pending'
+      && current.status !== 'retryable' && current.status !== 'expired') return current;
+    const deadline = verifiedDeploymentDeadline(current.descriptor.expiresAt, now);
+    if (!deadline.canComplete) {
+      this.verifiedCurrent = Object.freeze({
+        status: 'expired',
+        descriptor: current.descriptor,
+        transcript: current.transcript,
+        deadline,
+        choices: Object.freeze(['continue-casual', 'return-to-battery'] as const),
+      });
+      return this.verifiedCurrent;
+    }
+    if (current.status === 'expired') return current;
+    this.verifiedCurrent = current.status === 'retryable'
+      ? Object.freeze({ ...current, deadline })
+      : Object.freeze({ ...current, deadline });
+    return this.verifiedCurrent;
+  }
+
+  async completeVerifiedDeployment(now = Date.now()): Promise<VerifiedDeploymentReceipt | null> {
+    this.refreshVerifiedDeploymentDeadline(now);
+    const current = this.verifiedCurrent;
+    if ((current.status !== 'active' && current.status !== 'retryable')
+      || !current.deadline.canComplete || !this.ownsVerifiedDeployment()
+      || current.transcript.length === 0 || !this.accountSession.completeVerifiedDeployment) return null;
+    if (current.status === 'active' && !this.verifiedStorage.markTerminal(current.descriptor)) {
+      this.verifiedCurrent = Object.freeze({
+        status: 'failed',
+        error: 'Verified deployment is unavailable. Try again.',
+      });
+      return null;
+    }
+    this.verifiedCurrent = Object.freeze({
+      status: 'completion-pending',
+      descriptor: current.descriptor,
+      transcript: current.transcript,
+      deadline: current.deadline,
+    });
+    const accountGeneration = this.verifiedAccountGeneration;
+    const receipt = await this.accountSession.completeVerifiedDeployment(
+      current.descriptor.sessionId,
+      current.transcript,
+    );
+    const completedAt = Date.now();
+    this.verifiedNow = completedAt;
+    if (accountGeneration !== this.verifiedAccountGeneration || !this.ownsVerifiedDeployment()) return null;
+    this.refreshVerifiedDeploymentDeadline(completedAt);
+    if (receipt && receipt.result.sessionId === current.descriptor.sessionId
+      && receipt.progression.evidence === 'verified_replay_v1') {
+      this.verifiedStorage.clear(current.descriptor);
+      this.verifiedCurrent = Object.freeze({ status: 'verified', receipt });
+      return receipt;
+    }
+    const deadline = verifiedDeploymentDeadline(current.descriptor.expiresAt, completedAt);
+    this.verifiedCurrent = deadline.canComplete
+      ? Object.freeze({
+          status: 'retryable',
+          descriptor: current.descriptor,
+          transcript: current.transcript,
+          deadline,
+          error: 'Verification is pending. Retry before the deployment deadline.',
+        })
+      : Object.freeze({
+          status: 'expired',
+          descriptor: current.descriptor,
+          transcript: current.transcript,
+          deadline,
+          choices: Object.freeze(['continue-casual', 'return-to-battery'] as const),
+        });
+    return null;
+  }
+
+  retryVerifiedDeploymentCompletion(now = Date.now()): Promise<VerifiedDeploymentReceipt | null> {
+    if (this.refreshVerifiedDeploymentDeadline(now).status !== 'retryable') return Promise.resolve(null);
+    return this.completeVerifiedDeployment(now);
+  }
+
+  async abandonVerifiedDeployment(): Promise<boolean> {
+    const current = this.refreshVerifiedDeploymentDeadline(Date.now());
+    if ((current.status !== 'active' && current.status !== 'retryable')
+      || !current.deadline.canComplete || !this.ownsVerifiedDeployment()
+      || !this.accountSession.abandonVerifiedDeployment) return false;
+    const accountGeneration = this.verifiedAccountGeneration;
+    let abandoned = false;
+    try {
+      abandoned = await this.accountSession.abandonVerifiedDeployment(current.descriptor.sessionId);
+    } catch {
+      return false;
+    }
+    const abandonedAt = Date.now();
+    this.verifiedNow = abandonedAt;
+    if (accountGeneration !== this.verifiedAccountGeneration || !this.ownsVerifiedDeployment()) return false;
+    this.refreshVerifiedDeploymentDeadline(abandonedAt);
+    if (!abandoned) return false;
+    this.verifiedStorage.clear(current.descriptor);
+    this.verifiedOwnerId = null;
+    this.verifiedCurrent = Object.freeze({ status: 'idle' as const });
+    return true;
+  }
+
+  continueVerifiedDeploymentCasually(): boolean {
+    if (this.verifiedCurrent.status !== 'expired') return false;
+    this.verifiedStorage.clear(this.verifiedCurrent.descriptor);
+    this.verifiedOwnerId = null;
+    this.verifiedCurrent = Object.freeze({ status: 'casual' as const });
+    return true;
+  }
+
+  returnVerifiedDeploymentToBattery(): boolean {
+    if (this.verifiedCurrent.status !== 'expired') return false;
+    this.verifiedStorage.clear(this.verifiedCurrent.descriptor);
+    this.verifiedOwnerId = null;
+    this.verifiedCurrent = Object.freeze({ status: 'idle' as const });
+    return true;
+  }
+
   isAccountAnonymous(): boolean {
     return this.accountSession.state.status === 'anonymous';
+  }
+
+  private ownsVerifiedDeployment(): boolean {
+    const account = this.accountSession.state;
+    return this.verifiedOwnerId !== null
+      && account.status === 'authenticated'
+      && account.profile.id === this.verifiedOwnerId;
+  }
+
+  private authenticatedAccountId(): string | null {
+    const account = this.accountSession.state;
+    return account.status === 'authenticated' ? account.profile.id : null;
+  }
+
+  private freezeVerifiedDeploymentForAccountChange(): void {
+    const current = this.verifiedCurrent;
+    if (this.verifiedOwnerId === null || this.ownsVerifiedDeployment()
+      || (current.status !== 'active' && current.status !== 'completion-pending'
+        && current.status !== 'retryable' && current.status !== 'expired')) return;
+    this.verifiedCurrent = Object.freeze({
+      status: 'frozen',
+      descriptor: current.descriptor,
+      transcript: current.transcript,
+      deadline: current.deadline,
+      error: 'Return to the deployment owner account to resume verification.',
+    });
+  }
+
+  private async revalidateFrozenVerifiedDeployment(recoveryGeneration: number): Promise<void> {
+    const current = this.verifiedCurrent;
+    if (current.status !== 'frozen' || !this.ownsVerifiedDeployment()
+      || this.accountSession.state.status !== 'authenticated' || this.accountSession.state.busy
+      || !this.accountSession.startVerifiedDeployment) return;
+    let started: VerifiedDeploymentStart | null;
+    try {
+      started = await this.accountSession.startVerifiedDeployment();
+    } catch {
+      return;
+    }
+    const resumedAt = Date.now();
+    this.verifiedNow = resumedAt;
+    if (recoveryGeneration !== this.verifiedRecoveryGeneration
+      || this.verifiedCurrent !== current || !this.ownsVerifiedDeployment()) return;
+    const descriptor = parseVerifiedDeploymentDescriptor(started?.descriptor);
+    if (!started || started.resumed !== true || !descriptor
+      || !sameVerifiedDeploymentDescriptor(descriptor, current.descriptor)) return;
+    const deadline = verifiedDeploymentDeadline(descriptor.expiresAt, resumedAt);
+    if (!deadline.canComplete) return;
+    const recovered = this.verifiedStorage.recover(descriptor);
+    if (!recovered) return;
+    this.verifiedCurrent = recovered.terminal
+      ? Object.freeze({
+          status: 'retryable',
+          descriptor,
+          transcript: recovered.transcript,
+          deadline,
+          error: 'Verification is pending. Retry before the deployment deadline.',
+        })
+      : Object.freeze({ status: 'active', descriptor, transcript: recovered.transcript, deadline });
   }
 
   showAccountSignIn(): void {
@@ -2336,6 +2680,67 @@ export class Lobby {
         color: rgba(225, 214, 191, 0.68);
         font: 11px/1.15 var(--font-sans);
       }
+      #lobby .lobby-verified-deployment {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 5px 12px;
+        margin-top: 6px;
+        padding: 9px 10px;
+        border: 1px solid rgba(111, 195, 244, 0.38);
+        border-left: 2px solid rgba(111, 195, 244, 0.78);
+        background: linear-gradient(90deg, rgba(22, 54, 77, 0.62), rgba(8, 13, 20, 0.28));
+      }
+      #lobby .lobby-verified-deployment h3 {
+        margin: 0;
+        color: #9ad9ff;
+        font: 700 11px/1 var(--font-display);
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-verified-deployment__matchup {
+        margin: 0;
+        color: #d8efff;
+        font: 700 11px/1.2 var(--font-sans);
+      }
+      #lobby .lobby-verified-deployment__rules {
+        grid-column: 1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 14px;
+        margin: 0;
+        padding-left: 17px;
+        color: rgba(216, 239, 255, 0.7);
+        font: 10px/1.25 var(--font-mono);
+      }
+      #lobby .lobby-verified-deployment__message {
+        grid-column: 1;
+        margin: 0;
+        color: #ffd46e;
+        font: 10px/1.2 var(--font-mono);
+      }
+      #lobby .lobby-verified-deployment__message[hidden] { display: none; }
+      #lobby .lobby-verified-deployment__actions {
+        grid-column: 2;
+        grid-row: 1 / span 4;
+        display: grid;
+        align-content: center;
+        gap: 5px;
+        min-width: 184px;
+      }
+      #lobby .lobby-verified-deployment__confirm {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 5px;
+        padding-top: 5px;
+        border-top: 1px solid rgba(255, 210, 63, 0.24);
+      }
+      #lobby .lobby-verified-deployment__confirm[hidden] { display: none; }
+      #lobby .lobby-verified-deployment__confirm p {
+        grid-column: 1 / -1;
+        margin: 0;
+        color: rgba(255, 224, 159, 0.78);
+        font: 10px/1.25 var(--font-sans);
+      }
       #lobby .lobby-hotseat-customization {
         margin-top: 5px;
         min-width: 0;
@@ -2483,6 +2888,23 @@ export class Lobby {
         padding: 5px 7px;
       }
       #app.is-compact #lobby .lobby-hotseat-ready p { display: none; }
+      #app.is-compact #lobby .lobby-verified-deployment {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 3px 6px;
+        margin-top: 3px;
+        padding: 5px 6px;
+      }
+      #app.is-compact #lobby .lobby-verified-deployment__matchup { font-size: 9px; }
+      #app.is-compact #lobby .lobby-verified-deployment__rules {
+        gap: 1px 8px;
+        font-size: 8px;
+      }
+      #app.is-compact #lobby .lobby-verified-deployment__actions {
+        min-width: 168px;
+      }
+      #app.is-compact #lobby .lobby-verified-deployment__actions > .lobby-btn {
+        min-height: var(--st-deployment-choice-target, 44px);
+      }
       #app.is-compact #lobby .lobby-hotseat-customization > summary { min-height: 34px; }
       #app.is-compact #lobby .lobby-route-brief__setup {
         margin-top: 0;
@@ -3382,6 +3804,14 @@ export class Lobby {
   // ---- Hot Seat tab ----
 
   private startQuickDuel(): void {
+    const seed = this.generateQuickDuelSeed();
+    if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) return;
+    if (new URL(window.location.href).searchParams.get('e2e') === 'quick-duel-seed') {
+      const target = window as typeof window & {
+        __singedTerraE2E?: { quickDuelSeed?: number };
+      };
+      target.__singedTerraE2E = Object.freeze({ quickDuelSeed: seed });
+    }
     const human = this.players[0] ?? defaultRow(0);
     const humanPlayer = {
       name: human.name.trim() || 'Player 1',
@@ -3399,7 +3829,100 @@ export class Lobby {
       mode: 'hotseat',
       players: [humanPlayer, cpuPlayer],
       playerNames: [humanPlayer.name, cpuPlayer.name],
+      settings: { seed },
     });
+  }
+
+  private emitVerifiedDeployment(): boolean {
+    const current = this.verifiedCurrent;
+    if (current.status !== 'active' && current.status !== 'retryable') return false;
+    const { descriptor, transcript } = current;
+    const options = descriptor.config.options;
+    const players: LobbyPlayer[] = options.players.map((player) => ({
+      name: player.name,
+      color: player.color,
+      ...('ai' in player ? { ai: player.ai } : {}),
+    }));
+    this.onReady({
+      mode: 'hotseat',
+      players,
+      playerNames: players.map((player) => player.name),
+      settings: {
+        seed: descriptor.config.seed,
+        maxWind: options.maxWind,
+        gravity: options.gravity,
+        walls: options.walls,
+        hazards: options.hazards,
+        rounds: options.rounds,
+        interestRate: options.interestRate,
+        suddenDeathTurn: options.suddenDeathTurn,
+        armsLevel: options.armsLevel,
+        teamMode: options.teamMode,
+        rulesetVersion: descriptor.rulesetVersion,
+      },
+      verifiedDeployment: { descriptor, transcript },
+    });
+    return true;
+  }
+
+  private async launchVerifiedDeployment(): Promise<void> {
+    if (this.verifiedLaunchBusy) return;
+    if (this.emitVerifiedDeployment()) return;
+    this.verifiedLaunchBusy = true;
+    this.verifiedAbandonIntent = false;
+    this.render();
+    const started = await this.startVerifiedDeployment();
+    this.verifiedLaunchBusy = false;
+    if (!started || !this.emitVerifiedDeployment()) this.render();
+  }
+
+  private verifiedHotSeatView() {
+    const account = this.accountSession.state;
+    if (account.status !== 'authenticated') return null;
+    const current = this.verifiedCurrent;
+    const resumable = current.status === 'active'
+      || current.status === 'completion-pending'
+      || current.status === 'retryable'
+      || current.status === 'expired'
+      || current.status === 'frozen';
+    const transcript = resumable ? current.transcript : Object.freeze([] as VerifiedHumanFire[]);
+    const message = current.status === 'failed'
+      ? current.error
+      : current.status === 'retryable'
+        ? 'Recovered terminal evidence. Resume to retry verification.'
+        : resumable
+          ? `Recovered ${transcript.length} of 6 human salvos.`
+          : null;
+    const stateBusy = current.status === 'completion-pending'
+      || current.status === 'expired'
+      || current.status === 'frozen';
+    return {
+      action: resumable ? 'resume' as const : 'start' as const,
+      commanderName: account.profile.displayName,
+      busy: account.busy || this.verifiedLaunchBusy || stateBusy,
+      message,
+      abandonIntent: this.verifiedAbandonIntent,
+      onLaunch: () => { void this.launchVerifiedDeployment(); },
+      onRequestAbandon: () => {
+        if (account.busy || this.verifiedLaunchBusy || stateBusy) return;
+        this.verifiedAbandonIntent = true;
+        this.render();
+      },
+      onConfirmAbandon: () => {
+        if (this.verifiedLaunchBusy) return;
+        this.verifiedLaunchBusy = true;
+        this.render();
+        void this.abandonVerifiedDeployment().then(() => {
+          this.verifiedLaunchBusy = false;
+          this.verifiedAbandonIntent = false;
+          this.render();
+        });
+      },
+      onCancelAbandon: () => {
+        this.verifiedAbandonIntent = false;
+        this.render();
+      },
+    };
   }
 
   private renderHotSeatTab(): HTMLElement {
@@ -3411,6 +3934,7 @@ export class Lobby {
       advanced: this.renderAdvanced(),
       customizationOpen: this.hotSeatCustomizationOpen,
       validationMessage: this.validationError(),
+      verifiedDeployment: this.verifiedHotSeatView(),
       onPlayerCountChange: (count) => { this.setPlayerCount(count); },
       onCustomizationToggle: (open) => { this.hotSeatCustomizationOpen = open; },
       onStart: () => {

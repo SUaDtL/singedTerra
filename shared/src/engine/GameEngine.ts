@@ -598,7 +598,7 @@ export class GameEngine {
    * select_weapon sets the active weapon (no ammo gate here — gating happens on
    * `fire`, which rejects a shot when the selected weapon is out of ammo).
    */
-  applyAction(action: PlayerAction): void {
+  applyAction(action: PlayerAction): boolean {
     // ROUND_OVER between-rounds shop (V1 match structure): only buying and starting
     // the next round are honored. buy targets the named tank (all players may shop);
     // next_round flips the already-staged next round into combat.
@@ -607,38 +607,38 @@ export class GameEngine {
         const target = action.tankId
           ? this.state.tanks.find((t) => t.id === action.tankId)
           : this.activeTank();
-        if (target) this.applyBuy(action, target);
+        return target ? this.applyBuy(action, target) : false;
       } else if (action.type === 'next_round') {
         this.state.phase = 'PLAYER_TURN';
+        return true;
       }
-      return;
+      return false;
     }
 
-    if (this.state.phase !== 'PLAYER_TURN') return;
+    if (this.state.phase !== 'PLAYER_TURN') return false;
     const tank = this.activeTank();
-    if (!tank) return;
+    if (!tank) return false;
 
     switch (action.type) {
       case 'set_angle':
         tank.angle = clamp(action.angle, ANGLE_MIN, ANGLE_MAX);
-        return;
+        return true;
       case 'set_power':
         // Clamp to the tank's per-tank power cap (POWER_MAX baseline, raised by bought
         // Batteries) so a battery-equipped tank can over-power a shot for extra range.
         tank.power = clamp(action.power, POWER_MIN, tank.powerCap);
-        return;
+        return true;
       case 'move':
         // Committed but turn-neutral. The movement primitive independently
         // gates liveness, burial, payload bounds, terrain, tanks, and fuel.
-        resolveTankMove(tank, this.state.tanks, this.terrain, action.delta);
-        return;
+        return resolveTankMove(tank, this.state.tanks, this.terrain, action.delta) !== 0;
       case 'select_weapon':
         tank.selectedWeapon = action.weapon;
-        return;
+        return true;
       case 'fire': {
         // Ignore a re-fire while a shot is still resolving (any projectile in
         // flight). FIRING iff projectiles.length > 0.
-        if (this.state.projectiles.length > 0) return;
+        if (this.state.projectiles.length > 0) return false;
 
         // AMMO GATE (Slice 1.1). Reject the shot if the selected weapon has no
         // ammo and is not unlimited. Rejection returns WITHOUT mutating state or
@@ -646,7 +646,7 @@ export class GameEngine {
         // another weapon. The inventory entry is guaranteed present (inventory is
         // exhaustive over WeaponType).
         const ammo = tank.inventory[tank.selectedWeapon];
-        if (!ammo.unlimited && ammo.count <= 0) return;
+        if (!ammo.unlimited && ammo.count <= 0) return false;
 
         // Store-economy bookkeeping: this tank owns the shot, and its dealt
         // damage tally starts fresh (credited to the shooter in resolve()).
@@ -681,15 +681,14 @@ export class GameEngine {
 
         this.syncProjectileAlias();
         this.state.phase = 'FIRING';
-        return;
+        return true;
       }
       case 'buy':
         // Buy for the active tank (PLAYER_TURN ignores any tankId, preserving the
         // prior contract). Does NOT end the turn.
-        this.applyBuy(action, tank);
-        return;
+        return this.applyBuy(action, tank);
       case 'next_round':
-        return; // only valid during ROUND_OVER (handled above)
+        return false; // only valid during ROUND_OVER (handled above)
       case 'use_shield': {
         // Activating the shield is a turn-ending commitment, like firing. Gate on
         // shield ammo (the inventory entry is guaranteed present). Rejection leaves
@@ -699,7 +698,7 @@ export class GameEngine {
           : 'shield';
         const shieldWeapon = action.weapon ?? selectedShield;
         const ammo = tank.inventory[shieldWeapon];
-        if (!ammo.unlimited && ammo.count <= 0) return;
+        if (!ammo.unlimited && ammo.count <= 0) return false;
 
         const capacity = getWeapon(shieldWeapon).behavior?.shield?.capacity ?? 0;
         tank.shieldHp = capacity;
@@ -710,15 +709,15 @@ export class GameEngine {
         // wind), mirroring resolve()'s NEXT_TURN tail. Defensive guard (#14): if the
         // board is somehow already down to one survivor, end the round/match instead
         // of advancing the turn over an already-decided game.
-        if (this.endRoundIfDecided()) return;
+        if (this.endRoundIfDecided()) return true;
         this.advanceTurn();
         this.state.wind = this.nextWind(this.state.wind);
         this.state.turn += 1;
         this.state.phase = 'PLAYER_TURN';
-        return;
+        return true;
       }
       default:
-        return;
+        return false;
     }
   }
 
@@ -729,12 +728,12 @@ export class GameEngine {
    * changes phase or active player. The CPU-seat idempotency guard (P1-7b) collapses
    * staggered duplicate bot buys in networked lockstep to exactly-once.
    */
-  private applyBuy(action: { weapon?: WeaponType; accessory?: AccessoryType }, target: TankState): void {
+  private applyBuy(action: { weapon?: WeaponType; accessory?: AccessoryType }, target: TankState): boolean {
     // Enforce "exactly one of weapon/accessory" in the ENGINE too (the referee enforces it on
     // the wire). Without this, a both-fields buy resolves the accessory first and silently
     // drops the paid-for weapon — and hot-seat has no referee to catch it. Same rejection in
     // both execution contexts so they can never diverge (CLAUDE.md: one codebase, two contexts).
-    if (action.weapon && action.accessory) return;
+    if (action.weapon && action.accessory) return false;
 
     // ACCESSORY purchases (SE-parity) route through the same buy action but raise a tank
     // attribute instead of adding weapon ammo. A Battery raises powerCap (extra range). It
@@ -742,38 +741,39 @@ export class GameEngine {
     // needed for idempotency (bots don't buy accessories in this sprint; if a future AI
     // does, it must gain an idempotency guard like the weapon path's `slot.count > 0`).
     if (action.accessory === 'battery') {
-      if (BATTERY_ARMS_LEVEL > this.armsLevel) return; // arms-level gate (battery is lvl 2)
-      if (target.credits < BATTERY_PRICE) return;      // can't afford
+      if (BATTERY_ARMS_LEVEL > this.armsLevel) return false; // arms-level gate (battery is lvl 2)
+      if (target.credits < BATTERY_PRICE) return false;      // can't afford
       target.credits -= BATTERY_PRICE;
       target.powerCap += BATTERY_POWER_PER_UNIT * BATTERY_BUNDLE_SIZE;
-      return;
+      return true;
     }
     if (action.accessory === 'fuel_tank') {
-      if (FUEL_TANK_ARMS_LEVEL > this.armsLevel) return;
-      if (target.credits < FUEL_TANK_PRICE) return;
+      if (FUEL_TANK_ARMS_LEVEL > this.armsLevel) return false;
+      if (target.credits < FUEL_TANK_PRICE) return false;
       target.credits -= FUEL_TANK_PRICE;
       target.fuel += FUEL_TANK_FUEL;
-      return;
+      return true;
     }
     if (action.accessory === 'parachute') {
-      if (PARACHUTE_ARMS_LEVEL > this.armsLevel) return;
-      if (target.credits < PARACHUTE_PRICE) return;
+      if (PARACHUTE_ARMS_LEVEL > this.armsLevel) return false;
+      if (target.credits < PARACHUTE_PRICE) return false;
       target.credits -= PARACHUTE_PRICE;
       target.accessories.parachute += PARACHUTE_BUNDLE_SIZE;
-      return;
+      return true;
     }
-    if (!action.weapon) return; // neither a weapon nor a recognized accessory — nothing to buy
+    if (!action.weapon) return false; // neither a weapon nor a recognized accessory — nothing to buy
     const def = getWeapon(action.weapon);
-    if (!def.implemented) return;
+    if (!def.implemented) return false;
     // Arms-level gate (SE-parity): the room caps what is buyable. A weapon above the
     // room's arms level is not for sale here. Default armsLevel 4 => everything (no-op).
-    if (def.armsLevel > this.armsLevel) return;
+    if (def.armsLevel > this.armsLevel) return false;
     const slot = target.inventory[action.weapon];
-    if (slot.unlimited) return; // unlimited stock — nothing to buy
-    if (target.ai && slot.count > 0) return; // idempotent bot restock (P1-7b)
-    if (target.credits < def.price) return; // can't afford
+    if (slot.unlimited) return false; // unlimited stock — nothing to buy
+    if (target.ai && slot.count > 0) return false; // idempotent bot restock (P1-7b)
+    if (target.credits < def.price) return false; // can't afford
     target.credits -= def.price;
     slot.count += def.bundleSize;
+    return true;
   }
 
   /**

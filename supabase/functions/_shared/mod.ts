@@ -94,6 +94,9 @@ export const RATE_LIMITS: Record<string, number> = {
   account_summary: 60,
   record_hotseat_match: 20,
   verified_replay_probe: 10,
+  start_verified_deployment: 30,
+  abandon_verified_deployment: 30,
+  complete_verified_deployment: 30,
 }
 /** Applied to any function bucket without a specific entry above. */
 export const RATE_LIMIT_DEFAULT = 60

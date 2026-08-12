@@ -3,6 +3,8 @@ import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { fastForwardTicks } from './fastForward';
+import type { VerifiedDeploymentRecorder } from './verifiedDeployment';
+import { VerifiedDuelController } from '@shared/net/verifiedDuel';
 
 /**
  * HotSeatClient runs the shared GameEngine directly in the browser. All players
@@ -16,12 +18,28 @@ export class HotSeatClient implements GameClient {
   private readonly engine: GameEngine;
   private readonly initialTerrain: Uint8Array;
   private readonly listeners = new Set<(state: GameState) => void>();
+  private readonly verifiedMode?: VerifiedDeploymentRecorder | VerifiedDuelController;
   private rafId: number | null = null;
   private fastForward = false;
 
-  constructor(engine: GameEngine) {
-    this.engine = engine;
-    this.initialTerrain = engine.getState().terrain.slice();
+  constructor(controller: VerifiedDuelController);
+  constructor(engine: GameEngine, verifiedMode?: VerifiedDeploymentRecorder | VerifiedDuelController);
+  constructor(
+    engineOrController: GameEngine | VerifiedDuelController,
+    verifiedMode?: VerifiedDeploymentRecorder | VerifiedDuelController,
+  ) {
+    if (engineOrController instanceof VerifiedDuelController) {
+      if (verifiedMode !== undefined) throw new Error('verified_duel_engine_mismatch');
+      this.engine = engineOrController.engine;
+      this.verifiedMode = engineOrController;
+    } else {
+      if (verifiedMode instanceof VerifiedDuelController && verifiedMode.engine !== engineOrController) {
+        throw new Error('verified_duel_engine_mismatch');
+      }
+      this.engine = verifiedMode instanceof VerifiedDuelController ? verifiedMode.engine : engineOrController;
+      this.verifiedMode = verifiedMode;
+    }
+    this.initialTerrain = this.engine.getState().terrain.slice();
   }
 
   setFastForward(on: boolean): void {
@@ -36,7 +54,8 @@ export class HotSeatClient implements GameClient {
       // (deterministic), just fewer frames drawn.
       const maxTicks = fastForwardTicks(this.fastForward, this.engine.getState().phase);
       for (let i = 0; i < maxTicks; i++) {
-        this.engine.tick();
+        if (this.verifiedMode instanceof VerifiedDuelController) this.verifiedMode.tick();
+        else this.engine.tick();
         const phase = this.engine.getState().phase;
         if (phase !== 'FIRING' && phase !== 'RESOLVING') break; // settled — stop spinning
       }
@@ -57,7 +76,17 @@ export class HotSeatClient implements GameClient {
   }
 
   sendAction(action: PlayerAction): void {
-    this.engine.applyAction(action);
+    if (this.verifiedMode instanceof VerifiedDuelController) {
+      this.verifiedMode.applyHumanAction(action);
+      return;
+    }
+    const state = this.engine.getState();
+    const active = state.tanks.find((tank) => tank.id === state.activePlayerId);
+    const before = this.verifiedMode && active
+      ? { ...state, tanks: state.tanks.map((tank) => tank === active ? { ...tank } : tank) }
+      : state;
+    const accepted = this.engine.applyAction(action);
+    this.verifiedMode?.observe(action, before, accepted);
   }
 
   getState(): GameState | null {

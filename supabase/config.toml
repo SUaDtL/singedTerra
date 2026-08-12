@@ -101,3 +101,12 @@ verify_jwt = false
 
 [functions.verified_replay_probe]
 verify_jwt = false
+
+[functions.start_verified_deployment]
+verify_jwt = false
+
+[functions.abandon_verified_deployment]
+verify_jwt = false
+
+[functions.complete_verified_deployment]
+verify_jwt = false

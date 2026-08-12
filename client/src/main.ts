@@ -4,6 +4,7 @@ import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { GameState } from '@shared/types/GameState';
+import { VerifiedDuelController } from '@shared/net/verifiedDuel';
 import type { GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
@@ -29,6 +30,7 @@ import {
   observeAndForwardFirstSalvoAction,
 } from './ui/firstSalvoController';
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
+import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
@@ -42,7 +44,27 @@ const E2E_HOT_SEAT_SEED = (
 )
   ? e2eSeedCandidate
   : 1337;
-const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE = E2E_MODE === 'hotseat';
+const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE = E2E_MODE === 'hotseat'
+  || E2E_MODE === 'verified-lifecycle';
+
+interface TerminalPayoffE2EReceipt {
+  readonly terminalExplosionCount?: number;
+  readonly terminalExplosionObservedAt?: number;
+  readonly impactCompletedAt?: number;
+}
+
+function publishTerminalPayoffE2EReceipt(
+  patch: TerminalPayoffE2EReceipt,
+): void {
+  if (E2E_MODE !== 'victory-payoff') return;
+  const target = window as typeof window & {
+    __SINGED_TERRA_T8__?: Readonly<TerminalPayoffE2EReceipt>;
+  };
+  target.__SINGED_TERRA_T8__ = Object.freeze({
+    ...target.__SINGED_TERRA_T8__,
+    ...patch,
+  });
+}
 
 interface E2EForwardedActionCounts {
   setAngle: number;
@@ -55,6 +77,81 @@ let e2eForwardedActionCounts: E2EForwardedActionCounts = {
   setPower: 0,
   fire: 0,
 };
+
+interface SwitchableVerifiedClient extends GameClient {
+  continueCasually(): void;
+}
+
+/**
+ * Keep state/listeners stable while swapping the verified controller loop for an
+ * ordinary engine loop after the player's explicit expiry choice.
+ */
+function createSwitchableVerifiedClient(
+  controller: VerifiedDuelController,
+): SwitchableVerifiedClient {
+  let activeClient = new HotSeatClient(controller);
+  let activeUnsubscribe: (() => void) | null = null;
+  let started = false;
+  const listeners = new Set<(state: GameState) => void>();
+  const relay = (state: GameState): void => {
+    for (const listener of listeners) listener(state);
+  };
+  const bind = (): void => { activeUnsubscribe = activeClient.onStateChange(relay); };
+  bind();
+
+  return {
+    start: () => {
+      if (started) return;
+      started = true;
+      activeClient.start();
+    },
+    stop: () => {
+      started = false;
+      activeUnsubscribe?.();
+      activeUnsubscribe = null;
+      activeClient.stop();
+    },
+    setFastForward: (on) => activeClient.setFastForward(on),
+    sendAction: (action) => activeClient.sendAction(action),
+    getState: () => activeClient.getState(),
+    getInitialTerrain: () => activeClient.getInitialTerrain(),
+    getEffectiveGravity: () => activeClient.getEffectiveGravity(),
+    onStateChange: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    continueCasually: () => {
+      const wasStarted = started;
+      activeClient.stop();
+      activeUnsubscribe?.();
+      activeClient = new HotSeatClient(controller.engine);
+      bind();
+      if (wasStarted) activeClient.start();
+    },
+  };
+}
+
+function restoreVerifiedController(
+  seed: number,
+  transcript: readonly VerifiedHumanFire[],
+): VerifiedDuelController {
+  const controller = VerifiedDuelController.create(seed);
+  for (const [index, shot] of transcript.entries()) {
+    if (controller.complete
+      || !controller.applyHumanAction({ type: 'set_angle', angle: shot.angle })
+      || !controller.applyHumanAction({ type: 'set_power', power: shot.power })
+      || !controller.applyHumanAction({ type: 'fire' })) {
+      throw new Error('verified_recovery_refused');
+    }
+    while (!controller.complete && controller.engine.getState().phase !== 'PLAYER_TURN') {
+      controller.tick();
+    }
+    if (controller.complete && index + 1 < transcript.length) {
+      throw new Error('verified_recovery_trailing_action');
+    }
+  }
+  return controller;
+}
 
 /**
  * Entry point. Grabs the canvas + overlay containers, shows the Lobby, and on
@@ -100,6 +197,8 @@ function bootstrap(): void {
   // state the renderer draws, never touching the deterministic engine.
   const audio = new AudioEngine();
   audio.unlockOnGesture();
+  let terminalImpactObserved = false;
+  let terminalImpactNotified = false;
 
   // Global safety net (observability-004): startGame() is fire-and-forget
   // (`void startGame`), so an unhandled rejection (failed network init, a thrown
@@ -151,6 +250,14 @@ function bootstrap(): void {
   renderer.setEvents({
     onLaunch: () => audio.launch(),
     onExplosion: (radius, impact) => {
+      terminalImpactObserved = true;
+      const receipt = (window as typeof window & {
+        __SINGED_TERRA_T8__?: Readonly<TerminalPayoffE2EReceipt>;
+      }).__SINGED_TERRA_T8__;
+      publishTerminalPayoffE2EReceipt({
+        terminalExplosionCount: (receipt?.terminalExplosionCount ?? 0) + 1,
+        terminalExplosionObservedAt: performance.now(),
+      });
       audio.explosion(radius);
       if (impact) audio.impact(impact.impactType, impact.radius);
       flashBloom(radius);
@@ -193,9 +300,15 @@ function bootstrap(): void {
   let currentConfig: LobbyConfig | null = null;
   let gameGeneration = 0;
   let progressionSignInHandled = false;
+  let verifiedController: VerifiedDuelController | null = null;
+  let verifiedClient: SwitchableVerifiedClient | null = null;
+  let verifiedCasual = false;
+  let verifiedCompletionStarted = false;
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
-  let e2eVictoryPending = E2E_MODE === 'victory' || E2E_MODE === 'victory-anonymous';
+  let e2eVictoryPending = E2E_MODE === 'victory'
+    || E2E_MODE === 'victory-anonymous'
+    || E2E_MODE === 'victory-payoff';
 
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
     const state = client?.getState();
@@ -223,7 +336,66 @@ function bootstrap(): void {
         activeIsAi: !!activeTank?.ai,
         activeIsLocal,
         paused: hud.isPaused(),
-      });
+      })
+      && verifiedInputAllowed();
+  }
+
+  function verifiedInputAllowed(): boolean {
+    if (!verifiedController || verifiedCasual) return true;
+    const deployment = lobby.refreshVerifiedDeploymentDeadline();
+    return deployment.status === 'active' && deployment.deadline.acceptsInput;
+  }
+
+  function syncVerifiedHud(): void {
+    const context = currentConfig?.verifiedDeployment;
+    if (!context || !verifiedController || verifiedCasual) {
+      hud.setVerifiedDeployment(null);
+      return;
+    }
+    const deployment = lobby.refreshVerifiedDeploymentDeadline();
+    if (deployment.status === 'idle' || deployment.status === 'casual') {
+      hud.setVerifiedDeployment(null);
+      return;
+    }
+    if (deployment.status === 'failed') {
+      hud.setVerifiedDeployment({ status: 'failed' });
+      return;
+    }
+    if (deployment.status === 'frozen') {
+      hud.setVerifiedDeployment({ status: 'policy-refused' });
+      return;
+    }
+    if (deployment.status === 'verified') {
+      hud.setVerifiedDeployment(null);
+      return;
+    }
+    const state = verifiedController.engine.getState();
+    const humanSalvos = verifiedController.transcript.length;
+    const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
+    const result = verifiedController.complete ? verifiedController.result() : null;
+    const cpuSalvos = result?.cpuSalvos ?? Math.max(
+      0,
+      humanSalvos - (
+        (state.phase === 'FIRING' || state.phase === 'RESOLVING') && !activeTank?.ai ? 1 : 0
+      ),
+    );
+    const details = {
+      humanSalvos,
+      cpuSalvos,
+      humanLimit: context.descriptor.limits.humanSalvos,
+      cpuLimit: context.descriptor.limits.cpuSalvos,
+      deadline: deployment.deadline,
+    };
+    const status = deployment.status === 'completion-pending'
+      ? 'completion-pending'
+      : deployment.status === 'retryable'
+        ? 'retryable'
+        : deployment.status === 'expired'
+          ? 'expired'
+          : verifiedController.complete && state.phase !== 'GAME_OVER'
+            ? 'cap-adjudicating'
+            : 'active';
+    hud.setVerifiedDeployment({ status, ...details });
   }
 
   // --- Computer-opponent (AI) driver state ---
@@ -271,6 +443,12 @@ function bootstrap(): void {
     activeIsAi = false;
     activeIsLocal = false;
     aiActedKey = null;
+    verifiedController = null;
+    verifiedClient = null;
+    verifiedCasual = false;
+    verifiedCompletionStarted = false;
+    terminalImpactObserved = false;
+    terminalImpactNotified = false;
     // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
     // a networked "Waiting for…" surviving into a later hot-seat game (which has no
     // turn-watch to reset it).
@@ -280,6 +458,7 @@ function bootstrap(): void {
     // otherwise clear a lingering "{winner} wins!" banner when quitting to the menu
     // (it would sit on top of the lobby) — #13.
     hud.hideEndScreens();
+    hud.setVerifiedDeployment(null);
     hud.setFirstSalvoStep(null);
     // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
     // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
@@ -301,7 +480,23 @@ function bootstrap(): void {
     lobby.hide();
     currentConfig = config;
 
-    const newClient = await createClient(config);
+    let newClient: GameClient;
+    if (config.verifiedDeployment) {
+      try {
+        verifiedController = restoreVerifiedController(
+          config.verifiedDeployment.descriptor.config.seed,
+          config.verifiedDeployment.transcript,
+        );
+        verifiedClient = createSwitchableVerifiedClient(verifiedController);
+        newClient = verifiedClient;
+      } catch {
+        hud.setVerifiedDeployment({ status: 'failed' });
+        lobby.show();
+        return;
+      }
+    } else {
+      newClient = await createClient(config);
+    }
     client = newClient;
     selectClientBattlefieldWorld(newClient, renderer, currentConfig?.settings?.battlefieldWorld);
     firstSalvo.startNewGame();
@@ -333,10 +528,26 @@ function bootstrap(): void {
       initial.tanks[1]!.health = 0;
       initial.tanks[1]!.kills = 0;
       initial.tanks[1]!.totalDamage = 52;
+      if (E2E_MODE === 'victory-payoff') {
+        const defeated = initial.tanks[1]!;
+        const terminalExplosion = {
+          id: 1,
+          weaponType: 'baby_missile' as const,
+          cx: defeated.x,
+          cy: defeated.y,
+          radius: 34,
+          impactType: 'tank' as const,
+          style: 'blast' as const,
+          color: '#ffb347',
+          durationFrames: 85,
+        };
+        initial.lastExplosion = terminalExplosion;
+        initial.explosions = [terminalExplosion];
+      }
     }
     const activeTank = initial?.tanks.find((t) => t.id === initial.activePlayerId);
     const accountTank = initial?.tanks[0];
-    const hotSeatProgression = createHotSeatProgressionReporter({
+    const hotSeatProgression = config.verifiedDeployment ? null : createHotSeatProgressionReporter({
       mode: config.mode,
       // The anonymous fixture deliberately traverses the real null-result path.
       // Ordinary deterministic fixtures remain excluded from progression reporting.
@@ -369,7 +580,8 @@ function bootstrap(): void {
     // rAF loop keeps running underneath either way (networked lockstep stays
     // in sync); only this LOCAL emit is suppressed.
     const newInput = new InputHandler(canvas, (action) => {
-      if (!shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })) return;
+      if (!shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
+        || !verifiedInputAllowed()) return;
       // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
       // aim guide / HUD update instantly even when the idle-skip gate would skip.
       markDirty();
@@ -393,7 +605,18 @@ function bootstrap(): void {
             else if (forwardedAction.type === 'set_power') e2eForwardedActionCounts.setPower += 1;
             else if (forwardedAction.type === 'fire') e2eForwardedActionCounts.fire += 1;
           }
+          const transcriptLength = verifiedController?.transcript.length ?? 0;
           newClient.sendAction(forwardedAction);
+          if (
+            !verifiedCasual
+            && verifiedController
+            && forwardedAction.type === 'fire'
+            && verifiedController.transcript.length === transcriptLength + 1
+          ) {
+            const accepted = verifiedController.transcript[transcriptLength];
+            if (accepted) lobby.recordVerifiedDeploymentFire(accepted);
+            syncVerifiedHud();
+          }
         },
       );
       syncFirstSalvo();
@@ -434,8 +657,41 @@ function bootstrap(): void {
       newClient.onQuickChat?.((message) => hud.showQuickChat(message));
     }
 
+    const submitVerifiedCompletion = (): void => {
+      if (!verifiedController?.complete || verifiedCasual || verifiedCompletionStarted) return;
+      const deployment = lobby.refreshVerifiedDeploymentDeadline();
+      if ((deployment.status !== 'active' && deployment.status !== 'retryable')
+        || !deployment.deadline.canComplete) return;
+      verifiedCompletionStarted = true;
+      const request = lobby.completeVerifiedDeployment();
+      syncVerifiedHud();
+      void request.then((receipt) => {
+        if (
+          !receipt
+          || gameGeneration !== currentGameGeneration
+          || client !== newClient
+          || verifiedCasual
+        ) {
+          if (gameGeneration === currentGameGeneration && client === newClient) syncVerifiedHud();
+          return;
+        }
+        hud.setVerifiedProgressionReceipt(receipt);
+        hud.setVerifiedDeployment(null);
+        void lobby.refreshAccount();
+      }).catch(() => {
+        if (gameGeneration === currentGameGeneration && client === newClient) syncVerifiedHud();
+      });
+    };
+
     unsubscribe = newClient.onStateChange((state) => {
       hotSeatProgression?.observe(state);
+      if (verifiedController?.complete && !verifiedCasual && state.phase !== 'GAME_OVER') {
+        const result = verifiedController.result();
+        state.phase = 'GAME_OVER';
+        state.winner = result.winnerId;
+      }
+      syncVerifiedHud();
+      submitVerifiedCompletion();
       if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) exposeDeterministicHotSeatProbe(state);
       // Aim guide is shown only when the LOCAL human controls the active tank: a
       // human turn in hot-seat, or (networked) the active tank is THIS client's id.
@@ -493,6 +749,18 @@ function bootstrap(): void {
           paused: hud.isPaused(),
         }),
       );
+      const terminalEffectsSettled = terminalImpactObserved
+        || (state.projectiles.length === 0 && state.explosions.length === 0);
+      if (
+        state.phase === 'GAME_OVER'
+        && terminalEffectsSettled
+        && !renderer.isTerminalImpactAnimating(state)
+        && !terminalImpactNotified
+      ) {
+        terminalImpactNotified = true;
+        publishTerminalPayoffE2EReceipt({ impactCompletedAt: performance.now() });
+        hud.notifyTerminalImpactComplete();
+      }
       // When the active player changes, re-seed the input handler's aim AND
       // weapon cursor from the new active tank so each player's arrows start
       // from their own tank's current angle/power and their Q cycles from
@@ -583,7 +851,7 @@ function bootstrap(): void {
     activeIsAi,
     activeIsLocal,
     paused: hud.isPaused(),
-  });
+  }) && verifiedInputAllowed();
 
   hud.onFirstSalvoSkip(() => {
     firstSalvo.skip();
@@ -634,6 +902,45 @@ function bootstrap(): void {
     void startGame(config);
   });
 
+  hud.onVerifiedRetry(() => {
+    if (!verifiedController || verifiedCasual || !currentConfig?.verifiedDeployment) return;
+    const deployment = lobby.refreshVerifiedDeploymentDeadline();
+    if (deployment.status !== 'retryable' || !deployment.deadline.canComplete) return;
+    const retryGeneration = gameGeneration;
+    const retryClient = client;
+    const request = lobby.retryVerifiedDeploymentCompletion();
+    syncVerifiedHud();
+    void request.then((receipt) => {
+      if (!receipt || gameGeneration !== retryGeneration || client !== retryClient) {
+        if (gameGeneration === retryGeneration && client === retryClient) syncVerifiedHud();
+        return;
+      }
+      hud.setVerifiedProgressionReceipt(receipt);
+      hud.setVerifiedDeployment(null);
+      void lobby.refreshAccount();
+    }).catch(() => {
+      if (gameGeneration === retryGeneration && client === retryClient) syncVerifiedHud();
+    });
+  });
+
+  hud.onVerifiedContinueCasual(() => {
+    const deployment = lobby.refreshVerifiedDeploymentDeadline();
+    if (deployment.status !== 'expired' || !verifiedClient) return;
+    if (!lobby.continueVerifiedDeploymentCasually()) return;
+    verifiedCasual = true;
+    verifiedClient.continueCasually();
+    hud.setVerifiedDeployment(null);
+    input?.setDirectAimEnabled(directAimAllowed());
+  });
+
+  hud.onVerifiedReturnToBattery(() => {
+    const deployment = lobby.refreshVerifiedDeploymentDeadline();
+    if (deployment.status !== 'expired') return;
+    if (!lobby.returnVerifiedDeploymentToBattery()) return;
+    teardown();
+    lobby.show();
+  });
+
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
   // Tears down the engine/client/input and re-shows the full-field lobby overlay
   // (which covers the now-frozen canvas). For networked games this stops the
@@ -672,7 +979,12 @@ function bootstrap(): void {
   // brittle lobby-clicking. It ships in the bundle intentionally (the post-deploy
   // smoke drives the LIVE url with it), and is benign: it only starts a LOCAL
   // hot-seat game (fixed seed, two human seats) — no backend, no secrets, no auth.
-  if (E2E_MODE === 'hotseat' || E2E_MODE === 'victory' || E2E_MODE === 'victory-anonymous') {
+  if (
+    E2E_MODE === 'hotseat'
+    || E2E_MODE === 'victory'
+    || E2E_MODE === 'victory-anonymous'
+    || E2E_MODE === 'victory-payoff'
+  ) {
     if (E2E_MODE === 'victory-anonymous') lobby.show();
     void startGame({
       mode: 'hotseat',
