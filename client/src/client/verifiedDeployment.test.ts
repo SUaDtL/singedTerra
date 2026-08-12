@@ -231,6 +231,8 @@ describe('verified deployment client contracts', () => {
 
   it.each([
     ['nonzero offset', '2026-08-12T15:30:00+02:00', '2026-08-12T13:30:00.000Z'],
+    ['negative offset across a date boundary', '2026-08-12T23:30:00-02:00', '2026-08-13T01:30:00.000Z'],
+    ['maximum offset', '2026-08-12T13:30:00+14:00', '2026-08-11T23:30:00.000Z'],
     ['Postgres microseconds', '2026-08-12T13:30:00.123456+00:00', '2026-08-12T13:30:00.123Z'],
   ])('accepts %s in the closed timestamptz grammar', (_label, expiresAt, expected) => {
     const parsed = parseVerifiedDeploymentStartResponse({ ...startResponse, expiresAt })
@@ -244,7 +246,11 @@ describe('verified deployment client contracts', () => {
     ['RFC 1123', 'Wed, 12 Aug 2026 13:30:00 GMT'],
     ['calendar rollover', '2026-02-30T13:30:00Z'],
     ['hour rollover', '2026-08-12T24:00:00Z'],
+    ['minute rollover', '2026-08-12T13:60:00Z'],
+    ['second rollover', '2026-08-12T13:30:60Z'],
     ['invalid offset', '2026-08-12T13:30:00+15:00'],
+    ['offset-minute rollover', '2026-08-12T13:30:00+02:60'],
+    ['maximum-offset minute overflow', '2026-08-12T13:30:00+14:01'],
     ['over-precise fraction', '2026-08-12T13:30:00.1234567Z'],
   ])('rejects %s outside the closed timestamptz grammar', (_label, expiresAt) => {
     expect(parseVerifiedDeploymentStartResponse({ ...startResponse, expiresAt })).toBeNull()
