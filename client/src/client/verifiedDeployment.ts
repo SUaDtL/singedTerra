@@ -118,10 +118,28 @@ function exactKeys(value: Record<string, unknown>, expected: readonly string[]):
     && actual.every((key, index) => key === sortedExpected[index])
 }
 
-function exactIsoTimestamp(value: unknown): value is string {
-  if (typeof value !== 'string') return false
-  const parsed = Date.parse(value)
-  return Number.isFinite(parsed) && new Date(parsed).toISOString() === value
+function canonicalIsoTimestamp(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const match = /^([1-9]\d{3})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|([+-])(\d{2}):(\d{2}))$/.exec(value)
+  if (!match) return null
+  const [, rawYear, rawMonth, rawDay, rawHour, rawMinute, rawSecond, fraction = '', zone, sign, rawOffsetHour, rawOffsetMinute] = match
+  const year = Number(rawYear)
+  const month = Number(rawMonth)
+  const day = Number(rawDay)
+  const hour = Number(rawHour)
+  const minute = Number(rawMinute)
+  const second = Number(rawSecond)
+  const offsetHour = Number(rawOffsetHour ?? 0)
+  const offsetMinute = Number(rawOffsetMinute ?? 0)
+  const daysInMonth = month >= 1 && month <= 12
+    ? new Date(Date.UTC(year, month, 0)).getUTCDate()
+    : 0
+  if (day < 1 || day > daysInMonth || hour > 23 || minute > 59 || second > 59
+    || offsetHour > 14 || offsetMinute > 59 || (offsetHour === 14 && offsetMinute !== 0)) return null
+  const milliseconds = Number(fraction.padEnd(3, '0').slice(0, 3))
+  const offset = zone === 'Z' ? 0 : (offsetHour * 60 + offsetMinute) * (sign === '+' ? 1 : -1)
+  const parsed = Date.UTC(year, month - 1, day, hour, minute - offset, second, milliseconds)
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null
 }
 
 function normalizedDisplayName(value: unknown): string | null {
@@ -201,11 +219,12 @@ function parseConfig(value: unknown): VerifiedDeploymentConfig | null {
 export function parseVerifiedDeploymentDescriptor(value: unknown): VerifiedDeploymentDescriptor | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const descriptor = value as Record<string, unknown>
+  const expiresAt = canonicalIsoTimestamp(descriptor.expiresAt)
   if (!exactKeys(descriptor, [
     'sessionId', 'expiresAt', 'contractVersion', 'engineVersion', 'rulesetVersion', 'limits', 'config',
   ])
     || !normalizeVerifiedDeploymentSessionId(descriptor.sessionId)
-    || !exactIsoTimestamp(descriptor.expiresAt)
+    || !expiresAt
     || descriptor.contractVersion !== VERIFIED_DEPLOYMENT_CONTRACT_VERSION
     || descriptor.engineVersion !== VERIFIED_DEPLOYMENT_ENGINE_VERSION
     || descriptor.rulesetVersion !== VERIFIED_DEPLOYMENT_RULESET_VERSION) return null
@@ -214,7 +233,7 @@ export function parseVerifiedDeploymentDescriptor(value: unknown): VerifiedDeplo
   if (!limits || !config) return null
   return Object.freeze({
     sessionId: normalizeVerifiedDeploymentSessionId(descriptor.sessionId)!,
-    expiresAt: descriptor.expiresAt,
+    expiresAt,
     contractVersion: VERIFIED_DEPLOYMENT_CONTRACT_VERSION,
     engineVersion: VERIFIED_DEPLOYMENT_ENGINE_VERSION,
     rulesetVersion: VERIFIED_DEPLOYMENT_RULESET_VERSION,

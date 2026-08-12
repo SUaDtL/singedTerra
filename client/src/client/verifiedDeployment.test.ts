@@ -220,6 +220,36 @@ describe('verified deployment client contracts', () => {
     expect(JSON.stringify(parsed)).not.toContain('userId')
   })
 
+  it('accepts the equivalent UTC offset spelling emitted by Postgres and canonicalizes the deadline', () => {
+    const parsed = parseVerifiedDeploymentStartResponse({
+      ...startResponse,
+      expiresAt: '2026-08-12T13:30:00+00:00',
+    })
+
+    expect(parsed?.descriptor.expiresAt).toBe('2026-08-12T13:30:00.000Z')
+  })
+
+  it.each([
+    ['nonzero offset', '2026-08-12T15:30:00+02:00', '2026-08-12T13:30:00.000Z'],
+    ['Postgres microseconds', '2026-08-12T13:30:00.123456+00:00', '2026-08-12T13:30:00.123Z'],
+  ])('accepts %s in the closed timestamptz grammar', (_label, expiresAt, expected) => {
+    const parsed = parseVerifiedDeploymentStartResponse({ ...startResponse, expiresAt })
+    expect(parsed?.descriptor.expiresAt).toBe(expected)
+  })
+
+  it.each([
+    ['date only', '2026-08-12'],
+    ['zone-less local time', '2026-08-12T13:30:00'],
+    ['locale date', '08/12/2026 13:30:00'],
+    ['RFC 1123', 'Wed, 12 Aug 2026 13:30:00 GMT'],
+    ['calendar rollover', '2026-02-30T13:30:00Z'],
+    ['hour rollover', '2026-08-12T24:00:00Z'],
+    ['invalid offset', '2026-08-12T13:30:00+15:00'],
+    ['over-precise fraction', '2026-08-12T13:30:00.1234567Z'],
+  ])('rejects %s outside the closed timestamptz grammar', (_label, expiresAt) => {
+    expect(parseVerifiedDeploymentStartResponse({ ...startResponse, expiresAt })).toBeNull()
+  })
+
   it('accepts only the canonical lowercase UUIDv4 form emitted by the backend', () => {
     for (const accepted of [
       '22222222-2222-4222-8222-222222222222',

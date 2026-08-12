@@ -1025,7 +1025,7 @@ async function proveStagedHistoricalMutationRejected() {
 
 let migration;
 try {
-  migration = await readFile(migrationPath, 'utf8');
+  migration = (await readFile(migrationPath, 'utf8')).replace(/\r\n/g, '\n');
 } catch (error) {
   if (error?.code === 'ENOENT') fail('migration 016 is absent');
   throw error;

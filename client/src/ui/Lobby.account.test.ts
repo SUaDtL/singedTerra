@@ -885,6 +885,8 @@ describe('Lobby account composition', () => {
   })
 
   it('retains terminal evidence and retries completion only before expiry', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
     const root = document.createElement('div')
     let account!: FakeAccountSession
     const lobby = new Lobby(root, vi.fn(), (onChange) => {
@@ -1258,6 +1260,8 @@ describe('Lobby account composition', () => {
   })
 
   it('abandons only the exact active owner session and clears local recovery after acceptance', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
     const root = document.createElement('div')
     let account!: FakeAccountSession
     const lobby = new Lobby(root, vi.fn(), (onChange) => {
