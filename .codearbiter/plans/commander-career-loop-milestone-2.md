@@ -305,18 +305,23 @@
 - Create: `.codearbiter/reports/2026-08-11-commander-career-milestone-2-final-review-package.md`
 - Modify: `.codearbiter/open-tasks.md` through `$ca-task` only when closing/advancing the initiative
 
-- [ ] Update security controls for session/result ownership, private immutable transcript evidence, exact functions, dual IP/account limits, bounded streaming JSON, deterministic 60-probe server-generated CPU, honest expiry freeze, executable deployment drain/version posture, limits, RLS/RPC grants, and verified-vs-casual authority.
-- [ ] Run `npm run audit:deps`, `npm run check`, `npm run check:edge`, `npm run test:client`, `npm run coverage:client`, `npm run build`, migration verification, full Playwright, diff check, and secret scan from fresh state; record exact counts/timings.
-- [ ] Package spec, plan, sprint evidence, test evidence, and exact final diff for one adversarial subagent. Resolve every Critical, High, Medium/Low merge blocker and rerun review against the corrected exact package.
-- [ ] Route commit/PR through CodeArbiter gates. Require every hosted check green on the exact reviewed PR head.
-- [ ] For initial rollout keep starts disabled, deploy migration/config/functions while old completion/abandon remain available, prove the hosted non-awarding maximum-probe/full-duel workload, deploy the strict-version client, verify drain status/rollout order, enable starts with the checked-in command, then use the browser-managed authenticated session to prove start/resume, account limiting, real human-only transcript plus regenerated CPU, refresh recovery, completion retry/idempotency without replay, expiry presentation, summary, rank/AAR, and casual fallback in production.
-- [ ] Persist the production receipt, keep `career.initiative.0001` active, and immediately select the next tactical-objective slice from production evidence.
+- [x] Update security controls for session/result ownership, private immutable transcript evidence, exact functions, dual IP/account limits, bounded streaming JSON, deterministic 60-probe server-generated CPU, honest expiry freeze, executable deployment drain/version posture, limits, RLS/RPC grants, and verified-vs-casual authority.
+- [x] Run `npm run audit:deps`, `npm run check`, `npm run check:edge`, `npm run test:client`, `npm run coverage:client`, `npm run build`, migration verification, full Playwright, diff check, and secret scan from fresh state; record exact counts/timings.
+- [x] Package spec, plan, sprint evidence, test evidence, and exact final diff for one adversarial subagent. Resolve every Critical, High, Medium/Low merge blocker and rerun review against the corrected exact package.
+- [x] Route commit/PR through CodeArbiter gates. Require every hosted check green on the exact reviewed PR head.
+- [x] Complete the ordered rollout: keep starts disabled, deploy migration/config/functions while old completion/abandon remain available, prove the hosted non-awarding maximum-probe/full-duel workload, deploy the strict-version client, verify drain status/rollout order, and enable starts with the checked-in command.
+- [x] Use the browser-managed authenticated session to prove a fresh production start, a real human-only transcript plus regenerated CPU through the six-salvo cap, completion award, summary, rank/AAR, and durable dossier refresh.
+- [x] Prove same-owner start/resume identity, per-account active-session limiting, and refresh recovery against a live in-progress transcript.
+- [ ] Prove completion retry/idempotency without replay in production. The exact automated client/Edge/migration oracles pass, but forcing a response loss after the production commit requires authenticated runtime interception or infrastructure mutation and remains a user-only hard gate.
+- [x] Prove expiry presentation/freeze and one explicit exit path in production without altering the clock or server row.
+- [x] Prove anonymous casual fallback in an isolated unauthenticated browser without mutating the authenticated browser session.
+- [ ] Persist the complete production receipt, keep `career.initiative.0001` active, and immediately select the next tactical-objective slice from production evidence.
 
 **Verification:** exact reviewed SHA equals exact green PR head; exact merged main deploy provenance and authenticated production receipt are recorded
 **Maps to:** O-09 reviewed delivery and production truth
 **Covers:** AC-10
 **Depends on:** T-01 through T-08
-**Status:** IN_PROGRESS
+**Status:** IN_PROGRESS — PR #407, fresh launch/completion, recovery, anonymous fallback, and honest expiry are production-verified; forced post-commit response-loss retry remains at a security/operational hard gate
 
 ## Dependency order and MVP slice
 
