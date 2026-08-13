@@ -37,6 +37,8 @@ const DIAGNOSTIC_ID = 'verified-replay-runtime' as const
 
 class FakeProductionDiagnostics implements ProductionDiagnostics {
   state: ProductionDiagnosticsState = { status: 'anonymous' }
+  completionRetryProbe = { status: 'idle' as const }
+  pagesProvenance = { status: 'idle' as const }
   readonly runChecks = vi.fn(async (): Promise<DiagnosticCheckResult> => ({
     id: DIAGNOSTIC_ID,
     label: 'Verified replay runtime',
@@ -47,6 +49,8 @@ class FakeProductionDiagnostics implements ProductionDiagnostics {
     if (readiness !== 'authenticated') this.state = { status: readiness }
     else if (this.state.status !== 'PASS' && this.state.status !== 'FAIL') this.state = { status: 'IDLE' }
   })
+  readonly armCompletionRetryProbe = vi.fn(() => true)
+  readonly runPagesProvenance = vi.fn(async () => ({ status: 'PASS' as const, sha: 'a'.repeat(40), runId: '1' }))
   readonly dispose = vi.fn(() => {
     this.state = { status: 'disposed' }
   })

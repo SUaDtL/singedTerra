@@ -11,6 +11,7 @@ import type {
   VerifiedDeploymentServerReceipt,
   VerifiedDeploymentStart,
 } from './verifiedDeployment'
+import { createProductionDiagnostics } from './ProductionDiagnostics'
 
 type AssertTrue<T extends true> = T
 type IsRequiredKey<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
@@ -1516,6 +1517,28 @@ describe('verified deployment Supabase adapter', () => {
       ['abandon_verified_deployment', { body: { sessionId: verifiedSessionId } }],
       ['complete_verified_deployment', { body: { sessionId: verifiedSessionId, transcript } }],
     ])
+  })
+
+  it('uses the armed production diagnostic to discard one committed response and accept the identical retry', async () => {
+    const invoke = vi.fn(async () => ({ data: verifiedServerReceipt, error: null }))
+    const diagnostics = createProductionDiagnostics({ functions: { invoke: vi.fn() } } as never)
+    const gateway = createSupabaseAccountBackend({ auth: {}, functions: { invoke } } as never)
+    const transcript = [{ angle: 37, power: 64 }] as const
+    diagnostics.armCompletionRetryProbe()
+
+    await expect(gateway.completeVerifiedDeployment(verifiedSessionId, transcript))
+      .rejects.toThrow('Verified deployment is unavailable.')
+    expect(diagnostics.completionRetryProbe.status).toBe('response-discarded')
+
+    await expect(gateway.completeVerifiedDeployment(verifiedSessionId, transcript))
+      .resolves.toEqual(verifiedServerReceipt)
+    expect(invoke).toHaveBeenCalledTimes(2)
+    expect(invoke.mock.calls[0]).toEqual(invoke.mock.calls[1])
+    expect(diagnostics.completionRetryProbe).toMatchObject({
+      status: 'PASS',
+      sameEvidence: true,
+      sameReceipt: true,
+    })
   })
 
   it.each([

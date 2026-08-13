@@ -1,10 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
+  cancelVerifiedCompletionResponseDiagnostic,
   createProductionDiagnostics,
+  observeVerifiedCompletionResponseForDiagnostics,
+  projectPersistedCompletionRetryProbe,
   productionDiagnosticsReceiptForState,
+  validatePagesDeploymentProvenance,
   validateVerifiedReplayProbeResponse,
 } from './ProductionDiagnostics'
+import type { VerifiedDeploymentServerReceipt } from './verifiedDeployment'
 
 const EXACT_VERIFIED_REPLAY_RESPONSE = {
   ok: true,
@@ -192,6 +197,187 @@ describe('ProductionDiagnostics registry', () => {
       projectPublicDetails: descriptor?.projectPublicDetails,
     })
   })
+})
+
+describe('verified completion retry diagnostic', () => {
+  const sessionId = '00000000-0000-4000-8000-000000000061'
+  const transcript = [{ angle: 37, power: 64 }] as const
+  const receipt: VerifiedDeploymentServerReceipt = {
+    result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
+    progression: {
+      evidence: 'verified_replay_v1',
+      prior: { matchesPlayed: 2, wins: 1, totalXp: 300 },
+      current: { matchesPlayed: 3, wins: 2, totalXp: 500 },
+    },
+  }
+
+  afterEach(() => {
+    cancelVerifiedCompletionResponseDiagnostic()
+  })
+
+  it('arms only for an authenticated operator and remains inert otherwise', () => {
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never, {
+      readiness: 'anonymous',
+    })
+
+    expect(diagnostics.armCompletionRetryProbe()).toBe(false)
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
+
+    diagnostics.setReadiness('authenticated')
+    expect(diagnostics.armCompletionRetryProbe()).toBe(true)
+    expect(diagnostics.completionRetryProbe.status).toBe('armed')
+  })
+
+  it('runs the same-origin Pages provenance check without credentials and includes its bounded receipt', async () => {
+    vi.useFakeTimers()
+    const { client, invoke } = diagnosticsClient()
+    const fetch = vi.fn(async () => new Response(JSON.stringify({
+      sha: 'ad9be483282e359c0022913226ea8ddc11f7df1f',
+      runId: '31655039048',
+    }), { status: 200, headers: { 'content-type': 'application/json' } }))
+    const diagnostics = createProductionDiagnostics(client as never, {
+      fetch,
+      baseUrl: 'https://suadtl.github.io/singedTerra/',
+    })
+
+    const result = await diagnostics.runPagesProvenance()
+
+    expect(invoke).not.toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledWith(
+      'https://suadtl.github.io/singedTerra/deploy-meta.json',
+      { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } },
+    )
+    expect(result).toEqual({
+      status: 'PASS',
+      sha: 'ad9be483282e359c0022913226ea8ddc11f7df1f',
+      runId: '31655039048',
+    })
+    expect(diagnostics.pagesProvenance).toEqual(result)
+    expect(vi.getTimerCount()).toBe(0)
+    vi.useRealTimers()
+  })
+
+  it.each([
+    ['short SHA', { sha: 'ad9be48', runId: '31655039048' }],
+    ['non-decimal run ID', { sha: 'a'.repeat(40), runId: 'run-1' }],
+    ['widened metadata', { sha: 'a'.repeat(40), runId: '1', branch: 'main' }],
+  ])('rejects Pages provenance with %s', (_label, value) => {
+    expect(validatePagesDeploymentProvenance(value)).toBe(false)
+  })
+
+  it('discards one parsed response, verifies an identical retry, and projects the one-award delta', () => {
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)
+    expect(diagnostics.armCompletionRetryProbe()).toBe(true)
+
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(true)
+    expect(diagnostics.completionRetryProbe).toEqual({
+      status: 'response-discarded',
+      expected: {
+        outcome: 'win',
+        verifiedXp: 200,
+        matchesDelta: 1,
+        winsDelta: 1,
+        totalXpDelta: 200,
+      },
+    })
+
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
+    expect(diagnostics.completionRetryProbe).toEqual({
+      status: 'PASS',
+      sameEvidence: true,
+      sameReceipt: true,
+      award: {
+        outcome: 'win',
+        verifiedXp: 200,
+        matchesDelta: 1,
+        winsDelta: 1,
+        totalXpDelta: 200,
+      },
+    })
+  })
+
+  it('fails closed when the retry evidence differs and never discards another response', () => {
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)
+    diagnostics.armCompletionRetryProbe()
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(true)
+
+    expect(observeVerifiedCompletionResponseForDiagnostics(
+      sessionId,
+      [{ angle: 38, power: 64 }],
+      receipt,
+    )).toBe(false)
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'FAIL', code: 'evidence_mismatch' })
+  })
+
+  it.each(['anonymous', 'signed-out', 'authenticated-error'] as const)(
+    'cancels an armed response loss when readiness becomes %s',
+    (readiness) => {
+      const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)
+      expect(diagnostics.armCompletionRetryProbe()).toBe(true)
+
+      diagnostics.setReadiness(readiness)
+
+      expect(diagnostics.completionRetryProbe).toEqual({ status: 'idle' })
+      expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
+    },
+  )
+
+  it('cancels discarded-response evidence on sign-out and refuses to reset an active proof', () => {
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)
+    expect(diagnostics.armCompletionRetryProbe()).toBe(true)
+    expect(diagnostics.armCompletionRetryProbe()).toBe(false)
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(true)
+    expect(diagnostics.armCompletionRetryProbe()).toBe(false)
+
+    diagnostics.setReadiness('signed-out')
+
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'idle' })
+    diagnostics.setReadiness('authenticated')
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
+  })
+
+  it('hydrates one exact secret-free terminal PASS after a same-tab module reload', async () => {
+    sessionStorage.removeItem('singed-terra:production-diagnostics:completion-retry:v1')
+    const beforeReload = createProductionDiagnostics(diagnosticsClient().client as never)
+    expect(beforeReload.armCompletionRetryProbe()).toBe(true)
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(true)
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
+    expect(sessionStorage.getItem('singed-terra:production-diagnostics:completion-retry:v1')).not.toBeNull()
+    vi.resetModules()
+    const fresh = await import('./ProductionDiagnostics')
+
+    const diagnostics = fresh.createProductionDiagnostics(diagnosticsClient().client as never)
+
+    expect(diagnostics.completionRetryProbe).toEqual({
+      status: 'PASS',
+      sameEvidence: true,
+      sameReceipt: true,
+      award: { outcome: 'win', verifiedXp: 200, matchesDelta: 1, winsDelta: 1, totalXpDelta: 200 },
+    })
+    sessionStorage.removeItem('singed-terra:production-diagnostics:completion-retry:v1')
+  })
+
+  it.each([
+    ['multiple matches', { outcome: 'win', verifiedXp: 200, matchesDelta: 2, winsDelta: 1, totalXpDelta: 200 }],
+    ['wrong win delta', { outcome: 'loss', verifiedXp: 100, matchesDelta: 1, winsDelta: 1, totalXpDelta: 100 }],
+    ['wrong XP delta', { outcome: 'draw', verifiedXp: 100, matchesDelta: 1, winsDelta: 0, totalXpDelta: 0 }],
+    ['wrong outcome XP', { outcome: 'win', verifiedXp: 100, matchesDelta: 1, winsDelta: 1, totalXpDelta: 100 }],
+  ] as const)('rejects a persisted PASS with %s', async (_label, award) => {
+    expect(projectPersistedCompletionRetryProbe({
+      status: 'PASS', sameEvidence: true, sameReceipt: true, award,
+    })).toBeUndefined()
+    sessionStorage.setItem('singed-terra:production-diagnostics:completion-retry:v1', JSON.stringify({
+      status: 'PASS', sameEvidence: true, sameReceipt: true, award,
+    }))
+    vi.resetModules()
+    const fresh = await import('./ProductionDiagnostics')
+
+    const diagnostics = fresh.createProductionDiagnostics(diagnosticsClient().client as never)
+
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'idle' })
+    sessionStorage.removeItem('singed-terra:production-diagnostics:completion-retry:v1')
+  })
+
 })
 
 describe('verified-replay-runtime contract', () => {
@@ -613,6 +799,34 @@ describe('ProductionDiagnostics lifecycle', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('keeps the current Pages provenance run locked when a superseded request settles late', async () => {
+    const stale = deferred<Response>()
+    const current = deferred<Response>()
+    const fetch = vi.fn()
+      .mockImplementationOnce(() => stale.promise)
+      .mockImplementationOnce(() => current.promise)
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never, {
+      fetch,
+      baseUrl: 'https://suadtl.github.io/singedTerra/',
+    })
+    const first = diagnostics.runPagesProvenance()
+    diagnostics.setReadiness('anonymous')
+    diagnostics.setReadiness('authenticated')
+    const second = diagnostics.runPagesProvenance()
+
+    stale.resolve(new Response(JSON.stringify({ sha: 'a'.repeat(40), runId: '1' })))
+    await first
+
+    await expect(diagnostics.runPagesProvenance()).resolves.toEqual({
+      status: 'FAIL',
+      code: 'run_in_progress',
+    })
+    expect(fetch).toHaveBeenCalledTimes(2)
+
+    current.resolve(new Response(JSON.stringify({ sha: 'b'.repeat(40), runId: '2' })))
+    await expect(second).resolves.toMatchObject({ status: 'PASS', runId: '2' })
   })
 
   it('resolves an active duplicate immediately as run_in_progress without invoking or changing state', async () => {

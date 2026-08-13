@@ -1,4 +1,6 @@
 import type {
+  CompletionRetryProbeState,
+  PagesProvenanceState,
   ProductionDiagnosticsReceipt,
   ProductionDiagnosticsState,
 } from '../client/ProductionDiagnostics'
@@ -12,12 +14,89 @@ export type ProductionDiagnosticsCopyStatus = 'idle' | 'copied' | 'failed'
 
 export interface ProductionDiagnosticsViewOptions {
   readonly state: ProductionDiagnosticsState
+  readonly completionRetryProbe: CompletionRetryProbeState
+  readonly pagesProvenance: PagesProvenanceState
   readonly copyStatus: ProductionDiagnosticsCopyStatus
   readonly resolveReturnFocus: () => HTMLElement | null
   readonly onRun: () => void
   readonly onCopyReceipt: () => void
   readonly onOpenAccount: () => void
+  readonly onArmCompletionRetryProbe: () => void
+  readonly onRunPagesProvenance: () => void
   readonly onClose: () => void
+}
+
+function pagesProvenanceCopy(state: PagesProvenanceState): string {
+  if (state.status === 'PASS') return `Deployed ${state.sha.slice(0, 12)} · Pages run ${state.runId}`
+  if (state.status === 'RUNNING') return 'Checking the live Pages artifact…'
+  if (state.status === 'FAIL') return `Deployment provenance failed: ${state.code}`
+  return 'Verify which exact main commit and Pages run served this client.'
+}
+
+function buildPagesProvenanceTool(options: ProductionDiagnosticsViewOptions): HTMLElement {
+  const section = document.createElement('section')
+  section.className = 'production-diagnostics__provenance'
+  const heading = document.createElement('h3')
+  heading.textContent = 'Live deployment provenance'
+  const state = document.createElement('strong')
+  state.textContent = pagesProvenanceCopy(options.pagesProvenance)
+  const run = document.createElement('button')
+  run.type = 'button'
+  run.textContent = 'Check deployed build'
+  run.disabled = !isRunEnabled(options.state.status) || options.pagesProvenance.status === 'RUNNING'
+  run.addEventListener('click', () => {
+    if (!run.disabled) options.onRunPagesProvenance()
+  })
+  section.append(heading, state, run)
+  return section
+}
+
+function completionRetryCopy(state: CompletionRetryProbeState): string {
+  switch (state.status) {
+    case 'armed':
+      return 'ARMED: the next accepted completion response will be discarded once.'
+    case 'response-discarded':
+      return 'RESPONSE LOST: use the in-game Retry verification control with the retained evidence.'
+    case 'PASS':
+      return 'PASS: identical retry returned the immutable receipt.'
+    case 'FAIL':
+      return state.code === 'evidence_mismatch'
+        ? 'FAIL: retry evidence changed.'
+        : 'FAIL: retry returned a different receipt.'
+    default:
+      return 'Ready. No completion response will be altered until explicitly armed.'
+  }
+}
+
+function buildCompletionRetryProbe(options: ProductionDiagnosticsViewOptions): HTMLElement {
+  const section = document.createElement('section')
+  section.className = 'production-diagnostics__fault'
+  section.dataset.completionRetryState = options.completionRetryProbe.status
+  const heading = document.createElement('h3')
+  heading.textContent = 'Completion retry proof'
+  const description = document.createElement('p')
+  description.textContent = 'Discard exactly one accepted completion response, then verify the ordinary retry returns the same immutable receipt and one-award delta.'
+  const state = document.createElement('strong')
+  state.className = 'production-diagnostics__fault-state'
+  state.textContent = completionRetryCopy(options.completionRetryProbe)
+  const arm = document.createElement('button')
+  arm.type = 'button'
+  arm.className = 'production-diagnostics__arm-retry'
+  arm.textContent = 'Arm response loss'
+  arm.disabled = !isRunEnabled(options.state.status)
+    || options.completionRetryProbe.status === 'armed'
+    || options.completionRetryProbe.status === 'response-discarded'
+  arm.addEventListener('click', () => {
+    if (!arm.disabled) options.onArmCompletionRetryProbe()
+  })
+  section.append(heading, description, state)
+  if (options.completionRetryProbe.status === 'PASS') {
+    const award = document.createElement('code')
+    award.textContent = `${options.completionRetryProbe.award.matchesDelta} match · ${options.completionRetryProbe.award.winsDelta} win · ${options.completionRetryProbe.award.totalXpDelta} XP`
+    section.append(award)
+  }
+  section.append(arm)
+  return section
 }
 
 function readinessCopy(status: ProductionDiagnosticsState['status']): string {
@@ -180,6 +259,8 @@ export function buildProductionDiagnosticsView(
 
   const account = buildAccountAction(options.state, options.onOpenAccount)
   if (account) actions.append(account)
+  const completionRetryProbe = buildCompletionRetryProbe(options)
+  const pagesProvenance = buildPagesProvenanceTool(options)
 
   const receiptHeading = document.createElement('h3')
   receiptHeading.className = 'production-diagnostics__receipt-heading'
@@ -195,7 +276,7 @@ export function buildProductionDiagnosticsView(
   consoleGrid.className = 'production-diagnostics__console'
   const left = document.createElement('div')
   left.className = 'production-diagnostics__column'
-  left.append(status, check, actions)
+  left.append(status, check, pagesProvenance, completionRetryProbe, actions)
   const right = document.createElement('div')
   right.className = 'production-diagnostics__column production-diagnostics__column--receipt'
   right.append(receiptHeading, receiptRegion, copyStatus)

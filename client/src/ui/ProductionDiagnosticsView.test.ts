@@ -76,11 +76,15 @@ function options(
   const resolveReturnFocus = overrides.resolveReturnFocus ?? (() => connectedFocusTarget())
   return {
     state: { status: 'IDLE' },
+    completionRetryProbe: { status: 'idle' },
+    pagesProvenance: { status: 'idle' },
     copyStatus: 'idle',
     resolveReturnFocus,
     onRun: vi.fn(),
     onCopyReceipt: vi.fn(),
     onOpenAccount: vi.fn(),
+    onArmCompletionRetryProbe: vi.fn(),
+    onRunPagesProvenance: vi.fn(),
     onClose: vi.fn(),
     ...overrides,
   }
@@ -159,6 +163,51 @@ afterEach(() => {
 })
 
 describe('buildProductionDiagnosticsView', () => {
+  it('renders the authenticated completion retry probe and arms it from the existing toolkit', () => {
+    const onArmCompletionRetryProbe = vi.fn()
+    const root = buildProductionDiagnosticsView(options({ onArmCompletionRetryProbe }))
+
+    expect(root.textContent).toContain('Completion retry proof')
+    expect(root.textContent).toContain('Discard exactly one accepted completion response')
+    button(root, 'Arm response loss').click()
+    expect(onArmCompletionRetryProbe).toHaveBeenCalledOnce()
+  })
+
+  it('runs and displays the live Pages deployment provenance tool', () => {
+    const onRunPagesProvenance = vi.fn()
+    const idle = buildProductionDiagnosticsView(options({ onRunPagesProvenance }))
+    button(idle, 'Check deployed build').click()
+    expect(onRunPagesProvenance).toHaveBeenCalledOnce()
+
+    const passed = buildProductionDiagnosticsView(options({
+      pagesProvenance: {
+        status: 'PASS',
+        sha: 'ad9be483282e359c0022913226ea8ddc11f7df1f',
+        runId: '31655039048',
+      },
+    }))
+    expect(passed.textContent).toContain('Deployed ad9be483282e · Pages run 31655039048')
+  })
+
+  it('renders the verified same-evidence and one-award receipt', () => {
+    const root = buildProductionDiagnosticsView(options({
+      completionRetryProbe: {
+        status: 'PASS',
+        sameEvidence: true,
+        sameReceipt: true,
+        award: {
+          outcome: 'win',
+          verifiedXp: 200,
+          matchesDelta: 1,
+          winsDelta: 1,
+          totalXpDelta: 200,
+        },
+      },
+    }))
+
+    expect(root.textContent).toContain('PASS: identical retry returned the immutable receipt')
+    expect(root.textContent).toContain('1 match · 1 win · 200 XP')
+  })
   it('defines a fixed, non-generic operator contract and suppresses duplicate pre-render Run clicks', () => {
     let runAtCallback: HTMLButtonElement | null = null
     let disabledAtCallback = false

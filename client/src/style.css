@@ -773,6 +773,8 @@ body::before {
 
 #lobby .production-diagnostics__status,
 #lobby .production-diagnostics__check,
+#lobby .production-diagnostics__fault,
+#lobby .production-diagnostics__provenance,
 #lobby .production-diagnostics__receipt {
   box-sizing: border-box;
   min-width: 0;
@@ -805,6 +807,54 @@ body::before {
   padding: var(--ui-space-3);
 }
 
+#lobby .production-diagnostics__fault {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+}
+
+#lobby .production-diagnostics__provenance {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+}
+
+#lobby .production-diagnostics__provenance h3 {
+  margin: 0;
+  color: rgba(255, 224, 159, 0.72);
+  font: 700 var(--ui-type-label)/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#lobby .production-diagnostics__provenance strong {
+  color: rgba(255, 239, 205, 0.82);
+  font: 11px/1.45 var(--font-mono);
+}
+
+#lobby .production-diagnostics__fault h3,
+#lobby .production-diagnostics__fault p {
+  margin: 0;
+}
+
+#lobby .production-diagnostics__fault h3 {
+  color: rgba(255, 224, 159, 0.72);
+  font: 700 var(--ui-type-label)/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#lobby .production-diagnostics__fault p,
+#lobby .production-diagnostics__fault-state,
+#lobby .production-diagnostics__fault code {
+  color: rgba(255, 239, 205, 0.82);
+  font: 11px/1.45 var(--font-mono);
+}
+
+#lobby .production-diagnostics__fault-state {
+  color: var(--gold);
+}
+
 #lobby .production-diagnostics__check h3 {
   margin-bottom: var(--ui-space-2);
 }
@@ -835,7 +885,9 @@ body::before {
   align-items: center;
 }
 
-#lobby .production-diagnostics__actions button {
+#lobby .production-diagnostics__actions button,
+#lobby .production-diagnostics__fault button,
+#lobby .production-diagnostics__provenance button {
   box-sizing: border-box;
   min-height: 44px;
   padding: 10px 14px;
@@ -854,20 +906,28 @@ body::before {
   background-color: var(--gold);
 }
 
-#lobby .production-diagnostics__actions button:hover:not(:disabled) {
+#lobby .production-diagnostics__actions button:hover:not(:disabled),
+#lobby .production-diagnostics__fault button:hover:not(:disabled),
+#lobby .production-diagnostics__provenance button:hover:not(:disabled) {
   border-color: #ffe9a8;
 }
 
-#lobby .production-diagnostics__actions button:active:not(:disabled) {
+#lobby .production-diagnostics__actions button:active:not(:disabled),
+#lobby .production-diagnostics__fault button:active:not(:disabled),
+#lobby .production-diagnostics__provenance button:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-#lobby .production-diagnostics__actions button:focus-visible {
+#lobby .production-diagnostics__actions button:focus-visible,
+#lobby .production-diagnostics__fault button:focus-visible,
+#lobby .production-diagnostics__provenance button:focus-visible {
   outline: none;
   box-shadow: var(--ui-focus);
 }
 
-#lobby .production-diagnostics__actions button:disabled {
+#lobby .production-diagnostics__actions button:disabled,
+#lobby .production-diagnostics__fault button:disabled,
+#lobby .production-diagnostics__provenance button:disabled {
   color: rgba(225, 214, 191, 0.42);
   border-color: rgba(255, 188, 80, 0.2);
   background-color: rgba(7, 10, 12, 0.54);

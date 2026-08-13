@@ -14,6 +14,10 @@ import type {
   ProductionDiagnosticsReadiness,
   ProductionDiagnosticsState,
 } from '../client/ProductionDiagnostics'
+import {
+  createProductionDiagnostics,
+  observeVerifiedCompletionResponseForDiagnostics,
+} from '../client/ProductionDiagnostics'
 import { Lobby, type AccountSessionPort, type LobbyConfig } from './Lobby'
 
 class FakeAccountSession implements AccountSessionPort {
@@ -114,6 +118,8 @@ const DIAGNOSTIC_LABEL = 'Verified replay runtime'
 
 class FakeProductionDiagnostics implements ProductionDiagnostics {
   state: ProductionDiagnosticsState = { status: 'loading' }
+  completionRetryProbe = { status: 'idle' as const }
+  pagesProvenance = { status: 'idle' as const }
   readonly runChecks = vi.fn(async (): Promise<DiagnosticCheckResult> => {
     const result: DiagnosticCheckResult = {
       id: DIAGNOSTIC_ID,
@@ -128,6 +134,8 @@ class FakeProductionDiagnostics implements ProductionDiagnostics {
     if (readiness !== 'authenticated') this.state = { status: readiness }
     else if (this.state.status !== 'PASS' && this.state.status !== 'FAIL') this.state = { status: 'IDLE' }
   })
+  readonly armCompletionRetryProbe = vi.fn(() => true)
+  readonly runPagesProvenance = vi.fn(async () => ({ status: 'PASS' as const, sha: 'a'.repeat(40), runId: '1' }))
   readonly dispose = vi.fn(() => {
     this.state = { status: 'disposed' }
   })
@@ -151,7 +159,7 @@ function createLobbyWithDiagnostics(
   return new Constructor(root, vi.fn(), accountFactory, diagnosticsFactory)
 }
 
-function authenticatedState(): AccountState {
+function authenticatedState(): Extract<AccountState, { status: 'authenticated' }> {
   return {
     status: 'authenticated',
     busy: false,
@@ -436,6 +444,36 @@ describe('Lobby account composition', () => {
     account.emit(authenticatedState())
     expect(diagnostics.setReadiness).toHaveBeenLastCalledWith('authenticated')
     expect(root.querySelector<HTMLElement>('[aria-label="Production diagnostics"] .production-diagnostics')?.dataset.diagnosticsState).toBe('IDLE')
+  })
+
+  it('cancels an armed completion fault when authenticated account identity changes directly', () => {
+    window.history.replaceState(null, '', '/pregame?diagnostics=1')
+    const root = document.createElement('div')
+    document.body.append(root)
+    let account!: FakeAccountSession
+    const diagnostics = createProductionDiagnostics({ functions: { invoke: vi.fn() } } as never)
+    const lobby = createLobbyWithDiagnostics(
+      root,
+      (onChange) => {
+        account = new FakeAccountSession(onChange, authenticatedState())
+        return account
+      },
+      () => diagnostics,
+    )
+    lobby.show()
+    expect(diagnostics.armCompletionRetryProbe()).toBe(true)
+
+    account.emit({
+      ...authenticatedState(),
+      profile: { ...authenticatedState().profile, id: 'user-2' },
+    })
+
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'idle' })
+    expect(observeVerifiedCompletionResponseForDiagnostics(
+      verifiedSessionId,
+      [{ angle: 37, power: 64 }],
+      verifiedReceipt,
+    )).toBe(false)
   })
 
   it('waits for authenticated readiness, autoruns once, and survives account rerenders', async () => {

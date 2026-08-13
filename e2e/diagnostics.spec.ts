@@ -193,6 +193,8 @@ async function assertDiagnosticsLayout(page: Page, dialog: Locator): Promise<voi
       '.production-diagnostics__intro',
       '.production-diagnostics__status',
       '.production-diagnostics__check',
+      '.production-diagnostics__provenance',
+      '.production-diagnostics__fault',
       '.production-diagnostics__actions',
       '.production-diagnostics__receipt-heading',
       '.production-diagnostics__receipt',
@@ -266,6 +268,8 @@ async function assertDiagnosticsLayout(page: Page, dialog: Locator): Promise<voi
   expect(layout.receiptDataHorizontalOverflow, 'receipt may own only its bounded horizontal scroll').toBeGreaterThanOrEqual(0);
 
   await assertReachableControl(page, dialog.getByRole('button', { name: 'Close', exact: true }), dialog);
+  await assertReachableControl(page, dialog.getByRole('button', { name: 'Check deployed build', exact: true }), dialog);
+  await assertReachableControl(page, dialog.getByRole('button', { name: 'Arm response loss', exact: true }), dialog);
   await assertReachableControl(page, dialog.getByRole('button', { name: 'Run checks', exact: true }), dialog);
   await assertReachableControl(page, dialog.getByRole('button', { name: 'Copy receipt', exact: true }), dialog);
 

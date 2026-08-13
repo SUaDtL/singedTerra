@@ -151,11 +151,15 @@ describe('ProductionDiagnostics immutable registry execution', () => {
     const onRun = vi.fn()
     const view = buildProductionDiagnosticsView({
       state: diagnostics.state,
+      completionRetryProbe: diagnostics.completionRetryProbe,
+      pagesProvenance: diagnostics.pagesProvenance,
       copyStatus: 'idle',
       resolveReturnFocus: () => null,
       onRun,
       onCopyReceipt: vi.fn(),
       onOpenAccount: vi.fn(),
+      onArmCompletionRetryProbe: vi.fn(),
+      onRunPagesProvenance: vi.fn(),
       onClose: vi.fn(),
     })
     expect([...view.querySelectorAll('.production-diagnostics__check-line')].map((line) => line.textContent)).toEqual([

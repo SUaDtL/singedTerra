@@ -1,4 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { VerifiedHumanFire } from '@shared/net/verifiedDuel'
+import type { VerifiedDeploymentServerReceipt } from './verifiedDeployment'
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
   validateVerifiedReplayProbeResponse,
@@ -91,6 +93,31 @@ export type ProductionDiagnosticsState =
   | { readonly status: 'signed-out' }
   | { readonly status: 'disposed' }
 
+export interface CompletionRetryAwardProof {
+  readonly outcome: 'win' | 'loss' | 'draw'
+  readonly verifiedXp: 100 | 200
+  readonly matchesDelta: number
+  readonly winsDelta: number
+  readonly totalXpDelta: number
+}
+
+export type PagesProvenanceState =
+  | { readonly status: 'idle' | 'RUNNING' }
+  | { readonly status: 'PASS'; readonly sha: string; readonly runId: string }
+  | { readonly status: 'FAIL'; readonly code: 'request_failed' | 'invalid_response' | 'timeout' | 'run_in_progress' | 'not_authenticated' | 'disposed' }
+
+export type CompletionRetryProbeState =
+  | { readonly status: 'idle' }
+  | { readonly status: 'armed' }
+  | { readonly status: 'response-discarded'; readonly expected: CompletionRetryAwardProof }
+  | {
+      readonly status: 'PASS'
+      readonly sameEvidence: true
+      readonly sameReceipt: true
+      readonly award: CompletionRetryAwardProof
+    }
+  | { readonly status: 'FAIL'; readonly code: 'evidence_mismatch' | 'receipt_mismatch' }
+
 type BoundedDiagnosticFailureCode = Exclude<DiagnosticResultCode, 'ok'>
 
 export interface ProductionDiagnosticsPassReceiptResult {
@@ -179,13 +206,167 @@ export function productionDiagnosticsReceiptForState(
 
 export interface ProductionDiagnosticsOptions {
   readonly readiness?: ProductionDiagnosticsReadiness
+  readonly fetch?: typeof globalThis.fetch
+  readonly baseUrl?: string
 }
 
 export interface ProductionDiagnostics {
   readonly state: ProductionDiagnosticsState
+  readonly completionRetryProbe: CompletionRetryProbeState
+  readonly pagesProvenance: PagesProvenanceState
   runChecks(): Promise<DiagnosticCheckResult>
+  runPagesProvenance(): Promise<PagesProvenanceState>
+  armCompletionRetryProbe(): boolean
   setReadiness(readiness: ProductionDiagnosticsReadiness): void
   dispose(): void
+}
+
+const COMPLETION_RETRY_PROBE_STORAGE_KEY = 'singed-terra:production-diagnostics:completion-retry:v1'
+
+export function projectPersistedCompletionRetryProbe(value: unknown): CompletionRetryProbeState | undefined {
+  if (!isPlainRecord(value)) return undefined
+  const keys = Object.keys(value).sort()
+  if (keys.length === 2 && keys[0] === 'code' && keys[1] === 'status'
+    && value.status === 'FAIL'
+    && (value.code === 'evidence_mismatch' || value.code === 'receipt_mismatch')) {
+    return Object.freeze({ status: 'FAIL' as const, code: value.code })
+  }
+  if (keys.length !== 4 || keys[0] !== 'award' || keys[1] !== 'sameEvidence'
+    || keys[2] !== 'sameReceipt' || keys[3] !== 'status'
+    || value.status !== 'PASS' || value.sameEvidence !== true || value.sameReceipt !== true
+    || !isPlainRecord(value.award)) return undefined
+  const award = value.award
+  const awardKeys = Object.keys(award).sort()
+  if (awardKeys.length !== 5 || awardKeys[0] !== 'matchesDelta' || awardKeys[1] !== 'outcome'
+    || awardKeys[2] !== 'totalXpDelta' || awardKeys[3] !== 'verifiedXp' || awardKeys[4] !== 'winsDelta'
+    || (award.outcome !== 'win' && award.outcome !== 'loss' && award.outcome !== 'draw')
+    || (award.verifiedXp !== 100 && award.verifiedXp !== 200)
+    || award.matchesDelta !== 1
+    || award.winsDelta !== (award.outcome === 'win' ? 1 : 0)
+    || award.totalXpDelta !== award.verifiedXp
+    || award.verifiedXp !== (award.outcome === 'win' ? 200 : 100)) return undefined
+  const outcome = award.outcome as CompletionRetryAwardProof['outcome']
+  const verifiedXp = award.verifiedXp as CompletionRetryAwardProof['verifiedXp']
+  return Object.freeze({
+    status: 'PASS' as const,
+    sameEvidence: true as const,
+    sameReceipt: true as const,
+    award: Object.freeze({
+      outcome,
+      verifiedXp,
+      matchesDelta: 1,
+      winsDelta: outcome === 'win' ? 1 : 0,
+      totalXpDelta: verifiedXp,
+    }),
+  })
+}
+
+function persistedCompletionRetryProbe(): CompletionRetryProbeState {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(COMPLETION_RETRY_PROBE_STORAGE_KEY)
+    if (!raw || raw.length > 2_048) return Object.freeze({ status: 'idle' as const })
+    const projected = projectPersistedCompletionRetryProbe(JSON.parse(raw) as unknown)
+    if (projected) return projected
+  } catch {
+    // Diagnostics persistence is optional; malformed or inaccessible storage is inert.
+  }
+  return Object.freeze({ status: 'idle' as const })
+}
+
+function persistCompletionRetryTerminal(state: CompletionRetryProbeState): void {
+  if (state.status !== 'PASS' && state.status !== 'FAIL') return
+  try {
+    globalThis.sessionStorage?.setItem(COMPLETION_RETRY_PROBE_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // The live proof remains available in memory when session storage is unavailable.
+  }
+}
+
+let completionRetryProbeState: CompletionRetryProbeState = persistedCompletionRetryProbe()
+let completionRetryEvidence = ''
+let completionRetryReceipt = ''
+
+export function cancelVerifiedCompletionResponseDiagnostic(): void {
+  if (completionRetryProbeState.status !== 'armed'
+    && completionRetryProbeState.status !== 'response-discarded') return
+  completionRetryEvidence = ''
+  completionRetryReceipt = ''
+  completionRetryProbeState = Object.freeze({ status: 'idle' as const })
+}
+
+function completionEvidenceKey(
+  sessionId: string,
+  transcript: readonly VerifiedHumanFire[],
+): string {
+  return JSON.stringify([sessionId, transcript])
+}
+
+function completionAwardProof(receipt: VerifiedDeploymentServerReceipt): CompletionRetryAwardProof {
+  const { prior, current } = receipt.progression
+  return Object.freeze({
+    outcome: receipt.result.outcome,
+    verifiedXp: receipt.result.verifiedXp,
+    matchesDelta: current.matchesPlayed - prior.matchesPlayed,
+    winsDelta: current.wins - prior.wins,
+    totalXpDelta: current.totalXp - prior.totalXp,
+  })
+}
+
+/**
+ * Production-diagnostics seam called only after the normal completion adapter
+ * has received and parsed an accepted server response. Returning true asks the
+ * adapter to discard that one response so the ordinary retained-evidence retry
+ * path can prove server idempotency.
+ */
+export function observeVerifiedCompletionResponseForDiagnostics(
+  sessionId: string,
+  transcript: readonly VerifiedHumanFire[],
+  receipt: VerifiedDeploymentServerReceipt,
+): boolean {
+  const evidence = completionEvidenceKey(sessionId, transcript)
+  const serializedReceipt = JSON.stringify(receipt)
+  if (completionRetryProbeState.status === 'armed') {
+    completionRetryEvidence = evidence
+    completionRetryReceipt = serializedReceipt
+    completionRetryProbeState = Object.freeze({
+      status: 'response-discarded' as const,
+      expected: completionAwardProof(receipt),
+    })
+    return true
+  }
+  if (completionRetryProbeState.status !== 'response-discarded') return false
+  if (evidence !== completionRetryEvidence) {
+    completionRetryProbeState = Object.freeze({ status: 'FAIL' as const, code: 'evidence_mismatch' as const })
+    persistCompletionRetryTerminal(completionRetryProbeState)
+    return false
+  }
+  if (serializedReceipt !== completionRetryReceipt) {
+    completionRetryProbeState = Object.freeze({ status: 'FAIL' as const, code: 'receipt_mismatch' as const })
+    persistCompletionRetryTerminal(completionRetryProbeState)
+    return false
+  }
+  completionRetryProbeState = Object.freeze({
+    status: 'PASS' as const,
+    sameEvidence: true as const,
+    sameReceipt: true as const,
+    award: completionAwardProof(receipt),
+  })
+  persistCompletionRetryTerminal(completionRetryProbeState)
+  return false
+}
+
+export function validatePagesDeploymentProvenance(
+  value: unknown,
+): value is { readonly sha: string; readonly runId: string } {
+  if (!isPlainRecord(value)) return false
+  const keys = Object.keys(value).sort()
+  return keys.length === 2
+    && keys[0] === 'runId'
+    && keys[1] === 'sha'
+    && typeof value.sha === 'string'
+    && /^[0-9a-f]{40}$/.test(value.sha)
+    && typeof value.runId === 'string'
+    && /^[1-9][0-9]*$/.test(value.runId)
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -287,6 +468,11 @@ export function createProductionDiagnostics(
   let state: ProductionDiagnosticsState = READINESS_STATES[readiness]
   let generation = 0
   let activeRun: ActiveRun | undefined
+  let pagesProvenance: PagesProvenanceState = Object.freeze({ status: 'idle' as const })
+  let pagesRunActive = false
+  let pagesGeneration = 0
+  const pagesFetch = options.fetch ?? globalThis.fetch
+  const pagesBaseUrl = options.baseUrl ?? globalThis.location?.href ?? '/'
 
   const isCurrentRun = (run: ActiveRun): boolean => (
     activeRun === run && !run.settled && generation === run.generation
@@ -313,6 +499,80 @@ export function createProductionDiagnostics(
   return {
     get state() {
       return state
+    },
+
+    get completionRetryProbe() {
+      return completionRetryProbeState
+    },
+
+    get pagesProvenance() {
+      return pagesProvenance
+    },
+
+    armCompletionRetryProbe() {
+      if (state.status === 'disposed' || readiness !== 'authenticated') return false
+      if (completionRetryProbeState.status === 'armed'
+        || completionRetryProbeState.status === 'response-discarded') return false
+      completionRetryEvidence = ''
+      completionRetryReceipt = ''
+      completionRetryProbeState = Object.freeze({ status: 'armed' as const })
+      try { globalThis.sessionStorage?.removeItem(COMPLETION_RETRY_PROBE_STORAGE_KEY) } catch { /* optional */ }
+      return true
+    },
+
+    runPagesProvenance() {
+      if (state.status === 'disposed') {
+        return Promise.resolve(Object.freeze({ status: 'FAIL' as const, code: 'disposed' as const }))
+      }
+      if (readiness !== 'authenticated') {
+        return Promise.resolve(Object.freeze({ status: 'FAIL' as const, code: 'not_authenticated' as const }))
+      }
+      if (pagesRunActive) {
+        return Promise.resolve(Object.freeze({ status: 'FAIL' as const, code: 'run_in_progress' as const }))
+      }
+      pagesRunActive = true
+      pagesProvenance = Object.freeze({ status: 'RUNNING' as const })
+      const runGeneration = ++pagesGeneration
+      const request = async (): Promise<PagesProvenanceState> => {
+        try {
+          const url = new URL('deploy-meta.json', pagesBaseUrl).href
+          const response = await pagesFetch(url, {
+            cache: 'no-store',
+            credentials: 'omit',
+            headers: { Accept: 'application/json' },
+          })
+          if (!response.ok) return Object.freeze({ status: 'FAIL' as const, code: 'request_failed' as const })
+          const body = await response.text()
+          if (body.length > 4_096) return Object.freeze({ status: 'FAIL' as const, code: 'invalid_response' as const })
+          const value: unknown = JSON.parse(body)
+          if (!validatePagesDeploymentProvenance(value)) {
+            return Object.freeze({ status: 'FAIL' as const, code: 'invalid_response' as const })
+          }
+          return Object.freeze({
+            status: 'PASS' as const,
+            sha: value.sha as string,
+            runId: value.runId as string,
+          })
+        } catch {
+          return Object.freeze({ status: 'FAIL' as const, code: 'request_failed' as const })
+        }
+      }
+      let timeoutId: ReturnType<typeof globalThis.setTimeout> | undefined
+      const timeout = new Promise<PagesProvenanceState>((resolve) => {
+        timeoutId = globalThis.setTimeout(
+          () => resolve(Object.freeze({ status: 'FAIL' as const, code: 'timeout' as const })),
+          RUN_TIMEOUT_MS,
+        )
+      })
+      return Promise.race([request(), timeout]).then((result) => {
+        if (runGeneration === pagesGeneration && state.status !== 'disposed') {
+          pagesProvenance = result
+          pagesRunActive = false
+        }
+        return result
+      }).finally(() => {
+        if (timeoutId !== undefined) globalThis.clearTimeout(timeoutId)
+      })
     },
 
     runChecks() {
@@ -411,6 +671,7 @@ export function createProductionDiagnostics(
 
     setReadiness(nextReadiness) {
       if (state.status === 'disposed') return
+      if (nextReadiness !== 'authenticated') cancelVerifiedCompletionResponseDiagnostic()
       if (nextReadiness === 'authenticated') {
         const wasAuthenticated = readiness === 'authenticated'
         readiness = nextReadiness
@@ -420,6 +681,9 @@ export function createProductionDiagnostics(
 
       if (readiness === nextReadiness && state.status === nextReadiness && !activeRun) return
       readiness = nextReadiness
+      pagesGeneration += 1
+      pagesRunActive = false
+      pagesProvenance = Object.freeze({ status: 'idle' as const })
       if (activeRun) {
         settleRun(
           activeRun,
@@ -444,6 +708,9 @@ export function createProductionDiagnostics(
         generation += 1
       }
       state = Object.freeze({ status: 'disposed' as const })
+      pagesGeneration += 1
+      pagesRunActive = false
+      pagesProvenance = Object.freeze({ status: 'FAIL' as const, code: 'disposed' as const })
     },
   }
 }

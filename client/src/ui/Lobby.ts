@@ -61,6 +61,7 @@ import {
 } from '../client/verifiedDeploymentStorage';
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
+  cancelVerifiedCompletionResponseDiagnostic,
   createProductionDiagnostics,
   productionDiagnosticsReceiptForState,
   type DiagnosticCheckResult,
@@ -480,8 +481,12 @@ export class Lobby {
   }
 
   private renderForAccountChange(): void {
+    if (this.accountSession.state.status !== 'authenticated') {
+      cancelVerifiedCompletionResponseDiagnostic();
+    }
     const accountIdentity = this.authenticatedAccountId();
     if (accountIdentity !== this.verifiedAccountIdentity) {
+      cancelVerifiedCompletionResponseDiagnostic();
       this.verifiedAccountIdentity = accountIdentity;
       this.verifiedAccountGeneration += 1;
     }
@@ -2133,6 +2138,12 @@ export class Lobby {
         display: flex; align-items: start; justify-content: space-between; gap: 16px;
         padding: 18px 20px 14px; border-bottom: 1px solid rgba(229, 161, 65, 0.36);
       }
+      #lobby .lobby-overlay--operations .lobby-overlay__header {
+        position: sticky; top: 0; z-index: 2;
+        background:
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px),
+          linear-gradient(145deg, rgba(18, 14, 9, 0.995), rgba(4, 7, 9, 0.995));
+      }
       #lobby .lobby-overlay__kicker {
         display: block; color: rgba(255, 224, 159, 0.72);
         font: 700 10px/1 var(--font-mono); letter-spacing: 2px;
@@ -3329,10 +3340,21 @@ export class Lobby {
     } else if (this.diagnosticsIntentActive) {
       this.root.append(buildProductionDiagnosticsView({
         state: this.diagnosticsState(),
+        completionRetryProbe: this.diagnostics?.completionRetryProbe ?? { status: 'idle' },
+        pagesProvenance: this.diagnostics?.pagesProvenance ?? { status: 'idle' },
         copyStatus: this.diagnosticsCopyStatus,
         onRun: () => { this.runDiagnostics(); },
         onCopyReceipt: () => { this.copyDiagnosticsReceipt(); },
         onOpenAccount: () => { this.openAccountFromDiagnostics(); },
+        onArmCompletionRetryProbe: () => {
+          this.diagnostics?.armCompletionRetryProbe();
+          this.render();
+        },
+        onRunPagesProvenance: () => {
+          const run = this.diagnostics?.runPagesProvenance();
+          this.render();
+          void run?.finally(() => { if (this.diagnosticsIntentActive) this.render(); });
+        },
         onClose: () => { this.closeDiagnostics(); },
         resolveReturnFocus: () => this.diagnosticsReturnFocus(),
       }));

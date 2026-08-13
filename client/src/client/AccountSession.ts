@@ -20,6 +20,7 @@ import {
   type VerifiedDeploymentStart,
 } from './verifiedDeployment'
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel'
+import { observeVerifiedCompletionResponseForDiagnostics } from './ProductionDiagnostics'
 
 export type AccountMode = 'sign-in' | 'create'
 
@@ -298,6 +299,9 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
       if (result.error) throw new Error('Verified deployment is unavailable.')
       const parsed = parseVerifiedDeploymentCompletionResponse(result.data)
       if (!parsed || parsed.result.sessionId !== sessionId.toLowerCase()) {
+        throw new Error('Verified deployment is unavailable.')
+      }
+      if (observeVerifiedCompletionResponseForDiagnostics(sessionId, canonical, parsed)) {
         throw new Error('Verified deployment is unavailable.')
       }
       return parsed
