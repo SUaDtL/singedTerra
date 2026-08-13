@@ -4,6 +4,7 @@ import {
   cancelVerifiedCompletionResponseDiagnostic,
   createProductionDiagnostics,
   observeVerifiedCompletionResponseForDiagnostics,
+  verifiedCompletionDiagnosticHasPrivateMaterial,
   projectPersistedCompletionRetryProbe,
   productionDiagnosticsReceiptForState,
   validatePagesDeploymentProvenance,
@@ -245,7 +246,12 @@ describe('verified completion retry diagnostic', () => {
     expect(invoke).not.toHaveBeenCalled()
     expect(fetch).toHaveBeenCalledWith(
       'https://suadtl.github.io/singedTerra/deploy-meta.json',
-      { cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } },
+      {
+        cache: 'no-store',
+        credentials: 'omit',
+        headers: { Accept: 'application/json' },
+        signal: expect.any(AbortSignal),
+      },
     )
     expect(result).toEqual({
       status: 'PASS',
@@ -280,6 +286,7 @@ describe('verified completion retry diagnostic', () => {
         totalXpDelta: 200,
       },
     })
+    expect(verifiedCompletionDiagnosticHasPrivateMaterial()).toBe(true)
 
     expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
     expect(diagnostics.completionRetryProbe).toEqual({
@@ -294,6 +301,7 @@ describe('verified completion retry diagnostic', () => {
         totalXpDelta: 200,
       },
     })
+    expect(verifiedCompletionDiagnosticHasPrivateMaterial()).toBe(false)
   })
 
   it('fails closed when the retry evidence differs and never discards another response', () => {
@@ -307,6 +315,29 @@ describe('verified completion retry diagnostic', () => {
       receipt,
     )).toBe(false)
     expect(diagnostics.completionRetryProbe).toEqual({ status: 'FAIL', code: 'evidence_mismatch' })
+    expect(verifiedCompletionDiagnosticHasPrivateMaterial()).toBe(false)
+  })
+
+  it('fails closed and persists failure when identical evidence returns a different valid receipt', () => {
+    sessionStorage.removeItem('singed-terra:production-diagnostics:completion-retry:v1')
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)
+    diagnostics.armCompletionRetryProbe()
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(true)
+    const changedReceipt: VerifiedDeploymentServerReceipt = {
+      ...receipt,
+      progression: {
+        ...receipt.progression,
+        prior: { matchesPlayed: 3, wins: 2, totalXp: 500 },
+        current: { matchesPlayed: 4, wins: 3, totalXp: 700 },
+      },
+    }
+
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, changedReceipt)).toBe(false)
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'FAIL', code: 'receipt_mismatch' })
+    expect(verifiedCompletionDiagnosticHasPrivateMaterial()).toBe(false)
+    expect(JSON.parse(sessionStorage.getItem('singed-terra:production-diagnostics:completion-retry:v1') ?? 'null'))
+      .toEqual({ status: 'FAIL', code: 'receipt_mismatch' })
+    sessionStorage.removeItem('singed-terra:production-diagnostics:completion-retry:v1')
   })
 
   it.each(['anonymous', 'signed-out', 'authenticated-error'] as const)(
@@ -827,6 +858,79 @@ describe('ProductionDiagnostics lifecycle', () => {
 
     current.resolve(new Response(JSON.stringify({ sha: 'b'.repeat(40), runId: '2' })))
     await expect(second).resolves.toMatchObject({ status: 'PASS', runId: '2' })
+  })
+
+  it('times out a stalled Pages provenance request at the exact boundary and ignores its late response', async () => {
+    const stalled = deferred<Response>()
+    const fetch = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) => stalled.promise)
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never, {
+      fetch,
+      baseUrl: 'https://suadtl.github.io/singedTerra/',
+    })
+    const run = diagnostics.runPagesProvenance()
+    const signal = fetch.mock.calls[0]?.[1]?.signal
+
+    await vi.advanceTimersByTimeAsync(9_999)
+    expect(diagnostics.pagesProvenance).toEqual({ status: 'RUNNING' })
+    await vi.advanceTimersByTimeAsync(1)
+    await expect(run).resolves.toEqual({ status: 'FAIL', code: 'timeout' })
+    expect(diagnostics.pagesProvenance).toEqual({ status: 'FAIL', code: 'timeout' })
+    expect(vi.getTimerCount()).toBe(0)
+    expect(signal?.aborted).toBe(true)
+
+    stalled.resolve(new Response(JSON.stringify({ sha: 'c'.repeat(40), runId: '3' })))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(diagnostics.pagesProvenance).toEqual({ status: 'FAIL', code: 'timeout' })
+  })
+
+  it('cancels a multibyte Pages response stream as soon as its UTF-8 body exceeds 4096 bytes', async () => {
+    const cancel = vi.fn()
+    const multibyteOverflow = new TextEncoder().encode('€'.repeat(1_366))
+    expect(multibyteOverflow.byteLength).toBe(4_098)
+    expect('€'.repeat(1_366).length).toBeLessThan(4_096)
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(multibyteOverflow.slice(0, 4_095))
+        controller.enqueue(multibyteOverflow.slice(4_095))
+      },
+      cancel,
+    })
+    const fetch = vi.fn(async () => new Response(body, { status: 200 }))
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never, {
+      fetch,
+      baseUrl: 'https://suadtl.github.io/singedTerra/',
+    })
+
+    await expect(diagnostics.runPagesProvenance()).resolves.toEqual({
+      status: 'FAIL', code: 'invalid_response',
+    })
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('accepts an exact 4096-byte Pages stream without cancelling it', async () => {
+    const cancel = vi.fn()
+    const exact = new TextEncoder().encode(
+      `${JSON.stringify({ sha: 'd'.repeat(40), runId: '4' })}${' '.repeat(4_096 - 62)}`,
+    )
+    expect(exact.byteLength).toBe(4_096)
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(exact)
+        controller.close()
+      },
+      cancel,
+    })
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never, {
+      fetch: vi.fn(async () => new Response(body, { status: 200 })),
+      baseUrl: 'https://suadtl.github.io/singedTerra/',
+    })
+
+    await expect(diagnostics.runPagesProvenance()).resolves.toEqual({
+      status: 'PASS', sha: 'd'.repeat(40), runId: '4',
+    })
+    expect(cancel).not.toHaveBeenCalled()
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('resolves an active duplicate immediately as run_in_progress without invoking or changing state', async () => {

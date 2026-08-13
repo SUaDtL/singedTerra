@@ -286,11 +286,19 @@ let completionRetryProbeState: CompletionRetryProbeState = persistedCompletionRe
 let completionRetryEvidence = ''
 let completionRetryReceipt = ''
 
+function clearVerifiedCompletionDiagnosticPrivateMaterial(): void {
+  completionRetryEvidence = ''
+  completionRetryReceipt = ''
+}
+
+export function verifiedCompletionDiagnosticHasPrivateMaterial(): boolean {
+  return completionRetryEvidence.length > 0 || completionRetryReceipt.length > 0
+}
+
 export function cancelVerifiedCompletionResponseDiagnostic(): void {
   if (completionRetryProbeState.status !== 'armed'
     && completionRetryProbeState.status !== 'response-discarded') return
-  completionRetryEvidence = ''
-  completionRetryReceipt = ''
+  clearVerifiedCompletionDiagnosticPrivateMaterial()
   completionRetryProbeState = Object.freeze({ status: 'idle' as const })
 }
 
@@ -336,20 +344,24 @@ export function observeVerifiedCompletionResponseForDiagnostics(
   }
   if (completionRetryProbeState.status !== 'response-discarded') return false
   if (evidence !== completionRetryEvidence) {
+    clearVerifiedCompletionDiagnosticPrivateMaterial()
     completionRetryProbeState = Object.freeze({ status: 'FAIL' as const, code: 'evidence_mismatch' as const })
     persistCompletionRetryTerminal(completionRetryProbeState)
     return false
   }
   if (serializedReceipt !== completionRetryReceipt) {
+    clearVerifiedCompletionDiagnosticPrivateMaterial()
     completionRetryProbeState = Object.freeze({ status: 'FAIL' as const, code: 'receipt_mismatch' as const })
     persistCompletionRetryTerminal(completionRetryProbeState)
     return false
   }
+  const award = completionAwardProof(receipt)
+  clearVerifiedCompletionDiagnosticPrivateMaterial()
   completionRetryProbeState = Object.freeze({
     status: 'PASS' as const,
     sameEvidence: true as const,
     sameReceipt: true as const,
-    award: completionAwardProof(receipt),
+    award,
   })
   persistCompletionRetryTerminal(completionRetryProbeState)
   return false
@@ -367,6 +379,31 @@ export function validatePagesDeploymentProvenance(
     && /^[0-9a-f]{40}$/.test(value.sha)
     && typeof value.runId === 'string'
     && /^[1-9][0-9]*$/.test(value.runId)
+}
+
+async function readBoundedUtf8Body(response: Response, maximumBytes: number): Promise<string | undefined> {
+  const reader = response.body?.getReader()
+  if (!reader) return ''
+  const chunks: Uint8Array[] = []
+  let bytes = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+    bytes += value.byteLength
+    if (bytes > maximumBytes) {
+      await reader.cancel().catch(() => undefined)
+      return undefined
+    }
+    chunks.push(value)
+  }
+  const joined = new Uint8Array(bytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    joined.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder('utf-8', { fatal: true }).decode(joined)
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -533,6 +570,7 @@ export function createProductionDiagnostics(
       pagesRunActive = true
       pagesProvenance = Object.freeze({ status: 'RUNNING' as const })
       const runGeneration = ++pagesGeneration
+      const abortController = new AbortController()
       const request = async (): Promise<PagesProvenanceState> => {
         try {
           const url = new URL('deploy-meta.json', pagesBaseUrl).href
@@ -540,10 +578,11 @@ export function createProductionDiagnostics(
             cache: 'no-store',
             credentials: 'omit',
             headers: { Accept: 'application/json' },
+            signal: abortController.signal,
           })
           if (!response.ok) return Object.freeze({ status: 'FAIL' as const, code: 'request_failed' as const })
-          const body = await response.text()
-          if (body.length > 4_096) return Object.freeze({ status: 'FAIL' as const, code: 'invalid_response' as const })
+          const body = await readBoundedUtf8Body(response, 4_096)
+          if (body === undefined) return Object.freeze({ status: 'FAIL' as const, code: 'invalid_response' as const })
           const value: unknown = JSON.parse(body)
           if (!validatePagesDeploymentProvenance(value)) {
             return Object.freeze({ status: 'FAIL' as const, code: 'invalid_response' as const })
@@ -560,7 +599,10 @@ export function createProductionDiagnostics(
       let timeoutId: ReturnType<typeof globalThis.setTimeout> | undefined
       const timeout = new Promise<PagesProvenanceState>((resolve) => {
         timeoutId = globalThis.setTimeout(
-          () => resolve(Object.freeze({ status: 'FAIL' as const, code: 'timeout' as const })),
+          () => {
+            resolve(Object.freeze({ status: 'FAIL' as const, code: 'timeout' as const }))
+            abortController.abort()
+          },
           RUN_TIMEOUT_MS,
         )
       })
