@@ -318,6 +318,17 @@ describe('verified completion retry diagnostic', () => {
     expect(verifiedCompletionDiagnosticHasPrivateMaterial()).toBe(false)
   })
 
+  it('refuses to cancel after the one response was already discarded', () => {
+    const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)
+    expect(diagnostics.armCompletionRetryProbe()).toBe(true)
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(true)
+
+    expect(diagnostics.cancelCompletionRetryProbe()).toBe(false)
+    expect(diagnostics.completionRetryProbe.status).toBe('response-discarded')
+    expect(observeVerifiedCompletionResponseForDiagnostics(sessionId, transcript, receipt)).toBe(false)
+    expect(diagnostics.completionRetryProbe.status).toBe('PASS')
+  })
+
   it('fails closed and persists failure when identical evidence returns a different valid receipt', () => {
     sessionStorage.removeItem('singed-terra:production-diagnostics:completion-retry:v1')
     const diagnostics = createProductionDiagnostics(diagnosticsClient().client as never)

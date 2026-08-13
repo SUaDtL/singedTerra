@@ -22,6 +22,7 @@ export interface ProductionDiagnosticsViewOptions {
   readonly onCopyReceipt: () => void
   readonly onOpenAccount: () => void
   readonly onArmCompletionRetryProbe: () => void
+  readonly onCancelCompletionRetryProbe: () => void
   readonly onRunPagesProvenance: () => void
   readonly onClose: () => void
 }
@@ -89,13 +90,21 @@ function buildCompletionRetryProbe(options: ProductionDiagnosticsViewOptions): H
   arm.addEventListener('click', () => {
     if (!arm.disabled) options.onArmCompletionRetryProbe()
   })
+  const cancel = document.createElement('button')
+  cancel.type = 'button'
+  cancel.className = 'production-diagnostics__cancel-retry'
+  cancel.textContent = 'Cancel response loss'
+  cancel.disabled = options.completionRetryProbe.status !== 'armed'
+  cancel.addEventListener('click', () => {
+    if (!cancel.disabled) options.onCancelCompletionRetryProbe()
+  })
   section.append(heading, description, state)
   if (options.completionRetryProbe.status === 'PASS') {
     const award = document.createElement('code')
     award.textContent = `${options.completionRetryProbe.award.matchesDelta} match · ${options.completionRetryProbe.award.winsDelta} win · ${options.completionRetryProbe.award.totalXpDelta} XP`
     section.append(award)
   }
-  section.append(arm)
+  section.append(arm, cancel)
   return section
 }
 

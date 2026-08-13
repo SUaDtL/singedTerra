@@ -159,6 +159,7 @@ describe('ProductionDiagnostics immutable registry execution', () => {
       onCopyReceipt: vi.fn(),
       onOpenAccount: vi.fn(),
       onArmCompletionRetryProbe: vi.fn(),
+      onCancelCompletionRetryProbe: vi.fn(),
       onRunPagesProvenance: vi.fn(),
       onClose: vi.fn(),
     })

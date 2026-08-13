@@ -135,6 +135,7 @@ class FakeProductionDiagnostics implements ProductionDiagnostics {
     else if (this.state.status !== 'PASS' && this.state.status !== 'FAIL') this.state = { status: 'IDLE' }
   })
   readonly armCompletionRetryProbe = vi.fn(() => true)
+  readonly cancelCompletionRetryProbe = vi.fn(() => true)
   readonly runPagesProvenance = vi.fn(async () => ({ status: 'PASS' as const, sha: 'a'.repeat(40), runId: '1' }))
   readonly dispose = vi.fn(() => {
     this.state = { status: 'disposed' }
@@ -461,6 +462,19 @@ describe('Lobby account composition', () => {
       () => diagnostics,
     )
     lobby.show()
+
+    const arm = [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((candidate) => candidate.textContent === 'Arm response loss')
+    if (!arm) throw new Error('Missing response-loss arm control')
+    arm.click()
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'armed' })
+
+    const cancel = [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((candidate) => candidate.textContent === 'Cancel response loss')
+    if (!cancel) throw new Error('Missing explicit response-loss cancellation')
+    cancel.click()
+
+    expect(diagnostics.completionRetryProbe).toEqual({ status: 'idle' })
     expect(diagnostics.armCompletionRetryProbe()).toBe(true)
 
     account.emit({

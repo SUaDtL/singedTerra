@@ -3350,6 +3350,10 @@ export class Lobby {
           this.diagnostics?.armCompletionRetryProbe();
           this.render();
         },
+        onCancelCompletionRetryProbe: () => {
+          this.diagnostics?.cancelCompletionRetryProbe();
+          this.render();
+        },
         onRunPagesProvenance: () => {
           const run = this.diagnostics?.runPagesProvenance();
           this.render();

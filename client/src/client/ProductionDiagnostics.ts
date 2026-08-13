@@ -217,6 +217,7 @@ export interface ProductionDiagnostics {
   runChecks(): Promise<DiagnosticCheckResult>
   runPagesProvenance(): Promise<PagesProvenanceState>
   armCompletionRetryProbe(): boolean
+  cancelCompletionRetryProbe(): boolean
   setReadiness(readiness: ProductionDiagnosticsReadiness): void
   dispose(): void
 }
@@ -554,6 +555,12 @@ export function createProductionDiagnostics(
       completionRetryReceipt = ''
       completionRetryProbeState = Object.freeze({ status: 'armed' as const })
       try { globalThis.sessionStorage?.removeItem(COMPLETION_RETRY_PROBE_STORAGE_KEY) } catch { /* optional */ }
+      return true
+    },
+
+    cancelCompletionRetryProbe() {
+      if (completionRetryProbeState.status !== 'armed') return false
+      cancelVerifiedCompletionResponseDiagnostic()
       return true
     },
 

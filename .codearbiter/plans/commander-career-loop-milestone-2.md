@@ -313,9 +313,9 @@
 - [x] Use the browser-managed authenticated session to prove a fresh production start, a real human-only transcript plus regenerated CPU through the six-salvo cap, completion award, summary, rank/AAR, and durable dossier refresh.
 - [x] Prove same-owner start/resume identity, per-account active-session limiting, and refresh recovery against a live in-progress transcript.
 - [ ] Prove completion retry/idempotency without replay in production. The exact automated client/Edge/migration oracles pass; the remaining work is an ordinary bounded production diagnostic, not a security, authentication, or user-only hard gate.
-  - [ ] Extend the existing Production Diagnostics toolkit with an authenticated, inert-by-default one-shot completion-response discard after exact response parsing; retain and compare exact evidence plus immutable receipt, and project the one-award delta without identity or credential material.
-  - [ ] Add a reusable bounded same-origin Pages provenance tool that reports exact deployed SHA/run ID without credentials or operator-selected endpoints.
-  - [ ] Prove causal RED/GREEN adapter, lifecycle, hostile-shape, persistence, and responsive browser-layout coverage; route the exact diff through adversarial review and exact-head CI.
+  - [x] Extend the existing Production Diagnostics toolkit with an authenticated, inert-by-default one-shot completion-response discard after exact response parsing; retain and compare exact evidence plus immutable receipt, and project the one-award delta without identity or credential material.
+  - [x] Add a reusable bounded same-origin Pages provenance tool that reports exact deployed SHA/run ID without credentials or operator-selected endpoints.
+  - [x] Prove causal RED/GREEN adapter, lifecycle, hostile-shape, persistence, and responsive browser-layout coverage; route the exact diff through adversarial review and exact-head CI.
   - [ ] Deploy the client, arm the tool in authenticated production, complete a real deployment, observe the synthetic loss, retry from the ordinary player control, and record one immutable receipt/award with no replay.
 - [x] Prove expiry presentation/freeze and one explicit exit path in production without altering the clock or server row.
 - [x] Prove anonymous casual fallback in an isolated unauthenticated browser without mutating the authenticated browser session.
@@ -325,7 +325,7 @@
 **Maps to:** O-09 reviewed delivery and production truth
 **Covers:** AC-10
 **Depends on:** T-01 through T-08
-**Status:** IN_PROGRESS — PR #407, fresh launch/completion, recovery, anonymous fallback, and honest expiry are production-verified; the ordinary bounded completion-response diagnostic still requires corrected review, exact-head CI, deployment, and live retry proof
+**Status:** IN_PROGRESS — PR #407, fresh launch/completion, recovery, anonymous fallback, and honest expiry are production-verified. PR #409 merged as `main@3f067eb0fcac37095897ddbc7869a2322668fc68`, passed exact-head PR/main CI, CodeQL, Pages deployment and live smoke; its bounded diagnostic implementation is deployed. The live response-discard/retry receipt remains outstanding, and the post-panel-use cancellation correction still requires its own review, CI, deployment, and live proof.
 
 ## Dependency order and MVP slice
 

@@ -84,6 +84,7 @@ function options(
     onCopyReceipt: vi.fn(),
     onOpenAccount: vi.fn(),
     onArmCompletionRetryProbe: vi.fn(),
+    onCancelCompletionRetryProbe: vi.fn(),
     onRunPagesProvenance: vi.fn(),
     onClose: vi.fn(),
     ...overrides,
@@ -171,6 +172,29 @@ describe('buildProductionDiagnosticsView', () => {
     expect(root.textContent).toContain('Discard exactly one accepted completion response')
     button(root, 'Arm response loss').click()
     expect(onArmCompletionRetryProbe).toHaveBeenCalledOnce()
+  })
+
+  it('lets the operator cancel an armed response loss before returning to play', () => {
+    const onCancelCompletionRetryProbe = vi.fn()
+    const root = buildProductionDiagnosticsView(options({
+      completionRetryProbe: { status: 'armed' },
+      onCancelCompletionRetryProbe,
+    }))
+
+    button(root, 'Cancel response loss').click()
+
+    expect(onCancelCompletionRetryProbe).toHaveBeenCalledOnce()
+  })
+
+  it('does not offer cancellation after a completion response has already been discarded', () => {
+    const root = buildProductionDiagnosticsView(options({
+      completionRetryProbe: {
+        status: 'response-discarded',
+        expected: { outcome: 'win', verifiedXp: 200, matchesDelta: 1, winsDelta: 1, totalXpDelta: 200 },
+      },
+    }))
+
+    expect(button(root, 'Cancel response loss').disabled).toBe(true)
   })
 
   it('runs and displays the live Pages deployment provenance tool', () => {
