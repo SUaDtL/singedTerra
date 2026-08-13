@@ -340,11 +340,32 @@
 - [x] Add a causal real-engine regression: execute the human `p1` opener, then test Easy `p2`'s first response across deterministic positive/negative 6 mph matrices; assert no more than 12 damage and a later-turn credible threat.
 - [x] Verify RED against the existing post-search jitter planner (first-response damage reached 28.10; the flawed health-only guard also failed the later-threat assertion).
 - [x] Implement the smallest deterministic recovery constraint and verify GREEN with the shared harness and typecheck.
-- [ ] Run aggregate/gameplay checks, adversarial review, exact-head CI, deployment, and live browser proof.
+- [x] Run aggregate/gameplay checks, adversarial review, exact-head CI, deployment, and live browser proof.
 
 **Verification:** `npx tsx scripts/checks/ai.mjs`, `npm run check`, `npm run typecheck`
 **Maps to:** O-07 coherent player journey
-**Status:** IN_PROGRESS - test-first implementation is local-green; no review, merge, deployment, or production claim yet.
+**Status:** ACCEPTED — PR #411 merged as `main@0527b64f65cd9ac8fac956b6f7b7cce6b57549ca`; exact-head CI, CodeQL, Pages deployment, and live smoke are green. Production `deploy-meta.json` reports that exact SHA.
+
+### T-11: Keep online preparation unscrolled and tank spawn lanes clear
+
+**Files:**
+- Modify: `client/src/ui/Lobby.ts`
+- Modify: `client/src/ui/HUD.ts`
+- Modify: `e2e/online-garage-layout.spec.ts`
+- Modify: `e2e/hud-layout.spec.ts`
+
+**Interfaces:**
+- The full-stage online lobby is never its own scroll container; intentional scrolling remains reserved for bounded dense sub-surfaces.
+- The fine-pointer command deck remains functional but occupies the left-bottom free lane, clear of every deterministic two-, three-, and four-seat spawn footprint shared by hot-seat and online lockstep play.
+
+- [x] Add browser RED coverage requiring a non-scrolling online lobby card and a rendered command deck clear of every two-/three-/four-seat spawn footprint with a bottom-stage margin.
+- [x] Verify RED on the old implementation: lobby `overflow-y` was `auto`; the upper-left deck intersected the left spawn footprint, and the initially centred replacement intersected the three-seat centre footprint.
+- [x] Apply only the layout correction and rerun the desktop, compact fine-pointer, and touch browser matrix GREEN.
+- [ ] Run aggregate checks, adversarial review, exact-head CI, merge, Pages deployment, and production geometry proof.
+
+**Verification:** `npx playwright test e2e/hud-layout.spec.ts e2e/online-garage-layout.spec.ts`
+**Maps to:** O-08 real-browser usability and layering
+**Status:** IN_PROGRESS — test-first local implementation is green; no merge or deployment claim yet.
 
 ## Dependency order and MVP slice
 

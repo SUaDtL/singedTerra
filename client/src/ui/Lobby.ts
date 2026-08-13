@@ -1185,7 +1185,10 @@ export class Lobby {
         margin: 0;
         box-sizing: border-box;
         padding: 26px 56px;
-        overflow-y: auto;
+        /* The lobby is a composed fixed stage, not a document. Let dense
+           sub-surfaces own their own scrolling instead of reintroducing a
+           whole-screen scrollbar around online preparation. */
+        overflow-y: hidden;
         display: flex;
         flex-direction: column;
         justify-content: safe center;

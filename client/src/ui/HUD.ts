@@ -3603,9 +3603,13 @@ export class HUD {
 }
 .st-hud__controls {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  width: 236px;
+  /* Keep the optional fine-pointer deck in the only free lane shared by the
+   * default two-seat layout and configured two-, three-, and four-seat games.
+   * The former upper-left deck could hide a tank on high terrain. */
+  top: auto;
+  bottom: 14px;
+  left: 200px;
+  width: 220px;
   box-sizing: border-box;
   padding: 10px;
   border-radius: 10px;

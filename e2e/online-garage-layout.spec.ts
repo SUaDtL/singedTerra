@@ -13,6 +13,10 @@ test('online garage action hierarchy stays inside the stage', async ({ page }) =
   const fit = await page.locator('.lobby-card').evaluate((card) => ({
     clientHeight: card.clientHeight,
     scrollHeight: card.scrollHeight,
+    overflowY: getComputedStyle(card).overflowY,
   }));
   expect(fit.scrollHeight).toBeLessThanOrEqual(fit.clientHeight + 1);
+  // Online preparation is a fixed-stage composition. Scroll belongs only to
+  // genuinely dense inner data surfaces, never to the whole lobby card.
+  expect(fit.overflowY).toBe('hidden');
 });

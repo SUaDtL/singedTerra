@@ -362,7 +362,13 @@ test.describe('HUD layout guardrails', () => {
         const game = document.querySelector<HTMLCanvasElement>('#game')!;
         const gameRect = game.getBoundingClientRect();
         const gameScale = gameRect.width / game.width;
-        const impactMonitorLeft = gameRect.left + ((game.width - 220) / 2) * gameScale;
+        // Two-seat defaults use 15%/85%; configured 2-4 seat games use the
+        // inclusive 10%-90% spread. Keep the deck clear of every tank's real
+        // 20px collision/render footprint, not merely its centre point.
+        const tankHalfWidth = 10;
+        const spawnColumns = [0.1, 0.15, 11 / 30, 0.5, 19 / 30, 0.85, 0.9].map((fraction) => (
+          gameRect.left + game.width * fraction * gameScale
+        ));
         const title = node.querySelector<HTMLElement>('.st-hud__controls-title')!;
         const mode = node.querySelector<HTMLElement>('.st-hud__controls-mode')!;
         const rows = [...node.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
@@ -397,11 +403,15 @@ test.describe('HUD layout guardrails', () => {
           clientWidth: node.clientWidth,
           scrollHeight: node.scrollHeight,
           clientHeight: node.clientHeight,
-          impactClearanceLogical: (impactMonitorLeft - deckRect.right) / gameScale,
+          deckClearOfSpawnFootprints: spawnColumns.every((column) => (
+            column + tankHalfWidth * gameScale <= deckRect.left
+              || column - tankHalfWidth * gameScale >= deckRect.right
+          )),
+          bottomClearanceLogical: (gameRect.bottom - deckRect.bottom) / gameScale,
         };
       });
       const compactDeck = testInfo.project.name === 'small-window';
-      expect(geometry.width).toBeCloseTo(236, 1);
+      expect(geometry.width).toBeCloseTo(220, 1);
       expect(geometry.titleFont).toBeGreaterThanOrEqual(10.5);
       expect(geometry.modeFont).toBeGreaterThanOrEqual(7.5);
       expect(geometry.rows.at(-1)!.rect.width)
@@ -425,7 +435,10 @@ test.describe('HUD layout guardrails', () => {
       }
       expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
       expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
-      expect(geometry.impactClearanceLogical).toBeGreaterThanOrEqual(32);
+      // The deck must stay in the one free lane shared by the default two-seat
+      // layout and every configured two-, three-, and four-seat layout.
+      expect(geometry.deckClearOfSpawnFootprints).toBe(true);
+      expect(geometry.bottomClearanceLogical).toBeGreaterThanOrEqual(12);
       for (const label of geometry.labels) {
         expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 11 : 10);
         expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
