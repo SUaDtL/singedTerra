@@ -363,9 +363,10 @@ test.describe('HUD layout guardrails', () => {
         const gameRect = game.getBoundingClientRect();
         const gameScale = gameRect.width / game.width;
         // Two-seat defaults use 15%/85%; configured 2-4 seat games use the
-        // inclusive 10%-90% spread. Keep the deck clear of every tank's real
-        // 20px collision/render footprint, not merely its centre point.
-        const tankHalfWidth = 10;
+        // inclusive 10%-90% spread. The widest shipped chassis is 36px
+        // (Ranger/Bulwark/Jackal treads), so protect its visible 18px
+        // half-footprint rather than the narrower 20px collision box.
+        const tankRenderHalfWidth = 18;
         const spawnColumns = [0.1, 0.15, 11 / 30, 0.5, 19 / 30, 0.85, 0.9].map((fraction) => (
           gameRect.left + game.width * fraction * gameScale
         ));
@@ -404,8 +405,8 @@ test.describe('HUD layout guardrails', () => {
           scrollHeight: node.scrollHeight,
           clientHeight: node.clientHeight,
           deckClearOfSpawnFootprints: spawnColumns.every((column) => (
-            column + tankHalfWidth * gameScale <= deckRect.left
-              || column - tankHalfWidth * gameScale >= deckRect.right
+            column + tankRenderHalfWidth * gameScale <= deckRect.left
+              || column - tankRenderHalfWidth * gameScale >= deckRect.right
           )),
           bottomClearanceLogical: (gameRect.bottom - deckRect.bottom) / gameScale,
         };

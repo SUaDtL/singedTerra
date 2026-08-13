@@ -358,7 +358,7 @@
 - The full-stage online lobby is never its own scroll container; intentional scrolling remains reserved for bounded dense sub-surfaces.
 - The fine-pointer command deck remains functional but occupies the left-bottom free lane, clear of every deterministic two-, three-, and four-seat spawn footprint shared by hot-seat and online lockstep play.
 
-- [x] Add browser RED coverage requiring a non-scrolling online lobby card and a rendered command deck clear of every two-/three-/four-seat spawn footprint with a bottom-stage margin.
+- [x] Add browser RED coverage requiring a non-scrolling online lobby card and a rendered command deck clear of every two-/three-/four-seat spawn footprint using the widest shipped 36px chassis with a bottom-stage margin.
 - [x] Verify RED on the old implementation: lobby `overflow-y` was `auto`; the upper-left deck intersected the left spawn footprint, and the initially centred replacement intersected the three-seat centre footprint.
 - [x] Apply only the layout correction and rerun the desktop, compact fine-pointer, and touch browser matrix GREEN.
 - [ ] Run aggregate checks, adversarial review, exact-head CI, merge, Pages deployment, and production geometry proof.
