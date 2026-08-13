@@ -327,6 +327,25 @@
 **Depends on:** T-01 through T-08
 **Status:** IN_PROGRESS — PR #407, fresh launch/completion, recovery, anonymous fallback, and honest expiry are production-verified. PR #409 merged as `main@3f067eb0fcac37095897ddbc7869a2322668fc68`, passed exact-head PR/main CI, CodeQL, Pages deployment and live smoke; its bounded diagnostic implementation is deployed. The live response-discard/retry receipt remains outstanding, and the post-panel-use cancellation correction still requires its own review, CI, deployment, and live proof.
 
+### T-10: Make Easy CPU opening fire recoverable
+
+**Files:**
+- Modify: `shared/src/engine/AI.ts`
+- Modify: `scripts/checks/ai.mjs`
+
+**Interfaces:**
+- The shared deterministic CPU planner keeps Easy's Baby Missile and seeded replay identity, while its first response after the human opener is protected from a sniper-grade shot through strong wind.
+- Medium and Hard retain their competence contract; Easy becomes threatening after the player has had a chance to exchange fire, rather than solving the first wind-adjusted shot.
+
+- [x] Add a causal real-engine regression: execute the human `p1` opener, then test Easy `p2`'s first response across deterministic positive/negative 6 mph matrices; assert no more than 12 damage and a later-turn credible threat.
+- [x] Verify RED against the existing post-search jitter planner (first-response damage reached 28.10; the flawed health-only guard also failed the later-threat assertion).
+- [x] Implement the smallest deterministic recovery constraint and verify GREEN with the shared harness and typecheck.
+- [ ] Run aggregate/gameplay checks, adversarial review, exact-head CI, deployment, and live browser proof.
+
+**Verification:** `npx tsx scripts/checks/ai.mjs`, `npm run check`, `npm run typecheck`
+**Maps to:** O-07 coherent player journey
+**Status:** IN_PROGRESS - test-first implementation is local-green; no review, merge, deployment, or production claim yet.
+
 ## Dependency order and MVP slice
 
 Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01/T-02/T-03; T-05 depends on T-01/T-04; T-06 depends on T-02/T-04/T-05; T-07 depends on T-03/T-06; T-08 depends on T-07; T-09 depends on all implementation tasks.

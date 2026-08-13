@@ -30,6 +30,13 @@ function engine(seed) {
   return new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed });
 }
 function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
+function humanOpening(e) {
+  e.applyAction({ type: 'set_angle', angle: 90 });
+  e.applyAction({ type: 'set_power', power: 30 });
+  e.applyAction({ type: 'fire' });
+  tickToRest(e);
+  if (e.getState().activePlayerId !== 'p2') throw new Error('human opening did not hand the first response to p2');
+}
 
 /** Apply one AI turn for the active tank; returns false if the bot could not act.
  *  Mirrors the real drivers: a 'shield' plan becomes use_shield, not a fire. */
@@ -121,6 +128,47 @@ function playGame(seed, difficulty, turnCap = 120) {
   log(`[difficulty] mean opening dmg: easy=${easyMean.toFixed(1)} hard=${hardMean.toFixed(1)} (over ${SEEDS.length} maps)`);
   if (!(hardMean > easyMean)) fail(`hard (${hardMean.toFixed(1)}) did not out-damage easy (${easyMean.toFixed(1)}) — difficulty ordering broken`);
   else log('PASS: hard bots land harder than easy bots (difficulty ordering holds).');
+}
+
+// --- Check 3b: Easy's first CPU opportunity after the human opener is an aiming
+//     lesson, not a sniper response. Cover both wind directions and require a
+//     later Easy turn to remain a credible threat, rather than making it inert.
+{
+  const SEEDS = [0x0a, 0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50];
+  const MAX_EASY_OPENING_DAMAGE = 12;
+  let worstOpeningDamage = 0;
+  let laterThreats = 0;
+  for (const wind of [-6, 6]) {
+    for (const seed of SEEDS) {
+      const opening = engine(seed);
+      humanOpening(opening);
+      const openingState = opening.getState();
+      openingState.wind = wind;
+      const before = openingState.tanks[0].health;
+      aiTurn(opening, 'easy');
+      const damage = before - opening.getState().tanks[0].health;
+      worstOpeningDamage = Math.max(worstOpeningDamage, damage);
+      if (damage > MAX_EASY_OPENING_DAMAGE) {
+        fail(`easy CPU first response wind=${wind} seed=0x${seed.toString(16)} dealt ${damage} damage (max ${MAX_EASY_OPENING_DAMAGE})`);
+      }
+
+      const later = engine(seed);
+      humanOpening(later);
+      const laterState = later.getState();
+      laterState.turn = 3;
+      laterState.activePlayerId = 'p2';
+      laterState.wind = wind;
+      const laterBefore = laterState.tanks[0].health;
+      if (!aiTurn(later, 'easy')) fail(`easy CPU later response wind=${wind} seed=0x${seed.toString(16)} had no plan`);
+      if (laterBefore > later.getState().tanks[0].health) laterThreats++;
+    }
+  }
+  log(`[easy recovery] first CPU response worst damage=${worstOpeningDamage} (max ${MAX_EASY_OPENING_DAMAGE}), later threats=${laterThreats}`);
+  if (laterThreats === 0) {
+    fail('Easy never regains a credible later-turn threat after the protected first response.');
+  } else if (worstOpeningDamage <= MAX_EASY_OPENING_DAMAGE) {
+    log('PASS: Easy leaves room to observe the opening wind, then regains threat on later turns.');
+  }
 }
 
 // --- Check 4: edge cases yield null (no shot) ---

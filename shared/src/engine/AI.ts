@@ -23,7 +23,7 @@
 import type { GameState, TankState, AiDifficulty, AiPersonality } from '../types/GameState';
 import { GRAVITY } from './Physics';
 import { TANK_HEIGHT } from './Tank';
-import { searchShot } from './AiShotSearch';
+import { searchShot, simulateImpact } from './AiShotSearch';
 import { ACCESSORIES, getWeapon, PARACHUTE_PRICE, type AccessoryType, type WeaponType } from './WeaponSystem';
 import { createRng } from './Random';
 import { surfaceAt } from './Terrain';
@@ -64,6 +64,13 @@ const TUNING: Record<AiDifficulty, Tuning> = {
   medium: { angleError: 1.6, powerError: 2 },
   hard: { angleError: 0.5, powerError: 0.8 },
 };
+
+/** Easy's first opportunity in a duel should show the wind without
+ * immediately solving it. This is a target-center miss distance rather than a
+ * larger random wobble, because an exhaustive wind-correct search can otherwise
+ * still turn a fortunate wobble into a near-direct hit. */
+const EASY_FRESH_TARGET_MIN_MISS_DISTANCE = 60;
+const EASY_FRESH_TARGET_CORRECTION_STEPS = [8, 14, 20] as const;
 
 /** Stable small hash of a tank id (e.g. 'p1','p2') for seeding. */
 function hashId(id: string): number {
@@ -127,7 +134,41 @@ export function computeAiPlan(
   const angle = clamp(best.angle + (rng() * 2 - 1) * tune.angleError, 0, 180);
   const power = clamp(best.power + (rng() * 2 - 1) * tune.powerError, 1, 100);
 
-  return { weapon, angle, power, ...buyField };
+  const aim = difficulty === 'easy' && state.turn <= 1
+    ? recoverableEasyOpeningAim(state, me, target, angle, power, gravity, rng)
+    : { angle, power };
+  return { weapon, ...aim, ...buyField };
+}
+
+function recoverableEasyOpeningAim(
+  state: GameState,
+  me: TankState,
+  target: TankState,
+  angle: number,
+  power: number,
+  gravity: number,
+  rng: () => number,
+): Pick<AiPlan, 'angle' | 'power'> {
+  const targetY = target.y - TANK_HEIGHT / 2;
+  const candidates: Array<Pick<AiPlan, 'angle' | 'power'>> = [{ angle, power }];
+  const direction = rng() < 0.5 ? -1 : 1;
+  for (const step of EASY_FRESH_TARGET_CORRECTION_STEPS) {
+    candidates.push(
+      { angle: clamp(angle + direction * step, 0, 180), power: clamp(power + direction * step, 1, 100) },
+      { angle: clamp(angle - direction * step, 0, 180), power: clamp(power - direction * step, 1, 100) },
+      { angle: clamp(angle + direction * step, 0, 180), power: clamp(power - direction * step, 1, 100) },
+      { angle: clamp(angle - direction * step, 0, 180), power: clamp(power + direction * step, 1, 100) },
+    );
+  }
+  let safest: { aim: Pick<AiPlan, 'angle' | 'power'>; score: number } | null = null;
+  for (const candidate of candidates) {
+    const impact = simulateImpact(state, me, candidate.angle, candidate.power, gravity);
+    if (!impact) continue;
+    const score = Math.hypot(impact.x - target.x, impact.y - targetY);
+    if (score < EASY_FRESH_TARGET_MIN_MISS_DISTANCE) continue;
+    if (!safest || score < safest.score) safest = { aim: candidate, score };
+  }
+  return safest?.aim ?? { angle, power };
 }
 
 /** Nearest living enemy tank (Euclidean, body-center), or null. */
