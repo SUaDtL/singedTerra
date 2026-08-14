@@ -119,7 +119,7 @@ describe('Lobby Quick Duel', () => {
         },
       ],
       playerNames: [expectedHumanName, 'CPU 1'],
-      settings: { seed: 0xfedcba98 },
+      settings: { seed: 0xfedcba98, rounds: 3 },
     });
     expect(generateQuickDuelSeed).toHaveBeenCalledOnce();
     expect(emitted.players[0]).not.toHaveProperty('ai');
@@ -138,7 +138,7 @@ describe('Lobby Quick Duel', () => {
     expect(onReady.mock.calls.map(([config]) => config.settings?.seed))
       .toEqual([0, 0xffff_ffff]);
     for (const [config] of onReady.mock.calls) {
-      expect(config.settings).toEqual({ seed: expect.any(Number) });
+      expect(config.settings).toEqual({ seed: expect.any(Number), rounds: 3 });
       expect(config.settings!.seed).toBeGreaterThanOrEqual(0);
       expect(config.settings!.seed).toBeLessThanOrEqual(0xffff_ffff);
     }

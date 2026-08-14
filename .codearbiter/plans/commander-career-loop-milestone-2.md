@@ -369,6 +369,28 @@
 **Maps to:** O-08 real-browser usability and layering
 **Status:** ACCEPTED — PR #416 merged as `main@a237fb64376e213234110509ca1db6b97dfd3fc2`; exact-main CI, CodeQL, Pages, both scoped Edge deployments, and the bounded live geometry proof are recorded. `career.initiative.0001` remains active for the next player-facing outcome.
 
+### T-12: Make Quick Duel a tactical match rather than a single-round race
+
+**Files:**
+- Modify: `client/src/ui/Lobby.ts`
+- Modify: `client/src/ui/Lobby.quickDuel.test.ts`
+- Create: `e2e/quick-duel-pacing.spec.ts`
+- Modify: `.codearbiter/reports/2026-08-11-commander-career-milestone-2-sprint-evidence.md`
+
+**Interfaces:**
+- `Quick Duel vs CPU` emits the existing two-seat hot-seat configuration with `settings.rounds: 3`; the shared engine retains ownership of deterministic round staging, terrain refresh, carried economy, and first-to-two clinching.
+- Custom hot-seat and online room settings, all shared weapon damage, and Easy/Medium/Hard planner behavior remain unchanged.
+
+- [x] Write and observe the launch-contract RED: the default Quick Duel currently emits only a seed and consequently uses the engine's single-round fallback.
+- [x] Emit `rounds: 3` only from the Quick Duel route, and make every fresh redeployment assertion require the same curated format.
+- [x] Run focused and full client/engine/browser verification: the visible `Round 1 of 3` contract is green on desktop, compact, and Pixel touch.
+- [x] Re-clear adversarial review against the exact final candidate: zero Critical, High, Medium, Low, or merge-blocking findings.
+- [ ] Clear exact-head hosted CI, merge, Pages deployment, and a bounded production Quick Duel smoke; record only observed behavior.
+
+**Verification:** `npm --workspace client exec vitest run src/ui/Lobby.quickDuel.test.ts`, `npx playwright test e2e/quick-duel-pacing.spec.ts`, `npm run typecheck`, `npm run check`, `npm run test:client`
+**Maps to:** O-07 coherent player journey
+**Status:** IN_PROGRESS — selected from the reported two-shot Quick Duel and sniper-flip experience. The best-of-three contract makes the default duel a tactical exchange without weakening global combat or online play.
+
 ## Dependency order and MVP slice
 
 Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01/T-02/T-03; T-05 depends on T-01/T-04; T-06 depends on T-02/T-04/T-05; T-07 depends on T-03/T-06; T-08 depends on T-07; T-09 depends on all implementation tasks.

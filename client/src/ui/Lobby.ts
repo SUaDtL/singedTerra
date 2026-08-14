@@ -3858,7 +3858,7 @@ export class Lobby {
       mode: 'hotseat',
       players: [humanPlayer, cpuPlayer],
       playerNames: [humanPlayer.name, cpuPlayer.name],
-      settings: { seed },
+      settings: { seed, rounds: 3 },
     });
   }
 
