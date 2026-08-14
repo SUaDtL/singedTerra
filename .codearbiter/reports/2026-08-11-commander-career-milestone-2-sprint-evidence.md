@@ -248,3 +248,8 @@ Architecture closure: PASS on the corrected live package. The adversary confirme
 - Causal RED: the default `Quick Duel vs CPU` launch emitted only a fresh seed, so it used the shared engine's intentional one-round fallback. All three human-name/color launch cases failed when the expected configuration required `rounds: 3`.
 - GREEN: the Quick Duel route now emits the existing `rounds: 3` option along with its fresh unsigned seed. The shared deterministic match engine owns the resulting first-to-two format, round staging, fresh terrain, carried economy, and clinch; no shared combat values, AI planner, custom hot-seat setting, or online-room contract changed.
 - Local evidence: focused Quick Duel launch contract 4/4, strict typecheck, full client 158 files / 1,535 tests, and `npm run check` all pass. Dedicated fixture-free browser coverage causally asserts the visible `Round 1 of 3` contract after launch on desktop, compact, and Pixel touch (3/3). Final adversarial re-clear found zero findings. Exact-head CI, merge, Pages deployment, and a bounded production Quick Duel smoke remain required.
+
+### Delivery receipt
+
+- PR #418 reviewed head `62a88848d5be3a8cab4f08fc0e4df930e9c90cd9` merged as `main@173d7006cb9f710dcf0cd8765c9eb936ae267d46`. Exact-main CI `31796779223`, CodeQL `31796779229`, and Pages `31796779220` are green; Pages completed build, main provenance verification, deployment, and post-deploy live smoke.
+- The normal deployed splash and Lobby path entered Quick Duel as Player 1 versus CPU 1. The visible HUD showed `ROUND 1 OF 3`, 0–0 round pips, and both tanks at 100 health. This establishes the released casual-route outcome only; it does not claim an online match or a completed round.
