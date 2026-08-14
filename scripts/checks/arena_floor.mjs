@@ -6,7 +6,7 @@
  */
 
 import * as Terrain from '../../shared/src/engine/Terrain.ts';
-import { collide } from '../../shared/src/engine/Physics.ts';
+import { collide, sweepCollide } from '../../shared/src/engine/Physics.ts';
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 
 const EXPECTED_FLOOR_Y = 500;
@@ -47,6 +47,31 @@ eq(Terrain.ARENA_FLOOR_Y, EXPECTED_FLOOR_Y,
   const projectile = { x: 400, y: EXPECTED_FLOOR_Y, vx: 0, vy: 1, weaponType: 'baby_missile' };
   eq(collide(projectile, terrain, []).type, 'ground',
     'a downward projectile collides at the logical floor, not canvas bottom');
+}
+
+{
+  const terrain = new Uint8Array(Terrain.BITMAP_LEN);
+  const projectile = { x: 400, y: EXPECTED_FLOOR_Y + 0.9, vx: 0, vy: 1, weaponType: 'baby_missile' };
+  const hit = sweepCollide(projectile, 400, EXPECTED_FLOOR_Y - 0.1, terrain, []);
+  eq(hit.type, 'ground', 'a swept floor crossing reports a ground impact');
+  eq(hit.y, EXPECTED_FLOOR_Y, 'a swept floor crossing reports the exact logical impact y');
+  eq(projectile.y, EXPECTED_FLOOR_Y, 'a swept floor crossing snaps the projectile to the logical impact y');
+}
+
+{
+  const terrain = new Uint8Array(Terrain.BITMAP_LEN);
+  for (let x = 520; x <= 680; x++) {
+    for (let y = EXPECTED_FLOOR_Y - 2; y < Terrain.CANVAS_HEIGHT; y++) {
+      terrain[y * Terrain.CANVAS_WIDTH + x] = Terrain.SOLID_PIXEL;
+    }
+  }
+  Terrain.applyTerrainHazards(terrain, 1337, 'lava');
+  for (let x = 520; x <= 680; x++) {
+    for (let y = EXPECTED_FLOOR_Y; y < Terrain.CANVAS_HEIGHT; y++) {
+      eq(terrain[y * Terrain.CANVAS_WIDTH + x], Terrain.SOLID_PIXEL,
+        `lava hazard keeps protected base solid at (${x}, ${y})`);
+    }
+  }
 }
 
 {

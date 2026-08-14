@@ -195,6 +195,20 @@ export function sweepCollide(
         p.y = contactY;
         return hit;
       }
+      if (hit.type === 'ground' && prevY < ARENA_FLOOR_Y && endY >= ARENA_FLOOR_Y) {
+        // A swept probe may be its full sample step below the arena floor.
+        // Intersect the authored segment so the impact, projectile, and
+        // downstream explosion all share the exact logical boundary.
+        const contactT = dy === 0
+          ? t
+          : clamp((ARENA_FLOOR_Y - prevY) / dy, 0, 1);
+        const contactX = prevX + dx * contactT;
+        hit.x = contactX;
+        hit.y = ARENA_FLOOR_Y;
+        p.x = contactX;
+        p.y = ARENA_FLOOR_Y;
+        return hit;
+      }
       // Report the impact at the interpolated point where it was detected,
       // and snap the projectile back to that point so downstream consumers
       // (explosion center) use the entry location, not the overshot endpoint.

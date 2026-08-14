@@ -179,14 +179,14 @@ export function applyTerrainHazards(
     for (let x = center - halfWidth; x <= center + halfWidth; x++) {
       if (x < 0 || x >= CANVAS_WIDTH) continue;
       let surface = -1;
-      for (let y = 0; y < CANVAS_HEIGHT; y++) {
+      for (let y = 0; y < ARENA_FLOOR_Y; y++) {
         if (bitmap[y * CANVAS_WIDTH + x] === SOLID_PIXEL) {
           surface = y;
           break;
         }
       }
       if (surface < 0) continue;
-      const end = Math.min(CANVAS_HEIGHT, surface + depth);
+      const end = Math.min(ARENA_FLOOR_Y, surface + depth);
       for (let y = surface; y < end; y++) {
         const index = y * CANVAS_WIDTH + x;
         if (bitmap[index] === SOLID_PIXEL) {
