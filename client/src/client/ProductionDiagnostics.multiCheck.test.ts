@@ -21,8 +21,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: null,
       turn: 3,
       actionCount: 4,
-      tickCount: 293,
-      maxTurnTickCount: 198,
+      tickCount: 302,
+      maxTurnTickCount: 207,
     },
   },
 } as const

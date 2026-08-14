@@ -10,11 +10,11 @@ const VERIFIED_REPLAY_RESPONSE_CONTRACT = {
     },
     maximumTurn: {
       phase: 'GAME_OVER', winner: 'p1', winnerTeam: null, turn: 3,
-      actionCount: 4, tickCount: 293, maxTurnTickCount: 198,
+      actionCount: 4, tickCount: 302, maxTurnTickCount: 207,
     },
     verifiedDuel: {
       seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
-      humanSalvos: 6, cpuSalvos: 6, liveTicks: 625, cpuSimulationTicks: 24564,
+      humanSalvos: 6, cpuSalvos: 6, liveTicks: 626, cpuSimulationTicks: 24601,
       maximumProbeCount: 59,
       transcript: [
         { angle: 0, power: 5 }, { angle: 0, power: 5 }, { angle: 0, power: 5 },
@@ -36,11 +36,11 @@ const VERIFIED_REPLAY_PUBLIC_DETAILS = Object.freeze({
     }),
     maximumTurn: Object.freeze({
       phase: 'GAME_OVER', winner: 'p1', winnerTeam: null, turn: 3,
-      actionCount: 4, tickCount: 293, maxTurnTickCount: 198,
+      actionCount: 4, tickCount: 302, maxTurnTickCount: 207,
     }),
     verifiedDuel: Object.freeze({
       seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
-      humanSalvos: 6, cpuSalvos: 6, liveTicks: 625, cpuSimulationTicks: 24564,
+      humanSalvos: 6, cpuSalvos: 6, liveTicks: 626, cpuSimulationTicks: 24601,
       maximumProbeCount: 59,
       transcript: Object.freeze(Array.from({ length: 6 }, () => Object.freeze({ angle: 0, power: 5 }))),
     }),

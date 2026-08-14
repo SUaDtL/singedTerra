@@ -399,8 +399,8 @@ function fakeClient(initial: GameState) {
 function mountDom(): void {
   document.body.innerHTML = `
     <div id="app">
-      <div id="stage"><canvas id="game"></canvas></div>
-      <div id="hud"></div><div id="game-overlay"></div>
+      <div id="stage"><canvas id="game"></canvas><div id="game-overlay"></div><div id="battle-rail"></div></div>
+      <div id="hud"></div>
       <div id="modal-layer"></div><div id="lobby"></div>
     </div>`
 }

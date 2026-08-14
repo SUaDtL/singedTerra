@@ -26,6 +26,7 @@ import {
   pixelAt,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
+  ARENA_FLOOR_Y,
 } from './Terrain.ts';
 import {
   placeTwoTanks,
@@ -368,9 +369,10 @@ export class GameEngine {
     this.turnAtRoundStart = 0; // opening round begins at the turn-0 baseline
     this.options = options;
 
-    // number[] height line for tank placement (Tank.ts is unchanged and still
-    // expects a per-column surface line, not the pixel bitmap).
-    const terrainArr = Array.from(heightLine);
+    // Tank placement consumes a number[] surface line, so derive it from the
+    // same live bitmap used by collision. This keeps spawns on the synthesized
+    // arena floor even when the mutable terrain has no solid pixel above it.
+    const terrainArr = Array.from({ length: CANVAS_WIDTH }, (_, x) => surfaceAt(this.terrain, x));
 
     // 2–4 explicit players => generalized placement; otherwise the MVP0 default
     // two-tank layout (byte-identical to before for back-compat).
@@ -869,7 +871,7 @@ export class GameEngine {
           nextX < 0
           || nextX >= CANVAS_WIDTH
           || nextY < 0
-          || nextY >= CANVAS_HEIGHT
+          || nextY >= ARENA_FLOOR_Y
         ) {
           this.detonate(p.x, p.y, p.weaponType, 'ground');
           continue;
@@ -1003,12 +1005,12 @@ export class GameEngine {
             this.detonate(hit.x, hit.y, p.weaponType, 'ground');
           }
         } else if (sandhog !== undefined) {
-          // Terrain treats y >= CANVAS_HEIGHT as an implicit solid floor. A
+          // Terrain treats y >= ARENA_FLOOR_Y as an implicit solid floor. A
           // swept hit there is already outside the drawable battlefield, so it
           // cannot become a valid drill-entry point. Terminate on the final
           // in-bounds point along the swept segment instead.
-          if (hit.y >= CANVAS_HEIGHT) {
-            const endpointY = CANVAS_HEIGHT - 0.01;
+          if (hit.y >= ARENA_FLOOR_Y) {
+            const endpointY = ARENA_FLOOR_Y - 0.01;
             const deltaY = hit.y - collisionStartY;
             const fraction = deltaY > 0
               ? clamp((endpointY - collisionStartY) / deltaY, 0, 1)
@@ -1396,7 +1398,7 @@ export class GameEngine {
 
     // Re-place tanks on the new surface via the same path the opening round used, then
     // graft the carried economy/score fields back over the fresh (reset) tanks.
-    const terrainArr = Array.from(heightLine);
+    const terrainArr = Array.from({ length: CANVAS_WIDTH }, (_, x) => surfaceAt(this.terrain, x));
     const players = this.options?.players;
     const fresh =
       players && players.length >= 2 && players.length <= 4
