@@ -60,6 +60,16 @@ eq(Terrain.ARENA_FLOOR_Y, EXPECTED_FLOOR_Y,
 
 {
   const terrain = new Uint8Array(Terrain.BITMAP_LEN);
+  terrain[495 * Terrain.CANVAS_WIDTH + 400] = Terrain.SOLID_PIXEL;
+  const projectile = { x: 400, y: EXPECTED_FLOOR_Y + 10, vx: 0, vy: 1, weaponType: 'baby_missile' };
+  const hit = sweepCollide(projectile, 400, 490, terrain, []);
+  eq(hit.type, 'ground', 'a swept crossing detects earlier terrain before the logical floor');
+  eq(hit.y, 495, 'an earlier terrain impact keeps its own impact y');
+  eq(projectile.y, 495, 'an earlier terrain impact keeps the projectile above the rail');
+}
+
+{
+  const terrain = new Uint8Array(Terrain.BITMAP_LEN);
   for (let x = 520; x <= 680; x++) {
     for (let y = EXPECTED_FLOOR_Y - 2; y < Terrain.CANVAS_HEIGHT; y++) {
       terrain[y * Terrain.CANVAS_WIDTH + x] = Terrain.SOLID_PIXEL;
