@@ -33,6 +33,11 @@ import {
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import { projectLiveMatchSnapshot } from './client/liveMatchDiagnostics';
+import {
+  createFirstStrikeObjective,
+  observeFirstStrikeObjective,
+  type FirstStrikeObjective,
+} from './client/firstStrikeObjective';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
@@ -134,11 +139,24 @@ function createSwitchableVerifiedClient(
   };
 }
 
+function firstStrikeObservationFor(controller: VerifiedDuelController) {
+  const state = controller.engine.getState();
+  const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
+  if (!activeTank) return null;
+  return {
+    humanSalvos: controller.transcript.length,
+    humanDamageBySalvo: controller.settledHumanDamage,
+    phase: state.phase,
+    activeSeat: activeTank.ai ? 'cpu' as const : 'human' as const,
+  };
+}
+
 function restoreVerifiedController(
   seed: number,
   transcript: readonly VerifiedHumanFire[],
-): VerifiedDuelController {
+): { controller: VerifiedDuelController; firstStrikeObjective: FirstStrikeObjective } {
   const controller = VerifiedDuelController.create(seed);
+  let firstStrikeObjective = createFirstStrikeObjective();
   for (const [index, shot] of transcript.entries()) {
     if (controller.complete
       || !controller.applyHumanAction({ type: 'set_angle', angle: shot.angle })
@@ -152,8 +170,10 @@ function restoreVerifiedController(
     if (controller.complete && index + 1 < transcript.length) {
       throw new Error('verified_recovery_trailing_action');
     }
+    const observation = firstStrikeObservationFor(controller);
+    if (observation) firstStrikeObjective = observeFirstStrikeObjective(firstStrikeObjective, observation);
   }
-  return controller;
+  return { controller, firstStrikeObjective };
 }
 
 /**
@@ -322,6 +342,7 @@ function bootstrap(): void {
   let verifiedClient: SwitchableVerifiedClient | null = null;
   let verifiedCasual = false;
   let verifiedCompletionStarted = false;
+  let firstStrikeObjective: FirstStrikeObjective | null = null;
   let liveMatchTransport: 'not-applicable' | ConnectionState = 'not-applicable';
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
@@ -401,23 +422,47 @@ function bootstrap(): void {
     const context = currentConfig?.verifiedDeployment;
     if (!context || !verifiedController || verifiedCasual) {
       hud.setVerifiedDeployment(null);
+      hud.setFirstStrikeObjective(null);
       return;
     }
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     if (deployment.status === 'idle' || deployment.status === 'casual') {
       hud.setVerifiedDeployment(null);
+      hud.setFirstStrikeObjective(null);
       return;
     }
     if (deployment.status === 'failed') {
       hud.setVerifiedDeployment({ status: 'failed' });
+      hud.setFirstStrikeObjective(null);
       return;
     }
     if (deployment.status === 'frozen') {
       hud.setVerifiedDeployment({ status: 'policy-refused' });
+      hud.setFirstStrikeObjective(null);
       return;
     }
     if (deployment.status === 'verified') {
       hud.setVerifiedDeployment(null);
+      hud.setFirstStrikeObjective(null);
+      return;
+    }
+    if (deployment.status === 'expired') {
+      const state = verifiedController.engine.getState();
+      const humanSalvos = verifiedController.transcript.length;
+      const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
+      const cpuSalvos = Math.max(
+        0,
+        humanSalvos - ((state.phase === 'FIRING' || state.phase === 'RESOLVING') && !activeTank?.ai ? 1 : 0),
+      );
+      hud.setVerifiedDeployment({
+        status: 'expired',
+        humanSalvos,
+        cpuSalvos,
+        humanLimit: context.descriptor.limits.humanSalvos,
+        cpuLimit: context.descriptor.limits.cpuSalvos,
+        deadline: deployment.deadline,
+      });
+      hud.setFirstStrikeObjective(null);
       return;
     }
     const state = verifiedController.engine.getState();
@@ -441,12 +486,20 @@ function bootstrap(): void {
       ? 'completion-pending'
       : deployment.status === 'retryable'
         ? 'retryable'
-        : deployment.status === 'expired'
-          ? 'expired'
-          : verifiedController.complete && state.phase !== 'GAME_OVER'
-            ? 'cap-adjudicating'
-            : 'active';
+        : verifiedController.complete && state.phase !== 'GAME_OVER'
+          ? 'cap-adjudicating'
+          : 'active';
     hud.setVerifiedDeployment({ status, ...details });
+    const firstStrikeObservation = firstStrikeObservationFor(verifiedController);
+    if (!firstStrikeObservation) {
+      hud.setFirstStrikeObjective(null);
+      return;
+    }
+    firstStrikeObjective = observeFirstStrikeObjective(
+      firstStrikeObjective ?? createFirstStrikeObjective(),
+      firstStrikeObservation,
+    );
+    hud.setFirstStrikeObjective(firstStrikeObjective);
   }
 
   // --- Computer-opponent (AI) driver state ---
@@ -499,6 +552,7 @@ function bootstrap(): void {
     verifiedClient = null;
     verifiedCasual = false;
     verifiedCompletionStarted = false;
+    firstStrikeObjective = null;
     terminalImpactObserved = false;
     terminalImpactNotified = false;
     // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
@@ -511,6 +565,7 @@ function bootstrap(): void {
     // (it would sit on top of the lobby) — #13.
     hud.hideEndScreens();
     hud.setVerifiedDeployment(null);
+    hud.setFirstStrikeObjective(null);
     hud.setFirstSalvoStep(null);
     // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
     // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
@@ -535,10 +590,12 @@ function bootstrap(): void {
     let newClient: GameClient;
     if (config.verifiedDeployment) {
       try {
-        verifiedController = restoreVerifiedController(
+        const restored = restoreVerifiedController(
           config.verifiedDeployment.descriptor.config.seed,
           config.verifiedDeployment.transcript,
         );
+        verifiedController = restored.controller;
+        firstStrikeObjective = restored.firstStrikeObjective;
         verifiedClient = createSwitchableVerifiedClient(verifiedController);
         newClient = verifiedClient;
       } catch {

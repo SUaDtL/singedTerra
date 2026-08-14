@@ -170,6 +170,8 @@ describe('buildLobbyHotSeatView', () => {
     expect(verified?.textContent).toContain('Fixed battlefield rules');
     expect(verified?.textContent).toContain('Verified XP stakes');
     expect(verified?.textContent).toContain('30-minute deadline');
+    expect(verified?.textContent).toContain('Commander dossier');
+    expect(verified?.textContent).toContain('First Strike · Damage the CPU within your first three salvos.');
     expect(verified?.querySelector('input')).toBeNull();
     const launch = [...verified!.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === 'Start verified deployment');

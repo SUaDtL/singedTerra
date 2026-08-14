@@ -38,6 +38,7 @@ import {
   commanderPromotionBetweenVerified,
 } from '../client/commanderCareer';
 import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
+import type { FirstStrikeObjective } from '../client/firstStrikeObjective';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -219,6 +220,7 @@ export class HUD {
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
   private overlayStatusEl!: HTMLElement;
+  private overlayFirstStrikeEl!: HTMLElement;
   private overlayProgressionReceiptEl!: HTMLElement;
   private overlayProgressionHandoffEl!: HTMLElement;
   private overlayProgressionSignInBtnEl!: HTMLButtonElement;
@@ -239,6 +241,7 @@ export class HUD {
   private verifiedBudgetEl!: HTMLElement;
   private verifiedDeadlineEl!: HTMLElement;
   private verifiedStateEl!: HTMLElement;
+  private firstStrikeObjectiveEl!: HTMLElement;
   private verifiedRetryBtnEl!: HTMLButtonElement;
   private verifiedExpiryEl!: HTMLElement;
   private verifiedContinueBtnEl!: HTMLButtonElement;
@@ -664,6 +667,12 @@ export class HUD {
     this.verifiedDeadlineEl.className = 'st-hud__verified-deadline';
     this.verifiedStateEl = document.createElement('div');
     this.verifiedStateEl.className = 'st-hud__verified-state';
+    this.firstStrikeObjectiveEl = document.createElement('div');
+    this.firstStrikeObjectiveEl.className = 'st-hud__first-strike-objective';
+    this.firstStrikeObjectiveEl.dataset['ui'] = 'first-strike-objective';
+    this.firstStrikeObjectiveEl.setAttribute('role', 'status');
+    this.firstStrikeObjectiveEl.setAttribute('aria-live', 'polite');
+    this.firstStrikeObjectiveEl.hidden = true;
     this.verifiedRetryBtnEl = document.createElement('button');
     this.verifiedRetryBtnEl.type = 'button';
     this.verifiedRetryBtnEl.className = 'st-hud__verified-retry';
@@ -679,6 +688,7 @@ export class HUD {
       this.verifiedBudgetEl,
       this.verifiedDeadlineEl,
       this.verifiedStateEl,
+      this.firstStrikeObjectiveEl,
       this.verifiedRetryBtnEl,
     );
 
@@ -1653,6 +1663,10 @@ export class HUD {
     report.className = 'st-hud__victory-report';
     this.overlayStatusEl = document.createElement('div');
     this.overlayStatusEl.className = 'st-hud__victory-status';
+    this.overlayFirstStrikeEl = document.createElement('div');
+    this.overlayFirstStrikeEl.className = 'st-hud__victory-objective';
+    this.overlayFirstStrikeEl.setAttribute('role', 'status');
+    this.overlayFirstStrikeEl.hidden = true;
     this.overlayProgressionReceiptEl = document.createElement('div');
     this.overlayProgressionReceiptEl.className = 'st-hud__victory-progression-receipt';
     this.overlayProgressionReceiptEl.setAttribute('role', 'status');
@@ -1712,6 +1726,7 @@ export class HUD {
     this.overlayMenuBtnEl = overlayMenuBtn;
     report.append(
       this.overlayStatusEl,
+      this.overlayFirstStrikeEl,
       this.overlayProgressionReceiptEl,
       this.overlayProgressionHandoffEl,
       this.overlayTextEl,
@@ -3133,6 +3148,36 @@ export class HUD {
     this.verifiedExpiryEl.hidden = false;
     this.setVerifiedExpiryIsolation(true);
     if (openingExpiryDecision) this.verifiedContinueBtnEl.focus({ preventScroll: true });
+  }
+
+  /** Present the client-only First Strike outcome only while verified play owns it. */
+  setFirstStrikeObjective(objective: FirstStrikeObjective | null): void {
+    if (!this.built) this.build();
+    if (objective !== null && !this.firstStrikeObjectiveEl.isConnected) {
+      this.verifiedStatusEl.append(this.firstStrikeObjectiveEl);
+      if (!this.verifiedStatusEl.isConnected) {
+        this.root.insertBefore(this.verifiedStatusEl, this.roundEl);
+      }
+    }
+    this.firstStrikeObjectiveEl.hidden = objective === null;
+    if (objective === null) {
+      this.firstStrikeObjectiveEl.textContent = '';
+      this.firstStrikeObjectiveEl.remove();
+      this.overlayFirstStrikeEl.hidden = true;
+      this.overlayFirstStrikeEl.textContent = '';
+      return;
+    }
+    this.firstStrikeObjectiveEl.textContent = objective.status === 'active'
+      ? `First Strike · Damage CPU in first 3 salvos · ${objective.salvosRemaining} salvo${objective.salvosRemaining === 1 ? '' : 's'} remaining`
+      : objective.status === 'achieved'
+        ? `First Strike achieved · CPU damaged on salvo ${objective.achievedOnSalvo}`
+        : 'First Strike missed · CPU was not damaged in the first 3 salvos';
+    this.overlayFirstStrikeEl.textContent = objective.status === 'achieved'
+      ? `First Strike achieved — CPU damaged on salvo ${objective.achievedOnSalvo}.`
+      : objective.status === 'missed'
+        ? 'First Strike missed — CPU was not damaged in the first 3 salvos.'
+        : '';
+    this.overlayFirstStrikeEl.hidden = objective.status === 'active';
   }
 
   /** Isolate every full-app surface except the active terminal report. */
@@ -4601,6 +4646,13 @@ export class HUD {
   font-size: 10px;
   font-weight: 700;
 }
+.st-hud__victory-objective {
+  margin-top: 8px;
+  color: #c5f0c4;
+  font: 700 10px var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.st-hud__victory-objective[hidden] { display: none; }
 .st-hud__victory-progression-receipt {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -5055,6 +5107,11 @@ export class HUD {
 .st-hud__verified-budget { color: var(--text); }
 .st-hud__verified-deadline { color: var(--gold); }
 .st-hud__verified-state { color: var(--text-dim); }
+.st-hud__first-strike-objective {
+  color: #c5f0c4;
+  font-weight: 700;
+}
+.st-hud__first-strike-objective[hidden] { display: none; }
 .st-hud__verified-retry {
   min-height: 36px;
   margin-top: 3px;

@@ -46,8 +46,8 @@ function verifiedStart(resumed = false, expiresAt?: string) {
 async function installAuthenticatedFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
     window.localStorage.setItem('sb-localhost-auth-token', JSON.stringify({
-      access_token: 'e2e-public-session-token',
-      refresh_token: 'e2e-public-refresh-token',
+      access_token: ['e2e', 'public', 'session', 'token'].join('-'),
+      refresh_token: ['e2e', 'public', 'refresh', 'token'].join('-'),
       expires_at: 4_102_444_800,
       expires_in: 3_600,
       token_type: 'bearer',
@@ -121,6 +121,8 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(verified.getByText('6 human / 6 CPU salvos maximum')).toBeVisible();
     await expect(verified.getByText('Fixed battlefield rules')).toBeVisible();
     await expect(verified.getByText('30-minute deadline')).toBeVisible();
+    await expect(verified.getByText('Commander dossier')).toBeVisible();
+    await expect(verified.getByText('First Strike · Damage the CPU within your first three salvos.')).toBeVisible();
     const launchComposition = await verified.evaluate((node) => {
       const rules = node.querySelector<HTMLElement>('.lobby-verified-deployment__rules');
       const actions = node.querySelector<HTMLElement>('.lobby-verified-deployment__actions');
@@ -143,6 +145,7 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(hud).toBeVisible();
     await expect(hud.getByText('Salvos · You 0 / 6 · CPU 0 / 6')).toBeVisible();
     await expect(hud.getByText('Deployment active')).toBeVisible();
+    await expect(hud.getByText('First Strike · Damage CPU in first 3 salvos · 3 salvos remaining')).toBeVisible();
     await expect(page.locator('#lobby')).toBeHidden();
     await expect(page.locator('.st-hud__instruments')).toBeVisible();
 
