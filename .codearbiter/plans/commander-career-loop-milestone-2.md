@@ -312,20 +312,20 @@
 - [x] Complete the ordered rollout: keep starts disabled, deploy migration/config/functions while old completion/abandon remain available, prove the hosted non-awarding maximum-probe/full-duel workload, deploy the strict-version client, verify drain status/rollout order, and enable starts with the checked-in command.
 - [x] Use the browser-managed authenticated session to prove a fresh production start, a real human-only transcript plus regenerated CPU through the six-salvo cap, completion award, summary, rank/AAR, and durable dossier refresh.
 - [x] Prove same-owner start/resume identity, per-account active-session limiting, and refresh recovery against a live in-progress transcript.
-- [ ] Prove completion retry/idempotency without replay in production. The exact automated client/Edge/migration oracles pass; the remaining work is an ordinary bounded production diagnostic, not a security, authentication, or user-only hard gate.
+- [x] Prove completion retry/idempotency without replay in production. The exact automated client/Edge/migration oracles pass; the bounded authenticated production diagnostic now has an observed immutable-receipt and one-award receipt.
   - [x] Extend the existing Production Diagnostics toolkit with an authenticated, inert-by-default one-shot completion-response discard after exact response parsing; retain and compare exact evidence plus immutable receipt, and project the one-award delta without identity or credential material.
   - [x] Add a reusable bounded same-origin Pages provenance tool that reports exact deployed SHA/run ID without credentials or operator-selected endpoints.
   - [x] Prove causal RED/GREEN adapter, lifecycle, hostile-shape, persistence, and responsive browser-layout coverage; route the exact diff through adversarial review and exact-head CI.
-  - [ ] Deploy the client, arm the tool in authenticated production, complete a real deployment, observe the synthetic loss, retry from the ordinary player control, and record one immutable receipt/award with no replay.
+  - [x] Deploy the client, arm the tool in authenticated production, complete a real deployment, observe the synthetic loss, retry from the ordinary player control, and record one immutable receipt/award with no replay.
 - [x] Prove expiry presentation/freeze and one explicit exit path in production without altering the clock or server row.
 - [x] Prove anonymous casual fallback in an isolated unauthenticated browser without mutating the authenticated browser session.
-- [ ] Persist the complete production receipt, keep `career.initiative.0001` active, and immediately select the next tactical-objective slice from production evidence.
+- [x] Persist the complete production receipt, keep `career.initiative.0001` active, and select the next tactical-objective slice from production evidence: a bottom instrumentation rail with a raised arena floor, replacing the constrained floating command deck placement.
 
 **Verification:** exact reviewed SHA equals exact green PR head; exact merged main deploy provenance and authenticated production receipt are recorded
 **Maps to:** O-09 reviewed delivery and production truth
 **Covers:** AC-10
 **Depends on:** T-01 through T-08
-**Status:** IN_PROGRESS — PR #407, fresh launch/completion, recovery, anonymous fallback, and honest expiry are production-verified. PR #409 merged as `main@3f067eb0fcac37095897ddbc7869a2322668fc68`, passed exact-head PR/main CI, CodeQL, Pages deployment and live smoke; its bounded diagnostic implementation is deployed. The live response-discard/retry receipt remains outstanding, and the post-panel-use cancellation correction still requires its own review, CI, deployment, and live proof.
+**Status:** ACCEPTED — PR #407 established the verified career loop. PR #409 deployed the bounded diagnostic toolkit and PR #413 (`main@ff6b97009ff1dfd91c3ba99ad2e6d945a86d2321`) made the ordinary retry reachable from the blocking report, each with exact-head CI, CodeQL, Pages deployment, and live smoke. A fresh authenticated production run then armed the diagnostic, reached 6/6, observed the one accepted response loss, retried through the report action, and recorded the identical immutable receipt with exactly one match, one win, and +200 XP. `career.initiative.0001` remains active for the selected bottom-rail arena composition slice.
 
 ### T-10: Make Easy CPU opening fire recoverable
 
