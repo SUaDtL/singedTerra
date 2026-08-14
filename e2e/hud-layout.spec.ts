@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { GameEngine } from '../shared/src/engine/GameEngine';
 import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
-import { tankRecoilPose } from '../client/src/renderer/tankRecoil';
+import { maximumTankRecoilDownPx } from '../client/src/renderer/tankRecoil';
+import { ARENA_FLOOR_Y } from '../shared/src/engine/Terrain';
 import {
   gotoRunningGame,
   isCompact,
@@ -414,11 +415,11 @@ test.describe('HUD layout guardrails', () => {
           const tread = TANK_PART_SETS[tank.loadout.treads].parts.treads;
           // A destroyed valley may legally settle at the protected floor. Include
           // that real renderer pose alongside the generated roster's placement.
-          return Math.max(tank.y, 500) + tread.offsetY + tread.height;
+          return Math.max(tank.y, ARENA_FLOOR_Y) + tread.offsetY + tread.height;
         });
       });
-      const worstLegalDownwardRecoil = tankRecoilPose(90, 1.8, 0)!;
-      const expectedRailTop = Math.ceil(500 + worstLegalDownwardRecoil.y);
+      const worstLegalDownwardRecoil = maximumTankRecoilDownPx();
+      const expectedRailTop = Math.ceil(ARENA_FLOOR_Y + worstLegalDownwardRecoil);
       const geometry = await deck.evaluate((node, { chassisBasesByRoster, recoilY }) => {
         const deckRect = node.getBoundingClientRect();
         const rail = document.querySelector<HTMLElement>('#battle-rail')!;
@@ -464,6 +465,8 @@ test.describe('HUD layout guardrails', () => {
           scrollHeight: node.scrollHeight,
           clientHeight: node.clientHeight,
           railOverflow: getComputedStyle(rail).overflow,
+          declaredFloor: getComputedStyle(document.documentElement).getPropertyValue('--arena-floor-y'),
+          declaredRailTop: getComputedStyle(document.documentElement).getPropertyValue('--battle-rail-top-y'),
           railTopLogical: (railRect.top - gameRect.top) / gameScale,
           deckInsideRail: deckRect.top >= railRect.top - 1
             && deckRect.right <= railRect.right + 1
@@ -472,7 +475,7 @@ test.describe('HUD layout guardrails', () => {
             bases.every((baseY) => gameRect.top + (baseY + recoilY) * gameScale < railRect.top)
           )),
         };
-      }, { chassisBasesByRoster: widestChassisBasesByRoster, recoilY: worstLegalDownwardRecoil.y });
+      }, { chassisBasesByRoster: widestChassisBasesByRoster, recoilY: worstLegalDownwardRecoil });
       const compactDeck = testInfo.project.name === 'small-window';
       expect(geometry.width).toBeCloseTo(720, 1);
       expect(geometry.titleFont).toBeGreaterThanOrEqual(10.5);
@@ -493,6 +496,8 @@ test.describe('HUD layout guardrails', () => {
       expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
       expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
       expect(geometry.railOverflow).toBe('hidden');
+      expect(geometry.declaredFloor).toBe(`${ARENA_FLOOR_Y}px`);
+      expect(geometry.declaredRailTop).toBe(`${expectedRailTop}px`);
       expect(geometry.railTopLogical).toBeCloseTo(expectedRailTop, 1);
       expect(geometry.deckInsideRail).toBe(true);
       expect(geometry.widestChassisClearOfRail).toBe(true);

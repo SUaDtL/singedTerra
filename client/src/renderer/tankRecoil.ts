@@ -7,6 +7,11 @@ const MIN_PEAK_PX = 1.4;
 const MAX_PEAK_PX = 4;
 const VERTICAL_DAMPING = 0.35;
 
+/** Largest legal downward chassis translation, used to reserve opaque UI space. */
+export function maximumTankRecoilDownPx(): number {
+  return tankRecoilPose(90, MAX_LAUNCH_WEIGHT, 0)!.y;
+}
+
 export interface TankRecoilPose {
   readonly x: number;
   readonly y: number;

@@ -2,7 +2,8 @@ import './style.css';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
 import type { GameState } from '@shared/types/GameState';
 import { VerifiedDuelController } from '@shared/net/verifiedDuel';
 import type { GameClient } from './client/GameClient';
@@ -180,6 +181,9 @@ function bootstrap(): void {
   // Project the canonical CRT intensities (theme.ts) onto the DOM chrome's CSS
   // custom properties so the canvas tokens and the --crt-* vars share one source. (P3-16)
   const rootStyle = document.documentElement.style;
+  const battleRailTop = Math.ceil(ARENA_FLOOR_Y + maximumTankRecoilDownPx());
+  rootStyle.setProperty('--arena-floor-y', `${ARENA_FLOOR_Y}px`);
+  rootStyle.setProperty('--battle-rail-top-y', `${battleRailTop}px`);
   for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);
 
   const renderer = new Renderer(canvas);

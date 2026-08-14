@@ -261,14 +261,13 @@ body::before {
   pointer-events: none;
 }
 /*
- * The engine's ARENA_FLOOR_Y is 500 logical pixels. The 100px band below it is
+ * The engine supplies --arena-floor-y and the recoil-safe --battle-rail-top-y.
  * reserved for interface chrome, so gameplay may never place a tank behind it.
  * It is part of #stage rather than document flow: this cannot create a scrollbar.
  */
 #battle-rail {
   position: absolute;
-  /* 500px floor plus the ceiling of the renderer's 1.4px legal downward recoil. */
-  top: 502px;
+  top: var(--battle-rail-top-y);
   right: 0;
   left: 0;
   box-sizing: border-box;
