@@ -20,10 +20,16 @@ import { clamp } from './math.ts';
 
 export const CANVAS_WIDTH = 1200;
 export const CANVAS_HEIGHT = 600;
+/**
+ * Logical top edge of the protected bottom instrumentation rail. Gameplay
+ * terrain and projectile collision end here; the bitmap still retains the
+ * covered 100px base for its fixed 1200 by 600 representation.
+ */
+export const ARENA_FLOOR_Y = 500;
 
 /** Surface kept within these vertical bounds so tanks have sky above / ground below. */
 const MIN_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.35); // 210 — tallest allowed hill
-const MAX_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.9); //  540 — lowest allowed valley
+const MAX_SURFACE_Y = ARENA_FLOOR_Y; // lowest mutable valley, above the protected rail
 
 /**
  * Seeded PRNG (mulberry32). Deterministic, fast, good enough for terrain gen.
@@ -208,7 +214,7 @@ export function buildBitmap(heightLine: Uint16Array): Uint8Array {
   for (let x = 0; x < CANVAS_WIDTH; x++) {
     // Missing columns are air down to the floor, matching the old NaN loop
     // behavior while keeping the bitmap value contract explicit.
-    const s = clamp(heightLine[x] ?? CANVAS_HEIGHT, 0, CANVAS_HEIGHT);
+    const s = clamp(heightLine[x] ?? ARENA_FLOOR_Y, 0, ARENA_FLOOR_Y);
     for (let y = s; y < CANVAS_HEIGHT; y++) {
       bitmap[y * CANVAS_WIDTH + x] = SOLID_PIXEL;
     }
@@ -233,16 +239,17 @@ export function pixelAt(bitmap: Uint8Array, x: number, y: number): number {
 
 /**
  * Surface y at a given (possibly fractional) x: the topmost solid pixel in that
- * column. Scans top→bottom and returns the first solid y; if the whole column is
- * air, returns CANVAS_HEIGHT (i.e. the floor). Replaces the old height-line
+ * column. Scans only the mutable band and returns the first solid y; if the whole
+ * mutable column is air, returns ARENA_FLOOR_Y (the synthesized protected floor).
+ * Replaces the old height-line
  * surfaceAt — now derived from the live bitmap so it tracks deformation.
  */
 export function surfaceAt(bitmap: Uint8Array, x: number): number {
   const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
-  for (let y = 0; y < CANVAS_HEIGHT; y++) {
+  for (let y = 0; y < ARENA_FLOOR_Y; y++) {
     if ((bitmap[y * CANVAS_WIDTH + xi] ?? AIR_PIXEL) > AIR_PIXEL) return y;
   }
-  return CANVAS_HEIGHT;
+  return ARENA_FLOOR_Y;
 }
 
 /**
@@ -278,7 +285,7 @@ export function deform(
   const pxStart = Math.ceil(cx - r);
   const pxEnd = Math.floor(cx + r);
   const pyStart = Math.ceil(cy - r);
-  const pyEnd = Math.floor(cy + r);
+  const pyEnd = Math.min(Math.floor(cy + r), ARENA_FLOOR_Y - 1);
 
   for (let px = pxStart; px <= pxEnd; px++) {
     if (px < 0 || px >= CANVAS_WIDTH) continue;
@@ -346,11 +353,12 @@ export function settleStep(
     // Run up to pxPerTick one-pixel sub-steps for this column.
     for (let s = 0; s < pxPerTick; s++) {
       let movedThisSubstep = false;
-      // Scan bottom-up (y from H-2 down to 0): a solid at y with air at y+1
+      // Scan bottom-up in the mutable band only: the protected floor at
+      // ARENA_FLOOR_Y and every covered pixel below it stay untouched.
       // falls one pixel. Bottom-up scan ensures a floating run shifts down as
       // a whole unit in a single pass (each grain clears the row below it for
       // the grain above).
-      for (let y = CANVAS_HEIGHT - 2; y >= 0; y--) {
+      for (let y = ARENA_FLOOR_Y - 2; y >= 0; y--) {
         const pixel = bitmap[y * CANVAS_WIDTH + x] ?? AIR_PIXEL;
         if (pixel > AIR_PIXEL && (bitmap[(y + 1) * CANVAS_WIDTH + x] ?? AIR_PIXEL) === AIR_PIXEL) {
           bitmap[(y + 1) * CANVAS_WIDTH + x] = pixel;

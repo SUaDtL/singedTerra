@@ -20,7 +20,7 @@ import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 const SEED = 0x5eed1234;            // same seed weapons2/motion/gameover use
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
-const BURY = { angle: 15, power: 100, weapon: 'dirt_bomb' }; // probed: buries the far tank (P2)
+const BURY = { angle: 20, power: 100, weapon: 'dirt_bomb' }; // probed: buries the far tank (P2) above the arena floor
 
 function freshEngine() {
   return new GameEngine({
@@ -75,7 +75,7 @@ function fire(e, { angle, power, weapon }) {
   grant(e, 0, 'dirt_bomb'); grant(e, 0, 'riot_bomb');
   fire(e, BURY);                       // P1 buries P2
   if (!e.getState().tanks[1].buried) fail('[dig] setup — P2 not buried before the Riot Bomb');
-  const st = fire(e, { angle: 15, power: 100, weapon: 'riot_bomb' }); // P1 clears the dirt over P2
+  const st = fire(e, { angle: 20, power: 100, weapon: 'riot_bomb' }); // P1 clears the dirt over P2
   const p2 = st.tanks[1];
   log(`[dig] after Riot Bomb: P2 buried=${p2.buried} alive=${p2.alive} health=${p2.health.toFixed(1)}`);
   if (p2.buried) fail('Riot Bomb did not dig P2 out (clearing the dirt over a buried tank must free it)');

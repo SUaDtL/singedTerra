@@ -1,6 +1,6 @@
 import type { ProjectileState, TankState } from '../types/GameState.ts';
 import type { WallMode } from '../types/GameOptions.ts';
-import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, pixelAt, surfaceAt } from './Terrain.ts';
+import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, ARENA_FLOOR_Y, pixelAt, surfaceAt } from './Terrain.ts';
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank.ts';
 import { clamp } from './math.ts';
 
@@ -220,7 +220,7 @@ export const SWEEP_STEP = 1;
  * - OOB: x < 0 || x >= CANVAS_WIDTH (x===0 ok, x===CANVAS_WIDTH-1 ok).
  * - Tank: AABB of width TANK_WIDTH / height TANK_HEIGHT, centered on tank.x
  *   with its base at tank.y (box spans [tank.y - h, tank.y]).
- * - Ground: bottom-floor (y >= CANVAS_HEIGHT) or a solid bitmap pixel at
+ * - Ground: logical arena floor (y >= ARENA_FLOOR_Y) or a solid bitmap pixel at
  *   (floor(x), floor(y)).
  */
 export function collide(
@@ -258,11 +258,11 @@ export function collide(
     }
   }
 
-  // Ground hit. y grows downward. The bottom of the canvas is an implicit solid
-  // floor; otherwise hit when the pixel at (floor(x), floor(y)) is solid. (The
+  // Ground hit. y grows downward. The logical arena floor is an implicit solid
+  // boundary; otherwise hit when the pixel at (floor(x), floor(y)) is solid. (The
   // OOB-x check above guarantees x in [0, CANVAS_WIDTH) here.)
   const xi = Math.floor(p.x);
-  if (p.y >= CANVAS_HEIGHT) return { type: 'ground', x: p.x, y: p.y, material: 'ground' };
+  if (p.y >= ARENA_FLOOR_Y) return { type: 'ground', x: p.x, y: p.y, material: 'ground' };
   const pixel = pixelAt(terrain, xi, Math.floor(p.y));
   if (pixel > AIR_PIXEL) {
     return {

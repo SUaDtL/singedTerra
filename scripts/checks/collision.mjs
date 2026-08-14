@@ -22,6 +22,7 @@ import {
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
+  ARENA_FLOOR_Y,
   deform,
   applyGravity,
   surfaceAt,
@@ -377,10 +378,10 @@ console.log('\n[8] Swept collision: a FAST shot cannot tunnel through thin spike
 
   // (b) Same flight against a 20px tank. A point-only test tunnels ~45% of the
   // time at this speed; swept must be 0%.
-  const flat = flatBitmap(CANVAS_HEIGHT - 1);
+  const flat = flatBitmap(ARENA_FLOOR_Y - 1);
   // createTank needs a number[] height line; the tank's y is read from it, and
   // collide() gets the matching bitmap below.
-  const tankLine = new Array(CANVAS_WIDTH).fill(CANVAS_HEIGHT - 1);
+  const tankLine = new Array(CANVAS_WIDTH).fill(ARENA_FLOOR_Y - 1);
   const tank = createTank('t', 'T', 400, tankLine, '#fff');
   let tankTunneled = 0;
   for (let phase = 0; phase < 60; phase++) {

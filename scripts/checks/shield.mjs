@@ -92,10 +92,16 @@ function grant(e, tankIdx, weapon, count = 99) {
   inv.unlimited = false;
 }
 
-/** One unshielded P2->P1 shot (P2 = index 1); returns the damage dealt to P1. */
+/**
+ * One unshielded P2->P1 shot (P2 = index 1) from the exact same turn/terrain
+ * state as a shielded hit. Activating then zeroing the pool is deliberate test
+ * setup: it advances P1's turn without a terrain-mutating pass shot, so the
+ * returned damage is the direct unshielded counterpart of the absorbed hit.
+ */
 function baselineDamage(aim) {
   const e = freshEngine();
-  passP1Turn(e);
+  e.applyAction({ type: 'use_shield' });
+  e.getState().tanks[0].shieldHp = 0;
   grant(e, 1, aim.weapon);
   const hpBefore = e.getState().tanks[0].health;
   fireAt(e, aim);
@@ -144,9 +150,7 @@ log(`[baselines] missile=${baselineMissile.toFixed(1)} nuke=${baselineNuke.toFix
   const drained = SHIELD_CAPACITY - p1.shieldHp;
   log(`[absorb-commensurate] missile drained pool ${SHIELD_CAPACITY}->${p1.shieldHp.toFixed(1)} (~baseline ${baselineMissile.toFixed(1)}); health dmg=${(hpBefore - p1.health).toFixed(1)}`);
   if (p1.health !== hpBefore) fail(`shielded P1 took ${hpBefore - p1.health} damage from a missile the pool should have soaked`);
-  // eps=2: the unshielded baseline lobs a turn-passing shot that craters P1's terrain
-  // slightly, so its damage differs from the pristine-terrain shielded hit by ~1px.
-  if (!near(drained, baselineMissile, 2)) fail(`missile drained ${drained.toFixed(1)} pool, expected ~${baselineMissile.toFixed(1)} (commensurate with damage)`);
+  if (!near(drained, baselineMissile)) fail(`missile drained ${drained.toFixed(1)} pool, expected ~${baselineMissile.toFixed(1)} (commensurate with damage)`);
   if (p1.shieldHp <= 0) fail('one missile fully drained a 120 pool — the field should only be partly consumed');
   if (!failed) log('PASS: a missile is fully soaked and drains the pool by ~its damage (commensurate, partial).');
 }

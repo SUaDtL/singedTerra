@@ -3,7 +3,7 @@
  */
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { simulateImpact } from '../../shared/src/engine/AiShotSearch.ts';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
+import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
 import {
   MAX_FLIGHT_TICKS,
   PROJECTILE_DRAG,
@@ -293,7 +293,7 @@ for (const side of ['left', 'right']) {
 {
   const shot = projectile({
     x: 1,
-    y: CANVAS_HEIGHT - 1,
+    y: ARENA_FLOOR_Y - 1,
     vx: -4,
     vy: 2,
     weaponType: 'sandhog',
