@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { GameEngine } from '../shared/src/engine/GameEngine';
+import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
+import { maximumTankRecoilDownPx } from '../client/src/renderer/tankRecoil';
+import { ARENA_FLOOR_Y } from '../shared/src/engine/Terrain';
 import {
   gotoRunningGame,
   isCompact,
@@ -54,6 +58,43 @@ test.describe('HUD layout guardrails', () => {
       violations,
       `#hud children must not be crushed/clipped, got: ${JSON.stringify(violations, null, 2)}`,
     ).toEqual([]);
+  });
+
+  test('Pixel touch stalled recovery stays in the protected rail and can leave', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
+    let leaveCount = 0;
+    await page.exposeFunction('__recordTurnWatchLeave', () => { leaveCount += 1; });
+    await page.evaluate(() => {
+      const seam = (window as typeof window & {
+        __SINGED_TERRA_E2E_HUD__?: { setTurnWatch: (state: string, playerName: string) => void };
+      }).__SINGED_TERRA_E2E_HUD__;
+      if (!seam) throw new Error('Missing E2E HUD turn-watch seam');
+      seam.setTurnWatch('stalled', 'P2');
+      document.querySelector<HTMLButtonElement>('.st-hud__turnwatch-leave')!
+        .addEventListener('click', () => void (window as typeof window & {
+          __recordTurnWatchLeave: () => void;
+        }).__recordTurnWatchLeave());
+    });
+    const rail = page.locator('#battle-rail');
+    const watch = page.locator('.st-hud__turnwatch');
+    const leave = page.locator('.st-hud__turnwatch-leave');
+    await expect(watch).toBeVisible();
+    await expect(leave).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const rail = document.querySelector<HTMLElement>('#battle-rail')!.getBoundingClientRect();
+      const watch = document.querySelector<HTMLElement>('.st-hud__turnwatch')!.getBoundingClientRect();
+      const leave = document.querySelector<HTMLButtonElement>('.st-hud__turnwatch-leave')!.getBoundingClientRect();
+      return {
+        contained: watch.top >= rail.top - 1 && watch.bottom <= rail.bottom + 1,
+        targetHeight: leave.height,
+      };
+    });
+    expect(geometry.contained).toBe(true);
+    expect(geometry.targetHeight).toBeGreaterThanOrEqual(44);
+    await leave.click();
+    expect(leaveCount).toBe(1);
   });
 
   test('real Fire transition prioritizes outcome progress and restores decision focus', async ({
@@ -327,12 +368,14 @@ test.describe('HUD layout guardrails', () => {
     page,
   }, testInfo) => {
     const overlay = page.locator('#game-overlay');
-    const deck = overlay.locator('[data-ui="command-deck"]');
+    const rail = page.locator('#battle-rail');
+    const deck = rail.locator('[data-ui="command-deck"]');
     const dock = overlay.locator('.st-hud__touch-strip');
     const isTouch = testInfo.project.name === 'pixel-touch';
 
     if (!isTouch) {
       await expect(deck).toBeVisible();
+      await expect(rail).toBeVisible();
       await expect(deck).toHaveAttribute('role', 'region');
       await expect(deck).toHaveAttribute('aria-label', 'Keyboard and mouse commands');
       await expect(dock).toBeHidden();
@@ -357,19 +400,36 @@ test.describe('HUD layout guardrails', () => {
         'fire-space',
         'fire-enter',
       ]);
-      const geometry = await deck.evaluate((node) => {
+      const widestChassisBasesByRoster = [2, 3, 4].map((count) => {
+        const kits = ['ranger', 'bulwark', 'jackal', 'ranger'] as const;
+        const state = new GameEngine({
+          players: Array.from({ length: count }, (_, index) => ({
+            name: `P${index + 1}`,
+            color: ['#e84d4d', '#4d8ce8', '#4de87a', '#e8c84d'][index]!,
+            loadout: { treads: kits[index]!, hull: 'foundry', turret: 'foundry', barrel: 'foundry' },
+          })),
+          maxPlayers: count,
+          seed: 1,
+        }).getState();
+        return state.tanks.map((tank) => {
+          const tread = TANK_PART_SETS[tank.loadout.treads].parts.treads;
+          // A destroyed valley may legally settle at the protected floor. Include
+          // that real renderer pose alongside the generated roster's placement.
+          return Math.max(tank.y, ARENA_FLOOR_Y) + tread.offsetY + tread.height;
+        });
+      });
+      const worstLegalDownwardRecoil = maximumTankRecoilDownPx();
+      const expectedRailTop = Math.ceil(ARENA_FLOOR_Y + worstLegalDownwardRecoil);
+      const geometry = await deck.evaluate((node, { chassisBasesByRoster, recoilY }) => {
         const deckRect = node.getBoundingClientRect();
+        const rail = document.querySelector<HTMLElement>('#battle-rail')!;
+        const railRect = rail.getBoundingClientRect();
         const game = document.querySelector<HTMLCanvasElement>('#game')!;
         const gameRect = game.getBoundingClientRect();
         const gameScale = gameRect.width / game.width;
-        // Two-seat defaults use 15%/85%; configured 2-4 seat games use the
-        // inclusive 10%-90% spread. The widest shipped chassis is 36px
-        // (Ranger/Bulwark/Jackal treads), so protect its visible 18px
-        // half-footprint rather than the narrower 20px collision box.
-        const tankRenderHalfWidth = 18;
-        const spawnColumns = [0.1, 0.15, 11 / 30, 0.5, 19 / 30, 0.85, 0.9].map((fraction) => (
-          gameRect.left + game.width * fraction * gameScale
-        ));
+        // A tank's rendered tread base is its authoritative y coordinate. Cover
+        // every real roster cardinality with the widest 36px chassis, rather
+        // than merely proving an empty horizontal lane beside a floating deck.
         const title = node.querySelector<HTMLElement>('.st-hud__controls-title')!;
         const mode = node.querySelector<HTMLElement>('.st-hud__controls-mode')!;
         const rows = [...node.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
@@ -404,23 +464,22 @@ test.describe('HUD layout guardrails', () => {
           clientWidth: node.clientWidth,
           scrollHeight: node.scrollHeight,
           clientHeight: node.clientHeight,
-          deckClearOfSpawnFootprints: spawnColumns.every((column) => (
-            column + tankRenderHalfWidth * gameScale <= deckRect.left
-              || column - tankRenderHalfWidth * gameScale >= deckRect.right
+          railOverflow: getComputedStyle(rail).overflow,
+          declaredFloor: getComputedStyle(document.documentElement).getPropertyValue('--arena-floor-y'),
+          declaredRailTop: getComputedStyle(document.documentElement).getPropertyValue('--battle-rail-top-y'),
+          railTopLogical: (railRect.top - gameRect.top) / gameScale,
+          deckInsideRail: deckRect.top >= railRect.top - 1
+            && deckRect.right <= railRect.right + 1
+            && deckRect.bottom <= railRect.bottom + 1,
+          widestChassisClearOfRail: chassisBasesByRoster.every((bases) => (
+            bases.every((baseY) => gameRect.top + (baseY + recoilY) * gameScale < railRect.top)
           )),
-          bottomClearanceLogical: (gameRect.bottom - deckRect.bottom) / gameScale,
         };
-      });
+      }, { chassisBasesByRoster: widestChassisBasesByRoster, recoilY: worstLegalDownwardRecoil });
       const compactDeck = testInfo.project.name === 'small-window';
-      expect(geometry.width).toBeCloseTo(220, 1);
+      expect(geometry.width).toBeCloseTo(720, 1);
       expect(geometry.titleFont).toBeGreaterThanOrEqual(10.5);
       expect(geometry.modeFont).toBeGreaterThanOrEqual(7.5);
-      expect(geometry.rows.at(-1)!.rect.width)
-        .toBeGreaterThan(geometry.rows[0]!.rect.width * 1.8);
-      for (const row of geometry.rows.slice(0, -1)) {
-        expect(row.minHeight).toBeGreaterThanOrEqual(46);
-      }
-      expect(geometry.rows.at(-1)!.minHeight).toBeGreaterThanOrEqual(42);
       expect(geometry.ordinaryBorder).not.toBe(geometry.primaryBorder);
       expect(geometry.ordinaryBackground).not.toBe(geometry.primaryBackground);
       expect(geometry.keyFonts).toHaveLength(9);
@@ -436,10 +495,12 @@ test.describe('HUD layout guardrails', () => {
       }
       expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
       expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
-      // The deck must stay in the one free lane shared by the default two-seat
-      // layout and every configured two-, three-, and four-seat layout.
-      expect(geometry.deckClearOfSpawnFootprints).toBe(true);
-      expect(geometry.bottomClearanceLogical).toBeGreaterThanOrEqual(12);
+      expect(geometry.railOverflow).toBe('hidden');
+      expect(geometry.declaredFloor).toBe(`${ARENA_FLOOR_Y}px`);
+      expect(geometry.declaredRailTop).toBe(`${expectedRailTop}px`);
+      expect(geometry.railTopLogical).toBeCloseTo(expectedRailTop, 1);
+      expect(geometry.deckInsideRail).toBe(true);
+      expect(geometry.widestChassisClearOfRail).toBe(true);
       for (const label of geometry.labels) {
         expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 11 : 10);
         expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);

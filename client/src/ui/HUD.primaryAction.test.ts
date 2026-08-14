@@ -13,7 +13,7 @@ function mount(): {
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
   document.body.append(root, overlay, modal);
-  const hud = new HUD(root, overlay, modal);
+  const hud = new HUD(root, overlay, modal, overlay);
   const engine = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },

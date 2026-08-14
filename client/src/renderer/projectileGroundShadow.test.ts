@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import {
   GROUND_SHADOW_MAX_ALPHA,
   GROUND_SHADOW_MAX_RADIUS_X,
@@ -85,9 +85,8 @@ describe('getProjectileGroundShadow', () => {
     expect(cap!.alpha).toBeCloseTo(GROUND_SHADOW_MIN_ALPHA);
   });
 
-  it('fails closed off-canvas, at/below ground, on all-air terrain, and for malformed state', () => {
+  it('fails closed off-canvas, at/below ground, and for malformed state', () => {
     const terrain = terrainWithSurface([[10, 400]]);
-    const allAir = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT);
     const shortTerrain = new Uint8Array(20);
     const invalid = [
       { projectile: { x: -0.01, y: 20 }, terrain },
@@ -96,12 +95,20 @@ describe('getProjectileGroundShadow', () => {
       { projectile: { x: 10, y: Number.POSITIVE_INFINITY }, terrain },
       { projectile: { x: 10, y: 400 }, terrain },
       { projectile: { x: 10, y: 401 }, terrain },
-      { projectile: { x: 10, y: 20 }, terrain: allAir },
       { projectile: { x: 10, y: 20 }, terrain: shortTerrain },
     ];
 
     for (const sample of invalid) {
       expect(getProjectileGroundShadow(sample.projectile, sample.terrain)).toBeNull();
     }
+  });
+
+  it('projects all-air terrain onto the synthesized arena floor', () => {
+    const shadow = getProjectileGroundShadow(
+      { x: 10, y: 20 },
+      new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT),
+    );
+
+    expect(shadow?.groundY).toBe(ARENA_FLOOR_Y);
   });
 });

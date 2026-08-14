@@ -19,7 +19,7 @@ function mount(): {
   stage.append(overlay);
   app.append(stage, root, lobby, modal);
   document.body.append(app);
-  const hud = new HUD(root, overlay, modal);
+  const hud = new HUD(root, overlay, modal, overlay);
   const state = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },

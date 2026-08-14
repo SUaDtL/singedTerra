@@ -222,3 +222,10 @@ Architecture closure: PASS on the corrected live package. The adversary confirme
 - Production receipt: an authenticated Commander at 300/500 Level-2 XP armed the existing diagnostic through its real hit-tested control, closed the panel, completed a fresh six-human/six-CPU Verified Deployment at 26:42 remaining, and observed `Verification needs another attempt.` The blocking After Action Report presented `Retry verification` before `Play again`; its ordinary retry returned the stored result and displayed `Verified victory · +200 XP`. The dossier became R-03 Bombardier, Level 3, 0/500 XP.
 - Idempotency proof: reopening the deployed diagnostics surface showed `PASS: identical retry returned the immutable receipt.` with `1 match · 1 win · 200 XP`. This is a completed response-loss/retry proof, not an inference from the UI alone. No result replay or second award is claimed.
 - SMARTS selected the user-proposed next slice: a bottom instrumentation rail with a raised arena hard floor, replacing the constrained floating-deck placement. S=5, M=5, A=5, R=5, T=5, Satisfaction=5, confidence high. `career.initiative.0001` remains active.
+
+## Bottom instrumentation rail (2026-08-14)
+
+- The shared engine now reserves y=500 as an immutable arena floor. Terrain deformation, lava, projectile collisions, Sandhog paths, and tank settling stop before the covered band while retaining the 1200 by 600 replay bitmap.
+- The fine-pointer Command Deck and liveness companions mount in an explicit bottom rail. The right panel remains the fire-control and roster surface; touch command dock behavior remains overlay-native.
+- Geometry is derived from the shared floor and the catalog-derived maximum legal recoil. The opaque rail starts at y=502, strictly below every actual two-, three-, and four-seat rendered 36px chassis pose. Pixel-touch verifies a stalled Leave-to-lobby recovery target remains fully visible and clickable.
+- Local review is clear after adversarial corrections. Hosted CI, Pages deployment, and live geometry inspection remain required before acceptance.

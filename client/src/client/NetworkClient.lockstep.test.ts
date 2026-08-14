@@ -129,9 +129,9 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().activePlayerId).toBe('p2');
   });
 
-  it('preserves pristine terrain when replay craters cross visual worlds', async () => {
+  it('preserves pristine terrain when replay craters mutate the live battlefield', async () => {
     const { supabase } = makeFakeSupabase([{
-      data: [row(0, fire(5, 15)).new],
+      data: [row(0, fire(45, 50)).new],
       error: null,
     }]);
     const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
@@ -140,8 +140,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
 
     await client.initialize();
 
-    const replayedWorld = selectBattlefieldWorld(client.getState().terrain);
-    expect(replayedWorld.id).not.toBe(pristineWorld.id);
+    expect(client.getState().terrain).not.toEqual(pristine);
     expect(selectBattlefieldWorld(client.getInitialTerrain())).toBe(pristineWorld);
     expect(client.getInitialTerrain()).toEqual(pristine);
   });
