@@ -49,6 +49,14 @@ function buildVerifiedDeployment(
     item.textContent = rule;
     rules.append(item);
   }
+  const dossier = document.createElement('section');
+  dossier.className = 'lobby-verified-deployment__dossier';
+  dossier.setAttribute('aria-label', 'Commander dossier');
+  const dossierTitle = document.createElement('h4');
+  dossierTitle.textContent = 'Commander dossier';
+  const objective = document.createElement('p');
+  objective.textContent = 'First Strike · Damage the CPU within your first three salvos.';
+  dossier.append(dossierTitle, objective);
   const message = document.createElement('p');
   message.className = 'lobby-verified-deployment__message';
   message.setAttribute('role', 'status');
@@ -98,7 +106,7 @@ function buildVerifiedDeployment(
     actions.append(confirmation);
   }
 
-  verified.append(title, matchup, rules, message, actions);
+  verified.append(title, matchup, rules, dossier, message, actions);
   return verified;
 }
 

@@ -2736,6 +2736,27 @@ export class Lobby {
         color: rgba(216, 239, 255, 0.7);
         font: 10px/1.25 var(--font-mono);
       }
+      #lobby .lobby-verified-deployment__dossier {
+        grid-column: 1;
+        display: grid;
+        gap: 2px;
+        margin: 1px 0 0;
+        padding: 5px 7px;
+        border-left: 1px solid rgba(197, 240, 196, 0.5);
+        background: rgba(74, 147, 78, 0.12);
+      }
+      #lobby .lobby-verified-deployment__dossier h4 {
+        margin: 0;
+        color: #c5f0c4;
+        font: 700 9px/1 var(--font-display);
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-verified-deployment__dossier p {
+        margin: 0;
+        color: rgba(225, 246, 223, 0.86);
+        font: 10px/1.25 var(--font-mono);
+      }
       #lobby .lobby-verified-deployment__message {
         grid-column: 1;
         margin: 0;
@@ -2745,7 +2766,7 @@ export class Lobby {
       #lobby .lobby-verified-deployment__message[hidden] { display: none; }
       #lobby .lobby-verified-deployment__actions {
         grid-column: 2;
-        grid-row: 1 / span 4;
+        grid-row: 1 / span 5;
         display: grid;
         align-content: center;
         gap: 5px;
@@ -2923,6 +2944,8 @@ export class Lobby {
         gap: 1px 8px;
         font-size: 8px;
       }
+      #app.is-compact #lobby .lobby-verified-deployment__dossier { padding: 4px 5px; }
+      #app.is-compact #lobby .lobby-verified-deployment__dossier p { font-size: 8px; }
       #app.is-compact #lobby .lobby-verified-deployment__actions {
         min-width: 168px;
       }

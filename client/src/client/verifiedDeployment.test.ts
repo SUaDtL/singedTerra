@@ -93,6 +93,20 @@ describe('VerifiedDeploymentRecorder', () => {
     expect(game.getState().phase).toBe('PLAYER_TURN')
   })
 
+  it('records human-salvo damage at settlement before the deterministic CPU response', () => {
+    const controller = VerifiedDuelController.create(17)
+    const before = controller.engine.getState().tanks.find((tank) => tank.ai)?.health
+    expect(before).toBeDefined()
+    expect(controller.applyHumanAction({ type: 'set_angle', angle: 0 })).toBe(true)
+    expect(controller.applyHumanAction({ type: 'set_power', power: 5 })).toBe(true)
+    expect(controller.applyHumanAction({ type: 'fire' })).toBe(true)
+    const cpu = controller.engine.getState().tanks.find((tank) => tank.ai)
+    if (!cpu || before === undefined) throw new Error('missing_verified_cpu')
+    cpu.health = before - 13
+    while (controller.engine.getState().phase !== 'PLAYER_TURN') controller.tick()
+    expect(controller.settledHumanDamage).toEqual([13])
+  })
+
   it('rejects a verified controller paired with a different render engine', () => {
     const controller = VerifiedDuelController.create(17)
     const differentEngine = engine()

@@ -425,3 +425,24 @@ Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01
 - No placeholder, dependency, generic diagnostics, casual-rank, client-owned award, transcript-storage, or destructive-schema task is present.
 - Type names are stable across tasks: `VerifiedDeploymentStartResponse`, `VerifiedDeploymentRecorder`, `VerifiedDeploymentReceipt`, and `verifiedProgression`.
 - Negative check: if all tasks pass, no in-scope player or trust-boundary behavior remains missing. Tactical objectives and envelope expansion are explicit later milestones.
+### T-14: Give Verified Deployment a first tactical objective
+
+**Files:**
+
+- Create: `client/src/client/firstStrikeObjective.ts`
+- Modify: `client/src/main.ts`, `client/src/ui/HUD.ts`, `client/src/ui/Lobby.ts`, and `client/src/ui/LobbyHotSeatView.ts`
+- Modify: focused unit and production-browser coverage
+
+**Interfaces:**
+
+- Authenticated Verified Deployment alone presents First Strike: damage the CPU within the first three human salvos. The reducer observes only the already-replayed controller transcript and public engine health/phase; it never mutates an action, transcript, account, or network request.
+- A recovered deployment deterministically re-observes its historical salvos before presenting live state, so a first-three-salvo hit remains achieved after reload while a fourth-salvo hit cannot be backdated.
+- The Commander dossier/deployment brief, in-battle verified status, and existing After Action Report provide static, live, and terminal copy respectively. The report gains no action, focus target, reward, or XP claim.
+
+- [x] Establish causal RED/GREEN coverage for unresolved third-shot state, success-before-miss precedence, late-hit refusal, recovered early-hit preservation, and teardown/casual retirement.
+- [x] Prove the authenticated desktop and Pixel verified browser journey retains fixed-stage/no-scroll geometry while exposing the dossier and live cue.
+- [ ] Run full client/browser/deterministic gates, exact-diff adversarial review, hosted CI, Pages deployment, and authenticated production proof.
+
+**Verification:** `npm --workspace client test -- firstStrikeObjective.test.ts HUD.firstStrike.test.ts LobbyHotSeatView.test.ts main.hotSeatProgression.test.ts --run`, `npx playwright test e2e/verified-deployment.spec.ts`, `npm run typecheck`, `npm run check`, `npm run test:client`
+**Maps to:** O-07 coherent player journey
+**Status:** IN_PROGRESS â€” client-only local implementation is GREEN; delivery gates remain open. `career.initiative.0001` remains active.

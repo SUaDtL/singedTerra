@@ -26,6 +26,7 @@ const seams = vi.hoisted(() => ({
   progressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
+  firstStrikeHudStates: [] as Array<Record<string, unknown> | null>,
   liveMatchDiagnosticsProviders: [] as Array<() => unknown>,
   liveMatchDiagnosticsSettings: [] as Array<(() => unknown) | null>,
   anonymousHandoffs: 0,
@@ -175,6 +176,9 @@ vi.mock('./ui/HUD', () => ({
     }
     setVerifiedDeployment(state: Record<string, unknown> | null) {
       seams.verifiedHudStates.push(state)
+    }
+    setFirstStrikeObjective(state: Record<string, unknown> | null) {
+      seams.firstStrikeHudStates.push(state)
     }
     setLiveMatchDiagnostics(provider: (() => unknown) | null) {
       seams.liveMatchDiagnosticsSettings.push(provider)
@@ -353,8 +357,9 @@ function liveVerifiedState(): GameState {
   return state
 }
 
-function fakeVerifiedController(state: GameState) {
+function fakeVerifiedController(state: GameState, damageOnHumanSalvo?: number) {
   const commitments: Array<{ angle: number; power: number }> = []
+  const settledHumanDamage: number[] = []
   const applyCasualAction = vi.fn(() => true)
   const applyHumanAction = vi.fn((action: Record<string, unknown>): boolean => {
     const human = state.tanks[0]!
@@ -368,6 +373,9 @@ function fakeVerifiedController(state: GameState) {
     }
     if (action.type !== 'fire' || state.phase !== 'PLAYER_TURN') return false
     commitments.push({ angle: human.angle, power: human.power })
+    const damage = commitments.length === damageOnHumanSalvo ? 15 : 0
+    if (damage > 0) state.tanks[1]!.health -= damage
+    settledHumanDamage.push(damage)
     state.phase = 'FIRING'
     return true
   })
@@ -375,6 +383,7 @@ function fakeVerifiedController(state: GameState) {
     engine: { getState: () => state, applyAction: applyCasualAction },
     complete: false,
     get transcript() { return commitments.map((entry) => ({ ...entry })) },
+    get settledHumanDamage() { return [...settledHumanDamage] },
     applyHumanAction,
     tick: vi.fn(() => { state.phase = 'PLAYER_TURN' }),
     result: vi.fn(() => ({
@@ -390,6 +399,7 @@ function fakeClient(initial: GameState) {
   return {
     controller: null as null | { applyHumanAction?: (action: Record<string, unknown>) => boolean },
     emit(state: GameState) { listener?.(state) },
+    getEffectiveGravity: () => 0.15,
     getState: () => initial,
     initialize: async () => undefined,
     onStateChange(next: (state: GameState) => void) {
@@ -441,6 +451,7 @@ describe('production hot-seat progression composition', () => {
     seams.progressionReceipts.length = 0
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
+    seams.firstStrikeHudStates.length = 0
     seams.liveMatchDiagnosticsProviders.length = 0
     seams.liveMatchDiagnosticsSettings.length = 0
     seams.anonymousHandoffs = 0
@@ -569,6 +580,92 @@ describe('production hot-seat progression composition', () => {
     expect(seams.progressionReceipts).toEqual([])
   })
 
+  it('keeps First Strike live through a third fired salvo and misses before later CPU damage can be credited', async () => {
+    const state = liveVerifiedState()
+    state.tanks[0]!.health = 100
+    state.tanks[1]!.health = 100
+    const controller = fakeVerifiedController(state)
+    const verifiedClient = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(verifiedClient)
+    seams.verifiedDeployment = {
+      status: 'active',
+      descriptor: verifiedDescriptor,
+      transcript: [{ angle: 31, power: 62 }, { angle: 42, power: 68 }],
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+    seams.onLobbyReady(verifiedConfig(seams.verifiedDeployment.transcript as Array<{ angle: number; power: number }>))
+    await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
+    if (!seams.inputAction) throw new Error('Expected verified input wiring')
+
+    seams.inputAction({ type: 'fire' })
+    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'active', salvosRemaining: 0 })
+
+    state.phase = 'PLAYER_TURN'
+    state.activePlayerId = 'p2'
+    verifiedClient.emit(state)
+    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'missed' })
+
+    state.tanks[1]!.health = 82
+    state.activePlayerId = 'p1'
+    verifiedClient.emit(state)
+    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'missed' })
+  })
+
+  it('does not credit CPU-side damage while an early CPU response is in flight', async () => {
+    const state = liveVerifiedState()
+    state.tanks[0]!.health = 100
+    state.tanks[1]!.health = 100
+    const controller = fakeVerifiedController(state)
+    const verifiedClient = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(verifiedClient)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: verifiedDescriptor,
+      transcript: [{ angle: 31, power: 62 }],
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+    seams.onLobbyReady(verifiedConfig(seams.verifiedDeployment.transcript as Array<{ angle: number; power: number }>))
+    await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
+
+    state.phase = 'FIRING'
+    state.activePlayerId = 'p2'
+    state.tanks[1]!.health = 82
+    verifiedClient.emit(state)
+
+    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'active', salvosRemaining: 2 })
+  })
+
+  it('replays a resumed early hit before publishing First Strike so later salvos cannot erase it', async () => {
+    const state = liveVerifiedState()
+    state.tanks[0]!.health = 100
+    state.tanks[1]!.health = 100
+    const controller = fakeVerifiedController(state, 1)
+    const verifiedClient = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(verifiedClient)
+    seams.verifiedDeployment = {
+      status: 'active',
+      descriptor: verifiedDescriptor,
+      transcript: [
+        { angle: 31, power: 62 }, { angle: 42, power: 68 },
+        { angle: 51, power: 74 }, { angle: 59, power: 80 },
+      ],
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+    seams.onLobbyReady(verifiedConfig(seams.verifiedDeployment.transcript as Array<{ angle: number; power: number }>))
+    await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
+    verifiedClient.emit(state)
+
+    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'achieved', achievedOnSalvo: 1 })
+  })
+
   it('maps retry and expiry freeze, then resumes input only after explicit casual conversion', async () => {
     const state = liveVerifiedState()
     const controller = fakeVerifiedController(state)
@@ -601,6 +698,7 @@ describe('production hot-seat progression composition', () => {
       choices: ['continue-casual', 'return-to-battery'],
     }
     verifiedClient.emit(state)
+    expect(seams.firstStrikeHudStates.at(-1)).toBeNull()
     const acceptedBeforeExpiryChoice = controller.applyHumanAction.mock.calls.length
     seams.inputAction({ type: 'fire' })
     expect(controller.applyHumanAction).toHaveBeenCalledTimes(acceptedBeforeExpiryChoice)

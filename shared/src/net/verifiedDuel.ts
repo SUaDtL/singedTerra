@@ -175,6 +175,9 @@ export class VerifiedDuelController {
   readonly engine: GameEngine
   private readonly seed: number
   private readonly commitments: VerifiedHumanFire[] = []
+  /** CPU damage snapshots, one per fully settled accepted human salvo. */
+  private readonly humanDamageBySalvo: number[] = []
+  private humanCpuHealthBeforeSalvo: number | null = null
   private activeSalvo: 'human' | 'cpu' | null = null
   private currentSalvoTicks = 0
   private humanSalvos = 0
@@ -207,6 +210,14 @@ export class VerifiedDuelController {
     return Object.freeze(this.commitments.map((entry) => Object.freeze({ ...entry })))
   }
 
+  /**
+   * Read-only local diagnostic projection. It is intentionally excluded from
+   * the verified replay result and wire contract.
+   */
+  get settledHumanDamage(): readonly number[] {
+    return Object.freeze([...this.humanDamageBySalvo])
+  }
+
   applyHumanAction(action: PlayerAction): boolean {
     const state = this.engine.getState()
     const active = state.tanks.find((tank) => tank.id === state.activePlayerId)
@@ -222,6 +233,8 @@ export class VerifiedDuelController {
         : false
     }
     if (action.type !== 'fire' || this.humanSalvos >= VERIFIED_DUEL_MAX_HUMAN_SALVOS) return false
+    const cpu = state.tanks.find((tank) => tank.ai)
+    this.humanCpuHealthBeforeSalvo = cpu?.health ?? null
     this.engine.applyAction({ type: 'select_weapon', weapon: 'baby_missile' })
     const shot = Object.freeze({ angle: active.angle, power: active.power })
     if (!this.engine.applyAction(action)) return false
@@ -245,6 +258,15 @@ export class VerifiedDuelController {
     const settledSalvo = this.activeSalvo
     this.activeSalvo = null
     this.currentSalvoTicks = 0
+    if (settledSalvo === 'human') {
+      const cpu = this.engine.getState().tanks.find((tank) => tank.ai)
+      this.humanDamageBySalvo.push(
+        this.humanCpuHealthBeforeSalvo !== null && cpu
+          ? Math.max(0, this.humanCpuHealthBeforeSalvo - cpu.health)
+          : 0,
+      )
+      this.humanCpuHealthBeforeSalvo = null
+    }
     if (this.engine.getState().phase === 'GAME_OVER') {
       this.completed = true
       return
