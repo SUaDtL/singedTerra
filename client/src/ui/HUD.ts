@@ -37,6 +37,7 @@ import {
   commanderCareerForVerifiedProgression,
   commanderPromotionBetweenVerified,
 } from '../client/commanderCareer';
+import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -173,6 +174,14 @@ export class HUD {
   private verifiedRetryCb: (() => void) | null = null;
   private verifiedContinueCasualCb: (() => void) | null = null;
   private verifiedReturnToBatteryCb: (() => void) | null = null;
+  private liveMatchDiagnosticsProvider: (() => LiveMatchSnapshot | undefined) | null = null;
+  private liveMatchDiagnosticsTriggerEl!: HTMLButtonElement;
+  private liveMatchInspectorEl!: HTMLElement;
+  private liveMatchInspectorDataEl!: HTMLElement;
+  private liveMatchInspectorCopyEl!: HTMLButtonElement;
+  private liveMatchInspectorCloseEl!: HTMLButtonElement;
+  private liveMatchInspectorMenuEl!: HTMLButtonElement;
+  private liveMatchInspectorPreviousFocus: HTMLElement | null = null;
 
   // Shared command callbacks. Invoked by both the fine-pointer Command Deck and
   // the coarse-pointer dock; main.ts wires these to InputHandler's public steps.
@@ -392,6 +401,12 @@ export class HUD {
   onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
   onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
 
+  /** Enables the read-only maintainer inspector only for an explicit safe snapshot provider. */
+  setLiveMatchDiagnostics(provider: (() => LiveMatchSnapshot | undefined) | null): void {
+    this.liveMatchDiagnosticsProvider = provider;
+    if (this.built) this.syncLiveMatchDiagnostics();
+  }
+
   /** Register a local presentation-state callback for immediate input teardown. */
   onPauseChange(cb: (paused: boolean) => void): void {
     this.pauseChangeCb = cb;
@@ -575,6 +590,7 @@ export class HUD {
     this.buildLiveness();
     this.buildTouchStrip();
     this.buildFirstSalvoCoach();
+    this.buildLiveMatchDiagnostics();
 
     this.root.append(
       menu,
@@ -606,10 +622,12 @@ export class HUD {
       this.roundOverEl,
       this.pauseEl,
       this.verifiedExpiryEl,
+      this.liveMatchInspectorEl,
     );
     this.built = true;
     this.syncFirstSalvo();
     this.syncQuickChatAvailability();
+    this.syncLiveMatchDiagnostics();
   }
 
   /** Player health-bar column (top-left). */
@@ -1876,6 +1894,140 @@ export class HUD {
     // so the player can get back into the live game (review #5).
     menu.addEventListener('click', () => this.togglePause(true));
     return menu;
+  }
+
+  /** Maintainer-only read-only battle inspector. It is never mounted in ordinary play. */
+  private buildLiveMatchDiagnostics(): void {
+    this.liveMatchDiagnosticsTriggerEl = document.createElement('button');
+    this.liveMatchDiagnosticsTriggerEl.type = 'button';
+    this.liveMatchDiagnosticsTriggerEl.className = 'st-hud__menu st-hud__live-diagnostics-trigger';
+    this.liveMatchDiagnosticsTriggerEl.dataset['ui'] = 'live-match-diagnostics';
+    this.liveMatchDiagnosticsTriggerEl.textContent = 'Inspect live match';
+    this.liveMatchDiagnosticsTriggerEl.addEventListener('click', () => this.openLiveMatchInspector());
+
+    this.liveMatchInspectorEl = document.createElement('section');
+    this.liveMatchInspectorEl.className = 'st-hud__overlay st-hud__overlay--hidden';
+    this.liveMatchInspectorEl.dataset['ui'] = 'live-match-inspector';
+    this.liveMatchInspectorEl.setAttribute('role', 'dialog');
+    this.liveMatchInspectorEl.setAttribute('aria-modal', 'true');
+    this.liveMatchInspectorEl.setAttribute('aria-hidden', 'true');
+    this.liveMatchInspectorEl.setAttribute('aria-labelledby', 'st-live-match-inspector-title');
+
+    const panel = document.createElement('div');
+    panel.className = 'st-hud__overlay-panel';
+    const title = document.createElement('h2');
+    title.id = 'st-live-match-inspector-title';
+    title.className = 'st-hud__overlay-text';
+    title.textContent = 'Live match inspector';
+    const copy = document.createElement('p');
+    copy.textContent = 'Read-only public snapshot. It does not contain match identity or credentials.';
+    this.liveMatchInspectorDataEl = document.createElement('pre');
+    this.liveMatchInspectorDataEl.className = 'st-hud__live-diagnostics-data';
+    this.liveMatchInspectorCopyEl = document.createElement('button');
+    this.liveMatchInspectorCopyEl.type = 'button';
+    this.liveMatchInspectorCopyEl.className = 'st-hud__restart';
+    this.liveMatchInspectorCopyEl.dataset['action'] = 'copy-live-match-snapshot';
+    this.liveMatchInspectorCopyEl.textContent = 'Copy snapshot';
+    this.liveMatchInspectorCopyEl.addEventListener('click', () => {
+      const text = this.liveMatchInspectorDataEl.textContent ?? '';
+      void globalThis.navigator?.clipboard?.writeText(text).catch(() => undefined);
+    });
+    this.liveMatchInspectorCloseEl = document.createElement('button');
+    this.liveMatchInspectorCloseEl.type = 'button';
+    this.liveMatchInspectorCloseEl.className = 'st-hud__restart st-hud__restart--ghost';
+    this.liveMatchInspectorCloseEl.dataset['action'] = 'close-live-match-inspector';
+    this.liveMatchInspectorCloseEl.textContent = 'Close inspector';
+    this.liveMatchInspectorCloseEl.addEventListener('click', () => this.closeLiveMatchInspector());
+    const actions = document.createElement('div');
+    actions.className = 'st-hud__overlay-btns';
+    actions.append(this.liveMatchInspectorCopyEl, this.liveMatchInspectorCloseEl);
+    panel.append(title, copy, this.liveMatchInspectorDataEl, actions);
+    this.liveMatchInspectorEl.append(panel);
+    this.liveMatchInspectorEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab' || this.liveMatchInspectorEl.classList.contains('st-hud__overlay--hidden')) return;
+      event.preventDefault();
+      const actions = [this.liveMatchInspectorCopyEl, this.liveMatchInspectorCloseEl];
+      const current = actions.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.shiftKey
+        ? (current <= 0 ? actions.length - 1 : current - 1)
+        : (current < 0 || current === actions.length - 1 ? 0 : current + 1);
+      actions[next]!.focus({ preventScroll: true });
+    });
+
+    this.liveMatchInspectorMenuEl = document.createElement('button');
+    this.liveMatchInspectorMenuEl.type = 'button';
+    this.liveMatchInspectorMenuEl.className = 'st-hud__restart st-hud__restart--ghost';
+    this.liveMatchInspectorMenuEl.textContent = 'Inspect live match';
+    this.liveMatchInspectorMenuEl.addEventListener('click', () => {
+      this.togglePause(false);
+      this.openLiveMatchInspector();
+    });
+  }
+
+  private syncLiveMatchDiagnostics(): void {
+    const enabled = this.liveMatchDiagnosticsProvider !== null;
+    if (enabled && !this.liveMatchDiagnosticsTriggerEl.isConnected) {
+      this.root.insertBefore(this.liveMatchDiagnosticsTriggerEl, this.roundEl);
+      this.pauseActionsEl.insertBefore(this.liveMatchInspectorMenuEl, this.pauseActionsEl.lastElementChild);
+    } else if (!enabled && this.liveMatchDiagnosticsTriggerEl.isConnected) {
+      this.closeLiveMatchInspector();
+      this.liveMatchInspectorDataEl.textContent = '';
+      this.liveMatchDiagnosticsTriggerEl.remove();
+      this.liveMatchInspectorMenuEl.remove();
+    }
+  }
+
+  private openLiveMatchInspector(): void {
+    const snapshot = this.liveMatchDiagnosticsProvider?.();
+    if (!snapshot) return;
+    const focused = document.activeElement;
+    this.liveMatchInspectorPreviousFocus = focused instanceof HTMLElement ? focused : null;
+    this.liveMatchInspectorDataEl.textContent = JSON.stringify(snapshot, null, 2);
+    this.liveMatchInspectorEl.classList.remove('st-hud__overlay--hidden');
+    this.liveMatchInspectorEl.setAttribute('aria-hidden', 'false');
+    this.setLiveMatchInspectorIsolation(true);
+    this.liveMatchInspectorCopyEl.focus({ preventScroll: true });
+  }
+
+  private closeLiveMatchInspector(): void {
+    if (!this.liveMatchInspectorEl || this.liveMatchInspectorEl.classList.contains('st-hud__overlay--hidden')) return;
+    this.liveMatchInspectorEl.classList.add('st-hud__overlay--hidden');
+    this.liveMatchInspectorEl.setAttribute('aria-hidden', 'true');
+    this.setLiveMatchInspectorIsolation(false);
+    const previous = this.liveMatchInspectorPreviousFocus;
+    this.liveMatchInspectorPreviousFocus = null;
+    const fallback = this.liveMatchDiagnosticsTriggerEl.isConnected
+      ? this.liveMatchDiagnosticsTriggerEl
+      : null;
+    const target = previous?.isConnected && !previous.closest('[inert]') ? previous : fallback;
+    target?.focus({ preventScroll: true });
+  }
+
+  private setLiveMatchInspectorIsolation(active: boolean): void {
+    const appSiblings = this.modalRoot.parentElement
+      ? [...this.modalRoot.parentElement.children].filter((element): element is HTMLElement =>
+        element instanceof HTMLElement && element !== this.modalRoot)
+      : [];
+    const modalSiblings = [...this.modalRoot.children].filter((element): element is HTMLElement =>
+      element instanceof HTMLElement && element !== this.liveMatchInspectorEl);
+    for (const surface of [...appSiblings, ...modalSiblings]) {
+      if (active) {
+        if (surface.dataset['liveMatchInspectorPreviousInert'] !== undefined) continue;
+        surface.dataset['liveMatchInspectorPreviousInert'] = surface.inert ? 'true' : 'false';
+        surface.dataset['liveMatchInspectorPreviousAriaHidden'] = surface.getAttribute('aria-hidden') ?? '__absent__';
+        surface.inert = true;
+        surface.setAttribute('aria-hidden', 'true');
+      } else {
+        const previousInert = surface.dataset['liveMatchInspectorPreviousInert'];
+        if (previousInert === undefined) continue;
+        surface.inert = previousInert === 'true';
+        const previousAria = surface.dataset['liveMatchInspectorPreviousAriaHidden'];
+        if (previousAria === '__absent__' || previousAria === undefined) surface.removeAttribute('aria-hidden');
+        else surface.setAttribute('aria-hidden', previousAria);
+        delete surface.dataset['liveMatchInspectorPreviousInert'];
+        delete surface.dataset['liveMatchInspectorPreviousAriaHidden'];
+      }
+    }
   }
 
   /** Networked liveness widgets: connection banner, toast, turn-watch. */

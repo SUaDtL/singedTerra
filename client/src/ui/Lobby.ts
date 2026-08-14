@@ -339,6 +339,7 @@ const DIAGNOSTICS_LOCAL_FAILURE: DiagnosticCheckResult = Object.freeze({
  * Calls onReady with the resulting hot-seat config when the player starts.
  */
 export class Lobby {
+  private accountAuthenticationChangeCb: (() => void) | null = null;
   private readonly root: HTMLElement;
   private readonly onReady: (config: LobbyConfig) => void;
 
@@ -500,6 +501,7 @@ export class Lobby {
     this.syncDiagnosticsReadiness();
     this.maybeAutorunDiagnostics();
     this.render();
+    this.accountAuthenticationChangeCb?.();
     if (restoreFocus) this.focusAccountOverlay();
     else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
     void this.revalidateFrozenVerifiedDeployment(recoveryGeneration);
@@ -1098,6 +1100,14 @@ export class Lobby {
 
   isAccountAnonymous(): boolean {
     return this.accountSession.state.status === 'anonymous';
+  }
+
+  isAccountAuthenticated(): boolean {
+    return this.accountSession.state.status === 'authenticated';
+  }
+
+  onAccountAuthenticationChange(callback: () => void): void {
+    this.accountAuthenticationChangeCb = callback;
   }
 
   private ownsVerifiedDeployment(): boolean {

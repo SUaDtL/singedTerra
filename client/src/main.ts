@@ -6,7 +6,7 @@ import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terra
 import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
 import type { GameState } from '@shared/types/GameState';
 import { VerifiedDuelController } from '@shared/net/verifiedDuel';
-import type { GameClient } from './client/GameClient';
+import type { ConnectionState, GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
@@ -32,9 +32,11 @@ import {
 } from './ui/firstSalvoController';
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
+import { projectLiveMatchSnapshot } from './client/liveMatchDiagnostics';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
+const LIVE_MATCH_DIAGNOSTICS_ENABLED = E2E_PARAMS.get('diagnostics') === '1';
 const e2eSeedParam = E2E_PARAMS.get('seed');
 const e2eSeedCandidate = e2eSeedParam !== null && e2eSeedParam.trim() !== ''
   ? Number(e2eSeedParam)
@@ -320,6 +322,7 @@ function bootstrap(): void {
   let verifiedClient: SwitchableVerifiedClient | null = null;
   let verifiedCasual = false;
   let verifiedCompletionStarted = false;
+  let liveMatchTransport: 'not-applicable' | ConnectionState = 'not-applicable';
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
   let e2eVictoryPending = E2E_MODE === 'victory'
@@ -354,6 +357,38 @@ function bootstrap(): void {
         paused: hud.isPaused(),
       })
       && verifiedInputAllowed();
+  }
+
+  function currentLiveMatchSnapshot() {
+    const activeClient = client;
+    const state = activeClient?.getState();
+    const config = currentConfig;
+    const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
+    if (!activeClient || !state || !config || !activeTank) return undefined;
+    const activeSeatOrdinal = state.tanks.findIndex((tank) => tank.id === state.activePlayerId) + 1;
+    const execution = config.verifiedDeployment && !verifiedCasual ? 'verified' : 'casual';
+    const input = execution === 'verified' && lobby.verifiedDeployment.status !== 'active'
+      ? 'frozen'
+      : shouldAcceptLocalInput({
+        activeIsAi: !!activeTank.ai,
+        activeIsLocal: resolveActivePlayerOwnership(config.mode, activeClient, state.activePlayerId),
+        paused: hud.isPaused(),
+      })
+        ? 'ready'
+        : 'locked';
+    return projectLiveMatchSnapshot({
+      mode: config.mode,
+      execution,
+      phase: state.phase,
+      round: state.round,
+      totalRounds: state.totalRounds,
+      turn: state.turn,
+      activeSeatOrdinal,
+      activeSeatAlive: activeTank.alive,
+      activeSeatHealth: activeTank.health,
+      input,
+      transport: config.mode === 'network' ? liveMatchTransport : 'not-applicable',
+    });
   }
 
   function verifiedInputAllowed(): boolean {
@@ -458,6 +493,7 @@ function bootstrap(): void {
     lastPhase = null;
     activeIsAi = false;
     activeIsLocal = false;
+    liveMatchTransport = 'not-applicable';
     aiActedKey = null;
     verifiedController = null;
     verifiedClient = null;
@@ -660,8 +696,12 @@ function bootstrap(): void {
     // leaves the player on a silently frozen board. Reset first so a stale banner
     // from a prior network game can't linger into a hot-seat game (whose client has
     // no onConnectionChange); the network client immediately re-primes its state.
+    liveMatchTransport = config.mode === 'network' ? 'connecting' : 'not-applicable';
     hud.setConnection('connected');
-    newClient.onConnectionChange?.((connState) => hud.setConnection(connState));
+    newClient.onConnectionChange?.((connState) => {
+      liveMatchTransport = connState;
+      hud.setConnection(connState);
+    });
     newClient.onFireFailed?.((message) => hud.flashMessage(message));
     newClient.onTurnWatch?.((watch) => hud.setTurnWatch(watch));
     newClient.onAccountProgressChanged?.(() => { void lobby.refreshAccount(); });
@@ -917,6 +957,15 @@ function bootstrap(): void {
     // longer needs to — keeping lobby-visibility owned by a single place (#13).
     void startGame(config);
   });
+  if (LIVE_MATCH_DIAGNOSTICS_ENABLED) {
+    const syncLiveMatchDiagnostics = () => {
+      hud.setLiveMatchDiagnostics(
+        lobby.isAccountAuthenticated() ? currentLiveMatchSnapshot : null,
+      );
+    };
+    lobby.onAccountAuthenticationChange(syncLiveMatchDiagnostics);
+    syncLiveMatchDiagnostics();
+  }
 
   hud.onVerifiedRetry(() => {
     if (!verifiedController || verifiedCasual || !currentConfig?.verifiedDeployment) return;
