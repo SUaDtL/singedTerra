@@ -27,9 +27,13 @@ async function expectCoachFitsStage(page: import('@playwright/test').Page): Prom
   const geometry = await page.evaluate(() => {
     const stage = document.getElementById('stage')?.getBoundingClientRect();
     const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')?.getBoundingClientRect();
+    const rail = document.getElementById('battle-rail')?.getBoundingClientRect();
+    const skip = document.querySelector<HTMLElement>('.st-hud__first-salvo-skip')?.getBoundingClientRect();
     return {
       stage: stage?.toJSON(),
       card: card?.toJSON(),
+      rail: rail?.toJSON(),
+      skip: skip?.toJSON(),
       scrollWidth: document.documentElement.scrollWidth,
       scrollHeight: document.documentElement.scrollHeight,
       viewportWidth: window.innerWidth,
@@ -39,12 +43,20 @@ async function expectCoachFitsStage(page: import('@playwright/test').Page): Prom
 
   expect(geometry.stage, 'fixed game stage should be rendered').toBeTruthy();
   expect(geometry.card, 'First Salvo card should be rendered').toBeTruthy();
+  expect(geometry.rail, 'protected rail should be rendered').toBeTruthy();
+  expect(geometry.skip, 'First Salvo Skip target should be rendered').toBeTruthy();
   expect(geometry.card!.left).toBeGreaterThanOrEqual(geometry.stage!.left);
   expect(geometry.card!.right).toBeLessThanOrEqual(geometry.stage!.right);
   expect(geometry.card!.top).toBeGreaterThanOrEqual(geometry.stage!.top);
   expect(geometry.card!.bottom).toBeLessThanOrEqual(geometry.stage!.bottom);
+  expect(geometry.card!.bottom, 'coach must clear the protected rail').toBeLessThanOrEqual(geometry.rail!.top);
+  expect(geometry.skip!.left).toBeGreaterThanOrEqual(geometry.card!.left);
+  expect(geometry.skip!.right).toBeLessThanOrEqual(geometry.card!.right);
+  expect(geometry.skip!.top).toBeGreaterThanOrEqual(geometry.card!.top);
+  expect(geometry.skip!.bottom).toBeLessThanOrEqual(geometry.card!.bottom);
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
   expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
+  await expect(page.getByRole('button', { name: 'Skip', exact: true })).toBeEnabled();
 }
 
 test.describe('First Salvo browser contract', () => {

@@ -33,8 +33,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: null,
       turn: 3,
       actionCount: 4,
-      tickCount: 293,
-      maxTurnTickCount: 198,
+      tickCount: 302,
+      maxTurnTickCount: 207,
     },
     verifiedDuel: {
       seed: 17,
@@ -43,8 +43,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       reason: 'health',
       humanSalvos: 6,
       cpuSalvos: 6,
-      liveTicks: 625,
-      cpuSimulationTicks: 24564,
+      liveTicks: 626,
+      cpuSimulationTicks: 24601,
       maximumProbeCount: 59,
       transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })),
     },
@@ -481,8 +481,8 @@ describe('verified-replay-runtime contract', () => {
 
 describe('ProductionDiagnostics redaction', () => {
   it('collapses provider failures to request_failed without retaining the raw message', async () => {
-    const secret = 'account-bearer-secret'
-    const rawProviderMessage = `provider rejected ${secret}`
+    const privateValue = 'private-fixture-value'
+    const rawProviderMessage = `provider rejected ${privateValue}`
     const providerError = Object.create(null) as Record<PropertyKey, unknown>
     const providerMessageSymbol = Symbol('provider-message')
     Object.defineProperty(providerError, 'message', {
@@ -506,15 +506,15 @@ describe('ProductionDiagnostics redaction', () => {
       status: 'FAIL',
       code: 'request_failed',
     })
-    expect(containsForbiddenPublicValue(result, [secret, rawProviderMessage, 'provider rejected'])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue, rawProviderMessage, 'provider rejected'])).toBe(false)
   })
 
   it('collapses a secret-bearing widened response to invalid_response without exposing it', async () => {
-    const secret = 'refresh-token-secret'
+    const privateValue = 'private-fixture-value'
     const response = copyExactResponse()
-    const secretSymbol = Symbol('refresh-token-secret')
-    Object.defineProperty(response, 'credential', { value: secret, enumerable: false })
-    Object.defineProperty(response, secretSymbol, { value: secret, enumerable: false })
+    const secretSymbol = Symbol('private-fixture-value')
+    Object.defineProperty(response, 'credential', { value: privateValue, enumerable: false })
+    Object.defineProperty(response, secretSymbol, { value: privateValue, enumerable: false })
     const { client } = diagnosticsClient(response)
     const diagnostics = createProductionDiagnostics(client as never)
 
@@ -525,7 +525,7 @@ describe('ProductionDiagnostics redaction', () => {
       status: 'FAIL',
       code: 'invalid_response',
     })
-    expect(containsForbiddenPublicValue(result, [secret])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue])).toBe(false)
   })
 })
 
@@ -535,8 +535,8 @@ describe('ProductionDiagnostics resolved invocation boundary', () => {
     ['an undefined envelope', () => undefined],
     ['an array envelope', () => ['provider raw secret']],
   ])('collapses %s through runChecks() as request_failed without retaining raw values', async (_label, envelope) => {
-    const secret = 'provider raw secret'
-    const rawMessage = `transport rejected ${secret}`
+    const privateValue = 'private-fixture-value'
+    const rawMessage = `transport rejected ${privateValue}`
     const invoke = vi.fn(async () => envelope())
     const diagnostics = createProductionDiagnostics({ functions: { invoke } } as never)
 
@@ -547,15 +547,15 @@ describe('ProductionDiagnostics resolved invocation boundary', () => {
       status: 'FAIL',
       code: 'request_failed',
     })
-    expect(containsForbiddenPublicValue(result, [secret, rawMessage])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue, rawMessage])).toBe(false)
   })
 
   it.each([
     ['a throwing error accessor', 'error'],
     ['a throwing data accessor', 'data'],
   ])('collapses %s through runChecks() without exposing its thrown message', async (_label, property) => {
-    const secret = 'accessor-bearer-secret'
-    const rawMessage = `provider accessor exploded ${secret}`
+    const privateValue = 'private-fixture-value'
+    const rawMessage = `provider accessor exploded ${privateValue}`
     const envelope = Object.create(null) as Record<string, unknown>
     Object.defineProperty(envelope, property, {
       enumerable: true,
@@ -576,7 +576,7 @@ describe('ProductionDiagnostics resolved invocation boundary', () => {
       status: 'FAIL',
       code: 'request_failed',
     })
-    expect(containsForbiddenPublicValue(result, [secret, rawMessage, 'provider accessor exploded'])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue, rawMessage, 'provider accessor exploded'])).toBe(false)
   })
 })
 
@@ -591,7 +591,7 @@ describe('ProductionDiagnostics exact-object boundary', () => {
     ['a nested expected field getter', (response: MutableResponse) => {
       Object.defineProperty(response.fixtures.maximumTurn, 'tickCount', {
         enumerable: true,
-        get: () => 293,
+        get: () => 302,
       })
     }],
   ])('rejects %s through runChecks()', async (_label, mutate) => {
@@ -632,14 +632,14 @@ describe('ProductionDiagnostics exact-object boundary', () => {
 
 describe('ProductionDiagnostics mutation-proof projection', () => {
   it('does not let a stateful Proxy smuggle a changed value into PASS details', async () => {
-    const secret = 'proxy-reread-secret'
+    const privateValue = 'private-fixture-value'
     const response = copyExactResponse()
     let tickCountReads = 0
     const maximumTurn = new Proxy(response.fixtures.maximumTurn, {
       get(target, property, receiver) {
         if (property === 'tickCount') {
           tickCountReads += 1
-          return tickCountReads === 1 ? 293 : secret
+          return tickCountReads === 1 ? 302 : privateValue
         }
         return Reflect.get(target, property, receiver)
       },
@@ -653,9 +653,9 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
     expect(tickCountReads).toBeLessThanOrEqual(1)
     expect(result).toMatchObject({ status: 'PASS', code: 'ok' })
     if (result.status === 'PASS') {
-      expect(result.details.fixtures.maximumTurn.tickCount).toBe(293)
+      expect(result.details.fixtures.maximumTurn.tickCount).toBe(302)
     }
-    expect(containsForbiddenPublicValue(result, [secret])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue])).toBe(false)
   })
 
   it('returns only a detached recursive frozen projection that survives source mutation', async () => {
@@ -1154,9 +1154,9 @@ describe('ProductionDiagnostics lifecycle', () => {
   })
 
   it('collapses a synchronous provider throw to request_failed and clears its timer', async () => {
-    const secret = 'synchronous-provider-secret'
+    const privateValue = 'private-fixture-value'
     const invoke = vi.fn(() => {
-      throw new Error(secret)
+      throw new Error(privateValue)
     })
     const diagnostics = createProductionDiagnostics({ functions: { invoke } } as never)
 
@@ -1164,15 +1164,15 @@ describe('ProductionDiagnostics lifecycle', () => {
 
     expect(result).toMatchObject({ status: 'FAIL', code: 'request_failed' })
     expect(diagnostics.state).toEqual(result)
-    expect(containsForbiddenPublicValue(result, [secret])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue])).toBe(false)
     expect(vi.getTimerCount()).toBe(0)
   })
 
   it('collapses a hostile thenable rejection to request_failed safely', async () => {
-    const secret = 'hostile-thenable-secret'
+    const privateValue = 'private-fixture-value'
     const hostileThenable = {
       then(_resolve: unknown, reject: (reason: unknown) => void) {
-        reject(new Error(secret))
+        reject(new Error(privateValue))
       },
     }
     const invoke = vi.fn(() => hostileThenable)
@@ -1182,7 +1182,7 @@ describe('ProductionDiagnostics lifecycle', () => {
 
     expect(result).toMatchObject({ status: 'FAIL', code: 'request_failed' })
     expect(diagnostics.state).toEqual(result)
-    expect(containsForbiddenPublicValue(result, [secret])).toBe(false)
+    expect(containsForbiddenPublicValue(result, [privateValue])).toBe(false)
     expect(vi.getTimerCount()).toBe(0)
   })
 

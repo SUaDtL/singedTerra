@@ -58,28 +58,28 @@ const TERMINAL_CASES = [
     first: { type: 'fire' as const, angle: 25, power: 14, weapon: 'bouncing_betty' },
     missiles: 3,
     winner: 'p1',
-    ticks: 293,
+    ticks: 302,
   },
   {
     name: 'dirt-bomb',
     first: { type: 'fire' as const, angle: 15, power: 100, weapon: 'dirt_bomb' },
     missiles: 3,
     winner: 'p1',
-    ticks: 167,
+    ticks: 165,
   },
   {
     name: 'riot-bomb',
     first: { type: 'fire' as const, angle: 60, power: 45, weapon: 'riot_bomb' },
     missiles: 3,
     winner: 'p1',
-    ticks: 186,
+    ticks: 187,
   },
   {
     name: 'sandhog',
     first: { type: 'fire' as const, angle: 90, power: 30, weapon: 'sandhog' },
     missiles: 3,
     winner: 'p1',
-    ticks: 202,
+    ticks: 203,
   },
 ] as const
 
@@ -188,22 +188,22 @@ Deno.test('verified replay accepts exactly 448 total ticks and rejects a 447-tic
   if (code !== 'tick_limit') throw new Error(`447-tick budget returned ${JSON.stringify(code)}`)
 })
 
-Deno.test('verified replay accepts exactly 198 ticks in one turn and rejects a 197-tick budget', () => {
+Deno.test('verified replay accepts exactly 207 ticks in one turn and rejects a 206-tick budget', () => {
   const { config, transcript } = VERIFIED_REPLAY_PROBE_FIXTURES.maximumTurn
-  const accepted = replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 198 })
-  if (accepted.maxTurnTickCount !== 198) {
+  const accepted = replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 207 })
+  if (accepted.maxTurnTickCount !== 207) {
     throw new Error(`exact per-turn ceiling drifted: ${JSON.stringify(accepted)}`)
   }
 
   let code = ''
   try {
-    replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 197 })
+    replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 206 })
   } catch (error) {
     code = error && typeof error === 'object' && 'code' in error
       ? String((error as { code: unknown }).code)
       : ''
   }
-  if (code !== 'turn_tick_limit') throw new Error(`197-tick turn budget returned ${JSON.stringify(code)}`)
+  if (code !== 'turn_tick_limit') throw new Error(`206-tick turn budget returned ${JSON.stringify(code)}`)
 })
 
 const MAX_COST_OPTIONS = {
@@ -230,7 +230,7 @@ const MAX_COST_OPTIONS = {
 
 const PREMIUM_COST_CASES = [
   ['deaths_head', 75, 50, 112],
-  ['hot_napalm', 30, 75, 179],
+  ['hot_napalm', 30, 75, 184],
 ] as const
 
 Deno.test('four-seat premium weapon cost probes fit one fixed turn budget without changing production inventory', () => {

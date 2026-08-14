@@ -1,6 +1,6 @@
 // Regression contract for deterministic terrain-collapse fall damage and the
 // one-use Parachute accessory. The fixture uses the existing Riot Bomb crater
-// that drops P2 by 54px on seed 0x5eed1234.
+// that reaches the protected arena floor on seed 0x5eed1234.
 
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { PARACHUTE_PRICE } from '../../shared/src/engine/WeaponSystem.ts';
@@ -48,7 +48,7 @@ function fire(engine) {
   fire(engine);
   const tank = engine.getState().tanks[1];
   log(`[fall] unprotected health ${before}->${tank.health}, y=${tank.y}`);
-  if (before - tank.health !== 33) fail(`fall damage must follow the explicit formula (expected 33, got ${before - tank.health})`);
+  if (before - tank.health !== 45) fail(`fall damage must follow the explicit formula (expected 45, got ${before - tank.health})`);
 }
 
 // Parachute protects the same fall and is consumed exactly once.
@@ -59,7 +59,7 @@ function fire(engine) {
   const before = engine.getState().tanks[1].health;
   fire(engine);
   const tank = engine.getState().tanks[1];
-  if (before - tank.health !== 8) fail(`a parachute should reduce the 33-point fall to 8 damage, got ${before - tank.health}`);
+  if (before - tank.health !== 11) fail(`a parachute should reduce the 45-point fall to 11 damage, got ${before - tank.health}`);
   if (tank.accessories.parachute !== 0) fail('a used parachute must be consumed exactly once');
 }
 

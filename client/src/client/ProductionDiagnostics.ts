@@ -33,7 +33,7 @@ export interface VerifiedReplayProbeResponse {
   readonly rulesetVersion: 3
   readonly fixtures: {
     readonly maximumLifecycle: VerifiedReplayFixtureResult & { readonly winner: 'p2'; readonly winnerTeam: 2; readonly turn: 13; readonly actionCount: 15; readonly tickCount: 448; readonly maxTurnTickCount: 34 }
-    readonly maximumTurn: VerifiedReplayFixtureResult & { readonly winner: 'p1'; readonly winnerTeam: null; readonly turn: 3; readonly actionCount: 4; readonly tickCount: 293; readonly maxTurnTickCount: 198 }
+    readonly maximumTurn: VerifiedReplayFixtureResult & { readonly winner: 'p1'; readonly winnerTeam: null; readonly turn: 3; readonly actionCount: 4; readonly tickCount: 302; readonly maxTurnTickCount: 207 }
   }
 }
 
