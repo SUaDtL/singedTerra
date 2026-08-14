@@ -211,6 +211,7 @@ export class HUD {
   private overlayProgressionReceiptEl!: HTMLElement;
   private overlayProgressionHandoffEl!: HTMLElement;
   private overlayProgressionSignInBtnEl!: HTMLButtonElement;
+  private overlayVerifiedRetryBtnEl!: HTMLButtonElement;
   private overlayTankEl!: HTMLCanvasElement;
   private overlayPrimaryBtnEl!: HTMLButtonElement;
   private overlayMenuBtnEl!: HTMLButtonElement;
@@ -1666,6 +1667,15 @@ export class HUD {
     overlayMenuBtn.addEventListener('click', () => {
       if (this.overlayShown) this.quitCb?.();
     });
+    this.overlayVerifiedRetryBtnEl = document.createElement('button');
+    this.overlayVerifiedRetryBtnEl.className = 'st-hud__restart st-hud__victory-verified-retry';
+    this.overlayVerifiedRetryBtnEl.type = 'button';
+    this.overlayVerifiedRetryBtnEl.textContent = 'Retry verification';
+    this.overlayVerifiedRetryBtnEl.addEventListener('click', () => {
+      if (this.overlayShown && this.overlayVerifiedRetryBtnEl.isConnected && !this.overlayVerifiedRetryBtnEl.disabled) {
+        this.verifiedRetryCb?.();
+      }
+    });
     const overlayBtns = document.createElement('div');
     overlayBtns.className = 'st-hud__overlay-btns';
     overlayBtns.append(restartBtn, overlayMenuBtn);
@@ -1687,6 +1697,7 @@ export class HUD {
       event.preventDefault();
       const actions = [
         ...(this.overlayProgressionHandoffEl.hidden ? [] : [this.overlayProgressionSignInBtnEl]),
+        ...(this.overlayVerifiedRetryBtnEl.isConnected ? [this.overlayVerifiedRetryBtnEl] : []),
         this.overlayPrimaryBtnEl,
         this.overlayMenuBtnEl,
       ];
@@ -2892,6 +2903,15 @@ export class HUD {
     if (!this.built) this.build();
     this.verifiedRetryBtnEl.hidden = true;
     this.verifiedRetryBtnEl.disabled = true;
+    const isRetryable = state?.status === 'retryable';
+    const retiringFocusedOverlayRetry = !isRetryable
+      && this.overlayShown
+      && document.activeElement === this.overlayVerifiedRetryBtnEl;
+    this.overlayVerifiedRetryBtnEl.disabled = !isRetryable;
+    if (!isRetryable) {
+      if (retiringFocusedOverlayRetry) this.overlayPrimaryBtnEl.focus({ preventScroll: true });
+      this.overlayVerifiedRetryBtnEl.remove();
+    }
     if (state === null) {
       this.verifiedStatusEl.hidden = true;
       this.verifiedStatusEl.remove();
@@ -2927,6 +2947,10 @@ export class HUD {
       this.verifiedStateEl.textContent = 'Verification needs another attempt.';
       this.verifiedRetryBtnEl.hidden = false;
       this.verifiedRetryBtnEl.disabled = false;
+      this.overlayVerifiedRetryBtnEl.disabled = false;
+      if (!this.overlayVerifiedRetryBtnEl.isConnected) {
+        this.overlayPrimaryBtnEl.before(this.overlayVerifiedRetryBtnEl);
+      }
     } else if (state.status === 'expired') {
       this.verifiedStateEl.textContent = 'Verification expired.';
     } else if (state.deadline.warning === 'five-minutes') {
