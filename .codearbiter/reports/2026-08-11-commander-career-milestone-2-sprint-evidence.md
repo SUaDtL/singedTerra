@@ -239,6 +239,6 @@ Architecture closure: PASS on the corrected live package. The adversary confirme
 ### Bottom instrumentation rail delivery (2026-08-14)
 
 - PR #416 exact reviewed head `09d0ee2cf9b5af73a6859ed48684950987e205fe` cleared CI, CodeQL, Edge, and rendering guardrails before squash merge as `main@a237fb64376e213234110509ca1db6b97dfd3fc2`. Exact-main CI `31792840562`, CodeQL `31792840673`, and Pages deployment `31792840612` then passed on that merge.
-- The only deployed verifier consumer, `verified_replay_probe`, was deployed to Supabase project `jdvxfxjpobtyasozxauh`; no migration or other Edge function changed.
+- The scoped deployments to Supabase project `jdvxfxjpobtyasozxauh` covered `verified_replay_probe` and `complete_verified_deployment`, which both bundle the protected-floor verifier path. No migration or other Edge function changed.
 - A fresh production browser tab on the deployed hot-seat First Salvo route measured the coach card ending at y=526.125 while the opaque battle rail begins at y=536.609. The enabled Skip control stayed fully inside the coach card, and the page matched its 1280 by 720 viewport without document overflow. This proves the delivered rail/coaching geometry, not a networked-match result.
 - Final local browser follow-up combined First Salvo and terrain/material suites: 37 PASS and 5 intentional touch-specific skips. This supersedes the earlier split 10/5 and 27/27 counts without changing their scope.
