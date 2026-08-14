@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { FireCell, GameState } from '@shared/types/GameState';
 import { Renderer } from './Renderer';
 
@@ -197,7 +197,7 @@ describe('Renderer pooled napalm firelight', () => {
     expect(ops.find((op) => op.name === 'translate')?.args).toEqual([101, 274]);
   });
 
-  it('omits bloom for a malformed or all-air terrain surface', () => {
+  it('omits bloom for malformed terrain but anchors all-air terrain to the arena floor', () => {
     const fire = [{ x: 10, life: 36 }];
     const malformed = seam();
     const allAir = seam();
@@ -209,7 +209,8 @@ describe('Renderer pooled napalm firelight', () => {
     ));
 
     expect(malformed.ops.filter((op) => op.name === 'gradient')).toHaveLength(0);
-    expect(allAir.ops.filter((op) => op.name === 'gradient')).toHaveLength(0);
+    expect(allAir.ops.filter((op) => op.name === 'gradient')).toHaveLength(1);
+    expect(allAir.ops.find((op) => op.name === 'translate')?.args).toEqual([10, ARENA_FLOOR_Y - 6]);
   });
 
   it('does no Canvas work when no fire is active', () => {
