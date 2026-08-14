@@ -363,11 +363,11 @@
 - [x] Apply only the layout correction and rerun the desktop, compact fine-pointer, and touch browser matrix GREEN.
 - [x] Reconcile the protected-floor deterministic replay envelope: the authorized maximum valid verified turn now resolves in 207 ticks; 206 is rejected closed.
 - [x] Keep transient First Salvo instruction input clear of the protected rail, and reconcile its terrain-derived authored-world browser fixtures without treating HTTP cache behavior as game behavior.
-- [ ] Run adversarial review, exact-head CI, merge, Pages deployment, and production geometry proof.
+- [x] Run adversarial review, exact-head CI, merge, Pages deployment, scoped Edge deployments (`verified_replay_probe` and `complete_verified_deployment`), and production geometry proof.
 
 **Verification:** `npx playwright test e2e/hud-layout.spec.ts e2e/online-garage-layout.spec.ts`
 **Maps to:** O-08 real-browser usability and layering
-**Status:** IN_PROGRESS — local engine, client, and Edge contracts are green after the user-authorized verifier-bound correction; no merge or deployment claim yet.
+**Status:** ACCEPTED — PR #416 merged as `main@a237fb64376e213234110509ca1db6b97dfd3fc2`; exact-main CI, CodeQL, Pages, both scoped Edge deployments, and the bounded live geometry proof are recorded. `career.initiative.0001` remains active for the next player-facing outcome.
 
 ## Dependency order and MVP slice
 
