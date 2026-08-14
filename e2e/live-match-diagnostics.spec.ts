@@ -73,9 +73,13 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
   if (!directTrigger) {
     await page.getByRole('button', { name: 'Open menu', exact: true }).click()
     trigger = page.getByRole('button', { name: 'Inspect live match', exact: true })
+    await expect(fire).toBeDisabled()
   }
   await expect(trigger).toBeVisible()
-  await expect(fire).toBeEnabled()
+  // Touch opens the existing Command Menu to reach this action. That menu
+  // intentionally pauses battle input, so Fire is only expected to recover
+  // after the inspector has returned to the active battle.
+  if (directTrigger) await expect(fire).toBeEnabled()
   await trigger.focus()
   await trigger.click()
 
