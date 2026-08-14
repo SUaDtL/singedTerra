@@ -237,6 +237,60 @@ describe('HUD Victory After-Action Report', () => {
     expect(modal.querySelector<HTMLElement>('.st-hud__verified-expiry')?.hidden).toBe(true);
   });
 
+  it('keeps a retryable verified completion actionable inside the blocking after-action report', () => {
+    const { modal, hud, state } = mount();
+    const retry = vi.fn(() => hud.setVerifiedDeployment({
+      status: 'completion-pending', humanSalvos: 6, cpuSalvos: 6, humanLimit: 6, cpuLimit: 6,
+      deadline: { remainingMs: 29_000, warning: 'one-minute', acceptsInput: false, canComplete: true },
+    }));
+    const playAgain = vi.fn();
+    const mainMenu = vi.fn();
+    hud.onVerifiedRetry(retry);
+    hud.onRestart(playAgain);
+    hud.onQuit(mainMenu);
+    hud.setVerifiedDeployment({
+      status: 'retryable', humanSalvos: 6, cpuSalvos: 6, humanLimit: 6, cpuLimit: 6,
+      deadline: { remainingMs: 30_000, warning: 'one-minute', acceptsInput: false, canComplete: true },
+    });
+
+    revealTerminalReport(hud, state);
+
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    const retryButton = report.querySelector<HTMLButtonElement>('.st-hud__victory-verified-retry')!;
+    expect(retryButton.hidden).toBe(false);
+    expect(retryButton.textContent).toBe('Retry verification');
+    const reportActions = [...report.querySelectorAll<HTMLButtonElement>('.st-hud__overlay-btns > button')];
+    expect(reportActions.map((button) => button.textContent)).toEqual(['Retry verification', 'Play again', 'Main Menu']);
+    const playAgainButton = report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')!;
+    const mainMenuButton = report.querySelector<HTMLButtonElement>('.st-hud__restart--ghost')!;
+    playAgainButton.click();
+    mainMenuButton.click();
+    expect(playAgain).toHaveBeenCalledOnce();
+    expect(mainMenu).toHaveBeenCalledOnce();
+
+    playAgainButton.focus();
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(retryButton);
+    hud.setVerifiedDeployment({
+      status: 'retryable', humanSalvos: 6, cpuSalvos: 6, humanLimit: 6, cpuLimit: 6,
+      deadline: { remainingMs: 29_000, warning: 'one-minute', acceptsInput: false, canComplete: true },
+    });
+    expect(document.activeElement).toBe(retryButton);
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(playAgainButton);
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(mainMenuButton);
+    report.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(retryButton);
+    retryButton.click();
+    expect(retry).toHaveBeenCalledOnce();
+    expect(retryButton.isConnected).toBe(false);
+    expect(retryButton.disabled).toBe(true);
+    expect(document.activeElement).toBe(playAgainButton);
+    retryButton.click();
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
   it('freezes expiry into one focus-contained casual-or-Battery decision without implying an award', () => {
     const { stage, root, modal, hud, state } = mount();
     state.phase = 'PLAYER_TURN';
