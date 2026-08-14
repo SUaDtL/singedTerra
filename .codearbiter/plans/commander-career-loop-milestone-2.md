@@ -385,11 +385,11 @@
 - [x] Emit `rounds: 3` only from the Quick Duel route, and make every fresh redeployment assertion require the same curated format.
 - [x] Run focused and full client/engine/browser verification: the visible `Round 1 of 3` contract is green on desktop, compact, and Pixel touch.
 - [x] Re-clear adversarial review against the exact final candidate: zero Critical, High, Medium, Low, or merge-blocking findings.
-- [ ] Clear exact-head hosted CI, merge, Pages deployment, and a bounded production Quick Duel smoke; record only observed behavior.
+- [x] Clear exact-head hosted CI, merge, Pages deployment, and a bounded production Quick Duel smoke; record only observed behavior.
 
 **Verification:** `npm --workspace client exec vitest run src/ui/Lobby.quickDuel.test.ts`, `npx playwright test e2e/quick-duel-pacing.spec.ts`, `npm run typecheck`, `npm run check`, `npm run test:client`
 **Maps to:** O-07 coherent player journey
-**Status:** IN_PROGRESS — selected from the reported two-shot Quick Duel and sniper-flip experience. The best-of-three contract makes the default duel a tactical exchange without weakening global combat or online play.
+**Status:** ACCEPTED — PR #418 reviewed head `62a88848d5be3a8cab4f08fc0e4df930e9c90cd9` merged as `main@173d7006cb9f710dcf0cd8765c9eb936ae267d46`. Exact-main CI `31796779223`, CodeQL `31796779229`, and Pages `31796779220` passed. The deployed normal Quick Duel route visibly rendered `ROUND 1 OF 3`; no online-match behavior is inferred. `career.initiative.0001` remains active for the next player-facing outcome.
 
 ## Dependency order and MVP slice
 
