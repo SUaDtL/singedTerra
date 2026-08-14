@@ -405,13 +405,13 @@
 - The exact `?diagnostics=1` maintainer gate exposes a read-only in-battle inspector that reports a bounded public snapshot of mode, execution class, phase, round, turn, active-seat state, input state, and transport state.
 - The inspector never contains an identifier, code, token, seed, transcript, terrain, account datum, or action payload. It never pauses, mutates, sends, or fetches.
 
-- [ ] Write projector and HUD RED tests covering exact safe schema, normal-mode absence, diagnostics-mode reachability, immutable rendering, copy behavior, modal focus containment, and retained Fire reachability.
-- [ ] Implement the smallest pure snapshot projector and diagnostics-only HUD inspector.
-- [ ] Prove the in-battle route on desktop, compact, and touch browser profiles; run client, deterministic, adversarial, exact-head hosted, deployment, and bounded production-health gates.
+- [x] Write projector and HUD RED tests covering exact safe schema, normal-mode absence, diagnostics-mode reachability, immutable rendering, copy behavior, modal focus containment, and retained Fire reachability.
+- [x] Implement the smallest pure snapshot projector and diagnostics-only HUD inspector.
+- [x] Prove the in-battle route on desktop, compact, and touch browser profiles; run client, deterministic, adversarial, exact-head hosted, deployment, and bounded production-health gates.
 
 **Verification:** `npm --workspace client exec vitest run src/client/liveMatchDiagnostics.test.ts src/ui/HUD.diagnostics.test.ts`, `npx playwright test e2e/live-match-diagnostics.spec.ts`, `npm run typecheck`, `npm run check`, `npm run test:client`
 **Maps to:** O-09 reviewed delivery and production truth
-**Status:** IN_PROGRESS — a current player report needs the existing authenticated diagnostics console to troubleshoot a live game, not only lobby-time deployment checks. The bounded public snapshot is selected by SMARTS and remains absent from ordinary play.
+**Status:** ACCEPTED — PR #421 reviewed head `a5d6398c24ec2b639cee9154ee0f6ff5469720b5` merged as `main@9cfb497bf3cd4bbb3f80d9fd4993d74b532d4a89`. Exact-main CI `31803227944`, CodeQL `31803227874`, and Pages `31803227878` passed. An authenticated production Local Battle exposed the bounded hot-seat snapshot, copy control, and close-to-enabled-Fire return; the snapshot contained no identity, seed, transcript, token, or credential material. No Supabase deployment was associated with this client-only slice. `career.initiative.0001` remains active for the next player-facing outcome.
 
 ## Dependency order and MVP slice
 
