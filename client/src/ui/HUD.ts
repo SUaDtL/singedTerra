@@ -4073,7 +4073,8 @@ export class HUD {
 .st-hud__first-salvo {
   position: absolute;
   left: 14px;
-  bottom: 12px;
+  /* Keep the non-interactive coach above the protected instrumentation rail. */
+  bottom: calc(100% - var(--battle-rail-top-y) + 12px);
   z-index: 22;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

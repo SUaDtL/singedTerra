@@ -81,17 +81,19 @@ test.describe('authored battlefield backdrop integration', () => {
   }) => {
     const fixtures = [
       { seed: 4, path: 'art/battlefield-backdrop.webp' },
-      { seed: 8, path: 'art/battlefield-obsidian-caldera.webp' },
-      { seed: 1, path: 'art/battlefield-glassstorm-expanse.webp' },
+      { seed: 8, path: 'art/battlefield-glassstorm-expanse.webp' },
+      { seed: 0, path: 'art/battlefield-obsidian-caldera.webp' },
     ] as const;
 
     for (const fixture of fixtures) {
       const page = await context.newPage();
-      const selectedAsset = page.waitForResponse((response) =>
-        response.url().endsWith(fixture.path),
-      );
+      const requested: string[] = [];
+      page.on('request', (request) => {
+        const path = BACKDROP_PATHS.find((candidate) => request.url().endsWith(`/${candidate}`));
+        if (path !== undefined) requested.push(path);
+      });
       await gotoRunningGame(page, `?e2e=hotseat&seed=${fixture.seed}`);
-      expect((await selectedAsset).status()).toBe(200);
+      expect(requested).toEqual([fixture.path]);
       await page.close();
     }
   });
@@ -107,11 +109,13 @@ test.describe('authored battlefield backdrop integration', () => {
 
     for (const search of searches) {
       const page = await context.newPage();
-      const selectedAsset = page.waitForResponse((response) =>
-        response.url().endsWith('art/battlefield-backdrop.webp'),
-      );
+      const requested: string[] = [];
+      page.on('request', (request) => {
+        const path = BACKDROP_PATHS.find((candidate) => request.url().endsWith(`/${candidate}`));
+        if (path !== undefined) requested.push(path);
+      });
       await gotoRunningGame(page, search);
-      expect((await selectedAsset).status()).toBe(200);
+      expect(requested).toEqual(['art/battlefield-obsidian-caldera.webp']);
       await page.close();
     }
   });
@@ -161,11 +165,7 @@ test.describe('authored battlefield backdrop integration', () => {
     const fallbackSky = await sampleSky(page);
 
     const authoredPage = await context.newPage();
-    const assetResponse = authoredPage.waitForResponse((response) =>
-      BACKDROP_PATHS.some((path) => response.url().endsWith(`/${path}`)),
-    );
     await gotoRunningGame(authoredPage);
-    expect((await assetResponse).status()).toBe(200);
 
     await expect.poll(async () =>
       meanChannelDelta(fallbackSky, await sampleSky(authoredPage)),

@@ -362,6 +362,7 @@
 - [x] Verify RED on the old implementation: lobby `overflow-y` was `auto`; the upper-left deck intersected the left spawn footprint, and the initially centred replacement intersected the three-seat centre footprint.
 - [x] Apply only the layout correction and rerun the desktop, compact fine-pointer, and touch browser matrix GREEN.
 - [x] Reconcile the protected-floor deterministic replay envelope: the authorized maximum valid verified turn now resolves in 207 ticks; 206 is rejected closed.
+- [x] Keep transient First Salvo instruction input clear of the protected rail, and reconcile its terrain-derived authored-world browser fixtures without treating HTTP cache behavior as game behavior.
 - [ ] Run adversarial review, exact-head CI, merge, Pages deployment, and production geometry proof.
 
 **Verification:** `npx playwright test e2e/hud-layout.spec.ts e2e/online-garage-layout.spec.ts`
