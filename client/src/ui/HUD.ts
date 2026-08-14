@@ -5278,7 +5278,7 @@ export class HUD {
   #battle-rail .st-hud__turnwatch--stalled {
     top: 0;
     box-sizing: border-box;
-    height: 100px;
+    height: 98px;
     padding: 0 8px;
   }
   #battle-rail .st-hud__turnwatch--stalled .st-hud__turnwatch-leave {

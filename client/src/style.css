@@ -267,11 +267,12 @@ body::before {
  */
 #battle-rail {
   position: absolute;
-  top: 500px;
+  /* 500px floor plus the ceiling of the renderer's 1.4px legal downward recoil. */
+  top: 502px;
   right: 0;
   left: 0;
   box-sizing: border-box;
-  height: 100px;
+  height: 98px;
   z-index: 6;
   display: flex;
   align-items: stretch;
