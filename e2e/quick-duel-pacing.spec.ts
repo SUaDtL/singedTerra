@@ -7,5 +7,7 @@ test('Quick Duel visibly starts the curated best-of-three match', async ({ page 
   await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 
   await expect(page.locator('.st-hud__instruments')).toBeVisible();
-  await expect(page.locator('.st-hud__round')).toHaveText('Round 1 of 3');
+  const round = page.locator('.st-hud__round');
+  await expect(round).toBeVisible();
+  await expect(round).toHaveText('Round 1 of 3');
 });
