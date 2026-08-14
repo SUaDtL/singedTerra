@@ -33,8 +33,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: null,
       turn: 3,
       actionCount: 4,
-      tickCount: 293,
-      maxTurnTickCount: 198,
+      tickCount: 302,
+      maxTurnTickCount: 207,
     },
     verifiedDuel: {
       seed: 17,
@@ -43,8 +43,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       reason: 'health',
       humanSalvos: 6,
       cpuSalvos: 6,
-      liveTicks: 625,
-      cpuSimulationTicks: 24564,
+      liveTicks: 626,
+      cpuSimulationTicks: 24601,
       maximumProbeCount: 59,
       transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })),
     },
@@ -591,7 +591,7 @@ describe('ProductionDiagnostics exact-object boundary', () => {
     ['a nested expected field getter', (response: MutableResponse) => {
       Object.defineProperty(response.fixtures.maximumTurn, 'tickCount', {
         enumerable: true,
-        get: () => 293,
+        get: () => 302,
       })
     }],
   ])('rejects %s through runChecks()', async (_label, mutate) => {
@@ -639,7 +639,7 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
       get(target, property, receiver) {
         if (property === 'tickCount') {
           tickCountReads += 1
-          return tickCountReads === 1 ? 293 : secret
+          return tickCountReads === 1 ? 302 : secret
         }
         return Reflect.get(target, property, receiver)
       },
@@ -653,7 +653,7 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
     expect(tickCountReads).toBeLessThanOrEqual(1)
     expect(result).toMatchObject({ status: 'PASS', code: 'ok' })
     if (result.status === 'PASS') {
-      expect(result.details.fixtures.maximumTurn.tickCount).toBe(293)
+      expect(result.details.fixtures.maximumTurn.tickCount).toBe(302)
     }
     expect(containsForbiddenPublicValue(result, [secret])).toBe(false)
   })

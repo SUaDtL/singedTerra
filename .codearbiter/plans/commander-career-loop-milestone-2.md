@@ -356,16 +356,17 @@
 
 **Interfaces:**
 - The full-stage online lobby is never its own scroll container; intentional scrolling remains reserved for bounded dense sub-surfaces.
-- The fine-pointer command deck remains functional but occupies the left-bottom free lane, clear of every deterministic two-, three-, and four-seat spawn footprint shared by hot-seat and online lockstep play.
+- The fine-pointer command deck remains functional in a dedicated opaque bottom instrumentation rail. The shared engine reserves y=500 as the immutable arena floor, so every deterministic two-, three-, and four-seat spawn footprint shared by hot-seat and online lockstep play remains above the rail.
 
 - [x] Add browser RED coverage requiring a non-scrolling online lobby card and a rendered command deck clear of every two-/three-/four-seat spawn footprint using the widest shipped 36px chassis with a bottom-stage margin.
 - [x] Verify RED on the old implementation: lobby `overflow-y` was `auto`; the upper-left deck intersected the left spawn footprint, and the initially centred replacement intersected the three-seat centre footprint.
 - [x] Apply only the layout correction and rerun the desktop, compact fine-pointer, and touch browser matrix GREEN.
-- [ ] Run aggregate checks, adversarial review, exact-head CI, merge, Pages deployment, and production geometry proof.
+- [x] Reconcile the protected-floor deterministic replay envelope: the authorized maximum valid verified turn now resolves in 207 ticks; 206 is rejected closed.
+- [ ] Run adversarial review, exact-head CI, merge, Pages deployment, and production geometry proof.
 
 **Verification:** `npx playwright test e2e/hud-layout.spec.ts e2e/online-garage-layout.spec.ts`
 **Maps to:** O-08 real-browser usability and layering
-**Status:** IN_PROGRESS — test-first local implementation is green; no merge or deployment claim yet.
+**Status:** IN_PROGRESS — local engine, client, and Edge contracts are green after the user-authorized verifier-bound correction; no merge or deployment claim yet.
 
 ## Dependency order and MVP slice
 
