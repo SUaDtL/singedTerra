@@ -139,6 +139,8 @@ export class HUD {
   private readonly root: HTMLElement;
   /** On-canvas overlay root (#game-overlay) — controls legend + liveness widgets. */
   private readonly overlayRoot: HTMLElement;
+  /** Protected bottom-band root (#battle-rail) for fine-pointer commands and liveness. */
+  private readonly railRoot: HTMLElement;
   /** Full-app modal layer (#modal-layer), ABOVE the CRT chrome — store + game-over
    *  modals mount here so they render crisp and span canvas+panel (P3-16). */
   private readonly modalRoot: HTMLElement;
@@ -352,10 +354,16 @@ export class HUD {
   private desktopCommandDeckEl!: HTMLElement;
   private desktopCommandDeckGridEl!: HTMLElement;
 
-  constructor(root: HTMLElement, overlayRoot: HTMLElement, modalRoot: HTMLElement) {
+  constructor(
+    root: HTMLElement,
+    overlayRoot: HTMLElement,
+    modalRoot: HTMLElement,
+    railRoot = overlayRoot,
+  ) {
     this.root = root;
     this.overlayRoot = overlayRoot;
     this.modalRoot = modalRoot;
+    this.railRoot = railRoot;
     this.reduceMotion = typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
@@ -489,6 +497,7 @@ export class HUD {
   private syncCombatFocus(focus: CombatFocus): void {
     this.root.dataset['combatFocus'] = focus;
     this.overlayRoot.dataset['combatFocus'] = focus;
+    this.railRoot.dataset['combatFocus'] = focus;
     // These are mixed-interactivity regions: Store remains available in the
     // console and Menu remains available in the touch toolbar while combat
     // controls are disabled. Keep disabled semantics on the individual controls
@@ -577,16 +586,18 @@ export class HUD {
     // buildArsenal resolves the persisted state before the rail children exist;
     // re-apply it now so a stored-open drawer also isolates covered controls.
     this.applyStripCollapsed();
-    // Pointer-specific command surfaces share the upper-left sky position. CSS
-    // shows the keyboard deck on fine pointers and the interactive dock on coarse
-    // pointers, preserving the narrow rail for live telemetry.
+    // Fine-pointer commands and network liveness occupy the protected floor rail.
+    // The coarse-pointer dock deliberately stays on the overlay: its large touch
+    // targets remain reachable without changing its established input behavior.
     this.overlayRoot.append(
-      controls,
       this.touchStripEl,
+      this.firstSalvoEl,
+    );
+    this.railRoot.append(
+      controls,
       this.connBannerEl,
       this.toastEl,
       this.turnWatchEl,
-      this.firstSalvoEl,
     );
     this.modalRoot.append(
       this.terminalPayoffStatusEl,
@@ -3626,16 +3637,15 @@ export class HUD {
   white-space: nowrap;
 }
 .st-hud__controls {
-  position: absolute;
-  /* Keep the optional fine-pointer deck in the only free lane shared by the
-   * default two-seat layout and configured two-, three-, and four-seat games.
-   * The former upper-left deck could hide a tank on high terrain. */
-  top: auto;
-  bottom: 14px;
-  left: 200px;
-  width: 220px;
+  position: relative;
+  width: 720px;
+  height: 100%;
   box-sizing: border-box;
-  padding: 10px;
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+  padding: 6px 8px;
   border-radius: 10px;
   background:
     radial-gradient(110% 90% at 0% 0%, rgba(122, 215, 255, 0.13), transparent 48%),
@@ -3654,10 +3664,14 @@ export class HUD {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 24px;
-  margin-bottom: 8px;
-  padding: 0 2px 7px;
-  border-bottom: 1px solid rgba(255, 210, 63, 0.3);
+  min-height: 0;
+  margin: 0;
+  padding: 0 8px 0 2px;
+  border-right: 1px solid rgba(255, 210, 63, 0.3);
+  border-bottom: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
 }
 .st-hud__controls-title {
   color: var(--text-gold);
@@ -3680,7 +3694,7 @@ export class HUD {
 }
 .st-hud__control-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
 }
 .st-hud__control-cell {
@@ -3689,7 +3703,7 @@ export class HUD {
   grid-template-rows: 1fr auto;
   align-items: center;
   gap: 0 7px;
-  min-height: 46px;
+  min-height: 0;
   min-width: 0;
   padding: 6px 7px;
   border: 1px solid rgba(255, 210, 63, 0.2);
@@ -3771,7 +3785,7 @@ export class HUD {
   opacity: 0.35;
 }
 .st-hud__control-cell--primary {
-  grid-column: 1 / -1;
+  grid-column: auto;
   grid-template-columns: 30px minmax(0, 1fr) auto;
   grid-template-rows: 1fr;
   min-height: 42px;
@@ -3780,6 +3794,17 @@ export class HUD {
     linear-gradient(90deg, rgba(255, 122, 31, 0.2), transparent 70%),
     rgba(9, 5, 17, 0.84);
 }
+#battle-rail .st-hud__controls { pointer-events: auto; }
+#battle-rail .st-hud__conn,
+#battle-rail .st-hud__toast,
+#battle-rail .st-hud__turnwatch {
+  right: 16px;
+  left: auto;
+  transform: none;
+}
+#battle-rail .st-hud__conn { top: 4px; }
+#battle-rail .st-hud__toast { top: 36px; }
+#battle-rail .st-hud__turnwatch { top: 68px; }
 .st-hud__control-cell--primary .st-ui-glyph { grid-row: 1; }
 .st-hud__control-cell--primary .st-hud__control-label { align-self: center; }
 .st-hud__control-cell--primary .st-hud__keypair {
@@ -5768,7 +5793,7 @@ export class HUD {
 #hud[data-combat-focus="outcome"] > .st-hud__strip {
   filter: saturate(0.52) brightness(0.68);
 }
-#game-overlay[data-combat-focus="outcome"] > .st-hud__controls,
+#battle-rail[data-combat-focus="outcome"] > .st-hud__controls,
 #game-overlay[data-combat-focus="outcome"] > .st-hud__touch-strip {
   filter: saturate(0.52) brightness(0.68);
 }

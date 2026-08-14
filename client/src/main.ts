@@ -173,6 +173,7 @@ function bootstrap(): void {
   const canvas: HTMLCanvasElement = canvasEl;
   const hudRoot = requireElement('hud');
   const overlayRoot = requireElement('game-overlay');
+  const battleRailRoot = requireElement('battle-rail');
   const modalRoot = requireElement('modal-layer');
   const lobbyRoot = requireElement('lobby');
 
@@ -182,7 +183,7 @@ function bootstrap(): void {
   for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);
 
   const renderer = new Renderer(canvas);
-  const hud = new HUD(hudRoot, overlayRoot, modalRoot);
+  const hud = new HUD(hudRoot, overlayRoot, modalRoot, battleRailRoot);
   const firstSalvoStorage: FirstSalvoStorage = {
     getItem: (key) => window.localStorage.getItem(key),
     setItem: (key, value) => window.localStorage.setItem(key, value),

@@ -5,6 +5,7 @@ import type { GameState } from '@shared/types/GameState';
 
 interface MountedShell {
   root: HTMLElement;
+  rail: HTMLElement;
   modal: HTMLElement;
   hud: HUD;
   state: GameState;
@@ -13,9 +14,17 @@ interface MountedShell {
 function mountHarness(): MountedShell {
   const root = document.createElement('div');
   const overlay = document.createElement('div');
+  const rail = document.createElement('div');
+  rail.id = 'battle-rail';
   const modal = document.createElement('div');
-  document.body.append(root, overlay, modal);
-  const hud = new HUD(root, overlay, modal);
+  document.body.append(root, overlay, rail, modal);
+  const HUDWithRail = HUD as unknown as new (
+    root: HTMLElement,
+    overlay: HTMLElement,
+    modal: HTMLElement,
+    rail: HTMLElement,
+  ) => HUD;
+  const hud = new HUDWithRail(root, overlay, modal, rail);
   const engine = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },
@@ -26,7 +35,7 @@ function mountHarness(): MountedShell {
   });
   const state = engine.getState();
   hud.update(state);
-  return { root, modal, hud, state };
+  return { root, rail, modal, hud, state };
 }
 
 function mount(): HTMLElement {
@@ -40,6 +49,37 @@ afterEach(() => {
 });
 
 describe('HUD single-screen combat shell', () => {
+  it('mounts the fine-pointer command deck in the explicit battle rail', () => {
+    const { overlay, rail } = (() => {
+      const root = document.createElement('div');
+      const overlay = document.createElement('div');
+      const rail = document.createElement('div');
+      rail.id = 'battle-rail';
+      const modal = document.createElement('div');
+      document.body.append(root, overlay, rail, modal);
+      const HUDWithRail = HUD as unknown as new (
+        root: HTMLElement,
+        overlay: HTMLElement,
+        modal: HTMLElement,
+        rail: HTMLElement,
+      ) => HUD;
+      const hud = new HUDWithRail(root, overlay, modal, rail);
+      const engine = new GameEngine({
+        players: [
+          { name: 'Alice', color: '#e84d4d' },
+          { name: 'Bob', color: '#4d8ce8' },
+        ],
+        maxPlayers: 2,
+        seed: 1,
+      });
+      hud.update(engine.getState());
+      return { overlay, rail };
+    })();
+
+    expect(rail.querySelector('[data-ui="command-deck"]')).not.toBeNull();
+    expect(overlay.querySelector('[data-ui="command-deck"]')).toBeNull();
+  });
+
   it('marks one shell and applies the shared section rhythm to every rail region', () => {
     const root = mount();
     const commandConsole = root.querySelector<HTMLElement>('.st-hud__command-console')!;

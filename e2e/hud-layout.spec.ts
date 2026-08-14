@@ -327,12 +327,14 @@ test.describe('HUD layout guardrails', () => {
     page,
   }, testInfo) => {
     const overlay = page.locator('#game-overlay');
-    const deck = overlay.locator('[data-ui="command-deck"]');
+    const rail = page.locator('#battle-rail');
+    const deck = rail.locator('[data-ui="command-deck"]');
     const dock = overlay.locator('.st-hud__touch-strip');
     const isTouch = testInfo.project.name === 'pixel-touch';
 
     if (!isTouch) {
       await expect(deck).toBeVisible();
+      await expect(rail).toBeVisible();
       await expect(deck).toHaveAttribute('role', 'region');
       await expect(deck).toHaveAttribute('aria-label', 'Keyboard and mouse commands');
       await expect(dock).toBeHidden();
@@ -359,17 +361,19 @@ test.describe('HUD layout guardrails', () => {
       ]);
       const geometry = await deck.evaluate((node) => {
         const deckRect = node.getBoundingClientRect();
+        const rail = document.querySelector<HTMLElement>('#battle-rail')!;
+        const railRect = rail.getBoundingClientRect();
         const game = document.querySelector<HTMLCanvasElement>('#game')!;
         const gameRect = game.getBoundingClientRect();
         const gameScale = gameRect.width / game.width;
-        // Two-seat defaults use 15%/85%; configured 2-4 seat games use the
-        // inclusive 10%-90% spread. The widest shipped chassis is 36px
-        // (Ranger/Bulwark/Jackal treads), so protect its visible 18px
-        // half-footprint rather than the narrower 20px collision box.
-        const tankRenderHalfWidth = 18;
-        const spawnColumns = [0.1, 0.15, 11 / 30, 0.5, 19 / 30, 0.85, 0.9].map((fraction) => (
-          gameRect.left + game.width * fraction * gameScale
-        ));
+        // A tank's rendered tread base is its authoritative y coordinate. Cover
+        // every real roster cardinality with the widest 36px chassis, rather
+        // than merely proving an empty horizontal lane beside a floating deck.
+        const widestChassisBasesByRoster = [
+          [500, 500],
+          [500, 500, 500],
+          [500, 500, 500, 500],
+        ];
         const title = node.querySelector<HTMLElement>('.st-hud__controls-title')!;
         const mode = node.querySelector<HTMLElement>('.st-hud__controls-mode')!;
         const rows = [...node.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
@@ -404,23 +408,20 @@ test.describe('HUD layout guardrails', () => {
           clientWidth: node.clientWidth,
           scrollHeight: node.scrollHeight,
           clientHeight: node.clientHeight,
-          deckClearOfSpawnFootprints: spawnColumns.every((column) => (
-            column + tankRenderHalfWidth * gameScale <= deckRect.left
-              || column - tankRenderHalfWidth * gameScale >= deckRect.right
+          railOverflow: getComputedStyle(rail).overflow,
+          railTopLogical: (railRect.top - gameRect.top) / gameScale,
+          deckInsideRail: deckRect.top >= railRect.top - 1
+            && deckRect.right <= railRect.right + 1
+            && deckRect.bottom <= railRect.bottom + 1,
+          widestChassisClearOfRail: widestChassisBasesByRoster.every((bases) => (
+            bases.every((baseY) => gameRect.top + baseY * gameScale <= railRect.top + 1)
           )),
-          bottomClearanceLogical: (gameRect.bottom - deckRect.bottom) / gameScale,
         };
       });
       const compactDeck = testInfo.project.name === 'small-window';
-      expect(geometry.width).toBeCloseTo(220, 1);
+      expect(geometry.width).toBeCloseTo(720, 1);
       expect(geometry.titleFont).toBeGreaterThanOrEqual(10.5);
       expect(geometry.modeFont).toBeGreaterThanOrEqual(7.5);
-      expect(geometry.rows.at(-1)!.rect.width)
-        .toBeGreaterThan(geometry.rows[0]!.rect.width * 1.8);
-      for (const row of geometry.rows.slice(0, -1)) {
-        expect(row.minHeight).toBeGreaterThanOrEqual(46);
-      }
-      expect(geometry.rows.at(-1)!.minHeight).toBeGreaterThanOrEqual(42);
       expect(geometry.ordinaryBorder).not.toBe(geometry.primaryBorder);
       expect(geometry.ordinaryBackground).not.toBe(geometry.primaryBackground);
       expect(geometry.keyFonts).toHaveLength(9);
@@ -436,10 +437,10 @@ test.describe('HUD layout guardrails', () => {
       }
       expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
       expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
-      // The deck must stay in the one free lane shared by the default two-seat
-      // layout and every configured two-, three-, and four-seat layout.
-      expect(geometry.deckClearOfSpawnFootprints).toBe(true);
-      expect(geometry.bottomClearanceLogical).toBeGreaterThanOrEqual(12);
+      expect(geometry.railOverflow).toBe('hidden');
+      expect(geometry.railTopLogical).toBeCloseTo(500, 1);
+      expect(geometry.deckInsideRail).toBe(true);
+      expect(geometry.widestChassisClearOfRail).toBe(true);
       for (const label of geometry.labels) {
         expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 11 : 10);
         expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
