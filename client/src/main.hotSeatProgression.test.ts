@@ -26,10 +26,14 @@ const seams = vi.hoisted(() => ({
   progressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
+  liveMatchDiagnosticsProviders: [] as Array<() => unknown>,
+  liveMatchDiagnosticsSettings: [] as Array<(() => unknown) | null>,
   anonymousHandoffs: 0,
   accountSignInShows: 0,
   lobbyShows: 0,
   accountAnonymous: false,
+  accountAuthenticated: false,
+  onAccountAuthenticationChange: null as null | (() => void),
   onProgressionSignIn: null as null | (() => void),
   record: (_result: { matchId: string; won: boolean }): Promise<HotSeatProgressionReceipt | null> => Promise.resolve({
     prior: { progressionVersion: 1 as const, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
@@ -172,6 +176,10 @@ vi.mock('./ui/HUD', () => ({
     setVerifiedDeployment(state: Record<string, unknown> | null) {
       seams.verifiedHudStates.push(state)
     }
+    setLiveMatchDiagnostics(provider: (() => unknown) | null) {
+      seams.liveMatchDiagnosticsSettings.push(provider)
+      if (provider) seams.liveMatchDiagnosticsProviders.push(provider)
+    }
     notifyTerminalImpactComplete() { seams.terminalImpactNotifies += 1 }
     setAnonymousProgressionHandoff() { seams.anonymousHandoffs += 1 }
     setArmsLevel() {}
@@ -191,6 +199,8 @@ vi.mock('./ui/Lobby', () => ({
     hide() {}
     show() { seams.lobbyShows += 1 }
     isAccountAnonymous() { return seams.accountAnonymous }
+    isAccountAuthenticated() { return seams.accountAuthenticated }
+    onAccountAuthenticationChange(callback: () => void) { seams.onAccountAuthenticationChange = callback }
     get verifiedDeployment() { return seams.verifiedDeployment }
     refreshVerifiedDeploymentDeadline() { return seams.verifiedDeployment }
     recordVerifiedDeploymentFire(fire: { angle: number; power: number }) {
@@ -431,10 +441,14 @@ describe('production hot-seat progression composition', () => {
     seams.progressionReceipts.length = 0
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
+    seams.liveMatchDiagnosticsProviders.length = 0
+    seams.liveMatchDiagnosticsSettings.length = 0
     seams.anonymousHandoffs = 0
     seams.accountSignInShows = 0
     seams.lobbyShows = 0
     seams.accountAnonymous = false
+    seams.accountAuthenticated = false
+    seams.onAccountAuthenticationChange = null
     seams.onProgressionSignIn = null
     seams.record = () => Promise.resolve({
       prior: { progressionVersion: 1 as const, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
@@ -443,6 +457,69 @@ describe('production hot-seat progression composition', () => {
     seams.completeVerified = () => Promise.resolve(verifiedReceipt)
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('keeps the live snapshot provider absent when the exact diagnostics gate is missing', async () => {
+    await import('./main')
+
+    expect(seams.liveMatchDiagnosticsProviders).toEqual([])
+  })
+
+  it('keeps the live snapshot provider absent for an anonymous diagnostics query', async () => {
+    window.history.replaceState({}, '', '/?diagnostics=1')
+
+    await import('./main')
+
+    expect(seams.liveMatchDiagnosticsProviders).toEqual([])
+  })
+
+  it('mounts and retires diagnostics with authenticated account changes', async () => {
+    window.history.replaceState({}, '', '/?diagnostics=1')
+    await import('./main')
+    expect(seams.liveMatchDiagnosticsProviders).toEqual([])
+
+    seams.accountAuthenticated = true
+    seams.onAccountAuthenticationChange?.()
+    expect(seams.liveMatchDiagnosticsProviders).toHaveLength(1)
+
+    seams.accountAuthenticated = false
+    seams.onAccountAuthenticationChange?.()
+    expect(seams.liveMatchDiagnosticsSettings).toEqual([null, expect.any(Function), null])
+  })
+
+  it('wires a diagnostics-gated live snapshot from the current battle without raw lobby identity', async () => {
+    window.history.replaceState({}, '', '/?diagnostics=1')
+    seams.accountAuthenticated = true
+    const state = gameState()
+    Object.assign(state, { phase: 'PLAYER_TURN', winner: null, round: 1, totalRounds: 3 })
+    Object.assign(state.tanks[0]!, { alive: true, health: 88 })
+    const client = fakeClient(state)
+    seams.clients.push(client)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      roomId: 'private-room',
+      playerId: 'private-player',
+      settings: { seed: 42, rounds: 3 },
+      players: [],
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    expect(seams.liveMatchDiagnosticsProviders).toHaveLength(1)
+    expect(seams.liveMatchDiagnosticsProviders[0]!()).toEqual({
+      schemaVersion: 1,
+      mode: 'hotseat',
+      execution: 'casual',
+      phase: 'PLAYER_TURN',
+      round: 1,
+      totalRounds: 3,
+      turn: 4,
+      activeSeat: { ordinal: 1, alive: true, health: 88 },
+      input: 'ready',
+      transport: 'not-applicable',
+    })
   })
 
   it('replays recovery through the shared controller, persists only accepted human fire, and submits one verified terminal result', async () => {

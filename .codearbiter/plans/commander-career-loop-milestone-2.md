@@ -391,6 +391,28 @@
 **Maps to:** O-07 coherent player journey
 **Status:** ACCEPTED — PR #418 reviewed head `62a88848d5be3a8cab4f08fc0e4df930e9c90cd9` merged as `main@173d7006cb9f710dcf0cd8765c9eb936ae267d46`. Exact-main CI `31796779223`, CodeQL `31796779229`, and Pages `31796779220` passed. The deployed normal Quick Duel route visibly rendered `ROUND 1 OF 3`; no online-match behavior is inferred. `career.initiative.0001` remains active for the next player-facing outcome.
 
+### T-13: Make Production Diagnostics a live-match toolkit
+
+**Files:**
+
+- Create: `client/src/client/liveMatchDiagnostics.ts`
+- Modify: `client/src/ui/HUD.ts`
+- Modify: `client/src/main.ts`
+- Create: `e2e/live-match-diagnostics.spec.ts`
+
+**Interfaces:**
+
+- The exact `?diagnostics=1` maintainer gate exposes a read-only in-battle inspector that reports a bounded public snapshot of mode, execution class, phase, round, turn, active-seat state, input state, and transport state.
+- The inspector never contains an identifier, code, token, seed, transcript, terrain, account datum, or action payload. It never pauses, mutates, sends, or fetches.
+
+- [ ] Write projector and HUD RED tests covering exact safe schema, normal-mode absence, diagnostics-mode reachability, immutable rendering, copy behavior, modal focus containment, and retained Fire reachability.
+- [ ] Implement the smallest pure snapshot projector and diagnostics-only HUD inspector.
+- [ ] Prove the in-battle route on desktop, compact, and touch browser profiles; run client, deterministic, adversarial, exact-head hosted, deployment, and bounded production-health gates.
+
+**Verification:** `npm --workspace client exec vitest run src/client/liveMatchDiagnostics.test.ts src/ui/HUD.diagnostics.test.ts`, `npx playwright test e2e/live-match-diagnostics.spec.ts`, `npm run typecheck`, `npm run check`, `npm run test:client`
+**Maps to:** O-09 reviewed delivery and production truth
+**Status:** IN_PROGRESS — a current player report needs the existing authenticated diagnostics console to troubleshoot a live game, not only lobby-time deployment checks. The bounded public snapshot is selected by SMARTS and remains absent from ordinary play.
+
 ## Dependency order and MVP slice
 
 Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01/T-02/T-03; T-05 depends on T-01/T-04; T-06 depends on T-02/T-04/T-05; T-07 depends on T-03/T-06; T-08 depends on T-07; T-09 depends on all implementation tasks.
