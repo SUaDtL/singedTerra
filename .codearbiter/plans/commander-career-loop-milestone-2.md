@@ -435,14 +435,15 @@ Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01
 
 **Interfaces:**
 
-- Authenticated Verified Deployment alone presents First Strike: damage the CPU within the first three human salvos. The reducer observes only the already-replayed controller transcript and public engine health/phase; it never mutates an action, transcript, account, or network request.
+- Authenticated Verified Deployment alone presents First Strike: damage the CPU within the first three human salvos. The reducer observes the already-replayed controller transcript plus its local settled human-salvo damage projection; it never mutates an action, transcript, account, or network request.
 - A recovered deployment deterministically re-observes its historical salvos before presenting live state, so a first-three-salvo hit remains achieved after reload while a fourth-salvo hit cannot be backdated.
 - The Commander dossier/deployment brief, in-battle verified status, and existing After Action Report provide static, live, and terminal copy respectively. The report gains no action, focus target, reward, or XP claim.
 
 - [x] Establish causal RED/GREEN coverage for unresolved third-shot state, success-before-miss precedence, late-hit refusal, recovered early-hit preservation, and teardown/casual retirement.
 - [x] Prove the authenticated desktop and Pixel verified browser journey retains fixed-stage/no-scroll geometry while exposing the dossier and live cue.
-- [ ] Run full client/browser/deterministic gates, exact-diff adversarial review, hosted CI, Pages deployment, and authenticated production proof.
+- [x] Run full client/browser/deterministic gates, exact-diff adversarial review, hosted CI, Pages deployment, and authenticated production proof.
 
 **Verification:** `npm --workspace client test -- firstStrikeObjective.test.ts HUD.firstStrike.test.ts LobbyHotSeatView.test.ts main.hotSeatProgression.test.ts --run`, `npx playwright test e2e/verified-deployment.spec.ts`, `npm run typecheck`, `npm run check`, `npm run test:client`
 **Maps to:** O-07 coherent player journey
+**T-14 status correction (2026-08-14):** The immediately following pre-merge local-only status is retained as historical evidence but superseded. PR #423's reviewed head merged as `main@b313876106dd15b5def0dbdc66a7ea77efacbf77`; exact-main CI, CodeQL, and Pages are green, and an authenticated fresh-tab production launch showed the First Strike briefing and 3-salvo live cue. T-14 is **ACCEPTED**. `career.initiative.0001` remains active for the next tactical milestone.
 **Status:** IN_PROGRESS â€” client-only local implementation is GREEN; delivery gates remain open. `career.initiative.0001` remains active.
