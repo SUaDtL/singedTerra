@@ -9,7 +9,7 @@ function mountHud(): { root: HTMLElement; hud: HUD; engine: GameEngine } {
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
   document.body.append(root, overlay, modal);
-  const hud = new HUD(root, overlay, modal);
+  const hud = new HUD(root, overlay, modal, overlay);
   // A deterministic 2-player game — seed fixed so tank angle/power are stable.
   const engine = new GameEngine({
     players: [

@@ -358,7 +358,7 @@ export class HUD {
     root: HTMLElement,
     overlayRoot: HTMLElement,
     modalRoot: HTMLElement,
-    railRoot = overlayRoot,
+    railRoot: HTMLElement,
   ) {
     this.root = root;
     this.overlayRoot = overlayRoot;
@@ -5275,6 +5275,15 @@ export class HUD {
   .st-hud__store-close { min-height: 44px; }
   .st-hud__store-menu { min-height: 91px; }
   .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
+  #battle-rail .st-hud__turnwatch--stalled {
+    top: 0;
+    box-sizing: border-box;
+    height: 100px;
+    padding: 0 8px;
+  }
+  #battle-rail .st-hud__turnwatch--stalled .st-hud__turnwatch-leave {
+    min-height: 91px;
+  }
 }
 
 /* ===== Ballistic fire-control console ================================== */

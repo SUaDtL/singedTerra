@@ -184,6 +184,17 @@ function bootstrap(): void {
 
   const renderer = new Renderer(canvas);
   const hud = new HUD(hudRoot, overlayRoot, modalRoot, battleRailRoot);
+  if (E2E_MODE === 'hotseat') {
+    (
+      window as typeof window & {
+        __SINGED_TERRA_E2E_HUD__?: Readonly<{
+          setTurnWatch: (state: 'waiting' | 'stalled', playerName: string) => void;
+        }>;
+      }
+    ).__SINGED_TERRA_E2E_HUD__ = Object.freeze({
+      setTurnWatch: (state, playerName) => hud.setTurnWatch({ state, playerName }),
+    });
+  }
   const firstSalvoStorage: FirstSalvoStorage = {
     getItem: (key) => window.localStorage.getItem(key),
     setItem: (key, value) => window.localStorage.setItem(key, value),

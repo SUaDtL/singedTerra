@@ -70,7 +70,7 @@ function mount(): {
   const lobby = document.querySelector<HTMLElement>('#lobby')!;
   const modal = document.querySelector<HTMLElement>('#modal-layer')!;
   const overlay = document.querySelector<HTMLElement>('#game-overlay')!;
-  const hud = new HUD(root, overlay, modal);
+  const hud = new HUD(root, overlay, modal, overlay);
   const state = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },
