@@ -83,6 +83,10 @@ describe('HUD single-screen combat shell', () => {
     expect(root.querySelector('[data-ui="match-mode"]')?.textContent).toBe('Free-for-all');
     expect(root.querySelector('.st-hud__conn')?.textContent).toContain('Ready');
 
+    hud.setLiveMatchDiagnostics(() => undefined);
+    expect(root.querySelector('[data-ui="live-match-diagnostics"]')).toBeNull();
+    expect(root.querySelectorAll(':scope > button')).toHaveLength(1);
+
     state.tanks[0]!.team = 1;
     state.tanks[1]!.team = 1;
     hud.update(state);

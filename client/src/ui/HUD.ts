@@ -185,7 +185,6 @@ export class HUD {
   /** Existing renderer-derived local learning; null means no valid correction exists. */
   private impactLearningCue: BattleCommandImpactLearningCue | null = null;
   private liveMatchDiagnosticsProvider: (() => LiveMatchSnapshot | undefined) | null = null;
-  private liveMatchDiagnosticsTriggerEl!: HTMLButtonElement;
   private liveMatchInspectorEl!: HTMLElement;
   private liveMatchInspectorDataEl!: HTMLElement;
   private liveMatchInspectorCopyEl!: HTMLButtonElement;
@@ -2122,13 +2121,6 @@ export class HUD {
 
   /** Maintainer-only read-only battle inspector. It is never mounted in ordinary play. */
   private buildLiveMatchDiagnostics(): void {
-    this.liveMatchDiagnosticsTriggerEl = document.createElement('button');
-    this.liveMatchDiagnosticsTriggerEl.type = 'button';
-    this.liveMatchDiagnosticsTriggerEl.className = 'st-hud__menu st-hud__live-diagnostics-trigger';
-    this.liveMatchDiagnosticsTriggerEl.dataset['ui'] = 'live-match-diagnostics';
-    this.liveMatchDiagnosticsTriggerEl.textContent = 'Inspect live match';
-    this.liveMatchDiagnosticsTriggerEl.addEventListener('click', () => this.openLiveMatchInspector());
-
     this.liveMatchInspectorEl = document.createElement('section');
     this.liveMatchInspectorEl.className = 'st-hud__overlay st-hud__overlay--hidden';
     this.liveMatchInspectorEl.dataset['ui'] = 'live-match-inspector';
@@ -2181,6 +2173,7 @@ export class HUD {
     this.liveMatchInspectorMenuEl = document.createElement('button');
     this.liveMatchInspectorMenuEl.type = 'button';
     this.liveMatchInspectorMenuEl.className = 'st-hud__restart st-hud__restart--ghost';
+    this.liveMatchInspectorMenuEl.dataset['ui'] = 'live-match-inspector-menu';
     this.liveMatchInspectorMenuEl.textContent = 'Inspect live match';
     this.liveMatchInspectorMenuEl.addEventListener('click', () => {
       this.togglePause(false);
@@ -2190,13 +2183,11 @@ export class HUD {
 
   private syncLiveMatchDiagnostics(): void {
     const enabled = this.liveMatchDiagnosticsProvider !== null;
-    if (enabled && !this.liveMatchDiagnosticsTriggerEl.isConnected) {
-      this.root.insertBefore(this.liveMatchDiagnosticsTriggerEl, this.matchModeEl);
+    if (enabled && !this.liveMatchInspectorMenuEl.isConnected) {
       this.pauseActionsEl.insertBefore(this.liveMatchInspectorMenuEl, this.pauseActionsEl.lastElementChild);
-    } else if (!enabled && this.liveMatchDiagnosticsTriggerEl.isConnected) {
+    } else if (!enabled && this.liveMatchInspectorMenuEl.isConnected) {
       this.closeLiveMatchInspector();
       this.liveMatchInspectorDataEl.textContent = '';
-      this.liveMatchDiagnosticsTriggerEl.remove();
       this.liveMatchInspectorMenuEl.remove();
     }
   }
@@ -2220,9 +2211,7 @@ export class HUD {
     this.setLiveMatchInspectorIsolation(false);
     const previous = this.liveMatchInspectorPreviousFocus;
     this.liveMatchInspectorPreviousFocus = null;
-    const fallback = this.liveMatchDiagnosticsTriggerEl.isConnected
-      ? this.liveMatchDiagnosticsTriggerEl
-      : null;
+    const fallback = this.root.querySelector<HTMLElement>('.st-hud__menu');
     const target = previous?.isConnected && !previous.closest('[inert]') ? previous : fallback;
     target?.focus({ preventScroll: true });
   }
