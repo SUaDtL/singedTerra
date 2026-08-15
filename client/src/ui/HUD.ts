@@ -494,10 +494,16 @@ export class HUD {
   }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
-  update(state: GameState, isFiring = false, canControl = true, activeIsLocal = canControl): void {
+  update(
+    state: GameState,
+    isFiring = false,
+    canControl = true,
+    activeIsLocal = canControl,
+    verifiedInputAllowed = true,
+  ): void {
     if (!this.built) this.build();
 
-    this.syncBattleCommandState(state, isFiring, canControl, activeIsLocal);
+    this.syncBattleCommandState(state, isFiring, canControl, activeIsLocal, verifiedInputAllowed);
 
     const hasActiveTurn = state.phase === 'PLAYER_TURN' ||
       state.phase === 'FIRING' ||
@@ -531,9 +537,11 @@ export class HUD {
     isFiring: boolean,
     canControl: boolean,
     activeIsLocal: boolean,
+    verifiedInputAllowed: boolean,
   ): void {
     const command = battleCommandStateFor(state, isFiring, canControl, {
       activeIsLocal,
+      verifiedInputAllowed,
       verifiedDeployment: this.verifiedDeploymentState,
       impactLearningCue: this.impactLearningCue,
     });

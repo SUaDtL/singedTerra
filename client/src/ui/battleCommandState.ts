@@ -12,6 +12,10 @@ export type BattleCommandCommitmentPhase =
 export interface BattleCommandImpactLearningCue {
   readonly readout: string;
   readonly correction: string;
+  readonly shooterId: string;
+  readonly round: number;
+  readonly turn: number;
+  readonly explosionId: number;
 }
 
 /** The verified/report state the HUD may already know without querying a service. */
@@ -29,6 +33,8 @@ export interface BattleCommandVerifiedDeployment {
 /** Presentation inputs only; none are allowed to alter engine or transport state. */
 export interface BattleCommandStateOptions {
   readonly activeIsLocal?: boolean;
+  /** The same authoritative verified-deployment gate that guards real input. */
+  readonly verifiedInputAllowed?: boolean;
   readonly verifiedDeployment?: BattleCommandVerifiedDeployment | null;
   readonly impactLearningCue?: BattleCommandImpactLearningCue | null;
 }
@@ -94,6 +100,38 @@ function projectedState(
 
 const fireCommit = { label: 'Fire', enabled: true } as const;
 
+function validImpactLearningCue(
+  state: GameState,
+  tank: TankState | null,
+  activeIsLocal: boolean,
+  cue: BattleCommandImpactLearningCue | null | undefined,
+): BattleCommandImpactLearningCue | null {
+  if (
+    !activeIsLocal
+    || state.phase !== 'RESOLVING'
+    || tank === null
+    || cue === null
+    || cue === undefined
+    || cue.shooterId !== tank.id
+    || cue.round !== state.round
+    || cue.turn !== state.turn
+    || !Number.isInteger(cue.explosionId)
+    || cue.explosionId <= 0
+  ) return null;
+  return cue;
+}
+
+function verifiedDeploymentBlocksInput(
+  deployment: BattleCommandVerifiedDeployment | null | undefined,
+): boolean {
+  return deployment?.status === 'cap-adjudicating'
+    || deployment?.status === 'completion-pending'
+    || deployment?.status === 'retryable'
+    || deployment?.status === 'expired'
+    || deployment?.status === 'policy-refused'
+    || deployment?.status === 'failed';
+}
+
 /**
  * Projects one honest console contract from authoritative, in-memory HUD data.
  * This display-only function never changes deterministic state, callbacks, or
@@ -107,14 +145,10 @@ export function battleCommandStateFor(
 ): BattleCommandState {
   const tank = commandTank(state);
   const activeIsLocal = options.activeIsLocal ?? canControl;
+  const verifiedInputAllowed = options.verifiedInputAllowed
+    ?? !verifiedDeploymentBlocksInput(options.verifiedDeployment);
   const retryableReport = options.verifiedDeployment?.status === 'retryable';
 
-  if (retryableReport) {
-    return projectedState(state, tank, 'Verification retry available', {
-      phase: 'recovery', label: 'Retry verification in report',
-      explanation: 'The verified report can retry through its existing recovery action.', commit: null,
-    });
-  }
   if (state.phase === 'FIRING') {
     return projectedState(state, tank, 'Shot in flight', {
       phase: 'tracking', label: 'Tracking shot', explanation: 'Shot in flight.', commit: null,
@@ -130,7 +164,7 @@ export function battleCommandStateFor(
     return projectedState(state, tank, 'Resolving impact', {
       phase: 'resolving', label: 'Resolving impact',
       explanation: 'Resolving terrain and damage.', commit: null,
-    }, activeIsLocal ? options.impactLearningCue ?? null : null);
+    }, validImpactLearningCue(state, tank, activeIsLocal, options.impactLearningCue));
   }
   if (state.phase === 'PLAYER_TURN' && tank?.ai !== null && tank?.ai !== undefined) {
     return projectedState(state, tank, 'CPU commander turn', {
@@ -144,7 +178,7 @@ export function battleCommandStateFor(
       explanation: 'Another commander controls this turn.', commit: null,
     });
   }
-  if (state.phase === 'PLAYER_TURN' && tank !== null && canControl) {
+  if (state.phase === 'PLAYER_TURN' && tank !== null && canControl && verifiedInputAllowed) {
     return projectedState(state, tank, 'Your firing decision', {
       phase: 'decision', label: 'Fire ready', explanation: null, commit: fireCommit,
     });
@@ -162,6 +196,12 @@ export function battleCommandStateFor(
     });
   }
   if (state.phase === 'GAME_OVER') {
+    if (retryableReport) {
+      return projectedState(state, tank, 'Verification retry available', {
+        phase: 'recovery', label: 'Retry verification in report',
+        explanation: 'The verified report can retry through its existing recovery action.', commit: null,
+      });
+    }
     return projectedState(state, tank, 'After action report', {
       phase: 'recovery', label: 'After action report', explanation: 'Battle complete.', commit: null,
     });

@@ -854,6 +854,8 @@ function bootstrap(): void {
         renderer.render(state);
         renderDirty = false;
       }
+      const verifiedControlsAllowed = verifiedInputAllowed();
+      hud.setImpactLearningCue(renderer.currentImpactLearningCue());
       hud.update(
         state,
         newClient.isFiring ?? false,
@@ -861,8 +863,9 @@ function bootstrap(): void {
           activeIsAi: !!activeTank?.ai,
           activeIsLocal,
           paused: hud.isPaused(),
-        }),
+        }) && verifiedControlsAllowed,
         activeIsLocal,
+        verifiedControlsAllowed,
       );
       const terminalEffectsSettled = terminalImpactObserved
         || (state.projectiles.length === 0 && state.explosions.length === 0);

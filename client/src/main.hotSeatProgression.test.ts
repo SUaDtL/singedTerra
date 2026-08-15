@@ -26,6 +26,9 @@ const seams = vi.hoisted(() => ({
   progressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
+  hudUpdates: [] as unknown[][],
+  hudImpactCues: [] as unknown[],
+  rendererImpactCue: null as unknown,
   firstStrikeHudStates: [] as Array<Record<string, unknown> | null>,
   liveMatchDiagnosticsProviders: [] as Array<() => unknown>,
   liveMatchDiagnosticsSettings: [] as Array<(() => unknown) | null>,
@@ -101,6 +104,7 @@ vi.mock('./renderer/Renderer', () => ({
   Renderer: class {
     isAnimating() { return seams.rendererAnimating }
     isTerminalImpactAnimating() { return seams.rendererAnimating }
+    currentImpactLearningCue() { return seams.rendererImpactCue }
     render() {}
     reset() {}
     setAimGuide() {}
@@ -177,6 +181,7 @@ vi.mock('./ui/HUD', () => ({
     setVerifiedDeployment(state: Record<string, unknown> | null) {
       seams.verifiedHudStates.push(state)
     }
+    setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
     setFirstStrikeObjective(state: Record<string, unknown> | null) {
       seams.firstStrikeHudStates.push(state)
     }
@@ -192,7 +197,7 @@ vi.mock('./ui/HUD', () => ({
     setQuickChatEnabled() {}
     setTurnWatch() {}
     showQuickChat() {}
-    update() {}
+    update(...args: unknown[]) { seams.hudUpdates.push(args) }
   },
 }))
 vi.mock('./ui/Lobby', () => ({
@@ -451,6 +456,9 @@ describe('production hot-seat progression composition', () => {
     seams.progressionReceipts.length = 0
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
+    seams.hudUpdates.length = 0
+    seams.hudImpactCues.length = 0
+    seams.rendererImpactCue = null
     seams.firstStrikeHudStates.length = 0
     seams.liveMatchDiagnosticsProviders.length = 0
     seams.liveMatchDiagnosticsSettings.length = 0
@@ -711,6 +719,39 @@ describe('production hot-seat progression composition', () => {
     expect(casualClient.start).toHaveBeenCalledOnce()
     seams.onVerifiedReturnToBattery()
     expect(seams.returnedVerified).toBe(0)
+  })
+
+  it('passes the real verified input gate and renderer-admitted cue through one HUD update cycle', async () => {
+    const state = liveVerifiedState()
+    Object.assign(state, { phase: 'RESOLVING', round: 2, turn: 7 })
+    const controller = fakeVerifiedController(state)
+    const client = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(client)
+    seams.verifiedDeployment = {
+      status: 'expired', descriptor: verifiedDescriptor, transcript: [],
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+    }
+    seams.rendererImpactCue = {
+      readout: '84 PX LEFT OF CPU 1', correction: 'SHIFT IMPACT RIGHT',
+      shooterId: 'p1', round: 2, turn: 7, explosionId: 9,
+    }
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+    seams.onLobbyReady(verifiedConfig())
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+
+    expect(seams.hudImpactCues.at(-1)).toEqual(seams.rendererImpactCue)
+    expect(seams.hudUpdates.at(-1)?.[2]).toBe(false)
+    expect(seams.hudUpdates.at(-1)?.[4]).toBe(false)
+
+    state.phase = 'PLAYER_TURN'
+    state.turn += 1
+    seams.rendererImpactCue = null
+    client.emit(state)
+    expect(seams.hudImpactCues.at(-1)).toBeNull()
   })
 
   it('drops a verified completion receipt after account/game generation replacement', async () => {

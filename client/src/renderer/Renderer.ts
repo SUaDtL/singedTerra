@@ -62,6 +62,7 @@ import {
   getImpactMonitorGeometry,
   selectImpactMonitorFocus,
   type ImpactMonitorOffset,
+  type ImpactLearningCueContext,
 } from './impactMonitor';
 import {
   deriveImpactLearningCue,
@@ -171,6 +172,8 @@ interface Burst {
   authored: boolean;
   /** Local-human correction language associated with this exact blast. */
   cue?: ImpactLearningCue;
+  /** Shot identity binds a cue to its originating resolving state. */
+  learningContext?: ImpactLearningCueContext;
   /** Frames elapsed since spawn. */
   age: number;
 }
@@ -672,6 +675,15 @@ export class Renderer {
     this.impactMonitor?.draw(this.ctx, geometry, false, focus.cue ?? null);
   }
 
+  /** Expose only the currently live, renderer-admitted local cue to the HUD. */
+  currentImpactLearningCue(): (ImpactLearningCue & ImpactLearningCueContext) | null {
+    const focus = selectImpactMonitorFocus(this.bursts);
+    if (focus?.cue === null || focus?.cue === undefined || focus.learningContext === undefined) {
+      return null;
+    }
+    return { ...focus.cue, ...focus.learningContext };
+  }
+
   /** Capture shooter ownership once per firing edge without touching engine state. */
   private observeShotLaunch(
     state: Pick<GameState, 'phase' | 'activePlayerId'>,
@@ -933,6 +945,16 @@ export class Renderer {
             && this.explosionArt?.state === 'ready'
           ),
           ...(learningCue !== null ? { cue: learningCue } : {}),
+          ...(learningCue !== null && this.impactLearningShot?.local
+            ? {
+                learningContext: {
+                  shooterId: this.impactLearningShot.shooterId,
+                  round: state.round,
+                  turn: state.turn,
+                  explosionId: ex.id,
+                },
+              }
+            : {}),
           age: 0,
         });
         // Juice: bigger blast => bigger kick (capped). Reduced-motion = none.

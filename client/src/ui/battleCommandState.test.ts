@@ -56,12 +56,20 @@ describe('battle command state', () => {
   });
 
   it('tracks a fired shot and exposes only a valid local impact-learning cue', () => {
-    const cue = { readout: '84 PX LEFT OF CPU', correction: 'SHIFT IMPACT RIGHT' };
-    const local = battleCommandStateFor(stateFor('RESOLVING'), false, false, {
+    const state = stateFor('RESOLVING');
+    const cue = {
+      readout: '84 PX LEFT OF CPU',
+      correction: 'SHIFT IMPACT RIGHT',
+      shooterId: state.activePlayerId,
+      round: state.round,
+      turn: state.turn,
+      explosionId: 7,
+    };
+    const local = battleCommandStateFor(state, false, false, {
       activeIsLocal: true,
       impactLearningCue: cue,
     });
-    const remote = battleCommandStateFor(stateFor('RESOLVING'), false, false, {
+    const remote = battleCommandStateFor(state, false, false, {
       activeIsLocal: false,
       impactLearningCue: cue,
     });
@@ -73,6 +81,27 @@ describe('battle command state', () => {
     expectHonestState(local, { phase: 'resolving', label: 'Resolving impact' });
     expect(local.context.lastSalvo).toEqual(cue);
     expect(remote.context.lastSalvo).toBeNull();
+  });
+
+  it('expires a cue outside the originating local resolving shot', () => {
+    const state = stateFor('RESOLVING');
+    const cue = {
+      readout: '84 PX LEFT OF CPU', correction: 'SHIFT IMPACT RIGHT',
+      shooterId: state.activePlayerId, round: state.round, turn: state.turn, explosionId: 7,
+    };
+
+    expect(battleCommandStateFor(state, false, false, {
+      activeIsLocal: true,
+      impactLearningCue: { ...cue, shooterId: 'other-commander' },
+    }).context.lastSalvo).toBeNull();
+    expect(battleCommandStateFor({ ...state, turn: state.turn + 1 }, false, false, {
+      activeIsLocal: true,
+      impactLearningCue: cue,
+    }).context.lastSalvo).toBeNull();
+    expect(battleCommandStateFor({ ...state, phase: 'PLAYER_TURN' }, false, true, {
+      activeIsLocal: true,
+      impactLearningCue: cue,
+    }).context.lastSalvo).toBeNull();
   });
 
   it('hands off CPU and remote turns without offering a local commit', () => {
@@ -96,6 +125,46 @@ describe('battle command state', () => {
         verifiedDeployment: { status: 'retryable' },
       }),
       { phase: 'recovery', label: 'Verification retry available' },
+    );
+  });
+
+  it.each([
+    'cap-adjudicating',
+    'completion-pending',
+    'retryable',
+    'expired',
+    'policy-refused',
+    'failed',
+  ] as const)('blocks Fire when verified deployment is %s', (status) => {
+    expectHonestState(
+      battleCommandStateFor(stateFor('PLAYER_TURN'), false, true, {
+        activeIsLocal: true,
+        verifiedInputAllowed: false,
+        verifiedDeployment: { status },
+      }),
+      { phase: 'handoff', label: 'Input unavailable' },
+    );
+  });
+
+  it('reserves retry recovery for the after-action report, never an in-flight shot', () => {
+    const retryable = { status: 'retryable' as const };
+    expectHonestState(
+      battleCommandStateFor(stateFor('FIRING'), false, false, {
+        activeIsLocal: true, verifiedDeployment: retryable,
+      }),
+      { phase: 'tracking', label: 'Shot in flight' },
+    );
+    expectHonestState(
+      battleCommandStateFor(stateFor('RESOLVING'), false, false, {
+        activeIsLocal: true, verifiedDeployment: retryable,
+      }),
+      { phase: 'resolving', label: 'Resolving impact' },
+    );
+    expectHonestState(
+      battleCommandStateFor(stateFor('PLAYER_TURN'), true, false, {
+        activeIsLocal: true, verifiedDeployment: retryable,
+      }),
+      { phase: 'submitting', label: 'Submitting your shot' },
     );
   });
 
