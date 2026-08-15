@@ -48,6 +48,16 @@ describe('battle command state', () => {
     expect(command.commitment.commit).toEqual({ label: 'Fire', enabled: true });
   });
 
+  it('gives a controllable turn an exact shot readback instead of an empty commitment panel', () => {
+    const state = stateFor('PLAYER_TURN');
+    state.wind = -2;
+    const command = battleCommandStateFor(state, false, true, { activeIsLocal: true });
+
+    expect(command.commitment.explanation).toBe(
+      'Baby Missile · 45° · Power 50 · Wind 2.0 left.',
+    );
+  });
+
   it('labels a local fire submission without retaining a runnable commit', () => {
     expectHonestState(
       battleCommandStateFor(stateFor('PLAYER_TURN'), true, false, { activeIsLocal: true }),

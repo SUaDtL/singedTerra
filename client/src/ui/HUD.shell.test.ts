@@ -144,6 +144,13 @@ describe('HUD single-screen combat shell', () => {
     expect(commitment?.dataset['commandMode']).toBe('decision');
     expect(commitment?.querySelector('.st-hud__console-state')?.textContent)
       .toContain('Fire ready');
+    const readback = commitment?.querySelector<HTMLElement>('[data-ui="shot-readback"]');
+    expect(readback?.hidden).toBe(false);
+    expect(readback?.getAttribute('aria-label')).toBe('Current firing solution');
+    expect(readback?.textContent).toContain('Baby Missile');
+    expect(readback?.textContent).toContain('45°');
+    expect(readback?.textContent).toContain('Power 50');
+    expect(readback?.textContent).toMatch(/Wind (?:Calm|\d+\.\d (?:left|right))/);
     expect(root.querySelector('.st-hud__command-console')).toBeNull();
     expect(root.querySelector('.st-hud__strip')).toBeNull();
     expect(root.querySelector('.st-hud__weapon')).toBeNull();
@@ -243,6 +250,7 @@ describe('HUD single-screen combat shell', () => {
 
     expect(commitment.dataset['commandMode']).toBe('decision');
     expect(stateLabel.textContent).toContain('Fire ready');
+    expect(commitment.querySelector<HTMLElement>('[data-ui="shot-readback"]')?.hidden).toBe(false);
     fire.focus();
     fire.click();
 
@@ -252,6 +260,7 @@ describe('HUD single-screen combat shell', () => {
     expect(stateLabel.textContent?.trim()).not.toBe('');
     expect(fire.isConnected).toBe(false);
     expect(commitment.querySelector('.st-hud__primary-action')).toBeNull();
+    expect(commitment.querySelector<HTMLElement>('[data-ui="shot-readback"]')?.hidden).toBe(true);
     expect(commandConsole.contains(document.activeElement)).toBe(true);
 
     state.phase = 'FIRING';

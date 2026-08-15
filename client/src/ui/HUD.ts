@@ -308,6 +308,8 @@ export class HUD {
   private consoleCommitmentEl!: HTMLElement;
   private consoleStateEl!: HTMLElement;
   private consoleExplanationEl!: HTMLElement;
+  private shotReadbackEl!: HTMLElement;
+  private shotReadbackValueEls!: readonly HTMLElement[];
   private turnActionsEl!: HTMLElement;
   private primaryActionBtnEl!: HTMLButtonElement;
   private primaryActionLabelEl!: HTMLElement;
@@ -598,7 +600,27 @@ export class HUD {
       command.commitment.commit !== null,
       command.commitment.explanation ?? command.commitment.label,
     );
+    this.syncShotReadback(command.solution, command.commitment.phase);
     this.syncLastSalvoCue(command.context.lastSalvo);
+  }
+
+  /** Keep the decision card tied to the same values that the existing controls submit. */
+  private syncShotReadback(
+    solution: ReturnType<typeof battleCommandStateFor>['solution'],
+    phase: BattleCommandCommitmentPhase,
+  ): void {
+    const showReadback = phase === 'decision' && solution !== null;
+    this.shotReadbackEl.hidden = !showReadback;
+    if (!showReadback || solution === null) return;
+    const weapon = WEAPONS[solution.weapon as WeaponType]?.name ?? solution.weapon;
+    const wind = solution.wind === 0
+      ? 'Calm'
+      : `${windMagnitudeLabel(solution.wind)} ${solution.wind < 0 ? 'left' : 'right'}`;
+    const values = [weapon, `${solution.angle}°`, `Power ${solution.power}`, `Wind ${wind}`];
+    values.forEach((value, index) => {
+      const target = this.shotReadbackValueEls[index]!;
+      if (target.textContent !== value) target.textContent = value;
+    });
   }
 
   /** Present only the projection's live, renderer-admitted learning cue. */
@@ -1861,10 +1883,29 @@ export class HUD {
     const explanation = document.createElement('div');
     explanation.className = 'st-hud__commitment-explanation';
     explanation.hidden = true;
-    commitment.append(state, explanation, this.aimEl, this.turnActionsEl);
+    const readback = document.createElement('dl');
+    readback.className = 'st-hud__shot-readback';
+    readback.dataset['ui'] = 'shot-readback';
+    readback.setAttribute('aria-label', 'Current firing solution');
+    readback.hidden = true;
+    const readbackValues: HTMLElement[] = [];
+    for (const label of ['Weapon', 'Elevation', 'Power', 'Wind']) {
+      const item = document.createElement('div');
+      item.className = 'st-hud__shot-readback-item';
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const value = document.createElement('dd');
+      value.className = 'st-hud__shot-readback-value';
+      item.append(term, value);
+      readback.append(item);
+      readbackValues.push(value);
+    }
+    commitment.append(state, explanation, readback, this.aimEl, this.turnActionsEl);
     this.consoleCommitmentEl = commitment;
     this.consoleStateEl = state;
     this.consoleExplanationEl = explanation;
+    this.shotReadbackEl = readback;
+    this.shotReadbackValueEls = readbackValues;
 
     this.commandConsoleEl.append(context, solution, commitment);
   }
@@ -6311,6 +6352,51 @@ export class HUD {
   text-align: center;
 }
 #battle-rail .st-hud__commitment-explanation[hidden] { display: none; }
+#battle-rail .st-hud__shot-readback {
+  grid-row: 2 / 4;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  align-content: center;
+  min-width: 0;
+  margin: 5px 6px 4px;
+  padding: 8px;
+  border: 1px solid rgba(255, 210, 63, 0.36);
+  border-radius: 5px;
+  background:
+    linear-gradient(135deg, rgba(255, 210, 63, 0.1), transparent 58%),
+    rgba(17, 11, 27, 0.82);
+}
+#battle-rail .st-hud__shot-readback[hidden] { display: none; }
+#battle-rail .st-hud__shot-readback-item {
+  min-width: 0;
+  padding: 5px 6px;
+  border-left: 2px solid rgba(255, 210, 63, 0.52);
+  background: rgba(0, 0, 0, 0.18);
+}
+#battle-rail .st-hud__shot-readback dt {
+  overflow: hidden;
+  color: var(--ui-muted);
+  font-family: var(--font-display);
+  font-size: var(--st-command-readability-size, 11px);
+  font-weight: 750;
+  letter-spacing: 0.7px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#battle-rail .st-hud__shot-readback-value {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--text-gold);
+  font-family: var(--font-sans);
+  font-size: max(12px, var(--st-command-readability-size, 11px));
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 #battle-rail .st-hud__console-commitment[data-command-mode="observation"] .st-hud__console-state,
 #battle-rail .st-hud__console-commitment[data-command-mode="handoff"] .st-hud__console-state {
   color: var(--ui-muted);
@@ -6335,6 +6421,9 @@ export class HUD {
 }
 #battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim {
   visibility: hidden;
+}
+#battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__shot-readback {
+  display: none;
 }
 #battle-rail .st-hud__console-commitment .st-hud__primary-action,
 #battle-rail .st-hud__console-commitment .st-hud__store-btn {
