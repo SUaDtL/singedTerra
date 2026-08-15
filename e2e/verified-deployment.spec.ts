@@ -2,10 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 import { assertLobbyFrame, enterBattleIfBriefed } from './support';
 
 const SESSION_ID = '123e4567-e89b-42d3-a456-426614174000';
+const NEXT_SESSION_ID = '223e4567-e89b-42d3-a456-426614174000';
 
-function verifiedDescriptor(expiresAt = '2099-12-31T23:59:59.000Z') {
+function verifiedDescriptor(
+  expiresAt = '2099-12-31T23:59:59.000Z',
+  sessionId = SESSION_ID,
+  seed = 17,
+) {
   return {
-    sessionId: SESSION_ID,
+    sessionId,
     expiresAt,
     contractVersion: 1,
     engineVersion: 1,
@@ -17,7 +22,7 @@ function verifiedDescriptor(expiresAt = '2099-12-31T23:59:59.000Z') {
       power: { min: 0, max: 100 },
     },
     config: {
-      seed: 17,
+      seed,
       options: {
         maxPlayers: 2,
         maxWind: 6,
@@ -100,6 +105,48 @@ async function openLocalBattery(page: Page, search = './'): Promise<void> {
   await expect(page.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
 }
 
+async function installOnlineCpuFixture(page: Page): Promise<void> {
+  const players = [
+    { id: 'verified-absence-human', name: 'Ranger', color: '#e84d4d', ready: false },
+    { id: 'verified-absence-cpu', name: 'CPU 1', color: '#4d8ce8', ready: true, ai: 'easy' },
+  ];
+  const options = {
+    maxPlayers: 2,
+    maxWind: 6,
+    gravity: 0.15,
+    rulesetVersion: 2,
+    walls: 'open',
+    rounds: 1,
+    armsLevel: 0,
+  };
+  await page.route('**/functions/v1/create_room', async (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      roomId: 'room-verified-absence',
+      code: 'NONE',
+      playerId: players[0]!.id,
+      token: ['e2e', 'seat', 'verified-absence'].join('-'),
+      options,
+      players,
+    }),
+  }));
+  await page.route('**/functions/v1/ready_up', async (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      started: true,
+      players: players.map((player) => ({ ...player, ready: true })),
+    }),
+  }));
+  await page.route('**/rest/v1/room_actions**', async (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: { 'Content-Range': '0-0/0' },
+    body: '[]',
+  }));
+}
+
 test.describe('verified deployment production-browser journey', () => {
   test.beforeEach(async ({ page }) => installAuthenticatedFixture(page));
 
@@ -145,7 +192,9 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(hud).toBeVisible();
     await expect(hud.getByText('Salvos · You 0 / 6 · CPU 0 / 6')).toBeVisible();
     await expect(hud.getByText('Deployment active')).toBeVisible();
-    await expect(hud.getByText('First Strike · Damage CPU in first 3 salvos · 3 salvos remaining')).toBeVisible();
+    await expect(hud.getByText(
+      /First Strike.*Damage the CPU within your first three salvos\..*3 salvos remaining/,
+    )).toBeVisible();
     await expect(page.locator('#lobby')).toBeHidden();
     await expect(page.locator('.st-hud__instruments')).toBeVisible();
 
@@ -442,6 +491,142 @@ test.describe('verified deployment production-browser journey', () => {
     expect(await page.evaluate(() => localStorage.getItem('singedterra:verified-deployment')))
       .toBeNull();
   });
+
+  test('briefs, resolves, and rotates one verified Field Order through a fresh 0 / 6 deployment', async ({
+    page,
+  }) => {
+    test.setTimeout(45_000);
+    const transcript = Array.from({ length: 6 }, () => ({ angle: 0, power: 5 }));
+    let matchesPlayed = 0;
+    let startCalls = 0;
+
+    await page.addInitScript(({ descriptor, storedTranscript }) => {
+      localStorage.setItem('singedterra:verified-deployment', JSON.stringify({
+        storageVersion: 2,
+        deployments: [{ descriptor, transcript: storedTranscript, terminal: true }],
+      }));
+    }, { descriptor: verifiedDescriptor(), storedTranscript: transcript });
+    await page.unroute('**/functions/v1/account_summary');
+    await page.route('**/functions/v1/account_summary', async (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        matchesPlayed,
+        wins: matchesPlayed,
+        progressionVersion: 1,
+        totalXp: matchesPlayed * 200,
+        level: 1,
+        levelXp: matchesPlayed * 200,
+        nextLevelXp: 500,
+        verifiedProgression: {
+          evidence: 'verified_replay_v1',
+          matchesPlayed,
+          wins: matchesPlayed,
+          progressionVersion: 1,
+          totalXp: matchesPlayed * 200,
+          level: 1,
+          levelXp: matchesPlayed * 200,
+          nextLevelXp: 500,
+        },
+      }),
+    }));
+    await page.route('**/functions/v1/start_verified_deployment', async (route) => {
+      startCalls += 1;
+      const descriptor = startCalls === 1
+        ? { ...verifiedDescriptor(), resumed: true }
+        : { ...verifiedDescriptor(undefined, NEXT_SESSION_ID, 42), resumed: false };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(descriptor),
+      });
+    });
+    await page.route('**/functions/v1/complete_verified_deployment', async (route) => {
+      matchesPlayed = 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          result: { sessionId: SESSION_ID, won: true, outcome: 'win', verifiedXp: 200 },
+          progression: {
+            evidence: 'verified_replay_v1',
+            prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
+            current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
+          },
+        }),
+      });
+    });
+
+    await openLocalBattery(page, '?e2e=verified-lifecycle');
+    const verified = page.getByRole('region', { name: 'Verified deployment' });
+    await expect(verified.getByText(
+      /First Strike.*Damage the CPU within your first three salvos\./,
+    )).toBeVisible();
+
+    await verified.getByRole('button', { name: 'Start verified deployment' }).click();
+    const fieldOrderStatus = page.locator('[data-ui="field-order"]');
+    await expect(fieldOrderStatus).toContainText('First Strike');
+    const report = page.locator('.st-hud__overlay--victory');
+    await expect(report).toBeVisible({ timeout: 10_000 });
+    await expect(report.locator('.st-hud__victory-field-order'))
+      .toHaveText(/First Strike not achieved.*CPU was not damaged in the first 3 salvos\./);
+    const nextOrder = report.getByRole('button', { name: 'Brief next order', exact: true });
+    await expect(nextOrder).toHaveCount(1);
+    await expect(nextOrder).toBeFocused();
+
+    await nextOrder.click();
+    await expect(page.locator('#lobby')).toBeVisible();
+    await expect(verified.getByRole('button', { name: 'Start verified deployment' })).toBeFocused();
+    await expect(verified.getByText(
+      /Fire for Effect.*Damage the CPU on two separate human salvos\./,
+    )).toBeVisible();
+    await expect(fieldOrderStatus).toHaveCount(0);
+
+    await verified.getByRole('button', { name: 'Start verified deployment' }).click();
+    const freshHud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    await expect(freshHud.getByText(/Salvos.*You 0 \/ 6.*CPU 0 \/ 6/)).toBeVisible();
+    await expect(freshHud.getByText(
+      /Fire for Effect.*Damage the CPU on two separate human salvos.*0 of 2 damaging salvos/,
+    )).toBeVisible();
+    expect(startCalls).toBe(2);
+    expect(await page.evaluate(() => localStorage.getItem('singedterra:verified-deployment')))
+      .toContain(NEXT_SESSION_ID);
+  });
+
+  test('keeps Field Orders absent from ordinary, Quick Duel, and network routes', async ({ page }) => {
+    await page.goto('?e2e=hotseat');
+    await page.evaluate(() => document.getElementById('st-splash')?.remove());
+    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
+
+    await page.goto('?e2e=quick-duel-seed');
+    await page.evaluate(() => document.getElementById('st-splash')?.remove());
+    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
+
+    await installOnlineCpuFixture(page);
+    await page.goto('./');
+    await page.evaluate(() => document.getElementById('st-splash')?.remove());
+    await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Open operation' })).toBeVisible();
+    await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
+      .locator('select').first().selectOption('1');
+    await page.getByRole('button', { name: 'Create operation', exact: true }).click();
+    await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
+    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
+  });
+});
+
+test('keeps Field Orders absent from the anonymous local route', async ({ page }) => {
+  await page.goto('./');
+  await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Verified deployment' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click();
+  await expect(page.locator('.st-hud__instruments')).toBeVisible();
+  await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 });
 
 test('Quick Duel publishes a bounded query-gated seed receipt on every redeployment', async ({ page }) => {

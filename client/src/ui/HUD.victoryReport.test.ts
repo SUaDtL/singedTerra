@@ -375,6 +375,50 @@ describe('HUD Victory After-Action Report', () => {
       .toBe('1,000 XP to R-05 Battery Captain at Level 7');
   });
 
+  it('replaces the accepted verified report primary in place and releases its focus before the Battery handoff', () => {
+    const { modal, hud, state } = mount();
+    const restart = vi.fn();
+    const nextOrder = vi.fn(() => {
+      expect(document.activeElement).not.toBe(primary);
+    });
+    hud.onRestart(restart);
+    hud.onVerifiedNextOrder(nextOrder);
+    revealTerminalReport(hud, state);
+
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    const primary = report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')!;
+    hud.setVerifiedProgressionReceipt(verifiedPromotionReceipt);
+
+    expect(primary.textContent).toBe('Brief next order');
+    expect(report.querySelectorAll<HTMLButtonElement>('.st-hud__victory-primary')).toHaveLength(1);
+    primary.focus();
+    primary.click();
+    expect(nextOrder).toHaveBeenCalledOnce();
+    expect(restart).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['retryable', {
+      status: 'retryable', humanSalvos: 6, cpuSalvos: 6, humanLimit: 6, cpuLimit: 6,
+      deadline: { remainingMs: 30_000, warning: 'one-minute', acceptsInput: false, canComplete: true },
+    }],
+    ['failed', { status: 'failed' }],
+    ['expired', {
+      status: 'expired', humanSalvos: 4, cpuSalvos: 4, humanLimit: 6, cpuLimit: 6,
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+    }],
+    ['casual', null],
+  ] as const)('keeps the existing report primary for %s verified state', (_label, deployment) => {
+    const { modal, hud, state } = mount();
+    hud.setVerifiedDeployment(deployment);
+    revealTerminalReport(hud, state);
+
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    expect(report.querySelector<HTMLButtonElement>('.st-hud__victory-primary')?.textContent)
+      .toBe('Play again');
+    expect(report.querySelectorAll<HTMLButtonElement>('.st-hud__victory-primary')).toHaveLength(1);
+  });
+
   it('stages the exact winner and assembled tank in one real modal report', () => {
     const { stage, root, lobby, modal, hud, state } = mount();
     const restart = vi.fn();

@@ -38,7 +38,7 @@ import {
   commanderPromotionBetweenVerified,
 } from '../client/commanderCareer';
 import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
-import type { FirstStrikeObjective } from '../client/firstStrikeObjective';
+import { renderFieldOrder, type FieldOrder } from '../client/fieldOrder';
 import {
   battleCommandStateFor,
   type BattleCommandCommitmentPhase,
@@ -180,6 +180,8 @@ export class HUD {
   private verifiedRetryCb: (() => void) | null = null;
   private verifiedContinueCasualCb: (() => void) | null = null;
   private verifiedReturnToBatteryCb: (() => void) | null = null;
+  private verifiedNextOrderCb: (() => void) | null = null;
+  private verifiedNextOrderArmed = false;
   /** Last server-backed report state, used only by the display projection. */
   private verifiedDeploymentState: HUDVerifiedDeploymentState | null = null;
   /** Existing renderer-derived local learning; null means no valid correction exists. */
@@ -232,7 +234,7 @@ export class HUD {
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
   private overlayStatusEl!: HTMLElement;
-  private overlayFirstStrikeEl!: HTMLElement;
+  private overlayFieldOrderEl!: HTMLElement;
   private overlayProgressionReceiptEl!: HTMLElement;
   private overlayProgressionHandoffEl!: HTMLElement;
   private overlayProgressionSignInBtnEl!: HTMLButtonElement;
@@ -253,7 +255,7 @@ export class HUD {
   private verifiedBudgetEl!: HTMLElement;
   private verifiedDeadlineEl!: HTMLElement;
   private verifiedStateEl!: HTMLElement;
-  private firstStrikeObjectiveEl!: HTMLElement;
+  private fieldOrderEl!: HTMLElement;
   private verifiedRetryBtnEl!: HTMLButtonElement;
   private verifiedExpiryEl!: HTMLElement;
   private verifiedContinueBtnEl!: HTMLButtonElement;
@@ -420,6 +422,7 @@ export class HUD {
   onVerifiedRetry(cb: () => void): void { this.verifiedRetryCb = cb; }
   onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
   onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
+  onVerifiedNextOrder(cb: () => void): void { this.verifiedNextOrderCb = cb; }
 
   /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
   setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
@@ -805,12 +808,12 @@ export class HUD {
     this.verifiedDeadlineEl.className = 'st-hud__verified-deadline';
     this.verifiedStateEl = document.createElement('div');
     this.verifiedStateEl.className = 'st-hud__verified-state';
-    this.firstStrikeObjectiveEl = document.createElement('div');
-    this.firstStrikeObjectiveEl.className = 'st-hud__first-strike-objective';
-    this.firstStrikeObjectiveEl.dataset['ui'] = 'first-strike-objective';
-    this.firstStrikeObjectiveEl.setAttribute('role', 'status');
-    this.firstStrikeObjectiveEl.setAttribute('aria-live', 'polite');
-    this.firstStrikeObjectiveEl.hidden = true;
+    this.fieldOrderEl = document.createElement('div');
+    this.fieldOrderEl.className = 'st-hud__field-order';
+    this.fieldOrderEl.dataset['ui'] = 'field-order';
+    this.fieldOrderEl.setAttribute('role', 'status');
+    this.fieldOrderEl.setAttribute('aria-live', 'polite');
+    this.fieldOrderEl.hidden = true;
     this.verifiedRetryBtnEl = document.createElement('button');
     this.verifiedRetryBtnEl.type = 'button';
     this.verifiedRetryBtnEl.className = 'st-hud__verified-retry';
@@ -826,7 +829,7 @@ export class HUD {
       this.verifiedBudgetEl,
       this.verifiedDeadlineEl,
       this.verifiedStateEl,
-      this.firstStrikeObjectiveEl,
+      this.fieldOrderEl,
       this.verifiedRetryBtnEl,
     );
 
@@ -1911,10 +1914,10 @@ export class HUD {
     report.className = 'st-hud__victory-report';
     this.overlayStatusEl = document.createElement('div');
     this.overlayStatusEl.className = 'st-hud__victory-status';
-    this.overlayFirstStrikeEl = document.createElement('div');
-    this.overlayFirstStrikeEl.className = 'st-hud__victory-objective';
-    this.overlayFirstStrikeEl.setAttribute('role', 'status');
-    this.overlayFirstStrikeEl.hidden = true;
+    this.overlayFieldOrderEl = document.createElement('div');
+    this.overlayFieldOrderEl.className = 'st-hud__victory-field-order';
+    this.overlayFieldOrderEl.setAttribute('role', 'status');
+    this.overlayFieldOrderEl.hidden = true;
     this.overlayProgressionReceiptEl = document.createElement('div');
     this.overlayProgressionReceiptEl.className = 'st-hud__victory-progression-receipt';
     this.overlayProgressionReceiptEl.setAttribute('role', 'status');
@@ -1949,7 +1952,13 @@ export class HUD {
     restartBtn.textContent = 'Play again';
     // Listener attached ONCE here (never in update) — fires the stored callback.
     restartBtn.addEventListener('click', () => {
-      if (this.overlayShown) this.restartCb?.();
+      if (!this.overlayShown) return;
+      if (this.verifiedNextOrderArmed) {
+        restartBtn.blur();
+        this.verifiedNextOrderCb?.();
+        return;
+      }
+      this.restartCb?.();
     });
     const overlayMenuBtn = document.createElement('button');
     overlayMenuBtn.className = 'st-hud__restart st-hud__restart--ghost';
@@ -1974,7 +1983,7 @@ export class HUD {
     this.overlayMenuBtnEl = overlayMenuBtn;
     report.append(
       this.overlayStatusEl,
-      this.overlayFirstStrikeEl,
+      this.overlayFieldOrderEl,
       this.overlayProgressionReceiptEl,
       this.overlayProgressionHandoffEl,
       this.overlayTextEl,
@@ -3205,34 +3214,27 @@ export class HUD {
     if (openingExpiryDecision) this.verifiedContinueBtnEl.focus({ preventScroll: true });
   }
 
-  /** Present the client-only First Strike outcome only while verified play owns it. */
-  setFirstStrikeObjective(objective: FirstStrikeObjective | null): void {
+  /** Present one public client-only Field Order only while verified play owns it. */
+  setFieldOrder(order: FieldOrder | null): void {
     if (!this.built) this.build();
-    if (objective !== null && !this.firstStrikeObjectiveEl.isConnected) {
-      this.verifiedStatusEl.append(this.firstStrikeObjectiveEl);
+    if (order !== null && !this.fieldOrderEl.isConnected) {
+      this.verifiedStatusEl.append(this.fieldOrderEl);
       if (!this.verifiedStatusEl.isConnected) {
         this.root.insertBefore(this.verifiedStatusEl, this.roundEl);
       }
     }
-    this.firstStrikeObjectiveEl.hidden = objective === null;
-    if (objective === null) {
-      this.firstStrikeObjectiveEl.textContent = '';
-      this.firstStrikeObjectiveEl.remove();
-      this.overlayFirstStrikeEl.hidden = true;
-      this.overlayFirstStrikeEl.textContent = '';
+    this.fieldOrderEl.hidden = order === null;
+    if (order === null) {
+      this.fieldOrderEl.textContent = '';
+      this.fieldOrderEl.remove();
+      this.overlayFieldOrderEl.hidden = true;
+      this.overlayFieldOrderEl.textContent = '';
       return;
     }
-    this.firstStrikeObjectiveEl.textContent = objective.status === 'active'
-      ? `First Strike · Damage CPU in first 3 salvos · ${objective.salvosRemaining} salvo${objective.salvosRemaining === 1 ? '' : 's'} remaining`
-      : objective.status === 'achieved'
-        ? `First Strike achieved · CPU damaged on salvo ${objective.achievedOnSalvo}`
-        : 'First Strike missed · CPU was not damaged in the first 3 salvos';
-    this.overlayFirstStrikeEl.textContent = objective.status === 'achieved'
-      ? `First Strike achieved — CPU damaged on salvo ${objective.achievedOnSalvo}.`
-      : objective.status === 'missed'
-        ? 'First Strike missed — CPU was not damaged in the first 3 salvos.'
-        : '';
-    this.overlayFirstStrikeEl.hidden = objective.status === 'active';
+    const copy = renderFieldOrder(order);
+    this.fieldOrderEl.textContent = copy.status;
+    this.overlayFieldOrderEl.textContent = copy.report;
+    this.overlayFieldOrderEl.hidden = order.result === null;
   }
 
   /** Isolate every full-app surface except the active terminal report. */
@@ -3292,6 +3294,8 @@ export class HUD {
     this.overlayProgressionReceiptEl.classList.remove(
       'st-hud__victory-progression-receipt--promotion',
     );
+    this.verifiedNextOrderArmed = false;
+    this.overlayPrimaryBtnEl.textContent = 'Play again';
     this.clearAnonymousProgressionHandoff();
     this.overlayShown = false;
     this.terminalState = null;
@@ -3398,6 +3402,8 @@ export class HUD {
     }
     this.overlayProgressionReceiptEl.replaceChildren(...children);
     this.overlayProgressionReceiptEl.hidden = false;
+    this.verifiedNextOrderArmed = true;
+    this.overlayPrimaryBtnEl.textContent = 'Brief next order';
     this.clearAnonymousProgressionHandoff();
   }
 
@@ -4768,13 +4774,13 @@ export class HUD {
   font-size: 10px;
   font-weight: 700;
 }
-.st-hud__victory-objective {
+.st-hud__victory-field-order {
   margin-top: 8px;
   color: #c5f0c4;
   font: 700 10px var(--font-mono);
   letter-spacing: 0.04em;
 }
-.st-hud__victory-objective[hidden] { display: none; }
+.st-hud__victory-field-order[hidden] { display: none; }
 .st-hud__victory-progression-receipt {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -5229,11 +5235,11 @@ export class HUD {
 .st-hud__verified-budget { color: var(--text); }
 .st-hud__verified-deadline { color: var(--gold); }
 .st-hud__verified-state { color: var(--text-dim); }
-.st-hud__first-strike-objective {
+.st-hud__field-order {
   color: #c5f0c4;
   font-weight: 700;
 }
-.st-hud__first-strike-objective[hidden] { display: none; }
+.st-hud__field-order[hidden] { display: none; }
 .st-hud__verified-retry {
   min-height: 36px;
   margin-top: 3px;

@@ -46,6 +46,7 @@ import {
   type AccountMode,
   type AccountState,
 } from '../client/AccountSession';
+import { createFieldOrder, type FieldOrder } from '../client/fieldOrder';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import {
   parseVerifiedDeploymentDescriptor,
@@ -148,6 +149,7 @@ export interface LobbyConfig {
   verifiedDeployment?: {
     readonly descriptor: VerifiedDeploymentDescriptor;
     readonly transcript: readonly VerifiedHumanFire[];
+    readonly fieldOrder: FieldOrder | null;
   };
 }
 
@@ -290,6 +292,7 @@ interface LobbyVerifiedDeploymentDetails {
   readonly descriptor: VerifiedDeploymentDescriptor;
   readonly transcript: readonly VerifiedHumanFire[];
   readonly deadline: VerifiedDeploymentDeadline;
+  readonly fieldOrder: FieldOrder | null;
 }
 
 export type LobbyVerifiedDeploymentState =
@@ -339,7 +342,7 @@ const DIAGNOSTICS_LOCAL_FAILURE: DiagnosticCheckResult = Object.freeze({
  * Calls onReady with the resulting hot-seat config when the player starts.
  */
 export class Lobby {
-  private accountAuthenticationChangeCb: (() => void) | null = null;
+  private accountAuthenticationChangeCb: ((identityChanged: boolean) => void) | null = null;
   private readonly root: HTMLElement;
   private readonly onReady: (config: LobbyConfig) => void;
 
@@ -486,7 +489,8 @@ export class Lobby {
       cancelVerifiedCompletionResponseDiagnostic();
     }
     const accountIdentity = this.authenticatedAccountId();
-    if (accountIdentity !== this.verifiedAccountIdentity) {
+    const identityChanged = accountIdentity !== this.verifiedAccountIdentity;
+    if (identityChanged) {
       cancelVerifiedCompletionResponseDiagnostic();
       this.verifiedAccountIdentity = accountIdentity;
       this.verifiedAccountGeneration += 1;
@@ -501,7 +505,7 @@ export class Lobby {
     this.syncDiagnosticsReadiness();
     this.maybeAutorunDiagnostics();
     this.render();
-    this.accountAuthenticationChangeCb?.();
+    this.accountAuthenticationChangeCb?.(identityChanged);
     if (restoreFocus) this.focusAccountOverlay();
     else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
     void this.revalidateFrozenVerifiedDeployment(recoveryGeneration);
@@ -839,11 +843,16 @@ export class Lobby {
    * Render the hot-seat setup overlay: choose 2-4 players, name each, and pick
    * a unique color. A Start button validates and hands a config to onReady.
    */
-  show(): void {
+  show(options: { readonly focusVerifiedDeployment?: boolean } = {}): void {
     this.injectStyle();
     this.startDiagnostics();
     this.render();
     this.root.hidden = false;
+    if (options.focusVerifiedDeployment) {
+      this.root.querySelector<HTMLButtonElement>(
+        '.lobby-verified-deployment__launch:not(:disabled)',
+      )?.focus({ preventScroll: true });
+    }
     void this.accountSession.initialize();
     void this.checkRejoinCandidate();
   }
@@ -901,6 +910,7 @@ export class Lobby {
     if (account.status !== 'authenticated' || account.busy) return null;
     if (!this.accountSession.startVerifiedDeployment) return null;
     const accountId = account.profile.id;
+    const priorDeployment = this.verifiedCurrent;
     const accountGeneration = this.verifiedAccountGeneration;
     let started: VerifiedDeploymentStart | null;
     try {
@@ -943,6 +953,16 @@ export class Lobby {
       return null;
     }
     const transcript = recovered?.transcript ?? Object.freeze([]);
+    const sameBoundDescriptor = (
+      priorDeployment.status === 'active'
+      || priorDeployment.status === 'completion-pending'
+      || priorDeployment.status === 'retryable'
+      || priorDeployment.status === 'expired'
+      || priorDeployment.status === 'frozen'
+    ) && sameVerifiedDeploymentDescriptor(priorDeployment.descriptor, descriptor);
+    const fieldOrder = sameBoundDescriptor
+      ? priorDeployment.fieldOrder
+      : createFieldOrder(account.profile.summary?.verifiedProgression);
     this.verifiedOwnerId = accountId;
     this.verifiedCurrent = recovered?.terminal
       ? Object.freeze({
@@ -950,9 +970,10 @@ export class Lobby {
           descriptor,
           transcript,
           deadline,
+          fieldOrder,
           error: 'Verification is pending. Retry before the deployment deadline.',
         })
-      : Object.freeze({ status: 'active', descriptor, transcript, deadline });
+      : Object.freeze({ status: 'active', descriptor, transcript, deadline, fieldOrder });
     return Object.freeze({ resumed: started.resumed, descriptor });
   }
 
@@ -974,6 +995,7 @@ export class Lobby {
       descriptor: current.descriptor,
       transcript: recovered.transcript,
       deadline: verifiedDeploymentDeadline(current.descriptor.expiresAt, now),
+      fieldOrder: current.fieldOrder,
     });
     return true;
   }
@@ -990,6 +1012,7 @@ export class Lobby {
         descriptor: current.descriptor,
         transcript: current.transcript,
         deadline,
+        fieldOrder: null,
         choices: Object.freeze(['continue-casual', 'return-to-battery'] as const),
       });
       return this.verifiedCurrent;
@@ -1019,6 +1042,7 @@ export class Lobby {
       descriptor: current.descriptor,
       transcript: current.transcript,
       deadline: current.deadline,
+      fieldOrder: current.fieldOrder,
     });
     const accountGeneration = this.verifiedAccountGeneration;
     const receipt = await this.accountSession.completeVerifiedDeployment(
@@ -1042,6 +1066,7 @@ export class Lobby {
           descriptor: current.descriptor,
           transcript: current.transcript,
           deadline,
+          fieldOrder: current.fieldOrder,
           error: 'Verification is pending. Retry before the deployment deadline.',
         })
       : Object.freeze({
@@ -1049,6 +1074,7 @@ export class Lobby {
           descriptor: current.descriptor,
           transcript: current.transcript,
           deadline,
+          fieldOrder: null,
           choices: Object.freeze(['continue-casual', 'return-to-battery'] as const),
         });
     return null;
@@ -1091,8 +1117,9 @@ export class Lobby {
   }
 
   returnVerifiedDeploymentToBattery(): boolean {
-    if (this.verifiedCurrent.status !== 'expired') return false;
-    this.verifiedStorage.clear(this.verifiedCurrent.descriptor);
+    const current = this.verifiedCurrent;
+    if (current.status !== 'expired' && current.status !== 'verified') return false;
+    if (current.status === 'expired') this.verifiedStorage.clear(current.descriptor);
     this.verifiedOwnerId = null;
     this.verifiedCurrent = Object.freeze({ status: 'idle' as const });
     return true;
@@ -1106,7 +1133,7 @@ export class Lobby {
     return this.accountSession.state.status === 'authenticated';
   }
 
-  onAccountAuthenticationChange(callback: () => void): void {
+  onAccountAuthenticationChange(callback: (identityChanged: boolean) => void): void {
     this.accountAuthenticationChangeCb = callback;
   }
 
@@ -1132,6 +1159,7 @@ export class Lobby {
       descriptor: current.descriptor,
       transcript: current.transcript,
       deadline: current.deadline,
+      fieldOrder: null,
       error: 'Return to the deployment owner account to resume verification.',
     });
   }
@@ -1164,9 +1192,10 @@ export class Lobby {
           descriptor,
           transcript: recovered.transcript,
           deadline,
+          fieldOrder: null,
           error: 'Verification is pending. Retry before the deployment deadline.',
         })
-      : Object.freeze({ status: 'active', descriptor, transcript: recovered.transcript, deadline });
+      : Object.freeze({ status: 'active', descriptor, transcript: recovered.transcript, deadline, fieldOrder: null });
   }
 
   showAccountSignIn(): void {
@@ -3898,7 +3927,7 @@ export class Lobby {
   private emitVerifiedDeployment(): boolean {
     const current = this.verifiedCurrent;
     if (current.status !== 'active' && current.status !== 'retryable') return false;
-    const { descriptor, transcript } = current;
+    const { descriptor, transcript, fieldOrder } = current;
     const options = descriptor.config.options;
     const players: LobbyPlayer[] = options.players.map((player) => ({
       name: player.name,
@@ -3922,7 +3951,7 @@ export class Lobby {
         teamMode: options.teamMode,
         rulesetVersion: descriptor.rulesetVersion,
       },
-      verifiedDeployment: { descriptor, transcript },
+      verifiedDeployment: { descriptor, transcript, fieldOrder },
     });
     return true;
   }
@@ -3958,12 +3987,16 @@ export class Lobby {
     const stateBusy = current.status === 'completion-pending'
       || current.status === 'expired'
       || current.status === 'frozen';
+    const fieldOrder = resumable
+      ? current.fieldOrder
+      : createFieldOrder(account.profile.summary?.verifiedProgression);
     return {
       action: resumable ? 'resume' as const : 'start' as const,
       commanderName: account.profile.displayName,
       busy: account.busy || this.verifiedLaunchBusy || stateBusy,
       message,
       abandonIntent: this.verifiedAbandonIntent,
+      fieldOrder,
       onLaunch: () => { void this.launchVerifiedDeployment(); },
       onRequestAbandon: () => {
         if (account.busy || this.verifiedLaunchBusy || stateBusy) return;

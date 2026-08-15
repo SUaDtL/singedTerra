@@ -33,11 +33,7 @@ import {
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import { projectLiveMatchSnapshot } from './client/liveMatchDiagnostics';
-import {
-  createFirstStrikeObjective,
-  observeFirstStrikeObjective,
-  type FirstStrikeObjective,
-} from './client/firstStrikeObjective';
+import { observeFieldOrder, type FieldOrder } from './client/fieldOrder';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
@@ -139,24 +135,27 @@ function createSwitchableVerifiedClient(
   };
 }
 
-function firstStrikeObservationFor(controller: VerifiedDuelController) {
+function fieldOrderObservationFor(controller: VerifiedDuelController) {
   const state = controller.engine.getState();
   const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
   if (!activeTank) return null;
+  const outcome = controller.complete ? controller.result().outcome : null;
   return {
     humanSalvos: controller.transcript.length,
-    humanDamageBySalvo: controller.settledHumanDamage,
+    settledHumanDamage: controller.settledHumanDamage,
     phase: state.phase,
     activeSeat: activeTank.ai ? 'cpu' as const : 'human' as const,
+    winner: outcome === 'human_win' ? 'human' as const : outcome === 'cpu_win' ? 'cpu' as const : null,
   };
 }
 
 function restoreVerifiedController(
   seed: number,
   transcript: readonly VerifiedHumanFire[],
-): { controller: VerifiedDuelController; firstStrikeObjective: FirstStrikeObjective } {
+  initialFieldOrder: FieldOrder | null,
+): { controller: VerifiedDuelController; fieldOrder: FieldOrder | null } {
   const controller = VerifiedDuelController.create(seed);
-  let firstStrikeObjective = createFirstStrikeObjective();
+  let fieldOrder = initialFieldOrder;
   for (const [index, shot] of transcript.entries()) {
     if (controller.complete
       || !controller.applyHumanAction({ type: 'set_angle', angle: shot.angle })
@@ -170,10 +169,10 @@ function restoreVerifiedController(
     if (controller.complete && index + 1 < transcript.length) {
       throw new Error('verified_recovery_trailing_action');
     }
-    const observation = firstStrikeObservationFor(controller);
-    if (observation) firstStrikeObjective = observeFirstStrikeObjective(firstStrikeObjective, observation);
+    const observation = fieldOrderObservationFor(controller);
+    if (fieldOrder && observation) fieldOrder = observeFieldOrder(fieldOrder, observation);
   }
-  return { controller, firstStrikeObjective };
+  return { controller, fieldOrder };
 }
 
 /**
@@ -343,7 +342,7 @@ function bootstrap(): void {
   let verifiedClient: SwitchableVerifiedClient | null = null;
   let verifiedCasual = false;
   let verifiedCompletionStarted = false;
-  let firstStrikeObjective: FirstStrikeObjective | null = null;
+  let fieldOrder: FieldOrder | null = null;
   let liveMatchTransport: 'not-applicable' | ConnectionState = 'not-applicable';
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
@@ -424,28 +423,31 @@ function bootstrap(): void {
     const context = currentConfig?.verifiedDeployment;
     if (!context || !verifiedController || verifiedCasual) {
       hud.setVerifiedDeployment(null);
-      hud.setFirstStrikeObjective(null);
+      hud.setFieldOrder(null);
       return;
     }
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     if (deployment.status === 'idle' || deployment.status === 'casual') {
       hud.setVerifiedDeployment(null);
-      hud.setFirstStrikeObjective(null);
+      fieldOrder = null;
+      hud.setFieldOrder(null);
       return;
     }
     if (deployment.status === 'failed') {
       hud.setVerifiedDeployment({ status: 'failed' });
-      hud.setFirstStrikeObjective(null);
+      fieldOrder = null;
+      hud.setFieldOrder(null);
       return;
     }
     if (deployment.status === 'frozen') {
       hud.setVerifiedDeployment({ status: 'policy-refused' });
-      hud.setFirstStrikeObjective(null);
+      fieldOrder = null;
+      hud.setFieldOrder(null);
       return;
     }
     if (deployment.status === 'verified') {
       hud.setVerifiedDeployment(null);
-      hud.setFirstStrikeObjective(null);
+      hud.setFieldOrder(fieldOrder);
       return;
     }
     if (deployment.status === 'expired') {
@@ -464,7 +466,8 @@ function bootstrap(): void {
         cpuLimit: context.descriptor.limits.cpuSalvos,
         deadline: deployment.deadline,
       });
-      hud.setFirstStrikeObjective(null);
+      fieldOrder = null;
+      hud.setFieldOrder(null);
       return;
     }
     const state = verifiedController.engine.getState();
@@ -492,16 +495,13 @@ function bootstrap(): void {
           ? 'cap-adjudicating'
           : 'active';
     hud.setVerifiedDeployment({ status, ...details });
-    const firstStrikeObservation = firstStrikeObservationFor(verifiedController);
-    if (!firstStrikeObservation) {
-      hud.setFirstStrikeObjective(null);
+    const observation = fieldOrderObservationFor(verifiedController);
+    if (!fieldOrder || !observation) {
+      hud.setFieldOrder(null);
       return;
     }
-    firstStrikeObjective = observeFirstStrikeObjective(
-      firstStrikeObjective ?? createFirstStrikeObjective(),
-      firstStrikeObservation,
-    );
-    hud.setFirstStrikeObjective(firstStrikeObjective);
+    fieldOrder = observeFieldOrder(fieldOrder, observation);
+    hud.setFieldOrder(fieldOrder);
   }
 
   // --- Computer-opponent (AI) driver state ---
@@ -554,7 +554,7 @@ function bootstrap(): void {
     verifiedClient = null;
     verifiedCasual = false;
     verifiedCompletionStarted = false;
-    firstStrikeObjective = null;
+    fieldOrder = null;
     terminalImpactObserved = false;
     terminalImpactNotified = false;
     // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
@@ -567,7 +567,7 @@ function bootstrap(): void {
     // (it would sit on top of the lobby) — #13.
     hud.hideEndScreens();
     hud.setVerifiedDeployment(null);
-    hud.setFirstStrikeObjective(null);
+    hud.setFieldOrder(null);
     hud.setFirstSalvoStep(null);
     // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
     // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
@@ -595,9 +595,10 @@ function bootstrap(): void {
         const restored = restoreVerifiedController(
           config.verifiedDeployment.descriptor.config.seed,
           config.verifiedDeployment.transcript,
+          config.verifiedDeployment.fieldOrder,
         );
         verifiedController = restored.controller;
-        firstStrikeObjective = restored.firstStrikeObjective;
+        fieldOrder = restored.fieldOrder;
         verifiedClient = createSwitchableVerifiedClient(verifiedController);
         newClient = verifiedClient;
       } catch {
@@ -1022,15 +1023,19 @@ function bootstrap(): void {
     // longer needs to — keeping lobby-visibility owned by a single place (#13).
     void startGame(config);
   });
-  if (LIVE_MATCH_DIAGNOSTICS_ENABLED) {
-    const syncLiveMatchDiagnostics = () => {
+  const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
+    if (identityChanged) {
+      fieldOrder = null;
+      hud.setFieldOrder(null);
+    }
+    if (LIVE_MATCH_DIAGNOSTICS_ENABLED) {
       hud.setLiveMatchDiagnostics(
         lobby.isAccountAuthenticated() ? currentLiveMatchSnapshot : null,
       );
-    };
-    lobby.onAccountAuthenticationChange(syncLiveMatchDiagnostics);
-    syncLiveMatchDiagnostics();
-  }
+    }
+  };
+  lobby.onAccountAuthenticationChange(syncAccountOwnedPresentation);
+  syncAccountOwnedPresentation(false);
 
   hud.onVerifiedRetry(() => {
     if (!verifiedController || verifiedCasual || !currentConfig?.verifiedDeployment) return;
@@ -1058,8 +1063,10 @@ function bootstrap(): void {
     if (deployment.status !== 'expired' || !verifiedClient) return;
     if (!lobby.continueVerifiedDeploymentCasually()) return;
     verifiedCasual = true;
+    fieldOrder = null;
     verifiedClient.continueCasually();
     hud.setVerifiedDeployment(null);
+    hud.setFieldOrder(null);
     input?.setDirectAimEnabled(directAimAllowed());
   });
 
@@ -1069,6 +1076,21 @@ function bootstrap(): void {
     if (!lobby.returnVerifiedDeploymentToBattery()) return;
     teardown();
     lobby.show();
+  });
+
+  hud.onVerifiedNextOrder(() => {
+    const descriptor = currentConfig?.verifiedDeployment?.descriptor;
+    const deployment = lobby.verifiedDeployment;
+    if (
+      !descriptor
+      || !verifiedController
+      || verifiedCasual
+      || deployment.status !== 'verified'
+      || deployment.receipt.result.sessionId !== descriptor.sessionId
+      || !lobby.returnVerifiedDeploymentToBattery()
+    ) return;
+    teardown();
+    lobby.show({ focusVerifiedDeployment: true });
   });
 
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
