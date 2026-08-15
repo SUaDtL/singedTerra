@@ -1,0 +1,56 @@
+# Commander Operations Board local evidence
+
+Date: 2026-08-15
+Initiative: `career.initiative.0001` remains active.
+Decision: `career.operations.0002`
+
+## Player outcome
+
+An authenticated Commander entering Local Battle sees one bounded operations
+surface: the existing dossier remains immediately above a current Field Order,
+one verified-deployment control lane, and an explicitly local Practice
+Operations lane. Quick Operations continue through their existing local Quick
+Duel route and do not acquire verified rewards or account authority.
+
+## Test-first record
+
+- RED: `LobbyHotSeatView` had no Commander Operations region and the
+  authenticated Local Battle route had no practice callback.
+- GREEN: the builder composes the career, verified, and practice lanes in that
+  exact order, retains one verified primary action, and delegates each practice
+  card to the existing Quick Duel callback.
+- Lifecycle guard: an authenticated board retires on an anonymous account
+  transition and only returns with a newly authenticated state; the restored
+  practice card still emits the existing local Crosswind configuration.
+- Browser RED: the board initially rendered as an unstyled block; compact
+  layout initially split the verified rules down to an unusable 8px lane; and
+  the compact practice launch target measured 33.34px wide.
+- GREEN: the board is a contained grid; compact stacks the verified action
+  beneath its readable rules; and the practice control has a causal 44px
+  minimum target. Desktop cards and compact selector both launch Crosswind
+  Range through the normal local path.
+
+## Local verification
+
+- Focused view and account tests: 66 passed.
+- Full client suite: 164 files, 1,634 tests passed.
+- `npm run check`: passed (typecheck and deterministic harnesses).
+- `npm run check:edge`: 352 passed, 0 failed.
+- Complete Playwright production-bundle matrix: 346 passed, 38
+  project-inapplicable skips, 0 failures.
+- `git diff --check`: passed after restoring the exact historical audit bytes
+  and re-appending the two UTF-8 Commander Operations records.
+
+## Boundary and remaining delivery work
+
+This slice changes only client Local Battery composition, styling, and tests.
+It does not alter Auth policy, schemas, migrations, Edge Functions, action
+protocol, deterministic engine, verified receipt/reward authority, dependencies,
+or secrets. Exact-diff adversarial review, CodeArbiter commit gate, PR,
+exact-head hosted CI/CodeQL/Pages, merge, Pages provenance, and an
+authenticated production observation remain open.
+
+The plan deliberately retains unchecked mutation, broader lifecycle, and
+durable screenshot obligations. The green matrices above are local regression
+evidence, not a claim that those remaining plan checks or delivery gates are
+complete.

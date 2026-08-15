@@ -150,6 +150,72 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
 test.describe('verified deployment production-browser journey', () => {
   test.beforeEach(async ({ page }) => installAuthenticatedFixture(page));
 
+  test('composes one contained Commander Operations board before a verified launch', async ({ page }) => {
+    await openLocalBattery(page);
+    const board = page.locator('[data-ui="commander-operations"]');
+    await expect(board).toBeVisible();
+    await expect(board.getByRole('heading', { name: 'Current field order' })).toBeVisible();
+    await expect(board.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
+    await expect(board.getByRole('region', { name: 'Practice operations' })).toBeVisible();
+    await expect(board.locator('.lobby-verified-deployment__dossier')).toHaveCount(0);
+    const compactSelector = board.getByLabel('Choose practice operation');
+    if (await compactSelector.isVisible()) {
+      const practiceLaunch = board.getByRole('button', { name: 'Launch practice' });
+      const practiceTarget = await practiceLaunch.boundingBox();
+      expect(practiceTarget, 'Practice launch needs a rendered touch target').not.toBeNull();
+      expect(practiceTarget!.width).toBeGreaterThanOrEqual(44);
+      expect(practiceTarget!.height).toBeGreaterThanOrEqual(44);
+      await compactSelector.focus();
+      await page.keyboard.press('Tab');
+      await expect(practiceLaunch).toBeFocused();
+    } else {
+      const cards = board.locator('button[data-operation-id]');
+      const practiceTarget = await cards.first().boundingBox();
+      expect(practiceTarget, 'Practice card needs a rendered target').not.toBeNull();
+      expect(practiceTarget!.height).toBeGreaterThanOrEqual(44);
+      await cards.first().focus();
+      await page.keyboard.press('Tab');
+      await expect(cards.nth(1)).toBeFocused();
+    }
+
+    const metrics = await board.evaluate((node) => {
+      const lanes = [...node.children] as HTMLElement[];
+      const style = getComputedStyle(node);
+      const boardBox = node.getBoundingClientRect();
+      return {
+        display: style.display,
+        columns: style.gridTemplateColumns,
+        boardBox: boardBox.toJSON(),
+        lanes: lanes.map((lane) => lane.getBoundingClientRect().toJSON()),
+      };
+    });
+    expect(metrics.display).toBe('grid');
+    expect(metrics.columns).not.toBe('none');
+    for (const lane of metrics.lanes) {
+      expect(lane.left).toBeGreaterThanOrEqual(metrics.boardBox.left - 1);
+      expect(lane.right).toBeLessThanOrEqual(metrics.boardBox.right + 1);
+      expect(lane.top).toBeGreaterThanOrEqual(metrics.boardBox.top - 1);
+      expect(lane.bottom).toBeLessThanOrEqual(metrics.boardBox.bottom + 1);
+    }
+    await assertLobbyFrame(page);
+  });
+
+  test('launches the selected local practice operation from Commander Operations', async ({ page }) => {
+    await openLocalBattery(page);
+    const board = page.getByRole('region', { name: 'Commander Operations' });
+    const compactSelector = board.getByLabel('Choose practice operation');
+    if (await compactSelector.isVisible()) {
+      await compactSelector.selectOption('crosswind-range');
+      await board.getByRole('button', { name: 'Launch practice' }).click();
+    } else {
+      await board.locator('button[data-operation-id="crosswind-range"]').click();
+    }
+
+    await expect(page.locator('#lobby')).toBeHidden();
+    await expect(page.locator('[data-ui="quick-operation"]'))
+      .toHaveText(/Crosswind Range.*Wraparound walls turn shifting wind into a ranging test\./);
+  });
+
   test('contains fixed rules, loading, and the verified HUD at every input profile', async ({ page }) => {
     let releaseStart!: () => void;
     const startGate = new Promise<void>((resolve) => { releaseStart = resolve; });
@@ -168,8 +234,9 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(verified.getByText('6 human / 6 CPU salvos maximum')).toBeVisible();
     await expect(verified.getByText('Fixed battlefield rules')).toBeVisible();
     await expect(verified.getByText('30-minute deadline')).toBeVisible();
-    await expect(verified.getByText('Commander dossier')).toBeVisible();
-    await expect(verified.getByText('First Strike · Damage the CPU within your first three salvos.')).toBeVisible();
+    const commanderOperations = page.getByRole('region', { name: 'Commander Operations' });
+    await expect(commanderOperations.getByRole('heading', { name: 'Current field order' })).toBeVisible();
+    await expect(commanderOperations.getByText('First Strike · Damage the CPU within your first three salvos.')).toBeVisible();
     const launchComposition = await verified.evaluate((node) => {
       const rules = node.querySelector<HTMLElement>('.lobby-verified-deployment__rules');
       const actions = node.querySelector<HTMLElement>('.lobby-verified-deployment__actions');
@@ -179,7 +246,9 @@ test.describe('verified deployment production-browser journey', () => {
         actions: actions.getBoundingClientRect().toJSON(),
       };
     });
-    expect(launchComposition.actions.left).toBeGreaterThanOrEqual(launchComposition.rules.right - 1);
+    const launchIsBesideRules = launchComposition.actions.left >= launchComposition.rules.right - 1;
+    const launchIsBelowRules = launchComposition.actions.top >= launchComposition.rules.bottom - 1;
+    expect(launchIsBesideRules || launchIsBelowRules).toBe(true);
     await assertLobbyFrame(page);
 
     const launch = verified.getByRole('button', { name: 'Start verified deployment' });
@@ -559,7 +628,7 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page, '?e2e=verified-lifecycle');
     const verified = page.getByRole('region', { name: 'Verified deployment' });
-    await expect(verified.getByText(
+    await expect(page.getByRole('region', { name: 'Commander Operations' }).getByText(
       /First Strike.*Damage the CPU within your first three salvos\./,
     )).toBeVisible();
 
@@ -577,7 +646,7 @@ test.describe('verified deployment production-browser journey', () => {
     await nextOrder.click();
     await expect(page.locator('#lobby')).toBeVisible();
     await expect(verified.getByRole('button', { name: 'Start verified deployment' })).toBeFocused();
-    await expect(verified.getByText(
+    await expect(page.getByRole('region', { name: 'Commander Operations' }).getByText(
       /Fire for Effect.*Damage the CPU on two separate human salvos\./,
     )).toBeVisible();
     await expect(fieldOrderStatus).toHaveCount(0);

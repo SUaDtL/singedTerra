@@ -10,9 +10,18 @@ export interface LobbyHotSeatViewOptions {
   customizationOpen: boolean;
   validationMessage: string | null;
   verifiedDeployment: LobbyHotSeatVerifiedDeploymentOptions | null;
+  /** Authenticated Local Battle may compose existing local practice operations here. */
+  quickOperations?: readonly LobbyQuickOperation[];
+  onQuickOperation?: (operationId: string) => void;
   onPlayerCountChange: (count: number) => void;
   onCustomizationToggle: (open: boolean) => void;
   onStart: () => void;
+}
+
+export interface LobbyQuickOperation {
+  readonly id: string;
+  readonly title: string;
+  readonly briefing: string;
 }
 
 export interface LobbyHotSeatVerifiedDeploymentOptions {
@@ -30,6 +39,7 @@ export interface LobbyHotSeatVerifiedDeploymentOptions {
 
 function buildVerifiedDeployment(
   options: LobbyHotSeatVerifiedDeploymentOptions,
+  includeFieldOrderDossier = true,
 ): HTMLElement {
   const verified = document.createElement('section');
   verified.className = 'lobby-verified-deployment';
@@ -54,7 +64,7 @@ function buildVerifiedDeployment(
     rules.append(item);
   }
   const fieldOrder = options.fieldOrder;
-  const dossier = fieldOrder === null ? null : document.createElement('section');
+  const dossier = includeFieldOrderDossier && fieldOrder !== null ? document.createElement('section') : null;
   if (fieldOrder && dossier) {
     dossier.className = 'lobby-verified-deployment__dossier';
     dossier.setAttribute('aria-label', 'Commander dossier');
@@ -117,6 +127,87 @@ function buildVerifiedDeployment(
   if (dossier) verified.append(dossier);
   verified.append(message, actions);
   return verified;
+}
+
+function buildPracticeLane(
+  operations: readonly LobbyQuickOperation[],
+  onQuickOperation: (operationId: string) => void,
+): HTMLElement {
+  const practice = document.createElement('section');
+  practice.dataset.operationLane = 'practice';
+  practice.className = 'lobby-commander-operations__practice';
+  practice.setAttribute('aria-label', 'Practice operations');
+  const title = document.createElement('h3');
+  title.textContent = 'Practice operations';
+  const purpose = document.createElement('p');
+  purpose.textContent = 'Local practice only. Results do not affect your verified record.';
+  const cards = document.createElement('div');
+  cards.className = 'lobby-commander-operations__cards';
+  let selectedOperation = operations[0]!;
+  for (const operation of operations) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'lobby-commander-operations__card lobby-btn secondary';
+    card.dataset.operationId = operation.id;
+    card.setAttribute('aria-label', `${operation.title}. ${operation.briefing}`);
+    const label = document.createElement('strong');
+    label.textContent = operation.title;
+    const briefing = document.createElement('span');
+    briefing.textContent = operation.briefing;
+    card.append(label, briefing);
+    card.addEventListener('click', () => { onQuickOperation(operation.id); });
+    cards.append(card);
+  }
+  const compactLaunch = document.createElement('div');
+  compactLaunch.className = 'lobby-commander-operations__compact-launch';
+  const selector = document.createElement('select');
+  selector.dataset.ui = 'practice-operation-selector';
+  selector.setAttribute('aria-label', 'Choose practice operation');
+  for (const operation of operations) {
+    const option = document.createElement('option');
+    option.value = operation.id;
+    option.textContent = operation.title;
+    selector.append(option);
+  }
+  selector.addEventListener('change', () => {
+    selectedOperation = operations.find((operation) => operation.id === selector.value) ?? operations[0]!;
+  });
+  const launch = document.createElement('button');
+  launch.type = 'button';
+  launch.className = 'lobby-btn secondary';
+  launch.dataset.ui = 'launch-practice-operation';
+  launch.textContent = 'Launch practice';
+  launch.addEventListener('click', () => { onQuickOperation(selectedOperation.id); });
+  compactLaunch.append(selector, launch);
+  practice.append(title, purpose, cards, compactLaunch);
+  return practice;
+}
+
+function buildCommanderOperations(
+  verifiedDeployment: LobbyHotSeatVerifiedDeploymentOptions,
+  operations: readonly LobbyQuickOperation[],
+  onQuickOperation: (operationId: string) => void,
+): HTMLElement {
+  const board = document.createElement('section');
+  board.dataset.ui = 'commander-operations';
+  board.className = 'lobby-commander-operations';
+  board.setAttribute('aria-label', 'Commander Operations');
+
+  const career = document.createElement('section');
+  career.dataset.operationLane = 'career';
+  career.className = 'lobby-commander-operations__career';
+  const title = document.createElement('h3');
+  title.textContent = 'Current field order';
+  const order = document.createElement('p');
+  order.textContent = verifiedDeployment.fieldOrder === null
+    ? 'Your next verified order will be assigned when your record is available.'
+    : renderFieldOrder(verifiedDeployment.fieldOrder).brief;
+  career.append(title, order);
+
+  const verified = buildVerifiedDeployment(verifiedDeployment, false);
+  verified.dataset.operationLane = 'verified';
+  board.append(career, verified, buildPracticeLane(operations, onQuickOperation));
+  return board;
 }
 
 export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLElement {
@@ -209,7 +300,13 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   start.disabled = options.validationMessage !== null;
   start.addEventListener('click', options.onStart);
   wrapper.append(brief, ready);
-  if (options.verifiedDeployment) {
+  if (options.verifiedDeployment && options.quickOperations && options.onQuickOperation) {
+    wrapper.append(buildCommanderOperations(
+      options.verifiedDeployment,
+      options.quickOperations,
+      options.onQuickOperation,
+    ));
+  } else if (options.verifiedDeployment) {
     wrapper.append(buildVerifiedDeployment(options.verifiedDeployment));
   }
   wrapper.append(customization, start);
