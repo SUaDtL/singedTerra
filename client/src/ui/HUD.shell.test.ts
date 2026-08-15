@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { HUD } from './HUD';
 import type { GameState } from '@shared/types/GameState';
@@ -181,15 +181,34 @@ describe('HUD single-screen combat shell', () => {
     expect(tile.querySelector('.st-hud__weapon-ammo')?.textContent).toBe('2');
   });
 
-  it('changes the rail commitment from an armed shot to honest tracking state', () => {
+  it('replaces the focused Fire commitment through submit, flight, resolution, and handoff', () => {
     const { hud, state } = mountHarness();
+    const commandConsole = document.querySelector<HTMLElement>(
+      '#battle-rail .st-hud__command-console',
+    )!;
     const commitment = document.querySelector<HTMLElement>(
       '#battle-rail .st-hud__console-commitment',
     )!;
     const stateLabel = commitment.querySelector<HTMLElement>('.st-hud__console-state')!;
+    const fire = commitment.querySelector<HTMLButtonElement>('.st-hud__primary-action')!;
+    let fired = 0;
+    hud.onPrimaryAction(() => {
+      fired += 1;
+      hud.update(state, true, false);
+    });
 
     expect(commitment.dataset['commandMode']).toBe('decision');
     expect(stateLabel.textContent).toContain('Fire ready');
+    fire.focus();
+    fire.click();
+
+    expect(fired).toBe(1);
+    expect(commitment.dataset['commandMode']).toBe('submitting');
+    expect(stateLabel.textContent).toContain('Submitting shot');
+    expect(stateLabel.textContent?.trim()).not.toBe('');
+    expect(fire.isConnected).toBe(false);
+    expect(commitment.querySelector('.st-hud__primary-action')).toBeNull();
+    expect(commandConsole.contains(document.activeElement)).toBe(true);
 
     state.phase = 'FIRING';
     hud.update(state, true, false);
@@ -197,6 +216,60 @@ describe('HUD single-screen combat shell', () => {
     expect(commitment.dataset['commandMode']).toBe('tracking');
     expect(stateLabel.textContent).toContain('Tracking shot');
     expect(stateLabel.title).toBe('Shot in flight.');
+    expect(commitment.querySelector('button')).toBeNull();
+
+    state.phase = 'RESOLVING';
+    hud.update(state, false, false);
+
+    expect(commitment.dataset['commandMode']).toBe('resolving');
+    expect(stateLabel.textContent).toContain('Resolving impact');
+    expect(commitment.textContent).toContain('Resolving terrain and damage.');
+    expect(commitment.querySelector('button')).toBeNull();
+
+    state.phase = 'PLAYER_TURN';
+    state.activePlayerId = state.tanks[1]!.id;
+    hud.update(state, false, false, false);
+
+    expect(commitment.dataset['commandMode']).toBe('handoff');
+    expect(stateLabel.textContent).toContain('Awaiting remote action');
+    expect(commitment.textContent).toContain('Another commander controls this turn.');
+    expect(commitment.querySelector('button')).toBeNull();
+    expect(commandConsole.contains(document.activeElement)).toBe(true);
+    expect(fired).toBe(1);
+  });
+
+  it('keeps retry recovery in the report without adding a terminal console action', () => {
+    const { rail, modal, hud, state } = mountHarness();
+    const retry = vi.fn();
+    hud.onVerifiedRetry(retry);
+    hud.setVerifiedDeployment({
+      status: 'retryable',
+      humanSalvos: 6,
+      cpuSalvos: 6,
+      humanLimit: 6,
+      cpuLimit: 6,
+      deadline: {
+        remainingMs: 30_000,
+        warning: 'one-minute',
+        acceptsInput: false,
+        canComplete: true,
+      },
+    });
+    state.phase = 'GAME_OVER';
+    state.winner = state.tanks[0]!.id;
+
+    hud.update(state, false, false);
+
+    const commitment = rail.querySelector<HTMLElement>('.st-hud__console-commitment')!;
+    const reportRetry = modal.querySelector<HTMLButtonElement>(
+      '.st-hud__victory-verified-retry',
+    )!;
+    expect(commitment.dataset['commandMode']).toBe('recovery');
+    expect(commitment.textContent).toContain('Retry verification in report');
+    expect(commitment.querySelectorAll('button')).toHaveLength(0);
+    expect(reportRetry.isConnected).toBe(true);
+    expect(reportRetry.textContent).toBe('Retry verification');
+    expect(reportRetry.disabled).toBe(false);
   });
 
   it('uses exact decorative SVG icons while visible text keeps actions named', () => {

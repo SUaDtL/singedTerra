@@ -41,6 +41,7 @@ import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
 import type { FirstStrikeObjective } from '../client/firstStrikeObjective';
 import {
   battleCommandStateFor,
+  type BattleCommandCommitmentPhase,
   type BattleCommandImpactLearningCue,
 } from './battleCommandState';
 
@@ -294,8 +295,10 @@ export class HUD {
   private storeBtnEl!: HTMLButtonElement;
   private storeBtnLabelEl!: HTMLElement;
   private commandConsoleEl!: HTMLElement;
+  private consoleSolutionEl!: HTMLElement;
   private consoleCommitmentEl!: HTMLElement;
   private consoleStateEl!: HTMLElement;
+  private consoleExplanationEl!: HTMLElement;
   private turnActionsEl!: HTMLElement;
   private primaryActionBtnEl!: HTMLButtonElement;
   private primaryActionLabelEl!: HTMLElement;
@@ -303,6 +306,9 @@ export class HUD {
   private firstSalvoProgressEl!: HTMLElement;
   private firstSalvoCopyEl!: HTMLElement;
   private firstSalvoStatusEl!: HTMLElement;
+  private firstSalvoBriefingEl!: HTMLElement;
+  private firstSalvoBriefingEnterBtnEl!: HTMLButtonElement;
+  private firstSalvoBriefingAcknowledged = false;
   private storeEl!: HTMLElement;
   private storeCreditsEl!: HTMLElement;
   // Networked liveness widgets (P1-6): a persistent connection banner (shown only
@@ -459,8 +465,14 @@ export class HUD {
    */
   setFirstSalvoStep(step: FirstSalvoStep | null): void {
     if (this.firstSalvoStep === step) return;
+    const previousStep = this.firstSalvoStep;
     this.firstSalvoStep = step;
-    if (this.built) this.syncFirstSalvo();
+    if (step === null) this.firstSalvoBriefingAcknowledged = false;
+    if (!this.built) return;
+    if (previousStep === null && step !== null && !this.firstSalvoBriefingAcknowledged) {
+      this.showFirstSalvoBriefing();
+    }
+    this.syncFirstSalvo();
   }
 
   /**
@@ -574,6 +586,45 @@ export class HUD {
     } else if (this.consoleStateEl.title !== command.commitment.explanation) {
       this.consoleStateEl.title = command.commitment.explanation;
     }
+    this.syncCommitmentPresentation(
+      command.commitment.phase,
+      command.commitment.commit !== null,
+      command.commitment.explanation ?? command.commitment.label,
+    );
+  }
+
+  /** Replace a committed decision with phase context; never leave an inert Fire affordance. */
+  private syncCommitmentPresentation(
+    phase: BattleCommandCommitmentPhase,
+    hasCommit: boolean,
+    explanation: string,
+  ): void {
+    if (hasCommit) {
+      this.consoleExplanationEl.hidden = true;
+      this.consoleExplanationEl.textContent = '';
+      if (!this.aimEl.isConnected) {
+        const coach = this.firstSalvoEl?.parentElement === this.consoleCommitmentEl
+          ? this.firstSalvoEl
+          : null;
+        this.consoleCommitmentEl.insertBefore(this.aimEl, coach);
+      }
+      if (!this.turnActionsEl.isConnected) this.consoleCommitmentEl.append(this.turnActionsEl);
+      return;
+    }
+
+    const focusedCombatControl = this.turnActionsEl.contains(document.activeElement);
+    this.turnActionsEl.remove();
+    const tracksOutcome = phase === 'submitting' || phase === 'tracking' || phase === 'resolving';
+    if (tracksOutcome) {
+      if (!this.aimEl.isConnected) this.consoleCommitmentEl.append(this.aimEl);
+    } else {
+      this.aimEl.remove();
+    }
+    this.consoleExplanationEl.hidden = false;
+    if (this.consoleExplanationEl.textContent !== explanation) {
+      this.consoleExplanationEl.textContent = explanation;
+    }
+    if (focusedCombatControl) this.consoleStateEl.focus({ preventScroll: true });
   }
 
   private syncCombatFocus(focus: CombatFocus): void {
@@ -672,7 +723,6 @@ export class HUD {
     // targets remain reachable without changing its established input behavior.
     this.overlayRoot.append(
       this.touchStripEl,
-      this.firstSalvoEl,
     );
     this.railRoot.append(
       this.commandConsoleEl,
@@ -688,6 +738,7 @@ export class HUD {
       this.pauseEl,
       this.verifiedExpiryEl,
       this.liveMatchInspectorEl,
+      this.firstSalvoBriefingEl,
     );
     this.built = true;
     this.syncFirstSalvo();
@@ -1581,24 +1632,87 @@ export class HUD {
       this.firstSalvoStatusEl,
       skipBtn,
     );
+
+    this.firstSalvoBriefingEl = document.createElement('div');
+    this.firstSalvoBriefingEl.className = 'st-hud__first-salvo-briefing';
+    this.firstSalvoBriefingEl.dataset['ui'] = 'first-salvo-briefing';
+    this.firstSalvoBriefingEl.setAttribute('role', 'dialog');
+    this.firstSalvoBriefingEl.setAttribute('aria-modal', 'true');
+    this.firstSalvoBriefingEl.setAttribute('aria-labelledby', 'st-first-salvo-briefing-title');
+    this.firstSalvoBriefingEl.hidden = true;
+    const briefingPanel = document.createElement('section');
+    briefingPanel.className = 'st-hud__first-salvo-briefing-panel';
+    const eyebrow = document.createElement('div');
+    eyebrow.className = 'st-hud__first-salvo-briefing-eyebrow';
+    eyebrow.textContent = 'Operational briefing';
+    const title = document.createElement('h2');
+    title.id = 'st-first-salvo-briefing-title';
+    title.textContent = 'First Salvo';
+    const briefing = document.createElement('ol');
+    briefing.className = 'st-hud__first-salvo-briefing-steps';
+    for (const [name, detail] of [
+      ['Aim', 'Set elevation toward the target.'],
+      ['Wind', 'Read the vector before setting power.'],
+      ['Commit', 'Fire once the solution is ready.'],
+    ] as const) {
+      const item = document.createElement('li');
+      const label = document.createElement('strong');
+      label.textContent = name;
+      const copy = document.createElement('span');
+      copy.textContent = detail;
+      item.append(label, copy);
+      briefing.append(item);
+    }
+    this.firstSalvoBriefingEnterBtnEl = document.createElement('button');
+    this.firstSalvoBriefingEnterBtnEl.type = 'button';
+    this.firstSalvoBriefingEnterBtnEl.className = 'st-hud__restart';
+    this.firstSalvoBriefingEnterBtnEl.textContent = 'Enter battle';
+    this.firstSalvoBriefingEnterBtnEl.addEventListener('click', () => {
+      this.firstSalvoBriefingAcknowledged = true;
+      this.firstSalvoBriefingEl.hidden = true;
+      this.syncFirstSalvo();
+      const target = this.commandConsoleEl.querySelector<HTMLButtonElement>(
+        `[data-first-salvo-target="${this.firstSalvoStep ?? ''}"]`,
+      );
+      (target ?? this.consoleStateEl).focus({ preventScroll: true });
+    });
+    briefingPanel.append(eyebrow, title, briefing, this.firstSalvoBriefingEnterBtnEl);
+    this.firstSalvoBriefingEl.append(briefingPanel);
+  }
+
+  private showFirstSalvoBriefing(): void {
+    this.firstSalvoBriefingEl.hidden = false;
+    this.firstSalvoBriefingEnterBtnEl.focus({ preventScroll: true });
   }
 
   /** Reconciles card copy and static target rings without rebuilding DOM per frame. */
   private syncFirstSalvo(): void {
     const copy = this.firstSalvoCopyFor(this.firstSalvoStep);
-    this.firstSalvoEl.classList.toggle('st-hud__first-salvo--hidden', copy === null);
+    const visible = copy !== null && this.firstSalvoBriefingAcknowledged;
+    this.firstSalvoEl.classList.toggle('st-hud__first-salvo--hidden', !visible);
     const anchor = this.firstSalvoStep === 'fire' ? 'commitment' : 'solution';
     if (copy === null) delete this.firstSalvoEl.dataset['coachAnchor'];
     else this.firstSalvoEl.dataset['coachAnchor'] = anchor;
+    const destination = anchor === 'commitment'
+      ? this.consoleCommitmentEl
+      : this.consoleSolutionEl;
+    if (this.firstSalvoEl.parentElement !== destination) {
+      if (anchor === 'commitment' && this.turnActionsEl.isConnected) {
+        destination.insertBefore(this.firstSalvoEl, this.turnActionsEl);
+      } else {
+        destination.append(this.firstSalvoEl);
+      }
+    }
     for (const scope of [this.root, this.overlayRoot, this.railRoot]) {
       for (const target of scope.querySelectorAll<HTMLElement>('[data-first-salvo-target]')) {
         target.classList.toggle(
           'st-hud__first-salvo-target--active',
-          copy !== null && target.dataset['firstSalvoTarget'] === this.firstSalvoStep,
+          visible && target.dataset['firstSalvoTarget'] === this.firstSalvoStep,
         );
       }
     }
     if (copy === null) {
+      this.firstSalvoBriefingEl.hidden = true;
       this.firstSalvoProgressEl.textContent = '';
       this.firstSalvoCopyEl.textContent = '';
       this.firstSalvoStatusEl.textContent = '';
@@ -1667,6 +1781,7 @@ export class HUD {
     guideHint.textContent = 'G';
     guide.append(makeHudGlyph('aim', 14), guideLabel, guideHint);
     solution.append(this.weaponEl, instruments, controls, guide, this.stripEl);
+    this.consoleSolutionEl = solution;
 
     const commitment = document.createElement('section');
     commitment.className = 'st-hud__console-commitment';
@@ -1675,9 +1790,14 @@ export class HUD {
     state.className = 'st-hud__console-state';
     state.setAttribute('role', 'status');
     state.setAttribute('aria-live', 'polite');
-    commitment.append(state, this.aimEl, this.turnActionsEl);
+    state.tabIndex = -1;
+    const explanation = document.createElement('div');
+    explanation.className = 'st-hud__commitment-explanation';
+    explanation.hidden = true;
+    commitment.append(state, explanation, this.aimEl, this.turnActionsEl);
     this.consoleCommitmentEl = commitment;
     this.consoleStateEl = state;
+    this.consoleExplanationEl = explanation;
 
     this.commandConsoleEl.append(context, solution, commitment);
   }
@@ -4354,54 +4474,49 @@ export class HUD {
   font-size: var(--st-weapon-intel-value-size, 9px);
   line-height: 1.15;
 }
-/* First Salvo stays compact and non-modal: the card is pointer-transparent; only Skip receives pointer input. */
+/* First Salvo becomes a compact in-console ribbon after its one-time briefing. */
 .st-hud__first-salvo {
-  position: absolute;
-  left: 14px;
-  /* Keep the non-interactive coach above the protected instrumentation rail. */
-  bottom: calc(100% - var(--battle-rail-top-y) + 12px);
-  z-index: 22;
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 10px;
-  width: min(244px, calc(100% - 28px));
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 7px;
+  width: 100%;
+  min-height: 32px;
+  max-height: 44px;
   box-sizing: border-box;
-  padding: 9px 10px;
+  padding: 3px 5px;
   border: 1px solid rgba(255, 210, 63, 0.68);
-  border-radius: 6px;
+  border-radius: 4px;
   background:
     linear-gradient(115deg, rgba(255, 210, 63, 0.13), transparent 56%),
     rgba(15, 8, 25, 0.94);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 233, 168, 0.08);
   color: var(--text);
-  pointer-events: none;
+  overflow: hidden;
 }
 .st-hud__first-salvo--hidden { display: none; }
-#game-overlay .st-hud__first-salvo[data-coach-anchor="solution"] {
-  left: 50%;
-  transform: translateX(-50%);
-}
-#game-overlay .st-hud__first-salvo[data-coach-anchor="commitment"] {
-  right: 14px;
-  left: auto;
-}
 .st-hud__first-salvo-progress {
   grid-column: 1;
   color: var(--gold);
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.1px;
   text-transform: uppercase;
 }
 .st-hud__first-salvo-copy {
-  grid-column: 1 / -1;
+  grid-column: 2;
   color: var(--ui-copy);
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 650;
   line-height: 1.3;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .st-hud__first-salvo-status {
   position: absolute;
@@ -4413,10 +4528,9 @@ export class HUD {
   white-space: nowrap;
 }
 .st-hud__first-salvo-skip {
-  grid-column: 2;
+  grid-column: 3;
   grid-row: 1;
-  align-self: start;
-  min-height: 24px;
+  min-height: 28px;
   padding: 3px 6px;
   border: 1px solid rgba(255, 210, 63, 0.34);
   border-radius: 3px;
@@ -4424,9 +4538,8 @@ export class HUD {
   color: var(--ui-muted);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
-  pointer-events: auto;
 }
 .st-hud__first-salvo-skip:hover { color: var(--text-gold); border-color: var(--gold); }
 .st-hud__first-salvo-skip:focus-visible,
@@ -6137,6 +6250,61 @@ export class HUD {
   box-shadow: none;
   overflow: visible;
 }
+.st-hud__first-salvo-briefing {
+  position: absolute;
+  inset: 0;
+  z-index: 72;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(5, 3, 10, 0.76);
+  pointer-events: auto;
+}
+.st-hud__first-salvo-briefing[hidden] { display: none; }
+.st-hud__first-salvo-briefing-panel {
+  width: min(520px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 22px;
+  border: 1px solid rgba(255, 210, 63, 0.7);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(67, 37, 23, 0.98), rgba(12, 7, 22, 0.98));
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.64);
+  color: var(--ui-copy);
+}
+.st-hud__first-salvo-briefing-eyebrow {
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.st-hud__first-salvo-briefing-panel h2 {
+  margin: 5px 0 14px;
+  color: var(--text-gold);
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+.st-hud__first-salvo-briefing-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.st-hud__first-salvo-briefing-steps li {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.st-hud__first-salvo-briefing-steps strong { color: var(--gold); }
+.st-hud__first-salvo-briefing-panel > .st-hud__restart { width: 100%; min-height: 44px; }
+@media (pointer: coarse) {
+  .st-hud__first-salvo { height: 44px; padding-block: 0; }
+  .st-hud__first-salvo-skip { min-height: 44px; }
+}
 #battle-rail .st-hud__console-context,
 #battle-rail .st-hud__console-solution,
 #battle-rail .st-hud__console-commitment {
@@ -6163,7 +6331,7 @@ export class HUD {
   position: relative;
   display: grid;
   grid-template-columns: minmax(132px, 0.72fr) minmax(178px, 1.16fr) minmax(116px, 0.7fr);
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 6px;
   padding: 5px;
 }
@@ -6272,7 +6440,7 @@ export class HUD {
 }
 #battle-rail .st-hud__trajectory-guide {
   grid-column: 1 / -1;
-  grid-row: 2;
+  grid-row: 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6281,6 +6449,10 @@ export class HUD {
   color: var(--ui-muted);
   font-size: 8px;
   letter-spacing: 0.5px;
+}
+#battle-rail .st-hud__console-solution > .st-hud__first-salvo {
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 #battle-rail .st-hud__strip--collapsed { display: none; }
 #battle-rail .st-hud__strip--open {
@@ -6298,31 +6470,54 @@ export class HUD {
 }
 #battle-rail .st-hud__console-commitment {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 #battle-rail .st-hud__console-state {
+  grid-row: 1;
   min-width: 0;
   padding: 7px 8px 4px;
   color: var(--text-gold);
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.15px;
   line-height: 1.1;
   text-align: center;
   text-transform: uppercase;
 }
+#battle-rail .st-hud__commitment-explanation {
+  grid-row: 2;
+  align-self: center;
+  min-width: 0;
+  padding: 4px 10px;
+  color: var(--ui-copy);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+}
+#battle-rail .st-hud__commitment-explanation[hidden] { display: none; }
 #battle-rail .st-hud__console-commitment[data-command-mode="observation"] .st-hud__console-state,
 #battle-rail .st-hud__console-commitment[data-command-mode="handoff"] .st-hud__console-state {
   color: var(--ui-muted);
 }
 #battle-rail .st-hud__console-commitment .st-hud__aim {
+  grid-row: 3;
   align-self: stretch;
   margin: 5px 6px 4px;
 }
 #battle-rail .st-hud__console-commitment .st-hud__turn-actions {
+  grid-row: 4;
   padding: 6px;
   border-top-color: rgba(255, 210, 63, 0.24);
+}
+#battle-rail .st-hud__console-commitment > .st-hud__first-salvo {
+  grid-row: 3;
+  align-self: center;
+}
+#battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim {
+  visibility: hidden;
 }
 #battle-rail .st-hud__console-commitment .st-hud__primary-action,
 #battle-rail .st-hud__console-commitment .st-hud__store-btn {
