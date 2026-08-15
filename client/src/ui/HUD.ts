@@ -4307,9 +4307,9 @@ export class HUD {
   display: grid;
   box-sizing: border-box;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px 9px;
+  gap: 2px 9px;
   min-width: 0;
-  padding: 8px 9px;
+  padding: 5px 9px;
   border: 1px solid rgba(122, 215, 255, 0.3);
   border-radius: var(--ui-radius-sm);
   background:
@@ -4326,7 +4326,7 @@ export class HUD {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
   border-bottom: 1px solid rgba(255, 210, 63, 0.2);
 }
 .st-hud__weapon-intel-name {
@@ -5767,16 +5767,21 @@ export class HUD {
   align-items: center;
   justify-content: center;
   gap: 1px;
+  width: 100%;
   min-width: 0;
   pointer-events: none;
 }
 .st-hud__fuel-label {
+  box-sizing: border-box;
+  width: 100%;
   color: var(--ui-muted);
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--st-command-readability-size, 11px);
   line-height: 1;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1px;
+  text-align: center;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .st-hud__fuel-value {
   color: var(--gold);
@@ -6538,14 +6543,16 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
     grid-column: 1;
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     align-self: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 2px;
     line-height: 1;
   }
   #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-value {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    width: 100%;
   }
   #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-ammo {
     flex: 0 0 auto;
