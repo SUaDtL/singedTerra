@@ -217,8 +217,10 @@ export class HUD {
   private aimEl!: HTMLElement;
   /** Aim readout sub-node: pending / flight / resolving progress text. */
   private aimTextEl!: HTMLElement;
-  /** "Round N of M" indicator (side panel); hidden in single-round matches. */
+  /** Persistent round-format summary in the side ledger. */
   private roundEl!: HTMLElement;
+  /** Persistent free-for-all/team orientation for the match ledger. */
+  private matchModeEl!: HTMLElement;
   private overlayEl!: HTMLElement;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
    *  the client/engine keeps running underneath, so Resume returns to the live game. */
@@ -675,8 +677,13 @@ export class HUD {
    */
   private syncRound(state: GameState): void {
     const multi = state.totalRounds > 1;
-    this.roundEl.classList.toggle('st-hud__round--hidden', !multi);
-    if (multi) this.roundEl.textContent = `Round ${state.round} of ${state.totalRounds}`;
+    this.matchModeEl.textContent = state.tanks.some((tank) => tank.team === 1 || tank.team === 2)
+      ? 'Team battle'
+      : 'Free-for-all';
+    this.roundEl.classList.remove('st-hud__round--hidden');
+    this.roundEl.textContent = multi
+      ? `Round ${state.round} of ${state.totalRounds}`
+      : 'Single round';
 
     if (state.round > this.lastSeenRound && state.phase !== 'GAME_OVER') {
       const completed = state.round - 1;
@@ -694,7 +701,9 @@ export class HUD {
   private build(): void {
     HUD.injectStyle();
     this.root.classList.add('st-hud', 'st-ui-shell');
-    this.root.dataset['ui'] = 'combat-rail';
+    this.root.dataset['ui'] = 'match-ledger';
+    this.root.setAttribute('role', 'complementary');
+    this.root.setAttribute('aria-label', 'Match ledger');
     this.root.innerHTML = '';
 
     this.buildPlayers();
@@ -717,21 +726,19 @@ export class HUD {
 
     this.root.append(
       menu,
+      this.matchModeEl,
       this.roundEl,
       this.playersEl,
+      this.connBannerEl,
     );
     // buildArsenal resolves the persisted state before the rail children exist;
     // re-apply it now so a stored-open drawer also isolates covered controls.
     this.applyStripCollapsed();
-    // Fine-pointer commands and network liveness occupy the protected floor rail.
-    // The coarse-pointer dock deliberately stays on the overlay: its large touch
-    // targets remain reachable without changing its established input behavior.
-    this.overlayRoot.append(
-      this.touchStripEl,
-    );
+    // Quick Chat and the coarse-pointer dock stay outside the match ledger.
+    // Transient send/turn notices stay with the protected command rail.
+    this.overlayRoot.append(this.quickChatRootEl, this.touchStripEl);
     this.railRoot.append(
       this.commandConsoleEl,
-      this.connBannerEl,
       this.toastEl,
       this.turnWatchEl,
     );
@@ -753,17 +760,21 @@ export class HUD {
 
   /** Player health-bar column (top-left). */
   private buildPlayers(): void {
-    // Player health-bar column (top-left).
-    this.playersEl = document.createElement('div');
+    this.playersEl = document.createElement('ol');
     this.playersEl.className = 'st-hud__players st-ui-section st-ui-section--roster';
+    this.playersEl.setAttribute('aria-label', 'Turn order');
   }
 
   /** Round indicator (side panel): "Round N of M". */
   private buildRound(): void {
+    this.matchModeEl = document.createElement('div');
+    this.matchModeEl.className = 'st-hud__match-mode st-ui-section';
+    this.matchModeEl.dataset['ui'] = 'match-mode';
+    this.matchModeEl.textContent = 'Free-for-all';
+
     // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
     this.roundEl = document.createElement('div');
-    this.roundEl.className =
-      'st-hud__round st-hud__round--hidden st-ui-section st-ui-section--round';
+    this.roundEl.className = 'st-hud__round st-ui-section st-ui-section--round';
   }
 
   /** Compact, in-shell status for an authenticated verified deployment. */
@@ -2180,7 +2191,7 @@ export class HUD {
   private syncLiveMatchDiagnostics(): void {
     const enabled = this.liveMatchDiagnosticsProvider !== null;
     if (enabled && !this.liveMatchDiagnosticsTriggerEl.isConnected) {
-      this.root.insertBefore(this.liveMatchDiagnosticsTriggerEl, this.roundEl);
+      this.root.insertBefore(this.liveMatchDiagnosticsTriggerEl, this.matchModeEl);
       this.pauseActionsEl.insertBefore(this.liveMatchInspectorMenuEl, this.pauseActionsEl.lastElementChild);
     } else if (!enabled && this.liveMatchDiagnosticsTriggerEl.isConnected) {
       this.closeLiveMatchInspector();
@@ -2243,15 +2254,15 @@ export class HUD {
     }
   }
 
-  /** Networked liveness widgets: connection banner, toast, turn-watch. */
+  /** Ledger connection state plus transient toast and turn-watch notices. */
   private buildLiveness(): void {
-    // Status widgets stack in the side panel (this.root = #hud). The controls
-    // legend + liveness widgets go on the canvas overlay (#game-overlay) so they
-    // sit over the play field; the store + game-over modals go on #modal-layer.
-    // Networked liveness widgets (P1-6) — top-center over the canvas. The banner
-    // shows only while the link is down; the toast flashes a failed-shot message.
+    // Connection is durable orientation, while send/turn notices remain transient.
     this.connBannerEl = document.createElement('div');
-    this.connBannerEl.className = 'st-hud__conn st-hud__conn--hidden';
+    this.connBannerEl.className = 'st-hud__conn st-ui-section';
+    this.connBannerEl.dataset['connectionState'] = 'local';
+    this.connBannerEl.setAttribute('role', 'status');
+    this.connBannerEl.setAttribute('aria-live', 'polite');
+    this.connBannerEl.textContent = 'Ready';
     this.toastEl = document.createElement('div');
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
     this.turnWatchEl = document.createElement('div');
@@ -2294,7 +2305,6 @@ export class HUD {
       if (event.key === 'Escape') this.closeQuickChat();
     });
     this.quickChatRootEl.append(this.quickChatToggleEl, this.quickChatPanelEl);
-    this.root.append(this.quickChatRootEl);
   }
 
   private closeQuickChat(): void {
@@ -2508,16 +2518,16 @@ export class HUD {
   }
 
   /**
-   * Reflect the networked Realtime connection state (P1-6). Shows a persistent
-   * top-center banner while 'connecting'/'reconnecting'; hides it once 'connected'.
+   * Reflect the networked Realtime connection state in the persistent match ledger.
    * No-op before the HUD is built (build() runs on the first update()).
    */
   setConnection(state: ConnectionState): void {
     if (!this.built) this.build();
-    const down = state !== 'connected';
+    this.connBannerEl.dataset['connectionState'] = state;
     this.connBannerEl.textContent =
+      state === 'connected' ? 'Ready' :
       state === 'reconnecting' ? '⚠ Connection lost — reconnecting…' : 'Connecting…';
-    this.connBannerEl.classList.toggle('st-hud__conn--hidden', !down);
+    this.connBannerEl.classList.remove('st-hud__conn--hidden');
   }
 
   /**
@@ -2716,7 +2726,7 @@ export class HUD {
   private syncPlayers(state: GameState, isHandoff: boolean): void {
     const seen = new Set<string>();
 
-    for (const tank of state.tanks) {
+    for (const [index, tank] of state.tanks.entries()) {
       seen.add(tank.id);
       let row = this.rows.get(tank.id);
       if (!row) {
@@ -2730,6 +2740,7 @@ export class HUD {
         tank.id === state.activePlayerId,
         state.totalRounds,
         isHandoff,
+        index + 1,
       );
     }
 
@@ -2743,8 +2754,12 @@ export class HUD {
 
   /** Create the static node structure for one player's health bar. */
   private createRow(tank: TankState): PlayerRow {
-    const el = document.createElement('div');
+    const el = document.createElement('li');
     el.className = 'st-hud__player';
+
+    const order = document.createElement('span');
+    order.className = 'st-hud__turn-order';
+    order.setAttribute('aria-hidden', 'true');
 
     const swatch = document.createElement('span');
     swatch.className = 'st-hud__swatch';
@@ -2767,9 +2782,9 @@ export class HUD {
     fill.style.backgroundColor = tank.color;
     bar.append(fill);
 
-    el.append(swatch, name, pips, hp, bar);
+    el.append(order, swatch, name, pips, hp, bar);
     return {
-      el, hp, fill, name, swatch, pips,
+      el, hp, fill, name, swatch, pips, order,
       lastHealth: Math.max(0, Math.round(tank.health)),
       lastPips: '',
     };
@@ -2782,9 +2797,12 @@ export class HUD {
     active: boolean,
     totalRounds: number,
     isHandoff: boolean,
+    turnOrder: number,
   ): void {
     const health = Math.max(0, Math.round(tank.health));
     const dead = !tank.alive || health <= 0;
+    row.el.dataset['turnOrder'] = String(turnOrder);
+    row.order.textContent = String(turnOrder).padStart(2, '0');
 
     // Round-win pips (V1 match structure): one slot per round needed to clinch
     // (ceil(N/2)), filled = roundWins. Hidden entirely in a single-round match.
@@ -2823,6 +2841,10 @@ export class HUD {
     row.fill.style.width = `${Math.max(0, Math.min(100, health))}%`;
     row.el.classList.toggle('st-hud__player--dead', dead);
     row.el.classList.toggle('st-hud__player--active', active && !dead);
+    row.el.setAttribute(
+      'aria-label',
+      `${turnOrder}. ${HUD.playerLabel(tank)}, ${health} health${active && !dead ? ', active turn' : ''}`,
+    );
     if (!active) {
       row.el.classList.remove('st-hud__player--handoff');
     } else if (isHandoff && !dead) {
@@ -3832,6 +3854,9 @@ export class HUD {
   display: flex;
   flex-direction: column;
   gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .st-hud__player {
   position: relative;
@@ -3845,6 +3870,12 @@ export class HUD {
   background: transparent;
   font-size: 13px;
   transition: box-shadow 160ms ease, background 160ms ease, opacity 220ms ease;
+}
+.st-hud__turn-order {
+  flex: 0 0 18px;
+  color: var(--ui-muted);
+  font: 700 10px/1 var(--font-mono);
+  text-align: center;
 }
 .st-hud__player--active {
   background:
@@ -6572,6 +6603,7 @@ export class HUD {
 /** Cached mutable nodes for a single player's health bar. */
 interface PlayerRow {
   el: HTMLElement;
+  order: HTMLElement;
   hp: HTMLElement;
   fill: HTMLElement;
   /** Identity nodes, reconciled each frame so a reused seat id (p1/p2) picks up

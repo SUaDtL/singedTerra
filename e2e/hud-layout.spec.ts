@@ -50,6 +50,47 @@ test.describe('HUD layout guardrails', () => {
     await assertInstrumentsHeight(page, compact);
   });
 
+  test('right rail is a readable match ledger with a reachable Menu', async ({ page }, testInfo) => {
+    const ledger = page.locator('#hud');
+    await expect(ledger).toHaveAttribute('data-ui', 'match-ledger');
+    await expect(ledger).toHaveAttribute('aria-label', 'Match ledger');
+    await expect(ledger.locator('[data-ui="match-mode"]')).toHaveText('Free-for-all');
+    await expect(ledger.locator('.st-hud__round')).toBeVisible();
+    await expect(ledger.locator('.st-hud__players')).toHaveAttribute('aria-label', 'Turn order');
+    await expect(ledger.locator('.st-hud__player')).toHaveCount(2);
+    await expect(ledger.locator('.st-hud__conn')).toContainText('Ready');
+
+    const forbidden = ledger.locator([
+      '[data-ui="weapon-bay"]',
+      '[data-control="angle"]',
+      '[data-control="power"]',
+      '[data-ui="arsenal-drawer"]',
+      '.st-hud__store-btn',
+      '.st-hud__primary-action',
+      '.st-hud__trajectory-guide',
+    ].join(','));
+    await expect(forbidden).toHaveCount(0);
+    await expect(ledger).not.toContainText(/Fire Control/i);
+
+    const menu = testInfo.project.name === 'pixel-touch'
+      ? page.locator('.st-hud__touch-menu')
+      : ledger.getByRole('button', { name: 'Menu', exact: true });
+    await expect(menu).toBeVisible();
+    await expect(menu).toBeEnabled();
+    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+    if (await briefing.isVisible()) {
+      await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
+      await expect(briefing).toBeHidden();
+    }
+    await menu.focus();
+    await expect(menu).toBeFocused();
+    await menu.click();
+    const resume = page.getByRole('button', { name: 'Resume', exact: true });
+    await expect(resume).toBeFocused();
+    await resume.click();
+    await expect(menu).toBeFocused();
+  });
+
   test('no direct #hud child is crushed or content-clipped (generalized invariant)', async ({
     page,
   }) => {

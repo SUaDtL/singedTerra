@@ -49,6 +49,46 @@ afterEach(() => {
 });
 
 describe('HUD single-screen combat shell', () => {
+  it('keeps the side rail as a persistent match ledger, not a second fire console', () => {
+    const { root, rail, hud, state } = mountHarness();
+
+    expect(root.dataset['ui']).toBe('match-ledger');
+    expect(root.getAttribute('role')).toBe('complementary');
+    expect(root.getAttribute('aria-label')).toBe('Match ledger');
+    expect(root.querySelector('[data-ui="match-mode"]')?.textContent).toBe('Free-for-all');
+    expect(root.querySelector('.st-hud__round')).not.toBeNull();
+    expect(root.querySelector('.st-hud__players')?.tagName).toBe('OL');
+    expect(root.querySelector('.st-hud__players')?.getAttribute('aria-label')).toBe('Turn order');
+    expect(
+      [...root.querySelectorAll<HTMLElement>('.st-hud__player')]
+        .map((row) => row.dataset['turnOrder']),
+    ).toEqual(['1', '2']);
+    expect(root.querySelector('.st-hud__conn')?.textContent).toContain('Ready');
+
+    const forbidden = [
+      '[data-ui="weapon-bay"]',
+      '[data-control="angle"]',
+      '[data-control="power"]',
+      '[data-ui="arsenal-drawer"]',
+      '.st-hud__store-btn',
+      '.st-hud__primary-action',
+      '.st-hud__trajectory-guide',
+    ];
+    for (const selector of forbidden) expect(root.querySelector(selector)).toBeNull();
+    expect(root.textContent).not.toMatch(/Fire Control/i);
+    expect(root.querySelector('.st-hud__quick-chat')).toBeNull();
+    expect(rail.querySelector('.st-hud__conn')).toBeNull();
+
+    hud.setConnection('connected');
+    expect(root.querySelector('[data-ui="match-mode"]')?.textContent).toBe('Free-for-all');
+    expect(root.querySelector('.st-hud__conn')?.textContent).toContain('Ready');
+
+    state.tanks[0]!.team = 1;
+    state.tanks[1]!.team = 1;
+    hud.update(state);
+    expect(root.querySelector('[data-ui="match-mode"]')?.textContent).toBe('Team battle');
+  });
+
   it('mounts the active-turn command console in the explicit battle rail', () => {
     const { root, overlay, rail } = (() => {
       const root = document.createElement('div');
@@ -112,7 +152,7 @@ describe('HUD single-screen combat shell', () => {
     const commandConsole = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
 
     expect(root.classList.contains('st-ui-shell')).toBe(true);
-    expect(root.getAttribute('data-ui')).toBe('combat-rail');
+    expect(root.getAttribute('data-ui')).toBe('match-ledger');
     expect(root.querySelector('.st-hud__players')?.classList.contains('st-ui-section')).toBe(true);
     expect(rail.querySelector('.st-hud__instruments')?.classList.contains('st-ui-section')).toBe(true);
     expect(commandConsole.classList.contains('st-ui-section')).toBe(true);
@@ -148,13 +188,13 @@ describe('HUD single-screen combat shell', () => {
     expect(active.parentElement).toBe(context);
     expect(progress.parentElement).toBe(commitment);
     expect(actions.parentElement).toBe(commitment);
-    const persistentCombatRegions = [...root.children].filter(
-      (child) => !child.classList.contains('st-hud__quick-chat'),
-    );
-    expect(persistentCombatRegions).toEqual([
+    const persistentLedgerRegions = [...root.children];
+    expect(persistentLedgerRegions).toEqual([
       root.querySelector('.st-hud__menu'),
+      root.querySelector('[data-ui="match-mode"]'),
       root.querySelector('.st-hud__round'),
       roster,
+      root.querySelector('.st-hud__conn'),
     ]);
     expect(commandConsole.closest('.st-ui-shell')).toBeNull();
     expect(roster.closest('.st-ui-shell')).toBe(root);
