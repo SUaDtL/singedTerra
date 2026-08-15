@@ -136,9 +136,9 @@ test.describe('authored terrain material integration', () => {
     context,
   }) => {
     const fixtures = [
-      { seed: 4, path: MATERIAL_PATHS[0] },
-      { seed: 8, path: MATERIAL_PATHS[2] },
-      { seed: 0, path: MATERIAL_PATHS[1] },
+      { seed: 2, path: MATERIAL_PATHS[0] },
+      { seed: 1, path: MATERIAL_PATHS[1] },
+      { seed: 0, path: MATERIAL_PATHS[2] },
     ] as const;
 
     for (const fixture of fixtures) {
@@ -159,9 +159,9 @@ test.describe('authored terrain material integration', () => {
     context,
   }) => {
     const fixtures = [
-      { seed: 4, path: MATERIAL_PATHS[0] },
-      { seed: 8, path: MATERIAL_PATHS[2] },
-      { seed: 0, path: MATERIAL_PATHS[1] },
+      { seed: 2, path: MATERIAL_PATHS[0] },
+      { seed: 1, path: MATERIAL_PATHS[1] },
+      { seed: 0, path: MATERIAL_PATHS[2] },
     ] as const;
     const groundSamples: number[][] = [];
 
@@ -194,7 +194,10 @@ test.describe('authored terrain material integration', () => {
     page,
     context,
   }) => {
-    const activeMaterial = MATERIAL_PATHS[1];
+    // gotoRunningGame's default deterministic seed resolves to Ember.
+    // Keep this cache/fallback probe on that authored world rather than
+    // accidentally asserting a material selected by a different seed.
+    const activeMaterial = MATERIAL_PATHS[0];
     await page.route(`**/${activeMaterial}`, (route) => route.abort());
     await gotoRunningGame(page);
     await fireAndWaitForNextTurn(page);
