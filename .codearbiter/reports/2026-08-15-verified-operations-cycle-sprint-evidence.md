@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-15
 **Initiative:** `career.initiative.0001`
-**Status:** local GREEN; delivery and production acceptance open
+**Status:** delivery and bounded production receipt accepted
 
 ## Browser contract
 
@@ -36,10 +36,39 @@ verification contract changed.
 - Diff/whitespace checks and the state-free secret scan passed before the Task 4
   commits.
 
+## Hosted delivery
+
+PR [#427](https://github.com/SUaDtL/singedTerra/pull/427) reviewed exact head
+`d8ca33be7791d90492177724e286cdfd759b51df` and merged as
+`main@6547079dc81e5c8cb27fb9f887d451ca32b0ee37`. Exact-head CI
+`31876577759` passed typecheck, deterministic harnesses, client tests, build,
+Edge tests, and rendering E2E; exact-head CodeQL `31876577763` passed. On the
+merge commit, CI `31876818163`, CodeQL `31876818166`, and Pages
+`31876818184` all passed. Pages built the client, verified current-main source
+before and during deployment, verified deployed provenance, and completed its
+post-deploy live smoke.
+
+## Authenticated production receipt
+
+On the deployed Pages client, an authenticated Commander started the existing
+Hold the Field verified deployment, reached its six-human/six-CPU salvo cap,
+and reloaded through the normal Local Battle entry. Selecting the visible
+verified-deployment start action recovered the same capped transcript into the
+terminal report. The immutable result was a verified loss: Hold the Field was
+not achieved, while the existing verified result awarded +100 XP.
+
+The report exposed one `Brief next order` action. Activating it returned to the
+Battery with the accepted award reflected in the dossier, rotated the visible
+order to First Strike, and then started a fresh verified descriptor. The new
+live match showed `You 0 / 6`, `CPU 0 / 6`, a fresh 30-minute deadline, and
+First Strike with three salvos remaining. This proves recovery, accepted
+receipt, rotation, Battery handoff, and fresh-budget presentation without
+claiming a victory or a replayed award.
+
 ## Boundary
 
 Task 4 changes browser coverage and governed evidence only. It adds no Auth,
 schema, migration, Edge Function, protocol, award, dependency, account-summary,
-or runtime product change. Adversarial review, PR creation, exact-head hosted
-CI/CodeQL/Pages, deployment decision, and a bounded authenticated production
-receipt remain open and must not be inferred from this local evidence.
+or runtime product change. The product implementation itself was client-only,
+so Pages deployment is the complete deployable scope; no Supabase function or
+migration deployment is claimed.

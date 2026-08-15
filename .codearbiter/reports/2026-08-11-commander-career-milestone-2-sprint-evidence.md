@@ -301,3 +301,20 @@ Architecture closure: PASS on the corrected live package. The adversary confirme
 - Attribution correction (2026-08-14): raw current CPU health was not a sufficient success oracle during an early CPU response. The existing verified-duel controller now exposes a read-only, client-local vector of CPU-health deltas captured from each accepted human fire to that same salvo's settlement, before CPU planning/response. It remains outside replay results, transport, Edge Functions, persistence, and awards. RED/GREEN now includes CPU-side health loss during an early response (remains active), terminal/late damage (cannot backdate success), resumed first-salvo success, and controller settlement capture. Focused reducer/controller/HUD/Lobby/main tests pass 83/83 with strict typecheck; full-client/browser/review gates remain open.
 - Current local gate receipt (2026-08-14): strict typecheck, `npm run check`, and `git diff --check` pass. Full client Vitest passes 162 files / 1,559 tests. The exact production-build Verified Deployment browser journey passes 27/27 across desktop-fine, pixel-touch, and small-window profiles. Independent adversarial and mutation-oriented reviews cleared the human-salvo attribution correction (C0/H0/M0/L0); both confirm no replay, protocol, Auth, privacy, persistence, award, or CPU-side-damage credit regression. Hosted exact-head CI, merge, Pages deployment, and authenticated production proof remain open.
 - T-14 delivery and production receipt (2026-08-14): PR #423 reviewed head `93c10af1f7cddc79d831ab2ca40225a909edc77d` merged as `main@b313876106dd15b5def0dbdc66a7ea77efacbf77`. Exact-head PR CI (typecheck/harness/build, Edge, rendering E2E, CodeQL) passed; exact-main CI and CodeQL are green, and Pages run `31822850852` successfully built, verified current main, and deployed the client. On a fresh signed-in Commander SUaDtL browser tab, the normal Local Battle -> Start verified deployment route showed the production briefing's `First Strike · Damage the CPU within your first three salvos`, then launched a fresh verified deployment at `29:55 remaining` with `You 0 / 6 · CPU 0 / 6` and live `First Strike · Damage CPU in first 3 salvos · 3 salvos remaining`. This proves the released presentation/launch outcome only; it does not claim a full tactical completion or a reward beyond the existing verified path.
+## Verified Operations Cycle delivery
+
+PR #427 reviewed head `d8ca33be7791d90492177724e286cdfd759b51df` merged as
+`main@6547079dc81e5c8cb27fb9f887d451ca32b0ee37`. Exact-head CI
+`31876577759` and CodeQL `31876577763` passed; exact-main CI `31876818163`,
+CodeQL `31876818166`, and Pages `31876818184` passed. Pages verified main and
+deployed provenance, then completed its live smoke. The implementation is
+client-only, so no Supabase function or migration deployment was needed.
+
+The bounded authenticated production journey started Hold the Field, completed
+the six-salvo cap, reloaded and resumed the same verified descriptor, received
+an immutable verified-loss receipt with the existing +100 XP award, then took
+the sole Brief next order action. The Battery showed rotated First Strike, and
+a new deployment began with You 0 / 6 and CPU 0 / 6. This verifies the
+recovery, receipt, rotation, and fresh-budget loop without claiming a win or
+award replay. Verified Operations Cycle is ACCEPTED; `career.initiative.0001`
+remains active.

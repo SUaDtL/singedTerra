@@ -70,13 +70,14 @@
 - [x] Execute browser matrix, full client suite, `npm run check`, Edge checks,
   typecheck, and diff-check; resolve every regression without weakening existing
   verification or layout contracts.
-- [ ] Give the exact spec, plan, sprint log, tests, and final diff to an
+- [x] Give the exact spec, plan, sprint log, tests, and final diff to an
   adversarial reviewer; resolve all Critical, High, and merge-blocking findings.
-- [ ] Open a PR, require exact-head hosted CI/CodeQL/Pages success, deploy only
+- [x] Open a PR, require exact-head hosted CI/CodeQL/Pages success, deploy only
   if the review scope changes deployable code, and capture a bounded
   authenticated production receipt before marking the task accepted.
 
-**Local status:** GREEN. The browser mutation check and complete local gates are
-recorded in `.codearbiter/reports/2026-08-15-verified-operations-cycle-sprint-evidence.md`.
-Adversarial review, PR, exact-head hosted checks, deployment decision, and the
-authenticated production receipt remain open; this initiative is not accepted.
+**Delivery status:** ACCEPTED. Exact review, PR #427, hosted CI, CodeQL, Pages,
+and the bounded authenticated production loop are recorded in
+`.codearbiter/reports/2026-08-15-verified-operations-cycle-sprint-evidence.md`.
+The implementation is client-only; Pages deployed the exact merge and no
+Supabase deployment was required. `career.initiative.0001` remains active.
