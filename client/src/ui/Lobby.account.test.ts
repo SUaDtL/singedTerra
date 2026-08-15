@@ -1243,16 +1243,19 @@ describe('Lobby account composition', () => {
     })
   })
 
-  it('revalidates and unfreezes only the rightful owner with the exact resumed server descriptor', async () => {
+  it('revalidates the rightful owner without recomputing the retired order from a changed summary', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
     const root = document.createElement('div')
     let account!: FakeAccountSession
     const lobby = new Lobby(root, vi.fn(), (onChange) => {
-      account = new FakeAccountSession(onChange, authenticatedState())
+      account = new FakeAccountSession(onChange, verifiedAccountState(0))
       return account
     })
     await lobby.startVerifiedDeployment()
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active', fieldOrder: { id: 'first-strike', result: null },
+    })
     lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })
     const persisted = localStorage.getItem('singedterra:verified-deployment')
 
@@ -1263,7 +1266,7 @@ describe('Lobby account composition', () => {
     expect(localStorage.getItem('singedterra:verified-deployment')).toBe(persisted)
     account.startVerifiedDeployment.mockResolvedValueOnce({ ...verifiedStart, resumed: true })
     vi.setSystemTime(Date.parse('2026-08-12T13:10:00.000Z'))
-    account.emit(authenticatedState())
+    account.emit(verifiedAccountState(1))
     await Promise.resolve()
     await Promise.resolve()
 
@@ -1273,6 +1276,7 @@ describe('Lobby account composition', () => {
       descriptor: verifiedStart.descriptor,
       transcript: [{ angle: 37, power: 64 }],
       deadline: { remainingMs: 1_200_000, warning: 'none', acceptsInput: true, canComplete: true },
+      fieldOrder: null,
     })
     expect(localStorage.getItem('singedterra:verified-deployment')).toBe(persisted)
   })

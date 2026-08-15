@@ -1180,17 +1180,16 @@ export class Lobby {
     if (!deadline.canComplete) return;
     const recovered = this.verifiedStorage.recover(descriptor);
     if (!recovered) return;
-    const fieldOrder = createFieldOrder(this.accountSession.state.profile.summary?.verifiedProgression);
     this.verifiedCurrent = recovered.terminal
       ? Object.freeze({
           status: 'retryable',
           descriptor,
           transcript: recovered.transcript,
           deadline,
-          fieldOrder,
+          fieldOrder: null,
           error: 'Verification is pending. Retry before the deployment deadline.',
         })
-      : Object.freeze({ status: 'active', descriptor, transcript: recovered.transcript, deadline, fieldOrder });
+      : Object.freeze({ status: 'active', descriptor, transcript: recovered.transcript, deadline, fieldOrder: null });
   }
 
   showAccountSignIn(): void {
