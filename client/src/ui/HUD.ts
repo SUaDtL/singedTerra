@@ -39,7 +39,10 @@ import {
 } from '../client/commanderCareer';
 import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
 import type { FirstStrikeObjective } from '../client/firstStrikeObjective';
-import { battleCommandStateFor } from './battleCommandState';
+import {
+  battleCommandStateFor,
+  type BattleCommandImpactLearningCue,
+} from './battleCommandState';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -176,6 +179,10 @@ export class HUD {
   private verifiedRetryCb: (() => void) | null = null;
   private verifiedContinueCasualCb: (() => void) | null = null;
   private verifiedReturnToBatteryCb: (() => void) | null = null;
+  /** Last server-backed report state, used only by the display projection. */
+  private verifiedDeploymentState: HUDVerifiedDeploymentState | null = null;
+  /** Existing renderer-derived local learning; null means no valid correction exists. */
+  private impactLearningCue: BattleCommandImpactLearningCue | null = null;
   private liveMatchDiagnosticsProvider: (() => LiveMatchSnapshot | undefined) | null = null;
   private liveMatchDiagnosticsTriggerEl!: HTMLButtonElement;
   private liveMatchInspectorEl!: HTMLElement;
@@ -410,6 +417,11 @@ export class HUD {
   onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
   onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
 
+  /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
+  setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
+    this.impactLearningCue = cue;
+  }
+
   /** Enables the read-only maintainer inspector only for an explicit safe snapshot provider. */
   setLiveMatchDiagnostics(provider: (() => LiveMatchSnapshot | undefined) | null): void {
     this.liveMatchDiagnosticsProvider = provider;
@@ -482,16 +494,10 @@ export class HUD {
   }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
-  update(state: GameState, isFiring = false, canControl = true): void {
+  update(state: GameState, isFiring = false, canControl = true, activeIsLocal = canControl): void {
     if (!this.built) this.build();
 
-    const combatFocus: CombatFocus = state.phase === 'PLAYER_TURN'
-      ? (isFiring ? 'outcome' : 'decision')
-      : state.phase === 'FIRING' || state.phase === 'RESOLVING'
-        ? 'outcome'
-        : 'terminal';
-    this.syncCombatFocus(combatFocus);
-    this.syncBattleCommandState(state, isFiring, canControl);
+    this.syncBattleCommandState(state, isFiring, canControl, activeIsLocal);
 
     const hasActiveTurn = state.phase === 'PLAYER_TURN' ||
       state.phase === 'FIRING' ||
@@ -520,13 +526,41 @@ export class HUD {
   }
 
   /** Keep the rail's promise honest while the authoritative engine changes phase. */
-  private syncBattleCommandState(state: GameState, isFiring: boolean, canControl: boolean): void {
-    const command = battleCommandStateFor(state, isFiring, canControl);
-    this.consoleCommitmentEl.dataset['commandMode'] = command.mode;
-    const actor = command.active?.name;
-    const text = command.commitment.available
-      ? `${command.commitment.label} ready${actor ? ` · ${actor}` : ''}`
-      : `${command.commitment.label}${actor ? ` · ${actor}` : ''}`;
+  private syncBattleCommandState(
+    state: GameState,
+    isFiring: boolean,
+    canControl: boolean,
+    activeIsLocal: boolean,
+  ): void {
+    const command = battleCommandStateFor(state, isFiring, canControl, {
+      activeIsLocal,
+      verifiedDeployment: this.verifiedDeploymentState,
+      impactLearningCue: this.impactLearningCue,
+    });
+    const combatFocus: CombatFocus = command.commitment.phase === 'decision'
+      ? 'decision'
+      : command.commitment.phase === 'submitting'
+        || command.commitment.phase === 'tracking'
+        || command.commitment.phase === 'resolving'
+        ? 'outcome'
+        : 'terminal';
+    this.syncCombatFocus(combatFocus);
+    this.consoleCommitmentEl.dataset['commandMode'] = command.commitment.phase;
+    this.consoleCommitmentEl.dataset['commandPhase'] = command.commitment.phase;
+    this.consoleCommitmentEl.dataset['phaseLabel'] = command.context.phaseLabel;
+    this.commandConsoleEl.dataset['commandPhase'] = command.commitment.phase;
+    this.commandConsoleEl.dataset['phaseLabel'] = command.context.phaseLabel;
+    const commander = command.context.commander;
+    if (commander === null) {
+      delete this.consoleCommitmentEl.dataset['commanderId'];
+      delete this.commandConsoleEl.dataset['commanderId'];
+    } else {
+      this.consoleCommitmentEl.dataset['commanderId'] = commander.id;
+      this.commandConsoleEl.dataset['commanderId'] = commander.id;
+    }
+    const text = command.commitment.commit !== null
+      ? `${command.commitment.label} · ${commander?.name ?? 'Commander'}`
+      : `${command.commitment.label}${commander ? ` · ${commander.name}` : ''}`;
     if (this.consoleStateEl.textContent !== text) this.consoleStateEl.textContent = text;
     if (command.commitment.explanation === null) {
       this.consoleStateEl.removeAttribute('title');
@@ -3128,6 +3162,7 @@ export class HUD {
 
   /** Present only server-backed verified state; null retires every verified surface. */
   setVerifiedDeployment(state: HUDVerifiedDeploymentState | null): void {
+    this.verifiedDeploymentState = state;
     if (!this.built) this.build();
     this.verifiedRetryBtnEl.hidden = true;
     this.verifiedRetryBtnEl.disabled = true;

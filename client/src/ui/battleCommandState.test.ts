@@ -18,47 +18,91 @@ function stateFor(
   return state;
 }
 
+function expectHonestState(
+  command: ReturnType<typeof battleCommandStateFor>,
+  expected: {
+    readonly phase: 'decision' | 'submitting' | 'tracking' | 'resolving' | 'handoff' | 'recovery';
+    readonly label: string;
+    readonly commitEnabled?: boolean;
+    readonly commander?: string;
+  },
+): void {
+  expect(command.context.commander).toMatchObject({
+    id: expect.any(String),
+    name: expected.commander ?? 'Ranger',
+  });
+  expect(command.context.phaseLabel).toBe(expected.label);
+  expect(command.commitment.phase).toBe(expected.phase);
+  expect(command.commitment.commit?.enabled ?? false).toBe(expected.commitEnabled ?? false);
+}
+
 describe('battle command state', () => {
-  it('makes a controllable human turn an explicit Fire decision', () => {
+  it('projects a local player turn as the only enabled command decision', () => {
     const state = stateFor('PLAYER_TURN');
+    const command = battleCommandStateFor(state, false, true, { activeIsLocal: true });
 
-    expect(battleCommandStateFor(state, false, true)).toMatchObject({
-      mode: 'decision',
-      active: { name: 'Ranger', weapon: 'baby_missile', health: 100, fuel: 100 },
-      solution: { angle: 45, power: 50, wind: state.wind },
-      commitment: { label: 'Fire', available: true, explanation: null },
+    expectHonestState(command, { phase: 'decision', label: 'Your firing decision', commitEnabled: true });
+    expect(command.solution).toMatchObject({
+      weapon: 'baby_missile', angle: 45, power: 50, wind: state.wind,
     });
+    expect(command.commitment.commit).toEqual({ label: 'Fire', enabled: true });
   });
 
-  it('explains a disabled human decision instead of presenting a stale Fire action', () => {
-    const state = stateFor('PLAYER_TURN');
+  it('labels a local fire submission without retaining a runnable commit', () => {
+    expectHonestState(
+      battleCommandStateFor(stateFor('PLAYER_TURN'), true, false, { activeIsLocal: true }),
+      { phase: 'submitting', label: 'Submitting your shot' },
+    );
+  });
 
-    expect(battleCommandStateFor(state, false, false).commitment).toEqual({
-      label: 'Input unavailable',
-      available: false,
-      explanation: 'This battle is not accepting input.',
+  it('tracks a fired shot and exposes only a valid local impact-learning cue', () => {
+    const cue = { readout: '84 PX LEFT OF CPU', correction: 'SHIFT IMPACT RIGHT' };
+    const local = battleCommandStateFor(stateFor('RESOLVING'), false, false, {
+      activeIsLocal: true,
+      impactLearningCue: cue,
     });
+    const remote = battleCommandStateFor(stateFor('RESOLVING'), false, false, {
+      activeIsLocal: false,
+      impactLearningCue: cue,
+    });
+
+    expectHonestState(
+      battleCommandStateFor(stateFor('FIRING'), false, false, { activeIsLocal: true }),
+      { phase: 'tracking', label: 'Shot in flight' },
+    );
+    expectHonestState(local, { phase: 'resolving', label: 'Resolving impact' });
+    expect(local.context.lastSalvo).toEqual(cue);
+    expect(remote.context.lastSalvo).toBeNull();
   });
 
-  it('turns firing and resolution into observation states', () => {
-    expect(battleCommandStateFor(stateFor('FIRING'), false, true).commitment)
-      .toEqual({ label: 'Watching impact', available: false, explanation: 'Shot in flight.' });
-    expect(battleCommandStateFor(stateFor('RESOLVING'), false, true).commitment)
-      .toEqual({ label: 'Resolving impact', available: false, explanation: 'Resolving terrain and damage.' });
+  it('hands off CPU and remote turns without offering a local commit', () => {
+    const cpuState = stateFor('PLAYER_TURN');
+    cpuState.activePlayerId = cpuState.tanks[1]!.id;
+
+    expectHonestState(
+      battleCommandStateFor(cpuState, false, false, { activeIsLocal: false }),
+      { phase: 'handoff', label: 'CPU commander turn', commander: 'CPU' },
+    );
+    expectHonestState(
+      battleCommandStateFor(stateFor('PLAYER_TURN'), false, false, { activeIsLocal: false }),
+      { phase: 'handoff', label: 'Remote commander turn' },
+    );
   });
 
-  it('identifies a CPU-held player turn as a handoff instead of a human decision', () => {
-    const state = stateFor('PLAYER_TURN');
-    state.activePlayerId = state.tanks[1]!.id;
-
-    expect(battleCommandStateFor(state, false, true).commitment)
-      .toEqual({ label: 'CPU turn', available: false, explanation: 'Awaiting CPU action.' });
+  it('names verified report retry as recovery without making it a firing commit', () => {
+    expectHonestState(
+      battleCommandStateFor(stateFor('GAME_OVER'), false, false, {
+        activeIsLocal: true,
+        verifiedDeployment: { status: 'retryable' },
+      }),
+      { phase: 'recovery', label: 'Verification retry available' },
+    );
   });
 
-  it('names terminal and between-round states without exposing an action that cannot run', () => {
-    expect(battleCommandStateFor(stateFor('ROUND_OVER'), false, true).commitment)
-      .toEqual({ label: 'Preparing next round', available: false, explanation: 'Round transition in progress.' });
-    expect(battleCommandStateFor(stateFor('GAME_OVER'), false, true).commitment)
-      .toEqual({ label: 'After action report', available: false, explanation: 'Battle complete.' });
+  it('names unavailable local input without presenting a stale commit', () => {
+    expectHonestState(
+      battleCommandStateFor(stateFor('PLAYER_TURN'), false, false, { activeIsLocal: true }),
+      { phase: 'handoff', label: 'Input unavailable' },
+    );
   });
 });

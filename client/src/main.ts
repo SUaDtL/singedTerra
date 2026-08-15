@@ -862,6 +862,7 @@ function bootstrap(): void {
           activeIsLocal,
           paused: hud.isPaused(),
         }),
+        activeIsLocal,
       );
       const terminalEffectsSettled = terminalImpactObserved
         || (state.projectiles.length === 0 && state.explosions.length === 0);

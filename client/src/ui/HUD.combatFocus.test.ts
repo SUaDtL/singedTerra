@@ -52,6 +52,32 @@ describe('HUD combat focus', () => {
     expect(overlay.dataset['combatFocus']).toBe(expected);
   });
 
+  it.each([
+    ['PLAYER_TURN', false, true, true, 'decision', 'Your firing decision'],
+    ['PLAYER_TURN', true, false, true, 'submitting', 'Submitting your shot'],
+    ['FIRING', false, false, true, 'tracking', 'Shot in flight'],
+    ['RESOLVING', false, false, true, 'resolving', 'Resolving impact'],
+    ['PLAYER_TURN', false, false, false, 'handoff', 'Remote commander turn'],
+    ['PLAYER_TURN', false, false, true, 'handoff', 'Input unavailable'],
+  ] as const)('synchronizes %s as the honest %s console phase', (
+    phase,
+    pending,
+    canControl,
+    activeIsLocal,
+    commandPhase,
+    phaseLabel,
+  ) => {
+    const { root, hud, state } = mount();
+    state.phase = phase;
+
+    hud.update(state, pending, canControl, activeIsLocal);
+
+    const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
+    expect(console.dataset['commandPhase']).toBe(commandPhase);
+    expect(console.dataset['phaseLabel']).toBe(phaseLabel);
+    expect(console.dataset['commanderId']).toBe(state.activePlayerId);
+  });
+
   it('describes mixed outcome regions without disabling available Command Menu controls', () => {
     const { root, overlay, hud, state } = mount();
     hud.update(state, true, true);

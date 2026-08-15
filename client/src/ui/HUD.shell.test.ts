@@ -169,7 +169,7 @@ describe('HUD single-screen combat shell', () => {
     expect(tile.querySelector('.st-hud__weapon-value')?.textContent).toBe('Bouncing Betty');
   });
 
-  it('changes the rail commitment from an armed shot to honest observation state', () => {
+  it('changes the rail commitment from an armed shot to honest tracking state', () => {
     const { hud, state } = mountHarness();
     const commitment = document.querySelector<HTMLElement>(
       '#battle-rail .st-hud__console-commitment',
@@ -182,8 +182,8 @@ describe('HUD single-screen combat shell', () => {
     state.phase = 'FIRING';
     hud.update(state, true, false);
 
-    expect(commitment.dataset['commandMode']).toBe('observation');
-    expect(stateLabel.textContent).toContain('Watching impact');
+    expect(commitment.dataset['commandMode']).toBe('tracking');
+    expect(stateLabel.textContent).toContain('Tracking shot');
     expect(stateLabel.title).toBe('Shot in flight.');
   });
 
