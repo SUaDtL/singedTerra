@@ -5455,15 +5455,20 @@ export class HUD {
 .st-hud__gauge-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 0.65fr);
   grid-template-areas:
     'elevation power'
     'wind wind';
+  flex: 1 1 auto;
   gap: 6px;
   width: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 .st-hud__gauge-cell {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5484,13 +5489,18 @@ export class HUD {
   grid-area: wind;
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   align-items: center;
   padding: 3px 8px;
 }
 .st-hud__gauge-cell > svg {
   display: block;
+  flex: 1 1 auto;
   width: 100%;
   height: auto;
+  min-height: 0;
+  max-height: 100%;
+  margin-block: auto;
   overflow: visible;
 }
 .st-hud__gauge-cell--elevation > svg,
@@ -5569,6 +5579,10 @@ export class HUD {
     padding: 0 8px;
   }
   #app .st-hud__gauge-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'elevation power'
+      'wind wind';
     gap: 3px;
   }
   #app .st-hud__gauge-cell {
@@ -5576,6 +5590,8 @@ export class HUD {
     padding: 2px 5px 0;
   }
   #app .st-hud__gauge-cell--wind {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
     padding: 1px 6px;
   }
 }
@@ -6255,6 +6271,21 @@ export class HUD {
 #app.is-compact #battle-rail .st-hud__gauge-label {
   font-size: calc(var(--st-command-readability-size, 11px) * 1.2);
 }
+@media (pointer: fine) {
+  #app:not(.is-compact) #battle-rail .st-hud__gauge-label {
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.25);
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-label {
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.65);
+  }
+  #app #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
+  #app #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
+    transform: translateY(-3px);
+  }
+  #app #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
+    transform: translateY(-2px);
+  }
+}
 #battle-rail .st-hud__weapon-label { line-height: 1.25; }
 #app.is-compact #battle-rail .st-hud__weapon-label { display: none; }
   @media (pointer: coarse) {
@@ -6457,6 +6488,9 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
   #app.is-compact #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
     transform: translateY(-4px);
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
+    transform: translateY(-2px);
   }
 }
 /* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by

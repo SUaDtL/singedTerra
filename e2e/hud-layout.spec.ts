@@ -63,6 +63,68 @@ test.describe('HUD layout guardrails', () => {
     await assertInstrumentsHeight(page, compact);
   });
 
+  test('live gauges stay inside every instrument ancestor across phase states', async ({
+    page,
+  }) => {
+    const gaugeViolations = async (): Promise<string[]> =>
+      page.locator('.st-hud__instruments').evaluate((instruments) => {
+        const contains = (outer: DOMRect, inner: DOMRect): boolean =>
+          inner.left >= outer.left - 1 && inner.right <= outer.right + 1
+          && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
+        const failures: string[] = [];
+        const row = instruments.querySelector('.st-hud__gauge-row')!;
+        const rowRect = row.getBoundingClientRect();
+        const instrumentsRect = instruments.getBoundingClientRect();
+        if (!contains(instrumentsRect, rowRect)) failures.push('gauge row escapes instruments');
+
+        for (const cell of row.querySelectorAll('.st-hud__gauge-cell')) {
+          const name = cell.className.includes('--wind')
+            ? 'wind'
+            : cell.className.includes('--power') ? 'power' : 'elevation';
+          const cellRect = cell.getBoundingClientRect();
+          const svg = cell.querySelector('svg')!;
+          const svgRect = svg.getBoundingClientRect();
+          const value = cell.querySelector('.st-hud__gauge-label')!;
+          const valueRect = value.getBoundingClientRect();
+          for (const [owner, ownerRect] of [
+            ['gauge row', rowRect],
+            ['instruments', instrumentsRect],
+          ] as const) {
+            if (!contains(ownerRect, cellRect)) failures.push(`${name} cell escapes ${owner}`);
+            if (!contains(ownerRect, valueRect)) failures.push(`${name} value escapes ${owner}`);
+          }
+          if (!contains(cellRect, svgRect)) failures.push(`${name} svg escapes cell`);
+          if (!contains(svgRect, valueRect)) failures.push(`${name} value escapes svg`);
+          if (!contains(cellRect, valueRect)) failures.push(`${name} value escapes cell`);
+        }
+        const visibleTitles = [...row.querySelectorAll('.st-hud__gauge-cell-title')]
+          .map((title) => ({ text: title.textContent, rect: title.getBoundingClientRect() }))
+          .filter(({ rect }) => rect.width > 0 && rect.height > 0);
+        for (let firstIndex = 0; firstIndex < visibleTitles.length; firstIndex += 1) {
+          for (let secondIndex = firstIndex + 1; secondIndex < visibleTitles.length; secondIndex += 1) {
+            const first = visibleTitles[firstIndex]!;
+            const second = visibleTitles[secondIndex]!;
+            const sharesVerticalSpace = first.rect.top < second.rect.bottom
+              && first.rect.bottom > second.rect.top;
+            const horizontalGap = Math.max(
+              second.rect.left - first.rect.right,
+              first.rect.left - second.rect.right,
+            );
+            if (sharesVerticalSpace && horizontalGap < 2) {
+              failures.push(`${first.text}/${second.text} headings are crowded`);
+            }
+          }
+        }
+        return failures;
+      });
+
+    expect(await gaugeViolations(), 'decision gauge ancestry').toEqual([]);
+    await page.locator('.st-hud__primary-action').click();
+    await expect(page.locator('.st-hud__command-console'))
+      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    expect(await gaugeViolations(), 'flight gauge ancestry').toEqual([]);
+  });
+
   test('right rail is a readable match ledger with a reachable Menu', async ({ page }, testInfo) => {
     const ledger = page.locator('#hud');
     await expect(ledger).toHaveAttribute('data-ui', 'match-ledger');
