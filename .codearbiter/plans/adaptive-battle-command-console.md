@@ -34,11 +34,11 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 - Consume: `GameState`, existing HUD firing/control flags, existing verified/report state and impact-learning cue.
 - Produce: `BattleCommandState` with `context`, `solution`, and `commitment` fields. `commitment` is one of `decision`, `submitting`, `tracking`, `resolving`, `handoff`, or `recovery` and contains no action that cannot presently run.
 
-- [ ] Write focused RED tests for a player decision, local submission, firing, resolving, CPU/remote turn, report/retry, and unavailable input. Assert each state contains a persistent commander identity plus an honest phase label, and only the decision state exposes an enabled commit.
-- [ ] Run `npm -w @singedterra/client exec vitest run src/ui/battleCommandState.test.ts src/ui/HUD.combatFocus.test.ts`; confirm the missing state fields fail.
-- [ ] Extend the pure projection using only authoritative in-memory HUD inputs. Capture an existing impact-learning cue only when its current validity rules permit it; otherwise return `null` rather than an invented correction.
-- [ ] Render the projected phase state from one HUD synchronization point; do not add an alternate fire callback or transport branch.
-- [ ] Re-run the focused tests and `npm run typecheck`; commit `feat(console): model phase-aware battle decisions`.
+- [ ] Historic Task 1 RED execution record was not carried into durable governance evidence. The resulting committed causal coverage and GREEN delivery evidence are recorded below.
+- [ ] Historic Task 1 missing-field RED output is not durably recoverable. Do not infer it from the later GREEN result.
+- [x] Extend the pure projection using only authoritative in-memory HUD inputs. Capture an existing impact-learning cue only when its current validity rules permit it; otherwise return `null` rather than an invented correction.
+- [x] Render the projected phase state from one HUD synchronization point; do not add an alternate fire callback or transport branch.
+- [x] Re-run the focused tests and `npm run typecheck`; commit `feat(console): model phase-aware battle decisions`.
 
 ## Task 2: Build the unified firing solution
 
@@ -53,11 +53,11 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 - Consume: existing weapon selection, aim, power, move, store/menu, and aim-guide callbacks.
 - Produce: one lower-rail solution surface with weapon/ammo, Arsenal drawer trigger, angle/power controls, wind, trajectory guide, and compact keyboard hints attached to the controls they describe.
 
-- [ ] Write DOM RED assertions that the solution surface has exactly one weapon bay, real previous/next or drawer access, real angle/power adjustment controls, readable wind, and a deterministic aim-guide host. Assert the old desktop hotkey grid and any side-rail Arsenal/fire-control descendants are absent.
-- [ ] Run the focused HUD tests and confirm failure because the old deck still owns the controls.
-- [ ] Recompose existing nodes/callbacks into the solution surface. The Arsenal trigger opens the existing drawer/menu and restores focus to its trigger on close. Keep movement with commander context, not as a duplicate solution card.
-- [ ] Attach small keyboard hints to their actual controls; remove standalone clickable Fire/Enter duplicates.
-- [ ] Re-run focused tests and `npm run typecheck`; commit `feat(console): unify firing solution controls`.
+- [ ] Historic Task 2 DOM RED execution record was not carried into durable governance evidence. The resulting committed causal coverage and GREEN delivery evidence are recorded below.
+- [ ] Historic Task 2 old-deck ownership RED output is not durably recoverable. Do not infer it from the later GREEN result.
+- [x] Recompose existing nodes/callbacks into the solution surface. The Arsenal trigger opens the existing drawer/menu and restores focus to its trigger on close. Keep movement with commander context, not as a duplicate solution card.
+- [x] Attach small keyboard hints to their actual controls; remove standalone clickable Fire/Enter duplicates.
+- [x] Re-run the focused tests and `npm run typecheck`; commit `feat(console): unify firing solution controls`.
 
 ## Task 3: Make commitment transform instead of disable
 
@@ -72,12 +72,12 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 - Consume: `BattleCommandState.commitment`, the existing guarded Fire/retry/report callbacks, and the First Salvo controller.
 - Produce: one commitment zone that has Fire only in a controllable decision and otherwise presents transmitting, tracking, resolving, handoff, or recovery content without stale combat controls.
 
-- [ ] Write RED tests that activate Fire and drive the real callback through `decision -> submitting/tracking -> resolving -> handoff`; assert the original Fire element is removed, focus remains in the console, and the phase copy is useful rather than blank.
-- [ ] Add an explicit retryable-report path that retains the existing in-report retry action without creating a second terminal action in the console.
-- [ ] Run the targeted HUD/main/browser tests and confirm they fail under the disabled-Fire layout.
-- [ ] Implement element replacement/visibility changes from the state model, preserving the current guarded callbacks and focus semantics.
-- [ ] Move First Salvo to a 32–44px inline ribbon in the relevant solution/commitment zone. Expand the entry overlay with the three-part operational briefing (aim, wind, commit), one clear Enter action, and normal keyboard/touch activation.
-- [ ] Re-run focused tests; commit `feat(console): transform commitment through combat phases`.
+- [ ] Historic Task 3 phase-transition RED execution record was not carried into durable governance evidence. The resulting committed causal coverage and GREEN delivery evidence are recorded below.
+- [x] Add an explicit retryable-report path that retains the existing in-report retry action without creating a second terminal action in the console.
+- [ ] Historic Task 3 disabled-Fire-layout RED output is not durably recoverable. Do not infer it from the later GREEN result.
+- [x] Implement element replacement/visibility changes from the state model, preserving the current guarded callbacks and focus semantics.
+- [x] Move First Salvo to a 32–44px inline ribbon in the relevant solution/commitment zone. Expand the entry overlay with the three-part operational briefing (aim, wind, commit), one clear Enter action, and normal keyboard/touch activation.
+- [x] Re-run focused tests; commit `feat(console): transform commitment through combat phases`.
 
 ## Task 4: Convert the right rail to a ledger
 
@@ -91,10 +91,10 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 - Consume: existing round, roster, objective/verification, and connection presentation nodes.
 - Produce: a right-side ledger with menu, round/mode, roster/health/turn order, objective/verification, and connection only.
 
-- [ ] Write RED browser and DOM assertions that `#game-overlay`'s side rail has no weapon selection, angle/power, Arsenal, Store, or Fire descendants; it retains the ledger elements and its menu remains reachable.
-- [ ] Run the targeted tests and confirm they fail against the present Fire Control/Arsenal composition.
-- [ ] Move combat controls into the lower console and rename/remove the Fire Control treatment. Do not add filler merely to occupy empty ledger space.
-- [ ] Re-run targeted tests and typecheck; commit `refactor(console): leave the side rail as match ledger`.
+- [ ] Historic Task 4 browser/DOM RED execution record was not carried into durable governance evidence. The resulting committed causal coverage and GREEN delivery evidence are recorded below.
+- [ ] Historic Task 4 Fire Control/Arsenal RED output is not durably recoverable. Do not infer it from the later GREEN result.
+- [x] Move combat controls into the lower console and rename/remove the Fire Control treatment. Do not add filler merely to occupy empty ledger space.
+- [x] Re-run targeted tests and typecheck; commit `refactor(console): leave the side rail as match ledger`.
 
 ## Task 5: Give touch the same console, not a second deck
 
@@ -109,10 +109,10 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 - Consume: semantic desktop control callbacks and the protected rail root.
 - Produce: responsive rail controls whose touch targets use the same weapon/aim/power/move actions and whose secondary actions use the Command Menu/drawer.
 
-- [ ] Write Pixel-landscape RED assertions that no persistent touch Command Deck lies over the canvas; every touch action is in `#battle-rail`, each target is at least 44px, labels do not collide, and the primary action is visible.
-- [ ] Extend the desktop/compact/Pixel geometry matrix to prove 1600×900, 900×520, and Pixel 5 landscape no document overflow, constant rail height through phase changes, and clearance from every real configured/default 2–4-seat widest rendered chassis envelope.
-- [ ] Implement responsive grid variants that preserve commander identity, weapon/ammo, wind, one context cue, and the active phase action; collapse only secondary labels and route secondary tools to the menu.
-- [ ] Re-run the full HUD/First Salvo browser matrix and focused client tests; commit `feat(console): give touch the unified command surface`.
+- [ ] Historic Task 5 Pixel RED execution record was not carried into durable governance evidence. The resulting committed causal coverage and GREEN delivery evidence are recorded below.
+- [x] Extend the desktop/compact/Pixel geometry matrix to prove 1600×900, 900×520, and Pixel 5 landscape no document overflow, constant rail height through phase changes, and clearance from every real configured/default 2–4-seat widest rendered chassis envelope.
+- [x] Implement responsive grid variants that preserve commander identity, weapon/ammo, wind, one context cue, and the active phase action; collapse only secondary labels and route secondary tools to the menu.
+- [x] Re-run the full HUD/First Salvo browser matrix and focused client tests; commit `feat(console): give touch the unified command surface`.
 
 ## Task 6: Prove the whole decision loop
 
@@ -124,13 +124,15 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 - Modify: `.codearbiter/reports/2026-08-11-commander-career-milestone-2-sprint-evidence.md`
 - Modify: `.codearbiter/sprint-log.md`
 
-- [ ] Write an end-to-end RED journey for hot-seat and deterministic online CPU paths: choose weapon, adjust aim/power, move/fuel, open/close Arsenal with focus return, Fire once, observe tracking and impact, retain the allowed last-salvo cue, hand off to CPU/remote, and reach the verified recovery affordance without duplicate Fire.
-- [ ] Add visual-review assertions that reject empty/illegible control columns: body labels >=11px, critical values/actions >=12px, no visible overlap, no side-rail combat controls, and exactly one active commit control.
-- [ ] Run the journey tests and confirm failure before the recomposed console is complete.
-- [ ] Execute the complete affected client suite, `npm run check`, `npm run check:edge`, typecheck, and the full browser matrix. Give the final diff, test output, plan, and append-only evidence to adversarial and coverage reviewers; resolve every blocker.
-- [ ] Record only observed local/hosted/deployment/production facts. Then commit the evidence/governance slice.
+- [x] Write an end-to-end RED journey for hot-seat and deterministic online CPU paths: choose weapon, adjust aim/power, move/fuel, open/close Arsenal with focus return, Fire once, observe tracking and impact, retain the allowed last-salvo cue, hand off to CPU/remote, and reach the verified recovery affordance without duplicate Fire.
+- [x] Add visual-review assertions that reject empty/illegible control columns: body labels >=11px, critical values/actions >=12px, no visible overlap, no side-rail combat controls, and exactly one active commit control.
+- [x] Run the journey tests and confirm failure before the recomposed console is complete.
+- [x] Execute the complete affected client suite, `npm run check`, `npm run check:edge`, typecheck, and the full browser matrix. Give the final diff, test output, plan, and append-only evidence to adversarial and coverage reviewers; resolve every blocker.
+- [x] Record only observed local/hosted/deployment/production facts. Then commit the evidence/governance slice.
 
 ## Completion evidence
+
+Historical RED boundary: Task 1 through Task 5 original RED outputs are not retained in durable governance evidence, so their checklist rows remain explicitly unmarked. This is an audit gap, not evidence that the finished code lacks causal coverage. The delivery claim rests only on the committed causal tests, exact reviewer reports, hosted CI, deployment metadata, and direct live observations recorded below.
 
 The candidate is rejected unless exact-head hosted CI, CodeQL, Edge tests, and rendering E2E are green; Pages has deployed the merged head; the client and the two shared-floor verifier Edge consumers are deployed; and fresh production journeys prove both the rebuilt hot-seat console and an online/CPU console without making award or network claims beyond observation.
 
@@ -142,4 +144,4 @@ The candidate is rejected unless exact-head hosted CI, CodeQL, Edge tests, and r
 - [x] Fresh Pages hot-seat proof traversed Local Battle through the First Salvo entry and showed the deployed console's commander, firing solution, one enabled Fire action, and match ledger. Firing replaced the commit affordance with the in-flight tracking state rather than leaving a stale combat action.
 - [x] Fresh Pages online/CPU proof created a private two-seat operation with one Medium CPU, readied QA, and entered the real lockstep battle. The deployed console showed QA as the active commander, the real weapon/Angle/Power/Wind controls, exactly one Fire action, and the two-seat ledger. One ordinary human Baby Missile shot was followed by CPU play and control returned to QA at 40 health; this is direct observed handoff evidence only, not an inference about awards, authority, or broader network reliability. The test operation was returned to the lobby and left.
 
-Status: the adaptive battle-command console player outcome is delivered and production-verified. `career.initiative.0001` remains active for the next player-facing outcome.
+Status: the adaptive battle-command console player outcome is delivered and production-verified. The unmarked historic RED rows are an explicit governance-record gap and do not claim unfinished product behavior. `career.initiative.0001` remains active for the next player-facing outcome.
