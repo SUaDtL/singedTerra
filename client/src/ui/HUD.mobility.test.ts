@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 describe('HUD mobility rocker', () => {
-  it('gives full-width identity priority over the tactical controls', () => {
+  it('keeps movement with commander context while weapon control lives in the solution', () => {
     const { root, state, hud } = mount();
     state.tanks[0]!.playerName = 'Commander Longname X';
     hud.update(state, false, true);
@@ -60,8 +60,11 @@ describe('HUD mobility rocker', () => {
     expect(identity.parentElement).toBe(lockup);
     expect(lockup.querySelector('.st-hud__tank-portrait')).not.toBeNull();
     expect(tactical.parentElement).toBe(activeRow);
-    expect(tactical.querySelector('.st-hud__weapon')).not.toBeNull();
+    expect(tactical.querySelector('.st-hud__weapon')).toBeNull();
     expect(tactical.querySelector('.st-hud__mobility')).not.toBeNull();
+    expect(activeRow.querySelector('[data-command-action^="aim-"]')).toBeNull();
+    expect(activeRow.querySelector('[data-command-action^="power-"]')).toBeNull();
+    expect(root.querySelector('.st-hud__console-solution .st-hud__weapon')).not.toBeNull();
     expect(owner.textContent).toBe('Commander Longname X');
     expect(owner.getAttribute('title')).toBe('Commander Longname X');
   });
@@ -100,7 +103,8 @@ describe('HUD mobility rocker', () => {
     expect(meter.dataset['fuelBand']).toBe('normal');
     expect(meter.dataset['fuelTier']).toBe('0');
     expect(meter.dataset['fuelTone']).toBe('base');
-    expect(document.querySelector('.st-hud__controls')?.textContent).toContain('Move');
+    expect(mobility.textContent).toContain('A');
+    expect(mobility.textContent).toContain('D');
   });
 
   it('dispatches exactly one signed step from each semantic button', () => {

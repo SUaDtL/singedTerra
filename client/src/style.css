@@ -329,7 +329,7 @@ body::before {
     inset 0 -22px 34px rgba(255, 122, 31, 0.055);
 }
 #hud::after {
-  content: 'FIRE CONTROL';
+  content: 'BATTLE STATUS';
   position: absolute;
   right: 13px;
   bottom: 8px;
@@ -389,24 +389,17 @@ body::before {
   gap: var(--ui-space-2);
   color: var(--ui-copy);
 }
-#hud > .st-ui-section--arsenal {
-  margin-top: auto;
-  border-top: 1px solid var(--ui-line);
-  border-bottom: 0;
-}
 #hud > .st-ui-section--roster {
   color: color-mix(in srgb, var(--ui-copy) 88%, transparent);
   background: linear-gradient(180deg, rgba(9, 5, 16, 0.22), transparent);
 }
-#hud > .st-ui-section.st-hud__strip--open {
+#battle-rail .st-ui-section.st-hud__strip--open {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
+  inset: 4px;
   z-index: 20;
   width: auto;
-  height: calc(100% - 24px);
-  max-height: calc(100% - 24px);
+  height: auto;
+  max-height: calc(100% - 8px);
   margin: 0;
   padding: var(--ui-space-3);
   overflow: hidden;

@@ -42,93 +42,82 @@ afterEach(() => {
 });
 
 describe('HUD command input console', () => {
-  it('builds one semantic icon-led keyboard deck with compact exact key hints', () => {
+  it('builds one real firing solution with hints attached to their controls', () => {
     const { root } = mount();
-    const deck = root.querySelector<HTMLElement>('.st-hud__controls')!;
-    const items = [...deck.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
+    const solution = root.querySelector<HTMLElement>('[data-ui="firing-solution"]')!;
+    const weaponBay = solution.querySelector<HTMLElement>('[data-ui="weapon-bay"]')!;
+    const controls = [...solution.querySelectorAll<HTMLButtonElement>(
+      '.st-hud__solution-control',
+    )];
+    const angle = solution.querySelector<HTMLElement>('[data-control="angle"]')!;
+    const power = solution.querySelector<HTMLElement>('[data-control="power"]')!;
+    const wind = solution.querySelector<HTMLElement>('.st-hud__gauge-cell--wind')!;
+    const guide = solution.querySelector<HTMLElement>('[data-ui="deterministic-aim-guide"]')!;
 
-    expect(deck.getAttribute('role')).toBe('region');
-    expect(deck.getAttribute('aria-label')).toBe('Keyboard and mouse commands');
-    expect(deck.dataset['ui']).toBe('command-deck');
-    expect(deck.querySelector('.st-hud__controls-title')?.textContent).toBe('Command Deck');
-    expect(deck.querySelector('.st-hud__controls-mode')?.textContent).toBe('Mouse + keys');
-    expect(items.map((item) => item.dataset['command'])).toEqual([
-      'aim',
-      'power',
-      'move',
-      'weapon',
-      'fire',
+    expect(solution.getAttribute('aria-label')).toBe('Firing solution');
+    expect(solution.querySelectorAll('[data-ui="weapon-bay"]')).toHaveLength(1);
+    expect(weaponBay.getAttribute('aria-label')).toBe('Weapon and ammunition');
+    expect(weaponBay.querySelector('.st-hud__weapon-value')?.textContent).toBe('Baby Missile');
+    expect(weaponBay.querySelector('.st-hud__weapon-ammo')?.textContent).toBe('∞');
+    expect(controls.map((button) => button.dataset['commandAction'])).toEqual([
+      'weapon-next',
+      'aim-left',
+      'aim-right',
+      'power-down',
+      'power-up',
     ]);
-    expect(items.map((item) => item.querySelector('.st-hud__control-label')?.textContent))
-      .toEqual(['Aim', 'Power', 'Move', 'Weapon', 'Fire']);
-    expect(items.map((item) => item.querySelector('.st-ui-glyph')?.getAttribute('data-glyph')))
-      .toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
-    expect(
-      items.map((item) =>
-        [...item.querySelectorAll('kbd')].map((key) => key.textContent),
-      ),
-    ).toEqual([
-      ['←', '→'],
-      ['↑', '↓'],
-      ['A', 'D'],
-      ['Q'],
-      ['Space', 'Enter'],
-    ]);
-    expect(items.at(-1)?.classList.contains('st-hud__control-cell--primary')).toBe(true);
+    expect([...angle.querySelectorAll('kbd')].map((key) => key.textContent))
+      .toEqual(['←', '→']);
+    expect([...power.querySelectorAll('kbd')].map((key) => key.textContent))
+      .toEqual(['↓', '↑']);
+    expect(weaponBay.querySelector('[data-command-action="weapon-next"] kbd')?.textContent)
+      .toBe('Q');
+    expect(wind.querySelector('.st-hud__gauge-label')?.textContent).toMatch(/^[←→•] \d+\.\d$/);
+    expect(guide.textContent).toContain('Trajectory guide');
+    expect(guide.querySelector('kbd')?.textContent).toBe('G');
+    expect(solution.querySelector('[data-ui="command-deck"]')).toBeNull();
+    expect(solution.querySelector('.st-hud__control-grid')).toBeNull();
+    expect(solution.querySelector('[data-command-action^="fire-"]')).toBeNull();
+    expect(solution.querySelector('[data-command-action^="move-"]')).toBeNull();
+    expect(root.querySelectorAll('.st-hud__primary-action')).toHaveLength(1);
   });
 
-  it('routes every desktop keycap through the existing causal command callbacks', () => {
+  it('routes every firing-solution control through the existing causal callbacks', () => {
     const { root, hud } = mount();
     const angles = vi.fn();
     const powers = vi.fn();
-    const moves = vi.fn();
     const weapons = vi.fn();
-    const primaryActions = vi.fn();
     hud.onTouchAngle(angles);
     hud.onTouchPower(powers);
-    hud.onMove(moves);
     hud.onTouchWeapon(weapons);
-    hud.onPrimaryAction(primaryActions);
 
-    const deck = root.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
-    const buttons = [...deck.querySelectorAll<HTMLButtonElement>(
-      '.st-hud__command-key',
+    const solution = root.querySelector<HTMLElement>('[data-ui="firing-solution"]')!;
+    const buttons = [...solution.querySelectorAll<HTMLButtonElement>(
+      '.st-hud__solution-control',
     )];
 
-    expect(deck.getAttribute('aria-label')).toBe('Keyboard and mouse commands');
-    expect(deck.querySelector('.st-hud__controls-mode')?.textContent).toBe('Mouse + keys');
     expect(buttons.map((button) => button.dataset['commandAction'])).toEqual([
+      'weapon-next',
       'aim-left',
       'aim-right',
-      'power-up',
       'power-down',
-      'move-left',
-      'move-right',
-      'weapon',
-      'fire-space',
-      'fire-enter',
+      'power-up',
     ]);
     expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Select next weapon, current Baby Missile',
       'Aim barrel left',
       'Aim barrel right',
-      'Increase power',
       'Decrease power',
-      'Move tank left, 8 fuel maximum',
-      'Move tank right, 8 fuel maximum',
-      'Cycle weapon, current Baby Missile',
-      'Fire Baby Missile with Space',
-      'Fire Baby Missile with Enter',
+      'Increase power',
     ]);
 
     for (const button of buttons) button.click();
     expect(angles.mock.calls).toEqual([[3], [-3]]);
-    expect(powers.mock.calls).toEqual([[3], [-3]]);
-    expect(moves.mock.calls).toEqual([[-8], [8]]);
+    expect(powers.mock.calls).toEqual([[-3], [3]]);
     expect(weapons).toHaveBeenCalledTimes(1);
-    expect(primaryActions).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps desktop command availability aligned with local action and movement gates', () => {
+  it('keeps firing-solution availability aligned with local action gates', () => {
     const { root, hud } = mount();
     const engine = new GameEngine({
       players: [
@@ -141,14 +130,14 @@ describe('HUD command input console', () => {
     const state = engine.getState();
     const button = (action: string): HTMLButtonElement =>
       root.querySelector<HTMLButtonElement>(
-        `.st-hud__command-key[data-command-action="${action}"]`,
+        `.st-hud__solution-control[data-command-action="${action}"]`,
       )!;
 
     hud.update(state, false, false);
     const controlled = [...root.querySelectorAll<HTMLButtonElement>(
-      '.st-hud__command-key',
+      '.st-hud__solution-control',
     )];
-    expect(controlled).toHaveLength(9);
+    expect(controlled).toHaveLength(5);
     expect(controlled.every((entry) => entry.disabled)).toBe(true);
     expect(controlled.every((entry) => entry.getAttribute('aria-disabled') === 'true'))
       .toBe(true);
@@ -158,20 +147,6 @@ describe('HUD command input console', () => {
     expect(controlled.every((entry) => entry.getAttribute('aria-disabled') === 'false'))
       .toBe(true);
 
-    state.tanks[0]!.fuel = 0;
-    hud.update(state, false, true);
-    expect(button('move-left').disabled).toBe(true);
-    expect(button('move-right').disabled).toBe(true);
-    expect(button('aim-left').disabled).toBe(false);
-    expect(button('fire-space').disabled).toBe(false);
-
-    state.tanks[0]!.fuel = 100;
-    state.tanks[0]!.buried = true;
-    hud.update(state, false, true);
-    expect(button('move-left').disabled).toBe(true);
-    expect(button('aim-left').disabled).toBe(false);
-
-    state.tanks[0]!.buried = false;
     state.tanks[0]!.alive = false;
     hud.update(state, false, true);
     expect(controlled.every((entry) => entry.disabled)).toBe(true);
@@ -188,34 +163,25 @@ describe('HUD command input console', () => {
     state.tanks[0]!.selectedWeapon = 'nuke';
     state.tanks[0]!.inventory.nuke.count = 0;
     hud.update(state, false, true);
-    expect(button('fire-space').disabled).toBe(true);
-    expect(button('weapon').disabled).toBe(false);
-    expect(button('weapon').getAttribute('aria-label')).toBe('Cycle weapon, current Nuke');
-
-    state.tanks[0]!.selectedWeapon = 'shield';
-    state.tanks[0]!.inventory.shield.count = 1;
-    hud.update(state, false, true);
-    expect(button('fire-space').disabled).toBe(false);
-    expect(button('fire-space').getAttribute('aria-label'))
-      .toBe('Activate shield with Space');
-    expect(button('fire-enter').getAttribute('aria-label'))
-      .toBe('Activate shield with Enter');
+    expect(button('weapon-next').disabled).toBe(false);
+    expect(button('weapon-next').getAttribute('aria-label'))
+      .toBe('Select next weapon, current Nuke');
   });
 
-  it('isolates the desktop Command Deck while Arsenal owns interaction', () => {
+  it('isolates the firing controls and restores focus when the Arsenal closes', () => {
     const { root } = mount();
-    const deck = root.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
-    const grid = deck.querySelector<HTMLElement>('.st-hud__control-grid')!;
+    const controls = root.querySelector<HTMLElement>('[data-ui="solution-adjustments"]')!;
     const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
 
-    expect(grid.inert).toBe(false);
-    expect(deck.getAttribute('aria-hidden')).toBeNull();
+    expect(controls.inert).toBe(false);
+    expect(controls.getAttribute('aria-hidden')).toBeNull();
     toggle.click();
-    expect(grid.inert).toBe(true);
-    expect(deck.getAttribute('aria-hidden')).toBe('true');
+    expect(controls.inert).toBe(true);
+    expect(controls.getAttribute('aria-hidden')).toBe('true');
     toggle.click();
-    expect(grid.inert).toBe(false);
-    expect(deck.getAttribute('aria-hidden')).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+    expect(controls.inert).toBe(false);
+    expect(controls.getAttribute('aria-hidden')).toBeNull();
   });
 
   it('builds one grouped Touch Command Deck with bounded directional icons', () => {
