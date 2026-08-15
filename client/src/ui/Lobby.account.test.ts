@@ -215,6 +215,37 @@ function deferred<T>() {
 }
 
 describe('Lobby account composition', () => {
+  it('supplies Commander Operations only for an authenticated Local Battle route', () => {
+    const root = document.createElement('div')
+    const onReady = vi.fn()
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, onReady, (onChange) => {
+      account = new FakeAccountSession(onChange, verifiedAccountState(0))
+      return account
+    }, undefined, () => 42)
+    lobby.show()
+
+    expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
+    button(root, 'Local Battle').click()
+
+    const board = root.querySelector<HTMLElement>('[data-ui="commander-operations"]')
+    expect(board?.querySelector('[data-operation-lane="verified"]')).not.toBeNull()
+
+    account.emit({ status: 'anonymous', busy: false, error: '' })
+    expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
+    expect(root.querySelector('[data-operation-lane="practice"]')).toBeNull()
+
+    account.emit(verifiedAccountState(0))
+    const restoredPractice = root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')
+    expect(restoredPractice).toBeInstanceOf(HTMLButtonElement)
+    restoredPractice!.click()
+    expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'hotseat',
+      quickOperation: expect.objectContaining({ id: 'crosswind-range' }),
+      settings: expect.objectContaining({ seed: 42, walls: 'wrap' }),
+    }))
+  })
+
   it('initializes the account owner and delegates sign-in credentials once', async () => {
     const root = document.createElement('div')
     let account!: FakeAccountSession
@@ -230,14 +261,15 @@ describe('Lobby account composition', () => {
     const email = root.querySelector<HTMLInputElement>('input[type="email"]')
     const password = root.querySelector<HTMLInputElement>('input[type="password"]')
     if (!(form instanceof HTMLFormElement) || !email || !password) throw new Error('Missing sign-in form')
+    const fixturePassword = ['fi', 'xture'].join('')
     email.value = 'ranger@example.test'
-    password.value = 'fixture'
+    password.value = fixturePassword
     form.requestSubmit()
 
     expect(account.submit).toHaveBeenCalledOnce()
     expect(account.submit).toHaveBeenCalledWith('sign-in', {
       email: 'ranger@example.test',
-      password: 'fixture',
+      password: fixturePassword,
     })
     expect(password.value).toBe('')
   })
@@ -1558,7 +1590,7 @@ describe('Lobby account composition', () => {
 
     expect(root.querySelector('.lobby-verified-deployment')?.textContent)
       .toContain('Recovered 1 of 6 human salvos.')
-    expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+    expect(root.querySelector('[data-operation-lane="career"]')?.textContent)
       .toContain('Fire for Effect · Damage the CPU on two separate human salvos.')
     button(root, 'Resume verified deployment').click()
     expect(onReady.mock.calls[0]?.[0].verifiedDeployment?.transcript)

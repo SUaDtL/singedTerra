@@ -2736,6 +2736,80 @@ export class Lobby {
         color: rgba(225, 214, 191, 0.68);
         font: 11px/1.15 var(--font-sans);
       }
+      #lobby .lobby-commander-operations {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+        gap: 8px;
+        margin-top: 7px;
+        padding: 8px;
+        border: 1px solid rgba(255, 210, 63, 0.24);
+        border-top: 2px solid rgba(255, 210, 63, 0.66);
+        background: linear-gradient(135deg, rgba(49, 32, 16, 0.58), rgba(10, 16, 23, 0.5));
+      }
+      #lobby .lobby-commander-operations__career {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: baseline;
+        gap: 10px;
+        padding: 5px 7px;
+        border-left: 2px solid rgba(255, 210, 63, 0.78);
+        background: rgba(255, 210, 63, 0.08);
+      }
+      #lobby .lobby-commander-operations__career h3,
+      #lobby .lobby-commander-operations__practice h3 {
+        margin: 0;
+        color: #ffd46e;
+        font: 700 10px/1 var(--font-display);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+      }
+      #lobby .lobby-commander-operations__career p,
+      #lobby .lobby-commander-operations__practice p {
+        margin: 0;
+        color: rgba(232, 240, 247, 0.84);
+        font: 11px/1.3 var(--font-sans);
+      }
+      #lobby .lobby-commander-operations .lobby-verified-deployment {
+        min-width: 0;
+        margin-top: 0;
+      }
+      #lobby .lobby-commander-operations__practice {
+        display: grid;
+        align-content: start;
+        gap: 6px;
+        min-width: 0;
+        padding: 8px;
+        border: 1px solid rgba(210, 157, 67, 0.34);
+        background: rgba(15, 17, 22, 0.5);
+      }
+      #lobby .lobby-commander-operations__practice p {
+        color: rgba(225, 214, 191, 0.7);
+        font-size: 10px;
+      }
+      #lobby .lobby-commander-operations__cards {
+        display: grid;
+        gap: 5px;
+      }
+      #lobby .lobby-commander-operations__compact-launch {
+        display: none;
+      }
+      #lobby .lobby-commander-operations__card {
+        display: grid;
+        gap: 2px;
+        width: 100%;
+        min-width: 0;
+        padding: 6px 7px;
+        text-align: left;
+      }
+      #lobby .lobby-commander-operations__card strong {
+        color: #ffe6af;
+        font: 700 11px/1.1 var(--font-display);
+      }
+      #lobby .lobby-commander-operations__card span {
+        color: rgba(225, 214, 191, 0.72);
+        font: 9px/1.2 var(--font-sans);
+      }
       #lobby .lobby-verified-deployment {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -2983,6 +3057,54 @@ export class Lobby {
       }
       #app.is-compact #lobby .lobby-verified-deployment__actions > .lobby-btn {
         min-height: var(--st-deployment-choice-target, 44px);
+      }
+      #app.is-compact #lobby .lobby-commander-operations {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+        margin-top: 4px;
+        padding: 5px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations .lobby-verified-deployment {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 3px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations .lobby-verified-deployment__actions {
+        grid-column: 1;
+        grid-row: auto;
+        min-width: 0;
+        align-content: stretch;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__career {
+        gap: 6px;
+        padding: 4px 5px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__career p {
+        font-size: 9px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__practice {
+        gap: 3px;
+        padding: 5px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__practice > p {
+        display: none;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__cards {
+        display: none;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__compact-launch {
+        min-height: var(--st-deployment-choice-target, 44px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 3px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__compact-launch select,
+      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+        min-width: 0;
+        min-height: var(--st-deployment-choice-target, 44px);
+        font-size: 9px;
+      }
+      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+        min-width: var(--st-deployment-choice-target, 44px);
       }
       #app.is-compact #lobby .lobby-hotseat-customization > summary { min-height: 34px; }
       #app.is-compact #lobby .lobby-route-brief__setup {
@@ -4120,6 +4242,7 @@ export class Lobby {
   }
 
   private renderHotSeatTab(): HTMLElement {
+    const verifiedDeployment = this.verifiedHotSeatView();
     return buildLobbyHotSeatView({
       minPlayers: MIN_PLAYERS,
       maxPlayers: MAX_PLAYERS,
@@ -4128,7 +4251,11 @@ export class Lobby {
       advanced: this.renderAdvanced(),
       customizationOpen: this.hotSeatCustomizationOpen,
       validationMessage: this.validationError(),
-      verifiedDeployment: this.verifiedHotSeatView(),
+      verifiedDeployment,
+      ...(verifiedDeployment === null ? {} : {
+        quickOperations: QUICK_OPERATIONS,
+        onQuickOperation: (operationId: string) => { this.startQuickDuel(operationId); },
+      }),
       onPlayerCountChange: (count) => { this.setPlayerCount(count); },
       onCustomizationToggle: (open) => { this.hotSeatCustomizationOpen = open; },
       onStart: () => {

@@ -31,6 +31,59 @@ function startButton(root: HTMLElement): HTMLButtonElement {
 }
 
 describe('buildLobbyHotSeatView', () => {
+  it('composes authenticated career choices into one Commander Operations board', () => {
+    const onQuickOperation = vi.fn();
+    const root = buildLobbyHotSeatView(options({
+      quickOperations: [
+        { id: 'standard', title: 'Standard Duel', briefing: 'A balanced two-tank exhibition.' },
+        { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.' },
+      ],
+      onQuickOperation,
+      verifiedDeployment: {
+        action: 'start',
+        commanderName: 'Ranger',
+        busy: false,
+        message: null,
+        abandonIntent: false,
+        fieldOrder: {
+          id: 'first-strike',
+          title: 'First Strike',
+          instruction: 'Damage the CPU within your first three salvos.',
+          progress: { salvosRemaining: 3 },
+          result: null,
+        },
+        onLaunch: vi.fn(),
+        onRequestAbandon: vi.fn(),
+        onConfirmAbandon: vi.fn(),
+        onCancelAbandon: vi.fn(),
+      },
+    }));
+
+    const board = root.querySelector<HTMLElement>('[data-ui="commander-operations"]');
+    const dossier = root.querySelector<HTMLElement>('.lobby-verified-deployment__dossier');
+    expect(board?.getAttribute('aria-label')).toBe('Commander Operations');
+    expect(dossier?.getAttribute('aria-label')).toBe('Commander dossier');
+    expect(dossier?.nextElementSibling).toBe(board);
+    expect([...board?.children ?? []].map((child) => child.getAttribute('data-operation-lane')))
+      .toEqual(['career', 'verified', 'practice']);
+    expect(board?.textContent).toContain('First Strike');
+    expect(board?.textContent).toContain('Practice operation');
+    expect(board?.querySelectorAll('.lobby-verified-deployment__launch')).toHaveLength(1);
+    expect(board?.querySelector('[data-operation-lane="verified"] [data-operation-id]')).toBeNull();
+    expect(board?.querySelectorAll('[data-operation-id]')).toHaveLength(2);
+    const compactSelector = board?.querySelector<HTMLSelectElement>('[data-ui="practice-operation-selector"]');
+    expect([...compactSelector?.options ?? []].map((option) => option.value))
+      .toEqual(['standard', 'crosswind-range']);
+    const compactLaunch = board?.querySelector<HTMLButtonElement>('[data-ui="launch-practice-operation"]');
+    expect(compactLaunch?.textContent)
+      .toBe('Launch practice');
+    compactSelector!.value = 'crosswind-range';
+    compactSelector!.dispatchEvent(new Event('change'));
+    compactLaunch!.click();
+    expect(onQuickOperation).toHaveBeenCalledWith('crosswind-range');
+    expect(board?.textContent).not.toMatch(/bonus|reward|unlock|medal|streak/i);
+  });
+
   it('presents valid defaults as ready and progressively discloses customization', () => {
     const onCustomizationToggle = vi.fn();
     const root = buildLobbyHotSeatView(options({ onCustomizationToggle }));
