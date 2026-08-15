@@ -69,11 +69,13 @@ view callback boundary; a new public module would only duplicate that seam.
 
 ## Task 4 — Governed delivery
 
-- [ ] Append SMARTS and every observed RED/GREEN/correction decision through
+- [x] Append SMARTS and every observed RED/GREEN/correction decision through
   the sanctioned append-only sprint log route.
-- [ ] Run full client, deterministic, Edge, typecheck, build, and full browser
+- [x] Run full client, deterministic, Edge, typecheck, build, and full browser
   gates; give spec, plan, sprint log, tests, and exact diff to an adversarial
   reviewer and resolve every merge blocker.
-- [ ] Commit through the CodeArbiter gate, open a PR, require exact-head
+- [x] Commit through the CodeArbiter gate, open a PR, require exact-head
   hosted CI/CodeQL/Pages, merge under standing authority, and record deployed
-  provenance plus an authenticated production Battery observation.
+  provenance.
+- [ ] Observe the authenticated production Battery in a connected signed-in
+  browser context.
