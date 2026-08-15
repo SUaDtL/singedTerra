@@ -843,11 +843,16 @@ export class Lobby {
    * Render the hot-seat setup overlay: choose 2-4 players, name each, and pick
    * a unique color. A Start button validates and hands a config to onReady.
    */
-  show(): void {
+  show(options: { readonly focusVerifiedDeployment?: boolean } = {}): void {
     this.injectStyle();
     this.startDiagnostics();
     this.render();
     this.root.hidden = false;
+    if (options.focusVerifiedDeployment) {
+      this.root.querySelector<HTMLButtonElement>(
+        '.lobby-verified-deployment__launch:not(:disabled)',
+      )?.focus({ preventScroll: true });
+    }
     void this.accountSession.initialize();
     void this.checkRejoinCandidate();
   }

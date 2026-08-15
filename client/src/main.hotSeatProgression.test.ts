@@ -41,6 +41,7 @@ const seams = vi.hoisted(() => ({
   anonymousHandoffs: 0,
   accountSignInShows: 0,
   lobbyShows: 0,
+  lobbyShowOptions: [] as unknown[],
   accountAnonymous: false,
   accountAuthenticated: false,
   onAccountAuthenticationChange: null as null | ((identityChanged: boolean) => void),
@@ -224,7 +225,10 @@ vi.mock('./ui/Lobby', () => ({
       seams.onLobbyReady = onReady
     }
     hide() {}
-    show() { seams.lobbyShows += 1 }
+    show(options?: unknown) {
+      seams.lobbyShows += 1
+      seams.lobbyShowOptions.push(options)
+    }
     isAccountAnonymous() { return seams.accountAnonymous }
     isAccountAuthenticated() { return seams.accountAuthenticated }
     onAccountAuthenticationChange(callback: (identityChanged: boolean) => void) {
@@ -505,6 +509,7 @@ describe('production hot-seat progression composition', () => {
     seams.anonymousHandoffs = 0
     seams.accountSignInShows = 0
     seams.lobbyShows = 0
+    seams.lobbyShowOptions.length = 0
     seams.accountAnonymous = false
     seams.accountAuthenticated = false
     seams.onAccountAuthenticationChange = null
@@ -721,6 +726,7 @@ describe('production hot-seat progression composition', () => {
     expect(seams.returnedVerified).toBe(1)
     expect(firstClient.stop).toHaveBeenCalledOnce()
     expect(seams.lobbyShows).toBe(lobbyShowsBeforeHandoff + 1)
+    expect(seams.lobbyShowOptions.at(-1)).toEqual({ focusVerifiedDeployment: true })
     expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
 
     seams.verifiedPresentationEvents.length = 0
@@ -728,7 +734,7 @@ describe('production hot-seat progression composition', () => {
     const freshDescriptor = {
       ...verifiedDescriptor,
       sessionId: '00000000-0000-4000-8000-000000000062',
-      config: { ...verifiedDescriptor.config, seed: 23 },
+      config: { ...verifiedDescriptor.config, seed: 42 },
     }
     const freshState = liveVerifiedState()
     const freshController = fakeVerifiedController(freshState)
@@ -746,18 +752,60 @@ describe('production hot-seat progression composition', () => {
     }
     seams.onLobbyReady({
       ...verifiedConfig([], freshOrder),
-      settings: { ...verifiedConfig([], freshOrder).settings, seed: 23 },
+      settings: { ...verifiedConfig([], freshOrder).settings, seed: 42 },
       verifiedDeployment: { descriptor: freshDescriptor, transcript: [], fieldOrder: freshOrder },
     })
     await vi.waitFor(() => expect(freshClient.start).toHaveBeenCalledOnce())
     freshClient.emit(freshState)
 
-    expect(seams.verifiedControllerSeeds).toEqual([17, 23])
+    expect(seams.verifiedControllerSeeds).toEqual([17, 42])
     expect(seams.verifiedHudStates.at(-1)).toMatchObject({
       status: 'active', humanSalvos: 0, cpuSalvos: 0, humanLimit: 6, cpuLimit: 6,
     })
     expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({ id: 'fire-for-effect' })
     expect(seams.verifiedPresentationEvents.slice(-2)).toEqual(['budget', 'order'])
+  })
+
+  it('rejects every non-accepted next-order callback without leaving the consumed match', async () => {
+    const state = liveVerifiedState()
+    const controller = fakeVerifiedController(state)
+    const verifiedClient = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(verifiedClient)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: verifiedDescriptor, transcript: [{ angle: 45, power: 50 }],
+      deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onVerifiedNextOrder || !seams.onQuit) {
+      throw new Error('Expected verified report wiring')
+    }
+    seams.onLobbyReady(verifiedConfig([{ angle: 45, power: 50 }]))
+    await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
+
+    const rejectedStates = [
+      { status: 'retryable', descriptor: verifiedDescriptor, transcript: [],
+        deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: false, canComplete: true } },
+      { status: 'failed' },
+      { status: 'expired', descriptor: verifiedDescriptor, transcript: [],
+        deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false } },
+      { status: 'casual' },
+      { status: 'verified', receipt: { ...verifiedReceipt, result: {
+        ...verifiedReceipt.result, sessionId: '00000000-0000-4000-8000-000000000099',
+      } } },
+    ]
+    for (const rejected of rejectedStates) {
+      seams.verifiedDeployment = rejected
+      seams.onVerifiedNextOrder()
+    }
+    expect(seams.returnedVerified).toBe(0)
+    expect(verifiedClient.stop).not.toHaveBeenCalled()
+
+    seams.onQuit()
+    seams.verifiedDeployment = { status: 'verified', receipt: verifiedReceipt }
+    seams.onVerifiedNextOrder()
+    expect(seams.returnedVerified).toBe(0)
+    expect(verifiedClient.stop).toHaveBeenCalledOnce()
   })
 
   it('keeps First Strike live through a third fired salvo and misses before later CPU damage can be credited', async () => {

@@ -1090,7 +1090,7 @@ function bootstrap(): void {
       || !lobby.returnVerifiedDeploymentToBattery()
     ) return;
     teardown();
-    lobby.show();
+    lobby.show({ focusVerifiedDeployment: true });
   });
 
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).

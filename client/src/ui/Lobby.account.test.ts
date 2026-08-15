@@ -8,6 +8,7 @@ import type {
   VerifiedDeploymentReceipt,
   VerifiedDeploymentStart,
 } from '../client/verifiedDeployment'
+import { parseVerifiedDeploymentDescriptor } from '../client/verifiedDeployment'
 import type {
   DiagnosticCheckResult,
   ProductionDiagnostics,
@@ -1003,6 +1004,70 @@ describe('Lobby account composition', () => {
       fieldOrder: { id: 'fire-for-effect', result: null },
     })
     expect(account.startVerifiedDeployment).toHaveBeenCalledTimes(3)
+  })
+
+  it('launches the next verified deployment through the real Battery action with a fresh descriptor and budget', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
+    const root = document.createElement('div')
+    document.body.append(root)
+    const onReady = vi.fn<(config: LobbyConfig) => void>()
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, onReady, (onChange) => {
+      account = new FakeAccountSession(onChange, verifiedAccountState(0))
+      return account
+    })
+    const freshDescriptor = {
+      ...verifiedStart.descriptor,
+      sessionId: '00000000-0000-4000-8000-000000000062',
+      expiresAt: '2026-08-12T14:30:00.000Z',
+      config: { ...verifiedStart.descriptor.config, seed: 42 as const },
+    }
+    expect(parseVerifiedDeploymentDescriptor(freshDescriptor)).not.toBeNull()
+    account.startVerifiedDeployment
+      .mockResolvedValueOnce(verifiedStart)
+      .mockResolvedValueOnce({ resumed: false, descriptor: freshDescriptor })
+
+    lobby.show()
+    button(root, 'Local Battle').click()
+    button(root, 'Start verified deployment').click()
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce())
+    expect(onReady.mock.calls[0]?.[0].verifiedDeployment).toMatchObject({
+      descriptor: verifiedStart.descriptor,
+      transcript: [],
+      fieldOrder: { id: 'first-strike', result: null },
+    })
+
+    expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
+    account.completeVerifiedDeployment.mockImplementationOnce(async () => {
+      account.emit(verifiedAccountState(1))
+      return verifiedReceipt
+    })
+    await expect(lobby.completeVerifiedDeployment()).resolves.toEqual(verifiedReceipt)
+    expect(lobby.returnVerifiedDeploymentToBattery()).toBe(true)
+    expect(localStorage.getItem('singedterra:verified-deployment')).toBeNull()
+
+    lobby.show({ focusVerifiedDeployment: true })
+    const nextStart = button(root, 'Start verified deployment')
+    expect(document.activeElement).toBe(nextStart)
+    expect(nextStart.disabled).toBe(false)
+    nextStart.click()
+    await vi.waitFor(() => expect(account.startVerifiedDeployment).toHaveBeenCalledTimes(2))
+    await expect(account.startVerifiedDeployment.mock.results[1]?.value)
+      .resolves.toEqual({ resumed: false, descriptor: freshDescriptor })
+    expect(lobby.verifiedDeployment).toEqual(expect.objectContaining({ status: 'active' }))
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+
+    expect(onReady.mock.calls[1]?.[0].verifiedDeployment).toMatchObject({
+      descriptor: freshDescriptor,
+      transcript: [],
+      fieldOrder: { id: 'fire-for-effect', result: null },
+    })
+    expect(onReady.mock.calls[1]?.[0].verifiedDeployment?.descriptor.limits)
+      .toEqual({
+        humanSalvos: 6, cpuSalvos: 6,
+        angle: { min: 0, max: 180 }, power: { min: 0, max: 100 },
+      })
   })
 
   it('retains terminal evidence and retries completion only before expiry', async () => {
