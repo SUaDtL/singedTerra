@@ -43,9 +43,9 @@ const SHIELD_CAPACITY = getWeapon('shield').behavior.shield.capacity;
 // missile clearly damages P1 (~49) and the nuke clearly exceeds it (~79), which
 // the proportional-drain assertion requires. Re-swept after the muzzle fix
 // (barrel pivot +20px, length 18->22) shifted long-lob landings ~one blast radius.
-const MISSILE_AT_P1 = { angle: 140, power: 100, weapon: 'missile' };
-const NUKE_AT_P1    = { angle: 140, power: 100, weapon: 'nuke' };
-const NAPALM_AT_P1  = { angle: 140, power: 100, weapon: 'napalm' };
+const MISSILE_AT_P1 = { angle: 140, power: 96, weapon: 'missile' };
+const NUKE_AT_P1    = { angle: 140, power: 96, weapon: 'nuke' };
+const NAPALM_AT_P1  = { angle: 140, power: 96, weapon: 'napalm' };
 
 let failed = false;
 const log = (...a) => console.log(...a);

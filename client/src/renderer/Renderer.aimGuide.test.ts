@@ -17,7 +17,7 @@ function tank(): TankState {
     playerName: 'P1',
     color: '#ef4444',
     x: 120,
-    y: 420,
+    y: 300,
     angle: 45,
     power: 50,
     health: 100,

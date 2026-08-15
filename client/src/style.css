@@ -271,7 +271,7 @@ body::before {
   right: 0;
   left: 0;
   box-sizing: border-box;
-  height: 98px;
+  height: calc(var(--arena-height) - var(--battle-rail-top-y));
   z-index: 6;
   display: flex;
   align-items: stretch;

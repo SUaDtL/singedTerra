@@ -122,7 +122,7 @@ console.log('[2] Fired straight up returns and hits GROUND near origin (not OOB 
   // Tank near left edge on flat ground. Fire straight up (90deg). vx must be ~0
   // so x never leaves bounds; projectile must come back down and hit GROUND,
   // and the ground impact x must be ~the launch x (near origin), never OOB.
-  const surfaceY = 400;
+  const surfaceY = 300;
   const terrain = flatBitmap(surfaceY);
   // createTank expects a number[] HEIGHT LINE (Tank.ts is unchanged), so give it
   // a flat line at the same surface; collide() below gets the matching bitmap.
@@ -158,34 +158,34 @@ console.log('[2] Fired straight up returns and hits GROUND near origin (not OOB 
 console.log('[3] Aimed AT enemy tank => tank hit (AABB); near-miss => not a tank hit');
 // ---------------------------------------------------------------------------
 {
-  const terrain = flatBitmap(490);
-  // Enemy tank with base at y=400, x=400. AABB spans:
-  //   x in [400-10, 400+10] = [390,410]; y in [400-12, 400] = [388,400].
-  const enemyLine = new Array(CANVAS_WIDTH).fill(490); // height line for createTank
+  const terrain = flatBitmap(330);
+  // Enemy tank with base at y=300, x=400. AABB spans:
+  //   x in [400-10, 400+10] = [390,410]; y in [300-12, 300] = [288,300].
+  const enemyLine = new Array(CANVAS_WIDTH).fill(330); // height line for createTank
   const enemy = createTank('p2', 'P2', 400, enemyLine, '#00f');
-  enemy.y = 400;
+  enemy.y = 300;
   const tanks = [enemy];
 
   // Point dead-center of the box.
-  eq(collide(mkProjectile(400, 394), terrain, tanks).type, 'tank',
+  eq(collide(mkProjectile(400, 294), terrain, tanks).type, 'tank',
     'projectile inside enemy AABB => tank');
 
   // Corners (inclusive boundary).
-  eq(collide(mkProjectile(390, 388), terrain, tanks).type, 'tank',
+  eq(collide(mkProjectile(390, 288), terrain, tanks).type, 'tank',
     'AABB top-left corner inclusive => tank');
-  eq(collide(mkProjectile(410, 400), terrain, tanks).type, 'tank',
+  eq(collide(mkProjectile(410, 300), terrain, tanks).type, 'tank',
     'AABB bottom-right corner inclusive => tank');
 
   // Near-miss: just left of the box, in the air (above ground).
-  eq(collide(mkProjectile(389.5, 394), terrain, tanks).type, 'none',
+  eq(collide(mkProjectile(389.5, 294), terrain, tanks).type, 'none',
     'just left of AABB in air => none (near-miss)');
   // Near-miss: just above the box.
-  eq(collide(mkProjectile(400, 387.5), terrain, tanks).type, 'none',
+  eq(collide(mkProjectile(400, 287.5), terrain, tanks).type, 'none',
     'just above AABB in air => none (near-miss)');
 
   // A dead tank must NOT block.
   const deadTanks = [{ ...enemy, alive: false }];
-  eq(collide(mkProjectile(400, 394), terrain, deadTanks).type, 'none',
+  eq(collide(mkProjectile(400, 294), terrain, deadTanks).type, 'none',
     'dead tank does not register a tank hit');
 }
 
@@ -234,7 +234,7 @@ console.log('[4] deform at bitmap EDGES (cx near 0 / near 800): no OOR / NaN');
   // A centered crater + gravity actually LOWERS the surface (surfaceAt grows).
   b = flatBitmap(300);
   const surfaceBefore = surfaceAt(b, 400);
-  const range = deform(b, 400, 400, 20);
+  const range = deform(b, 400, 300, 20);
   ok(range !== null, 'centered crater wrote pixels (deform returned a range)');
   if (range !== null) applyGravity(b, range.xStart, range.xEnd);
   ok(surfaceAt(b, 400) > surfaceBefore,

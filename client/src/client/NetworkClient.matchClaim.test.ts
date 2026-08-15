@@ -13,7 +13,10 @@ const OPTIONS = {
     { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
   ],
 };
-const NAPALM_KILL_SHOT: NetworkAction = { type: 'fire', angle: 45, power: 100, weapon: 'napalm' };
+// The protected command-surface floor moves both deterministic tank spawns up.
+// This short-range Nuke still produces a real replayed terminal state under the
+// same network-action translation used in production.
+const TERMINAL_KILL_SHOT: NetworkAction = { type: 'fire', angle: 0, power: 5, weapon: 'nuke' };
 
 type QueryResult = { data: unknown; error: { message?: string } | null };
 
@@ -98,14 +101,14 @@ function actionTrackingSnapshot(client: NetworkClient): unknown {
 }
 
 async function gameOverClient(session: { access_token: string } | null): Promise<NetworkClient> {
-  const { supabase } = makeFakeSupabase([{ data: [row(0, NAPALM_KILL_SHOT)], error: null }], session);
+  const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT)], error: null }], session);
   const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, 'seat-token-secret');
   const state = engineOf(client).getState();
   const shooter = required(state.tanks[0], 'shooter tank');
   const victim = required(state.tanks[1], 'victim tank');
-  const napalm = required(shooter.inventory.napalm, 'shooter napalm inventory');
-  napalm.count = 9;
-  napalm.unlimited = false;
+  const nuke = required(shooter.inventory.nuke, 'shooter nuke inventory');
+  nuke.count = 9;
+  nuke.unlimited = false;
   victim.health = 5;
   await client.initialize();
   expect(client.getState().phase).toBe('GAME_OVER');

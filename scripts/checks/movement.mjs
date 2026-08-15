@@ -10,7 +10,7 @@ import { TANK_WIDTH } from '../../shared/src/engine/Tank.ts';
 import { replayNetworkAction } from '../../shared/src/net/replay.ts';
 
 const SEED = 0x5eed1234;
-const SURFACE = 400;
+const SURFACE = 300;
 const START_FUEL = 100;
 const MOVE_STEP = 8;
 const FUEL_TANK_PRICE = 10_000;

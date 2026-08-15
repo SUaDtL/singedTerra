@@ -115,10 +115,9 @@ const FUNKY_AIM = { angle: 78, power: 60, weapon: 'funky_bomb' };
 const BETTY_AIM = { angle: 25, power: 14, weapon: 'bouncing_betty' };
 const NAPALM_AIM = { angle: 65, power: 40, weapon: 'napalm' };
 // Aim that drops napalm onto/just-uphill of an opponent so the fire pools over it
-// (swept against the real engine for this seed on the 1200×600 field — a flat,
-// powerful long shot reaching the far tank at x≈1080; central in a robust plateau
-// of ~538 damaging aims). Proves damage-over-time.
-const NAPALM_BURN_AIM = { angle: 45, power: 100, weapon: 'napalm' };
+// (swept against the real engine after the protected command band raised the
+// floor to y=340; central in a broad damaging plateau). Proves damage-over-time.
+const NAPALM_BURN_AIM = { angle: 31, power: 96, weapon: 'napalm' };
 
 /**
  * Fire one shot and tick to resolution, capturing a per-tick in-flight trace.

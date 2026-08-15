@@ -204,6 +204,7 @@ function bootstrap(): void {
   // custom properties so the canvas tokens and the --crt-* vars share one source. (P3-16)
   const rootStyle = document.documentElement.style;
   const battleRailTop = Math.ceil(ARENA_FLOOR_Y + maximumTankRecoilDownPx());
+  rootStyle.setProperty('--arena-height', `${CANVAS_HEIGHT}px`);
   rootStyle.setProperty('--arena-floor-y', `${ARENA_FLOOR_Y}px`);
   rootStyle.setProperty('--battle-rail-top-y', `${battleRailTop}px`);
   for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);

@@ -12,8 +12,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: 2,
       turn: 13,
       actionCount: 15,
-      tickCount: 448,
-      maxTurnTickCount: 34,
+      tickCount: 453,
+      maxTurnTickCount: 36,
     },
     maximumTurn: {
       phase: 'GAME_OVER',
@@ -21,8 +21,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: null,
       turn: 3,
       actionCount: 4,
-      tickCount: 302,
-      maxTurnTickCount: 207,
+      tickCount: 316,
+      maxTurnTickCount: 221,
     },
   },
 } as const

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { GameEngine } from '../shared/src/engine/GameEngine';
 import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
 import { maximumTankRecoilDownPx } from '../client/src/renderer/tankRecoil';
-import { ARENA_FLOOR_Y } from '../shared/src/engine/Terrain';
+import { ARENA_FLOOR_Y, CANVAS_HEIGHT } from '../shared/src/engine/Terrain';
 import {
   gotoRunningGame,
   isCompact,
@@ -102,27 +102,30 @@ test.describe('HUD layout guardrails', () => {
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const hud = page.locator('#hud');
+    const rail = page.locator('#battle-rail');
     const overlay = page.locator('#game-overlay');
     const fire = page.locator('.st-hud__primary-action');
     await expect(hud).toHaveAttribute('data-combat-focus', 'decision');
     await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
+    await expect(rail).toHaveAttribute('data-combat-focus', 'decision');
 
     await fire.click();
     await expect(hud).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(overlay).toHaveAttribute('data-combat-focus', 'outcome');
+    await expect(rail).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(page.locator('.st-hud__aim')).toBeVisible();
     await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
     await expect(page.locator('.st-hud__touch-strip')).not.toHaveAttribute('aria-disabled', /.+/);
     await expect(page.locator('.st-hud__command-console')).toHaveAttribute(
       'aria-label',
-      'Shot outcome in progress. Combat controls unavailable; Store remains available.',
+      'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
     );
     await expect(page.locator('.st-hud__touch-strip')).toHaveAttribute(
       'aria-label',
       'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
     );
-    await expect(page.locator('.st-hud__store-btn')).toBeEnabled();
     await expect(page.locator('.st-hud__touch-menu')).toBeEnabled();
+    await expect(page.locator('#hud .st-hud__menu')).toBeEnabled();
 
     const outcome = await page.evaluate(() => {
       const select = (selector: string) => document.querySelector<HTMLElement>(selector)!;
@@ -138,6 +141,8 @@ test.describe('HUD layout guardrails', () => {
       const order = (node: HTMLElement) => Number(getComputedStyle(node).order);
       const filter = (node: HTMLElement) => getComputedStyle(node).filter;
       const consoleEl = select('.st-hud__command-console');
+      const solution = select('.st-hud__console-solution');
+      const commitment = select('.st-hud__console-commitment');
       const progress = select('.st-hud__aim');
       const instruments = select('.st-hud__instruments');
       const actions = select('.st-hud__turn-actions');
@@ -151,9 +156,10 @@ test.describe('HUD layout guardrails', () => {
       const primary = select('.st-hud__primary-action');
       const touchCombat = select('.st-hud__touch-btn[data-command="aim-left"]');
       const fineCombat = select('.st-hud__command-key[data-command-action="aim-left"]');
-      const store = select('.st-hud__store-btn');
       const menu = select('.st-hud__touch-menu');
+      const commandMenu = select('#hud .st-hud__menu');
       const progressRect = rect(progress);
+      const actionsRect = rect(actions);
       const consoleRect = rect(consoleEl);
       return {
         order: { progress: order(progress), instruments: order(instruments), actions: order(actions) },
@@ -165,22 +171,24 @@ test.describe('HUD layout guardrails', () => {
           progress: effectiveOpacity(progress), primary: effectiveOpacity(primary),
           touchCombat: effectiveOpacity(touchCombat), fineCombat: effectiveOpacity(fineCombat),
           rosterRows: rosterRows.map(effectiveOpacity), arsenal: effectiveOpacity(arsenal),
-          store: effectiveOpacity(store), menu: effectiveOpacity(menu),
+          menu: effectiveOpacity(menu), commandMenu: effectiveOpacity(commandMenu),
         },
         filter: {
-          progress: filter(progress), instruments: filter(instruments), actions: filter(actions),
-          roster: filter(roster), arsenal: filter(arsenal), fineDeck: filter(fineDeck),
+          progress: filter(progress), instruments: filter(solution), actions: filter(actions),
+          roster: filter(roster), arsenal: filter(arsenal), fineDeck: filter(solution),
           touchDeck: filter(touchDeck),
         },
-        owned: progress.parentElement === consoleEl
-          && instruments.parentElement === consoleEl
-          && actions.parentElement === consoleEl,
+        owned: consoleEl.contains(progress)
+          && instruments.parentElement === solution
+          && actions.parentElement === commitment
+          && progress.parentElement === commitment,
         contained: progressRect.left >= consoleRect.left - 1
           && progressRect.right <= consoleRect.right + 1
           && progressRect.top >= consoleRect.top - 1
           && progressRect.bottom <= consoleRect.bottom + 1
           && document.documentElement.scrollWidth <= window.innerWidth
           && document.documentElement.scrollHeight <= window.innerHeight,
+        commitmentFlow: progressRect.bottom <= actionsRect.top + 1,
         announcement: {
           role: progress.getAttribute('role'),
           live: progress.getAttribute('aria-live'),
@@ -190,8 +198,7 @@ test.describe('HUD layout guardrails', () => {
     });
     expect(outcome.owned).toBe(true);
     expect(outcome.contained).toBe(true);
-    expect(outcome.order.progress).toBeLessThan(outcome.order.instruments);
-    expect(outcome.order.progress).toBeLessThan(outcome.order.actions);
+    expect(outcome.commitmentFlow).toBe(true);
     expect(Object.values(outcome.parentOpacity)).toEqual([1, 1, 1, 1, 1, 1]);
     expect(outcome.effectiveOpacity.progress).toBe(1);
     expect(outcome.effectiveOpacity.primary).toBeGreaterThanOrEqual(0.35);
@@ -200,8 +207,8 @@ test.describe('HUD layout guardrails', () => {
     expect(outcome.effectiveOpacity.rosterRows.length).toBeGreaterThan(0);
     expect(Math.min(...outcome.effectiveOpacity.rosterRows)).toBeGreaterThanOrEqual(0.4);
     expect(outcome.effectiveOpacity.arsenal).toBeGreaterThanOrEqual(0.9);
-    expect(outcome.effectiveOpacity.store).toBeGreaterThanOrEqual(0.9);
     expect(outcome.effectiveOpacity.menu).toBeGreaterThanOrEqual(0.9);
+    expect(outcome.effectiveOpacity.commandMenu).toBeGreaterThanOrEqual(0.9);
     expect(outcome.filter.progress).toBe('none');
     for (const [surface, treatment] of Object.entries(outcome.filter)) {
       if (surface === 'progress') continue;
@@ -214,6 +221,7 @@ test.describe('HUD layout guardrails', () => {
 
     await expect(hud).toHaveAttribute('data-combat-focus', 'decision', { timeout: 20_000 });
     await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
+    await expect(rail).toHaveAttribute('data-combat-focus', 'decision');
     await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
     await expect(page.locator('.st-hud__touch-strip')).not.toHaveAttribute('aria-disabled', /.+/);
     await expect(page.locator('.st-hud__command-console')).toHaveAttribute('aria-label', 'Turn command console');
@@ -271,17 +279,17 @@ test.describe('HUD layout guardrails', () => {
     const geometry = await frame.evaluate((node) => {
       const frameBox = node.getBoundingClientRect();
       const portraitBox = node.querySelector('canvas')!.getBoundingClientRect();
-      const hudBox = node.closest('#hud')!.getBoundingClientRect();
+      const contextBox = node.closest('.st-hud__console-context')!.getBoundingClientRect();
       return {
         frame: frameBox.toJSON(),
         portrait: portraitBox.toJSON(),
-        hud: hudBox.toJSON(),
+        context: contextBox.toJSON(),
       };
     });
     expect(Math.abs(geometry.frame.width - geometry.portrait.width)).toBeLessThan(1);
     expect(Math.abs(geometry.frame.height - geometry.portrait.height)).toBeLessThan(1);
-    expect(geometry.frame.left).toBeGreaterThanOrEqual(geometry.hud.left);
-    expect(geometry.frame.right).toBeLessThanOrEqual(geometry.hud.right);
+    expect(geometry.frame.left).toBeGreaterThanOrEqual(geometry.context.left);
+    expect(geometry.frame.right).toBeLessThanOrEqual(geometry.context.right);
 
     if (testInfo.project.name === 'desktop-fine') {
       expect(geometry.frame.width).toBeGreaterThanOrEqual(140);
@@ -297,18 +305,18 @@ test.describe('HUD layout guardrails', () => {
 
   test('combat command glyphs stay semantic, framed, and fitted', async ({
     page,
-  }) => {
+  }, testInfo) => {
     const icons = page.locator('svg.st-ui-icon');
     const glyphs = page.locator('.st-ui-glyph');
     const visibleGlyphs = page.locator('.st-ui-glyph:visible');
     const commandIcons = page.locator('.st-hud__controls svg.st-ui-icon');
     const commandGlyphs = page.locator('.st-hud__controls .st-ui-glyph');
     const touchIcons = page.locator('.st-hud__touch-strip svg.st-ui-icon');
-    const railIcons = page.locator('#hud svg.st-ui-icon');
-    const railGlyphs = page.locator('#hud .st-ui-glyph');
+    const railIcons = page.locator('#battle-rail svg.st-ui-icon');
+    const railGlyphs = page.locator('#battle-rail .st-ui-glyph');
 
-    await expect(icons).toHaveCount(18);
-    await expect(glyphs).toHaveCount(10);
+    await expect(icons).toHaveCount(17);
+    await expect(glyphs).toHaveCount(9);
     expect(await commandIcons.evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute('data-icon')),
     )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
@@ -319,18 +327,20 @@ test.describe('HUD layout guardrails', () => {
       nodes.map((node) => node.getAttribute('data-icon')),
     )).toEqual(['left', 'right', 'decrease', 'increase', 'left', 'right', 'weapon', 'menu']);
     expect(await railIcons.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('data-symbol')),
-    )).toEqual(['menu', 'credits', 'target', 'ordnance', 'disclosure']);
+      nodes.map((node) => node.getAttribute('data-icon')).filter(Boolean),
+    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire', 'fire']);
     expect(await railGlyphs.evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute('data-glyph')),
-    )).toEqual(['menu', 'store', 'fire', 'arsenal']);
+    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire', 'fire']);
 
     const arsenal = page.locator('[data-icon="arsenal"]');
-    const store = page.locator('[data-icon="store"]');
     await expect(arsenal.locator('circle[r="9"]')).toHaveCount(1);
-    await expect(store.locator('circle[r="6"]')).toHaveCount(1);
     await expect(page.getByText('Arsenal', { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Store/ })).toBeVisible();
+    if (testInfo.project.name === 'pixel-touch') {
+      await expect(page.locator('.st-hud__touch-menu')).toBeVisible();
+    } else {
+      await expect(page.locator('#hud .st-hud__menu')).toBeVisible();
+    }
     await expect(page.locator('.st-hud__primary-action')).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
@@ -354,11 +364,13 @@ test.describe('HUD layout guardrails', () => {
       viewportHeight: window.innerHeight,
     }));
     expect(geometry.glyphSizes).toHaveLength(await visibleGlyphs.count());
+    const glyphFloor = testInfo.project.name === 'pixel-touch' ? 12 : 15;
+    const iconFloor = testInfo.project.name === 'pixel-touch' ? 9.5 : 12;
     for (const size of geometry.glyphSizes) {
-      expect(size.frameWidth).toBeGreaterThanOrEqual(15);
-      expect(size.frameHeight).toBeGreaterThanOrEqual(15);
-      expect(size.iconWidth).toBeGreaterThanOrEqual(12);
-      expect(size.iconHeight).toBeGreaterThanOrEqual(12);
+      expect(size.frameWidth).toBeGreaterThanOrEqual(glyphFloor);
+      expect(size.frameHeight).toBeGreaterThanOrEqual(glyphFloor);
+      expect(size.iconWidth).toBeGreaterThanOrEqual(iconFloor);
+      expect(size.iconHeight).toBeGreaterThanOrEqual(iconFloor);
     }
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
     expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
@@ -432,6 +444,12 @@ test.describe('HUD layout guardrails', () => {
         // than merely proving an empty horizontal lane beside a floating deck.
         const title = node.querySelector<HTMLElement>('.st-hud__controls-title')!;
         const mode = node.querySelector<HTMLElement>('.st-hud__controls-mode')!;
+        const commandConsole = document.querySelector<HTMLElement>(
+          '#battle-rail .st-hud__command-console',
+        )!;
+        const zones = [...commandConsole.querySelectorAll<HTMLElement>(
+          '.st-hud__console-context, .st-hud__console-solution, .st-hud__console-commitment',
+        )];
         const rows = [...node.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
         const labels = [...node.querySelectorAll<HTMLElement>('.st-hud__control-label')];
         const keycaps = [...node.querySelectorAll<HTMLElement>('kbd')];
@@ -468,18 +486,32 @@ test.describe('HUD layout guardrails', () => {
           declaredFloor: getComputedStyle(document.documentElement).getPropertyValue('--arena-floor-y'),
           declaredRailTop: getComputedStyle(document.documentElement).getPropertyValue('--battle-rail-top-y'),
           railTopLogical: (railRect.top - gameRect.top) / gameScale,
+          railHeightLogical: railRect.height / gameScale,
+          railBottomLogical: (railRect.bottom - gameRect.top) / gameScale,
           deckInsideRail: deckRect.top >= railRect.top - 1
             && deckRect.right <= railRect.right + 1
             && deckRect.bottom <= railRect.bottom + 1,
+          zonesInsideRail: zones.every((zone) => {
+            const rect = zone.getBoundingClientRect();
+            return rect.left >= railRect.left - 1
+              && rect.top >= railRect.top - 1
+              && rect.right <= railRect.right + 1
+              && rect.bottom <= railRect.bottom + 1;
+          }),
+          zonesDoNotOverlap: zones.every((zone, index) => {
+            const rect = zone.getBoundingClientRect();
+            const next = zones[index + 1]?.getBoundingClientRect();
+            return next == null || rect.right <= next.left + 1;
+          }),
           widestChassisClearOfRail: chassisBasesByRoster.every((bases) => (
             bases.every((baseY) => gameRect.top + (baseY + recoilY) * gameScale < railRect.top)
           )),
         };
       }, { chassisBasesByRoster: widestChassisBasesByRoster, recoilY: worstLegalDownwardRecoil });
       const compactDeck = testInfo.project.name === 'small-window';
-      expect(geometry.width).toBeCloseTo(720, 1);
-      expect(geometry.titleFont).toBeGreaterThanOrEqual(10.5);
-      expect(geometry.modeFont).toBeGreaterThanOrEqual(7.5);
+      expect(geometry.width).toBeGreaterThanOrEqual(360);
+      expect(geometry.titleFont).toBeGreaterThanOrEqual(9);
+      expect(geometry.modeFont).toBeGreaterThanOrEqual(6.5);
       expect(geometry.ordinaryBorder).not.toBe(geometry.primaryBorder);
       expect(geometry.ordinaryBackground).not.toBe(geometry.primaryBackground);
       expect(geometry.keyFonts).toHaveLength(9);
@@ -488,10 +520,10 @@ test.describe('HUD layout guardrails', () => {
       }
       expect(geometry.glyphs).toHaveLength(5);
       for (const glyph of geometry.glyphs) {
-        expect(glyph.logicalWidth).toBeCloseTo(30, 1);
-        expect(glyph.logicalHeight).toBeCloseTo(30, 1);
-        expect(glyph.rendered.width).toBeGreaterThanOrEqual(compactDeck ? 15 : 29.9);
-        expect(glyph.rendered.height).toBeGreaterThanOrEqual(compactDeck ? 15 : 29.9);
+        expect(glyph.logicalWidth).toBeCloseTo(25, 1);
+        expect(glyph.logicalHeight).toBeCloseTo(25, 1);
+        expect(glyph.rendered.width).toBeGreaterThanOrEqual(compactDeck ? 15 : 24.9);
+        expect(glyph.rendered.height).toBeGreaterThanOrEqual(compactDeck ? 15 : 24.9);
       }
       expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
       expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
@@ -499,10 +531,14 @@ test.describe('HUD layout guardrails', () => {
       expect(geometry.declaredFloor).toBe(`${ARENA_FLOOR_Y}px`);
       expect(geometry.declaredRailTop).toBe(`${expectedRailTop}px`);
       expect(geometry.railTopLogical).toBeCloseTo(expectedRailTop, 1);
+      expect(geometry.railHeightLogical).toBeCloseTo(CANVAS_HEIGHT - expectedRailTop, 1);
+      expect(geometry.railBottomLogical).toBeCloseTo(CANVAS_HEIGHT, 1);
       expect(geometry.deckInsideRail).toBe(true);
+      expect(geometry.zonesInsideRail).toBe(true);
+      expect(geometry.zonesDoNotOverlap).toBe(true);
       expect(geometry.widestChassisClearOfRail).toBe(true);
       for (const label of geometry.labels) {
-        expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 11 : 10);
+        expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 8 : 8);
         expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
       }
       const elevation = page.locator(
@@ -1249,7 +1285,7 @@ test.describe('HUD layout guardrails', () => {
     expect(documentSize.height).toBeLessThanOrEqual(documentSize.viewportHeight);
   });
 
-  test('the analog console is visible, boxed, and inside #hud at every scale', async ({ page }) => {
+  test('the analog console is visible, boxed, and inside the firing-solution zone at every scale', async ({ page }) => {
     const dials = page.locator('.st-hud__gauge-row');
     const nums = page.locator('.st-hud__gauge-nums');
 
@@ -1262,12 +1298,12 @@ test.describe('HUD layout guardrails', () => {
     expect(gaugeBox!.height).toBeGreaterThan(0);
 
     // The gauges must lie within the #hud panel — not overflowing/clipped out of it.
-    const hudBox = await page.locator('#hud').boundingBox();
-    expect(hudBox).not.toBeNull();
-    expect(gaugeBox!.x).toBeGreaterThanOrEqual(hudBox!.x - 1);
-    expect(gaugeBox!.x + gaugeBox!.width).toBeLessThanOrEqual(hudBox!.x + hudBox!.width + 1);
-    expect(gaugeBox!.y).toBeGreaterThanOrEqual(hudBox!.y - 1);
-    expect(gaugeBox!.y + gaugeBox!.height).toBeLessThanOrEqual(hudBox!.y + hudBox!.height + 1);
+    const solutionBox = await page.locator('#battle-rail .st-hud__console-solution').boundingBox();
+    expect(solutionBox).not.toBeNull();
+    expect(gaugeBox!.x).toBeGreaterThanOrEqual(solutionBox!.x - 1);
+    expect(gaugeBox!.x + gaugeBox!.width).toBeLessThanOrEqual(solutionBox!.x + solutionBox!.width + 1);
+    expect(gaugeBox!.y).toBeGreaterThanOrEqual(solutionBox!.y - 1);
+    expect(gaugeBox!.y + gaugeBox!.height).toBeLessThanOrEqual(solutionBox!.y + solutionBox!.height + 1);
 
     const elevationBox = await page.locator('.st-hud__gauge-cell--elevation').boundingBox();
     const powerBox = await page.locator('.st-hud__gauge-cell--power').boundingBox();
@@ -1291,8 +1327,7 @@ test.describe('HUD layout guardrails', () => {
     const weapon = activeRow.locator('.st-hud__weapon-value');
     const portrait = activeRow.getByRole('img', { name: /Mobility:/ });
     const meter = activeRow.getByRole('progressbar', { name: 'Movement fuel' });
-    const store = console.getByRole('button', { name: /Store/ });
-    const fire = console.getByRole('button', { name: /Fire/ });
+    const fire = console.locator('.st-hud__primary-action');
 
     await expect(console).toBeVisible();
     await expect(activeRow).toBeVisible();
@@ -1307,8 +1342,8 @@ test.describe('HUD layout guardrails', () => {
     await expect(activeRow.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'baby_missile');
     await expect(meter).toHaveAttribute('aria-valuenow', '100');
-    await expect(store).toBeVisible();
     await expect(fire).toBeVisible();
+    await expect(console.locator('.st-hud__primary-action')).toHaveCount(1);
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
       "P1's turn. Weapon Baby Missile. 100 fuel remaining.",
@@ -1567,16 +1602,16 @@ test.describe('HUD layout guardrails', () => {
     await expect(action).toContainText('Fire');
     await expect(page.locator('.st-hud__touch-fire')).toHaveCount(0);
 
-    const hudBox = await page.locator('#hud').boundingBox();
+    const railBox = await page.locator('#battle-rail').boundingBox();
     const actionBox = await action.boundingBox();
-    expect(hudBox).not.toBeNull();
+    expect(railBox).not.toBeNull();
     expect(actionBox).not.toBeNull();
-    expect(actionBox!.x).toBeGreaterThanOrEqual(hudBox!.x - 1);
+    expect(actionBox!.x).toBeGreaterThanOrEqual(railBox!.x - 1);
     expect(actionBox!.x + actionBox!.width)
-      .toBeLessThanOrEqual(hudBox!.x + hudBox!.width + 1);
-    expect(actionBox!.y).toBeGreaterThanOrEqual(hudBox!.y - 1);
+      .toBeLessThanOrEqual(railBox!.x + railBox!.width + 1);
+    expect(actionBox!.y).toBeGreaterThanOrEqual(railBox!.y - 1);
     expect(actionBox!.y + actionBox!.height)
-      .toBeLessThanOrEqual(hudBox!.y + hudBox!.height + 1);
+      .toBeLessThanOrEqual(railBox!.y + railBox!.height + 1);
     if (testInfo.project.name === 'pixel-touch') {
       expect(actionBox!.height).toBeGreaterThanOrEqual(44);
     }

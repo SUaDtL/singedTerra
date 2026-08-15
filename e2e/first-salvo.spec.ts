@@ -59,6 +59,26 @@ async function expectCoachFitsStage(page: import('@playwright/test').Page): Prom
   await expect(page.getByRole('button', { name: 'Skip', exact: true })).toBeEnabled();
 }
 
+async function expectCoachAnchorsRailZone(
+  page: import('@playwright/test').Page,
+  anchor: 'solution' | 'commitment',
+): Promise<void> {
+  const geometry = await page.evaluate((expectedAnchor) => {
+    const coach = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    const zone = document.querySelector<HTMLElement>(
+      `#battle-rail .st-hud__console-${expectedAnchor}`,
+    )!;
+    const coachRect = coach.getBoundingClientRect();
+    const zoneRect = zone.getBoundingClientRect();
+    const railRect = document.getElementById('battle-rail')!.getBoundingClientRect();
+    return { coachRect: coachRect.toJSON(), zoneRect: zoneRect.toJSON(), railRect: railRect.toJSON(), anchor: coach.dataset['coachAnchor'] };
+  }, anchor);
+  expect(geometry.anchor).toBe(anchor);
+  expect(geometry.coachRect.bottom).toBeLessThanOrEqual(geometry.railRect.top);
+  expect(geometry.coachRect.left).toBeLessThanOrEqual(geometry.zoneRect.right);
+  expect(geometry.coachRect.right).toBeGreaterThanOrEqual(geometry.zoneRect.left);
+}
+
 test.describe('First Salvo browser contract', () => {
   test('fits the fixed stage and advances through real local controls', async ({ page }, testInfo) => {
     await gotoFirstSalvo(page);
@@ -69,6 +89,14 @@ test.describe('First Salvo browser contract', () => {
     await expect(fire).toBeVisible();
     await expect(fire).toBeEnabled();
     await expectCoachFitsStage(page);
+    await expectCoachAnchorsRailZone(page, 'solution');
+
+    if (testInfo.project.name === 'pixel-touch') {
+      const skipBox = await page.getByRole('button', { name: 'Skip', exact: true }).boundingBox();
+      expect(skipBox).not.toBeNull();
+      expect(skipBox!.width).toBeGreaterThanOrEqual(44);
+      expect(skipBox!.height).toBeGreaterThanOrEqual(44);
+    }
 
     if (testInfo.project.name === 'pixel-touch') {
       const touchAim = page.locator('.st-hud__touch-strip [data-first-salvo-target="aim"]');
@@ -102,12 +130,34 @@ test.describe('First Salvo browser contract', () => {
     }
 
     await expect(card).toContainText('3 / 3');
+    await expectCoachAnchorsRailZone(page, 'commitment');
     await expect(fire).toBeVisible();
     await expect(fire).toBeEnabled();
     await expectCoachFitsStage(page);
 
     await fire.click();
     await expect(card).toBeHidden();
+  });
+
+  test('lets Pixel Skip dismiss the anchored coach once without stealing Fire reachability', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'Coarse-pointer Skip activation regression');
+    await gotoFirstSalvo(page);
+
+    const card = page.locator('[data-ui="first-salvo-coach"]');
+    const skip = page.getByRole('button', { name: 'Skip', exact: true });
+    const fire = page.locator('#battle-rail .st-hud__primary-action');
+    await expect(skip).toBeEnabled();
+    await skip.click();
+    await expect(card).toBeHidden();
+    await expect(fire).toBeVisible();
+    await expect(fire).toBeEnabled();
+
+    // A stale handle must not reopen coaching or consume a second command.
+    await skip.click({ force: true }).catch(() => undefined);
+    await expect(card).toBeHidden();
+    await expect(fire).toBeEnabled();
   });
 
   test('lets a fine-pointer canvas drag begin through the coach background', async ({ page }, testInfo) => {

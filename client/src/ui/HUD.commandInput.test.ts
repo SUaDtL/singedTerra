@@ -43,8 +43,8 @@ afterEach(() => {
 
 describe('HUD command input console', () => {
   it('builds one semantic icon-led keyboard deck with compact exact key hints', () => {
-    const { overlay } = mount();
-    const deck = overlay.querySelector<HTMLElement>('.st-hud__controls')!;
+    const { root } = mount();
+    const deck = root.querySelector<HTMLElement>('.st-hud__controls')!;
     const items = [...deck.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
 
     expect(deck.getAttribute('role')).toBe('region');
@@ -78,7 +78,7 @@ describe('HUD command input console', () => {
   });
 
   it('routes every desktop keycap through the existing causal command callbacks', () => {
-    const { overlay, hud } = mount();
+    const { root, hud } = mount();
     const angles = vi.fn();
     const powers = vi.fn();
     const moves = vi.fn();
@@ -90,7 +90,7 @@ describe('HUD command input console', () => {
     hud.onTouchWeapon(weapons);
     hud.onPrimaryAction(primaryActions);
 
-    const deck = overlay.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
+    const deck = root.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
     const buttons = [...deck.querySelectorAll<HTMLButtonElement>(
       '.st-hud__command-key',
     )];
@@ -129,7 +129,7 @@ describe('HUD command input console', () => {
   });
 
   it('keeps desktop command availability aligned with local action and movement gates', () => {
-    const { overlay, hud } = mount();
+    const { root, hud } = mount();
     const engine = new GameEngine({
       players: [
         { name: 'Alice', color: '#e84d4d' },
@@ -140,12 +140,12 @@ describe('HUD command input console', () => {
     });
     const state = engine.getState();
     const button = (action: string): HTMLButtonElement =>
-      overlay.querySelector<HTMLButtonElement>(
+      root.querySelector<HTMLButtonElement>(
         `.st-hud__command-key[data-command-action="${action}"]`,
       )!;
 
     hud.update(state, false, false);
-    const controlled = [...overlay.querySelectorAll<HTMLButtonElement>(
+    const controlled = [...root.querySelectorAll<HTMLButtonElement>(
       '.st-hud__command-key',
     )];
     expect(controlled).toHaveLength(9);
@@ -203,8 +203,8 @@ describe('HUD command input console', () => {
   });
 
   it('isolates the desktop Command Deck while Arsenal owns interaction', () => {
-    const { root, overlay } = mount();
-    const deck = overlay.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
+    const { root } = mount();
+    const deck = root.querySelector<HTMLElement>('[data-ui="command-deck"]')!;
     const grid = deck.querySelector<HTMLElement>('.st-hud__control-grid')!;
     const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
 

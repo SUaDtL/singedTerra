@@ -54,7 +54,7 @@ describe('VerifiedDeploymentRecorder', () => {
   it('uses the shared controller through HotSeatClient and matches verifier bytes at terminal and cap outcomes', () => {
     for (const { length, angle, power } of [
       { length: 6, angle: 0, power: 5 },
-      { length: 5, angle: 20, power: 100 },
+      { length: 6, angle: 20, power: 100 },
     ]) {
       const raf = animationFrames()
       vi.stubGlobal('requestAnimationFrame', raf.request)

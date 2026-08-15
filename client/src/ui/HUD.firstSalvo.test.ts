@@ -52,6 +52,7 @@ describe('HUD First Salvo presentation seam', () => {
     expect(skip.textContent).toBe('Skip');
     expect(skip.tabIndex).toBe(0);
     expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(false);
+    expect(card.dataset['coachAnchor']).toBe('solution');
     expect(root.querySelector('[data-first-salvo-target="aim"]')?.classList
       .contains('st-hud__first-salvo-target--active')).toBe(true);
     expect(root.querySelector('[data-first-salvo-target="power-and-wind"]')?.classList
@@ -70,15 +71,17 @@ describe('HUD First Salvo presentation seam', () => {
 
     expect(document.querySelector('[data-ui="first-salvo-coach"]')?.textContent)
       .toContain('Wind Vector');
+    expect(document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')?.dataset['coachAnchor'])
+      .toBe('solution');
     expect(root.querySelector('[data-first-salvo-target="aim"]')?.classList
       .contains('st-hud__first-salvo-target--active')).toBe(false);
     const powerAndWindTargets = [
-      ...root.querySelectorAll<HTMLElement>('[data-first-salvo-target="power-and-wind"]'),
+      ...document.querySelectorAll<HTMLElement>('[data-first-salvo-target="power-and-wind"]'),
     ];
-    expect(powerAndWindTargets).toHaveLength(2);
+    expect(powerAndWindTargets).toHaveLength(6);
     expect(powerAndWindTargets
       .every((target) => target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
-    root.ownerDocument.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!.click();
+    document.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!.click();
     expect(skip).toHaveBeenCalledTimes(1);
     expect(document.querySelector('[data-ui="first-salvo-coach"]')?.classList
       .contains('st-hud__first-salvo--hidden')).toBe(true);
@@ -120,6 +123,7 @@ describe('HUD First Salvo presentation seam', () => {
     hud.setFirstSalvoStep('fire');
 
     const card = overlay.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    expect(card.dataset['coachAnchor']).toBe('commitment');
     expect(root.querySelector('.st-hud__primary-action')?.textContent).toContain('Activate shield');
     expect(card.textContent).toContain('Primary action');
     expect(card.textContent).toContain('Space');

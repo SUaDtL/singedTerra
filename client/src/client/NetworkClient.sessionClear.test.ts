@@ -7,7 +7,7 @@
  *
  * Driving a REAL engine to GAME_OVER (rather than faking the assertion) reuses
  * the exact tuning `scripts/checks/gameover.mjs` already proves deterministic:
- * seed 0x5eed1234 + a napalm shot at angle=45/power=100 lands on the far tank
+ * seed 0x5eed1234 + a short-range Nuke at angle=0/power=5 reaches the far tank
  * after the deterministic drag integrator is applied.
  * Mirroring that harness's TEST SETUP, the victim's health is lowered first
  * (a low-HP tank dies mid-burn, ending the — single-round-by-default — match
@@ -30,8 +30,8 @@ import { NetworkClient } from './NetworkClient';
 import type { NetworkAction } from '@shared/net/replay';
 import { writeSession, readSession } from '../lib/sessionDescriptor';
 
-// Same seed/aim `scripts/checks/gameover.mjs` uses: a napalm shot at
-// angle=45/power=100 lands on the far tank under this seed.
+// With the protected command-surface floor, this remains a real replayed
+// terminal hit at the deterministic spawn height.
 const SEED = 0x5eed1234;
 const OPTIONS = {
   maxPlayers: 2,
@@ -71,7 +71,7 @@ function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient } 
   return { supabase };
 }
 
-const NAPALM_KILL_SHOT: NetworkAction = { type: 'fire', angle: 45, power: 100, weapon: 'napalm' };
+const TERMINAL_KILL_SHOT: NetworkAction = { type: 'fire', angle: 0, power: 5, weapon: 'nuke' };
 
 function row(seq: number, action: NetworkAction) {
   return { new: { id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc', action, created_at: '' } };
@@ -117,17 +117,17 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
     // to completion (isReplaying -> tickToCompletion) but does not itself call
     // emitState() — the TEST SETUP (napalm grant + low HP) is applied to the
     // engine BEFORE that replay runs.
-    const { supabase } = makeFakeSupabase([{ data: [row(0, NAPALM_KILL_SHOT).new], error: null }]);
+    const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT).new], error: null }]);
     const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
 
-    // TEST SETUP (mirrors scripts/checks/gameover.mjs): grant napalm to the
-    // shooter (P1) and lower the victim's (P2) HP so the burn is a reliable kill.
+    // TEST SETUP: grant Nuke to the shooter (P1) and lower the victim's (P2)
+    // HP so the replayed direct blast is a deterministic terminal state.
     const state = engineOf(client).getState();
     const shooter = required(state.tanks[0], 'shooter tank');
     const victim = required(state.tanks[1], 'victim tank');
-    const napalm = required(shooter.inventory.napalm, 'shooter napalm inventory');
-    napalm.count = 9;
-    napalm.unlimited = false;
+    const nuke = required(shooter.inventory.nuke, 'shooter nuke inventory');
+    nuke.count = 9;
+    nuke.unlimited = false;
     victim.health = 5;
 
     await client.initialize();

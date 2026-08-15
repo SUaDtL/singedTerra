@@ -15,7 +15,7 @@ function tank(overrides: Partial<TankState> = {}): TankState {
     playerName: 'P1',
     color: '#ef4444',
     x: 120,
-    y: 420,
+    y: 300,
     angle: 45,
     power: 50,
     health: 100,
@@ -153,7 +153,7 @@ describe('skill-preserving honest ballistic aim guide', () => {
   it('ends at the first real contact when a very short shot lands inside the hint', () => {
     const me = tank({ angle: 0, power: 30 });
     const terrain = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT);
-    const surfaceY = 405;
+    const surfaceY = 305;
     for (let y = surfaceY; y < CANVAS_HEIGHT; y++) {
       terrain.fill(1, y * CANVAS_WIDTH, (y + 1) * CANVAS_WIDTH);
     }
@@ -184,7 +184,7 @@ describe('skill-preserving honest ballistic aim guide', () => {
       playerName: 'P2',
       color: '#3b82f6',
       x: 190,
-      y: 412,
+      y: 292,
       angle: 135,
     });
     const tankHit = buildLaunchGuide(gameState(me, { tanks: [me, target] }), me, 0.15);

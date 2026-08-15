@@ -52,10 +52,13 @@ describe('HUD Command Menu', () => {
     expect(menu.querySelector<HTMLButtonElement>('button')?.textContent).toBe('Resume');
   });
 
-  it('closes the voluntary Store surface before opening Command Menu', () => {
+  it('opens the voluntary Store surface from Command Menu and restores the menu affordance', () => {
     const { root, modal } = mount();
 
-    root.querySelector<HTMLButtonElement>('.st-hud__store-btn')!.click();
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+    [...modal.querySelectorAll<HTMLButtonElement>('[data-ui="command-menu"] button')]
+      .find((button) => button.textContent === 'Open Store')!
+      .click();
     expect(modal.querySelector('.st-hud__store')?.classList.contains('st-hud__store--hidden')).toBe(false);
 
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
@@ -65,7 +68,10 @@ describe('HUD Command Menu', () => {
 
   it('provides a Command Menu handoff from the blocking Store surface', () => {
     const { root, modal } = mount();
-    root.querySelector<HTMLButtonElement>('.st-hud__store-btn')!.click();
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+    [...modal.querySelectorAll<HTMLButtonElement>('[data-ui="command-menu"] button')]
+      .find((button) => button.textContent === 'Open Store')!
+      .click();
 
     modal.querySelector<HTMLButtonElement>('[data-command="open-menu"]')!.click();
 
@@ -91,7 +97,7 @@ describe('HUD Command Menu', () => {
     const { root, modal } = mount();
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
     const menu = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
-    const [resume, returnToLobby] = [...menu.querySelectorAll<HTMLButtonElement>('button')];
+    const [resume, openStore, returnToLobby] = [...menu.querySelectorAll<HTMLButtonElement>('button')];
 
     returnToLobby!.focus();
     menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
@@ -102,6 +108,9 @@ describe('HUD Command Menu', () => {
       shiftKey: true,
       bubbles: true,
     }));
+    expect(document.activeElement).toBe(returnToLobby);
+    openStore!.focus();
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     expect(document.activeElement).toBe(returnToLobby);
   });
 

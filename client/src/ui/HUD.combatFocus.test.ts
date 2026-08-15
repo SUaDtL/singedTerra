@@ -52,25 +52,22 @@ describe('HUD combat focus', () => {
     expect(overlay.dataset['combatFocus']).toBe(expected);
   });
 
-  it('describes mixed outcome regions without disabling available Store and Menu controls', () => {
+  it('describes mixed outcome regions without disabling available Command Menu controls', () => {
     const { root, overlay, hud, state } = mount();
     hud.update(state, true, true);
 
     const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
     const touchToolbar = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
-    const store = root.querySelector<HTMLButtonElement>('.st-hud__store-btn')!;
     const menu = overlay.querySelector<HTMLButtonElement>('.st-hud__touch-menu')!;
     const progress = root.querySelector<HTMLElement>('.st-hud__aim')!;
     expect(console.getAttribute('aria-disabled')).toBeNull();
     expect(touchToolbar.getAttribute('aria-disabled')).toBeNull();
     expect(console.getAttribute('aria-label')).toBe(
-      'Shot outcome in progress. Combat controls unavailable; Store remains available.',
+      'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
     );
     expect(touchToolbar.getAttribute('aria-label')).toBe(
       'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
     );
-    expect(store.disabled).toBe(false);
-    expect(store.getAttribute('aria-disabled')).not.toBe('true');
     expect(menu.disabled).toBe(false);
     expect(menu.getAttribute('aria-disabled')).not.toBe('true');
     expect(progress.getAttribute('role')).toBe('status');
@@ -112,7 +109,7 @@ describe('HUD combat focus', () => {
     expect(console.getAttribute('aria-disabled')).toBeNull();
     expect(touchToolbar.getAttribute('aria-disabled')).toBeNull();
     expect(console.getAttribute('aria-label')).toBe(
-      'Turn command console outside an active turn. Combat controls inactive; Store remains available.',
+      'Turn command console outside an active turn. Combat controls inactive; Command Menu remains available.',
     );
     expect(touchToolbar.getAttribute('aria-label')).toBe(
       'Touch combat controls inactive outside an active turn; Menu remains available.',

@@ -20,7 +20,7 @@ import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 const SEED = 0x5eed1234;            // same seed weapons2/motion/gameover use
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
-const BURY = { angle: 20, power: 100, weapon: 'dirt_bomb' }; // probed: buries the far tank (P2) above the arena floor
+const BURY = { angle: 30, power: 100, weapon: 'dirt_bomb' }; // central post-command-band plateau: buries P2 above the arena floor
 
 function freshEngine() {
   return new GameEngine({

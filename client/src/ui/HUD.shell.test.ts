@@ -49,8 +49,8 @@ afterEach(() => {
 });
 
 describe('HUD single-screen combat shell', () => {
-  it('mounts the fine-pointer command deck in the explicit battle rail', () => {
-    const { overlay, rail } = (() => {
+  it('mounts the active-turn command console in the explicit battle rail', () => {
+    const { root, overlay, rail } = (() => {
       const root = document.createElement('div');
       const overlay = document.createElement('div');
       const rail = document.createElement('div');
@@ -73,66 +73,86 @@ describe('HUD single-screen combat shell', () => {
         seed: 1,
       });
       hud.update(engine.getState());
-      return { overlay, rail };
+      return { root, overlay, rail };
     })();
 
-    expect(rail.querySelector('[data-ui="command-deck"]')).not.toBeNull();
-    expect(overlay.querySelector('[data-ui="command-deck"]')).toBeNull();
+    const console = rail.querySelector<HTMLElement>('.st-hud__command-console');
+
+    expect(console).not.toBeNull();
+    expect(console?.getAttribute('aria-label')).toBe('Turn command console');
+    const context = console?.querySelector<HTMLElement>('.st-hud__console-context');
+    const solution = console?.querySelector<HTMLElement>('.st-hud__console-solution');
+    const commitment = console?.querySelector<HTMLElement>('.st-hud__console-commitment');
+    expect(context?.querySelector('.st-hud__active-row')).not.toBeNull();
+    expect(solution?.querySelector('.st-hud__instruments')).not.toBeNull();
+    expect(solution?.querySelector('[data-ui="command-deck"]')).not.toBeNull();
+    expect(commitment?.querySelectorAll('.st-hud__turn-actions .st-hud__primary-action')).toHaveLength(1);
+    expect(commitment?.querySelector('.st-hud__store-btn')).toBeNull();
+    expect(commitment?.dataset['commandMode']).toBe('decision');
+    expect(commitment?.querySelector('.st-hud__console-state')?.textContent)
+      .toContain('Fire ready');
+    expect(root.querySelector('.st-hud__command-console')).toBeNull();
+    expect(overlay.querySelector('.st-hud__command-console')).toBeNull();
   });
 
   it('marks one shell and applies the shared section rhythm to every rail region', () => {
     const root = mount();
-    const commandConsole = root.querySelector<HTMLElement>('.st-hud__command-console')!;
+    const rail = document.querySelector<HTMLElement>('#battle-rail')!;
+    const commandConsole = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
 
     expect(root.classList.contains('st-ui-shell')).toBe(true);
     expect(root.getAttribute('data-ui')).toBe('combat-rail');
     expect(root.querySelector('.st-hud__players')?.classList.contains('st-ui-section')).toBe(true);
-    expect(root.querySelector('.st-hud__instruments')?.classList.contains('st-ui-section')).toBe(true);
+    expect(rail.querySelector('.st-hud__instruments')?.classList.contains('st-ui-section')).toBe(true);
     expect(commandConsole.classList.contains('st-ui-section')).toBe(true);
-    expect(commandConsole.parentElement).toBe(root);
+    expect(commandConsole.parentElement?.id).toBe('battle-rail');
     expect(commandConsole.getAttribute('role')).toBe('region');
     expect(commandConsole.getAttribute('aria-label')).toBe('Turn command console');
     expect(commandConsole.querySelector('.st-hud__active-row')).not.toBeNull();
     expect(commandConsole.querySelector('.st-hud__aim')).not.toBeNull();
     expect(commandConsole.querySelector('.st-hud__turn-actions')).not.toBeNull();
-    expect(root.querySelector('.st-hud__store-btn')?.classList.contains('st-ui-action')).toBe(true);
-    expect(root.querySelector('.st-hud__primary-action')?.classList.contains('st-ui-action')).toBe(true);
+    expect(rail.querySelector('.st-hud__primary-action')?.classList.contains('st-ui-action')).toBe(true);
     expect(root.querySelector('.st-hud__strip')?.classList.contains('st-ui-section')).toBe(true);
   });
 
   it('orders one current-turn decision console before secondary battle status', () => {
     const root = mount();
-    const commandConsole = root.querySelector<HTMLElement>('.st-hud__command-console')!;
-    const instruments = root.querySelector<HTMLElement>('.st-hud__instruments')!;
-    const active = root.querySelector<HTMLElement>('.st-hud__active-row')!;
-    const progress = root.querySelector<HTMLElement>('.st-hud__aim')!;
-    const actions = root.querySelector<HTMLElement>('.st-hud__turn-actions')!;
+    const rail = document.querySelector<HTMLElement>('#battle-rail')!;
+    const commandConsole = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
+    const context = commandConsole.querySelector<HTMLElement>('.st-hud__console-context')!;
+    const solution = commandConsole.querySelector<HTMLElement>('.st-hud__console-solution')!;
+    const commitment = commandConsole.querySelector<HTMLElement>('.st-hud__console-commitment')!;
+    const instruments = solution.querySelector<HTMLElement>('.st-hud__instruments')!;
+    const active = context.querySelector<HTMLElement>('.st-hud__active-row')!;
+    const progress = commitment.querySelector<HTMLElement>('.st-hud__aim')!;
+    const actions = commitment.querySelector<HTMLElement>('.st-hud__turn-actions')!;
     const roster = root.querySelector<HTMLElement>('.st-hud__players')!;
 
     expect([...commandConsole.children]).toEqual([
-      active,
-      instruments,
-      progress,
-      actions,
+      context,
+      solution,
+      commitment,
     ]);
-    expect(instruments.parentElement).toBe(commandConsole);
+    expect(instruments.parentElement).toBe(solution);
+    expect(active.parentElement).toBe(context);
+    expect(progress.parentElement).toBe(commitment);
+    expect(actions.parentElement).toBe(commitment);
     const persistentCombatRegions = [...root.children].filter(
       (child) => !child.classList.contains('st-hud__quick-chat'),
     );
     expect(persistentCombatRegions).toEqual([
       root.querySelector('.st-hud__menu'),
       root.querySelector('.st-hud__round'),
-      commandConsole,
       roster,
       root.querySelector('.st-hud__strip'),
     ]);
-    expect(commandConsole.compareDocumentPosition(roster) & Node.DOCUMENT_POSITION_FOLLOWING)
-      .not.toBe(0);
+    expect(commandConsole.closest('.st-ui-shell')).toBeNull();
+    expect(roster.closest('.st-ui-shell')).toBe(root);
   });
 
   it('keeps the selected weapon glyph synchronized inside a stable tactical tile', () => {
     const { root, hud, state } = mountHarness();
-    const tile = root.querySelector<HTMLElement>('.st-hud__weapon')!;
+    const tile = document.querySelector<HTMLElement>('#battle-rail .st-hud__weapon')!;
     const iconHost = tile.querySelector<HTMLElement>('.st-hud__weapon-icon')!;
 
     expect(iconHost.querySelector('.st-weapon-icon')?.getAttribute('data-weapon'))
@@ -142,20 +162,44 @@ describe('HUD single-screen combat shell', () => {
     state.tanks[0]!.selectedWeapon = 'bouncing_betty';
     hud.update(state, false, true);
 
-    expect(root.querySelector('.st-hud__weapon')).toBe(tile);
-    expect(root.querySelector('.st-hud__weapon-icon')).toBe(iconHost);
+    expect(document.querySelector('#battle-rail .st-hud__weapon')).toBe(tile);
+    expect(document.querySelector('#battle-rail .st-hud__weapon-icon')).toBe(iconHost);
     expect(iconHost.querySelector('.st-weapon-icon')?.getAttribute('data-weapon'))
       .toBe('bouncing_betty');
     expect(tile.querySelector('.st-hud__weapon-value')?.textContent).toBe('Bouncing Betty');
   });
 
+  it('changes the rail commitment from an armed shot to honest observation state', () => {
+    const { hud, state } = mountHarness();
+    const commitment = document.querySelector<HTMLElement>(
+      '#battle-rail .st-hud__console-commitment',
+    )!;
+    const stateLabel = commitment.querySelector<HTMLElement>('.st-hud__console-state')!;
+
+    expect(commitment.dataset['commandMode']).toBe('decision');
+    expect(stateLabel.textContent).toContain('Fire ready');
+
+    state.phase = 'FIRING';
+    hud.update(state, true, false);
+
+    expect(commitment.dataset['commandMode']).toBe('observation');
+    expect(stateLabel.textContent).toContain('Watching impact');
+    expect(stateLabel.title).toBe('Shot in flight.');
+  });
+
   it('uses exact decorative SVG icons while visible text keeps actions named', () => {
     const root = mount();
     const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;
-    const store = root.querySelector<HTMLButtonElement>('.st-hud__store-btn')!;
     const arsenal = root.querySelector<HTMLElement>('.st-hud__strip-title')!;
-    const icons = root.querySelectorAll<SVGSVGElement>('svg.st-ui-icon');
-    const glyphs = root.querySelectorAll<HTMLElement>('.st-ui-glyph');
+    const fire = document.querySelector<HTMLButtonElement>('#battle-rail .st-hud__primary-action')!;
+    const disclosure = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+    const iconRoots = [menu, fire, arsenal, disclosure];
+    const icons = iconRoots.flatMap((element) => [
+      ...element.querySelectorAll<SVGSVGElement>('svg.st-ui-icon'),
+    ]);
+    const glyphs = iconRoots.flatMap((element) => [
+      ...element.querySelectorAll<HTMLElement>('.st-ui-glyph'),
+    ]);
     const iconNames = [...icons].map((icon) => icon.dataset['icon']);
     const iconSymbols = [...icons].map((icon) => icon.dataset['symbol']);
     const iconPaths = Object.fromEntries(
@@ -167,30 +211,21 @@ describe('HUD single-screen combat shell', () => {
 
     expect(menu.getAttribute('aria-label')).toBe('Menu');
     expect(menu.textContent).toContain('Menu');
-    expect(store.getAttribute('aria-label')).toMatch(/Store/);
-    expect(store.textContent).toContain('Store');
     expect(arsenal.textContent).toContain('Arsenal');
-    expect(iconNames).toEqual(['menu', 'store', 'fire', 'arsenal', 'disclosure']);
+    expect(iconNames).toEqual(['menu', 'fire', 'arsenal', 'disclosure']);
     expect(iconSymbols).toEqual([
       'menu',
-      'credits',
       'target',
       'ordnance',
       'disclosure',
     ]);
     expect([...glyphs].map((glyph) => glyph.dataset['glyph'])).toEqual([
       'menu',
-      'store',
       'fire',
       'arsenal',
     ]);
     expect(iconPaths).toEqual({
       menu: ['M4 5h16', 'M4 12h16', 'M4 19h16'],
-      store: [
-        'M13.744 17.736a6 6 0 1 1-7.48-7.48',
-        'M15 6h1v4',
-        'm6.134 14.768.866-.5 2 3.464',
-      ],
       fire: [],
       arsenal: [
         'M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95',
@@ -198,7 +233,6 @@ describe('HUD single-screen combat shell', () => {
       ],
       disclosure: ['m6 9 6 6 6-6'],
     });
-    expect(root.querySelector('[data-icon="store"] circle')?.getAttribute('r')).toBe('6');
     expect(root.querySelector('[data-icon="arsenal"] circle')?.getAttribute('r')).toBe('9');
     expect(
       root.querySelector('[data-icon="disclosure"]')?.closest('.st-ui-glyph'),
@@ -294,7 +328,8 @@ describe('HUD single-screen combat shell', () => {
 
     const strip = root.querySelector('.st-hud__strip')!;
     const store = modal.querySelector('.st-hud__store')!;
-    root.querySelector<HTMLButtonElement>('.st-hud__store-btn')!.click();
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+    modal.querySelector<HTMLButtonElement>('[data-command="open-store"]')!.click();
     expect(store.classList.contains('st-hud__store--hidden')).toBe(false);
     expect(strip.classList.contains('st-hud__strip--open')).toBe(true);
     modal.querySelector<HTMLButtonElement>('.st-hud__store-close')!.click();
