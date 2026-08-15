@@ -193,12 +193,8 @@ describe('HUD mobility rocker', () => {
   it('disables movement without local control, fuel, life, or a playable turn', () => {
     const { root, hud, state, left, right } = mount();
     const tank = state.tanks[0]!;
-    const touchMoves = () => [
-      document.querySelector<HTMLButtonElement>('[data-command="move-left"]')!,
-      document.querySelector<HTMLButtonElement>('[data-command="move-right"]')!,
-    ];
     const expectMovementDisabled = (disabled: boolean): void => {
-      for (const button of [left(), right(), ...touchMoves()]) {
+      for (const button of [left(), right()]) {
         expect(button.disabled).toBe(disabled);
         expect(button.getAttribute('aria-disabled')).toBe(String(disabled));
       }
@@ -232,11 +228,11 @@ describe('HUD mobility rocker', () => {
 
     hud.update(state, false, true);
     expectMovementDisabled(false);
-    const dock = document.querySelector<HTMLElement>('.st-hud__touch-strip')!;
+    const context = root.querySelector<HTMLElement>('.st-hud__console-context')!;
     root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!.click();
-    expect(dock.inert).toBe(true);
+    expect(context.inert).toBe(true);
     root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!.click();
-    expect(dock.inert).toBe(false);
+    expect(context.inert).toBe(false);
     expectMovementDisabled(false);
   });
 

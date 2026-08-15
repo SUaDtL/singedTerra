@@ -6,6 +6,7 @@ interface MountedCommands {
   root: HTMLElement;
   overlay: HTMLElement;
   modal: HTMLElement;
+  rail: HTMLElement;
   hud: HUD;
 }
 
@@ -13,8 +14,10 @@ function mount(): MountedCommands {
   const root = document.createElement('div');
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
-  document.body.append(root, overlay, modal);
-  const hud = new HUD(root, overlay, modal, overlay);
+  const rail = document.createElement('div');
+  rail.id = 'battle-rail';
+  document.body.append(root, overlay, modal, rail);
+  const hud = new HUD(root, overlay, modal, rail);
   const state = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },
@@ -24,13 +27,7 @@ function mount(): MountedCommands {
     seed: 1,
   }).getState();
   hud.update(state, false, true);
-  return { root, overlay, modal, hud };
-}
-
-function pointerEvent(type: string, pointerId = 1): Event {
-  const event = new Event(type, { bubbles: true, cancelable: true });
-  Object.defineProperty(event, 'pointerId', { value: pointerId });
-  return event;
+  return { root, overlay, modal, rail, hud };
 }
 
 afterEach(() => {
@@ -43,8 +40,8 @@ afterEach(() => {
 
 describe('HUD command input console', () => {
   it('builds one real firing solution with hints attached to their controls', () => {
-    const { root } = mount();
-    const solution = root.querySelector<HTMLElement>('[data-ui="firing-solution"]')!;
+    const { rail } = mount();
+    const solution = rail.querySelector<HTMLElement>('[data-ui="firing-solution"]')!;
     const weaponBay = solution.querySelector<HTMLElement>('[data-ui="weapon-bay"]')!;
     const controls = [...solution.querySelectorAll<HTMLButtonElement>(
       '.st-hud__solution-control',
@@ -79,11 +76,11 @@ describe('HUD command input console', () => {
     expect(solution.querySelector('.st-hud__control-grid')).toBeNull();
     expect(solution.querySelector('[data-command-action^="fire-"]')).toBeNull();
     expect(solution.querySelector('[data-command-action^="move-"]')).toBeNull();
-    expect(root.querySelectorAll('.st-hud__primary-action')).toHaveLength(1);
+    expect(rail.querySelectorAll('.st-hud__primary-action')).toHaveLength(1);
   });
 
   it('routes every firing-solution control through the existing causal callbacks', () => {
-    const { root, hud } = mount();
+    const { rail, hud } = mount();
     const angles = vi.fn();
     const powers = vi.fn();
     const weapons = vi.fn();
@@ -91,7 +88,7 @@ describe('HUD command input console', () => {
     hud.onTouchPower(powers);
     hud.onTouchWeapon(weapons);
 
-    const solution = root.querySelector<HTMLElement>('[data-ui="firing-solution"]')!;
+    const solution = rail.querySelector<HTMLElement>('[data-ui="firing-solution"]')!;
     const buttons = [...solution.querySelectorAll<HTMLButtonElement>(
       '.st-hud__solution-control',
     )];
@@ -118,7 +115,7 @@ describe('HUD command input console', () => {
   });
 
   it('keeps firing-solution availability aligned with local action gates', () => {
-    const { root, hud } = mount();
+    const { rail, hud } = mount();
     const engine = new GameEngine({
       players: [
         { name: 'Alice', color: '#e84d4d' },
@@ -129,12 +126,12 @@ describe('HUD command input console', () => {
     });
     const state = engine.getState();
     const button = (action: string): HTMLButtonElement =>
-      root.querySelector<HTMLButtonElement>(
+      rail.querySelector<HTMLButtonElement>(
         `.st-hud__solution-control[data-command-action="${action}"]`,
       )!;
 
     hud.update(state, false, false);
-    const controlled = [...root.querySelectorAll<HTMLButtonElement>(
+    const controlled = [...rail.querySelectorAll<HTMLButtonElement>(
       '.st-hud__solution-control',
     )];
     expect(controlled).toHaveLength(5);
@@ -169,9 +166,9 @@ describe('HUD command input console', () => {
   });
 
   it('isolates the firing controls and restores focus when the Arsenal closes', () => {
-    const { root } = mount();
-    const controls = root.querySelector<HTMLElement>('[data-ui="solution-adjustments"]')!;
-    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
+    const { rail } = mount();
+    const controls = rail.querySelector<HTMLElement>('[data-ui="solution-adjustments"]')!;
+    const toggle = rail.querySelector<HTMLButtonElement>('.st-hud__strip-toggle')!;
 
     expect(controls.inert).toBe(false);
     expect(controls.getAttribute('aria-hidden')).toBeNull();
@@ -184,80 +181,50 @@ describe('HUD command input console', () => {
     expect(controls.getAttribute('aria-hidden')).toBeNull();
   });
 
-  it('builds one grouped Touch Command Deck with bounded directional icons', () => {
-    const { root, overlay } = mount();
-    const dock = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
-    const buttons = [...dock.querySelectorAll<HTMLButtonElement>('.st-hud__touch-btn')];
-    const groups = [...dock.querySelectorAll<HTMLElement>('.st-hud__touch-group')];
+  it('keeps touch on the one semantic rail instead of building an overlay deck', () => {
+    const { root, overlay, rail } = mount();
+    const console = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
 
-    expect(dock.parentElement).toBe(overlay);
-    expect(root.querySelector('.st-hud__touch-strip')).toBeNull();
-    expect(dock.getAttribute('role')).toBe('toolbar');
-    expect(dock.getAttribute('aria-label')).toBe('Touch commands');
-    expect(dock.querySelector('.st-hud__touch-title')?.textContent).toBe('Command Deck');
-    expect(dock.querySelector('.st-hud__touch-mode')?.textContent).toBe('Touch');
-    expect(groups.map((group) => group.getAttribute('role'))).toEqual([
-      'group',
-      'group',
-      'group',
-    ]);
-    expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
-      'Aim',
-      'Power',
-      'Drive',
-    ]);
-    expect(groups.map((group) => group.querySelector('.st-hud__touch-group-title')?.textContent))
-      .toEqual(['Aim', 'Power', 'Drive']);
-    expect(groups.map((group) => [...group.querySelectorAll('.st-hud__touch-label')]
-      .map((label) => label.textContent))).toEqual([
-      ['Left', 'Right'],
-      ['Less', 'More'],
-      ['Left', 'Right'],
-    ]);
-    expect(buttons.map((button) => button.dataset['command'])).toEqual([
-      'aim-left',
-      'aim-right',
-      'power-down',
-      'power-up',
-      'move-left',
-      'move-right',
-      'weapon',
-      'menu',
-    ]);
-    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Aim barrel left',
-      'Aim barrel right',
-      'Decrease power',
-      'Increase power',
-      'Move tank left, 8 fuel maximum',
-      'Move tank right, 8 fuel maximum',
-      'Cycle weapon, current Baby Missile',
-      'Open menu',
-    ]);
-    expect(buttons.map((button) => button.querySelector('.st-hud__touch-label')?.textContent))
-      .toEqual(['Left', 'Right', 'Less', 'More', 'Left', 'Right', 'Baby Missile', 'Menu']);
-    expect(buttons.map((button) => button.querySelector('.st-ui-icon')?.getAttribute('data-icon')))
-      .toEqual(['left', 'right', 'decrease', 'increase', 'left', 'right', 'weapon', 'menu']);
-    expect(groups.flatMap((group) => [...group.querySelectorAll<HTMLButtonElement>('button')]
-      .map((button) => button.dataset['firstSalvoTarget'] ?? null))).toEqual([
-      'aim',
-      'aim',
-      'power-and-wind',
-      'power-and-wind',
-      null,
-      null,
-    ]);
-    expect(
-      buttons.at(-1)?.querySelector('.st-ui-glyph')?.getAttribute('data-glyph'),
-    ).toBe('menu');
-    expect(dock.querySelectorAll('[data-command="fire"]')).toHaveLength(0);
-    expect(root.querySelectorAll('.st-hud__primary-action')).toHaveLength(1);
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
+    expect(console).not.toBeNull();
+    expect(console.querySelectorAll('.st-hud__solution-control')).toHaveLength(5);
+    expect(console.querySelectorAll('.st-hud__move-btn')).toHaveLength(2);
+    expect(console.querySelectorAll('.st-hud__primary-action')).toHaveLength(1);
+    expect(root.querySelectorAll('.st-hud__primary-action')).toHaveLength(0);
   });
 
-  it('retains disabled and aria-disabled states after regrouping', () => {
-    const { overlay, hud } = mount();
-    const controlled = [...overlay.querySelectorAll<HTMLButtonElement>(
-      '.st-hud__touch-btn:not([data-command="menu"])',
+  it('routes touch activation through the same rail controls and causal callbacks', () => {
+    const { rail, hud } = mount();
+    const angles = vi.fn();
+    const powers = vi.fn();
+    const moves = vi.fn();
+    const weapons = vi.fn();
+    hud.onTouchAngle(angles);
+    hud.onTouchPower(powers);
+    hud.onMove(moves);
+    hud.onTouchWeapon(weapons);
+
+    const click = (selector: string): void => {
+      rail.querySelector<HTMLButtonElement>(selector)!.click();
+    };
+    click('[data-command-action="aim-left"]');
+    click('[data-command-action="aim-right"]');
+    click('[data-command-action="power-down"]');
+    click('[data-command-action="power-up"]');
+    click('[data-move="-8"]');
+    click('[data-move="8"]');
+    click('[data-command-action="weapon-next"]');
+
+    expect(angles.mock.calls).toEqual([[3], [-3]]);
+    expect(powers.mock.calls).toEqual([[-3], [3]]);
+    expect(moves.mock.calls).toEqual([[-8], [8]]);
+    expect(weapons).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains the shared disabled and aria-disabled state on every rail command', () => {
+    const { rail, hud } = mount();
+    const controlled = [...rail.querySelectorAll<HTMLButtonElement>(
+      '.st-hud__solution-control, .st-hud__move-btn',
     )];
     const state = new GameEngine({
       players: [
@@ -275,100 +242,5 @@ describe('HUD command input console', () => {
     hud.update(state, false, true);
     expect(controlled.every((button) => !button.disabled)).toBe(true);
     expect(controlled.every((button) => button.getAttribute('aria-disabled') === 'false')).toBe(true);
-  });
-
-  it('routes the touch Menu through the existing non-destructive pause surface', () => {
-    const { overlay, modal, hud } = mount();
-    const pauseChanges = vi.fn<(paused: boolean) => void>();
-    hud.onPauseChange(pauseChanges);
-    const pause = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
-
-    overlay.querySelector<HTMLButtonElement>('[data-command="menu"]')!.click();
-    expect(hud.isPaused()).toBe(true);
-    expect(pause.classList.contains('st-hud__overlay--hidden')).toBe(false);
-
-    [...pause.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent === 'Resume')!
-      .click();
-    expect(hud.isPaused()).toBe(false);
-    expect(pause.classList.contains('st-hud__overlay--hidden')).toBe(true);
-    expect(pauseChanges.mock.calls).toEqual([[true], [false]]);
-  });
-
-  it('maps visible touch directions to causal signed deltas and preserves repeat cadence', () => {
-    vi.useFakeTimers();
-    const { overlay, hud } = mount();
-    const angles = vi.fn();
-    const powers = vi.fn();
-    const moves = vi.fn();
-    const weapons = vi.fn();
-    hud.onTouchAngle(angles);
-    hud.onTouchPower(powers);
-    hud.onMove(moves);
-    hud.onTouchWeapon(weapons);
-
-    const button = (command: string): HTMLButtonElement => {
-      const target = overlay.querySelector<HTMLButtonElement>(
-        `.st-hud__touch-btn[data-command="${command}"]`,
-      )!;
-      target.setPointerCapture = vi.fn();
-      return target;
-    };
-    const left = button('aim-left');
-    const right = button('aim-right');
-    const powerDown = button('power-down');
-    const powerUp = button('power-up');
-
-    left.dispatchEvent(pointerEvent('pointerdown'));
-    expect(angles).toHaveBeenLastCalledWith(3);
-    expect(angles).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(479);
-    expect(angles).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(1);
-    expect(angles).toHaveBeenCalledTimes(2);
-    left.dispatchEvent(pointerEvent('pointerup'));
-    vi.advanceTimersByTime(160);
-    expect(angles).toHaveBeenCalledTimes(2);
-
-    right.dispatchEvent(pointerEvent('pointerdown', 2));
-    expect(angles).toHaveBeenLastCalledWith(-3);
-    right.dispatchEvent(pointerEvent('pointerup', 2));
-    powerDown.dispatchEvent(pointerEvent('pointerdown', 3));
-    expect(powers).toHaveBeenLastCalledWith(-3);
-    powerDown.dispatchEvent(pointerEvent('pointerup', 3));
-    powerUp.dispatchEvent(pointerEvent('pointerdown', 4));
-    expect(powers).toHaveBeenLastCalledWith(3);
-    powerUp.dispatchEvent(pointerEvent('pointerup', 4));
-
-    button('move-left').click();
-    expect(moves).toHaveBeenLastCalledWith(-8);
-    button('move-right').click();
-    expect(moves).toHaveBeenLastCalledWith(8);
-    button('weapon').click();
-    expect(weapons).toHaveBeenCalledTimes(1);
-
-    left.click();
-    expect(angles).toHaveBeenLastCalledWith(3);
-    expect(angles).toHaveBeenCalledTimes(4);
-  });
-
-  it('keeps one hold owner per stepper and never leaves a multi-touch repeat running', () => {
-    vi.useFakeTimers();
-    const { overlay, hud } = mount();
-    const angles = vi.fn();
-    hud.onTouchAngle(angles);
-    const left = overlay.querySelector<HTMLButtonElement>(
-      '.st-hud__touch-btn[data-command="aim-left"]',
-    )!;
-    left.setPointerCapture = vi.fn();
-
-    left.dispatchEvent(pointerEvent('pointerdown', 1));
-    vi.advanceTimersByTime(200);
-    left.dispatchEvent(pointerEvent('pointerdown', 2));
-    expect(angles).toHaveBeenCalledTimes(1);
-
-    left.dispatchEvent(pointerEvent('pointerup', 1));
-    vi.advanceTimersByTime(800);
-    expect(angles).toHaveBeenCalledTimes(1);
   });
 });

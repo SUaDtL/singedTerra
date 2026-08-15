@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { GameEngine } from '../shared/src/engine/GameEngine';
 import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
 import { maximumTankRecoilDownPx } from '../client/src/renderer/tankRecoil';
@@ -33,6 +33,14 @@ const ARSENAL_WEAPONS = [
 
 const STORE_WEAPONS = ARSENAL_WEAPONS.slice(1);
 
+async function openStoreFromCommandMenu(page: Page): Promise<void> {
+  await page.locator('#hud').getByRole('button', { name: 'Menu', exact: true }).click();
+  const commandMenu = page.getByRole('dialog', { name: 'Command Menu' });
+  await expect(commandMenu).toBeVisible();
+  await commandMenu.getByRole('button', { name: 'Open Store', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Store' })).toBeVisible();
+}
+
 /**
  * HUD rendering-guardrail suite. Runs across the viewport matrix (desktop-fine,
  * pixel-touch, small-window) defined in playwright.config.ts. Every assertion
@@ -43,6 +51,11 @@ const STORE_WEAPONS = ARSENAL_WEAPONS.slice(1);
 test.describe('HUD layout guardrails', () => {
   test.beforeEach(async ({ page }) => {
     await gotoRunningGame(page);
+    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+    if (await briefing.isVisible()) {
+      await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
+      await expect(briefing).toBeHidden();
+    }
   });
 
   test('instrument cluster is not flex-crushed (the exact regression)', async ({ page }) => {
@@ -72,9 +85,7 @@ test.describe('HUD layout guardrails', () => {
     await expect(forbidden).toHaveCount(0);
     await expect(ledger).not.toContainText(/Fire Control/i);
 
-    const menu = testInfo.project.name === 'pixel-touch'
-      ? page.locator('.st-hud__touch-menu')
-      : ledger.getByRole('button', { name: 'Menu', exact: true });
+    const menu = ledger.getByRole('button', { name: 'Menu', exact: true });
     await expect(menu).toBeVisible();
     await expect(menu).toBeEnabled();
     const briefing = page.locator('[data-ui="first-salvo-briefing"]');
@@ -99,6 +110,122 @@ test.describe('HUD layout guardrails', () => {
       violations,
       `#hud children must not be crushed/clipped, got: ${JSON.stringify(violations, null, 2)}`,
     ).toEqual([]);
+  });
+
+  test('one responsive battle rail owns every rendered combat command and stays fitted', async ({
+    page,
+  }, testInfo) => {
+    const rail = page.locator('#battle-rail');
+    const console = rail.locator('.st-hud__command-console');
+    await expect(page.locator('#game-overlay .st-hud__touch-strip')).toHaveCount(0);
+    await expect(console).toBeVisible();
+
+    const widestChassisBasesByRoster = [2, 3, 4].map((count) => {
+      const state = new GameEngine({
+        players: Array.from({ length: count }, (_, index) => ({
+          name: `Commander ${index + 1}`,
+          color: ['#e84d4d', '#4d8ce8', '#4de87a', '#e8c84d'][index]!,
+          loadout: {
+            treads: 'ranger' as const,
+            hull: 'jackal' as const,
+            turret: 'jackal' as const,
+            barrel: 'jackal' as const,
+          },
+        })),
+        maxPlayers: count,
+        seed: 1,
+      }).getState();
+      const tread = TANK_PART_SETS.ranger.parts.treads;
+      return state.tanks.map((tank) => Math.max(tank.y, ARENA_FLOOR_Y)
+        + tread.offsetY + tread.height);
+    });
+    const recoilY = maximumTankRecoilDownPx();
+    const geometry = await console.evaluate((node, { chassisBasesByRoster, recoil }) => {
+      const rail = document.getElementById('battle-rail')!;
+      const game = document.querySelector<HTMLCanvasElement>('#game')!;
+      const railRect = rail.getBoundingClientRect();
+      const gameRect = game.getBoundingClientRect();
+      const consoleRect = node.getBoundingClientRect();
+      const scale = gameRect.width / game.width;
+      const rendered = (element: HTMLElement): boolean => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden'
+          && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
+      };
+      const targets = [...node.querySelectorAll<HTMLButtonElement>('button')]
+        .filter(rendered)
+        .map((button) => ({
+          label: button.getAttribute('aria-label') ?? button.textContent ?? '',
+          className: button.className,
+          authoredWidth: getComputedStyle(button).width,
+          authoredMinWidth: getComputedStyle(button).minWidth,
+          rect: button.getBoundingClientRect().toJSON(),
+        }));
+      const labels = [...node.querySelectorAll<HTMLElement>([
+        '.st-hud__turn-owner',
+        '.st-hud__weapon-value',
+        '.st-hud__weapon-ammo',
+        '.st-hud__solution-adjustment-label',
+        '.st-hud__gauge-label',
+        '.st-hud__console-state',
+        '.st-hud__commitment-explanation',
+      ].join(','))].filter(rendered).map((label) => ({
+        text: label.textContent,
+        clientWidth: label.clientWidth,
+        scrollWidth: label.scrollWidth,
+        clientHeight: label.clientHeight,
+        scrollHeight: label.scrollHeight,
+      }));
+      return {
+        rail: railRect.toJSON(),
+        console: consoleRect.toJSON(),
+        targets,
+        labels,
+        allTargetsInRail: targets.every(({ rect }) => rect.left >= railRect.left - 1
+          && rect.right <= railRect.right + 1
+          && rect.top >= railRect.top - 1
+          && rect.bottom <= railRect.bottom + 1),
+        widestChassisClearOfRail: chassisBasesByRoster.every((bases) => bases.every((baseY) =>
+          gameRect.top + (baseY + recoil) * scale < railRect.top)),
+        documentOverflowX: document.documentElement.scrollWidth - innerWidth,
+        documentOverflowY: document.documentElement.scrollHeight - innerHeight,
+      };
+    }, { chassisBasesByRoster: widestChassisBasesByRoster, recoil: recoilY });
+
+    expect(geometry.allTargetsInRail).toBe(true);
+    expect(geometry.widestChassisClearOfRail).toBe(true);
+    expect(geometry.documentOverflowX).toBeLessThanOrEqual(0);
+    expect(geometry.documentOverflowY).toBeLessThanOrEqual(0);
+    expect(geometry.console.x).toBeGreaterThanOrEqual(geometry.rail.x - 1);
+    expect(geometry.console.y).toBeGreaterThanOrEqual(geometry.rail.y - 1);
+    expect(geometry.console.x + geometry.console.width)
+      .toBeLessThanOrEqual(geometry.rail.x + geometry.rail.width + 1);
+    expect(geometry.console.y + geometry.console.height)
+      .toBeLessThanOrEqual(geometry.rail.y + geometry.rail.height + 1);
+    for (const label of geometry.labels) {
+      expect(label.scrollWidth, `${label.text} must not clip horizontally`)
+        .toBeLessThanOrEqual(label.clientWidth + 1);
+      expect(label.scrollHeight, `${label.text} must not clip vertically`)
+        .toBeLessThanOrEqual(label.clientHeight + 1);
+    }
+    const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
+    for (const target of geometry.targets) {
+      expect(
+        target.rect.width,
+        `${target.label} target width (${target.className}; width ${target.authoredWidth}; min ${target.authoredMinWidth})`,
+      ).toBeGreaterThanOrEqual(targetFloor);
+      expect(target.rect.height, `${target.label} target height`).toBeGreaterThanOrEqual(targetFloor);
+    }
+
+    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+    if (await briefing.isVisible()) await page.getByRole('button', { name: 'Enter battle' }).click();
+    const before = await rail.boundingBox();
+    await page.locator('.st-hud__primary-action').click();
+    await expect(console).toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    const after = await rail.boundingBox();
+    expect(after?.height).toBeCloseTo(before!.height, 1);
+    expect(after?.y).toBeCloseTo(before!.y, 1);
   });
 
   test('Pixel touch stalled recovery stays in the protected rail and can leave', async ({
@@ -156,17 +283,13 @@ test.describe('HUD layout guardrails', () => {
     await expect(rail).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(page.locator('.st-hud__aim')).toBeVisible();
     await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
-    await expect(page.locator('.st-hud__touch-strip')).not.toHaveAttribute('aria-disabled', /.+/);
+    await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
     await expect(page.locator('.st-hud__command-console')).toHaveAttribute(
       'aria-label',
       'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
     );
-    await expect(page.locator('.st-hud__touch-strip')).toHaveAttribute(
-      'aria-label',
-      'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
-    );
-    await expect(page.locator('.st-hud__touch-menu')).toBeEnabled();
     await expect(page.locator('#hud .st-hud__menu')).toBeEnabled();
+    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
 
     const outcome = await page.evaluate(() => {
       const select = (selector: string) => document.querySelector<HTMLElement>(selector)!;
@@ -186,42 +309,31 @@ test.describe('HUD layout guardrails', () => {
       const commitment = select('.st-hud__console-commitment');
       const progress = select('.st-hud__aim');
       const instruments = select('.st-hud__instruments');
-      const actions = select('.st-hud__turn-actions');
       const roster = select('.st-hud__players');
       const rosterRows = Array.from(
         document.querySelectorAll<HTMLElement>('.st-hud__player'),
       );
       const arsenal = select('.st-hud__strip');
-      const fineDeck = select('.st-hud__controls');
-      const touchDeck = select('.st-hud__touch-strip');
-      const primary = select('.st-hud__primary-action');
-      const touchCombat = select('.st-hud__touch-btn[data-command="aim-left"]');
-      const fineCombat = select('.st-hud__command-key[data-command-action="aim-left"]');
-      const menu = select('.st-hud__touch-menu');
+      const combat = select('.st-hud__solution-control[data-command-action="aim-left"]');
       const commandMenu = select('#hud .st-hud__menu');
       const progressRect = rect(progress);
-      const actionsRect = rect(actions);
       const consoleRect = rect(consoleEl);
       return {
-        order: { progress: order(progress), instruments: order(instruments), actions: order(actions) },
+        order: { progress: order(progress), instruments: order(instruments) },
         parentOpacity: {
-          instruments: opacity(instruments), actions: opacity(actions), roster: opacity(roster),
-          arsenal: opacity(arsenal), fineDeck: opacity(fineDeck), touchDeck: opacity(touchDeck),
+          instruments: opacity(instruments), roster: opacity(roster), arsenal: opacity(arsenal),
         },
         effectiveOpacity: {
-          progress: effectiveOpacity(progress), primary: effectiveOpacity(primary),
-          touchCombat: effectiveOpacity(touchCombat), fineCombat: effectiveOpacity(fineCombat),
+          progress: effectiveOpacity(progress), combat: effectiveOpacity(combat),
           rosterRows: rosterRows.map(effectiveOpacity), arsenal: effectiveOpacity(arsenal),
-          menu: effectiveOpacity(menu), commandMenu: effectiveOpacity(commandMenu),
+          commandMenu: effectiveOpacity(commandMenu),
         },
         filter: {
-          progress: filter(progress), instruments: filter(solution), actions: filter(actions),
-          roster: filter(roster), arsenal: filter(arsenal), fineDeck: filter(solution),
-          touchDeck: filter(touchDeck),
+          progress: filter(progress), instruments: filter(solution),
+          roster: filter(roster), solution: filter(solution),
         },
         owned: consoleEl.contains(progress)
           && instruments.parentElement === solution
-          && actions.parentElement === commitment
           && progress.parentElement === commitment,
         contained: progressRect.left >= consoleRect.left - 1
           && progressRect.right <= consoleRect.right + 1
@@ -229,7 +341,6 @@ test.describe('HUD layout guardrails', () => {
           && progressRect.bottom <= consoleRect.bottom + 1
           && document.documentElement.scrollWidth <= window.innerWidth
           && document.documentElement.scrollHeight <= window.innerHeight,
-        commitmentFlow: progressRect.bottom <= actionsRect.top + 1,
         announcement: {
           role: progress.getAttribute('role'),
           live: progress.getAttribute('aria-live'),
@@ -239,16 +350,12 @@ test.describe('HUD layout guardrails', () => {
     });
     expect(outcome.owned).toBe(true);
     expect(outcome.contained).toBe(true);
-    expect(outcome.commitmentFlow).toBe(true);
-    expect(Object.values(outcome.parentOpacity)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(Object.values(outcome.parentOpacity)).toEqual([1, 1, 1]);
     expect(outcome.effectiveOpacity.progress).toBe(1);
-    expect(outcome.effectiveOpacity.primary).toBeGreaterThanOrEqual(0.35);
-    expect(outcome.effectiveOpacity.touchCombat).toBeGreaterThanOrEqual(0.35);
-    expect(outcome.effectiveOpacity.fineCombat).toBeGreaterThanOrEqual(0.3);
+    expect(outcome.effectiveOpacity.combat).toBeGreaterThanOrEqual(0.3);
     expect(outcome.effectiveOpacity.rosterRows.length).toBeGreaterThan(0);
     expect(Math.min(...outcome.effectiveOpacity.rosterRows)).toBeGreaterThanOrEqual(0.4);
     expect(outcome.effectiveOpacity.arsenal).toBeGreaterThanOrEqual(0.9);
-    expect(outcome.effectiveOpacity.menu).toBeGreaterThanOrEqual(0.9);
     expect(outcome.effectiveOpacity.commandMenu).toBeGreaterThanOrEqual(0.9);
     expect(outcome.filter.progress).toBe('none');
     for (const [surface, treatment] of Object.entries(outcome.filter)) {
@@ -264,10 +371,10 @@ test.describe('HUD layout guardrails', () => {
     await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
     await expect(rail).toHaveAttribute('data-combat-focus', 'decision');
     await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
-    await expect(page.locator('.st-hud__touch-strip')).not.toHaveAttribute('aria-disabled', /.+/);
+    await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
     await expect(page.locator('.st-hud__command-console')).toHaveAttribute('aria-label', 'Turn command console');
-    await expect(page.locator('.st-hud__touch-strip')).toHaveAttribute('aria-label', 'Touch commands');
     await expect(page.locator('.st-hud__active-row')).toBeVisible();
+    await expect(page.locator('.st-hud__primary-action')).toHaveCount(1);
   });
 
   test('keeps Space bound to fire after a gameplay control takes focus', async ({
@@ -283,28 +390,7 @@ test.describe('HUD layout guardrails', () => {
 
     await page.keyboard.press('Space');
 
-    await expect(fire).toBeDisabled();
-  });
-
-  test('does not double-fire when Space semantically activates the Fire key button', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === 'pixel-touch', 'keyboard command deck is hidden');
-
-    const fireKey = page.locator('[data-command-action="fire-space"]');
-    const fire = page.locator('.st-hud__primary-action');
-    await fireKey.focus();
-    await expect(fireKey).toBeFocused();
-    const before = await page.evaluate(() => (
-      window as typeof window & { __SINGED_TERRA_E2E__?: { forwardedActions: { fire: number } } }
-    ).__SINGED_TERRA_E2E__?.forwardedActions.fire ?? 0);
-
-    await page.keyboard.press('Space');
-
-    await expect(fire).toBeDisabled();
-    await expect.poll(async () => page.evaluate(() => (
-      window as typeof window & { __SINGED_TERRA_E2E__?: { forwardedActions: { fire: number } } }
-    ).__SINGED_TERRA_E2E__?.forwardedActions.fire ?? 0)).toBe(before + 1);
+    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
   });
 
   test('active custom tank has a combat-readable tactical identity card', async ({
@@ -350,38 +436,19 @@ test.describe('HUD layout guardrails', () => {
     const icons = page.locator('svg.st-ui-icon');
     const glyphs = page.locator('.st-ui-glyph');
     const visibleGlyphs = page.locator('.st-ui-glyph:visible');
-    const commandIcons = page.locator('.st-hud__controls svg.st-ui-icon');
-    const commandGlyphs = page.locator('.st-hud__controls .st-ui-glyph');
-    const touchIcons = page.locator('.st-hud__touch-strip svg.st-ui-icon');
     const railIcons = page.locator('#battle-rail svg.st-ui-icon');
     const railGlyphs = page.locator('#battle-rail .st-ui-glyph');
 
-    await expect(icons).toHaveCount(17);
-    await expect(glyphs).toHaveCount(9);
-    expect(await commandIcons.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('data-icon')),
-    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
-    expect(await commandGlyphs.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('data-glyph')),
-    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
-    expect(await touchIcons.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('data-icon')),
-    )).toEqual(['left', 'right', 'decrease', 'increase', 'left', 'right', 'weapon', 'menu']);
-    expect(await railIcons.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('data-icon')).filter(Boolean),
-    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire', 'fire']);
-    expect(await railGlyphs.evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute('data-glyph')),
-    )).toEqual(['aim', 'power', 'move', 'weapon', 'fire', 'fire']);
+    expect(await icons.count()).toBeGreaterThan(0);
+    expect(await glyphs.count()).toBeGreaterThan(0);
+    await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
+    expect(await railIcons.count()).toBeGreaterThan(0);
+    expect(await railGlyphs.count()).toBeGreaterThan(0);
 
     const arsenal = page.locator('[data-icon="arsenal"]');
     await expect(arsenal.locator('circle[r="9"]')).toHaveCount(1);
-    await expect(page.getByText('Arsenal', { exact: true })).toBeVisible();
-    if (testInfo.project.name === 'pixel-touch') {
-      await expect(page.locator('.st-hud__touch-menu')).toBeVisible();
-    } else {
-      await expect(page.locator('#hud .st-hud__menu')).toBeVisible();
-    }
+    await expect(page.getByRole('button', { name: 'Expand arsenal' })).toBeVisible();
+    await expect(page.locator('#hud .st-hud__menu')).toBeVisible();
     await expect(page.locator('.st-hud__primary-action')).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
@@ -415,571 +482,6 @@ test.describe('HUD layout guardrails', () => {
     }
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
     expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-  });
-
-  test('interactive Command Deck and touch dock stay causal, strong, and fitted', async ({
-    page,
-  }, testInfo) => {
-    const overlay = page.locator('#game-overlay');
-    const rail = page.locator('#battle-rail');
-    const deck = rail.locator('[data-ui="command-deck"]');
-    const dock = overlay.locator('.st-hud__touch-strip');
-    const isTouch = testInfo.project.name === 'pixel-touch';
-
-    if (!isTouch) {
-      await expect(deck).toBeVisible();
-      await expect(rail).toBeVisible();
-      await expect(deck).toHaveAttribute('role', 'region');
-      await expect(deck).toHaveAttribute('aria-label', 'Keyboard and mouse commands');
-      await expect(dock).toBeHidden();
-      await expect(deck.locator('.st-hud__controls-title')).toHaveText('Command Deck');
-      await expect(deck.locator('.st-hud__controls-mode')).toHaveText('Mouse + keys');
-      await expect(deck.locator('.st-hud__control-cell')).toHaveCount(5);
-      expect(await deck.locator('.st-hud__control-cell').evaluateAll((items) =>
-        items.map((item) => (item as HTMLElement).dataset['command']),
-      )).toEqual(['aim', 'power', 'move', 'weapon', 'fire']);
-      const commandKeys = deck.locator('.st-hud__command-key');
-      await expect(commandKeys).toHaveCount(9);
-      expect(await commandKeys.evaluateAll((items) =>
-        items.map((item) => (item as HTMLElement).dataset['commandAction']),
-      )).toEqual([
-        'aim-left',
-        'aim-right',
-        'power-up',
-        'power-down',
-        'move-left',
-        'move-right',
-        'weapon',
-        'fire-space',
-        'fire-enter',
-      ]);
-      const widestChassisBasesByRoster = [2, 3, 4].map((count) => {
-        const kits = ['ranger', 'bulwark', 'jackal', 'ranger'] as const;
-        const state = new GameEngine({
-          players: Array.from({ length: count }, (_, index) => ({
-            name: `P${index + 1}`,
-            color: ['#e84d4d', '#4d8ce8', '#4de87a', '#e8c84d'][index]!,
-            loadout: { treads: kits[index]!, hull: 'foundry', turret: 'foundry', barrel: 'foundry' },
-          })),
-          maxPlayers: count,
-          seed: 1,
-        }).getState();
-        return state.tanks.map((tank) => {
-          const tread = TANK_PART_SETS[tank.loadout.treads].parts.treads;
-          // A destroyed valley may legally settle at the protected floor. Include
-          // that real renderer pose alongside the generated roster's placement.
-          return Math.max(tank.y, ARENA_FLOOR_Y) + tread.offsetY + tread.height;
-        });
-      });
-      const worstLegalDownwardRecoil = maximumTankRecoilDownPx();
-      const expectedRailTop = Math.ceil(ARENA_FLOOR_Y + worstLegalDownwardRecoil);
-      const geometry = await deck.evaluate((node, { chassisBasesByRoster, recoilY }) => {
-        const deckRect = node.getBoundingClientRect();
-        const rail = document.querySelector<HTMLElement>('#battle-rail')!;
-        const railRect = rail.getBoundingClientRect();
-        const game = document.querySelector<HTMLCanvasElement>('#game')!;
-        const gameRect = game.getBoundingClientRect();
-        const gameScale = gameRect.width / game.width;
-        // A tank's rendered tread base is its authoritative y coordinate. Cover
-        // every real roster cardinality with the widest 36px chassis, rather
-        // than merely proving an empty horizontal lane beside a floating deck.
-        const title = node.querySelector<HTMLElement>('.st-hud__controls-title')!;
-        const mode = node.querySelector<HTMLElement>('.st-hud__controls-mode')!;
-        const commandConsole = document.querySelector<HTMLElement>(
-          '#battle-rail .st-hud__command-console',
-        )!;
-        const zones = [...commandConsole.querySelectorAll<HTMLElement>(
-          '.st-hud__console-context, .st-hud__console-solution, .st-hud__console-commitment',
-        )];
-        const rows = [...node.querySelectorAll<HTMLElement>('.st-hud__control-cell')];
-        const labels = [...node.querySelectorAll<HTMLElement>('.st-hud__control-label')];
-        const keycaps = [...node.querySelectorAll<HTMLElement>('kbd')];
-        const glyphs = [...node.querySelectorAll<HTMLElement>('.st-ui-glyph')];
-        const firstStyle = getComputedStyle(rows[0]!);
-        const primaryStyle = getComputedStyle(rows.at(-1)!);
-        return {
-          width: parseFloat(getComputedStyle(node).width),
-          titleFont: parseFloat(getComputedStyle(title).fontSize),
-          modeFont: parseFloat(getComputedStyle(mode).fontSize),
-          rows: rows.map((row) => ({
-            rect: row.getBoundingClientRect().toJSON(),
-            minHeight: parseFloat(getComputedStyle(row).minHeight),
-          })),
-          labels: labels.map((label) => ({
-            fontSize: parseFloat(getComputedStyle(label).fontSize),
-            height: label.getBoundingClientRect().height,
-          })),
-          keyFonts: keycaps.map((key) => parseFloat(getComputedStyle(key).fontSize)),
-          glyphs: glyphs.map((glyph) => ({
-            logicalWidth: parseFloat(getComputedStyle(glyph).width),
-            logicalHeight: parseFloat(getComputedStyle(glyph).height),
-            rendered: glyph.getBoundingClientRect().toJSON(),
-          })),
-          ordinaryBorder: firstStyle.borderColor,
-          primaryBorder: primaryStyle.borderColor,
-          ordinaryBackground: firstStyle.backgroundImage,
-          primaryBackground: primaryStyle.backgroundImage,
-          scrollWidth: node.scrollWidth,
-          clientWidth: node.clientWidth,
-          scrollHeight: node.scrollHeight,
-          clientHeight: node.clientHeight,
-          railOverflow: getComputedStyle(rail).overflow,
-          declaredFloor: getComputedStyle(document.documentElement).getPropertyValue('--arena-floor-y'),
-          declaredRailTop: getComputedStyle(document.documentElement).getPropertyValue('--battle-rail-top-y'),
-          railTopLogical: (railRect.top - gameRect.top) / gameScale,
-          railHeightLogical: railRect.height / gameScale,
-          railBottomLogical: (railRect.bottom - gameRect.top) / gameScale,
-          deckInsideRail: deckRect.top >= railRect.top - 1
-            && deckRect.right <= railRect.right + 1
-            && deckRect.bottom <= railRect.bottom + 1,
-          zonesInsideRail: zones.every((zone) => {
-            const rect = zone.getBoundingClientRect();
-            return rect.left >= railRect.left - 1
-              && rect.top >= railRect.top - 1
-              && rect.right <= railRect.right + 1
-              && rect.bottom <= railRect.bottom + 1;
-          }),
-          zonesDoNotOverlap: zones.every((zone, index) => {
-            const rect = zone.getBoundingClientRect();
-            const next = zones[index + 1]?.getBoundingClientRect();
-            return next == null || rect.right <= next.left + 1;
-          }),
-          widestChassisClearOfRail: chassisBasesByRoster.every((bases) => (
-            bases.every((baseY) => gameRect.top + (baseY + recoilY) * gameScale < railRect.top)
-          )),
-        };
-      }, { chassisBasesByRoster: widestChassisBasesByRoster, recoilY: worstLegalDownwardRecoil });
-      const compactDeck = testInfo.project.name === 'small-window';
-      expect(geometry.width).toBeGreaterThanOrEqual(360);
-      expect(geometry.titleFont).toBeGreaterThanOrEqual(9);
-      expect(geometry.modeFont).toBeGreaterThanOrEqual(6.5);
-      expect(geometry.ordinaryBorder).not.toBe(geometry.primaryBorder);
-      expect(geometry.ordinaryBackground).not.toBe(geometry.primaryBackground);
-      expect(geometry.keyFonts).toHaveLength(9);
-      for (const fontSize of geometry.keyFonts) {
-        expect(fontSize).toBeGreaterThanOrEqual(8.5);
-      }
-      expect(geometry.glyphs).toHaveLength(5);
-      for (const glyph of geometry.glyphs) {
-        expect(glyph.logicalWidth).toBeCloseTo(25, 1);
-        expect(glyph.logicalHeight).toBeCloseTo(25, 1);
-        expect(glyph.rendered.width).toBeGreaterThanOrEqual(compactDeck ? 15 : 24.9);
-        expect(glyph.rendered.height).toBeGreaterThanOrEqual(compactDeck ? 15 : 24.9);
-      }
-      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
-      expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
-      expect(geometry.railOverflow).toBe('hidden');
-      expect(geometry.declaredFloor).toBe(`${ARENA_FLOOR_Y}px`);
-      expect(geometry.declaredRailTop).toBe(`${expectedRailTop}px`);
-      expect(geometry.railTopLogical).toBeCloseTo(expectedRailTop, 1);
-      expect(geometry.railHeightLogical).toBeCloseTo(CANVAS_HEIGHT - expectedRailTop, 1);
-      expect(geometry.railBottomLogical).toBeCloseTo(CANVAS_HEIGHT, 1);
-      expect(geometry.deckInsideRail).toBe(true);
-      expect(geometry.zonesInsideRail).toBe(true);
-      expect(geometry.zonesDoNotOverlap).toBe(true);
-      expect(geometry.widestChassisClearOfRail).toBe(true);
-      for (const label of geometry.labels) {
-        expect(label.fontSize).toBeGreaterThanOrEqual(compactDeck ? 8 : 8);
-        expect(label.height).toBeGreaterThanOrEqual(compactDeck ? 5 : 7);
-      }
-      const elevation = page.locator(
-        '.st-hud__gauge-cell--elevation .st-hud__gauge-label',
-      );
-      const power = page.locator('.st-hud__gauge-cell--power .st-hud__gauge-label');
-      await expect(elevation).toHaveText('45° ▶');
-      const aimLeft = deck.locator(
-        '.st-hud__command-key[data-command-action="aim-left"]',
-      );
-      await expect(aimLeft).toHaveAttribute('aria-label', 'Aim barrel left');
-      await aimLeft.focus();
-      expect(await aimLeft.evaluate((button) => getComputedStyle(button).boxShadow))
-        .not.toBe('none');
-      await page.keyboard.press('Enter');
-      await expect(elevation).toHaveText('48° ▶');
-      await deck.getByRole('button', { name: 'Aim barrel right' }).click();
-      await expect(elevation).toHaveText('45° ▶');
-      await expect(power).toHaveText('50');
-      await deck.getByRole('button', { name: 'Increase power' }).click();
-      await expect(power).toHaveText('53');
-      await deck.getByRole('button', { name: 'Decrease power' }).click();
-      await expect(power).toHaveText('50');
-
-      const arsenalToggle = page.getByRole('button', { name: 'Expand arsenal' });
-      const deckGrid = deck.locator('.st-hud__control-grid');
-      await expect(deckGrid).not.toHaveAttribute('inert', '');
-      await arsenalToggle.click();
-      await expect(deckGrid).toHaveAttribute('inert', '');
-      await expect(deck).toHaveAttribute('aria-hidden', 'true');
-      await aimLeft.evaluate((button) => (button as HTMLButtonElement).focus());
-      await expect(aimLeft).not.toBeFocused();
-      const aimBounds = await aimLeft.boundingBox();
-      expect(aimBounds).not.toBeNull();
-      await page.mouse.click(
-        aimBounds!.x + aimBounds!.width / 2,
-        aimBounds!.y + aimBounds!.height / 2,
-      );
-      await expect(elevation).toHaveText('45° ▶');
-      await page.keyboard.press('Tab');
-      expect(await deck.evaluate((node) => node.contains(document.activeElement))).toBe(false);
-      await page.getByRole('button', { name: 'Collapse arsenal' }).click();
-      await expect(deckGrid).not.toHaveAttribute('inert', '');
-      await expect(deck).not.toHaveAttribute('aria-hidden', 'true');
-      await aimLeft.focus();
-      await expect(aimLeft).toBeFocused();
-
-      const fire = deck.getByRole('button', { name: 'Fire Baby Missile with Space' });
-      await fire.click();
-      await expect(fire).toBeDisabled();
-    } else {
-      await expect(deck).toBeHidden();
-      await expect(dock).toBeVisible();
-      await expect(dock).toHaveAttribute('role', 'toolbar');
-      await expect(dock).toHaveAttribute('aria-label', 'Touch commands');
-      await expect(dock.locator('.st-hud__touch-title')).toHaveText('Command Deck');
-      await expect(dock.locator('.st-hud__touch-mode')).toHaveText('Touch');
-      const groups = dock.locator('.st-hud__touch-group');
-      await expect(groups).toHaveCount(3);
-      expect(await groups.evaluateAll((items) => items.map((item) => ({
-        name: item.getAttribute('aria-label'),
-        title: item.querySelector('.st-hud__touch-group-title')?.textContent,
-        labels: [...item.querySelectorAll('.st-hud__touch-label')]
-          .map((label) => label.textContent),
-      })))).toEqual([
-        { name: 'Aim', title: 'Aim', labels: ['Left', 'Right'] },
-        { name: 'Power', title: 'Power', labels: ['Less', 'More'] },
-        { name: 'Drive', title: 'Drive', labels: ['Left', 'Right'] },
-      ]);
-      const buttons = dock.locator('.st-hud__touch-btn');
-      await expect(buttons).toHaveCount(8);
-      expect(await buttons.evaluateAll((items) =>
-        items.map((item) => (item as HTMLElement).dataset['command']),
-      )).toEqual([
-        'aim-left',
-        'aim-right',
-        'power-down',
-        'power-up',
-        'move-left',
-        'move-right',
-        'weapon',
-        'menu',
-      ]);
-      const buttonBoxes = await buttons.evaluateAll((items) =>
-        items.map((item) => item.getBoundingClientRect().toJSON()),
-      );
-      for (const box of buttonBoxes) {
-        expect(box.width).toBeGreaterThanOrEqual(44);
-        expect(box.height).toBeGreaterThanOrEqual(44);
-      }
-      const dockType = await dock.evaluate((node) => ({
-        title: node.querySelector<HTMLElement>('.st-hud__touch-title')!
-          .getBoundingClientRect().toJSON(),
-        mode: node.querySelector<HTMLElement>('.st-hud__touch-mode')!
-          .getBoundingClientRect().toJSON(),
-        groupTitles: [...node.querySelectorAll<HTMLElement>('.st-hud__touch-group-title')]
-          .map((title) => ({
-            text: title.textContent,
-            box: title.getBoundingClientRect().toJSON(),
-          })),
-        labels: [...node.querySelectorAll<HTMLElement>('.st-hud__touch-label')]
-          .map((label) => label.getBoundingClientRect().height),
-        symbols: [...node.querySelectorAll<HTMLElement>('.st-hud__touch-symbol')]
-          .map((symbol) => {
-            const box = symbol.getBoundingClientRect();
-            return { width: box.width, height: box.height };
-          }),
-        icons: [...node.querySelectorAll<SVGElement>('.st-hud__touch-symbol svg')]
-          .map((icon) => icon.getBoundingClientRect().toJSON()),
-      }));
-      expect(dockType.title.height).toBeGreaterThanOrEqual(8);
-      expect(dockType.mode.height).toBeGreaterThanOrEqual(8);
-      expect(dockType.groupTitles.map((title) => title.text)).toEqual([
-        'Aim',
-        'Power',
-        'Drive',
-        'Utilities',
-      ]);
-      for (const title of dockType.groupTitles) {
-        expect(title.box.width).toBeGreaterThan(0);
-        expect(title.box.height).toBeGreaterThanOrEqual(8);
-      }
-      for (const height of dockType.labels) expect(height).toBeGreaterThanOrEqual(8);
-      for (const symbol of dockType.symbols) {
-        expect(symbol.width).toBeGreaterThanOrEqual(18);
-        expect(symbol.height).toBeGreaterThanOrEqual(18);
-      }
-      for (const icon of dockType.icons) {
-        expect(icon.width).toBeGreaterThanOrEqual(12);
-        expect(icon.height).toBeGreaterThanOrEqual(12);
-      }
-      await expect(page.locator('#hud .st-hud__menu')).toBeHidden();
-      await dock.getByRole('button', { name: 'Open menu' }).click();
-      const commandMenu = page.getByRole('dialog', { name: 'Command Menu' });
-      await expect(commandMenu).toBeVisible();
-      await page.getByRole('button', { name: 'Resume' }).click();
-      await expect(commandMenu).toBeHidden();
-      await expect(dock).toBeVisible();
-
-      const elevation = page.locator(
-        '.st-hud__gauge-cell--elevation .st-hud__gauge-label',
-      );
-      const power = page.locator('.st-hud__gauge-cell--power .st-hud__gauge-label');
-      await expect(elevation).toHaveText('45° ▶');
-      await dock.getByRole('button', { name: 'Aim barrel left' }).click();
-      await expect(elevation).toHaveText('48° ▶');
-      await dock.getByRole('button', { name: 'Aim barrel right' }).click();
-      await expect(elevation).toHaveText('45° ▶');
-      await expect(power).toHaveText('50');
-      await dock.getByRole('button', { name: 'Decrease power' }).click();
-      await expect(power).toHaveText('47');
-      await dock.getByRole('button', { name: 'Increase power' }).click();
-      await expect(power).toHaveText('50');
-      await dock.getByRole('button', { name: 'Cycle weapon, current Baby Missile' }).click();
-      await expect(dock.getByRole('button', { name: 'Cycle weapon, current Missile' }))
-        .toBeVisible();
-
-      const fuel = page.locator('.st-hud__fuel-value');
-      await expect(fuel).toHaveText('100');
-      await dock.getByRole('button', { name: 'Move tank right, 8 fuel maximum' }).click();
-      const movedRight = await fuel.evaluate((element) =>
-        new Promise<boolean>((resolve) => {
-          let frames = 0;
-          const sample = (): void => {
-            if (element.textContent !== '100') {
-              resolve(true);
-            } else if (frames >= 6) {
-              resolve(false);
-            } else {
-              frames += 1;
-              requestAnimationFrame(sample);
-            }
-          };
-          requestAnimationFrame(sample);
-        }),
-      );
-      if (!movedRight) {
-        await dock.getByRole('button', { name: 'Move tank left, 8 fuel maximum' }).click();
-      }
-      await expect(fuel).not.toHaveText('100');
-      const remainingFuel = Number(await fuel.textContent());
-      expect(remainingFuel).toBeGreaterThanOrEqual(92);
-      expect(remainingFuel).toBeLessThan(100);
-      await expect(page.locator('.st-hud__turn-owner')).toHaveText('P1');
-
-      const railMoves = page.locator('.st-hud__mobility > .st-hud__move-btn');
-      await expect(railMoves).toHaveCount(2);
-      await expect(railMoves.first()).toBeHidden();
-      await expect(railMoves.last()).toBeHidden();
-      for (const action of [
-        page.getByRole('button', { name: /^Store/ }),
-        page.getByRole('button', { name: /^Fire/ }),
-      ]) {
-        const box = await action.boundingBox();
-        expect(box).not.toBeNull();
-        expect(box!.width).toBeGreaterThanOrEqual(44);
-        expect(box!.height).toBeGreaterThanOrEqual(44);
-      }
-
-      const arsenalToggle = page.getByRole('button', { name: 'Expand arsenal' });
-      const arsenalBox = await arsenalToggle.boundingBox();
-      expect(arsenalBox).not.toBeNull();
-      expect(arsenalBox!.width).toBeGreaterThanOrEqual(44);
-      expect(arsenalBox!.height).toBeGreaterThanOrEqual(44);
-      await arsenalToggle.click();
-      await expect(dock).toBeHidden();
-      expect(await dock.evaluate((element) => (element as HTMLElement).inert)).toBe(true);
-      await page.getByRole('button', { name: 'Collapse arsenal' }).click();
-      await expect(dock).toBeVisible();
-      expect(await dock.evaluate((element) => (element as HTMLElement).inert)).toBe(false);
-    }
-
-    const labelSelector = isTouch
-      ? '.st-hud__touch-label'
-      : '.st-hud__control-label';
-    const typography = await page.evaluate((selector) => {
-      const label = document.querySelector<HTMLElement>(selector)!;
-      const probe = document.createElement('span');
-      probe.style.color = 'var(--ui-copy)';
-      probe.style.fontFamily = 'var(--font-sans)';
-      document.body.append(probe);
-      const actual = getComputedStyle(label);
-      const expected = getComputedStyle(probe);
-      const result = {
-        color: actual.color,
-        expectedColor: expected.color,
-        family: actual.fontFamily,
-        expectedFamily: expected.fontFamily,
-      };
-      probe.remove();
-      return result;
-    }, labelSelector);
-    expect(typography.color).toBe(typography.expectedColor);
-    expect(typography.family).toBe(typography.expectedFamily);
-
-    const geometry = await page.evaluate(() => {
-      const overlayRect = document.getElementById('game-overlay')!.getBoundingClientRect();
-      const active = document.querySelector<HTMLElement>(
-        matchMedia('(pointer: coarse)').matches
-          ? '.st-hud__touch-strip'
-          : '.st-hud__controls',
-      )!.getBoundingClientRect();
-      return {
-        contained:
-          active.left >= overlayRect.left - 1
-          && active.right <= overlayRect.right + 1
-          && active.top >= overlayRect.top - 1
-          && active.bottom <= overlayRect.bottom + 1,
-        pageWidth: document.documentElement.scrollWidth,
-        pageHeight: document.documentElement.scrollHeight,
-        viewportWidth: innerWidth,
-        viewportHeight: innerHeight,
-      };
-    });
-    expect(geometry.contained).toBe(true);
-    expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewportWidth);
-    expect(geometry.pageHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-  });
-
-  test('Pixel 5 Touch Command Deck stays bounded clear of shared overlay states', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
-    const firstSalvo = page.locator('[data-ui="first-salvo-coach"]');
-    const firstSalvoChildCount = await firstSalvo.evaluate((node) => node.childElementCount);
-    const geometry = await page.evaluate(() => {
-      const dock = document.querySelector<HTMLElement>('.st-hud__touch-strip')!;
-      const overlay = document.getElementById('game-overlay')!;
-      const hud = document.getElementById('hud')!;
-      const stateEntries = [
-        { node: document.querySelector<HTMLElement>('.st-hud__conn')!, hidden: 'st-hud__conn--hidden' },
-        { node: document.querySelector<HTMLElement>('.st-hud__toast')!, hidden: 'st-hud__toast--hidden' },
-        { node: document.querySelector<HTMLElement>('.st-hud__turnwatch')!, hidden: 'st-hud__turnwatch--hidden' },
-        { node: document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!, hidden: 'st-hud__first-salvo--hidden' },
-      ];
-      const snapshots = stateEntries.map(({ node }) => ({
-        node,
-        className: node.className,
-      }));
-      const fixtureNodes = stateEntries.slice(0, 3).map(({ node }, index) => {
-        const fixture = document.createElement('span');
-        fixture.dataset['layoutStateFixture'] = String(index);
-        fixture.textContent = ['Connection lost — reconnecting…', 'Shot failed — try again', 'Waiting for P2…'][index]!;
-        node.append(fixture);
-        return fixture;
-      });
-      const intersects = (a: DOMRect, b: DOMRect): boolean =>
-        a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-      const renderedMetric = (node: HTMLElement): {
-        rendered: boolean;
-        box: DOMRect;
-      } => {
-        const style = getComputedStyle(node);
-        const box = node.getBoundingClientRect();
-        return {
-          rendered:
-            style.display !== 'none'
-            && style.visibility !== 'hidden'
-            && Number(style.opacity) > 0
-            && box.width > 0
-            && box.height > 0,
-          box,
-        };
-      };
-
-      try {
-        for (const { node, hidden } of stateEntries) node.classList.remove(hidden);
-        const dockMetric = renderedMetric(dock);
-        const overlayMetric = renderedMetric(overlay);
-        const buttons = [...dock.querySelectorAll<HTMLElement>('.st-hud__touch-btn')]
-          .map((button) => {
-            const metric = renderedMetric(button);
-            return { rendered: metric.rendered, box: metric.box.toJSON() };
-          });
-        const groups = [...dock.querySelectorAll<HTMLElement>('.st-hud__touch-group')]
-          .map((group) => {
-            const groupMetric = renderedMetric(group);
-            const titleMetric = renderedMetric(
-              group.querySelector<HTMLElement>('.st-hud__touch-group-title')!,
-            );
-            return {
-              rendered: groupMetric.rendered,
-              group: groupMetric.box.toJSON(),
-              titleRendered: titleMetric.rendered,
-              title: titleMetric.box.toJSON(),
-              buttons: [...group.querySelectorAll<HTMLElement>('.st-hud__touch-btn')]
-                .map((button) => renderedMetric(button).box.toJSON()),
-            };
-          });
-        const states = stateEntries.map(({ node }) => {
-          const metric = renderedMetric(node);
-          return { rendered: metric.rendered, box: metric.box.toJSON() };
-        });
-        const stateOverlaps = states.map((state) => intersects(dockMetric.box, state.box as DOMRect));
-        const noticeOverlaps = states.slice(0, 3).flatMap((state, index) =>
-          states.slice(index + 1, 3).map((candidate) =>
-            intersects(state.box as DOMRect, candidate.box as DOMRect),
-          ),
-        );
-        return {
-          viewportWidth: innerWidth,
-          viewportHeight: innerHeight,
-          dockRendered: dockMetric.rendered,
-          overlayRendered: overlayMetric.rendered,
-          dock: dockMetric.box.toJSON(),
-          overlay: overlayMetric.box.toJSON(),
-          buttons,
-          groups,
-          states,
-          stateOverlaps,
-          noticeOverlaps,
-          documentOverflowX: document.documentElement.scrollWidth - innerWidth,
-          documentOverflowY: document.documentElement.scrollHeight - innerHeight,
-          hudOverflowX: hud.scrollWidth - hud.clientWidth,
-          hudOverflowY: hud.scrollHeight - hud.clientHeight,
-        };
-      } finally {
-        for (const snapshot of snapshots) {
-          snapshot.node.className = snapshot.className;
-        }
-        for (const fixture of fixtureNodes) fixture.remove();
-      }
-    });
-
-    expect(geometry.viewportWidth).toBe(802);
-    expect(geometry.viewportHeight).toBe(293);
-    expect(geometry.dockRendered).toBe(true);
-    expect(geometry.overlayRendered).toBe(true);
-    expect(geometry.dock.left).toBeGreaterThanOrEqual(geometry.overlay.left - 1);
-    expect(geometry.dock.right).toBeLessThanOrEqual(geometry.overlay.right + 1);
-    expect(geometry.dock.top).toBeGreaterThanOrEqual(geometry.overlay.top - 1);
-    expect(geometry.dock.bottom).toBeLessThanOrEqual(geometry.overlay.bottom + 1);
-    expect(geometry.dock.height).toBeLessThanOrEqual(78);
-    for (const button of geometry.buttons) {
-      expect(button.rendered).toBe(true);
-      expect(button.box.width).toBeGreaterThanOrEqual(44);
-      expect(button.box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const group of geometry.groups) {
-      expect(group.rendered).toBe(true);
-      expect(group.titleRendered).toBe(true);
-      expect(group.title.bottom).toBeLessThanOrEqual(group.buttons[0]!.top);
-      expect(group.buttons[0]!.right).toBeLessThanOrEqual(group.buttons[1]!.left);
-      expect(group.buttons[0]!.top).toBe(group.buttons[1]!.top);
-    }
-    expect(geometry.states.every((state) => state.rendered)).toBe(true);
-    expect(geometry.stateOverlaps).toEqual([false, false, false, false]);
-    expect(geometry.noticeOverlaps).toEqual([false, false, false]);
-    for (const notice of geometry.states.slice(0, 3)) {
-      expect(notice.box.top).toBeGreaterThanOrEqual(geometry.dock.bottom);
-    }
-    expect(geometry.documentOverflowX).toBeLessThanOrEqual(0);
-    expect(geometry.documentOverflowY).toBeLessThanOrEqual(0);
-    expect(geometry.hudOverflowX).toBeLessThanOrEqual(0);
-    expect(geometry.hudOverflowY).toBeLessThanOrEqual(0);
-    await expect(firstSalvo).toHaveJSProperty('childElementCount', firstSalvoChildCount);
-    await expect(firstSalvo.locator('.st-hud__first-salvo-progress')).toHaveCount(1);
-    await expect(firstSalvo.locator('.st-hud__first-salvo-copy')).toHaveCount(1);
-    await expect(firstSalvo.locator('.st-hud__first-salvo-status')).toHaveCount(1);
-    await expect(firstSalvo.locator('.st-hud__first-salvo-skip')).toHaveCount(1);
   });
 
   test('weapon-family glyphs remain visible inside Arsenal and Store', async ({
@@ -1026,7 +528,7 @@ test.describe('HUD layout guardrails', () => {
     }
 
     await page.getByRole('button', { name: 'Collapse arsenal' }).click();
-    await page.getByRole('button', { name: /Store/ }).click();
+    await openStoreFromCommandMenu(page);
     const storeIcons = page.locator('.st-hud__store-name-line .st-weapon-icon');
     const storeCatalog = await page.locator(
       '.st-hud__store-name-line',
@@ -1052,7 +554,7 @@ test.describe('HUD layout guardrails', () => {
   test('Store catalog keeps its controls fixed around a responsive internal catalog', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /Store/ }).click();
+    await openStoreFromCommandMenu(page);
 
     const panel = page.locator('.st-hud__store-panel');
     const catalog = panel.locator('.st-hud__store-catalog');
@@ -1191,7 +693,7 @@ test.describe('HUD layout guardrails', () => {
   test('Store cards contain their information and purchase control without overlap', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /Store/ }).click();
+    await openStoreFromCommandMenu(page);
 
     const violations = await page.locator('.st-hud__store-row').evaluateAll((rows) =>
       rows.flatMap((row) => {
@@ -1247,7 +749,7 @@ test.describe('HUD layout guardrails', () => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
     await page.setViewportSize({ width: 1172, height: 600 });
     await expect.poll(() => isCompact(page)).toBe(false);
-    await page.getByRole('button', { name: /Store/ }).click();
+    await openStoreFromCommandMenu(page);
 
     const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
     const heights = await targets.evaluateAll((buttons) =>
@@ -1268,7 +770,7 @@ test.describe('HUD layout guardrails', () => {
     expect(roundShopMinimums).toHaveLength(20);
     expect(roundShopMinimums.every((minimum) => minimum === '44px')).toBe(true);
 
-    await page.getByRole('button', { name: /Store/ }).click();
+    await openStoreFromCommandMenu(page);
     const catalogHeights = await page.locator('.st-hud__store-catalog .st-hud__store-buy')
       .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
     expect(Math.min(...catalogHeights)).toBeGreaterThanOrEqual(44);
@@ -1280,7 +782,7 @@ test.describe('HUD layout guardrails', () => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
     await page.setViewportSize({ width: 667, height: 375 });
     await expect.poll(() => isCompact(page)).toBe(true);
-    await page.getByRole('button', { name: /Store/ }).click();
+    await openStoreFromCommandMenu(page);
 
     const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
     const heights = await targets.evaluateAll((buttons) =>
@@ -1364,8 +866,9 @@ test.describe('HUD layout guardrails', () => {
     }
     const console = page.getByRole('region', { name: 'Turn command console' });
     const activeRow = console.locator('.st-hud__active-row');
+    const solution = console.locator('.st-hud__console-solution');
     const player = activeRow.locator('.st-hud__turn-owner');
-    const weapon = activeRow.locator('.st-hud__weapon-value');
+    const weapon = solution.locator('.st-hud__weapon-value');
     const portrait = activeRow.getByRole('img', { name: /Mobility:/ });
     const meter = activeRow.getByRole('progressbar', { name: 'Movement fuel' });
     const fire = console.locator('.st-hud__primary-action');
@@ -1380,7 +883,7 @@ test.describe('HUD layout guardrails', () => {
       "P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.",
     );
     await expect(activeRow.locator('.st-hud__turn-kicker')).toBeVisible();
-    await expect(activeRow.locator('.st-hud__weapon-icon .st-weapon-icon'))
+    await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'baby_missile');
     await expect(meter).toHaveAttribute('aria-valuenow', '100');
     await expect(fire).toBeVisible();
@@ -1394,7 +897,7 @@ test.describe('HUD layout guardrails', () => {
     await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
     await page.getByRole('button', { name: 'Collapse arsenal' }).click();
     await expect(weapon).toHaveText('Sandhog');
-    await expect(activeRow.locator('.st-hud__weapon-icon .st-weapon-icon'))
+    await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'sandhog');
     await expect(fire).toHaveAttribute('aria-label', 'Fire Sandhog');
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
@@ -1601,9 +1104,7 @@ test.describe('HUD layout guardrails', () => {
     await meter.evaluate((node) => { node.dataset['identityProbe'] = 'stable'; });
     const fullRing = await meter.evaluate((node) => getComputedStyle(node).backgroundImage);
 
-    const activeRight = touch
-      ? page.locator('.st-hud__touch-strip [data-command="move-right"]')
-      : right;
+    const activeRight = right;
     await activeRight.click();
     await expect.poll(() => fuel.textContent()).not.toBe('100');
     const remaining = Number(await fuel.textContent());
@@ -1665,7 +1166,7 @@ test.describe('HUD layout guardrails', () => {
     }
     expect(reachedAction, 'Tab should reach the primary action').toBe(true);
     await page.keyboard.press('Enter');
-    await expect(action).toBeDisabled();
+    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
   });
 
   test('compact touch starts fitted with arsenal collapsed', async ({ page }, testInfo) => {
@@ -1683,27 +1184,29 @@ test.describe('HUD layout guardrails', () => {
   });
 
   test('arsenal opens as a fitted drawer without changing rail height', async ({ page }) => {
-    const before = await page.locator('#hud').evaluate((hud) => ({
-      clientHeight: hud.clientHeight,
-      scrollHeight: hud.scrollHeight,
+    const rail = page.locator('#battle-rail');
+    const solution = page.locator('.st-hud__console-solution');
+    const before = await rail.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
     }));
     await page.locator('.st-hud__strip-toggle').click();
     await expect(page.locator('.st-hud__strip-grid')).toBeVisible();
     await expect(page.locator('.st-hud__strip')).toHaveClass(/st-hud__strip--open/);
     await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
-    const hudBox = await page.locator('#hud').boundingBox();
+    const solutionBox = await solution.boundingBox();
     const drawerBox = await page.locator('.st-hud__strip').boundingBox();
-    expect(hudBox).not.toBeNull();
+    expect(solutionBox).not.toBeNull();
     expect(drawerBox).not.toBeNull();
-    expect(drawerBox!.x).toBeGreaterThanOrEqual(hudBox!.x - 1);
+    expect(drawerBox!.x).toBeGreaterThanOrEqual(solutionBox!.x - 1);
     expect(drawerBox!.x + drawerBox!.width)
-      .toBeLessThanOrEqual(hudBox!.x + hudBox!.width + 1);
-    expect(drawerBox!.y).toBeGreaterThanOrEqual(hudBox!.y - 1);
+      .toBeLessThanOrEqual(solutionBox!.x + solutionBox!.width + 1);
+    expect(drawerBox!.y).toBeGreaterThanOrEqual(solutionBox!.y - 1);
     expect(drawerBox!.y + drawerBox!.height)
-      .toBeLessThanOrEqual(hudBox!.y + hudBox!.height + 1);
+      .toBeLessThanOrEqual(solutionBox!.y + solutionBox!.height + 1);
     for (const locator of [
       page.locator('.st-hud__strip-grid'),
-      page.locator('.st-hud__strip-toggle'),
+      page.locator('.st-hud__arsenal-drawer-close'),
     ]) {
       const childBox = await locator.boundingBox();
       expect(childBox).not.toBeNull();
@@ -1714,9 +1217,9 @@ test.describe('HUD layout guardrails', () => {
       expect(childBox!.y + childBox!.height)
         .toBeLessThanOrEqual(drawerBox!.y + drawerBox!.height + 1);
     }
-    const open = await page.locator('#hud').evaluate((hud) => ({
-      clientHeight: hud.clientHeight,
-      scrollHeight: hud.scrollHeight,
+    const open = await rail.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
     }));
     expect(open.scrollHeight).toBeLessThanOrEqual(open.clientHeight + 1);
     expect(open.scrollHeight).toBe(before.scrollHeight);

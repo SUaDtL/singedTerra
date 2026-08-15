@@ -83,16 +83,12 @@ describe('HUD combat focus', () => {
     hud.update(state, true, true);
 
     const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
-    const touchToolbar = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
-    const menu = overlay.querySelector<HTMLButtonElement>('.st-hud__touch-menu')!;
+    const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;
     const progress = root.querySelector<HTMLElement>('.st-hud__aim')!;
     expect(console.getAttribute('aria-disabled')).toBeNull();
-    expect(touchToolbar.getAttribute('aria-disabled')).toBeNull();
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(console.getAttribute('aria-label')).toBe(
       'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
-    );
-    expect(touchToolbar.getAttribute('aria-label')).toBe(
-      'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
     );
     expect(menu.disabled).toBe(false);
     expect(menu.getAttribute('aria-disabled')).not.toBe('true');
@@ -114,12 +110,9 @@ describe('HUD combat focus', () => {
     expect(root.dataset['combatFocus']).toBe('decision');
     expect(overlay.dataset['combatFocus']).toBe('decision');
     expect(root.querySelector('.st-hud__command-console')?.getAttribute('aria-disabled')).toBeNull();
-    expect(overlay.querySelector('.st-hud__touch-strip')?.getAttribute('aria-disabled')).toBeNull();
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(root.querySelector('.st-hud__command-console')?.getAttribute('aria-label')).toBe(
       'Turn command console',
-    );
-    expect(overlay.querySelector('.st-hud__touch-strip')?.getAttribute('aria-label')).toBe(
-      'Touch commands',
     );
     expect(root.querySelector('.st-hud__active-row')?.classList.contains('st-hud__active-row--hidden')).toBe(false);
   });
@@ -131,14 +124,10 @@ describe('HUD combat focus', () => {
     hud.update(state, false, true);
 
     const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
-    const touchToolbar = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
     expect(console.getAttribute('aria-disabled')).toBeNull();
-    expect(touchToolbar.getAttribute('aria-disabled')).toBeNull();
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(console.getAttribute('aria-label')).toBe(
       'Turn command console outside an active turn. Combat controls inactive; Command Menu remains available.',
-    );
-    expect(touchToolbar.getAttribute('aria-label')).toBe(
-      'Touch combat controls inactive outside an active turn; Menu remains available.',
     );
   });
 });

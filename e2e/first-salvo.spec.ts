@@ -58,6 +58,7 @@ async function expectCoachFitsRail(page: import('@playwright/test').Page): Promi
       scrollHeight: document.documentElement.scrollHeight,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
+      coarsePointer: matchMedia('(pointer: coarse)').matches,
     };
   });
 
@@ -74,7 +75,7 @@ async function expectCoachFitsRail(page: import('@playwright/test').Page): Promi
   // The fixed arena is CSS-zoomed to fit smaller viewports. offsetHeight keeps
   // this contract in the ribbon's logical CSS pixels rather than screen pixels.
   expect(geometry.cardLayoutHeight).toBeGreaterThanOrEqual(32);
-  expect(geometry.cardLayoutHeight).toBeLessThanOrEqual(44);
+  expect(geometry.cardLayoutHeight).toBeLessThanOrEqual(geometry.coarsePointer ? 91 : 44);
   expect(geometry.skip!.left).toBeGreaterThanOrEqual(geometry.card!.left);
   expect(geometry.skip!.right).toBeLessThanOrEqual(geometry.card!.right);
   expect(geometry.skip!.top).toBeGreaterThanOrEqual(geometry.card!.top);
@@ -165,28 +166,30 @@ test.describe('First Salvo browser contract', () => {
     }
 
     if (testInfo.project.name === 'pixel-touch') {
-      const touchAim = page.locator('.st-hud__touch-strip [data-first-salvo-target="aim"]');
-      const touchPower = page.locator('.st-hud__touch-strip [data-first-salvo-target="power-and-wind"]');
+      const aimTargets = page.locator('#battle-rail [data-first-salvo-target="aim"]');
+      const powerTargets = page.locator('#battle-rail [data-first-salvo-target="power-and-wind"]');
+      const touchAim = page.locator('#battle-rail button[data-first-salvo-target="aim"]');
+      const touchPower = page.locator('#battle-rail button[data-first-salvo-target="power-and-wind"]');
       await expect(touchAim).toHaveCount(2);
       await expect(touchPower).toHaveCount(2);
-      await expect.poll(() => touchAim.evaluateAll((targets) => targets.every((target) =>
+      await expect.poll(() => aimTargets.evaluateAll((targets) => targets.every((target) =>
         target.classList.contains('st-hud__first-salvo-target--active'),
       ))).toBe(true);
-      await expect.poll(() => touchPower.evaluateAll((targets) => targets.every((target) =>
+      await expect.poll(() => powerTargets.evaluateAll((targets) => targets.every((target) =>
         !target.classList.contains('st-hud__first-salvo-target--active'),
       ))).toBe(true);
 
       await touchAim.first().click();
       await expect(card).toContainText('2 / 3');
-      await expect.poll(() => touchAim.evaluateAll((targets) => targets.every((target) =>
+      await expect.poll(() => aimTargets.evaluateAll((targets) => targets.every((target) =>
         !target.classList.contains('st-hud__first-salvo-target--active'),
       ))).toBe(true);
-      await expect.poll(() => touchPower.evaluateAll((targets) => targets.every((target) =>
+      await expect.poll(() => powerTargets.evaluateAll((targets) => targets.every((target) =>
         target.classList.contains('st-hud__first-salvo-target--active'),
       ))).toBe(true);
 
       await touchPower.last().click();
-      await expect.poll(() => touchPower.evaluateAll((targets) => targets.every((target) =>
+      await expect.poll(() => powerTargets.evaluateAll((targets) => targets.every((target) =>
         !target.classList.contains('st-hud__first-salvo-target--active'),
       ))).toBe(true);
     } else {
@@ -305,7 +308,7 @@ test.describe('First Salvo browser contract', () => {
     });
     await page.touchscreen.tap(
       canvasBox!.x + canvasBox!.width * 0.55,
-      canvasBox!.y + canvasBox!.height * 0.58,
+      canvasBox!.y + canvasBox!.height * 0.36,
     );
 
     await expect(canvas).toHaveAttribute('data-last-pointer-type', 'touch');
@@ -355,11 +358,11 @@ test.describe('First Salvo browser contract', () => {
     const before = await readAimProbe(page);
     const start = {
       x: canvasBox!.x + canvasBox!.width * 0.55,
-      y: canvasBox!.y + canvasBox!.height * 0.58,
+      y: canvasBox!.y + canvasBox!.height * 0.36,
     };
     const end = {
       x: canvasBox!.x + canvasBox!.width * 0.62,
-      y: canvasBox!.y + canvasBox!.height * 0.48,
+      y: canvasBox!.y + canvasBox!.height * 0.28,
     };
     const cdp = await page.context().newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent', {

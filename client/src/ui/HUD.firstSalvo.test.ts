@@ -66,6 +66,9 @@ describe('HUD First Salvo presentation seam', () => {
     expect(hud.isFirstSalvoBriefingOpen()).toBe(false);
     expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(false);
     expect(card.parentElement?.classList.contains('st-hud__console-solution')).toBe(true);
+    expect(document.activeElement).toBe(
+      root.querySelector('.st-hud__console-state'),
+    );
   });
 
   it('presents a live, non-modal Aim coach and highlights only the aim instrument', () => {
@@ -113,7 +116,7 @@ describe('HUD First Salvo presentation seam', () => {
     const powerAndWindTargets = [
       ...document.querySelectorAll<HTMLElement>('[data-first-salvo-target="power-and-wind"]'),
     ];
-    expect(powerAndWindTargets).toHaveLength(6);
+    expect(powerAndWindTargets).toHaveLength(4);
     expect(powerAndWindTargets
       .every((target) => target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
     document.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!.click();
@@ -122,15 +125,15 @@ describe('HUD First Salvo presentation seam', () => {
       .contains('st-hud__first-salvo--hidden')).toBe(true);
   });
 
-  it('highlights and clears both rendered touch Aim and Power controls', () => {
-    const { overlay, modal, hud } = mount();
+  it('highlights and clears the unified rail Aim and Power controls', () => {
+    const { root, modal, hud } = mount();
     const touchAim = [
-      overlay.querySelector<HTMLElement>('[data-command="aim-left"]')!,
-      overlay.querySelector<HTMLElement>('[data-command="aim-right"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="aim-left"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="aim-right"]')!,
     ];
     const touchPower = [
-      overlay.querySelector<HTMLElement>('[data-command="power-down"]')!,
-      overlay.querySelector<HTMLElement>('[data-command="power-up"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="power-down"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="power-up"]')!,
     ];
 
     hud.setFirstSalvoStep('aim');
@@ -150,7 +153,7 @@ describe('HUD First Salvo presentation seam', () => {
   });
 
   it('uses primary-action copy for a live shield and exposes an accessible replay control', () => {
-    const { root, overlay, modal, hud, state } = mount();
+    const { root, modal, hud, state } = mount();
     const replay = vi.fn();
     hud.onFirstSalvoReplay(replay);
     state.tanks[0]!.selectedWeapon = 'shield';
@@ -170,7 +173,7 @@ describe('HUD First Salvo presentation seam', () => {
     expect(root.querySelector('[data-first-salvo-target="fire"]')?.classList
       .contains('st-hud__first-salvo-target--active')).toBe(true);
 
-    overlay.querySelector<HTMLButtonElement>('[data-command="menu"]')!.click();
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
     const replayButton = [...modal.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent === 'Replay First Salvo')!;
     expect(replayButton.tabIndex).toBe(0);
