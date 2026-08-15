@@ -133,3 +133,13 @@ Reject a change that leaves two command surfaces, turns the right rail back into
 ## Completion evidence
 
 The candidate is rejected unless exact-head hosted CI, CodeQL, Edge tests, and rendering E2E are green; Pages has deployed the merged head; the client and the two shared-floor verifier Edge consumers are deployed; and fresh production journeys prove both the rebuilt hot-seat console and an online/CPU console without making award or network claims beyond observation.
+
+### Delivery receipt (2026-08-15)
+
+- [x] PR #425 exact reviewed head `9360c67f7ba9607a7923f46944dbd73c14ed2d16` cleared CI (typecheck, deterministic harnesses, Edge tests, and rendering E2E) and CodeQL, then squash-merged as `main@b142f26540ec2f27a03f0c11bf7372208f156d18`.
+- [x] Exact-main CI `31870611518`, CodeQL `31870611469`, and Pages `31870611508` passed. The Pages run built the client, verified current-main provenance before and during deployment, and passed its post-deploy live smoke.
+- [x] PR #425 includes the shared verifier envelope. Live Supabase metadata shows `verified_replay_probe` v11 and `complete_verified_deployment` v6 both updated at `2026-08-15 06:55:15 UTC`, during the exact-main Pages provenance run. No migration, configuration, or unrelated Edge function is claimed.
+- [x] Fresh Pages hot-seat proof traversed Local Battle through the First Salvo entry and showed the deployed console's commander, firing solution, one enabled Fire action, and match ledger. Firing replaced the commit affordance with the in-flight tracking state rather than leaving a stale combat action.
+- [x] Fresh Pages online/CPU proof created a private two-seat operation with one Medium CPU, readied QA, and entered the real lockstep battle. The deployed console showed QA as the active commander, the real weapon/Angle/Power/Wind controls, exactly one Fire action, and the two-seat ledger. One ordinary human Baby Missile shot was followed by CPU play and control returned to QA at 40 health; this is direct observed handoff evidence only, not an inference about awards, authority, or broader network reliability. The test operation was returned to the lobby and left.
+
+Status: the adaptive battle-command console player outcome is delivered and production-verified. `career.initiative.0001` remains active for the next player-facing outcome.
