@@ -26,6 +26,12 @@ function options(overrides: Partial<DesiredShellOptions> = {}): DesiredShellOpti
     vehiclePreview: section('vehicle-preview'),
     content: section('content'),
     controls: section('controls'),
+    quickOperations: [
+      { id: 'standard', title: 'Standard Duel', briefing: 'A balanced two-tank exhibition.' },
+      { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.' },
+      { id: 'caldera-run', title: 'Caldera Run', briefing: 'Lava terrain changes every landing.' },
+      { id: 'last-light-siege', title: 'Last Light Siege', briefing: 'Best of three before sudden death.' },
+    ],
     onTabChange: vi.fn(),
     onQuickDuel: vi.fn(),
     onRejoin: vi.fn(),
@@ -47,7 +53,7 @@ describe('buildLobbyShellView', () => {
     const root = buildLobbyShellView(options());
     const deployment = root.querySelector<HTMLElement>('.lobby-deployment')!;
     const chooser = root.querySelector<HTMLElement>('.lobby-deployment-chooser')!;
-    const choices = [...chooser.querySelectorAll<HTMLButtonElement>('button')];
+    const choices = [...chooser.querySelectorAll<HTMLButtonElement>('button:not([data-operation-id])')];
 
     expect(deployment.tagName).toBe('MAIN');
     expect(deployment.getAttribute('aria-label')).toBe('Deployment preparation');
@@ -68,6 +74,32 @@ describe('buildLobbyShellView', () => {
     expect(root.querySelector('[data-section="controls"]')).toBeNull();
   });
 
+  it('presents operation cards with a selected briefing and launches the selected card', () => {
+    const onQuickDuel = vi.fn();
+    const root = buildLobbyShellView(options({ onQuickDuel }));
+    const cards = [...root.querySelectorAll<HTMLButtonElement>('[data-operation-id]')];
+    const caldera = root.querySelector<HTMLButtonElement>('[data-operation-id="caldera-run"]')!;
+
+    expect(cards.map((card) => card.dataset['operationId'])).toEqual([
+      'standard',
+      'crosswind-range',
+      'caldera-run',
+      'last-light-siege',
+    ]);
+    expect(cards[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[data-ui="quick-operation-briefing"]')?.textContent)
+      .toBe('A balanced two-tank exhibition.');
+
+    caldera.click();
+
+    expect(caldera.getAttribute('aria-pressed')).toBe('true');
+    expect(cards[0]?.getAttribute('aria-pressed')).toBe('false');
+    expect(root.querySelector('[data-ui="quick-operation-briefing"]')?.textContent)
+      .toBe('Lava terrain changes every landing.');
+    button(root, 'Quick Duel vs CPU').click();
+    expect(onQuickDuel).toHaveBeenCalledWith('caldera-run');
+  });
+
   it('routes each deployment choice exactly once', () => {
     const onQuickDuel = vi.fn();
     const onTabChange = vi.fn();
@@ -78,7 +110,7 @@ describe('buildLobbyShellView', () => {
     button(root, 'Play Online').click();
 
     expect(onQuickDuel).toHaveBeenCalledOnce();
-    expect(onQuickDuel).toHaveBeenCalledWith();
+    expect(onQuickDuel).toHaveBeenCalledWith('standard');
     expect(onTabChange.mock.calls).toEqual([['hotseat'], ['online']]);
   });
 
@@ -165,7 +197,7 @@ describe('buildLobbyShellView', () => {
 
     expect(root.querySelector('[data-section="account"]')).toBeNull();
     expect(root.querySelector('.lobby-rejoin-banner')).toBeNull();
-    expect(root.querySelectorAll('.lobby-deployment-chooser button')).toHaveLength(3);
+    expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(3);
   });
 
   it('preserves the online content wrapper as a neutral ownership boundary', () => {

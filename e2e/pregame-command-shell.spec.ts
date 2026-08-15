@@ -41,7 +41,8 @@ test.describe('Pre-game command shell', () => {
 
   test('opens on one focused three-choice deployment front door', async ({ page }) => {
     const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
-    const choices = chooser.getByRole('button');
+    const choices = chooser.locator('button:not([data-operation-id])');
+    const operations = chooser.locator('[data-operation-id]');
 
     await expect(choices).toHaveCount(3);
     await expect(choices).toHaveText([
@@ -49,6 +50,8 @@ test.describe('Pre-game command shell', () => {
       'Local Battle',
       'Play Online',
     ]);
+    await expect(operations).toHaveCount(4);
+    await expect(operations.first()).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
     await expect(page.locator('#lobby .lobby-online-primary')).toHaveCount(0);
     await expect(page.locator('#lobby .lobby-preview')).toHaveCount(0);
@@ -60,11 +63,12 @@ test.describe('Pre-game command shell', () => {
     const quick = chooser.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
     const local = chooser.getByRole('button', { name: 'Local Battle', exact: true });
     const online = chooser.getByRole('button', { name: 'Play Online', exact: true });
+    const operations = chooser.locator('[data-operation-id]');
 
     const metrics = await chooser.evaluate((element) => {
       const app = document.getElementById('app');
       const quick = element.querySelector<HTMLElement>('.primary');
-      const secondary = [...element.querySelectorAll<HTMLElement>('button:not(.primary)')];
+      const secondary = [...element.querySelectorAll<HTMLElement>('button:not(.primary):not([data-operation-id])')];
       if (!app || !quick || secondary.length !== 2) throw new Error('Expected deployment choices');
       const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
       return {
@@ -92,6 +96,12 @@ test.describe('Pre-game command shell', () => {
     for (const choice of [quick, local, online]) {
       const box = await choice.boundingBox();
       expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+    for (const operation of await operations.all()) {
+      const box = await operation.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
     await assertLobbyFrame(page);

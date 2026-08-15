@@ -120,9 +120,33 @@ describe('Lobby Quick Duel', () => {
       ],
       playerNames: [expectedHumanName, 'CPU 1'],
       settings: { seed: 0xfedcba98, rounds: 3 },
+      quickOperation: {
+        id: 'standard',
+        title: 'Standard Duel',
+        briefing: 'A balanced three-round duel.',
+      },
     });
     expect(generateQuickDuelSeed).toHaveBeenCalledOnce();
     expect(emitted.players[0]).not.toHaveProperty('ai');
+  });
+
+  it("carries Crosswind's real wrap-wall rule through the existing local launch config", () => {
+    const lobby = new Lobby(root, onReady, undefined, undefined, () => 0xfedcba98);
+    lobby.show();
+
+    root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')!.click();
+    button(root, 'Quick Duel vs CPU').click();
+
+    expect(onReady).toHaveBeenCalledOnce();
+    expect(onReady.mock.calls[0]![0]).toMatchObject({
+      mode: 'hotseat',
+      settings: { seed: 0xfedcba98, rounds: 3, walls: 'wrap' },
+      quickOperation: {
+        id: 'crosswind-range',
+        title: 'Crosswind Range',
+        briefing: 'Wraparound walls turn shifting wind into a ranging test.',
+      },
+    });
   });
 
   it('requests exactly one fresh unsigned seed for each redeployment in one Lobby', () => {
@@ -142,5 +166,20 @@ describe('Lobby Quick Duel', () => {
       expect(config.settings!.seed).toBeGreaterThanOrEqual(0);
       expect(config.settings!.seed).toBeLessThanOrEqual(0xffff_ffff);
     }
+  });
+
+  it('applies the chosen operation only to the ordinary Quick Duel settings', () => {
+    const lobby = new Lobby(root, onReady, undefined, undefined, () => 42);
+    lobby.show();
+
+    const operation = root.querySelector<HTMLButtonElement>('[data-operation-id="caldera-run"]');
+    expect(operation).not.toBeNull();
+    operation!.click();
+    button(root, 'Quick Duel vs CPU').click();
+
+    expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'hotseat',
+      settings: { seed: 42, rounds: 3, hazards: 'lava', battlefieldWorld: 'obsidian-caldera' },
+    }));
   });
 });

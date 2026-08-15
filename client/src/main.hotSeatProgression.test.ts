@@ -28,6 +28,7 @@ const seams = vi.hoisted(() => ({
   progressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
+  quickOperations: [] as Array<Record<string, unknown> | null>,
   verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
   hudFrames: [] as Array<{ phase: GameState['phase']; activePlayerId: string; isFiring: boolean }>,
@@ -203,6 +204,7 @@ vi.mock('./ui/HUD', () => ({
     notifyTerminalImpactComplete() { seams.terminalImpactNotifies += 1 }
     setAnonymousProgressionHandoff() { seams.anonymousHandoffs += 1 }
     setArmsLevel() {}
+    setQuickOperation(operation: Record<string, unknown> | null) { seams.quickOperations.push(operation) }
     setConnection() {}
     setFirstSalvoStep() {}
     setQuickChatEnabled() {}
@@ -496,6 +498,7 @@ describe('production hot-seat progression composition', () => {
     seams.progressionReceipts.length = 0
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
+    seams.quickOperations.length = 0
     seams.verifiedPresentationEvents.length = 0
     seams.hudUpdates.length = 0
     seams.hudFrames.length = 0
@@ -521,6 +524,32 @@ describe('production hot-seat progression composition', () => {
     seams.completeVerified = () => Promise.resolve(verifiedReceipt)
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('projects Quick Duel operation identity only from the explicitly local launch config', async () => {
+    seams.clients.push(fakeClient(liveVerifiedState()), fakeClient(liveVerifiedState()))
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      quickOperation: {
+        id: 'caldera-run',
+        title: 'Caldera Run',
+        briefing: 'Lava terrain turns every crater into a positional risk.',
+      },
+    })
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+
+    await vi.waitFor(() => expect(seams.quickOperations).toEqual([
+      {
+        id: 'caldera-run',
+        title: 'Caldera Run',
+        briefing: 'Lava terrain turns every crater into a positional risk.',
+      },
+      null,
+    ]))
   })
 
   it('forwards one real Fire and presents its submit, flight, resolution, and CPU handoff frames', async () => {

@@ -93,6 +93,27 @@ describe('HUD single-screen combat shell', () => {
     expect(root.querySelector('[data-ui="match-mode"]')?.textContent).toBe('Team battle');
   });
 
+  it('shows a Quick Operation only when local Quick Duel composition supplies one', () => {
+    const { root, hud } = mountHarness();
+    const operation = root.querySelector<HTMLElement>('[data-ui="quick-operation"]')!;
+
+    expect(operation.hidden).toBe(true);
+    expect(operation.textContent).toBe('');
+
+    hud.setQuickOperation({
+      title: 'Caldera Run',
+      briefing: 'Lava terrain turns every crater into a positional risk.',
+    });
+
+    expect(operation.hidden).toBe(false);
+    expect(operation.textContent).toBe('Caldera Run · Lava terrain turns every crater into a positional risk.');
+
+    hud.setQuickOperation(null);
+
+    expect(operation.hidden).toBe(true);
+    expect(operation.textContent).toBe('');
+  });
+
   it('mounts the active-turn command console in the explicit battle rail', () => {
     const { root, overlay, rail } = (() => {
       const root = document.createElement('div');
@@ -203,6 +224,7 @@ describe('HUD single-screen combat shell', () => {
     expect(persistentLedgerRegions).toEqual([
       root.querySelector('.st-hud__menu'),
       root.querySelector('[data-ui="match-mode"]'),
+      root.querySelector('[data-ui="quick-operation"]'),
       root.querySelector('.st-hud__round'),
       roster,
       root.querySelector('.st-hud__conn'),
