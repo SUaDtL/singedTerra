@@ -378,6 +378,7 @@ function bootstrap(): void {
         activeIsLocal,
         paused: hud.isPaused(),
       })
+      && !hud.isFirstSalvoBriefingOpen()
       && verifiedInputAllowed();
   }
 
@@ -690,7 +691,8 @@ function bootstrap(): void {
     // rAF loop keeps running underneath either way (networked lockstep stays
     // in sync); only this LOCAL emit is suppressed.
     const newInput = new InputHandler(canvas, (action) => {
-      if (!shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
+      if (hud.isFirstSalvoBriefingOpen()
+        || !shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
         || !verifiedInputAllowed()) return;
       // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
       // aim guide / HUD update instantly even when the idle-skip gate would skip.
@@ -734,6 +736,7 @@ function bootstrap(): void {
       initialAngle: activeTank?.angle,
       initialPower: activeTank?.power,
       canDirectAim: directAimAllowed,
+      canHandleCommand: () => !hud.isFirstSalvoBriefingOpen(),
     });
     input = newInput;
     newInput.attach();
@@ -969,7 +972,7 @@ function bootstrap(): void {
     activeIsAi,
     activeIsLocal,
     paused: hud.isPaused(),
-  }) && verifiedInputAllowed();
+  }) && !hud.isFirstSalvoBriefingOpen() && verifiedInputAllowed();
 
   hud.onFirstSalvoSkip(() => {
     firstSalvo.skip();

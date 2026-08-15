@@ -265,6 +265,42 @@ describe('InputHandler public contract', () => {
     ]);
   });
 
+  it('leaves combat keys inert behind a modal without consuming native button activation', () => {
+    let commandAllowed = false;
+    createHandler({ canHandleCommand: () => commandAllowed }).attach();
+    const enter = document.createElement('button');
+    const clicks = vi.fn();
+    enter.addEventListener('click', clicks);
+    document.body.append(enter);
+
+    const blocked = [' ', 'ArrowLeft', 'ArrowUp', 'a', 'd', 'q']
+      .map((key) => dispatchKey(key));
+    for (const key of [' ', 'Enter']) {
+      enter.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key,
+      }));
+      enter.click();
+    }
+
+    expect(emitted()).toEqual([]);
+    expect(blocked.every((event) => !event.defaultPrevented)).toBe(true);
+    expect(clicks).toHaveBeenCalledTimes(2);
+
+    commandAllowed = true;
+    for (const key of ['ArrowLeft', 'ArrowUp', 'a', 'd', 'q', ' ']) dispatchKey(key);
+    expect(emitted()).toEqual([
+      { type: 'set_angle', angle: 47 },
+      { type: 'set_power', power: 52 },
+      { type: 'move', delta: -8 },
+      { type: 'move', delta: 8 },
+      { type: 'select_weapon', weapon: implementedWeapons[1] },
+      { type: 'fire' },
+    ]);
+    enter.remove();
+  });
+
   it('lets the dedicated Fire control own Space/Enter without a second global fire', () => {
     const button = document.createElement('button');
     button.className = 'st-hud__primary-action';

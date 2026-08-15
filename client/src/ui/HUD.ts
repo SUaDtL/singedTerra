@@ -475,6 +475,11 @@ export class HUD {
     this.syncFirstSalvo();
   }
 
+  /** Presentation-only input gate while the First Salvo entry briefing owns focus. */
+  isFirstSalvoBriefingOpen(): boolean {
+    return this.built && !this.firstSalvoBriefingEl.hidden;
+  }
+
   /**
    * Set the room's arms level (0–4) so the store can show above-level weapons/accessories as locked.
    * UI-only: the engine independently enforces the same gate in `applyBuy`, so a stale or unset value
@@ -6302,7 +6307,14 @@ export class HUD {
 .st-hud__first-salvo-briefing-steps strong { color: var(--gold); }
 .st-hud__first-salvo-briefing-panel > .st-hud__restart { width: 100%; min-height: 44px; }
 @media (pointer: coarse) {
-  .st-hud__first-salvo { height: 44px; padding-block: 0; }
+  .st-hud__first-salvo {
+    height: 44px;
+    padding-block: 0;
+    border-width: 0;
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.42),
+      inset 0 0 0 1px rgba(255, 210, 63, 0.68);
+  }
   .st-hud__first-salvo-skip { min-height: 44px; }
 }
 #battle-rail .st-hud__console-context,

@@ -60,8 +60,10 @@ describe('HUD First Salvo presentation seam', () => {
     hud.setFirstSalvoStep('aim');
 
     const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    expect(hud.isFirstSalvoBriefingOpen()).toBe(true);
     expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(true);
     enterBriefing(modal);
+    expect(hud.isFirstSalvoBriefingOpen()).toBe(false);
     expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(false);
     expect(card.parentElement?.classList.contains('st-hud__console-solution')).toBe(true);
   });

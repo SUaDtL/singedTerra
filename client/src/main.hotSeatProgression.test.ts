@@ -29,6 +29,7 @@ const seams = vi.hoisted(() => ({
   hudUpdates: [] as unknown[][],
   hudFrames: [] as Array<{ phase: GameState['phase']; activePlayerId: string; isFiring: boolean }>,
   forwardedActions: [] as Array<Record<string, unknown>>,
+  firstSalvoBriefingOpen: false,
   hudImpactCues: [] as unknown[],
   rendererImpactCue: null as unknown,
   firstStrikeHudStates: [] as Array<Record<string, unknown> | null>,
@@ -156,6 +157,7 @@ vi.mock('./ui/HUD', () => ({
     flashMessage() {}
     hideEndScreens() {}
     isPaused() { return false }
+    isFirstSalvoBriefingOpen() { return seams.firstSalvoBriefingOpen }
     onBuy() {}
     onFirstSalvoReplay() {}
     onFirstSalvoSkip() {}
@@ -471,6 +473,7 @@ describe('production hot-seat progression composition', () => {
     seams.hudUpdates.length = 0
     seams.hudFrames.length = 0
     seams.forwardedActions.length = 0
+    seams.firstSalvoBriefingOpen = false
     seams.hudImpactCues.length = 0
     seams.rendererImpactCue = null
     seams.firstStrikeHudStates.length = 0
@@ -520,6 +523,34 @@ describe('production hot-seat progression composition', () => {
       .toEqual(['PLAYER_TURN', 'PLAYER_TURN', 'FIRING', 'RESOLVING', 'PLAYER_TURN'])
     expect(seams.hudFrames.at(-4)?.isFiring).toBe(true)
     expect(seams.hudFrames.at(-1)?.activePlayerId).toBe(state.tanks[1]!.id)
+  })
+
+  it('drops every combat command while the First Salvo briefing is open and resumes after entry', async () => {
+    const state = liveVerifiedState()
+    const client = fakeClient(state)
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+    if (!seams.inputAction) throw new Error('Expected input wiring')
+    const combatActions = [
+      { type: 'fire' },
+      { type: 'set_angle', angle: 46 },
+      { type: 'set_power', power: 51 },
+      { type: 'move', delta: -12 },
+      { type: 'move', delta: 12 },
+      { type: 'select_weapon', weapon: 'missile' },
+    ]
+
+    seams.firstSalvoBriefingOpen = true
+    for (const action of combatActions) seams.inputAction(action)
+    expect(seams.forwardedActions).toEqual([])
+
+    seams.firstSalvoBriefingOpen = false
+    for (const action of combatActions) seams.inputAction(action)
+    expect(seams.forwardedActions).toEqual(combatActions)
   })
 
   it('keeps the live snapshot provider absent when the exact diagnostics gate is missing', async () => {

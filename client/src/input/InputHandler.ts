@@ -17,6 +17,8 @@ export interface InputHandlerOptions {
   powerStep?: number;
   /** Live game-state gate for direct canvas aim. Defaults to enabled. */
   canDirectAim?: () => boolean;
+  /** Live presentation gate for every combat command. Defaults to enabled. */
+  canHandleCommand?: () => boolean;
 }
 
 /**
@@ -74,6 +76,7 @@ export class InputHandler {
   private readonly angleStep: number;
   private readonly powerStep: number;
   private readonly canDirectAim: () => boolean;
+  private readonly canHandleCommand: () => boolean;
 
   /** Locally-tracked absolute aim state (the engine re-clamps on apply). */
   private angle: number;
@@ -109,6 +112,7 @@ export class InputHandler {
     this.angleStep = options.angleStep ?? DEFAULT_ANGLE_STEP;
     this.powerStep = options.powerStep ?? DEFAULT_POWER_STEP;
     this.canDirectAim = options.canDirectAim ?? (() => true);
+    this.canHandleCommand = options.canHandleCommand ?? (() => true);
   }
 
   /**
@@ -160,21 +164,28 @@ export class InputHandler {
   // (main.ts) is responsible for gating them when an AI holds the turn.
 
   /** Adjust aim angle by `delta` degrees (positive = more left / higher angle). */
-  stepAngle(delta: number): void { this.adjustAngle(delta); }
+  stepAngle(delta: number): void {
+    if (this.canHandleCommand()) this.adjustAngle(delta);
+  }
 
   /** Adjust power by `delta` units (positive = more power). */
-  stepPower(delta: number): void { this.adjustPower(delta); }
+  stepPower(delta: number): void {
+    if (this.canHandleCommand()) this.adjustPower(delta);
+  }
 
   /** Emit one bounded, discrete tank movement commitment. */
   stepMove(delta: number): void {
-    if (isValidMoveDelta(delta)) this.emit({ type: 'move', delta });
+    if (this.canHandleCommand() && isValidMoveDelta(delta)) this.emit({ type: 'move', delta });
   }
 
   /** Advance weapon selection forward one slot (wrapping). */
-  nextWeapon(): void { this.cycleWeapon(); }
+  nextWeapon(): void {
+    if (this.canHandleCommand()) this.cycleWeapon();
+  }
 
   /** Emit a fire or use_shield action for the currently selected weapon. */
   triggerFire(): void {
+    if (!this.canHandleCommand()) return;
     this.emit(
       isShieldWeapon(IMPLEMENTED_WEAPONS[this.weaponIndex]!)
         ? { type: 'use_shield' }
@@ -228,6 +239,7 @@ export class InputHandler {
     if (nativeControl && (!isSpaceKey || isTextEntry || isDedicatedFireControl)) {
       return;
     }
+    if (!this.canHandleCommand()) return;
     if (isSpaceKey) {
       event.preventDefault();
       this.emit(
@@ -323,6 +335,7 @@ export class InputHandler {
       !this.tankPosKnown ||
       !this.directAimEnabled ||
       !this.canDirectAim() ||
+      !this.canHandleCommand() ||
       !event.isPrimary ||
       (event.pointerType === 'mouse' && event.button !== 0)
     ) {
@@ -343,7 +356,7 @@ export class InputHandler {
 
   private handlePointerMove = (event: PointerEvent): void => {
     if (event.pointerId !== this.activePointerId) return;
-    if (!this.directAimEnabled || !this.canDirectAim()) {
+    if (!this.directAimEnabled || !this.canDirectAim() || !this.canHandleCommand()) {
       this.clearActivePointer(true);
       return;
     }
