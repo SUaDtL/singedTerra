@@ -20,6 +20,22 @@ import {
 } from '../client/ProductionDiagnostics'
 import { Lobby, type AccountSessionPort, type LobbyConfig } from './Lobby'
 
+function verifiedAccountState(matchesPlayed: number): Extract<AccountState, { status: 'authenticated' }> {
+  const wins = 0
+  const totalXp = matchesPlayed * 100
+  const progression = {
+    matchesPlayed, wins, progressionVersion: 1 as const, totalXp,
+    level: Math.floor(totalXp / 500) + 1, levelXp: totalXp % 500, nextLevelXp: 500,
+  }
+  return {
+    status: 'authenticated', busy: false, error: '',
+    profile: {
+      id: 'user-1', displayName: 'Ranger',
+      summary: { ...progression, verifiedProgression: { evidence: 'verified_replay_v1', ...progression } },
+    },
+  }
+}
+
 class FakeAccountSession implements AccountSessionPort {
   state: AccountState
   readonly initialize = vi.fn(async () => undefined)
@@ -936,6 +952,49 @@ describe('Lobby account composition', () => {
     expect(account.startVerifiedDeployment).toHaveBeenCalledOnce()
   })
 
+  it('freezes the selected order to one descriptor and rotates only after an accepted receipt refresh', async () => {
+    const root = document.createElement('div')
+    let account!: FakeAccountSession
+    const lobby = new Lobby(root, vi.fn(), (onChange) => {
+      account = new FakeAccountSession(onChange, verifiedAccountState(0))
+      return account
+    })
+
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active', fieldOrder: { id: 'first-strike', result: null },
+    })
+
+    account.emit(verifiedAccountState(1))
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active', fieldOrder: { id: 'first-strike', result: null },
+    })
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:30.000Z'))
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active', fieldOrder: { id: 'first-strike', result: null },
+    })
+
+    expect(lobby.recordVerifiedDeploymentFire(
+      { angle: 37, power: 64 },
+      Date.parse('2026-08-12T13:01:00.000Z'),
+    )).toBe(true)
+    account.completeVerifiedDeployment.mockImplementationOnce(async () => {
+      account.emit(verifiedAccountState(1))
+      return verifiedReceipt
+    })
+    await expect(lobby.completeVerifiedDeployment(Date.parse('2026-08-12T13:02:00.000Z')))
+      .resolves.toEqual(verifiedReceipt)
+
+    account.startVerifiedDeployment.mockResolvedValueOnce({
+      resumed: false,
+      descriptor: { ...verifiedStart.descriptor, sessionId: '00000000-0000-4000-8000-000000000062' },
+    })
+    await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
+    expect(lobby.verifiedDeployment).toMatchObject({
+      status: 'active', fieldOrder: { id: 'fire-for-effect', result: null },
+    })
+  })
+
   it('retains terminal evidence and retries completion only before expiry', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(Date.parse('2026-08-12T13:00:00.000Z'))
@@ -1003,6 +1062,7 @@ describe('Lobby account composition', () => {
     await expect(pending).resolves.toBeNull()
     expect(lobby.verifiedDeployment).toMatchObject({
       status: 'expired',
+      fieldOrder: null,
       transcript: [{ angle: 37, power: 64 }],
       deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
       choices: ['continue-casual', 'return-to-battery'],
@@ -1110,6 +1170,7 @@ describe('Lobby account composition', () => {
 
     expect(lobby.verifiedDeployment).toMatchObject({
       status: 'frozen',
+      fieldOrder: null,
       descriptor: verifiedStart.descriptor,
       transcript: [{ angle: 37, power: 64 }],
       error: 'Return to the deployment owner account to resume verification.',
@@ -1371,6 +1432,7 @@ describe('Lobby account composition', () => {
     const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment')!
     expect(verified.querySelector('input')).toBeNull()
     expect(verified.textContent).toContain('Commander Ranger versus deterministic CPU')
+    expect(verified.textContent).not.toContain('First Strike')
     button(root, 'Start verified deployment').click()
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce())
 
@@ -1395,6 +1457,7 @@ describe('Lobby account composition', () => {
       verifiedDeployment: {
         descriptor: verifiedStart.descriptor,
         transcript: [],
+        fieldOrder: null,
       },
     })
   })
@@ -1406,7 +1469,7 @@ describe('Lobby account composition', () => {
     const onReady = vi.fn<(config: LobbyConfig) => void>()
     let account!: FakeAccountSession
     const lobby = new Lobby(root, onReady, (onChange) => {
-      account = new FakeAccountSession(onChange, authenticatedState())
+      account = new FakeAccountSession(onChange, verifiedAccountState(1))
       return account
     })
     await lobby.startVerifiedDeployment()
@@ -1416,9 +1479,13 @@ describe('Lobby account composition', () => {
 
     expect(root.querySelector('.lobby-verified-deployment')?.textContent)
       .toContain('Recovered 1 of 6 human salvos.')
+    expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+      .toContain('Fire for Effect · Damage the CPU on two separate human salvos.')
     button(root, 'Resume verified deployment').click()
     expect(onReady.mock.calls[0]?.[0].verifiedDeployment?.transcript)
       .toEqual([{ angle: 37, power: 64 }])
+    expect(onReady.mock.calls[0]?.[0].verifiedDeployment?.fieldOrder)
+      .toMatchObject({ id: 'fire-for-effect', result: null })
 
     button(root, 'Abandon verified deployment').click()
     expect(account.abandonVerifiedDeployment).not.toHaveBeenCalled()

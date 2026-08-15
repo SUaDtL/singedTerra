@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
 import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
+import type { FieldOrder } from './client/fieldOrder'
 
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
@@ -32,7 +33,7 @@ const seams = vi.hoisted(() => ({
   firstSalvoBriefingOpen: false,
   hudImpactCues: [] as unknown[],
   rendererImpactCue: null as unknown,
-  firstStrikeHudStates: [] as Array<Record<string, unknown> | null>,
+  fieldOrderHudStates: [] as Array<Record<string, unknown> | null>,
   liveMatchDiagnosticsProviders: [] as Array<() => unknown>,
   liveMatchDiagnosticsSettings: [] as Array<(() => unknown) | null>,
   anonymousHandoffs: 0,
@@ -40,7 +41,7 @@ const seams = vi.hoisted(() => ({
   lobbyShows: 0,
   accountAnonymous: false,
   accountAuthenticated: false,
-  onAccountAuthenticationChange: null as null | (() => void),
+  onAccountAuthenticationChange: null as null | ((identityChanged: boolean) => void),
   onProgressionSignIn: null as null | (() => void),
   record: (_result: { matchId: string; won: boolean }): Promise<HotSeatProgressionReceipt | null> => Promise.resolve({
     prior: { progressionVersion: 1 as const, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500 },
@@ -186,8 +187,8 @@ vi.mock('./ui/HUD', () => ({
       seams.verifiedHudStates.push(state)
     }
     setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
-    setFirstStrikeObjective(state: Record<string, unknown> | null) {
-      seams.firstStrikeHudStates.push(state)
+    setFieldOrder(state: Record<string, unknown> | null) {
+      seams.fieldOrderHudStates.push(state)
     }
     setLiveMatchDiagnostics(provider: (() => unknown) | null) {
       seams.liveMatchDiagnosticsSettings.push(provider)
@@ -221,7 +222,9 @@ vi.mock('./ui/Lobby', () => ({
     show() { seams.lobbyShows += 1 }
     isAccountAnonymous() { return seams.accountAnonymous }
     isAccountAuthenticated() { return seams.accountAuthenticated }
-    onAccountAuthenticationChange(callback: () => void) { seams.onAccountAuthenticationChange = callback }
+    onAccountAuthenticationChange(callback: (identityChanged: boolean) => void) {
+      seams.onAccountAuthenticationChange = callback
+    }
     get verifiedDeployment() { return seams.verifiedDeployment }
     refreshVerifiedDeploymentDeadline() { return seams.verifiedDeployment }
     recordVerifiedDeploymentFire(fire: { angle: number; power: number }) {
@@ -343,7 +346,14 @@ const verifiedReceipt = {
   },
 } as const
 
-function verifiedConfig(transcript: ReadonlyArray<{ angle: number; power: number }> = []) {
+function verifiedConfig(
+  transcript: ReadonlyArray<{ angle: number; power: number }> = [],
+  fieldOrder: FieldOrder = {
+    id: 'first-strike', title: 'First Strike',
+    instruction: 'Damage the CPU within your first three salvos.',
+    progress: { salvosRemaining: 3 }, result: null,
+  },
+) {
   return {
     mode: 'hotseat',
     players: verifiedDescriptor.config.options.players,
@@ -361,7 +371,11 @@ function verifiedConfig(transcript: ReadonlyArray<{ angle: number; power: number
       teamMode: false,
       rulesetVersion: 3,
     },
-    verifiedDeployment: { descriptor: verifiedDescriptor, transcript },
+    verifiedDeployment: {
+      descriptor: verifiedDescriptor,
+      transcript,
+      fieldOrder,
+    },
   }
 }
 
@@ -476,7 +490,7 @@ describe('production hot-seat progression composition', () => {
     seams.firstSalvoBriefingOpen = false
     seams.hudImpactCues.length = 0
     seams.rendererImpactCue = null
-    seams.firstStrikeHudStates.length = 0
+    seams.fieldOrderHudStates.length = 0
     seams.liveMatchDiagnosticsProviders.length = 0
     seams.liveMatchDiagnosticsSettings.length = 0
     seams.anonymousHandoffs = 0
@@ -573,11 +587,11 @@ describe('production hot-seat progression composition', () => {
     expect(seams.liveMatchDiagnosticsProviders).toEqual([])
 
     seams.accountAuthenticated = true
-    seams.onAccountAuthenticationChange?.()
+    seams.onAccountAuthenticationChange?.(true)
     expect(seams.liveMatchDiagnosticsProviders).toHaveLength(1)
 
     seams.accountAuthenticated = false
-    seams.onAccountAuthenticationChange?.()
+    seams.onAccountAuthenticationChange?.(true)
     expect(seams.liveMatchDiagnosticsSettings).toEqual([null, expect.any(Function), null])
   })
 
@@ -659,8 +673,13 @@ describe('production hot-seat progression composition', () => {
     verifiedClient.emit(state)
     await vi.waitFor(() => expect(seams.completedVerified).toBe(1))
     await vi.waitFor(() => expect(seams.verifiedProgressionReceipts).toEqual([verifiedReceipt]))
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'first-strike', result: { status: 'missed' },
+    })
     expect(seams.recorded).toEqual([])
     expect(seams.progressionReceipts).toEqual([])
+    seams.onQuit?.()
+    expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
   })
 
   it('keeps First Strike live through a third fired salvo and misses before later CPU damage can be credited', async () => {
@@ -684,17 +703,19 @@ describe('production hot-seat progression composition', () => {
     if (!seams.inputAction) throw new Error('Expected verified input wiring')
 
     seams.inputAction({ type: 'fire' })
-    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'active', salvosRemaining: 0 })
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'first-strike', progress: { salvosRemaining: 0 }, result: null,
+    })
 
     state.phase = 'PLAYER_TURN'
     state.activePlayerId = 'p2'
     verifiedClient.emit(state)
-    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'missed' })
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({ id: 'first-strike', result: { status: 'missed' } })
 
     state.tanks[1]!.health = 82
     state.activePlayerId = 'p1'
     verifiedClient.emit(state)
-    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'missed' })
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({ id: 'first-strike', result: { status: 'missed' } })
   })
 
   it('does not credit CPU-side damage while an early CPU response is in flight', async () => {
@@ -720,7 +741,9 @@ describe('production hot-seat progression composition', () => {
     state.tanks[1]!.health = 82
     verifiedClient.emit(state)
 
-    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'active', salvosRemaining: 2 })
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'first-strike', progress: { salvosRemaining: 2 }, result: null,
+    })
   })
 
   it('replays a resumed early hit before publishing First Strike so later salvos cannot erase it', async () => {
@@ -746,7 +769,41 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
     verifiedClient.emit(state)
 
-    expect(seams.firstStrikeHudStates.at(-1)).toEqual({ status: 'achieved', achievedOnSalvo: 1 })
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'first-strike', result: { status: 'achieved', achievedOnSalvo: 1 },
+    })
+  })
+
+  it('retains the descriptor-bound order across resume facts and retires it only on account replacement', async () => {
+    const state = liveVerifiedState()
+    const controller = fakeVerifiedController(state, 1)
+    const verifiedClient = fakeClient(state)
+    const order: FieldOrder = {
+      id: 'fire-for-effect', title: 'Fire for Effect',
+      instruction: 'Damage the CPU on two separate human salvos.',
+      progress: { damagedSalvos: 0, requiredDamagedSalvos: 2 }, result: null,
+    }
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(verifiedClient)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: verifiedDescriptor, transcript: [{ angle: 31, power: 62 }],
+      fieldOrder: order,
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onAccountAuthenticationChange) throw new Error('Expected lifecycle wiring')
+
+    seams.onLobbyReady(verifiedConfig([{ angle: 31, power: 62 }], order))
+    await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
+    verifiedClient.emit(state)
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'fire-for-effect', progress: { damagedSalvos: 1, requiredDamagedSalvos: 2 }, result: null,
+    })
+
+    seams.onAccountAuthenticationChange(false)
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({ id: 'fire-for-effect' })
+    seams.onAccountAuthenticationChange(true)
+    expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
   })
 
   it('maps retry and expiry freeze, then resumes input only after explicit casual conversion', async () => {
@@ -781,7 +838,7 @@ describe('production hot-seat progression composition', () => {
       choices: ['continue-casual', 'return-to-battery'],
     }
     verifiedClient.emit(state)
-    expect(seams.firstStrikeHudStates.at(-1)).toBeNull()
+    expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
     const acceptedBeforeExpiryChoice = controller.applyHumanAction.mock.calls.length
     seams.inputAction({ type: 'fire' })
     expect(controller.applyHumanAction).toHaveBeenCalledTimes(acceptedBeforeExpiryChoice)

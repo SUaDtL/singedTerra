@@ -39,6 +39,13 @@ export interface FieldOrder {
   readonly result: FieldOrderResult | null
 }
 
+/** Complete public copy projection shared by every Field Order surface. */
+export interface FieldOrderCopy {
+  readonly brief: string
+  readonly status: string
+  readonly report: string
+}
+
 interface FieldOrderDefinition {
   readonly id: FieldOrderId
   readonly title: string
@@ -147,4 +154,50 @@ export function observeFieldOrder(order: FieldOrder, observation: FieldOrderObse
     case 'fire-for-effect': return observeFireForEffect(order, observation)
     case 'hold-the-field': return observeHoldTheField(order, observation)
   }
+}
+
+function activeStatus(order: FieldOrder): string {
+  switch (order.id) {
+    case 'first-strike': {
+      const remaining = (order.progress as FirstStrikeProgress).salvosRemaining
+      return `${remaining} salvo${remaining === 1 ? '' : 's'} remaining`
+    }
+    case 'fire-for-effect': {
+      const progress = order.progress as FireForEffectProgress
+      return `${progress.damagedSalvos} of ${progress.requiredDamagedSalvos} damaging salvos`
+    }
+    case 'hold-the-field':
+      return 'Awaiting duel outcome'
+  }
+}
+
+function terminalReport(order: FieldOrder): string {
+  const achieved = order.result?.status === 'achieved'
+  switch (order.id) {
+    case 'first-strike':
+      return achieved
+        ? `First Strike achieved — CPU damaged on salvo ${(order.result as { achievedOnSalvo: number }).achievedOnSalvo}.`
+        : 'First Strike not achieved — CPU was not damaged in the first 3 salvos.'
+    case 'fire-for-effect': {
+      const progress = order.progress as FireForEffectProgress
+      return achieved
+        ? 'Fire for Effect achieved — CPU damaged on 2 separate human salvos.'
+        : `Fire for Effect not achieved — CPU was damaged on ${progress.damagedSalvos} of 2 required human salvos.`
+    }
+    case 'hold-the-field':
+      return achieved
+        ? 'Hold the Field achieved — duel won.'
+        : 'Hold the Field not achieved — duel was not won.'
+  }
+}
+
+/** Renders only receipt-safe Field Order fields into shared briefing/status/report copy. */
+export function renderFieldOrder(order: FieldOrder): FieldOrderCopy {
+  const brief = `${order.title} · ${order.instruction}`
+  const report = order.result === null ? '' : terminalReport(order)
+  return Object.freeze({
+    brief,
+    status: order.result === null ? `${brief} · ${activeStatus(order)}` : report.slice(0, -1),
+    report,
+  })
 }

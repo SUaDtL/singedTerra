@@ -1,3 +1,6 @@
+import { renderFieldOrder, type FieldOrder } from '../client/fieldOrder';
+import { buildLobbyPreparationSection } from './LobbyPreparationSection';
+
 export interface LobbyHotSeatViewOptions {
   minPlayers: number;
   maxPlayers: number;
@@ -18,6 +21,7 @@ export interface LobbyHotSeatVerifiedDeploymentOptions {
   busy: boolean;
   message: string | null;
   abandonIntent: boolean;
+  fieldOrder: FieldOrder | null;
   onLaunch: () => void;
   onRequestAbandon: () => void;
   onConfirmAbandon: () => void;
@@ -49,14 +53,17 @@ function buildVerifiedDeployment(
     item.textContent = rule;
     rules.append(item);
   }
-  const dossier = document.createElement('section');
-  dossier.className = 'lobby-verified-deployment__dossier';
-  dossier.setAttribute('aria-label', 'Commander dossier');
-  const dossierTitle = document.createElement('h4');
-  dossierTitle.textContent = 'Commander dossier';
-  const objective = document.createElement('p');
-  objective.textContent = 'First Strike · Damage the CPU within your first three salvos.';
-  dossier.append(dossierTitle, objective);
+  const fieldOrder = options.fieldOrder;
+  const dossier = fieldOrder === null ? null : document.createElement('section');
+  if (fieldOrder && dossier) {
+    dossier.className = 'lobby-verified-deployment__dossier';
+    dossier.setAttribute('aria-label', 'Commander dossier');
+    const dossierTitle = document.createElement('h4');
+    dossierTitle.textContent = 'Commander dossier';
+    const order = document.createElement('p');
+    order.textContent = renderFieldOrder(fieldOrder).brief;
+    dossier.append(dossierTitle, order);
+  }
   const message = document.createElement('p');
   message.className = 'lobby-verified-deployment__message';
   message.setAttribute('role', 'status');
@@ -106,7 +113,9 @@ function buildVerifiedDeployment(
     actions.append(confirmation);
   }
 
-  verified.append(title, matchup, rules, dossier, message, actions);
+  verified.append(title, matchup, rules);
+  if (dossier) verified.append(dossier);
+  verified.append(message, actions);
   return verified;
 }
 
@@ -207,4 +216,3 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
 
   return wrapper;
 }
-import { buildLobbyPreparationSection } from './LobbyPreparationSection';
