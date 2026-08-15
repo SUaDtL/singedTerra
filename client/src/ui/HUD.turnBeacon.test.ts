@@ -46,7 +46,7 @@ describe('HUD turn handoff beacon', () => {
     expect(status.getAttribute('aria-live')).toBe('polite');
     expect(status.getAttribute('aria-atomic')).toBe('true');
     expect(status.getAttribute('aria-label')).toBe(
-      "Alice's turn. Weapon Baby Missile. 100 fuel remaining.",
+      "Alice's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.",
     );
     expect(row.style.getPropertyValue('--st-turn-color')).toBe('#e84d4d');
     expect(row.classList.contains('st-hud__active-row--handoff')).toBe(true);
@@ -101,7 +101,7 @@ describe('HUD turn handoff beacon', () => {
 
     expect(root.querySelector('.st-hud__turn-owner')?.textContent).toBe('🤖 Bob');
     expect(root.querySelector('.st-hud__turn-status')?.getAttribute('aria-label'))
-      .toBe("🤖 Bob's turn. Weapon Baby Missile. 100 fuel remaining.");
+      .toBe("🤖 Bob's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.");
     expect(
       root.querySelector<HTMLElement>('.st-hud__active-row')
         ?.style.getPropertyValue('--st-turn-color'),
@@ -123,7 +123,7 @@ describe('HUD turn handoff beacon', () => {
     expect(progress.getAttribute('aria-live')).toBe('polite');
     expect(progress.getAttribute('aria-atomic')).toBe('true');
     expect(progress.getAttribute('aria-label')).toBe('Alice is sending a shot.');
-    expect(row.classList.contains('st-hud__active-row--hidden')).toBe(true);
+    expect(row.classList.contains('st-hud__active-row--hidden')).toBe(false);
     expect(progress.classList.contains('st-hud__aim--hidden')).toBe(false);
 
     state.phase = 'FIRING';
@@ -133,7 +133,7 @@ describe('HUD turn handoff beacon', () => {
     expect(progress.getAttribute('aria-label')).toBe(
       "Alice's shot is in flight.",
     );
-    expect(row.classList.contains('st-hud__active-row--hidden')).toBe(true);
+    expect(row.classList.contains('st-hud__active-row--hidden')).toBe(false);
     expect(progress.classList.contains('st-hud__aim--hidden')).toBe(false);
 
     state.phase = 'RESOLVING';
@@ -143,7 +143,7 @@ describe('HUD turn handoff beacon', () => {
     expect(progress.getAttribute('aria-label')).toBe(
       "Alice's shot is resolving.",
     );
-    expect(row.classList.contains('st-hud__active-row--hidden')).toBe(true);
+    expect(row.classList.contains('st-hud__active-row--hidden')).toBe(false);
     expect(progress.classList.contains('st-hud__aim--hidden')).toBe(false);
 
     state.tanks[0]!.alive = false;

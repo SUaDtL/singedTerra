@@ -2,16 +2,10 @@ import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS, ACCESSORIES } from '@shared/engine/WeaponSystem';
 import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
 import type { ConnectionState, TurnWatch } from '../client/GameClient';
-import { MAX_WIND } from '@shared/engine/Physics';
 import {
-  gaugeFraction,
-  windNeedleOffset,
-  elevationNeedleDeg,
   elevationDegrees,
-  aimDirectionGlyph,
   powerLabel,
   windMagnitudeLabel,
-  windDirectionSymbol,
 } from './gaugeMath';
 import { resolveInitialArsenalCollapsed } from './arsenalPreference';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
@@ -114,21 +108,6 @@ function writeArsenalCollapsed(collapsed: boolean): void {
 }
 
 /**
- * Barrel-relative aim readout (P3-13b). The engine angle is a GLOBAL compass
- * value (0=right, 90=up, 180=left). Shown raw, the number doesn't track the
- * visible barrel — a left-firing tank reads "135°" while its barrel looks
- * raised ~45° — so ←/→ feel inverted. Present it instead as ELEVATION above the
- * horizon (0=flat, 90=straight up) plus an aim-direction arrow, so the number
- * rises and falls WITH the barrel for either side. Display-only: the logged
- * set_angle values are untouched, so deterministic replay is unaffected.
- *
- * Delegates to gaugeMath helpers so the computation is not duplicated.
- */
-function aimReadout(angle: number): string {
-  return `Elev ${elevationDegrees(angle)}° ${aimDirectionGlyph(angle)}`;
-}
-
-/**
  * HUD is an HTML/CSS overlay (SPEC §8), NOT canvas-drawn. MVP1 grows the MVP0
  * text readout into a full overlay: per-player health bars, a wind indicator,
  * active-tank aim/weapon readout, and a GAME_OVER panel with a Restart button.
@@ -199,6 +178,8 @@ export class HUD {
   private touchAngleCb: ((delta: number) => void) | null = null;
   private touchPowerCb: ((delta: number) => void) | null = null;
   private touchWeaponCb: (() => void) | null = null;
+  /** Toggle for the deterministic trajectory projection, shared by G and touch. */
+  private aimGuideCb: (() => void) | null = null;
   /** Callback fired by the shared rail action (projectile fire or shield activation). */
   private primaryActionCb: (() => void) | null = null;
   /** Callback fired by one semantic mobility-rocker activation. */
@@ -215,6 +196,7 @@ export class HUD {
   private weaponEl!: HTMLElement;
   private weaponValueEl!: HTMLElement;
   private weaponAmmoEl!: HTMLElement;
+  private commanderHealthEl!: HTMLElement;
   private aimEl!: HTMLElement;
   /** Aim readout sub-node: pending / flight / resolving progress text. */
   private aimTextEl!: HTMLElement;
@@ -310,10 +292,11 @@ export class HUD {
   private lastSalvoHideTimer: ReturnType<typeof setTimeout> | null = null;
   private consoleSolutionEl!: HTMLElement;
   private consoleCommitmentEl!: HTMLElement;
+  private matchDrawerBtnEl!: HTMLButtonElement;
+  private matchDrawerCloseEl!: HTMLButtonElement;
   private consoleStateEl!: HTMLElement;
   private consoleExplanationEl!: HTMLElement;
-  private shotReadbackEl!: HTMLElement;
-  private shotReadbackValueEls!: readonly HTMLElement[];
+
   private turnActionsEl!: HTMLElement;
   private primaryActionBtnEl!: HTMLButtonElement;
   private primaryActionLabelEl!: HTMLElement;
@@ -357,17 +340,8 @@ export class HUD {
   /** Per-tank-id cache of the bar's mutable nodes, so updates skip rebuilds. */
   private rows = new Map<string, PlayerRow>();
 
-  // ── Instrument cluster gauge nodes (cockpit HUD, #44) ──────────────────
-  // Cached once in build(); mutated each frame in syncWind / syncAim.
-  // Elevation gauge SVG nodes:
-  private gaugeElevNeedle!: SVGLineElement;
-  private gaugeElevLabel!: SVGTextElement;
-  // Wind gauge SVG nodes:
-  private gaugeWindMarker!: SVGRectElement;
-  private gaugeWindLabel!: SVGTextElement;
-  // Power gauge SVG nodes:
-  private gaugePowerArc!: SVGPathElement;
-  private gaugePowerLabel!: SVGTextElement;
+
+
   // Active-player name row (replaces old aimTextEl player portion):
   private activePlayerEl!: HTMLElement;
   private turnStatusEl!: HTMLElement;
@@ -387,6 +361,9 @@ export class HUD {
   private solutionTurnCommandBtns: HTMLButtonElement[] = [];
   private solutionWeaponCommandBtnEl!: HTMLButtonElement;
   private solutionAdjustmentsEl!: HTMLElement;
+  private solutionAngleValueEl!: HTMLElement;
+  private solutionPowerValueEl!: HTMLElement;
+  private solutionWindValueEl!: HTMLElement;
 
   constructor(
     root: HTMLElement,
@@ -501,6 +478,7 @@ export class HUD {
   onTouchAngle(cb: (delta: number) => void): void { this.touchAngleCb = cb; }
   onTouchPower(cb: (delta: number) => void): void { this.touchPowerCb = cb; }
   onTouchWeapon(cb: () => void): void { this.touchWeaponCb = cb; }
+  onAimGuide(cb: () => void): void { this.aimGuideCb = cb; }
   /** Register the shared Fire / Activate shield action. */
   onPrimaryAction(cb: () => void): void { this.primaryActionCb = cb; }
   /** Register one bounded left/right movement commitment. */
@@ -604,28 +582,9 @@ export class HUD {
       command.commitment.commit !== null,
       command.commitment.explanation ?? command.commitment.label,
     );
-    this.syncShotReadback(command.solution, command.commitment.phase);
     this.syncLastSalvoCue(command.context.lastSalvo);
   }
 
-  /** Keep the decision card tied to the same values that the existing controls submit. */
-  private syncShotReadback(
-    solution: ReturnType<typeof battleCommandStateFor>['solution'],
-    phase: BattleCommandCommitmentPhase,
-  ): void {
-    const showReadback = phase === 'decision' && solution !== null;
-    this.shotReadbackEl.hidden = !showReadback;
-    if (!showReadback || solution === null) return;
-    const weapon = WEAPONS[solution.weapon as WeaponType]?.name ?? solution.weapon;
-    const wind = solution.wind === 0
-      ? 'Calm'
-      : `${windMagnitudeLabel(solution.wind)} ${solution.wind < 0 ? 'left' : 'right'}`;
-    const values = [weapon, `${solution.angle}°`, `Power ${solution.power}`, `Wind ${wind}`];
-    values.forEach((value, index) => {
-      const target = this.shotReadbackValueEls[index]!;
-      if (target.textContent !== value) target.textContent = value;
-    });
-  }
 
   /** Present only the projection's live, renderer-admitted learning cue. */
   private syncLastSalvoCue(cue: BattleCommandImpactLearningCue | null): void {
@@ -655,6 +614,10 @@ export class HUD {
     explanation: string,
   ): void {
     if (hasCommit) {
+      // Weapon, angle, power, and wind already have one live visual owner in
+      // Fire Control. The terminal owns only commitment state and the one
+      // irreversible action; duplicating the solution here would create a
+      // second ballistic panel with divergent hierarchy.
       this.consoleExplanationEl.hidden = true;
       this.consoleExplanationEl.textContent = '';
       if (!this.aimEl.isConnected) {
@@ -663,7 +626,14 @@ export class HUD {
           : null;
         this.consoleCommitmentEl.insertBefore(this.aimEl, coach);
       }
-      if (!this.turnActionsEl.isConnected) this.consoleCommitmentEl.append(this.turnActionsEl);
+      // Touch keeps its coach in the solution value band, but it still owns
+      // the sole primary action until dismissed; Aim/Power remain available.
+      const coachOwnsPrimary = !this.firstSalvoEl.classList.contains('st-hud__first-salvo--hidden')
+        && (this.firstSalvoEl.parentElement === this.consoleCommitmentEl
+          || (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches));
+      if (!coachOwnsPrimary && !this.turnActionsEl.isConnected) {
+        this.consoleCommitmentEl.append(this.turnActionsEl);
+      }
       return;
     }
 
@@ -747,21 +717,22 @@ export class HUD {
     this.buildPlayers();
     this.buildVerifiedDeployment();
     this.buildRound();
-    const instruments = this.buildInstrumentCluster();
     this.buildActiveRow();
     this.buildArsenal();
     const controls = this.buildSolutionControls();
     this.buildStore();
     this.buildTurnActions();
-    this.buildCommandConsole(instruments, controls);
+    this.buildCommandConsole(controls);
     this.buildEndScreens();
     this.buildRoundShop();
     const menu = this.buildMenu();
+    this.buildMatchDrawer();
     this.buildLiveness();
     this.buildFirstSalvoCoach();
     this.buildLiveMatchDiagnostics();
 
     this.root.append(
+      this.matchDrawerCloseEl,
       menu,
       this.matchModeEl,
       this.quickOperationEl,
@@ -775,7 +746,7 @@ export class HUD {
     // Quick Chat stays outside the match ledger. Transient send/turn notices
     // stay with the protected command rail; combat input never gets a second
     // overlay-only touch surface.
-    this.overlayRoot.append(this.quickChatRootEl);
+    this.overlayRoot.append(this.quickChatRootEl, this.matchDrawerBtnEl);
     this.railRoot.append(
       this.commandConsoleEl,
       this.toastEl,
@@ -792,6 +763,14 @@ export class HUD {
       this.firstSalvoBriefingEl,
     );
     this.built = true;
+    // Splash dismissal can happen after an entry briefing was made visible.
+    // Reclaim focus only if that modal still owns the interaction; ordinary
+    // matches and a dismissed briefing remain completely unaffected.
+    window.addEventListener('st:splash-dismissed', () => {
+      if (this.isFirstSalvoBriefingOpen()) {
+        this.firstSalvoBriefingEnterBtnEl.focus({ preventScroll: true });
+      }
+    });
     this.syncFirstSalvo();
     this.syncQuickChatAvailability();
     this.syncLiveMatchDiagnostics();
@@ -921,217 +900,11 @@ export class HUD {
     });
   }
 
-  /** Responsive analog fire-control console (#44). */
-  private buildInstrumentCluster(): HTMLElement {
-    // One inset console with large elevation/power dials and a wide wind rail.
-    // All volatile geometry remains driven by the pure gaugeMath helpers.
-
-    const instruments = document.createElement('div');
-    instruments.className =
-      'st-hud__instruments st-ui-section st-ui-section--instrument';
-    instruments.setAttribute('role', 'group');
-    instruments.setAttribute('aria-label', 'Ballistic computer');
-    const instrTitle = document.createElement('div');
-    instrTitle.className = 'st-hud__instr-title';
-    instrTitle.textContent = 'Ballistic Computer';
-
-    // ── Elevation gauge (semicircular dial, 180° arc) ──
-    // Needle pivots at center of a 72×44 SVG.  Arc: 180° semicircle, flat edge down.
-    // Angle mapping via elevationNeedleDeg(angle): 0=right(3 o'clock), 90=up, 180=left.
-    // SVG coordinate origin: top-left.  Dial center: (36, 40).  Arc radius: 30.
-    // The arc goes from (6,40) [left, 180°] to (66,40) [right, 0°] along the top.
-    const elevSvg = HUD.makeSvg(72, 56);
-    elevSvg.setAttribute('aria-label', 'Elevation gauge');
-    // Dial arc track
-    const elevTrack = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    elevTrack.setAttribute('d', 'M 6 40 A 30 30 0 0 1 66 40');
-    elevTrack.setAttribute('class', 'st-hud__gauge-track');
-    // Center pivot mark
-    const elevPivot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    elevPivot.setAttribute('cx', '36');
-    elevPivot.setAttribute('cy', '40');
-    elevPivot.setAttribute('r', '2.5');
-    elevPivot.setAttribute('class', 'st-hud__gauge-pivot');
-    // Needle (pivots at dial center 36,40; points upward at natural 0° rotation)
-    this.gaugeElevNeedle = document.createElementNS('http://www.w3.org/2000/svg', 'line') as SVGLineElement;
-    this.gaugeElevNeedle.setAttribute('x1', '36');
-    this.gaugeElevNeedle.setAttribute('y1', '40');
-    this.gaugeElevNeedle.setAttribute('x2', '36');
-    this.gaugeElevNeedle.setAttribute('y2', '12');
-    this.gaugeElevNeedle.setAttribute('class', 'st-hud__gauge-needle');
-    // Tick marks at 0°, 45°, 90°, 135°, 180° of the dial arc
-    const elevTicks = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    elevTicks.setAttribute('class', 'st-hud__gauge-ticks');
-    for (const deg of [0, 45, 90, 135, 180]) {
-      // Map dial degrees → SVG angle: 0°=right, rotated CCW from positive-x axis.
-      // dial deg 0 → SVG 0° from center pointing right; 90 → pointing up (−90° SVG); 180 → left
-      const rad = ((180 - deg) * Math.PI) / 180; // 0=right at SVG angle 0
-      const r = 30; const cx = 36; const cy = 40;
-      const x1 = cx + r * Math.cos(rad);
-      const y1 = cy - r * Math.sin(rad);
-      const x2 = cx + (r - 5) * Math.cos(rad);
-      const y2 = cy - (r - 5) * Math.sin(rad);
-      const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      tick.setAttribute('x1', String(x1));
-      tick.setAttribute('y1', String(y1));
-      tick.setAttribute('x2', String(x2));
-      tick.setAttribute('y2', String(y2));
-      elevTicks.append(tick);
-    }
-    // On-gauge numeric label (elevation degrees + direction glyph)
-    this.gaugeElevLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
-    this.gaugeElevLabel.setAttribute('x', '36');
-    this.gaugeElevLabel.setAttribute('y', '52');
-    this.gaugeElevLabel.setAttribute('text-anchor', 'middle');
-    this.gaugeElevLabel.setAttribute('class', 'st-hud__gauge-label');
-    this.gaugeElevLabel.textContent = '0▶';
-    this.gaugeElevLabel.setAttribute('aria-label', '0 degrees, right');
-    elevSvg.append(elevTrack, elevTicks, elevPivot, this.gaugeElevNeedle, this.gaugeElevLabel);
-    const elevCell = document.createElement('div');
-    elevCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--elevation';
-    elevCell.dataset['firstSalvoTarget'] = 'aim';
-    const elevCellTitle = document.createElement('div');
-    elevCellTitle.className = 'st-hud__gauge-cell-title';
-    elevCellTitle.textContent = 'Angle';
-    elevCell.append(elevCellTitle, elevSvg);
-
-    // ── Wind gauge (horizontal center-zero track) ──
-    // Wide center-zero rail. The marker traverses 116px while remaining in-frame.
-    const windSvg = HUD.makeSvg(144, 52);
-    windSvg.setAttribute('aria-label', 'Wind gauge');
-    // Track background bar
-    const windTrack = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    windTrack.setAttribute('x', '8');
-    windTrack.setAttribute('y', '18');
-    windTrack.setAttribute('width', '128');
-    windTrack.setAttribute('height', '6');
-    windTrack.setAttribute('rx', '3');
-    windTrack.setAttribute('class', 'st-hud__gauge-track-rect');
-    // Center tick
-    const windCenter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    windCenter.setAttribute('x1', '72');
-    windCenter.setAttribute('y1', '14');
-    windCenter.setAttribute('x2', '72');
-    windCenter.setAttribute('y2', '30');
-    windCenter.setAttribute('class', 'st-hud__gauge-ticks');
-    // End ticks
-    const windTickL = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    windTickL.setAttribute('x1', '8'); windTickL.setAttribute('y1', '16');
-    windTickL.setAttribute('x2', '8'); windTickL.setAttribute('y2', '28');
-    windTickL.setAttribute('class', 'st-hud__gauge-ticks');
-    const windTickR = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    windTickR.setAttribute('x1', '136'); windTickR.setAttribute('y1', '16');
-    windTickR.setAttribute('x2', '136'); windTickR.setAttribute('y2', '28');
-    windTickR.setAttribute('class', 'st-hud__gauge-ticks');
-    // Moving marker (diamond shape via rect rotated 45°, centered on track center y=25)
-    this.gaugeWindMarker = document.createElementNS('http://www.w3.org/2000/svg', 'rect') as SVGRectElement;
-    this.gaugeWindMarker.setAttribute('x', '68');
-    this.gaugeWindMarker.setAttribute('y', '18');
-    this.gaugeWindMarker.setAttribute('width', '8');
-    this.gaugeWindMarker.setAttribute('height', '8');
-    this.gaugeWindMarker.setAttribute('rx', '1');
-    this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 72, 22)');
-    this.gaugeWindMarker.setAttribute('class', 'st-hud__gauge-needle-rect');
-    // Label
-    this.gaugeWindLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
-    this.gaugeWindLabel.setAttribute('x', '72');
-    this.gaugeWindLabel.setAttribute('y', '46');
-    this.gaugeWindLabel.setAttribute('text-anchor', 'middle');
-    this.gaugeWindLabel.setAttribute('class', 'st-hud__gauge-label');
-    this.gaugeWindLabel.textContent = '• 0.0';
-    windSvg.append(windTrack, windTickL, windTickR, windCenter, this.gaugeWindMarker, this.gaugeWindLabel);
-    const windCell = document.createElement('div');
-    windCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--wind';
-    windCell.dataset['firstSalvoTarget'] = 'power-and-wind';
-    const windCellTitle = document.createElement('div');
-    windCellTitle.className = 'st-hud__gauge-cell-title';
-    windCellTitle.textContent = 'Wind';
-    windCell.append(windCellTitle, windSvg);
-
-    // ── Power gauge (arc fill driven by stroke-dasharray) ──
-    // Match the elevation dial's 72×56 frame, center, radius, and semicircle so
-    // the two primary controls read as one balanced instrument pair.
-    const pwrSvg = HUD.makeSvg(72, 56);
-    pwrSvg.setAttribute('aria-label', 'Power gauge');
-    const PWR_R = 30;
-    const PWR_CX = 36;
-    const PWR_CY = 40;
-    const pwrArcD = 'M 6 40 A 30 30 0 0 1 66 40';
-    const PWR_ARC_LEN = Math.PI * PWR_R;
-    // Track (full arc, dim)
-    const pwrTrack = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    pwrTrack.setAttribute('d', pwrArcD);
-    pwrTrack.setAttribute('class', 'st-hud__gauge-track');
-    const pwrTicks = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    pwrTicks.setAttribute('class', 'st-hud__gauge-ticks');
-    for (const deg of [0, 45, 90, 135, 180]) {
-      const rad = ((180 - deg) * Math.PI) / 180;
-      const x1 = PWR_CX + PWR_R * Math.cos(rad);
-      const y1 = PWR_CY - PWR_R * Math.sin(rad);
-      const x2 = PWR_CX + (PWR_R - 5) * Math.cos(rad);
-      const y2 = PWR_CY - (PWR_R - 5) * Math.sin(rad);
-      const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      tick.setAttribute('x1', String(x1));
-      tick.setAttribute('y1', String(y1));
-      tick.setAttribute('x2', String(x2));
-      tick.setAttribute('y2', String(y2));
-      pwrTicks.append(tick);
-    }
-    // Fill arc (same path, stroke-dasharray driven by gaugeFraction × ARC_LEN)
-    this.gaugePowerArc = document.createElementNS('http://www.w3.org/2000/svg', 'path') as SVGPathElement;
-    this.gaugePowerArc.setAttribute('d', pwrArcD);
-    this.gaugePowerArc.setAttribute('stroke-dasharray', `0 ${PWR_ARC_LEN.toFixed(2)}`);
-    this.gaugePowerArc.setAttribute('class', 'st-hud__gauge-power-fill');
-    // Store arc length as data attribute for frame updates
-    this.gaugePowerArc.dataset['arcLen'] = String(PWR_ARC_LEN.toFixed(4));
-    // End-cap dot at start position (low end)
-    const pwrDotL = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    pwrDotL.setAttribute('cx', '6');
-    pwrDotL.setAttribute('cy', '40');
-    pwrDotL.setAttribute('r', '2.5');
-    pwrDotL.setAttribute('class', 'st-hud__gauge-pivot');
-    const pwrDotR = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    pwrDotR.setAttribute('cx', '66');
-    pwrDotR.setAttribute('cy', '40');
-    pwrDotR.setAttribute('r', '2.5');
-    pwrDotR.setAttribute('class', 'st-hud__gauge-pivot');
-    // Numeric label
-    this.gaugePowerLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text') as SVGTextElement;
-    this.gaugePowerLabel.setAttribute('x', '36');
-    this.gaugePowerLabel.setAttribute('y', '52');
-    this.gaugePowerLabel.setAttribute('text-anchor', 'middle');
-    this.gaugePowerLabel.setAttribute('class', 'st-hud__gauge-label st-hud__gauge-label--lg');
-    this.gaugePowerLabel.textContent = '0';
-    pwrSvg.append(
-      pwrTrack,
-      pwrTicks,
-      this.gaugePowerArc,
-      pwrDotL,
-      pwrDotR,
-      this.gaugePowerLabel,
-    );
-    const pwrCell = document.createElement('div');
-    pwrCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--power';
-    pwrCell.dataset['firstSalvoTarget'] = 'power-and-wind';
-    const pwrCellTitle = document.createElement('div');
-    pwrCellTitle.className = 'st-hud__gauge-cell-title';
-    pwrCellTitle.textContent = 'Power';
-    pwrCell.append(pwrCellTitle, pwrSvg);
-
-    // Assemble the instrument cluster row
-    const gaugeRow = document.createElement('div');
-    gaugeRow.className = 'st-hud__gauge-row';
-    gaugeRow.append(elevCell, pwrCell, windCell);
-
-    instruments.append(instrTitle, gaugeRow);
-    return instruments;
-  }
-
   /** Active-player + weapon readout row, plus shot-progress status. */
   private buildActiveRow(): void {
     // ── Active player + weapon name row (replaces aim text + old wind/weapon blocks) ──
     // This shows "PlayerName  ·  WeaponName" in one compact row. It persists below the
-    // gauges and is hidden while the shot-progress status is shown.
+    // decision controls and is hidden while the shot-progress status is shown.
     this.activePlayerEl = document.createElement('div');
     this.activePlayerEl.className = 'st-hud__active-row';
     this.turnStatusEl = document.createElement('div');
@@ -1153,7 +926,7 @@ export class HUD {
     this.aimEl.append(this.aimTextEl);
     this.aimEl.classList.add('st-hud__aim--hidden');
 
-    // Active weapon readout — kept as a text row (not a gauge; SPEC says "may be
+    // Active weapon readout — kept as a text row (the spec says it may be
     // repositioned"). Placed inside activePlayerEl alongside the player name.
     const owner = document.createElement('div');
     owner.className = 'st-hud__turn-identity';
@@ -1162,7 +935,11 @@ export class HUD {
     ownerKicker.textContent = 'Active turn';
     this.turnOwnerEl = document.createElement('span');
     this.turnOwnerEl.className = 'st-hud__turn-owner';
-    owner.append(ownerKicker, this.turnOwnerEl);
+    this.commanderHealthEl = document.createElement('span');
+    this.commanderHealthEl.className = 'st-hud__commander-health';
+    this.commanderHealthEl.dataset['ui'] = 'commander-health';
+    this.commanderHealthEl.setAttribute('aria-label', 'No active commander health');
+    owner.append(ownerKicker, this.turnOwnerEl, this.commanderHealthEl);
     const portraitFrame = document.createElement('div');
     portraitFrame.className = 'st-hud__tank-portrait-frame';
     this.tankPortraitEl = document.createElement('canvas');
@@ -1177,6 +954,7 @@ export class HUD {
     const weapon = document.createElement('section');
     weapon.className = 'st-hud__weapon';
     weapon.dataset['ui'] = 'weapon-bay';
+    weapon.dataset['valueOwner'] = 'weapon';
     weapon.setAttribute('aria-label', 'Weapon and ammunition');
     this.weaponEl = weapon;
     this.weaponIconEl = document.createElement('span');
@@ -1301,28 +1079,62 @@ export class HUD {
       control: 'angle' | 'power',
       label: string,
       buttons: HTMLButtonElement[],
-    ): HTMLElement => {
+    ): { readonly group: HTMLElement; readonly value: HTMLElement } => {
       const group = document.createElement('div');
       group.className = 'st-hud__solution-adjustment';
       group.dataset['control'] = control;
+      group.dataset['valueOwner'] = control;
       group.setAttribute('role', 'group');
       group.setAttribute('aria-label', label);
       const title = document.createElement('span');
       title.className = 'st-hud__solution-adjustment-label';
       title.textContent = label;
-      group.append(title, ...buttons);
-      return group;
+      const value = document.createElement('output');
+      value.className = 'st-hud__solution-adjustment-value';
+      value.setAttribute('aria-live', 'off');
+      group.append(title, value, ...buttons);
+      return { group, value };
     };
-    controls.append(
-      makeGroup('angle', 'Angle', [
-        makeControl('aim-left', '←', 'Aim barrel left', '−', () => this.touchAngleCb?.(3), 'aim'),
-        makeControl('aim-right', '→', 'Aim barrel right', '+', () => this.touchAngleCb?.(-3), 'aim'),
-      ]),
-      makeGroup('power', 'Power', [
-        makeControl('power-down', '↓', 'Decrease power', '−', () => this.touchPowerCb?.(-3), 'power-and-wind'),
-        makeControl('power-up', '↑', 'Increase power', '+', () => this.touchPowerCb?.(3), 'power-and-wind'),
-      ]),
-    );
+    const angle = makeGroup('angle', 'Angle', [
+      makeControl('aim-left', '←', 'Aim barrel left', '−', () => this.touchAngleCb?.(3), 'aim'),
+      makeControl('aim-right', '→', 'Aim barrel right', '+', () => this.touchAngleCb?.(-3), 'aim'),
+    ]);
+    const power = makeGroup('power', 'Power', [
+      makeControl('power-down', '↓', 'Decrease power', '−', () => this.touchPowerCb?.(-3), 'power-and-wind'),
+      makeControl('power-up', '↑', 'Increase power', '+', () => this.touchPowerCb?.(3), 'power-and-wind'),
+    ]);
+    this.solutionAngleValueEl = angle.value;
+    this.solutionPowerValueEl = power.value;
+    const wind = document.createElement('div');
+    wind.className = 'st-hud__solution-wind';
+    wind.dataset['valueOwner'] = 'wind';
+    wind.dataset['firstSalvoTarget'] = 'power-and-wind';
+    wind.setAttribute('aria-label', 'Wind');
+    const windLabel = document.createElement('span');
+    windLabel.className = 'st-hud__solution-adjustment-label';
+    windLabel.textContent = 'Wind';
+    this.solutionWindValueEl = document.createElement('output');
+    this.solutionWindValueEl.className = 'st-hud__solution-adjustment-value';
+    wind.append(windLabel, this.solutionWindValueEl);
+    const guide = document.createElement('button');
+    guide.type = 'button';
+    guide.className = 'st-hud__trajectory-guide';
+    guide.dataset['ui'] = 'deterministic-aim-guide';
+    guide.dataset['guideModel'] = 'fixed-step-ballistic';
+    guide.setAttribute('aria-label', 'Deterministic trajectory guide on the battlefield');
+    const guideLabel = document.createElement('span');
+    guideLabel.className = 'st-hud__trajectory-guide-label';
+    guideLabel.textContent = 'Guide';
+    const guideHint = document.createElement('kbd');
+    guideHint.setAttribute('aria-hidden', 'true');
+    guideHint.textContent = 'G';
+    guide.append(makeHudGlyph('aim', 14), guideLabel, guideHint);
+    guide.addEventListener('click', () => this.aimGuideCb?.());
+    // The trajectory guide is live firing context, not a fourth command card.
+    // Keeping it with Wind makes its global-G hint available without reserving a
+    // separate row in the protected battle rail.
+    wind.append(guide);
+    controls.append(angle.group, power.group, wind);
     return controls;
   }
 
@@ -1335,6 +1147,8 @@ export class HUD {
     this.stripEl.className =
       'st-hud__strip st-ui-section st-ui-section--arsenal';
     this.stripEl.dataset['ui'] = 'arsenal-drawer';
+    this.stripEl.setAttribute('role', 'dialog');
+    this.stripEl.setAttribute('aria-modal', 'true');
     // The trigger lives in the weapon bay; the drawer itself stays one reusable
     // owned-only surface and keeps its persisted disclosure state.
     const stripToggle = document.createElement('button');
@@ -1358,13 +1172,15 @@ export class HUD {
     drawerHeader.className = 'st-hud__arsenal-drawer-header';
     const drawerTitle = document.createElement('span');
     drawerTitle.className = 'st-hud__arsenal-drawer-title';
-    drawerTitle.textContent = 'Arsenal';
+    drawerTitle.id = `st-hud-armory-title-${HUD.arsenalDrawerSequence}`;
+    drawerTitle.textContent = 'Armory';
+    this.stripEl.setAttribute('aria-labelledby', drawerTitle.id);
     this.arsenalDrawerCloseEl = document.createElement('button');
     this.arsenalDrawerCloseEl.type = 'button';
     this.arsenalDrawerCloseEl.className = 'st-hud__arsenal-drawer-close';
-    this.arsenalDrawerCloseEl.setAttribute('aria-label', 'Collapse arsenal');
+    this.arsenalDrawerCloseEl.setAttribute('aria-label', 'Close Armory');
     this.arsenalDrawerCloseEl.textContent = 'Close';
-    this.arsenalDrawerCloseEl.addEventListener('click', () => this.toggleStripCollapsed());
+    this.arsenalDrawerCloseEl.addEventListener('click', () => this.closeArmory());
     drawerHeader.append(drawerTitle, this.arsenalDrawerCloseEl);
     const stripGrid = document.createElement('div');
     stripGrid.className = 'st-hud__strip-grid';
@@ -1469,14 +1285,28 @@ export class HUD {
         this.intelInputMode = 'keyboard';
         this.renderWeaponIntel();
       }
+      if (event.key === 'Tab' && !this.stripCollapsed) {
+        const focusable = [...this.stripEl.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+          .filter((element) => !element.hidden && element.offsetParent !== null);
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (first && last && (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus({ preventScroll: true });
+          return;
+        }
+      }
       if (event.key !== 'Escape' || this.stripCollapsed) return;
       event.preventDefault();
       event.stopPropagation();
-      this.stripCollapsed = true;
-      writeArsenalCollapsed(true);
-      this.applyStripCollapsed();
-      this.stripToggleEl.focus();
+      this.closeArmory();
     });
+    this.modalRoot.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || this.stripCollapsed || !this.stripEl.contains(event.target as Node)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeArmory();
+    }, true);
     const stored = readStoredArsenalPreference();
     this.stripCollapsed = resolveInitialArsenalCollapsed(stored);
   }
@@ -1765,6 +1595,13 @@ export class HUD {
       // keyboard commands remain native while assistive tech announces readiness.
       this.consoleStateEl.focus({ preventScroll: true });
     });
+    // The entry briefing has one intentional action.  Do not let Shift+Tab or
+    // Tab fall through to obscured combat controls while it is modal.
+    this.firstSalvoBriefingEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return;
+      event.preventDefault();
+      this.firstSalvoBriefingEnterBtnEl.focus({ preventScroll: true });
+    });
     briefingPanel.append(eyebrow, title, briefing, this.firstSalvoBriefingEnterBtnEl);
     this.firstSalvoBriefingEl.append(briefingPanel);
   }
@@ -1779,18 +1616,28 @@ export class HUD {
     const copy = this.firstSalvoCopyFor(this.firstSalvoStep);
     const visible = copy !== null && this.firstSalvoBriefingAcknowledged;
     this.firstSalvoEl.classList.toggle('st-hud__first-salvo--hidden', !visible);
-    const anchor = this.firstSalvoStep === 'fire' ? 'commitment' : 'solution';
+    const coarsePointer = typeof window.matchMedia === 'function'
+      && window.matchMedia('(pointer: coarse)').matches;
+
+    // On touch the coach uses the value band of the firing solution: its Skip
+    // target stays large without obscuring the live Aim/Power buttons below.
+    const anchor = this.firstSalvoStep === 'fire' ? 'terminal' : 'solution';
     if (copy === null) delete this.firstSalvoEl.dataset['coachAnchor'];
     else this.firstSalvoEl.dataset['coachAnchor'] = anchor;
-    const destination = anchor === 'commitment'
+    const destination = anchor === 'terminal'
       ? this.consoleCommitmentEl
       : this.consoleSolutionEl;
+    // A compact touch terminal cannot honestly show a 44px Skip target and a
+    // second Fire target at once. The final coach owns that cell; dismissal
+    // restores the one real primary action before ordinary play resumes.
+    if (visible && (anchor === 'terminal' || coarsePointer)) this.turnActionsEl.remove();
     if (this.firstSalvoEl.parentElement !== destination) {
-      if (anchor === 'commitment' && this.turnActionsEl.isConnected) {
-        destination.insertBefore(this.firstSalvoEl, this.turnActionsEl);
-      } else {
-        destination.append(this.firstSalvoEl);
-      }
+      destination.append(this.firstSalvoEl);
+    }
+    if (!visible
+      && this.consoleCommitmentEl.dataset['commandMode'] === 'decision'
+      && !this.turnActionsEl.isConnected) {
+      this.consoleCommitmentEl.append(this.turnActionsEl);
     }
     for (const scope of [this.root, this.overlayRoot, this.railRoot]) {
       for (const target of scope.querySelectorAll<HTMLElement>('[data-first-salvo-target]')) {
@@ -1842,7 +1689,7 @@ export class HUD {
   }
 
   /** One semantic surface for identity, progress, tactics, economy, and Fire. */
-  private buildCommandConsole(instruments: HTMLElement, controls: HTMLElement): void {
+  private buildCommandConsole(controls: HTMLElement): void {
     this.commandConsoleEl = document.createElement('section');
     this.commandConsoleEl.className =
       'st-hud__command-console st-ui-section st-ui-section--active';
@@ -1879,24 +1726,16 @@ export class HUD {
     solution.className = 'st-hud__console-solution';
     solution.dataset['ui'] = 'firing-solution';
     solution.setAttribute('aria-label', 'Firing solution');
-    const guide = document.createElement('div');
-    guide.className = 'st-hud__trajectory-guide';
-    guide.dataset['ui'] = 'deterministic-aim-guide';
-    guide.dataset['guideModel'] = 'fixed-step-ballistic';
-    guide.setAttribute('role', 'note');
-    guide.setAttribute('aria-label', 'Deterministic trajectory guide on the battlefield');
-    const guideLabel = document.createElement('span');
-    guideLabel.textContent = 'Trajectory guide';
-    const guideHint = document.createElement('kbd');
-    guideHint.setAttribute('aria-hidden', 'true');
-    guideHint.textContent = 'G';
-    guide.append(makeHudGlyph('aim', 14), guideLabel, guideHint);
-    solution.append(this.weaponEl, instruments, controls, guide, this.stripEl);
+
+    // Buying is a gameplay decision inside Armory, alongside loadout choice;
+    // it is not a third standalone card or a Command Menu destination.
+    this.stripBodyEl.append(this.storeBtnEl);
+    solution.append(this.weaponEl, controls, this.stripEl);
     this.consoleSolutionEl = solution;
 
-    const commitment = document.createElement('section');
-    commitment.className = 'st-hud__console-commitment';
-    commitment.setAttribute('aria-label', 'Turn commitment');
+    const terminal = document.createElement('section');
+    terminal.className = 'st-hud__fire-terminal';
+    terminal.setAttribute('aria-label', 'Fire control phase');
     const state = document.createElement('div');
     state.className = 'st-hud__console-state';
     state.setAttribute('role', 'status');
@@ -1905,31 +1744,14 @@ export class HUD {
     const explanation = document.createElement('div');
     explanation.className = 'st-hud__commitment-explanation';
     explanation.hidden = true;
-    const readback = document.createElement('dl');
-    readback.className = 'st-hud__shot-readback';
-    readback.dataset['ui'] = 'shot-readback';
-    readback.setAttribute('aria-label', 'Current firing solution');
-    readback.hidden = true;
-    const readbackValues: HTMLElement[] = [];
-    for (const label of ['Weapon', 'Elevation', 'Power', 'Wind']) {
-      const item = document.createElement('div');
-      item.className = 'st-hud__shot-readback-item';
-      const term = document.createElement('dt');
-      term.textContent = label;
-      const value = document.createElement('dd');
-      value.className = 'st-hud__shot-readback-value';
-      item.append(term, value);
-      readback.append(item);
-      readbackValues.push(value);
-    }
-    commitment.append(state, explanation, readback, this.aimEl, this.turnActionsEl);
-    this.consoleCommitmentEl = commitment;
+    terminal.append(state, explanation, this.aimEl, this.turnActionsEl);
+    this.consoleCommitmentEl = terminal;
     this.consoleStateEl = state;
     this.consoleExplanationEl = explanation;
-    this.shotReadbackEl = readback;
-    this.shotReadbackValueEls = readbackValues;
 
-    this.commandConsoleEl.append(context, solution, commitment);
+
+    solution.append(terminal);
+    this.commandConsoleEl.append(context, solution);
   }
 
   /** GAME_OVER overlay + the non-destructive PAUSE overlay. */
@@ -2099,15 +1921,6 @@ export class HUD {
     resumeBtn.textContent = 'Resume';
     this.pauseResumeBtnEl = resumeBtn;
     resumeBtn.addEventListener('click', () => this.togglePause(false));
-    const storeBtn = document.createElement('button');
-    storeBtn.className = 'st-hud__restart st-hud__restart--ghost';
-    storeBtn.type = 'button';
-    storeBtn.dataset['command'] = 'open-store';
-    storeBtn.textContent = 'Open Store';
-    storeBtn.addEventListener('click', () => {
-      this.togglePause(false);
-      this.toggleStore(true);
-    });
     const replayFirstSalvoBtn = document.createElement('button');
     replayFirstSalvoBtn.className = 'st-hud__restart st-hud__restart--ghost';
     replayFirstSalvoBtn.type = 'button';
@@ -2125,7 +1938,7 @@ export class HUD {
     const pauseBtns = document.createElement('div');
     pauseBtns.className = 'st-hud__overlay-btns';
     this.pauseActionsEl = pauseBtns;
-    pauseBtns.append(resumeBtn, storeBtn);
+    pauseBtns.append(resumeBtn);
     const pauseExit = document.createElement('div');
     pauseExit.className = 'st-hud__command-menu-exit';
     pauseExit.dataset['ui'] = 'command-menu-exit';
@@ -2243,6 +2056,43 @@ export class HUD {
     // so the player can get back into the live game (review #5).
     menu.addEventListener('click', () => this.togglePause(true));
     return menu;
+  }
+
+  /** Compact Match trigger for the drawer presentation on constrained layouts. */
+  private buildMatchDrawer(): void {
+    this.matchDrawerBtnEl = document.createElement('button');
+    this.matchDrawerBtnEl.type = 'button';
+    this.matchDrawerBtnEl.className = 'st-hud__match-drawer-toggle st-ui-action st-ui-action--quiet';
+    this.matchDrawerBtnEl.dataset['ui'] = 'match-drawer-toggle';
+    this.matchDrawerBtnEl.setAttribute('aria-label', 'Open match ledger');
+    this.matchDrawerBtnEl.setAttribute('aria-controls', 'hud');
+    this.matchDrawerBtnEl.setAttribute('aria-expanded', 'false');
+    this.matchDrawerBtnEl.append(makeHudGlyph('menu', 14), document.createTextNode('Match'));
+    this.matchDrawerBtnEl.addEventListener('click', () => {
+      this.setMatchDrawerOpen(!this.root.classList.contains('st-hud--match-drawer-open'));
+    });
+    this.matchDrawerCloseEl = document.createElement('button');
+    this.matchDrawerCloseEl.type = 'button';
+    this.matchDrawerCloseEl.className = 'st-hud__match-drawer-close st-ui-action st-ui-action--quiet';
+    this.matchDrawerCloseEl.textContent = 'Close';
+    this.matchDrawerCloseEl.setAttribute('aria-label', 'Close match ledger');
+    this.matchDrawerCloseEl.addEventListener('click', () => this.setMatchDrawerOpen(false));
+    this.root.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.root.classList.contains('st-hud--match-drawer-open')) {
+        event.preventDefault();
+        this.setMatchDrawerOpen(false);
+      }
+    });
+  }
+
+  private setMatchDrawerOpen(open: boolean): void {
+    if (open && !this.stripCollapsed) return;
+    this.root.classList.toggle('st-hud--match-drawer-open', open);
+    this.matchDrawerBtnEl.setAttribute('aria-expanded', String(open));
+    this.matchDrawerBtnEl.tabIndex = open ? -1 : 0;
+    this.matchDrawerBtnEl.setAttribute('aria-hidden', String(open));
+    if (open) this.matchDrawerCloseEl.focus({ preventScroll: true });
+    else this.matchDrawerBtnEl.focus({ preventScroll: true });
   }
 
   /** Maintainer-only read-only battle inspector. It is never mounted in ordinary play. */
@@ -2598,7 +2448,7 @@ export class HUD {
     const credits = active?.credits ?? 0;
     const canAct = state.phase === 'PLAYER_TURN';
 
-    const storeLabel = `Store · $${credits.toLocaleString()}`;
+    const storeLabel = `Buy weapons · $${credits.toLocaleString()}`;
     if (this.storeBtnLabelEl.textContent !== storeLabel) {
       this.storeBtnLabelEl.textContent = storeLabel;
     }
@@ -2767,28 +2617,16 @@ export class HUD {
     }
   }
 
-  /**
-   * Update the wind SVG gauge: slide the marker horizontally and refresh the label.
-   * The half-track half-width is 32px (track spans x=4..68, center=36, half=32).
-   * windNeedleOffset returns [-1,1]; marker center starts at x=72.
-   * The marker is a rotated rect with natural center at (x+4, y+4) after the 45° rotate
-   * around (x+4, y+4) = (72, 22). We translate it by offset×58px.
-   */
+  /** Project authoritative wind into Fire Control's single live value. */
   private syncWind(wind: number): void {
-    const offset = windNeedleOffset(wind, MAX_WIND); // [-1, 1]
-    const tx = offset * 58;
-    // Marker: rect x=68 y=18 w=8 h=8, rotated around its center (72,22).
-    const cx = 72 + tx;
-    this.gaugeWindMarker.setAttribute('x', String(cx - 4));
-    this.gaugeWindMarker.setAttribute('transform', `rotate(45, ${cx}, 22)`);
-    // Label: "→ 3.2" / "← 3.2" / "• 0.0"
-    const sym = windDirectionSymbol(wind);
     const mag = windMagnitudeLabel(wind);
-    const lbl = `${sym} ${mag}`;
-    if (this.gaugeWindLabel.textContent !== lbl) this.gaugeWindLabel.textContent = lbl;
+    const solutionWind = wind === 0 ? 'Calm' : `${mag} ${wind < 0 ? 'left' : 'right'}`;
+    if (this.solutionWindValueEl.textContent !== solutionWind) {
+      this.solutionWindValueEl.textContent = solutionWind;
+    }
   }
 
-  /** Update the active tank's SVG gauges + weapon/player name row. */
+  /** Update the active commander and live firing values. */
   private syncAim(state: GameState, isFiring = false, isHandoff = false): void {
     const hasActiveTurn = state.phase === 'PLAYER_TURN' ||
       state.phase === 'FIRING' ||
@@ -2804,13 +2642,15 @@ export class HUD {
       ? activeTank
       : undefined;
     if (!tank) {
-      // No active tank: blank gauges and clear identity rather than leaving a
+      // No active tank: clear decision values and identity rather than leaving a
       // stale player named through a terminal or defensive state.
       this.activePlayerEl.classList.toggle('st-hud__active-row--hidden', true);
       this.aimEl.classList.toggle('st-hud__aim--hidden', true);
       if (this.turnOwnerEl.textContent !== '') this.turnOwnerEl.textContent = '';
       if (this.weaponValueEl.textContent !== '—') this.weaponValueEl.textContent = '—';
       if (this.weaponAmmoEl.textContent !== '—') this.weaponAmmoEl.textContent = '—';
+      if (this.commanderHealthEl.textContent !== '—') this.commanderHealthEl.textContent = '—';
+      this.commanderHealthEl.setAttribute('aria-label', 'No active commander health');
       if (this.selectedWeaponIconType !== null) {
         this.weaponIconEl.replaceChildren();
         this.selectedWeaponIconType = null;
@@ -2826,16 +2666,8 @@ export class HUD {
         this.activePlayerEl.style.removeProperty('--st-turn-color');
       }
       this.syncTankPortrait();
-      // Zero out gauges
-      this.gaugeElevNeedle.setAttribute('transform', '');
-      if (this.gaugeElevLabel.textContent !== '0▶') this.gaugeElevLabel.textContent = '0▶';
-      this.gaugeElevLabel.setAttribute('aria-label', '0 degrees, right');
-      this.gaugeWindMarker.setAttribute('x', '68');
-      this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 72, 22)');
-      if (this.gaugeWindLabel.textContent !== '• 0.0') this.gaugeWindLabel.textContent = '• 0.0';
-      const arcLen = parseFloat(this.gaugePowerArc.dataset['arcLen'] ?? '0');
-      this.gaugePowerArc.setAttribute('stroke-dasharray', `0 ${arcLen.toFixed(2)}`);
-      if (this.gaugePowerLabel.textContent !== '0') this.gaugePowerLabel.textContent = '0';
+      this.solutionAngleValueEl.textContent = '—';
+      this.solutionPowerValueEl.textContent = '—';
       return;
     }
 
@@ -2868,8 +2700,11 @@ export class HUD {
         this.aimEl.setAttribute('aria-label', progress.label);
       }
       this.aimEl.classList.toggle('st-hud__aim--hidden', false);
-      this.activePlayerEl.classList.toggle('st-hud__active-row--hidden', true);
-      // Keep gauges frozen at their last values while a shot is progressing.
+      // The terminal status carries progress, while the commander remains the
+      // visual anchor for the whole committed-shot phase. Hiding it left the
+      // left rail blank on ordinary desktop and compact play.
+      this.activePlayerEl.classList.toggle('st-hud__active-row--hidden', false);
+      // Keep decision values frozen while a shot is progressing.
       return;
     }
 
@@ -2884,6 +2719,15 @@ export class HUD {
     if (this.turnOwnerEl.title !== ownerLabel) {
       this.turnOwnerEl.title = ownerLabel;
     }
+    const health = Math.max(0, Math.floor(tank.health));
+    const healthLabel = `${health} HP`;
+    if (this.commanderHealthEl.textContent !== healthLabel) {
+      this.commanderHealthEl.textContent = healthLabel;
+    }
+    const healthAriaLabel = `${health} health remaining`;
+    if (this.commanderHealthEl.getAttribute('aria-label') !== healthAriaLabel) {
+      this.commanderHealthEl.setAttribute('aria-label', healthAriaLabel);
+    }
     if (this.weaponValueEl.textContent !== weaponName) {
       this.weaponValueEl.textContent = weaponName;
     }
@@ -2897,7 +2741,7 @@ export class HUD {
       this.activePlayerEl.style.setProperty('--st-turn-color', tank.color);
     }
     const activeLabel =
-      `${ownerLabel}'s turn. Weapon ${weaponName}. ${Math.max(0, Math.floor(tank.fuel))} fuel remaining.`;
+      `${ownerLabel}'s turn. ${health} health. Weapon ${weaponName}. ${Math.max(0, Math.floor(tank.fuel))} fuel remaining.`;
     if (this.turnStatusEl.getAttribute('aria-label') !== activeLabel) {
       this.turnStatusEl.setAttribute('aria-label', activeLabel);
     }
@@ -2907,28 +2751,15 @@ export class HUD {
       this.activePlayerEl.classList.add('st-hud__active-row--handoff');
     }
 
-    // ── Elevation gauge ──
-    // elevationNeedleDeg(angle) gives [0,180]: 0=right, 90=up, 180=left.
-    // The needle SVG natural position points up. Positive SVG rotation moves it
-    // clockwise toward screen-right, so a rightward 45° barrel needs +45°.
-    const needleDeg = elevationNeedleDeg(tank.angle);
-    const needleRot = 90 - needleDeg; // 0→+90° (right), 90→0° (up), 180→−90° (left)
-    this.gaugeElevNeedle.setAttribute('transform', `rotate(${needleRot}, 36, 40)`);
     const elevation = elevationDegrees(tank.angle);
-    const direction = tank.angle === 90 ? 'up' : tank.angle < 90 ? 'right' : 'left';
-    const elevLbl = `${elevation}${aimDirectionGlyph(tank.angle)}`;
-    if (this.gaugeElevLabel.textContent !== elevLbl) this.gaugeElevLabel.textContent = elevLbl;
-    this.gaugeElevLabel.setAttribute('aria-label', `${elevation} degrees, ${direction}`);
-
-    // ── Power gauge (arc fill) ──
-    const fraction = gaugeFraction(tank.power, 0, tank.powerCap ?? 100);
-    const arcLen = parseFloat(this.gaugePowerArc.dataset['arcLen'] ?? '0');
-    const filled = fraction * arcLen;
-    const gap = arcLen - filled;
-    const dasharrayVal = `${filled.toFixed(2)} ${gap.toFixed(2)}`;
-    this.gaugePowerArc.setAttribute('stroke-dasharray', dasharrayVal);
+    const solutionAngle = `${elevation}°`;
+    if (this.solutionAngleValueEl.textContent !== solutionAngle) {
+      this.solutionAngleValueEl.textContent = solutionAngle;
+    }
     const pwrLbl = powerLabel(tank.power);
-    if (this.gaugePowerLabel.textContent !== pwrLbl) this.gaugePowerLabel.textContent = pwrLbl;
+    if (this.solutionPowerValueEl.textContent !== pwrLbl) {
+      this.solutionPowerValueEl.textContent = pwrLbl;
+    }
   }
 
   /** Repaint the authored vehicle portrait only when its visible identity changes. */
@@ -3043,10 +2874,25 @@ export class HUD {
 
   /** Flip and persist the arsenal-collapsed preference. */
   private toggleStripCollapsed(): void {
-    this.stripCollapsed = !this.stripCollapsed;
-    writeArsenalCollapsed(this.stripCollapsed);
+    if (!this.stripCollapsed) {
+      this.closeArmory();
+      return;
+    }
+    this.stripCollapsed = false;
+    this.setMatchDrawerOpen(false);
+    this.modalRoot.append(this.stripEl);
+    writeArsenalCollapsed(false);
     this.applyStripCollapsed();
-    (this.stripCollapsed ? this.stripToggleEl : this.arsenalDrawerCloseEl).focus();
+    this.arsenalDrawerCloseEl.focus({ preventScroll: true });
+  }
+
+  private closeArmory(): void {
+    if (this.stripCollapsed) return;
+    this.stripCollapsed = true;
+    this.consoleSolutionEl.append(this.stripEl);
+    writeArsenalCollapsed(true);
+    this.applyStripCollapsed();
+    this.stripToggleEl.focus({ preventScroll: true });
   }
 
   /** Reflect the collapsed state onto the strip DOM + toggle affordance. */
@@ -3057,11 +2903,11 @@ export class HUD {
     this.stripToggleEl.setAttribute('aria-expanded', String(!this.stripCollapsed));
     this.stripToggleEl.setAttribute(
       'aria-label',
-      this.stripCollapsed ? 'Expand arsenal' : 'Collapse arsenal',
+      this.stripCollapsed ? 'Open Armory — equip or buy weapons' : 'Close Armory',
     );
     this.stripToggleEl.setAttribute('aria-hidden', String(!this.stripCollapsed));
     this.stripToggleEl.tabIndex = this.stripCollapsed ? 0 : -1;
-    this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Expand Arsenal' : 'Close Arsenal';
+    this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Armory · equip / buy' : 'Close Armory';
     this.stripBodyEl.hidden = this.stripCollapsed;
     this.weaponIntelEl.hidden = this.stripCollapsed;
     this.renderWeaponIntel();
@@ -3073,6 +2919,7 @@ export class HUD {
     }
     if (this.consoleCommitmentEl) this.consoleCommitmentEl.inert = !this.stripCollapsed;
     if (this.consoleContextEl) this.consoleContextEl.inert = !this.stripCollapsed;
+    this.matchDrawerBtnEl.inert = !this.stripCollapsed;
     this.solutionAdjustmentsEl.inert = !this.stripCollapsed;
     this.solutionWeaponCommandBtnEl.inert = !this.stripCollapsed;
     if (!this.stripCollapsed) {
@@ -3975,165 +3822,6 @@ export class HUD {
   color: var(--gold);
   white-space: nowrap;
 }
-.st-hud__controls {
-  position: relative;
-  width: 720px;
-  height: 100%;
-  box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
-  align-items: stretch;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  background:
-    radial-gradient(110% 90% at 0% 0%, rgba(122, 215, 255, 0.13), transparent 48%),
-    linear-gradient(180deg, rgba(31, 18, 51, 0.96), rgba(9, 5, 16, 0.96));
-  border: 1px solid rgba(255, 210, 63, 0.42);
-  box-shadow:
-    inset 0 0 0 1px rgba(8, 4, 13, 0.78),
-    inset 0 0 26px rgba(255, 122, 31, 0.08),
-    0 12px 32px rgba(0, 0, 0, 0.4);
-  color: var(--ui-muted);
-}
-.st-hud__controls--blocked {
-  pointer-events: auto;
-}
-.st-hud__controls-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 0;
-  margin: 0;
-  padding: 0 8px 0 2px;
-  border-right: 1px solid rgba(255, 210, 63, 0.3);
-  border-bottom: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-}
-.st-hud__controls-title {
-  color: var(--text-gold);
-  font-family: var(--font-display);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-}
-.st-hud__controls-mode {
-  padding: 3px 7px;
-  border: 1px solid rgba(122, 215, 255, 0.34);
-  border-radius: 99px;
-  color: var(--tank-blue-lite, #7ad7ff);
-  font-family: var(--font-mono);
-  font-size: 7.5px;
-  letter-spacing: 0.8px;
-  line-height: 1;
-  text-transform: uppercase;
-}
-.st-hud__control-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-}
-.st-hud__control-cell {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  grid-template-rows: 1fr auto;
-  align-items: center;
-  gap: 0 7px;
-  min-height: 0;
-  min-width: 0;
-  padding: 6px 7px;
-  border: 1px solid rgba(255, 210, 63, 0.2);
-  border-radius: 6px;
-  background:
-    linear-gradient(145deg, rgba(255, 233, 168, 0.07), transparent 52%),
-    rgba(9, 5, 17, 0.74);
-  box-shadow: inset 0 1px 0 rgba(255, 233, 168, 0.07);
-}
-.st-hud__control-cell .st-ui-glyph {
-  grid-row: 1 / 3;
-  width: 30px;
-  height: 30px;
-}
-.st-hud__control-label {
-  align-self: end;
-  color: var(--ui-copy);
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.45px;
-  line-height: 1.05;
-  text-transform: uppercase;
-}
-.st-hud__keypair {
-  display: flex;
-  align-items: center;
-  align-self: start;
-  gap: 3px;
-  min-width: 0;
-}
-.st-hud__command-key {
-  appearance: none;
-  display: inline-grid;
-  place-items: center;
-  min-width: 14px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid rgba(255, 210, 63, 0.34);
-  border-radius: 3px;
-  background: rgba(255, 210, 63, 0.12);
-  color: var(--text-gold);
-  cursor: pointer;
-  pointer-events: auto;
-  transition:
-    border-color 110ms ease,
-    background 110ms ease,
-    box-shadow 110ms ease,
-    transform 80ms ease;
-}
-.st-hud__controls kbd {
-  display: block;
-  min-width: 14px;
-  padding: 2px 4px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  line-height: 1.25;
-  text-align: center;
-  pointer-events: none;
-}
-.st-hud__command-key:hover:not(:disabled) {
-  border-color: rgba(122, 215, 255, 0.72);
-  background: rgba(122, 215, 255, 0.2);
-  box-shadow: 0 0 8px rgba(122, 215, 255, 0.2);
-}
-.st-hud__command-key:active:not(:disabled) {
-  transform: translateY(1px);
-  background: rgba(255, 210, 63, 0.25);
-}
-.st-hud__command-key:focus-visible {
-  outline: none;
-  box-shadow: var(--ui-focus);
-}
-.st-hud__command-key:disabled {
-  cursor: not-allowed;
-  opacity: 0.35;
-}
-.st-hud__control-cell--primary {
-  grid-column: auto;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  grid-template-rows: 1fr;
-  min-height: 42px;
-  border-color: rgba(255, 122, 31, 0.5);
-  background:
-    linear-gradient(90deg, rgba(255, 122, 31, 0.2), transparent 70%),
-    rgba(9, 5, 17, 0.84);
-}
-#battle-rail .st-hud__controls { pointer-events: auto; }
 #battle-rail .st-hud__conn,
 #battle-rail .st-hud__toast,
 #battle-rail .st-hud__turnwatch {
@@ -4144,21 +3832,6 @@ export class HUD {
 #battle-rail .st-hud__conn { top: 4px; }
 #battle-rail .st-hud__toast { top: 36px; }
 #battle-rail .st-hud__turnwatch { top: 68px; }
-.st-hud__control-cell--primary .st-ui-glyph { grid-row: 1; }
-.st-hud__control-cell--primary .st-hud__control-label { align-self: center; }
-.st-hud__control-cell--primary .st-hud__keypair {
-  align-self: center;
-  justify-self: end;
-}
-.st-hud__control-cell--primary .st-hud__command-key {
-  border-color: rgba(255, 122, 31, 0.56);
-  background: rgba(255, 122, 31, 0.16);
-}
-.st-hud__control-cell--primary .st-hud__command-key:hover:not(:disabled) {
-  border-color: var(--ui-action-hot);
-  background: rgba(255, 122, 31, 0.3);
-  box-shadow: 0 0 9px rgba(255, 122, 31, 0.28);
-}
 .st-hud__aim {
   box-sizing: border-box;
   display: flex;
@@ -4193,22 +3866,21 @@ export class HUD {
   border-radius: 6px;
   pointer-events: auto;
 }
-.st-hud__strip-header {
+/* The Armory is reparented into the modal layer while open. Keep that modal
+ * independently bounded: the old rail-only open rule left it at natural
+ * content height on touch, extending past the fitted stage. */
+#modal-layer > .st-hud__strip--open {
+  position: absolute;
+  inset: clamp(8px, 8%, 48px) clamp(8px, 4%, 32px);
+  box-sizing: border-box;
+  z-index: 2;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.st-hud__strip-title {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-space-2);
-  font-family: var(--font-display);
-  font-size: var(--ui-type-label);
-  font-weight: bold;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-color: var(--ui-line-strong);
+  background: var(--ui-surface-raised);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
 }
 .st-hud__strip-toggle {
   display: inline-flex;
@@ -5483,14 +5155,13 @@ export class HUD {
   .st-hud__player--hit::after { animation: none; opacity: 0; }
   .st-hud__bar-fill,
   .st-hud__weapon-btn,
-  .st-hud__restart,
-  .st-hud__command-key { transition: none; }
+  .st-hud__restart { transition: none; }
 }
 
 /* ===== Coarse-pointer (touch) overrides ================================ */
 /* Enlarge interactive targets to ≥44px and hide the keyboard legend. */
 @media (pointer: coarse) {
-  .st-hud__controls { display: none; }
+  #battle-rail { padding: 4px 8px; }
   #hud .st-ui-glyph { width: 31px; height: 31px; }
   #hud .st-ui-glyph > .st-ui-icon { width: 25px; height: 25px; }
   .st-hud__weapon-btn .st-weapon-icon,
@@ -5527,206 +5198,6 @@ export class HUD {
   }
 }
 
-/* ===== Ballistic fire-control console ================================== */
-.st-hud__instruments {
-  position: relative;
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px 10px;
-  background:
-    linear-gradient(135deg, rgba(255, 210, 63, 0.10), transparent 28%),
-    radial-gradient(120% 80% at 50% 0%, rgba(255, 122, 31, 0.16), transparent 62%),
-    linear-gradient(180deg, #241535 0%, #0d0816 100%);
-  border: 2px solid rgba(255, 210, 63, 0.54);
-  border-radius: 7px;
-  box-shadow:
-    inset 0 0 0 2px rgba(8, 4, 13, 0.92),
-    inset 0 0 24px rgba(255, 122, 31, 0.12),
-    0 0 0 1px rgba(255, 233, 168, 0.10),
-    0 7px 18px rgba(0, 0, 0, 0.42);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  overflow: hidden;
-  /* Keep the console physical; the fitted combat rail does not flex-crush it. */
-  flex-shrink: 0;
-}
-.st-hud__instruments::before {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  border: 1px solid rgba(255, 233, 168, 0.10);
-  border-radius: 3px;
-  pointer-events: none;
-}
-.st-hud__instruments::after {
-  content: '';
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #09050e;
-  border: 1px solid rgba(255, 233, 168, 0.30);
-  box-shadow: 222px 0 #09050e, 0 140px #09050e, 222px 140px #09050e;
-  pointer-events: none;
-}
-.st-hud__instr-title {
-  font-family: var(--font-display);
-  font-size: var(--ui-type-label);
-  font-weight: bold;
-  letter-spacing: 2.6px;
-  text-transform: uppercase;
-  color: var(--text-gold);
-  text-shadow: 0 0 8px rgba(255, 122, 31, 0.34);
-  text-align: center;
-  padding: 1px 12px 6px;
-  border-bottom: 1px solid rgba(255, 210, 63, 0.30);
-}
-.st-hud__gauge-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr) minmax(0, 0.65fr);
-  grid-template-areas:
-    'elevation power'
-    'wind wind';
-  flex: 1 1 auto;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-.st-hud__gauge-cell {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 5px 6px 3px;
-  border: 1px solid rgba(255, 210, 63, 0.24);
-  border-radius: 5px;
-  background:
-    radial-gradient(circle at 50% 58%, rgba(255, 210, 63, 0.10), transparent 58%),
-    linear-gradient(180deg, rgba(7, 4, 12, 0.84), rgba(18, 10, 27, 0.78));
-  box-shadow:
-    inset 0 0 12px rgba(0, 0, 0, 0.72),
-    inset 0 1px 0 rgba(255, 233, 168, 0.08);
-}
-.st-hud__gauge-cell--elevation { grid-area: elevation; }
-.st-hud__gauge-cell--power { grid-area: power; }
-.st-hud__gauge-cell--wind {
-  grid-area: wind;
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  align-items: center;
-  padding: 3px 8px;
-}
-.st-hud__gauge-cell > svg {
-  display: block;
-  flex: 1 1 auto;
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  max-height: 100%;
-  margin-block: auto;
-  overflow: visible;
-}
-.st-hud__gauge-cell--elevation > svg,
-.st-hud__gauge-cell--power > svg {
-  width: 100%;
-}
-.st-hud__gauge-cell-title {
-  font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
-  color: rgba(255, 233, 168, 0.70);
-  text-align: center;
-}
-.st-hud__gauge-track {
-  fill: none;
-  stroke: rgba(255, 210, 63, 0.30);
-  stroke-width: 4;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 2px rgba(255, 122, 31, 0.26));
-}
-.st-hud__gauge-track-rect {
-  fill: rgba(255, 210, 63, 0.14);
-  stroke: rgba(255, 210, 63, 0.42);
-  stroke-width: 2;
-}
-.st-hud__gauge-ticks {
-  fill: none;
-  stroke: rgba(255, 233, 168, 0.62);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-.st-hud__gauge-pivot {
-  fill: var(--gold);
-  filter: drop-shadow(0 0 3px rgba(255, 210, 63, 0.66));
-}
-.st-hud__gauge-needle {
-  stroke: var(--gold);
-  stroke-width: 3;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 3px rgba(255, 210, 63, 0.66));
-}
-.st-hud__gauge-needle-rect {
-  fill: var(--gold);
-  filter: drop-shadow(0 0 3px rgba(255, 210, 63, 0.72));
-}
-.st-hud__gauge-power-fill {
-  fill: none;
-  stroke: var(--ember);
-  stroke-width: 5;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(255, 122, 31, 0.72));
-}
-.st-hud__gauge-label {
-  fill: var(--text-gold);
-  font-family: var(--font-mono);
-  font-size: var(--ui-type-body);
-  font-weight: bold;
-  font-variant-numeric: tabular-nums;
-}
-.st-hud__gauge-label--lg {
-  font-size: var(--ui-type-title);
-  fill: var(--gold);
-}
-#app.is-compact .st-hud__gauge-track { stroke-width: 5; }
-#app.is-compact .st-hud__gauge-ticks { stroke-width: 2; }
-#app.is-compact .st-hud__gauge-needle { stroke-width: 4; }
-#app.is-compact .st-hud__gauge-label { font-size: 12px; }
-.st-hud__gauge-cell--elevation .st-hud__gauge-label { font-size: 8.5px; }
-@media (pointer: coarse) {
-  #app .st-hud__instruments {
-    gap: 1px;
-    padding: 0 7px;
-  }
-  #app .st-hud__instr-title {
-    padding: 0 8px;
-  }
-  #app .st-hud__gauge-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas:
-      'elevation power'
-      'wind wind';
-    gap: 3px;
-  }
-  #app .st-hud__gauge-cell {
-    gap: 1px;
-    padding: 2px 5px 0;
-  }
-  #app .st-hud__gauge-cell--wind {
-    display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
-    padding: 1px 6px;
-  }
-}
 /* Touch uses the same semantic command console. */
 @media (pointer: coarse) {
   .st-hud__strip { order: 1; }
@@ -5741,24 +5212,7 @@ export class HUD {
   flex-shrink: 0;
   overflow: hidden;
 }
-.st-hud__command-console > .st-hud__instruments {
-  width: auto;
-  margin: 0 6px 6px;
-  padding: 6px 8px;
-  border-width: 1px;
-  border-radius: 4px;
-  background:
-    linear-gradient(135deg, rgba(255, 210, 63, 0.055), transparent 30%),
-    radial-gradient(120% 80% at 50% 0%, rgba(255, 122, 31, 0.09), transparent 62%),
-    linear-gradient(180deg, rgba(30, 17, 46, 0.92), rgba(11, 7, 18, 0.96));
-  box-shadow:
-    inset 0 0 0 1px rgba(8, 4, 13, 0.82),
-    inset 0 0 18px rgba(255, 122, 31, 0.07);
-}
-#app.is-compact .st-hud__command-console > .st-hud__instruments {
-  margin: 0 4px 3px;
-  padding-block: 4px;
-}
+
 .st-hud__active-row {
   position: relative;
   display: flex;
@@ -5960,14 +5414,8 @@ export class HUD {
 #app.is-compact .st-hud__fuel-value {
   font-size: 15px;
 }
-#app.is-compact .st-hud__controls-title {
-  font-size: 12px;
-}
 #app.is-compact .st-hud__control-label {
   font-size: 11px;
-}
-#app.is-compact .st-hud__controls kbd {
-  font-size: 9.5px;
 }
 @media (pointer: coarse) {
   #app .st-hud__active-row {
@@ -6036,48 +5484,16 @@ export class HUD {
 #app .st-hud__active-row--hidden { display: none; }
 /* Shot progress replaces the owner row during submit, flight, and resolution. */
 .st-hud__aim--hidden { display: none; }
-/* During a committed shot, progress becomes the visual entry point while the
-   unchanged command DOM remains available for the next decision state. */
-#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__aim {
-  order: -1;
-  margin: 5px 6px 4px;
-  min-height: 42px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 210, 63, 0.72);
-  border-radius: 4px;
-  background:
-    radial-gradient(120% 100% at 50% 0%, rgba(255, 210, 63, 0.2), transparent 62%),
-    linear-gradient(180deg, rgba(66, 35, 24, 0.96), rgba(19, 10, 24, 0.98));
-  box-shadow:
-    0 0 18px rgba(255, 122, 31, 0.2),
-    inset 0 0 0 1px rgba(255, 233, 168, 0.1);
-  opacity: 1;
-  font-weight: 800;
-}
-#battle-rail[data-combat-focus="outcome"] .st-hud__console-solution,
-#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__turn-actions {
-  filter: saturate(0.55) brightness(0.72);
-}
-#hud[data-combat-focus="outcome"] > .st-hud__players,
-#hud[data-combat-focus="outcome"] > .st-hud__strip {
-  filter: saturate(0.52) brightness(0.68);
-}
-#battle-rail[data-combat-focus="outcome"] > .st-hud__controls {
-  filter: saturate(0.52) brightness(0.68);
-}
-#app.is-compact #battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__aim {
-  min-height: 34px;
-  margin: 3px 4px;
-  padding: 5px 7px;
-}
+
 /* ===== Battle command surface ==========================================
  * The protected rail is the active-turn workspace, not a second side panel.
- * Context, solution, and commitment remain visually distinct while every live
- * input stays in one scan path from left to right. */
+ * Commander context and the nested Fire Control surface stay in one scan path
+ * from left to right.  The terminal action belongs to Fire Control; it must
+ * never reserve an empty outer grid track. */
 #battle-rail .st-hud__command-console {
   pointer-events: auto;
   display: grid;
-  grid-template-columns: minmax(218px, 0.86fr) minmax(468px, 2.05fr) minmax(218px, 0.86fr);
+  grid-template-columns: minmax(218px, 0.86fr) minmax(0, 2.91fr);
   gap: 8px;
   width: 100%;
   height: 100%;
@@ -6152,8 +5568,7 @@ export class HUD {
   .st-hud__first-salvo-skip { min-height: 44px; }
 }
 #battle-rail .st-hud__console-context,
-#battle-rail .st-hud__console-solution,
-#battle-rail .st-hud__console-commitment {
+#battle-rail .st-hud__console-solution {
   box-sizing: border-box;
   min-width: 0;
   min-height: 0;
@@ -6173,6 +5588,32 @@ export class HUD {
 #battle-rail .st-hud__console-context .st-hud__active-row {
   flex: 1;
   padding: 7px 8px 7px 12px;
+}
+/* Fine-pointer Commander is a genuine dossier, not a small card stranded in
+   a tall rail column.  The portrait consumes the available identity band;
+   mobility remains pinned to the operational edge. */
+@media (pointer: fine) {
+  #battle-rail .st-hud__console-context .st-hud__active-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  #battle-rail .st-hud__identity-lockup {
+    align-content: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    min-height: 0;
+  }
+  #battle-rail .st-hud__tank-portrait-frame,
+  #battle-rail .st-hud__tank-portrait {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 144 / 80;
+    min-height: 0;
+  }
+  #battle-rail .st-hud__tactical-row {
+    grid-row: 2;
+  }
 }
 #battle-rail .st-hud__console-solution {
   position: relative;
@@ -6219,16 +5660,6 @@ export class HUD {
 }
 #battle-rail .st-hud__arsenal-trigger .st-ui-glyph { width: 25px; height: 25px; }
 #battle-rail .st-hud__arsenal-trigger > .st-ui-icon:last-child { margin-left: auto; }
-#battle-rail .st-hud__console-solution > .st-hud__instruments {
-  grid-column: 2;
-  grid-row: 1;
-  width: auto;
-  height: 100%;
-  min-height: 0;
-  margin: 0;
-  padding: 5px 7px;
-  border-color: rgba(255, 210, 63, 0.3);
-}
 #battle-rail .st-hud__solution-adjustments {
   grid-column: 3;
   grid-row: 1;
@@ -6354,132 +5785,13 @@ export class HUD {
   display: flex;
   margin: 0;
   padding: 6px;
-  overflow: auto;
+  /* Only the weapon grid may scroll. Letting the entire drawer scroll moves
+     its cards behind the arena and makes an apparently visible weapon unclickable. */
+  overflow: hidden;
   border: 1px solid var(--ui-line-strong);
   border-radius: 6px;
   background: var(--ui-surface-raised);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
-}
-#battle-rail .st-hud__console-commitment {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-}
-#battle-rail .st-hud__console-state {
-  grid-row: 1;
-  min-width: 0;
-  padding: 7px 8px 4px;
-  color: var(--text-gold);
-  font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 1.15px;
-  line-height: 1.1;
-  text-align: center;
-  text-transform: uppercase;
-}
-#battle-rail .st-hud__commitment-explanation {
-  grid-row: 2;
-  align-self: center;
-  min-width: 0;
-  padding: 4px 10px;
-  color: var(--ui-copy);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.25;
-  text-align: center;
-}
-#battle-rail .st-hud__commitment-explanation[hidden] { display: none; }
-#battle-rail .st-hud__shot-readback {
-  grid-row: 2 / 4;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  align-content: center;
-  min-width: 0;
-  margin: 5px 6px 4px;
-  padding: 8px;
-  border: 1px solid rgba(255, 210, 63, 0.36);
-  border-radius: 5px;
-  background:
-    linear-gradient(135deg, rgba(255, 210, 63, 0.1), transparent 58%),
-    rgba(17, 11, 27, 0.82);
-}
-#battle-rail .st-hud__shot-readback[hidden] { display: none; }
-#battle-rail .st-hud__shot-readback-item {
-  min-width: 0;
-  padding: 5px 6px;
-  border-left: 2px solid rgba(255, 210, 63, 0.52);
-  background: rgba(0, 0, 0, 0.18);
-}
-#battle-rail .st-hud__shot-readback dt {
-  overflow: hidden;
-  color: var(--ui-muted);
-  font-family: var(--font-display);
-  font-size: var(--st-command-readability-size, 11px);
-  font-weight: 750;
-  letter-spacing: 0.7px;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-#battle-rail .st-hud__shot-readback-value {
-  margin: 3px 0 0;
-  overflow: hidden;
-  color: var(--text-gold);
-  font-family: var(--font-sans);
-  font-size: max(12px, var(--st-command-readability-size, 11px));
-  font-weight: 800;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#battle-rail .st-hud__console-commitment[data-command-mode="observation"] .st-hud__console-state,
-#battle-rail .st-hud__console-commitment[data-command-mode="handoff"] .st-hud__console-state {
-  color: var(--ui-muted);
-}
-#battle-rail .st-hud__console-commitment .st-hud__aim {
-  grid-row: 3;
-  align-self: stretch;
-  margin: 5px 6px 4px;
-}
-#battle-rail .st-hud__console-commitment .st-hud__turn-actions {
-  grid-row: 4;
-  padding: 6px;
-  border-top-color: rgba(255, 210, 63, 0.24);
-}
-#battle-rail .st-hud__console-commitment > .st-hud__first-salvo {
-  grid-row: 3;
-  align-self: center;
-  justify-self: stretch;
-  width: auto;
-  max-width: 100%;
-  margin-inline: 5px;
-}
-#battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim {
-  visibility: hidden;
-}
-#battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__shot-readback {
-  display: none;
-}
-#battle-rail .st-hud__console-commitment .st-hud__primary-action,
-#battle-rail .st-hud__console-commitment .st-hud__store-btn {
-  min-height: 50px;
-}
-#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__aim {
-  order: 0;
-  min-height: 0;
-  padding: 7px 9px;
-  border: 1px solid rgba(255, 210, 63, 0.72);
-  border-radius: 4px;
-  background:
-    radial-gradient(120% 100% at 50% 0%, rgba(255, 210, 63, 0.2), transparent 62%),
-    linear-gradient(180deg, rgba(66, 35, 24, 0.96), rgba(19, 10, 24, 0.98));
-}
-#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__turn-actions,
-#battle-rail[data-combat-focus="outcome"] .st-hud__console-solution {
-  filter: saturate(0.55) brightness(0.72);
 }
 #battle-rail .st-hud__turn-owner,
 #battle-rail .st-hud__weapon-label,
@@ -6487,8 +5799,6 @@ export class HUD {
 #battle-rail .st-hud__weapon-ammo,
 #battle-rail .st-hud__solution-adjustment-label,
 #battle-rail .st-hud__solution-direction,
-#battle-rail .st-hud__gauge-cell-title,
-#app #battle-rail .st-hud__gauge-label,
 #battle-rail .st-hud__trajectory-guide,
 #battle-rail .st-hud__first-salvo-progress,
 #battle-rail .st-hud__first-salvo-copy,
@@ -6507,30 +5817,12 @@ export class HUD {
 #app.is-compact #battle-rail .st-hud__fuel-label {
   font-size: var(--st-command-readability-size, 11px);
 }
-#app.is-compact #battle-rail .st-hud__gauge-label {
-  font-size: calc(var(--st-command-readability-size, 11px) * 1.2);
-}
-@media (pointer: fine) {
-  #app:not(.is-compact) #battle-rail .st-hud__gauge-label {
-    font-size: calc(var(--st-command-readability-size, 11px) * 1.25);
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-label {
-    font-size: calc(var(--st-command-readability-size, 11px) * 1.65);
-  }
-  #app #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
-  #app #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
-    transform: translateY(-3px);
-  }
-  #app #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
-    transform: translateY(-2px);
-  }
-}
 #battle-rail .st-hud__weapon-label { line-height: 1.25; }
 #app.is-compact #battle-rail .st-hud__weapon-label { display: none; }
   @media (pointer: coarse) {
   #battle-rail .st-hud__command-console {
     --st-rail-touch-target: var(--st-deployment-choice-target, 91px);
-    grid-template-columns: 270px minmax(0, 1fr) 180px;
+    grid-template-columns: 270px minmax(0, 1fr);
     gap: 5px;
   }
   #hud .st-hud__menu {
@@ -6609,9 +5901,6 @@ export class HUD {
     min-width: var(--st-rail-touch-target);
     min-height: var(--st-rail-touch-target);
   }
-  #battle-rail .st-hud__console-solution > .st-hud__instruments {
-    padding-inline: 3px;
-  }
   #battle-rail .st-hud__solution-adjustments {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: minmax(var(--st-rail-touch-target), 1fr);
@@ -6639,18 +5928,18 @@ export class HUD {
     display: none;
   }
   #battle-rail .st-hud__console-solution > .st-hud__first-salvo,
-  #battle-rail .st-hud__console-commitment > .st-hud__first-salvo {
+  #battle-rail .st-hud__fire-terminal > .st-hud__first-salvo {
     min-height: var(--st-rail-touch-target);
   }
   #battle-rail .st-hud__first-salvo-skip {
+    box-sizing: border-box;
     min-width: var(--st-rail-touch-target);
     min-height: var(--st-rail-touch-target);
   }
-  #battle-rail .st-hud__console-commitment .st-hud__turn-actions {
+  #battle-rail .st-hud__fire-terminal .st-hud__turn-actions {
     padding: 4px;
   }
-  #battle-rail .st-hud__console-commitment .st-hud__store-btn,
-  #battle-rail .st-hud__console-commitment .st-hud__primary-action {
+  #battle-rail .st-hud__fire-terminal .st-hud__primary-action {
     min-height: var(--st-rail-touch-target);
   }
   #battle-rail .st-hud__console-state,
@@ -6690,48 +5979,11 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-ammo {
     flex: 0 0 auto;
   }
-  #app.is-compact #battle-rail .st-hud__solution-adjustment-label,
-  #app.is-compact #battle-rail .st-hud__instr-title,
-  #app.is-compact #battle-rail .st-hud__gauge-cell-title {
+  #app.is-compact #battle-rail .st-hud__solution-adjustment-label {
     display: none;
   }
   #app.is-compact #battle-rail .st-hud__trajectory-guide {
     display: none;
-  }
-  #app.is-compact #battle-rail .st-hud__solution-adjustment {
-    grid-template-rows: minmax(var(--st-rail-touch-target), 1fr);
-  }
-  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__instruments {
-    padding: 3px;
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-row {
-    grid-template-rows: minmax(0, 1fr) minmax(0, 0.75fr);
-    flex: 1 1 auto;
-    min-height: 0;
-    gap: 2px;
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-cell {
-    min-height: 0;
-    gap: 0;
-    padding: 0 1px;
-    overflow: hidden;
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-cell--wind {
-    display: flex;
-    padding: 0 2px;
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-cell > svg {
-    max-height: 100%;
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-label {
-    font-size: calc(var(--st-command-readability-size, 11px) * 1.35);
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
-  #app.is-compact #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
-    transform: translateY(-4px);
-  }
-  #app.is-compact #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
-    transform: translateY(-2px);
   }
 }
 @media (pointer: fine) {
@@ -6754,9 +6006,292 @@ export class HUD {
     grid-column: 2;
   }
 }
-/* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by
-   direct attribute mutation (transform / stroke-dasharray) with no CSS transition,
-   so they snap to each new value instantly — there is nothing to suppress. */
+/* The completed firing surface has one working row.  A collapsed Armory is
+   represented by its trigger in the weapon bay; it must not reserve a blank
+   second row.  The live guide rides with Wind instead of becoming a fourth card. */
+#battle-rail .st-hud__console-solution {
+  grid-template-rows: minmax(0, 1fr);
+}
+#battle-rail .st-hud__console-solution > .st-hud__strip:not(.st-hud__strip--open) {
+  display: none;
+}
+#battle-rail .st-hud__solution-adjustments {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(132px, 0.5fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+#battle-rail .st-hud__solution-wind {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+}
+#battle-rail .st-hud__solution-wind .st-hud__trajectory-guide {
+  grid-column: auto;
+  grid-row: auto;
+  position: static;
+  align-self: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+/* Consolidated Fire Control: one equal-height live decision surface, not a
+   collection of decorative cards. */
+#battle-rail .st-hud__fire-terminal {
+  grid-column: 3;
+  grid-row: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid rgba(255, 210, 63, 0.22);
+  background: linear-gradient(180deg, rgba(255, 210, 63, 0.04), transparent 42%);
+}
+#battle-rail .st-hud__fire-terminal .st-hud__console-state {
+  padding: 7px 8px 4px;
+  color: var(--text-gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.15px;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+}
+#battle-rail .st-hud__fire-terminal .st-hud__commitment-explanation { align-self: center; padding: 4px 10px; color: var(--ui-copy); font-size: 12px; font-weight: 650; line-height: 1.25; text-align: center; }
+#battle-rail .st-hud__fire-terminal .st-hud__aim { align-self: stretch; margin: 5px 6px 4px; }
+#battle-rail .st-hud__fire-terminal .st-hud__turn-actions { padding: 6px; border-top-color: rgba(255, 210, 63, 0.24); min-width: 0; max-width: 100%; }
+#battle-rail .st-hud__fire-terminal .st-hud__primary-action { min-height: 50px; min-width: 0; max-width: 100%; }
+#battle-rail .st-hud__fire-terminal > .st-hud__first-salvo { grid-row: 2; align-self: center; justify-self: stretch; width: auto; max-width: 100%; margin-inline: 5px; }
+#battle-rail .st-hud__fire-terminal:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim { visibility: hidden; }
+#battle-rail .st-hud__console-solution { grid-template-columns: minmax(166px, 0.72fr) minmax(250px, 1.32fr) minmax(112px, 0.36fr); grid-template-rows: minmax(0, 1fr); }
+#battle-rail .st-hud__console-solution > .st-hud__strip:not(.st-hud__strip--open) { display: none; }
+#battle-rail .st-hud__solution-adjustments { grid-column: 2; grid-row: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(132px, 0.5fr); grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+#battle-rail .st-hud__solution-adjustment, #battle-rail .st-hud__solution-wind, #battle-rail .st-hud__fire-terminal, #battle-rail .st-hud__console-solution > .st-hud__weapon { align-self: stretch; height: 100%; }
+#battle-rail .st-hud__solution-adjustment { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr) 32px; box-sizing: border-box; }
+#battle-rail .st-hud__solution-adjustment-label { grid-column: 1 / -1; grid-row: 1; }
+#battle-rail .st-hud__solution-adjustment-value { grid-column: 1 / -1; grid-row: 2; align-self: center; color: var(--text-gold); font-family: var(--font-mono); font-size: calc(var(--st-command-readability-size, 11px) * 1.2); font-weight: 800; text-align: center; }
+#battle-rail .st-hud__solution-adjustment .st-hud__solution-control { grid-row: 3; width: 100%; box-sizing: border-box; }
+#battle-rail .st-hud__solution-wind { grid-column: 3; grid-row: 1; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; }
+#battle-rail .st-hud__solution-wind > .st-hud__solution-adjustment-label { grid-row: 1; }
+#battle-rail .st-hud__solution-wind > .st-hud__solution-adjustment-value { grid-row: 2; }
+#battle-rail .st-hud__solution-wind > .st-hud__trajectory-guide { grid-row: 3; position: static; width: 100%; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; }
+#battle-rail .st-hud__trajectory-guide-label { display: none; }
+#battle-rail .st-hud__commander-health { display: inline-flex; width: fit-content; margin-top: 3px; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--st-turn-color, var(--gold)) 58%, transparent); border-radius: 999px; color: var(--text-gold); font-family: var(--font-mono); font-size: var(--st-command-readability-size, 11px); font-weight: 800; line-height: 1; }
+/* The terminal earns its area in the decision phase: live phase/ownership at
+   the top, the deterministic shot readback in the middle, and the one commit
+   action anchored at the bottom.  Fire is important, but it is not a blank
+   red billboard. */
+#battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal {
+  /* A semantic terminal is still a member of the Fire Control row, but it
+     does not pretend to be a fifth card once its only decision content is
+     phase plus Fire. Leave the surrounding battlefield-facing surface alone. */
+  grid-template-rows: auto auto;
+  align-content: end;
+  gap: 6px;
+  border-left-width: 0;
+  background-image: none;
+}
+#battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+}
+#battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__aim {
+  grid-row: 2;
+  align-self: center;
+}
+#battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__turn-actions {
+  grid-row: 3;
+  align-self: end;
+  height: auto;
+  padding: 5px;
+}
+#battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__primary-action {
+  height: auto;
+  min-height: 50px;
+}
+#battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal { grid-column: 1 / -1; }
+#battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal > .st-hud__aim {
+  order: 0;
+  min-height: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 210, 63, 0.72);
+  border-radius: 4px;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255, 210, 63, 0.2), transparent 62%),
+    linear-gradient(180deg, rgba(66, 35, 24, 0.96), rgba(19, 10, 24, 0.98));
+}
+#battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal > .st-hud__turn-actions,
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-solution {
+  filter: saturate(0.55) brightness(0.72);
+}
+#battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state, #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__aim { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-hud__match-drawer-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 5px;
+  color: var(--text-gold);
+  background: linear-gradient(180deg, rgba(66, 39, 67, 0.94), rgba(18, 9, 27, 0.96));
+  box-shadow: inset 0 0 0 1px rgba(255, 233, 168, 0.08), 0 5px 14px rgba(0, 0, 0, 0.35);
+  font: 700 var(--st-command-readability-size, 11px)/1 var(--font-display);
+  letter-spacing: 0.8px;
+  cursor: pointer;
+}
+.st-hud__match-drawer-toggle:hover { border-color: var(--gold); color: var(--gold); }
+.st-hud__match-drawer-toggle:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+@media (pointer: coarse) {
+  #battle-rail .st-hud__command-console { grid-template-columns: 282px minmax(0, 1fr); }
+  /* Touch spends the constrained rail height on live inputs, not a duplicate
+     tank portrait. Commander identity, health, fuel and movement remain. */
+  #battle-rail .st-hud__console-context .st-hud__active-row { box-sizing: border-box; width: 100%; min-width: 0; grid-template-rows: auto minmax(0, 1fr); gap: 2px; padding: 3px 5px 3px 8px; }
+  #battle-rail .st-hud__identity-lockup { grid-template-columns: minmax(0, 1fr); }
+  #battle-rail .st-hud__tank-portrait-frame { display: none; }
+  #battle-rail .st-hud__mobility { grid-column: 1 / -1; grid-row: 2; grid-template-columns: var(--st-rail-touch-target) 58px var(--st-rail-touch-target); min-width: 0; }
+  #battle-rail .st-hud__console-solution { gap: 2px; padding: 2px; }
+  #battle-rail .st-hud__console-solution { grid-template-columns: 160px minmax(0, 1fr) 124px; }
+  #battle-rail .st-hud__solution-adjustments { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target); overflow: hidden; }
+  #battle-rail .st-hud__solution-adjustment { grid-template-rows: auto minmax(0, 1fr) var(--st-rail-touch-target); min-height: 0; padding: 2px; gap: 1px; overflow: hidden; }
+  #battle-rail .st-hud__solution-wind { grid-column: 1 / -1; grid-row: 2; grid-template-columns: minmax(0, 1fr) var(--st-rail-touch-target); grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  #battle-rail .st-hud__solution-wind > .st-hud__solution-adjustment-value { grid-column: 1; grid-row: 1; align-self: center; }
+  #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__trajectory-guide { display: flex; grid-column: 2; grid-row: 1; box-sizing: border-box; width: var(--st-rail-touch-target); height: var(--st-rail-touch-target); min-height: 0; max-height: 100%; }
+  #battle-rail .st-hud__solution-adjustment .st-hud__solution-control { min-width: var(--st-rail-touch-target); min-height: var(--st-rail-touch-target); height: var(--st-rail-touch-target); box-sizing: border-box; }
+  #battle-rail .st-hud__trajectory-guide, #battle-rail .st-hud__fire-terminal .st-hud__primary-action { min-width: var(--st-rail-touch-target); min-height: var(--st-rail-touch-target); }
+  #app.is-compact #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__primary-action {
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__fire-terminal > .st-hud__first-salvo {
+    height: var(--st-rail-touch-target);
+    min-height: var(--st-rail-touch-target);
+    max-height: var(--st-rail-touch-target);
+    /* The compact terminal is only 112 logical px wide: do not spend its
+       5px desktop inset twice when the coach owns the 44px Skip target. */
+    margin-inline: 0;
+  }
+
+  /* This is the terminal compact topology.  Keep it last: earlier cockpit
+     rules used the third track for a detached commitment card, whereas the
+     terminal is now Fire Control's third cell. */
+  #app.is-compact #battle-rail .st-hud__console-solution {
+    grid-template-columns: 160px minmax(0, 1fr) 124px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustments {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target);
+  }
+  #app.is-compact #battle-rail .st-hud__fire-terminal {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+/* The 200px protected rail has exactly one coarse touch row.  Each numerical
+   adjustment keeps its two real actions beside its live value rather than
+   stacking two 44px physical targets vertically. */
+@media (pointer: coarse) {
+  #battle-rail .st-hud__console-context .st-hud__active-row {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target);
+    min-height: 0;
+  }
+  #battle-rail .st-hud__identity-lockup,
+  #battle-rail .st-hud__tactical-row {
+    min-height: 0;
+    overflow: hidden;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution {
+    grid-template-columns: 156px minmax(0, 1fr) 112px;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustments {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(182px, 1fr) minmax(182px, 1fr) 96px;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment {
+    grid-template-columns: var(--st-rail-touch-target) minmax(0, 1fr) var(--st-rail-touch-target);
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    padding: 2px;
+    gap: 1px;
+    overflow: hidden;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment-label {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment-value {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    align-self: center;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment .st-hud__solution-control {
+    grid-row: 1;
+    height: var(--st-rail-touch-target);
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment .st-hud__solution-control:first-of-type {
+    grid-column: 1;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment .st-hud__solution-control:last-of-type {
+    grid-column: 3;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-wind {
+    grid-column: 3;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target);
+  }
+  #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__solution-adjustment-label {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__solution-adjustment-value {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__trajectory-guide {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
+@media (pointer: fine) {
+  #battle-rail .st-hud__identity-lockup { overflow: hidden; }
+  #battle-rail .st-hud__tank-portrait-frame {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    aspect-ratio: 144 / 80;
+    justify-self: center;
+  }
+  #battle-rail .st-hud__tank-portrait {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Numerical Fire Control is reduced-motion-safe: its values update as text and
+   controls do not animate between decision states. */
 `;
 
 }

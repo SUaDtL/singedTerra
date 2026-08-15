@@ -271,7 +271,7 @@ test.describe('verified deployment production-browser journey', () => {
       /First Strike.*Damage the CPU within your first three salvos\..*3 salvos remaining/,
     )).toBeVisible();
     await expect(page.locator('#lobby')).toBeHidden();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('.st-hud__console-solution')).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
       documentWidth: document.documentElement.scrollWidth,
@@ -301,7 +301,7 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page);
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('.st-hud__console-solution')).toBeVisible();
     await enterBattleIfBriefed(page);
     await page.locator('#hud .st-hud__menu, [data-command="menu"]').filter({ visible: true }).first().click();
     const menu = page.getByRole('dialog', { name: 'Command Menu' });
@@ -525,7 +525,7 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(firstReport).toBeVisible({ timeout: 10_000 });
     await expect(firstReport.locator('.st-hud__victory-progression-receipt')).toBeHidden();
     await expect.poll(() => completionCalls).toBe(1);
-    const recoveryCommitment = page.locator('#battle-rail .st-hud__console-commitment');
+    const recoveryCommitment = page.locator('#battle-rail .st-hud__fire-terminal');
     await expect(recoveryCommitment).toHaveAttribute('data-command-mode', 'recovery');
     await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
     const retryVerification = page.getByRole('button', {
@@ -671,13 +671,13 @@ test.describe('verified deployment production-browser journey', () => {
   test('keeps Field Orders absent from ordinary, Quick Duel, and network routes', async ({ page }) => {
     await page.goto('?e2e=hotseat');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('.st-hud__console-solution')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('.st-hud__console-solution')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 
     await installOnlineCpuFixture(page);
@@ -689,7 +689,7 @@ test.describe('verified deployment production-browser journey', () => {
       .locator('select').first().selectOption('1');
     await page.getByRole('button', { name: 'Create operation', exact: true }).click();
     await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('.st-hud__console-solution')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
   });
 });
@@ -700,7 +700,7 @@ test('keeps Field Orders absent from the anonymous local route', async ({ page }
   await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Verified deployment' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click();
-  await expect(page.locator('.st-hud__instruments')).toBeVisible();
+  await expect(page.locator('.st-hud__console-solution')).toBeVisible();
   await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 });
 
@@ -709,7 +709,7 @@ test('Quick Duel publishes a bounded query-gated seed receipt on every redeploym
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('.st-hud__console-solution')).toBeVisible();
     return page.evaluate(() => {
       const probe = (window as typeof window & { __singedTerraE2E?: { quickDuelSeed?: number } })
         .__singedTerraE2E;

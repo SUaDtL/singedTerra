@@ -19,7 +19,7 @@ async function gotoFirstSalvo(page: import('@playwright/test').Page): Promise<vo
   // Pages project-site path, and the opt-in flag does not clear any storage.
   await page.goto('?e2e=hotseat&tutorial=first-salvo');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
-  await expect(page.locator('#hud.st-hud')).toBeVisible();
+  await expect(page.locator('#hud.st-hud')).toHaveCount(1);
   await expect(page.locator('[data-ui="first-salvo-briefing"]')).toBeVisible();
   await expect(page.locator('[data-ui="first-salvo-coach"]')).toBeHidden();
 }
@@ -87,12 +87,14 @@ async function expectCoachFitsRail(page: import('@playwright/test').Page): Promi
 
 async function expectCoachAnchorsRailZone(
   page: import('@playwright/test').Page,
-  anchor: 'solution' | 'commitment',
+  anchor: 'solution' | 'terminal',
 ): Promise<void> {
   const geometry = await page.evaluate((expectedAnchor) => {
     const coach = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
     const zone = document.querySelector<HTMLElement>(
-      `#battle-rail .st-hud__console-${expectedAnchor}`,
+      expectedAnchor === 'terminal'
+        ? '#battle-rail .st-hud__fire-terminal'
+        : '#battle-rail .st-hud__console-solution',
     )!;
     const coachRect = coach.getBoundingClientRect();
     const zoneRect = zone.getBoundingClientRect();
@@ -109,6 +111,34 @@ async function expectCoachAnchorsRailZone(
 }
 
 test.describe('First Salvo browser contract', () => {
+  test('moves focus into the entry briefing after the real splash fades away', async ({ page }) => {
+    await page.goto('?e2e=hotseat&tutorial=first-salvo');
+    const splash = page.locator('#st-splash');
+    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+    const enter = page.getByRole('button', { name: 'Enter battle', exact: true });
+
+    await expect(splash).toBeVisible();
+    await splash.click();
+    await expect(briefing).toBeVisible();
+    await expect(splash).toHaveCount(0);
+    await expect(enter).toBeFocused();
+  });
+
+  test('keeps keyboard focus inside the entry briefing until battle is entered', async ({ page }) => {
+    await gotoFirstSalvo(page);
+    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+    const enter = page.getByRole('button', { name: 'Enter battle', exact: true });
+    const fire = page.getByRole('button', { name: /Fire Baby Missile/ });
+
+    await expect(enter).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(enter).toBeFocused();
+    await expect(fire).not.toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(enter).toBeFocused();
+    await expect(briefing).toBeVisible();
+  });
+
   test('blocks combat keys behind the briefing while preserving native Space entry', async ({ page }) => {
     await gotoFirstSalvo(page);
     const briefing = page.locator('[data-ui="first-salvo-briefing"]');
@@ -150,10 +180,11 @@ test.describe('First Salvo browser contract', () => {
 
     const card = page.locator('[data-ui="first-salvo-coach"]');
     const fire = page.locator('.st-hud__primary-action');
-    const readback = page.locator('[data-ui="shot-readback"]');
+    const solutionValues = page.locator('[data-value-owner]');
     await expect(card).toContainText('1 / 3');
-    await expect(fire).toBeVisible();
-    await expect(fire).toBeEnabled();
+    // Touch coach owns the value band, not the live Aim/Power control row.
+    // It still withholds Fire until the coach is dismissed.
+    await expect(fire).toHaveCount(testInfo.project.name === 'pixel-touch' ? 0 : 1);
     await expectCoachFitsRail(page);
     await expectCoachAnchorsRailZone(page, 'solution');
 
@@ -164,6 +195,23 @@ test.describe('First Salvo browser contract', () => {
       expect(skipBox).not.toBeNull();
       expect(skipBox!.width).toBeGreaterThanOrEqual(44);
       expect(skipLayoutHeight).toBeGreaterThanOrEqual(44);
+      const coachCopy = await card.evaluate((coach) => {
+        const parts = [...coach.querySelectorAll<HTMLElement>(
+          '.st-hud__first-salvo-progress, .st-hud__first-salvo-copy',
+        )];
+        return parts.map((part) => ({
+          className: part.className,
+          clientWidth: part.clientWidth,
+          scrollWidth: part.scrollWidth,
+          clientHeight: part.clientHeight,
+        }));
+      });
+      for (const part of coachCopy) {
+        expect(part.clientWidth, `${part.className} must retain readable width`).toBeGreaterThan(0);
+        expect(part.clientHeight, `${part.className} must retain readable height`).toBeGreaterThan(0);
+        expect(part.scrollWidth, `${part.className} must not be horizontally clipped`)
+          .toBeLessThanOrEqual(part.clientWidth + 1);
+      }
     }
 
     if (testInfo.project.name === 'pixel-touch') {
@@ -200,15 +248,17 @@ test.describe('First Salvo browser contract', () => {
     }
 
     await expect(card).toContainText('3 / 3');
-    await expectCoachAnchorsRailZone(page, 'commitment');
-    await expect(readback).toBeHidden();
-    await expect(fire).toBeVisible();
-    await expect(fire).toBeEnabled();
+    await expectCoachAnchorsRailZone(page, 'terminal');
+    await expect(page.locator('[data-ui="shot-readback"]')).toHaveCount(0);
+    await expect(fire).toHaveCount(0);
     await expectCoachFitsRail(page);
 
     await page.getByRole('button', { name: 'Skip', exact: true }).click();
     await expect(card).toBeHidden();
-    await expect(readback).toBeVisible();
+    await expect(solutionValues).toHaveCount(4);
+    await expect(solutionValues.nth(1)).toBeVisible();
+    await expect(fire).toBeVisible();
+    await expect(fire).toBeEnabled();
 
     await fire.click();
     await expect(card).toBeHidden();
@@ -289,18 +339,17 @@ test.describe('First Salvo browser contract', () => {
     await enterFirstSalvoBriefing(page, 'pointer');
 
     const card = page.locator('[data-ui="first-salvo-coach"]');
-    const elevation = page.locator(
-      '.st-hud__gauge-cell--elevation .st-hud__gauge-label',
-    );
-    const power = page.locator('.st-hud__gauge-cell--power .st-hud__gauge-label');
+    const elevation = page.locator('[data-value-owner="angle"] output');
+    const power = page.locator('[data-value-owner="power"] output');
     const fire = page.locator('.st-hud__primary-action');
     const canvasBox = await page.locator('#game').boundingBox();
     expect(canvasBox).not.toBeNull();
-    await expect(elevation).toHaveText('45▶');
-    await expect(elevation).toHaveAttribute('aria-label', '45 degrees, right');
+    await expect(elevation).toHaveText('45°');
     await expect(power).toHaveText('50');
     await expect(card).toContainText('1 / 3');
-    await expect(fire).toBeEnabled();
+    // The touch coach owns the terminal cell while it is active; there must
+    // not be a second, tappable Fire action beneath the instruction.
+    await expect(fire).toHaveCount(0);
     const before = await readAimProbe(page);
 
     const canvas = page.locator('#game');
@@ -323,7 +372,7 @@ test.describe('First Salvo browser contract', () => {
     await expect(elevation).not.toHaveText('45▶');
     await expect(power).not.toHaveText('50');
     await expect(card).not.toContainText('1 / 3');
-    await expect(fire).toBeEnabled();
+    await expect(fire).toHaveCount(0);
     await expect.poll(() => readAimProbe(page)).toMatchObject({
       phase: 'PLAYER_TURN',
       turn: before.turn,
@@ -403,7 +452,7 @@ test.describe('First Salvo browser contract', () => {
     await expect.poll(() => page.evaluate(() =>
       window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     )).toBe(true);
-    const elevationTarget = page.locator('.st-hud__gauge-cell--elevation[data-first-salvo-target="aim"]');
+    const elevationTarget = page.locator('[data-command-action="aim-left"][data-first-salvo-target="aim"]');
     await expect(elevationTarget).toHaveClass(
       /st-hud__first-salvo-target--active/,
     );

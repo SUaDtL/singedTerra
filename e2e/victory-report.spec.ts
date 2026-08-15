@@ -171,7 +171,7 @@ test.describe('Victory After-Action Report', () => {
     await expect(page.locator('#stage')).not.toHaveAttribute('inert', '');
     await expect(page.locator('#hud')).not.toHaveAttribute('inert', '');
     await expect(page.locator('#lobby')).not.toHaveAttribute('inert', '');
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('#battle-rail .st-hud__console-solution')).toBeVisible();
   });
 
 });

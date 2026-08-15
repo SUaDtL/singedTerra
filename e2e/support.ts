@@ -8,7 +8,7 @@ import { expect, type Page } from '@playwright/test';
 
 /**
  * Navigate to the deterministic hot-seat E2E entrypoint and wait until a game is
- * actually running (the HUD is built and the instrument cluster is on screen).
+ * actually running (the HUD is built and numerical Fire Control is on screen).
  * Dismisses the splash overlay so it can't intercept anything.
  */
 export async function enterBattleIfBriefed(page: Page): Promise<void> {
@@ -41,9 +41,11 @@ export async function gotoRunningGame(
   // removes this node, so removing it directly is equivalent.)
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   // The HUD builds lazily on the first engine tick; waiting for the instrument
-  // cluster to be visible proves the game loop is running, not just the DOM.
-  await expect(page.locator('#hud.st-hud')).toBeVisible();
-  await expect(page.locator('.st-hud__instruments')).toBeVisible();
+  // live firing-solution values prove the game loop is running, not just the DOM.
+  // At ordinary aspect ratios Match is deliberately a closed drawer; its DOM
+  // proves the HUD has built without permanently reserving canvas width.
+  await expect(page.locator('#hud.st-hud')).toHaveCount(1);
+  await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
   // A forced tutorial query intentionally overrides the stored preference; cross
   // that public entry control if a caller explicitly requests the forced path.
   await enterBattleIfBriefed(page);
@@ -198,17 +200,17 @@ export async function findHudLayoutViolations(page: Page): Promise<LayoutViolati
 }
 
 /**
- * Assert the instrument cluster is not crushed: its rendered box height clears a
+ * Assert numerical Fire Control is not crushed: its rendered box height clears a
  * sane floor. A 10.6px flex-crush (the shipped regression) must fail this. The
  * floor is lower in compact/zoomed layouts (the whole #app is CSS-zoomed down, so
  * boundingBox heights shrink with it) but still far above a clipped console.
  */
-export async function assertInstrumentsHeight(page: Page, compact: boolean): Promise<void> {
-  const box = await page.locator('.st-hud__instruments').boundingBox();
-  expect(box, 'instrument cluster should have a rendered box').not.toBeNull();
+export async function assertFireControlHeight(page: Page, compact: boolean): Promise<void> {
+  const box = await page.locator('#battle-rail .st-hud__console-solution').boundingBox();
+  expect(box, 'Fire Control should have a rendered box').not.toBeNull();
   const floor = compact ? 24 : 40;
   expect(
     box!.height,
-    `instrument cluster height ${box!.height.toFixed(1)}px should clear ${floor}px (crush guard)`,
+    `Fire Control height ${box!.height.toFixed(1)}px should clear ${floor}px (crush guard)`,
   ).toBeGreaterThan(floor);
 }

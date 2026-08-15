@@ -7,7 +7,6 @@ import {
   gotoRunningGame,
   isCompact,
   findHudLayoutViolations,
-  assertInstrumentsHeight,
 } from './support';
 
 const ARSENAL_WEAPONS = [
@@ -33,11 +32,11 @@ const ARSENAL_WEAPONS = [
 
 const STORE_WEAPONS = ARSENAL_WEAPONS.slice(1);
 
-async function openStoreFromCommandMenu(page: Page): Promise<void> {
-  await page.locator('#hud').getByRole('button', { name: 'Menu', exact: true }).click();
-  const commandMenu = page.getByRole('dialog', { name: 'Command Menu' });
-  await expect(commandMenu).toBeVisible();
-  await commandMenu.getByRole('button', { name: 'Open Store', exact: true }).click();
+async function openStoreFromArmory(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+  const armory = page.locator('[data-ui="arsenal-drawer"]');
+  await expect(armory).toBeVisible();
+  await armory.getByRole('button', { name: /Buy weapons/ }).click();
   await expect(page.getByRole('dialog', { name: 'Store' })).toBeVisible();
 }
 
@@ -45,7 +44,7 @@ async function openStoreFromCommandMenu(page: Page): Promise<void> {
  * HUD rendering-guardrail suite. Runs across the viewport matrix (desktop-fine,
  * pixel-touch, small-window) defined in playwright.config.ts. Every assertion
  * reads COMPUTED GEOMETRY from real Chromium — not DOM presence — because the bug
- * these guard against (the instrument cluster flex-crushed to ~10.6px) had the
+ * these guard against (the Fire Control flex-crushed to ~10.6px) had the
  * right DOM but the wrong layout.
  */
 test.describe('HUD layout guardrails', () => {
@@ -56,77 +55,66 @@ test.describe('HUD layout guardrails', () => {
       await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
       await expect(briefing).toBeHidden();
     }
+    const coachSkip = page.getByRole('button', { name: 'Skip', exact: true });
+    if (await coachSkip.isVisible()) await coachSkip.click();
   });
 
-  test('instrument cluster is not flex-crushed (the exact regression)', async ({ page }) => {
+  test('integrated firing controls are not flex-crushed', async ({ page }) => {
     const compact = await isCompact(page);
-    await assertInstrumentsHeight(page, compact);
+    const box = await page.locator('#battle-rail .st-hud__solution-adjustments').boundingBox();
+    expect(box, 'integrated firing controls should have a rendered box').not.toBeNull();
+    expect(box!.height).toBeGreaterThan(compact ? 24 : 40);
   });
 
-  test('live gauges stay inside every instrument ancestor across phase states', async ({
+  test('live firing values stay inside their integrated controls across phase states', async ({
     page,
   }) => {
-    const gaugeViolations = async (): Promise<string[]> =>
-      page.locator('.st-hud__instruments').evaluate((instruments) => {
+    const solutionViolations = async (): Promise<string[]> =>
+      page.locator('.st-hud__solution-adjustments').evaluate((controls) => {
         const contains = (outer: DOMRect, inner: DOMRect): boolean =>
           inner.left >= outer.left - 1 && inner.right <= outer.right + 1
           && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
         const failures: string[] = [];
-        const row = instruments.querySelector('.st-hud__gauge-row')!;
-        const rowRect = row.getBoundingClientRect();
-        const instrumentsRect = instruments.getBoundingClientRect();
-        if (!contains(instrumentsRect, rowRect)) failures.push('gauge row escapes instruments');
-
-        for (const cell of row.querySelectorAll('.st-hud__gauge-cell')) {
-          const name = cell.className.includes('--wind')
-            ? 'wind'
-            : cell.className.includes('--power') ? 'power' : 'elevation';
-          const cellRect = cell.getBoundingClientRect();
-          const svg = cell.querySelector('svg')!;
-          const svgRect = svg.getBoundingClientRect();
-          const value = cell.querySelector('.st-hud__gauge-label')!;
-          const valueRect = value.getBoundingClientRect();
-          for (const [owner, ownerRect] of [
-            ['gauge row', rowRect],
-            ['instruments', instrumentsRect],
-          ] as const) {
-            if (!contains(ownerRect, cellRect)) failures.push(`${name} cell escapes ${owner}`);
-            if (!contains(ownerRect, valueRect)) failures.push(`${name} value escapes ${owner}`);
+        const railRect = document.querySelector<HTMLElement>('#battle-rail')!.getBoundingClientRect();
+        for (const owner of controls.querySelectorAll<HTMLElement>('[data-value-owner]')) {
+          const value = owner.querySelector<HTMLElement>('output, .st-hud__solution-wind-value')!;
+          if (!contains(owner.getBoundingClientRect(), value.getBoundingClientRect())) failures.push(`${owner.dataset.valueOwner} value escapes owner`);
+          if (!contains(railRect, value.getBoundingClientRect())) failures.push(`${owner.dataset.valueOwner} value escapes rail`);
+          if (value.clientWidth < value.scrollWidth) {
+            failures.push(`${owner.dataset.valueOwner} value is clipped`);
           }
-          if (!contains(cellRect, svgRect)) failures.push(`${name} svg escapes cell`);
-          if (!contains(svgRect, valueRect)) failures.push(`${name} value escapes svg`);
-          if (!contains(cellRect, valueRect)) failures.push(`${name} value escapes cell`);
-        }
-        const visibleTitles = [...row.querySelectorAll('.st-hud__gauge-cell-title')]
-          .map((title) => ({ text: title.textContent, rect: title.getBoundingClientRect() }))
-          .filter(({ rect }) => rect.width > 0 && rect.height > 0);
-        for (let firstIndex = 0; firstIndex < visibleTitles.length; firstIndex += 1) {
-          for (let secondIndex = firstIndex + 1; secondIndex < visibleTitles.length; secondIndex += 1) {
-            const first = visibleTitles[firstIndex]!;
-            const second = visibleTitles[secondIndex]!;
-            const sharesVerticalSpace = first.rect.top < second.rect.bottom
-              && first.rect.bottom > second.rect.top;
-            const horizontalGap = Math.max(
-              second.rect.left - first.rect.right,
-              first.rect.left - second.rect.right,
-            );
-            if (sharesVerticalSpace && horizontalGap < 2) {
-              failures.push(`${first.text}/${second.text} headings are crowded`);
+          for (const button of owner.querySelectorAll<HTMLElement>('button')) {
+            if (!contains(railRect, button.getBoundingClientRect())) {
+              failures.push(`${owner.dataset.valueOwner} control escapes rail`);
             }
           }
         }
         return failures;
       });
 
-    expect(await gaugeViolations(), 'decision gauge ancestry').toEqual([]);
+    expect(await solutionViolations(), 'decision solution ancestry').toEqual([]);
     await page.locator('.st-hud__primary-action').click();
     await expect(page.locator('.st-hud__command-console'))
       .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
-    expect(await gaugeViolations(), 'flight gauge ancestry').toEqual([]);
+    expect(await solutionViolations(), 'flight solution ancestry').toEqual([]);
   });
 
   test('right rail is a readable match ledger with a reachable Menu', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
     const ledger = page.locator('#hud');
+    const matchDrawer = page.getByRole('button', { name: 'Open match ledger', exact: true });
+    const close = ledger.getByRole('button', { name: 'Close match ledger', exact: true });
+    const menu = ledger.getByRole('button', { name: 'Menu', exact: true });
+    await expect(ledger).toBeHidden();
+    await expect(matchDrawer).toBeVisible();
+    await matchDrawer.click();
+    await expect(ledger).toBeVisible();
+    await expect(close).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(ledger).toBeHidden();
+    await expect(matchDrawer).toBeFocused();
+    await matchDrawer.click();
+    await expect(ledger).toBeVisible();
     await expect(ledger).toHaveAttribute('data-ui', 'match-ledger');
     await expect(ledger).toHaveAttribute('aria-label', 'Match ledger');
     await expect(ledger.locator('[data-ui="match-mode"]')).toHaveText('Free-for-all');
@@ -134,6 +122,19 @@ test.describe('HUD layout guardrails', () => {
     await expect(ledger.locator('.st-hud__players')).toHaveAttribute('aria-label', 'Turn order');
     await expect(ledger.locator('.st-hud__player')).toHaveCount(2);
     await expect(ledger.locator('.st-hud__conn')).toContainText('Ready');
+    const [ledgerBox, stageBox, appBox] = await Promise.all([
+      ledger.boundingBox(),
+      page.locator('#stage').boundingBox(),
+      page.locator('#app').boundingBox(),
+    ]);
+    expect(ledgerBox).not.toBeNull();
+    expect(stageBox).not.toBeNull();
+    expect(appBox).not.toBeNull();
+    expect(ledgerBox!.height).toBeLessThan(stageBox!.height * 0.6);
+    // Ordinary desktop opens Match on demand over the field rather than
+    // permanently reducing it. The app remains exactly the battlefield wide.
+    expect(Math.abs(appBox!.width - stageBox!.width)).toBeLessThanOrEqual(1);
+    expect(ledgerBox!.x + ledgerBox!.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width);
 
     const forbidden = ledger.locator([
       '[data-ui="weapon-bay"]',
@@ -147,7 +148,6 @@ test.describe('HUD layout guardrails', () => {
     await expect(forbidden).toHaveCount(0);
     await expect(ledger).not.toContainText(/Fire Control/i);
 
-    const menu = ledger.getByRole('button', { name: 'Menu', exact: true });
     await expect(menu).toBeVisible();
     await expect(menu).toBeEnabled();
     const briefing = page.locator('[data-ui="first-salvo-briefing"]');
@@ -162,6 +162,107 @@ test.describe('HUD layout guardrails', () => {
     await expect(resume).toBeFocused();
     await resume.click();
     await expect(menu).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(ledger).toBeHidden();
+    await expect(matchDrawer).toBeFocused();
+  });
+
+  test('docks Match only on an ultrawide fine-pointer stage without shrinking the battlefield', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'coarse pointer always uses the reachable Match drawer');
+    await page.setViewportSize({ width: 2048, height: 838 });
+    const ledger = page.locator('#hud');
+    const drawer = page.getByRole('button', { name: 'Open match ledger', exact: true });
+    await expect(ledger).toBeVisible();
+    await expect(drawer).toBeHidden();
+    const geometry = await page.evaluate(() => {
+      const game = document.querySelector<HTMLCanvasElement>('#game')!;
+      const stage = document.getElementById('stage')!;
+      const ledger = document.getElementById('hud')!;
+      const gameBox = game.getBoundingClientRect();
+      const stageBox = stage.getBoundingClientRect();
+      const ledgerBox = ledger.getBoundingClientRect();
+      return {
+        scale: gameBox.width / game.width,
+        stage: stageBox.toJSON(),
+        ledger: ledgerBox.toJSON(),
+      };
+    });
+    expect(geometry.scale).toBeGreaterThan(1);
+    expect(geometry.ledger.x).toBeGreaterThanOrEqual(geometry.stage.x + geometry.stage.width - 1);
+    expect(geometry.ledger.y).toBeCloseTo(geometry.stage.y, 1);
+    expect(geometry.ledger.height).toBeLessThan(geometry.stage.height * 0.6);
+  });
+
+  test('keeps Match as a drawer on a wide coarse-pointer viewport', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the native coarse-pointer profile');
+    const ledger = page.locator('#hud');
+    const drawer = page.getByRole('button', { name: 'Open match ledger', exact: true });
+    await expect(ledger).toBeHidden();
+    await expect(drawer).toBeVisible();
+    const drawerBox = await drawer.boundingBox();
+    expect(drawerBox).not.toBeNull();
+    expect(drawerBox!.width).toBeGreaterThanOrEqual(44);
+    expect(drawerBox!.height).toBeGreaterThanOrEqual(44);
+    await drawer.click();
+    const close = ledger.locator('.st-hud__match-drawer-close');
+    await expect(close).toBeVisible();
+    const closeBox = await close.boundingBox();
+    expect(closeBox).not.toBeNull();
+    expect(closeBox!.width).toBeGreaterThanOrEqual(44);
+    expect(closeBox!.height).toBeGreaterThanOrEqual(44);
+    await close.click();
+    await expect(ledger).toBeHidden();
+  });
+
+  test('keeps the Fire terminal compact rather than reserving a second command card', async ({ page }) => {
+    const proportions = await page.evaluate(() => {
+      const solution = document.querySelector<HTMLElement>('#battle-rail .st-hud__console-solution')!;
+      const terminal = document.querySelector<HTMLElement>('#battle-rail .st-hud__fire-terminal')!;
+      const solutionRect = solution.getBoundingClientRect();
+      const terminalRect = terminal.getBoundingClientRect();
+      return {
+        ratio: terminalRect.width / solutionRect.width,
+        terminalRect: terminalRect.toJSON(),
+        coarsePointer: matchMedia('(pointer: coarse)').matches,
+      };
+    });
+    // Coarse layouts reserve a 44px physical terminal target; fine-pointer
+    // layouts must not recreate the old full-width commitment card.
+    expect(proportions.ratio).toBeLessThanOrEqual(proportions.coarsePointer ? 0.68 : 0.16);
+    expect(proportions.terminalRect.height).toBeGreaterThan(0);
+  });
+
+  test('decision-state Fire terminal uses its height for live status as well as the action', async ({ page }) => {
+    const geometry = await page.locator('#battle-rail .st-hud__fire-terminal').evaluate((terminal) => {
+      const terminalRect = terminal.getBoundingClientRect();
+      const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
+      const summary = terminal.querySelector<HTMLElement>('.st-hud__commitment-explanation')!;
+      const fire = terminal.querySelector<HTMLElement>('.st-hud__primary-action')!;
+      const stateRect = state.getBoundingClientRect();
+      const summaryRect = summary.getBoundingClientRect();
+      const fireRect = fire.getBoundingClientRect();
+      const stateStyle = getComputedStyle(state);
+      const terminalStyle = getComputedStyle(terminal);
+      return {
+        stateVisible: stateStyle.clip === 'auto' && stateRect.width > 1 && stateRect.height > 1,
+        summaryHidden: summary.hidden,
+        state: { top: stateRect.top, bottom: stateRect.bottom },
+        summary: { top: summaryRect.top, bottom: summaryRect.bottom },
+        fire: { top: fireRect.top, height: fireRect.height },
+        terminal: { top: terminalRect.top, bottom: terminalRect.bottom, height: terminalRect.height },
+        terminalVisualDecoration: {
+          backgroundImage: terminalStyle.backgroundImage,
+          borderLeftWidth: terminalStyle.borderLeftWidth,
+        },
+      };
+    });
+    expect(geometry.stateVisible).toBe(true);
+    expect(geometry.summaryHidden).toBe(true);
+    expect(geometry.state.top).toBeGreaterThanOrEqual(geometry.terminal.top);
+    expect(geometry.fire.top).toBeGreaterThanOrEqual(geometry.state.bottom);
+    expect(geometry.fire.height).toBeLessThanOrEqual(geometry.terminal.height * 0.62);
+    expect(geometry.terminalVisualDecoration.backgroundImage).toBe('none');
+    expect(geometry.terminalVisualDecoration.borderLeftWidth).toBe('0px');
   });
 
   test('no direct #hud child is crushed or content-clipped (generalized invariant)', async ({
@@ -231,13 +332,10 @@ test.describe('HUD layout guardrails', () => {
         '.st-hud__weapon-ammo',
         '.st-hud__solution-adjustment-label',
         '.st-hud__solution-direction',
-        '.st-hud__gauge-cell-title',
-        '.st-hud__gauge-label',
         '.st-hud__trajectory-guide',
         '.st-hud__first-salvo-progress',
         '.st-hud__first-salvo-copy',
         '.st-hud__first-salvo-skip',
-        '.st-hud__console-state',
         '.st-hud__commitment-explanation',
       ].join(','))].filter(rendered).map((label) => ({
         text: label.textContent,
@@ -253,6 +351,7 @@ test.describe('HUD layout guardrails', () => {
       }));
       return {
         rail: railRect.toJSON(),
+        logicalRailHeight: railRect.height / scale,
         console: consoleRect.toJSON(),
         targets,
         labels,
@@ -269,6 +368,8 @@ test.describe('HUD layout guardrails', () => {
 
     expect(geometry.allTargetsInRail).toBe(true);
     expect(geometry.widestChassisClearOfRail).toBe(true);
+    expect(geometry.logicalRailHeight, 'the protected command rail must not consume the battlefield')
+      .toBeLessThanOrEqual(200.5);
     expect(geometry.documentOverflowX).toBeLessThanOrEqual(0);
     expect(geometry.documentOverflowY).toBeLessThanOrEqual(0);
     expect(geometry.console.x).toBeGreaterThanOrEqual(geometry.rail.x - 1);
@@ -344,6 +445,18 @@ test.describe('HUD layout guardrails', () => {
           assertContained(weapon, child, child.textContent ?? child.className);
         }
 
+        const context = rail.querySelector<HTMLElement>('.st-hud__console-context')!;
+        const commander = context.querySelector<HTMLElement>('.st-hud__active-row')!;
+        if (context.scrollWidth > context.clientWidth || context.scrollHeight > context.clientHeight) {
+          failures.push('commander context scrolls instead of fitting');
+        }
+        assertContained(context, commander, 'active commander');
+        for (const child of commander.querySelectorAll<HTMLElement>(
+          '.st-hud__identity-lockup, .st-hud__mobility, .st-hud__fuel-meter, .st-hud__move-btn',
+        )) {
+          assertContained(context, child, child.className);
+        }
+
         for (const group of rail.querySelectorAll('.st-hud__solution-adjustment')) {
           const label = group.querySelector('.st-hud__solution-adjustment-label')!;
           assertContained(group, label, label.textContent ?? 'adjustment label');
@@ -356,21 +469,6 @@ test.describe('HUD layout guardrails', () => {
             );
           }
         }
-
-        for (const cell of rail.querySelectorAll('.st-hud__gauge-cell')) {
-          const title = cell.querySelector('.st-hud__gauge-cell-title')!;
-          const value = cell.querySelector('.st-hud__gauge-label')!;
-          assertContained(cell, title, title.textContent ?? 'gauge title');
-          assertContained(cell, value, value.textContent ?? 'gauge value');
-          assertSeparated(title, value, `${title.textContent} / ${value.textContent}`);
-        }
-
-        const instruments = rail.querySelector('.st-hud__instruments')!;
-        const instrumentTitle = instruments.querySelector('.st-hud__instr-title')!;
-        const gaugeRow = instruments.querySelector('.st-hud__gauge-row')!;
-        assertContained(instruments, instrumentTitle, 'Ballistic Computer');
-        assertContained(instruments, gaugeRow, 'gauge row');
-        assertSeparated(instrumentTitle, gaugeRow, 'Ballistic Computer / gauges');
 
         const solution = rail.querySelector('.st-hud__console-solution')!;
         const guide = solution.querySelector('.st-hud__trajectory-guide')!;
@@ -450,91 +548,16 @@ test.describe('HUD layout guardrails', () => {
     await expect(hud).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(overlay).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(rail).toHaveAttribute('data-combat-focus', 'outcome');
+    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
     await expect(page.locator('.st-hud__aim')).toBeVisible();
+    await expect(page.locator('.st-hud__active-row')).toBeVisible();
     await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
     await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
     await expect(page.locator('.st-hud__command-console')).toHaveAttribute(
       'aria-label',
-      'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
+      'Turn command console',
     );
     await expect(page.locator('#hud .st-hud__menu')).toBeEnabled();
-    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
-
-    const outcome = await page.evaluate(() => {
-      const select = (selector: string) => document.querySelector<HTMLElement>(selector)!;
-      const rect = (node: HTMLElement) => node.getBoundingClientRect();
-      const opacity = (node: HTMLElement) => Number(getComputedStyle(node).opacity);
-      const effectiveOpacity = (node: HTMLElement) => {
-        let result = 1;
-        for (let current: HTMLElement | null = node; current; current = current.parentElement) {
-          result *= Number(getComputedStyle(current).opacity);
-        }
-        return result;
-      };
-      const order = (node: HTMLElement) => Number(getComputedStyle(node).order);
-      const filter = (node: HTMLElement) => getComputedStyle(node).filter;
-      const consoleEl = select('.st-hud__command-console');
-      const solution = select('.st-hud__console-solution');
-      const commitment = select('.st-hud__console-commitment');
-      const progress = select('.st-hud__aim');
-      const instruments = select('.st-hud__instruments');
-      const roster = select('.st-hud__players');
-      const rosterRows = Array.from(
-        document.querySelectorAll<HTMLElement>('.st-hud__player'),
-      );
-      const arsenal = select('.st-hud__strip');
-      const combat = select('.st-hud__solution-control[data-command-action="aim-left"]');
-      const commandMenu = select('#hud .st-hud__menu');
-      const progressRect = rect(progress);
-      const consoleRect = rect(consoleEl);
-      return {
-        order: { progress: order(progress), instruments: order(instruments) },
-        parentOpacity: {
-          instruments: opacity(instruments), roster: opacity(roster), arsenal: opacity(arsenal),
-        },
-        effectiveOpacity: {
-          progress: effectiveOpacity(progress), combat: effectiveOpacity(combat),
-          rosterRows: rosterRows.map(effectiveOpacity), arsenal: effectiveOpacity(arsenal),
-          commandMenu: effectiveOpacity(commandMenu),
-        },
-        filter: {
-          progress: filter(progress), instruments: filter(solution),
-          roster: filter(roster), solution: filter(solution),
-        },
-        owned: consoleEl.contains(progress)
-          && instruments.parentElement === solution
-          && progress.parentElement === commitment,
-        contained: progressRect.left >= consoleRect.left - 1
-          && progressRect.right <= consoleRect.right + 1
-          && progressRect.top >= consoleRect.top - 1
-          && progressRect.bottom <= consoleRect.bottom + 1
-          && document.documentElement.scrollWidth <= window.innerWidth
-          && document.documentElement.scrollHeight <= window.innerHeight,
-        announcement: {
-          role: progress.getAttribute('role'),
-          live: progress.getAttribute('aria-live'),
-          text: progress.textContent,
-        },
-      };
-    });
-    expect(outcome.owned).toBe(true);
-    expect(outcome.contained).toBe(true);
-    expect(Object.values(outcome.parentOpacity)).toEqual([1, 1, 1]);
-    expect(outcome.effectiveOpacity.progress).toBe(1);
-    expect(outcome.effectiveOpacity.combat).toBeGreaterThanOrEqual(0.3);
-    expect(outcome.effectiveOpacity.rosterRows.length).toBeGreaterThan(0);
-    expect(Math.min(...outcome.effectiveOpacity.rosterRows)).toBeGreaterThanOrEqual(0.4);
-    expect(outcome.effectiveOpacity.arsenal).toBeGreaterThanOrEqual(0.9);
-    expect(outcome.effectiveOpacity.commandMenu).toBeGreaterThanOrEqual(0.9);
-    expect(outcome.filter.progress).toBe('none');
-    for (const [surface, treatment] of Object.entries(outcome.filter)) {
-      if (surface === 'progress') continue;
-      expect(treatment, `${surface} should use non-alpha outcome demotion`).toContain('saturate');
-      expect(treatment, `${surface} should retain legibility with authored brightness`).toContain('brightness');
-    }
-    expect(outcome.announcement.role).toBe('status');
-    expect(outcome.announcement.live).toBe('polite');
-    expect(outcome.announcement.text).toMatch(/Shot in flight|Terrain settling|Sending shot/);
 
     await expect(hud).toHaveAttribute('data-combat-focus', 'decision', { timeout: 20_000 });
     await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
@@ -567,6 +590,15 @@ test.describe('HUD layout guardrails', () => {
   }, testInfo) => {
     const frame = page.locator('.st-hud__tank-portrait-frame');
     const portrait = frame.locator('.st-hud__tank-portrait');
+    if (testInfo.project.name === 'pixel-touch') {
+      // Touch spends the rail's finite height on live movement and firing
+      // targets. Identity, health and fuel remain; the decorative portrait is
+      // deliberately removed rather than cramped into an unreadable card.
+      await expect(frame).toBeHidden();
+      await expect(page.locator('[data-ui="commander-health"]')).toHaveText('100 HP');
+      await expect(page.getByRole('progressbar', { name: 'Movement fuel' })).toHaveAttribute('aria-valuenow', '100');
+      return;
+    }
     await expect(frame).toBeVisible();
     await expect(portrait).toBeVisible();
     await expect(portrait).toHaveAttribute('width', '144');
@@ -616,8 +648,13 @@ test.describe('HUD layout guardrails', () => {
 
     const arsenal = page.locator('[data-icon="arsenal"]');
     await expect(arsenal.locator('circle[r="9"]')).toHaveCount(1);
-    await expect(page.getByRole('button', { name: 'Expand arsenal' })).toBeVisible();
-    await expect(page.locator('#hud .st-hud__menu')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open Armory — equip or buy weapons' })).toBeVisible();
+    const drawerTrigger = page.getByRole('button', { name: 'Open match ledger', exact: true });
+    if (await drawerTrigger.count()) {
+      await expect(drawerTrigger).toBeVisible();
+    } else {
+      await expect(page.locator('#hud .st-hud__menu')).toBeVisible();
+    }
     await expect(page.locator('.st-hud__primary-action')).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
@@ -653,10 +690,10 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
   });
 
-  test('weapon-family glyphs remain visible inside Arsenal and Store', async ({
+  test('weapon-family glyphs remain visible inside the gameplay Armory and Store', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: 'Expand arsenal' }).click();
+    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
     const arsenalCatalog = await page.locator(
       '.st-hud__weapon-btn',
     ).evaluateAll((buttons) => buttons.map((button) => ({
@@ -696,8 +733,8 @@ test.describe('HUD layout guardrails', () => {
       expect(size.contained).toBe(true);
     }
 
-    await page.getByRole('button', { name: 'Collapse arsenal' }).click();
-    await openStoreFromCommandMenu(page);
+    await page.getByRole('button', { name: 'Close Armory' }).click();
+    await openStoreFromArmory(page);
     const storeIcons = page.locator('.st-hud__store-name-line .st-weapon-icon');
     const storeCatalog = await page.locator(
       '.st-hud__store-name-line',
@@ -723,7 +760,7 @@ test.describe('HUD layout guardrails', () => {
   test('Store catalog keeps its controls fixed around a responsive internal catalog', async ({
     page,
   }) => {
-    await openStoreFromCommandMenu(page);
+    await openStoreFromArmory(page);
 
     const panel = page.locator('.st-hud__store-panel');
     const catalog = panel.locator('.st-hud__store-catalog');
@@ -862,7 +899,7 @@ test.describe('HUD layout guardrails', () => {
   test('Store cards contain their information and purchase control without overlap', async ({
     page,
   }) => {
-    await openStoreFromCommandMenu(page);
+    await openStoreFromArmory(page);
 
     const violations = await page.locator('.st-hud__store-row').evaluateAll((rows) =>
       rows.flatMap((row) => {
@@ -918,7 +955,7 @@ test.describe('HUD layout guardrails', () => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
     await page.setViewportSize({ width: 1172, height: 600 });
     await expect.poll(() => isCompact(page)).toBe(false);
-    await openStoreFromCommandMenu(page);
+    await openStoreFromArmory(page);
 
     const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
     const heights = await targets.evaluateAll((buttons) =>
@@ -939,7 +976,7 @@ test.describe('HUD layout guardrails', () => {
     expect(roundShopMinimums).toHaveLength(20);
     expect(roundShopMinimums.every((minimum) => minimum === '44px')).toBe(true);
 
-    await openStoreFromCommandMenu(page);
+    await openStoreFromArmory(page);
     const catalogHeights = await page.locator('.st-hud__store-catalog .st-hud__store-buy')
       .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
     expect(Math.min(...catalogHeights)).toBeGreaterThanOrEqual(44);
@@ -951,7 +988,7 @@ test.describe('HUD layout guardrails', () => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
     await page.setViewportSize({ width: 667, height: 375 });
     await expect.poll(() => isCompact(page)).toBe(true);
-    await openStoreFromCommandMenu(page);
+    await openStoreFromArmory(page);
 
     const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
     const heights = await targets.evaluateAll((buttons) =>
@@ -997,36 +1034,143 @@ test.describe('HUD layout guardrails', () => {
     expect(documentSize.height).toBeLessThanOrEqual(documentSize.viewportHeight);
   });
 
-  test('the analog console is visible, boxed, and inside the firing-solution zone at every scale', async ({ page }) => {
-    const dials = page.locator('.st-hud__gauge-row');
-    const nums = page.locator('.st-hud__gauge-nums');
+  test('one numerical firing solution replaces the retired analog computer at every scale', async ({ page }) => {
+    const solution = page.locator('#battle-rail .st-hud__console-solution');
+    await expect(page.locator('.st-hud__gauge-row')).toHaveCount(0);
+    await expect(solution.locator('.st-hud__solution-adjustment')).toHaveCount(2);
+    const wind = solution.locator('.st-hud__solution-wind');
+    await expect(wind).toHaveCount(1);
+    await expect(wind.locator('[data-ui="deterministic-aim-guide"]')).toHaveCount(1);
 
-    await expect(dials).toBeVisible();
-    await expect(nums).toHaveCount(0);
+    // Live numerical firing values must stay inside their owner regions.
+    const geometry = await solution.evaluate((node) => {
+      const solution = node.getBoundingClientRect();
+      const controls = [...node.querySelectorAll<HTMLElement>(
+        '.st-hud__solution-adjustment, .st-hud__solution-wind',
+      )];
+      const contained = (rect: DOMRect) =>
+        rect.left >= solution.left - 1 && rect.right <= solution.right + 1
+        && rect.top >= solution.top - 1 && rect.bottom <= solution.bottom + 1;
+      return controls.map((control) => ({
+        text: control.textContent?.trim(),
+        contained: contained(control.getBoundingClientRect()),
+      }));
+    });
+    expect(geometry).toHaveLength(3);
+    expect(
+      geometry.every((control) => control.contained),
+      `integrated solution controls must remain contained: ${JSON.stringify(geometry)}`,
+    ).toBe(true);
+    expect(geometry.map((control) => control.text).join(' ')).toMatch(/Angle.*Power.*Wind.*Guide/s);
+  });
 
-    const gaugeBox = await dials.boundingBox();
-    expect(gaugeBox, 'the visible gauge representation should have a box').not.toBeNull();
-    expect(gaugeBox!.width).toBeGreaterThan(0);
-    expect(gaugeBox!.height).toBeGreaterThan(0);
+  test('Fire Control uses the full live rail instead of decorative empty cards', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'pixel-touch', 'touch deliberately gives Wind and Guide their own reachable lower row');
+    const geometry = await page.locator('#battle-rail .st-hud__console-solution').evaluate((solution) => {
+      const rect = solution.getBoundingClientRect();
+      const box = (selector: string) => {
+        const node = solution.querySelector<HTMLElement>(selector)!;
+        const value = node.getBoundingClientRect();
+        return { top: value.top, bottom: value.bottom, height: value.height };
+      };
+      const angle = solution.querySelector<HTMLElement>('[data-value-owner="angle"]')!;
+      const power = solution.querySelector<HTMLElement>('[data-value-owner="power"]')!;
+      const band = (owner: HTMLElement) => {
+        const label = owner.querySelector<HTMLElement>('.st-hud__solution-adjustment-label')!.getBoundingClientRect();
+        const value = owner.querySelector<HTMLElement>('output')!.getBoundingClientRect();
+        const buttons = [...owner.querySelectorAll<HTMLElement>('button')].map((button) => button.getBoundingClientRect());
+        return {
+          labelBottom: label.bottom,
+          valueTop: value.top,
+          valueBottom: value.bottom,
+          buttonTop: Math.min(...buttons.map((button) => button.top)),
+        };
+      };
+      return {
+        solution: { top: rect.top, bottom: rect.bottom, height: rect.height },
+        weapon: box('.st-hud__weapon'),
+        angle: box('[data-value-owner="angle"]'),
+        power: box('[data-value-owner="power"]'),
+        wind: box('[data-value-owner="wind"]'),
+        terminal: box('.st-hud__fire-terminal'),
+        terminalState: box('.st-hud__console-state'),
+        fire: box('.st-hud__primary-action'),
+        angleBand: band(angle),
+        powerBand: band(power),
+      };
+    });
+    for (const [name, cell] of Object.entries({
+      weapon: geometry.weapon,
+      angle: geometry.angle,
+      power: geometry.power,
+      wind: geometry.wind,
+      terminal: geometry.terminal,
+    })) {
+      expect(cell.height, `${name} must occupy the live Fire Control row`)
+        .toBeGreaterThanOrEqual(geometry.solution.height * 0.72);
+      expect(cell.top, `${name} starts in the shared row`).toBeLessThanOrEqual(geometry.solution.top + 8);
+      expect(cell.bottom, `${name} ends in the shared row`).toBeGreaterThanOrEqual(geometry.solution.bottom - 8);
+    }
+    expect(geometry.terminalState.top, 'phase starts the terminal hierarchy')
+      .toBeGreaterThanOrEqual(geometry.terminal.top);
+    expect(geometry.fire.top, 'the one commit action follows phase state')
+      .toBeGreaterThanOrEqual(geometry.terminalState.bottom);
+    expect(geometry.fire.height, 'Fire remains a bounded terminal action')
+      .toBeLessThanOrEqual(geometry.terminal.height * 0.62);
+    for (const [name, band] of Object.entries({ angle: geometry.angleBand, power: geometry.powerBand })) {
+      expect(band.labelBottom, `${name} label precedes live value`).toBeLessThanOrEqual(band.valueTop);
+      expect(band.valueBottom, `${name} value precedes controls`).toBeLessThanOrEqual(band.buttonTop);
+    }
+  });
 
-    // The gauges must lie within the #hud panel — not overflowing/clipped out of it.
-    const solutionBox = await page.locator('#battle-rail .st-hud__console-solution').boundingBox();
-    expect(solutionBox).not.toBeNull();
-    expect(gaugeBox!.x).toBeGreaterThanOrEqual(solutionBox!.x - 1);
-    expect(gaugeBox!.x + gaugeBox!.width).toBeLessThanOrEqual(solutionBox!.x + solutionBox!.width + 1);
-    expect(gaugeBox!.y).toBeGreaterThanOrEqual(solutionBox!.y - 1);
-    expect(gaugeBox!.y + gaugeBox!.height).toBeLessThanOrEqual(solutionBox!.y + solutionBox!.height + 1);
+  test('Commander and Fire Control consume the full command rail with no orphaned track', async ({ page }) => {
+    const geometry = await page.locator('#battle-rail .st-hud__command-console').evaluate((console) => {
+      const rect = console.getBoundingClientRect();
+      const directChildren = [...console.children].filter((node) => node instanceof HTMLElement) as HTMLElement[];
+      const context = console.querySelector<HTMLElement>(':scope > .st-hud__console-context')!;
+      const solution = console.querySelector<HTMLElement>(':scope > .st-hud__console-solution')!;
+      const contextRect = context.getBoundingClientRect();
+      const solutionRect = solution.getBoundingClientRect();
+      return {
+        directChildClasses: directChildren.map((child) => child.className),
+        console: { left: rect.left, right: rect.right },
+        context: { left: contextRect.left, right: contextRect.right },
+        solution: { left: solutionRect.left, right: solutionRect.right },
+      };
+    });
+    expect(geometry.directChildClasses).toEqual([
+      expect.stringContaining('st-hud__console-context'),
+      expect.stringContaining('st-hud__console-solution'),
+    ]);
+    expect(geometry.context.left).toBeLessThanOrEqual(geometry.console.left + 1);
+    expect(geometry.solution.right).toBeGreaterThanOrEqual(geometry.console.right - 1);
+    expect(geometry.solution.left).toBeGreaterThan(geometry.context.right);
+  });
 
-    const elevationBox = await page.locator('.st-hud__gauge-cell--elevation').boundingBox();
-    const powerBox = await page.locator('.st-hud__gauge-cell--power').boundingBox();
-    const windBox = await page.locator('.st-hud__gauge-cell--wind').boundingBox();
-    expect(elevationBox).not.toBeNull();
-    expect(powerBox).not.toBeNull();
-    expect(windBox).not.toBeNull();
-    expect(Math.abs(elevationBox!.y - powerBox!.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(elevationBox!.width - powerBox!.width)).toBeLessThanOrEqual(1);
-    expect(windBox!.y).toBeGreaterThan(elevationBox!.y + elevationBox!.height);
-    expect(windBox!.width).toBeGreaterThan(elevationBox!.width * 1.8);
+  test('desktop Commander spends its full column on live tactical identity instead of blank rail', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'touch intentionally removes the decorative portrait');
+    const geometry = await page.locator('#battle-rail .st-hud__console-context').evaluate((context) => {
+      const contextRect = context.getBoundingClientRect();
+      const active = context.querySelector<HTMLElement>('.st-hud__active-row')!.getBoundingClientRect();
+      const portrait = context.querySelector<HTMLElement>('.st-hud__tank-portrait-frame')!.getBoundingClientRect();
+      const mobility = context.querySelector<HTMLElement>('.st-hud__mobility')!.getBoundingClientRect();
+      return {
+        context: { top: contextRect.top, bottom: contextRect.bottom, height: contextRect.height },
+        active: { top: active.top, bottom: active.bottom, height: active.height },
+        portrait: { top: portrait.top, bottom: portrait.bottom, width: portrait.width, height: portrait.height },
+        mobility: { top: mobility.top, bottom: mobility.bottom },
+      };
+    });
+    expect(geometry.active.bottom).toBeGreaterThanOrEqual(geometry.context.bottom - 4);
+    // The compact 200px protected rail keeps Commander useful without taking
+    // back battlefield height. The portrait remains a substantial identity cue
+    // while mobility anchors the lower edge of the same live panel.
+    expect(geometry.portrait.height).toBeGreaterThanOrEqual(geometry.active.height * 0.35);
+    expect(geometry.portrait.width / geometry.portrait.height,
+      'Commander tank art must remain a landscape vehicle, not stretch vertically').toBeGreaterThan(1.7);
+    // Commander keeps a deliberate 7px inner panel inset; anything beyond this
+    // would be the blank lower-third regression this test guards.
+    expect(geometry.mobility.bottom).toBeGreaterThanOrEqual(geometry.context.bottom - 14);
   });
 
   test('turn command console is coherent, complete, and fitted', async ({ page }, testInfo) => {
@@ -1036,9 +1180,9 @@ test.describe('HUD layout guardrails', () => {
     const console = page.getByRole('region', { name: 'Turn command console' });
     const activeRow = console.locator('.st-hud__active-row');
     const solution = console.locator('.st-hud__console-solution');
-    const commitment = console.locator('.st-hud__console-commitment');
-    const readback = commitment.locator('[data-ui="shot-readback"]');
+    const commitment = console.locator('.st-hud__fire-terminal');
     const player = activeRow.locator('.st-hud__turn-owner');
+    const health = activeRow.locator('[data-ui="commander-health"]');
     const weapon = solution.locator('.st-hud__weapon-value');
     const portrait = activeRow.getByRole('img', { name: /Mobility:/ });
     const meter = activeRow.getByRole('progressbar', { name: 'Movement fuel' });
@@ -1047,40 +1191,42 @@ test.describe('HUD layout guardrails', () => {
     await expect(console).toBeVisible();
     await expect(activeRow).toBeVisible();
     await expect(player).toHaveText('P1');
+    await expect(health).toHaveText('100 HP');
     await expect(weapon).toHaveText('Baby Missile');
-    await expect(portrait).toHaveCount(1);
-    await expect(portrait).toHaveAttribute(
-      'aria-label',
-      "P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.",
-    );
+    if (testInfo.project.name === 'pixel-touch') {
+      await expect(portrait).toHaveCount(0);
+    } else {
+      await expect(portrait).toHaveCount(1);
+      await expect(portrait).toHaveAttribute(
+        'aria-label',
+        "P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.",
+      );
+    }
     await expect(activeRow.locator('.st-hud__turn-kicker')).toBeVisible();
     await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'baby_missile');
     await expect(meter).toHaveAttribute('aria-valuenow', '100');
     await expect(fire).toBeVisible();
     await expect(console.locator('.st-hud__primary-action')).toHaveCount(1);
-    await expect(readback).toBeVisible();
-    await expect(readback).toHaveAttribute('aria-label', 'Current firing solution');
-    await expect(readback).toContainText('Baby Missile');
-    await expect(readback).toContainText('45°');
-    await expect(readback).toContainText('Power 50');
-    await expect(readback).toContainText(/Wind (?:Calm|\d+\.\d (?:left|right))/);
+    await expect(commitment.locator('[data-ui="shot-readback"]')).toHaveCount(0);
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
-      "P1's turn. Weapon Baby Missile. 100 fuel remaining.",
+      "P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.",
     );
 
-    await page.getByRole('button', { name: 'Expand arsenal' }).click();
+    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+    if (testInfo.project.name === 'pixel-touch') return;
+
     await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
-    await page.getByRole('button', { name: 'Collapse arsenal' }).click();
+    await page.getByRole('button', { name: 'Close Armory' }).click();
     await expect(weapon).toHaveText('Sandhog');
-    await expect(readback).toContainText('Sandhog');
+    await expect(commitment.locator('[data-ui="shot-readback"]')).toHaveCount(0);
     await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'sandhog');
     await expect(fire).toHaveAttribute('aria-label', 'Fire Sandhog');
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
-      "P1's turn. Weapon Sandhog. 100 fuel remaining.",
+      "P1's turn. 100 health. Weapon Sandhog. 100 fuel remaining.",
     );
     await expect.poll(async () => portrait.evaluate((canvas) => {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -1122,8 +1268,7 @@ test.describe('HUD layout guardrails', () => {
       const hud = document.getElementById('hud')!;
       const playerNode = node.querySelector<HTMLElement>('.st-hud__turn-owner')!;
       const weaponNode = node.querySelector<HTMLElement>('.st-hud__weapon-value')!;
-      const commitmentNode = node.querySelector<HTMLElement>('.st-hud__console-commitment')!;
-      const readbackNode = node.querySelector<HTMLElement>('[data-ui="shot-readback"]')!;
+      const commitmentNode = node.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
       // Mutate and measure in one browser task so the live HUD update loop
       // cannot restore the fixture name between the probe and geometry read.
       playerNode.textContent = 'Commander Longname X';
@@ -1134,10 +1279,6 @@ test.describe('HUD layout guardrails', () => {
           return rect.width > 0 && rect.height > 0;
         });
       const targetRects = visibleTargets.map((target) => target.getBoundingClientRect());
-      const commitmentBounds = commitmentNode.getBoundingClientRect();
-      const readbackBounds = readbackNode.getBoundingClientRect();
-      const readbackItems = [...readbackNode.querySelectorAll<HTMLElement>('.st-hud__shot-readback-item')]
-        .map((item) => item.getBoundingClientRect());
       return {
         consoleClientHeight: node.clientHeight,
         consoleScrollHeight: node.scrollHeight,
@@ -1149,21 +1290,25 @@ test.describe('HUD layout guardrails', () => {
         playerScrollWidth: playerNode.scrollWidth,
         weaponClientWidth: weaponNode.clientWidth,
         weaponScrollWidth: weaponNode.scrollWidth,
-        targetsContained: targetRects.every((target) =>
-          target.left >= bounds.left - 1
-          && target.right <= bounds.right + 1
-          && target.top >= bounds.top - 1
-          && target.bottom <= bounds.bottom + 1),
-        readbackContained: readbackBounds.left >= commitmentBounds.left - 1
-          && readbackBounds.right <= commitmentBounds.right + 1
-          && readbackBounds.top >= commitmentBounds.top - 1
-          && readbackBounds.bottom <= commitmentBounds.bottom + 1,
-        readbackItemsSeparate: readbackItems.every((item, index) =>
-          readbackItems.every((other, otherIndex) => index === otherIndex
-            || item.right <= other.left + 1
-            || other.right <= item.left + 1
-            || item.bottom <= other.top + 1
-            || other.bottom <= item.top + 1)),
+        targetViolations: targetRects
+          .map((target, index) => ({ target, className: visibleTargets[index]!.className }))
+          .filter(({ target }) => target.left < bounds.left - 1
+            || target.right > bounds.right + 1
+            || target.top < bounds.top - 1
+            || target.bottom > bounds.bottom + 1)
+          .map(({ target, className }) => ({ className, ...target.toJSON() })),
+        commitmentHasSolutionReadback: commitmentNode.querySelector('[data-ui="shot-readback"]') !== null,
+        solutionValueCounts: {
+          weapon: node.querySelectorAll('.st-hud__console-solution .st-hud__weapon-value').length,
+          elevation: node.querySelectorAll('.st-hud__console-solution [data-value-owner="angle"]').length,
+          power: node.querySelectorAll('.st-hud__console-solution [data-value-owner="power"]').length,
+          wind: node.querySelectorAll('.st-hud__console-solution [data-value-owner="wind"]').length,
+        },
+        childHeights: [...node.children].map((child) => ({
+          className: child.className,
+          clientHeight: (child as HTMLElement).clientHeight,
+          scrollHeight: (child as HTMLElement).scrollHeight,
+        })),
         targetMetrics: visibleTargets.map((target) => ({
           className: target.className,
           height: target.getBoundingClientRect().height,
@@ -1171,14 +1316,15 @@ test.describe('HUD layout guardrails', () => {
         })),
       };
     });
-    expect(geometry.consoleScrollHeight).toBeLessThanOrEqual(geometry.consoleClientHeight + 1);
+    expect(geometry.consoleScrollHeight, JSON.stringify(geometry.childHeights))
+      .toBeLessThanOrEqual(geometry.consoleClientHeight + 1);
     expect(geometry.consoleScrollWidth).toBeLessThanOrEqual(geometry.consoleClientWidth + 1);
     expect(geometry.hudScrollHeight).toBeLessThanOrEqual(geometry.hudClientHeight + 1);
     expect(geometry.playerScrollWidth).toBeLessThanOrEqual(geometry.playerClientWidth + 1);
     expect(geometry.weaponScrollWidth).toBeLessThanOrEqual(geometry.weaponClientWidth + 1);
-    expect(geometry.targetsContained).toBe(true);
-    expect(geometry.readbackContained).toBe(true);
-    expect(geometry.readbackItemsSeparate).toBe(true);
+    expect(geometry.targetViolations, JSON.stringify(geometry)).toEqual([]);
+    expect(geometry.commitmentHasSolutionReadback).toBe(false);
+    expect(geometry.solutionValueCounts).toEqual({ weapon: 1, elevation: 1, power: 1, wind: 1 });
     const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
     for (const target of geometry.targetMetrics) {
       expect(
@@ -1315,7 +1461,7 @@ test.describe('HUD layout guardrails', () => {
     await expect(activeRow.locator('.st-hud__turn-owner')).toHaveText('P1');
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
-      `P1's turn. Weapon Baby Missile. ${remaining} fuel remaining.`,
+      `P1's turn. 100 health. Weapon Baby Missile. ${remaining} fuel remaining.`,
     );
 
     const geometry = await page.evaluate(() => ({
@@ -1382,7 +1528,7 @@ test.describe('HUD layout guardrails', () => {
 
   test('arsenal opens as a fitted drawer without changing rail height', async ({ page }) => {
     const rail = page.locator('#battle-rail');
-    const solution = page.locator('.st-hud__console-solution');
+    const modalLayer = page.locator('#modal-layer');
     const before = await rail.evaluate((element) => ({
       clientHeight: element.clientHeight,
       scrollHeight: element.scrollHeight,
@@ -1395,16 +1541,16 @@ test.describe('HUD layout guardrails', () => {
     await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('.st-hud__arsenal-drawer-close')).toBeFocused();
     await expect(trigger).toHaveAttribute('aria-hidden', 'true');
-    const solutionBox = await solution.boundingBox();
+    const modalBox = await modalLayer.boundingBox();
     const drawerBox = await page.locator('.st-hud__strip').boundingBox();
-    expect(solutionBox).not.toBeNull();
+    expect(modalBox).not.toBeNull();
     expect(drawerBox).not.toBeNull();
-    expect(drawerBox!.x).toBeGreaterThanOrEqual(solutionBox!.x - 1);
+    expect(drawerBox!.x).toBeGreaterThanOrEqual(modalBox!.x - 1);
     expect(drawerBox!.x + drawerBox!.width)
-      .toBeLessThanOrEqual(solutionBox!.x + solutionBox!.width + 1);
-    expect(drawerBox!.y).toBeGreaterThanOrEqual(solutionBox!.y - 1);
+      .toBeLessThanOrEqual(modalBox!.x + modalBox!.width + 1);
+    expect(drawerBox!.y).toBeGreaterThanOrEqual(modalBox!.y - 1);
     expect(drawerBox!.y + drawerBox!.height)
-      .toBeLessThanOrEqual(solutionBox!.y + solutionBox!.height + 1);
+      .toBeLessThanOrEqual(modalBox!.y + modalBox!.height + 1);
     for (const locator of [
       page.locator('.st-hud__strip-grid'),
       page.locator('.st-hud__arsenal-drawer-close'),
@@ -1436,7 +1582,10 @@ test.describe('HUD layout guardrails', () => {
     await expect(page.locator('.st-hud__strip')).not.toHaveClass(/st-hud__strip--open/);
     await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('.st-hud__strip-toggle')).toBeFocused();
-    await expect(page.locator('.st-hud__strip-toggle')).toContainText('Expand');
+    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute(
+      'aria-label',
+      'Open Armory — equip or buy weapons',
+    );
     const releasedSiblings = await page.locator('#hud').evaluate((hud) =>
       [...hud.children]
         .filter((child) => !child.classList.contains('st-hud__strip'))

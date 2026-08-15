@@ -116,7 +116,7 @@ describe('HUD First Salvo presentation seam', () => {
     const powerAndWindTargets = [
       ...document.querySelectorAll<HTMLElement>('[data-first-salvo-target="power-and-wind"]'),
     ];
-    expect(powerAndWindTargets).toHaveLength(4);
+    expect(powerAndWindTargets).toHaveLength(3);
     expect(powerAndWindTargets
       .every((target) => target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
     document.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!.click();
@@ -152,6 +152,16 @@ describe('HUD First Salvo presentation seam', () => {
       .every((target) => !target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
   });
 
+  it('lets the final coach temporarily own the terminal cell and restores Fire on Skip', () => {
+    const { root, modal, hud } = mount();
+    hud.setFirstSalvoStep('fire');
+    enterBriefing(modal);
+    expect(root.querySelector('.st-hud__primary-action')).toBeNull();
+    const skip = root.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!;
+    skip.click();
+    expect(root.querySelector('.st-hud__primary-action')).not.toBeNull();
+  });
+
   it('uses primary-action copy for a live shield and exposes an accessible replay control', () => {
     const { root, modal, hud, state } = mount();
     const replay = vi.fn();
@@ -163,15 +173,14 @@ describe('HUD First Salvo presentation seam', () => {
     enterBriefing(modal);
 
     const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
-    expect(card.dataset['coachAnchor']).toBe('commitment');
-    expect(card.parentElement?.classList.contains('st-hud__console-commitment')).toBe(true);
-    expect(root.querySelector('.st-hud__primary-action')?.textContent).toContain('Activate shield');
+    expect(card.dataset['coachAnchor']).toBe('terminal');
+    expect(card.parentElement?.classList.contains('st-hud__fire-terminal')).toBe(true);
+    expect(root.querySelector('.st-hud__primary-action')).toBeNull();
     expect(card.textContent).toContain('Primary action');
     expect(card.textContent).toContain('Space');
     expect(card.textContent).not.toContain('shot');
     expect(card.textContent).not.toContain('Fire');
-    expect(root.querySelector('[data-first-salvo-target="fire"]')?.classList
-      .contains('st-hud__first-salvo-target--active')).toBe(true);
+    expect(root.querySelector('[data-first-salvo-target="fire"]')).toBeNull();
 
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
     const replayButton = [...modal.querySelectorAll<HTMLButtonElement>('button')]

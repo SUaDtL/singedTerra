@@ -80,9 +80,9 @@ test.describe('authored battlefield backdrop integration', () => {
     context,
   }) => {
     const fixtures = [
-      { seed: 2, path: 'art/battlefield-backdrop.webp' },
-      { seed: 1, path: 'art/battlefield-obsidian-caldera.webp' },
-      { seed: 0, path: 'art/battlefield-glassstorm-expanse.webp' },
+      { seed: 4, path: 'art/battlefield-backdrop.webp' },
+      { seed: 0, path: 'art/battlefield-obsidian-caldera.webp' },
+      { seed: 1, path: 'art/battlefield-glassstorm-expanse.webp' },
     ] as const;
 
     for (const fixture of fixtures) {
@@ -98,7 +98,7 @@ test.describe('authored battlefield backdrop integration', () => {
     }
   });
 
-  test('missing, blank, and invalid fixture seeds preserve the Ember 1337 baseline', async ({
+  test('missing, blank, and invalid fixture seeds preserve the Glassstorm 1337 baseline', async ({
     context,
   }) => {
     const searches = [
@@ -115,7 +115,7 @@ test.describe('authored battlefield backdrop integration', () => {
         if (path !== undefined) requested.push(path);
       });
       await gotoRunningGame(page, search);
-      expect(requested).toEqual(['art/battlefield-backdrop.webp']);
+      expect(requested).toEqual(['art/battlefield-glassstorm-expanse.webp']);
       await page.close();
     }
   });

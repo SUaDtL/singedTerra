@@ -153,7 +153,8 @@ describe('skill-preserving honest ballistic aim guide', () => {
   it('ends at the first real contact when a very short shot lands inside the hint', () => {
     const me = tank({ angle: 0, power: 30 });
     const terrain = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT);
-    const surfaceY = 305;
+    // The protected floor is y=300, so a real terrain contact must sit above it.
+    const surfaceY = 280;
     for (let y = surfaceY; y < CANVAS_HEIGHT; y++) {
       terrain.fill(1, y * CANVAS_WIDTH, (y + 1) * CANVAS_WIDTH);
     }

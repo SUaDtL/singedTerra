@@ -4,30 +4,26 @@ import { gotoRunningGame } from './support';
 test.describe('Command Menu navigation', () => {
   test.beforeEach(async ({ page }) => {
     await gotoRunningGame(page);
+    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+    if (await briefing.isVisible()) {
+      await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
+    }
+    const skip = page.getByRole('button', { name: 'Skip', exact: true });
+    if (await skip.isVisible()) await skip.click();
   });
 
   test('keeps one named, focus-safe navigation surface fitted across supported controls', async ({
     page,
-  }, testInfo) => {
+  }) => {
     const railMenuTrigger = page.locator('#hud .st-hud__menu');
 
     await railMenuTrigger.click();
     const launchMenu = page.getByRole('dialog', { name: 'Command Menu' });
-    await launchMenu.getByRole('button', { name: 'Open Store', exact: true }).click();
-    await expect(page.locator('.st-hud__store')).toBeVisible();
-    const menuTrigger = page.locator('[data-command="open-menu"]');
-    const handoffBox = await menuTrigger.boundingBox();
-    expect(handoffBox).not.toBeNull();
-    if (testInfo.project.name === 'pixel-touch') {
-      expect(handoffBox!.height).toBeGreaterThanOrEqual(44);
-    }
-    await menuTrigger.click();
-
-    const menu = page.getByRole('dialog', { name: 'Command Menu' });
+    await expect(launchMenu.getByRole('button', { name: /Store/ })).toHaveCount(0);
+    const menu = launchMenu;
     const resume = menu.getByRole('button', { name: 'Resume' });
     const exit = menu.getByRole('group', { name: 'Leave this match' });
     await expect(menu).toBeVisible();
-    await expect(page.locator('.st-hud__store')).toBeHidden();
     await expect(resume).toBeFocused();
     await expect(exit.getByRole('button', { name: 'Return to Lobby' })).toBeVisible();
     expect(await page.evaluate(() => ({

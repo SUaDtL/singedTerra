@@ -10,8 +10,8 @@
   /* Stage = the 1200x600 play canvas + a right-side HUD panel. */
   --canvas-w: 1200px;
   --canvas-h: 600px;
-  --panel-w: 264px;
-  --stage-w: 1464px; /* canvas-w + panel-w — the full app width */
+  --panel-w: 0px;
+  --stage-w: 1416px; /* canvas-w + panel-w — the full app width */
   --stage-h: 600px;
 
   /* ===== singedTerra art tokens (Sprint 5) — mirror client/src/ui/theme.ts ===== */
@@ -294,9 +294,10 @@ body::before {
 #hud {
   position: relative;
   flex: 0 0 auto;
+  align-self: flex-start;
   box-sizing: border-box;
   width: var(--panel-w);
-  height: 100%;
+  height: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -328,26 +329,13 @@ body::before {
     inset 0 0 22px rgba(255, 210, 63, 0.045),
     inset 0 -22px 34px rgba(255, 122, 31, 0.055);
 }
-#hud::after {
-  content: 'BATTLE STATUS';
-  position: absolute;
-  right: 13px;
-  bottom: 8px;
-  z-index: 0;
-  pointer-events: none;
-  color: rgba(255, 233, 168, 0.13);
-  font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: 2.4px;
-}
 #hud > * {
   position: relative;
   z-index: 1;
 }
 
-/* One rail, not a stack of cards. Top-level regions share separator rhythm;
-   the ballistic computer is the deliberate raised-instrument exception. */
-#hud > .st-ui-section:not(.st-ui-section--instrument) {
+/* One rail, not a stack of cards. Top-level regions share separator rhythm. */
+#hud > .st-ui-section {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
@@ -357,13 +345,6 @@ body::before {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-}
-#hud > .st-ui-section--instrument {
-  margin: var(--ui-space-2) 0;
-}
-#app.is-compact #hud > .st-ui-section--instrument {
-  /* Preserve the full-size dials while reclaiming rail height from whitespace. */
-  margin-block: var(--ui-space-1);
 }
 #hud > .st-ui-section--active {
   padding-block: 0 var(--ui-space-2);
@@ -791,6 +772,120 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .portrait-warn__device { animation: none; }
   #portrait-launch { transition: none; }
+}
+
+/*
+ * Match is information, not permanently reserved scenery.  At ordinary aspect
+ * ratios its ledger is a light drawer over the field; only an actually wide
+ * display earns a dock without reducing the 1200px battlefield.
+ */
+:root {
+  --stage-w: 1200px;
+}
+
+#hud {
+  display: none;
+}
+
+#hud.st-hud--match-drawer-open {
+  display: flex;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 216px;
+  max-height: calc(var(--canvas-h) - 24px);
+  z-index: 12;
+  overflow: auto;
+}
+
+#hud .st-hud__match-drawer-close {
+  display: none;
+}
+
+#hud.st-hud--match-drawer-open .st-hud__match-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  margin: 0 0 6px auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 4px;
+  color: var(--gold);
+  background: linear-gradient(180deg, rgba(255, 210, 63, 0.11), rgba(12, 7, 22, 0.9));
+  font: 800 11px/1 var(--font-display);
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+#app.is-compact #hud.st-hud--match-drawer-open {
+  font-size: var(--st-command-readability-size, 23px);
+}
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__menu,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__player,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__conn,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__round,
+#app.is-compact #hud.st-hud--match-drawer-open [data-ui="match-mode"] {
+  font-size: var(--st-command-readability-size, 23px);
+}
+
+#game-overlay > .st-hud__match-drawer-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 13;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  pointer-events: auto;
+}
+
+#game-overlay:has(#hud.st-hud--match-drawer-open) > .st-hud__match-drawer-toggle {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  #hud.st-hud--match-drawer-open .st-hud__match-drawer-close {
+    min-width: var(--st-deployment-choice-target, 91px);
+    min-height: var(--st-deployment-choice-target, 91px);
+    font-size: var(--st-command-readability-size, 23px);
+  }
+  #game-overlay > .st-hud__match-drawer-toggle {
+    min-width: var(--st-deployment-choice-target, 91px);
+    min-height: var(--st-deployment-choice-target, 91px);
+    justify-content: center;
+    border: 1px solid rgba(255, 210, 63, 0.58);
+    border-radius: 5px;
+    color: var(--text-gold);
+    background: linear-gradient(180deg, rgba(42, 27, 62, 0.96), rgba(13, 8, 25, 0.98));
+    box-shadow: inset 0 0 0 1px rgba(122, 215, 255, 0.14), 0 6px 16px rgba(0, 0, 0, 0.42);
+  }
+}
+
+/* A landscape touch device can be ultrawide without having spare interaction
+   space. Only a fine-pointer workspace gets a permanent Match dock. */
+@media (min-aspect-ratio: 59/25) and (pointer: fine) {
+  :root {
+    --panel-w: 216px;
+    --stage-w: 1416px;
+  }
+
+  #hud {
+    display: flex;
+    position: relative;
+    top: auto;
+    right: auto;
+    width: var(--panel-w);
+    max-height: none;
+    overflow: hidden;
+  }
+
+  #game-overlay > .st-hud__match-drawer-toggle {
+    display: none;
+  }
 }
 
 /* ===== Authenticated production diagnostics ============================

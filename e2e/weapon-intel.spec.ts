@@ -11,9 +11,23 @@ test.describe('weapon intel battlefield composition', () => {
     const panel = page.locator('.st-hud__weapon-intel');
     const before = await hud.evaluate((node) => node.scrollHeight);
 
-    const openArsenal = page.getByRole('button', { name: 'Expand arsenal' });
+    const openArsenal = page.getByRole('button', { name: 'Open Armory — equip or buy weapons' });
     if (testInfo.project.name === 'pixel-touch') await openArsenal.tap();
     else await openArsenal.click();
+    await expect(drawer).toHaveAttribute('role', 'dialog');
+    await expect(drawer).toHaveAttribute('aria-modal', 'true');
+    await expect(drawer).toHaveAccessibleName('Armory');
+    if (testInfo.project.name === 'pixel-touch') {
+      const match = page.getByRole('button', { name: 'Open match ledger', exact: true });
+      expect(await match.evaluate((element) => (element as HTMLElement).inert)).toBe(true);
+      await page.keyboard.press('Escape');
+      await expect(drawer).toHaveClass(/st-hud__strip--collapsed/);
+      expect(await drawer.evaluate((element) =>
+        element.parentElement?.classList.contains('st-hud__console-solution'))).toBe(true);
+      await expect(openArsenal).toBeFocused();
+      expect(await match.evaluate((element) => (element as HTMLElement).inert)).toBe(false);
+      await openArsenal.tap();
+    }
     await expect(panel).toBeVisible();
     await expect(panel).toHaveAttribute('data-weapon', 'baby_missile');
     await expect(panel).toContainText('Reliable precision shot');
@@ -37,20 +51,16 @@ test.describe('weapon intel battlefield composition', () => {
     const missile = page.locator('.st-hud__weapon-btn[data-weapon="missile"]');
     await expect(missile).toBeVisible();
     if (testInfo.project.name === 'pixel-touch') {
-      expect(await scrollDossierToBottom()).toBeGreaterThan(0);
       await missile.tap();
       await expect(panel).toHaveAttribute('data-weapon', 'missile');
       await expectHeadingVisible('Missile');
       await expect(page.locator('.st-hud__weapon-value')).toHaveText('Missile');
     } else {
-      await page.getByRole('button', { name: 'Collapse arsenal' }).focus();
+      await page.getByRole('button', { name: 'Close Armory' }).focus();
       await page.keyboard.press('Tab');
       await expect(panel).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(page.locator('.st-hud__weapon-btn[data-weapon="baby_missile"]')).toBeFocused();
-      if (testInfo.project.name === 'small-window') {
-        expect(await scrollDossierToBottom()).toBeGreaterThan(0);
-      }
       await page.keyboard.press('Tab');
       await expect(missile).toBeFocused();
       await expect(panel).toHaveAttribute('data-weapon', 'missile');
@@ -60,9 +70,6 @@ test.describe('weapon intel battlefield composition', () => {
       const dirtBomb = page.locator('.st-hud__weapon-btn[data-weapon="dirt_bomb"]');
       await expect(dirtBomb).toBeVisible();
       await missile.click();
-      if (testInfo.project.name === 'small-window') {
-        expect(await scrollDossierToBottom()).toBeGreaterThan(0);
-      }
       const beforeHover = await panel.boundingBox();
       await dirtBomb.hover();
       const afterHover = await panel.boundingBox();
@@ -151,6 +158,7 @@ test.describe('weapon intel battlefield composition', () => {
       return {
         drawer: rect('.st-hud__strip'),
         panel: rect('.st-hud__weapon-intel'),
+        stage: rect('#stage'),
         canvas: rect('#game'),
         rail: rect('#battle-rail'),
         hudScrollHeight: hudNode.scrollHeight,
@@ -176,10 +184,12 @@ test.describe('weapon intel battlefield composition', () => {
     expect(geometry.panel.right).toBeLessThanOrEqual(geometry.drawer.right + 1);
     expect(geometry.panel.top).toBeGreaterThanOrEqual(geometry.drawer.top - 1);
     expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.drawer.bottom + 1);
-    expect(geometry.drawer.left).toBeGreaterThanOrEqual(geometry.rail.left - 1);
-    expect(geometry.drawer.right).toBeLessThanOrEqual(geometry.rail.right + 1);
-    expect(geometry.drawer.top).toBeGreaterThanOrEqual(geometry.rail.top - 1);
-    expect(geometry.drawer.bottom).toBeLessThanOrEqual(geometry.rail.bottom + 1);
+    // Armory is a gameplay modal opened from Fire Control, not a rail-sized
+    // sheet that could push its selectable cards behind the battlefield.
+    expect(geometry.drawer.left).toBeGreaterThanOrEqual(geometry.stage.left - 1);
+    expect(geometry.drawer.right).toBeLessThanOrEqual(geometry.stage.right + 1);
+    expect(geometry.drawer.top).toBeGreaterThanOrEqual(geometry.stage.top - 1);
+    expect(geometry.drawer.bottom).toBeLessThanOrEqual(geometry.stage.bottom + 1);
     expect(geometry.hudScrollHeight).toBe(before);
     expect(geometry.panelScrollWidth).toBeLessThanOrEqual(geometry.panelClientWidth + 1);
     if (testInfo.project.name === 'desktop-fine') {

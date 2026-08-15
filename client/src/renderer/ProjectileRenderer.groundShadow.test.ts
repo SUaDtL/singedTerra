@@ -117,10 +117,10 @@ function projectile(x: number, y: number, age = 10): ProjectileState {
 
 describe('ProjectileRenderer terrain-projected shadows', () => {
   it('draws one neutral radial ellipse for each valid live projectile', () => {
-    const terrain = terrainWithSurface([[100, 320], [200, 300], [300, 280]]);
+    const terrain = terrainWithSurface([[100, 280], [200, 260], [300, 240]]);
     const projectiles = [
       projectile(100, 200),
-      projectile(200, 270),
+      projectile(200, 200),
       projectile(300, 280),
     ];
     const before = JSON.stringify(projectiles);
@@ -138,7 +138,7 @@ describe('ProjectileRenderer terrain-projected shadows', () => {
     ]);
     expect(fills).toHaveLength(2);
     expect(ops.filter((op) => op.name === 'translate').map((op) => op.args))
-      .toEqual([[100, 321], [200, 301]]);
+      .toEqual([[100, 281], [200, 261]]);
     expect(ops.some((op) => (
       op.name === 'colorStop'
       && op.args[0] === 1
@@ -171,8 +171,8 @@ describe('ProjectileRenderer terrain-projected shadows', () => {
   });
 
   it('applies exact helper geometry and alpha for low and high shells', () => {
-    const terrain = terrainWithSurface([[400, 320], [500, 320]]);
-    const projectiles = [projectile(400, 310), projectile(500, 100)];
+    const terrain = terrainWithSurface([[400, 280], [500, 280]]);
+    const projectiles = [projectile(400, 270), projectile(500, 100)];
     const expected = projectiles.map((p) => getProjectileGroundShadow(p, terrain));
     const { ctx, ops } = recordingContext();
     const renderer = new ProjectileRenderer();
@@ -191,11 +191,11 @@ describe('ProjectileRenderer terrain-projected shadows', () => {
   });
 
   it('restores every caller Canvas field and does no work without a valid cue', () => {
-    const terrain = terrainWithSurface([[10, 320]]);
+    const terrain = terrainWithSurface([[10, 280]]);
     const { ctx, ops } = recordingContext();
     const renderer = new ProjectileRenderer();
 
-    renderer.drawGroundShadows(ctx, [projectile(10, 320)], terrain);
+    renderer.drawGroundShadows(ctx, [projectile(10, 280)], terrain);
 
     expect(ops.filter((op) => op.name === 'gradient')).toHaveLength(0);
     expect(ctx.fillStyle).toBe('#caller-fill');
@@ -210,7 +210,7 @@ describe('ProjectileRenderer terrain-projected shadows', () => {
   });
 
   it('does not project a surface shadow for an underground Sandhog drill', () => {
-    const terrain = terrainWithSurface([[100, 320]]);
+    const terrain = terrainWithSurface([[100, 280]]);
     const { ctx, ops } = recordingContext();
     const renderer = new ProjectileRenderer();
 

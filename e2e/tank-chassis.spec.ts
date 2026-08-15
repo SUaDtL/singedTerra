@@ -220,8 +220,8 @@ test.describe('authored tank chassis integration', () => {
     await expect(page.locator('.st-hud__command-console'))
       .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
     await expect(action).toBeEnabled({ timeout: 15_000 });
-    await expect(page.getByRole('img', { name: 'Elevation gauge' }))
-      .toContainText(/45.*◀/);
+    await expect(page.locator('[data-control="angle"] output'))
+      .toHaveText('45°');
 
     const geometry = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,

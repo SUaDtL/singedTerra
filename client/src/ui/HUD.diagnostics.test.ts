@@ -59,7 +59,9 @@ describe('HUD live match diagnostics', () => {
 
     const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!
     expect(root.querySelector('[data-ui="live-match-diagnostics"]')).toBeNull()
-    expect(root.querySelectorAll(':scope > button')).toHaveLength(1)
+    // Match owns an internal close control, hidden until its drawer opens;
+    // diagnostics itself remains behind Menu and adds no root action.
+    expect(root.querySelectorAll(':scope > button')).toHaveLength(2)
     menu.focus()
     menu.click()
     const trigger = modal.querySelector<HTMLButtonElement>('[data-ui="live-match-inspector-menu"]')!

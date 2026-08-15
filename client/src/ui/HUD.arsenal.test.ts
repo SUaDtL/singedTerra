@@ -31,7 +31,8 @@ function mount(): { root: HTMLElement; hud: HUD; state: GameState; engine: GameE
 }
 
 function btn(root: HTMLElement, weapon: string): HTMLButtonElement | null {
-  return root.querySelector<HTMLButtonElement>(`.st-hud__weapon-btn[data-weapon="${weapon}"]`);
+  void root;
+  return document.querySelector<HTMLButtonElement>(`.st-hud__weapon-btn[data-weapon="${weapon}"]`);
 }
 function isHidden(el: Element | null): boolean {
   return !!el?.classList.contains('st-hud__weapon-btn--hidden');
@@ -86,7 +87,8 @@ describe('HUD arsenal - weapon intel', () => {
   beforeEach(() => localStorage.clear());
 
   function intel(root: HTMLElement): HTMLElement {
-    return root.querySelector<HTMLElement>('.st-hud__weapon-intel')!;
+    void root;
+    return document.querySelector<HTMLElement>('.st-hud__weapon-intel')!;
   }
 
   it('opens with accessible intel for the selected weapon and live ammunition', () => {

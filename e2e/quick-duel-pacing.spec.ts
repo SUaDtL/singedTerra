@@ -19,7 +19,8 @@ for (const [id, title, briefing] of OPERATIONS) {
     await expect(page.locator('[data-ui="quick-operation-briefing"]')).toHaveText(briefing);
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('#battle-rail .st-hud__console-solution')).toBeVisible();
+    await expect(page.locator('#battle-rail .st-hud__fire-terminal')).toBeVisible();
     await expect(page.locator('#hud [data-ui="quick-operation"]')).toHaveText(`${title} · ${briefing}`);
     const round = page.locator('.st-hud__round');
     await expect(round).toBeVisible();
@@ -41,9 +42,9 @@ test('a selected operation retains its ledger identity through one real salvo', 
   }
 
   await page.locator('#battle-rail .st-hud__primary-action').click();
-  await expect(page.locator('#battle-rail .st-hud__console-commitment'))
+  await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
     .toHaveAttribute('data-command-mode', /tracking|resolving/);
-  await expect(page.locator('#battle-rail .st-hud__console-commitment'))
+  await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
     .toHaveAttribute('data-command-mode', 'handoff', { timeout: 30_000 });
   await expect(page.locator('#hud [data-ui="quick-operation"]'))
     .toHaveText('Crosswind Range · Wraparound walls turn shifting wind into a ranging test.');

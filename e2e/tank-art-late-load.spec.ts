@@ -37,7 +37,7 @@ test('late tank atlas replaces fallback without a reload', async ({
   await page.goto('?e2e=hotseat', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await expect(page.locator('#hud.st-hud')).toBeVisible();
-  await expect(page.locator('.st-hud__instruments')).toBeVisible();
+  await expect(page.locator('#battle-rail .st-hud__console-solution')).toBeVisible();
   await atlasRequestStarted;
   await page.waitForTimeout(5_100);
 

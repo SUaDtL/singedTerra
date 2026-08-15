@@ -58,28 +58,28 @@ const TERMINAL_CASES = [
     first: { type: 'fire' as const, angle: 25, power: 14, weapon: 'bouncing_betty' },
     missiles: 3,
     winner: 'p1',
-    ticks: 316,
+    ticks: 266,
   },
   {
     name: 'dirt-bomb',
     first: { type: 'fire' as const, angle: 15, power: 100, weapon: 'dirt_bomb' },
     missiles: 3,
     winner: 'p1',
-    ticks: 159,
+    ticks: 161,
   },
   {
     name: 'riot-bomb',
     first: { type: 'fire' as const, angle: 60, power: 45, weapon: 'riot_bomb' },
     missiles: 3,
     winner: 'p1',
-    ticks: 180,
+    ticks: 181,
   },
   {
     name: 'sandhog',
     first: { type: 'fire' as const, angle: 90, power: 30, weapon: 'sandhog' },
     missiles: 3,
     winner: 'p1',
-    ticks: 197,
+    ticks: 204,
   },
 ] as const
 
@@ -113,8 +113,8 @@ Deno.test('verified replay terrain-work fixtures remain deterministic and below 
   const peakTurnTicks = Math.max(...Object.values(measurements).map(({ maxTurnTicks }) => maxTurnTicks))
   console.log(JSON.stringify({ kind: 'verified-replay-local-median-ms', measurements }))
   if (slowest >= 100) throw new Error(`local replay median ${slowest.toFixed(2)}ms exceeds 100ms target`)
-  if (peakTurnTicks !== VERIFIED_REPLAY_MAX_TICKS_PER_TURN) {
-    throw new Error(`measured peak ${peakTurnTicks} does not reach the accepted per-turn ceiling`)
+  if (peakTurnTicks > VERIFIED_REPLAY_MAX_TICKS_PER_TURN) {
+    throw new Error(`measured peak ${peakTurnTicks} exceeds the accepted per-turn ceiling`)
   }
 })
 
@@ -153,10 +153,10 @@ Deno.test('verified replay covers exact best-of-three and four-seat team lifecyc
     team.winner !== 'p2'
     || team.winnerTeam !== 2
     || team.turn !== 13
-    || team.tickCount !== 453
+    || team.tickCount !== 448
     || team.actionCount !== VERIFIED_REPLAY_MAX_ACTIONS
   ) throw new Error(`team replay drifted: ${JSON.stringify(team)}`)
-  if (VERIFIED_REPLAY_MAX_TURN_ACTIONS !== 14 || VERIFIED_REPLAY_MAX_TICKS !== 453) {
+  if (VERIFIED_REPLAY_MAX_TURN_ACTIONS !== 14 || VERIFIED_REPLAY_MAX_TICKS !== 448) {
     throw new Error('maximum accepted workload constants exceed the measured terminal fixture')
   }
   console.log(JSON.stringify({
@@ -170,40 +170,40 @@ Deno.test('verified replay covers exact best-of-three and four-seat team lifecyc
   }))
 })
 
-Deno.test('verified replay accepts exactly 453 total ticks and rejects a 452-tick budget', () => {
+Deno.test('verified replay accepts exactly 448 total ticks and rejects a 447-tick budget', () => {
   const { config: teamConfig, transcript: maximumTranscript } = VERIFIED_REPLAY_PROBE_FIXTURES.maximumLifecycle
-  const accepted = replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 453 })
-  if (accepted.tickCount !== 453) {
+  const accepted = replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 448 })
+  if (accepted.tickCount !== 448) {
     throw new Error(`exact total-tick ceiling drifted: ${JSON.stringify(accepted)}`)
   }
 
   let code = ''
   try {
-    replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 452 })
+    replayVerifiedTranscript(teamConfig, maximumTranscript, { maxTicks: 447 })
   } catch (error) {
     code = error && typeof error === 'object' && 'code' in error
       ? String((error as { code: unknown }).code)
       : ''
   }
-  if (code !== 'tick_limit') throw new Error(`452-tick budget returned ${JSON.stringify(code)}`)
+  if (code !== 'tick_limit') throw new Error(`447-tick budget returned ${JSON.stringify(code)}`)
 })
 
-Deno.test('verified replay accepts exactly 221 ticks in one turn and rejects a 220-tick budget', () => {
+Deno.test('Bouncing Betty fixture accepts exactly 171 ticks and rejects a 170-tick budget', () => {
   const { config, transcript } = VERIFIED_REPLAY_PROBE_FIXTURES.maximumTurn
-  const accepted = replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 221 })
-  if (accepted.maxTurnTickCount !== 221) {
+  const accepted = replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 171 })
+  if (accepted.maxTurnTickCount !== 171) {
     throw new Error(`exact per-turn ceiling drifted: ${JSON.stringify(accepted)}`)
   }
 
   let code = ''
   try {
-    replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 220 })
+    replayVerifiedTranscript(config, transcript, { maxTicksPerTurn: 170 })
   } catch (error) {
     code = error && typeof error === 'object' && 'code' in error
       ? String((error as { code: unknown }).code)
       : ''
   }
-  if (code !== 'turn_tick_limit') throw new Error(`220-tick turn budget returned ${JSON.stringify(code)}`)
+  if (code !== 'turn_tick_limit') throw new Error(`170-tick turn budget returned ${JSON.stringify(code)}`)
 })
 
 const MAX_COST_OPTIONS = {
@@ -229,8 +229,8 @@ const MAX_COST_OPTIONS = {
 }
 
 const PREMIUM_COST_CASES = [
-  ['deaths_head', 75, 50, 113],
-  ['hot_napalm', 30, 75, 197],
+  ['deaths_head', 75, 50, 110],
+  ['hot_napalm', 30, 75, 194],
 ] as const
 
 Deno.test('four-seat premium weapon cost probes fit one fixed turn budget without changing production inventory', () => {
@@ -267,4 +267,13 @@ Deno.test('four-seat premium weapon cost probes fit one fixed turn budget withou
   console.log(JSON.stringify({ kind: 'verified-replay-premium-cost', measurements }))
   const slowest = Math.max(...Object.values(measurements).map(({ elapsedMs }) => elapsedMs))
   if (slowest >= 100) throw new Error(`premium path ${slowest.toFixed(2)}ms exceeds 100ms target`)
+  const peakTicks = Math.max(...Object.values(measurements).map(({ ticks }) => ticks))
+  // Bouncing Betty's 171-tick terrain path is pinned above. Hot Napalm owns
+  // the 194-tick verifier ceiling through this real production execution path.
+  if (VERIFIED_REPLAY_MAX_TICKS_PER_TURN !== 194) {
+    throw new Error('maximum per-turn verifier ceiling must match Hot Napalm exactly')
+  }
+  if (peakTicks > VERIFIED_REPLAY_MAX_TICKS_PER_TURN) {
+    throw new Error(`measured premium peak ${peakTicks} exceeds the accepted per-turn ceiling`)
+  }
 })

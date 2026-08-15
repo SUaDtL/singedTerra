@@ -48,7 +48,7 @@ describe('HUD command input console', () => {
     )];
     const angle = solution.querySelector<HTMLElement>('[data-control="angle"]')!;
     const power = solution.querySelector<HTMLElement>('[data-control="power"]')!;
-    const wind = solution.querySelector<HTMLElement>('.st-hud__gauge-cell--wind')!;
+    const wind = solution.querySelector<HTMLElement>('[data-value-owner="wind"]')!;
     const guide = solution.querySelector<HTMLElement>('[data-ui="deterministic-aim-guide"]')!;
 
     expect(solution.getAttribute('aria-label')).toBe('Firing solution');
@@ -69,8 +69,8 @@ describe('HUD command input console', () => {
       .toEqual(['↓', '↑']);
     expect(weaponBay.querySelector('[data-command-action="weapon-next"] kbd')?.textContent)
       .toBe('Q');
-    expect(wind.querySelector('.st-hud__gauge-label')?.textContent).toMatch(/^[←→•] \d+\.\d$/);
-    expect(guide.textContent).toContain('Trajectory guide');
+    expect(wind.textContent).toMatch(/Wind(?:Calm|\d+\.\d (?:left|right))/);
+    expect(guide.textContent).toContain('Guide');
     expect(guide.querySelector('kbd')?.textContent).toBe('G');
     expect(solution.querySelector('[data-ui="command-deck"]')).toBeNull();
     expect(solution.querySelector('.st-hud__control-grid')).toBeNull();
@@ -173,7 +173,7 @@ describe('HUD command input console', () => {
     expect(controls.inert).toBe(false);
     expect(controls.getAttribute('aria-hidden')).toBeNull();
     toggle.click();
-    const drawerClose = rail.querySelector<HTMLButtonElement>('.st-hud__arsenal-drawer-close')!;
+    const drawerClose = document.querySelector<HTMLButtonElement>('.st-hud__arsenal-drawer-close')!;
     expect(controls.inert).toBe(true);
     expect(controls.getAttribute('aria-hidden')).toBe('true');
     expect(toggle.getAttribute('aria-hidden')).toBe('true');

@@ -239,7 +239,7 @@ describe('HUD mobility rocker', () => {
   it('keeps the active-row announcement focused on turn ownership', () => {
     const { root } = mount();
     expect(root.querySelector('.st-hud__turn-status')?.getAttribute('aria-label'))
-      .toBe("Alice's turn. Weapon Baby Missile. 100 fuel remaining.");
+      .toBe("Alice's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.");
   });
 
   it('offers the canonical Fuel Tank with a live fuel readout', () => {

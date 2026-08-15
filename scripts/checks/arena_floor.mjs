@@ -1,6 +1,6 @@
 /**
  * Deterministic regression harness for the protected arena floor that reserves
- * the bottom 260 logical pixels for the battle command surface.
+ * the bottom 200 logical pixels for the battle command surface.
  *
  * Run: npx tsx scripts/checks/arena_floor.mjs
  */
@@ -9,7 +9,11 @@ import * as Terrain from '../../shared/src/engine/Terrain.ts';
 import { collide, sweepCollide } from '../../shared/src/engine/Physics.ts';
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 
-const EXPECTED_FLOOR_Y = 340;
+// The rail starts at y=400, keeping its command surface compact while leaving
+// 400 logical pixels of live terrain. Keep this
+// literal here as the deliberate product contract; every following assertion
+// proves Terrain and Physics honour the exported value at that boundary.
+const EXPECTED_FLOOR_Y = 400;
 let pass = 0;
 let fail = 0;
 

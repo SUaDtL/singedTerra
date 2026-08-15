@@ -39,11 +39,11 @@ async function acknowledgeBriefing(page: Page): Promise<void> {
 }
 
 async function chooseMissileAndRestoreArsenalFocus(page: Page): Promise<void> {
-  const trigger = page.getByRole('button', { name: 'Expand arsenal', exact: true });
+  const trigger = page.getByRole('button', { name: 'Open Armory — equip or buy weapons', exact: true });
   await trigger.click();
   const drawer = page.locator('[data-ui="arsenal-drawer"]');
   await expect(drawer).toHaveClass(/st-hud__strip--open/);
-  await expect(drawer.getByRole('button', { name: 'Collapse arsenal', exact: true })).toBeFocused();
+  await expect(drawer.getByRole('button', { name: 'Close Armory', exact: true })).toBeFocused();
   await drawer.locator('button[data-weapon="missile"]').click();
   await expect(page.locator('#battle-rail .st-hud__weapon-value')).toHaveText('Missile');
   await page.keyboard.press('Escape');
@@ -64,7 +64,7 @@ async function adjustSolutionAndMove(page: Page): Promise<void> {
 async function exerciseExistingAimGuide(page: Page): Promise<void> {
   const guide = page.locator('[data-ui="deterministic-aim-guide"]');
   await expect(guide).toBeVisible();
-  await expect(guide).toContainText('Trajectory guide');
+  await expect(guide).toContainText('Guide');
   await expect(guide.locator('kbd')).toHaveText('G');
   const before = await readHotSeatProbe(page);
   await page.keyboard.press('g');
@@ -161,8 +161,8 @@ test.describe('adaptive command console causal journeys', () => {
     test.setTimeout(45_000);
     await page.goto('?e2e=hotseat&tutorial=first-salvo&seed=1337');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await expect(page.locator('#hud.st-hud')).toBeVisible();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('#hud.st-hud')).toHaveCount(1);
+    await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
     await acknowledgeBriefing(page);
     await chooseMissileAndRestoreArsenalFocus(page);
     await adjustSolutionAndMove(page);
@@ -172,7 +172,7 @@ test.describe('adaptive command console causal journeys', () => {
     const fire = page.locator('#battle-rail .st-hud__primary-action');
     await expect(fire).toHaveCount(1);
     await fire.click();
-    await expect(page.locator('#battle-rail .st-hud__console-commitment'))
+    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
       .toHaveAttribute('data-command-mode', /tracking|resolving/);
     await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
     const lastSalvo = page.locator('[data-ui="last-salvo-cue"]');
@@ -190,7 +190,7 @@ test.describe('adaptive command console causal journeys', () => {
       forwardedActions: { fire: before.forwardedActions.fire + 1 },
     });
     await page.keyboard.up('f');
-    await expect(page.locator('#battle-rail .st-hud__console-commitment'))
+    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
       .toHaveAttribute('data-command-mode', 'decision');
     await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(1);
     expect((await readHotSeatProbe(page)).forwardedActions.fire).toBe(before.forwardedActions.fire + 1);
@@ -210,7 +210,7 @@ test.describe('adaptive command console causal journeys', () => {
       .locator('select').first().selectOption('1');
     await page.getByRole('button', { name: 'Create operation', exact: true }).click();
     await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
     await acknowledgeBriefing(page);
     await chooseMissileAndRestoreArsenalFocus(page);
 
@@ -221,7 +221,7 @@ test.describe('adaptive command console causal journeys', () => {
     await expect(fire).toHaveCount(1);
     await fire.click();
     await page.keyboard.down('f');
-    await expect(page.locator('#battle-rail .st-hud__console-commitment'))
+    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
       .toHaveAttribute('data-command-mode', 'submitting');
     await expect.poll(() => fixture.rows.map((row) => row.action['type']))
       .toEqual(['move', 'fire']);
@@ -229,14 +229,14 @@ test.describe('adaptive command console causal journeys', () => {
       body['action'] as Record<string, unknown>
     )['type'] === 'fire' && body['actingPlayerId'] === undefined).length).toBe(1);
 
-    await expect(page.locator('#battle-rail .st-hud__console-commitment'), 'watchdog log resync must recover the accepted canonical shot')
+    await expect(page.locator('#battle-rail .st-hud__fire-terminal'), 'watchdog log resync must recover the accepted canonical shot')
       .toHaveAttribute('data-command-mode', /tracking|resolving|handoff/, { timeout: 15_000 });
     await expect.poll(() => fixture.submissions.filter((body) => (
       body['action'] as Record<string, unknown>
     )['type'] === 'fire' && typeof body['actingPlayerId'] === 'string').length, { timeout: 20_000 })
       .toBe(1);
     await page.keyboard.up('f');
-    await expect(page.locator('#battle-rail .st-hud__console-commitment'))
+    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
       .toHaveAttribute('data-command-mode', 'handoff');
     await expect(page.locator('#battle-rail .st-hud__console-state')).toContainText('CPU');
     await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
@@ -265,10 +265,10 @@ test('command console retains its visual contract through the decision phase', a
       return logical * zoomScale;
     };
     const meaningful = [...rail.querySelectorAll<HTMLElement>(
-      '.st-hud__turn-owner, .st-hud__fuel-label, .st-hud__fuel-value, .st-hud__weapon-label, .st-hud__weapon-value, .st-hud__weapon-ammo, .st-hud__gauge-cell-title, .st-hud__gauge-label, .st-hud__solution-adjustment-label, .st-hud__console-state, .st-hud__primary-action-label, .st-hud__trajectory-guide, .st-hud__move-btn kbd, .st-hud__solution-control kbd',
+      '.st-hud__turn-owner, .st-hud__fuel-label, .st-hud__fuel-value, .st-hud__weapon-label, .st-hud__weapon-value, .st-hud__weapon-ammo, .st-hud__solution-adjustment-label, .st-hud__console-state, .st-hud__primary-action-label, .st-hud__trajectory-guide, .st-hud__move-btn kbd, .st-hud__solution-control kbd',
     )].filter(visible);
     const critical = [...rail.querySelectorAll<HTMLElement>(
-      '.st-hud__turn-owner, .st-hud__fuel-value, .st-hud__weapon-value, .st-hud__gauge-label, .st-hud__console-state, .st-hud__primary-action-label',
+      '.st-hud__turn-owner, .st-hud__fuel-value, .st-hud__weapon-value, .st-hud__console-state, .st-hud__primary-action-label',
     )].filter(visible);
     const smallest = (elements: HTMLElement[]) => elements
       .map((element) => ({
@@ -278,7 +278,7 @@ test('command console retains its visual contract through the decision phase', a
       }))
       .sort((left, right) => left.value - right.value)[0]!;
     const zones = [...rail.querySelectorAll<HTMLElement>(
-      ':scope .st-hud__console-context, :scope .st-hud__console-solution, :scope .st-hud__console-commitment',
+      ':scope > .st-hud__console-context, :scope > .st-hud__console-solution',
     )].map((element) => element.getBoundingClientRect().toJSON());
     const overlaps = zones.flatMap((left, index) => zones.slice(index + 1).map((right) => (
       left.left < right.right - 1 && left.right > right.left + 1
@@ -286,7 +286,7 @@ test('command console retains its visual contract through the decision phase', a
     ))).filter(Boolean).length;
     const ledger = document.getElementById('hud')!;
     return {
-      windVisible: visible(rail.querySelector('.st-hud__gauge-cell--wind')!),
+      windVisible: visible(rail.querySelector('[data-value-owner="wind"]')!),
       minimumMeaningfulFont: smallest(meaningful),
       minimumCriticalFont: smallest(critical),
       overlaps,

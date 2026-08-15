@@ -312,6 +312,11 @@ function bootstrap(): void {
     },
     onMiss: () => audio.fizzle(),
   });
+  const toggleAimGuide = (): void => {
+    const on = renderer.toggleAimGuide();
+    markDirty(); // reflect it on a static decision frame as well as in flight
+    hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
+  };
   // Mute toggle (M). Document-level so it works on any screen; 'M' is unused by
   // InputHandler (which owns arrows/space/Q), so there's no key conflict.
   window.addEventListener('keydown', (e) => {
@@ -319,9 +324,7 @@ function bootstrap(): void {
       const muted = audio.toggleMute();
       hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
     } else if (e.code === 'KeyG' && !e.repeat) {
-      const on = renderer.toggleAimGuide();
-      markDirty(); // show/hide the aim guide on the next frame even on a static turn
-      hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
+      toggleAimGuide();
     } else if (e.code === 'KeyF') {
       // Hold F to fast-forward the shot animation (review #7). Local view pacing only;
       // never a logged action. Repeats while held (idempotent); released on keyup.
@@ -1129,6 +1132,11 @@ function bootstrap(): void {
   hud.onTouchAngle((delta) => { if (localInputAllowed()) input?.stepAngle(delta); });
   hud.onTouchPower((delta) => { if (localInputAllowed()) input?.stepPower(delta); });
   hud.onTouchWeapon(()     => { if (localInputAllowed()) input?.nextWeapon(); });
+  // Some narrow presentation harnesses provide an older HUD-shaped seam that
+  // does not expose the optional Guide control. Real HUD instances always do;
+  // keeping this registration capability-checked preserves those unrelated
+  // composition tests without creating a second input path.
+  hud.onAimGuide?.(()       => { if (localInputAllowed()) toggleAimGuide(); });
   hud.onMove((delta)        => { if (localInputAllowed()) input?.stepMove(delta); });
   hud.onPrimaryAction(()   => { if (localInputAllowed()) input?.triggerFire(); });
 
@@ -1166,12 +1174,12 @@ function bootstrap(): void {
 
   // JS-driven scale via CSS zoom (NOT transform: scale).
   //
-  // zoom is used because it affects layout: a 1464×600 #app at zoom s takes up
-  // 1464s×600s in document flow, so the body can center it without overflow.
-  // transform:scale() leaves the layout box at 1464×600 regardless of the visual
+  // zoom is used because it affects layout: a 1416×600 #app at zoom s takes up
+  // 1416s×600s in document flow, so the body can center it without overflow.
+  // transform:scale() leaves the layout box at 1416×600 regardless of the visual
   // size — body overflow:hidden then clips visible content.
   //
-  // The 1464×600 divisor MUST mirror --stage-w / --stage-h in style.css (the full
+  // The 1416×600 divisor MUST mirror --stage-w / --stage-h in style.css (the full
   // stage = 1200×600 canvas + 264px HUD panel); keep them in sync.
   //
   // Cap at 2× so 4K monitors don't get an absurdly large stage.
@@ -1182,7 +1190,15 @@ function bootstrap(): void {
   const COMPACT_SCALE = 0.8;
   function updateScale(): void {
     if (!appEl) return;
-    const s = Math.min(window.innerWidth / 1464, window.innerHeight / 600, 2);
+    // A landscape phone can have an ultrawide aspect ratio without having room
+    // for a permanent Match column. Dock only for a fine-pointer workstation;
+    // touch stays focused on the arena and opens Match as a drawer.
+    const coarsePointer = typeof window.matchMedia === 'function'
+      && window.matchMedia('(pointer: coarse)').matches;
+    const wideLedgerDock = !coarsePointer
+      && window.innerWidth / window.innerHeight >= 1416 / 600;
+    const stageWidth = wideLedgerDock ? 1416 : 1200;
+    const s = Math.min(window.innerWidth / stageWidth, window.innerHeight / 600, 2);
     appEl.style.zoom = String(s);
     // Store buy controls need a 44px physical touch target even when the entire
     // stage is zoomed below the compact design scale. Round upward so browser

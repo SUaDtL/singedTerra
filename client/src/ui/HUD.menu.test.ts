@@ -52,32 +52,23 @@ describe('HUD Command Menu', () => {
     expect(menu.querySelector<HTMLButtonElement>('button')?.textContent).toBe('Resume');
   });
 
-  it('opens the voluntary Store surface from Command Menu and restores the menu affordance', () => {
+  it('keeps weapon purchasing out of the Command Menu', () => {
     const { root, modal } = mount();
 
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
-    [...modal.querySelectorAll<HTMLButtonElement>('[data-ui="command-menu"] button')]
-      .find((button) => button.textContent === 'Open Store')!
-      .click();
-    expect(modal.querySelector('.st-hud__store')?.classList.contains('st-hud__store--hidden')).toBe(false);
-
-    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
-
-    expect(modal.querySelector('.st-hud__store')?.classList.contains('st-hud__store--hidden')).toBe(true);
+    expect([...modal.querySelectorAll<HTMLButtonElement>('[data-ui="command-menu"] button')]
+      .some((button) => button.textContent === 'Open Store')).toBe(false);
   });
 
-  it('provides a Command Menu handoff from the blocking Store surface', () => {
-    const { root, modal } = mount();
-    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
-    [...modal.querySelectorAll<HTMLButtonElement>('[data-ui="command-menu"] button')]
-      .find((button) => button.textContent === 'Open Store')!
-      .click();
+  it('keeps Armory and buying weapons in the live Fire Control surface', () => {
+    const { root } = mount();
 
-    modal.querySelector<HTMLButtonElement>('[data-command="open-menu"]')!.click();
-
-    expect(modal.querySelector('.st-hud__store')?.classList.contains('st-hud__store--hidden')).toBe(true);
-    expect(modal.querySelector('[data-ui="command-menu"]')?.classList
-      .contains('st-hud__overlay--hidden')).toBe(false);
+    const fireControl = root.querySelector<HTMLElement>('[aria-label="Firing solution"]')!;
+    expect(fireControl.querySelector<HTMLButtonElement>('[aria-label="Open Armory — equip or buy weapons"]'))
+      .toBeTruthy();
+    expect(fireControl.querySelector(':scope > .st-hud__store-btn')).toBeNull();
+    expect([...fireControl.querySelectorAll<HTMLButtonElement>('[data-ui="arsenal-drawer"] button')]
+      .some((button) => button.textContent?.startsWith('Buy weapons'))).toBe(true);
   });
 
   it('returns focus to the Menu control that opened Command Menu', () => {
@@ -97,7 +88,7 @@ describe('HUD Command Menu', () => {
     const { root, modal } = mount();
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
     const menu = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
-    const [resume, openStore, returnToLobby] = [...menu.querySelectorAll<HTMLButtonElement>('button')];
+    const [resume, returnToLobby] = [...menu.querySelectorAll<HTMLButtonElement>('button')];
 
     returnToLobby!.focus();
     menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
@@ -108,9 +99,6 @@ describe('HUD Command Menu', () => {
       shiftKey: true,
       bubbles: true,
     }));
-    expect(document.activeElement).toBe(returnToLobby);
-    openStore!.focus();
-    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     expect(document.activeElement).toBe(returnToLobby);
   });
 
