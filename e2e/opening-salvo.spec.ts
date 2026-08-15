@@ -232,11 +232,12 @@ test.describe('bounded aim guide', () => {
     for (let shot = 0; shot < 2; shot++) {
       await expect(action).toBeEnabled();
       await action.click();
-      await expect(action).toBeDisabled();
+      await expect(page.locator('.st-hud__command-console'))
+        .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
       await expect(action).toBeEnabled({ timeout: 15_000 });
       if (shot === 0) {
         await expect(page.getByRole('img', { name: 'Elevation gauge' }))
-          .toContainText('45° ◀');
+          .toContainText(/45.*◀/);
       }
     }
 
@@ -261,7 +262,8 @@ test.describe('bounded aim guide', () => {
 
     const action = page.locator('.st-hud__primary-action');
     await action.click();
-    await expect(action).toBeDisabled();
+    await expect(page.locator('.st-hud__command-console'))
+      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
     await expect(action).toBeEnabled({ timeout: 15_000 });
     // The new turn has the same bounded wind/turn-handoff flourishes as initial
     // load. Let them expire before isolating a guide-only frame delta.

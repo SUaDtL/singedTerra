@@ -1233,8 +1233,9 @@ test.describe('HUD layout guardrails', () => {
       return { width: parseFloat(style.width), height: parseFloat(style.height) };
     });
     const touch = testInfo.project.name === 'pixel-touch';
-    expect(authoredDialSize.width).toBeCloseTo(touch ? 58 : 34, 1);
-    expect(authoredDialSize.height).toBeCloseTo(touch ? 58 : 34, 1);
+    const authoredFuelDial = touch ? 58 : testInfo.project.name === 'small-window' ? 42 : 34;
+    expect(authoredDialSize.width).toBeCloseTo(authoredFuelDial, 1);
+    expect(authoredDialSize.height).toBeCloseTo(authoredFuelDial, 1);
     expect(Math.abs(meterBox!.width - meterBox!.height)).toBeLessThanOrEqual(1);
     expect(meterBox!.width).toBeGreaterThanOrEqual(touch ? 28 : 20);
     expect(fuelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);

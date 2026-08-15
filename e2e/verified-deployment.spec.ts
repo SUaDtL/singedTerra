@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { assertLobbyFrame } from './support';
+import { assertLobbyFrame, enterBattleIfBriefed } from './support';
 
 const SESSION_ID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -178,6 +178,7 @@ test.describe('verified deployment production-browser journey', () => {
     await openLocalBattery(page);
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await enterBattleIfBriefed(page);
     await page.locator('#hud .st-hud__menu, [data-command="menu"]').filter({ visible: true }).first().click();
     const menu = page.getByRole('dialog', { name: 'Command Menu' });
     await menu.getByRole('button', { name: 'Return to Lobby' }).click();

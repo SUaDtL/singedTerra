@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { openHotSeatCustomization } from './support';
+import { enterBattleIfBriefed, openHotSeatCustomization } from './support';
 
 interface LayoutBox {
   left: number;
@@ -253,6 +253,7 @@ test.describe('Garage spotlight', () => {
     );
 
     await page.getByRole('button', { name: 'Deploy local battle' }).click();
+    await enterBattleIfBriefed(page);
     const portrait = page.locator('.st-hud__tank-portrait');
     await expect(portrait).toHaveAttribute(
       'aria-label',

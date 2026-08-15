@@ -27,7 +27,8 @@ async function fireAndWaitForNextTurn(page: Page): Promise<void> {
   const action = page.locator('.st-hud__primary-action');
   await expect(action).toBeEnabled();
   await action.click();
-  await expect(action).toBeDisabled();
+  await expect(page.locator('.st-hud__command-console'))
+    .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
   await expect(action).toBeEnabled({ timeout: 15_000 });
 }
 

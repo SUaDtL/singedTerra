@@ -9,12 +9,11 @@ test.describe('Command Menu navigation', () => {
   test('keeps one named, focus-safe navigation surface fitted across supported controls', async ({
     page,
   }, testInfo) => {
-    const store = page.getByRole('button', { name: /Store/ });
-    const railMenuTrigger = testInfo.project.name === 'pixel-touch'
-      ? page.locator('[data-command="menu"]')
-      : page.locator('#hud .st-hud__menu');
+    const railMenuTrigger = page.locator('#hud .st-hud__menu');
 
-    await store.click();
+    await railMenuTrigger.click();
+    const launchMenu = page.getByRole('dialog', { name: 'Command Menu' });
+    await launchMenu.getByRole('button', { name: 'Open Store', exact: true }).click();
     await expect(page.locator('.st-hud__store')).toBeVisible();
     const menuTrigger = page.locator('[data-command="open-menu"]');
     const handoffBox = await menuTrigger.boundingBox();

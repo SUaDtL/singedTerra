@@ -447,3 +447,27 @@ Order: T-01 → T-02; T-03 may proceed after plan approval; T-04 depends on T-01
 **Maps to:** O-07 coherent player journey
 **T-14 status correction (2026-08-14):** The immediately following pre-merge local-only status is retained as historical evidence but superseded. PR #423's reviewed head merged as `main@b313876106dd15b5def0dbdc66a7ea77efacbf77`; exact-main CI, CodeQL, and Pages are green, and an authenticated fresh-tab production launch showed the First Strike briefing and 3-salvo live cue. T-14 is **ACCEPTED**. `career.initiative.0001` remains active for the next tactical milestone.
 **Status:** IN_PROGRESS â€” client-only local implementation is GREEN; delivery gates remain open. `career.initiative.0001` remains active.
+
+### T-15: Prove the adaptive battle-command decision loop
+
+**Files:**
+
+- Modify: `client/src/ui/HUD.ts` and focused HUD presentation coverage
+- Create: `e2e/command-console-journey.spec.ts`
+- Modify: existing production-browser fixtures whose contracts still referenced the retired side/touch command surfaces
+
+**Interfaces:**
+
+- The existing hot-seat engine and `NetworkClient` remain the only gameplay paths. Browser coverage operates the public console controls and, for the online case, replaces only the Supabase HTTP boundary while deliberately withholding the Realtime echo to exercise canonical recovery.
+- The console renders only the renderer-admitted last-salvo learning cue, with a bounded presentation dwell after impact. It adds no impact predictor, aim-guide implementation, gameplay callback, action, transport, authority, or persistence state.
+- The existing `G` trajectory-guide path remains the only aim-guide control and is proved current from the console host.
+
+- [x] Add causal hot-seat and deterministic online CPU browser journeys for weapon, aim/power, movement/fuel, Arsenal focus return, one Fire, tracking/impact, last-salvo context, handoff/recovery, and duplicate-Fire refusal.
+- [x] Add a desktop, 900x520, and Pixel decision/flight visual contract for physical type floors, containment, overlap, one active commit, ledger purity, and document fit.
+- [x] Run the complete client, deterministic, Edge, type, browser, diff-hygiene, and state-free secret gates locally.
+- [ ] Clear final adversarial and coverage review on the exact candidate.
+- [ ] Require exact-head hosted CI and CodeQL, merge through the governed PR, deploy affected client/Supabase consumers, and verify fresh production hot-seat plus online/CPU journeys.
+
+**Verification:** `npm run test:client`, `npm run check`, `npm run check:edge`, `npm run typecheck`, `npx playwright test --workers=4`, `git diff --check`, and the state-free CodeArbiter secret scan
+**Maps to:** O-07 coherent player journey
+**Status:** IN_PROGRESS — local implementation and complete local verification are GREEN; adversarial review, hosted delivery, deployment, and production proof remain open. `career.initiative.0001` remains active.

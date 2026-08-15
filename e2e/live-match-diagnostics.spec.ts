@@ -47,7 +47,7 @@ test('an anonymous diagnostics query never exposes the live match inspector', as
   await expect(page.locator('.st-hud__primary-action')).toBeEnabled()
 })
 
-test('an authenticated diagnostics query opens, copies, and closes the redacted live snapshot without blocking Fire', async ({ page, context }, testInfo) => {
+test('an authenticated diagnostics query opens, copies, and closes the redacted live snapshot without blocking Fire', async ({ page, context }) => {
   await installAuthenticatedFixture(page)
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   // Use the public authenticated Lobby journey. The deterministic e2e entrypoint
@@ -76,9 +76,7 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
   const ledger = page.locator('#hud')
   await expect(ledger.getByRole('button', { name: 'Inspect live match', exact: true })).toHaveCount(0)
   await expect(ledger.locator(':scope > button')).toHaveCount(1)
-  const menu = testInfo.project.name === 'pixel-touch'
-    ? page.getByRole('button', { name: 'Open menu', exact: true })
-    : ledger.getByRole('button', { name: 'Menu', exact: true })
+  const menu = ledger.getByRole('button', { name: 'Menu', exact: true })
   await menu.click()
   const trigger = page.getByRole('button', { name: 'Inspect live match', exact: true })
   await expect(page.getByRole('dialog', { name: 'Command Menu', exact: true })).toBeVisible()

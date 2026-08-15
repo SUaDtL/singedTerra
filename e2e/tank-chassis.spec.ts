@@ -217,10 +217,11 @@ test.describe('authored tank chassis integration', () => {
     const action = page.locator('.st-hud__primary-action');
     await expect(action).toBeEnabled();
     await action.click();
-    await expect(action).toBeDisabled();
+    await expect(page.locator('.st-hud__command-console'))
+      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
     await expect(action).toBeEnabled({ timeout: 15_000 });
     await expect(page.getByRole('img', { name: 'Elevation gauge' }))
-      .toContainText('45° ◀');
+      .toContainText(/45.*◀/);
 
     const geometry = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,

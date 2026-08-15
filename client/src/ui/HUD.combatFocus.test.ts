@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameState } from '@shared/types/GameState';
 import { HUD } from './HUD';
@@ -28,6 +28,7 @@ function mount(): {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   document.body.innerHTML = '';
   document.head.querySelector('#st-hud-style')?.remove();
   localStorage.clear();
@@ -115,6 +116,41 @@ describe('HUD combat focus', () => {
       'Turn command console',
     );
     expect(root.querySelector('.st-hud__active-row')?.classList.contains('st-hud__active-row--hidden')).toBe(false);
+  });
+
+  it('keeps the renderer-admitted last-salvo correction readable through the immediate handoff', () => {
+    vi.useFakeTimers();
+    const { root, hud, state } = mount();
+    state.phase = 'RESOLVING';
+    hud.setImpactLearningCue({
+      readout: '84 PX LEFT OF BOB',
+      correction: 'SHIFT IMPACT RIGHT',
+      shooterId: state.activePlayerId,
+      round: state.round,
+      turn: state.turn,
+      explosionId: 7,
+    });
+
+    hud.update(state, false, true, true);
+
+    const cue = root.querySelector<HTMLElement>('[data-ui="last-salvo-cue"]');
+    expect(cue?.hidden).toBe(false);
+    expect(cue?.getAttribute('role')).toBe('status');
+    expect(cue?.getAttribute('aria-live')).toBe('polite');
+    expect(cue?.textContent).toContain('84 PX LEFT OF BOB');
+    expect(cue?.textContent).toContain('SHIFT IMPACT RIGHT');
+
+    state.phase = 'PLAYER_TURN';
+    state.turn += 1;
+    hud.update(state, false, true, true);
+    expect(cue?.hidden).toBe(false);
+    expect(cue?.textContent).toContain('84 PX LEFT OF BOB');
+    vi.advanceTimersByTime(1_399);
+    expect(cue?.hidden).toBe(false);
+    vi.advanceTimersByTime(1);
+    expect(cue?.hidden).toBe(true);
+    expect(cue?.textContent).not.toContain('84 PX LEFT OF BOB');
+    expect(cue?.textContent).not.toContain('SHIFT IMPACT RIGHT');
   });
 
   it('uses terminal descriptions without claiming mixed parents are enabled or disabled', () => {

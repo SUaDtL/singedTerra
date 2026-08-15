@@ -298,6 +298,10 @@ export class HUD {
   private storeBtnLabelEl!: HTMLElement;
   private commandConsoleEl!: HTMLElement;
   private consoleContextEl!: HTMLElement;
+  private lastSalvoEl!: HTMLElement;
+  private lastSalvoReadoutEl!: HTMLElement;
+  private lastSalvoCorrectionEl!: HTMLElement;
+  private lastSalvoHideTimer: ReturnType<typeof setTimeout> | null = null;
   private consoleSolutionEl!: HTMLElement;
   private consoleCommitmentEl!: HTMLElement;
   private consoleStateEl!: HTMLElement;
@@ -591,6 +595,28 @@ export class HUD {
       command.commitment.commit !== null,
       command.commitment.explanation ?? command.commitment.label,
     );
+    this.syncLastSalvoCue(command.context.lastSalvo);
+  }
+
+  /** Present only the projection's live, renderer-admitted learning cue. */
+  private syncLastSalvoCue(cue: BattleCommandImpactLearningCue | null): void {
+    if (cue === null) {
+      if (this.lastSalvoEl.hidden || this.lastSalvoHideTimer !== null) return;
+      this.lastSalvoHideTimer = setTimeout(() => {
+        this.lastSalvoHideTimer = null;
+        this.lastSalvoEl.hidden = true;
+        this.lastSalvoReadoutEl.textContent = '';
+        this.lastSalvoCorrectionEl.textContent = '';
+      }, 1_400);
+      return;
+    }
+    if (this.lastSalvoHideTimer !== null) {
+      clearTimeout(this.lastSalvoHideTimer);
+      this.lastSalvoHideTimer = null;
+    }
+    this.lastSalvoEl.hidden = false;
+    this.lastSalvoReadoutEl.textContent = cue.readout;
+    this.lastSalvoCorrectionEl.textContent = cue.correction;
   }
 
   /** Replace a committed decision with phase context; never leave an inert Fire affordance. */
@@ -1778,6 +1804,27 @@ export class HUD {
     const context = document.createElement('section');
     context.className = 'st-hud__console-context';
     context.setAttribute('aria-label', 'Active commander');
+    this.lastSalvoEl = document.createElement('div');
+    this.lastSalvoEl.className = 'st-hud__last-salvo';
+    this.lastSalvoEl.dataset['ui'] = 'last-salvo-cue';
+    this.lastSalvoEl.setAttribute('role', 'status');
+    this.lastSalvoEl.setAttribute('aria-live', 'polite');
+    this.lastSalvoEl.setAttribute('aria-atomic', 'true');
+    this.lastSalvoEl.hidden = true;
+    const lastSalvoLabel = document.createElement('span');
+    lastSalvoLabel.className = 'st-hud__last-salvo-label';
+    lastSalvoLabel.textContent = 'Last salvo';
+    this.lastSalvoReadoutEl = document.createElement('span');
+    this.lastSalvoReadoutEl.className = 'st-hud__last-salvo-readout';
+    this.lastSalvoCorrectionEl = document.createElement('strong');
+    this.lastSalvoCorrectionEl.className = 'st-hud__last-salvo-correction';
+    this.lastSalvoEl.append(
+      lastSalvoLabel,
+      this.lastSalvoReadoutEl,
+      this.lastSalvoCorrectionEl,
+    );
+    const tacticalRow = this.activePlayerEl.querySelector('.st-hud__tactical-row');
+    (tacticalRow ?? context).append(this.lastSalvoEl);
     context.append(this.activePlayerEl);
     this.consoleContextEl = context;
 
@@ -5690,7 +5737,7 @@ export class HUD {
   background: rgba(122, 215, 255, 0.08);
   color: rgba(183, 225, 255, 0.78);
   font-family: var(--font-mono);
-  font-size: 6px;
+  font-size: var(--st-command-readability-size, 11px);
   line-height: 1;
 }
 .st-hud__move-btn:hover:not(:disabled) {
@@ -5726,7 +5773,7 @@ export class HUD {
 .st-hud__fuel-label {
   color: var(--ui-muted);
   font-family: var(--font-display);
-  font-size: 6px;
+  font-size: var(--st-command-readability-size, 11px);
   line-height: 1;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -5976,7 +6023,7 @@ export class HUD {
 .st-hud__first-salvo-briefing-eyebrow {
   color: var(--gold);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.4px;
   text-transform: uppercase;
@@ -6029,6 +6076,7 @@ export class HUD {
   box-shadow: inset 0 0 0 1px rgba(8, 4, 13, 0.56);
 }
 #battle-rail .st-hud__console-context {
+  position: relative;
   display: flex;
   align-items: stretch;
 }
@@ -6039,7 +6087,7 @@ export class HUD {
 #battle-rail .st-hud__console-solution {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) minmax(180px, 1.05fr) minmax(180px, 0.9fr);
+  grid-template-columns: minmax(190px, 0.95fr) minmax(180px, 1.05fr) minmax(180px, 0.9fr);
   grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 6px;
   padding: 5px;
@@ -6144,7 +6192,7 @@ export class HUD {
   background: rgba(122, 215, 255, 0.08);
   color: rgba(183, 225, 255, 0.82);
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: var(--st-command-readability-size, 11px);
   line-height: 1;
 }
 #battle-rail .st-hud__trajectory-guide {
@@ -6165,6 +6213,48 @@ export class HUD {
   justify-self: stretch;
   width: auto;
   max-width: 100%;
+  margin-inline: 5px;
+}
+#battle-rail .st-hud__last-salvo {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 6px;
+  min-height: 40px;
+  padding: 4px 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 4px;
+  background: rgba(37, 20, 27, 0.9);
+  color: var(--ui-copy);
+  font-size: var(--st-command-readability-size, 11px);
+  line-height: 1.05;
+}
+#battle-rail .st-hud__last-salvo[hidden] { display: none; }
+#battle-rail .st-hud__last-salvo-label {
+  grid-row: 1 / -1;
+  color: var(--ui-muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+#battle-rail .st-hud__last-salvo-readout,
+#battle-rail .st-hud__last-salvo-correction {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#battle-rail .st-hud__last-salvo-correction {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+#battle-rail .st-hud__tactical-row:has(.st-hud__last-salvo:not([hidden])) > .st-hud__mobility {
+  display: none;
 }
 #battle-rail .st-hud__strip--collapsed { display: none; }
 #battle-rail .st-hud__strip--open {
@@ -6230,6 +6320,7 @@ export class HUD {
   justify-self: stretch;
   width: auto;
   max-width: 100%;
+  margin-inline: 5px;
 }
 #battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim {
   visibility: hidden;
@@ -6266,6 +6357,16 @@ export class HUD {
 #battle-rail .st-hud__first-salvo-skip,
 #battle-rail .st-hud__console-state,
 #battle-rail .st-hud__commitment-explanation {
+  font-size: var(--st-command-readability-size, 11px);
+}
+#app #battle-rail .st-hud__turn-owner,
+#app #battle-rail .st-hud__fuel-value,
+#app #battle-rail .st-hud__weapon-value,
+#app #battle-rail .st-hud__console-state,
+#app #battle-rail .st-hud__primary-action-label {
+  font-size: calc(var(--st-command-readability-size, 11px) * 1.1);
+}
+#app.is-compact #battle-rail .st-hud__fuel-label {
   font-size: var(--st-command-readability-size, 11px);
 }
 #app.is-compact #battle-rail .st-hud__gauge-label {
@@ -6426,7 +6527,7 @@ export class HUD {
      shot decisions. Redundant headings remain available through the region,
      group, and SVG accessible names while the live values get real space. */
   #app.is-compact #battle-rail .st-hud__console-solution {
-    grid-template-columns: 170px 146px minmax(380px, 1fr);
+    grid-template-columns: 180px 146px minmax(380px, 1fr);
   }
   #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__weapon {
     grid-template-columns: minmax(0, 1fr);
@@ -6491,6 +6592,26 @@ export class HUD {
   }
   #app.is-compact #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
     transform: translateY(-2px);
+  }
+}
+@media (pointer: fine) {
+  #app.is-compact #battle-rail .st-hud__fuel-meter {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__weapon {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-icon {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
+    grid-column: 1;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon > .st-hud__solution-control {
+    grid-column: 2;
   }
 }
 /* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by
