@@ -44,14 +44,26 @@ Duel route and do not acquire verified rewards or account authority.
   board. The focused view/account suite (66 tests), typecheck, and the
   desktop, touch, and small-window board journey (3 tests) passed.
 
-## Boundary and remaining delivery work
+## Hosted delivery and remaining production proof
+
+PR [#433](https://github.com/SUaDtL/singedTerra/pull/433) reviewed head
+`9500308`, which passed CI `31889923419` and CodeQL `31889923473`, then
+merged as `ffed005`. Exact-main CI `31890260441`, CodeQL `31890260439`, and
+Pages `31890260470` passed. Pages verified current-main source, deployed
+provenance, and its post-deploy live smoke. Live
+`deploy-meta.json` reports that same merge SHA and Pages run ID.
+
+The public Pages health and provenance are verified. An authenticated Battery
+observation is still open: the available browser connector had no signed-in tab,
+and the local Playwright fixture deliberately uses the development Supabase
+storage key so it cannot establish a fake account on the production origin.
+
+## Boundary
 
 This slice changes only client Local Battery composition, styling, and tests.
 It does not alter Auth policy, schemas, migrations, Edge Functions, action
 protocol, deterministic engine, verified receipt/reward authority, dependencies,
-or secrets. Exact-diff adversarial review, CodeArbiter commit gate, PR,
-exact-head hosted CI/CodeQL/Pages, merge, Pages provenance, and an
-authenticated production observation remain open.
+or secrets. The authenticated production observation remains open.
 
 The plan deliberately retains unchecked mutation, broader lifecycle, and
 durable screenshot obligations. The green matrices above are local regression
