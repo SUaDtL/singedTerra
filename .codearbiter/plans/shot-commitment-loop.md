@@ -45,5 +45,21 @@ desktop/compact/Pixel browser proof required.
   reviewer; resolve every Critical, High, and merge-blocking finding. The
   reviewer required a precise First Salvo ownership exception; the all-profile
   journey now proves the decision card hides at step 3 and returns after Skip.
-- [ ] Commit, open a PR, require exact-head CI/CodeQL/Pages, verify the Pages
+- [x] Commit, open a PR, require exact-head CI/CodeQL/Pages, verify the Pages
   deployment, and capture a bounded production smoke receipt before acceptance.
+  PR #429 reviewed head `53b8b500f09ae7d51851ab77850a61921bfc2a7f`
+  merged as `main@bfa552ef9e4314dacfaf388d4472f3384329e29b`.
+
+## Delivery receipt
+
+Exact-head CI `31881002549` and CodeQL `31881002548` passed before merge.
+Exact-main CI `31881295517`, CodeQL `31881295535`, and Pages
+`31881295520` passed. Pages verified current-main source and deployed
+provenance, then passed its post-deploy live render smoke. The live
+`deploy-meta.json` reports `bfa552ef9e4314dacfaf388d4472f3384329e29b` and
+run `31881295520`; an independent desktop production-browser check exercised
+the fitted, live weapon-linked firing-solution card successfully:
+`E2E_LIVE_URL=https://suadtl.github.io/singedTerra/ npx playwright test
+e2e/hud-layout.spec.ts --grep "turn command console is coherent"
+--project=desktop-fine --workers=1` exited 0 with 1 passed. This client-only
+delivery required no Supabase deployment or migration.
