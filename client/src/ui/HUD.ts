@@ -222,6 +222,9 @@ export class HUD {
   private roundEl!: HTMLElement;
   /** Persistent free-for-all/team orientation for the match ledger. */
   private matchModeEl!: HTMLElement;
+  /** Local Quick Duel operation briefing; absent on all other routes. */
+  private quickOperationEl!: HTMLElement;
+  private quickOperation: { readonly title: string; readonly briefing: string } | null = null;
   private overlayEl!: HTMLElement;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
    *  the client/engine keeps running underneath, so Resume returns to the live game. */
@@ -234,6 +237,7 @@ export class HUD {
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
   private overlayStatusEl!: HTMLElement;
+  private overlayQuickOperationEl!: HTMLElement;
   private overlayFieldOrderEl!: HTMLElement;
   private overlayProgressionReceiptEl!: HTMLElement;
   private overlayProgressionHandoffEl!: HTMLElement;
@@ -760,6 +764,7 @@ export class HUD {
     this.root.append(
       menu,
       this.matchModeEl,
+      this.quickOperationEl,
       this.roundEl,
       this.playersEl,
       this.connBannerEl,
@@ -806,9 +811,26 @@ export class HUD {
     this.matchModeEl.dataset['ui'] = 'match-mode';
     this.matchModeEl.textContent = 'Free-for-all';
 
+    this.quickOperationEl = document.createElement('div');
+    this.quickOperationEl.className = 'st-hud__match-mode st-ui-section';
+    this.quickOperationEl.dataset['ui'] = 'quick-operation';
+    this.quickOperationEl.hidden = true;
+
     // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
     this.roundEl = document.createElement('div');
     this.roundEl.className = 'st-hud__round st-ui-section st-ui-section--round';
+  }
+
+  /** Displays local-only Quick Duel context without influencing match authority. */
+  setQuickOperation(operation: { readonly title: string; readonly briefing: string } | null): void {
+    if (!this.built) this.build();
+    this.quickOperation = operation;
+    this.quickOperationEl.hidden = operation === null;
+    this.overlayQuickOperationEl.hidden = operation === null;
+    this.overlayQuickOperationEl.textContent = operation === null
+      ? ''
+      : `Operation · ${operation.title} — ${operation.briefing}`;
+    this.quickOperationEl.textContent = operation === null ? '' : `${operation.title} · ${operation.briefing}`;
   }
 
   /** Compact, in-shell status for an authenticated verified deployment. */
@@ -1955,6 +1977,10 @@ export class HUD {
     report.className = 'st-hud__victory-report';
     this.overlayStatusEl = document.createElement('div');
     this.overlayStatusEl.className = 'st-hud__victory-status';
+    this.overlayQuickOperationEl = document.createElement('div');
+    this.overlayQuickOperationEl.className = 'st-hud__victory-operation';
+    this.overlayQuickOperationEl.dataset['ui'] = 'quick-operation-report';
+    this.overlayQuickOperationEl.hidden = true;
     this.overlayFieldOrderEl = document.createElement('div');
     this.overlayFieldOrderEl.className = 'st-hud__victory-field-order';
     this.overlayFieldOrderEl.setAttribute('role', 'status');
@@ -2024,6 +2050,7 @@ export class HUD {
     this.overlayMenuBtnEl = overlayMenuBtn;
     report.append(
       this.overlayStatusEl,
+      this.overlayQuickOperationEl,
       this.overlayFieldOrderEl,
       this.overlayProgressionReceiptEl,
       this.overlayProgressionHandoffEl,
@@ -3505,6 +3532,10 @@ export class HUD {
 
   private showVictoryReport(state: GameState): void {
     this.unlockTerminalPayoff();
+    this.overlayQuickOperationEl.hidden = this.quickOperation === null;
+    this.overlayQuickOperationEl.textContent = this.quickOperation === null
+      ? ''
+      : `Operation · ${this.quickOperation.title} — ${this.quickOperation.briefing}`;
     if (state.winner === null) {
       // 0 alive (mutual kill) / round-win tie => DRAW per engine contract.
       this.overlayTextEl.textContent = 'Draw';
@@ -4815,6 +4846,13 @@ export class HUD {
   font-size: 10px;
   font-weight: 700;
 }
+.st-hud__victory-operation {
+  margin-top: 8px;
+  color: #ffe0a0;
+  font: 700 10px/1.4 var(--font-mono);
+  letter-spacing: 0.03em;
+}
+.st-hud__victory-operation[hidden] { display: none; }
 .st-hud__victory-field-order {
   margin-top: 8px;
   color: #c5f0c4;

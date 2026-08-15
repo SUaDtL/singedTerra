@@ -68,7 +68,7 @@ describe('Lobby shareable room invites', () => {
       history.replaceState(null, '', `/singedTerra/${query}`);
       const lobby = new Lobby(root, vi.fn());
       lobby.show();
-      expect(root.querySelectorAll('.lobby-deployment-chooser button')).toHaveLength(3);
+      expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(3);
       expect(root.querySelector('.lobby-mode-context')).toBeNull();
       expect(root.querySelector('.lobby-code-input')).toBeNull();
     }

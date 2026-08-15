@@ -10,6 +10,7 @@ import type { ConnectionState, GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
+import { quickOperationById } from './client/quickOperations';
 import { rematchToConfig } from './client/rematchConfig';
 import { InputHandler } from './input/InputHandler';
 import {
@@ -37,6 +38,9 @@ import { observeFieldOrder, type FieldOrder } from './client/fieldOrder';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
+const E2E_QUICK_OPERATION = E2E_MODE === 'victory' && E2E_PARAMS.has('quick-operation')
+  ? quickOperationById(E2E_PARAMS.get('quick-operation'))
+  : null;
 const LIVE_MATCH_DIAGNOSTICS_ENABLED = E2E_PARAMS.get('diagnostics') === '1';
 const e2eSeedParam = E2E_PARAMS.get('seed');
 const e2eSeedCandidate = e2eSeedParam !== null && e2eSeedParam.trim() !== ''
@@ -617,6 +621,10 @@ function bootstrap(): void {
     // Tell the store which weapons/accessories are buyable in this room (UI gate only; the engine
     // enforces it independently). Default 4 => everything buyable, matching the engine default.
     hud.setArmsLevel(config.settings?.armsLevel ?? 4);
+    // Older focused test doubles intentionally model only the HUD methods relevant
+    // to their lifecycle assertion; the real HUD always owns this presentation seam.
+    (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
+      .setQuickOperation?.(config.quickOperation ?? null);
 
     // Seed the input handler's locally-tracked aim from the active tank so the
     // arrow keys step from that tank's real angle/power (set_angle/set_power
@@ -1146,6 +1154,11 @@ function bootstrap(): void {
       ],
       playerNames: ['P1', 'P2'],
       settings: { seed: E2E_HOT_SEAT_SEED },
+      quickOperation: E2E_QUICK_OPERATION === null ? undefined : {
+        id: E2E_QUICK_OPERATION.id,
+        title: E2E_QUICK_OPERATION.title,
+        briefing: E2E_QUICK_OPERATION.briefing,
+      },
     });
   } else {
     lobby.show();

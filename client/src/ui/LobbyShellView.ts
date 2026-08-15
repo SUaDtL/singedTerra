@@ -23,7 +23,8 @@ export interface LobbyShellViewOptions {
   content: HTMLElement;
   controls: HTMLElement;
   onTabChange: (tab: LobbyPrimaryTab) => void;
-  onQuickDuel: () => void;
+  quickOperations?: readonly { readonly id: string; readonly title: string; readonly briefing: string }[];
+  onQuickDuel: (operationId: string) => void;
   onRejoin: () => void;
   onBack: () => void;
 }
@@ -91,13 +92,57 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       return button;
     };
 
+    const operations = options.quickOperations ?? [{ id: 'standard', title: 'Standard Duel', briefing: '' }];
+    let selectedOperation = operations[0]!;
+    const operationField = document.createElement('section');
+    operationField.className = 'lobby-quick-operation';
+    operationField.dataset.ui = 'quick-operation';
+    operationField.setAttribute('aria-label', 'Quick operations');
+    const operationKicker = document.createElement('span');
+    operationKicker.className = 'lobby-quick-operation__kicker';
+    operationKicker.textContent = 'QUICK OPERATIONS';
+    const operationTitle = document.createElement('h2');
+    operationTitle.textContent = 'Choose a battlefield condition';
+    const operationCards = document.createElement('div');
+    operationCards.className = 'lobby-quick-operation__cards';
+    const operationBriefing = document.createElement('p');
+    operationBriefing.className = 'lobby-quick-operation__briefing';
+    operationBriefing.dataset.ui = 'quick-operation-briefing';
+    const cardButtons: HTMLButtonElement[] = [];
+    const selectOperation = (operation: typeof selectedOperation): void => {
+      selectedOperation = operation;
+      operationBriefing.textContent = operation.briefing;
+      for (const card of cardButtons) {
+        card.setAttribute('aria-pressed', String(card.dataset['operationId'] === operation.id));
+      }
+    };
+    for (const operation of operations) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'lobby-quick-operation__card';
+      card.dataset['operationId'] = operation.id;
+      card.setAttribute('aria-pressed', 'false');
+      const cardTitle = document.createElement('span');
+      cardTitle.className = 'lobby-quick-operation__card-title';
+      cardTitle.textContent = operation.title;
+      const cardBriefing = document.createElement('span');
+      cardBriefing.className = 'lobby-quick-operation__card-briefing';
+      cardBriefing.textContent = operation.briefing;
+      card.append(cardTitle, cardBriefing);
+      card.addEventListener('click', () => { selectOperation(operation); });
+      cardButtons.push(card);
+      operationCards.append(card);
+    }
+    selectOperation(selectedOperation);
+    operationField.append(operationKicker, operationTitle, operationCards, operationBriefing);
     chooser.append(
+      operationField,
       choice(
         'Quick Duel vs CPU',
         options.rejoinAvailable
           ? 'lobby-btn lobby-deployment-choice--secondary'
           : 'lobby-btn primary',
-        () => { options.onQuickDuel(); },
+        () => { options.onQuickDuel(selectedOperation.id); },
       ),
       choice(
         'Local Battle',

@@ -113,6 +113,25 @@ afterEach(() => {
 });
 
 describe('HUD Victory After-Action Report', () => {
+  it('carries the local Quick Operation into After Action and removes it outside that route', () => {
+    const { modal, hud, state } = mount();
+
+    hud.setQuickOperation({
+      title: 'Caldera Run',
+      briefing: 'Lava terrain turns every crater into a positional risk.',
+    });
+    revealTerminalReport(hud, state);
+
+    const operation = modal.querySelector<HTMLElement>('[data-ui="quick-operation-report"]');
+    expect(operation?.hidden).toBe(false);
+    expect(operation?.textContent).toBe('Operation · Caldera Run — Lava terrain turns every crater into a positional risk.');
+
+    hud.setQuickOperation(null);
+
+    expect(operation?.hidden).toBe(true);
+    expect(operation?.textContent).toBe('');
+  });
+
   it('waits for terminal impact completion and a deterministic payoff beat while suppressing duplicate navigation', () => {
     const { root, stage, modal, hud, state } = mount();
     const restart = vi.fn();

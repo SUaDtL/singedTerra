@@ -14,6 +14,7 @@ import {
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { buildLobbyHotSeatView } from './LobbyHotSeatView';
+import { QUICK_OPERATIONS, quickOperationById, quickOperationOptions } from '../client/quickOperations';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
@@ -145,6 +146,8 @@ export interface LobbyConfig {
   token?: string;
   /** Optional advanced engine settings; only set fields are present. */
   settings?: LobbySettings;
+  /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
+  quickOperation?: { readonly id: string; readonly title: string; readonly briefing: string };
   /** Auth-owned verified execution context. Server config and recovery transcript stay immutable. */
   verifiedDeployment?: {
     readonly descriptor: VerifiedDeploymentDescriptor;
@@ -3080,6 +3083,74 @@ export class Lobby {
         letter-spacing: 0.9px;
         text-transform: uppercase;
       }
+      #lobby .lobby-quick-operation {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 7px;
+        padding: 12px;
+        border: 1px solid rgba(255, 210, 63, 0.28);
+        background: linear-gradient(135deg, rgba(44, 29, 19, 0.78), rgba(12, 16, 18, 0.92));
+      }
+      #lobby .lobby-quick-operation__kicker {
+        color: #e9ba55;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+      }
+      #lobby .lobby-quick-operation h2 {
+        margin: 0;
+        color: #fff0c6;
+        font-size: 18px;
+        line-height: 1.15;
+      }
+      #lobby .lobby-quick-operation__cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      #lobby .lobby-quick-operation__card {
+        min-width: 0;
+        min-height: var(--st-deployment-choice-target, 44px);
+        padding: 10px 12px;
+        border: 1px solid rgba(170, 132, 72, 0.68);
+        background: rgba(13, 17, 18, 0.9);
+        color: #d8c6a2;
+        text-align: left;
+        transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+      }
+      #lobby .lobby-quick-operation__card:hover,
+      #lobby .lobby-quick-operation__card:focus-visible {
+        border-color: rgba(255, 211, 92, 0.96);
+        outline: none;
+        background: rgba(63, 43, 24, 0.94);
+      }
+      #lobby .lobby-quick-operation__card[aria-pressed='true'] {
+        border-color: #ffd15d;
+        background: linear-gradient(135deg, rgba(110, 53, 27, 0.95), rgba(42, 27, 17, 0.96));
+        box-shadow: inset 3px 0 0 #f4b53c, 0 0 0 1px rgba(255, 217, 119, 0.2);
+        color: #fff0c6;
+      }
+      #lobby .lobby-quick-operation__card-title,
+      #lobby .lobby-quick-operation__card-briefing {
+        display: block;
+      }
+      #lobby .lobby-quick-operation__card-title {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.35px;
+      }
+      #lobby .lobby-quick-operation__card-briefing,
+      #lobby .lobby-quick-operation__briefing {
+        color: #c6b795;
+        font-size: 12px;
+        line-height: 1.3;
+      }
+      #lobby .lobby-quick-operation__briefing {
+        min-height: 1.3em;
+        margin: 0;
+        color: #ffe0a0;
+      }
       #lobby .lobby-deployment-chooser .lobby-btn.primary {
         grid-column: 1 / -1;
         min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
@@ -3151,10 +3222,21 @@ export class Lobby {
         width: min(600px, 52%);
       }
       #app.is-compact #lobby .lobby-deployment-chooser {
-        width: min(760px, 70%);
+        /* Reserve the masthead's right-hand commander dossier. The chooser
+           owns the left deployment lane instead of flowing underneath it. */
+        width: min(600px, 52%);
+        justify-self: start;
+        margin-inline: 0 auto;
         gap: 8px;
         padding: 12px;
       }
+      #app.is-compact #lobby .lobby-quick-operation {
+        gap: 5px;
+        padding: 9px;
+      }
+      #app.is-compact #lobby .lobby-quick-operation h2 { font-size: 16px; }
+      #app.is-compact #lobby .lobby-quick-operation__card { padding: 7px 9px; }
+      #app.is-compact #lobby .lobby-quick-operation__card-briefing { display: none; }
       #app.is-compact #lobby .lobby-deployment__back {
         width: max-content;
         align-self: center;
@@ -3373,7 +3455,8 @@ export class Lobby {
         this.surface = 'preparation';
         this.render();
       },
-      onQuickDuel: () => { this.startQuickDuel(); },
+      quickOperations: QUICK_OPERATIONS,
+      onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
       onRejoin: () => { void this.handleRejoin(); },
       onBack: () => {
         const choice = this.activeTab === 'hotseat' ? 'Local Battle' : 'Play Online';
@@ -3894,7 +3977,7 @@ export class Lobby {
 
   // ---- Hot Seat tab ----
 
-  private startQuickDuel(): void {
+  private startQuickDuel(operationId: unknown = 'standard'): void {
     const seed = this.generateQuickDuelSeed();
     if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) return;
     if (new URL(window.location.href).searchParams.get('e2e') === 'quick-duel-seed') {
@@ -3916,11 +3999,27 @@ export class Lobby {
       ai: 'medium' as const,
       loadout: normalizeTankLoadout(seatPresetLoadout(1)),
     };
+    const operation = quickOperationById(operationId);
+    const composedOptions = quickOperationOptions(operation.id, {
+      maxPlayers: 2,
+      players: [humanPlayer, cpuPlayer],
+      seed,
+      rounds: 3,
+    });
+    // Roster ownership remains on LobbyConfig.players. The catalog helper proves
+    // a complete GameEngine projection, then this existing settings channel carries
+    // only the optional engine knobs it has always owned.
+    const { maxPlayers: _maxPlayers, players: _players, ...settings } = composedOptions;
     this.onReady({
       mode: 'hotseat',
       players: [humanPlayer, cpuPlayer],
       playerNames: [humanPlayer.name, cpuPlayer.name],
-      settings: { seed, rounds: 3 },
+      settings,
+      quickOperation: {
+        id: operation.id,
+        title: operation.title,
+        briefing: operation.briefing,
+      },
     });
   }
 
