@@ -37,6 +37,19 @@ export interface LobbyHotSeatVerifiedDeploymentOptions {
   onCancelAbandon: () => void;
 }
 
+function buildCommanderDossier(fieldOrder: FieldOrder | null): HTMLElement | null {
+  if (fieldOrder === null) return null;
+  const dossier = document.createElement('section');
+  dossier.className = 'lobby-verified-deployment__dossier';
+  dossier.setAttribute('aria-label', 'Commander dossier');
+  const title = document.createElement('h4');
+  title.textContent = 'Commander dossier';
+  const order = document.createElement('p');
+  order.textContent = renderFieldOrder(fieldOrder).brief;
+  dossier.append(title, order);
+  return dossier;
+}
+
 function buildVerifiedDeployment(
   options: LobbyHotSeatVerifiedDeploymentOptions,
   includeFieldOrderDossier = true,
@@ -63,17 +76,7 @@ function buildVerifiedDeployment(
     item.textContent = rule;
     rules.append(item);
   }
-  const fieldOrder = options.fieldOrder;
-  const dossier = includeFieldOrderDossier && fieldOrder !== null ? document.createElement('section') : null;
-  if (fieldOrder && dossier) {
-    dossier.className = 'lobby-verified-deployment__dossier';
-    dossier.setAttribute('aria-label', 'Commander dossier');
-    const dossierTitle = document.createElement('h4');
-    dossierTitle.textContent = 'Commander dossier';
-    const order = document.createElement('p');
-    order.textContent = renderFieldOrder(fieldOrder).brief;
-    dossier.append(dossierTitle, order);
-  }
+  const dossier = includeFieldOrderDossier ? buildCommanderDossier(options.fieldOrder) : null;
   const message = document.createElement('p');
   message.className = 'lobby-verified-deployment__message';
   message.setAttribute('role', 'status');
@@ -301,6 +304,8 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   start.addEventListener('click', options.onStart);
   wrapper.append(brief, ready);
   if (options.verifiedDeployment && options.quickOperations && options.onQuickOperation) {
+    const dossier = buildCommanderDossier(options.verifiedDeployment.fieldOrder);
+    if (dossier) wrapper.append(dossier);
     wrapper.append(buildCommanderOperations(
       options.verifiedDeployment,
       options.quickOperations,

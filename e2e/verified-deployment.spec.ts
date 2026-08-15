@@ -153,7 +153,13 @@ test.describe('verified deployment production-browser journey', () => {
   test('composes one contained Commander Operations board before a verified launch', async ({ page }) => {
     await openLocalBattery(page);
     const board = page.locator('[data-ui="commander-operations"]');
+    const dossier = page.locator('.lobby-verified-deployment__dossier');
     await expect(board).toBeVisible();
+    await expect(dossier).toBeVisible();
+    await expect(dossier).toHaveText(/First Strike/);
+    await expect(dossier.evaluate((node) =>
+      node.nextElementSibling?.matches('[data-ui="commander-operations"]') ?? false,
+    )).resolves.toBe(true);
     await expect(board.getByRole('heading', { name: 'Current field order' })).toBeVisible();
     await expect(board.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
     await expect(board.getByRole('region', { name: 'Practice operations' })).toBeVisible();

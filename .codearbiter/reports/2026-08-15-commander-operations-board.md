@@ -39,7 +39,10 @@ Duel route and do not acquire verified rewards or account authority.
 - Complete Playwright production-bundle matrix: 346 passed, 38
   project-inapplicable skips, 0 failures.
 - `git diff --check`: passed after restoring the exact historical audit bytes
-  and re-appending the two UTF-8 Commander Operations records.
+  and re-appending the UTF-8 Commander Operations audit records.
+- Review correction: the existing Commander dossier is immediately above the
+  board. The focused view/account suite (66 tests), typecheck, and the
+  desktop, touch, and small-window board journey (3 tests) passed.
 
 ## Boundary and remaining delivery work
 

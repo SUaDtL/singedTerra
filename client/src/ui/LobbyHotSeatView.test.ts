@@ -60,7 +60,10 @@ describe('buildLobbyHotSeatView', () => {
     }));
 
     const board = root.querySelector<HTMLElement>('[data-ui="commander-operations"]');
+    const dossier = root.querySelector<HTMLElement>('.lobby-verified-deployment__dossier');
     expect(board?.getAttribute('aria-label')).toBe('Commander Operations');
+    expect(dossier?.getAttribute('aria-label')).toBe('Commander dossier');
+    expect(dossier?.nextElementSibling).toBe(board);
     expect([...board?.children ?? []].map((child) => child.getAttribute('data-operation-lane')))
       .toEqual(['career', 'verified', 'practice']);
     expect(board?.textContent).toContain('First Strike');
