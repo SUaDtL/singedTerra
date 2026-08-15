@@ -11,10 +11,26 @@ import { expect, type Page } from '@playwright/test';
  * actually running (the HUD is built and the instrument cluster is on screen).
  * Dismisses the splash overlay so it can't intercept anything.
  */
+export async function enterBattleIfBriefed(page: Page): Promise<void> {
+  const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+  if (await briefing.isVisible()) {
+    await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
+    await expect(briefing).toBeHidden();
+  }
+}
+
 export async function gotoRunningGame(
   page: Page,
   search = '?e2e=hotseat',
 ): Promise<void> {
+  // Shared layout/combat fixtures start after onboarding. Seed the same durable
+  // preference the public Skip control writes before navigation so tests do not
+  // race a coach card (or an already-open Arsenal drawer) for pointer ownership.
+  // Dedicated First Salvo and command-console journey specs exercise the real
+  // briefing and coach controls without this helper.
+  await page.addInitScript(() => {
+    window.localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
+  });
   // Relative query (no leading '/') so it resolves against baseURL correctly for
   // BOTH the local root-served preview ('/') and the live project site served under
   // a sub-path ('/singedTerra/') — a leading-slash path would drop the sub-path.
@@ -27,6 +43,11 @@ export async function gotoRunningGame(
   // cluster to be visible proves the game loop is running, not just the DOM.
   await expect(page.locator('#hud.st-hud')).toBeVisible();
   await expect(page.locator('.st-hud__instruments')).toBeVisible();
+  // A forced tutorial query intentionally overrides the stored preference; cross
+  // that public entry control if a caller explicitly requests the forced path.
+  await enterBattleIfBriefed(page);
+  const skipCoach = page.getByRole('button', { name: 'Skip', exact: true });
+  if (await skipCoach.isVisible()) await skipCoach.click();
 }
 
 /**

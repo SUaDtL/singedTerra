@@ -92,14 +92,13 @@ describe('HUD unified primary action', () => {
     expect(action().disabled).toBe(false);
   });
 
-  it('disables the action when control is unavailable, a shot is pending, or the phase cannot act', () => {
-    const { hud, state, action } = mount();
+  it('removes the action when control is unavailable, a shot is pending, or the phase cannot act', () => {
+    const { root, hud, state, action } = mount();
     const selected = vi.fn();
     hud.onWeaponSelect(selected);
 
     hud.update(state, false, false);
-    expect(action().disabled).toBe(true);
-    expect(action().getAttribute('aria-disabled')).toBe('true');
+    expect(root.querySelector('.st-hud__primary-action')).toBeNull();
     const weapon = document.querySelector<HTMLButtonElement>(
       '.st-hud__weapon-btn[data-weapon="baby_missile"]',
     )!;
@@ -107,11 +106,14 @@ describe('HUD unified primary action', () => {
     weapon.click();
     expect(selected).not.toHaveBeenCalled();
 
+    hud.update(state, false, true);
+    expect(action().disabled).toBe(false);
+
     hud.update(state, true, true);
-    expect(action().disabled).toBe(true);
+    expect(root.querySelector('.st-hud__primary-action')).toBeNull();
 
     state.phase = 'RESOLVING';
     hud.update(state, false, true);
-    expect(action().disabled).toBe(true);
+    expect(root.querySelector('.st-hud__primary-action')).toBeNull();
   });
 });

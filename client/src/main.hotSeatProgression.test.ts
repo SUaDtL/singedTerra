@@ -26,6 +26,12 @@ const seams = vi.hoisted(() => ({
   progressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
+  hudUpdates: [] as unknown[][],
+  hudFrames: [] as Array<{ phase: GameState['phase']; activePlayerId: string; isFiring: boolean }>,
+  forwardedActions: [] as Array<Record<string, unknown>>,
+  firstSalvoBriefingOpen: false,
+  hudImpactCues: [] as unknown[],
+  rendererImpactCue: null as unknown,
   firstStrikeHudStates: [] as Array<Record<string, unknown> | null>,
   liveMatchDiagnosticsProviders: [] as Array<() => unknown>,
   liveMatchDiagnosticsSettings: [] as Array<(() => unknown) | null>,
@@ -101,6 +107,7 @@ vi.mock('./renderer/Renderer', () => ({
   Renderer: class {
     isAnimating() { return seams.rendererAnimating }
     isTerminalImpactAnimating() { return seams.rendererAnimating }
+    currentImpactLearningCue() { return seams.rendererImpactCue }
     render() {}
     reset() {}
     setAimGuide() {}
@@ -150,6 +157,7 @@ vi.mock('./ui/HUD', () => ({
     flashMessage() {}
     hideEndScreens() {}
     isPaused() { return false }
+    isFirstSalvoBriefingOpen() { return seams.firstSalvoBriefingOpen }
     onBuy() {}
     onFirstSalvoReplay() {}
     onFirstSalvoSkip() {}
@@ -177,6 +185,7 @@ vi.mock('./ui/HUD', () => ({
     setVerifiedDeployment(state: Record<string, unknown> | null) {
       seams.verifiedHudStates.push(state)
     }
+    setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
     setFirstStrikeObjective(state: Record<string, unknown> | null) {
       seams.firstStrikeHudStates.push(state)
     }
@@ -192,7 +201,15 @@ vi.mock('./ui/HUD', () => ({
     setQuickChatEnabled() {}
     setTurnWatch() {}
     showQuickChat() {}
-    update() {}
+    update(...args: unknown[]) {
+      seams.hudUpdates.push(args)
+      const state = args[0] as GameState
+      seams.hudFrames.push({
+        phase: state.phase,
+        activePlayerId: state.activePlayerId,
+        isFiring: args[1] === true,
+      })
+    }
   },
 }))
 vi.mock('./ui/Lobby', () => ({
@@ -401,12 +418,14 @@ function fakeClient(initial: GameState) {
     emit(state: GameState) { listener?.(state) },
     getEffectiveGravity: () => 0.15,
     getState: () => initial,
+    isFiring: false,
     initialize: async () => undefined,
     onStateChange(next: (state: GameState) => void) {
       listener = next
       return () => { listener = null }
     },
     sendAction(action: Record<string, unknown>) {
+      seams.forwardedActions.push(action)
       if (this.controller?.applyHumanAction) this.controller.applyHumanAction(action)
       else (this.controller as { applyAction?: (value: Record<string, unknown>) => boolean } | null)
         ?.applyAction?.(action)
@@ -451,6 +470,12 @@ describe('production hot-seat progression composition', () => {
     seams.progressionReceipts.length = 0
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
+    seams.hudUpdates.length = 0
+    seams.hudFrames.length = 0
+    seams.forwardedActions.length = 0
+    seams.firstSalvoBriefingOpen = false
+    seams.hudImpactCues.length = 0
+    seams.rendererImpactCue = null
     seams.firstStrikeHudStates.length = 0
     seams.liveMatchDiagnosticsProviders.length = 0
     seams.liveMatchDiagnosticsSettings.length = 0
@@ -468,6 +493,64 @@ describe('production hot-seat progression composition', () => {
     seams.completeVerified = () => Promise.resolve(verifiedReceipt)
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('forwards one real Fire and presents its submit, flight, resolution, and CPU handoff frames', async () => {
+    const state = liveVerifiedState()
+    const client = fakeClient(state)
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+    if (!seams.inputAction) throw new Error('Expected input wiring')
+
+    seams.inputAction({ type: 'fire' })
+    client.isFiring = true
+    client.emit(state)
+    state.phase = 'FIRING'
+    client.emit(state)
+    state.phase = 'RESOLVING'
+    client.isFiring = false
+    client.emit(state)
+    state.phase = 'PLAYER_TURN'
+    state.activePlayerId = state.tanks[1]!.id
+    client.emit(state)
+
+    expect(seams.forwardedActions).toEqual([{ type: 'fire' }])
+    expect(seams.hudFrames.slice(-5).map(({ phase }) => phase))
+      .toEqual(['PLAYER_TURN', 'PLAYER_TURN', 'FIRING', 'RESOLVING', 'PLAYER_TURN'])
+    expect(seams.hudFrames.at(-4)?.isFiring).toBe(true)
+    expect(seams.hudFrames.at(-1)?.activePlayerId).toBe(state.tanks[1]!.id)
+  })
+
+  it('drops every combat command while the First Salvo briefing is open and resumes after entry', async () => {
+    const state = liveVerifiedState()
+    const client = fakeClient(state)
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+    if (!seams.inputAction) throw new Error('Expected input wiring')
+    const combatActions = [
+      { type: 'fire' },
+      { type: 'set_angle', angle: 46 },
+      { type: 'set_power', power: 51 },
+      { type: 'move', delta: -12 },
+      { type: 'move', delta: 12 },
+      { type: 'select_weapon', weapon: 'missile' },
+    ]
+
+    seams.firstSalvoBriefingOpen = true
+    for (const action of combatActions) seams.inputAction(action)
+    expect(seams.forwardedActions).toEqual([])
+
+    seams.firstSalvoBriefingOpen = false
+    for (const action of combatActions) seams.inputAction(action)
+    expect(seams.forwardedActions).toEqual(combatActions)
   })
 
   it('keeps the live snapshot provider absent when the exact diagnostics gate is missing', async () => {
@@ -711,6 +794,39 @@ describe('production hot-seat progression composition', () => {
     expect(casualClient.start).toHaveBeenCalledOnce()
     seams.onVerifiedReturnToBattery()
     expect(seams.returnedVerified).toBe(0)
+  })
+
+  it('passes the real verified input gate and renderer-admitted cue through one HUD update cycle', async () => {
+    const state = liveVerifiedState()
+    Object.assign(state, { phase: 'RESOLVING', round: 2, turn: 7 })
+    const controller = fakeVerifiedController(state)
+    const client = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(client)
+    seams.verifiedDeployment = {
+      status: 'expired', descriptor: verifiedDescriptor, transcript: [],
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+    }
+    seams.rendererImpactCue = {
+      readout: '84 PX LEFT OF CPU 1', correction: 'SHIFT IMPACT RIGHT',
+      shooterId: 'p1', round: 2, turn: 7, explosionId: 9,
+    }
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+    seams.onLobbyReady(verifiedConfig())
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+
+    expect(seams.hudImpactCues.at(-1)).toEqual(seams.rendererImpactCue)
+    expect(seams.hudUpdates.at(-1)?.[2]).toBe(false)
+    expect(seams.hudUpdates.at(-1)?.[4]).toBe(false)
+
+    state.phase = 'PLAYER_TURN'
+    state.turn += 1
+    seams.rendererImpactCue = null
+    client.emit(state)
+    expect(seams.hudImpactCues.at(-1)).toBeNull()
   })
 
   it('drops a verified completion receipt after account/game generation replacement', async () => {

@@ -6,15 +6,15 @@ const VERIFIED_REPLAY_RESPONSE_CONTRACT = {
   fixtures: {
     maximumLifecycle: {
       phase: 'GAME_OVER', winner: 'p2', winnerTeam: 2, turn: 13,
-      actionCount: 15, tickCount: 448, maxTurnTickCount: 34,
+      actionCount: 15, tickCount: 453, maxTurnTickCount: 36,
     },
     maximumTurn: {
       phase: 'GAME_OVER', winner: 'p1', winnerTeam: null, turn: 3,
-      actionCount: 4, tickCount: 302, maxTurnTickCount: 207,
+      actionCount: 4, tickCount: 316, maxTurnTickCount: 221,
     },
     verifiedDuel: {
       seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
-      humanSalvos: 6, cpuSalvos: 6, liveTicks: 626, cpuSimulationTicks: 24601,
+      humanSalvos: 6, cpuSalvos: 6, liveTicks: 641, cpuSimulationTicks: 24216,
       maximumProbeCount: 59,
       transcript: [
         { angle: 0, power: 5 }, { angle: 0, power: 5 }, { angle: 0, power: 5 },
@@ -32,15 +32,15 @@ const VERIFIED_REPLAY_PUBLIC_DETAILS = Object.freeze({
   fixtures: Object.freeze({
     maximumLifecycle: Object.freeze({
       phase: 'GAME_OVER', winner: 'p2', winnerTeam: 2, turn: 13,
-      actionCount: 15, tickCount: 448, maxTurnTickCount: 34,
+      actionCount: 15, tickCount: 453, maxTurnTickCount: 36,
     }),
     maximumTurn: Object.freeze({
       phase: 'GAME_OVER', winner: 'p1', winnerTeam: null, turn: 3,
-      actionCount: 4, tickCount: 302, maxTurnTickCount: 207,
+      actionCount: 4, tickCount: 316, maxTurnTickCount: 221,
     }),
     verifiedDuel: Object.freeze({
       seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
-      humanSalvos: 6, cpuSalvos: 6, liveTicks: 626, cpuSimulationTicks: 24601,
+      humanSalvos: 6, cpuSalvos: 6, liveTicks: 641, cpuSimulationTicks: 24216,
       maximumProbeCount: 59,
       transcript: Object.freeze(Array.from({ length: 6 }, () => Object.freeze({ angle: 0, power: 5 }))),
     }),

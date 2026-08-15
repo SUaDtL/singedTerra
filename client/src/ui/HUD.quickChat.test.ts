@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { HUD } from './HUD';
 
-function mount(): { hud: HUD; root: HTMLElement; state: ReturnType<GameEngine['getState']> } {
+function mount(): {
+  hud: HUD;
+  root: HTMLElement;
+  overlay: HTMLElement;
+  state: ReturnType<GameEngine['getState']>;
+} {
   const root = document.createElement('div');
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
@@ -16,7 +21,7 @@ function mount(): { hud: HUD; root: HTMLElement; state: ReturnType<GameEngine['g
     maxPlayers: 2,
     seed: 1,
   });
-  return { hud, root, state: engine.getState() };
+  return { hud, root, overlay, state: engine.getState() };
 }
 
 afterEach(() => {
@@ -27,18 +32,19 @@ afterEach(() => {
 
 describe('HUD quick chat', () => {
   it('renders an accessible six-message palette only when network chat is enabled', () => {
-    const { hud, root, state } = mount();
+    const { hud, root, overlay, state } = mount();
     hud.update(state);
-    expect(root.querySelector('.st-hud__quick-chat')?.classList.contains('st-hud__quick-chat--hidden')).toBe(true);
+    expect(root.querySelector('.st-hud__quick-chat')).toBeNull();
+    expect(overlay.querySelector('.st-hud__quick-chat')?.classList.contains('st-hud__quick-chat--hidden')).toBe(true);
 
     const sent: string[] = [];
     hud.onQuickChat((key) => sent.push(key));
     hud.setQuickChatEnabled(true);
-    const toggle = root.querySelector<HTMLButtonElement>('.st-hud__quick-chat-toggle')!;
+    const toggle = overlay.querySelector<HTMLButtonElement>('.st-hud__quick-chat-toggle')!;
     expect(toggle.getAttribute('aria-label')).toBe('Open quick chat');
     toggle.click();
-    expect(root.querySelectorAll('.st-hud__quick-chat-option')).toHaveLength(6);
-    root.querySelector<HTMLButtonElement>('[data-quick-chat="nice_shot"]')!.click();
+    expect(overlay.querySelectorAll('.st-hud__quick-chat-option')).toHaveLength(6);
+    overlay.querySelector<HTMLButtonElement>('[data-quick-chat="nice_shot"]')!.click();
     expect(sent).toEqual(['nice_shot']);
   });
 

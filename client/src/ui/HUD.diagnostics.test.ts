@@ -57,9 +57,13 @@ describe('HUD live match diagnostics', () => {
     Object.assign(navigator, { clipboard: { writeText } })
     hud.setLiveMatchDiagnostics(() => SNAPSHOT)
 
-    const trigger = root.querySelector<HTMLButtonElement>('[data-ui="live-match-diagnostics"]')!
+    const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!
+    expect(root.querySelector('[data-ui="live-match-diagnostics"]')).toBeNull()
+    expect(root.querySelectorAll(':scope > button')).toHaveLength(1)
+    menu.focus()
+    menu.click()
+    const trigger = modal.querySelector<HTMLButtonElement>('[data-ui="live-match-inspector-menu"]')!
     expect(trigger.textContent).toContain('Inspect live match')
-    trigger.focus()
     trigger.click()
 
     const inspector = modal.querySelector<HTMLElement>('[data-ui="live-match-inspector"]')!
@@ -75,13 +79,15 @@ describe('HUD live match diagnostics', () => {
 
     inspector.querySelector<HTMLButtonElement>('[data-action="close-live-match-inspector"]')!.click()
     expect(root.inert).toBe(false)
-    expect(document.activeElement).toBe(trigger)
+    expect(document.activeElement).toBe(menu)
   })
 
   it('withdraws the rendered snapshot when authenticated diagnostics access is removed', () => {
-    const { modal, hud } = mount()
+    const { root, modal, hud } = mount()
     hud.setLiveMatchDiagnostics(() => SNAPSHOT)
-    const trigger = document.querySelector<HTMLButtonElement>('[data-ui="live-match-diagnostics"]')!
+    const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!
+    menu.click()
+    const trigger = modal.querySelector<HTMLButtonElement>('[data-ui="live-match-inspector-menu"]')!
     trigger.click()
 
     const inspector = modal.querySelector<HTMLElement>('[data-ui="live-match-inspector"]')!
@@ -92,5 +98,6 @@ describe('HUD live match diagnostics', () => {
     expect(inspector.getAttribute('aria-hidden')).toBe('true')
     expect(inspector.querySelector('.st-hud__live-diagnostics-data')?.textContent).toBe('')
     expect(document.querySelector('[data-ui="live-match-diagnostics"]')).toBeNull()
+    expect(document.querySelector('[data-ui="live-match-inspector-menu"]')).toBeNull()
   })
 })

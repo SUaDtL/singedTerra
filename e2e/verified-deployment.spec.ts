@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { assertLobbyFrame } from './support';
+import { assertLobbyFrame, enterBattleIfBriefed } from './support';
 
 const SESSION_ID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -178,6 +178,7 @@ test.describe('verified deployment production-browser journey', () => {
     await openLocalBattery(page);
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await enterBattleIfBriefed(page);
     await page.locator('#hud .st-hud__menu, [data-command="menu"]').filter({ visible: true }).first().click();
     const menu = page.getByRole('dialog', { name: 'Command Menu' });
     await menu.getByRole('button', { name: 'Return to Lobby' }).click();
@@ -400,6 +401,19 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(firstReport).toBeVisible({ timeout: 10_000 });
     await expect(firstReport.locator('.st-hud__victory-progression-receipt')).toBeHidden();
     await expect.poll(() => completionCalls).toBe(1);
+    const recoveryCommitment = page.locator('#battle-rail .st-hud__console-commitment');
+    await expect(recoveryCommitment).toHaveAttribute('data-command-mode', 'recovery');
+    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
+    const retryVerification = page.getByRole('button', {
+      name: 'Retry verification',
+      exact: true,
+    });
+    await expect(retryVerification).toHaveCount(1);
+    await expect(firstReport.getByRole('button', {
+      name: 'Retry verification',
+      exact: true,
+    })).toHaveCount(1);
+    await expect(firstReport.getByRole('button', { name: /fire/i })).toHaveCount(0);
     await firstReport.getByRole('button', { name: 'Main Menu' }).click();
 
     const verified = page.getByRole('region', { name: 'Verified deployment' });
@@ -409,6 +423,11 @@ test.describe('verified deployment production-browser journey', () => {
 
     const acceptedReport = page.locator('.st-hud__overlay--victory');
     await expect(acceptedReport).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
+    await expect(page.getByRole('button', {
+      name: 'Retry verification',
+      exact: true,
+    })).toHaveCount(0);
     const receipt = acceptedReport.locator('.st-hud__victory-progression-receipt');
     await expect(receipt.locator('.st-hud__victory-progression-summary'))
       .toHaveText('Verified victory · +200 XP · Level 5 · 0 / 500 XP');

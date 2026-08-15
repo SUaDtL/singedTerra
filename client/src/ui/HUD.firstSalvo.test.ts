@@ -29,6 +29,24 @@ function mount(): MountedHud {
   return { root, overlay, modal, hud, state };
 }
 
+function enterBriefing(modal: HTMLElement): HTMLButtonElement {
+  const briefing = modal.querySelector<HTMLElement>('[data-ui="first-salvo-briefing"]');
+  expect(briefing).not.toBeNull();
+  if (!briefing) throw new Error('Expected First Salvo briefing');
+  const enter = briefing.querySelector<HTMLButtonElement>('button')!;
+  expect(briefing.getAttribute('role')).toBe('dialog');
+  expect(briefing.getAttribute('aria-modal')).toBe('true');
+  expect(briefing.textContent).toContain('Aim');
+  expect(briefing.textContent).toContain('Wind');
+  expect(briefing.textContent).toContain('Commit');
+  expect(briefing.querySelectorAll('button')).toHaveLength(1);
+  expect(enter.textContent).toBe('Enter battle');
+  expect(document.activeElement).toBe(enter);
+  enter.click();
+  expect(briefing.hidden).toBe(true);
+  return enter;
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   document.body.innerHTML = '';
@@ -36,12 +54,30 @@ afterEach(() => {
 });
 
 describe('HUD First Salvo presentation seam', () => {
-  it('presents a live, non-modal Aim coach and highlights only the aim instrument', () => {
-    const { root, overlay, hud } = mount();
+  it('opens with one three-part operational briefing before revealing the inline coach', () => {
+    const { root, modal, hud } = mount();
 
     hud.setFirstSalvoStep('aim');
 
-    const card = overlay.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    expect(hud.isFirstSalvoBriefingOpen()).toBe(true);
+    expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(true);
+    enterBriefing(modal);
+    expect(hud.isFirstSalvoBriefingOpen()).toBe(false);
+    expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(false);
+    expect(card.parentElement?.classList.contains('st-hud__console-solution')).toBe(true);
+    expect(document.activeElement).toBe(
+      root.querySelector('.st-hud__console-state'),
+    );
+  });
+
+  it('presents a live, non-modal Aim coach and highlights only the aim instrument', () => {
+    const { root, modal, hud } = mount();
+
+    hud.setFirstSalvoStep('aim');
+    enterBriefing(modal);
+
+    const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
     const skip = card.querySelector<HTMLButtonElement>('button')!;
     expect(card.getAttribute('role')).toBe('region');
     expect(card.getAttribute('aria-label')).toBe('First Salvo coach');
@@ -52,6 +88,8 @@ describe('HUD First Salvo presentation seam', () => {
     expect(skip.textContent).toBe('Skip');
     expect(skip.tabIndex).toBe(0);
     expect(card.classList.contains('st-hud__first-salvo--hidden')).toBe(false);
+    expect(card.dataset['coachAnchor']).toBe('solution');
+    expect(card.parentElement?.classList.contains('st-hud__console-solution')).toBe(true);
     expect(root.querySelector('[data-first-salvo-target="aim"]')?.classList
       .contains('st-hud__first-salvo-target--active')).toBe(true);
     expect(root.querySelector('[data-first-salvo-target="power-and-wind"]')?.classList
@@ -61,41 +99,45 @@ describe('HUD First Salvo presentation seam', () => {
   });
 
   it('switches the active targets and calls Skip once after idempotent frame updates', () => {
-    const { root, hud } = mount();
+    const { root, modal, hud } = mount();
     const skip = vi.fn();
     hud.onFirstSalvoSkip(skip);
 
     hud.setFirstSalvoStep('power-and-wind');
+    enterBriefing(modal);
     hud.setFirstSalvoStep('power-and-wind');
 
     expect(document.querySelector('[data-ui="first-salvo-coach"]')?.textContent)
       .toContain('Wind Vector');
+    expect(document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')?.dataset['coachAnchor'])
+      .toBe('solution');
     expect(root.querySelector('[data-first-salvo-target="aim"]')?.classList
       .contains('st-hud__first-salvo-target--active')).toBe(false);
     const powerAndWindTargets = [
-      ...root.querySelectorAll<HTMLElement>('[data-first-salvo-target="power-and-wind"]'),
+      ...document.querySelectorAll<HTMLElement>('[data-first-salvo-target="power-and-wind"]'),
     ];
-    expect(powerAndWindTargets).toHaveLength(2);
+    expect(powerAndWindTargets).toHaveLength(4);
     expect(powerAndWindTargets
       .every((target) => target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
-    root.ownerDocument.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!.click();
+    document.querySelector<HTMLButtonElement>('[data-ui="first-salvo-coach"] button')!.click();
     expect(skip).toHaveBeenCalledTimes(1);
     expect(document.querySelector('[data-ui="first-salvo-coach"]')?.classList
       .contains('st-hud__first-salvo--hidden')).toBe(true);
   });
 
-  it('highlights and clears both rendered touch Aim and Power controls', () => {
-    const { overlay, hud } = mount();
+  it('highlights and clears the unified rail Aim and Power controls', () => {
+    const { root, modal, hud } = mount();
     const touchAim = [
-      overlay.querySelector<HTMLElement>('[data-command="aim-left"]')!,
-      overlay.querySelector<HTMLElement>('[data-command="aim-right"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="aim-left"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="aim-right"]')!,
     ];
     const touchPower = [
-      overlay.querySelector<HTMLElement>('[data-command="power-down"]')!,
-      overlay.querySelector<HTMLElement>('[data-command="power-up"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="power-down"]')!,
+      root.querySelector<HTMLElement>('[data-command-action="power-up"]')!,
     ];
 
     hud.setFirstSalvoStep('aim');
+    enterBriefing(modal);
     expect(touchAim.every((target) => target.dataset['firstSalvoTarget'] === 'aim')).toBe(true);
     expect(touchAim.every((target) => target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
     expect(touchPower.every((target) => !target.classList.contains('st-hud__first-salvo-target--active'))).toBe(true);
@@ -111,15 +153,18 @@ describe('HUD First Salvo presentation seam', () => {
   });
 
   it('uses primary-action copy for a live shield and exposes an accessible replay control', () => {
-    const { root, overlay, modal, hud, state } = mount();
+    const { root, modal, hud, state } = mount();
     const replay = vi.fn();
     hud.onFirstSalvoReplay(replay);
     state.tanks[0]!.selectedWeapon = 'shield';
     hud.update(state, false, true);
 
     hud.setFirstSalvoStep('fire');
+    enterBriefing(modal);
 
-    const card = overlay.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    expect(card.dataset['coachAnchor']).toBe('commitment');
+    expect(card.parentElement?.classList.contains('st-hud__console-commitment')).toBe(true);
     expect(root.querySelector('.st-hud__primary-action')?.textContent).toContain('Activate shield');
     expect(card.textContent).toContain('Primary action');
     expect(card.textContent).toContain('Space');
@@ -128,7 +173,7 @@ describe('HUD First Salvo presentation seam', () => {
     expect(root.querySelector('[data-first-salvo-target="fire"]')?.classList
       .contains('st-hud__first-salvo-target--active')).toBe(true);
 
-    overlay.querySelector<HTMLButtonElement>('[data-command="menu"]')!.click();
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
     const replayButton = [...modal.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent === 'Replay First Salvo')!;
     expect(replayButton.tabIndex).toBe(0);
@@ -137,9 +182,10 @@ describe('HUD First Salvo presentation seam', () => {
   });
 
   it('clears the live coach state on dismissal so the same step announces again after replay', () => {
-    const { overlay, hud } = mount();
+    const { root, modal, hud } = mount();
     hud.setFirstSalvoStep('aim');
-    const card = overlay.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
+    enterBriefing(modal);
+    const card = document.querySelector<HTMLElement>('[data-ui="first-salvo-coach"]')!;
     const status = card.querySelector<HTMLElement>('[data-first-salvo-status]')!;
     const observer = new MutationObserver(() => undefined);
     observer.observe(card, { attributes: true, childList: true, characterData: true, subtree: true });

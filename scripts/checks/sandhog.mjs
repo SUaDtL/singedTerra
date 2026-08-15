@@ -2,10 +2,14 @@
 // fixed-step underground drill, carves a persistent corridor, then detonates.
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { getWeapon } from '../../shared/src/engine/WeaponSystem.ts';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
+import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
 
 const SEED = 0x5a7d406;
-const SURFACE_Y = 300;
+// Leave the full 22-tick drill path above the protected floor. The fixture
+// verifies Sandhog's authored tunnel, while separate boundary tests own the
+// shared floor contract.
+const SURFACE_Y = 280;
+const ENTRY_START_Y = SURFACE_Y - 6;
 const MAX_TICKS = 10_000;
 const PLAYERS = [
   { name: 'P1', color: '#e84d4d' },
@@ -141,7 +145,7 @@ check(BURROW.tunnelRadius === 7, 'Sandhog tunnel radius is exactly seven pixels'
 
 // 2. Ground impact converts to a drill without detonating.
 const main = makeFlatEngine();
-installProjectile(main, { x: 200, y: 294, vx: 4, vy: 6 });
+installProjectile(main, { x: 200, y: ENTRY_START_Y, vx: 4, vy: 6 });
 main.tick();
 const entryState = main.getState();
 const entry = entryState.projectiles[0];
@@ -238,7 +242,7 @@ check(
 
 // 4. A target above the endpoint takes damage through intervening terrain.
 const covered = makeFlatEngine();
-installProjectile(covered, { x: 200, y: 294, vx: 4, vy: 6 });
+installProjectile(covered, { x: 200, y: ENTRY_START_Y, vx: 4, vy: 6 });
 covered.tick();
 const coveredEntry = covered.getState().projectiles[0];
 const target = covered.getState().tanks[1];
@@ -249,7 +253,7 @@ for (let i = 0; i < BURROW.ticks; i++) covered.tick();
 check(target.health < targetHealthBefore, 'endpoint blast damages a tank through terrain cover');
 
 // 5. A direct tank contact detonates immediately and never enters drill state.
-const direct = makeFlatEngine(CANVAS_HEIGHT);
+const direct = makeFlatEngine(ARENA_FLOOR_Y);
 const directTarget = direct.getState().tanks[1];
 directTarget.x = 203;
 directTarget.y = 210;
@@ -264,7 +268,7 @@ check(
 
 // 6. A boundary truncates safely at the last in-bounds drill position.
 const boundary = makeFlatEngine();
-installProjectile(boundary, { x: 1180, y: 294, vx: 7, vy: 6 });
+installProjectile(boundary, { x: 1180, y: ENTRY_START_Y, vx: 7, vy: 6 });
 boundary.tick();
 let boundaryTicks = 0;
 while (boundary.getState().phase === 'FIRING' && boundaryTicks < BURROW.ticks) {
@@ -284,8 +288,8 @@ check(
 
 // 7. The implicit bottom floor terminates at the last in-bounds point instead
 // of arming a drill whose entry point already escaped below the battlefield.
-const floorBoundary = makeFlatEngine(CANVAS_HEIGHT);
-installProjectile(floorBoundary, { x: 600, y: 590, vx: 0, vy: 20 });
+const floorBoundary = makeFlatEngine(ARENA_FLOOR_Y);
+installProjectile(floorBoundary, { x: 600, y: ARENA_FLOOR_Y - 10, vx: 0, vy: 20 });
 floorBoundary.tick();
 const floorBoundaryState = floorBoundary.getState();
 const floorBoundaryBlast = floorBoundaryState.explosions[0];
@@ -294,7 +298,7 @@ check(
   'bottom-floor contact consumes the shell instead of arming an out-of-bounds drill',
 );
 check(
-  floorBoundaryBlast?.cy >= 0 && floorBoundaryBlast?.cy < CANVAS_HEIGHT,
+  floorBoundaryBlast?.cy >= 0 && floorBoundaryBlast?.cy < ARENA_FLOOR_Y,
   'bottom-floor endpoint blast stays strictly inside vertical bounds',
 );
 check(
@@ -304,7 +308,7 @@ check(
 
 // 8. Clone and future evolution remain identical mid-burrow.
 const original = makeFlatEngine();
-installProjectile(original, { x: 200, y: 294, vx: -4, vy: 6 });
+installProjectile(original, { x: 200, y: ENTRY_START_Y, vx: -4, vy: 6 });
 original.tick();
 for (let i = 0; i < 6; i++) original.tick();
 const cloned = original.clone();
@@ -318,15 +322,15 @@ check(
 // 9. A Sandhog endpoint can decide both a single-round match and one round of
 // a multi-round match through the normal resolution state machine.
 function endpointKill(rounds) {
-  const engine = makeFlatEngine(CANVAS_HEIGHT, { rounds });
+  const engine = makeFlatEngine(ARENA_FLOOR_Y, { rounds });
   const state = engine.getState();
   const victim = state.tanks[1];
   victim.x = 603.2;
-  victim.y = 600;
+  victim.y = ARENA_FLOOR_Y;
   victim.health = 1;
   installProjectile(engine, {
     x: 600,
-    y: 589.6,
+    y: ARENA_FLOOR_Y - 10.4,
     vx: BURROW.horizontalSpeed,
     vy: BURROW.verticalSpeed,
     burrowTicksRemaining: 1,

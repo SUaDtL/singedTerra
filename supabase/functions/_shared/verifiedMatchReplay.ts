@@ -9,11 +9,11 @@ import type { GamePhase, GameState, TankState } from '../../../shared/src/types/
 
 export const VERIFIED_REPLAY_MAX_ACTIONS = 15
 export const VERIFIED_REPLAY_MAX_TURN_ACTIONS = 14
-export const VERIFIED_REPLAY_MAX_TICKS = 448
+export const VERIFIED_REPLAY_MAX_TICKS = 453
 // The reviewed maximum-turn replay reaches the protected arena floor on its
-// 207th tick. Keep this as the authoritative verifier ceiling: callers may
+// 221st tick. Keep this as the authoritative verifier ceiling: callers may
 // tighten it, but can never expand it.
-export const VERIFIED_REPLAY_MAX_TICKS_PER_TURN = 207
+export const VERIFIED_REPLAY_MAX_TICKS_PER_TURN = 221
 
 export type VerifiedReplayErrorCode =
   | 'invalid_config'

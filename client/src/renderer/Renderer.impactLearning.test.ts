@@ -10,6 +10,12 @@ interface LearningBurst {
   lifeFrames: number;
   visual: { reachRadius: number };
   cue?: ImpactLearningCue | null;
+  learningContext?: {
+    shooterId: string;
+    round: number;
+    turn: number;
+    explosionId: number;
+  };
 }
 
 interface RendererLearningSeam {
@@ -37,6 +43,7 @@ interface RendererLearningSeam {
   observeShotLaunch(state: Pick<GameState, 'phase' | 'activePlayerId'>): boolean;
   consumeExplosion(state: GameState): void;
   drawImpactMonitor(offset: { x: number; y: number }): void;
+  currentImpactLearningCue(): unknown;
 }
 
 const cue: ImpactLearningCue = {
@@ -94,6 +101,8 @@ function impactState(event = explosion()): GameState {
     explosions: [event],
     lastExplosion: event,
     walls: 'open',
+    round: 2,
+    turn: 7,
     tanks: [
       {
         id: 'shooter',
@@ -154,6 +163,23 @@ describe('Renderer impact learning wiring', () => {
     remote.impactLearningShot = { shooterId: 'shooter', local: false };
     remote.consumeExplosion(impactState());
     expect(remote.bursts[0]?.cue ?? null).toBeNull();
+  });
+
+  it('exports only the live renderer-admitted cue with its shot identity', () => {
+    const renderer = rendererHarness();
+    renderer.impactLearningShot = { shooterId: 'shooter', local: true };
+    renderer.consumeExplosion(impactState());
+
+    expect(renderer.currentImpactLearningCue()).toEqual({
+      ...cue,
+      shooterId: 'shooter',
+      round: 2,
+      turn: 7,
+      explosionId: 1,
+    });
+
+    renderer.bursts[0]!.age = renderer.bursts[0]!.lifeFrames;
+    expect(renderer.currentImpactLearningCue()).toBeNull();
   });
 
   it('keeps each explosion cue attached through strongest-burst monitor selection', () => {

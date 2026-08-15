@@ -11,7 +11,7 @@
 import { createHash } from 'node:crypto';
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 
-const EXPECTED_TRACE_DIGEST = '4166226c09006aa5dc399a85b6db893d8815511b0f5238e7cb2b2cee7288ee4c';
+const EXPECTED_TRACE_DIGEST = '00b49a8b4af30b91133894cefc815ab6c515f2019e2cbc1f5966a865fa59cdcb';
 
 function projectionEngine() {
   return new GameEngine({

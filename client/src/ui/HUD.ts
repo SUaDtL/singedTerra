@@ -39,6 +39,11 @@ import {
 } from '../client/commanderCareer';
 import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
 import type { FirstStrikeObjective } from '../client/firstStrikeObjective';
+import {
+  battleCommandStateFor,
+  type BattleCommandCommitmentPhase,
+  type BattleCommandImpactLearningCue,
+} from './battleCommandState';
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -175,8 +180,11 @@ export class HUD {
   private verifiedRetryCb: (() => void) | null = null;
   private verifiedContinueCasualCb: (() => void) | null = null;
   private verifiedReturnToBatteryCb: (() => void) | null = null;
+  /** Last server-backed report state, used only by the display projection. */
+  private verifiedDeploymentState: HUDVerifiedDeploymentState | null = null;
+  /** Existing renderer-derived local learning; null means no valid correction exists. */
+  private impactLearningCue: BattleCommandImpactLearningCue | null = null;
   private liveMatchDiagnosticsProvider: (() => LiveMatchSnapshot | undefined) | null = null;
-  private liveMatchDiagnosticsTriggerEl!: HTMLButtonElement;
   private liveMatchInspectorEl!: HTMLElement;
   private liveMatchInspectorDataEl!: HTMLElement;
   private liveMatchInspectorCopyEl!: HTMLButtonElement;
@@ -184,8 +192,8 @@ export class HUD {
   private liveMatchInspectorMenuEl!: HTMLButtonElement;
   private liveMatchInspectorPreviousFocus: HTMLElement | null = null;
 
-  // Shared command callbacks. Invoked by both the fine-pointer Command Deck and
-  // the coarse-pointer dock; main.ts wires these to InputHandler's public steps.
+  // Shared command callbacks. The responsive rail owns one semantic control set;
+  // main.ts wires these to InputHandler's public steps.
   private touchAngleCb: ((delta: number) => void) | null = null;
   private touchPowerCb: ((delta: number) => void) | null = null;
   private touchWeaponCb: (() => void) | null = null;
@@ -202,12 +210,16 @@ export class HUD {
 
   // Cached node references (populated by `build()`).
   private playersEl!: HTMLElement;
+  private weaponEl!: HTMLElement;
   private weaponValueEl!: HTMLElement;
+  private weaponAmmoEl!: HTMLElement;
   private aimEl!: HTMLElement;
   /** Aim readout sub-node: pending / flight / resolving progress text. */
   private aimTextEl!: HTMLElement;
-  /** "Round N of M" indicator (side panel); hidden in single-round matches. */
+  /** Persistent round-format summary in the side ledger. */
   private roundEl!: HTMLElement;
+  /** Persistent free-for-all/team orientation for the match ledger. */
+  private matchModeEl!: HTMLElement;
   private overlayEl!: HTMLElement;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
    *  the client/engine keeps running underneath, so Resume returns to the live game. */
@@ -265,6 +277,7 @@ export class HUD {
   /** Collapse/expand control for the arsenal strip + its persisted state. */
   private stripToggleEl!: HTMLButtonElement;
   private stripToggleLabelEl!: HTMLElement;
+  private arsenalDrawerCloseEl!: HTMLButtonElement;
   private stripBodyEl!: HTMLElement;
   private stripCollapsed = false;
   private weaponIntelEl!: HTMLElement;
@@ -284,6 +297,15 @@ export class HUD {
   private storeBtnEl!: HTMLButtonElement;
   private storeBtnLabelEl!: HTMLElement;
   private commandConsoleEl!: HTMLElement;
+  private consoleContextEl!: HTMLElement;
+  private lastSalvoEl!: HTMLElement;
+  private lastSalvoReadoutEl!: HTMLElement;
+  private lastSalvoCorrectionEl!: HTMLElement;
+  private lastSalvoHideTimer: ReturnType<typeof setTimeout> | null = null;
+  private consoleSolutionEl!: HTMLElement;
+  private consoleCommitmentEl!: HTMLElement;
+  private consoleStateEl!: HTMLElement;
+  private consoleExplanationEl!: HTMLElement;
   private turnActionsEl!: HTMLElement;
   private primaryActionBtnEl!: HTMLButtonElement;
   private primaryActionLabelEl!: HTMLElement;
@@ -291,6 +313,9 @@ export class HUD {
   private firstSalvoProgressEl!: HTMLElement;
   private firstSalvoCopyEl!: HTMLElement;
   private firstSalvoStatusEl!: HTMLElement;
+  private firstSalvoBriefingEl!: HTMLElement;
+  private firstSalvoBriefingEnterBtnEl!: HTMLButtonElement;
+  private firstSalvoBriefingAcknowledged = false;
   private storeEl!: HTMLElement;
   private storeCreditsEl!: HTMLElement;
   // Networked liveness widgets (P1-6): a persistent connection banner (shown only
@@ -350,21 +375,10 @@ export class HUD {
   /** Last turn actually presented in the owner row; resets between games. */
   private lastPresentedTurnKey: string | null = null;
 
-  // Coarse-pointer dock: weapon button needs per-frame sync.
-  private touchStripEl!: HTMLElement;
-  private touchWeaponBtnEl!: HTMLButtonElement;
-  private touchWeaponLabelEl!: HTMLElement;
-  private touchMoveLeftBtnEl!: HTMLButtonElement;
-  private touchMoveRightBtnEl!: HTMLButtonElement;
-  private touchMenuBtnEl!: HTMLButtonElement;
-  private touchCommandBtns: HTMLButtonElement[] = [];
-  /** Fine-pointer command keycaps, split by the availability gate they mirror. */
-  private desktopTurnCommandBtns: HTMLButtonElement[] = [];
-  private desktopMoveCommandBtns: HTMLButtonElement[] = [];
-  private desktopPrimaryActionBtns: HTMLButtonElement[] = [];
-  private desktopWeaponCommandBtnEl!: HTMLButtonElement;
-  private desktopCommandDeckEl!: HTMLElement;
-  private desktopCommandDeckGridEl!: HTMLElement;
+  /** Responsive solution controls share one authority gate across input types. */
+  private solutionTurnCommandBtns: HTMLButtonElement[] = [];
+  private solutionWeaponCommandBtnEl!: HTMLButtonElement;
+  private solutionAdjustmentsEl!: HTMLElement;
 
   constructor(
     root: HTMLElement,
@@ -375,7 +389,10 @@ export class HUD {
     this.root = root;
     this.overlayRoot = overlayRoot;
     this.modalRoot = modalRoot;
-    this.railRoot = railRoot;
+    // Legacy isolated HUD mounts supplied the overlay as the fourth argument
+    // before the protected rail existed. Keep those tests and embedders on the
+    // original side-panel topology; real gameplay always supplies #battle-rail.
+    this.railRoot = railRoot === overlayRoot ? root : railRoot;
     this.reduceMotion = typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
@@ -403,6 +420,11 @@ export class HUD {
   onVerifiedRetry(cb: () => void): void { this.verifiedRetryCb = cb; }
   onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
   onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
+
+  /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
+  setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
+    this.impactLearningCue = cue;
+  }
 
   /** Enables the read-only maintainer inspector only for an explicit safe snapshot provider. */
   setLiveMatchDiagnostics(provider: (() => LiveMatchSnapshot | undefined) | null): void {
@@ -442,8 +464,19 @@ export class HUD {
    */
   setFirstSalvoStep(step: FirstSalvoStep | null): void {
     if (this.firstSalvoStep === step) return;
+    const previousStep = this.firstSalvoStep;
     this.firstSalvoStep = step;
-    if (this.built) this.syncFirstSalvo();
+    if (step === null) this.firstSalvoBriefingAcknowledged = false;
+    if (!this.built) return;
+    if (previousStep === null && step !== null && !this.firstSalvoBriefingAcknowledged) {
+      this.showFirstSalvoBriefing();
+    }
+    this.syncFirstSalvo();
+  }
+
+  /** Presentation-only input gate while the First Salvo entry briefing owns focus. */
+  isFirstSalvoBriefingOpen(): boolean {
+    return this.built && !this.firstSalvoBriefingEl.hidden;
   }
 
   /**
@@ -476,15 +509,16 @@ export class HUD {
   }
 
   /** Update the overlay to reflect the latest game state (called every frame). */
-  update(state: GameState, isFiring = false, canControl = true): void {
+  update(
+    state: GameState,
+    isFiring = false,
+    canControl = true,
+    activeIsLocal = canControl,
+    verifiedInputAllowed = true,
+  ): void {
     if (!this.built) this.build();
 
-    const combatFocus: CombatFocus = state.phase === 'PLAYER_TURN'
-      ? (isFiring ? 'outcome' : 'decision')
-      : state.phase === 'FIRING' || state.phase === 'RESOLVING'
-        ? 'outcome'
-        : 'terminal';
-    this.syncCombatFocus(combatFocus);
+    this.syncBattleCommandState(state, isFiring, canControl, activeIsLocal, verifiedInputAllowed);
 
     const hasActiveTurn = state.phase === 'PLAYER_TURN' ||
       state.phase === 'FIRING' ||
@@ -512,36 +546,133 @@ export class HUD {
     if (presentedTurnKey !== null) this.lastPresentedTurnKey = presentedTurnKey;
   }
 
+  /** Keep the rail's promise honest while the authoritative engine changes phase. */
+  private syncBattleCommandState(
+    state: GameState,
+    isFiring: boolean,
+    canControl: boolean,
+    activeIsLocal: boolean,
+    verifiedInputAllowed: boolean,
+  ): void {
+    const command = battleCommandStateFor(state, isFiring, canControl, {
+      activeIsLocal,
+      verifiedInputAllowed,
+      verifiedDeployment: this.verifiedDeploymentState,
+      impactLearningCue: this.impactLearningCue,
+    });
+    const combatFocus: CombatFocus = command.commitment.phase === 'decision'
+      ? 'decision'
+      : command.commitment.phase === 'submitting'
+        || command.commitment.phase === 'tracking'
+        || command.commitment.phase === 'resolving'
+        ? 'outcome'
+        : 'terminal';
+    this.syncCombatFocus(combatFocus);
+    this.consoleCommitmentEl.dataset['commandMode'] = command.commitment.phase;
+    this.consoleCommitmentEl.dataset['commandPhase'] = command.commitment.phase;
+    this.consoleCommitmentEl.dataset['phaseLabel'] = command.context.phaseLabel;
+    this.commandConsoleEl.dataset['commandPhase'] = command.commitment.phase;
+    this.commandConsoleEl.dataset['phaseLabel'] = command.context.phaseLabel;
+    const commander = command.context.commander;
+    if (commander === null) {
+      delete this.consoleCommitmentEl.dataset['commanderId'];
+      delete this.commandConsoleEl.dataset['commanderId'];
+    } else {
+      this.consoleCommitmentEl.dataset['commanderId'] = commander.id;
+      this.commandConsoleEl.dataset['commanderId'] = commander.id;
+    }
+    const text = command.commitment.commit !== null
+      ? `${command.commitment.label} · ${commander?.name ?? 'Commander'}`
+      : `${command.commitment.label}${commander ? ` · ${commander.name}` : ''}`;
+    if (this.consoleStateEl.textContent !== text) this.consoleStateEl.textContent = text;
+    if (command.commitment.explanation === null) {
+      this.consoleStateEl.removeAttribute('title');
+    } else if (this.consoleStateEl.title !== command.commitment.explanation) {
+      this.consoleStateEl.title = command.commitment.explanation;
+    }
+    this.syncCommitmentPresentation(
+      command.commitment.phase,
+      command.commitment.commit !== null,
+      command.commitment.explanation ?? command.commitment.label,
+    );
+    this.syncLastSalvoCue(command.context.lastSalvo);
+  }
+
+  /** Present only the projection's live, renderer-admitted learning cue. */
+  private syncLastSalvoCue(cue: BattleCommandImpactLearningCue | null): void {
+    if (cue === null) {
+      if (this.lastSalvoEl.hidden || this.lastSalvoHideTimer !== null) return;
+      this.lastSalvoHideTimer = setTimeout(() => {
+        this.lastSalvoHideTimer = null;
+        this.lastSalvoEl.hidden = true;
+        this.lastSalvoReadoutEl.textContent = '';
+        this.lastSalvoCorrectionEl.textContent = '';
+      }, 1_400);
+      return;
+    }
+    if (this.lastSalvoHideTimer !== null) {
+      clearTimeout(this.lastSalvoHideTimer);
+      this.lastSalvoHideTimer = null;
+    }
+    this.lastSalvoEl.hidden = false;
+    this.lastSalvoReadoutEl.textContent = cue.readout;
+    this.lastSalvoCorrectionEl.textContent = cue.correction;
+  }
+
+  /** Replace a committed decision with phase context; never leave an inert Fire affordance. */
+  private syncCommitmentPresentation(
+    phase: BattleCommandCommitmentPhase,
+    hasCommit: boolean,
+    explanation: string,
+  ): void {
+    if (hasCommit) {
+      this.consoleExplanationEl.hidden = true;
+      this.consoleExplanationEl.textContent = '';
+      if (!this.aimEl.isConnected) {
+        const coach = this.firstSalvoEl?.parentElement === this.consoleCommitmentEl
+          ? this.firstSalvoEl
+          : null;
+        this.consoleCommitmentEl.insertBefore(this.aimEl, coach);
+      }
+      if (!this.turnActionsEl.isConnected) this.consoleCommitmentEl.append(this.turnActionsEl);
+      return;
+    }
+
+    const focusedCombatControl = this.turnActionsEl.contains(document.activeElement);
+    this.turnActionsEl.remove();
+    const tracksOutcome = phase === 'submitting' || phase === 'tracking' || phase === 'resolving';
+    if (tracksOutcome) {
+      if (!this.aimEl.isConnected) this.consoleCommitmentEl.append(this.aimEl);
+    } else {
+      this.aimEl.remove();
+    }
+    this.consoleExplanationEl.hidden = false;
+    if (this.consoleExplanationEl.textContent !== explanation) {
+      this.consoleExplanationEl.textContent = explanation;
+    }
+    if (focusedCombatControl) this.consoleStateEl.focus({ preventScroll: true });
+  }
+
   private syncCombatFocus(focus: CombatFocus): void {
     this.root.dataset['combatFocus'] = focus;
     this.overlayRoot.dataset['combatFocus'] = focus;
     this.railRoot.dataset['combatFocus'] = focus;
-    // These are mixed-interactivity regions: Store remains available in the
-    // console and Menu remains available in the touch toolbar while combat
+    // These are mixed-interactivity regions: the Command Menu remains available
+    // while direct combat controls are disabled. Keep disabled semantics on the
     // controls are disabled. Keep disabled semantics on the individual controls
     // and describe the current mode at the region boundary instead.
     this.commandConsoleEl.removeAttribute('aria-disabled');
-    this.touchStripEl.removeAttribute('aria-disabled');
     if (focus === 'decision') {
       this.commandConsoleEl.setAttribute('aria-label', 'Turn command console');
-      this.touchStripEl.setAttribute('aria-label', 'Touch commands');
     } else if (focus === 'outcome') {
       this.commandConsoleEl.setAttribute(
         'aria-label',
-        'Shot outcome in progress. Combat controls unavailable; Store remains available.',
-      );
-      this.touchStripEl.setAttribute(
-        'aria-label',
-        'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
+        'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
       );
     } else {
       this.commandConsoleEl.setAttribute(
         'aria-label',
-        'Turn command console outside an active turn. Combat controls inactive; Store remains available.',
-      );
-      this.touchStripEl.setAttribute(
-        'aria-label',
-        'Touch combat controls inactive outside an active turn; Menu remains available.',
+        'Turn command console outside an active turn. Combat controls inactive; Command Menu remains available.',
       );
     }
   }
@@ -555,8 +686,13 @@ export class HUD {
    */
   private syncRound(state: GameState): void {
     const multi = state.totalRounds > 1;
-    this.roundEl.classList.toggle('st-hud__round--hidden', !multi);
-    if (multi) this.roundEl.textContent = `Round ${state.round} of ${state.totalRounds}`;
+    this.matchModeEl.textContent = state.tanks.some((tank) => tank.team === 1 || tank.team === 2)
+      ? 'Team battle'
+      : 'Free-for-all';
+    this.roundEl.classList.remove('st-hud__round--hidden');
+    this.roundEl.textContent = multi
+      ? `Round ${state.round} of ${state.totalRounds}`
+      : 'Single round';
 
     if (state.round > this.lastSeenRound && state.phase !== 'GAME_OVER') {
       const completed = state.round - 1;
@@ -574,7 +710,9 @@ export class HUD {
   private build(): void {
     HUD.injectStyle();
     this.root.classList.add('st-hud', 'st-ui-shell');
-    this.root.dataset['ui'] = 'combat-rail';
+    this.root.dataset['ui'] = 'match-ledger';
+    this.root.setAttribute('role', 'complementary');
+    this.root.setAttribute('aria-label', 'Match ledger');
     this.root.innerHTML = '';
 
     this.buildPlayers();
@@ -582,39 +720,34 @@ export class HUD {
     this.buildRound();
     const instruments = this.buildInstrumentCluster();
     this.buildActiveRow();
-    const controls = this.buildControlsLegend();
     this.buildArsenal();
+    const controls = this.buildSolutionControls();
     this.buildStore();
     this.buildTurnActions();
-    this.buildCommandConsole(instruments);
+    this.buildCommandConsole(instruments, controls);
     this.buildEndScreens();
     this.buildRoundShop();
     const menu = this.buildMenu();
     this.buildLiveness();
-    this.buildTouchStrip();
     this.buildFirstSalvoCoach();
     this.buildLiveMatchDiagnostics();
 
     this.root.append(
       menu,
+      this.matchModeEl,
       this.roundEl,
-      this.commandConsoleEl,
       this.playersEl,
-      this.stripEl,
+      this.connBannerEl,
     );
     // buildArsenal resolves the persisted state before the rail children exist;
     // re-apply it now so a stored-open drawer also isolates covered controls.
     this.applyStripCollapsed();
-    // Fine-pointer commands and network liveness occupy the protected floor rail.
-    // The coarse-pointer dock deliberately stays on the overlay: its large touch
-    // targets remain reachable without changing its established input behavior.
-    this.overlayRoot.append(
-      this.touchStripEl,
-      this.firstSalvoEl,
-    );
+    // Quick Chat stays outside the match ledger. Transient send/turn notices
+    // stay with the protected command rail; combat input never gets a second
+    // overlay-only touch surface.
+    this.overlayRoot.append(this.quickChatRootEl);
     this.railRoot.append(
-      controls,
-      this.connBannerEl,
+      this.commandConsoleEl,
       this.toastEl,
       this.turnWatchEl,
     );
@@ -626,6 +759,7 @@ export class HUD {
       this.pauseEl,
       this.verifiedExpiryEl,
       this.liveMatchInspectorEl,
+      this.firstSalvoBriefingEl,
     );
     this.built = true;
     this.syncFirstSalvo();
@@ -635,17 +769,21 @@ export class HUD {
 
   /** Player health-bar column (top-left). */
   private buildPlayers(): void {
-    // Player health-bar column (top-left).
-    this.playersEl = document.createElement('div');
+    this.playersEl = document.createElement('ol');
     this.playersEl.className = 'st-hud__players st-ui-section st-ui-section--roster';
+    this.playersEl.setAttribute('aria-label', 'Turn order');
   }
 
   /** Round indicator (side panel): "Round N of M". */
   private buildRound(): void {
+    this.matchModeEl = document.createElement('div');
+    this.matchModeEl.className = 'st-hud__match-mode st-ui-section';
+    this.matchModeEl.dataset['ui'] = 'match-mode';
+    this.matchModeEl.textContent = 'Free-for-all';
+
     // Round indicator (side panel): "Round N of M" — hidden in single-round matches.
     this.roundEl = document.createElement('div');
-    this.roundEl.className =
-      'st-hud__round st-hud__round--hidden st-ui-section st-ui-section--round';
+    this.roundEl.className = 'st-hud__round st-ui-section st-ui-section--round';
   }
 
   /** Compact, in-shell status for an authenticated verified deployment. */
@@ -744,6 +882,8 @@ export class HUD {
     const instruments = document.createElement('div');
     instruments.className =
       'st-hud__instruments st-ui-section st-ui-section--instrument';
+    instruments.setAttribute('role', 'group');
+    instruments.setAttribute('aria-label', 'Ballistic computer');
     const instrTitle = document.createElement('div');
     instrTitle.className = 'st-hud__instr-title';
     instrTitle.textContent = 'Ballistic Computer';
@@ -797,14 +937,15 @@ export class HUD {
     this.gaugeElevLabel.setAttribute('y', '52');
     this.gaugeElevLabel.setAttribute('text-anchor', 'middle');
     this.gaugeElevLabel.setAttribute('class', 'st-hud__gauge-label');
-    this.gaugeElevLabel.textContent = '0° ▶';
+    this.gaugeElevLabel.textContent = '0▶';
+    this.gaugeElevLabel.setAttribute('aria-label', '0 degrees, right');
     elevSvg.append(elevTrack, elevTicks, elevPivot, this.gaugeElevNeedle, this.gaugeElevLabel);
     const elevCell = document.createElement('div');
     elevCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--elevation';
     elevCell.dataset['firstSalvoTarget'] = 'aim';
     const elevCellTitle = document.createElement('div');
     elevCellTitle.className = 'st-hud__gauge-cell-title';
-    elevCellTitle.textContent = 'Elevation';
+    elevCellTitle.textContent = 'Angle';
     elevCell.append(elevCellTitle, elevSvg);
 
     // ── Wind gauge (horizontal center-zero track) ──
@@ -857,7 +998,7 @@ export class HUD {
     windCell.dataset['firstSalvoTarget'] = 'power-and-wind';
     const windCellTitle = document.createElement('div');
     windCellTitle.className = 'st-hud__gauge-cell-title';
-    windCellTitle.textContent = 'Wind Vector';
+    windCellTitle.textContent = 'Wind';
     windCell.append(windCellTitle, windSvg);
 
     // ── Power gauge (arc fill driven by stroke-dasharray) ──
@@ -986,8 +1127,11 @@ export class HUD {
     identity.className = 'st-hud__identity-lockup';
     identity.append(portraitFrame, this.turnStatusEl);
 
-    const weapon = document.createElement('div');
+    const weapon = document.createElement('section');
     weapon.className = 'st-hud__weapon';
+    weapon.dataset['ui'] = 'weapon-bay';
+    weapon.setAttribute('aria-label', 'Weapon and ammunition');
+    this.weaponEl = weapon;
     this.weaponIconEl = document.createElement('span');
     this.weaponIconEl.className = 'st-hud__weapon-icon';
     this.weaponIconEl.setAttribute('aria-hidden', 'true');
@@ -998,7 +1142,9 @@ export class HUD {
     weaponLabel.textContent = 'Weapon';
     this.weaponValueEl = document.createElement('span');
     this.weaponValueEl.className = 'st-hud__weapon-value';
-    weaponCopy.append(weaponLabel, this.weaponValueEl);
+    this.weaponAmmoEl = document.createElement('span');
+    this.weaponAmmoEl.className = 'st-hud__weapon-ammo';
+    weaponCopy.append(weaponLabel, this.weaponValueEl, this.weaponAmmoEl);
     weapon.append(this.weaponIconEl, weaponCopy);
 
     const mobility = document.createElement('div');
@@ -1051,115 +1197,85 @@ export class HUD {
 
     const tactical = document.createElement('div');
     tactical.className = 'st-hud__tactical-row';
-    tactical.append(weapon, mobility);
+    tactical.append(mobility);
 
-    // Identity owns the full primary row. Weapon, fuel, and movement share a
-    // separate tactical row instead of competing with and truncating the player.
+    // Identity and mobility stay together as commander context. Weapon choice
+    // belongs to the lower-rail firing solution built below.
     this.turnStatusEl.append(owner);
     this.activePlayerEl.append(identity, tactical);
   }
 
-  /** Fine-pointer command deck (upper-left overlay; built once). */
-  private buildControlsLegend(): HTMLElement {
+  /** Fine-pointer controls that directly adjust the authoritative firing solution. */
+  private buildSolutionControls(): HTMLElement {
+    const makeControl = (
+      action: string,
+      key: string,
+      label: string,
+      direction: string,
+      run: () => void,
+      firstSalvoTarget?: string,
+    ): HTMLButtonElement => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'st-hud__solution-control';
+      button.dataset['commandAction'] = action;
+      button.setAttribute('aria-label', label);
+      if (firstSalvoTarget) button.dataset['firstSalvoTarget'] = firstSalvoTarget;
+      const directionEl = document.createElement('span');
+      directionEl.className = 'st-hud__solution-direction';
+      directionEl.setAttribute('aria-hidden', 'true');
+      directionEl.textContent = direction;
+      const hint = document.createElement('kbd');
+      hint.setAttribute('aria-hidden', 'true');
+      hint.textContent = key;
+      button.append(directionEl, hint);
+      button.addEventListener('click', run);
+      this.solutionTurnCommandBtns.push(button);
+      return button;
+    };
+
+    this.solutionWeaponCommandBtnEl = makeControl(
+      'weapon-next',
+      'Q',
+      'Select next weapon',
+      '›',
+      () => this.touchWeaponCb?.(),
+    );
+    this.weaponEl.append(this.solutionWeaponCommandBtnEl, this.stripToggleEl);
+
     const controls = document.createElement('div');
-    controls.className = 'st-hud__controls';
-    controls.setAttribute('role', 'region');
-    controls.setAttribute('aria-label', 'Keyboard and mouse commands');
-    controls.dataset['ui'] = 'command-deck';
-    this.desktopCommandDeckEl = controls;
+    controls.className = 'st-hud__solution-adjustments';
+    controls.dataset['ui'] = 'solution-adjustments';
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', 'Angle and power adjustments');
+    this.solutionAdjustmentsEl = controls;
 
-    const header = document.createElement('div');
-    header.className = 'st-hud__controls-header';
-    const title = document.createElement('span');
-    title.className = 'st-hud__controls-title';
-    title.textContent = 'Command Deck';
-    const mode = document.createElement('span');
-    mode.className = 'st-hud__controls-mode';
-    mode.textContent = 'Mouse + keys';
-    header.append(title, mode);
-
-    const grid = document.createElement('div');
-    grid.className = 'st-hud__control-grid';
-    this.desktopCommandDeckGridEl = grid;
-    const definitions = [
-      {
-        command: 'aim', label: 'Aim', glyph: 'aim',
-        keys: [
-          { text: '←', action: 'aim-left', aria: 'Aim barrel left', run: () => this.touchAngleCb?.(3) },
-          { text: '→', action: 'aim-right', aria: 'Aim barrel right', run: () => this.touchAngleCb?.(-3) },
-        ],
-        firstSalvoTarget: 'aim',
-      },
-      {
-        command: 'power', label: 'Power', glyph: 'power',
-        keys: [
-          { text: '↑', action: 'power-up', aria: 'Increase power', run: () => this.touchPowerCb?.(3) },
-          { text: '↓', action: 'power-down', aria: 'Decrease power', run: () => this.touchPowerCb?.(-3) },
-        ],
-        firstSalvoTarget: 'power-and-wind',
-      },
-      {
-        command: 'move', label: 'Move', glyph: 'move',
-        keys: [
-          { text: 'A', action: 'move-left', aria: 'Move tank left, 8 fuel maximum', run: () => this.moveCb?.(-8) },
-          { text: 'D', action: 'move-right', aria: 'Move tank right, 8 fuel maximum', run: () => this.moveCb?.(8) },
-        ],
-      },
-      {
-        command: 'weapon', label: 'Weapon', glyph: 'weapon',
-        keys: [
-          { text: 'Q', action: 'weapon', aria: 'Cycle weapon', run: () => this.touchWeaponCb?.() },
-        ],
-      },
-      {
-        command: 'fire', label: 'Fire', glyph: 'fire', primary: true,
-        firstSalvoTarget: 'fire',
-        keys: [
-          { text: 'Space', action: 'fire-space', aria: 'Fire with Space', run: () => this.primaryActionCb?.() },
-          { text: 'Enter', action: 'fire-enter', aria: 'Fire with Enter', run: () => this.primaryActionCb?.() },
-        ],
-      },
-    ] as const;
-    for (const definition of definitions) {
-      const cell = document.createElement('div');
-      cell.className = 'st-hud__control-cell';
-      if ('primary' in definition) cell.classList.add('st-hud__control-cell--primary');
-      cell.dataset['command'] = definition.command;
-      const label = document.createElement('span');
-      label.className = 'st-hud__control-label';
-      label.textContent = definition.label;
-      const keypair = document.createElement('span');
-      keypair.className = 'st-hud__keypair';
-      for (const key of definition.keys) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'st-hud__command-key';
-        button.dataset['commandAction'] = key.action;
-        button.dataset['commandKey'] = key.text;
-        button.setAttribute('aria-label', key.aria);
-        if ('firstSalvoTarget' in definition) {
-          button.dataset['firstSalvoTarget'] = definition.firstSalvoTarget;
-        }
-        const hint = document.createElement('kbd');
-        hint.setAttribute('aria-hidden', 'true');
-        hint.textContent = key.text;
-        button.append(hint);
-        button.addEventListener('click', key.run);
-        keypair.append(button);
-
-        if (key.action === 'move-left' || key.action === 'move-right') {
-          this.desktopMoveCommandBtns.push(button);
-        } else if (key.action === 'fire-space' || key.action === 'fire-enter') {
-          this.desktopPrimaryActionBtns.push(button);
-        } else {
-          this.desktopTurnCommandBtns.push(button);
-          if (key.action === 'weapon') this.desktopWeaponCommandBtnEl = button;
-        }
-      }
-      cell.append(makeHudGlyph(definition.glyph, 15), label, keypair);
-      grid.append(cell);
-    }
-    controls.append(header, grid);
+    const makeGroup = (
+      control: 'angle' | 'power',
+      label: string,
+      buttons: HTMLButtonElement[],
+    ): HTMLElement => {
+      const group = document.createElement('div');
+      group.className = 'st-hud__solution-adjustment';
+      group.dataset['control'] = control;
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', label);
+      const title = document.createElement('span');
+      title.className = 'st-hud__solution-adjustment-label';
+      title.textContent = label;
+      group.append(title, ...buttons);
+      return group;
+    };
+    controls.append(
+      makeGroup('angle', 'Angle', [
+        makeControl('aim-left', '←', 'Aim barrel left', '−', () => this.touchAngleCb?.(3), 'aim'),
+        makeControl('aim-right', '→', 'Aim barrel right', '+', () => this.touchAngleCb?.(-3), 'aim'),
+      ]),
+      makeGroup('power', 'Power', [
+        makeControl('power-down', '↓', 'Decrease power', '−', () => this.touchPowerCb?.(-3), 'power-and-wind'),
+        makeControl('power-up', '↑', 'Increase power', '+', () => this.touchPowerCb?.(3), 'power-and-wind'),
+      ]),
+    );
     return controls;
   }
 
@@ -1172,29 +1288,37 @@ export class HUD {
     this.stripEl.className =
       'st-hud__strip st-ui-section st-ui-section--arsenal';
     this.stripEl.dataset['ui'] = 'arsenal-drawer';
-    // Header row: "Arsenal" title + a collapse/expand toggle. Collapsing folds the
-    // grid away to reclaim vertical space (mobile especially); the state persists.
-    const stripHeader = document.createElement('div');
-    stripHeader.className = 'st-hud__strip-header';
-    const stripTitle = document.createElement('div');
-    stripTitle.className = 'st-hud__strip-title';
-    const stripTitleText = document.createElement('span');
-    stripTitleText.textContent = 'Arsenal';
-    stripTitle.append(makeHudGlyph('arsenal', 15), stripTitleText);
+    // The trigger lives in the weapon bay; the drawer itself stays one reusable
+    // owned-only surface and keeps its persisted disclosure state.
     const stripToggle = document.createElement('button');
     stripToggle.type = 'button';
-    stripToggle.className = 'st-hud__strip-toggle st-ui-icon-action';
+    stripToggle.className = 'st-hud__strip-toggle st-ui-icon-action st-hud__arsenal-trigger';
     const stripToggleLabel = document.createElement('span');
     stripToggleLabel.className = 'st-hud__strip-toggle-label';
-    stripToggle.append(makeHudIcon('disclosure', 16), stripToggleLabel);
+    stripToggle.append(
+      makeHudGlyph('arsenal', 15),
+      stripToggleLabel,
+      makeHudIcon('disclosure', 16),
+    );
     stripToggle.addEventListener('click', () => this.toggleStripCollapsed());
-    stripHeader.append(stripTitle, stripToggle);
     this.stripToggleEl = stripToggle;
     this.stripToggleLabelEl = stripToggleLabel;
     const stripBody = document.createElement('div');
     stripBody.className = 'st-hud__strip-body';
     stripBody.id = `st-hud-arsenal-drawer-${HUD.arsenalDrawerSequence++}`;
     this.stripBodyEl = stripBody;
+    const drawerHeader = document.createElement('div');
+    drawerHeader.className = 'st-hud__arsenal-drawer-header';
+    const drawerTitle = document.createElement('span');
+    drawerTitle.className = 'st-hud__arsenal-drawer-title';
+    drawerTitle.textContent = 'Arsenal';
+    this.arsenalDrawerCloseEl = document.createElement('button');
+    this.arsenalDrawerCloseEl.type = 'button';
+    this.arsenalDrawerCloseEl.className = 'st-hud__arsenal-drawer-close';
+    this.arsenalDrawerCloseEl.setAttribute('aria-label', 'Collapse arsenal');
+    this.arsenalDrawerCloseEl.textContent = 'Close';
+    this.arsenalDrawerCloseEl.addEventListener('click', () => this.toggleStripCollapsed());
+    drawerHeader.append(drawerTitle, this.arsenalDrawerCloseEl);
     const stripGrid = document.createElement('div');
     stripGrid.className = 'st-hud__strip-grid';
     stripGrid.id = `${stripBody.id}-grid`;
@@ -1291,8 +1415,8 @@ export class HUD {
       this.weaponCells.set(type, { el: btn, ammo: ammoSpan });
       stripGrid.append(btn);
     }
-    stripBody.append(intel, stripGrid);
-    this.stripEl.append(stripHeader, stripBody);
+    stripBody.append(drawerHeader, intel, stripGrid);
+    this.stripEl.append(stripBody);
     this.stripEl.addEventListener('keydown', (event) => {
       if (event.key === 'Tab' || event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
         this.intelInputMode = 'keyboard';
@@ -1308,7 +1432,6 @@ export class HUD {
     });
     const stored = readStoredArsenalPreference();
     this.stripCollapsed = resolveInitialArsenalCollapsed(stored);
-    this.applyStripCollapsed();
   }
 
   /** Render the active preview without rebuilding the dossier DOM. */
@@ -1364,6 +1487,9 @@ export class HUD {
 
     this.storeEl = document.createElement('div');
     this.storeEl.className = 'st-hud__store st-hud__store--hidden';
+    this.storeEl.setAttribute('role', 'dialog');
+    this.storeEl.setAttribute('aria-modal', 'true');
+    this.storeEl.setAttribute('aria-label', 'Store');
     const storePanel = document.createElement('div');
     storePanel.className = 'st-hud__store-panel';
     const storeHeader = document.createElement('div');
@@ -1512,7 +1638,7 @@ export class HUD {
     // on touch when the browser follows it with the button's semantic click.
     this.primaryActionBtnEl.addEventListener('click', () => this.primaryActionCb?.());
 
-    this.turnActionsEl.append(this.storeBtnEl, this.primaryActionBtnEl);
+    this.turnActionsEl.append(this.primaryActionBtnEl);
   }
 
   /** Compact, non-blocking instruction card; local action observation stays in main.ts. */
@@ -1549,21 +1675,86 @@ export class HUD {
       this.firstSalvoStatusEl,
       skipBtn,
     );
+
+    this.firstSalvoBriefingEl = document.createElement('div');
+    this.firstSalvoBriefingEl.className = 'st-hud__first-salvo-briefing';
+    this.firstSalvoBriefingEl.dataset['ui'] = 'first-salvo-briefing';
+    this.firstSalvoBriefingEl.setAttribute('role', 'dialog');
+    this.firstSalvoBriefingEl.setAttribute('aria-modal', 'true');
+    this.firstSalvoBriefingEl.setAttribute('aria-labelledby', 'st-first-salvo-briefing-title');
+    this.firstSalvoBriefingEl.hidden = true;
+    const briefingPanel = document.createElement('section');
+    briefingPanel.className = 'st-hud__first-salvo-briefing-panel';
+    const eyebrow = document.createElement('div');
+    eyebrow.className = 'st-hud__first-salvo-briefing-eyebrow';
+    eyebrow.textContent = 'Operational briefing';
+    const title = document.createElement('h2');
+    title.id = 'st-first-salvo-briefing-title';
+    title.textContent = 'First Salvo';
+    const briefing = document.createElement('ol');
+    briefing.className = 'st-hud__first-salvo-briefing-steps';
+    for (const [name, detail] of [
+      ['Aim', 'Set elevation toward the target.'],
+      ['Wind', 'Read the vector before setting power.'],
+      ['Commit', 'Fire once the solution is ready.'],
+    ] as const) {
+      const item = document.createElement('li');
+      const label = document.createElement('strong');
+      label.textContent = name;
+      const copy = document.createElement('span');
+      copy.textContent = detail;
+      item.append(label, copy);
+      briefing.append(item);
+    }
+    this.firstSalvoBriefingEnterBtnEl = document.createElement('button');
+    this.firstSalvoBriefingEnterBtnEl.type = 'button';
+    this.firstSalvoBriefingEnterBtnEl.className = 'st-hud__restart';
+    this.firstSalvoBriefingEnterBtnEl.textContent = 'Enter battle';
+    this.firstSalvoBriefingEnterBtnEl.addEventListener('click', () => {
+      this.firstSalvoBriefingAcknowledged = true;
+      this.firstSalvoBriefingEl.hidden = true;
+      this.syncFirstSalvo();
+      // Return focus to the stable phase rail, not an adjustment button: global
+      // keyboard commands remain native while assistive tech announces readiness.
+      this.consoleStateEl.focus({ preventScroll: true });
+    });
+    briefingPanel.append(eyebrow, title, briefing, this.firstSalvoBriefingEnterBtnEl);
+    this.firstSalvoBriefingEl.append(briefingPanel);
+  }
+
+  private showFirstSalvoBriefing(): void {
+    this.firstSalvoBriefingEl.hidden = false;
+    this.firstSalvoBriefingEnterBtnEl.focus({ preventScroll: true });
   }
 
   /** Reconciles card copy and static target rings without rebuilding DOM per frame. */
   private syncFirstSalvo(): void {
     const copy = this.firstSalvoCopyFor(this.firstSalvoStep);
-    this.firstSalvoEl.classList.toggle('st-hud__first-salvo--hidden', copy === null);
-    for (const scope of [this.root, this.overlayRoot]) {
+    const visible = copy !== null && this.firstSalvoBriefingAcknowledged;
+    this.firstSalvoEl.classList.toggle('st-hud__first-salvo--hidden', !visible);
+    const anchor = this.firstSalvoStep === 'fire' ? 'commitment' : 'solution';
+    if (copy === null) delete this.firstSalvoEl.dataset['coachAnchor'];
+    else this.firstSalvoEl.dataset['coachAnchor'] = anchor;
+    const destination = anchor === 'commitment'
+      ? this.consoleCommitmentEl
+      : this.consoleSolutionEl;
+    if (this.firstSalvoEl.parentElement !== destination) {
+      if (anchor === 'commitment' && this.turnActionsEl.isConnected) {
+        destination.insertBefore(this.firstSalvoEl, this.turnActionsEl);
+      } else {
+        destination.append(this.firstSalvoEl);
+      }
+    }
+    for (const scope of [this.root, this.overlayRoot, this.railRoot]) {
       for (const target of scope.querySelectorAll<HTMLElement>('[data-first-salvo-target]')) {
         target.classList.toggle(
           'st-hud__first-salvo-target--active',
-          copy !== null && target.dataset['firstSalvoTarget'] === this.firstSalvoStep,
+          visible && target.dataset['firstSalvoTarget'] === this.firstSalvoStep,
         );
       }
     }
     if (copy === null) {
+      this.firstSalvoBriefingEl.hidden = true;
       this.firstSalvoProgressEl.textContent = '';
       this.firstSalvoCopyEl.textContent = '';
       this.firstSalvoStatusEl.textContent = '';
@@ -1586,17 +1777,17 @@ export class HUD {
       case 'aim':
         return {
           progress: 'First Salvo · 1 / 3 · Aim',
-          instruction: 'Set elevation with Arrow keys or the Aim controls.',
+          instruction: 'Set Aim with Arrow keys.',
         };
       case 'power-and-wind':
         return {
           progress: 'First Salvo · 2 / 3 · Power + wind',
-          instruction: 'Set Power, then read the Wind Vector before you fire.',
+          instruction: 'Set Power; read Wind Vector.',
         };
       case 'fire':
         return {
           progress: 'First Salvo · 3 / 3 · Primary action',
-          instruction: 'Use Space, Enter, or the highlighted primary action.',
+          instruction: 'Press Space or Enter.',
         };
       default:
         return null;
@@ -1604,18 +1795,75 @@ export class HUD {
   }
 
   /** One semantic surface for identity, progress, tactics, economy, and Fire. */
-  private buildCommandConsole(instruments: HTMLElement): void {
+  private buildCommandConsole(instruments: HTMLElement, controls: HTMLElement): void {
     this.commandConsoleEl = document.createElement('section');
     this.commandConsoleEl.className =
       'st-hud__command-console st-ui-section st-ui-section--active';
     this.commandConsoleEl.setAttribute('role', 'region');
     this.commandConsoleEl.setAttribute('aria-label', 'Turn command console');
-    this.commandConsoleEl.append(
-      this.activePlayerEl,
-      instruments,
-      this.aimEl,
-      this.turnActionsEl,
+    const context = document.createElement('section');
+    context.className = 'st-hud__console-context';
+    context.setAttribute('aria-label', 'Active commander');
+    this.lastSalvoEl = document.createElement('div');
+    this.lastSalvoEl.className = 'st-hud__last-salvo';
+    this.lastSalvoEl.dataset['ui'] = 'last-salvo-cue';
+    this.lastSalvoEl.setAttribute('role', 'status');
+    this.lastSalvoEl.setAttribute('aria-live', 'polite');
+    this.lastSalvoEl.setAttribute('aria-atomic', 'true');
+    this.lastSalvoEl.hidden = true;
+    const lastSalvoLabel = document.createElement('span');
+    lastSalvoLabel.className = 'st-hud__last-salvo-label';
+    lastSalvoLabel.textContent = 'Last salvo';
+    this.lastSalvoReadoutEl = document.createElement('span');
+    this.lastSalvoReadoutEl.className = 'st-hud__last-salvo-readout';
+    this.lastSalvoCorrectionEl = document.createElement('strong');
+    this.lastSalvoCorrectionEl.className = 'st-hud__last-salvo-correction';
+    this.lastSalvoEl.append(
+      lastSalvoLabel,
+      this.lastSalvoReadoutEl,
+      this.lastSalvoCorrectionEl,
     );
+    const tacticalRow = this.activePlayerEl.querySelector('.st-hud__tactical-row');
+    (tacticalRow ?? context).append(this.lastSalvoEl);
+    context.append(this.activePlayerEl);
+    this.consoleContextEl = context;
+
+    const solution = document.createElement('section');
+    solution.className = 'st-hud__console-solution';
+    solution.dataset['ui'] = 'firing-solution';
+    solution.setAttribute('aria-label', 'Firing solution');
+    const guide = document.createElement('div');
+    guide.className = 'st-hud__trajectory-guide';
+    guide.dataset['ui'] = 'deterministic-aim-guide';
+    guide.dataset['guideModel'] = 'fixed-step-ballistic';
+    guide.setAttribute('role', 'note');
+    guide.setAttribute('aria-label', 'Deterministic trajectory guide on the battlefield');
+    const guideLabel = document.createElement('span');
+    guideLabel.textContent = 'Trajectory guide';
+    const guideHint = document.createElement('kbd');
+    guideHint.setAttribute('aria-hidden', 'true');
+    guideHint.textContent = 'G';
+    guide.append(makeHudGlyph('aim', 14), guideLabel, guideHint);
+    solution.append(this.weaponEl, instruments, controls, guide, this.stripEl);
+    this.consoleSolutionEl = solution;
+
+    const commitment = document.createElement('section');
+    commitment.className = 'st-hud__console-commitment';
+    commitment.setAttribute('aria-label', 'Turn commitment');
+    const state = document.createElement('div');
+    state.className = 'st-hud__console-state';
+    state.setAttribute('role', 'status');
+    state.setAttribute('aria-live', 'polite');
+    state.tabIndex = -1;
+    const explanation = document.createElement('div');
+    explanation.className = 'st-hud__commitment-explanation';
+    explanation.hidden = true;
+    commitment.append(state, explanation, this.aimEl, this.turnActionsEl);
+    this.consoleCommitmentEl = commitment;
+    this.consoleStateEl = state;
+    this.consoleExplanationEl = explanation;
+
+    this.commandConsoleEl.append(context, solution, commitment);
   }
 
   /** GAME_OVER overlay + the non-destructive PAUSE overlay. */
@@ -1774,6 +2022,15 @@ export class HUD {
     resumeBtn.textContent = 'Resume';
     this.pauseResumeBtnEl = resumeBtn;
     resumeBtn.addEventListener('click', () => this.togglePause(false));
+    const storeBtn = document.createElement('button');
+    storeBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    storeBtn.type = 'button';
+    storeBtn.dataset['command'] = 'open-store';
+    storeBtn.textContent = 'Open Store';
+    storeBtn.addEventListener('click', () => {
+      this.togglePause(false);
+      this.toggleStore(true);
+    });
     const replayFirstSalvoBtn = document.createElement('button');
     replayFirstSalvoBtn.className = 'st-hud__restart st-hud__restart--ghost';
     replayFirstSalvoBtn.type = 'button';
@@ -1791,7 +2048,7 @@ export class HUD {
     const pauseBtns = document.createElement('div');
     pauseBtns.className = 'st-hud__overlay-btns';
     this.pauseActionsEl = pauseBtns;
-    pauseBtns.append(resumeBtn);
+    pauseBtns.append(resumeBtn, storeBtn);
     const pauseExit = document.createElement('div');
     pauseExit.className = 'st-hud__command-menu-exit';
     pauseExit.dataset['ui'] = 'command-menu-exit';
@@ -1913,13 +2170,6 @@ export class HUD {
 
   /** Maintainer-only read-only battle inspector. It is never mounted in ordinary play. */
   private buildLiveMatchDiagnostics(): void {
-    this.liveMatchDiagnosticsTriggerEl = document.createElement('button');
-    this.liveMatchDiagnosticsTriggerEl.type = 'button';
-    this.liveMatchDiagnosticsTriggerEl.className = 'st-hud__menu st-hud__live-diagnostics-trigger';
-    this.liveMatchDiagnosticsTriggerEl.dataset['ui'] = 'live-match-diagnostics';
-    this.liveMatchDiagnosticsTriggerEl.textContent = 'Inspect live match';
-    this.liveMatchDiagnosticsTriggerEl.addEventListener('click', () => this.openLiveMatchInspector());
-
     this.liveMatchInspectorEl = document.createElement('section');
     this.liveMatchInspectorEl.className = 'st-hud__overlay st-hud__overlay--hidden';
     this.liveMatchInspectorEl.dataset['ui'] = 'live-match-inspector';
@@ -1972,6 +2222,7 @@ export class HUD {
     this.liveMatchInspectorMenuEl = document.createElement('button');
     this.liveMatchInspectorMenuEl.type = 'button';
     this.liveMatchInspectorMenuEl.className = 'st-hud__restart st-hud__restart--ghost';
+    this.liveMatchInspectorMenuEl.dataset['ui'] = 'live-match-inspector-menu';
     this.liveMatchInspectorMenuEl.textContent = 'Inspect live match';
     this.liveMatchInspectorMenuEl.addEventListener('click', () => {
       this.togglePause(false);
@@ -1981,13 +2232,11 @@ export class HUD {
 
   private syncLiveMatchDiagnostics(): void {
     const enabled = this.liveMatchDiagnosticsProvider !== null;
-    if (enabled && !this.liveMatchDiagnosticsTriggerEl.isConnected) {
-      this.root.insertBefore(this.liveMatchDiagnosticsTriggerEl, this.roundEl);
+    if (enabled && !this.liveMatchInspectorMenuEl.isConnected) {
       this.pauseActionsEl.insertBefore(this.liveMatchInspectorMenuEl, this.pauseActionsEl.lastElementChild);
-    } else if (!enabled && this.liveMatchDiagnosticsTriggerEl.isConnected) {
+    } else if (!enabled && this.liveMatchInspectorMenuEl.isConnected) {
       this.closeLiveMatchInspector();
       this.liveMatchInspectorDataEl.textContent = '';
-      this.liveMatchDiagnosticsTriggerEl.remove();
       this.liveMatchInspectorMenuEl.remove();
     }
   }
@@ -2011,9 +2260,7 @@ export class HUD {
     this.setLiveMatchInspectorIsolation(false);
     const previous = this.liveMatchInspectorPreviousFocus;
     this.liveMatchInspectorPreviousFocus = null;
-    const fallback = this.liveMatchDiagnosticsTriggerEl.isConnected
-      ? this.liveMatchDiagnosticsTriggerEl
-      : null;
+    const fallback = this.root.querySelector<HTMLElement>('.st-hud__menu');
     const target = previous?.isConnected && !previous.closest('[inert]') ? previous : fallback;
     target?.focus({ preventScroll: true });
   }
@@ -2045,15 +2292,15 @@ export class HUD {
     }
   }
 
-  /** Networked liveness widgets: connection banner, toast, turn-watch. */
+  /** Ledger connection state plus transient toast and turn-watch notices. */
   private buildLiveness(): void {
-    // Status widgets stack in the side panel (this.root = #hud). The controls
-    // legend + liveness widgets go on the canvas overlay (#game-overlay) so they
-    // sit over the play field; the store + game-over modals go on #modal-layer.
-    // Networked liveness widgets (P1-6) — top-center over the canvas. The banner
-    // shows only while the link is down; the toast flashes a failed-shot message.
+    // Connection is durable orientation, while send/turn notices remain transient.
     this.connBannerEl = document.createElement('div');
-    this.connBannerEl.className = 'st-hud__conn st-hud__conn--hidden';
+    this.connBannerEl.className = 'st-hud__conn st-ui-section';
+    this.connBannerEl.dataset['connectionState'] = 'local';
+    this.connBannerEl.setAttribute('role', 'status');
+    this.connBannerEl.setAttribute('aria-live', 'polite');
+    this.connBannerEl.textContent = 'Ready';
     this.toastEl = document.createElement('div');
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
     this.turnWatchEl = document.createElement('div');
@@ -2096,7 +2343,6 @@ export class HUD {
       if (event.key === 'Escape') this.closeQuickChat();
     });
     this.quickChatRootEl.append(this.quickChatToggleEl, this.quickChatPanelEl);
-    this.root.append(this.quickChatRootEl);
   }
 
   private closeQuickChat(): void {
@@ -2109,217 +2355,17 @@ export class HUD {
     if (!this.quickChatEnabled) this.closeQuickChat();
   }
 
-  /** Coarse-pointer command dock: combat steppers, weapon cycle, and menu. */
-  private buildTouchStrip(): void {
-    this.touchStripEl = document.createElement('div');
-    this.touchStripEl.className = 'st-hud__touch-strip';
-    this.touchStripEl.setAttribute('role', 'toolbar');
-    this.touchStripEl.setAttribute('aria-label', 'Touch commands');
-
-    const header = document.createElement('div');
-    header.className = 'st-hud__touch-header';
-    const title = document.createElement('span');
-    title.className = 'st-hud__touch-title';
-    title.textContent = 'Command Deck';
-    const mode = document.createElement('span');
-    mode.className = 'st-hud__touch-mode';
-    mode.textContent = 'Touch';
-    header.append(title, mode);
-
-    const grid = document.createElement('div');
-    grid.className = 'st-hud__touch-grid';
-
-    const mkTouchBtn = (
-      command: string,
-      ariaLabel: string,
-      symbol: string | Node,
-      label: string,
-      extra?: string,
-    ): HTMLButtonElement => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = `st-hud__touch-btn${extra ? ` ${extra}` : ''}`;
-      b.dataset['command'] = command;
-      b.setAttribute('aria-label', ariaLabel);
-      const symbolEl = document.createElement('span');
-      symbolEl.className = 'st-hud__touch-symbol';
-      symbolEl.setAttribute('aria-hidden', 'true');
-      if (typeof symbol === 'string') symbolEl.textContent = symbol;
-      else symbolEl.append(symbol);
-      const labelEl = document.createElement('span');
-      labelEl.className = 'st-hud__touch-label';
-      labelEl.textContent = label;
-      b.append(symbolEl, labelEl);
-      return b;
-    };
-
-    /** Wire hold-to-repeat on a stepper button. Immediate step on pointerdown,
-     *  then fast repeat after a short hold. pointerCapture keeps events firing
-     *  if the finger drifts off the button. */
-    const wireRepeater = (btn: HTMLButtonElement, action: () => void): void => {
-      let holdTimer: ReturnType<typeof setTimeout> | null = null;
-      let repeatTimer: ReturnType<typeof setInterval> | null = null;
-      let activePointerId: number | null = null;
-      const stop = (event?: PointerEvent): void => {
-        if (
-          event
-          && activePointerId !== null
-          && event.pointerId !== activePointerId
-        ) return;
-        if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
-        if (repeatTimer !== null) { clearInterval(repeatTimer); repeatTimer = null; }
-        activePointerId = null;
-      };
-      btn.addEventListener('pointerdown', (e) => {
-        if (activePointerId !== null) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        e.preventDefault();
-        activePointerId = e.pointerId;
-        btn.setPointerCapture(e.pointerId);
-        action();
-        holdTimer = setTimeout(() => {
-          holdTimer = null;
-          repeatTimer = setInterval(action, 80);
-        }, 400);
-      });
-      btn.addEventListener('pointerup', stop);
-      btn.addEventListener('pointercancel', stop);
-      btn.addEventListener('lostpointercapture', stop);
-      // Pointer taps already step on pointerdown. A synthetic click with detail 0
-      // is keyboard activation, so support it without double-stepping a tap.
-      btn.addEventListener('click', (event) => {
-        if (event.detail === 0) action();
-      });
-    };
-
-    const touchAngleL = mkTouchBtn(
-      'aim-left',
-      'Aim barrel left',
-      makeHudIcon('left', 26),
-      'Left',
-    );
-    const touchAngleR = mkTouchBtn(
-      'aim-right',
-      'Aim barrel right',
-      makeHudIcon('right', 26),
-      'Right',
-    );
-    const touchPowerD = mkTouchBtn(
-      'power-down',
-      'Decrease power',
-      makeHudIcon('decrease', 26),
-      'Less',
-    );
-    const touchPowerU = mkTouchBtn(
-      'power-up',
-      'Increase power',
-      makeHudIcon('increase', 26),
-      'More',
-    );
-    touchAngleL.dataset['firstSalvoTarget'] = 'aim';
-    touchAngleR.dataset['firstSalvoTarget'] = 'aim';
-    touchPowerD.dataset['firstSalvoTarget'] = 'power-and-wind';
-    touchPowerU.dataset['firstSalvoTarget'] = 'power-and-wind';
-    this.touchMoveLeftBtnEl = mkTouchBtn(
-      'move-left',
-      'Move tank left, 8 fuel maximum',
-      makeHudIcon('left', 26),
-      'Left',
-    );
-    this.touchMoveRightBtnEl = mkTouchBtn(
-      'move-right',
-      'Move tank right, 8 fuel maximum',
-      makeHudIcon('right', 26),
-      'Right',
-    );
-    this.touchWeaponBtnEl = mkTouchBtn(
-      'weapon',
-      'Cycle weapon, current Baby Missile',
-      makeHudIcon('weapon', 26),
-      'Baby Missile',
-      'st-hud__touch-weapon',
-    );
-    this.touchWeaponLabelEl = this.touchWeaponBtnEl.querySelector(
-      '.st-hud__touch-label',
-    )!;
-    this.touchMenuBtnEl = mkTouchBtn(
-      'menu',
-      'Open menu',
-      makeHudGlyph('menu', 26),
-      'Menu',
-      'st-hud__touch-menu',
-    );
-
-    wireRepeater(touchAngleL, () => this.touchAngleCb?.(3));
-    wireRepeater(touchAngleR, () => this.touchAngleCb?.(-3));
-    wireRepeater(touchPowerD, () => this.touchPowerCb?.(-3));
-    wireRepeater(touchPowerU, () => this.touchPowerCb?.(3));
-    this.touchMoveLeftBtnEl.addEventListener('click', () => this.moveCb?.(-8));
-    this.touchMoveRightBtnEl.addEventListener('click', () => this.moveCb?.(8));
-    this.touchWeaponBtnEl.addEventListener('click', () => this.touchWeaponCb?.());
-    this.touchMenuBtnEl.addEventListener('click', () => this.togglePause(true));
-
-    this.touchCommandBtns = [
-      touchAngleL,
-      touchAngleR,
-      touchPowerD,
-      touchPowerU,
-      this.touchMoveLeftBtnEl,
-      this.touchMoveRightBtnEl,
-      this.touchWeaponBtnEl,
-      this.touchMenuBtnEl,
-    ];
-
-    const makeGroup = (
-      label: 'Aim' | 'Power' | 'Drive',
-      buttons: readonly HTMLButtonElement[],
-    ): HTMLElement => {
-      const group = document.createElement('div');
-      group.className = 'st-hud__touch-group';
-      group.setAttribute('role', 'group');
-      group.setAttribute('aria-label', label);
-      const groupTitle = document.createElement('span');
-      groupTitle.className = 'st-hud__touch-group-title';
-      groupTitle.textContent = label;
-      const pair = document.createElement('div');
-      pair.className = 'st-hud__touch-pair';
-      pair.append(...buttons);
-      group.append(groupTitle, pair);
-      return group;
-    };
-
-    const utilities = document.createElement('div');
-    utilities.className = 'st-hud__touch-utilities';
-    utilities.setAttribute('role', 'group');
-    utilities.setAttribute('aria-label', 'Utilities');
-    const utilitiesTitle = document.createElement('span');
-    utilitiesTitle.className = 'st-hud__touch-group-title';
-    utilitiesTitle.textContent = 'Utilities';
-    const utilityPair = document.createElement('div');
-    utilityPair.className = 'st-hud__touch-pair';
-    utilityPair.append(this.touchWeaponBtnEl, this.touchMenuBtnEl);
-    utilities.append(utilitiesTitle, utilityPair);
-
-    grid.append(
-      makeGroup('Aim', [touchAngleL, touchAngleR]),
-      makeGroup('Power', [touchPowerD, touchPowerU]),
-      makeGroup('Drive', [this.touchMoveLeftBtnEl, this.touchMoveRightBtnEl]),
-      utilities,
-    );
-    this.touchStripEl.append(header, grid);
-  }
-
   /**
-   * Reflect the networked Realtime connection state (P1-6). Shows a persistent
-   * top-center banner while 'connecting'/'reconnecting'; hides it once 'connected'.
+   * Reflect the networked Realtime connection state in the persistent match ledger.
    * No-op before the HUD is built (build() runs on the first update()).
    */
   setConnection(state: ConnectionState): void {
     if (!this.built) this.build();
-    const down = state !== 'connected';
+    this.connBannerEl.dataset['connectionState'] = state;
     this.connBannerEl.textContent =
+      state === 'connected' ? 'Ready' :
       state === 'reconnecting' ? '⚠ Connection lost — reconnecting…' : 'Connecting…';
-    this.connBannerEl.classList.toggle('st-hud__conn--hidden', !down);
+    this.connBannerEl.classList.remove('st-hud__conn--hidden');
   }
 
   /**
@@ -2414,10 +2460,8 @@ export class HUD {
       }
       return true;
     };
-    const fallbackMenu = [
-      this.root.querySelector<HTMLButtonElement>('.st-hud__menu'),
-      this.touchMenuBtnEl,
-    ].find(isVisibleFocusTarget);
+    const fallbackMenu = [this.root.querySelector<HTMLButtonElement>('.st-hud__menu')]
+      .find(isVisibleFocusTarget);
     const focusTarget = isVisibleFocusTarget(previousFocus) ? previousFocus : fallbackMenu;
     if (focusTarget) {
       focusTarget.focus({ preventScroll: true });
@@ -2518,7 +2562,7 @@ export class HUD {
   private syncPlayers(state: GameState, isHandoff: boolean): void {
     const seen = new Set<string>();
 
-    for (const tank of state.tanks) {
+    for (const [index, tank] of state.tanks.entries()) {
       seen.add(tank.id);
       let row = this.rows.get(tank.id);
       if (!row) {
@@ -2532,6 +2576,7 @@ export class HUD {
         tank.id === state.activePlayerId,
         state.totalRounds,
         isHandoff,
+        index + 1,
       );
     }
 
@@ -2545,8 +2590,12 @@ export class HUD {
 
   /** Create the static node structure for one player's health bar. */
   private createRow(tank: TankState): PlayerRow {
-    const el = document.createElement('div');
+    const el = document.createElement('li');
     el.className = 'st-hud__player';
+
+    const order = document.createElement('span');
+    order.className = 'st-hud__turn-order';
+    order.setAttribute('aria-hidden', 'true');
 
     const swatch = document.createElement('span');
     swatch.className = 'st-hud__swatch';
@@ -2569,9 +2618,9 @@ export class HUD {
     fill.style.backgroundColor = tank.color;
     bar.append(fill);
 
-    el.append(swatch, name, pips, hp, bar);
+    el.append(order, swatch, name, pips, hp, bar);
     return {
-      el, hp, fill, name, swatch, pips,
+      el, hp, fill, name, swatch, pips, order,
       lastHealth: Math.max(0, Math.round(tank.health)),
       lastPips: '',
     };
@@ -2584,9 +2633,12 @@ export class HUD {
     active: boolean,
     totalRounds: number,
     isHandoff: boolean,
+    turnOrder: number,
   ): void {
     const health = Math.max(0, Math.round(tank.health));
     const dead = !tank.alive || health <= 0;
+    row.el.dataset['turnOrder'] = String(turnOrder);
+    row.order.textContent = String(turnOrder).padStart(2, '0');
 
     // Round-win pips (V1 match structure): one slot per round needed to clinch
     // (ceil(N/2)), filled = roundWins. Hidden entirely in a single-round match.
@@ -2625,6 +2677,10 @@ export class HUD {
     row.fill.style.width = `${Math.max(0, Math.min(100, health))}%`;
     row.el.classList.toggle('st-hud__player--dead', dead);
     row.el.classList.toggle('st-hud__player--active', active && !dead);
+    row.el.setAttribute(
+      'aria-label',
+      `${turnOrder}. ${HUD.playerLabel(tank)}, ${health} health${active && !dead ? ', active turn' : ''}`,
+    );
     if (!active) {
       row.el.classList.remove('st-hud__player--handoff');
     } else if (isHandoff && !dead) {
@@ -2677,6 +2733,7 @@ export class HUD {
       this.aimEl.classList.toggle('st-hud__aim--hidden', true);
       if (this.turnOwnerEl.textContent !== '') this.turnOwnerEl.textContent = '';
       if (this.weaponValueEl.textContent !== '—') this.weaponValueEl.textContent = '—';
+      if (this.weaponAmmoEl.textContent !== '—') this.weaponAmmoEl.textContent = '—';
       if (this.selectedWeaponIconType !== null) {
         this.weaponIconEl.replaceChildren();
         this.selectedWeaponIconType = null;
@@ -2694,7 +2751,8 @@ export class HUD {
       this.syncTankPortrait();
       // Zero out gauges
       this.gaugeElevNeedle.setAttribute('transform', '');
-      if (this.gaugeElevLabel.textContent !== '0° ▶') this.gaugeElevLabel.textContent = '0° ▶';
+      if (this.gaugeElevLabel.textContent !== '0▶') this.gaugeElevLabel.textContent = '0▶';
+      this.gaugeElevLabel.setAttribute('aria-label', '0 degrees, right');
       this.gaugeWindMarker.setAttribute('x', '68');
       this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 72, 22)');
       if (this.gaugeWindLabel.textContent !== '• 0.0') this.gaugeWindLabel.textContent = '• 0.0';
@@ -2779,8 +2837,11 @@ export class HUD {
     const needleDeg = elevationNeedleDeg(tank.angle);
     const needleRot = 90 - needleDeg; // 0→+90° (right), 90→0° (up), 180→−90° (left)
     this.gaugeElevNeedle.setAttribute('transform', `rotate(${needleRot}, 36, 40)`);
-    const elevLbl = `${elevationDegrees(tank.angle)}° ${aimDirectionGlyph(tank.angle)}`;
+    const elevation = elevationDegrees(tank.angle);
+    const direction = tank.angle === 90 ? 'up' : tank.angle < 90 ? 'right' : 'left';
+    const elevLbl = `${elevation}${aimDirectionGlyph(tank.angle)}`;
     if (this.gaugeElevLabel.textContent !== elevLbl) this.gaugeElevLabel.textContent = elevLbl;
+    this.gaugeElevLabel.setAttribute('aria-label', `${elevation} degrees, ${direction}`);
 
     // ── Power gauge (arc fill) ──
     const fraction = gaugeFraction(tank.power, 0, tank.powerCap ?? 100);
@@ -2894,13 +2955,7 @@ export class HUD {
       !tank.buried &&
       fuel > 0;
     const disabled = !canMove;
-    for (const button of [
-      this.moveLeftBtnEl,
-      this.moveRightBtnEl,
-      this.touchMoveLeftBtnEl,
-      this.touchMoveRightBtnEl,
-      ...this.desktopMoveCommandBtns,
-    ]) {
+    for (const button of [this.moveLeftBtnEl, this.moveRightBtnEl]) {
       if (button.disabled !== disabled) button.disabled = disabled;
       const ariaDisabled = String(disabled);
       if (button.getAttribute('aria-disabled') !== ariaDisabled) {
@@ -2914,7 +2969,7 @@ export class HUD {
     this.stripCollapsed = !this.stripCollapsed;
     writeArsenalCollapsed(this.stripCollapsed);
     this.applyStripCollapsed();
-    if (this.stripCollapsed) this.stripToggleEl.focus();
+    (this.stripCollapsed ? this.stripToggleEl : this.arsenalDrawerCloseEl).focus();
   }
 
   /** Reflect the collapsed state onto the strip DOM + toggle affordance. */
@@ -2927,21 +2982,26 @@ export class HUD {
       'aria-label',
       this.stripCollapsed ? 'Expand arsenal' : 'Collapse arsenal',
     );
-    this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Expand' : 'Close';
+    this.stripToggleEl.setAttribute('aria-hidden', String(!this.stripCollapsed));
+    this.stripToggleEl.tabIndex = this.stripCollapsed ? 0 : -1;
+    this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Expand Arsenal' : 'Close Arsenal';
     this.stripBodyEl.hidden = this.stripCollapsed;
     this.weaponIntelEl.hidden = this.stripCollapsed;
     this.renderWeaponIntel();
     for (const child of [...this.root.children]) {
-      if (child !== this.stripEl) (child as HTMLElement).inert = !this.stripCollapsed;
+      if (child !== this.commandConsoleEl) (child as HTMLElement).inert = !this.stripCollapsed;
     }
-    if (this.touchStripEl) this.touchStripEl.inert = !this.stripCollapsed;
-    const deckBlocked = !this.stripCollapsed;
-    this.desktopCommandDeckGridEl.inert = deckBlocked;
-    this.desktopCommandDeckEl.classList.toggle('st-hud__controls--blocked', deckBlocked);
-    if (deckBlocked) {
-      this.desktopCommandDeckEl.setAttribute('aria-hidden', 'true');
+    for (const child of [...this.railRoot.children]) {
+      if (child !== this.commandConsoleEl) (child as HTMLElement).inert = !this.stripCollapsed;
+    }
+    if (this.consoleCommitmentEl) this.consoleCommitmentEl.inert = !this.stripCollapsed;
+    if (this.consoleContextEl) this.consoleContextEl.inert = !this.stripCollapsed;
+    this.solutionAdjustmentsEl.inert = !this.stripCollapsed;
+    this.solutionWeaponCommandBtnEl.inert = !this.stripCollapsed;
+    if (!this.stripCollapsed) {
+      this.solutionAdjustmentsEl.setAttribute('aria-hidden', 'true');
     } else {
-      this.desktopCommandDeckEl.removeAttribute('aria-hidden');
+      this.solutionAdjustmentsEl.removeAttribute('aria-hidden');
     }
   }
 
@@ -2953,6 +3013,20 @@ export class HUD {
     const selectedUsable = !!selectedInventory &&
       (selectedInventory.unlimited || selectedInventory.count > 0);
     const previousSelected = this.selectedIntelWeapon;
+    const ammo = !tank
+      ? '—'
+      : selectedInventory?.unlimited
+        ? AMMO_UNLIMITED_GLYPH
+        : String(selectedInventory?.count ?? 0);
+    if (this.weaponAmmoEl.textContent !== ammo) this.weaponAmmoEl.textContent = ammo;
+    this.weaponAmmoEl.setAttribute(
+      'aria-label',
+      !tank
+        ? 'No active ammunition'
+        : selectedInventory?.unlimited
+          ? 'Unlimited ammunition'
+          : `${selectedInventory?.count ?? 0} rounds remaining`,
+    );
     if (tank) this.selectedIntelWeapon = tank.selectedWeapon;
     for (const [type, cell] of this.weaponCells) {
       const entry = tank?.inventory[type];
@@ -2985,18 +3059,8 @@ export class HUD {
       this.resetWeaponIntelPreview();
     }
     this.renderWeaponIntel();
-    // Sync the shared primary action and touch weapon stepper from the same
-    // explicit local-ownership state.
-    for (const button of this.touchCommandBtns) {
-      if (
-        button === this.touchMoveLeftBtnEl
-        || button === this.touchMoveRightBtnEl
-        || button === this.touchMenuBtnEl
-      ) continue;
-      button.disabled = !canAct;
-      button.setAttribute('aria-disabled', String(!canAct));
-    }
-    for (const button of this.desktopTurnCommandBtns) {
+    // Sync every shared rail stepper from the same explicit local-ownership state.
+    for (const button of this.solutionTurnCommandBtns) {
       button.disabled = !canAct;
       button.setAttribute('aria-disabled', String(!canAct));
     }
@@ -3011,19 +3075,9 @@ export class HUD {
     const canCommit = canAct && selectedUsable;
     this.primaryActionBtnEl.disabled = !canCommit;
     this.primaryActionBtnEl.setAttribute('aria-disabled', String(!canCommit));
-    for (const button of this.desktopPrimaryActionBtns) {
-      button.disabled = !canCommit;
-      button.setAttribute('aria-disabled', String(!canCommit));
-      const key = button.dataset['commandKey'] ?? '';
-      button.setAttribute('aria-label', `${actionAccessibleName} with ${key}`);
-    }
-    if (this.touchWeaponLabelEl.textContent !== weaponName) {
-      this.touchWeaponLabelEl.textContent = weaponName;
-    }
-    this.touchWeaponBtnEl.setAttribute('aria-label', `Cycle weapon, current ${weaponName}`);
-    this.desktopWeaponCommandBtnEl.setAttribute(
+    this.solutionWeaponCommandBtnEl.setAttribute(
       'aria-label',
-      `Cycle weapon, current ${weaponName}`,
+      `Select next weapon, current ${weaponName}`,
     );
   }
 
@@ -3078,6 +3132,7 @@ export class HUD {
 
   /** Present only server-backed verified state; null retires every verified surface. */
   setVerifiedDeployment(state: HUDVerifiedDeploymentState | null): void {
+    this.verifiedDeploymentState = state;
     if (!this.built) this.build();
     this.verifiedRetryBtnEl.hidden = true;
     this.verifiedRetryBtnEl.disabled = true;
@@ -3622,6 +3677,9 @@ export class HUD {
   display: flex;
   flex-direction: column;
   gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .st-hud__player {
   position: relative;
@@ -3635,6 +3693,12 @@ export class HUD {
   background: transparent;
   font-size: 13px;
   transition: box-shadow 160ms ease, background 160ms ease, opacity 220ms ease;
+}
+.st-hud__turn-order {
+  flex: 0 0 18px;
+  color: var(--ui-muted);
+  font: 700 10px/1 var(--font-mono);
+  text-align: center;
 }
 .st-hud__player--active {
   background:
@@ -4018,9 +4082,12 @@ export class HUD {
   box-shadow: 0 0 9px rgba(255, 122, 31, 0.28);
 }
 .st-hud__aim {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
   padding: 5px 10px;
   border-radius: 4px;
   background: rgba(12, 7, 22, 0.55);
@@ -4030,7 +4097,12 @@ export class HUD {
   line-height: 1.5;
   color: var(--text-gold);
 }
-.st-hud__aim-text { white-space: nowrap; }
+.st-hud__aim-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .st-hud__strip {
   display: flex;
   flex-direction: column;
@@ -4082,6 +4154,9 @@ export class HUD {
   margin: 0;
   transition: transform 130ms ease;
 }
+.st-hud__strip-toggle[aria-expanded='true'] > .st-ui-icon:last-child {
+  transform: rotate(180deg);
+}
 .st-hud__strip-toggle-label {
   font-family: var(--font-body);
   font-size: 9px;
@@ -4093,18 +4168,56 @@ export class HUD {
   transform: rotate(180deg);
 }
 .st-hud__strip-body {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.48fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   flex: 1 1 auto;
-  flex-direction: column;
   gap: 5px;
   overflow: hidden;
 }
 .st-hud__strip-body[hidden] { display: none; }
+.st-hud__arsenal-drawer-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.24);
+}
+.st-hud__arsenal-drawer-title {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.st-hud__arsenal-drawer-close {
+  min-width: 52px;
+  min-height: 30px;
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 210, 63, 0.38);
+  border-radius: 3px;
+  background: rgba(255, 210, 63, 0.08);
+  color: var(--text-gold);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.st-hud__arsenal-drawer-close:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 1px;
+}
 .st-hud__strip-grid {
+  grid-column: 2;
+  grid-row: 2;
   display: grid;
-  flex: 1 1 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
   gap: 4px;
   min-height: 0;
   overflow-y: auto;
@@ -4189,13 +4302,14 @@ export class HUD {
   opacity: 0.9;
 }
 .st-hud__weapon-intel {
+  grid-column: 1;
+  grid-row: 2;
   display: grid;
   box-sizing: border-box;
-  flex: 0 0 180px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px 9px;
+  gap: 2px 9px;
   min-width: 0;
-  padding: 8px 9px;
+  padding: 5px 9px;
   border: 1px solid rgba(122, 215, 255, 0.3);
   border-radius: var(--ui-radius-sm);
   background:
@@ -4212,7 +4326,7 @@ export class HUD {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
   border-bottom: 1px solid rgba(255, 210, 63, 0.2);
 }
 .st-hud__weapon-intel-name {
@@ -4266,46 +4380,55 @@ export class HUD {
   font-size: var(--st-weapon-intel-value-size, 9px);
   line-height: 1.15;
 }
-/* First Salvo stays compact and non-modal: the card is pointer-transparent; only Skip receives pointer input. */
+/* First Salvo becomes a compact in-console ribbon after its one-time briefing. */
 .st-hud__first-salvo {
-  position: absolute;
-  left: 14px;
-  /* Keep the non-interactive coach above the protected instrumentation rail. */
-  bottom: calc(100% - var(--battle-rail-top-y) + 12px);
-  z-index: 22;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 10px;
-  width: min(244px, calc(100% - 28px));
+  position: relative;
+  z-index: 2;
   box-sizing: border-box;
-  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 7px;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  max-height: 44px;
+  box-sizing: border-box;
+  padding: 0 5px;
   border: 1px solid rgba(255, 210, 63, 0.68);
-  border-radius: 6px;
+  border-radius: 4px;
   background:
     linear-gradient(115deg, rgba(255, 210, 63, 0.13), transparent 56%),
     rgba(15, 8, 25, 0.94);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 233, 168, 0.08);
   color: var(--text);
-  pointer-events: none;
+  overflow: hidden;
 }
 .st-hud__first-salvo--hidden { display: none; }
 .st-hud__first-salvo-progress {
   grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
   color: var(--gold);
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.1px;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .st-hud__first-salvo-copy {
-  grid-column: 1 / -1;
+  grid-column: 2;
   color: var(--ui-copy);
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 650;
   line-height: 1.3;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .st-hud__first-salvo-status {
   position: absolute;
@@ -4317,10 +4440,10 @@ export class HUD {
   white-space: nowrap;
 }
 .st-hud__first-salvo-skip {
-  grid-column: 2;
+  grid-column: 3;
   grid-row: 1;
-  align-self: start;
-  min-height: 24px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 3px 6px;
   border: 1px solid rgba(255, 210, 63, 0.34);
   border-radius: 3px;
@@ -4328,9 +4451,8 @@ export class HUD {
   color: var(--ui-muted);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
-  pointer-events: auto;
 }
 .st-hud__first-salvo-skip:hover { color: var(--text-gold); border-color: var(--gold); }
 .st-hud__first-salvo-skip:focus-visible,
@@ -5277,186 +5399,9 @@ export class HUD {
   .st-hud__bar-fill,
   .st-hud__weapon-btn,
   .st-hud__restart,
-  .st-hud__command-key,
-  .st-hud__touch-btn { transition: none; }
+  .st-hud__command-key { transition: none; }
 }
 
-/* ===== Coarse-pointer command dock ===================================== */
-/* Hidden on precise pointers; replaces the keyboard deck on touch. */
-.st-hud__touch-strip {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  display: none;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 3px;
-  width: min(896px, calc(100% - 28px));
-  max-height: 159px;
-  padding: 5px 6px 6px;
-  box-sizing: border-box;
-  border: 1px solid rgba(255, 210, 63, 0.32);
-  border-radius: 10px;
-  background:
-    radial-gradient(100% 120% at 0% 0%, rgba(122, 215, 255, 0.10), transparent 52%),
-    linear-gradient(180deg, rgba(28, 16, 47, 0.94), rgba(8, 5, 15, 0.94));
-  box-shadow:
-    inset 0 0 0 1px rgba(8, 4, 13, 0.78),
-    0 10px 28px rgba(0, 0, 0, 0.38);
-  pointer-events: auto;
-  /* Prevent touch gestures (scroll, pinch) hijacking button presses. */
-  touch-action: none;
-}
-@media (pointer: coarse) {
-  .st-hud__touch-strip { display: grid; }
-}
-.st-hud__touch-strip[inert] { display: none; }
-.st-hud__touch-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 28px;
-  padding: 0 2px 2px;
-  border-bottom: 1px solid rgba(255, 210, 63, 0.20);
-}
-.st-hud__touch-title,
-.st-hud__touch-group-title {
-  color: var(--text-dim);
-  font-family: var(--font-display);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-.st-hud__touch-title {
-  font-size: 17px;
-  letter-spacing: 1.7px;
-}
-.st-hud__touch-mode {
-  padding: 2px 5px;
-  border: 1px solid rgba(122, 215, 255, 0.25);
-  border-radius: 99px;
-  color: var(--tank-blue-lite, #7ad7ff);
-  font-family: var(--font-mono);
-  font-size: 16px;
-  letter-spacing: 0.8px;
-  line-height: 1;
-  text-transform: uppercase;
-}
-.st-hud__touch-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.05fr);
-  gap: 5px;
-  min-width: 0;
-}
-.st-hud__touch-group,
-.st-hud__touch-utilities {
-  display: grid;
-  grid-template-rows: 20px 91px;
-  gap: 2px;
-  min-width: 0;
-}
-.st-hud__touch-group-title {
-  overflow: hidden;
-  padding-left: 2px;
-  font-size: 17px;
-  letter-spacing: 1.05px;
-  line-height: 20px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.st-hud__touch-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  min-width: 0;
-}
-.st-hud__touch-btn {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  place-items: center;
-  gap: 4px;
-  min-width: 0;
-  cursor: pointer;
-  /* 91 logical px stays above 44 rendered px at the supported 0.488× phone scale. */
-  min-height: 91px;
-  padding: 5px 6px;
-  border: 1px solid rgba(255, 210, 63, 0.27);
-  border-radius: 6px;
-  background:
-    linear-gradient(145deg, rgba(255, 233, 168, 0.07), transparent 50%),
-    rgba(10, 6, 18, 0.86);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 233, 168, 0.06),
-    0 2px 7px rgba(0, 0, 0, 0.24);
-  color: var(--text-gold);
-  -webkit-tap-highlight-color: transparent;
-  touch-action: none;
-  transition:
-    background 70ms ease,
-    border-color 70ms ease,
-    transform 70ms ease;
-}
-.st-hud__touch-symbol {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255, 210, 63, 0.20);
-  border-radius: 5px;
-  background: rgba(255, 210, 63, 0.08);
-  color: var(--gold);
-  font-family: var(--font-mono);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-}
-.st-hud__touch-label {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ui-copy);
-  font-family: var(--font-sans);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.35px;
-  line-height: 1.05;
-  text-align: left;
-  text-overflow: ellipsis;
-}
-.st-hud__touch-btn:active:not(:disabled) {
-  transform: translateY(1px);
-  border-color: rgba(255, 122, 31, 0.58);
-  background:
-    linear-gradient(145deg, rgba(255, 122, 31, 0.20), transparent 58%),
-    rgba(16, 8, 24, 0.94);
-}
-.st-hud__touch-btn:disabled { opacity: 0.38; cursor: not-allowed; }
-.st-hud__touch-weapon {
-  border-color: rgba(122, 215, 255, 0.42);
-  color: var(--tank-blue-lite, #7ad7ff);
-}
-.st-hud__touch-weapon .st-hud__touch-symbol {
-  border-color: rgba(122, 215, 255, 0.30);
-  background: rgba(122, 215, 255, 0.08);
-  color: var(--tank-blue-lite, #7ad7ff);
-}
-.st-hud__touch-menu {
-  border-color: rgba(192, 132, 252, 0.34);
-  color: var(--ui-muted);
-}
-.st-hud__touch-menu .st-hud__touch-symbol {
-  border-color: rgba(192, 132, 252, 0.28);
-  background: rgba(192, 132, 252, 0.08);
-  color: var(--ui-muted);
-}
-.st-hud__touch-menu .st-ui-glyph {
-  width: 38px;
-  height: 38px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.st-hud__touch-menu .st-ui-glyph > .st-ui-icon {
-  width: 26px;
-  height: 26px;
-}
 /* ===== Coarse-pointer (touch) overrides ================================ */
 /* Enlarge interactive targets to ≥44px and hide the keyboard legend. */
 @media (pointer: coarse) {
@@ -5482,6 +5427,7 @@ export class HUD {
   /* The supported Pixel 5 landscape viewport zooms the fixed stage to 0.488x,
      so 91 logical px preserves a >=44 CSS-pixel hit target after scaling. */
   .st-hud__primary-action { min-height: 91px; }
+  .st-hud__first-salvo-skip { min-width: 91px; min-height: 91px; }
   .st-hud__store-close { min-height: 44px; }
   .st-hud__store-menu { min-height: 91px; }
   .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
@@ -5556,15 +5502,20 @@ export class HUD {
 .st-hud__gauge-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 0.65fr);
   grid-template-areas:
     'elevation power'
     'wind wind';
+  flex: 1 1 auto;
   gap: 6px;
   width: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 .st-hud__gauge-cell {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5585,18 +5536,23 @@ export class HUD {
   grid-area: wind;
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   align-items: center;
   padding: 3px 8px;
 }
 .st-hud__gauge-cell > svg {
   display: block;
+  flex: 1 1 auto;
   width: 100%;
   height: auto;
+  min-height: 0;
+  max-height: 100%;
+  margin-block: auto;
   overflow: visible;
 }
 .st-hud__gauge-cell--elevation > svg,
 .st-hud__gauge-cell--power > svg {
-  width: 88%;
+  width: 100%;
 }
 .st-hud__gauge-cell-title {
   font-family: var(--font-display);
@@ -5660,6 +5616,7 @@ export class HUD {
 #app.is-compact .st-hud__gauge-ticks { stroke-width: 2; }
 #app.is-compact .st-hud__gauge-needle { stroke-width: 4; }
 #app.is-compact .st-hud__gauge-label { font-size: 12px; }
+.st-hud__gauge-cell--elevation .st-hud__gauge-label { font-size: 8.5px; }
 @media (pointer: coarse) {
   #app .st-hud__instruments {
     gap: 1px;
@@ -5669,6 +5626,10 @@ export class HUD {
     padding: 0 8px;
   }
   #app .st-hud__gauge-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'elevation power'
+      'wind wind';
     gap: 3px;
   }
   #app .st-hud__gauge-cell {
@@ -5676,14 +5637,13 @@ export class HUD {
     padding: 2px 5px 0;
   }
   #app .st-hud__gauge-cell--wind {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
     padding: 1px 6px;
   }
 }
-/* On touch devices the interactive dock lives in overlayRoot, outside #hud.
- * Keep only the Arsenal drawer in the rail's trailing order group so the
- * decision console and roster retain their DOM hierarchy. */
+/* Touch uses the same semantic command console. */
 @media (pointer: coarse) {
-  .st-hud__touch-strip { margin-top: 0; }
   .st-hud__strip { order: 1; }
 }
 /* One command surface: identity first, tactics second, commitment last. */
@@ -5745,8 +5705,8 @@ export class HUD {
   pointer-events: auto;
 }
 .st-hud__move-btn {
-  min-width: 0;
-  min-height: 34px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 2px 0;
   display: flex;
   flex-direction: column;
@@ -5777,7 +5737,7 @@ export class HUD {
   background: rgba(122, 215, 255, 0.08);
   color: rgba(183, 225, 255, 0.78);
   font-family: var(--font-mono);
-  font-size: 6px;
+  font-size: var(--st-command-readability-size, 11px);
   line-height: 1;
 }
 .st-hud__move-btn:hover:not(:disabled) {
@@ -5807,16 +5767,21 @@ export class HUD {
   align-items: center;
   justify-content: center;
   gap: 1px;
+  width: 100%;
   min-width: 0;
   pointer-events: none;
 }
 .st-hud__fuel-label {
+  box-sizing: border-box;
+  width: 100%;
   color: var(--ui-muted);
-  font-family: var(--font-display);
-  font-size: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--st-command-readability-size, 11px);
   line-height: 1;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1px;
+  text-align: center;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .st-hud__fuel-value {
   color: var(--gold);
@@ -5988,7 +5953,7 @@ export class HUD {
 .st-hud__aim--hidden { display: none; }
 /* During a committed shot, progress becomes the visual entry point while the
    unchanged command DOM remains available for the next decision state. */
-#hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__aim {
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__aim {
   order: -1;
   margin: 5px 6px 4px;
   min-height: 42px;
@@ -6004,22 +5969,657 @@ export class HUD {
   opacity: 1;
   font-weight: 800;
 }
-#hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__instruments,
-#hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__turn-actions {
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-solution,
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__turn-actions {
   filter: saturate(0.55) brightness(0.72);
 }
 #hud[data-combat-focus="outcome"] > .st-hud__players,
 #hud[data-combat-focus="outcome"] > .st-hud__strip {
   filter: saturate(0.52) brightness(0.68);
 }
-#battle-rail[data-combat-focus="outcome"] > .st-hud__controls,
-#game-overlay[data-combat-focus="outcome"] > .st-hud__touch-strip {
+#battle-rail[data-combat-focus="outcome"] > .st-hud__controls {
   filter: saturate(0.52) brightness(0.68);
 }
-#app.is-compact #hud[data-combat-focus="outcome"] .st-hud__command-console > .st-hud__aim {
+#app.is-compact #battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__aim {
   min-height: 34px;
   margin: 3px 4px;
   padding: 5px 7px;
+}
+/* ===== Battle command surface ==========================================
+ * The protected rail is the active-turn workspace, not a second side panel.
+ * Context, solution, and commitment remain visually distinct while every live
+ * input stays in one scan path from left to right. */
+#battle-rail .st-hud__command-console {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: minmax(218px, 0.86fr) minmax(468px, 2.05fr) minmax(218px, 0.86fr);
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.st-hud__first-salvo-briefing {
+  position: absolute;
+  inset: 0;
+  z-index: 72;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(5, 3, 10, 0.76);
+  pointer-events: auto;
+}
+.st-hud__first-salvo-briefing[hidden] { display: none; }
+.st-hud__first-salvo-briefing-panel {
+  width: min(520px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 22px;
+  border: 1px solid rgba(255, 210, 63, 0.7);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(67, 37, 23, 0.98), rgba(12, 7, 22, 0.98));
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.64);
+  color: var(--ui-copy);
+}
+.st-hud__first-salvo-briefing-eyebrow {
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.st-hud__first-salvo-briefing-panel h2 {
+  margin: 5px 0 14px;
+  color: var(--text-gold);
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+.st-hud__first-salvo-briefing-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.st-hud__first-salvo-briefing-steps li {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.st-hud__first-salvo-briefing-steps strong { color: var(--gold); }
+.st-hud__first-salvo-briefing-panel > .st-hud__restart { width: 100%; min-height: 44px; }
+@media (pointer: coarse) {
+  .st-hud__first-salvo {
+    height: 44px;
+    padding-block: 0;
+    border-width: 0;
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.42),
+      inset 0 0 0 1px rgba(255, 210, 63, 0.68);
+  }
+  .st-hud__first-salvo-skip { min-height: 44px; }
+}
+#battle-rail .st-hud__console-context,
+#battle-rail .st-hud__console-solution,
+#battle-rail .st-hud__console-commitment {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 210, 63, 0.26);
+  border-radius: 7px;
+  background:
+    linear-gradient(145deg, rgba(255, 233, 168, 0.06), transparent 44%),
+    rgba(10, 6, 19, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(8, 4, 13, 0.56);
+}
+#battle-rail .st-hud__console-context {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+#battle-rail .st-hud__console-context .st-hud__active-row {
+  flex: 1;
+  padding: 7px 8px 7px 12px;
+}
+#battle-rail .st-hud__console-solution {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(190px, 0.95fr) minmax(180px, 1.05fr) minmax(180px, 0.9fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  padding: 5px;
+}
+#battle-rail .st-hud__console-solution > .st-hud__weapon {
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: 25px minmax(0, 1fr) 40px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 3px 5px;
+  padding: 5px;
+}
+#battle-rail .st-hud__console-solution .st-hud__weapon-icon { grid-column: 1; grid-row: 1; }
+#battle-rail .st-hud__console-solution .st-hud__weapon-copy { grid-column: 2; grid-row: 1; }
+.st-hud__weapon-ammo {
+  color: var(--ui-copy);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+#battle-rail .st-hud__console-solution .st-hud__weapon > .st-hud__solution-control {
+  grid-column: 3;
+  grid-row: 1;
+}
+#battle-rail .st-hud__arsenal-trigger {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 40px;
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 210, 63, 0.28);
+  border-radius: 4px;
+  color: var(--gold);
+  background: rgba(255, 210, 63, 0.06);
+}
+#battle-rail .st-hud__arsenal-trigger .st-ui-glyph { width: 25px; height: 25px; }
+#battle-rail .st-hud__arsenal-trigger > .st-ui-icon:last-child { margin-left: auto; }
+#battle-rail .st-hud__console-solution > .st-hud__instruments {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 5px 7px;
+  border-color: rgba(255, 210, 63, 0.3);
+}
+#battle-rail .st-hud__solution-adjustments {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  min-width: 0;
+}
+#battle-rail .st-hud__solution-adjustment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px 40px;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid rgba(122, 215, 255, 0.24);
+  border-radius: 4px;
+  background: rgba(9, 5, 17, 0.52);
+}
+.st-hud__solution-adjustment-label {
+  color: var(--ui-copy);
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+.st-hud__solution-control {
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 2px;
+  border: 1px solid rgba(122, 215, 255, 0.32);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(122, 215, 255, 0.14), rgba(12, 7, 22, 0.72));
+  color: var(--tank-blue-lite, #7ad7ff);
+  cursor: pointer;
+}
+.st-hud__solution-control:hover:not(:disabled) { border-color: rgba(122, 215, 255, 0.7); }
+.st-hud__solution-control:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
+.st-hud__solution-control:disabled { cursor: not-allowed; opacity: 0.36; }
+.st-hud__solution-direction { font-family: var(--font-display); font-size: 13px; font-weight: 800; line-height: 1.05; }
+.st-hud__solution-control kbd,
+.st-hud__trajectory-guide kbd {
+  min-width: 13px;
+  padding: 1px 3px;
+  border: 1px solid rgba(122, 215, 255, 0.25);
+  border-radius: 2px;
+  background: rgba(122, 215, 255, 0.08);
+  color: rgba(183, 225, 255, 0.82);
+  font-family: var(--font-mono);
+  font-size: var(--st-command-readability-size, 11px);
+  line-height: 1;
+}
+#battle-rail .st-hud__trajectory-guide {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 16px;
+  color: var(--ui-muted);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+}
+#battle-rail .st-hud__console-solution > .st-hud__first-salvo {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: stretch;
+  width: auto;
+  max-width: 100%;
+  margin-inline: 5px;
+}
+#battle-rail .st-hud__last-salvo {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 6px;
+  min-height: 40px;
+  padding: 4px 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 4px;
+  background: rgba(37, 20, 27, 0.9);
+  color: var(--ui-copy);
+  font-size: var(--st-command-readability-size, 11px);
+  line-height: 1.05;
+}
+#battle-rail .st-hud__last-salvo[hidden] { display: none; }
+#battle-rail .st-hud__last-salvo-label {
+  grid-row: 1 / -1;
+  color: var(--ui-muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+#battle-rail .st-hud__last-salvo-readout,
+#battle-rail .st-hud__last-salvo-correction {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#battle-rail .st-hud__last-salvo-correction {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+#battle-rail .st-hud__tactical-row:has(.st-hud__last-salvo:not([hidden])) > .st-hud__mobility {
+  display: none;
+}
+#battle-rail .st-hud__strip--collapsed { display: none; }
+#battle-rail .st-hud__strip--open {
+  position: absolute;
+  inset: 4px;
+  z-index: 8;
+  display: flex;
+  margin: 0;
+  padding: 6px;
+  overflow: auto;
+  border: 1px solid var(--ui-line-strong);
+  border-radius: 6px;
+  background: var(--ui-surface-raised);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+}
+#battle-rail .st-hud__console-commitment {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+#battle-rail .st-hud__console-state {
+  grid-row: 1;
+  min-width: 0;
+  padding: 7px 8px 4px;
+  color: var(--text-gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.15px;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+}
+#battle-rail .st-hud__commitment-explanation {
+  grid-row: 2;
+  align-self: center;
+  min-width: 0;
+  padding: 4px 10px;
+  color: var(--ui-copy);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+}
+#battle-rail .st-hud__commitment-explanation[hidden] { display: none; }
+#battle-rail .st-hud__console-commitment[data-command-mode="observation"] .st-hud__console-state,
+#battle-rail .st-hud__console-commitment[data-command-mode="handoff"] .st-hud__console-state {
+  color: var(--ui-muted);
+}
+#battle-rail .st-hud__console-commitment .st-hud__aim {
+  grid-row: 3;
+  align-self: stretch;
+  margin: 5px 6px 4px;
+}
+#battle-rail .st-hud__console-commitment .st-hud__turn-actions {
+  grid-row: 4;
+  padding: 6px;
+  border-top-color: rgba(255, 210, 63, 0.24);
+}
+#battle-rail .st-hud__console-commitment > .st-hud__first-salvo {
+  grid-row: 3;
+  align-self: center;
+  justify-self: stretch;
+  width: auto;
+  max-width: 100%;
+  margin-inline: 5px;
+}
+#battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim {
+  visibility: hidden;
+}
+#battle-rail .st-hud__console-commitment .st-hud__primary-action,
+#battle-rail .st-hud__console-commitment .st-hud__store-btn {
+  min-height: 50px;
+}
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__aim {
+  order: 0;
+  min-height: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 210, 63, 0.72);
+  border-radius: 4px;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255, 210, 63, 0.2), transparent 62%),
+    linear-gradient(180deg, rgba(66, 35, 24, 0.96), rgba(19, 10, 24, 0.98));
+}
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-commitment > .st-hud__turn-actions,
+#battle-rail[data-combat-focus="outcome"] .st-hud__console-solution {
+  filter: saturate(0.55) brightness(0.72);
+}
+#battle-rail .st-hud__turn-owner,
+#battle-rail .st-hud__weapon-label,
+#battle-rail .st-hud__weapon-value,
+#battle-rail .st-hud__weapon-ammo,
+#battle-rail .st-hud__solution-adjustment-label,
+#battle-rail .st-hud__solution-direction,
+#battle-rail .st-hud__gauge-cell-title,
+#app #battle-rail .st-hud__gauge-label,
+#battle-rail .st-hud__trajectory-guide,
+#battle-rail .st-hud__first-salvo-progress,
+#battle-rail .st-hud__first-salvo-copy,
+#battle-rail .st-hud__first-salvo-skip,
+#battle-rail .st-hud__console-state,
+#battle-rail .st-hud__commitment-explanation {
+  font-size: var(--st-command-readability-size, 11px);
+}
+#app #battle-rail .st-hud__turn-owner,
+#app #battle-rail .st-hud__fuel-value,
+#app #battle-rail .st-hud__weapon-value,
+#app #battle-rail .st-hud__console-state,
+#app #battle-rail .st-hud__primary-action-label {
+  font-size: calc(var(--st-command-readability-size, 11px) * 1.1);
+}
+#app.is-compact #battle-rail .st-hud__fuel-label {
+  font-size: var(--st-command-readability-size, 11px);
+}
+#app.is-compact #battle-rail .st-hud__gauge-label {
+  font-size: calc(var(--st-command-readability-size, 11px) * 1.2);
+}
+@media (pointer: fine) {
+  #app:not(.is-compact) #battle-rail .st-hud__gauge-label {
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.25);
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-label {
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.65);
+  }
+  #app #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
+  #app #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
+    transform: translateY(-3px);
+  }
+  #app #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
+    transform: translateY(-2px);
+  }
+}
+#battle-rail .st-hud__weapon-label { line-height: 1.25; }
+#app.is-compact #battle-rail .st-hud__weapon-label { display: none; }
+  @media (pointer: coarse) {
+  #battle-rail .st-hud__command-console {
+    --st-rail-touch-target: var(--st-deployment-choice-target, 91px);
+    grid-template-columns: 270px minmax(0, 1fr) 180px;
+    gap: 5px;
+  }
+  #hud .st-hud__menu {
+    display: flex;
+    min-height: var(--st-rail-touch-target, var(--st-deployment-choice-target, 91px));
+  }
+  #battle-rail .st-hud__active-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 4px;
+    padding: 5px 7px 5px 10px;
+  }
+  #battle-rail .st-hud__identity-lockup {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 5px;
+  }
+  #battle-rail .st-hud__tank-portrait-frame,
+  #battle-rail .st-hud__tank-portrait {
+    width: 90px;
+    height: 50px;
+  }
+  #battle-rail .st-hud__tactical-row {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+  }
+  #battle-rail .st-hud__mobility {
+    display: grid;
+    grid-template-columns: var(--st-rail-touch-target) minmax(58px, 1fr) var(--st-rail-touch-target);
+    gap: 4px;
+  }
+  #battle-rail .st-hud__mobility > .st-hud__move-btn {
+    display: flex;
+    min-width: var(--st-rail-touch-target);
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__fuel-meter {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+  }
+  #battle-rail .st-hud__console-solution {
+    grid-template-columns: 180px 150px minmax(360px, 1fr);
+    grid-template-rows: minmax(var(--st-rail-touch-target), 1fr) auto auto;
+    gap: 4px;
+    padding: 4px;
+  }
+  #battle-rail .st-hud__console-solution > .st-hud__weapon {
+    grid-template-columns: 25px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target);
+    gap: 3px 4px;
+    padding: 3px;
+  }
+  #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
+    overflow: hidden;
+  }
+  #battle-rail .st-hud__console-solution .st-hud__weapon-value,
+  #battle-rail .st-hud__console-solution .st-hud__weapon-ammo {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #battle-rail .st-hud__console-solution .st-hud__weapon > .st-hud__solution-control {
+    display: none;
+  }
+  #battle-rail .st-hud__arsenal-trigger {
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__arsenal-drawer-close {
+    min-width: var(--st-rail-touch-target);
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__console-solution > .st-hud__instruments {
+    padding-inline: 3px;
+  }
+  #battle-rail .st-hud__solution-adjustments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(var(--st-rail-touch-target), 1fr);
+    gap: 4px;
+  }
+  #battle-rail .st-hud__solution-adjustment {
+    grid-template-columns: repeat(2, minmax(var(--st-rail-touch-target), 1fr));
+    grid-template-rows: auto minmax(var(--st-rail-touch-target), 1fr);
+    gap: 2px;
+    padding: 2px;
+  }
+  #battle-rail .st-hud__solution-adjustment-label {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #battle-rail .st-hud__solution-control {
+    min-width: var(--st-rail-touch-target);
+    min-height: var(--st-rail-touch-target);
+    touch-action: manipulation;
+  }
+  #battle-rail .st-hud__solution-control kbd,
+  #battle-rail .st-hud__trajectory-guide kbd {
+    display: none;
+  }
+  #battle-rail .st-hud__console-solution > .st-hud__first-salvo,
+  #battle-rail .st-hud__console-commitment > .st-hud__first-salvo {
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__first-salvo-skip {
+    min-width: var(--st-rail-touch-target);
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__console-commitment .st-hud__turn-actions {
+    padding: 4px;
+  }
+  #battle-rail .st-hud__console-commitment .st-hud__store-btn,
+  #battle-rail .st-hud__console-commitment .st-hud__primary-action {
+    min-height: var(--st-rail-touch-target);
+  }
+  #battle-rail .st-hud__console-state,
+  #battle-rail .st-hud__commitment-explanation,
+  #battle-rail .st-hud__turn-owner,
+  #battle-rail .st-hud__weapon-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* At the narrow Pixel-landscape envelope, keep only information that changes
+     shot decisions. Redundant headings remain available through the region,
+     group, and SVG accessible names while the live values get real space. */
+  #app.is-compact #battle-rail .st-hud__console-solution {
+    grid-template-columns: 180px 146px minmax(380px, 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__weapon {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-icon {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: center;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-value {
+    flex: 0 1 auto;
+    width: 100%;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-ammo {
+    flex: 0 0 auto;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment-label,
+  #app.is-compact #battle-rail .st-hud__instr-title,
+  #app.is-compact #battle-rail .st-hud__gauge-cell-title {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__trajectory-guide {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment {
+    grid-template-rows: minmax(var(--st-rail-touch-target), 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__instruments {
+    padding: 3px;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-row {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.75fr);
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 2px;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell {
+    min-height: 0;
+    gap: 0;
+    padding: 0 1px;
+    overflow: hidden;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell--wind {
+    display: flex;
+    padding: 0 2px;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell > svg {
+    max-height: 100%;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-label {
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.35);
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
+  #app.is-compact #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
+    transform: translateY(-4px);
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell--wind .st-hud__gauge-label {
+    transform: translateY(-2px);
+  }
+}
+@media (pointer: fine) {
+  #app.is-compact #battle-rail .st-hud__fuel-meter {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__weapon {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-icon {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
+    grid-column: 1;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon > .st-hud__solution-control {
+    grid-column: 2;
+  }
 }
 /* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by
    direct attribute mutation (transform / stroke-dasharray) with no CSS transition,
@@ -6031,6 +6631,7 @@ export class HUD {
 /** Cached mutable nodes for a single player's health bar. */
 interface PlayerRow {
   el: HTMLElement;
+  order: HTMLElement;
   hp: HTMLElement;
   fill: HTMLElement;
   /** Identity nodes, reconciled each frame so a reused seat id (p1/p2) picks up

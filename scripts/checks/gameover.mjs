@@ -22,7 +22,10 @@ import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 const SEED = 0x5eed1234;     // same seed weapons2/motion use: drag-aware napalm aim lands on the far tank
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
-const AIM = { angle: 45, power: 100, weapon: 'napalm' };
+// Central point of the post-command-band damaging plateau for this seed. The
+// raised protected floor changes the generated terrain, so the legacy long lob
+// at 45/100 now lands short of P2; this still exercises a sustained DOT kill.
+const AIM = { angle: 31, power: 96, weapon: 'napalm' };
 
 function freshEngine() {
   return new GameEngine({

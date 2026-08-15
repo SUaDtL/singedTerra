@@ -13,7 +13,9 @@ const OPTIONS = {
     { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
   ],
 };
-const NAPALM_KILL_SHOT: NetworkAction = { type: 'fire', angle: 45, power: 100, weapon: 'napalm' };
+// This Napalm trajectory remains a deterministic opponent kill after the
+// protected command-surface floor moves both tank spawns up.
+const TERMINAL_KILL_SHOT: NetworkAction = { type: 'fire', angle: 31, power: 96, weapon: 'napalm' };
 
 type QueryResult = { data: unknown; error: { message?: string } | null };
 
@@ -98,7 +100,7 @@ function actionTrackingSnapshot(client: NetworkClient): unknown {
 }
 
 async function gameOverClient(session: { access_token: string } | null): Promise<NetworkClient> {
-  const { supabase } = makeFakeSupabase([{ data: [row(0, NAPALM_KILL_SHOT)], error: null }], session);
+  const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT)], error: null }], session);
   const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, 'seat-token-secret');
   const state = engineOf(client).getState();
   const shooter = required(state.tanks[0], 'shooter tank');
@@ -109,6 +111,9 @@ async function gameOverClient(session: { access_token: string } | null): Promise
   victim.health = 5;
   await client.initialize();
   expect(client.getState().phase).toBe('GAME_OVER');
+  expect(client.getState().winner).toBe('p1');
+  expect(client.getState().tanks[0]?.alive).toBe(true);
+  expect(client.getState().tanks[1]?.alive).toBe(false);
   return client;
 }
 

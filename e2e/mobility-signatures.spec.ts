@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
-import { openHotSeatCustomization } from './support';
+import { enterBattleIfBriefed, openHotSeatCustomization } from './support';
 
 const KITS = [
   { id: 'foundry', label: 'Foundry', accent: '#d6a15f', expectedOps: ['strokeRect'] },
@@ -175,6 +175,7 @@ async function startGarageMatch(page: Page, kit: Kit): Promise<void> {
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Deploy local battle' }).click();
   await expect(page.locator('#game')).toBeVisible();
+  await enterBattleIfBriefed(page);
   await expect(page.locator('.st-hud__fuel-value')).toHaveText('100');
 }
 
@@ -281,10 +282,7 @@ async function exerciseMove(page: Page, kit: Kit): Promise<{ mask: Mask; baselin
   const baseline = await waitForStableCanvas(page, kit);
   await clearProbe(page);
   const fuel = page.locator('.st-hud__fuel-value');
-  const touch = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
-  const move = touch
-    ? page.locator('.st-hud__touch-strip [data-command="move-right"]')
-    : page.locator('.st-hud__mobility [data-move="8"]');
+  const move = page.locator('#battle-rail .st-hud__mobility [data-move="8"]');
   await move.click();
   await expect(fuel).toHaveText('92');
   await expect.poll(async () => {
@@ -337,8 +335,7 @@ test.describe('Mobility signatures in the production bundle', () => {
     const baseline = await waitForStableCanvas(page, kit);
     await clearProbe(page);
     const fuel = page.locator('.st-hud__fuel-value');
-    const touch = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
-    const move = touch ? page.locator('.st-hud__touch-strip [data-command="move-right"]') : page.locator('.st-hud__mobility [data-move="8"]');
+    const move = page.locator('#battle-rail .st-hud__mobility [data-move="8"]');
     await move.click();
     await expect(fuel).toHaveText('92');
     await expect.poll(async () => (await probeState(page, kit)).tankDraws.at(-1)?.x ?? null).toBe(baseline.x + 8);

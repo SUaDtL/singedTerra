@@ -271,7 +271,7 @@ body::before {
   right: 0;
   left: 0;
   box-sizing: border-box;
-  height: 98px;
+  height: calc(var(--arena-height) - var(--battle-rail-top-y));
   z-index: 6;
   display: flex;
   align-items: stretch;
@@ -329,7 +329,7 @@ body::before {
     inset 0 -22px 34px rgba(255, 122, 31, 0.055);
 }
 #hud::after {
-  content: 'FIRE CONTROL';
+  content: 'BATTLE STATUS';
   position: absolute;
   right: 13px;
   bottom: 8px;
@@ -389,24 +389,62 @@ body::before {
   gap: var(--ui-space-2);
   color: var(--ui-copy);
 }
-#hud > .st-ui-section--arsenal {
-  margin-top: auto;
-  border-top: 1px solid var(--ui-line);
-  border-bottom: 0;
-}
 #hud > .st-ui-section--roster {
   color: color-mix(in srgb, var(--ui-copy) 88%, transparent);
   background: linear-gradient(180deg, rgba(9, 5, 16, 0.22), transparent);
 }
-#hud > .st-ui-section.st-hud__strip--open {
+#hud > .st-hud__match-mode {
+  padding-top: 13px;
+  color: var(--ui-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+#hud > .st-hud__round {
+  color: var(--text-gold);
+  font-size: 13px;
+  letter-spacing: 0.8px;
+}
+#hud > .st-hud__conn {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+  padding-block: 10px;
+  transform: none;
+  border-color: var(--ui-line);
+  border-radius: 0;
+  color: var(--ui-copy);
+  background: transparent;
+  box-shadow: none;
+  white-space: normal;
+}
+#hud > .st-hud__conn::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #6fd7a9;
+  box-shadow: 0 0 8px rgba(111, 215, 169, 0.46);
+}
+#hud > .st-hud__conn[data-connection-state='connecting']::before,
+#hud > .st-hud__conn[data-connection-state='reconnecting']::before {
+  background: var(--ember);
+  box-shadow: 0 0 8px rgba(255, 122, 31, 0.52);
+}
+#battle-rail .st-ui-section.st-hud__strip--open {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
+  inset: 4px;
   z-index: 20;
   width: auto;
-  height: calc(100% - 24px);
-  max-height: calc(100% - 24px);
+  height: auto;
+  max-height: calc(100% - 8px);
   margin: 0;
   padding: var(--ui-space-3);
   overflow: hidden;

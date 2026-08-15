@@ -152,6 +152,7 @@ test.describe('weapon intel battlefield composition', () => {
         drawer: rect('.st-hud__strip'),
         panel: rect('.st-hud__weapon-intel'),
         canvas: rect('#game'),
+        rail: rect('#battle-rail'),
         hudScrollHeight: hudNode.scrollHeight,
         panelClientWidth: panelNode.clientWidth,
         panelScrollWidth: panelNode.scrollWidth,
@@ -175,7 +176,10 @@ test.describe('weapon intel battlefield composition', () => {
     expect(geometry.panel.right).toBeLessThanOrEqual(geometry.drawer.right + 1);
     expect(geometry.panel.top).toBeGreaterThanOrEqual(geometry.drawer.top - 1);
     expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.drawer.bottom + 1);
-    expect(geometry.drawer.left).toBeGreaterThanOrEqual(geometry.canvas.right - 1);
+    expect(geometry.drawer.left).toBeGreaterThanOrEqual(geometry.rail.left - 1);
+    expect(geometry.drawer.right).toBeLessThanOrEqual(geometry.rail.right + 1);
+    expect(geometry.drawer.top).toBeGreaterThanOrEqual(geometry.rail.top - 1);
+    expect(geometry.drawer.bottom).toBeLessThanOrEqual(geometry.rail.bottom + 1);
     expect(geometry.hudScrollHeight).toBe(before);
     expect(geometry.panelScrollWidth).toBeLessThanOrEqual(geometry.panelClientWidth + 1);
     if (testInfo.project.name === 'desktop-fine') {

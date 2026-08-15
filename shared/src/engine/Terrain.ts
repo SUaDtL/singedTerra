@@ -23,9 +23,9 @@ export const CANVAS_HEIGHT = 600;
 /**
  * Logical top edge of the protected bottom instrumentation rail. Gameplay
  * terrain and projectile collision end here; the bitmap still retains the
- * covered 100px base for its fixed 1200 by 600 representation.
+ * covered 260px base for its fixed 1200 by 600 representation.
  */
-export const ARENA_FLOOR_Y = 500;
+export const ARENA_FLOOR_Y = 340;
 
 /** Surface kept within these vertical bounds so tanks have sky above / ground below. */
 const MIN_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.35); // 210 — tallest allowed hill
@@ -172,7 +172,7 @@ export function applyTerrainHazards(
   for (let pool = 0; pool < poolCount; pool++) {
     // Keep every pool inside the central 520..680 band. This is clear of the
     // two-seat spawn points (180/1020) and the inner four-seat points
-    // (440/760), including the tank footprint and placement interpolation.
+    // (340/760), including the tank footprint and placement interpolation.
     const center = 520 + Math.floor(rand() * 160);
     const halfWidth = 18 + Math.floor(rand() * 18);
     const depth = 6 + Math.floor(rand() * 7);

@@ -24,8 +24,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: 2,
       turn: 13,
       actionCount: 15,
-      tickCount: 448,
-      maxTurnTickCount: 34,
+      tickCount: 453,
+      maxTurnTickCount: 36,
     },
     maximumTurn: {
       phase: 'GAME_OVER',
@@ -33,8 +33,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       winnerTeam: null,
       turn: 3,
       actionCount: 4,
-      tickCount: 302,
-      maxTurnTickCount: 207,
+      tickCount: 316,
+      maxTurnTickCount: 221,
     },
     verifiedDuel: {
       seed: 17,
@@ -43,8 +43,8 @@ const EXACT_VERIFIED_REPLAY_RESPONSE = {
       reason: 'health',
       humanSalvos: 6,
       cpuSalvos: 6,
-      liveTicks: 626,
-      cpuSimulationTicks: 24601,
+      liveTicks: 641,
+      cpuSimulationTicks: 24216,
       maximumProbeCount: 59,
       transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })),
     },
@@ -453,10 +453,10 @@ describe('verified-replay-runtime contract', () => {
     ['a wrong maximumTurn turn', (response: MutableResponse) => { response.fixtures.maximumTurn.turn = 2 }],
     ['a wrong maximumLifecycle actionCount', (response: MutableResponse) => { response.fixtures.maximumLifecycle.actionCount = 14 }],
     ['a wrong maximumTurn actionCount', (response: MutableResponse) => { response.fixtures.maximumTurn.actionCount = 3 }],
-    ['a wrong maximumLifecycle tickCount', (response: MutableResponse) => { response.fixtures.maximumLifecycle.tickCount = 447 }],
-    ['a wrong maximumTurn tickCount', (response: MutableResponse) => { response.fixtures.maximumTurn.tickCount = 292 }],
-    ['a wrong maximumLifecycle maxTurnTickCount', (response: MutableResponse) => { response.fixtures.maximumLifecycle.maxTurnTickCount = 33 }],
-    ['a wrong maximumTurn maxTurnTickCount', (response: MutableResponse) => { response.fixtures.maximumTurn.maxTurnTickCount = 197 }],
+    ['a wrong maximumLifecycle tickCount', (response: MutableResponse) => { response.fixtures.maximumLifecycle.tickCount = 452 }],
+    ['a wrong maximumTurn tickCount', (response: MutableResponse) => { response.fixtures.maximumTurn.tickCount = 315 }],
+    ['a wrong maximumLifecycle maxTurnTickCount', (response: MutableResponse) => { response.fixtures.maximumLifecycle.maxTurnTickCount = 35 }],
+    ['a wrong maximumTurn maxTurnTickCount', (response: MutableResponse) => { response.fixtures.maximumTurn.maxTurnTickCount = 220 }],
     ['a missing fixture field', (response: MutableResponse) => { delete response.fixtures.maximumTurn.maxTurnTickCount }],
     ['an extra root field', (response: MutableResponse) => { response.requestEcho = 'operator-controlled' }],
     ['an extra fixture field', (response: MutableResponse) => { response.fixtures.maximumLifecycle.progression = 99 }],
@@ -591,7 +591,7 @@ describe('ProductionDiagnostics exact-object boundary', () => {
     ['a nested expected field getter', (response: MutableResponse) => {
       Object.defineProperty(response.fixtures.maximumTurn, 'tickCount', {
         enumerable: true,
-        get: () => 302,
+        get: () => 316,
       })
     }],
   ])('rejects %s through runChecks()', async (_label, mutate) => {
@@ -639,7 +639,7 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
       get(target, property, receiver) {
         if (property === 'tickCount') {
           tickCountReads += 1
-          return tickCountReads === 1 ? 302 : secret
+          return tickCountReads === 1 ? 316 : secret
         }
         return Reflect.get(target, property, receiver)
       },
@@ -653,7 +653,7 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
     expect(tickCountReads).toBeLessThanOrEqual(1)
     expect(result).toMatchObject({ status: 'PASS', code: 'ok' })
     if (result.status === 'PASS') {
-      expect(result.details.fixtures.maximumTurn.tickCount).toBe(302)
+      expect(result.details.fixtures.maximumTurn.tickCount).toBe(316)
     }
     expect(containsForbiddenPublicValue(result, [secret])).toBe(false)
   })

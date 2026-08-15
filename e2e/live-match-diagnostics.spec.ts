@@ -61,25 +61,29 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
   await page.getByRole('button', { name: 'Local Battle', exact: true }).click()
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click()
   await expect(page.locator('#hud.st-hud')).toBeVisible()
+  const briefing = page.locator('[data-ui="first-salvo-briefing"]')
+  if (await briefing.isVisible()) {
+    await page.getByRole('button', { name: 'Enter battle', exact: true }).click()
+    await expect(briefing).toBeHidden()
+  }
   // A fresh browser profile correctly starts the local First Salvo coach with
   // Fire gated. Dismiss that independent onboarding layer before testing that
   // the inspector itself leaves the ordinary primary action reachable.
   const skipCoach = page.getByRole('button', { name: 'Skip', exact: true })
   if (await skipCoach.isVisible()) await skipCoach.click()
 
-  let trigger = page.getByRole('button', { name: 'Inspect live match', exact: true })
   const fire = page.locator('.st-hud__primary-action')
-  const directTrigger = await trigger.count() === 1
-  if (!directTrigger) {
-    await page.getByRole('button', { name: 'Open menu', exact: true }).click()
-    trigger = page.getByRole('button', { name: 'Inspect live match', exact: true })
-    await expect(fire).toBeDisabled()
-  }
+  const ledger = page.locator('#hud')
+  await expect(ledger.getByRole('button', { name: 'Inspect live match', exact: true })).toHaveCount(0)
+  await expect(ledger.locator(':scope > button')).toHaveCount(1)
+  const menu = ledger.getByRole('button', { name: 'Menu', exact: true })
+  await menu.click()
+  const trigger = page.getByRole('button', { name: 'Inspect live match', exact: true })
+  await expect(page.getByRole('dialog', { name: 'Command Menu', exact: true })).toBeVisible()
   await expect(trigger).toBeVisible()
   // Touch opens the existing Command Menu to reach this action. That menu
   // intentionally pauses battle input, so Fire is only expected to recover
   // after the inspector has returned to the active battle.
-  if (directTrigger) await expect(fire).toBeEnabled()
   await trigger.focus()
   await trigger.click()
 
@@ -94,7 +98,6 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
 
   await inspector.getByRole('button', { name: 'Close inspector', exact: true }).click()
   await expect(inspector).toHaveCount(0)
-  if (directTrigger) await expect(trigger).toBeFocused()
-  else await expect(page.getByRole('button', { name: 'Open menu', exact: true })).toBeFocused()
+  await expect(menu).toBeFocused()
   await expect(fire).toBeEnabled()
 })

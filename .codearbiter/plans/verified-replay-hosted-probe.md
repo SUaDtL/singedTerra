@@ -8,7 +8,7 @@
 - Work test-first: each implementation task begins with the named failing test and preserves the RED output in the sprint evidence report.
 - No client-selected replay config or transcript and no player, match, verification, progression, rank, reward, or entitlement writes.
 - Keep `verify_jwt = false` and validate exactly one strict Bearer credential through Supabase Auth in the handler.
-- Preserve all existing `withCors` behavior and every deterministic replay ceiling.
+- Preserve all existing `withCors` behavior and every accepted deterministic replay envelope, as superseded below when shared arena geometry changes.
 - No migration and no new dependency.
 - The final adversarial reviewer receives the spec, this plan, sprint evidence, tests, and final diff.
 
@@ -17,7 +17,7 @@
 - **AC-01:** A `withCors` handler configured for no-body mode returns 400 and cancels a supplied body before its wrapped handler runs, while an absent body reaches the handler and all existing JSON/optional-body tests remain unchanged.
 - **AC-02:** `verified_replay_probe` returns 401 for a missing, malformed, duplicated, or Supabase-rejected Bearer credential and invokes neither replay fixture.
 - **AC-03:** With a Supabase-accepted Bearer credential and no body, the probe returns exactly probe version 1, engine version 1, ruleset version 3, and the pinned deterministic results for `maximumLifecycle` and `maximumTurn`.
-- **AC-04:** The production fixture module reaches the accepted limits exactly: `maximumLifecycle` consumes 15 actions and 448 total ticks, while `maximumTurn` consumes 198 ticks in one turn; the existing workload test imports these fixtures so endpoint and ceiling evidence cannot drift independently.
+- **AC-04:** The production fixture module reaches the accepted limits exactly: `maximumLifecycle` consumes 15 actions and 453 total ticks, while `maximumTurn` consumes 221 ticks in one turn; the existing workload test imports these fixtures so endpoint and ceiling evidence cannot drift independently.
 - **AC-05:** The handler performs no table, RPC, or persistence operation and returns no account id, credential, timing, progression, rank, reward, entitlement, or request-controlled field; only Supabase Auth validation and the outer operational rate-limit wrapper may access the service client.
 - **AC-06:** Any replay exception returns status 500 with `{ "error": "probe_unavailable" }`; operational logging is bounded to the probe stage and safe replay error code and does not contain the Bearer token, authenticated user id, stack, or raw exception message.
 - **AC-07:** `supabase/config.toml`, the shared limiter tests, and `security-controls.md` explicitly register `verified_replay_probe` as an account-authenticated, no-award, 10-per-minute function with no domain-state writes.
@@ -32,6 +32,10 @@
 | T-03 | `supabase/functions/_shared/mod.ts`, `supabase/functions/_shared/verifiedReplayProbeFixture.ts`, `supabase/functions/_shared/mod.test.ts`, `supabase/functions/_shared/verifiedMatchReplay.workload.test.ts` | Implement no-body mode and the two immutable fixtures; both focused Deno suites pass without modifying expected values. | O-01 and O-04: bounded request seam and non-drifting ceiling fixtures | AC-01, AC-04 | T-01, T-02 | ACCEPTED |
 | T-04 | `supabase/functions/verified_replay_probe/index.ts`, `supabase/functions/verified_replay_probe/index.test.ts`, `supabase/functions/_shared/mod.ts`, `supabase/functions/_shared/mod.test.ts`, `supabase/config.toml`, `.codearbiter/security-controls.md` | Implement the handler, named 10/min bucket, explicit config, and boundary docs; focused probe tests plus `npm run check:edge` pass. | O-02, O-03, O-05, O-06, O-07: authenticated deterministic no-award endpoint | AC-02, AC-03, AC-05, AC-06, AC-07 | T-03 | ACCEPTED |
 | T-05 | `.codearbiter/reports/2026-08-10-verified-replay-hosted-probe-sprint-evidence.md`, `.codearbiter/reports/2026-08-10-verified-replay-hosted-probe-final-review-package.md` | Run dependency audit, `npm run check`, `npm run check:edge`, `npm run test:client`, build, diff/security gates, adversarial review, exact-head hosted CI, merge, deploy only the function, then verify production 401 and authenticated exact response. | O-08: reviewed exact-head delivery and hosted proof | AC-08 | T-04 | PENDING |
+
+## Supersession receipt (2026-08-14)
+
+The original 448/198 values described the pre-command-surface arena floor. The shared protected-floor contract now stops terrain and impacts at y=340, changing deterministic settlement work. The authoritative ceilings are deliberately superseded to 453 total ticks and 221 ticks per turn; exact reject-side tests prove 452 and 220 remain invalid. Action and transcript limits are unchanged.
 
 ## Order and MVP slice
 

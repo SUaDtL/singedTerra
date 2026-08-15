@@ -280,21 +280,21 @@ test.describe('tank Garage', () => {
     const active = page.locator('.st-hud__active-row');
     const owner = active.locator('.st-hud__turn-owner');
     const tactical = active.locator('.st-hud__tactical-row');
+    const solution = page.locator('#battle-rail .st-hud__console-solution');
     await expect(active).toBeVisible();
     await expect(owner).toHaveText(playerName);
     await expect(owner).toHaveAttribute('title', playerName);
-    await expect(tactical.locator('.st-hud__weapon')).toBeVisible();
+    await expect(active.locator('.st-hud__weapon')).toHaveCount(0);
+    await expect(solution.locator('.st-hud__weapon')).toBeVisible();
     await expect(tactical.locator('.st-hud__mobility')).toBeVisible();
 
     const fit = await owner.evaluate((element) => ({
       clientWidth: element.clientWidth,
       scrollWidth: element.scrollWidth,
-      textOverflow: getComputedStyle(element).textOverflow,
       pageHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
     }));
     expect(fit.scrollWidth).toBeLessThanOrEqual(fit.clientWidth + 1);
-    expect(fit.textOverflow).not.toBe('ellipsis');
     expect(fit.pageHeight).toBeLessThanOrEqual(fit.viewportHeight + 1);
   });
 

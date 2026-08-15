@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameState } from '@shared/types/GameState';
 import { HUD } from './HUD';
@@ -28,6 +28,7 @@ function mount(): {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   document.body.innerHTML = '';
   document.head.querySelector('#st-hud-style')?.remove();
   localStorage.clear();
@@ -52,25 +53,44 @@ describe('HUD combat focus', () => {
     expect(overlay.dataset['combatFocus']).toBe(expected);
   });
 
-  it('describes mixed outcome regions without disabling available Store and Menu controls', () => {
+  it.each([
+    ['PLAYER_TURN', false, true, true, 'decision', 'Your firing decision'],
+    ['PLAYER_TURN', true, false, true, 'submitting', 'Submitting your shot'],
+    ['FIRING', false, false, true, 'tracking', 'Shot in flight'],
+    ['RESOLVING', false, false, true, 'resolving', 'Resolving impact'],
+    ['PLAYER_TURN', false, false, false, 'handoff', 'Remote commander turn'],
+    ['PLAYER_TURN', false, false, true, 'handoff', 'Input unavailable'],
+  ] as const)('synchronizes %s as the honest %s console phase', (
+    phase,
+    pending,
+    canControl,
+    activeIsLocal,
+    commandPhase,
+    phaseLabel,
+  ) => {
+    const { root, hud, state } = mount();
+    state.phase = phase;
+
+    hud.update(state, pending, canControl, activeIsLocal);
+
+    const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
+    expect(console.dataset['commandPhase']).toBe(commandPhase);
+    expect(console.dataset['phaseLabel']).toBe(phaseLabel);
+    expect(console.dataset['commanderId']).toBe(state.activePlayerId);
+  });
+
+  it('describes mixed outcome regions without disabling available Command Menu controls', () => {
     const { root, overlay, hud, state } = mount();
     hud.update(state, true, true);
 
     const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
-    const touchToolbar = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
-    const store = root.querySelector<HTMLButtonElement>('.st-hud__store-btn')!;
-    const menu = overlay.querySelector<HTMLButtonElement>('.st-hud__touch-menu')!;
+    const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;
     const progress = root.querySelector<HTMLElement>('.st-hud__aim')!;
     expect(console.getAttribute('aria-disabled')).toBeNull();
-    expect(touchToolbar.getAttribute('aria-disabled')).toBeNull();
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(console.getAttribute('aria-label')).toBe(
-      'Shot outcome in progress. Combat controls unavailable; Store remains available.',
+      'Shot outcome in progress. Combat controls unavailable; Command Menu remains available.',
     );
-    expect(touchToolbar.getAttribute('aria-label')).toBe(
-      'Touch commands during shot outcome. Combat controls unavailable; Menu remains available.',
-    );
-    expect(store.disabled).toBe(false);
-    expect(store.getAttribute('aria-disabled')).not.toBe('true');
     expect(menu.disabled).toBe(false);
     expect(menu.getAttribute('aria-disabled')).not.toBe('true');
     expect(progress.getAttribute('role')).toBe('status');
@@ -91,14 +111,46 @@ describe('HUD combat focus', () => {
     expect(root.dataset['combatFocus']).toBe('decision');
     expect(overlay.dataset['combatFocus']).toBe('decision');
     expect(root.querySelector('.st-hud__command-console')?.getAttribute('aria-disabled')).toBeNull();
-    expect(overlay.querySelector('.st-hud__touch-strip')?.getAttribute('aria-disabled')).toBeNull();
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(root.querySelector('.st-hud__command-console')?.getAttribute('aria-label')).toBe(
       'Turn command console',
     );
-    expect(overlay.querySelector('.st-hud__touch-strip')?.getAttribute('aria-label')).toBe(
-      'Touch commands',
-    );
     expect(root.querySelector('.st-hud__active-row')?.classList.contains('st-hud__active-row--hidden')).toBe(false);
+  });
+
+  it('keeps the renderer-admitted last-salvo correction readable through the immediate handoff', () => {
+    vi.useFakeTimers();
+    const { root, hud, state } = mount();
+    state.phase = 'RESOLVING';
+    hud.setImpactLearningCue({
+      readout: '84 PX LEFT OF BOB',
+      correction: 'SHIFT IMPACT RIGHT',
+      shooterId: state.activePlayerId,
+      round: state.round,
+      turn: state.turn,
+      explosionId: 7,
+    });
+
+    hud.update(state, false, true, true);
+
+    const cue = root.querySelector<HTMLElement>('[data-ui="last-salvo-cue"]');
+    expect(cue?.hidden).toBe(false);
+    expect(cue?.getAttribute('role')).toBe('status');
+    expect(cue?.getAttribute('aria-live')).toBe('polite');
+    expect(cue?.textContent).toContain('84 PX LEFT OF BOB');
+    expect(cue?.textContent).toContain('SHIFT IMPACT RIGHT');
+
+    state.phase = 'PLAYER_TURN';
+    state.turn += 1;
+    hud.update(state, false, true, true);
+    expect(cue?.hidden).toBe(false);
+    expect(cue?.textContent).toContain('84 PX LEFT OF BOB');
+    vi.advanceTimersByTime(1_399);
+    expect(cue?.hidden).toBe(false);
+    vi.advanceTimersByTime(1);
+    expect(cue?.hidden).toBe(true);
+    expect(cue?.textContent).not.toContain('84 PX LEFT OF BOB');
+    expect(cue?.textContent).not.toContain('SHIFT IMPACT RIGHT');
   });
 
   it('uses terminal descriptions without claiming mixed parents are enabled or disabled', () => {
@@ -108,14 +160,10 @@ describe('HUD combat focus', () => {
     hud.update(state, false, true);
 
     const console = root.querySelector<HTMLElement>('.st-hud__command-console')!;
-    const touchToolbar = overlay.querySelector<HTMLElement>('.st-hud__touch-strip')!;
     expect(console.getAttribute('aria-disabled')).toBeNull();
-    expect(touchToolbar.getAttribute('aria-disabled')).toBeNull();
+    expect(document.querySelector('.st-hud__touch-strip')).toBeNull();
     expect(console.getAttribute('aria-label')).toBe(
-      'Turn command console outside an active turn. Combat controls inactive; Store remains available.',
-    );
-    expect(touchToolbar.getAttribute('aria-label')).toBe(
-      'Touch combat controls inactive outside an active turn; Menu remains available.',
+      'Turn command console outside an active turn. Combat controls inactive; Command Menu remains available.',
     );
   });
 });

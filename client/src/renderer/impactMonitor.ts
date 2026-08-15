@@ -14,6 +14,13 @@ export const IMPACT_MONITOR_MAX_COMPACT_SCALE = 1.8;
 const FRAME_INSET_X = 11;
 const FRAME_INSET_Y = 7;
 
+export interface ImpactLearningCueContext {
+  readonly shooterId: string;
+  readonly round: number;
+  readonly turn: number;
+  readonly explosionId: number;
+}
+
 export interface ImpactMonitorFocus {
   readonly cx: number;
   readonly cy: number;
@@ -21,6 +28,7 @@ export interface ImpactMonitorFocus {
   readonly age: number;
   readonly lifeFrames: number;
   readonly cue?: ImpactLearningCue | null;
+  readonly learningContext?: ImpactLearningCueContext;
 }
 
 export interface ImpactMonitorCandidate {
@@ -31,6 +39,7 @@ export interface ImpactMonitorCandidate {
   readonly reachRadius?: number;
   readonly visual?: { readonly reachRadius: number };
   readonly cue?: ImpactLearningCue | null;
+  readonly learningContext?: ImpactLearningCueContext;
 }
 
 export interface ImpactMonitorOffset {
@@ -77,6 +86,7 @@ export function selectImpactMonitorFocus(
       age: burst.age,
       lifeFrames: burst.lifeFrames,
       ...(burst.cue !== undefined ? { cue: burst.cue } : {}),
+      ...(burst.learningContext !== undefined ? { learningContext: burst.learningContext } : {}),
     };
     if (!isLiveFocus(candidate)) continue;
     if (

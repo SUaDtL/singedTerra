@@ -62,14 +62,15 @@ function tankSnap(e) {
 // that the animated settle spans multiple RESOLVING ticks.
 // ==========================================================================
 {
-  // cluster_bomb at seed 0x1a3 produced 7 RESOLVING ticks in test 2 — use it.
+  // cluster_bomb at seed 0x1a3 with the low, short 15°/40 solution produces
+  // ten RESOLVING ticks — use it.
   // A cluster_bomb creates multiple overlapping craters, guaranteeing enough
   // unsupported dirt to drive several settle steps.
   const e = freshEngine(0x1a3);
 
   e.applyAction({ type: 'select_weapon', weapon: 'cluster_bomb' });
-  e.applyAction({ type: 'set_angle', angle: 45 });
-  e.applyAction({ type: 'set_power', power: 60 });
+  e.applyAction({ type: 'set_angle', angle: 15 });
+  e.applyAction({ type: 'set_power', power: 40 });
   e.applyAction({ type: 'fire' });
 
   // Run FIRING phase to completion (one step per tick, no RESOLVING yet)
@@ -87,8 +88,10 @@ function tankSnap(e) {
   } else if (phaseAfterFiring !== 'RESOLVING') {
     fail(`[monotonic] expected RESOLVING after FIRING (terrain-hitting shot), got ${phaseAfterFiring}`);
   } else {
-    // Collect per-tick P2 y values through RESOLVING
+    // Collect rendered-relevant settle state through RESOLVING. A timed
+    // RESOLVING countdown without evolving terrain is not an animation.
     const p2YPerTick = [e.getState().tanks[1].y]; // y at start of RESOLVING
+    const terrainPerTick = [terrainHex(e)];
     let resolvingTicks = 0;
     let transitionPhase = null;
 
@@ -97,6 +100,7 @@ function tankSnap(e) {
       resolvingTicks++;
       const st = e.getState();
       p2YPerTick.push(st.tanks[1].y);
+      terrainPerTick.push(terrainHex(e));
       if (st.phase !== 'RESOLVING') {
         transitionPhase = st.phase;
         break;
@@ -121,6 +125,12 @@ function tankSnap(e) {
       log(`PASS [monotonic]: P2 y monotonically non-decreasing across ${resolvingTicks} RESOLVING ticks.`);
     }
 
+    if (new Set(terrainPerTick).size < 2) {
+      fail('[monotonic] RESOLVING had no terrain-state change; a countdown alone is not progressive collapse');
+    } else {
+      log(`PASS [monotonic]: terrain evolved across ${new Set(terrainPerTick).size} distinct settle snapshots.`);
+    }
+
     // Assert: transitions to the right terminal phase
     const finalPhase = transitionPhase ?? e.getState().phase;
     if (finalPhase !== 'PLAYER_TURN' && finalPhase !== 'ROUND_OVER' && finalPhase !== 'GAME_OVER') {
@@ -141,7 +151,7 @@ function tankSnap(e) {
     { seed: 0xc0ffee,   angle: 50, power: 80, weapon: 'missile'      },
     { seed: 0x5eed1234, angle: 45, power: 70, weapon: 'missile'      },
     { seed: 0xbeef,     angle: 60, power: 65, weapon: 'heavy_missile' },
-    { seed: 0x1a3,      angle: 45, power: 60, weapon: 'cluster_bomb'  },
+    { seed: 0x1a3,      angle: 15, power: 40, weapon: 'cluster_bomb'  },
     { seed: 0xfade,     angle: 45, power: 75, weapon: 'missile'      },
   ];
 
@@ -200,8 +210,8 @@ function tankSnap(e) {
   function buildEngineAndFireToResolving(seed) {
     const e = freshEngine(seed);
     e.applyAction({ type: 'select_weapon', weapon: 'cluster_bomb' });
-    e.applyAction({ type: 'set_angle', angle: 45 });
-    e.applyAction({ type: 'set_power', power: 60 });
+    e.applyAction({ type: 'set_angle', angle: 15 });
+    e.applyAction({ type: 'set_power', power: 40 });
     e.applyAction({ type: 'fire' });
     while (e.getState().phase === 'FIRING') { e.tick(); }
     return e;

@@ -1,14 +1,14 @@
 // Regression contract for deterministic terrain-collapse fall damage and the
-// one-use Parachute accessory. The fixture uses the existing Riot Bomb crater
-// that reaches the protected arena floor on seed 0x5eed1234.
+// one-use Parachute accessory. The fixture uses a deterministic Riot Bomb crater
+// that remains above the protected arena floor on seed 0x1a3.
 
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { PARACHUTE_PRICE } from '../../shared/src/engine/WeaponSystem.ts';
 import { replayNetworkAction } from '../../shared/src/net/replay.ts';
 
-const SEED = 0x5eed1234;
+const SEED = 0x1a3;
 const COLORS = ['#e84d4d', '#4d8ce8'];
-const DROP = { angle: 23, power: 99, weapon: 'riot_bomb' };
+const DROP = { angle: 35, power: 100, weapon: 'riot_bomb' };
 const MAX_TICKS = 100_000;
 let failed = false;
 const fail = (message) => { failed = true; console.log(`FAIL: ${message}`); };
@@ -27,28 +27,52 @@ function grant(engine, count) {
   tank.inventory.riot_bomb = { count, unlimited: false };
 }
 
-function fire(engine) {
+function fireToResolving(engine) {
   engine.applyAction({ type: 'select_weapon', weapon: DROP.weapon });
   engine.applyAction({ type: 'set_angle', angle: DROP.angle });
   engine.applyAction({ type: 'set_power', power: DROP.power });
   engine.applyAction({ type: 'fire' });
   let ticks = 0;
-  while ((engine.getState().phase === 'FIRING' || engine.getState().phase === 'RESOLVING') && ticks < MAX_TICKS) {
+  while (engine.getState().phase === 'FIRING' && ticks < MAX_TICKS) {
+    engine.tick();
+    ticks++;
+  }
+  if (ticks >= MAX_TICKS || engine.getState().phase !== 'RESOLVING') {
+    throw new Error(`fall-damage fixture never entered RESOLVING (phase=${engine.getState().phase})`);
+  }
+}
+
+function resolve(engine) {
+  let ticks = 0;
+  while (engine.getState().phase === 'RESOLVING' && ticks < MAX_TICKS) {
     engine.tick();
     ticks++;
   }
   if (ticks >= MAX_TICKS) throw new Error('fall-damage fixture never resolved');
 }
 
+function fire(engine) {
+  fireToResolving(engine);
+  resolve(engine);
+}
+
 // Unprotected long drop: the old behavior leaves P2 at full health.
 {
   const engine = fresh();
   grant(engine, 1);
-  const before = engine.getState().tanks[1].health;
-  fire(engine);
+  const before = { ...engine.getState().tanks[1] };
+  fireToResolving(engine);
+  const impact = { ...engine.getState().tanks[1] };
+  resolve(engine);
   const tank = engine.getState().tanks[1];
-  log(`[fall] unprotected health ${before}->${tank.health}, y=${tank.y}`);
-  if (before - tank.health !== 45) fail(`fall damage must follow the explicit formula (expected 45, got ${before - tank.health})`);
+  const drop = tank.y - impact.y;
+  const expectedDamage = Math.floor(Math.max(0, drop - 32) * 1.5);
+  log(`[fall] flight health ${before.health}->${impact.health}, settle y ${impact.y}->${tank.y}, settle health ${impact.health}->${tank.health}`);
+  if (impact.health !== before.health) fail(`Riot Bomb must not deal direct damage before settlement (got ${before.health - impact.health})`);
+  if (drop !== 48) fail(`fixture must induce the pinned 48px settlement drop (got ${drop})`);
+  if (impact.health - tank.health !== expectedDamage || expectedDamage !== 24) {
+    fail(`fall damage must follow the explicit formula (expected ${expectedDamage}, got ${impact.health - tank.health})`);
+  }
 }
 
 // Parachute protects the same fall and is consumed exactly once.
@@ -56,10 +80,18 @@ function fire(engine) {
   const engine = fresh();
   grant(engine, 1);
   engine.getState().tanks[1].accessories.parachute = 1;
-  const before = engine.getState().tanks[1].health;
-  fire(engine);
+  fireToResolving(engine);
+  const impact = { ...engine.getState().tanks[1] };
+  resolve(engine);
   const tank = engine.getState().tanks[1];
-  if (before - tank.health !== 11) fail(`a parachute should reduce the 45-point fall to 11 damage, got ${before - tank.health}`);
+  const drop = tank.y - impact.y;
+  const expectedDamage = Math.floor(Math.max(0, drop - 32) * 1.5);
+  const protectedDamage = Math.floor(expectedDamage / 4);
+  if (impact.health !== 100) fail(`Parachute fixture must enter settlement at full health (got ${impact.health})`);
+  if (drop !== 48) fail(`Parachute fixture must induce the pinned 48px settlement drop (got ${drop})`);
+  if (impact.health - tank.health !== protectedDamage || protectedDamage !== 6) {
+    fail(`a parachute should reduce the ${expectedDamage}-point fall to ${protectedDamage} damage, got ${impact.health - tank.health}`);
+  }
   if (tank.accessories.parachute !== 0) fail('a used parachute must be consumed exactly once');
 }
 
@@ -69,8 +101,11 @@ function fire(engine) {
   grant(engine, 1);
   const tank = engine.getState().tanks[1];
   tank.y = 0;
-  fire(engine);
-  if (tank.alive || tank.health !== 0) fail('an extreme terrain fall must be able to kill a tank');
+  fireToResolving(engine);
+  const impact = { health: tank.health, alive: tank.alive, y: tank.y };
+  resolve(engine);
+  if (impact.health !== 100 || !impact.alive) fail('the lethal fixture must enter settlement with an alive undamaged tank');
+  if (tank.alive || tank.health !== 0 || tank.y <= impact.y) fail('an extreme terrain fall must kill during resolution, not at blast impact');
 }
 
 // The normal buy contract grants exactly one Parachute and charges its catalog price.

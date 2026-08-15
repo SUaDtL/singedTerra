@@ -204,6 +204,7 @@ function bootstrap(): void {
   // custom properties so the canvas tokens and the --crt-* vars share one source. (P3-16)
   const rootStyle = document.documentElement.style;
   const battleRailTop = Math.ceil(ARENA_FLOOR_Y + maximumTankRecoilDownPx());
+  rootStyle.setProperty('--arena-height', `${CANVAS_HEIGHT}px`);
   rootStyle.setProperty('--arena-floor-y', `${ARENA_FLOOR_Y}px`);
   rootStyle.setProperty('--battle-rail-top-y', `${battleRailTop}px`);
   for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);
@@ -377,6 +378,7 @@ function bootstrap(): void {
         activeIsLocal,
         paused: hud.isPaused(),
       })
+      && !hud.isFirstSalvoBriefingOpen()
       && verifiedInputAllowed();
   }
 
@@ -689,7 +691,8 @@ function bootstrap(): void {
     // rAF loop keeps running underneath either way (networked lockstep stays
     // in sync); only this LOCAL emit is suppressed.
     const newInput = new InputHandler(canvas, (action) => {
-      if (!shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
+      if (hud.isFirstSalvoBriefingOpen()
+        || !shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
         || !verifiedInputAllowed()) return;
       // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
       // aim guide / HUD update instantly even when the idle-skip gate would skip.
@@ -733,6 +736,7 @@ function bootstrap(): void {
       initialAngle: activeTank?.angle,
       initialPower: activeTank?.power,
       canDirectAim: directAimAllowed,
+      canHandleCommand: () => !hud.isFirstSalvoBriefingOpen(),
     });
     input = newInput;
     newInput.attach();
@@ -853,6 +857,8 @@ function bootstrap(): void {
         renderer.render(state);
         renderDirty = false;
       }
+      const verifiedControlsAllowed = verifiedInputAllowed();
+      hud.setImpactLearningCue(renderer.currentImpactLearningCue());
       hud.update(
         state,
         newClient.isFiring ?? false,
@@ -860,7 +866,9 @@ function bootstrap(): void {
           activeIsAi: !!activeTank?.ai,
           activeIsLocal,
           paused: hud.isPaused(),
-        }),
+        }) && verifiedControlsAllowed,
+        activeIsLocal,
+        verifiedControlsAllowed,
       );
       const terminalEffectsSettled = terminalImpactObserved
         || (state.projectiles.length === 0 && state.explosions.length === 0);
@@ -964,7 +972,7 @@ function bootstrap(): void {
     activeIsAi,
     activeIsLocal,
     paused: hud.isPaused(),
-  }) && verifiedInputAllowed();
+  }) && !hud.isFirstSalvoBriefingOpen() && verifiedInputAllowed();
 
   hud.onFirstSalvoSkip(() => {
     firstSalvo.skip();
@@ -1150,6 +1158,10 @@ function bootstrap(): void {
     appEl.style.setProperty('--st-command-choice-target', `${commandChoiceTarget}px`);
     const deploymentChoiceTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
     appEl.style.setProperty('--st-deployment-choice-target', `${deploymentChoiceTarget}px`);
+    // The whole stage is zoomed. Give the persistent command rail a logical
+    // type size that still resolves to at least 11 physical pixels.
+    const commandReadabilitySize = Math.max(11, Math.ceil(11 / Math.max(s, Number.EPSILON)));
+    appEl.style.setProperty('--st-command-readability-size', `${commandReadabilitySize}px`);
     // The arsenal dossier lives inside the zoomed stage. Keep its tactical copy
     // above physical readability floors instead of shrinking it to 3-6px on phones.
     appEl.style.setProperty('--st-weapon-intel-name-size', `${Math.max(12, Math.ceil(12 / s))}px`);
