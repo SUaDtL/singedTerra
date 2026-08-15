@@ -35,5 +35,5 @@
   typecheck, build, and complete Playwright matrix.
 - [x] Give spec, plan, log, tests, and final diff to an adversarial reviewer;
   resolve all Critical, High, and merge-blocking findings.
-- [ ] Commit, open PR, require exact-head hosted CI/CodeQL/Pages, merge under
+- [x] Commit, open PR, require exact-head hosted CI/CodeQL/Pages, merge under
   standing authority, verify deployed provenance and one production launch.
