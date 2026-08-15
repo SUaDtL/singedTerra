@@ -168,16 +168,22 @@ test.describe('HUD layout guardrails', () => {
         '.st-hud__weapon-value',
         '.st-hud__weapon-ammo',
         '.st-hud__solution-adjustment-label',
+        '.st-hud__solution-direction',
         '.st-hud__gauge-cell-title',
         '.st-hud__gauge-label',
         '.st-hud__trajectory-guide',
+        '.st-hud__first-salvo-progress',
+        '.st-hud__first-salvo-copy',
+        '.st-hud__first-salvo-skip',
         '.st-hud__console-state',
         '.st-hud__commitment-explanation',
       ].join(','))].filter(rendered).map((label) => ({
         text: label.textContent,
-        renderedFontSize: parseFloat(getComputedStyle(label).fontSize)
-          * (document.getElementById('app')!.getBoundingClientRect().width
-            / document.getElementById('app')!.offsetWidth),
+        renderedFontSize: label instanceof SVGTextElement
+          ? label.getBoundingClientRect().height
+          : parseFloat(getComputedStyle(label).fontSize)
+            * (document.getElementById('app')!.getBoundingClientRect().width
+              / document.getElementById('app')!.offsetWidth),
         clientWidth: label.clientWidth,
         scrollWidth: label.scrollWidth,
         clientHeight: label.clientHeight,
@@ -210,11 +216,11 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.console.y + geometry.console.height)
       .toBeLessThanOrEqual(geometry.rail.y + geometry.rail.height + 1);
     for (const label of geometry.labels) {
-      expect(label.renderedFontSize, `${label.text} must render at a readable size`)
+      expect.soft(label.renderedFontSize, `${label.text} must render at a readable size`)
         .toBeGreaterThanOrEqual(11);
-      expect(label.scrollWidth, `${label.text} must not clip horizontally`)
+      expect.soft(label.scrollWidth, `${label.text} must not clip horizontally`)
         .toBeLessThanOrEqual(label.clientWidth + 1);
-      expect(label.scrollHeight, `${label.text} must not clip vertically`)
+      expect.soft(label.scrollHeight, `${label.text} must not clip vertically`)
         .toBeLessThanOrEqual(label.clientHeight + 1);
     }
     const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
@@ -234,6 +240,99 @@ test.describe('HUD layout guardrails', () => {
     const after = await rail.boundingBox();
     expect(after?.height).toBeCloseTo(before!.height, 1);
     expect(after?.y).toBeCloseTo(before!.y, 1);
+  });
+
+  test('Pixel compact command text stays inside its component without collisions', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pixel-touch', 'requires compact coarse-pointer geometry');
+
+    const commandViolations = async (): Promise<string[]> =>
+      page.locator('#battle-rail').evaluate((rail) => {
+        const rendered = (element: Element): element is HTMLElement | SVGElement => {
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden'
+            && Number(style.opacity) > 0 && box.width > 0 && box.height > 0;
+        };
+        const contains = (outer: DOMRect, inner: DOMRect): boolean =>
+          inner.left >= outer.left - 1 && inner.right <= outer.right + 1
+          && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
+        const intersects = (a: DOMRect, b: DOMRect): boolean =>
+          a.left < b.right - 1 && a.right > b.left + 1
+          && a.top < b.bottom - 1 && a.bottom > b.top + 1;
+        const failures: string[] = [];
+        const assertContained = (owner: Element, child: Element, label: string): void => {
+          if (rendered(child)
+            && !contains(owner.getBoundingClientRect(), child.getBoundingClientRect())) {
+            failures.push(`${label} escapes ${owner.className}`);
+          }
+        };
+        const assertSeparated = (first: Element, second: Element, label: string): void => {
+          if (rendered(first) && rendered(second)
+            && intersects(first.getBoundingClientRect(), second.getBoundingClientRect())) {
+            failures.push(`${label} intersects`);
+          }
+        };
+
+        const weapon = rail.querySelector('.st-hud__weapon')!;
+        for (const child of weapon.querySelectorAll(
+          '.st-hud__weapon-value, .st-hud__weapon-ammo',
+        )) {
+          assertContained(weapon, child, child.textContent ?? child.className);
+        }
+
+        for (const group of rail.querySelectorAll('.st-hud__solution-adjustment')) {
+          const label = group.querySelector('.st-hud__solution-adjustment-label')!;
+          assertContained(group, label, label.textContent ?? 'adjustment label');
+          for (const button of group.querySelectorAll('button')) {
+            assertContained(group, button, button.getAttribute('aria-label') ?? 'adjustment button');
+            assertSeparated(
+              label,
+              button,
+              `${label.textContent} / ${button.getAttribute('aria-label')}`,
+            );
+          }
+        }
+
+        for (const cell of rail.querySelectorAll('.st-hud__gauge-cell')) {
+          const title = cell.querySelector('.st-hud__gauge-cell-title')!;
+          const value = cell.querySelector('.st-hud__gauge-label')!;
+          assertContained(cell, title, title.textContent ?? 'gauge title');
+          assertContained(cell, value, value.textContent ?? 'gauge value');
+          assertSeparated(title, value, `${title.textContent} / ${value.textContent}`);
+        }
+
+        const instruments = rail.querySelector('.st-hud__instruments')!;
+        const instrumentTitle = instruments.querySelector('.st-hud__instr-title')!;
+        const gaugeRow = instruments.querySelector('.st-hud__gauge-row')!;
+        assertContained(instruments, instrumentTitle, 'Ballistic Computer');
+        assertContained(instruments, gaugeRow, 'gauge row');
+        assertSeparated(instrumentTitle, gaugeRow, 'Ballistic Computer / gauges');
+
+        const solution = rail.querySelector('.st-hud__console-solution')!;
+        const guide = solution.querySelector('.st-hud__trajectory-guide')!;
+        const coach = solution.querySelector('[data-ui="first-salvo-coach"]');
+        assertContained(solution, guide, 'trajectory guide');
+        if (coach) {
+          assertSeparated(guide, coach, 'trajectory guide / First Salvo');
+          const coachProgress = coach.querySelector('.st-hud__first-salvo-progress')!;
+          const coachCopy = coach.querySelector('.st-hud__first-salvo-copy')!;
+          const coachSkip = coach.querySelector('.st-hud__first-salvo-skip')!;
+          for (const child of [coachProgress, coachCopy, coachSkip]) {
+            assertContained(coach, child, child.textContent ?? child.className);
+          }
+          assertSeparated(coachProgress, coachCopy, 'First Salvo progress / copy');
+          assertSeparated(coachCopy, coachSkip, 'First Salvo copy / skip');
+        }
+        return failures;
+      });
+
+    expect(await commandViolations(), 'decision state geometry').toEqual([]);
+    await page.locator('.st-hud__primary-action').click();
+    await expect(page.locator('.st-hud__command-console'))
+      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    expect(await commandViolations(), 'flight state geometry').toEqual([]);
   });
 
   test('Pixel touch stalled recovery stays in the protected rail and can leave', async ({

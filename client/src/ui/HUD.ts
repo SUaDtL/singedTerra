@@ -856,6 +856,8 @@ export class HUD {
     const instruments = document.createElement('div');
     instruments.className =
       'st-hud__instruments st-ui-section st-ui-section--instrument';
+    instruments.setAttribute('role', 'group');
+    instruments.setAttribute('aria-label', 'Ballistic computer');
     const instrTitle = document.createElement('div');
     instrTitle.className = 'st-hud__instr-title';
     instrTitle.textContent = 'Ballistic Computer';
@@ -1749,17 +1751,17 @@ export class HUD {
       case 'aim':
         return {
           progress: 'First Salvo · 1 / 3 · Aim',
-          instruction: 'Set elevation with Arrow keys or the Aim controls.',
+          instruction: 'Set Aim with Arrow keys.',
         };
       case 'power-and-wind':
         return {
           progress: 'First Salvo · 2 / 3 · Power + wind',
-          instruction: 'Set Power, then read the Wind Vector before you fire.',
+          instruction: 'Set Power; read Wind Vector.',
         };
       case 'fire':
         return {
           progress: 'First Salvo · 3 / 3 · Primary action',
-          instruction: 'Use Space, Enter, or the highlighted primary action.',
+          instruction: 'Press Space or Enter.',
         };
       default:
         return null;
@@ -6116,7 +6118,7 @@ export class HUD {
 .st-hud__solution-control:hover:not(:disabled) { border-color: rgba(122, 215, 255, 0.7); }
 .st-hud__solution-control:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
 .st-hud__solution-control:disabled { cursor: not-allowed; opacity: 0.36; }
-.st-hud__solution-direction { font-family: var(--font-display); font-size: 13px; font-weight: 800; line-height: 0.8; }
+.st-hud__solution-direction { font-family: var(--font-display); font-size: 13px; font-weight: 800; line-height: 1.05; }
 .st-hud__solution-control kbd,
 .st-hud__trajectory-guide kbd {
   min-width: 13px;
@@ -6239,12 +6241,19 @@ export class HUD {
 #battle-rail .st-hud__weapon-value,
 #battle-rail .st-hud__weapon-ammo,
 #battle-rail .st-hud__solution-adjustment-label,
+#battle-rail .st-hud__solution-direction,
 #battle-rail .st-hud__gauge-cell-title,
 #app #battle-rail .st-hud__gauge-label,
 #battle-rail .st-hud__trajectory-guide,
+#battle-rail .st-hud__first-salvo-progress,
+#battle-rail .st-hud__first-salvo-copy,
+#battle-rail .st-hud__first-salvo-skip,
 #battle-rail .st-hud__console-state,
 #battle-rail .st-hud__commitment-explanation {
   font-size: var(--st-command-readability-size, 11px);
+}
+#app.is-compact #battle-rail .st-hud__gauge-label {
+  font-size: calc(var(--st-command-readability-size, 11px) * 1.2);
 }
 #battle-rail .st-hud__weapon-label { line-height: 1.25; }
 #app.is-compact #battle-rail .st-hud__weapon-label { display: none; }
@@ -6380,6 +6389,74 @@ export class HUD {
   #battle-rail .st-hud__weapon-value {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* At the narrow Pixel-landscape envelope, keep only information that changes
+     shot decisions. Redundant headings remain available through the region,
+     group, and SVG accessible names while the live values get real space. */
+  #app.is-compact #battle-rail .st-hud__console-solution {
+    grid-template-columns: 170px 146px minmax(380px, 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__weapon {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-icon {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
+    grid-column: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    align-self: center;
+    gap: 5px;
+    line-height: 1;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-value {
+    flex: 1 1 auto;
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution .st-hud__weapon-ammo {
+    flex: 0 0 auto;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment-label,
+  #app.is-compact #battle-rail .st-hud__instr-title,
+  #app.is-compact #battle-rail .st-hud__gauge-cell-title {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__trajectory-guide {
+    display: none;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment {
+    grid-template-rows: minmax(var(--st-rail-touch-target), 1fr);
+  }
+  #app.is-compact #battle-rail .st-hud__console-solution > .st-hud__instruments {
+    padding: 3px;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-row {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.75fr);
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 2px;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell {
+    min-height: 0;
+    gap: 0;
+    padding: 0 1px;
+    overflow: hidden;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell--wind {
+    display: flex;
+    padding: 0 2px;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell > svg {
+    max-height: 100%;
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-label {
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.35);
+  }
+  #app.is-compact #battle-rail .st-hud__gauge-cell--elevation .st-hud__gauge-label,
+  #app.is-compact #battle-rail .st-hud__gauge-cell--power .st-hud__gauge-label {
+    transform: translateY(-4px);
   }
 }
 /* Gauges are reduced-motion-safe by construction: needle/marker/fill are driven by
