@@ -180,6 +180,8 @@ export class HUD {
   private verifiedRetryCb: (() => void) | null = null;
   private verifiedContinueCasualCb: (() => void) | null = null;
   private verifiedReturnToBatteryCb: (() => void) | null = null;
+  private verifiedNextOrderCb: (() => void) | null = null;
+  private verifiedNextOrderArmed = false;
   /** Last server-backed report state, used only by the display projection. */
   private verifiedDeploymentState: HUDVerifiedDeploymentState | null = null;
   /** Existing renderer-derived local learning; null means no valid correction exists. */
@@ -420,6 +422,7 @@ export class HUD {
   onVerifiedRetry(cb: () => void): void { this.verifiedRetryCb = cb; }
   onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
   onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
+  onVerifiedNextOrder(cb: () => void): void { this.verifiedNextOrderCb = cb; }
 
   /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
   setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
@@ -1949,7 +1952,13 @@ export class HUD {
     restartBtn.textContent = 'Play again';
     // Listener attached ONCE here (never in update) — fires the stored callback.
     restartBtn.addEventListener('click', () => {
-      if (this.overlayShown) this.restartCb?.();
+      if (!this.overlayShown) return;
+      if (this.verifiedNextOrderArmed) {
+        restartBtn.blur();
+        this.verifiedNextOrderCb?.();
+        return;
+      }
+      this.restartCb?.();
     });
     const overlayMenuBtn = document.createElement('button');
     overlayMenuBtn.className = 'st-hud__restart st-hud__restart--ghost';
@@ -3285,6 +3294,8 @@ export class HUD {
     this.overlayProgressionReceiptEl.classList.remove(
       'st-hud__victory-progression-receipt--promotion',
     );
+    this.verifiedNextOrderArmed = false;
+    this.overlayPrimaryBtnEl.textContent = 'Play again';
     this.clearAnonymousProgressionHandoff();
     this.overlayShown = false;
     this.terminalState = null;
@@ -3391,6 +3402,8 @@ export class HUD {
     }
     this.overlayProgressionReceiptEl.replaceChildren(...children);
     this.overlayProgressionReceiptEl.hidden = false;
+    this.verifiedNextOrderArmed = true;
+    this.overlayPrimaryBtnEl.textContent = 'Brief next order';
     this.clearAnonymousProgressionHandoff();
   }
 

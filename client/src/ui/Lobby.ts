@@ -1112,8 +1112,9 @@ export class Lobby {
   }
 
   returnVerifiedDeploymentToBattery(): boolean {
-    if (this.verifiedCurrent.status !== 'expired') return false;
-    this.verifiedStorage.clear(this.verifiedCurrent.descriptor);
+    const current = this.verifiedCurrent;
+    if (current.status !== 'expired' && current.status !== 'verified') return false;
+    if (current.status === 'expired') this.verifiedStorage.clear(current.descriptor);
     this.verifiedOwnerId = null;
     this.verifiedCurrent = Object.freeze({ status: 'idle' as const });
     return true;

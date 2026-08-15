@@ -1078,6 +1078,21 @@ function bootstrap(): void {
     lobby.show();
   });
 
+  hud.onVerifiedNextOrder(() => {
+    const descriptor = currentConfig?.verifiedDeployment?.descriptor;
+    const deployment = lobby.verifiedDeployment;
+    if (
+      !descriptor
+      || !verifiedController
+      || verifiedCasual
+      || deployment.status !== 'verified'
+      || deployment.receipt.result.sessionId !== descriptor.sessionId
+      || !lobby.returnVerifiedDeploymentToBattery()
+    ) return;
+    teardown();
+    lobby.show();
+  });
+
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
   // Tears down the engine/client/input and re-shows the full-field lobby overlay
   // (which covers the now-frozen canvas). For networked games this stops the

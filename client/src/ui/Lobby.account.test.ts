@@ -985,14 +985,24 @@ describe('Lobby account composition', () => {
     await expect(lobby.completeVerifiedDeployment(Date.parse('2026-08-12T13:02:00.000Z')))
       .resolves.toEqual(verifiedReceipt)
 
+    expect(lobby.returnVerifiedDeploymentToBattery()).toBe(true)
+    expect(lobby.verifiedDeployment).toEqual({ status: 'idle' })
+
     account.startVerifiedDeployment.mockResolvedValueOnce({
       resumed: false,
       descriptor: { ...verifiedStart.descriptor, sessionId: '00000000-0000-4000-8000-000000000062' },
     })
     await lobby.startVerifiedDeployment(Date.parse('2026-08-12T13:00:00.000Z'))
     expect(lobby.verifiedDeployment).toMatchObject({
-      status: 'active', fieldOrder: { id: 'fire-for-effect', result: null },
+      status: 'active',
+      descriptor: {
+        sessionId: '00000000-0000-4000-8000-000000000062',
+        limits: { humanSalvos: 6, cpuSalvos: 6 },
+      },
+      transcript: [],
+      fieldOrder: { id: 'fire-for-effect', result: null },
     })
+    expect(account.startVerifiedDeployment).toHaveBeenCalledTimes(3)
   })
 
   it('retains terminal evidence and retries completion only before expiry', async () => {

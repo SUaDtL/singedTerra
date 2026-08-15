@@ -13,6 +13,7 @@ const seams = vi.hoisted(() => ({
   onVerifiedRetry: null as null | (() => void),
   onVerifiedContinueCasual: null as null | (() => void),
   onVerifiedReturnToBattery: null as null | (() => void),
+  onVerifiedNextOrder: null as null | (() => void),
   inputAction: null as null | ((action: Record<string, unknown>) => void),
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererAnimating: false,
@@ -27,6 +28,7 @@ const seams = vi.hoisted(() => ({
   progressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
+  verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
   hudFrames: [] as Array<{ phase: GameState['phase']; activePlayerId: string; isFiring: boolean }>,
   forwardedActions: [] as Array<Record<string, unknown>>,
@@ -173,6 +175,7 @@ vi.mock('./ui/HUD', () => ({
     onVerifiedRetry(callback: () => void) { seams.onVerifiedRetry = callback }
     onVerifiedContinueCasual(callback: () => void) { seams.onVerifiedContinueCasual = callback }
     onVerifiedReturnToBattery(callback: () => void) { seams.onVerifiedReturnToBattery = callback }
+    onVerifiedNextOrder(callback: () => void) { seams.onVerifiedNextOrder = callback }
     onTouchAngle() {}
     onTouchPower() {}
     onTouchWeapon() {}
@@ -185,10 +188,12 @@ vi.mock('./ui/HUD', () => ({
     }
     setVerifiedDeployment(state: Record<string, unknown> | null) {
       seams.verifiedHudStates.push(state)
+      if (state && 'humanSalvos' in state) seams.verifiedPresentationEvents.push('budget')
     }
     setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
     setFieldOrder(state: Record<string, unknown> | null) {
       seams.fieldOrderHudStates.push(state)
+      if (state) seams.verifiedPresentationEvents.push('order')
     }
     setLiveMatchDiagnostics(provider: (() => unknown) | null) {
       seams.liveMatchDiagnosticsSettings.push(provider)
@@ -245,6 +250,8 @@ vi.mock('./ui/Lobby', () => ({
       return true
     }
     returnVerifiedDeploymentToBattery() {
+      if (seams.verifiedDeployment.status !== 'expired'
+        && seams.verifiedDeployment.status !== 'verified') return false
       seams.returnedVerified += 1
       seams.verifiedDeployment = { status: 'idle' }
       return true
@@ -470,6 +477,7 @@ describe('production hot-seat progression composition', () => {
     seams.onVerifiedRetry = null
     seams.onVerifiedContinueCasual = null
     seams.onVerifiedReturnToBattery = null
+    seams.onVerifiedNextOrder = null
     seams.inputAction = null
     seams.rendererEvents = null
     seams.rendererAnimating = false
@@ -484,6 +492,7 @@ describe('production hot-seat progression composition', () => {
     seams.progressionReceipts.length = 0
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
+    seams.verifiedPresentationEvents.length = 0
     seams.hudUpdates.length = 0
     seams.hudFrames.length = 0
     seams.forwardedActions.length = 0
@@ -680,6 +689,75 @@ describe('production hot-seat progression composition', () => {
     expect(seams.progressionReceipts).toEqual([])
     seams.onQuit?.()
     expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
+  })
+
+  it('returns only an accepted verified report to the Battery before a fresh descriptor-backed order starts', async () => {
+    const firstState = liveVerifiedState()
+    const firstController = fakeVerifiedController(firstState)
+    const firstClient = fakeClient(firstState)
+    seams.verifiedControllers.push(firstController)
+    seams.clients.push(firstClient)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: verifiedDescriptor, transcript: [{ angle: 45, power: 50 }],
+      deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: true, canComplete: true },
+    }
+    seams.completeVerified = async () => {
+      seams.verifiedDeployment = { status: 'verified', receipt: verifiedReceipt }
+      return verifiedReceipt
+    }
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onVerifiedNextOrder) throw new Error('Expected verified report wiring')
+    seams.onLobbyReady(verifiedConfig([{ angle: 45, power: 50 }]))
+    await vi.waitFor(() => expect(firstClient.start).toHaveBeenCalledOnce())
+
+    firstController.complete = true
+    firstState.phase = 'GAME_OVER'
+    firstState.winner = 'p1'
+    firstClient.emit(firstState)
+    await vi.waitFor(() => expect(seams.verifiedProgressionReceipts).toEqual([verifiedReceipt]))
+
+    const lobbyShowsBeforeHandoff = seams.lobbyShows
+    seams.onVerifiedNextOrder()
+    expect(seams.returnedVerified).toBe(1)
+    expect(firstClient.stop).toHaveBeenCalledOnce()
+    expect(seams.lobbyShows).toBe(lobbyShowsBeforeHandoff + 1)
+    expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
+
+    seams.verifiedPresentationEvents.length = 0
+
+    const freshDescriptor = {
+      ...verifiedDescriptor,
+      sessionId: '00000000-0000-4000-8000-000000000062',
+      config: { ...verifiedDescriptor.config, seed: 23 },
+    }
+    const freshState = liveVerifiedState()
+    const freshController = fakeVerifiedController(freshState)
+    const freshClient = fakeClient(freshState)
+    const freshOrder: FieldOrder = {
+      id: 'fire-for-effect', title: 'Fire for Effect',
+      instruction: 'Damage the CPU on two separate human salvos.',
+      progress: { damagedSalvos: 0, requiredDamagedSalvos: 2 }, result: null,
+    }
+    seams.verifiedControllers.push(freshController)
+    seams.clients.push(freshClient)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: freshDescriptor, transcript: [], fieldOrder: freshOrder,
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    seams.onLobbyReady({
+      ...verifiedConfig([], freshOrder),
+      settings: { ...verifiedConfig([], freshOrder).settings, seed: 23 },
+      verifiedDeployment: { descriptor: freshDescriptor, transcript: [], fieldOrder: freshOrder },
+    })
+    await vi.waitFor(() => expect(freshClient.start).toHaveBeenCalledOnce())
+    freshClient.emit(freshState)
+
+    expect(seams.verifiedControllerSeeds).toEqual([17, 23])
+    expect(seams.verifiedHudStates.at(-1)).toMatchObject({
+      status: 'active', humanSalvos: 0, cpuSalvos: 0, humanLimit: 6, cpuLimit: 6,
+    })
+    expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({ id: 'fire-for-effect' })
+    expect(seams.verifiedPresentationEvents.slice(-2)).toEqual(['budget', 'order'])
   })
 
   it('keeps First Strike live through a third fired salvo and misses before later CPU damage can be credited', async () => {
