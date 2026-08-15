@@ -1036,6 +1036,8 @@ test.describe('HUD layout guardrails', () => {
     const console = page.getByRole('region', { name: 'Turn command console' });
     const activeRow = console.locator('.st-hud__active-row');
     const solution = console.locator('.st-hud__console-solution');
+    const commitment = console.locator('.st-hud__console-commitment');
+    const readback = commitment.locator('[data-ui="shot-readback"]');
     const player = activeRow.locator('.st-hud__turn-owner');
     const weapon = solution.locator('.st-hud__weapon-value');
     const portrait = activeRow.getByRole('img', { name: /Mobility:/ });
@@ -1057,6 +1059,12 @@ test.describe('HUD layout guardrails', () => {
     await expect(meter).toHaveAttribute('aria-valuenow', '100');
     await expect(fire).toBeVisible();
     await expect(console.locator('.st-hud__primary-action')).toHaveCount(1);
+    await expect(readback).toBeVisible();
+    await expect(readback).toHaveAttribute('aria-label', 'Current firing solution');
+    await expect(readback).toContainText('Baby Missile');
+    await expect(readback).toContainText('45°');
+    await expect(readback).toContainText('Power 50');
+    await expect(readback).toContainText(/Wind (?:Calm|\d+\.\d (?:left|right))/);
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
       "P1's turn. Weapon Baby Missile. 100 fuel remaining.",
@@ -1066,6 +1074,7 @@ test.describe('HUD layout guardrails', () => {
     await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
     await page.getByRole('button', { name: 'Collapse arsenal' }).click();
     await expect(weapon).toHaveText('Sandhog');
+    await expect(readback).toContainText('Sandhog');
     await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
       .toHaveAttribute('data-weapon', 'sandhog');
     await expect(fire).toHaveAttribute('aria-label', 'Fire Sandhog');
@@ -1113,6 +1122,8 @@ test.describe('HUD layout guardrails', () => {
       const hud = document.getElementById('hud')!;
       const playerNode = node.querySelector<HTMLElement>('.st-hud__turn-owner')!;
       const weaponNode = node.querySelector<HTMLElement>('.st-hud__weapon-value')!;
+      const commitmentNode = node.querySelector<HTMLElement>('.st-hud__console-commitment')!;
+      const readbackNode = node.querySelector<HTMLElement>('[data-ui="shot-readback"]')!;
       // Mutate and measure in one browser task so the live HUD update loop
       // cannot restore the fixture name between the probe and geometry read.
       playerNode.textContent = 'Commander Longname X';
@@ -1123,6 +1134,10 @@ test.describe('HUD layout guardrails', () => {
           return rect.width > 0 && rect.height > 0;
         });
       const targetRects = visibleTargets.map((target) => target.getBoundingClientRect());
+      const commitmentBounds = commitmentNode.getBoundingClientRect();
+      const readbackBounds = readbackNode.getBoundingClientRect();
+      const readbackItems = [...readbackNode.querySelectorAll<HTMLElement>('.st-hud__shot-readback-item')]
+        .map((item) => item.getBoundingClientRect());
       return {
         consoleClientHeight: node.clientHeight,
         consoleScrollHeight: node.scrollHeight,
@@ -1139,6 +1154,16 @@ test.describe('HUD layout guardrails', () => {
           && target.right <= bounds.right + 1
           && target.top >= bounds.top - 1
           && target.bottom <= bounds.bottom + 1),
+        readbackContained: readbackBounds.left >= commitmentBounds.left - 1
+          && readbackBounds.right <= commitmentBounds.right + 1
+          && readbackBounds.top >= commitmentBounds.top - 1
+          && readbackBounds.bottom <= commitmentBounds.bottom + 1,
+        readbackItemsSeparate: readbackItems.every((item, index) =>
+          readbackItems.every((other, otherIndex) => index === otherIndex
+            || item.right <= other.left + 1
+            || other.right <= item.left + 1
+            || item.bottom <= other.top + 1
+            || other.bottom <= item.top + 1)),
         targetMetrics: visibleTargets.map((target) => ({
           className: target.className,
           height: target.getBoundingClientRect().height,
@@ -1152,6 +1177,8 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.playerScrollWidth).toBeLessThanOrEqual(geometry.playerClientWidth + 1);
     expect(geometry.weaponScrollWidth).toBeLessThanOrEqual(geometry.weaponClientWidth + 1);
     expect(geometry.targetsContained).toBe(true);
+    expect(geometry.readbackContained).toBe(true);
+    expect(geometry.readbackItemsSeparate).toBe(true);
     const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
     for (const target of geometry.targetMetrics) {
       expect(

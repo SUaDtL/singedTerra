@@ -150,6 +150,7 @@ test.describe('First Salvo browser contract', () => {
 
     const card = page.locator('[data-ui="first-salvo-coach"]');
     const fire = page.locator('.st-hud__primary-action');
+    const readback = page.locator('[data-ui="shot-readback"]');
     await expect(card).toContainText('1 / 3');
     await expect(fire).toBeVisible();
     await expect(fire).toBeEnabled();
@@ -200,9 +201,14 @@ test.describe('First Salvo browser contract', () => {
 
     await expect(card).toContainText('3 / 3');
     await expectCoachAnchorsRailZone(page, 'commitment');
+    await expect(readback).toBeHidden();
     await expect(fire).toBeVisible();
     await expect(fire).toBeEnabled();
     await expectCoachFitsRail(page);
+
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    await expect(card).toBeHidden();
+    await expect(readback).toBeVisible();
 
     await fire.click();
     await expect(card).toBeHidden();

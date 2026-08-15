@@ -13,6 +13,7 @@ import { expect, type Page } from '@playwright/test';
  */
 export async function enterBattleIfBriefed(page: Page): Promise<void> {
   const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+  await briefing.waitFor({ state: 'visible', timeout: 300 }).catch(() => undefined);
   if (await briefing.isVisible()) {
     await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
     await expect(briefing).toBeHidden();

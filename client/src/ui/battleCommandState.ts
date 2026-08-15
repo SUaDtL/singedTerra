@@ -100,6 +100,13 @@ function projectedState(
 
 const fireCommit = { label: 'Fire', enabled: true } as const;
 
+function shotReadback(solution: NonNullable<BattleCommandState['solution']>): string {
+  const wind = solution.wind === 0
+    ? 'Wind calm.'
+    : `Wind ${Math.abs(solution.wind).toFixed(1)} ${solution.wind < 0 ? 'left' : 'right'}.`;
+  return `${solution.weapon === 'baby_missile' ? 'Baby Missile' : solution.weapon} · ${solution.angle}° · Power ${solution.power} · ${wind}`;
+}
+
 function validImpactLearningCue(
   state: GameState,
   tank: TankState | null,
@@ -179,8 +186,11 @@ export function battleCommandStateFor(
     });
   }
   if (state.phase === 'PLAYER_TURN' && tank !== null && canControl && verifiedInputAllowed) {
+    const solution = solutionFor(state, tank);
     return projectedState(state, tank, 'Your firing decision', {
-      phase: 'decision', label: 'Fire ready', explanation: null, commit: fireCommit,
+      phase: 'decision', label: 'Fire ready',
+      explanation: solution === null ? null : shotReadback(solution),
+      commit: fireCommit,
     });
   }
   if (state.phase === 'PLAYER_TURN') {
