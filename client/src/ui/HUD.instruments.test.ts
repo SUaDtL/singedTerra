@@ -32,11 +32,11 @@ describe('HUD instrument cluster', () => {
     expect(root.querySelectorAll('.st-hud__gauge-label')).toHaveLength(3);
     expect(root.querySelector('.st-hud__gauge-nums')).toBeNull();
     expect(root.querySelector('.st-hud__gauge-cell--elevation')?.textContent)
-      .toContain('Elevation');
+      .toContain('Angle');
     expect(root.querySelector('.st-hud__gauge-cell--power')?.textContent)
       .toContain('Power');
     expect(root.querySelector('.st-hud__gauge-cell--wind')?.textContent)
-      .toContain('Wind Vector');
+      .toContain('Wind');
   });
 
   it('uses a full-width wind rail with exact signed, clamped marker travel', () => {
@@ -92,27 +92,29 @@ describe('HUD instrument cluster', () => {
 
     // Player 1 starts at global angle 45°: up and to the RIGHT.
     expect(needle?.getAttribute('transform')).toBe('rotate(45, 36, 40)');
-    expect(label?.textContent).toBe('45° ▶');
+    expect(label?.textContent).toBe('45▶');
+    expect(label?.getAttribute('aria-label')).toBe('45 degrees, right');
 
     tank.angle = 0;
     hud.update(state);
     expect(needle?.getAttribute('transform')).toBe('rotate(90, 36, 40)');
-    expect(label?.textContent).toBe('0° ▶');
+    expect(label?.textContent).toBe('0▶');
 
     tank.angle = 90;
     hud.update(state);
     expect(needle?.getAttribute('transform')).toBe('rotate(0, 36, 40)');
-    expect(label?.textContent).toBe('90° ▲');
+    expect(label?.textContent).toBe('90▲');
 
     tank.angle = 135;
     hud.update(state);
     expect(needle?.getAttribute('transform')).toBe('rotate(-45, 36, 40)');
-    expect(label?.textContent).toBe('45° ◀');
+    expect(label?.textContent).toBe('45◀');
 
     tank.angle = 180;
     hud.update(state);
     expect(needle?.getAttribute('transform')).toBe('rotate(-90, 36, 40)');
-    expect(label?.textContent).toBe('0° ◀');
+    expect(label?.textContent).toBe('0◀');
+    expect(label?.getAttribute('aria-label')).toBe('0 degrees, left');
   });
 
   it('gives elevation and power matching dial geometry', () => {

@@ -290,7 +290,8 @@ test.describe('First Salvo browser contract', () => {
     const fire = page.locator('.st-hud__primary-action');
     const canvasBox = await page.locator('#game').boundingBox();
     expect(canvasBox).not.toBeNull();
-    await expect(elevation).toHaveText('45° ▶');
+    await expect(elevation).toHaveText('45▶');
+    await expect(elevation).toHaveAttribute('aria-label', '45 degrees, right');
     await expect(power).toHaveText('50');
     await expect(card).toContainText('1 / 3');
     await expect(fire).toBeEnabled();
@@ -313,7 +314,7 @@ test.describe('First Salvo browser contract', () => {
 
     await expect(canvas).toHaveAttribute('data-last-pointer-type', 'touch');
     await expect(canvas).toHaveAttribute('data-last-pointer-primary', 'true');
-    await expect(elevation).not.toHaveText('45° ▶');
+    await expect(elevation).not.toHaveText('45▶');
     await expect(power).not.toHaveText('50');
     await expect(card).not.toContainText('1 / 3');
     await expect(fire).toBeEnabled();

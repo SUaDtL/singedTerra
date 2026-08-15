@@ -173,9 +173,12 @@ describe('HUD command input console', () => {
     expect(controls.inert).toBe(false);
     expect(controls.getAttribute('aria-hidden')).toBeNull();
     toggle.click();
+    const drawerClose = rail.querySelector<HTMLButtonElement>('.st-hud__arsenal-drawer-close')!;
     expect(controls.inert).toBe(true);
     expect(controls.getAttribute('aria-hidden')).toBe('true');
-    toggle.click();
+    expect(toggle.getAttribute('aria-hidden')).toBe('true');
+    expect(document.activeElement).toBe(drawerClose);
+    drawerClose.click();
     expect(document.activeElement).toBe(toggle);
     expect(controls.inert).toBe(false);
     expect(controls.getAttribute('aria-hidden')).toBeNull();

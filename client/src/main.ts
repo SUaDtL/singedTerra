@@ -1158,6 +1158,10 @@ function bootstrap(): void {
     appEl.style.setProperty('--st-command-choice-target', `${commandChoiceTarget}px`);
     const deploymentChoiceTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
     appEl.style.setProperty('--st-deployment-choice-target', `${deploymentChoiceTarget}px`);
+    // The whole stage is zoomed. Give the persistent command rail a logical
+    // type size that still resolves to at least 11 physical pixels.
+    const commandReadabilitySize = Math.max(11, Math.ceil(11 / Math.max(s, Number.EPSILON)));
+    appEl.style.setProperty('--st-command-readability-size', `${commandReadabilitySize}px`);
     // The arsenal dossier lives inside the zoomed stage. Keep its tactical copy
     // above physical readability floors instead of shrinking it to 3-6px on phones.
     appEl.style.setProperty('--st-weapon-intel-name-size', `${Math.max(12, Math.ceil(12 / s))}px`);

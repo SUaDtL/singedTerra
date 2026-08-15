@@ -277,6 +277,7 @@ export class HUD {
   /** Collapse/expand control for the arsenal strip + its persisted state. */
   private stripToggleEl!: HTMLButtonElement;
   private stripToggleLabelEl!: HTMLElement;
+  private arsenalDrawerCloseEl!: HTMLButtonElement;
   private stripBodyEl!: HTMLElement;
   private stripCollapsed = false;
   private weaponIntelEl!: HTMLElement;
@@ -908,14 +909,15 @@ export class HUD {
     this.gaugeElevLabel.setAttribute('y', '52');
     this.gaugeElevLabel.setAttribute('text-anchor', 'middle');
     this.gaugeElevLabel.setAttribute('class', 'st-hud__gauge-label');
-    this.gaugeElevLabel.textContent = '0° ▶';
+    this.gaugeElevLabel.textContent = '0▶';
+    this.gaugeElevLabel.setAttribute('aria-label', '0 degrees, right');
     elevSvg.append(elevTrack, elevTicks, elevPivot, this.gaugeElevNeedle, this.gaugeElevLabel);
     const elevCell = document.createElement('div');
     elevCell.className = 'st-hud__gauge-cell st-hud__gauge-cell--elevation';
     elevCell.dataset['firstSalvoTarget'] = 'aim';
     const elevCellTitle = document.createElement('div');
     elevCellTitle.className = 'st-hud__gauge-cell-title';
-    elevCellTitle.textContent = 'Elevation';
+    elevCellTitle.textContent = 'Angle';
     elevCell.append(elevCellTitle, elevSvg);
 
     // ── Wind gauge (horizontal center-zero track) ──
@@ -968,7 +970,7 @@ export class HUD {
     windCell.dataset['firstSalvoTarget'] = 'power-and-wind';
     const windCellTitle = document.createElement('div');
     windCellTitle.className = 'st-hud__gauge-cell-title';
-    windCellTitle.textContent = 'Wind Vector';
+    windCellTitle.textContent = 'Wind';
     windCell.append(windCellTitle, windSvg);
 
     // ── Power gauge (arc fill driven by stroke-dasharray) ──
@@ -1282,13 +1284,13 @@ export class HUD {
     const drawerTitle = document.createElement('span');
     drawerTitle.className = 'st-hud__arsenal-drawer-title';
     drawerTitle.textContent = 'Arsenal';
-    const drawerClose = document.createElement('button');
-    drawerClose.type = 'button';
-    drawerClose.className = 'st-hud__arsenal-drawer-close';
-    drawerClose.setAttribute('aria-label', 'Collapse arsenal');
-    drawerClose.textContent = 'Close';
-    drawerClose.addEventListener('click', () => this.toggleStripCollapsed());
-    drawerHeader.append(drawerTitle, drawerClose);
+    this.arsenalDrawerCloseEl = document.createElement('button');
+    this.arsenalDrawerCloseEl.type = 'button';
+    this.arsenalDrawerCloseEl.className = 'st-hud__arsenal-drawer-close';
+    this.arsenalDrawerCloseEl.setAttribute('aria-label', 'Collapse arsenal');
+    this.arsenalDrawerCloseEl.textContent = 'Close';
+    this.arsenalDrawerCloseEl.addEventListener('click', () => this.toggleStripCollapsed());
+    drawerHeader.append(drawerTitle, this.arsenalDrawerCloseEl);
     const stripGrid = document.createElement('div');
     stripGrid.className = 'st-hud__strip-grid';
     stripGrid.id = `${stripBody.id}-grid`;
@@ -2700,7 +2702,8 @@ export class HUD {
       this.syncTankPortrait();
       // Zero out gauges
       this.gaugeElevNeedle.setAttribute('transform', '');
-      if (this.gaugeElevLabel.textContent !== '0° ▶') this.gaugeElevLabel.textContent = '0° ▶';
+      if (this.gaugeElevLabel.textContent !== '0▶') this.gaugeElevLabel.textContent = '0▶';
+      this.gaugeElevLabel.setAttribute('aria-label', '0 degrees, right');
       this.gaugeWindMarker.setAttribute('x', '68');
       this.gaugeWindMarker.setAttribute('transform', 'rotate(45, 72, 22)');
       if (this.gaugeWindLabel.textContent !== '• 0.0') this.gaugeWindLabel.textContent = '• 0.0';
@@ -2785,8 +2788,11 @@ export class HUD {
     const needleDeg = elevationNeedleDeg(tank.angle);
     const needleRot = 90 - needleDeg; // 0→+90° (right), 90→0° (up), 180→−90° (left)
     this.gaugeElevNeedle.setAttribute('transform', `rotate(${needleRot}, 36, 40)`);
-    const elevLbl = `${elevationDegrees(tank.angle)}° ${aimDirectionGlyph(tank.angle)}`;
+    const elevation = elevationDegrees(tank.angle);
+    const direction = tank.angle === 90 ? 'up' : tank.angle < 90 ? 'right' : 'left';
+    const elevLbl = `${elevation}${aimDirectionGlyph(tank.angle)}`;
     if (this.gaugeElevLabel.textContent !== elevLbl) this.gaugeElevLabel.textContent = elevLbl;
+    this.gaugeElevLabel.setAttribute('aria-label', `${elevation} degrees, ${direction}`);
 
     // ── Power gauge (arc fill) ──
     const fraction = gaugeFraction(tank.power, 0, tank.powerCap ?? 100);
@@ -2914,7 +2920,7 @@ export class HUD {
     this.stripCollapsed = !this.stripCollapsed;
     writeArsenalCollapsed(this.stripCollapsed);
     this.applyStripCollapsed();
-    if (this.stripCollapsed) this.stripToggleEl.focus();
+    (this.stripCollapsed ? this.stripToggleEl : this.arsenalDrawerCloseEl).focus();
   }
 
   /** Reflect the collapsed state onto the strip DOM + toggle affordance. */
@@ -4027,9 +4033,12 @@ export class HUD {
   box-shadow: 0 0 9px rgba(255, 122, 31, 0.28);
 }
 .st-hud__aim {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
   padding: 5px 10px;
   border-radius: 4px;
   background: rgba(12, 7, 22, 0.55);
@@ -4039,7 +4048,12 @@ export class HUD {
   line-height: 1.5;
   color: var(--text-gold);
 }
-.st-hud__aim-text { white-space: nowrap; }
+.st-hud__aim-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .st-hud__strip {
   display: flex;
   flex-direction: column;
@@ -4344,12 +4358,16 @@ export class HUD {
 .st-hud__first-salvo--hidden { display: none; }
 .st-hud__first-salvo-progress {
   grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
   color: var(--gold);
   font-family: var(--font-display);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.1px;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .st-hud__first-salvo-copy {
   grid-column: 2;
@@ -6003,7 +6021,7 @@ export class HUD {
 #battle-rail .st-hud__console-solution {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(126px, 0.68fr) minmax(202px, 1.22fr) minmax(116px, 0.7fr);
+  grid-template-columns: minmax(180px, 0.9fr) minmax(180px, 1.05fr) minmax(180px, 0.9fr);
   grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 6px;
   padding: 5px;
@@ -6126,6 +6144,9 @@ export class HUD {
 #battle-rail .st-hud__console-solution > .st-hud__first-salvo {
   grid-column: 1 / -1;
   grid-row: 2;
+  justify-self: stretch;
+  width: auto;
+  max-width: 100%;
 }
 #battle-rail .st-hud__strip--collapsed { display: none; }
 #battle-rail .st-hud__strip--open {
@@ -6188,6 +6209,9 @@ export class HUD {
 #battle-rail .st-hud__console-commitment > .st-hud__first-salvo {
   grid-row: 3;
   align-self: center;
+  justify-self: stretch;
+  width: auto;
+  max-width: 100%;
 }
 #battle-rail .st-hud__console-commitment:has(> .st-hud__first-salvo:not(.st-hud__first-salvo--hidden)) > .st-hud__aim {
   visibility: hidden;
@@ -6210,10 +6234,24 @@ export class HUD {
 #battle-rail[data-combat-focus="outcome"] .st-hud__console-solution {
   filter: saturate(0.55) brightness(0.72);
 }
+#battle-rail .st-hud__turn-owner,
+#battle-rail .st-hud__weapon-label,
+#battle-rail .st-hud__weapon-value,
+#battle-rail .st-hud__weapon-ammo,
+#battle-rail .st-hud__solution-adjustment-label,
+#battle-rail .st-hud__gauge-cell-title,
+#app #battle-rail .st-hud__gauge-label,
+#battle-rail .st-hud__trajectory-guide,
+#battle-rail .st-hud__console-state,
+#battle-rail .st-hud__commitment-explanation {
+  font-size: var(--st-command-readability-size, 11px);
+}
+#battle-rail .st-hud__weapon-label { line-height: 1.25; }
+#app.is-compact #battle-rail .st-hud__weapon-label { display: none; }
   @media (pointer: coarse) {
   #battle-rail .st-hud__command-console {
     --st-rail-touch-target: var(--st-deployment-choice-target, 91px);
-    grid-template-columns: 270px minmax(0, 1fr) 220px;
+    grid-template-columns: 270px minmax(0, 1fr) 180px;
     gap: 5px;
   }
   #hud .st-hud__menu {
@@ -6260,7 +6298,7 @@ export class HUD {
     min-height: 58px;
   }
   #battle-rail .st-hud__console-solution {
-    grid-template-columns: 130px 170px minmax(360px, 1fr);
+    grid-template-columns: 180px 150px minmax(360px, 1fr);
     grid-template-rows: minmax(var(--st-rail-touch-target), 1fr) auto auto;
     gap: 4px;
     padding: 4px;

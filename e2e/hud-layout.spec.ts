@@ -164,14 +164,20 @@ test.describe('HUD layout guardrails', () => {
         }));
       const labels = [...node.querySelectorAll<HTMLElement>([
         '.st-hud__turn-owner',
+        '.st-hud__weapon-label',
         '.st-hud__weapon-value',
         '.st-hud__weapon-ammo',
         '.st-hud__solution-adjustment-label',
+        '.st-hud__gauge-cell-title',
         '.st-hud__gauge-label',
+        '.st-hud__trajectory-guide',
         '.st-hud__console-state',
         '.st-hud__commitment-explanation',
       ].join(','))].filter(rendered).map((label) => ({
         text: label.textContent,
+        renderedFontSize: parseFloat(getComputedStyle(label).fontSize)
+          * (document.getElementById('app')!.getBoundingClientRect().width
+            / document.getElementById('app')!.offsetWidth),
         clientWidth: label.clientWidth,
         scrollWidth: label.scrollWidth,
         clientHeight: label.clientHeight,
@@ -204,6 +210,8 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.console.y + geometry.console.height)
       .toBeLessThanOrEqual(geometry.rail.y + geometry.rail.height + 1);
     for (const label of geometry.labels) {
+      expect(label.renderedFontSize, `${label.text} must render at a readable size`)
+        .toBeGreaterThanOrEqual(11);
       expect(label.scrollWidth, `${label.text} must not clip horizontally`)
         .toBeLessThanOrEqual(label.clientWidth + 1);
       expect(label.scrollHeight, `${label.text} must not clip vertically`)
@@ -1190,10 +1198,14 @@ test.describe('HUD layout guardrails', () => {
       clientHeight: element.clientHeight,
       scrollHeight: element.scrollHeight,
     }));
-    await page.locator('.st-hud__strip-toggle').click();
+    const trigger = page.locator('.st-hud__strip-toggle');
+    await trigger.focus();
+    await page.keyboard.press('Enter');
     await expect(page.locator('.st-hud__strip-grid')).toBeVisible();
     await expect(page.locator('.st-hud__strip')).toHaveClass(/st-hud__strip--open/);
     await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.st-hud__arsenal-drawer-close')).toBeFocused();
+    await expect(trigger).toHaveAttribute('aria-hidden', 'true');
     const solutionBox = await solution.boundingBox();
     const drawerBox = await page.locator('.st-hud__strip').boundingBox();
     expect(solutionBox).not.toBeNull();
@@ -1230,7 +1242,6 @@ test.describe('HUD layout guardrails', () => {
         .every((child) => (child as HTMLElement).inert),
     );
     expect(inertSiblings).toBe(true);
-    await page.locator('.st-hud__weapon-btn:visible').first().focus();
     await page.keyboard.press('Escape');
     await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
     await expect(page.locator('.st-hud__strip')).not.toHaveClass(/st-hud__strip--open/);
