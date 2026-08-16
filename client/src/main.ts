@@ -239,6 +239,13 @@ function bootstrap(): void {
   // state the renderer draws, never touching the deterministic engine.
   const audio = new AudioEngine();
   audio.unlockOnGesture();
+  const syncBattleSettings = (): void => {
+    hud.setBattleSettingsState?.({
+      aimGuideEnabled: renderer.isAimGuideEnabled,
+      soundEnabled: !audio.isMuted,
+    });
+  };
+  syncBattleSettings();
   let terminalImpactObserved = false;
   let terminalImpactNotified = false;
 
@@ -314,15 +321,20 @@ function bootstrap(): void {
   });
   const toggleAimGuide = (): void => {
     const on = renderer.toggleAimGuide();
+    syncBattleSettings();
     markDirty(); // reflect it on a static decision frame as well as in flight
     hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
+  };
+  const toggleSound = (): void => {
+    const muted = audio.toggleMute();
+    syncBattleSettings();
+    hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
   };
   // Mute toggle (M). Document-level so it works on any screen; 'M' is unused by
   // InputHandler (which owns arrows/space/Q), so there's no key conflict.
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyM' && !e.repeat) {
-      const muted = audio.toggleMute();
-      hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
+      toggleSound();
     } else if (e.code === 'KeyG' && !e.repeat) {
       toggleAimGuide();
     } else if (e.code === 'KeyF') {
@@ -1132,11 +1144,11 @@ function bootstrap(): void {
   hud.onTouchAngle((delta) => { if (localInputAllowed()) input?.stepAngle(delta); });
   hud.onTouchPower((delta) => { if (localInputAllowed()) input?.stepPower(delta); });
   hud.onTouchWeapon(()     => { if (localInputAllowed()) input?.nextWeapon(); });
-  // Some narrow presentation harnesses provide an older HUD-shaped seam that
-  // does not expose the optional Guide control. Real HUD instances always do;
-  // keeping this registration capability-checked preserves those unrelated
-  // composition tests without creating a second input path.
-  hud.onAimGuide?.(()       => { if (localInputAllowed()) toggleAimGuide(); });
+  // Narrow presentation harnesses may provide an older HUD-shaped seam. The
+  // production HUD always exposes both Settings callbacks; keep those fixtures
+  // from becoming an unrelated integration dependency.
+  hud.onAimGuide?.(()        => toggleAimGuide());
+  hud.onToggleSound?.(()     => toggleSound());
   hud.onMove((delta)        => { if (localInputAllowed()) input?.stepMove(delta); });
   hud.onPrimaryAction(()   => { if (localInputAllowed()) input?.triggerFire(); });
 

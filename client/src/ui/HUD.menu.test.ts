@@ -60,6 +60,18 @@ describe('HUD Command Menu', () => {
       .some((button) => button.textContent === 'Open Store')).toBe(false);
   });
 
+  it('routes Battle Settings from Command Menu to the shared settings dialog', () => {
+    const { root, modal } = mount();
+
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+    modal.querySelector<HTMLButtonElement>('[data-ui="command-menu"] button[data-command="battle-settings"]')!.click();
+
+    expect(modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!.classList
+      .contains('st-hud__overlay--hidden')).toBe(true);
+    expect(modal.querySelector<HTMLElement>('[data-ui="battle-settings"]')!.classList
+      .contains('st-hud__overlay--hidden')).toBe(false);
+  });
+
   it('keeps Armory and buying weapons in the live Fire Control surface', () => {
     const { root } = mount();
 
@@ -88,7 +100,7 @@ describe('HUD Command Menu', () => {
     const { root, modal } = mount();
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
     const menu = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
-    const [resume, returnToLobby] = [...menu.querySelectorAll<HTMLButtonElement>('button')];
+    const [resume, , returnToLobby] = [...menu.querySelectorAll<HTMLButtonElement>('button')];
 
     returnToLobby!.focus();
     menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));

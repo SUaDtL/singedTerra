@@ -156,9 +156,8 @@ describe('HUD single-screen combat shell', () => {
     expect(solution?.querySelector('.st-hud__instruments')).toBeNull();
     expect(solution?.querySelectorAll('[data-ui="weapon-bay"]')).toHaveLength(1);
     expect(solution?.querySelector('[data-ui="arsenal-drawer"]')).not.toBeNull();
-    expect(solution?.querySelector('[data-ui="deterministic-aim-guide"]')).not.toBeNull();
-    expect(solution?.querySelector('.st-hud__solution-adjustments [data-ui="deterministic-aim-guide"]'))
-      .not.toBeNull();
+    expect(solution?.querySelector('[data-ui="deterministic-aim-guide"]')).toBeNull();
+    expect(commitment?.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
     expect(solution?.querySelectorAll('[data-control="angle"]')).toHaveLength(1);
     expect(solution?.querySelectorAll('[data-control="power"]')).toHaveLength(1);
     expect(solution?.querySelector('[data-value-owner="wind"]')).not.toBeNull();
@@ -302,7 +301,8 @@ describe('HUD single-screen combat shell', () => {
     expect(commitment.dataset['commandMode']).toBe('tracking');
     expect(stateLabel.textContent).toContain('Tracking shot');
     expect(stateLabel.title).toBe('Shot in flight.');
-    expect(commitment.querySelector('button')).toBeNull();
+    expect(commitment.querySelector('.st-hud__primary-action')).toBeNull();
+    expect(commitment.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
 
     state.phase = 'RESOLVING';
     hud.update(state, false, false);
@@ -310,7 +310,8 @@ describe('HUD single-screen combat shell', () => {
     expect(commitment.dataset['commandMode']).toBe('resolving');
     expect(stateLabel.textContent).toContain('Resolving impact');
     expect(commitment.textContent).toContain('Resolving terrain and damage.');
-    expect(commitment.querySelector('button')).toBeNull();
+    expect(commitment.querySelector('.st-hud__primary-action')).toBeNull();
+    expect(commitment.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
 
     state.phase = 'PLAYER_TURN';
     state.activePlayerId = state.tanks[1]!.id;
@@ -319,7 +320,8 @@ describe('HUD single-screen combat shell', () => {
     expect(commitment.dataset['commandMode']).toBe('handoff');
     expect(stateLabel.textContent).toContain('Awaiting remote action');
     expect(commitment.textContent).toContain('Another commander controls this turn.');
-    expect(commitment.querySelector('button')).toBeNull();
+    expect(commitment.querySelector('.st-hud__primary-action')).toBeNull();
+    expect(commitment.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
     expect(commandConsole.contains(document.activeElement)).toBe(true);
     expect(fired).toBe(1);
   });
@@ -352,7 +354,8 @@ describe('HUD single-screen combat shell', () => {
     )!;
     expect(commitment.dataset['commandMode']).toBe('recovery');
     expect(commitment.textContent).toContain('Retry verification in report');
-    expect(commitment.querySelectorAll('button')).toHaveLength(0);
+    expect(commitment.querySelectorAll('.st-hud__primary-action')).toHaveLength(0);
+    expect(commitment.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
     expect(reportRetry.isConnected).toBe(true);
     expect(reportRetry.textContent).toBe('Retry verification');
     expect(reportRetry.disabled).toBe(false);

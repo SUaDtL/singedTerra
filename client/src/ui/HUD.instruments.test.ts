@@ -37,8 +37,8 @@ describe('HUD firing solution', () => {
     expect(solution.querySelectorAll('[data-value-owner="angle"]')).toHaveLength(1);
     expect(solution.querySelectorAll('[data-value-owner="power"]')).toHaveLength(1);
     expect(solution.querySelectorAll('[data-value-owner="wind"]')).toHaveLength(1);
-    expect(solution.querySelector('.st-hud__solution-wind [data-ui="deterministic-aim-guide"]'))
-      .toBeTruthy();
+    expect(solution.querySelector('[data-ui="deterministic-aim-guide"]')).toBeNull();
+    expect(root.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
 
     for (const [instrument, label] of [
       ['angle', 'Angle'],

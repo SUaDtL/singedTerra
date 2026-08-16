@@ -54,6 +54,12 @@ import {
  */
 export type StorePurchase = { weapon?: WeaponType; accessory?: AccessoryType };
 
+/** Renderer/audio-owned local preferences projected by the Battle Settings dialog. */
+export interface HUDBattleSettingsState {
+  readonly aimGuideEnabled: boolean;
+  readonly soundEnabled: boolean;
+}
+
 interface HUDVerifiedDeploymentDetails {
   readonly humanSalvos: number;
   readonly cpuSalvos: number;
@@ -187,6 +193,8 @@ export class HUD {
   private touchWeaponCb: (() => void) | null = null;
   /** Toggle for the deterministic trajectory projection, shared by G and touch. */
   private aimGuideCb: (() => void) | null = null;
+  /** Toggle for the persisted local audio preference, shared by M and Settings. */
+  private toggleSoundCb: (() => void) | null = null;
   /** Callback fired by the shared rail action (projectile fire or shield activation). */
   private primaryActionCb: (() => void) | null = null;
   /** Callback fired by one semantic mobility-rocker activation. */
@@ -222,6 +230,15 @@ export class HUD {
   private pauseReplayFirstSalvoBtnEl!: HTMLButtonElement;
   private pauseActionsEl!: HTMLElement;
   private pausePreviousFocus: HTMLElement | null = null;
+  private battleSettingsEl!: HTMLElement;
+  private battleSettingsGuideEl!: HTMLButtonElement;
+  private battleSettingsSoundEl!: HTMLButtonElement;
+  private battleSettingsCloseEl!: HTMLButtonElement;
+  private battleSettingsPreviousFocus: HTMLElement | null = null;
+  private battleSettingsState: HUDBattleSettingsState = {
+    aimGuideEnabled: true,
+    soundEnabled: true,
+  };
   private overlayTextEl!: HTMLElement;
   /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
   private overlayScoreEl!: HTMLElement;
@@ -489,6 +506,11 @@ export class HUD {
   onTouchPower(cb: (delta: number) => void): void { this.touchPowerCb = cb; }
   onTouchWeapon(cb: () => void): void { this.touchWeaponCb = cb; }
   onAimGuide(cb: () => void): void { this.aimGuideCb = cb; }
+  onToggleSound(cb: () => void): void { this.toggleSoundCb = cb; }
+  setBattleSettingsState(state: HUDBattleSettingsState): void {
+    this.battleSettingsState = state;
+    if (this.built) this.syncBattleSettings();
+  }
   /** Register the shared Fire / Activate shield action. */
   onPrimaryAction(cb: () => void): void { this.primaryActionCb = cb; }
   /** Register one bounded left/right movement commitment. */
@@ -734,6 +756,7 @@ export class HUD {
     this.buildTurnActions();
     this.buildCommandConsole(controls);
     this.buildEndScreens();
+    this.buildBattleSettings();
     this.buildRoundShop();
     const menu = this.buildMenu();
     this.buildMatchDrawer();
@@ -768,6 +791,7 @@ export class HUD {
       this.overlayEl,
       this.roundOverEl,
       this.pauseEl,
+      this.battleSettingsEl,
       this.verifiedExpiryEl,
       this.liveMatchInspectorEl,
       this.firstSalvoBriefingEl,
@@ -784,6 +808,7 @@ export class HUD {
     this.syncFirstSalvo();
     this.syncQuickChatAvailability();
     this.syncLiveMatchDiagnostics();
+    this.syncBattleSettings();
   }
 
   /** Player health-bar column (top-left). */
@@ -1196,21 +1221,6 @@ export class HUD {
     this.solutionAngleNeedleEl = angleSvg.needle;
     this.solutionPowerArcEl = powerSvg.fill;
     this.solutionWindVectorEl = windSvg.vector;
-    const guide = document.createElement('button');
-    guide.type = 'button';
-    guide.className = 'st-hud__trajectory-guide';
-    guide.dataset['ui'] = 'deterministic-aim-guide';
-    guide.dataset['guideModel'] = 'fixed-step-ballistic';
-    guide.setAttribute('aria-label', 'Deterministic trajectory guide on the battlefield');
-    const guideLabel = document.createElement('span');
-    guideLabel.className = 'st-hud__trajectory-guide-label';
-    guideLabel.textContent = 'Guide';
-    const guideHint = document.createElement('kbd');
-    guideHint.setAttribute('aria-hidden', 'true');
-    guideHint.textContent = 'G';
-    guide.append(makeHudGlyph('aim', 14), guideLabel, guideHint);
-    guide.addEventListener('click', () => this.aimGuideCb?.());
-    wind.root.append(guide);
     controls.append(angle.root, power.root, wind.root);
     return controls;
   }
@@ -1818,10 +1828,17 @@ export class HUD {
     state.setAttribute('role', 'status');
     state.setAttribute('aria-live', 'polite');
     state.tabIndex = -1;
+    const settings = document.createElement('button');
+    settings.type = 'button';
+    settings.className = 'st-hud__battle-settings-trigger st-ui-icon-action';
+    settings.dataset['ui'] = 'battle-settings-trigger';
+    settings.setAttribute('aria-label', 'Battle settings');
+    settings.textContent = '⚙';
+    settings.addEventListener('click', () => this.openBattleSettings(settings));
     const explanation = document.createElement('div');
     explanation.className = 'st-hud__commitment-explanation';
     explanation.hidden = true;
-    terminal.append(state, explanation, this.aimEl, this.turnActionsEl);
+    terminal.append(state, settings, explanation, this.aimEl, this.turnActionsEl);
     this.consoleCommitmentEl = terminal;
     this.consoleStateEl = state;
     this.consoleExplanationEl = explanation;
@@ -2007,6 +2024,12 @@ export class HUD {
       this.togglePause(false);
       this.firstSalvoReplayCb?.();
     });
+    const battleSettingsBtn = document.createElement('button');
+    battleSettingsBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    battleSettingsBtn.type = 'button';
+    battleSettingsBtn.dataset['command'] = 'battle-settings';
+    battleSettingsBtn.textContent = 'Battle Settings';
+    battleSettingsBtn.addEventListener('click', () => this.openBattleSettings(battleSettingsBtn));
     const pauseQuitBtn = document.createElement('button');
     pauseQuitBtn.className = 'st-hud__restart st-hud__restart--ghost';
     pauseQuitBtn.type = 'button';
@@ -2015,7 +2038,7 @@ export class HUD {
     const pauseBtns = document.createElement('div');
     pauseBtns.className = 'st-hud__overlay-btns';
     this.pauseActionsEl = pauseBtns;
-    pauseBtns.append(resumeBtn);
+    pauseBtns.append(resumeBtn, battleSettingsBtn);
     const pauseExit = document.createElement('div');
     pauseExit.className = 'st-hud__command-menu-exit';
     pauseExit.dataset['ui'] = 'command-menu-exit';
@@ -2035,6 +2058,83 @@ export class HUD {
       event.preventDefault();
       actions[next]?.focus({ preventScroll: true });
     });
+  }
+
+  /** One modal surface for renderer/audio-owned local battle preferences. */
+  private buildBattleSettings(): void {
+    const settings = document.createElement('div');
+    settings.className = 'st-hud__overlay st-hud__overlay--hidden st-hud__battle-settings';
+    settings.dataset['ui'] = 'battle-settings';
+    settings.setAttribute('role', 'dialog');
+    settings.setAttribute('aria-modal', 'true');
+    settings.setAttribute('aria-label', 'Battle Settings');
+    settings.setAttribute('aria-hidden', 'true');
+    const panel = document.createElement('section');
+    panel.className = 'st-hud__overlay-panel st-hud__battle-settings-panel';
+    const title = document.createElement('h2');
+    title.className = 'st-hud__overlay-text';
+    title.textContent = 'Battle Settings';
+    const copy = document.createElement('p');
+    copy.className = 'st-hud__battle-settings-copy';
+    copy.textContent = 'Local display and audio preferences.';
+    const makeSwitch = (
+      label: string,
+      shortcut: string,
+      run: () => void,
+    ): HTMLButtonElement => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'st-hud__battle-settings-switch';
+      button.setAttribute('role', 'switch');
+      button.setAttribute('aria-label', label);
+      const text = document.createElement('span');
+      text.textContent = label;
+      const hint = document.createElement('kbd');
+      hint.setAttribute('aria-hidden', 'true');
+      hint.textContent = shortcut;
+      const value = document.createElement('span');
+      value.className = 'st-hud__battle-settings-value';
+      value.dataset['settingValue'] = label === 'Trajectory guide' ? 'aim-guide' : 'sound';
+      button.append(text, hint, value);
+      button.addEventListener('click', run);
+      return button;
+    };
+    this.battleSettingsGuideEl = makeSwitch('Trajectory guide', 'G', () => this.aimGuideCb?.());
+    this.battleSettingsSoundEl = makeSwitch('Sound', 'M', () => this.toggleSoundCb?.());
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'st-hud__restart st-hud__restart--ghost';
+    close.textContent = 'Close settings';
+    close.addEventListener('click', () => this.closeBattleSettings());
+    this.battleSettingsCloseEl = close;
+    const actions = document.createElement('div');
+    actions.className = 'st-hud__overlay-btns';
+    actions.append(close);
+    panel.append(title, copy, this.battleSettingsGuideEl, this.battleSettingsSoundEl, actions);
+    settings.append(panel);
+    settings.addEventListener('click', (event) => {
+      if (event.target === settings) this.closeBattleSettings();
+    });
+    settings.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeBattleSettings();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const controls = [
+        this.battleSettingsGuideEl,
+        this.battleSettingsSoundEl,
+        this.battleSettingsCloseEl,
+      ];
+      const current = controls.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.shiftKey
+        ? (current <= 0 ? controls.length - 1 : current - 1)
+        : (current < 0 || current === controls.length - 1 ? 0 : current + 1);
+      event.preventDefault();
+      controls[next]!.focus({ preventScroll: true });
+    });
+    this.battleSettingsEl = settings;
   }
 
   /** ROUND_OVER between-rounds shop modal. */
@@ -2505,6 +2605,89 @@ export class HUD {
       }
       delete surface.dataset['commandMenuPreviousInert'];
       delete surface.dataset['commandMenuPreviousAriaHidden'];
+    }
+  }
+
+  private openBattleSettings(trigger?: HTMLElement): void {
+    if (!this.battleSettingsEl.classList.contains('st-hud__overlay--hidden')) return;
+    const focused = document.activeElement;
+    this.battleSettingsPreviousFocus = trigger ?? (focused instanceof HTMLElement ? focused : null);
+    if (!this.pauseEl.classList.contains('st-hud__overlay--hidden')) this.togglePause(false);
+    if (!this.stripCollapsed) this.closeArmory();
+    this.toggleStore(false);
+    this.setMatchDrawerOpen(false);
+    this.battleSettingsEl.classList.remove('st-hud__overlay--hidden');
+    this.battleSettingsEl.setAttribute('aria-hidden', 'false');
+    this.setBattleSettingsIsolation(true);
+    this.syncBattleSettings();
+    this.battleSettingsGuideEl.focus({ preventScroll: true });
+  }
+
+  private closeBattleSettings(): void {
+    if (this.battleSettingsEl.classList.contains('st-hud__overlay--hidden')) return;
+    this.battleSettingsEl.classList.add('st-hud__overlay--hidden');
+    this.battleSettingsEl.setAttribute('aria-hidden', 'true');
+    this.setBattleSettingsIsolation(false);
+    const previous = this.battleSettingsPreviousFocus;
+    this.battleSettingsPreviousFocus = null;
+    const visible = (element: HTMLElement | null): element is HTMLElement => {
+      if (!element?.isConnected || element.closest('[inert]')) return false;
+      for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+      }
+      return true;
+    };
+    const fallback = this.commandConsoleEl.querySelector<HTMLButtonElement>(
+      '[aria-label="Battle settings"]',
+    );
+    (visible(previous) ? previous : fallback)?.focus({ preventScroll: true });
+  }
+
+  /** Exclude all app/modal peers while the Settings dialog owns focus. */
+  private setBattleSettingsIsolation(active: boolean): void {
+    const appSiblings = this.modalRoot.parentElement
+      ? [...this.modalRoot.parentElement.children]
+        .filter((element): element is HTMLElement =>
+          element instanceof HTMLElement && element !== this.modalRoot)
+      : [];
+    const modalSiblings = [...this.modalRoot.children]
+      .filter((element): element is HTMLElement =>
+        element instanceof HTMLElement && element !== this.battleSettingsEl);
+    for (const surface of [...appSiblings, ...modalSiblings]) {
+      if (active) {
+        if (surface.dataset['battleSettingsPreviousInert'] !== undefined) continue;
+        surface.dataset['battleSettingsPreviousInert'] = surface.inert ? 'true' : 'false';
+        surface.dataset['battleSettingsPreviousAriaHidden'] =
+          surface.getAttribute('aria-hidden') ?? '__absent__';
+        surface.inert = true;
+        surface.setAttribute('aria-hidden', 'true');
+        continue;
+      }
+      const previousInert = surface.dataset['battleSettingsPreviousInert'];
+      if (previousInert === undefined) continue;
+      surface.inert = previousInert === 'true';
+      const previousAria = surface.dataset['battleSettingsPreviousAriaHidden'];
+      if (previousAria === '__absent__' || previousAria === undefined) {
+        surface.removeAttribute('aria-hidden');
+      } else {
+        surface.setAttribute('aria-hidden', previousAria);
+      }
+      delete surface.dataset['battleSettingsPreviousInert'];
+      delete surface.dataset['battleSettingsPreviousAriaHidden'];
+    }
+  }
+
+  private syncBattleSettings(): void {
+    const settings = [
+      [this.battleSettingsGuideEl, this.battleSettingsState.aimGuideEnabled],
+      [this.battleSettingsSoundEl, this.battleSettingsState.soundEnabled],
+    ] as const;
+    for (const [button, enabled] of settings) {
+      button.setAttribute('aria-checked', String(enabled));
+      button.dataset['enabled'] = String(enabled);
+      const value = button.querySelector<HTMLElement>('[data-setting-value]');
+      if (value) value.textContent = enabled ? 'On' : 'Off';
     }
   }
 
@@ -6472,6 +6655,80 @@ export class HUD {
     stroke-width: 7;
   }
   #battle-rail .st-hud__instrument-needle { stroke: var(--tank-blue-lite, #7ad7ff); }
+}
+
+/* Preferences live at the terminal edge rather than repeating a live Wind-row action. */
+#battle-rail .st-hud__fire-terminal {
+  position: relative;
+}
+#battle-rail .st-hud__battle-settings-trigger {
+  position: absolute;
+  inset: 4px 4px auto auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(122, 215, 255, 0.34);
+  border-radius: 4px;
+  background: rgba(12, 7, 22, 0.84);
+  color: var(--tank-blue-lite, #7ad7ff);
+  font-size: 22px;
+  line-height: 1;
+}
+#battle-rail .st-hud__battle-settings-trigger:focus-visible,
+.st-hud__battle-settings-switch:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+.st-hud__battle-settings-panel {
+  display: grid;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+}
+.st-hud__battle-settings-copy {
+  margin: 0;
+  color: var(--ui-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.st-hud__battle-settings-switch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid rgba(122, 215, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(12, 7, 22, 0.78);
+  color: var(--text-main);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  text-align: left;
+}
+.st-hud__battle-settings-switch kbd {
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 233, 168, 0.3);
+  border-radius: 3px;
+  color: var(--ui-muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+.st-hud__battle-settings-value {
+  min-width: 28px;
+  color: var(--ui-muted);
+  font-weight: 700;
+  text-align: right;
+}
+.st-hud__battle-settings-switch[data-enabled="true"] {
+  border-color: rgba(255, 210, 63, 0.58);
+  background: linear-gradient(90deg, rgba(255, 210, 63, 0.16), rgba(12, 7, 22, 0.78));
+}
+.st-hud__battle-settings-switch[data-enabled="true"] .st-hud__battle-settings-value {
+  color: var(--gold);
 }
 
 /* Numerical Fire Control is reduced-motion-safe: its values update as text and

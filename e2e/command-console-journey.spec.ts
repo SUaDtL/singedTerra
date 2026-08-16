@@ -61,16 +61,32 @@ async function adjustSolutionAndMove(page: Page): Promise<void> {
     .toBeLessThan(fuelBefore);
 }
 
-async function exerciseExistingAimGuide(page: Page): Promise<void> {
-  const guide = page.locator('[data-ui="deterministic-aim-guide"]');
-  await expect(guide).toBeVisible();
-  await expect(guide).toContainText('Guide');
-  await expect(guide.locator('kbd')).toHaveText('G');
+async function exerciseBattleSettings(page: Page): Promise<void> {
+  await expect(page.locator('[data-ui="deterministic-aim-guide"]')).toHaveCount(0);
+  const settingsTrigger = page.getByRole('button', { name: 'Battle settings', exact: true });
+  await expect(settingsTrigger).toHaveCount(1);
   const before = await readHotSeatProbe(page);
+  await settingsTrigger.click();
+  const settings = page.getByRole('dialog', { name: 'Battle Settings', exact: true });
+  const guide = settings.getByRole('switch', { name: 'Trajectory guide', exact: true });
+  const sound = settings.getByRole('switch', { name: 'Sound', exact: true });
+  await expect(guide).toHaveAttribute('aria-checked', 'true');
+  await expect(sound).toHaveAttribute('aria-checked', 'true');
+  await guide.click();
+  await expect(page.locator('.st-hud__toast')).toContainText('Aim guide off');
+  await expect(guide).toHaveAttribute('aria-checked', 'false');
+  await sound.click();
+  await expect(page.locator('.st-hud__toast')).toContainText('Sound off');
+  await expect(sound).toHaveAttribute('aria-checked', 'false');
   await page.keyboard.press('g');
-  await expect(page.locator('.st-hud__toast')).toHaveText('🎯 Aim guide off');
-  await page.keyboard.press('g');
-  await expect(page.locator('.st-hud__toast')).toHaveText('🎯 Aim guide on');
+  await expect(page.locator('.st-hud__toast')).toContainText('Aim guide on');
+  await expect(guide).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('m');
+  await expect(page.locator('.st-hud__toast')).toContainText('Sound on');
+  await expect(sound).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape');
+  await expect(settings).toBeHidden();
+  await expect(settingsTrigger).toBeFocused();
   expect((await readHotSeatProbe(page)).forwardedActions).toEqual(before.forwardedActions);
 }
 
@@ -166,7 +182,7 @@ test.describe('adaptive command console causal journeys', () => {
     await acknowledgeBriefing(page);
     await chooseMissileAndRestoreArsenalFocus(page);
     await adjustSolutionAndMove(page);
-    await exerciseExistingAimGuide(page);
+    await exerciseBattleSettings(page);
 
     const before = await readHotSeatProbe(page);
     const fire = page.locator('#battle-rail .st-hud__primary-action');
@@ -265,7 +281,7 @@ test('command console retains its visual contract through the decision phase', a
       return logical * zoomScale;
     };
     const meaningful = [...rail.querySelectorAll<HTMLElement>(
-      '.st-hud__turn-owner, .st-hud__fuel-label, .st-hud__fuel-value, .st-hud__weapon-label, .st-hud__weapon-value, .st-hud__weapon-ammo, .st-hud__solution-adjustment-label, .st-hud__console-state, .st-hud__primary-action-label, .st-hud__trajectory-guide, .st-hud__move-btn kbd, .st-hud__solution-control kbd',
+      '.st-hud__turn-owner, .st-hud__fuel-label, .st-hud__fuel-value, .st-hud__weapon-label, .st-hud__weapon-value, .st-hud__weapon-ammo, .st-hud__solution-adjustment-label, .st-hud__console-state, .st-hud__primary-action-label, .st-hud__move-btn kbd, .st-hud__solution-control kbd',
     )].filter(visible);
     const critical = [...rail.querySelectorAll<HTMLElement>(
       '.st-hud__turn-owner, .st-hud__fuel-value, .st-hud__weapon-value, .st-hud__console-state, .st-hud__primary-action-label',

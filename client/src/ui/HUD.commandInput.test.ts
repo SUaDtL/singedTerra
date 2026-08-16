@@ -49,7 +49,6 @@ describe('HUD command input console', () => {
     const angle = solution.querySelector<HTMLElement>('[data-control="angle"]')!;
     const power = solution.querySelector<HTMLElement>('[data-control="power"]')!;
     const wind = solution.querySelector<HTMLElement>('[data-value-owner="wind"]')!;
-    const guide = solution.querySelector<HTMLElement>('[data-ui="deterministic-aim-guide"]')!;
 
     expect(solution.getAttribute('aria-label')).toBe('Firing solution');
     expect(solution.querySelectorAll('[data-ui="weapon-bay"]')).toHaveLength(1);
@@ -70,8 +69,8 @@ describe('HUD command input console', () => {
     expect(weaponBay.querySelector('[data-command-action="weapon-next"] kbd')?.textContent)
       .toBe('Q');
     expect(wind.textContent).toMatch(/Wind(?:Calm|\d+\.\d (?:left|right))/);
-    expect(guide.textContent).toContain('Guide');
-    expect(guide.querySelector('kbd')?.textContent).toBe('G');
+    expect(solution.querySelector('[data-ui="deterministic-aim-guide"]')).toBeNull();
+    expect(rail.querySelectorAll('[aria-label="Battle settings"]')).toHaveLength(1);
     expect(solution.querySelector('[data-ui="command-deck"]')).toBeNull();
     expect(solution.querySelector('.st-hud__control-grid')).toBeNull();
     expect(solution.querySelector('[data-command-action^="fire-"]')).toBeNull();

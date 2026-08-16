@@ -416,6 +416,11 @@ export class Renderer {
     return this.aimGuideEnabled;
   }
 
+  /** Persisted master preference projected by the Battle Settings dialog. */
+  get isAimGuideEnabled(): boolean {
+    return this.aimGuideEnabled;
+  }
+
   /**
    * Reset all PER-GAME visual state. The Renderer is a page-level singleton reused
    * across games (a fresh GameEngine — with its own explosionSeq restarting at 0 — is
