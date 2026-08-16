@@ -316,6 +316,11 @@ export class HUD {
   private matchDrawerBtnEl!: HTMLButtonElement;
   private matchDrawerCloseEl!: HTMLButtonElement;
   private consoleStateEl!: HTMLElement;
+  /** Existing command phase context, separate from its changing status label. */
+  private consoleStatePhaseEl!: HTMLElement;
+  /** Decision-only guidance for the existing Fire commitment, not a second solution readout. */
+  private consoleStateGuidanceEl!: HTMLElement;
+  private consoleStateLabelEl!: HTMLElement;
   private consoleExplanationEl!: HTMLElement;
 
   private turnActionsEl!: HTMLElement;
@@ -610,7 +615,16 @@ export class HUD {
     const text = command.commitment.commit !== null
       ? `${command.commitment.label} · ${commander?.name ?? 'Commander'}`
       : `${command.commitment.label}${commander ? ` · ${commander.name}` : ''}`;
-    if (this.consoleStateEl.textContent !== text) this.consoleStateEl.textContent = text;
+    if (this.consoleStatePhaseEl.textContent !== command.context.phaseLabel) {
+      this.consoleStatePhaseEl.textContent = command.context.phaseLabel;
+    }
+    this.consoleStatePhaseEl.hidden = command.commitment.phase !== 'decision';
+    const guidance = command.commitment.phase === 'decision' ? 'Confirm firing solution' : '';
+    this.consoleStateGuidanceEl.hidden = guidance === '';
+    if (this.consoleStateGuidanceEl.textContent !== guidance) {
+      this.consoleStateGuidanceEl.textContent = guidance;
+    }
+    if (this.consoleStateLabelEl.textContent !== text) this.consoleStateLabelEl.textContent = text;
     if (command.commitment.explanation === null) {
       this.consoleStateEl.removeAttribute('title');
     } else if (this.consoleStateEl.title !== command.commitment.explanation) {
@@ -1816,6 +1830,14 @@ export class HUD {
     state.setAttribute('role', 'status');
     state.setAttribute('aria-live', 'polite');
     state.tabIndex = -1;
+    const statePhase = document.createElement('span');
+    statePhase.className = 'st-hud__console-state-phase';
+    const stateGuidance = document.createElement('span');
+    stateGuidance.className = 'st-hud__console-state-guidance';
+    stateGuidance.hidden = true;
+    const stateLabel = document.createElement('span');
+    stateLabel.className = 'st-hud__console-state-label';
+    state.append(statePhase, stateGuidance, stateLabel);
     const settings = document.createElement('button');
     settings.type = 'button';
     settings.className = 'st-hud__battle-settings-trigger st-ui-icon-action';
@@ -1829,6 +1851,9 @@ export class HUD {
     terminal.append(state, settings, explanation, this.aimEl, this.turnActionsEl);
     this.consoleCommitmentEl = terminal;
     this.consoleStateEl = state;
+    this.consoleStatePhaseEl = statePhase;
+    this.consoleStateGuidanceEl = stateGuidance;
+    this.consoleStateLabelEl = stateLabel;
     this.consoleExplanationEl = explanation;
 
 
@@ -6750,14 +6775,17 @@ export class HUD {
     align-self: end;
   }
   #battle-rail .st-hud__console-context .st-hud__active-row {
-    grid-template-rows: 121px minmax(40px, 1fr);
+    grid-template-rows: 122px 40px;
+    align-content: space-between;
+    gap: 0;
   }
+  #battle-rail .st-hud__console-context .st-hud__tank-portrait-frame { align-self: end; }
+  #battle-rail .st-hud__console-context .st-hud__turn-status { align-self: start; }
   #battle-rail .st-hud__identity-lockup {
     grid-template-columns: 144px minmax(0, 1fr);
     grid-template-rows: minmax(80px, 1fr);
     gap: 7px;
     padding-inline: 3px;
-    background: linear-gradient(90deg, rgba(122, 215, 255, 0.09), transparent 88%);
   }
   #battle-rail .st-hud__tank-portrait-frame,
   #battle-rail .st-hud__tank-portrait {
@@ -6780,14 +6808,20 @@ export class HUD {
   }
   #battle-rail .st-hud__console-solution > .st-hud__weapon {
     grid-template-columns: 32px minmax(0, 1fr) 44px;
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     padding: 8px;
+  }
+  #battle-rail .st-hud__console-solution .st-hud__weapon-icon {
+    align-self: end;
+    margin-bottom: 6px;
+    height: 44px;
   }
   #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
     align-self: stretch;
     box-sizing: border-box;
     padding: 8px 5px;
-    background: linear-gradient(90deg, rgba(255, 210, 63, 0.08), transparent 88%);
+    justify-content: start;
+    gap: 4px;
   }
   #battle-rail .st-hud__solution-adjustments {
     grid-column: 2;
@@ -6819,7 +6853,7 @@ export class HUD {
   #battle-rail .st-hud__fire-terminal .st-hud__console-state {
     box-sizing: border-box;
     justify-self: start;
-    width: calc(100% - 52px);
+    width: calc(100% - 64px);
   }
   #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal {
     grid-template-rows: auto minmax(0, 1fr) auto;
@@ -6828,9 +6862,50 @@ export class HUD {
   }
   #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state {
     grid-row: 1 / 3;
-    display: grid;
-    align-content: center;
-    background: linear-gradient(180deg, rgba(255, 210, 63, 0.08), transparent 70%);
+    position: relative;
+    display: block;
+    padding: 0;
+    width: calc(100% - 64px);
+    overflow: visible;
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state-phase,
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state-guidance,
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state-label {
+    position: absolute;
+    right: 2px;
+    left: 2px;
+    z-index: 1;
+    white-space: nowrap;
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state-phase {
+    top: 8px;
+    font-size: 9px;
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state-guidance {
+    top: 77px;
+    font-size: 9px;
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state-label {
+    top: 100px;
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__battle-settings-trigger {
+    inset: 32px 4px auto auto;
+  }
+  #battle-rail .st-hud__console-state-phase {
+    color: var(--ui-muted);
+    font-family: var(--font-mono);
+    font-size: var(--st-command-readability-size, 11px);
+    font-weight: 700;
+    letter-spacing: 0.7px;
+  }
+  #battle-rail .st-hud__console-state-guidance {
+    color: var(--ui-copy);
+    font-family: var(--font-mono);
+    font-size: var(--st-command-readability-size, 11px);
+    font-weight: 700;
+  }
+  #battle-rail .st-hud__console-state-label {
+    color: var(--text-gold);
   }
   #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__aim {
     align-self: stretch;

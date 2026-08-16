@@ -249,6 +249,10 @@ test.describe('HUD layout guardrails', () => {
     await page.locator('.st-hud__primary-action').click();
     await expect(page.locator('.st-hud__command-console'))
       .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    await expect(page.locator('.st-hud__console-state-phase'))
+      .toBeHidden();
+    await expect(page.locator('.st-hud__console-state-label'))
+      .toBeVisible();
     const flight = await commandBays();
     await page.screenshot({ path: testInfo.outputPath('command-spine-flight-1600x900.png') });
 
@@ -271,11 +275,21 @@ test.describe('HUD layout guardrails', () => {
     const gaps = await page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
       const stage = document.getElementById('stage')!.getBoundingClientRect();
       const scale = stage.height / 600;
-      const maxGap = (owner: HTMLElement, content: HTMLElement[]): number => {
+      const textRect = (element: HTMLElement): DOMRect | null => {
+        if (element.textContent?.trim() === '') return null;
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const rect = range.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 ? rect : null;
+      };
+      const maxGap = (owner: HTMLElement, content: Array<DOMRect | null>): number => {
         const bounds = owner.getBoundingClientRect();
         const intervals = content
-          .map((node) => node.getBoundingClientRect())
-          .filter((rect) => rect.width > 0 && rect.height > 0)
+          .filter((rect): rect is DOMRect => rect !== null
+            && rect.width > 0
+            && rect.height > 0
+            && rect.top >= bounds.top - 1
+            && rect.bottom <= bounds.bottom + 1)
           .map((rect) => ({ top: rect.top, bottom: rect.bottom }))
           .sort((left, right) => left.top - right.top);
         let cursor = bounds.top;
@@ -291,35 +305,48 @@ test.describe('HUD layout guardrails', () => {
       const weapon = solution.querySelector<HTMLElement>('.st-hud__weapon')!;
       const wind = solution.querySelector<HTMLElement>('[data-instrument="wind"]')!;
       const terminal = solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
+      const mobility = [...commander.querySelectorAll<HTMLElement>('.st-hud__move-btn, .st-hud__fuel-meter')]
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return (rect.top + rect.bottom) / 2;
+        });
       return {
         commander: maxGap(commander, [
-          commander.querySelector<HTMLElement>('.st-hud__identity-lockup')!,
-          commander.querySelector<HTMLElement>('.st-hud__mobility')!,
+          commander.querySelector<HTMLElement>('.st-hud__tank-portrait-frame')!.getBoundingClientRect(),
+          textRect(commander.querySelector<HTMLElement>('.st-hud__turn-kicker')!),
+          textRect(commander.querySelector<HTMLElement>('.st-hud__turn-owner')!),
+          textRect(commander.querySelector<HTMLElement>('.st-hud__commander-health')!),
+          ...[...commander.querySelectorAll<HTMLElement>('.st-hud__move-btn, .st-hud__fuel-meter')]
+            .map((element) => element.getBoundingClientRect()),
         ]),
         weapon: maxGap(weapon, [
-          weapon.querySelector<HTMLElement>('.st-hud__weapon-copy')!,
-          weapon.querySelector<HTMLElement>('.st-hud__arsenal-trigger')!,
+          weapon.querySelector<HTMLElement>('.st-hud__weapon-icon')!.getBoundingClientRect(),
+          textRect(weapon.querySelector<HTMLElement>('.st-hud__weapon-label')!),
+          textRect(weapon.querySelector<HTMLElement>('.st-hud__weapon-value')!),
+          textRect(weapon.querySelector<HTMLElement>('.st-hud__weapon-ammo')!),
+          weapon.querySelector<HTMLElement>('.st-hud__arsenal-trigger')!.getBoundingClientRect(),
         ]),
         wind: maxGap(wind, [
-          wind.querySelector<HTMLElement>('svg')!,
-          wind.querySelector<HTMLElement>('output')!,
+          wind.querySelector<HTMLElement>('svg')!.getBoundingClientRect(),
+          wind.querySelector<HTMLElement>('output')!.getBoundingClientRect(),
         ]),
         fire: maxGap(terminal, [
-          terminal.querySelector<HTMLElement>('.st-hud__console-state')!,
-          terminal.querySelector<HTMLElement>('[aria-label="Battle settings"]')!,
-          terminal.querySelector<HTMLElement>('.st-hud__primary-action')!,
+          textRect(terminal.querySelector<HTMLElement>('.st-hud__console-state-phase')!),
+          textRect(terminal.querySelector<HTMLElement>('.st-hud__console-state-label')!),
+          terminal.querySelector<HTMLElement>('.st-hud__console-state-guidance')
+            ? textRect(terminal.querySelector<HTMLElement>('.st-hud__console-state-guidance')!)
+            : null,
+          textRect(terminal.querySelector<HTMLElement>('.st-hud__aim-text')!),
+          terminal.querySelector<HTMLElement>('[aria-label="Battle settings"]')!.getBoundingClientRect(),
+          terminal.querySelector<HTMLElement>('.st-hud__primary-action')!.getBoundingClientRect(),
         ]),
-        authoredBands: {
-          commander: getComputedStyle(commander.querySelector<HTMLElement>('.st-hud__identity-lockup')!).backgroundImage,
-          weapon: getComputedStyle(weapon.querySelector<HTMLElement>('.st-hud__weapon-copy')!).backgroundImage,
-          fire: getComputedStyle(terminal.querySelector<HTMLElement>('.st-hud__console-state')!).backgroundImage,
-        },
+        mobility,
       };
     });
-
-    expect(gaps.authoredBands.commander, 'Commander identity is a visible live band').not.toBe('none');
-    expect(gaps.authoredBands.weapon, 'Weapon information is a visible live band').not.toBe('none');
-    expect(gaps.authoredBands.fire, 'Fire phase is a visible live band').not.toBe('none');
+    for (const center of gaps.mobility) {
+      expect(center, 'Commander move and fuel controls share one rocker row')
+        .toBeCloseTo(gaps.mobility[0]!, 1);
+    }
     for (const [bay, gap] of Object.entries({
       commander: gaps.commander,
       weapon: gaps.weapon,
