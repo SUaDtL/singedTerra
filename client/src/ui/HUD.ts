@@ -3150,13 +3150,13 @@ export class HUD {
     this.arsenalDrawerCloseEl.focus({ preventScroll: true });
   }
 
-  private closeArmory(): void {
+  private closeArmory(restoreFocus = true): void {
     if (this.stripCollapsed) return;
     this.stripCollapsed = true;
     this.consoleSolutionEl.append(this.stripEl);
     writeArsenalCollapsed(true);
     this.applyStripCollapsed();
-    this.stripToggleEl.focus({ preventScroll: true });
+    if (restoreFocus) this.stripToggleEl.focus({ preventScroll: true });
   }
 
   /** Reflect the collapsed state onto the strip DOM + toggle affordance. */
@@ -3172,6 +3172,13 @@ export class HUD {
     this.stripToggleEl.setAttribute('aria-hidden', String(!this.stripCollapsed));
     this.stripToggleEl.tabIndex = this.stripCollapsed ? 0 : -1;
     this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Armory · equip / buy' : 'Close Armory';
+    if (this.stripCollapsed) {
+      this.stripEl.removeAttribute('role');
+      this.stripEl.removeAttribute('aria-modal');
+    } else {
+      this.stripEl.setAttribute('role', 'dialog');
+      this.stripEl.setAttribute('aria-modal', 'true');
+    }
     this.stripBodyEl.hidden = this.stripCollapsed;
     this.weaponIntelEl.hidden = this.stripCollapsed;
     this.setArmoryOverlayIsolation(!this.stripCollapsed);
@@ -3759,6 +3766,8 @@ export class HUD {
       return;
     }
 
+    const armoryOwnedFocus = !this.stripCollapsed && this.stripEl.contains(document.activeElement);
+    if (!this.stripCollapsed) this.closeArmory(false);
     this.closeBattleSettings();
 
     if (!this.roundOverShown) {
@@ -3785,6 +3794,12 @@ export class HUD {
       if (this.shopTankId) this.roundOverTankSel.value = this.shopTankId;
       this.roundOverEl.classList.remove('st-hud__overlay--hidden');
       this.roundOverShown = true;
+      if (armoryOwnedFocus) {
+        const focusTarget = humans.length > 0
+          ? this.roundOverTankSel
+          : this.roundOverEl.querySelector<HTMLButtonElement>('.st-hud__restart');
+        focusTarget?.focus({ preventScroll: true });
+      }
     }
 
     // Live shop sync for the selected tank (credits + per-weapon affordability).

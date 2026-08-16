@@ -3,7 +3,13 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameState } from '@shared/types/GameState';
 import { HUD } from './HUD';
 
-function mount(): { hud: HUD; root: HTMLElement; modal: HTMLElement; state: GameState } {
+function mount(): {
+  hud: HUD;
+  root: HTMLElement;
+  overlay: HTMLElement;
+  modal: HTMLElement;
+  state: GameState;
+} {
   const root = document.createElement('div');
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
@@ -15,7 +21,7 @@ function mount(): { hud: HUD; root: HTMLElement; modal: HTMLElement; state: Game
     seed: 1,
   }).getState();
   hud.update(state, false, true);
-  return { hud, root, modal, state };
+  return { hud, root, overlay, modal, state };
 }
 
 function armoryCard(root: HTMLElement, name: string): HTMLElement {
@@ -103,5 +109,41 @@ describe('HUD Armory commerce catalog', () => {
     expect(style.minWidth).toBe('78px');
     expect(style.padding).toBe('5px 10px');
     expect(style.minHeight).toBe('auto');
+  });
+
+  it('hands an open Armory cleanly to the sole between-round commerce surface', () => {
+    const { hud, root, overlay, modal, state } = mount();
+    const purchases: Array<{ purchase: unknown; tankId?: string }> = [];
+    hud.onBuy((purchase, tankId) => purchases.push({ purchase, tankId }));
+    const trigger = root.querySelector<HTMLButtonElement>('.st-hud__arsenal-trigger')!;
+    trigger.click();
+    const armory = modal.querySelector<HTMLElement>('[data-ui="arsenal-drawer"]')!;
+    expect(armory.getAttribute('role')).toBe('dialog');
+    expect(overlay.inert).toBe(true);
+
+    state.phase = 'ROUND_OVER';
+    state.totalRounds = 3;
+    state.round = 2;
+    state.lastRoundWinnerId = state.tanks[0]!.id;
+    hud.update(state, false, true);
+
+    expect(armory.classList.contains('st-hud__strip--collapsed')).toBe(true);
+    expect(root.contains(armory)).toBe(true);
+    expect(modal.contains(armory)).toBe(false);
+    expect(armory.getAttribute('role')).toBeNull();
+    expect(armory.getAttribute('aria-modal')).toBeNull();
+    expect(overlay.inert).toBe(false);
+    const roundOver = modal.querySelector<HTMLElement>('.st-hud__overlay:not(.st-hud__overlay--hidden)')!;
+    expect(roundOver.querySelector('.st-hud__roundshop')).not.toBeNull();
+    expect(document.activeElement).toBe(roundOver.querySelector('.st-hud__roundshop-sel'));
+    expect(document.activeElement?.closest('[hidden], .st-hud__strip--collapsed')).toBeNull();
+
+    const missileBuy = [...roundOver.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
+      .find((button) => button.firstElementChild?.textContent === 'Missile')!;
+    missileBuy.click();
+    expect(purchases).toEqual([{
+      purchase: { weapon: 'missile' },
+      tankId: state.tanks[0]!.id,
+    }]);
   });
 });
