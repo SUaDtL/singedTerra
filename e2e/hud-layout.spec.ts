@@ -282,7 +282,7 @@ test.describe('HUD layout guardrails', () => {
         solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
       ].map((bay) => bay.getBoundingClientRect().toJSON());
     });
-    const outcome = async () => page.locator('#battle-rail .st-hud__fire-terminal').evaluate((terminal) => {
+    const outcome = async (labelText?: string) => page.locator('#battle-rail .st-hud__fire-terminal').evaluate((terminal, labelText) => {
       const visible = (element: HTMLElement): boolean => {
         const style = getComputedStyle(element);
         const rect = element.getBoundingClientRect();
@@ -291,6 +291,7 @@ test.describe('HUD layout guardrails', () => {
       };
       const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
       const label = state.querySelector<HTMLElement>('.st-hud__console-state-label')!;
+      if (labelText !== undefined) label.textContent = labelText;
       const owners = [
         ['state label', label],
         ['explanation', terminal.querySelector<HTMLElement>('.st-hud__commitment-explanation')!],
@@ -306,12 +307,14 @@ test.describe('HUD layout guardrails', () => {
         state: {
           clientWidth: state.clientWidth,
           scrollWidth: state.scrollWidth,
+          clientHeight: state.clientHeight,
+          scrollHeight: state.scrollHeight,
           rect: stateRect.toJSON(),
         },
         label: labelRect.toJSON(),
         terminal: terminalRect.toJSON(),
       };
-    });
+    }, labelText);
 
     for (const viewport of [
       { width: 1600, height: 900 },
@@ -334,19 +337,33 @@ test.describe('HUD layout guardrails', () => {
         .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
 
       const flight = await commandBays();
-      const status = await outcome();
-      expect(status.owners, `${viewport.width}x${viewport.height} has one visible outcome owner`)
-        .toEqual([expect.objectContaining({ name: 'state label', text: expect.stringMatching(/.+/) })]);
-      expect(status.state.clientWidth, `${viewport.width}x${viewport.height} outcome status fits its text`)
-        .toBeGreaterThanOrEqual(status.state.scrollWidth);
-      expect(status.label.left, `${viewport.width}x${viewport.height} outcome text starts inside its owner`)
-        .toBeGreaterThanOrEqual(status.state.rect.left - 1);
-      expect(status.label.right, `${viewport.width}x${viewport.height} outcome text ends inside its owner`)
-        .toBeLessThanOrEqual(status.state.rect.right + 1);
-      expect(status.state.rect.left, `${viewport.width}x${viewport.height} outcome starts at its Fire bay`)
-        .toBeCloseTo(status.terminal.left, 1);
-      expect(status.state.rect.right, `${viewport.width}x${viewport.height} outcome reaches its Fire bay end`)
-        .toBeCloseTo(status.terminal.right, 1);
+      for (const label of [
+        'Tracking shot · P1',
+        'Tracking shot · Player 1',
+        'Tracking shot · ABCDEFGHIJKLMNOPQRST',
+      ]) {
+        // This follows a real Fire transition, then substitutes only a legal
+        // display string to prove name length cannot change bay geometry.
+        const status = await outcome(label);
+        expect(status.owners, `${viewport.width}x${viewport.height} ${label} has one visible outcome owner`)
+          .toEqual([expect.objectContaining({ name: 'state label', text: label })]);
+        expect(status.state.clientWidth, `${viewport.width}x${viewport.height} ${label} has no horizontal scroll`)
+          .toBeGreaterThanOrEqual(status.state.scrollWidth);
+        expect(status.state.clientHeight, `${viewport.width}x${viewport.height} ${label} has no vertical scroll`)
+          .toBeGreaterThanOrEqual(status.state.scrollHeight);
+        expect(status.label.left, `${viewport.width}x${viewport.height} ${label} starts inside its owner`)
+          .toBeGreaterThanOrEqual(status.state.rect.left - 1);
+        expect(status.label.right, `${viewport.width}x${viewport.height} ${label} ends inside its owner`)
+          .toBeLessThanOrEqual(status.state.rect.right + 1);
+        expect(status.label.top, `${viewport.width}x${viewport.height} ${label} starts inside its owner vertically`)
+          .toBeGreaterThanOrEqual(status.state.rect.top - 1);
+        expect(status.label.bottom, `${viewport.width}x${viewport.height} ${label} ends inside its owner vertically`)
+          .toBeLessThanOrEqual(status.state.rect.bottom + 1);
+        expect(status.state.rect.left, `${viewport.width}x${viewport.height} outcome starts at its Fire bay`)
+          .toBeCloseTo(status.terminal.left, 1);
+        expect(status.state.rect.right, `${viewport.width}x${viewport.height} outcome reaches its Fire bay end`)
+          .toBeCloseTo(status.terminal.right, 1);
+      }
       for (const [index, bay] of flight.entries()) {
         expect(bay.left, `${viewport.width}x${viewport.height} flight bay ${index} keeps its left`)
           .toBeCloseTo(decision[index]!.left, 1);

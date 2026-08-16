@@ -6931,8 +6931,13 @@ export class HUD {
     justify-content: center;
     padding: 8px 4px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+  }
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state-label {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
   }
   #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state-phase,
   #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state-guidance,
