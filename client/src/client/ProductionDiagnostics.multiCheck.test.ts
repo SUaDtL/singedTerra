@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const EXACT_VERIFIED_REPLAY_RESPONSE = {
   ok: true,
   probeVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   fixtures: {
     maximumLifecycle: {
       phase: 'GAME_OVER',

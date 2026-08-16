@@ -15,7 +15,7 @@ const validSummary: AccountSummary = {
   levelXp: 200,
   nextLevelXp: 500,
   verifiedProgression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     matchesPlayed: 7,
     wins: 3,
     progressionVersion: 1,
@@ -35,7 +35,7 @@ const casualSummary: AccountSummary = {
   levelXp: 200,
   nextLevelXp: 500,
   verifiedProgression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     matchesPlayed: 0,
     wins: 0,
     progressionVersion: 1,
@@ -55,7 +55,7 @@ const divergentSummary: AccountSummary = {
   levelXp: 0,
   nextLevelXp: 500,
   verifiedProgression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     matchesPlayed: 4,
     wins: 1,
     progressionVersion: 1,
@@ -365,7 +365,7 @@ describe('buildAccountPanelView', () => {
       level: 2,
       levelXp: 0,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 4,
         wins: 1,
         progressionVersion: 1,
@@ -383,7 +383,7 @@ describe('buildAccountPanelView', () => {
       level: 1,
       levelXp: 400,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 2,
         wins: 2,
         progressionVersion: 1,

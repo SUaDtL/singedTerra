@@ -1057,7 +1057,7 @@ export class Lobby {
     if (accountGeneration !== this.verifiedAccountGeneration || !this.ownsVerifiedDeployment()) return null;
     this.refreshVerifiedDeploymentDeadline(completedAt);
     if (receipt && receipt.result.sessionId === current.descriptor.sessionId
-      && receipt.progression.evidence === 'verified_replay_v1') {
+      && receipt.progression.evidence === 'verified_replay_v2') {
       this.verifiedStorage.clear(current.descriptor);
       this.verifiedCurrent = Object.freeze({ status: 'verified', receipt });
       return receipt;
@@ -4054,6 +4054,13 @@ export class Lobby {
       return;
     }
     const liveRoom = room!;
+    if (normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
+      clearSession();
+      this.rejoinCandidate = null;
+      this.onlineError = 'This room uses an older game build and cannot be resumed here.';
+      this.render();
+      return;
+    }
 
     // The secret seat token never lives in the session descriptor (ADR-0009) —
     // read it back from its own localStorage key, keyed by the public playerId.
@@ -4594,6 +4601,13 @@ export class Lobby {
         return;
       }
 
+      if (normalizeNetworkRulesetVersion(data.options?.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
+        this.onlineError = 'This room uses an older game build and cannot be joined here.';
+        this.onlineBusy = false;
+        this.render();
+        return;
+      }
+
       // Joined successfully — stop browsing and enter the waiting room.
       this.stopBrowsePoll();
       this.waitingRoomId = data.roomId;
@@ -4771,6 +4785,12 @@ export class Lobby {
   }
 
   private emitNetworkReady(room: { players: NetworkPlayer[]; seed: number; options: RoomOptions }): void {
+    if (normalizeNetworkRulesetVersion(room.options.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
+      this.onlineError = 'This room uses an older game build and cannot start here.';
+      this.onlineBusy = false;
+      this.render();
+      return;
+    }
     const config: LobbyConfig = {
       mode: 'network',
       players: room.players.map((p) => ({

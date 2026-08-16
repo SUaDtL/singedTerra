@@ -10,7 +10,7 @@ function dependencies(rowOverrides: Record<string, unknown> = {}) {
     from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { display_name: '  Ash   Walker ' }, error: null }) }) }) }),
     rpc: async (name: string, args: unknown) => {
       calls.push({ name, args })
-      return { data: [{ id: sessionId, user_id: userId, config: buildVerifiedDeploymentConfig('Ash Walker', 17), contract_version: 1, engine_version: 1, ruleset_version: 3, status: 'active', expires_at: '2026-08-11T12:30:00.000Z', created_at: '2026-08-11T12:00:00.000Z', resumed: false, ...rowOverrides }], error: null }
+      return { data: [{ id: sessionId, user_id: userId, config: buildVerifiedDeploymentConfig('Ash Walker', 17), contract_version: 2, engine_version: 2, ruleset_version: 4, status: 'active', expires_at: '2026-08-11T12:30:00.000Z', created_at: '2026-08-11T12:00:00.000Z', resumed: false, ...rowOverrides }], error: null }
     },
   }
   return { supabase, calls }
@@ -22,7 +22,7 @@ Deno.test('start constructs only the frozen server-owned config and exact RPC ar
   assertEquals(response.status, 200)
   assertEquals(test.calls, [{ name: 'start_verified_deployment', args: { p_user_id: userId, p_config: buildVerifiedDeploymentConfig('Ash Walker', 17), p_expires_at: '2026-08-11T12:30:00.000Z' } }])
   assertEquals(await response.json(), {
-    sessionId, resumed: false, expiresAt: '2026-08-11T12:30:00.000Z', contractVersion: 1, engineVersion: 1, rulesetVersion: 3,
+    sessionId, resumed: false, expiresAt: '2026-08-11T12:30:00.000Z', contractVersion: 2, engineVersion: 2, rulesetVersion: 4,
     limits: { humanSalvos: 6, cpuSalvos: 6, angle: { min: 0, max: 180 }, power: { min: 0, max: 100 } },
     config: buildVerifiedDeploymentConfig('Ash Walker', 17),
   })

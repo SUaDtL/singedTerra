@@ -24,13 +24,13 @@ Deno.test('verified replay probe fixture graph matches its reviewed canonical di
   const bytes = new TextEncoder().encode(JSON.stringify(VERIFIED_REPLAY_PROBE_FIXTURES))
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
   const actual = Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('')
-  const expected = '6de7dc423d2493d4b1e58dbe2c3c331dcbbcc279b700549fc026f003f33380ab'
+  const expected = 'f65b8a11dbcec96fd7da72886f025185d1d6391f01ec47ed4bb55edb4d61f141'
   if (actual !== expected) throw new Error(`fixture digest drifted: ${actual}`)
 })
 
 const CONFIG = {
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   options: {
     players: [
       { name: 'P1', color: '#e84d4d' },
@@ -225,7 +225,7 @@ const MAX_COST_OPTIONS = {
   armsLevel: 4,
   teamMode: true,
   starterWeaponFalloff: 'decisive' as const,
-  rulesetVersion: 3 as const,
+  rulesetVersion: 4 as const,
 }
 
 const PREMIUM_COST_CASES = [

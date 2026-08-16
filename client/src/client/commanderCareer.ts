@@ -16,7 +16,7 @@ export interface CommanderCareer {
 }
 
 export interface VerifiedCommanderProgression {
-  readonly evidence: 'verified_replay_v1'
+  readonly evidence: 'verified_replay_v2'
   readonly progressionVersion: 1
   readonly level: number
 }
@@ -46,7 +46,7 @@ function isVerifiedProgression(value: unknown): value is VerifiedCommanderProgre
     && keys[0] === 'evidence'
     && keys[1] === 'level'
     && keys[2] === 'progressionVersion'
-    && record.evidence === 'verified_replay_v1'
+    && record.evidence === 'verified_replay_v2'
     && record.progressionVersion === 1
     && typeof record.level === 'number'
     && isValidLevel(record.level)

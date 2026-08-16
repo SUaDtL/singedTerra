@@ -308,9 +308,9 @@ function gameState(options: { firstAi?: boolean; winner?: string | null } = {}):
 const verifiedDescriptor = {
   sessionId: '00000000-0000-4000-8000-000000000061',
   expiresAt: '2026-08-12T13:30:00.000Z',
-  contractVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  contractVersion: 2,
+  engineVersion: 2,
+  rulesetVersion: 4,
   limits: {
     humanSalvos: 6,
     cpuSalvos: 6,
@@ -347,13 +347,13 @@ const verifiedReceipt = {
     verifiedXp: 200,
   },
   progression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: {
-      evidence: 'verified_replay_v1', progressionVersion: 1,
+      evidence: 'verified_replay_v2', progressionVersion: 1,
       matchesPlayed: 0, wins: 0, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500,
     },
     current: {
-      evidence: 'verified_replay_v1', progressionVersion: 1,
+      evidence: 'verified_replay_v2', progressionVersion: 1,
       matchesPlayed: 1, wins: 1, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500,
     },
   },
@@ -382,7 +382,7 @@ function verifiedConfig(
       suddenDeathTurn: 0,
       armsLevel: 0,
       teamMode: false,
-      rulesetVersion: 3,
+      rulesetVersion: 4,
     },
     verifiedDeployment: {
       descriptor: verifiedDescriptor,

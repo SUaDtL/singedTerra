@@ -89,7 +89,7 @@ async function installOnlineCpuFixture(page: Page): Promise<{
     maxPlayers: 2,
     maxWind: 6,
     gravity: 0.15,
-    rulesetVersion: 2,
+    rulesetVersion: 4,
     walls: 'open',
     rounds: 1,
     armsLevel: 0,

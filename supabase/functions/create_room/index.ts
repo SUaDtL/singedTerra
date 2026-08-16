@@ -92,8 +92,8 @@ async function handleCreateRoomWithDependencies(
     return json({ error: 'Invalid input: rulesetVersion' }, 400)
   }
   const requestedHazards = coerceTerrainHazards(options.hazards)
-  if (requestedHazards !== undefined && requestedRuleset.version !== 3) {
-    return json({ error: 'Invalid input: lava hazards require rulesetVersion 3' }, 400)
+  if (requestedHazards !== undefined && requestedRuleset.version !== 3 && requestedRuleset.version !== 4) {
+    return json({ error: 'Invalid input: lava hazards require a hazard-capable ruleset' }, 400)
   }
 
   const supabase = dependencies.serviceClient ?? getServiceClient()

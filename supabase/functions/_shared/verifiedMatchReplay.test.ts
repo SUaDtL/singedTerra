@@ -5,6 +5,7 @@ import {
   VERIFIED_REPLAY_MAX_TICKS_PER_TURN,
   VERIFIED_REPLAY_MAX_TURN_ACTIONS,
 } from './verifiedMatchReplay.ts'
+import { createVerifiedDuelOptions } from '../../../shared/src/net/verifiedDuel.ts'
 
 function assertEqual<T>(actual: T, expected: T, label: string): void {
   if (actual !== expected) {
@@ -13,8 +14,8 @@ function assertEqual<T>(actual: T, expected: T, label: string): void {
 }
 
 const CONFIG = {
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   options: {
     players: [
       { name: 'P1', color: '#e84d4d' },
@@ -34,6 +35,10 @@ const CONFIG = {
     starterWeaponFalloff: 'decisive',
   },
 }
+
+Deno.test('verified duel creates the protected-floor V2 ruleset it claims in immutable receipts', () => {
+  assertEqual(createVerifiedDuelOptions(17).rulesetVersion, 4, 'verified duel ruleset')
+})
 
 const TERMINAL_TRANSCRIPT = Array.from({ length: 3 }, () => ({
   type: 'fire' as const,
@@ -241,7 +246,7 @@ Deno.test('verified replay accepts only a finite versioned server configuration'
   const invalidConfigs = [
     ['extra root field', { ...CONFIG, auditMode: true }],
     ['second extra root field', { ...CONFIG, requestId: 'fixture-request' }],
-    ['engine version', { ...CONFIG, engineVersion: 2 }],
+    ['engine version', { ...CONFIG, engineVersion: 1 }],
     ['ruleset version', { ...CONFIG, rulesetVersion: 99 }],
     ['infinite rounds', { ...CONFIG, options: { ...CONFIG.options, rounds: Number.POSITIVE_INFINITY } }],
     ['unsupported rounds', { ...CONFIG, options: { ...CONFIG.options, rounds: 5 } }],

@@ -16,14 +16,14 @@ const verifiedPromotionReceipt: VerifiedDeploymentReceipt = {
     verifiedXp: 200,
   },
   progression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: {
-      evidence: 'verified_replay_v1', progressionVersion: 1,
+      evidence: 'verified_replay_v2', progressionVersion: 1,
       matchesPlayed: 10, wins: 8, totalXp: 1_800,
       level: 4, levelXp: 300, nextLevelXp: 500,
     },
     current: {
-      evidence: 'verified_replay_v1', progressionVersion: 1,
+      evidence: 'verified_replay_v2', progressionVersion: 1,
       matchesPlayed: 11, wins: 9, totalXp: 2_000,
       level: 5, levelXp: 0, nextLevelXp: 500,
     },

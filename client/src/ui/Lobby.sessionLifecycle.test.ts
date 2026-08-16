@@ -99,7 +99,7 @@ const waitingPlayers = [
   { id: 'p-2', name: 'CPU', color: '#4d8ce8', ready: true, ai: 'medium' as const, lastSeen: 100 },
 ];
 
-const waitingOptions = { maxPlayers: 3, maxWind: 7, gravity: 0.2, rounds: 3 };
+const waitingOptions = { maxPlayers: 3, maxWind: 7, gravity: 0.2, rounds: 3, rulesetVersion: 4 as const };
 const activeLoadouts: TankLoadout[] = [
   {
     treads: 'jackal',
@@ -154,7 +154,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
       waitingToken: 'tok',
       waitingPlayers: [],
       waitingSeed: 0,
-      waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
+      waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4 },
       waitingThisPlayerReady: true,
       surface: 'preparation',
       activeTab: 'online',
@@ -307,7 +307,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
         interestRate: 0.15,
         suddenDeathTurn: 12,
         armsLevel: 3,
-        rulesetVersion: 1,
+        rulesetVersion: 4,
       },
     });
   });

@@ -10,7 +10,8 @@ export type WallMode = 'open' | 'reflective' | 'wrap' | 'concrete';
 export type StarterWeaponFalloff = 'linear' | 'decisive';
 
 /** Deterministic network-room contract understood by the current client. */
-export type NetworkRulesetVersion = 1 | 2 | 3;
+/** Version 4 pins the protected arena floor as a deterministic compatibility boundary. */
+export type NetworkRulesetVersion = 1 | 2 | 3 | 4;
 
 /** Stable team identifiers used by the opt-in 2v2 ruleset. */
 export type TeamId = 1 | 2;

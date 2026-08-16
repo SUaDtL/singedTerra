@@ -55,12 +55,19 @@ fact has a single visual home.
   completion collapses the ribbon without a layout jump or restored duplicate
   readback.
 - Existing callbacks, keyboard controls, mobile targets, renderer-owned aim
-  guide, gameplay, network protocol, verified flow, Auth policy, schema,
-  progression, and dependencies remain unchanged. Raising the shared protected
-  floor also changes deterministic replay work, so verifier ceilings,
-  diagnostics, and the `verified_replay_probe` plus
-  `complete_verified_deployment` function bundles are updated and deployed
-  together; no action-log or award semantics change.
+  guide, gameplay authority, and dependencies remain unchanged. Raising the
+  shared protected floor changes deterministic replay work, so it introduces
+  two explicit compatibility boundaries rather than interpreting old work with
+  new physics: network rooms use ruleset V4 and the browser refuses V1–V3
+  rooms before constructing an engine; Verified Deployment uses the reviewed
+  V2 tuple `(contract, engine, ruleset) = (2, 2, 4)`. V1 starts are drained
+  before V2 is enabled, active V1 sessions are never replayed or awarded by
+  V2 code, and immutable completed V1 receipts remain readable. The additive
+  migration and all V4/V2 Edge consumers (`create_room`, `join_room`,
+  `submit_action`, `restart_game`, `start_verified_deployment`,
+  `abandon_verified_deployment`, `complete_verified_deployment`,
+  `account_summary`, and `verified_replay_probe`) deploy under the V2 manifest
+  before the strict V4 Pages client.
 
 ## Acceptance criteria
 
@@ -77,5 +84,6 @@ fact has a single visual home.
    fires once, sees the phase transition, and returns to a fresh decision state
    with no duplicated readback; it opens Armory and discovers buying weapons
    without entering Command Menu.
-5. TDD, exact-diff adversarial review, hosted CI/CodeQL, Pages provenance, and
-   production health complete delivery before acceptance.
+5. TDD, exact-diff adversarial review, hosted CI/CodeQL, Pages provenance,
+   V1 drain/V2 enablement, and production health complete delivery before
+   acceptance.

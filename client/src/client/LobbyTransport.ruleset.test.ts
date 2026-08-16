@@ -23,7 +23,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     callFunctionMock.mockReset();
   });
 
-  it('creates rooms and starts joins with current ruleset 2', async () => {
+  it('creates rooms and starts joins with protected-floor ruleset 4', async () => {
     callFunctionMock.mockResolvedValue({ ok: false, status: 400, data: { error: 'stop' } });
     const transport = new LobbyTransport();
 
@@ -45,11 +45,11 @@ describe('LobbyTransport network ruleset rollout', () => {
     await transport.joinRoom(joinParams);
 
     expect(callFunctionMock).toHaveBeenNthCalledWith(1, 'create_room', expect.objectContaining({
-      rulesetVersion: 2,
+      rulesetVersion: 4,
     }));
     expect(callFunctionMock).toHaveBeenNthCalledWith(2, 'join_room', {
       ...joinParams,
-      rulesetVersion: 2,
+      rulesetVersion: 4,
     });
   });
 
@@ -78,7 +78,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     }));
   });
 
-  it('requests hazard ruleset 3 only when lava is enabled', async () => {
+  it('keeps the protected-floor ruleset when lava is enabled', async () => {
     callFunctionMock.mockResolvedValue({ ok: false, status: 400, data: { error: 'stop' } });
     await new LobbyTransport().createRoom({
       playerName: 'Alice', color: '#e84d4d', loadout: DEFAULT_TANK_LOADOUT, bots: [],
@@ -86,40 +86,26 @@ describe('LobbyTransport network ruleset rollout', () => {
       hazards: 'lava', rounds: '', interestRate: '', suddenDeath: '', armsLevel: '',
     });
     expect(callFunctionMock).toHaveBeenCalledWith('create_room', expect.objectContaining({
-      rulesetVersion: 3,
+      rulesetVersion: 4,
       options: expect.objectContaining({ hazards: 'lava' }),
     }));
   });
 
-  it('retries exactly once as v1 when the referee identifies a legacy room', async () => {
+  it('refuses a legacy room without retrying into a different deterministic engine', async () => {
     const mismatch = {
       ok: false,
       status: 409,
       data: { error: 'ruleset_mismatch', requiredRulesetVersion: 1 },
     };
-    const joined = {
-      ok: true,
-      status: 200,
-      data: {
-        roomId: 'room-v1',
-        playerId: 'player-2',
-        token: 'x',
-        options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 1 },
-      },
-    };
-    callFunctionMock.mockResolvedValueOnce(mismatch).mockResolvedValueOnce(joined);
+    callFunctionMock.mockResolvedValueOnce(mismatch);
 
     const result = await new LobbyTransport().joinRoom(joinParams);
 
-    expect(result).toBe(joined);
-    expect(callFunctionMock).toHaveBeenCalledTimes(2);
+    expect(result).toBe(mismatch);
+    expect(callFunctionMock).toHaveBeenCalledTimes(1);
     expect(callFunctionMock).toHaveBeenNthCalledWith(1, 'join_room', {
       ...joinParams,
-      rulesetVersion: 2,
-    });
-    expect(callFunctionMock).toHaveBeenNthCalledWith(2, 'join_room', {
-      ...joinParams,
-      rulesetVersion: 1,
+      rulesetVersion: 4,
     });
   });
 
@@ -128,7 +114,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     ['wrong error', { ok: false, status: 409, data: { error: 'room_full', requiredRulesetVersion: 1 } }],
     ['missing required version', { ok: false, status: 409, data: { error: 'ruleset_mismatch' } }],
     ['malformed required version', { ok: false, status: 409, data: { error: 'ruleset_mismatch', requiredRulesetVersion: '1' } }],
-    ['current required version', { ok: false, status: 409, data: { error: 'ruleset_mismatch', requiredRulesetVersion: 2 } }],
+    ['current required version', { ok: false, status: 409, data: { error: 'ruleset_mismatch', requiredRulesetVersion: 4 } }],
   ])('does not retry on %s', async (_label, response) => {
     callFunctionMock.mockResolvedValue(response);
 

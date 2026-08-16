@@ -26,7 +26,7 @@ type _accountSummaryProgressionFieldsAreRequired = [
 type _accountSummaryVersionIsLiteralOne = AssertTrue<AccountSummary['progressionVersion'] extends 1 ? true : false>
 
 const verifiedZeroProgression = {
-  evidence: 'verified_replay_v1' as const,
+  evidence: 'verified_replay_v2' as const,
   matchesPlayed: 0,
   wins: 0,
   progressionVersion: 1 as const,
@@ -63,9 +63,9 @@ const verifiedSessionId = '00000000-0000-4000-8000-000000000061'
 const verifiedDescriptor: VerifiedDeploymentDescriptor = {
   sessionId: verifiedSessionId,
   expiresAt: '2026-08-12T13:30:00.000Z',
-  contractVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  contractVersion: 2,
+  engineVersion: 2,
+  rulesetVersion: 4,
   limits: {
     humanSalvos: 6,
     cpuSalvos: 6,
@@ -102,7 +102,7 @@ const verifiedStart: VerifiedDeploymentStart = {
 const verifiedServerReceipt: VerifiedDeploymentServerReceipt = {
   result: { sessionId: verifiedSessionId, won: true, outcome: 'win', verifiedXp: 200 },
   progression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
     current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
   },
@@ -215,7 +215,7 @@ describe('createSupabaseAccountBackend', () => {
       levelXp: 300,
       nextLevelXp: 500,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 0,
         wins: 0,
         progressionVersion: 1,
@@ -234,7 +234,7 @@ describe('createSupabaseAccountBackend', () => {
       levelXp: 0,
       nextLevelXp: 500,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 0,
         wins: 0,
         progressionVersion: 1,
@@ -253,7 +253,7 @@ describe('createSupabaseAccountBackend', () => {
       levelXp: 0,
       nextLevelXp: 500,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 4,
         wins: 1,
         progressionVersion: 1,
@@ -307,7 +307,7 @@ describe('createSupabaseAccountBackend', () => {
     levelXp: 0,
     nextLevelXp: 500,
     verifiedProgression: {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       matchesPlayed: 4,
       wins: 1,
       progressionVersion: 1,
@@ -371,7 +371,7 @@ describe('createSupabaseAccountBackend', () => {
       error: null,
     }],
     ['a verified progression with a missing key', {
-      data: { ...validSummary, verifiedProgression: { evidence: 'verified_replay_v1', matchesPlayed: 4, wins: 1, progressionVersion: 1, totalXp: 500, level: 2, levelXp: 0 } },
+      data: { ...validSummary, verifiedProgression: { evidence: 'verified_replay_v2', matchesPlayed: 4, wins: 1, progressionVersion: 1, totalXp: 500, level: 2, levelXp: 0 } },
       error: null,
     }],
     ['an unknown verified progression version', {
@@ -1490,9 +1490,9 @@ describe('verified deployment Supabase adapter', () => {
     sessionId: verifiedSessionId,
     resumed: false,
     expiresAt: verifiedDescriptor.expiresAt,
-    contractVersion: 1,
-    engineVersion: 1,
-    rulesetVersion: 3,
+    contractVersion: 2,
+    engineVersion: 2,
+    rulesetVersion: 4,
     limits: verifiedDescriptor.limits,
     config: verifiedDescriptor.config,
   }
@@ -1663,7 +1663,7 @@ describe('AccountSession verified deployment lifecycle', () => {
   it('accepts completion once only when server arithmetic and refreshed verified progression both agree', async () => {
     const completed = deferred<VerifiedDeploymentServerReceipt>()
     const verifiedCurrent = {
-      evidence: 'verified_replay_v1' as const,
+      evidence: 'verified_replay_v2' as const,
       matchesPlayed: 1,
       wins: 1,
       progressionVersion: 1 as const,
@@ -1700,7 +1700,7 @@ describe('AccountSession verified deployment lifecycle', () => {
     const expected = {
       result: verifiedServerReceipt.result,
       progression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         prior: verifiedZeroProgression,
         current: verifiedCurrent,
       },
@@ -1750,13 +1750,13 @@ describe('AccountSession verified deployment lifecycle', () => {
     const receipt = {
       result: verifiedServerReceipt.result,
       progression: {
-        evidence: 'verified_replay_v1' as const,
+        evidence: 'verified_replay_v2' as const,
         prior: { matchesPlayed: 2, wins: 1, totalXp: 300 },
         current: { matchesPlayed: 3, wins: 2, totalXp: 500 },
       },
     }
     const authoritativeCurrent = {
-      evidence: 'verified_replay_v1' as const,
+      evidence: 'verified_replay_v2' as const,
       matchesPlayed: 3,
       wins: 2,
       progressionVersion: 1 as const,
@@ -1783,8 +1783,8 @@ describe('AccountSession verified deployment lifecycle', () => {
       .resolves.toEqual({
         result: receipt.result,
         progression: {
-          evidence: 'verified_replay_v1',
-          prior: { evidence: 'verified_replay_v1', ...receipt.progression.prior, progressionVersion: 1, level: 1, levelXp: 300, nextLevelXp: 500 },
+          evidence: 'verified_replay_v2',
+          prior: { evidence: 'verified_replay_v2', ...receipt.progression.prior, progressionVersion: 1, level: 1, levelXp: 300, nextLevelXp: 500 },
           current: authoritativeCurrent,
         },
       })
@@ -1793,7 +1793,7 @@ describe('AccountSession verified deployment lifecycle', () => {
 
   it('does not suppress an authoritative completion receipt when the pre-match account summary is unavailable', async () => {
     const authoritativeCurrent = {
-      evidence: 'verified_replay_v1' as const,
+      evidence: 'verified_replay_v2' as const,
       matchesPlayed: 1,
       wins: 1,
       progressionVersion: 1 as const,
@@ -1820,7 +1820,7 @@ describe('AccountSession verified deployment lifecycle', () => {
       .resolves.toEqual({
         result: verifiedServerReceipt.result,
         progression: {
-          evidence: 'verified_replay_v1',
+          evidence: 'verified_replay_v2',
           prior: verifiedZeroProgression,
           current: authoritativeCurrent,
         },

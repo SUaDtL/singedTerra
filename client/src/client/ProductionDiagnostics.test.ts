@@ -15,8 +15,8 @@ import type { VerifiedDeploymentServerReceipt } from './verifiedDeployment'
 const EXACT_VERIFIED_REPLAY_RESPONSE = {
   ok: true,
   probeVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   fixtures: {
     maximumLifecycle: {
       phase: 'GAME_OVER',
@@ -206,7 +206,7 @@ describe('verified completion retry diagnostic', () => {
   const receipt: VerifiedDeploymentServerReceipt = {
     result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
     progression: {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       prior: { matchesPlayed: 2, wins: 1, totalXp: 300 },
       current: { matchesPlayed: 3, wins: 2, totalXp: 500 },
     },
@@ -441,7 +441,7 @@ describe('verified-replay-runtime contract', () => {
     ['a wrong root ok flag', (response: MutableResponse) => { response.ok = false }],
     ['a missing root ok flag', (response: MutableResponse) => { delete response.ok }],
     ['a wrong probe version', (response: MutableResponse) => { response.probeVersion = 2 }],
-    ['a wrong engine version', (response: MutableResponse) => { response.engineVersion = 2 }],
+    ['a wrong engine version', (response: MutableResponse) => { response.engineVersion = 1 }],
     ['a wrong ruleset version', (response: MutableResponse) => { response.rulesetVersion = 2 }],
     ['a wrong maximumLifecycle phase', (response: MutableResponse) => { response.fixtures.maximumLifecycle.phase = 'PLAYER_TURN' }],
     ['a wrong maximumTurn phase', (response: MutableResponse) => { response.fixtures.maximumTurn.phase = 'PLAYER_TURN' }],
@@ -673,8 +673,8 @@ describe('ProductionDiagnostics mutation-proof projection', () => {
     expect(details).toEqual({
       ok: true,
       probeVersion: 1,
-      engineVersion: 1,
-      rulesetVersion: 3,
+      engineVersion: 2,
+      rulesetVersion: 4,
       fixtures: {
         maximumLifecycle: EXACT_VERIFIED_REPLAY_RESPONSE.fixtures.maximumLifecycle,
         maximumTurn: EXACT_VERIFIED_REPLAY_RESPONSE.fixtures.maximumTurn,

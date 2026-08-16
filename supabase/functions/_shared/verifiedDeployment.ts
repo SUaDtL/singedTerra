@@ -24,9 +24,9 @@ export const VERIFIED_DEPLOYMENT_OPTIONS = Object.freeze({
   teamMode: false,
 })
 
-export const VERIFIED_CONTRACT_VERSION = 1 as const
-export const VERIFIED_ENGINE_VERSION = 1 as const
-export const VERIFIED_RULESET_VERSION = 3 as const
+export const VERIFIED_CONTRACT_VERSION = 2 as const
+export const VERIFIED_ENGINE_VERSION = 2 as const
+export const VERIFIED_RULESET_VERSION = 4 as const
 export const VERIFIED_ACCOUNT_LIMIT = 10
 export const VERIFIED_IP_LIMIT = 30
 export const VERIFIED_RATE_WINDOW_SECONDS = 60
@@ -287,9 +287,10 @@ function validProgressionCounts(value: VerifiedProgressionCounts): boolean {
 export function projectVerifiedDeploymentReceipt(
   result: VerifiedDeploymentResultReceipt,
   current: VerifiedProgressionCounts,
+  evidence: 'verified_replay_v1' | 'verified_replay_v2' = 'verified_replay_v2',
 ): {
   result: VerifiedDeploymentResultReceipt
-  progression: { evidence: 'verified_replay_v1'; prior: VerifiedProgressionCounts; current: VerifiedProgressionCounts }
+  progression: { evidence: 'verified_replay_v1' | 'verified_replay_v2'; prior: VerifiedProgressionCounts; current: VerifiedProgressionCounts }
 } | null {
   const correctAward = (result.won && result.outcome === 'win' && result.verifiedXp === 200)
     || (!result.won && (result.outcome === 'loss' || result.outcome === 'draw') && result.verifiedXp === 100)
@@ -303,7 +304,7 @@ export function projectVerifiedDeploymentReceipt(
   return Object.freeze({
     result: Object.freeze({ ...result, sessionId: result.sessionId.toLowerCase() }),
     progression: Object.freeze({
-      evidence: 'verified_replay_v1' as const,
+      evidence,
       prior: Object.freeze(prior),
       current: Object.freeze({ ...current }),
     }),

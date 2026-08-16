@@ -57,8 +57,8 @@ export interface VerifiedReplayLimits {
 }
 
 interface VerifiedMatchConfig {
-  engineVersion: 1
-  rulesetVersion: 3
+  engineVersion: 2
+  rulesetVersion: 4
   options: GameOptions
 }
 
@@ -122,7 +122,7 @@ function parsePlayer(value: unknown): NonNullable<GameOptions['players']>[number
 
 function parseConfig(value: unknown): VerifiedMatchConfig {
   if (!isRecord(value) || !hasExactKeys(value, CONFIG_KEYS)) fail('invalid_config')
-  if (value.engineVersion !== 1 || value.rulesetVersion !== 3 || !isRecord(value.options)) fail('invalid_config')
+  if (value.engineVersion !== 2 || value.rulesetVersion !== 4 || !isRecord(value.options)) fail('invalid_config')
   const options = value.options
   if (!hasExactKeys(options, OPTION_KEYS)) fail('invalid_config')
   if (!safeIntegerBetween(options.maxPlayers, 2, 4)) fail('invalid_config')
@@ -154,8 +154,8 @@ function parseConfig(value: unknown): VerifiedMatchConfig {
   if (options.starterWeaponFalloff !== 'decisive') fail('invalid_config')
 
   return {
-    engineVersion: 1,
-    rulesetVersion: 3,
+    engineVersion: 2,
+    rulesetVersion: 4,
     options: {
       maxPlayers: options.maxPlayers,
       players: parsedPlayers,
@@ -170,7 +170,7 @@ function parseConfig(value: unknown): VerifiedMatchConfig {
       armsLevel: options.armsLevel,
       teamMode: options.teamMode,
       starterWeaponFalloff: 'decisive',
-      rulesetVersion: 3,
+      rulesetVersion: 4,
     },
   }
 }

@@ -19,10 +19,16 @@ playfield height through the protected floor, and changes no authority.
 ## Global constraints
 
 - Client presentation plus the shared protected arena-floor constant and its
-  deterministic verifier/diagnostics compatibility surfaces. No renderer
-  prediction, network protocol, Auth policy, schema, progression, dependency,
-  or action-log change. The floor must ship in both `verified_replay_probe`
-  and `complete_verified_deployment`, which bundle the shared replay code.
+  deterministic verifier/diagnostics compatibility surfaces. The floor changes
+  deterministic interpretation, so this slice adds only the required
+  compatibility controls: network ruleset V4 refusal for V1–V3 rooms and an
+  additive Verified Deployment V2 drain manifest/migration. No renderer
+  prediction, action-log shape, direct client award, dependency, or dynamic
+  old-engine selection is added. The floor must ship in all V4/V2 Edge
+  consumers—`create_room`, `join_room`, `submit_action`, `restart_game`,
+  `start_verified_deployment`, `abandon_verified_deployment`,
+  `complete_verified_deployment`, `account_summary`, and
+  `verified_replay_probe`—before Pages publishes the strict V4 client.
 - Preserve one primary Fire action in a controllable decision state and none in
   every other state.
 - Raise the shared floor only with replay/verifier harness evidence, and
@@ -95,3 +101,25 @@ playfield height through the protected floor, and changes no authority.
   merge-blocking finding.
 - [ ] Commit, open a PR, require exact-head hosted CI/CodeQL/Pages, merge under
   standing authority, and verify the exact Pages deploy provenance and health.
+
+### Task 5: Fence replay and lockstep semantics
+
+**Files:**
+
+- Add `supabase/migrations/017_verified_deployment_v2.sql`.
+- Add `scripts/verified-deployment-v2-rollout.mjs` and its static contract check.
+- Modify verified deployment, diagnostics, network-ruleset, Lobby, and Edge
+  version contracts plus focused tests.
+
+- [x] Capture the post-floor risk: V1 verified sessions and V1–V3 rooms could
+  otherwise be interpreted by an engine with new collision geometry.
+- [x] Add V2 `(2,2,4)` replay parsing and an additive V1/V2 SQL tuple boundary;
+  completed V1 results remain receipt-only while active V1 work cannot replay
+  or award.
+- [x] Add network ruleset V4 and refuse legacy room handoff before engine
+  construction, rejoin, or ready-state launch.
+- [ ] Prove the V2 migration/RPC transition, full deterministic + Edge/client
+  suites, browser matrix, and exact migration review.
+- [ ] Execute the V1 drain, deploy the nine V4/V2 Edge consumers and hosted
+  probe, publish V4 Pages, enable V2 only after the V1 drain guard accepts,
+  then run production V2 replay/retry and two-tab V4 lockstep proof.

@@ -18,7 +18,7 @@ const readyRoom: Extract<LobbySessionEvent, { type: 'ready' }>['room'] = {
     { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
   ] satisfies NetworkPlayer[],
   seed: 42,
-  options: { maxPlayers: 2, maxWind: 10, gravity: 0.15 } satisfies RoomOptions,
+  options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4 } satisfies RoomOptions,
 }
 
 function internals(lobby: Lobby): LobbyInternals {

@@ -1,8 +1,8 @@
 const VERIFIED_REPLAY_RESPONSE_CONTRACT = {
   ok: true,
   probeVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   fixtures: {
     maximumLifecycle: {
       phase: 'GAME_OVER', winner: 'p2', winnerTeam: 2, turn: 13,
@@ -27,8 +27,8 @@ const VERIFIED_REPLAY_RESPONSE_CONTRACT = {
 const VERIFIED_REPLAY_PUBLIC_DETAILS = Object.freeze({
   ok: true,
   probeVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   fixtures: Object.freeze({
     maximumLifecycle: Object.freeze({
       phase: 'GAME_OVER', winner: 'p2', winnerTeam: 2, turn: 13,

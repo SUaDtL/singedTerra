@@ -43,11 +43,6 @@ const validDisabledControl = Object.freeze({
   last_started_at: '2026-08-11T11:30:00.000Z',
   updated_at: '2026-08-11T11:00:00.000Z',
 });
-const validEnabledControl = Object.freeze({
-  ...validDisabledControl,
-  starts_enabled: true,
-  updated_at: '2026-08-11T12:01:00.000Z',
-});
 
 function responseSequence(payloads, calls = []) {
   const queue = [...payloads];
@@ -82,11 +77,10 @@ assert.equal(statusRun.calls.length, 1);
 assert.equal(statusRun.calls[0].options.headers.Authorization, 'Bearer fixture-secret');
 assert.ok(statusRun.output.every((line) => !line.includes('fixture.invalid') && !line.includes('fixture-secret')), 'output must be credential-safe');
 await invoke('disable', [[validDisabledControl], [validStatus]]);
-await invoke('enable', [[validStatus], [validEnabledControl]]);
 
-for (const command of ['status', 'disable', 'enable']) {
+for (const command of ['status', 'disable']) {
   await rejects(command, [[]], /rpc_shape_invalid/, `${command} must reject an empty response`);
-  const firstValid = command === 'status' || command === 'enable' ? validStatus : validDisabledControl;
+  const firstValid = command === 'status' ? validStatus : validDisabledControl;
   await rejects(command, [[firstValid, firstValid]], /rpc_shape_invalid/, `${command} must reject a multi-row response`);
   await rejects(command, [[{ ...firstValid, contract_version: '1' }]], /rpc_shape_invalid/, `${command} must reject malformed field types`);
 }
@@ -105,15 +99,6 @@ for (const testCase of disableStatusCases) {
   await rejects('disable', [[validDisabledControl], testCase.payload], testCase.pattern, `disable must reject ${testCase.label} drain status after valid control mutation`);
 }
 
-const enableControlCases = [
-  { payload: [], pattern: /rpc_shape_invalid/, label: 'empty' },
-  { payload: [validEnabledControl, validEnabledControl], pattern: /rpc_shape_invalid/, label: 'multi-row' },
-  { payload: [{ ...validEnabledControl, contract_version: '1' }], pattern: /rpc_shape_invalid/, label: 'malformed' },
-  { payload: [{ ...validEnabledControl, contract_version: 2 }], pattern: /rpc_contract_mismatch/, label: 'contract-wrong' },
-  { payload: [{ ...validEnabledControl, starts_enabled: false }], pattern: /rpc_state_mismatch/, label: 'state-wrong' },
-];
-for (const testCase of enableControlCases) {
-  await rejects('enable', [[validStatus], testCase.payload], testCase.pattern, `enable must reject ${testCase.label} control response after valid drain status`);
-}
+await rejects('enable', [], /usage: verified-deployment-drain <disable\|status>/, 'V1 enable must remain terminally forbidden');
 
 console.log('PASS: Verified Deployment drain CLI is credential-safe and refuses unsafe rollout readiness.');

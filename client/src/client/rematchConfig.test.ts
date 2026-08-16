@@ -4,13 +4,8 @@ import { buildClientEngineOptions } from './gameEngineOptions';
 import { rematchToConfig } from './rematchConfig';
 
 describe('rematchToConfig', () => {
-  it.each([
-    [1, 'linear'],
-    [2, 'decisive'],
-  ] as const)('carries successor ruleset %i into %s network engine construction', (
-    rulesetVersion,
-    starterWeaponFalloff,
-  ) => {
+  it('carries only the protected-floor successor into network engine construction', () => {
+    const rulesetVersion = 4 as const;
     const info: RematchInfo = {
       roomId: 'room-next',
       code: 'NEXT42',
@@ -34,6 +29,6 @@ describe('rematchToConfig', () => {
     expect(config.settings?.walls).toBe('concrete');
     expect(config.settings?.battlefieldWorld).toBe('glassstorm-expanse');
     expect(buildClientEngineOptions({ ...config, mode: 'network' }).starterWeaponFalloff)
-      .toBe(starterWeaponFalloff);
+      .toBe('decisive');
   });
 });

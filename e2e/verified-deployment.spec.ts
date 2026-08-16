@@ -12,9 +12,9 @@ function verifiedDescriptor(
   return {
     sessionId,
     expiresAt,
-    contractVersion: 1,
-    engineVersion: 1,
-    rulesetVersion: 3,
+    contractVersion: 2,
+    engineVersion: 2,
+    rulesetVersion: 4,
     limits: {
       humanSalvos: 6,
       cpuSalvos: 6,
@@ -84,7 +84,7 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
       levelXp: 0,
       nextLevelXp: 500,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 0,
         wins: 0,
         progressionVersion: 1,
@@ -105,6 +105,14 @@ async function openLocalBattery(page: Page, search = './'): Promise<void> {
   await expect(page.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
 }
 
+/** Verified mission state lives in the adaptive Match ledger on non-ultrawide layouts. */
+async function openVerifiedLedger(page: Page) {
+  await enterBattleIfBriefed(page);
+  const toggle = page.getByRole('button', { name: 'Open match ledger' });
+  if (await toggle.isVisible()) await toggle.click();
+  return page.locator('#hud .st-hud__verified-deployment');
+}
+
 async function installOnlineCpuFixture(page: Page): Promise<void> {
   const players = [
     { id: 'verified-absence-human', name: 'Ranger', color: '#e84d4d', ready: false },
@@ -114,7 +122,7 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
     maxPlayers: 2,
     maxWind: 6,
     gravity: 0.15,
-    rulesetVersion: 2,
+    rulesetVersion: 4,
     walls: 'open',
     rounds: 1,
     armsLevel: 0,
@@ -262,8 +270,8 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(verified.getByRole('button', { name: 'Verified deployment busy' })).toBeDisabled();
     await assertLobbyFrame(page);
     releaseStart();
-
-    const hud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    await expect(page.locator('#lobby')).toBeHidden();
+    const hud = await openVerifiedLedger(page);
     await expect(hud).toBeVisible();
     await expect(hud.getByText('Salvos · You 0 / 6 · CPU 0 / 6')).toBeVisible();
     await expect(hud.getByText('Deployment active')).toBeVisible();
@@ -350,7 +358,7 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
-    const hud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    const hud = await openVerifiedLedger(page);
     await expect(hud.getByText('Salvos · You 1 / 6 · CPU 1 / 6')).toBeVisible();
     expect(await page.evaluate(() => JSON.parse(
       localStorage.getItem('singedterra:verified-deployment') ?? 'null',
@@ -374,7 +382,7 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
-    const hud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    const hud = await openVerifiedLedger(page);
     const setNow = (value: number) => page.evaluate((next) => {
       const setter = (window as typeof window & { __setVerifiedNow?: (time: number) => void })
         .__setVerifiedNow;
@@ -440,7 +448,7 @@ test.describe('verified deployment production-browser journey', () => {
   test('retries terminal evidence and renders only the server-confirmed verified promotion', async ({ page }) => {
     const transcript = Array.from({ length: 6 }, () => ({ angle: 0, power: 5 }));
     const prior = {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       matchesPlayed: 10,
       wins: 8,
       progressionVersion: 1,
@@ -450,7 +458,7 @@ test.describe('verified deployment production-browser journey', () => {
       nextLevelXp: 500,
     } as const;
     const current = {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       matchesPlayed: 11,
       wins: 9,
       progressionVersion: 1,
@@ -511,7 +519,7 @@ test.describe('verified deployment production-browser journey', () => {
         body: JSON.stringify({
           result: { sessionId: SESSION_ID, won: true, outcome: 'win', verifiedXp: 200 },
           progression: {
-            evidence: 'verified_replay_v1',
+            evidence: 'verified_replay_v2',
             prior: { matchesPlayed: 10, wins: 8, totalXp: 1_800 },
             current: { matchesPlayed: 11, wins: 9, totalXp: 2_000 },
           },
@@ -594,7 +602,7 @@ test.describe('verified deployment production-browser journey', () => {
         levelXp: matchesPlayed * 200,
         nextLevelXp: 500,
         verifiedProgression: {
-          evidence: 'verified_replay_v1',
+          evidence: 'verified_replay_v2',
           matchesPlayed,
           wins: matchesPlayed,
           progressionVersion: 1,
@@ -624,7 +632,7 @@ test.describe('verified deployment production-browser journey', () => {
         body: JSON.stringify({
           result: { sessionId: SESSION_ID, won: true, outcome: 'win', verifiedXp: 200 },
           progression: {
-            evidence: 'verified_replay_v1',
+            evidence: 'verified_replay_v2',
             prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
             current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
           },
@@ -658,7 +666,7 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(fieldOrderStatus).toHaveCount(0);
 
     await verified.getByRole('button', { name: 'Start verified deployment' }).click();
-    const freshHud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    const freshHud = await openVerifiedLedger(page);
     await expect(freshHud.getByText(/Salvos.*You 0 \/ 6.*CPU 0 \/ 6/)).toBeVisible();
     await expect(freshHud.getByText(
       /Fire for Effect.*Damage the CPU on two separate human salvos.*0 of 2 damaging salvos/,
