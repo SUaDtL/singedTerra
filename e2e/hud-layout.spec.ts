@@ -1446,6 +1446,46 @@ test.describe('HUD layout guardrails', () => {
     }
   });
 
+  test('fine Commander mobility remains inside the console after Armory closes', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'pixel-touch', 'coarse Commander topology is independent');
+    if (testInfo.project.name === 'desktop-fine') {
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
+
+    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+    await page.getByRole('button', { name: 'Close Armory' }).click();
+
+    const geometry = await page.locator('.st-hud__active-row').evaluate((activeRow) => {
+      const console = activeRow.closest<HTMLElement>('.st-hud__command-console')!;
+      const context = activeRow.closest<HTMLElement>('.st-hud__console-context')!;
+      const portrait = activeRow.querySelector<HTMLElement>('.st-hud__tank-portrait-frame')!;
+      const movement = [...activeRow.querySelectorAll<HTMLButtonElement>('.st-hud__move-btn')]
+        .map((button) => ({
+          box: button.getBoundingClientRect().toJSON(),
+          authoredMinHeight: Number.parseFloat(getComputedStyle(button).minHeight),
+        }));
+      return {
+        console: console.getBoundingClientRect().toJSON(),
+        contextClientHeight: context.clientHeight,
+        contextScrollHeight: context.scrollHeight,
+        portrait: portrait.getBoundingClientRect().toJSON(),
+        movement,
+      };
+    });
+
+    expect(geometry.contextScrollHeight).toBeLessThanOrEqual(geometry.contextClientHeight + 1);
+    expect(geometry.portrait.width / geometry.portrait.height).toBeGreaterThanOrEqual(1.75);
+    expect(geometry.portrait.width / geometry.portrait.height).toBeLessThanOrEqual(1.85);
+    expect(geometry.movement).toHaveLength(2);
+    for (const movement of geometry.movement) {
+      expect(movement.authoredMinHeight).toBeGreaterThanOrEqual(34);
+      expect(movement.box.top).toBeGreaterThanOrEqual(geometry.console.top - 1);
+      expect(movement.box.bottom).toBeLessThanOrEqual(geometry.console.bottom + 1);
+    }
+  });
+
   test('noncompact touch keeps every command target at least 44 rendered pixels', async ({
     page,
   }, testInfo) => {

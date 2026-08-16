@@ -6577,7 +6577,11 @@ export class HUD {
 @media (pointer: fine) {
   #battle-rail .st-hud__console-context .st-hud__active-row { padding-inline: 10px; }
   #battle-rail .st-hud__console-context .st-hud__active-row {
-    grid-template-rows: minmax(80px, 1fr) 40px;
+    box-sizing: border-box;
+    grid-template-rows: 80px minmax(34px, 1fr);
+    gap: 0;
+    min-height: 0;
+    padding-block: 2px;
   }
   #battle-rail .st-hud__identity-lockup {
     grid-template-columns: 144px minmax(0, 1fr);
