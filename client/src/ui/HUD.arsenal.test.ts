@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HUD } from './HUD';
 import { WEAPON_INTEL } from './weaponIntel';
 import { GameEngine } from '@shared/engine/GameEngine';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
 import type { GameState } from '@shared/types/GameState';
 
 function mount(): { root: HTMLElement; hud: HUD; state: GameState; engine: GameEngine } {
@@ -381,5 +382,36 @@ describe('HUD arsenal — collapsible', () => {
     const second = mount();
     second.hud.update(second.state);
     expect(second.root.querySelector('.st-hud__strip')!.classList.contains('st-hud__strip--collapsed')).toBe(false);
+  });
+});
+
+describe('HUD Armory commerce', () => {
+  it('keeps equip and buy for a finite weapon in one Armory dialog', () => {
+    const { hud, state } = mount();
+    const tank = state.tanks.find((candidate) => candidate.id === state.activePlayerId)!;
+    tank.inventory.missile = { count: 2, unlimited: false };
+    const purchases: unknown[] = [];
+    const selected: WeaponType[] = [];
+    hud.onBuy((purchase) => purchases.push(purchase));
+    hud.onWeaponSelect((weapon) => selected.push(weapon));
+    hud.update(state);
+
+    document.querySelector<HTMLButtonElement>('[aria-label="Open Armory — equip or buy weapons"]')!.click();
+    const armory = document.querySelector<HTMLElement>('[data-ui="arsenal-drawer"]')!;
+    const card = armory.querySelector<HTMLElement>('[data-weapon="missile"].st-hud__armory-card')!;
+
+    expect(card.querySelector('[data-armory-ammo]')?.textContent).toContain('2');
+    expect(card.querySelector('[data-armory-price]')?.textContent).toContain('$');
+    const equip = card.querySelector<HTMLButtonElement>('[data-action="equip"]')!;
+    const buy = card.querySelector<HTMLButtonElement>('[data-action="buy"]')!;
+    expect(equip.textContent).toBe('Equip');
+    expect(buy.textContent).toContain('Buy');
+    equip.click();
+    buy.click();
+
+    expect(selected).toEqual(['missile']);
+    expect(purchases).toEqual([{ weapon: 'missile' }]);
+    expect(armory.getAttribute('role')).toBe('dialog');
+    expect(document.querySelectorAll('[aria-label="Store"]')).toHaveLength(0);
   });
 });

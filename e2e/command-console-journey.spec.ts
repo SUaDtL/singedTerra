@@ -38,14 +38,24 @@ async function acknowledgeBriefing(page: Page): Promise<void> {
   if (await skip.isVisible()) await skip.click();
 }
 
-async function chooseMissileAndRestoreArsenalFocus(page: Page): Promise<void> {
+async function chooseMissileAndRestoreArsenalFocus(page: Page, purchase = true): Promise<void> {
   const trigger = page.getByRole('button', { name: 'Open Armory — equip or buy weapons', exact: true });
   await trigger.click();
   const drawer = page.locator('[data-ui="arsenal-drawer"]');
   await expect(drawer).toHaveClass(/st-hud__strip--open/);
   await expect(drawer.getByRole('button', { name: 'Close Armory', exact: true })).toBeFocused();
-  await drawer.locator('button[data-weapon="missile"]').click();
+  const missile = drawer.locator('[data-weapon="missile"].st-hud__armory-card');
+  await expect(missile.locator('[data-armory-ammo]')).toHaveText('Ammo 4');
+  if (purchase) {
+    await missile.getByRole('button', { name: /Buy Missile/ }).click();
+    await expect(missile.locator('[data-armory-ammo]')).toHaveText('Ammo 9');
+    await expect(drawer.locator('.st-hud__armory-credits')).toHaveText('Credits: $6,125');
+    await expect(missile.getByRole('button', { name: 'Missile is current', exact: true })).toBeDisabled();
+  } else {
+    await drawer.locator('button[data-weapon="missile"]').click();
+  }
   await expect(page.locator('#battle-rail .st-hud__weapon-value')).toHaveText('Missile');
+  await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(drawer).toHaveClass(/st-hud__strip--collapsed/);
   await expect(trigger).toBeFocused();
@@ -228,7 +238,7 @@ test.describe('adaptive command console causal journeys', () => {
     await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
     await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
     await acknowledgeBriefing(page);
-    await chooseMissileAndRestoreArsenalFocus(page);
+    await chooseMissileAndRestoreArsenalFocus(page, false);
 
     await page.getByRole('button', { name: 'Aim barrel left', exact: true }).click();
     await page.getByRole('button', { name: 'Increase power', exact: true }).click();

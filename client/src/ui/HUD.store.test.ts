@@ -3,27 +3,24 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import type { GameState } from '@shared/types/GameState';
 import { HUD } from './HUD';
 
-function mount(): { hud: HUD; modal: HTMLElement; state: GameState } {
+function mount(): { hud: HUD; root: HTMLElement; modal: HTMLElement; state: GameState } {
   const root = document.createElement('div');
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
   document.body.append(root, overlay, modal);
   const hud = new HUD(root, overlay, modal, overlay);
   const state = new GameEngine({
-    players: [
-      { name: 'Alice', color: '#e84d4d' },
-      { name: 'Bob', color: '#4d8ce8' },
-    ],
+    players: [{ name: 'Alice', color: '#e84d4d' }, { name: 'Bob', color: '#4d8ce8' }],
     maxPlayers: 2,
     seed: 1,
   }).getState();
   hud.update(state, false, true);
-  return { hud, modal, state };
+  return { hud, root, modal, state };
 }
 
-function storeRow(modal: HTMLElement, name: string): HTMLElement {
-  return [...modal.querySelectorAll<HTMLElement>('.st-hud__store-row')]
-    .find((row) => row.querySelector('.st-hud__store-name')?.textContent === name)!;
+function armoryCard(root: HTMLElement, name: string): HTMLElement {
+  return [...root.querySelectorAll<HTMLElement>('.st-hud__armory-card')]
+    .find((card) => card.querySelector('.st-hud__armory-name')?.textContent === name)!;
 }
 
 afterEach(() => {
@@ -33,147 +30,64 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe('HUD store catalog', () => {
-  it('renders the ordered catalog sections and presentation role copy', () => {
-    const { modal } = mount();
-    const sections = [...modal.querySelectorAll<HTMLElement>('.st-hud__store-section')];
+describe('HUD Armory commerce catalog', () => {
+  it('places weapons and Supplies in Armory with no independent Store dialog', () => {
+    const { root, modal } = mount();
+    const catalog = root.querySelector<HTMLElement>('.st-hud__armory-catalog')!;
 
-    expect(sections.map((section) => section.querySelector('h2')?.textContent)).toEqual([
-      'Impact',
-      'Tactical',
-      'Terrain & Fire',
-      'Systems',
-    ]);
-    expect(sections.map((section) =>
-      [...section.querySelectorAll('.st-hud__store-name')].map((name) => name.textContent),
-    )).toEqual([
-      ['Missile', 'Heavy Missile', 'Baby Nuke', 'Nuke'],
-      ['Bouncing Betty', 'Funky Bomb', 'Cluster Bomb', 'MIRV', "Death's Head", 'Tracer'],
-      ['Dirt Bomb', 'Riot Bomb', 'Napalm', 'Hot Napalm', 'Sandhog'],
-      ['Shield', 'Heavy Shield', 'Battery', 'Fuel Tank', 'Parachute'],
-    ]);
-    expect([...modal.querySelectorAll('.st-hud__store-summary')].map((summary) => summary.textContent))
-      .toEqual([
-        'Reliable direct-hit blast.',
-        'Heavy blast for fortified targets.',
-        'Compact nuclear blast.',
-        'Maximum-radius nuclear blast.',
-        'Bounds through terrain with a blast at every hop.',
-        'Splits into a wide mid-flight spread.',
-        'Splits at the apex into a tight bomblet carpet.',
-        'Splits at the apex into three heavy warheads.',
-        'Splits at the apex into seven heavy warheads.',
-        'Zero-damage shot that marks the real impact.',
-        'Raises a mound instead of a crater.',
-        'Carves a wide crater without blast damage.',
-        'Spreads a lingering fire across the surface.',
-        'A wider, hotter, longer-burning fire field.',
-        'Drills underground before its endpoint blast.',
-        'Absorbs incoming damage before it reaches your tank.',
-        'A stronger finite barrier for surviving heavy fire.',
-        '+100 power cap.',
-        '+100 movement fuel.',
-        'Reduces one dangerous collapse fall to 25% damage.',
-      ]);
+    expect(catalog.querySelector('.st-hud__armory-catalog-header h3')?.textContent).toBe('Weapons');
+    expect(catalog.querySelector('.st-hud__armory-supplies h3')?.textContent).toBe('Supplies');
+    expect(armoryCard(root, 'Missile').dataset['weapon']).toBe('missile');
+    expect(armoryCard(root, 'Fuel Tank').dataset['accessory']).toBe('fuel_tank');
+    expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
   });
 
-  it('keeps the header, catalog, and footer separate while preserving buy behavior', () => {
-    const { hud, modal, state } = mount();
-    const panel = modal.querySelector<HTMLElement>('.st-hud__store-panel')!;
-    const children = [...panel.children];
+  it('updates credits, ammo, equip state, and purchase availability in place', () => {
+    const { hud, root, state } = mount();
+    const missile = armoryCard(root, 'Missile');
+    const fuelTank = armoryCard(root, 'Fuel Tank');
     const purchases: unknown[] = [];
     hud.onBuy((purchase) => purchases.push(purchase));
 
-    expect(children.map((child) => child.className)).toEqual([
-      'st-hud__store-header',
-      'st-hud__store-catalog',
-      'st-hud__store-footer',
-    ]);
-    expect(panel.querySelector('.st-hud__store-header .st-hud__store-credits')?.textContent)
-      .toBe('Credits: $8,000');
-    expect(panel.querySelector<HTMLButtonElement>('.st-hud__store-footer .st-hud__store-close')?.type)
-      .toBe('button');
-
-    const missile = storeRow(modal, 'Missile').querySelector<HTMLButtonElement>('.st-hud__store-buy')!;
-    const fuelTank = storeRow(modal, 'Fuel Tank');
-    const fuelBuy = fuelTank.querySelector<HTMLButtonElement>('.st-hud__store-buy')!;
-    expect(missile.disabled).toBe(false);
-    expect(fuelBuy.disabled).toBe(true);
-    expect(fuelTank.querySelector('.st-hud__store-owned')?.textContent).toBe('Fuel 100');
+    expect(root.querySelector('.st-hud__armory-credits')?.textContent).toBe('Credits: $8,000');
+    expect(missile.querySelector('[data-armory-ammo]')?.textContent).toBe('Ammo 4');
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(false);
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="equip"]')?.textContent).toBe('Equip');
+    expect(fuelTank.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(true);
 
     state.tanks[0]!.credits = 30_000;
+    state.tanks[0]!.inventory.missile = { count: 3, unlimited: false };
+    state.tanks[0]!.selectedWeapon = 'missile';
     state.tanks[0]!.fuel = 175;
     hud.update(state, false, true);
-    expect(fuelTank.querySelector('.st-hud__store-owned')?.textContent).toBe('Fuel 175');
-    expect(fuelBuy.disabled).toBe(false);
-    missile.click();
-    fuelBuy.click();
+
+    expect(root.querySelector('.st-hud__armory-credits')?.textContent).toBe('Credits: $30,000');
+    expect(missile.querySelector('[data-armory-ammo]')?.textContent).toBe('Ammo 3');
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="equip"]')?.textContent).toBe('Current');
+    expect(fuelTank.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(false);
+    missile.querySelector<HTMLButtonElement>('[data-action="buy"]')!.click();
+    fuelTank.querySelector<HTMLButtonElement>('[data-action="buy"]')!.click();
     expect(purchases).toEqual([{ weapon: 'missile' }, { accessory: 'fuel_tank' }]);
   });
 
-  it('keeps accessory effects in the summary and bundle quantity in the purchase control', () => {
-    const { modal } = mount();
-    const parachute = storeRow(modal, 'Parachute');
-
-    expect(parachute.querySelector('.st-hud__store-summary')?.textContent)
-      .toBe('Reduces one dangerous collapse fall to 25% damage.');
-    expect(parachute.querySelector('.st-hud__store-price')?.textContent).toBe('$4,000');
-    expect(parachute.querySelector('.st-hud__store-bundle')?.textContent).toBe('+1');
-  });
-
-  it('names each purchase control for the item it buys', () => {
-    const { modal } = mount();
-    const rows = [...modal.querySelectorAll<HTMLElement>('.st-hud__store-row')];
-
-    for (const row of rows) {
-      const name = row.querySelector('.st-hud__store-name')?.textContent;
-      const accessibleName = row.querySelector('.st-hud__store-buy')?.getAttribute('aria-label');
-      expect(accessibleName, `${name} purchase control`).toBeTypeOf('string');
-      expect(accessibleName, `${name} purchase control`).toContain(name!);
-    }
-    expect(storeRow(modal, 'Parachute').querySelector('.st-hud__store-buy')?.getAttribute('aria-label'))
-      .toBe('Buy Parachute for $4,000, bundle of 1');
-  });
-
-  it('locks above-level weapon and accessory cards while leaving affordable unlocked gear enabled', () => {
-    const { hud, modal, state } = mount();
+  it('retains arms-level and turn-phase purchase gates without changing action authority', () => {
+    const { hud, root, state } = mount();
     state.tanks[0]!.credits = 30_000;
     hud.setArmsLevel(0);
     hud.update(state, false, true);
+    const missile = armoryCard(root, 'Missile');
+    const heavyMissile = armoryCard(root, 'Heavy Missile');
+    const battery = armoryCard(root, 'Battery');
 
-    const missile = storeRow(modal, 'Missile');
-    const heavyMissile = storeRow(modal, 'Heavy Missile');
-    const battery = storeRow(modal, 'Battery');
-
-    expect(heavyMissile.querySelector('.st-hud__store-owned')?.textContent)
-      .toBe('🔒 Arms Lv 1');
-    expect(heavyMissile.querySelector<HTMLButtonElement>('.st-hud__store-buy')?.disabled)
-      .toBe(true);
-    expect(battery.querySelector('.st-hud__store-owned')?.textContent)
-      .toBe('🔒 Arms Lv 2');
-    expect(battery.querySelector<HTMLButtonElement>('.st-hud__store-buy')?.disabled)
-      .toBe(true);
-    expect(missile.querySelector<HTMLButtonElement>('.st-hud__store-buy')?.disabled)
-      .toBe(false);
-  });
-
-  it('disables an affordable unlocked purchase outside PLAYER_TURN and re-enables it on return', () => {
-    const { hud, modal, state } = mount();
-    state.tanks[0]!.credits = 30_000;
-    hud.setArmsLevel(1);
-    hud.update(state, false, true);
-    const heavyMissileBuy = storeRow(modal, 'Heavy Missile')
-      .querySelector<HTMLButtonElement>('.st-hud__store-buy')!;
-
-    expect(heavyMissileBuy.disabled).toBe(false);
+    expect(heavyMissile.querySelector('.st-hud__armory-owned')?.textContent).toBe('🔒 Arms Lv 1');
+    expect(heavyMissile.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(true);
+    expect(battery.querySelector('.st-hud__armory-owned')?.textContent).toBe('🔒 Arms Lv 2');
+    expect(battery.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(true);
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(false);
 
     state.phase = 'FIRING';
     hud.update(state, false, true);
-    expect(heavyMissileBuy.disabled).toBe(true);
-
-    state.phase = 'PLAYER_TURN';
-    hud.update(state, false, true);
-    expect(heavyMissileBuy.disabled).toBe(false);
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="buy"]')?.disabled).toBe(true);
   });
 
   it('keeps between-round shop buy controls on their legacy sizing contract', () => {

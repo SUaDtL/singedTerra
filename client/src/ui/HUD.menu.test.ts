@@ -72,15 +72,19 @@ describe('HUD Command Menu', () => {
       .contains('st-hud__overlay--hidden')).toBe(false);
   });
 
-  it('keeps Armory and buying weapons in the live Fire Control surface', () => {
-    const { root } = mount();
+  it('keeps Armory equip and purchase controls in the live Fire Control surface', () => {
+    const { root, modal } = mount();
 
     const fireControl = root.querySelector<HTMLElement>('[aria-label="Firing solution"]')!;
     expect(fireControl.querySelector<HTMLButtonElement>('[aria-label="Open Armory — equip or buy weapons"]'))
       .toBeTruthy();
     expect(fireControl.querySelector(':scope > .st-hud__store-btn')).toBeNull();
-    expect([...fireControl.querySelectorAll<HTMLButtonElement>('[data-ui="arsenal-drawer"] button')]
-      .some((button) => button.textContent?.startsWith('Buy weapons'))).toBe(true);
+    const missile = fireControl.querySelector<HTMLElement>(
+      '[data-ui="arsenal-drawer"] [data-weapon="missile"].st-hud__armory-card',
+    )!;
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="equip"]')?.textContent).toBe('Equip');
+    expect(missile.querySelector<HTMLButtonElement>('[data-action="buy"]')?.textContent).toContain('Buy');
+    expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
   });
 
   it('returns focus to the Menu control that opened Command Menu', () => {
@@ -116,7 +120,6 @@ describe('HUD Command Menu', () => {
 
   it('isolates background surfaces while Command Menu is open and restores them on Resume', () => {
     const { stage, lobby, root, modal } = mount();
-    const store = modal.querySelector<HTMLElement>('.st-hud__store')!;
     const victory = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
 
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
@@ -124,7 +127,6 @@ describe('HUD Command Menu', () => {
     expect(stage.inert).toBe(true);
     expect(root.inert).toBe(true);
     expect(lobby.inert).toBe(true);
-    expect(store.inert).toBe(true);
     expect(victory.inert).toBe(true);
 
     modal.querySelector<HTMLButtonElement>('[data-ui="command-menu"] button')!.click();
@@ -132,7 +134,6 @@ describe('HUD Command Menu', () => {
     expect(stage.inert).toBe(false);
     expect(root.inert).toBe(false);
     expect(lobby.inert).toBe(false);
-    expect(store.inert).toBe(false);
     expect(victory.inert).toBe(false);
   });
 

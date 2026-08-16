@@ -2,6 +2,25 @@ import { test, expect } from '@playwright/test';
 import { gotoRunningGame } from './support';
 
 test.describe('weapon intel battlefield composition', () => {
+  test('buys a finite weapon inside the sole Armory dialog', async ({ page }) => {
+    await gotoRunningGame(page);
+    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+    const armory = page.locator('[data-ui="arsenal-drawer"]');
+    const missile = armory.locator('[data-weapon="missile"].st-hud__armory-card');
+    const ammo = missile.locator('[data-armory-ammo]');
+    const credits = armory.locator('.st-hud__armory-credits');
+
+    await expect(armory).toHaveAccessibleName('Armory');
+    await expect(ammo).toHaveText('Ammo 4');
+    await expect(credits).toHaveText('Credits: $8,000');
+    await missile.getByRole('button', { name: /Buy Missile/ }).click();
+    await expect(ammo).toHaveText('Ammo 9');
+    await expect(credits).toHaveText('Credits: $6,125');
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
+    await expect(page.locator('.st-hud__store')).toHaveCount(0);
+  });
+
   test('previews tactics through the active input mode and stays inside the arsenal layer', async ({
     page,
   }, testInfo) => {

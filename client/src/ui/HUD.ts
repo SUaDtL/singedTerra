@@ -200,9 +200,6 @@ export class HUD {
   /** Callback fired by one semantic mobility-rocker activation. */
   private moveCb: ((delta: number) => void) | null = null;
 
-  /** Whether the store panel is currently open. */
-  private storeOpen = false;
-
   /** Whether the static DOM scaffold has been built yet. */
   private built = false;
 
@@ -306,8 +303,6 @@ export class HUD {
   private pointerIntelFallbackTimer: ReturnType<typeof setTimeout> | null = null;
   private renderedIntelWeapon: WeaponType | null = null;
   private renderedIntelAmmo: string | null = null;
-  private storeBtnEl!: HTMLButtonElement;
-  private storeBtnLabelEl!: HTMLElement;
   private commandConsoleEl!: HTMLElement;
   private consoleContextEl!: HTMLElement;
   private lastSalvoEl!: HTMLElement;
@@ -331,8 +326,7 @@ export class HUD {
   private firstSalvoBriefingEl!: HTMLElement;
   private firstSalvoBriefingEnterBtnEl!: HTMLButtonElement;
   private firstSalvoBriefingAcknowledged = false;
-  private storeEl!: HTMLElement;
-  private storeCreditsEl!: HTMLElement;
+  private armoryCreditsEl!: HTMLElement;
   // Networked liveness widgets (P1-6): a persistent connection banner (shown only
   // while reconnecting/connecting) and a transient toast for failed shots.
   private connBannerEl!: HTMLElement;
@@ -345,8 +339,13 @@ export class HUD {
   private quickChatPanelEl!: HTMLElement;
   private quickChatToggleEl!: HTMLButtonElement;
 
-  /** Per-store-row nodes (buy button + owned count), for cheap per-frame sync. */
-  private storeCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
+  /** Per-Armory weapon card nodes, kept in sync with the existing buy authority. */
+  private storeCells = new Map<WeaponType, {
+    buyBtn: HTMLButtonElement;
+    owned: HTMLElement;
+    equipBtn: HTMLButtonElement;
+    ammo: HTMLElement;
+  }>();
 
   /** Per-accessory store-row nodes (PLAYER_TURN store) — battery etc. */
   private storeAccessoryCells = new Map<AccessoryType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
@@ -752,7 +751,6 @@ export class HUD {
     this.buildActiveRow();
     this.buildArsenal();
     const controls = this.buildSolutionControls();
-    this.buildStore();
     this.buildTurnActions();
     this.buildCommandConsole(controls);
     this.buildEndScreens();
@@ -787,7 +785,6 @@ export class HUD {
     );
     this.modalRoot.append(
       this.terminalPayoffStatusEl,
-      this.storeEl,
       this.overlayEl,
       this.roundOverEl,
       this.pauseEl,
@@ -1365,7 +1362,7 @@ export class HUD {
       this.weaponCells.set(type, { el: btn, ammo: ammoSpan });
       stripGrid.append(btn);
     }
-    stripBody.append(drawerHeader, intel, stripGrid);
+    stripBody.append(drawerHeader, intel, stripGrid, this.buildArmoryCommerce());
     this.stripEl.append(stripBody);
     this.stripEl.addEventListener('keydown', (event) => {
       if (event.key === 'Tab' || event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
@@ -1437,145 +1434,123 @@ export class HUD {
     this.pointerIntelFallbackTimer = null;
   }
 
-  /** Store toggle button (side panel) + the store modal (on the modal layer). */
-  private buildStore(): void {
-    // Store toggle button (side panel) + the store modal (on the canvas overlay).
-    // Clicking the button opens/closes the modal; buying is wired per-row below.
-    this.storeBtnEl = document.createElement('button');
-    this.storeBtnEl.type = 'button';
-    this.storeBtnEl.className = 'st-hud__store-btn st-ui-action';
-    this.storeBtnLabelEl = document.createElement('span');
-    this.storeBtnLabelEl.className = 'st-hud__store-btn-label';
-    this.storeBtnEl.append(makeHudGlyph('store', 15), this.storeBtnLabelEl);
-    this.storeBtnEl.addEventListener('click', () => this.toggleStore());
-
-    this.storeEl = document.createElement('div');
-    this.storeEl.className = 'st-hud__store st-hud__store--hidden';
-    this.storeEl.setAttribute('role', 'dialog');
-    this.storeEl.setAttribute('aria-modal', 'true');
-    this.storeEl.setAttribute('aria-label', 'Store');
-    const storePanel = document.createElement('div');
-    storePanel.className = 'st-hud__store-panel';
-    const storeHeader = document.createElement('div');
-    storeHeader.className = 'st-hud__store-header';
-    const storeTitle = document.createElement('div');
-    storeTitle.className = 'st-hud__store-title';
-    storeTitle.textContent = 'Store';
-    this.storeCreditsEl = document.createElement('div');
-    this.storeCreditsEl.className = 'st-hud__store-credits';
-    const storeMenu = document.createElement('button');
-    storeMenu.type = 'button';
-    storeMenu.className = 'st-hud__store-menu';
-    storeMenu.dataset['command'] = 'open-menu';
-    storeMenu.setAttribute('aria-label', 'Open Command Menu');
-    storeMenu.textContent = 'Menu';
-    storeMenu.addEventListener('click', () => this.togglePause(true));
-    storeHeader.append(storeTitle, this.storeCreditsEl, storeMenu);
-
-    const catalog = document.createElement('div');
-    catalog.className = 'st-hud__store-catalog';
-    for (const catalogSection of STORE_CATALOG) {
-      const section = document.createElement('section');
-      section.className = 'st-hud__store-section';
-      const title = document.createElement('h2');
-      title.textContent = catalogSection.title;
-      const grid = document.createElement('div');
-      grid.className = 'st-hud__store-section-grid';
-      for (const entry of catalogSection.entries) {
-        grid.append(
-          entry.kind === 'weapon'
-            ? this.createStoreWeaponCard(entry.type, entry.summary)
-            : this.createStoreAccessoryCard(entry.type, entry.summary),
-        );
+  /** Add the purchasable catalog to the Armory's one focus scope. */
+  private buildArmoryCommerce(): HTMLElement {
+    const catalog = document.createElement('section');
+    catalog.className = 'st-hud__armory-catalog';
+    catalog.setAttribute('aria-label', 'Armory catalog');
+    const catalogHeader = document.createElement('div');
+    catalogHeader.className = 'st-hud__armory-catalog-header';
+    const weaponsTitle = document.createElement('h3');
+    weaponsTitle.textContent = 'Weapons';
+    this.armoryCreditsEl = document.createElement('span');
+    this.armoryCreditsEl.className = 'st-hud__armory-credits';
+    catalogHeader.append(weaponsTitle, this.armoryCreditsEl);
+    const weapons = document.createElement('div');
+    weapons.className = 'st-hud__armory-card-grid';
+    const supplies = document.createElement('section');
+    supplies.className = 'st-hud__armory-supplies';
+    const suppliesTitle = document.createElement('h3');
+    suppliesTitle.textContent = 'Supplies';
+    const supplyGrid = document.createElement('div');
+    supplyGrid.className = 'st-hud__armory-card-grid';
+    for (const section of STORE_CATALOG) {
+      for (const entry of section.entries) {
+        if (entry.kind === 'weapon') {
+          weapons.append(this.createArmoryWeaponCard(entry.type, entry.summary));
+        } else {
+          supplyGrid.append(this.createArmoryAccessoryCard(entry.type, entry.summary));
+        }
       }
-      section.append(title, grid);
-      catalog.append(section);
     }
-
-    const storeClose = document.createElement('button');
-    storeClose.type = 'button';
-    storeClose.className = 'st-hud__store-close';
-    storeClose.textContent = 'Close';
-    storeClose.addEventListener('click', () => this.toggleStore(false));
-    const storeFooter = document.createElement('div');
-    storeFooter.className = 'st-hud__store-footer';
-    storeFooter.append(storeClose);
-
-    storePanel.append(storeHeader, catalog, storeFooter);
-    this.storeEl.append(storePanel);
-
-    // Click-outside-to-dismiss (review #8): a click on the store BACKDROP (storeEl
-    // itself, not the centered panel) closes the store. Clicks inside storePanel have a
-    // descendant target, so buying/closing within the store is unaffected. The store
-    // overlay lives in #modal-layer above the canvas, so this click never reaches the
-    // play field (no stray aim/fire). Scoped to the in-turn store; the flow-gated
-    // game-over / round-over modals deliberately do NOT get casual dismiss.
-    this.storeEl.addEventListener('click', (e) => {
-      if (e.target === this.storeEl) this.toggleStore(false);
-    });
+    supplies.append(suppliesTitle, supplyGrid);
+    catalog.append(catalogHeader, weapons, supplies);
+    return catalog;
   }
 
-  private createStoreWeaponCard(type: WeaponType, summary: string): HTMLElement {
+  private createArmoryWeaponCard(type: WeaponType, summary: string): HTMLElement {
     const def = WEAPONS[type];
     const row = document.createElement('div');
-    row.className = 'st-hud__store-row';
+    row.className = 'st-hud__armory-card';
+    row.dataset['weapon'] = type;
     const info = document.createElement('div');
-    info.className = 'st-hud__store-info';
+    info.className = 'st-hud__armory-info';
     const name = document.createElement('span');
-    name.className = 'st-hud__store-name';
+    name.className = 'st-hud__armory-name';
     name.textContent = def.name;
     const nameLine = document.createElement('div');
-    nameLine.className = 'st-hud__store-name-line';
+    nameLine.className = 'st-hud__armory-name-line';
     nameLine.append(makeWeaponIcon(type, 16), name);
     const summaryEl = document.createElement('span');
-    summaryEl.className = 'st-hud__store-summary';
+    summaryEl.className = 'st-hud__armory-intel';
     summaryEl.textContent = summary;
     const owned = document.createElement('span');
-    owned.className = 'st-hud__store-owned';
-    info.append(nameLine, summaryEl, owned);
+    owned.className = 'st-hud__armory-owned';
+    const ammo = document.createElement('span');
+    ammo.className = 'st-hud__armory-ammo';
+    ammo.dataset['armoryAmmo'] = '';
+    info.append(nameLine, summaryEl, owned, ammo);
+
+    const equipBtn = document.createElement('button');
+    equipBtn.type = 'button';
+    equipBtn.className = 'st-hud__armory-equip';
+    equipBtn.dataset['action'] = 'equip';
+    equipBtn.addEventListener('click', () => this.weaponSelectCb?.(type));
 
     const buyBtn = document.createElement('button');
     buyBtn.type = 'button';
-    buyBtn.className = 'st-hud__store-buy';
+    buyBtn.className = 'st-hud__armory-buy';
+    buyBtn.dataset['action'] = 'buy';
     buyBtn.setAttribute(
       'aria-label',
       `Buy ${def.name} for $${def.price.toLocaleString()}, bundle of ${def.bundleSize}`,
     );
-    buyBtn.innerHTML =
-      `<span class="st-hud__store-price">$${def.price.toLocaleString()}</span>` +
-      `<span class="st-hud__store-bundle">+${def.bundleSize}</span>`;
+    const price = document.createElement('span');
+    price.className = 'st-hud__armory-price';
+    price.dataset['armoryPrice'] = '';
+    price.textContent = `Buy $${def.price.toLocaleString()}`;
+    const bundle = document.createElement('span');
+    bundle.className = 'st-hud__armory-bundle';
+    bundle.textContent = `+${def.bundleSize}`;
+    buyBtn.append(price, bundle);
     buyBtn.addEventListener('click', () => this.buyCb?.({ weapon: type }));
-    row.append(info, buyBtn);
-    this.storeCells.set(type, { buyBtn, owned });
+    row.append(info, equipBtn, buyBtn);
+    this.storeCells.set(type, { buyBtn, owned, equipBtn, ammo });
     return row;
   }
 
-  private createStoreAccessoryCard(key: AccessoryType, summary: string): HTMLElement {
+  private createArmoryAccessoryCard(key: AccessoryType, summary: string): HTMLElement {
     const acc = ACCESSORIES[key];
     const row = document.createElement('div');
-    row.className = 'st-hud__store-row';
+    row.className = 'st-hud__armory-card';
+    row.dataset['accessory'] = key;
     const info = document.createElement('div');
-    info.className = 'st-hud__store-info';
+    info.className = 'st-hud__armory-info';
     const name = document.createElement('span');
-    name.className = 'st-hud__store-name';
+    name.className = 'st-hud__armory-name';
     name.textContent = acc.name;
     const summaryEl = document.createElement('span');
-    summaryEl.className = 'st-hud__store-summary';
+    summaryEl.className = 'st-hud__armory-intel';
     summaryEl.textContent = summary;
     const owned = document.createElement('span');
-    owned.className = 'st-hud__store-owned';
+    owned.className = 'st-hud__armory-owned';
     info.append(name, summaryEl, owned);
 
     const buyBtn = document.createElement('button');
     buyBtn.type = 'button';
-    buyBtn.className = 'st-hud__store-buy';
+    buyBtn.className = 'st-hud__armory-buy';
+    buyBtn.dataset['action'] = 'buy';
     buyBtn.setAttribute(
       'aria-label',
       `Buy ${acc.name} for $${acc.price.toLocaleString()}, bundle of ${acc.bundleSize}`,
     );
-    buyBtn.innerHTML =
-      `<span class="st-hud__store-price">$${acc.price.toLocaleString()}</span>` +
-      `<span class="st-hud__store-bundle">+${acc.bundleSize}</span>`;
+    const price = document.createElement('span');
+    price.className = 'st-hud__armory-price';
+    price.textContent = `Buy $${acc.price.toLocaleString()}`;
+    const bundle = document.createElement('span');
+    bundle.className = 'st-hud__armory-bundle';
+    bundle.textContent = `+${acc.bundleSize}`;
+    buyBtn.append(price, bundle);
     buyBtn.addEventListener('click', () => this.buyCb?.({ accessory: key }));
     row.append(info, buyBtn);
     this.storeAccessoryCells.set(key, { buyBtn, owned });
@@ -1815,9 +1790,6 @@ export class HUD {
     solution.dataset['ui'] = 'firing-solution';
     solution.setAttribute('aria-label', 'Firing solution');
 
-    // Buying is a gameplay decision inside Armory, alongside loadout choice;
-    // it is not a third standalone card or a Command Menu destination.
-    this.stripBodyEl.append(this.storeBtnEl);
     solution.append(this.weaponEl, controls, this.stripEl);
     this.consoleSolutionEl = solution;
 
@@ -2531,7 +2503,6 @@ export class HUD {
     return this.paused;
   }
 
-  /** Open/close the store modal. With no argument, toggles. */
   /** Show/hide the in-game PAUSE overlay. Non-destructive — the client/engine keeps
    *  running underneath (the networked lockstep loop MUST keep applying the broadcast
    *  log to stay in sync), so Resume returns to the exact live game. Local human input
@@ -2540,7 +2511,7 @@ export class HUD {
     if (show) {
       const focused = document.activeElement;
       this.pausePreviousFocus = focused instanceof HTMLElement ? focused : null;
-      this.toggleStore(false);
+      if (!this.stripCollapsed) this.closeArmory();
       if (this.firstSalvoReplayCb) {
         this.pauseActionsEl.append(this.pauseReplayFirstSalvoBtnEl);
       } else {
@@ -2617,7 +2588,6 @@ export class HUD {
     this.battleSettingsPreviousFocus = trigger ?? (focused instanceof HTMLElement ? focused : null);
     if (!this.pauseEl.classList.contains('st-hud__overlay--hidden')) this.togglePause(false);
     if (!this.stripCollapsed) this.closeArmory();
-    this.toggleStore(false);
     this.setMatchDrawerOpen(false);
     this.battleSettingsEl.classList.remove('st-hud__overlay--hidden');
     this.battleSettingsEl.setAttribute('aria-hidden', 'false');
@@ -2703,11 +2673,6 @@ export class HUD {
     }
   }
 
-  private toggleStore(open?: boolean): void {
-    this.storeOpen = open ?? !this.storeOpen;
-    this.storeEl.classList.toggle('st-hud__store--hidden', !this.storeOpen);
-  }
-
   /**
    * Reflect the ACTIVE tank's wallet/inventory into the store: credit balance,
    * per-weapon owned count, and per-row affordability. Buying is only allowed
@@ -2720,12 +2685,7 @@ export class HUD {
     const credits = active?.credits ?? 0;
     const canAct = state.phase === 'PLAYER_TURN';
 
-    const storeLabel = `Buy weapons · $${credits.toLocaleString()}`;
-    if (this.storeBtnLabelEl.textContent !== storeLabel) {
-      this.storeBtnLabelEl.textContent = storeLabel;
-    }
-    this.storeBtnEl.setAttribute('aria-label', storeLabel);
-    this.storeCreditsEl.textContent = `Credits: $${credits.toLocaleString()}`;
+    this.armoryCreditsEl.textContent = `Credits: $${credits.toLocaleString()}`;
 
     for (const [type, cell] of this.storeCells) {
       const def = WEAPONS[type];
@@ -2734,6 +2694,15 @@ export class HUD {
       const owned = slot ? (slot.unlimited ? '∞' : String(slot.count)) : '0';
       const label = locked ? `🔒 Arms Lv ${def.armsLevel}` : `Own ${owned}`;
       if (cell.owned.textContent !== label) cell.owned.textContent = label;
+      const ammo = `Ammo ${owned}`;
+      if (cell.ammo.textContent !== ammo) cell.ammo.textContent = ammo;
+      const selected = active?.selectedWeapon === type;
+      cell.equipBtn.disabled = !canAct || selected;
+      cell.equipBtn.textContent = selected ? 'Current' : 'Equip';
+      cell.equipBtn.setAttribute(
+        'aria-label',
+        selected ? `${def.name} is current` : `Equip ${def.name}`,
+      );
       const buyable = canAct && !locked && credits >= def.price;
       cell.buyBtn.disabled = !buyable;
       cell.buyBtn.classList.toggle('st-hud__store-buy--disabled', !buyable);
@@ -3165,6 +3134,10 @@ export class HUD {
       this.closeArmory();
       return;
     }
+    if (!this.battleSettingsEl.classList.contains('st-hud__overlay--hidden')) {
+      this.closeBattleSettings();
+    }
+    if (this.paused) this.togglePause(false);
     this.stripCollapsed = false;
     this.setMatchDrawerOpen(false);
     this.modalRoot.append(this.stripEl);
@@ -4211,7 +4184,7 @@ export class HUD {
 .st-hud__strip-body {
   display: grid;
   grid-template-columns: minmax(180px, 0.48fr) minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(90px, 0.34fr) minmax(0, 0.66fr);
   min-height: 0;
   flex: 1 1 auto;
   gap: 5px;
@@ -4314,7 +4287,7 @@ export class HUD {
   filter: drop-shadow(0 0 3px rgba(255, 233, 168, 0.08));
 }
 .st-hud__weapon-btn .st-weapon-icon,
-.st-hud__store-name-line .st-weapon-icon {
+.st-hud__armory-name-line .st-weapon-icon {
   width: 18px;
   height: 18px;
 }
@@ -4977,11 +4950,6 @@ export class HUD {
   background: rgba(6, 3, 11, 0.34);
   flex-shrink: 0;
 }
-.st-hud__turn-actions .st-hud__store-btn {
-  width: auto;
-  min-width: 0;
-  flex: 0.9;
-}
 .st-hud__primary-action {
   min-width: 0;
   min-height: 42px;
@@ -5028,155 +4996,91 @@ export class HUD {
   filter: saturate(0.45);
   box-shadow: none;
 }
-.st-hud__store-btn {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  pointer-events: auto;
-  cursor: pointer;
-  justify-content: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 7px 8px;
-  margin: 0;
-  border: 1px solid rgba(255, 210, 63, 0.20);
-  border-radius: var(--ui-radius-md);
-  background: rgba(255, 210, 63, 0.035);
-  color: var(--ui-muted);
-  font-family: var(--font-sans);
-  font-size: var(--ui-type-body);
-  letter-spacing: 0.5px;
-  font-variant-numeric: tabular-nums;
-  transition: background 130ms ease, border-color 130ms ease;
-}
-.st-hud__store-btn:hover { background: var(--ui-surface-active); color: var(--ui-action); }
-.st-hud__store {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(6, 4, 12, 0.62);
-  pointer-events: auto;
-  /* No z-index: store + game-over are siblings on #modal-layer, so DOM order
-   * governs — game-over (appended last) correctly paints above an open store. */
-}
-.st-hud__store--hidden { display: none; }
-.st-hud__store-panel {
-  width: min(920px, calc(100% - 36px));
-  height: min(720px, calc(100% - 28px));
-  max-height: 86%;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  border: 1px solid rgba(122, 215, 255, 0.45);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(18, 11, 30, 0.98), rgba(10, 6, 18, 0.98));
-  box-shadow: 0 0 28px rgba(122, 215, 255, 0.22);
-}
-.st-hud__store-header {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid rgba(122, 215, 255, 0.16);
-}
-.st-hud__store-title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  color: var(--gold);
-}
-.st-hud__store-credits {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  color: #7ad7ff;
-  font-size: 13px;
-}
-.st-hud__store-menu {
-  pointer-events: auto;
-  cursor: pointer;
-  min-height: 34px;
-  padding: 5px 10px;
-  border: 1px solid rgba(255, 210, 63, 0.58);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--gold);
-  font-family: var(--font-display);
-  font-size: 12px;
-}
-.st-hud__store-menu:hover { background: rgba(255, 210, 63, 0.16); }
-.st-hud__store-catalog {
+.st-hud__armory-catalog {
+  grid-column: 1 / -1;
+  grid-row: 3;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
-  gap: 16px;
+  gap: 8px;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 14px 18px 18px;
+  padding: 2px 1px 1px;
   scrollbar-gutter: stable;
 }
-.st-hud__store-section { min-width: 0; }
-.st-hud__store-section h2 {
-  margin: 0 0 8px;
+.st-hud__armory-catalog-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.st-hud__armory-catalog h3 {
+  margin: 0;
   color: var(--gold);
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
 }
-.st-hud__store-section-grid {
+.st-hud__armory-credits {
+  color: #7ad7ff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__armory-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
-.st-hud__store-row {
+.st-hud__armory-supplies {
+  display: grid;
+  gap: 6px;
+}
+.st-hud__armory-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 70px;
+  min-height: 64px;
   padding: 8px;
   border: 1px solid rgba(255, 210, 63, 0.18);
   border-radius: 6px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
   transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
 }
-.st-hud__store-row:hover {
+.st-hud__armory-card:hover {
   border-color: rgba(255, 210, 63, 0.42);
   background: linear-gradient(135deg, rgba(255, 210, 63, 0.11), rgba(255, 255, 255, 0.03));
 }
-.st-hud__store-row:focus-within {
+.st-hud__armory-card:focus-within {
   border-color: var(--gold);
   box-shadow: 0 0 0 1px rgba(255, 210, 63, 0.2);
 }
-.st-hud__store-info { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
-.st-hud__store-name-line {
+.st-hud__armory-info { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
+.st-hud__armory-name-line {
   display: flex;
   align-items: center;
   gap: 7px;
   min-width: 0;
 }
-.st-hud__store-name { color: var(--text-gold); font-size: 13px; }
-.st-hud__store-summary {
+.st-hud__armory-name { color: var(--text-gold); font-size: 13px; }
+.st-hud__armory-intel {
   color: var(--ui-muted);
   font-size: 10px;
   line-height: 1.25;
 }
-.st-hud__store-owned {
+.st-hud__armory-owned,
+.st-hud__armory-ammo {
   opacity: 0.6;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-variant-numeric: tabular-nums;
 }
-.st-hud__store-buy {
+.st-hud__store-buy,
+.st-hud__armory-buy,
+.st-hud__armory-equip {
   pointer-events: auto;
   cursor: pointer;
   display: flex;
@@ -5191,56 +5095,40 @@ export class HUD {
   font-family: var(--font-mono);
   transition: background 120ms ease;
 }
-.st-hud__store-catalog .st-hud__store-buy {
+.st-hud__armory-buy,
+.st-hud__armory-equip {
   flex: 0 0 auto;
   min-width: 70px;
   min-height: max(44px, var(--st-store-buy-target, 44px));
   padding: 5px 8px;
   transition: background 120ms ease, box-shadow 120ms ease;
 }
-.st-hud__store-buy:hover { background: rgba(255, 210, 63, 0.26); }
-.st-hud__store-menu:focus-visible,
-.st-hud__store-catalog .st-hud__store-buy:focus-visible,
-.st-hud__store-close:focus-visible {
+.st-hud__armory-equip {
+  min-width: 58px;
+  border-color: rgba(122, 215, 255, 0.62);
+  background: rgba(122, 215, 255, 0.1);
+  color: #b9edff;
+}
+.st-hud__store-buy:hover,
+.st-hud__armory-buy:hover,
+.st-hud__armory-equip:hover { background: rgba(255, 210, 63, 0.26); }
+.st-hud__armory-buy:focus-visible,
+.st-hud__armory-equip:focus-visible {
   outline: 2px solid #7ad7ff;
   outline-offset: 2px;
 }
-.st-hud__store-price { font-size: 12px; font-variant-numeric: tabular-nums; }
-.st-hud__store-bundle { font-size: 9px; opacity: 0.7; }
-.st-hud__store-buy--disabled { opacity: 0.32; cursor: not-allowed; }
-.st-hud__store-buy--disabled:hover { background: rgba(255, 210, 63, 0.12); }
-.st-hud__store-footer {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-end;
-  padding: 10px 18px 14px;
-  border-top: 1px solid rgba(122, 215, 255, 0.16);
-}
-.st-hud__store-close {
-  pointer-events: auto;
-  cursor: pointer;
-  min-height: 40px;
-  padding: 7px 18px;
-  border: 1px solid var(--gold);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--gold);
-  font-family: var(--font-display);
-  font-size: 13px;
-}
-.st-hud__store-close:hover { background: rgba(255, 210, 63, 0.16); }
-#app.is-compact .st-hud__store-panel {
-  width: calc(100% - 24px);
-  height: calc(100% - 20px);
-  max-height: 92%;
-}
-#app.is-compact .st-hud__store-catalog { grid-template-columns: minmax(0, 1fr); }
-#app.is-compact .st-hud__store-section-grid { grid-template-columns: minmax(0, 1fr); }
-#app.is-compact .st-hud__store-row { min-height: 64px; }
-/* Preserve the compact design floor on top of the all-scale physical target. */
-#app.is-compact .st-hud__store-catalog .st-hud__store-buy {
-  min-height: max(72px, var(--st-store-buy-target, 72px));
-}
+.st-hud__armory-price { font-size: 12px; font-variant-numeric: tabular-nums; }
+.st-hud__armory-bundle { font-size: 9px; opacity: 0.7; }
+.st-hud__store-buy--disabled,
+.st-hud__armory-buy:disabled,
+.st-hud__armory-equip:disabled { opacity: 0.32; cursor: not-allowed; }
+.st-hud__store-buy--disabled:hover,
+.st-hud__armory-buy:disabled:hover,
+.st-hud__armory-equip:disabled:hover { background: rgba(255, 210, 63, 0.12); }
+#app.is-compact .st-hud__armory-card-grid { grid-template-columns: minmax(0, 1fr); }
+#app.is-compact .st-hud__armory-card { min-height: 64px; }
+#app.is-compact .st-hud__armory-buy,
+#app.is-compact .st-hud__armory-equip { min-height: max(72px, var(--st-store-buy-target, 72px)); }
 
 /* Round indicator (side panel) — "Round N of M". */
 .st-hud__round {
@@ -5456,7 +5344,7 @@ export class HUD {
   #hud .st-ui-glyph { width: 31px; height: 31px; }
   #hud .st-ui-glyph > .st-ui-icon { width: 25px; height: 25px; }
   .st-hud__weapon-btn .st-weapon-icon,
-  .st-hud__store-name-line .st-weapon-icon { width: 23px; height: 23px; }
+  .st-hud__armory-name-line .st-weapon-icon { width: 23px; height: 23px; }
   .st-hud__conn { top: 176px; }
   .st-hud__toast { top: 214px; }
   .st-hud__turnwatch { top: 252px; }
@@ -5465,18 +5353,12 @@ export class HUD {
   .st-hud__weapon-btn { min-height: 91px; }
   .st-hud__strip-toggle { min-width: 91px; min-height: 91px; }
   .st-hud__store-buy { min-height: 44px; }
-  .st-hud__store-catalog .st-hud__store-buy {
-    min-height: max(44px, var(--st-store-buy-target, 44px));
-  }
   .st-hud__restart    { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
   #hud .st-hud__menu  { display: none; }
-  .st-hud__store-btn  { min-height: 44px; }
   /* The supported Pixel 5 landscape viewport zooms the fixed stage to 0.488x,
      so 91 logical px preserves a >=44 CSS-pixel hit target after scaling. */
   .st-hud__primary-action { min-height: 91px; }
   .st-hud__first-salvo-skip { min-width: 91px; min-height: 91px; }
-  .st-hud__store-close { min-height: 44px; }
-  .st-hud__store-menu { min-height: 91px; }
   .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
   #battle-rail .st-hud__turnwatch--stalled {
     top: 0;
@@ -5746,11 +5628,7 @@ export class HUD {
     padding: 3px 6px;
   }
   #app .st-hud__move-btn,
-  #app .st-hud__store-btn {
-    min-height: 56px;
-  }
   #app.is-compact .st-hud__move-btn,
-  #app.is-compact .st-hud__store-btn,
   #app.is-compact .st-hud__primary-action {
     min-height: 91px;
   }

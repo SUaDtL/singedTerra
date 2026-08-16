@@ -244,18 +244,19 @@ describe('HUD mobility rocker', () => {
       .toBe("Alice's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.");
   });
 
-  it('offers the canonical Fuel Tank with a live fuel readout', () => {
-    const { modal } = mount();
-    const row = [...modal.querySelectorAll<HTMLElement>('.st-hud__store-row')]
+  it('offers the canonical Fuel Tank in Armory with a live fuel readout', () => {
+    const { root, modal } = mount();
+    const row = [...root.querySelectorAll<HTMLElement>('.st-hud__armory-card')]
       .find((candidate) =>
-        candidate.querySelector('.st-hud__store-name')?.textContent === 'Fuel Tank');
+        candidate.querySelector('.st-hud__armory-name')?.textContent === 'Fuel Tank');
 
     expect(row).toBeDefined();
-    expect(row?.querySelector('.st-hud__store-owned')?.textContent).toBe('Fuel 100');
-    expect(row?.querySelector('.st-hud__store-price')?.textContent).toBe('$10,000');
-    expect(row?.querySelector('.st-hud__store-summary')?.textContent)
+    expect(row?.querySelector('.st-hud__armory-owned')?.textContent).toBe('Fuel 100');
+    expect(row?.querySelector('.st-hud__armory-price')?.textContent).toBe('Buy $10,000');
+    expect(row?.querySelector('.st-hud__armory-intel')?.textContent)
       .toBe('+100 movement fuel.');
-    expect(row?.querySelector('.st-hud__store-bundle')?.textContent)
+    expect(row?.querySelector('.st-hud__armory-bundle')?.textContent)
       .toBe('+10');
+    expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
   });
 });

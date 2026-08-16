@@ -32,18 +32,16 @@ const ARSENAL_WEAPONS = [
 
 const STORE_WEAPONS = ARSENAL_WEAPONS.slice(1);
 
-async function openStoreFromArmory(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+async function openArmory(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
   const armory = page.locator('[data-ui="arsenal-drawer"]');
   await expect(armory).toBeVisible();
-  await armory.getByRole('button', { name: /Buy weapons/ }).click();
-  await expect(page.getByRole('dialog', { name: 'Store' })).toBeVisible();
 }
 
 /**
  * HUD rendering-guardrail suite. Runs across the viewport matrix (desktop-fine,
  * pixel-touch, small-window) defined in playwright.config.ts. Every assertion
- * reads COMPUTED GEOMETRY from real Chromium — not DOM presence — because the bug
+ * reads COMPUTED GEOMETRY from real Chromium â€” not DOM presence â€” because the bug
  * these guard against (the Fire Control flex-crushed to ~10.6px) had the
  * right DOM but the wrong layout.
  */
@@ -697,7 +695,7 @@ test.describe('HUD layout guardrails', () => {
 
     const arsenal = page.locator('[data-icon="arsenal"]');
     await expect(arsenal.locator('circle[r="9"]')).toHaveCount(1);
-    await expect(page.getByRole('button', { name: 'Open Armory — equip or buy weapons' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' })).toBeVisible();
     const drawerTrigger = page.getByRole('button', { name: 'Open match ledger', exact: true });
     if (await drawerTrigger.count()) {
       await expect(drawerTrigger).toBeVisible();
@@ -739,10 +737,10 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
   });
 
-  test('weapon-family glyphs remain visible inside the gameplay Armory and Store', async ({
+  test('weapon-family glyphs remain visible inside the unified gameplay Armory', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+    await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
     const arsenalCatalog = await page.locator(
       '.st-hud__weapon-btn',
     ).evaluateAll((buttons) => buttons.map((button) => ({
@@ -782,305 +780,25 @@ test.describe('HUD layout guardrails', () => {
       expect(size.contained).toBe(true);
     }
 
-    await page.getByRole('button', { name: 'Close Armory' }).click();
-    await openStoreFromArmory(page);
-    const storeIcons = page.locator('.st-hud__store-name-line .st-weapon-icon');
-    const storeCatalog = await page.locator(
-      '.st-hud__store-name-line',
+    const armoryIcons = page.locator('.st-hud__armory-name-line .st-weapon-icon');
+    const armoryCatalog = await page.locator(
+      '.st-hud__armory-name-line',
     ).evaluateAll((lines) => lines.map((line) => ({
       weapon: line.querySelector('.st-weapon-icon')
         ?.getAttribute('data-weapon'),
-      name: line.querySelector('.st-hud__store-name')?.textContent,
+      name: line.querySelector('.st-hud__armory-name')?.textContent,
     })));
-    // Task 1 intentionally grouped the former flat list by catalog role. This
-    // guardrail owns glyph coverage, not the presentation order of those groups.
-    expect(storeCatalog).toHaveLength(STORE_WEAPONS.length);
-    expect(storeCatalog).toEqual(expect.arrayContaining(STORE_WEAPONS.map(([weapon, name]) => ({
+    expect(armoryCatalog).toHaveLength(STORE_WEAPONS.length);
+    expect(armoryCatalog).toEqual(expect.arrayContaining(STORE_WEAPONS.map(([weapon, name]) => ({
       weapon,
       name,
     }))));
-    await expect(storeIcons).toHaveCount(STORE_WEAPONS.length);
-    const firstStoreIcon = await storeIcons.first().boundingBox();
-    expect(firstStoreIcon).not.toBeNull();
-    expect(firstStoreIcon!.width).toBeGreaterThanOrEqual(11);
-    expect(firstStoreIcon!.height).toBeGreaterThanOrEqual(11);
-  });
-
-  test('Store catalog keeps its controls fixed around a responsive internal catalog', async ({
-    page,
-  }) => {
-    await openStoreFromArmory(page);
-
-    const panel = page.locator('.st-hud__store-panel');
-    const catalog = panel.locator('.st-hud__store-catalog');
-    const sections = catalog.locator('.st-hud__store-section');
-    const close = panel.getByRole('button', { name: 'Close' });
-    await expect(panel.locator('.st-hud__store-header')).toBeVisible();
-    await expect(close).toBeVisible();
-    await expect(sections).toHaveCount(4);
-
-    const compact = await isCompact(page);
-    const layout = await panel.evaluate((panelNode) => {
-      const panel = panelNode as HTMLElement;
-      const store = panel.parentElement!;
-      const catalog = panel.querySelector<HTMLElement>('.st-hud__store-catalog')!;
-      const sections = [...catalog.querySelectorAll<HTMLElement>('.st-hud__store-section')];
-      const header = panel.querySelector<HTMLElement>('.st-hud__store-header')!;
-      const footer = panel.querySelector<HTMLElement>('.st-hud__store-footer')!;
-      const close = panel.querySelector<HTMLElement>('.st-hud__store-close')!;
-      const panelRect = panel.getBoundingClientRect();
-      const storeRect = store.getBoundingClientRect();
-      const headerRect = header.getBoundingClientRect();
-      const footerRect = footer.getBoundingClientRect();
-      const closeRect = close.getBoundingClientRect();
-      const firstSectionRect = sections[0]!.getBoundingClientRect();
-      const secondSectionRect = sections[1]!.getBoundingClientRect();
-      const catalogRect = catalog.getBoundingClientRect();
-      const buyTargets = [...catalog.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
-        .map((button) => button.getBoundingClientRect());
-      const isContained = (inner: DOMRect, outer: DOMRect) =>
-        inner.left >= outer.left - 1
-        && inner.right <= outer.right + 1
-        && inner.top >= outer.top - 1
-        && inner.bottom <= outer.bottom + 1;
-      const visibleBuyTargets = buyTargets.filter((target) =>
-        target.top >= catalogRect.top - 1 && target.bottom <= catalogRect.bottom + 1,
-      );
-
-      return {
-        panel: panelRect.toJSON(),
-        store: storeRect.toJSON(),
-        panelOverflowY: getComputedStyle(panel).overflowY,
-        catalogOverflowY: getComputedStyle(catalog).overflowY,
-        catalogScrollHeight: catalog.scrollHeight,
-        catalogClientHeight: catalog.clientHeight,
-        firstSection: firstSectionRect.toJSON(),
-        secondSection: secondSectionRect.toJSON(),
-        headerContained: headerRect.top >= panelRect.top - 1 && headerRect.bottom <= panelRect.bottom + 1,
-        footerContained: footerRect.top >= panelRect.top - 1 && footerRect.bottom <= panelRect.bottom + 1,
-        panelContainedByStore: isContained(panelRect, storeRect),
-        panelContainedByViewport:
-          panelRect.left >= -1 && panelRect.right <= window.innerWidth + 1
-          && panelRect.top >= -1 && panelRect.bottom <= window.innerHeight + 1,
-        closeContained: isContained(closeRect, panelRect) && isContained(closeRect, storeRect),
-        visibleBuyTargets: visibleBuyTargets.map((target) => ({
-          height: target.height,
-          contained: isContained(target, panelRect) && isContained(target, storeRect),
-        })),
-        documentWidth: document.documentElement.scrollWidth,
-        documentHeight: document.documentElement.scrollHeight,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-      };
-    });
-
-    expect(layout.panelOverflowY).not.toBe('auto');
-    expect(layout.catalogOverflowY).toBe('auto');
-    expect(layout.catalogScrollHeight).toBeGreaterThan(layout.catalogClientHeight);
-    expect(layout.headerContained).toBe(true);
-    expect(layout.footerContained).toBe(true);
-    expect(layout.panelContainedByStore).toBe(true);
-    expect(layout.panelContainedByViewport).toBe(true);
-    expect(layout.closeContained).toBe(true);
-    expect(layout.visibleBuyTargets.length).toBeGreaterThan(0);
-    expect(layout.visibleBuyTargets.every((target) => target.contained)).toBe(true);
-    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.documentHeight).toBeLessThanOrEqual(layout.viewportHeight);
-
-    if (compact) {
-      expect(layout.secondSection.left).toBeCloseTo(layout.firstSection.left, 0);
-      expect(layout.secondSection.top).toBeGreaterThan(layout.firstSection.top);
-      for (const target of layout.visibleBuyTargets) {
-        expect(target.height).toBeGreaterThanOrEqual(44);
-      }
-    } else {
-      expect(layout.secondSection.left).toBeGreaterThan(layout.firstSection.left);
-      expect(layout.secondSection.top).toBeCloseTo(layout.firstSection.top, 0);
-    }
-
-    const scrolledLayout = await panel.evaluate((panelNode) => {
-      const panel = panelNode as HTMLElement;
-      const catalog = panel.querySelector<HTMLElement>('.st-hud__store-catalog')!;
-      const header = panel.querySelector<HTMLElement>('.st-hud__store-header')!;
-      const footer = panel.querySelector<HTMLElement>('.st-hud__store-footer')!;
-      const close = panel.querySelector<HTMLElement>('.st-hud__store-close')!;
-      const firstSection = catalog.querySelector<HTMLElement>('.st-hud__store-section')!;
-      const before = {
-        header: header.getBoundingClientRect().toJSON(),
-        footer: footer.getBoundingClientRect().toJSON(),
-        firstSectionTop: firstSection.getBoundingClientRect().top,
-      };
-      catalog.scrollTop = Math.min(80, catalog.scrollHeight - catalog.clientHeight);
-      const panelRect = panel.getBoundingClientRect();
-      const storeRect = panel.parentElement!.getBoundingClientRect();
-      const catalogRect = catalog.getBoundingClientRect();
-      const isContained = (inner: DOMRect, outer: DOMRect) =>
-        inner.left >= outer.left - 1
-        && inner.right <= outer.right + 1
-        && inner.top >= outer.top - 1
-        && inner.bottom <= outer.bottom + 1;
-      const visibleBuyTargets = [...catalog.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
-        .map((button) => button.getBoundingClientRect())
-        .filter((target) => target.top >= catalogRect.top - 1 && target.bottom <= catalogRect.bottom + 1);
-
-      return {
-        before,
-        header: header.getBoundingClientRect().toJSON(),
-        footer: footer.getBoundingClientRect().toJSON(),
-        firstSectionTop: firstSection.getBoundingClientRect().top,
-        panelScrollTop: panel.scrollTop,
-        catalogScrollTop: catalog.scrollTop,
-        closeContained: isContained(close.getBoundingClientRect(), panelRect)
-          && isContained(close.getBoundingClientRect(), storeRect),
-        visibleBuysContained: visibleBuyTargets.length > 0
-          && visibleBuyTargets.every((target) => isContained(target, panelRect) && isContained(target, storeRect)),
-      };
-    });
-    expect(scrolledLayout.catalogScrollTop).toBeGreaterThan(0);
-    expect(scrolledLayout.panelScrollTop).toBe(0);
-    expect(scrolledLayout.header).toEqual(scrolledLayout.before.header);
-    expect(scrolledLayout.footer).toEqual(scrolledLayout.before.footer);
-    expect(scrolledLayout.firstSectionTop).toBeLessThan(scrolledLayout.before.firstSectionTop);
-    expect(scrolledLayout.closeContained).toBe(true);
-    expect(scrolledLayout.visibleBuysContained).toBe(true);
-  });
-
-  test('Store cards contain their information and purchase control without overlap', async ({
-    page,
-  }) => {
-    await openStoreFromArmory(page);
-
-    const violations = await page.locator('.st-hud__store-row').evaluateAll((rows) =>
-      rows.flatMap((row) => {
-        const card = row.getBoundingClientRect();
-        const info = row.querySelector<HTMLElement>('.st-hud__store-info')!
-          .getBoundingClientRect();
-        const buy = row.querySelector<HTMLButtonElement>('.st-hud__store-buy')!
-          .getBoundingClientRect();
-        const tolerance = 1;
-        const scale = card.width / (row as HTMLElement).offsetWidth;
-        const declaredGap = Number.parseFloat(getComputedStyle(row).columnGap);
-        const actualGap = buy.left - info.right;
-        const expectedGap = declaredGap * scale;
-        const infoLogicalWidth = info.width / scale;
-        const infoNode = row.querySelector<HTMLElement>('.st-hud__store-info')!;
-        const infoContentContained =
-          infoNode.scrollWidth <= infoNode.clientWidth + tolerance
-          && infoNode.scrollHeight <= infoNode.clientHeight + tolerance;
-        const contained = (child: DOMRect) =>
-          child.left >= card.left - tolerance
-          && child.right <= card.right + tolerance
-          && child.top >= card.top - tolerance
-          && child.bottom <= card.bottom + tolerance;
-        const separated = actualGap >= expectedGap - tolerance;
-        const readableInfo = infoLogicalWidth >= 48 && infoContentContained;
-        if (contained(info) && contained(buy) && separated && readableInfo) return [];
-        return [{
-          name: row.querySelector('.st-hud__store-name')?.textContent ?? 'unknown',
-          card: card.toJSON(),
-          info: info.toJSON(),
-          buy: buy.toJSON(),
-          containedInfo: contained(info),
-          containedBuy: contained(buy),
-          actualGap,
-          expectedGap,
-          infoLogicalWidth,
-          infoContentContained,
-          separated,
-          readableInfo,
-        }];
-      }),
-    );
-
-    expect(
-      violations,
-      `Store card children must stay inside their card without overlap: ${JSON.stringify(violations, null, 2)}`,
-    ).toEqual([]);
-  });
-
-  test('Store catalog preserves 44px buy targets at the non-compact coarse scale', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
-    await page.setViewportSize({ width: 1172, height: 600 });
-    await expect.poll(() => isCompact(page)).toBe(false);
-    await openStoreFromArmory(page);
-
-    const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
-    const heights = await targets.evaluateAll((buttons) =>
-      buttons.map((button) => button.getBoundingClientRect().height),
-    );
-    expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
-  });
-
-  test('Store keeps the generated round-shop coarse minimum at the scale boundary', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
-    await page.setViewportSize({ width: 1172, height: 600 });
-    await expect.poll(() => isCompact(page)).toBe(false);
-
-    const roundShopMinimums = await page.locator('.st-hud__roundshop-grid .st-hud__store-buy')
-      .evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).minHeight));
-    expect(roundShopMinimums).toHaveLength(20);
-    expect(roundShopMinimums.every((minimum) => minimum === '44px')).toBe(true);
-
-    await openStoreFromArmory(page);
-    const catalogHeights = await page.locator('.st-hud__store-catalog .st-hud__store-buy')
-      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
-    expect(Math.min(...catalogHeights)).toBeGreaterThanOrEqual(44);
-  });
-
-  test('Store catalog preserves 44px buy targets at the smaller landscape scale', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
-    await page.setViewportSize({ width: 667, height: 375 });
-    await expect.poll(() => isCompact(page)).toBe(true);
-    await openStoreFromArmory(page);
-
-    const targets = page.locator('.st-hud__store-catalog .st-hud__store-buy');
-    const heights = await targets.evaluateAll((buttons) =>
-      buttons.map((button) => button.getBoundingClientRect().height),
-    );
-    expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
-    const containment = await page.locator('.st-hud__store-panel').evaluate((panelNode) => {
-      const panel = panelNode as HTMLElement;
-      const store = panel.parentElement!;
-      const catalog = panel.querySelector<HTMLElement>('.st-hud__store-catalog')!;
-      const panelRect = panel.getBoundingClientRect();
-      const storeRect = store.getBoundingClientRect();
-      const isContained = (inner: DOMRect, outer: DOMRect) =>
-        inner.left >= outer.left - 1
-        && inner.right <= outer.right + 1
-        && inner.top >= outer.top - 1
-        && inner.bottom <= outer.bottom + 1;
-      const catalogRect = catalog.getBoundingClientRect();
-      const visibleBuys = [...catalog.querySelectorAll<HTMLButtonElement>('.st-hud__store-buy')]
-        .map((button) => button.getBoundingClientRect())
-        .filter((target) => target.top >= catalogRect.top - 1 && target.bottom <= catalogRect.bottom + 1);
-      return {
-        panelContainedByStore: isContained(panelRect, storeRect),
-        panelContainedByViewport:
-          panelRect.left >= -1 && panelRect.right <= window.innerWidth + 1
-          && panelRect.top >= -1 && panelRect.bottom <= window.innerHeight + 1,
-        closeContained: isContained(panel.querySelector<HTMLElement>('.st-hud__store-close')!.getBoundingClientRect(), panelRect),
-        visibleBuysContained: visibleBuys.length > 0
-          && visibleBuys.every((target) => isContained(target, panelRect) && isContained(target, storeRect)),
-      };
-    });
-    expect(containment.panelContainedByStore).toBe(true);
-    expect(containment.panelContainedByViewport).toBe(true);
-    expect(containment.closeContained).toBe(true);
-    expect(containment.visibleBuysContained).toBe(true);
-    const documentSize = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-    }));
-    expect(documentSize.width).toBeLessThanOrEqual(documentSize.viewportWidth);
-    expect(documentSize.height).toBeLessThanOrEqual(documentSize.viewportHeight);
+    await expect(armoryIcons).toHaveCount(STORE_WEAPONS.length);
+    const firstArmoryIcon = await armoryIcons.first().boundingBox();
+    expect(firstArmoryIcon).not.toBeNull();
+    expect(firstArmoryIcon!.width).toBeGreaterThanOrEqual(11);
+    expect(firstArmoryIcon!.height).toBeGreaterThanOrEqual(11);
+    await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
   });
 
   test('one numerical firing solution replaces the retired analog computer at every scale', async ({ page }) => {
@@ -1326,7 +1044,7 @@ test.describe('HUD layout guardrails', () => {
       "P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.",
     );
 
-    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+    await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
     if (testInfo.project.name === 'pixel-touch') return;
 
     await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
@@ -1454,7 +1172,7 @@ test.describe('HUD layout guardrails', () => {
       await page.setViewportSize({ width: 1440, height: 900 });
     }
 
-    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
+    await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
     await page.getByRole('button', { name: 'Close Armory' }).click();
 
     const geometry = await page.locator('.st-hud__active-row').evaluate((activeRow) => {
@@ -1762,7 +1480,7 @@ test.describe('HUD layout guardrails', () => {
     await expect(page.locator('.st-hud__strip-toggle')).toBeFocused();
     await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute(
       'aria-label',
-      'Open Armory — equip or buy weapons',
+      'Open Armory â€” equip or buy weapons',
     );
     const releasedSiblings = await page.locator('#hud').evaluate((hud) =>
       [...hud.children]

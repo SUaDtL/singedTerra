@@ -168,8 +168,8 @@ describe('HUD single-screen combat shell', () => {
     expect(solution?.querySelector('[data-ui="command-deck"]')).toBeNull();
     expect(solution?.querySelector('.st-hud__control-grid')).toBeNull();
     expect(solution?.querySelector('[data-command-action^="fire-"]')).toBeNull();
-    expect(solution?.querySelectorAll('.st-hud__store-btn')).toHaveLength(1);
-    expect(solution?.querySelector('.st-hud__store-btn')?.textContent).toContain('Buy weapons');
+    expect(solution?.querySelectorAll('.st-hud__store-btn')).toHaveLength(0);
+    expect(solution?.querySelectorAll('.st-hud__armory-card[data-weapon]')).toHaveLength(17);
     expect(commitment?.querySelectorAll('.st-hud__turn-actions .st-hud__primary-action')).toHaveLength(1);
     expect(commitment?.querySelector('.st-hud__store-btn')).toBeNull();
     expect(commitment?.dataset['commandMode']).toBe('decision');
@@ -486,7 +486,7 @@ describe('HUD single-screen combat shell', () => {
       .toBe(secondBody.id);
   });
 
-  it('preserves weapon selection and store behavior through the shell controls', () => {
+  it('preserves weapon selection and unified Armory behavior through the shell controls', () => {
     const { root, rail, modal, hud, state } = mountHarness();
     const selected: string[] = [];
     hud.onWeaponSelect((weapon) => selected.push(weapon));
@@ -509,13 +509,12 @@ describe('HUD single-screen combat shell', () => {
     ).toBe('false');
 
     const strip = document.querySelector('.st-hud__strip')!;
-    const store = modal.querySelector('.st-hud__store')!;
-    modal.querySelector<HTMLButtonElement>('.st-hud__store-btn')!.click();
-    expect(store.classList.contains('st-hud__store--hidden')).toBe(false);
     expect(strip.classList.contains('st-hud__strip--open')).toBe(true);
-    modal.querySelector<HTMLButtonElement>('.st-hud__store-close')!.click();
-    expect(store.classList.contains('st-hud__store--hidden')).toBe(true);
-    expect(strip.classList.contains('st-hud__strip--open')).toBe(true);
+    const armoryCard = modal.querySelector<HTMLElement>('[data-weapon="missile"].st-hud__armory-card')!;
+    expect(armoryCard.querySelector('[data-armory-ammo]')?.textContent).toBe('Ammo 4');
+    expect(armoryCard.querySelector<HTMLButtonElement>('[data-action="equip"]')?.textContent).toBe('Current');
+    expect(armoryCard.querySelector<HTMLButtonElement>('[data-action="buy"]')?.textContent).toContain('Buy');
+    expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
     expect(missile.classList.contains('st-hud__weapon-btn--active')).toBe(true);
   });
 });
