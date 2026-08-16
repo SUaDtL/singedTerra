@@ -6749,6 +6749,21 @@ export class HUD {
   #battle-rail .st-hud__console-context .st-hud__tactical-row {
     align-self: end;
   }
+  #battle-rail .st-hud__console-context .st-hud__active-row {
+    grid-template-rows: 121px minmax(40px, 1fr);
+  }
+  #battle-rail .st-hud__identity-lockup {
+    grid-template-columns: 144px minmax(0, 1fr);
+    grid-template-rows: minmax(80px, 1fr);
+    gap: 7px;
+    padding-inline: 3px;
+    background: linear-gradient(90deg, rgba(122, 215, 255, 0.09), transparent 88%);
+  }
+  #battle-rail .st-hud__tank-portrait-frame,
+  #battle-rail .st-hud__tank-portrait {
+    width: 144px;
+    height: 80px;
+  }
   #battle-rail .st-hud__console-solution {
     grid-template-columns: 210px 530px 206px;
     gap: 0;
@@ -6768,6 +6783,12 @@ export class HUD {
     grid-template-rows: minmax(0, 1fr);
     padding: 8px;
   }
+  #battle-rail .st-hud__console-solution .st-hud__weapon-copy {
+    align-self: stretch;
+    box-sizing: border-box;
+    padding: 8px 5px;
+    background: linear-gradient(90deg, rgba(255, 210, 63, 0.08), transparent 88%);
+  }
   #battle-rail .st-hud__solution-adjustments {
     grid-column: 2;
     grid-row: 1;
@@ -6777,10 +6798,17 @@ export class HUD {
   }
   #battle-rail .st-hud__instrument {
     grid-template-rows: auto minmax(52px, 1fr) auto 36px;
-    padding: 5px 7px;
+    padding: 3px 7px;
   }
   #battle-rail .st-hud__instrument > .st-hud__instrument-svg {
     min-height: 52px;
+  }
+  #battle-rail .st-hud__instrument.st-hud__solution-wind {
+    grid-template-rows: auto minmax(52px, 1fr) auto;
+  }
+  #battle-rail .st-hud__instrument.st-hud__solution-wind > .st-hud__solution-adjustment-value {
+    grid-row: 3;
+    align-self: end;
   }
   #battle-rail .st-hud__fire-terminal {
     grid-column: 3;
@@ -6798,8 +6826,17 @@ export class HUD {
     align-content: stretch;
     gap: 0;
   }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__console-state {
+    grid-row: 1 / 3;
+    display: grid;
+    align-content: center;
+    background: linear-gradient(180deg, rgba(255, 210, 63, 0.08), transparent 70%);
+  }
   #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__aim {
     align-self: stretch;
+  }
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal {
+    grid-column: 3;
   }
 }
 

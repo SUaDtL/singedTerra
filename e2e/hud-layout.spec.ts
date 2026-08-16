@@ -228,6 +228,109 @@ test.describe('HUD layout guardrails', () => {
     }
   });
 
+  test('flight keeps every authored command bay in its decision footprint', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
+    await page.setViewportSize({ width: 1600, height: 900 });
+
+    const commandBays = async () => page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
+      const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
+      const bays = [
+        spine.querySelector<HTMLElement>('.st-hud__console-context')!,
+        solution.querySelector<HTMLElement>('.st-hud__weapon')!,
+        solution.querySelector<HTMLElement>('[data-instrument="angle"]')!,
+        solution.querySelector<HTMLElement>('[data-instrument="power"]')!,
+        solution.querySelector<HTMLElement>('[data-instrument="wind"]')!,
+        solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
+      ];
+      return bays.map((bay) => bay.getBoundingClientRect().toJSON());
+    });
+    const decision = await commandBays();
+
+    await page.locator('.st-hud__primary-action').click();
+    await expect(page.locator('.st-hud__command-console'))
+      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    const flight = await commandBays();
+    await page.screenshot({ path: testInfo.outputPath('command-spine-flight-1600x900.png') });
+
+    for (const [index, bay] of flight.entries()) {
+      expect(bay.left, `flight bay ${index} keeps its authored left`).toBeCloseTo(decision[index]!.left, 1);
+      expect(bay.right, `flight bay ${index} keeps its authored right`).toBeCloseTo(decision[index]!.right, 1);
+      for (const [otherIndex, other] of flight.entries()) {
+        if (otherIndex <= index) continue;
+        const overlapWidth = Math.min(bay.right, other.right) - Math.max(bay.left, other.left);
+        const overlapHeight = Math.min(bay.bottom, other.bottom) - Math.max(bay.top, other.top);
+        expect(overlapWidth > 1 && overlapHeight > 1, `flight bays ${index}/${otherIndex} do not intersect`).toBe(false);
+      }
+    }
+  });
+
+  test('fine command bays have no unexplained authored vacancy', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
+    await page.setViewportSize({ width: 1600, height: 900 });
+
+    const gaps = await page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
+      const stage = document.getElementById('stage')!.getBoundingClientRect();
+      const scale = stage.height / 600;
+      const maxGap = (owner: HTMLElement, content: HTMLElement[]): number => {
+        const bounds = owner.getBoundingClientRect();
+        const intervals = content
+          .map((node) => node.getBoundingClientRect())
+          .filter((rect) => rect.width > 0 && rect.height > 0)
+          .map((rect) => ({ top: rect.top, bottom: rect.bottom }))
+          .sort((left, right) => left.top - right.top);
+        let cursor = bounds.top;
+        let largest = 0;
+        for (const interval of intervals) {
+          largest = Math.max(largest, interval.top - cursor);
+          cursor = Math.max(cursor, interval.bottom);
+        }
+        return Math.max(largest, bounds.bottom - cursor) / scale;
+      };
+      const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
+      const commander = spine.querySelector<HTMLElement>('.st-hud__console-context')!;
+      const weapon = solution.querySelector<HTMLElement>('.st-hud__weapon')!;
+      const wind = solution.querySelector<HTMLElement>('[data-instrument="wind"]')!;
+      const terminal = solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
+      return {
+        commander: maxGap(commander, [
+          commander.querySelector<HTMLElement>('.st-hud__identity-lockup')!,
+          commander.querySelector<HTMLElement>('.st-hud__mobility')!,
+        ]),
+        weapon: maxGap(weapon, [
+          weapon.querySelector<HTMLElement>('.st-hud__weapon-copy')!,
+          weapon.querySelector<HTMLElement>('.st-hud__arsenal-trigger')!,
+        ]),
+        wind: maxGap(wind, [
+          wind.querySelector<HTMLElement>('svg')!,
+          wind.querySelector<HTMLElement>('output')!,
+        ]),
+        fire: maxGap(terminal, [
+          terminal.querySelector<HTMLElement>('.st-hud__console-state')!,
+          terminal.querySelector<HTMLElement>('[aria-label="Battle settings"]')!,
+          terminal.querySelector<HTMLElement>('.st-hud__primary-action')!,
+        ]),
+        authoredBands: {
+          commander: getComputedStyle(commander.querySelector<HTMLElement>('.st-hud__identity-lockup')!).backgroundImage,
+          weapon: getComputedStyle(weapon.querySelector<HTMLElement>('.st-hud__weapon-copy')!).backgroundImage,
+          fire: getComputedStyle(terminal.querySelector<HTMLElement>('.st-hud__console-state')!).backgroundImage,
+        },
+      };
+    });
+
+    expect(gaps.authoredBands.commander, 'Commander identity is a visible live band').not.toBe('none');
+    expect(gaps.authoredBands.weapon, 'Weapon information is a visible live band').not.toBe('none');
+    expect(gaps.authoredBands.fire, 'Fire phase is a visible live band').not.toBe('none');
+    for (const [bay, gap] of Object.entries({
+      commander: gaps.commander,
+      weapon: gaps.weapon,
+      wind: gaps.wind,
+      fire: gaps.fire,
+    })) {
+      expect(gap, `${bay} uses the full protected command band`).toBeLessThanOrEqual(16);
+    }
+    await page.screenshot({ path: testInfo.outputPath('command-spine-vacancy-1600x900.png') });
+  });
+
   test('live firing values stay inside their integrated controls across phase states', async ({
     page,
   }) => {
