@@ -6720,6 +6720,89 @@ export class HUD {
   color: var(--gold);
 }
 
+/* Fine-pointer owns the complete recoil-safe rail: the 198px protected band
+   leaves a 1176 x 180 command spine after the rail frame and its 12px gutters.
+   These authored columns are a continuous instrument panel; separators carry
+   grouping so the live controls do not read as six floating cards. */
+@media (pointer: fine) {
+  #battle-rail {
+    bottom: 0;
+    height: auto;
+    max-height: none;
+  }
+  #battle-rail .st-hud__command-console {
+    grid-template-columns: 230px 946px;
+    gap: 0;
+    width: 1176px;
+    height: 180px;
+  }
+  #battle-rail .st-hud__console-context,
+  #battle-rail .st-hud__console-solution {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #battle-rail .st-hud__console-context {
+    border-right: 1px solid rgba(255, 210, 63, 0.28);
+  }
+  #battle-rail .st-hud__console-context .st-hud__tactical-row {
+    align-self: end;
+  }
+  #battle-rail .st-hud__console-solution {
+    grid-template-columns: 210px 530px 206px;
+    gap: 0;
+    padding: 0;
+  }
+  #battle-rail .st-hud__console-solution > .st-hud__weapon,
+  #battle-rail .st-hud__solution-adjustment,
+  #battle-rail .st-hud__solution-wind {
+    box-sizing: border-box;
+    border: 0;
+    border-right: 1px solid rgba(122, 215, 255, 0.24);
+    border-radius: 0;
+    background: transparent;
+  }
+  #battle-rail .st-hud__console-solution > .st-hud__weapon {
+    grid-template-columns: 32px minmax(0, 1fr) 44px;
+    grid-template-rows: minmax(0, 1fr);
+    padding: 8px;
+  }
+  #battle-rail .st-hud__solution-adjustments {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: 190px 190px 150px;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+  }
+  #battle-rail .st-hud__instrument {
+    grid-template-rows: auto minmax(52px, 1fr) auto 36px;
+    padding: 5px 7px;
+  }
+  #battle-rail .st-hud__instrument > .st-hud__instrument-svg {
+    min-height: 52px;
+  }
+  #battle-rail .st-hud__fire-terminal {
+    grid-column: 3;
+    grid-row: 1;
+    border-left: 0;
+    background: linear-gradient(180deg, rgba(255, 210, 63, 0.09), transparent 72%);
+  }
+  #battle-rail .st-hud__fire-terminal .st-hud__console-state {
+    box-sizing: border-box;
+    justify-self: start;
+    width: calc(100% - 52px);
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-content: stretch;
+    gap: 0;
+  }
+  #battle-rail[data-combat-focus="decision"] .st-hud__fire-terminal .st-hud__aim {
+    align-self: stretch;
+  }
+}
+
 /* Numerical Fire Control is reduced-motion-safe: its values update as text and
    controls do not animate between decision states. */
 `;

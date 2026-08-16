@@ -122,7 +122,7 @@ test.describe('HUD layout guardrails', () => {
       };
     });
 
-    expect(geometry.railHeight / geometry.stageHeight).toBeLessThanOrEqual(0.24);
+    expect(geometry.railHeight / geometry.stageHeight).toBeCloseTo(198 / 600, 2);
     const [first, ...rest] = geometry.instruments;
     for (const instrument of geometry.instruments) {
       expect(instrument.contained, `${instrument.name} content stays in its owner`).toBe(true);
@@ -132,6 +132,100 @@ test.describe('HUD layout guardrails', () => {
       expect(instrument.owner.bottom, `${instrument.name} shares the rail bottom: ${JSON.stringify(geometry)}`).toBeCloseTo(first!.owner.bottom, 1);
     }
     expect(rest).toHaveLength(2);
+  });
+
+  test('fine command spine occupies the complete protected recoil-safe band', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
+
+    for (const viewport of [
+      { width: 1600, height: 900 },
+      { width: 900, height: 520 },
+      { width: 2048, height: 864 },
+    ]) {
+      await page.setViewportSize(viewport);
+      const geometry = await page.locator('#battle-rail').evaluate((rail) => {
+        const app = document.getElementById('app')!.getBoundingClientRect();
+        const stage = document.getElementById('stage')!.getBoundingClientRect();
+        const spine = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
+        const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
+        const terminal = solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
+        const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
+        const settings = terminal.querySelector<HTMLButtonElement>('[aria-label="Battle settings"]')!;
+        const bays = [
+          spine.querySelector<HTMLElement>('.st-hud__console-context')!,
+          solution.querySelector<HTMLElement>('.st-hud__weapon')!,
+          solution.querySelector<HTMLElement>('[data-instrument="angle"]')!,
+          solution.querySelector<HTMLElement>('[data-instrument="power"]')!,
+          solution.querySelector<HTMLElement>('[data-instrument="wind"]')!,
+          solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
+        ].map((bay) => ({
+          name: bay.dataset['instrument'] ?? bay.className,
+          rect: bay.getBoundingClientRect().toJSON(),
+          live: [...bay.querySelectorAll<HTMLElement>('button, output, svg, canvas, [role="status"]')]
+            .filter((node) => {
+              const rect = node.getBoundingClientRect();
+              return rect.width > 0 && rect.height > 0;
+            })
+            .map((node) => node.getBoundingClientRect().toJSON()),
+        }));
+        const scale = stage.height / 600;
+        return {
+          app: app.toJSON(),
+          stage: stage.toJSON(),
+          rail: rail.getBoundingClientRect().toJSON(),
+          spine: spine.getBoundingClientRect().toJSON(),
+          scale,
+          bays,
+          fireTerminal: {
+            state: state.getBoundingClientRect().toJSON(),
+            settings: settings.getBoundingClientRect().toJSON(),
+          },
+          fineStepHeights: [...solution.querySelectorAll<HTMLElement>(
+            '[data-instrument="angle"] .st-hud__solution-control, [data-instrument="power"] .st-hud__solution-control',
+          )].map((button) => button.getBoundingClientRect().height / scale),
+        };
+      });
+
+      expect(Math.abs(geometry.stage.bottom - geometry.rail.bottom), `${viewport.width}x${viewport.height} rail reaches stage bottom`).toBeLessThanOrEqual(1);
+      expect(Math.abs(geometry.stage.bottom - geometry.app.bottom), `${viewport.width}x${viewport.height} app reaches stage bottom`).toBeLessThanOrEqual(1);
+      expect(geometry.spine.width / geometry.scale).toBeCloseTo(1176, 1);
+      expect(geometry.spine.height / geometry.scale).toBeCloseTo(180, 1);
+
+      const expectedWidths = [230, 210, 190, 190, 150, 206];
+      const [firstBay, ...remainingBays] = geometry.bays;
+      for (const [index, bay] of geometry.bays.entries()) {
+        expect(bay.rect.width / geometry.scale, `${viewport.width}x${viewport.height} bay ${index} width`)
+          .toBeCloseTo(expectedWidths[index]!, 1);
+        expect(bay.rect.top, `${viewport.width}x${viewport.height} bay ${index} shares the useful top`)
+          .toBeCloseTo(firstBay!.rect.top, 1);
+        expect(bay.rect.bottom, `${viewport.width}x${viewport.height} bay ${index} shares the useful bottom`)
+          .toBeCloseTo(firstBay!.rect.bottom, 1);
+        expect(bay.live.length, `${viewport.width}x${viewport.height} bay ${index} has direct live content`).toBeGreaterThan(0);
+        for (const live of bay.live) {
+          expect(live.top).toBeGreaterThanOrEqual(bay.rect.top - 1);
+          expect(live.bottom).toBeLessThanOrEqual(bay.rect.bottom + 1);
+        }
+      }
+      for (const [index, bay] of remainingBays.entries()) {
+        const prior = geometry.bays[index]!;
+        expect(bay.rect.left, `${viewport.width}x${viewport.height} bays stay separated`)
+          .toBeGreaterThanOrEqual(prior.rect.right - 1);
+      }
+      for (const height of geometry.fineStepHeights) {
+        expect(height, `${viewport.width}x${viewport.height} fine steps remain precise`).toBeGreaterThanOrEqual(34);
+        expect(height, `${viewport.width}x${viewport.height} fine steps do not inflate`).toBeLessThanOrEqual(48);
+      }
+      const state = geometry.fireTerminal.state;
+      const settings = geometry.fireTerminal.settings;
+      const stateSettingsOverlap = Math.min(state.right, settings.right) - Math.max(state.left, settings.left);
+      expect(stateSettingsOverlap, `${viewport.width}x${viewport.height} Fire status and settings remain separate`)
+        .toBeLessThanOrEqual(1);
+      await page.screenshot({
+        path: testInfo.outputPath(`command-spine-${viewport.width}x${viewport.height}.png`),
+      });
+    }
   });
 
   test('live firing values stay inside their integrated controls across phase states', async ({
@@ -306,8 +400,12 @@ test.describe('HUD layout guardrails', () => {
       };
     });
     // Coarse layouts reserve a 44px physical terminal target; fine-pointer
-    // layouts must not recreate the old full-width commitment card.
-    expect(proportions.ratio).toBeLessThanOrEqual(proportions.coarsePointer ? 0.68 : 0.16);
+    // layouts give the structured Fire terminal its authored 206px spine bay.
+    if (proportions.coarsePointer) {
+      expect(proportions.ratio).toBeLessThanOrEqual(0.68);
+    } else {
+      expect(proportions.ratio).toBeCloseTo(206 / 946, 2);
+    }
     expect(proportions.terminalRect.height).toBeGreaterThan(0);
   });
 
@@ -1162,7 +1260,7 @@ test.describe('HUD layout guardrails', () => {
     ]);
     expect(geometry.context.left).toBeLessThanOrEqual(geometry.console.left + 1);
     expect(geometry.solution.right).toBeGreaterThanOrEqual(geometry.console.right - 1);
-    expect(geometry.solution.left).toBeGreaterThan(geometry.context.right);
+    expect(geometry.solution.left).toBeGreaterThanOrEqual(geometry.context.right - 1);
   });
 
   test('desktop Commander spends its full column on live tactical identity instead of blank rail', async ({ page }, testInfo) => {
