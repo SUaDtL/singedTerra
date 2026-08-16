@@ -14,7 +14,14 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
 import type { GameState } from '@shared/types/GameState';
 
-function mount(): { root: HTMLElement; hud: HUD; state: GameState; engine: GameEngine } {
+function mount(): {
+  root: HTMLElement;
+  overlay: HTMLElement;
+  modal: HTMLElement;
+  hud: HUD;
+  state: GameState;
+  engine: GameEngine;
+} {
   const root = document.createElement('div');
   const overlay = document.createElement('div');
   const modal = document.createElement('div');
@@ -28,7 +35,7 @@ function mount(): { root: HTMLElement; hud: HUD; state: GameState; engine: GameE
     maxPlayers: 2,
     seed: 1,
   });
-  return { root, hud, state: engine.getState(), engine };
+  return { root, overlay, modal, hud, state: engine.getState(), engine };
 }
 
 function btn(root: HTMLElement, weapon: string): HTMLButtonElement | null {
@@ -386,6 +393,32 @@ describe('HUD arsenal — collapsible', () => {
 });
 
 describe('HUD Armory commerce', () => {
+  it('isolates external overlay controls and releases them with focus return', () => {
+    const { root, overlay, modal, hud, state } = mount();
+    hud.setQuickChatEnabled(true);
+    hud.update(state);
+    const trigger = root.querySelector<HTMLButtonElement>('.st-hud__arsenal-trigger')!;
+    const quickChat = overlay.querySelector<HTMLButtonElement>('.st-hud__quick-chat-toggle')!;
+
+    trigger.focus();
+    trigger.click();
+
+    expect(overlay.inert).toBe(true);
+    expect(modal.classList.contains('st-hud__modal-layer--armory-open')).toBe(true);
+    expect(document.activeElement).toBe(
+      modal.querySelector<HTMLButtonElement>('.st-hud__arsenal-drawer-close'),
+    );
+
+    modal.querySelector<HTMLElement>('[data-ui="arsenal-drawer"]')!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+
+    expect(overlay.inert).toBe(false);
+    expect(modal.classList.contains('st-hud__modal-layer--armory-open')).toBe(false);
+    expect(document.activeElement).toBe(trigger);
+    expect(quickChat.closest('[inert]')).toBeNull();
+  });
+
   it('keeps equip and buy for a finite weapon in one Armory dialog', () => {
     const { hud, state } = mount();
     const tank = state.tanks.find((candidate) => candidate.id === state.activePlayerId)!;

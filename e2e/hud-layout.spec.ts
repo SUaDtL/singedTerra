@@ -33,7 +33,7 @@ const ARSENAL_WEAPONS = [
 const STORE_WEAPONS = ARSENAL_WEAPONS.slice(1);
 
 async function openArmory(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
+  await page.getByRole('button', { name: /^Open Armory .*equip or buy weapons$/ }).click();
   const armory = page.locator('[data-ui="arsenal-drawer"]');
   await expect(armory).toBeVisible();
 }
@@ -695,7 +695,7 @@ test.describe('HUD layout guardrails', () => {
 
     const arsenal = page.locator('[data-icon="arsenal"]');
     await expect(arsenal.locator('circle[r="9"]')).toHaveCount(1);
-    await expect(page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Open Armory .*equip or buy weapons$/ })).toBeVisible();
     const drawerTrigger = page.getByRole('button', { name: 'Open match ledger', exact: true });
     if (await drawerTrigger.count()) {
       await expect(drawerTrigger).toBeVisible();
@@ -740,7 +740,7 @@ test.describe('HUD layout guardrails', () => {
   test('weapon-family glyphs remain visible inside the unified gameplay Armory', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
+    await openArmory(page);
     const arsenalCatalog = await page.locator(
       '.st-hud__weapon-btn',
     ).evaluateAll((buttons) => buttons.map((button) => ({
@@ -799,6 +799,159 @@ test.describe('HUD layout guardrails', () => {
     expect(firstArmoryIcon!.width).toBeGreaterThanOrEqual(11);
     expect(firstArmoryIcon!.height).toBeGreaterThanOrEqual(11);
     await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
+  });
+
+  test('unified Armory cards and commerce actions stay contained at every scale', async ({
+    page,
+  }, testInfo) => {
+    await openArmory(page);
+    const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
+    const catalog = armory.locator('.st-hud__armory-catalog');
+    await expect(page.locator('[role="dialog"]:visible')).toHaveCount(1);
+    await expect(page.locator('#modal-layer.st-hud__modal-layer--armory-open')).toHaveCount(1);
+    await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
+    await expect(catalog).toBeVisible();
+
+    const geometry = await armory.evaluate((dialog) => {
+      const tolerance = 1;
+      const containsHorizontally = (outer: DOMRect, inner: DOMRect): boolean =>
+        inner.left >= outer.left - tolerance && inner.right <= outer.right + tolerance;
+      const dialogRect = dialog.getBoundingClientRect();
+      const catalog = dialog.querySelector<HTMLElement>('.st-hud__armory-catalog')!;
+      const catalogRect = catalog.getBoundingClientRect();
+      const cards = [...dialog.querySelectorAll<HTMLElement>('.st-hud__armory-card')];
+      const cardRects = cards.map((card) => card.getBoundingClientRect());
+      const overlaps: Array<[number, number]> = [];
+      for (let left = 0; left < cardRects.length; left += 1) {
+        for (let right = left + 1; right < cardRects.length; right += 1) {
+          const a = cardRects[left];
+          const b = cardRects[right];
+          if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > tolerance
+            && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > tolerance) {
+            overlaps.push([left, right]);
+          }
+        }
+      }
+      const text = [...dialog.querySelectorAll<HTMLElement>('[data-armory-ammo], .st-hud__armory-price')]
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          const card = element.closest<HTMLElement>('.st-hud__armory-card')!.getBoundingClientRect();
+          return {
+            content: element.textContent?.trim() ?? '',
+            rendered: rect.width > 0 && rect.height > 0,
+            horizontallyContained: containsHorizontally(card, rect),
+          };
+        });
+      const actions = [...dialog.querySelectorAll<HTMLButtonElement>(
+        '.st-hud__armory-buy, .st-hud__armory-equip',
+      )].map((button) => ({
+        action: button.dataset['action'],
+        height: button.getBoundingClientRect().height,
+        cardContained: containsHorizontally(
+          button.closest<HTMLElement>('.st-hud__armory-card')!.getBoundingClientRect(),
+          button.getBoundingClientRect(),
+        ),
+      }));
+      return {
+        dialogContained:
+          dialogRect.left >= -tolerance
+          && dialogRect.top >= -tolerance
+          && dialogRect.right <= window.innerWidth + tolerance
+          && dialogRect.bottom <= window.innerHeight + tolerance,
+        catalogContained:
+          catalogRect.left >= dialogRect.left - tolerance
+          && catalogRect.top >= dialogRect.top - tolerance
+          && catalogRect.right <= dialogRect.right + tolerance
+          && catalogRect.bottom <= dialogRect.bottom + tolerance,
+        catalogOverflowY: getComputedStyle(catalog).overflowY,
+        catalogScrollable: catalog.scrollHeight > catalog.clientHeight,
+        cardsHorizontallyContained: cardRects.every((rect) => containsHorizontally(catalogRect, rect)),
+        overlaps,
+        text,
+        actions,
+        documentWidth: document.documentElement.scrollWidth,
+        documentHeight: document.documentElement.scrollHeight,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(geometry.dialogContained).toBe(true);
+    expect(geometry.catalogContained).toBe(true);
+    expect(geometry.catalogOverflowY).toBe('auto');
+    expect(geometry.catalogScrollable).toBe(true);
+    expect(geometry.cardsHorizontallyContained).toBe(true);
+    expect(geometry.overlaps).toEqual([]);
+    expect(geometry.text.length).toBeGreaterThan(STORE_WEAPONS.length);
+    for (const text of geometry.text) {
+      expect(text.content).not.toBe('');
+      expect(text.rendered).toBe(true);
+      expect(text.horizontallyContained).toBe(true);
+    }
+    expect(geometry.actions.length).toBeGreaterThan(STORE_WEAPONS.length);
+    for (const action of geometry.actions) {
+      expect(action.cardContained).toBe(true);
+      expect(action.height).toBeGreaterThanOrEqual(
+        testInfo.project.name === 'pixel-touch' ? 44 : 43.5,
+      );
+    }
+    expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+    expect(geometry.documentHeight).toBeLessThanOrEqual(geometry.viewportHeight);
+
+    const lastCard = armory.locator('.st-hud__armory-card').last();
+    await lastCard.scrollIntoViewIfNeeded();
+    await expect(lastCard.locator('.st-hud__armory-price')).toBeVisible();
+    const lastCardBox = await lastCard.boundingBox();
+    const catalogBox = await catalog.boundingBox();
+    expect(lastCardBox).not.toBeNull();
+    expect(catalogBox).not.toBeNull();
+    expect(lastCardBox!.y).toBeGreaterThanOrEqual(catalogBox!.y - 1);
+    expect(lastCardBox!.y + lastCardBox!.height)
+      .toBeLessThanOrEqual(catalogBox!.y + catalogBox!.height + 1);
+  });
+
+  test('Armory isolates network quick chat, traps focus, and releases it on dismiss', async ({
+    page,
+  }) => {
+    const quickChatRoot = page.locator('.st-hud__quick-chat');
+    await quickChatRoot.evaluate((element) => {
+      element.classList.remove('st-hud__quick-chat--hidden');
+    });
+    const quickChat = page.getByRole('button', { name: 'Open quick chat', exact: true });
+    await expect(quickChat).toBeVisible();
+    await openArmory(page);
+
+    await expect.poll(() => page.locator('#game-overlay').evaluate((element) => element.inert)).toBe(true);
+    let clickWasBlocked = false;
+    try {
+      await quickChat.click({ trial: true, timeout: 500 });
+    } catch {
+      clickWasBlocked = true;
+    }
+    expect(clickWasBlocked).toBe(true);
+    const lastAction = page.locator(
+      '[data-ui="arsenal-drawer"] .st-hud__armory-buy:not(:disabled), '
+      + '[data-ui="arsenal-drawer"] .st-hud__armory-equip:not(:disabled)',
+    ).last();
+    await lastAction.focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Close Armory', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(lastAction).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    const trigger = page.getByRole('button', { name: /^Open Armory .*equip or buy weapons$/ });
+    await expect(trigger).toBeFocused();
+    await expect.poll(() => page.locator('#game-overlay').evaluate((element) => element.inert)).toBe(false);
+    await quickChat.click();
+    await expect(quickChat).toHaveAttribute('aria-expanded', 'true');
+    await quickChat.click();
+
+    await trigger.click();
+    const modalLayer = page.locator('#modal-layer.st-hud__modal-layer--armory-open');
+    await modalLayer.click({ position: { x: 2, y: 2 } });
+    await expect(trigger).toBeFocused();
+    await expect(page.getByRole('dialog', { name: 'Armory', exact: true })).toBeHidden();
   });
 
   test('one numerical firing solution replaces the retired analog computer at every scale', async ({ page }) => {
@@ -1044,7 +1197,7 @@ test.describe('HUD layout guardrails', () => {
       "P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.",
     );
 
-    await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
+    await openArmory(page);
     if (testInfo.project.name === 'pixel-touch') return;
 
     await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
@@ -1172,7 +1325,7 @@ test.describe('HUD layout guardrails', () => {
       await page.setViewportSize({ width: 1440, height: 900 });
     }
 
-    await page.getByRole('button', { name: 'Open Armory â€” equip or buy weapons' }).click();
+    await openArmory(page);
     await page.getByRole('button', { name: 'Close Armory' }).click();
 
     const geometry = await page.locator('.st-hud__active-row').evaluate((activeRow) => {
@@ -1480,7 +1633,7 @@ test.describe('HUD layout guardrails', () => {
     await expect(page.locator('.st-hud__strip-toggle')).toBeFocused();
     await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute(
       'aria-label',
-      'Open Armory â€” equip or buy weapons',
+      /^Open Armory .*equip or buy weapons$/,
     );
     const releasedSiblings = await page.locator('#hud').evaluate((hud) =>
       [...hud.children]

@@ -1391,6 +1391,10 @@ export class HUD {
       event.stopPropagation();
       this.closeArmory();
     }, true);
+    this.modalRoot.addEventListener('click', (event) => {
+      if (this.stripCollapsed || event.target !== this.modalRoot) return;
+      this.closeArmory();
+    });
     const stored = readStoredArsenalPreference();
     this.stripCollapsed = resolveInitialArsenalCollapsed(stored);
   }
@@ -3170,6 +3174,8 @@ export class HUD {
     this.stripToggleLabelEl.textContent = this.stripCollapsed ? 'Armory · equip / buy' : 'Close Armory';
     this.stripBodyEl.hidden = this.stripCollapsed;
     this.weaponIntelEl.hidden = this.stripCollapsed;
+    this.setArmoryOverlayIsolation(!this.stripCollapsed);
+    this.modalRoot.classList.toggle('st-hud__modal-layer--armory-open', !this.stripCollapsed);
     this.renderWeaponIntel();
     for (const child of [...this.root.children]) {
       if (child !== this.commandConsoleEl) (child as HTMLElement).inert = !this.stripCollapsed;
@@ -3187,6 +3193,21 @@ export class HUD {
     } else {
       this.solutionAdjustmentsEl.removeAttribute('aria-hidden');
     }
+  }
+
+  /** Keep canvas telemetry visible while excluding overlay-only controls behind the Armory. */
+  private setArmoryOverlayIsolation(active: boolean): void {
+    if (active) {
+      if (this.overlayRoot.dataset['armoryPreviousInert'] === undefined) {
+        this.overlayRoot.dataset['armoryPreviousInert'] = this.overlayRoot.inert ? 'true' : 'false';
+      }
+      this.overlayRoot.inert = true;
+      return;
+    }
+    const previousInert = this.overlayRoot.dataset['armoryPreviousInert'];
+    if (previousInert === undefined) return;
+    this.overlayRoot.inert = previousInert === 'true';
+    delete this.overlayRoot.dataset['armoryPreviousInert'];
   }
 
   /** Reconcile the weapon strip: owned-only visibility, active highlight, live ammo. No DOM rebuild. */
@@ -4129,6 +4150,12 @@ export class HUD {
   border: 1px solid rgba(255, 210, 63, 0.18);
   border-radius: 6px;
   pointer-events: auto;
+}
+/* One modal owner and one intercepting backdrop: covered overlay controls never
+ * receive pointer input while Armory owns the dialog focus scope. */
+#modal-layer.st-hud__modal-layer--armory-open {
+  pointer-events: auto;
+  background: rgba(4, 3, 12, 0.62);
 }
 /* The Armory is reparented into the modal layer while open. Keep that modal
  * independently bounded: the old rail-only open rule left it at natural
