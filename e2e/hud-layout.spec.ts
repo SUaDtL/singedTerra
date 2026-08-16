@@ -1135,6 +1135,47 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.map((control) => control.text).join(' ')).toMatch(/Angle.*Power.*Wind/s);
   });
 
+  test('compact firing instruments keep their rendered SVGs inside the single owner', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'desktop-fine', 'compact viewport contract');
+    const instruments = await page.locator('#battle-rail .st-hud__solution-adjustments')
+      .evaluate((controls) => {
+        const contained = (outer: DOMRect, inner: DOMRect): boolean =>
+          inner.left >= outer.left - 1 && inner.right <= outer.right + 1
+          && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
+        return ['angle', 'power', 'wind'].map((name) => {
+          const owner = controls.querySelector<HTMLElement>(`[data-instrument="${name}"]`)!;
+          const svg = owner.querySelector<SVGSVGElement>('.st-hud__instrument-svg')!;
+          const ownerRect = owner.getBoundingClientRect();
+          const svgRect = svg.getBoundingClientRect();
+          const style = getComputedStyle(svg);
+          return {
+            name,
+            rendered: style.display !== 'none' && style.visibility !== 'hidden'
+              && Number(style.opacity) > 0 && svgRect.width > 0 && svgRect.height > 0,
+            contained: contained(ownerRect, svgRect),
+            buttons: [...owner.querySelectorAll<HTMLButtonElement>('button')].map((button) => {
+              const rect = button.getBoundingClientRect();
+              return { width: rect.width, height: rect.height };
+            }),
+          };
+        });
+      });
+
+    expect(instruments).toHaveLength(3);
+    for (const instrument of instruments) {
+      expect(instrument.rendered, `${instrument.name} SVG is visibly rendered`).toBe(true);
+      expect(instrument.contained, `${instrument.name} SVG stays inside its owner`).toBe(true);
+      if (testInfo.project.name === 'pixel-touch') {
+        for (const button of instrument.buttons) {
+          expect(button.width, `${instrument.name} touch target width`).toBeGreaterThanOrEqual(44);
+          expect(button.height, `${instrument.name} touch target height`).toBeGreaterThanOrEqual(44);
+        }
+      }
+    }
+  });
+
   test('Fire Control uses the full live rail instead of decorative empty cards', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === 'pixel-touch', 'touch uses a strengthened one-row numerical-control topology');
     const geometry = await page.locator('#battle-rail .st-hud__console-solution').evaluate((solution) => {

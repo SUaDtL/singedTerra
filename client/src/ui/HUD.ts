@@ -6258,9 +6258,6 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__solution-adjustment-label {
     display: none;
   }
-  #app.is-compact #battle-rail .st-hud__instrument-svg {
-    display: none;
-  }
   #app.is-compact #battle-rail .st-hud__trajectory-guide {
     display: none;
   }
@@ -6519,11 +6516,22 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__solution-adjustment-label {
     display: none;
   }
+  #app.is-compact #battle-rail .st-hud__solution-adjustment > .st-hud__instrument-svg {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    pointer-events: none;
+  }
   #app.is-compact #battle-rail .st-hud__solution-adjustment-value {
     grid-column: 2;
     grid-row: 1;
     min-width: 0;
     align-self: center;
+    position: relative;
+    z-index: 1;
   }
   #app.is-compact #battle-rail .st-hud__solution-adjustment .st-hud__solution-control {
     grid-row: 1;
@@ -6539,7 +6547,7 @@ export class HUD {
     grid-column: 3;
     grid-row: 1;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target);
+    grid-template-rows: minmax(0, 1fr);
   }
   #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__solution-adjustment-label {
     display: none;
@@ -6548,6 +6556,15 @@ export class HUD {
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
+  }
+  #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__instrument-svg {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    pointer-events: none;
   }
   #app.is-compact #battle-rail .st-hud__solution-wind > .st-hud__trajectory-guide {
     grid-column: 1;
