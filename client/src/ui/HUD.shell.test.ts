@@ -162,6 +162,10 @@ describe('HUD single-screen combat shell', () => {
     expect(solution?.querySelectorAll('[data-control="angle"]')).toHaveLength(1);
     expect(solution?.querySelectorAll('[data-control="power"]')).toHaveLength(1);
     expect(solution?.querySelector('[data-value-owner="wind"]')).not.toBeNull();
+    expect(solution?.querySelectorAll('[data-instrument="angle"] > svg')).toHaveLength(1);
+    expect(solution?.querySelectorAll('[data-instrument="power"] > svg')).toHaveLength(1);
+    expect(solution?.querySelectorAll('[data-instrument="wind"] > svg')).toHaveLength(1);
+    expect(solution?.querySelectorAll('[data-instrument] output')).toHaveLength(3);
     expect(solution?.querySelector('[data-ui="command-deck"]')).toBeNull();
     expect(solution?.querySelector('.st-hud__control-grid')).toBeNull();
     expect(solution?.querySelector('[data-command-action^="fire-"]')).toBeNull();

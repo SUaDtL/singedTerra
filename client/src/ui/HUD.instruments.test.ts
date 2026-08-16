@@ -3,6 +3,11 @@ import { describe, it, expect } from 'vitest';
 import { HUD } from './HUD';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { MAX_WIND } from '@shared/engine/Physics';
+import {
+  elevationArcEndPoint,
+  powerArcEndPoint,
+  windVectorEndPoint,
+} from './gaugeMath';
 
 function mountHud(): { root: HTMLElement; hud: HUD; engine: GameEngine } {
   const root = document.createElement('div');
@@ -23,7 +28,7 @@ function mountHud(): { root: HTMLElement; hud: HUD; engine: GameEngine } {
 }
 
 describe('HUD firing solution', () => {
-  it('builds one numerical Firing Solution instead of a second analog computer', () => {
+  it('builds one compact, single-owner Firing Solution instead of a second analog computer', () => {
     const { root } = mountHud();
     const solution = root.querySelector('.st-hud__console-solution')!;
     expect(root.querySelector('.st-hud__instruments')).toBeNull();
@@ -34,6 +39,22 @@ describe('HUD firing solution', () => {
     expect(solution.querySelectorAll('[data-value-owner="wind"]')).toHaveLength(1);
     expect(solution.querySelector('.st-hud__solution-wind [data-ui="deterministic-aim-guide"]'))
       .toBeTruthy();
+
+    for (const [instrument, label] of [
+      ['angle', 'Angle'],
+      ['power', 'Power'],
+      ['wind', 'Wind'],
+    ] as const) {
+      const owner = solution.querySelector<HTMLElement>(`[data-instrument="${instrument}"]`)!;
+      const value = owner.querySelector<HTMLOutputElement>('output')!;
+
+      expect(owner, `${label} has one owner`).toBeTruthy();
+      expect(owner.getAttribute('aria-label')).toBe(label);
+      expect(owner.querySelectorAll(':scope > svg')).toHaveLength(1);
+      expect(owner.querySelectorAll('output')).toHaveLength(1);
+      expect(value.getAttribute('aria-label')).toBe(label);
+      expect(owner.querySelectorAll('[data-visible-value]')).toHaveLength(0);
+    }
   });
 
   it('renders calm and signed wind as the one live solution value', () => {
@@ -79,5 +100,19 @@ describe('HUD firing solution', () => {
     tank.power = 100;
     hud.update(state);
     expect(power.textContent).toBe('100');
+  });
+
+  it('clamps the compact instrument geometry at exact angle, power, and wind extrema', () => {
+    expect(elevationArcEndPoint(0)).toEqual({ x: 86, y: 50 });
+    expect(elevationArcEndPoint(90)).toEqual({ x: 50, y: 14 });
+    expect(elevationArcEndPoint(180)).toEqual({ x: 14, y: 50 });
+
+    expect(powerArcEndPoint(0)).toEqual({ x: 14, y: 50 });
+    expect(powerArcEndPoint(50)).toEqual({ x: 50, y: 14 });
+    expect(powerArcEndPoint(100)).toEqual({ x: 86, y: 50 });
+
+    expect(windVectorEndPoint(-MAX_WIND, MAX_WIND)).toEqual({ x: 14, y: 50 });
+    expect(windVectorEndPoint(0, MAX_WIND)).toEqual({ x: 50, y: 50 });
+    expect(windVectorEndPoint(MAX_WIND, MAX_WIND)).toEqual({ x: 86, y: 50 });
   });
 });

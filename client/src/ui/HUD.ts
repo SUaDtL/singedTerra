@@ -4,9 +4,16 @@ import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
 import type { ConnectionState, TurnWatch } from '../client/GameClient';
 import {
   elevationDegrees,
+  elevationArcEndPoint,
+  elevationNeedleDeg,
+  gaugeFraction,
   powerLabel,
+  powerArcEndPoint,
   windMagnitudeLabel,
+  windNeedleOffset,
+  windVectorEndPoint,
 } from './gaugeMath';
+import { MAX_WIND } from '@shared/engine/Physics';
 import { resolveInitialArsenalCollapsed } from './arsenalPreference';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
 import { STORE_CATALOG } from './storeCatalog';
@@ -364,6 +371,9 @@ export class HUD {
   private solutionAngleValueEl!: HTMLElement;
   private solutionPowerValueEl!: HTMLElement;
   private solutionWindValueEl!: HTMLElement;
+  private solutionAngleNeedleEl!: SVGLineElement;
+  private solutionPowerArcEl!: SVGPathElement;
+  private solutionWindVectorEl!: SVGLineElement;
 
   constructor(
     root: HTMLElement,
@@ -1075,47 +1085,120 @@ export class HUD {
     controls.setAttribute('aria-label', 'Angle and power adjustments');
     this.solutionAdjustmentsEl = controls;
 
-    const makeGroup = (
-      control: 'angle' | 'power',
+    interface InstrumentNodes {
+      readonly root: HTMLElement;
+      readonly svg: SVGSVGElement;
+      readonly value: HTMLOutputElement;
+    }
+    const makeSvgNode = <T extends SVGElement>(tag: string): T =>
+      document.createElementNS('http://www.w3.org/2000/svg', tag) as T;
+    const buildInstrument = (
+      instrument: 'angle' | 'power' | 'wind',
       label: string,
-      buttons: HTMLButtonElement[],
-    ): { readonly group: HTMLElement; readonly value: HTMLElement } => {
-      const group = document.createElement('div');
-      group.className = 'st-hud__solution-adjustment';
-      group.dataset['control'] = control;
-      group.dataset['valueOwner'] = control;
-      group.setAttribute('role', 'group');
-      group.setAttribute('aria-label', label);
+      svg: SVGSVGElement,
+    ): InstrumentNodes => {
+      const root = document.createElement('div');
+      root.className = instrument === 'wind'
+        ? 'st-hud__solution-wind st-hud__instrument'
+        : 'st-hud__solution-adjustment st-hud__instrument';
+      root.dataset['instrument'] = instrument;
+      root.dataset['valueOwner'] = instrument;
+      if (instrument !== 'wind') root.dataset['control'] = instrument;
+      root.setAttribute('role', 'group');
+      root.setAttribute('aria-label', label);
       const title = document.createElement('span');
       title.className = 'st-hud__solution-adjustment-label';
+      title.setAttribute('aria-hidden', 'true');
       title.textContent = label;
       const value = document.createElement('output');
       value.className = 'st-hud__solution-adjustment-value';
+      value.setAttribute('aria-label', label);
       value.setAttribute('aria-live', 'off');
-      group.append(title, value, ...buttons);
-      return { group, value };
+      root.append(title);
+      return { root, svg, value };
     };
-    const angle = makeGroup('angle', 'Angle', [
-      makeControl('aim-left', '←', 'Aim barrel left', '−', () => this.touchAngleCb?.(3), 'aim'),
-      makeControl('aim-right', '→', 'Aim barrel right', '+', () => this.touchAngleCb?.(-3), 'aim'),
-    ]);
-    const power = makeGroup('power', 'Power', [
-      makeControl('power-down', '↓', 'Decrease power', '−', () => this.touchPowerCb?.(-3), 'power-and-wind'),
-      makeControl('power-up', '↑', 'Increase power', '+', () => this.touchPowerCb?.(3), 'power-and-wind'),
-    ]);
+    const makeAngleSvg = (): { readonly svg: SVGSVGElement; readonly needle: SVGLineElement } => {
+      const svg = HUD.makeSvg(100, 100);
+      svg.classList.add('st-hud__instrument-svg');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('focusable', 'false');
+      const arc = makeSvgNode<SVGPathElement>('path');
+      arc.classList.add('st-hud__instrument-track');
+      arc.setAttribute('d', 'M14 50 A36 36 0 0 1 86 50');
+      const needle = makeSvgNode<SVGLineElement>('line');
+      needle.classList.add('st-hud__instrument-needle');
+      needle.setAttribute('x1', '50');
+      needle.setAttribute('y1', '50');
+      const end = elevationArcEndPoint(90);
+      needle.setAttribute('x2', String(end.x));
+      needle.setAttribute('y2', String(end.y));
+      svg.append(arc, needle);
+      return { svg, needle };
+    };
+    const makePowerSvg = (): { readonly svg: SVGSVGElement; readonly fill: SVGPathElement } => {
+      const svg = HUD.makeSvg(100, 100);
+      svg.classList.add('st-hud__instrument-svg');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('focusable', 'false');
+      const track = makeSvgNode<SVGPathElement>('path');
+      track.classList.add('st-hud__instrument-track');
+      track.setAttribute('d', 'M14 50 A36 36 0 0 1 86 50');
+      const fill = makeSvgNode<SVGPathElement>('path');
+      fill.classList.add('st-hud__instrument-fill');
+      const end = powerArcEndPoint(50);
+      fill.setAttribute('d', `M14 50 A36 36 0 0 1 ${end.x} ${end.y}`);
+      svg.append(track, fill);
+      return { svg, fill };
+    };
+    const makeWindSvg = (): { readonly svg: SVGSVGElement; readonly vector: SVGLineElement } => {
+      const svg = HUD.makeSvg(100, 100);
+      svg.classList.add('st-hud__instrument-svg');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('focusable', 'false');
+      const track = makeSvgNode<SVGLineElement>('line');
+      track.classList.add('st-hud__instrument-track');
+      track.setAttribute('x1', '14');
+      track.setAttribute('y1', '50');
+      track.setAttribute('x2', '86');
+      track.setAttribute('y2', '50');
+      const vector = makeSvgNode<SVGLineElement>('line');
+      vector.classList.add('st-hud__instrument-needle');
+      vector.setAttribute('x1', '50');
+      vector.setAttribute('y1', '50');
+      const end = windVectorEndPoint(0, MAX_WIND);
+      vector.setAttribute('x2', String(end.x));
+      vector.setAttribute('y2', String(end.y));
+      svg.append(track, vector);
+      return { svg, vector };
+    };
+    const angleSvg = makeAngleSvg();
+    const powerSvg = makePowerSvg();
+    const windSvg = makeWindSvg();
+    const angle = buildInstrument('angle', 'Angle', angleSvg.svg);
+    const angleDownButton = makeControl(
+      'aim-left', '\u2190', 'Aim barrel left', '\u2212', () => this.touchAngleCb?.(3), 'aim',
+    );
+    const angleUpButton = makeControl(
+      'aim-right', '\u2192', 'Aim barrel right', '+', () => this.touchAngleCb?.(-3), 'aim',
+    );
+    angle.root.append(angleDownButton, angle.svg, angle.value, angleUpButton);
+    const power = buildInstrument('power', 'Power', powerSvg.svg);
+    const powerDownButton = makeControl(
+      'power-down', '\u2193', 'Decrease power', '\u2212', () => this.touchPowerCb?.(-3), 'power-and-wind',
+    );
+    const powerUpButton = makeControl(
+      'power-up', '\u2191', 'Increase power', '+', () => this.touchPowerCb?.(3), 'power-and-wind',
+    );
+    power.root.append(powerDownButton, power.svg, power.value, powerUpButton);
+    const wind = buildInstrument('wind', 'Wind', windSvg.svg);
+    wind.root.dataset['firstSalvoTarget'] = 'power-and-wind';
+    wind.root.append(wind.svg, wind.value);
     this.solutionAngleValueEl = angle.value;
     this.solutionPowerValueEl = power.value;
-    const wind = document.createElement('div');
-    wind.className = 'st-hud__solution-wind';
-    wind.dataset['valueOwner'] = 'wind';
-    wind.dataset['firstSalvoTarget'] = 'power-and-wind';
-    wind.setAttribute('aria-label', 'Wind');
-    const windLabel = document.createElement('span');
-    windLabel.className = 'st-hud__solution-adjustment-label';
-    windLabel.textContent = 'Wind';
-    this.solutionWindValueEl = document.createElement('output');
-    this.solutionWindValueEl.className = 'st-hud__solution-adjustment-value';
-    wind.append(windLabel, this.solutionWindValueEl);
+    this.solutionWindValueEl = wind.value;
+    this.solutionAngleNeedleEl = angleSvg.needle;
+    this.solutionPowerArcEl = powerSvg.fill;
+    this.solutionWindVectorEl = windSvg.vector;
     const guide = document.createElement('button');
     guide.type = 'button';
     guide.className = 'st-hud__trajectory-guide';
@@ -1130,11 +1213,8 @@ export class HUD {
     guideHint.textContent = 'G';
     guide.append(makeHudGlyph('aim', 14), guideLabel, guideHint);
     guide.addEventListener('click', () => this.aimGuideCb?.());
-    // The trajectory guide is live firing context, not a fourth command card.
-    // Keeping it with Wind makes its global-G hint available without reserving a
-    // separate row in the protected battle rail.
-    wind.append(guide);
-    controls.append(angle.group, power.group, wind);
+    wind.root.append(guide);
+    controls.append(angle.root, power.root, wind.root);
     return controls;
   }
 
@@ -2624,6 +2704,11 @@ export class HUD {
     if (this.solutionWindValueEl.textContent !== solutionWind) {
       this.solutionWindValueEl.textContent = solutionWind;
     }
+    const offset = windNeedleOffset(wind, MAX_WIND);
+    const end = windVectorEndPoint(wind, MAX_WIND);
+    this.solutionWindVectorEl.dataset['offset'] = String(offset);
+    this.solutionWindVectorEl.setAttribute('x2', String(end.x));
+    this.solutionWindVectorEl.setAttribute('y2', String(end.y));
   }
 
   /** Update the active commander and live firing values. */
@@ -2756,10 +2841,20 @@ export class HUD {
     if (this.solutionAngleValueEl.textContent !== solutionAngle) {
       this.solutionAngleValueEl.textContent = solutionAngle;
     }
+    const angleEnd = elevationArcEndPoint(tank.angle);
+    this.solutionAngleNeedleEl.dataset['needleDeg'] = String(elevationNeedleDeg(tank.angle));
+    this.solutionAngleNeedleEl.setAttribute('x2', String(angleEnd.x));
+    this.solutionAngleNeedleEl.setAttribute('y2', String(angleEnd.y));
     const pwrLbl = powerLabel(tank.power);
     if (this.solutionPowerValueEl.textContent !== pwrLbl) {
       this.solutionPowerValueEl.textContent = pwrLbl;
     }
+    const powerFraction = gaugeFraction(tank.power, 0, 100);
+    const powerEnd = powerArcEndPoint(tank.power);
+    this.solutionPowerArcEl.setAttribute(
+      'd',
+      `M14 50 A36 36 0 ${powerFraction > 0.5 ? '1' : '0'} 1 ${powerEnd.x} ${powerEnd.y}`,
+    );
   }
 
   /** Repaint the authored vehicle portrait only when its visible identity changes. */
@@ -6288,6 +6383,86 @@ export class HUD {
     height: 100%;
     max-width: 100%;
   }
+}
+
+/* Final fine-pointer instrument topology: keep these after the compact touch
+   overrides so the equal-height desktop spine is never reopened into cards. */
+@media (pointer: fine) {
+  #battle-rail { max-height: 144px; }
+  #battle-rail .st-hud__solution-adjustments {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    gap: 5px;
+  }
+  #battle-rail .st-hud__instrument {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto minmax(16px, 1fr) auto 36px;
+    align-items: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 2px 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  #battle-rail .st-hud__instrument > .st-hud__solution-adjustment-label,
+  #battle-rail .st-hud__instrument > .st-hud__instrument-svg,
+  #battle-rail .st-hud__instrument > .st-hud__solution-adjustment-value,
+  #battle-rail .st-hud__instrument > .st-hud__trajectory-guide { grid-column: 1 / -1; }
+  #battle-rail .st-hud__instrument > .st-hud__solution-adjustment-label { grid-row: 1; }
+  #battle-rail .st-hud__instrument > .st-hud__instrument-svg {
+    grid-row: 2;
+    width: 100%;
+    min-height: 16px;
+    height: 100%;
+  }
+  #battle-rail .st-hud__instrument > .st-hud__solution-adjustment-value {
+    grid-row: 3;
+    color: var(--text-gold);
+    font-family: var(--font-mono);
+    font-size: calc(var(--st-command-readability-size, 11px) * 1.2);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    text-align: center;
+  }
+  #battle-rail .st-hud__instrument > .st-hud__solution-control,
+  #battle-rail .st-hud__instrument > .st-hud__trajectory-guide {
+    grid-row: 4;
+    min-width: 34px;
+    min-height: 34px;
+    height: 36px;
+    max-height: 48px;
+    box-sizing: border-box;
+  }
+  #battle-rail .st-hud__instrument > .st-hud__solution-control:first-of-type { grid-column: 1; }
+  #battle-rail .st-hud__instrument > .st-hud__solution-control:last-of-type { grid-column: 2; }
+  #battle-rail .st-hud__instrument.st-hud__solution-wind {
+    grid-template-rows: auto minmax(16px, 1fr) auto 36px;
+    align-self: stretch;
+    height: 100%;
+  }
+  #battle-rail .st-hud__instrument.st-hud__solution-wind > .st-hud__trajectory-guide {
+    min-height: 34px;
+    height: 36px;
+    max-height: 48px;
+  }
+  #battle-rail .st-hud__instrument-track {
+    fill: none;
+    stroke: rgba(122, 215, 255, 0.36);
+    stroke-linecap: round;
+    stroke-width: 7;
+  }
+  #battle-rail .st-hud__instrument-needle,
+  #battle-rail .st-hud__instrument-fill {
+    fill: none;
+    stroke: var(--text-gold);
+    stroke-linecap: round;
+    stroke-width: 7;
+  }
+  #battle-rail .st-hud__instrument-needle { stroke: var(--tank-blue-lite, #7ad7ff); }
 }
 
 /* Numerical Fire Control is reduced-motion-safe: its values update as text and

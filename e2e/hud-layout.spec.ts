@@ -66,6 +66,52 @@ test.describe('HUD layout guardrails', () => {
     expect(box!.height).toBeGreaterThan(compact ? 24 : 40);
   });
 
+  test('field instruments share a compact, banded battle-console rail', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'desktop geometry is the fine-pointer contract');
+    const geometry = await page.locator('#battle-rail .st-hud__solution-adjustments').evaluate((controls) => {
+      const stage = document.getElementById('stage')!.getBoundingClientRect();
+      const rail = document.getElementById('battle-rail')!.getBoundingClientRect();
+      const contains = (outer: DOMRect, inner: DOMRect): boolean =>
+        inner.left >= outer.left - 1 && inner.right <= outer.right + 1
+        && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
+      const instruments = ['angle', 'power', 'wind'].map((name) => {
+        const owner = controls.querySelector<HTMLElement>(`[data-instrument="${name}"]`)!;
+        const svg = owner.querySelector<SVGSVGElement>('svg')!;
+        const value = owner.querySelector<HTMLOutputElement>('output')!;
+        const buttons = [...owner.querySelectorAll<HTMLButtonElement>('button')];
+        const ownerRect = owner.getBoundingClientRect();
+        const svgRect = svg.getBoundingClientRect();
+        const valueRect = value.getBoundingClientRect();
+        const buttonRects = buttons.map((button) => button.getBoundingClientRect());
+        return {
+          name,
+          owner: ownerRect.toJSON(),
+          contained: [svgRect, valueRect, ...buttonRects].every((rect) => contains(ownerRect, rect)),
+          svgBottom: svgRect.bottom,
+          valueTop: valueRect.top,
+          valueBottom: valueRect.bottom,
+          buttonTop: Math.min(...buttonRects.map((rect) => rect.top)),
+        };
+      });
+      return {
+        stageHeight: stage.height,
+        railHeight: rail.height,
+        instruments,
+      };
+    });
+
+    expect(geometry.railHeight / geometry.stageHeight).toBeLessThanOrEqual(0.24);
+    const [first, ...rest] = geometry.instruments;
+    for (const instrument of geometry.instruments) {
+      expect(instrument.contained, `${instrument.name} content stays in its owner`).toBe(true);
+      expect(instrument.svgBottom, `${instrument.name} SVG precedes its value`).toBeLessThanOrEqual(instrument.valueTop + 1);
+      expect(instrument.valueBottom, `${instrument.name} value precedes its controls`).toBeLessThanOrEqual(instrument.buttonTop + 1);
+      expect(instrument.owner.top, `${instrument.name} shares the rail top: ${JSON.stringify(geometry)}`).toBeCloseTo(first!.owner.top, 1);
+      expect(instrument.owner.bottom, `${instrument.name} shares the rail bottom: ${JSON.stringify(geometry)}`).toBeCloseTo(first!.owner.bottom, 1);
+    }
+    expect(rest).toHaveLength(2);
+  });
+
   test('live firing values stay inside their integrated controls across phase states', async ({
     page,
   }) => {
