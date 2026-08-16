@@ -211,6 +211,18 @@ describe('HUD single-screen combat shell', () => {
     expect(overlay.querySelector('.st-hud__command-console')).toBeNull();
   });
 
+  it('keeps the console material URL as fail-soft decoration outside the semantic command surface', () => {
+    const { rail } = mountHarness();
+    const commandConsole = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
+
+    expect(rail.style.getPropertyValue('--st-console-texture'))
+      .toBe('url(/battle-console-plate.webp)');
+    expect(rail.getAttribute('aria-label') ?? '').not.toContain('battle-console-plate');
+    expect(rail.getAttribute('role')).toBeNull();
+    expect(rail.querySelector('[aria-label="battle-console-plate.webp"]')).toBeNull();
+    expect(commandConsole.getAttribute('aria-label')).toBe('Turn command console');
+  });
+
   it('marks one shell and applies the shared section rhythm to every rail region', () => {
     const root = mount();
     const rail = document.querySelector<HTMLElement>('#battle-rail')!;

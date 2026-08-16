@@ -64,6 +64,30 @@ test.describe('HUD layout guardrails', () => {
     expect(box!.height).toBeGreaterThan(compact ? 24 : 40);
   });
 
+  test('console material remains a non-interactive fallback-backed decoration', async ({ page }) => {
+    const material = await page.locator('#battle-rail').evaluate((rail) => {
+      const style = getComputedStyle(rail);
+      const console = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
+      return {
+        texture: rail.style.getPropertyValue('--st-console-texture'),
+        backgroundImage: style.backgroundImage,
+        backgroundColor: style.backgroundColor,
+        railPointerEvents: style.pointerEvents,
+        pseudoContent: getComputedStyle(rail, '::before').content,
+        railName: rail.getAttribute('aria-label'),
+        consoleName: console.getAttribute('aria-label'),
+      };
+    });
+
+    expect(material.texture).toBe('url(/battle-console-plate.webp)');
+    expect(material.backgroundImage).toMatch(/url\("[^)]*battle-console-plate\.webp"\)/);
+    expect(material.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(material.railPointerEvents).toBe('none');
+    expect(material.pseudoContent).toBe('none');
+    expect(material.railName ?? '').not.toContain('battle-console-plate');
+    expect(material.consoleName).toBe('Turn command console');
+  });
+
   test('field instruments share a compact, banded battle-console rail', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'desktop geometry is the fine-pointer contract');
     const geometry = await page.locator('#battle-rail .st-hud__solution-adjustments').evaluate((controls) => {

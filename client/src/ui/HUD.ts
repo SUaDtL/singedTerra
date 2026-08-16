@@ -406,6 +406,12 @@ export class HUD {
     // before the protected rail existed. Keep those tests and embedders on the
     // original side-panel topology; real gameplay always supplies #battle-rail.
     this.railRoot = railRoot === overlayRoot ? root : railRoot;
+    // Decorative material only: the opaque CSS gradients remain a complete
+    // fallback and all command semantics continue to live in the DOM/SVG.
+    this.railRoot.style.setProperty(
+      '--st-console-texture',
+      `url(${import.meta.env.BASE_URL}battle-console-plate.webp)`,
+    );
     this.reduceMotion = typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
@@ -3897,6 +3903,16 @@ export class HUD {
   font-family: var(--font-sans);
   color: var(--text);
   font-size: var(--ui-type-title);
+}
+/* The generated plate is a low-opacity material layer, never an interface.
+   Gradients retain the full readable fall-back if the optional asset is absent. */
+#battle-rail {
+  background-image:
+    linear-gradient(rgba(13, 8, 23, 0.90), rgba(13, 8, 23, 0.96)),
+    var(--st-console-texture, none),
+    linear-gradient(90deg, rgba(9, 5, 17, 0.96), rgba(25, 14, 43, 0.96) 55%, rgba(9, 5, 17, 0.96)),
+    radial-gradient(80% 120% at 50% 0%, rgba(255, 122, 31, 0.13), transparent 70%);
+  background-color: var(--ui-rail);
 }
 .st-hud__players {
   display: flex;
