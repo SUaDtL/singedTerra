@@ -268,6 +268,102 @@ test.describe('HUD layout guardrails', () => {
     }
   });
 
+  test('fine flight gives one unclipped outcome owner the whole Fire bay', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
+
+    const commandBays = async () => page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
+      const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
+      return [
+        spine.querySelector<HTMLElement>('.st-hud__console-context')!,
+        solution.querySelector<HTMLElement>('.st-hud__weapon')!,
+        solution.querySelector<HTMLElement>('[data-instrument="angle"]')!,
+        solution.querySelector<HTMLElement>('[data-instrument="power"]')!,
+        solution.querySelector<HTMLElement>('[data-instrument="wind"]')!,
+        solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
+      ].map((bay) => bay.getBoundingClientRect().toJSON());
+    });
+    const outcome = async () => page.locator('#battle-rail .st-hud__fire-terminal').evaluate((terminal) => {
+      const visible = (element: HTMLElement): boolean => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return !element.hidden && style.display !== 'none' && style.visibility !== 'hidden'
+          && rect.width > 0 && rect.height > 0;
+      };
+      const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
+      const label = state.querySelector<HTMLElement>('.st-hud__console-state-label')!;
+      const owners = [
+        ['state label', label],
+        ['explanation', terminal.querySelector<HTMLElement>('.st-hud__commitment-explanation')!],
+        ['aim', terminal.querySelector<HTMLElement>('.st-hud__aim')!],
+      ].filter(([, element]) => visible(element)) as Array<[string, HTMLElement]>;
+      const stateRect = state.getBoundingClientRect();
+      const terminalRect = terminal.getBoundingClientRect();
+      const labelRange = document.createRange();
+      labelRange.selectNodeContents(label);
+      const labelRect = labelRange.getBoundingClientRect();
+      return {
+        owners: owners.map(([name, element]) => ({ name, text: element.textContent?.trim() ?? '' })),
+        state: {
+          clientWidth: state.clientWidth,
+          scrollWidth: state.scrollWidth,
+          rect: stateRect.toJSON(),
+        },
+        label: labelRect.toJSON(),
+        terminal: terminalRect.toJSON(),
+      };
+    });
+
+    for (const viewport of [
+      { width: 1600, height: 900 },
+      { width: 900, height: 520 },
+      { width: 2048, height: 864 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.reload();
+      await gotoRunningGame(page);
+      const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+      if (await briefing.isVisible()) {
+        await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
+        await expect(briefing).toBeHidden();
+      }
+      const coachSkip = page.getByRole('button', { name: 'Skip', exact: true });
+      if (await coachSkip.isVisible()) await coachSkip.click();
+      const decision = await commandBays();
+      await page.locator('.st-hud__primary-action').click();
+      await expect(page.locator('.st-hud__command-console'))
+        .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+
+      const flight = await commandBays();
+      const status = await outcome();
+      expect(status.owners, `${viewport.width}x${viewport.height} has one visible outcome owner`)
+        .toEqual([expect.objectContaining({ name: 'state label', text: expect.stringMatching(/.+/) })]);
+      expect(status.state.clientWidth, `${viewport.width}x${viewport.height} outcome status fits its text`)
+        .toBeGreaterThanOrEqual(status.state.scrollWidth);
+      expect(status.label.left, `${viewport.width}x${viewport.height} outcome text starts inside its owner`)
+        .toBeGreaterThanOrEqual(status.state.rect.left - 1);
+      expect(status.label.right, `${viewport.width}x${viewport.height} outcome text ends inside its owner`)
+        .toBeLessThanOrEqual(status.state.rect.right + 1);
+      expect(status.state.rect.left, `${viewport.width}x${viewport.height} outcome starts at its Fire bay`)
+        .toBeCloseTo(status.terminal.left, 1);
+      expect(status.state.rect.right, `${viewport.width}x${viewport.height} outcome reaches its Fire bay end`)
+        .toBeCloseTo(status.terminal.right, 1);
+      for (const [index, bay] of flight.entries()) {
+        expect(bay.left, `${viewport.width}x${viewport.height} flight bay ${index} keeps its left`)
+          .toBeCloseTo(decision[index]!.left, 1);
+        expect(bay.width, `${viewport.width}x${viewport.height} flight bay ${index} keeps its width`)
+          .toBeCloseTo(decision[index]!.width, 1);
+        for (const [otherIndex, other] of flight.entries()) {
+          if (otherIndex <= index) continue;
+          const overlapWidth = Math.min(bay.right, other.right) - Math.max(bay.left, other.left);
+          const overlapHeight = Math.min(bay.bottom, other.bottom) - Math.max(bay.top, other.top);
+          expect(overlapWidth > 1 && overlapHeight > 1,
+            `${viewport.width}x${viewport.height} flight bays ${index}/${otherIndex} do not intersect`).toBe(false);
+        }
+      }
+      await page.screenshot({ path: testInfo.outputPath(`command-spine-flight-${viewport.width}x${viewport.height}.png`) });
+    }
+  });
+
   test('fine command bays have no unexplained authored vacancy', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
     await page.setViewportSize({ width: 1600, height: 900 });
@@ -857,7 +953,12 @@ test.describe('HUD layout guardrails', () => {
     await expect(overlay).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(rail).toHaveAttribute('data-combat-focus', 'outcome');
     await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
-    await expect(page.locator('.st-hud__aim')).toBeVisible();
+    if (await page.evaluate(() => matchMedia('(pointer: fine)').matches)) {
+      await expect(page.locator('.st-hud__aim')).toBeHidden();
+      await expect(page.locator('.st-hud__console-state-label')).toBeVisible();
+    } else {
+      await expect(page.locator('.st-hud__aim')).toBeVisible();
+    }
     await expect(page.locator('.st-hud__active-row')).toBeVisible();
     await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
     await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);

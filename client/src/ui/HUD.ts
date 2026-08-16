@@ -625,6 +625,12 @@ export class HUD {
       this.consoleStateGuidanceEl.textContent = guidance;
     }
     if (this.consoleStateLabelEl.textContent !== text) this.consoleStateLabelEl.textContent = text;
+    const announcement = command.commitment.explanation === null
+      ? text
+      : `${text}. ${command.commitment.explanation}`;
+    if (this.consoleStateEl.getAttribute('aria-label') !== announcement) {
+      this.consoleStateEl.setAttribute('aria-label', announcement);
+    }
     if (command.commitment.explanation === null) {
       this.consoleStateEl.removeAttribute('title');
     } else if (this.consoleStateEl.title !== command.commitment.explanation) {
@@ -6912,6 +6918,31 @@ export class HUD {
   }
   #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal {
     grid-column: 3;
+    position: relative;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state {
+    grid-row: 1;
+    justify-self: stretch;
+    align-self: stretch;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state-phase,
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__console-state-guidance,
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__commitment-explanation,
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__aim {
+    display: none;
+  }
+  #battle-rail[data-combat-focus="outcome"] .st-hud__fire-terminal .st-hud__battle-settings-trigger {
+    position: absolute;
+    inset: 4px 4px auto auto;
   }
 }
 
