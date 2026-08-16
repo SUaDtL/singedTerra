@@ -954,6 +954,8 @@ export class HUD {
     portraitFrame.className = 'st-hud__tank-portrait-frame';
     this.tankPortraitEl = document.createElement('canvas');
     this.tankPortraitEl.className = 'st-hud__tank-portrait';
+    this.tankPortraitEl.width = 144;
+    this.tankPortraitEl.height = 80;
     this.tankPortraitEl.setAttribute('role', 'img');
     this.tankPortraitEl.setAttribute('aria-label', 'No active tank.');
     portraitFrame.append(this.tankPortraitEl);
@@ -1010,25 +1012,20 @@ export class HUD {
     };
     this.moveLeftBtnEl = makeMoveButton(-8, 'Move tank left, 8 fuel maximum', '‹', 'A');
     this.moveRightBtnEl = makeMoveButton(8, 'Move tank right, 8 fuel maximum', '›', 'D');
-    const fuel = document.createElement('div');
-    fuel.className = 'st-hud__fuel';
-    const fuelReadout = document.createElement('div');
-    fuelReadout.className = 'st-hud__fuel-readout';
     const fuelLabel = document.createElement('span');
     fuelLabel.className = 'st-hud__fuel-label';
-    fuelLabel.textContent = 'Fuel';
+    fuelLabel.textContent = 'FUEL';
     this.fuelValueEl = document.createElement('span');
     this.fuelValueEl.className = 'st-hud__fuel-value';
-    fuelReadout.append(this.fuelValueEl, fuelLabel);
     this.fuelMeterEl = document.createElement('div');
-    this.fuelMeterEl.className = 'st-hud__fuel-meter st-hud__fuel-dial';
+    this.fuelMeterEl.className = 'st-hud__fuel-meter st-hud__fuel-capsule';
+    this.fuelMeterEl.dataset['ui'] = 'fuel-meter';
     this.fuelMeterEl.setAttribute('role', 'progressbar');
     this.fuelMeterEl.setAttribute('aria-label', 'Movement fuel');
     this.fuelMeterEl.setAttribute('aria-valuemin', '0');
     this.fuelMeterEl.setAttribute('aria-valuemax', '100');
-    this.fuelMeterEl.append(fuelReadout);
-    fuel.append(this.fuelMeterEl);
-    mobility.append(this.moveLeftBtnEl, fuel, this.moveRightBtnEl);
+    this.fuelMeterEl.append(fuelLabel, this.fuelValueEl);
+    mobility.append(this.moveLeftBtnEl, this.fuelMeterEl, this.moveRightBtnEl);
 
     const tactical = document.createElement('div');
     tactical.className = 'st-hud__tactical-row';
@@ -5321,10 +5318,7 @@ export class HUD {
   flex-shrink: 0;
 }
 .st-hud__tactical-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 94px;
-  align-items: stretch;
-  gap: 5px;
+  display: block;
   min-width: 0;
 }
 .st-hud__tactical-row .st-hud__weapon {
@@ -5332,9 +5326,12 @@ export class HUD {
 }
 .st-hud__mobility {
   display: grid;
-  grid-template-columns: 27px minmax(36px, 1fr) 27px;
+  grid-template-columns: 40px minmax(72px, 1fr) 40px;
   align-items: stretch;
-  gap: 2px;
+  justify-content: center;
+  gap: 6px;
+  width: min(100%, 208px);
+  margin-inline: auto;
   min-width: 0;
   pointer-events: auto;
 }
@@ -5387,61 +5384,45 @@ export class HUD {
   cursor: not-allowed;
   opacity: 0.36;
 }
-.st-hud__fuel {
-  display: grid;
-  place-items: center;
-  min-width: 0;
-  padding: 0 1px;
-}
-.st-hud__fuel-readout {
+.st-hud__fuel-label {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  width: 100%;
   min-width: 0;
-  pointer-events: none;
-}
-.st-hud__fuel-label {
-  box-sizing: border-box;
-  width: 100%;
   color: var(--ui-muted);
   font-family: var(--font-mono);
-  font-size: var(--st-command-readability-size, 11px);
+  font-size: 9px;
   line-height: 1;
-  letter-spacing: 0.1px;
-  text-align: center;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 .st-hud__fuel-value {
+  position: relative;
+  z-index: 1;
   color: var(--gold);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 0.9;
+  line-height: 1;
 }
 .st-hud__fuel-meter {
   --st-fuel-level: 0%;
   --st-fuel-color: var(--gold);
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  min-width: 34px;
-  min-height: 34px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  min-height: 36px;
+  padding-inline: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 233, 168, 0.22);
+  border-radius: 999px;
   background:
-    conic-gradient(
-      from -90deg,
-      var(--st-fuel-color) 0 var(--st-fuel-level),
-      rgba(255, 210, 63, 0.11) var(--st-fuel-level) 100%
-    );
+    repeating-linear-gradient(90deg, rgba(255, 233, 168, 0.1) 0 1px, transparent 1px 12px),
+    linear-gradient(90deg, rgba(255, 210, 63, 0.1), rgba(7, 4, 12, 0.82));
   box-shadow:
     0 0 7px color-mix(in srgb, var(--st-fuel-color) 22%, transparent),
     inset 0 0 0 1px rgba(255, 233, 168, 0.08);
@@ -5450,12 +5431,14 @@ export class HUD {
 .st-hud__fuel-meter::before {
   content: '';
   position: absolute;
-  inset: 3px;
+  inset: 2px auto 2px 2px;
   z-index: 0;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(69, 39, 77, 0.92), rgba(7, 4, 12, 0.98) 72%);
-  box-shadow: inset 0 0 0 1px rgba(255, 233, 168, 0.08);
+  width: var(--st-fuel-level);
+  max-width: calc(100% - 4px);
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--st-fuel-color) 70%, transparent), var(--st-fuel-color));
+  opacity: 0.72;
+  pointer-events: none;
 }
 .st-hud__fuel-meter[data-fuel-band="low"] {
   --st-fuel-color: var(--ember);
@@ -5958,10 +5941,9 @@ export class HUD {
     min-height: var(--st-rail-touch-target);
   }
   #battle-rail .st-hud__fuel-meter {
-    width: 58px;
-    height: 58px;
-    min-width: 58px;
-    min-height: 58px;
+    width: 100%;
+    min-height: 32px;
+    padding-inline: 7px;
   }
   #battle-rail .st-hud__console-solution {
     grid-template-columns: 180px 150px minmax(360px, 1fr);
@@ -6256,6 +6238,7 @@ export class HUD {
   #battle-rail .st-hud__identity-lockup { grid-template-columns: minmax(0, 1fr); }
   #battle-rail .st-hud__tank-portrait-frame { display: none; }
   #battle-rail .st-hud__mobility { grid-column: 1 / -1; grid-row: 2; grid-template-columns: var(--st-rail-touch-target) 58px var(--st-rail-touch-target); min-width: 0; }
+  #battle-rail .st-hud__fuel-meter { width: 58px; height: 28px; min-width: 0; min-height: 28px; padding-inline: 3px; gap: 3px; }
   #battle-rail .st-hud__console-solution { gap: 2px; padding: 2px; }
   #battle-rail .st-hud__console-solution { grid-template-columns: 160px minmax(0, 1fr) 124px; }
   #battle-rail .st-hud__solution-adjustments { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) var(--st-rail-touch-target); overflow: hidden; }
@@ -6370,24 +6353,50 @@ export class HUD {
 }
 
 @media (pointer: fine) {
-  #battle-rail .st-hud__identity-lockup { overflow: hidden; }
+  #battle-rail .st-hud__console-context .st-hud__active-row { padding-inline: 10px; }
+  #battle-rail .st-hud__console-context .st-hud__active-row {
+    grid-template-rows: minmax(80px, 1fr) 40px;
+  }
+  #battle-rail .st-hud__identity-lockup {
+    grid-template-columns: 144px minmax(0, 1fr);
+    grid-template-rows: minmax(80px, 1fr);
+    overflow: hidden;
+  }
   #battle-rail .st-hud__tank-portrait-frame {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    aspect-ratio: 144 / 80;
+    width: 144px;
+    height: 80px;
+    max-width: none;
+    aspect-ratio: 1.8;
     justify-self: center;
+    align-self: center;
   }
   #battle-rail .st-hud__tank-portrait {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
+    width: 144px;
+    height: 80px;
+    max-width: none;
   }
 }
 
 /* Final fine-pointer instrument topology: keep these after the compact touch
    overrides so the equal-height desktop spine is never reopened into cards. */
 @media (pointer: fine) {
+  #app.is-compact #battle-rail .st-hud__mobility {
+    grid-template-columns: 34px minmax(76px, 1fr) 34px;
+    gap: 4px;
+    width: 100%;
+  }
+  #app.is-compact #battle-rail .st-hud__move-btn {
+    min-width: 34px;
+    min-height: 34px;
+  }
+  #app.is-compact #battle-rail .st-hud__fuel-meter {
+    width: 100%;
+    height: 32px;
+    min-width: 0;
+    min-height: 32px;
+    padding-inline: 4px;
+    gap: 4px;
+  }
   #battle-rail { max-height: 144px; }
   #battle-rail .st-hud__solution-adjustments {
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -69,11 +69,10 @@ describe('HUD mobility rocker', () => {
     expect(owner.getAttribute('title')).toBe('Commander Longname X');
   });
 
-  it('fits semantic left/fuel/right controls into the active-turn row', () => {
+  it('centers one horizontal fuel capsule directly between semantic movement controls', () => {
     const { root, left, right, fuel } = mount();
     const mobility = root.querySelector<HTMLElement>('.st-hud__mobility')!;
     const meter = root.querySelector<HTMLElement>('.st-hud__fuel-meter')!;
-    const readout = root.querySelector<HTMLElement>('.st-hud__fuel-readout')!;
     const label = root.querySelector<HTMLElement>('.st-hud__fuel-label')!;
 
     expect(mobility).not.toBeNull();
@@ -87,13 +86,16 @@ describe('HUD mobility rocker', () => {
     expect(right().querySelector('kbd')?.textContent).toBe('D');
     expect([...left().childNodes].every((node) => node.nodeType === Node.ELEMENT_NODE)).toBe(true);
     expect([...right().childNodes].every((node) => node.nodeType === Node.ELEMENT_NODE)).toBe(true);
+    expect([...mobility.children]).toEqual([left(), meter, right()]);
     expect(fuel().textContent).toBe('100');
     expect(fuel().getAttribute('aria-label')).toBe('100 fuel remaining');
-    expect(meter.classList.contains('st-hud__fuel-dial')).toBe(true);
-    expect(meter.contains(readout)).toBe(true);
-    expect(readout.children[0]).toBe(fuel());
-    expect(readout.children[1]).toBe(label);
-    expect(label.textContent).toBe('Fuel');
+    expect(meter.dataset['ui']).toBe('fuel-meter');
+    expect(meter.classList.contains('st-hud__fuel-capsule')).toBe(true);
+    expect(meter.classList.contains('st-hud__fuel-dial')).toBe(false);
+    expect([...meter.children]).toEqual([label, fuel()]);
+    expect(meter.querySelectorAll('.st-hud__fuel-label')).toHaveLength(1);
+    expect(meter.querySelectorAll('.st-hud__fuel-value')).toHaveLength(1);
+    expect(label.textContent).toBe('FUEL');
     expect(meter.getAttribute('role')).toBe('progressbar');
     expect(meter.getAttribute('aria-label')).toBe('Movement fuel');
     expect(meter.getAttribute('aria-valuemin')).toBe('0');

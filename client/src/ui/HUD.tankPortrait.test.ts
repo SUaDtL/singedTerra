@@ -65,6 +65,9 @@ describe('HUD active tank identity portrait', () => {
 
     expect(portrait).not.toBeNull();
     expect(root.querySelectorAll('.st-hud__tank-portrait')).toHaveLength(1);
+    expect(portrait.width).toBe(144);
+    expect(portrait.height).toBe(80);
+    expect(portrait.width / portrait.height).toBeCloseTo(1.8, 2);
     expect(portrait.getAttribute('role')).toBe('img');
     expect(portrait.getAttribute('aria-label')).toBe(
       "Alice's tank. Mobility: Spider Legs. Hull: Siege Hull. "

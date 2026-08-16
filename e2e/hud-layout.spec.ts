@@ -662,6 +662,8 @@ test.describe('HUD layout guardrails', () => {
     });
     expect(Math.abs(geometry.frame.width - geometry.portrait.width)).toBeLessThan(1);
     expect(Math.abs(geometry.frame.height - geometry.portrait.height)).toBeLessThan(1);
+    expect(geometry.frame.width / geometry.frame.height).toBeGreaterThanOrEqual(1.75);
+    expect(geometry.frame.width / geometry.frame.height).toBeLessThanOrEqual(1.85);
     expect(geometry.frame.left).toBeGreaterThanOrEqual(geometry.context.left);
     expect(geometry.frame.right).toBeLessThanOrEqual(geometry.context.right);
 
@@ -1431,8 +1433,9 @@ test.describe('HUD layout guardrails', () => {
     await expect(left).toBeEnabled();
     await expect(right).toBeEnabled();
     await expect(fuel).toHaveText('100');
-    await expect(fuelLabel).toHaveText('Fuel');
+    await expect(fuelLabel).toHaveText('FUEL');
     await expect(meter).toHaveAttribute('data-fuel-band', 'normal');
+    await expect(meter).toHaveAttribute('data-ui', 'fuel-meter');
 
     const rowBox = await activeRow.boundingBox();
     const mobilityBox = await mobility.boundingBox();
@@ -1447,22 +1450,33 @@ test.describe('HUD layout guardrails', () => {
     expect(mobilityBox!.x).toBeGreaterThanOrEqual(rowBox!.x - 1);
     expect(mobilityBox!.x + mobilityBox!.width)
       .toBeLessThanOrEqual(rowBox!.x + rowBox!.width + 1);
-    const authoredDialSize = await meter.evaluate((node) => {
+    expect(Math.abs((mobilityBox!.x + mobilityBox!.width / 2) - (rowBox!.x + rowBox!.width / 2)))
+      .toBeLessThanOrEqual(2);
+    expect(await mobility.evaluate((node) => [...node.children].map((child) => child.className)))
+      .toEqual(['st-hud__move-btn', 'st-hud__fuel-meter st-hud__fuel-capsule', 'st-hud__move-btn']);
+    const authoredCapsuleSize = await meter.evaluate((node) => {
       const style = getComputedStyle(node);
-      return { width: parseFloat(style.width), height: parseFloat(style.height) };
+      return {
+        width: parseFloat(style.width),
+        height: parseFloat(style.height),
+        overflow: style.overflow,
+        backgroundImage: style.backgroundImage,
+      };
     });
-    const touch = testInfo.project.name === 'pixel-touch';
-    const authoredFuelDial = touch ? 58 : testInfo.project.name === 'small-window' ? 42 : 34;
-    expect(authoredDialSize.width).toBeCloseTo(authoredFuelDial, 1);
-    expect(authoredDialSize.height).toBeCloseTo(authoredFuelDial, 1);
-    expect(Math.abs(meterBox!.width - meterBox!.height)).toBeLessThanOrEqual(1);
-    expect(meterBox!.width).toBeGreaterThanOrEqual(touch ? 28 : 20);
+    expect(authoredCapsuleSize.width / authoredCapsuleSize.height).toBeGreaterThanOrEqual(2);
+    expect(meterBox!.width / meterBox!.height).toBeGreaterThanOrEqual(2);
+    expect(authoredCapsuleSize.overflow).toBe('hidden');
+    expect(authoredCapsuleSize.backgroundImage).toContain('linear-gradient');
     expect(fuelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);
     expect(fuelBox!.x + fuelBox!.width).toBeLessThanOrEqual(meterBox!.x + meterBox!.width);
     expect(fuelLabelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);
     expect(fuelLabelBox!.x + fuelLabelBox!.width)
       .toBeLessThanOrEqual(meterBox!.x + meterBox!.width);
-    expect(fuelBox!.y + fuelBox!.height).toBeLessThanOrEqual(fuelLabelBox!.y + 1);
+    expect(
+      fuelBox!.x + fuelBox!.width <= fuelLabelBox!.x + 1
+        || fuelLabelBox!.x + fuelLabelBox!.width <= fuelBox!.x + 1,
+      'fuel label and value must occupy separate horizontal space',
+    ).toBe(true);
     const fuelTypography = await meter.evaluate((node) => {
       const value = node.querySelector<HTMLElement>('.st-hud__fuel-value')!;
       const label = node.querySelector<HTMLElement>('.st-hud__fuel-label')!;
@@ -1472,13 +1486,13 @@ test.describe('HUD layout guardrails', () => {
       };
     });
     const compact = testInfo.project.name !== 'desktop-fine';
-    expect(fuelTypography.valueFontSize).toBeGreaterThanOrEqual(compact ? 12 : 11);
-    expect(fuelTypography.labelFontSize).toBeGreaterThanOrEqual(compact ? 7 : 6);
-    expect(fuelBox!.height).toBeGreaterThanOrEqual(compact ? 6.5 : 9);
-    expect(fuelLabelBox!.height).toBeGreaterThanOrEqual(compact ? 4 : 5);
+    expect(fuelTypography.valueFontSize).toBeGreaterThanOrEqual(11);
+    expect(fuelTypography.labelFontSize).toBeGreaterThanOrEqual(8);
+    expect(fuelBox!.height).toBeGreaterThanOrEqual(8);
+    expect(fuelLabelBox!.height).toBeGreaterThanOrEqual(8);
     await expect.poll(() => meter.evaluate(
       (node) => getComputedStyle(node).backgroundImage,
-    )).toContain('conic-gradient');
+    )).toContain('linear-gradient');
     const tierColors = await meter.evaluate((node) => {
       const color = () => getComputedStyle(node).getPropertyValue('--st-fuel-color');
       const base = color();
@@ -1491,7 +1505,7 @@ test.describe('HUD layout guardrails', () => {
     });
     expect(new Set(Object.values(tierColors)).size).toBe(3);
     await meter.evaluate((node) => { node.dataset['identityProbe'] = 'stable'; });
-    const fullRing = await meter.evaluate((node) => getComputedStyle(node).backgroundImage);
+    const fullFuelFill = await meter.evaluate((node) => getComputedStyle(node, '::before').width);
 
     const activeRight = right;
     await activeRight.click();
@@ -1502,8 +1516,8 @@ test.describe('HUD layout guardrails', () => {
     await expect(meter).toHaveAttribute('aria-valuenow', String(remaining));
     await expect(meter).toHaveAttribute('data-identity-probe', 'stable');
     await expect.poll(() => meter.evaluate(
-      (node) => getComputedStyle(node).backgroundImage,
-    )).not.toBe(fullRing);
+      (node) => getComputedStyle(node, '::before').width,
+    )).not.toBe(fullFuelFill);
     await expect(activeRow.locator('.st-hud__turn-owner')).toHaveText('P1');
     await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
       'aria-label',
@@ -1521,6 +1535,20 @@ test.describe('HUD layout guardrails', () => {
     expect(geometry.hudScroll).toBeLessThanOrEqual(geometry.hudClient + 1);
     expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewportWidth);
     expect(geometry.pageHeight).toBeLessThanOrEqual(geometry.viewportHeight);
+  });
+
+  test('Commander identity keeps its x-position when the active selector changes', async ({ page }) => {
+    const owner = page.locator('.st-hud__active-row .st-hud__turn-owner');
+    await expect(owner).toHaveText('P1');
+    const initial = await owner.boundingBox();
+    expect(initial).not.toBeNull();
+
+    await page.locator('.st-hud__primary-action').click();
+    await expect(owner).toHaveText('P2', { timeout: 15_000 });
+    const handoff = await owner.boundingBox();
+    expect(handoff).not.toBeNull();
+    expect(handoff!.x, 'active turn styling must not shift the Commander identity column')
+      .toBeCloseTo(initial!.x, 1);
   });
 
   test('one primary action stays visible, in-bounds, and drives the live fire path', async ({
