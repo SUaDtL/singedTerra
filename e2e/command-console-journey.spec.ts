@@ -100,6 +100,19 @@ async function exerciseBattleSettings(page: Page): Promise<void> {
   expect((await readHotSeatProbe(page)).forwardedActions).toEqual(before.forwardedActions);
 }
 
+async function readRosterCoordinates(page: Page): Promise<Array<Record<string, number>>> {
+  return page.locator('#hud .st-hud__player-row').evaluateAll((rows) => rows.map((row) => {
+    const coordinate = (selector: string): number =>
+      row.querySelector<HTMLElement>(selector)!.getBoundingClientRect().x;
+    return {
+      name: coordinate('[data-roster-field="name"]'),
+      ammo: coordinate('[data-roster-field="ammo"]'),
+      health: coordinate('[data-roster-field="health"]'),
+      swatch: coordinate('[data-roster-field="health-swatch"]'),
+    };
+  }));
+}
+
 async function installOnlineCpuFixture(page: Page): Promise<{
   rows: CanonicalActionRow[];
   submissions: Array<Record<string, unknown>>;
@@ -194,6 +207,8 @@ test.describe('adaptive command console causal journeys', () => {
     await adjustSolutionAndMove(page);
     await exerciseBattleSettings(page);
 
+    const rosterBefore = await readRosterCoordinates(page);
+
     const before = await readHotSeatProbe(page);
     const fire = page.locator('#battle-rail .st-hud__primary-action');
     await expect(fire).toHaveCount(1);
@@ -219,6 +234,7 @@ test.describe('adaptive command console causal journeys', () => {
     await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
       .toHaveAttribute('data-command-mode', 'decision');
     await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(1);
+    expect(await readRosterCoordinates(page)).toEqual(rosterBefore);
     expect((await readHotSeatProbe(page)).forwardedActions.fire).toBe(before.forwardedActions.fire + 1);
   });
 

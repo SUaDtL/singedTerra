@@ -305,6 +305,8 @@ export class HUD {
   private renderedIntelAmmo: string | null = null;
   private commandConsoleEl!: HTMLElement;
   private consoleContextEl!: HTMLElement;
+  /** Shrink-wrapped presentation owner for Match-only information. */
+  private matchCardEl!: HTMLElement;
   private lastSalvoEl!: HTMLElement;
   private lastSalvoReadoutEl!: HTMLElement;
   private lastSalvoCorrectionEl!: HTMLElement;
@@ -762,7 +764,9 @@ export class HUD {
     this.buildFirstSalvoCoach();
     this.buildLiveMatchDiagnostics();
 
-    this.root.append(
+    this.matchCardEl = document.createElement('div');
+    this.matchCardEl.className = 'st-hud__match-card';
+    this.matchCardEl.append(
       this.matchDrawerCloseEl,
       menu,
       this.matchModeEl,
@@ -771,6 +775,7 @@ export class HUD {
       this.playersEl,
       this.connBannerEl,
     );
+    this.root.append(this.matchCardEl);
     // buildArsenal resolves the persisted state before the rail children exist;
     // re-apply it now so a stored-open drawer also isolates covered controls.
     this.applyStripCollapsed();
@@ -2746,7 +2751,6 @@ export class HUD {
         row,
         tank,
         tank.id === state.activePlayerId,
-        state.totalRounds,
         isHandoff,
         index + 1,
       );
@@ -2763,38 +2767,43 @@ export class HUD {
   /** Create the static node structure for one player's health bar. */
   private createRow(tank: TankState): PlayerRow {
     const el = document.createElement('li');
-    el.className = 'st-hud__player';
+    el.className = 'st-hud__player st-hud__player-row';
 
     const order = document.createElement('span');
     order.className = 'st-hud__turn-order';
+    order.dataset['rosterField'] = 'ordinal';
     order.setAttribute('aria-hidden', 'true');
 
-    const swatch = document.createElement('span');
-    swatch.className = 'st-hud__swatch';
-    swatch.style.backgroundColor = tank.color;
+    const activeMarker = document.createElement('span');
+    activeMarker.className = 'st-hud__player-active-marker';
+    activeMarker.dataset['rosterField'] = 'active-marker';
+    activeMarker.setAttribute('aria-hidden', 'true');
 
     const name = document.createElement('span');
     name.className = 'st-hud__name';
+    name.dataset['rosterField'] = 'name';
     name.textContent = HUD.playerLabel(tank);
 
     const hp = document.createElement('span');
     hp.className = 'st-hud__hp';
+    hp.dataset['rosterField'] = 'health';
 
-    const pips = document.createElement('span');
-    pips.className = 'st-hud__pips';
+    const ammo = document.createElement('span');
+    ammo.className = 'st-hud__ammo';
+    ammo.dataset['rosterField'] = 'ammo';
 
     const bar = document.createElement('span');
-    bar.className = 'st-hud__bar';
+    bar.className = 'st-hud__bar st-hud__health-swatch';
+    bar.dataset['rosterField'] = 'health-swatch';
     const fill = document.createElement('span');
     fill.className = 'st-hud__bar-fill';
     fill.style.backgroundColor = tank.color;
     bar.append(fill);
 
-    el.append(order, swatch, name, pips, hp, bar);
+    el.append(order, activeMarker, name, ammo, hp, bar);
     return {
-      el, hp, fill, name, swatch, pips, order,
+      el, hp, fill, name, ammo, order,
       lastHealth: Math.max(0, Math.round(tank.health)),
-      lastPips: '',
     };
   }
 
@@ -2803,7 +2812,6 @@ export class HUD {
     row: PlayerRow,
     tank: TankState,
     active: boolean,
-    totalRounds: number,
     isHandoff: boolean,
     turnOrder: number,
   ): void {
@@ -2812,19 +2820,12 @@ export class HUD {
     row.el.dataset['turnOrder'] = String(turnOrder);
     row.order.textContent = String(turnOrder).padStart(2, '0');
 
-    // Round-win pips (V1 match structure): one slot per round needed to clinch
-    // (ceil(N/2)), filled = roundWins. Hidden entirely in a single-round match.
-    // Rebuilt only when the (wins/clinch) signature changes — not every frame.
-    const clinch = Math.max(1, Math.ceil(totalRounds / 2));
-    const sig = totalRounds > 1 ? `${Math.min(tank.roundWins, clinch)}/${clinch}` : '';
-    if (sig !== row.lastPips) {
-      row.pips.textContent =
-        totalRounds > 1
-          ? '●'.repeat(Math.min(tank.roundWins, clinch)) +
-            '○'.repeat(Math.max(0, clinch - tank.roundWins))
-          : '';
-      row.lastPips = sig;
-    }
+    const ammo = tank.inventory[tank.selectedWeapon];
+    row.ammo.textContent = ammo.unlimited ? AMMO_UNLIMITED_GLYPH : String(ammo.count);
+    row.ammo.setAttribute(
+      'aria-label',
+      `${WEAPONS[tank.selectedWeapon].name} ammo ${ammo.unlimited ? 'unlimited' : ammo.count}`,
+    );
 
     // Reconcile identity. Rows are cached by tank.id (the seat slot p1/p2/...),
     // and the persistent HUD reuses them across games — so without this a reused
@@ -2833,7 +2834,6 @@ export class HUD {
     // normalizes backgroundColor and a 2-4 node restyle is negligible.
     const label = HUD.playerLabel(tank);
     if (row.name.textContent !== label) row.name.textContent = label;
-    row.swatch.style.backgroundColor = tank.color;
     row.fill.style.backgroundColor = tank.color;
 
     // Damage flash: re-trigger the ::after wash whenever health drops. Remove +
@@ -3369,7 +3369,7 @@ export class HUD {
     }
 
     if (!this.verifiedStatusEl.isConnected) {
-      this.root.insertBefore(this.verifiedStatusEl, this.roundEl);
+      this.matchCardEl.insertBefore(this.verifiedStatusEl, this.roundEl);
     }
     this.verifiedStatusEl.hidden = false;
     if (!('deadline' in state)) {
@@ -3424,7 +3424,7 @@ export class HUD {
     if (order !== null && !this.fieldOrderEl.isConnected) {
       this.verifiedStatusEl.append(this.fieldOrderEl);
       if (!this.verifiedStatusEl.isConnected) {
-        this.root.insertBefore(this.verifiedStatusEl, this.roundEl);
+        this.matchCardEl.insertBefore(this.verifiedStatusEl, this.roundEl);
       }
     }
     this.fieldOrderEl.hidden = order === null;
@@ -3906,11 +3906,12 @@ export class HUD {
   padding: 0;
   list-style: none;
 }
-.st-hud__player {
+.st-hud__player-row {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 22px 6px minmax(0, 1fr) 22px 34px 18px;
   align-items: center;
-  gap: 7px;
+  gap: 0;
   padding: 5px 2px;
   border: 0;
   border-bottom: 1px solid var(--ui-line);
@@ -3920,7 +3921,7 @@ export class HUD {
   transition: box-shadow 160ms ease, background 160ms ease, opacity 220ms ease;
 }
 .st-hud__turn-order {
-  flex: 0 0 18px;
+  grid-column: 1;
   color: var(--ui-muted);
   font: 700 10px/1 var(--font-mono);
   text-align: center;
@@ -3928,10 +3929,18 @@ export class HUD {
 .st-hud__player--active {
   background:
     linear-gradient(90deg, var(--ui-surface-active), rgba(142, 47, 83, 0.16) 58%, transparent);
-  border-left: 2px solid var(--ui-action);
-  padding-left: 6px;
   box-shadow: inset 10px 0 18px rgba(255, 122, 31, 0.06);
 }
+.st-hud__player-active-marker {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 0;
+  width: 2px;
+  background: var(--ui-action);
+  opacity: 0;
+  pointer-events: none;
+}
+.st-hud__player--active .st-hud__player-active-marker { opacity: 1; }
 .st-hud__player--handoff {
   animation: st-hud-roster-handoff 560ms ease-out;
 }
@@ -3950,23 +3959,32 @@ export class HUD {
   background: rgba(232, 77, 77, 0.6);
   animation: st-hud-flash 420ms ease forwards;
 }
-.st-hud__swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+.st-hud__name {
+  grid-column: 3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.st-hud__name { min-width: 74px; }
+.st-hud__ammo {
+  grid-column: 4;
+  color: var(--ui-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
 .st-hud__hp {
-  min-width: 26px;
+  grid-column: 5;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--text-gold);
 }
 .st-hud__bar {
-  display: inline-block;
-  width: 92px;
+  grid-column: 6;
+  display: block;
+  width: 18px;
   height: 8px;
   border-radius: 3px;
   background: rgba(0, 0, 0, 0.4);
@@ -5273,14 +5291,6 @@ export class HUD {
   border: 0;
 }
 #app.is-compact .st-hud__verified-expiry-actions { grid-template-columns: 1fr; }
-
-/* Per-player round-win pips (●/○ slots up to the clinch count). */
-.st-hud__pips {
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--gold);
-  margin-left: auto;
-}
 
 /* Final scoreboard grid inside the GAME_OVER panel. */
 .st-hud__score {
@@ -6709,11 +6719,8 @@ interface PlayerRow {
   /** Identity nodes, reconciled each frame so a reused seat id (p1/p2) picks up
    *  the new game's player name/color instead of the previous occupant's. */
   name: HTMLElement;
-  swatch: HTMLElement;
-  /** Round-win pips (V1 match structure); empty in single-round matches. */
-  pips: HTMLElement;
+  /** Selected weapon's current ammo count. */
+  ammo: HTMLElement;
   /** Last rendered health, to detect drops and trigger the damage flash. */
   lastHealth: number;
-  /** Last rendered "roundWins/clinch" signature, to skip pip rebuilds. */
-  lastPips: string;
 }

@@ -85,7 +85,7 @@ describe('HUD single-screen combat shell', () => {
 
     hud.setLiveMatchDiagnostics(() => undefined);
     expect(root.querySelector('[data-ui="live-match-diagnostics"]')).toBeNull();
-    const drawerClose = root.querySelector<HTMLButtonElement>(':scope > .st-hud__match-drawer-close')!;
+    const drawerClose = root.querySelector<HTMLButtonElement>('.st-hud__match-card > .st-hud__match-drawer-close')!;
     expect(drawerClose.hidden).toBe(false);
     expect(drawerClose.classList.contains('st-hud__match-drawer-close')).toBe(true);
     expect(drawerClose.offsetParent).toBeNull();
@@ -94,6 +94,27 @@ describe('HUD single-screen combat shell', () => {
     state.tanks[1]!.team = 1;
     hud.update(state);
     expect(root.querySelector('[data-ui="match-mode"]')?.textContent).toBe('Team battle');
+  });
+
+  it('gives every roster row a stable active-marker gutter', () => {
+    const { root, hud, state } = mountHarness();
+    const rows = [...root.querySelectorAll<HTMLElement>('.st-hud__player-row')];
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => (
+      [...row.children].map((child) => (child as HTMLElement).dataset['rosterField'])
+    ))).toEqual([
+      ['ordinal', 'active-marker', 'name', 'ammo', 'health', 'health-swatch'],
+      ['ordinal', 'active-marker', 'name', 'ammo', 'health', 'health-swatch'],
+    ]);
+    expect(rows[0]?.querySelector('.st-hud__player-active-marker')).not.toBeNull();
+
+    state.activePlayerId = state.tanks[1]!.id;
+    hud.update(state);
+
+    expect(rows.map((row) => row.classList.contains('st-hud__player--active'))).toEqual([false, true]);
+    expect(rows.map((row) => row.querySelector('.st-hud__player-active-marker')))
+      .toEqual(expect.arrayContaining([expect.any(HTMLElement), expect.any(HTMLElement)]));
   });
 
   it('shows a Quick Operation only when local Quick Duel composition supplies one', () => {
@@ -229,7 +250,7 @@ describe('HUD single-screen combat shell', () => {
     expect(active.parentElement).toBe(context);
     expect(progress.parentElement).toBe(commitment);
     expect(actions.parentElement).toBe(commitment);
-    const persistentLedgerRegions = [...root.children];
+    const persistentLedgerRegions = [...root.querySelector('.st-hud__match-card')!.children];
     expect(persistentLedgerRegions).toEqual([
       root.querySelector('.st-hud__match-drawer-close'),
       root.querySelector('.st-hud__menu'),

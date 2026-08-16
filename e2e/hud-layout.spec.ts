@@ -222,19 +222,30 @@ test.describe('HUD layout guardrails', () => {
       const game = document.querySelector<HTMLCanvasElement>('#game')!;
       const stage = document.getElementById('stage')!;
       const ledger = document.getElementById('hud')!;
+      const card = ledger.querySelector<HTMLElement>('.st-hud__match-card')!;
       const gameBox = game.getBoundingClientRect();
       const stageBox = stage.getBoundingClientRect();
       const ledgerBox = ledger.getBoundingClientRect();
+      const cardBox = card.getBoundingClientRect();
+      const ledgerStyle = getComputedStyle(ledger);
       return {
         scale: gameBox.width / game.width,
         stage: stageBox.toJSON(),
         ledger: ledgerBox.toJSON(),
+        card: cardBox.toJSON(),
+        ledgerBackground: ledgerStyle.backgroundImage,
+        ledgerBorderLeft: ledgerStyle.borderLeftWidth,
+        ledgerOutline: ledgerStyle.outlineStyle,
       };
     });
     expect(geometry.scale).toBeGreaterThan(1);
     expect(geometry.ledger.x).toBeGreaterThanOrEqual(geometry.stage.x + geometry.stage.width - 1);
     expect(geometry.ledger.y).toBeCloseTo(geometry.stage.y, 1);
-    expect(geometry.ledger.height).toBeLessThan(geometry.stage.height * 0.6);
+    expect(geometry.card.height).toBeLessThan(geometry.stage.height * 0.6);
+    expect(geometry.ledger.height).toBeLessThanOrEqual(geometry.card.height + 1);
+    expect(geometry.ledgerBackground).toBe('none');
+    expect(geometry.ledgerBorderLeft).toBe('0px');
+    expect(geometry.ledgerOutline).toBe('none');
   });
 
   test('keeps Match as a drawer on a wide coarse-pointer viewport', async ({ page }, testInfo) => {
