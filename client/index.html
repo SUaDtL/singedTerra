@@ -6,11 +6,11 @@
     <!-- Baseline CSP. GitHub Pages can't set response headers, so the policy that lived
          in netlify.toml/nginx.conf is carried here as a meta tag. connect-src allows the
          Supabase backend the client talks to directly (Edge Functions over https + the
-         Realtime websocket). Note: frame-ancestors is header-only (ignored in a meta) —
-         clickjacking protection is not available on GitHub Pages. -->
+         Realtime websocket). Frame protection remains deployment-header-owned because
+         frame-ancestors is ineffective when delivered through a meta tag. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; frame-ancestors 'none'"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'"
     />
     <title>singedTerra</title>
   </head>

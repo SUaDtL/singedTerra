@@ -198,13 +198,35 @@ test.describe('adaptive command console causal journeys', () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'one causal journey; viewport contracts run separately');
     test.setTimeout(45_000);
+    const browserErrors: string[] = [];
+    page.on('pageerror', (error) => browserErrors.push(`pageerror: ${error.message}`));
+    page.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(`console: ${message.text()}`);
+    });
     await page.goto('?e2e=hotseat&tutorial=first-salvo&seed=1337');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
     await expect(page.locator('#hud.st-hud')).toHaveCount(1);
-    await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
+    const angle = page.locator('[data-value-owner="angle"] output');
+    const power = page.locator('[data-value-owner="power"] output');
+    const wind = page.locator('[data-value-owner="wind"] output');
+    await expect(angle).toHaveCount(1);
+    await expect(power).toHaveCount(1);
+    await expect(wind).toHaveCount(1);
+    await expect(angle).toBeVisible();
+    await expect(power).toBeVisible();
+    await expect(wind).toBeVisible();
+    const initialSolution = {
+      angle: await angle.textContent(),
+      power: await power.textContent(),
+      wind: await wind.textContent(),
+    };
+    expect(initialSolution.wind).toMatch(/\d|CALM/);
     await acknowledgeBriefing(page);
     await chooseMissileAndRestoreArsenalFocus(page);
     await adjustSolutionAndMove(page);
+    await expect(angle).not.toHaveText(initialSolution.angle ?? '');
+    await expect(power).not.toHaveText(initialSolution.power ?? '');
+    await expect(wind).toHaveText(initialSolution.wind ?? '');
     await exerciseBattleSettings(page);
 
     const rosterBefore = await readRosterCoordinates(page);
@@ -236,6 +258,7 @@ test.describe('adaptive command console causal journeys', () => {
     await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(1);
     expect(await readRosterCoordinates(page)).toEqual(rosterBefore);
     expect((await readHotSeatProbe(page)).forwardedActions.fire).toBe(before.forwardedActions.fire + 1);
+    expect(browserErrors).toEqual([]);
   });
 
   test('online CPU commander recovers one canonical Fire after a withheld realtime echo', async ({
@@ -252,6 +275,7 @@ test.describe('adaptive command console causal journeys', () => {
       .locator('select').first().selectOption('1');
     await page.getByRole('button', { name: 'Create operation', exact: true }).click();
     await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
+    await expect(page.locator('#battle-rail .st-hud__weapon-value')).toHaveText('Baby Missile');
     await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
     await acknowledgeBriefing(page);
     await chooseMissileAndRestoreArsenalFocus(page, false);
