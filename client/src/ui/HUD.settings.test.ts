@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { HUD } from './HUD';
+import type { GameState } from '@shared/types/GameState';
+import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
 
-function mount(): { root: HTMLElement; modal: HTMLElement; hud: HUD } {
+function mount(): { root: HTMLElement; modal: HTMLElement; hud: HUD; state: GameState } {
   const app = document.createElement('main');
   const stage = document.createElement('div');
   const root = document.createElement('div');
@@ -22,8 +24,21 @@ function mount(): { root: HTMLElement; modal: HTMLElement; hud: HUD } {
     seed: 1,
   }).getState();
   hud.update(state, false, true);
-  return { root, modal, hud };
+  return { root, modal, hud, state };
 }
+
+const SNAPSHOT: LiveMatchSnapshot = Object.freeze({
+  schemaVersion: 1,
+  mode: 'hotseat',
+  execution: 'casual',
+  phase: 'PLAYER_TURN',
+  round: 1,
+  totalRounds: 1,
+  turn: 0,
+  activeSeat: Object.freeze({ ordinal: 1, alive: true, health: 100 }),
+  input: 'ready',
+  transport: 'not-applicable',
+});
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -111,5 +126,65 @@ describe('HUD battle settings', () => {
 
     expect(settings.classList.contains('st-hud__overlay--hidden')).toBe(true);
     expect(document.activeElement).toBe(gear);
+  });
+
+  it.each([
+    'first-salvo briefing',
+    'round-over report',
+    'game-over payoff',
+    'verified-expiry decision',
+    'live-match inspector',
+  ])('refuses to cover the truthful %s modal', (peer) => {
+    const { root, modal, hud, state } = mount();
+    if (peer === 'first-salvo briefing') {
+      hud.setFirstSalvoStep('aim');
+    } else if (peer === 'round-over report') {
+      state.phase = 'ROUND_OVER';
+      state.round = 2;
+      state.totalRounds = 3;
+      hud.update(state, false, false);
+    } else if (peer === 'game-over payoff') {
+      state.phase = 'GAME_OVER';
+      state.winner = state.tanks[0]!.id;
+      hud.update(state, false, false);
+    } else if (peer === 'verified-expiry decision') {
+      hud.setVerifiedDeployment({
+        status: 'expired',
+        humanSalvos: 4,
+        cpuSalvos: 4,
+        humanLimit: 6,
+        cpuLimit: 6,
+        deadline: {
+          remainingMs: 0,
+          warning: 'expired',
+          acceptsInput: false,
+          canComplete: false,
+        },
+      });
+    } else {
+      hud.setLiveMatchDiagnostics(() => SNAPSHOT);
+      root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+      modal.querySelector<HTMLButtonElement>('[data-ui="live-match-inspector-menu"]')!.click();
+    }
+
+    root.querySelector<HTMLButtonElement>('[aria-label="Battle settings"]')!.click();
+
+    expect(modal.querySelector<HTMLElement>('[data-ui="battle-settings"]')!.classList
+      .contains('st-hud__overlay--hidden')).toBe(true);
+  });
+
+  it('yields an open Settings dialog when a truthful round-over report arrives', () => {
+    const { root, modal, hud, state } = mount();
+    root.querySelector<HTMLButtonElement>('[aria-label="Battle settings"]')!.click();
+    const settings = modal.querySelector<HTMLElement>('[data-ui="battle-settings"]')!;
+    expect(settings.classList.contains('st-hud__overlay--hidden')).toBe(false);
+
+    state.phase = 'ROUND_OVER';
+    state.round = 2;
+    state.totalRounds = 3;
+    hud.update(state, false, false);
+
+    expect(settings.classList.contains('st-hud__overlay--hidden')).toBe(true);
+    expect(modal.querySelector('.st-hud__overlay:not(.st-hud__overlay--hidden)')).toBeTruthy();
   });
 });

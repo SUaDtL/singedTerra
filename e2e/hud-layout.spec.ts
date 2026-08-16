@@ -517,11 +517,12 @@ test.describe('HUD layout guardrails', () => {
         }
 
         const solution = rail.querySelector('.st-hud__console-solution')!;
-        const guide = solution.querySelector('.st-hud__trajectory-guide')!;
+        const terminal = solution.querySelector('.st-hud__fire-terminal')!;
+        const settings = terminal.querySelector('[aria-label="Battle settings"]')!;
         const coach = solution.querySelector('[data-ui="first-salvo-coach"]');
-        assertContained(solution, guide, 'trajectory guide');
+        assertContained(terminal, settings, 'Battle settings');
         if (coach) {
-          assertSeparated(guide, coach, 'trajectory guide / First Salvo');
+          assertSeparated(settings, coach, 'Battle settings / First Salvo');
           const coachProgress = coach.querySelector('.st-hud__first-salvo-progress')!;
           const coachCopy = coach.querySelector('.st-hud__first-salvo-copy')!;
           const coachSkip = coach.querySelector('.st-hud__first-salvo-skip')!;
@@ -1088,7 +1089,29 @@ test.describe('HUD layout guardrails', () => {
     await expect(solution.locator('.st-hud__solution-adjustment')).toHaveCount(2);
     const wind = solution.locator('.st-hud__solution-wind');
     await expect(wind).toHaveCount(1);
-    await expect(wind.locator('[data-ui="deterministic-aim-guide"]')).toHaveCount(1);
+    await expect(solution.locator('[data-ui="deterministic-aim-guide"]')).toHaveCount(0);
+    const settingsTrigger = page.getByRole('button', { name: 'Battle settings', exact: true });
+    await expect(settingsTrigger).toHaveCount(1);
+    const settingsGeometry = await settingsTrigger.evaluate((trigger) => {
+      const target = trigger.getBoundingClientRect();
+      const terminal = trigger.closest('.st-hud__fire-terminal')!.getBoundingClientRect();
+      return {
+        contained: target.left >= terminal.left - 1 && target.right <= terminal.right + 1
+          && target.top >= terminal.top - 1 && target.bottom <= terminal.bottom + 1,
+        width: target.width,
+        height: target.height,
+      };
+    });
+    expect(settingsGeometry.contained).toBe(true);
+    expect(settingsGeometry.width).toBeGreaterThanOrEqual(44);
+    expect(settingsGeometry.height).toBeGreaterThanOrEqual(44);
+    await settingsTrigger.click();
+    const settingsDialog = page.getByRole('dialog', { name: 'Battle Settings', exact: true });
+    await expect(settingsDialog).toBeVisible();
+    await expect(settingsDialog.getByRole('switch')).toHaveCount(2);
+    await page.keyboard.press('Escape');
+    await expect(settingsDialog).toBeHidden();
+    await expect(settingsTrigger).toBeFocused();
 
     // Live numerical firing values must stay inside their owner regions.
     const geometry = await solution.evaluate((node) => {
@@ -1109,11 +1132,11 @@ test.describe('HUD layout guardrails', () => {
       geometry.every((control) => control.contained),
       `integrated solution controls must remain contained: ${JSON.stringify(geometry)}`,
     ).toBe(true);
-    expect(geometry.map((control) => control.text).join(' ')).toMatch(/Angle.*Power.*Wind.*Guide/s);
+    expect(geometry.map((control) => control.text).join(' ')).toMatch(/Angle.*Power.*Wind/s);
   });
 
   test('Fire Control uses the full live rail instead of decorative empty cards', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'pixel-touch', 'touch deliberately gives Wind and Guide their own reachable lower row');
+    test.skip(testInfo.project.name === 'pixel-touch', 'touch uses a strengthened one-row numerical-control topology');
     const geometry = await page.locator('#battle-rail .st-hud__console-solution').evaluate((solution) => {
       const rect = solution.getBoundingClientRect();
       const box = (selector: string) => {

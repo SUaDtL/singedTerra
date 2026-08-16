@@ -1694,6 +1694,7 @@ export class HUD {
   }
 
   private showFirstSalvoBriefing(): void {
+    this.closeBattleSettings();
     this.firstSalvoBriefingEl.hidden = false;
     this.firstSalvoBriefingEnterBtnEl.focus({ preventScroll: true });
   }
@@ -2348,6 +2349,7 @@ export class HUD {
   private openLiveMatchInspector(): void {
     const snapshot = this.liveMatchDiagnosticsProvider?.();
     if (!snapshot) return;
+    this.closeBattleSettings();
     const focused = document.activeElement;
     this.liveMatchInspectorPreviousFocus = focused instanceof HTMLElement ? focused : null;
     this.liveMatchInspectorDataEl.textContent = JSON.stringify(snapshot, null, 2);
@@ -2610,6 +2612,7 @@ export class HUD {
 
   private openBattleSettings(trigger?: HTMLElement): void {
     if (!this.battleSettingsEl.classList.contains('st-hud__overlay--hidden')) return;
+    if (this.battleSettingsPeerOwnsInteraction()) return;
     const focused = document.activeElement;
     this.battleSettingsPreviousFocus = trigger ?? (focused instanceof HTMLElement ? focused : null);
     if (!this.pauseEl.classList.contains('st-hud__overlay--hidden')) this.togglePause(false);
@@ -2621,6 +2624,15 @@ export class HUD {
     this.setBattleSettingsIsolation(true);
     this.syncBattleSettings();
     this.battleSettingsGuideEl.focus({ preventScroll: true });
+  }
+
+  private battleSettingsPeerOwnsInteraction(): boolean {
+    return this.roundOverShown
+      || this.terminalState !== null
+      || this.overlayShown
+      || !this.verifiedExpiryEl.hidden
+      || !this.liveMatchInspectorEl.classList.contains('st-hud__overlay--hidden')
+      || !this.firstSalvoBriefingEl.hidden;
   }
 
   private closeBattleSettings(): void {
@@ -3333,6 +3345,7 @@ export class HUD {
   setVerifiedDeployment(state: HUDVerifiedDeploymentState | null): void {
     this.verifiedDeploymentState = state;
     if (!this.built) this.build();
+    if (state?.status === 'expired') this.closeBattleSettings();
     this.verifiedRetryBtnEl.hidden = true;
     this.verifiedRetryBtnEl.disabled = true;
     const isRetryable = state?.status === 'retryable';
@@ -3706,6 +3719,7 @@ export class HUD {
       if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport();
       return;
     }
+    this.closeBattleSettings();
     if (this.overlayShown) return;
     if (this.terminalState === null) {
       // A networked game may end beneath Pause; terminal state supersedes it.
@@ -3750,6 +3764,8 @@ export class HUD {
       this.roundOverShown = false;
       return;
     }
+
+    this.closeBattleSettings();
 
     if (!this.roundOverShown) {
       const completed = state.round - 1;
@@ -6242,6 +6258,9 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__solution-adjustment-label {
     display: none;
   }
+  #app.is-compact #battle-rail .st-hud__instrument-svg {
+    display: none;
+  }
   #app.is-compact #battle-rail .st-hud__trajectory-guide {
     display: none;
   }
@@ -6482,7 +6501,10 @@ export class HUD {
   #app.is-compact #battle-rail .st-hud__solution-adjustments {
     grid-column: 2;
     grid-row: 1;
-    grid-template-columns: minmax(182px, 1fr) minmax(182px, 1fr) 96px;
+    grid-template-columns:
+      minmax(calc(var(--st-rail-touch-target) + var(--st-rail-touch-target) + 6px), 1fr)
+      minmax(calc(var(--st-rail-touch-target) + var(--st-rail-touch-target) + 6px), 1fr)
+      96px;
     grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
   }
@@ -6666,10 +6688,10 @@ export class HUD {
   inset: 4px 4px auto auto;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  width: var(--st-deployment-choice-target, 44px);
+  height: var(--st-deployment-choice-target, 44px);
+  min-width: var(--st-deployment-choice-target, 44px);
+  min-height: var(--st-deployment-choice-target, 44px);
   padding: 0;
   border: 1px solid rgba(122, 215, 255, 0.34);
   border-radius: 4px;
