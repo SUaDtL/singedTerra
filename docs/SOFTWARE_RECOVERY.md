@@ -20,7 +20,7 @@ In the last 100 commits touching client/shared sources at the baseline, Lobby ap
 
 ## Delivery sequence
 
-- [ ] Finish PR 445, exact-head CI, Pages and backend deployment proof.
+- [x] Finish PR 445, exact-head CI, Pages and backend deployment proof.
 - [x] Extract verified-deployment lifecycle from Lobby and prove existing caller behavior unchanged.
 - [ ] Extract match-session ownership from main: start/stop, subscriptions, timers, renderer disposal. One owner must dispose each resource exactly once.
 - [ ] Split remaining Lobby/HUD workflows into controllers and semantic views; move authored styles out of TypeScript independently so behavioral diffs stay reviewable.
@@ -63,6 +63,14 @@ Initial dependency assessment, checked 2026-09-08:
 
 These fit assessments are engineering inferences from the current code and documented capabilities, not completed migration benchmarks.
 
+## Gameplay finding to address separately
+
+The production verification mission repeatedly selected CPU angle 90 / power 20. A local engine reproduction on seed 17, after a human angle 45 / power 50 shot, confirmed `selectVerifiedCpuFire` chooses 90 / 20: zero opponent damage and 32.6317 self-damage. The same state with 135 / 100 causes zero damage to either tank.
+
+`simulateProbe` in `shared/src/net/verifiedDuel.ts` reads proximity from the projectile after the shot has settled. Both reproduced misses have a null projectile, so both receive zero proximity penalty. The score omits self-damage, and equal scores retain the first coarse candidate. This is a gameplay-quality defect candidate independent of module size, and demonstrates why parity tests alone are insufficient for recovery.
+
+Next work: pin the harmful-versus-safe-miss case as a gameplay regression, evaluate impact-distance and self-preservation scoring within the existing probe/tick budget, and add representative seed/outcome tests. Changing verified CPU decisions changes canonical replay: retain V2 semantics for eligible sessions and completed evidence; deliver the improved policy under a reviewed version transition and guarded drain. Do not silently change V2 while current sessions remain eligible. This requires no engine replacement to investigate.
+
 ## Working rules
 
 Ship bounded slices; do not combine dependency upgrades with behavioral refactors. Keep existing public boundaries until consumers migrate. Prefer responsibility ownership over generic utility buckets or pass-through wrappers. Add dependency-boundary checks where they prevent a demonstrated regression. Keep a concise evidence record here rather than accumulating duplicate campaign artifacts.
@@ -74,3 +82,5 @@ Ship bounded slices; do not combine dependency upgrades with behavioral refactor
 - First slice baseline: 1,638 client tests; Windows Lobby coverage 89.45% lines / 77.42% branches. New seam suite failed on the missing controller before extraction.
 - After extraction: 1,644 client tests, no pre-existing test edits; combined Lobby/controller coverage 89.64% lines / 77.88% branches. The controller alone has 92.62% lines / 86.39% branches. Compare the combined surface because moving covered code changes each individual file's denominator.
 - Typecheck, build and deterministic harnesses pass. Independent review compared all 12 moved lifecycle/helper bodies against the baseline AST and found parity, with no blocking findings. Full browser verification passed: 324 checks across desktop, touch, and smaller-window profiles; 12 existing profile-specific skips, no retries.
+- PR 445 merged as `cfbbead9c624cb43f27862bd62d37783664cfd69`; Pages run `34229994141` passed publication, provenance and live smoke. Supabase automatically applied 018/019 and deployed the rematch handler. Hosted replay passed; V2 start succeeded after guarded admission enablement. A rolled-back production rematch RPC check passed without changing the earlier test room.
+- Production V2 completion retry passed: deliberately discarded one accepted response, then the normal Retry returned the identical immutable receipt. Diagnostics reported one match, one win, 200 XP; database counts confirmed one completed V2 session and one award.
