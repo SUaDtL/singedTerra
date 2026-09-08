@@ -41,10 +41,13 @@ test.describe('Sandhog causal browser contract', () => {
     }
     const skip = page.getByRole('button', { name: 'Skip', exact: true });
     if (await skip.isVisible()) await skip.click();
-    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
-    await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
-    await page.getByRole('button', { name: 'Close Armory' }).click();
-    const fire = page.locator('.st-hud__primary-action');
+    await page.getByRole('button', { name: 'Open Armory', exact: true }).click();
+    await page.locator('[data-battle-console-armory-item]')
+      .filter({ has: page.getByRole('heading', { name: 'Sandhog', exact: true }) })
+      .getByRole('button', { name: 'Equip', exact: true }).click();
+    await page.getByRole('dialog', { name: 'Armory', exact: true })
+      .getByRole('button', { name: 'Close Armory', exact: true }).click();
+    const fire = page.locator('button[data-battle-console-action="fire"]');
     await expect(fire).toHaveAttribute('aria-label', 'Fire Sandhog');
     await expect(fire).toBeVisible();
 

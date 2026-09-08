@@ -6,7 +6,11 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveFinalGitExecutable, resolveFinalRepositoryRoot } from './final-repository-root.mjs';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const gitRoot = resolveFinalRepositoryRoot(root);
+const gitExecutable = resolveFinalGitExecutable();
 const migrationPath = join(root, 'supabase', 'migrations', '011_data_classification_comments.sql');
 
 const requiredStatements = [
@@ -91,7 +95,7 @@ for (const gitArgs of [
   ['diff', '--name-only', 'HEAD^', 'HEAD', '--', 'supabase/migrations'],
 ]) {
   try {
-    for (const path of execFileSync('git', gitArgs, { cwd: root, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean)) {
+    for (const path of execFileSync(gitExecutable, gitArgs, { cwd: gitRoot, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean)) {
       changedMigrationPaths.add(path.replaceAll('\\', '/'));
     }
   } catch {

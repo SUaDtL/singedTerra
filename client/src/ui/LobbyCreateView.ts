@@ -21,6 +21,7 @@ export interface LobbyCreateViewOptions {
   onCreate: () => void;
   onJoin: () => void;
   onBrowse: () => void;
+  listenerSignal?: AbortSignal;
 }
 
 export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLElement {
@@ -55,7 +56,7 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
   }
   playerSelect.addEventListener('change', () => {
     options.onPlayerCountChange(Number(playerSelect.value));
-  });
+  }, { signal: options.listenerSignal });
   playerField.append(playerLabel, playerSelect);
   const botField = document.createElement('div');
   botField.className = 'lobby-field';
@@ -71,7 +72,7 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
   }
   botSelect.addEventListener('change', () => {
     options.onBotCountChange(Number(botSelect.value));
-  });
+  }, { signal: options.listenerSignal });
   botField.append(botLabel, botSelect);
   if (options.botCount > 0) {
     const difficultySelect = document.createElement('select');
@@ -84,7 +85,7 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
     }
     difficultySelect.addEventListener('change', () => {
       options.onBotDifficultyChange(difficultySelect.value as AiDifficulty);
-    });
+    }, { signal: options.listenerSignal });
     botField.append(difficultySelect);
   }
   const visibilityField = document.createElement('div');
@@ -101,7 +102,7 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
   }
   visibilitySelect.addEventListener('change', () => {
     options.onVisibilityChange(visibilitySelect.value as 'public' | 'private');
-  });
+  }, { signal: options.listenerSignal });
   visibilityField.append(visibilityLabel, visibilitySelect);
   setup.append(
     buildLobbyPreparationSection({
@@ -126,11 +127,11 @@ export function buildLobbyCreateView(options: LobbyCreateViewOptions): HTMLEleme
   createButton.className = 'lobby-btn primary';
   createButton.textContent = options.busy ? 'Creating...' : 'Create operation';
   createButton.disabled = options.busy;
-  createButton.addEventListener('click', options.onCreate);
+  createButton.addEventListener('click', options.onCreate, { signal: options.listenerSignal });
 
   root.append(brief, setup, buildOnlineRouteActions(createButton, [
     { id: 'join-code', label: 'Join with a code', onClick: options.onJoin },
     { id: 'browse', label: 'Browse public rooms', onClick: options.onBrowse },
-  ]));
+  ], options.listenerSignal));
   return root;
 }

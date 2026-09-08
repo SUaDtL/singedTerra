@@ -16,6 +16,7 @@ const seams = vi.hoisted(() => ({
   onVerifiedNextOrder: null as null | (() => void),
   inputAction: null as null | ((action: Record<string, unknown>) => void),
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
+  rendererConstructed: 0,
   rendererAnimating: false,
   terminalImpactNotifies: 0,
   recorded: [] as Array<{ matchId: string; won: boolean }>,
@@ -110,6 +111,7 @@ vi.mock('./ui/firstSalvoController', () => ({
 }))
 vi.mock('./renderer/Renderer', () => ({
   Renderer: class {
+    constructor() { seams.rendererConstructed += 1 }
     isAnimating() { return seams.rendererAnimating }
     isTerminalImpactAnimating() { return seams.rendererAnimating }
     currentImpactLearningCue() { return seams.rendererImpactCue }
@@ -486,6 +488,7 @@ describe('production hot-seat progression composition', () => {
     seams.onVerifiedNextOrder = null
     seams.inputAction = null
     seams.rendererEvents = null
+    seams.rendererConstructed = 0
     seams.rendererAnimating = false
     seams.terminalImpactNotifies = 0
     seams.recorded.length = 0
@@ -524,6 +527,28 @@ describe('production hot-seat progression composition', () => {
     seams.completeVerified = () => Promise.resolve(verifiedReceipt)
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('owns renderer resources only for an active game generation', async () => {
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onQuit) throw new Error('Expected lobby wiring')
+    expect(seams.rendererConstructed).toBe(0)
+
+    const first = fakeClient(gameState())
+    seams.clients.push(first)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(first.start).toHaveBeenCalledOnce())
+    expect(seams.rendererConstructed).toBe(1)
+
+    seams.onQuit()
+    await vi.waitFor(() => expect(first.stop).toHaveBeenCalledOnce())
+    expect(seams.rendererConstructed).toBe(1)
+
+    const second = fakeClient(gameState())
+    seams.clients.push(second)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    expect(seams.rendererConstructed).toBe(2)
   })
 
   it('projects Quick Duel operation identity only from the explicitly local launch config', async () => {
@@ -753,8 +778,8 @@ describe('production hot-seat progression composition', () => {
     const lobbyShowsBeforeHandoff = seams.lobbyShows
     seams.onVerifiedNextOrder()
     expect(seams.returnedVerified).toBe(1)
-    expect(firstClient.stop).toHaveBeenCalledOnce()
-    expect(seams.lobbyShows).toBe(lobbyShowsBeforeHandoff + 1)
+    await vi.waitFor(() => expect(firstClient.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(seams.lobbyShows).toBe(lobbyShowsBeforeHandoff + 1))
     expect(seams.lobbyShowOptions.at(-1)).toEqual({ focusVerifiedDeployment: true })
     expect(seams.fieldOrderHudStates.at(-1)).toBeNull()
 
@@ -1076,9 +1101,10 @@ describe('production hot-seat progression composition', () => {
     const terminal = fakeClient(gameState())
     seams.clients.push(terminal)
     await import('./main')
-    if (!seams.onLobbyReady || !seams.rendererEvents) throw new Error('Expected renderer wiring')
+    if (!seams.onLobbyReady) throw new Error('Expected renderer wiring')
     seams.onLobbyReady({ mode: 'hotseat', players: [] })
     await vi.waitFor(() => expect(terminal.start).toHaveBeenCalledOnce())
+    if (!seams.rendererEvents) throw new Error('Expected active-game renderer wiring')
 
     seams.rendererEvents.onExplosion?.(40, null)
     terminal.emit(gameState())
@@ -1266,8 +1292,8 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
     seams.onProgressionSignIn()
 
-    expect(client.stop).toHaveBeenCalledOnce()
-    expect(seams.accountSignInShows).toBe(1)
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(seams.accountSignInShows).toBe(1))
     expect(seams.lobbyShows).toBe(2)
   })
 
@@ -1282,8 +1308,8 @@ describe('production hot-seat progression composition', () => {
     seams.onProgressionSignIn()
     seams.onProgressionSignIn()
 
-    expect(client.stop).toHaveBeenCalledOnce()
-    expect(seams.accountSignInShows).toBe(1)
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(seams.accountSignInShows).toBe(1))
     expect(seams.lobbyShows).toBe(2)
   })
 
@@ -1301,7 +1327,7 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(seams.anonymousHandoffs).toBe(1))
     seams.onProgressionSignIn()
     seams.onProgressionSignIn()
-    expect(seams.accountSignInShows).toBe(1)
+    await vi.waitFor(() => expect(seams.accountSignInShows).toBe(1))
 
     const second = fakeClient(gameState())
     seams.clients.push(second)
@@ -1312,8 +1338,8 @@ describe('production hot-seat progression composition', () => {
     seams.onProgressionSignIn()
 
     expect(seams.recorded).toHaveLength(2)
-    expect(second.stop).toHaveBeenCalledOnce()
-    expect(seams.accountSignInShows).toBe(2)
+    await vi.waitFor(() => expect(second.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(seams.accountSignInShows).toBe(2))
   })
 
   it('routes the anonymous victory fixture through the reporter and anonymous-account guard', async () => {

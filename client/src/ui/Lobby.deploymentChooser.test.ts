@@ -36,6 +36,30 @@ describe('Lobby deployment chooser', () => {
     expect(root.querySelector('.lobby-preview')).toBeNull();
   });
 
+  it('does not construct listener-owning preparation nodes while only the chooser is active', () => {
+    const listenerTargets: EventTarget[] = [];
+    const nativeAddEventListener = EventTarget.prototype.addEventListener;
+    vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function recordListener(
+      this: EventTarget,
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      listenerTargets.push(this);
+      nativeAddEventListener.call(this, type, listener, options);
+    });
+    const lobby = new Lobby(root, vi.fn());
+
+    lobby.show();
+
+    const preparationTargets = listenerTargets.filter((target): target is Element => (
+      target instanceof Element && target.matches(
+        '.lobby-name, .lobby-start, .lobby-garage, .lobby-advanced-trigger, .lobby-hotseat-customization',
+      )
+    ));
+    expect(preparationTargets).toEqual([]);
+  });
+
   it('opens Local Battle and restores focus to that choice on return', () => {
     const lobby = new Lobby(root, vi.fn());
     lobby.show();
@@ -47,6 +71,40 @@ describe('Lobby deployment chooser', () => {
     button(root, 'Back to deployment choices').click();
     expect(document.activeElement).toBe(button(root, 'Local Battle'));
     expect(root.querySelector('.lobby-start')).toBeNull();
+  });
+
+  it('aborts every rendered element listener before the lobby tree is hidden', () => {
+    const registrations: Array<{ target: EventTarget; signal?: AbortSignal }> = [];
+    const nativeAddEventListener = EventTarget.prototype.addEventListener;
+    vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function scopedListener(
+      this: EventTarget,
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      registrations.push({
+        target: this,
+        ...(typeof options === 'object' && options?.signal ? { signal: options.signal } : {}),
+      });
+      nativeAddEventListener.call(this, type, listener, options);
+    });
+    const onReady = vi.fn();
+    const lobby = new Lobby(root, onReady);
+    lobby.show();
+    button(root, 'Local Battle').click();
+    const staleStart = root.querySelector<HTMLButtonElement>('.lobby-start')!;
+    const activeRegistrations = registrations.filter(({ target }) => (
+      target instanceof Element && root.contains(target)
+    ));
+    expect(activeRegistrations.length).toBeGreaterThan(10);
+    expect(activeRegistrations.every(({ signal }) => signal instanceof AbortSignal && !signal.aborted))
+      .toBe(true);
+
+    lobby.hide();
+
+    expect(activeRegistrations.every(({ signal }) => signal?.aborted === true)).toBe(true);
+    staleStart.click();
+    expect(onReady).not.toHaveBeenCalled();
   });
 
   it('preserves Local and Online working state across chooser round trips', () => {

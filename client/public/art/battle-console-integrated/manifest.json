@@ -1,0 +1,1075 @@
+{
+  "schema": "singedterra-battle-console-runtime-assets/v1",
+  "recipe": {
+    "path": "scripts/assets/battle-console-assets.json",
+    "sha256": "5D655C648CA015B2EAD99DC0A493DF2DCDDB325F3F7B6359DE22E964094ED941"
+  },
+  "source": {
+    "path": ".codearbiter/contracts/battle-console/reference/blank-static-chrome.png",
+    "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+  },
+  "dynamicSource": {
+    "path": ".codearbiter/contracts/battle-console/reference/canonical-pixi-layer.png",
+    "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+  },
+  "semanticSource": {
+    "path": ".codearbiter/contracts/battle-console/reference/normalized-wide.png",
+    "sha256": "F72CD13D4C1FEF69CB1EECEEC13EFC46484616ACA646C17307B55B1698E139D3"
+  },
+  "staticRestorations": [
+    {
+      "reason": "Restore right brass edge of wind inset erased by historical live-text mask; no lettering in this crop.",
+      "x": 946,
+      "y": 122,
+      "width": 10,
+      "height": 25
+    }
+  ],
+  "dialRepairs": [
+    {
+      "centerX": 609,
+      "centerY": 102,
+      "radius": 51,
+      "bottom": 111,
+      "sourceRect": {
+        "x": 554,
+        "y": 43,
+        "width": 110,
+        "height": 106
+      },
+      "readout": {
+        "x": 574,
+        "y": 121,
+        "width": 69,
+        "height": 20
+      }
+    },
+    {
+      "centerX": 753,
+      "centerY": 102,
+      "radius": 51,
+      "bottom": 111,
+      "sourceRect": {
+        "x": 698,
+        "y": 43,
+        "width": 110,
+        "height": 106
+      },
+      "readout": {
+        "x": 719,
+        "y": 121,
+        "width": 69,
+        "height": 20
+      }
+    },
+    {
+      "centerX": 900,
+      "centerY": 102,
+      "radius": 51,
+      "bottom": 111,
+      "sourceRect": {
+        "x": 845,
+        "y": 43,
+        "width": 110,
+        "height": 106
+      },
+      "readout": {
+        "x": 867,
+        "y": 121,
+        "width": 73,
+        "height": 20
+      }
+    }
+  ],
+  "materialInfills": [
+    {
+      "rect": {
+        "x": 838,
+        "y": 149,
+        "width": 126,
+        "height": 47
+      },
+      "interior": {
+        "x": 846,
+        "y": 153,
+        "width": 110,
+        "height": 37
+      },
+      "sample": {
+        "x": 360,
+        "y": 21,
+        "width": 110,
+        "height": 12
+      },
+      "brightness": 0.85,
+      "bottomTrimSource": {
+        "x": 850,
+        "y": 143,
+        "width": 102,
+        "height": 7
+      },
+      "bottomTrimTarget": {
+        "x": 850,
+        "y": 189,
+        "width": 102,
+        "height": 7
+      },
+      "clip": {
+        "x": 849,
+        "y": 154,
+        "width": 102,
+        "height": 35,
+        "radius": 6
+      }
+    }
+  ],
+  "fireFaceRepair": {
+    "rect": {
+      "x": 1018,
+      "y": 115,
+      "width": 270,
+      "height": 68
+    },
+    "face": {
+      "x": 1039,
+      "y": 132,
+      "width": 232,
+      "height": 43
+    },
+    "sample": {
+      "x": 1043,
+      "y": 132,
+      "width": 45,
+      "height": 43
+    },
+    "reticle": {
+      "x": 1097,
+      "y": 133,
+      "width": 42,
+      "height": 39
+    }
+  },
+  "blankExtensions": [
+    {
+      "sample": {
+        "x": 91,
+        "y": 119,
+        "width": 112,
+        "height": 1
+      },
+      "rect": {
+        "x": 91,
+        "y": 120,
+        "width": 112,
+        "height": 3
+      }
+    }
+  ],
+  "roundedWellRepairs": [
+    {
+      "rect": {
+        "x": 220,
+        "y": 83,
+        "width": 85,
+        "height": 31
+      },
+      "interior": {
+        "x": 224,
+        "y": 88,
+        "width": 76,
+        "height": 21
+      },
+      "radius": 10,
+      "sample": {
+        "x": 262,
+        "y": 89
+      }
+    }
+  ],
+  "assets": [
+    {
+      "path": "static-chrome.png",
+      "sha256": "742993C6596D8A814AB7B7EDA189796201E10B441B8703921550855124862E31",
+      "bytes": 487420,
+      "width": 1388,
+      "height": 212,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "role": "state-free-static-chrome"
+    },
+    {
+      "path": "canonical-pixi-layer.png",
+      "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530",
+      "bytes": 559644,
+      "width": 1388,
+      "height": 212,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "role": "canonical-dynamic-pixi-atlas"
+    },
+    {
+      "path": "canonical-semantic-atlas.png",
+      "sha256": "7D7CA5B3834A94CCDCA702396AAD843B3B0393C28E2DA258B70ABD48A342734F",
+      "bytes": 622268,
+      "width": 1388,
+      "height": 212,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "role": "canonical-preact-semantic-atlas"
+    },
+    {
+      "path": "static-chrome-standard.png",
+      "sha256": "662518DA477A72B5B844121A82DA3FE7058AB8E0373A3D621E69E549972BD355",
+      "bytes": 370428,
+      "width": 1180,
+      "height": 180,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "mode": "standard",
+      "role": "state-free-static-chrome-standard"
+    },
+    {
+      "path": "canonical-pixi-layer-standard.png",
+      "sha256": "A610E4C66FBAC8908D300C4D0AF2EB9D4CA12E6440A99EF1E8FF0DA44E328D31",
+      "bytes": 58519,
+      "width": 641,
+      "height": 54,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "mode": "standard",
+      "role": "canonical-dynamic-pixi-atlas-standard",
+      "regions": [
+        {
+          "key": "tank-portrait",
+          "targetRect": {
+            "x": 74,
+            "y": 51,
+            "width": 101,
+            "height": 54
+          },
+          "atlasRect": {
+            "x": 0,
+            "y": 0,
+            "width": 101,
+            "height": 54
+          }
+        },
+        {
+          "key": "fuel-live-fill",
+          "targetRect": {
+            "x": 120,
+            "y": 119,
+            "width": 100,
+            "height": 32
+          },
+          "atlasRect": {
+            "x": 102,
+            "y": 0,
+            "width": 100,
+            "height": 32
+          }
+        },
+        {
+          "key": "weapon-art",
+          "targetRect": {
+            "x": 307,
+            "y": 52,
+            "width": 36,
+            "height": 40
+          },
+          "atlasRect": {
+            "x": 203,
+            "y": 0,
+            "width": 36,
+            "height": 40
+          }
+        },
+        {
+          "key": "angle-arc",
+          "targetRect": {
+            "x": 484,
+            "y": 47,
+            "width": 52,
+            "height": 29
+          },
+          "atlasRect": {
+            "x": 240,
+            "y": 0,
+            "width": 52,
+            "height": 29
+          }
+        },
+        {
+          "key": "angle-needle",
+          "targetRect": {
+            "x": 510,
+            "y": 38,
+            "width": 44,
+            "height": 54
+          },
+          "atlasRect": {
+            "x": 293,
+            "y": 0,
+            "width": 44,
+            "height": 54
+          }
+        },
+        {
+          "key": "power-arc",
+          "targetRect": {
+            "x": 601,
+            "y": 45,
+            "width": 54,
+            "height": 47
+          },
+          "atlasRect": {
+            "x": 338,
+            "y": 0,
+            "width": 54,
+            "height": 47
+          }
+        },
+        {
+          "key": "power-needle",
+          "targetRect": {
+            "x": 635,
+            "y": 36,
+            "width": 18,
+            "height": 53
+          },
+          "atlasRect": {
+            "x": 393,
+            "y": 0,
+            "width": 18,
+            "height": 53
+          }
+        },
+        {
+          "key": "wind-glyph",
+          "targetRect": {
+            "x": 741,
+            "y": 51,
+            "width": 61,
+            "height": 43
+          },
+          "atlasRect": {
+            "x": 412,
+            "y": 0,
+            "width": 61,
+            "height": 43
+          }
+        },
+        {
+          "key": "ready-icon",
+          "targetRect": {
+            "x": 873,
+            "y": 48,
+            "width": 49,
+            "height": 44
+          },
+          "atlasRect": {
+            "x": 474,
+            "y": 0,
+            "width": 49,
+            "height": 44
+          }
+        },
+        {
+          "key": "ready-lamps",
+          "targetRect": {
+            "x": 934,
+            "y": 76,
+            "width": 74,
+            "height": 18
+          },
+          "atlasRect": {
+            "x": 524,
+            "y": 0,
+            "width": 74,
+            "height": 18
+          }
+        },
+        {
+          "key": "fire-reticle",
+          "targetRect": {
+            "x": 930,
+            "y": 110,
+            "width": 42,
+            "height": 39
+          },
+          "atlasRect": {
+            "x": 599,
+            "y": 0,
+            "width": 42,
+            "height": 39
+          }
+        }
+      ]
+    },
+    {
+      "path": "canonical-semantic-atlas-standard.png",
+      "sha256": "9602A0328C046CFE49D13494900C26E32A96F4C661E2267D7123BB5A7033C3CA",
+      "bytes": 70021,
+      "width": 1125,
+      "height": 33,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "mode": "standard",
+      "role": "canonical-preact-semantic-atlas-standard",
+      "regions": [
+        {
+          "key": "commander-title",
+          "targetRect": {
+            "x": 125,
+            "y": 17,
+            "width": 83,
+            "height": 20
+          },
+          "atlasRect": {
+            "x": 0,
+            "y": 0,
+            "width": 83,
+            "height": 20
+          }
+        },
+        {
+          "key": "player-name",
+          "targetRect": {
+            "x": 184,
+            "y": 45,
+            "width": 81,
+            "height": 25
+          },
+          "atlasRect": {
+            "x": 84,
+            "y": 0,
+            "width": 81,
+            "height": 25
+          }
+        },
+        {
+          "key": "health-value",
+          "targetRect": {
+            "x": 191,
+            "y": 74,
+            "width": 66,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 166,
+            "y": 0,
+            "width": 66,
+            "height": 23
+          }
+        },
+        {
+          "key": "fuel-label",
+          "targetRect": {
+            "x": 133,
+            "y": 115,
+            "width": 49,
+            "height": 19
+          },
+          "atlasRect": {
+            "x": 233,
+            "y": 0,
+            "width": 49,
+            "height": 19
+          }
+        },
+        {
+          "key": "fuel-value",
+          "targetRect": {
+            "x": 136,
+            "y": 130,
+            "width": 47,
+            "height": 21
+          },
+          "atlasRect": {
+            "x": 283,
+            "y": 0,
+            "width": 47,
+            "height": 21
+          }
+        },
+        {
+          "key": "weapon-label",
+          "targetRect": {
+            "x": 346,
+            "y": 39,
+            "width": 54,
+            "height": 18
+          },
+          "atlasRect": {
+            "x": 331,
+            "y": 0,
+            "width": 54,
+            "height": 18
+          }
+        },
+        {
+          "key": "weapon-name",
+          "targetRect": {
+            "x": 346,
+            "y": 57,
+            "width": 88,
+            "height": 33
+          },
+          "atlasRect": {
+            "x": 386,
+            "y": 0,
+            "width": 88,
+            "height": 33
+          }
+        },
+        {
+          "key": "armory-label",
+          "targetRect": {
+            "x": 340,
+            "y": 115,
+            "width": 86,
+            "height": 27
+          },
+          "atlasRect": {
+            "x": 475,
+            "y": 0,
+            "width": 86,
+            "height": 27
+          }
+        },
+        {
+          "key": "ballistics-title",
+          "targetRect": {
+            "x": 551,
+            "y": 7,
+            "width": 95,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 562,
+            "y": 0,
+            "width": 95,
+            "height": 23
+          }
+        },
+        {
+          "key": "angle-value",
+          "targetRect": {
+            "x": 499,
+            "y": 101,
+            "width": 57,
+            "height": 26
+          },
+          "atlasRect": {
+            "x": 658,
+            "y": 0,
+            "width": 57,
+            "height": 26
+          }
+        },
+        {
+          "key": "power-value",
+          "targetRect": {
+            "x": 619,
+            "y": 101,
+            "width": 49,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 716,
+            "y": 0,
+            "width": 49,
+            "height": 23
+          }
+        },
+        {
+          "key": "wind-value",
+          "targetRect": {
+            "x": 738,
+            "y": 101,
+            "width": 77,
+            "height": 27
+          },
+          "atlasRect": {
+            "x": 766,
+            "y": 0,
+            "width": 77,
+            "height": 27
+          }
+        },
+        {
+          "key": "fire-control-title",
+          "targetRect": {
+            "x": 915,
+            "y": 16,
+            "width": 108,
+            "height": 22
+          },
+          "atlasRect": {
+            "x": 844,
+            "y": 0,
+            "width": 108,
+            "height": 22
+          }
+        },
+        {
+          "key": "fire-ready-text",
+          "targetRect": {
+            "x": 924,
+            "y": 51,
+            "width": 100,
+            "height": 27
+          },
+          "atlasRect": {
+            "x": 953,
+            "y": 0,
+            "width": 100,
+            "height": 27
+          }
+        },
+        {
+          "key": "fire-action-text",
+          "targetRect": {
+            "x": 970,
+            "y": 113,
+            "width": 71,
+            "height": 29
+          },
+          "atlasRect": {
+            "x": 1054,
+            "y": 0,
+            "width": 71,
+            "height": 29
+          }
+        }
+      ]
+    },
+    {
+      "path": "static-chrome-compact.png",
+      "sha256": "7F0957BB9C65BBFFF06077595BC8B7D5FBE0028AA019CAF10B9018580EAF8ED7",
+      "bytes": 248892,
+      "width": 960,
+      "height": 147,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "mode": "compact",
+      "role": "state-free-static-chrome-compact"
+    },
+    {
+      "path": "canonical-pixi-layer-compact.png",
+      "sha256": "5C427C7DC7203ED2137BB25C7ECCC715BC134BE3716CEAC84750BCB762A38D8E",
+      "bytes": 41785,
+      "width": 534,
+      "height": 45,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "mode": "compact",
+      "role": "canonical-dynamic-pixi-atlas-compact",
+      "regions": [
+        {
+          "key": "tank-portrait",
+          "targetRect": {
+            "x": 60,
+            "y": 41,
+            "width": 83,
+            "height": 45
+          },
+          "atlasRect": {
+            "x": 0,
+            "y": 0,
+            "width": 83,
+            "height": 45
+          }
+        },
+        {
+          "key": "fuel-live-fill",
+          "targetRect": {
+            "x": 97,
+            "y": 96,
+            "width": 82,
+            "height": 27
+          },
+          "atlasRect": {
+            "x": 84,
+            "y": 0,
+            "width": 82,
+            "height": 27
+          }
+        },
+        {
+          "key": "weapon-art",
+          "targetRect": {
+            "x": 249,
+            "y": 42,
+            "width": 30,
+            "height": 34
+          },
+          "atlasRect": {
+            "x": 167,
+            "y": 0,
+            "width": 30,
+            "height": 34
+          }
+        },
+        {
+          "key": "angle-arc",
+          "targetRect": {
+            "x": 393,
+            "y": 38,
+            "width": 43,
+            "height": 25
+          },
+          "atlasRect": {
+            "x": 198,
+            "y": 0,
+            "width": 43,
+            "height": 25
+          }
+        },
+        {
+          "key": "angle-needle",
+          "targetRect": {
+            "x": 415,
+            "y": 30,
+            "width": 37,
+            "height": 45
+          },
+          "atlasRect": {
+            "x": 242,
+            "y": 0,
+            "width": 37,
+            "height": 45
+          }
+        },
+        {
+          "key": "power-arc",
+          "targetRect": {
+            "x": 488,
+            "y": 36,
+            "width": 45,
+            "height": 39
+          },
+          "atlasRect": {
+            "x": 280,
+            "y": 0,
+            "width": 45,
+            "height": 39
+          }
+        },
+        {
+          "key": "power-needle",
+          "targetRect": {
+            "x": 516,
+            "y": 29,
+            "width": 16,
+            "height": 44
+          },
+          "atlasRect": {
+            "x": 326,
+            "y": 0,
+            "width": 16,
+            "height": 44
+          }
+        },
+        {
+          "key": "wind-glyph",
+          "targetRect": {
+            "x": 602,
+            "y": 41,
+            "width": 51,
+            "height": 36
+          },
+          "atlasRect": {
+            "x": 343,
+            "y": 0,
+            "width": 51,
+            "height": 36
+          }
+        },
+        {
+          "key": "ready-icon",
+          "targetRect": {
+            "x": 709,
+            "y": 38,
+            "width": 41,
+            "height": 37
+          },
+          "atlasRect": {
+            "x": 395,
+            "y": 0,
+            "width": 41,
+            "height": 37
+          }
+        },
+        {
+          "key": "ready-lamps",
+          "targetRect": {
+            "x": 759,
+            "y": 61,
+            "width": 61,
+            "height": 16
+          },
+          "atlasRect": {
+            "x": 437,
+            "y": 0,
+            "width": 61,
+            "height": 16
+          }
+        },
+        {
+          "key": "fire-reticle",
+          "targetRect": {
+            "x": 756,
+            "y": 89,
+            "width": 35,
+            "height": 33
+          },
+          "atlasRect": {
+            "x": 499,
+            "y": 0,
+            "width": 35,
+            "height": 33
+          }
+        }
+      ]
+    },
+    {
+      "path": "canonical-semantic-atlas-compact.png",
+      "sha256": "FB9D5A7DA739C9946458058F12B1B50378D25A69A9EA26EAD2B208CDF5CE4CFE",
+      "bytes": 50051,
+      "width": 932,
+      "height": 28,
+      "colorSpace": "srgb",
+      "alpha": "straight-rgba",
+      "mode": "compact",
+      "role": "canonical-preact-semantic-atlas-compact",
+      "regions": [
+        {
+          "key": "commander-title",
+          "targetRect": {
+            "x": 101,
+            "y": 13,
+            "width": 68,
+            "height": 17
+          },
+          "atlasRect": {
+            "x": 0,
+            "y": 0,
+            "width": 68,
+            "height": 17
+          }
+        },
+        {
+          "key": "player-name",
+          "targetRect": {
+            "x": 149,
+            "y": 36,
+            "width": 67,
+            "height": 21
+          },
+          "atlasRect": {
+            "x": 69,
+            "y": 0,
+            "width": 67,
+            "height": 21
+          }
+        },
+        {
+          "key": "health-value",
+          "targetRect": {
+            "x": 155,
+            "y": 60,
+            "width": 54,
+            "height": 20
+          },
+          "atlasRect": {
+            "x": 137,
+            "y": 0,
+            "width": 54,
+            "height": 20
+          }
+        },
+        {
+          "key": "fuel-label",
+          "targetRect": {
+            "x": 108,
+            "y": 93,
+            "width": 41,
+            "height": 16
+          },
+          "atlasRect": {
+            "x": 192,
+            "y": 0,
+            "width": 41,
+            "height": 16
+          }
+        },
+        {
+          "key": "fuel-value",
+          "targetRect": {
+            "x": 110,
+            "y": 106,
+            "width": 39,
+            "height": 18
+          },
+          "atlasRect": {
+            "x": 234,
+            "y": 0,
+            "width": 39,
+            "height": 18
+          }
+        },
+        {
+          "key": "weapon-label",
+          "targetRect": {
+            "x": 281,
+            "y": 31,
+            "width": 45,
+            "height": 16
+          },
+          "atlasRect": {
+            "x": 274,
+            "y": 0,
+            "width": 45,
+            "height": 16
+          }
+        },
+        {
+          "key": "weapon-name",
+          "targetRect": {
+            "x": 281,
+            "y": 45,
+            "width": 72,
+            "height": 28
+          },
+          "atlasRect": {
+            "x": 320,
+            "y": 0,
+            "width": 72,
+            "height": 28
+          }
+        },
+        {
+          "key": "armory-label",
+          "targetRect": {
+            "x": 276,
+            "y": 93,
+            "width": 71,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 393,
+            "y": 0,
+            "width": 71,
+            "height": 23
+          }
+        },
+        {
+          "key": "ballistics-title",
+          "targetRect": {
+            "x": 448,
+            "y": 5,
+            "width": 79,
+            "height": 20
+          },
+          "atlasRect": {
+            "x": 465,
+            "y": 0,
+            "width": 79,
+            "height": 20
+          }
+        },
+        {
+          "key": "angle-value",
+          "targetRect": {
+            "x": 406,
+            "y": 81,
+            "width": 47,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 545,
+            "y": 0,
+            "width": 47,
+            "height": 23
+          }
+        },
+        {
+          "key": "power-value",
+          "targetRect": {
+            "x": 503,
+            "y": 81,
+            "width": 41,
+            "height": 20
+          },
+          "atlasRect": {
+            "x": 593,
+            "y": 0,
+            "width": 41,
+            "height": 20
+          }
+        },
+        {
+          "key": "wind-value",
+          "targetRect": {
+            "x": 600,
+            "y": 81,
+            "width": 64,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 635,
+            "y": 0,
+            "width": 64,
+            "height": 23
+          }
+        },
+        {
+          "key": "fire-control-title",
+          "targetRect": {
+            "x": 744,
+            "y": 12,
+            "width": 89,
+            "height": 19
+          },
+          "atlasRect": {
+            "x": 700,
+            "y": 0,
+            "width": 89,
+            "height": 19
+          }
+        },
+        {
+          "key": "fire-ready-text",
+          "targetRect": {
+            "x": 751,
+            "y": 41,
+            "width": 82,
+            "height": 23
+          },
+          "atlasRect": {
+            "x": 790,
+            "y": 0,
+            "width": 82,
+            "height": 23
+          }
+        },
+        {
+          "key": "fire-action-text",
+          "targetRect": {
+            "x": 789,
+            "y": 92,
+            "width": 59,
+            "height": 25
+          },
+          "atlasRect": {
+            "x": 873,
+            "y": 0,
+            "width": 59,
+            "height": 25
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2229 @@
+{
+  "authorities": {
+    "adr": {
+      "bytes": 6057,
+      "path": ".codearbiter/decisions/0018-preact-battle-console-semantic-ownership.md",
+      "sha256": "2A1A1F186D26DAC2EF96414A85C9804737D5B6AC2B3EA169490AA5A2DC778015"
+    },
+    "intentTransitionTraces": {
+      "bytes": 250281,
+      "identitySha256": "56A7911BAC76E03091EAA491C8A76442827EF79029BB7069250C2C3BAC93AB6C",
+      "path": ".codearbiter/contracts/battle-console/topology/intent-transition-traces.json",
+      "sha256": "D1880E2BCAA5EADFB2E20925C525B09644E0F00BFF4121D8121939A6E481F83D"
+    },
+    "lifecycleTriggers": {
+      "bytes": 59855,
+      "identitySha256": "2BA7D3A844FADA9A4E45416C65F7A0ED0AE49D6BEB24A9321E2295BC81D6141E",
+      "path": ".codearbiter/contracts/battle-console/topology/lifecycle-triggers.json",
+      "sha256": "E67DE39A4FF6EC73D508F0C73E5B4F47067C37E84DB4B08312DB6B52297EE497"
+    },
+    "plan": {
+      "bytes": 65151,
+      "path": ".codearbiter/plans/battle-console-integrated-visual-system.md",
+      "sha256": "C312256C8193D02B13D10FBAA52ECEB3254DE3996241437F1E26F78D316F569B"
+    },
+    "presentationArchitecture": {
+      "bytes": 414109,
+      "identitySha256": "FAA55212FFAD7CE4A188B04821ED2B9ADABBBE371023CA02B31CA444A1206EA0",
+      "path": ".codearbiter/contracts/battle-console/topology/presentation-architecture.json",
+      "sha256": "F90933A90FA3A329B44D9E55E5220279B21B43FD34EC2357944D3B414F34D9AB"
+    },
+    "semanticBaseline": {
+      "bytes": 615267,
+      "identitySha256": "4B13AC710D3D409B8B79693DC921021B762A5FC158D62320CA98C597BC439644",
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-baseline.json",
+      "sha256": "90A0102F2BA33F69042F2DE3E3605347AB4AF6B0B6222D7BD17C5B63828F271E"
+    },
+    "semanticOwners": {
+      "bytes": 500102,
+      "identitySha256": "5435E01A60DA5C8B0E052AF9F2F32672E1E1CE785DEAF6CE6EEB53611DC146A3",
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-owners.json",
+      "sha256": "3450CF71C04B8B4EB7C79C1674B6FD4C31FDCE6EFA7BAE31B6F9D6D67B272705"
+    },
+    "snapshotDescriptor": {
+      "bytes": 8735047,
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-baseline-snapshot.json",
+      "sha256": "0522BAC1A7762EF117611D104F76D025944F3D51ABE838410719A1F5C7CEEDAE"
+    },
+    "specification": {
+      "bytes": 82191,
+      "path": ".codearbiter/specs/battle-console-integrated-visual-system.md",
+      "sha256": "8261162F81F19609754781785945A2CA3A1C59B0D0F30F2DE3B781BE5DAEB3F7"
+    },
+    "taskBrief": {
+      "bytes": 16667,
+      "path": ".superpowers/sdd/battle-console-integrated-visual-system/task-G1-09-brief.md",
+      "sha256": "AECA61B7428F1230B518E3253799D51D7A431FD0E4DC0E3F418CC743F098EFBC"
+    }
+  },
+  "campaign": "singedterra.battle-console.hybrid",
+  "cardinalities": {
+    "commandBranches": 26,
+    "focusJourneys": 3,
+    "matrixRecords": 52,
+    "modalJourneys": 7,
+    "nodes": 405,
+    "observedListeners": 60,
+    "roots": 6
+  },
+  "claims": {
+    "axeOrAssistiveTechnologyProofComplete": false,
+    "browserE2eComplete": false,
+    "physicalCoarsePointerProofComplete": false,
+    "productAccessibilityComplete": false,
+    "readyFallbackContractLocked": true
+  },
+  "focusJourneys": [
+    {
+      "key": "focus-settings-command",
+      "sourceRecordSha256": "5274B824892A605A3AE6065869B82F2F0FEBDA2F05C1E9DD371E30D6C87DDF9F",
+      "targetRequirements": [
+        "stable-tab-order",
+        "disabled-inert-excluded",
+        "explicit-disappearance-transfer",
+        "explicit-return-target"
+      ]
+    },
+    {
+      "key": "focus-settings-pause",
+      "sourceRecordSha256": "4FF7696356231049122A5B678E4632C089168F4BFABDE25781A066DF3CFBD23E",
+      "targetRequirements": [
+        "stable-tab-order",
+        "disabled-inert-excluded",
+        "explicit-disappearance-transfer",
+        "explicit-return-target"
+      ]
+    },
+    {
+      "key": "focus-first-salvo",
+      "sourceRecordSha256": "5101D058EFF5E68C511A5C4A43CF54481A45CFDBA672218A9D91CAB5763F1021",
+      "targetRequirements": [
+        "stable-tab-order",
+        "disabled-inert-excluded",
+        "explicit-disappearance-transfer",
+        "explicit-return-target"
+      ]
+    }
+  ],
+  "identitySha256": "19ACF299FBBB974DCC959DF94624CE3E4BD4AF5C6524601A883F20BE127A7C43",
+  "matrix": [
+    {
+      "branchKey": "a-move-left",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "ED05A250BE205428B3111694190B25446FC760D61A65816D4BF6600935FC4890",
+        "nativeEventsSha256": "E3B2921488D33CFEEE7A8B4DC2F134E6D6B55C45CE3C6BCD8662FD1DA7A73AF3",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "ED10F860143A17A8226CE9389D3FFF00AC2BDB0195B6D9FD9065C97779A53D77",
+      "sourceTraceSha256": "2D307378E045F3A9804B2E6A7D6C41303ACD3683471E07C925440644946A7DCE"
+    },
+    {
+      "branchKey": "a-move-left",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "ED05A250BE205428B3111694190B25446FC760D61A65816D4BF6600935FC4890",
+        "nativeEventsSha256": "E3B2921488D33CFEEE7A8B4DC2F134E6D6B55C45CE3C6BCD8662FD1DA7A73AF3",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "ED10F860143A17A8226CE9389D3FFF00AC2BDB0195B6D9FD9065C97779A53D77",
+      "sourceTraceSha256": "2D307378E045F3A9804B2E6A7D6C41303ACD3683471E07C925440644946A7DCE"
+    },
+    {
+      "branchKey": "d-move-right",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "444BB8159403B7E90C46DE7AF27DC8F24DEFABCA8FCC6FD7F21554D95B4DA415",
+        "nativeEventsSha256": "CD9D7F6379308BA957E0F610D2FB3D170228DD18A09CECD5A6F9A8655B3F75EF",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "1BF69E9211A4F0A9AF0F8DA053A112DCE3B9312472900F6D515840A8007BDA39",
+      "sourceTraceSha256": "FB5D81E9D419281A0B2942E236F1F479D3F5C0B1D6C883DD0791806273CEF80E"
+    },
+    {
+      "branchKey": "d-move-right",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "444BB8159403B7E90C46DE7AF27DC8F24DEFABCA8FCC6FD7F21554D95B4DA415",
+        "nativeEventsSha256": "CD9D7F6379308BA957E0F610D2FB3D170228DD18A09CECD5A6F9A8655B3F75EF",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "1BF69E9211A4F0A9AF0F8DA053A112DCE3B9312472900F6D515840A8007BDA39",
+      "sourceTraceSha256": "FB5D81E9D419281A0B2942E236F1F479D3F5C0B1D6C883DD0791806273CEF80E"
+    },
+    {
+      "branchKey": "m-settings",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "269B64451ADA6768CFEFBDB94998403C1D635FF03A6DFFF0E430322396335A35",
+        "nativeEventsSha256": "B649C3877DC244E06F899C09BD0516837CB7AE3828ABDDF68AFE4606B9F5A941",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-presentation",
+          "owner": "controller-window-intent"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "C3BB94934B6633744DC158FD977180CAB55BEE1BAE10C05235D554AB508C19A9",
+      "sourceTraceSha256": "1F64BEC0C492186F78839AFE8F007A41329F6703A9F0FCE6A78F1794AD9C7CF2"
+    },
+    {
+      "branchKey": "m-settings",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "269B64451ADA6768CFEFBDB94998403C1D635FF03A6DFFF0E430322396335A35",
+        "nativeEventsSha256": "B649C3877DC244E06F899C09BD0516837CB7AE3828ABDDF68AFE4606B9F5A941",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-presentation",
+          "owner": "controller-window-intent"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "C3BB94934B6633744DC158FD977180CAB55BEE1BAE10C05235D554AB508C19A9",
+      "sourceTraceSha256": "1F64BEC0C492186F78839AFE8F007A41329F6703A9F0FCE6A78F1794AD9C7CF2"
+    },
+    {
+      "branchKey": "g-settings",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "E5D08D0B3FE47515DFFAE43BA14BAF4F1BCCC13DB06750D41828DF2D9D83DE3C",
+        "nativeEventsSha256": "F786DC69EA40084523A3054183BBD639A10896F4FDFECF389BD7D5CC0BDC6C77",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-presentation",
+          "owner": "controller-window-intent"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "EE1209DE48E7BA5E24B23419612FFC3978ACFC209A170FDF6D2BC65BC55CCCC7",
+      "sourceTraceSha256": "FDFB72B18A618608A5BE2303BD8FB8D98C4A833860DB1A390DC12E9EF88B4865"
+    },
+    {
+      "branchKey": "g-settings",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "E5D08D0B3FE47515DFFAE43BA14BAF4F1BCCC13DB06750D41828DF2D9D83DE3C",
+        "nativeEventsSha256": "F786DC69EA40084523A3054183BBD639A10896F4FDFECF389BD7D5CC0BDC6C77",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-presentation",
+          "owner": "controller-window-intent"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "EE1209DE48E7BA5E24B23419612FFC3978ACFC209A170FDF6D2BC65BC55CCCC7",
+      "sourceTraceSha256": "FDFB72B18A618608A5BE2303BD8FB8D98C4A833860DB1A390DC12E9EF88B4865"
+    },
+    {
+      "branchKey": "f-keydown",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "7F4304EF7C7090169708390C7A828BB7E618F4C3A0960008A7E43EE36EFE74DB",
+        "nativeEventsSha256": "AE5935DDB0C1D3A9D15F5F1FCFEDBF909D6257547F854551CDE4731ECDE84D14",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "A2AF59EC64F4093BAC575C0368F4B8FD2F9DF86CEAB3F690ADFAE330A4A658EB",
+      "sourceTraceSha256": "2495D1E3F6ECE17C4DC74EBD2D705D57AE16F975923020DFBAE387FFB4336D53"
+    },
+    {
+      "branchKey": "f-keydown",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "7F4304EF7C7090169708390C7A828BB7E618F4C3A0960008A7E43EE36EFE74DB",
+        "nativeEventsSha256": "AE5935DDB0C1D3A9D15F5F1FCFEDBF909D6257547F854551CDE4731ECDE84D14",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "A2AF59EC64F4093BAC575C0368F4B8FD2F9DF86CEAB3F690ADFAE330A4A658EB",
+      "sourceTraceSha256": "2495D1E3F6ECE17C4DC74EBD2D705D57AE16F975923020DFBAE387FFB4336D53"
+    },
+    {
+      "branchKey": "f-keyup",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "A37E0B3158C74C64B899B1E6DCCE07A5F412F4FE8FFCE2E05A8B329D0AFF3944",
+        "nativeEventsSha256": "A9B84C17C09D29260431BF41F5FC9B25A6276DC0080E7092C006140C403261CE",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "40FAA8964B1EAE131E427E4557ECD9BFB6577F49EE064BC8D605ABA62CFC9BF8",
+      "sourceTraceSha256": "635831142DB2089A2E5010506DD0F2D4A6BE6B5AB474CA88E0C62906C50C802B"
+    },
+    {
+      "branchKey": "f-keyup",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "A37E0B3158C74C64B899B1E6DCCE07A5F412F4FE8FFCE2E05A8B329D0AFF3944",
+        "nativeEventsSha256": "A9B84C17C09D29260431BF41F5FC9B25A6276DC0080E7092C006140C403261CE",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "40FAA8964B1EAE131E427E4557ECD9BFB6577F49EE064BC8D605ABA62CFC9BF8",
+      "sourceTraceSha256": "635831142DB2089A2E5010506DD0F2D4A6BE6B5AB474CA88E0C62906C50C802B"
+    },
+    {
+      "branchKey": "f-repeat",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "4C132AA5147505587D08F67FF293C6E14374316DCDA7B63336CE548CBF3CD204",
+        "nativeEventsSha256": "70F87F6502442648257D99FDDF03DDD2362102521665BE388FAF56E85B083581",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "0EFB030A0170BE24663795D06F74DF20F1A0C82C13F5BCE4E6FACC65CDB7C0A7",
+      "sourceTraceSha256": "EFA1788C50E43D5F533B97E5BD5B9C3129E24BDAE882008191356C4F7D80DEB4"
+    },
+    {
+      "branchKey": "f-repeat",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "4C132AA5147505587D08F67FF293C6E14374316DCDA7B63336CE548CBF3CD204",
+        "nativeEventsSha256": "70F87F6502442648257D99FDDF03DDD2362102521665BE388FAF56E85B083581",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "0EFB030A0170BE24663795D06F74DF20F1A0C82C13F5BCE4E6FACC65CDB7C0A7",
+      "sourceTraceSha256": "EFA1788C50E43D5F533B97E5BD5B9C3129E24BDAE882008191356C4F7D80DEB4"
+    },
+    {
+      "branchKey": "f-fast-forward",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "AE89A8781BF90ABD1E7041389D0673FFB633C1B80ABF188D192F55A5CA2117DA",
+        "nativeEventsSha256": "CA39830727AD895B44F2CDA8518A551DBF5CCC4D3F0722AD01998A35994C4F88",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "0B7A769FDD540339354F615783688E18C4F010790872CC115AA4142F5772EE17",
+      "sourceTraceSha256": "89B109FEA5F1E908AEF291665E3CCAA89DEBF2361CB5185E6CB23A92D6112B19"
+    },
+    {
+      "branchKey": "f-fast-forward",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "AE89A8781BF90ABD1E7041389D0673FFB633C1B80ABF188D192F55A5CA2117DA",
+        "nativeEventsSha256": "CA39830727AD895B44F2CDA8518A551DBF5CCC4D3F0722AD01998A35994C4F88",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "0B7A769FDD540339354F615783688E18C4F010790872CC115AA4142F5772EE17",
+      "sourceTraceSha256": "89B109FEA5F1E908AEF291665E3CCAA89DEBF2361CB5185E6CB23A92D6112B19"
+    },
+    {
+      "branchKey": "space-fire",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "87A551F8EB3A79EA7F371B8573E8A3203DD1876E740A7AD43B373D6E6E0C9BF5",
+        "nativeEventsSha256": "6484E94C98461819F9281E5FB9078FE4EBE3FBBAC953E64883F591005C8C9D0C",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        },
+        {
+          "key": "focused-native-control",
+          "owner": "native-activation"
+        },
+        {
+          "key": "focused-text-entry",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "3AF87720BB0BC7C13159C27512FDD05EFB250FF9B821617F3E37E2D986A86358",
+      "sourceTraceSha256": "2F447A7DB815B8E56F7623CB45CB402E6509E808FED24B85EC6895D09ADDA82A"
+    },
+    {
+      "branchKey": "space-fire",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "87A551F8EB3A79EA7F371B8573E8A3203DD1876E740A7AD43B373D6E6E0C9BF5",
+        "nativeEventsSha256": "6484E94C98461819F9281E5FB9078FE4EBE3FBBAC953E64883F591005C8C9D0C",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        },
+        {
+          "key": "focused-native-control",
+          "owner": "native-activation"
+        },
+        {
+          "key": "focused-text-entry",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "3AF87720BB0BC7C13159C27512FDD05EFB250FF9B821617F3E37E2D986A86358",
+      "sourceTraceSha256": "2F447A7DB815B8E56F7623CB45CB402E6509E808FED24B85EC6895D09ADDA82A"
+    },
+    {
+      "branchKey": "enter-activate",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "8A3184C413E30EA91AF5B20D67FCA85A0B77111DC732084317AF0CD08B8973EE",
+        "nativeEventsSha256": "0928EF64E36666A1770FA305707E43198233EA8994D5D489D0B86493EDB2D318",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        },
+        {
+          "key": "focused-native-control",
+          "owner": "native-activation"
+        },
+        {
+          "key": "focused-text-entry",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "D04B48DDDCE9ADD442F34EF1805D7D229AFF7E786E2DD9472B332FDF6A6B3AC0",
+      "sourceTraceSha256": "159CDDB47D928990C58757341A8B08C6667C57ADC97DEF07DA90CDA9DAE14029"
+    },
+    {
+      "branchKey": "enter-activate",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "8A3184C413E30EA91AF5B20D67FCA85A0B77111DC732084317AF0CD08B8973EE",
+        "nativeEventsSha256": "0928EF64E36666A1770FA305707E43198233EA8994D5D489D0B86493EDB2D318",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        },
+        {
+          "key": "focused-native-control",
+          "owner": "native-activation"
+        },
+        {
+          "key": "focused-text-entry",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "D04B48DDDCE9ADD442F34EF1805D7D229AFF7E786E2DD9472B332FDF6A6B3AC0",
+      "sourceTraceSha256": "159CDDB47D928990C58757341A8B08C6667C57ADC97DEF07DA90CDA9DAE14029"
+    },
+    {
+      "branchKey": "arrow-left",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "CAC679EB8C7FED37D87158D8F70EF2C31749FCB3480AC496614C74FC75FC2D34",
+        "nativeEventsSha256": "AE7A3477A88DB788CFD1B01D909808DBF8D5EA2C8612282A9C3E18436982DED6",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "927C7A7E431A75012BDD926A7BD1E0DFACA6C54B5AB6F1F3C85EC359B6BE0BA1",
+      "sourceTraceSha256": "9A22DA643AAC162BABBA56A7130DF7952FA08C03556587E6C727384BD910D620"
+    },
+    {
+      "branchKey": "arrow-left",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "CAC679EB8C7FED37D87158D8F70EF2C31749FCB3480AC496614C74FC75FC2D34",
+        "nativeEventsSha256": "AE7A3477A88DB788CFD1B01D909808DBF8D5EA2C8612282A9C3E18436982DED6",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "927C7A7E431A75012BDD926A7BD1E0DFACA6C54B5AB6F1F3C85EC359B6BE0BA1",
+      "sourceTraceSha256": "9A22DA643AAC162BABBA56A7130DF7952FA08C03556587E6C727384BD910D620"
+    },
+    {
+      "branchKey": "arrow-right",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "66FF9640915AFC4A5E957B3F8074DA207725FCE852BB10DAEB0BB24E71F9BBB4",
+        "nativeEventsSha256": "78209E53113DDF71FB1D1ADC54CEFDBA35266DCC4F642C3CEF8981A4A7C043F4",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "466187F91F091536698BA33702664B3BA7233B432970D1C1B2073C6FB3EEAFFE",
+      "sourceTraceSha256": "F061667397AE31E5BAFCD72A93A51EDC8C241671C42271405C5B7C32E1AD70B2"
+    },
+    {
+      "branchKey": "arrow-right",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "66FF9640915AFC4A5E957B3F8074DA207725FCE852BB10DAEB0BB24E71F9BBB4",
+        "nativeEventsSha256": "78209E53113DDF71FB1D1ADC54CEFDBA35266DCC4F642C3CEF8981A4A7C043F4",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "466187F91F091536698BA33702664B3BA7233B432970D1C1B2073C6FB3EEAFFE",
+      "sourceTraceSha256": "F061667397AE31E5BAFCD72A93A51EDC8C241671C42271405C5B7C32E1AD70B2"
+    },
+    {
+      "branchKey": "arrow-up",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C9B5488A72978E90AC5F34BDD42C096E7016B82C2A6DDB16FF1016DFB2584F94",
+        "nativeEventsSha256": "E6C43A1DD9981BA38EF93B64A72557AE263359E6DCC8E22813746235D8B2A4D7",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "A1988045DCC3FA555569BBAE2AF74F912F6D66A8FDCD6C71F685C08905C9ECB9",
+      "sourceTraceSha256": "322F3EA1E8D073BAC532A596218BA5F2274171C8D740F3F9424F452FAAD40431"
+    },
+    {
+      "branchKey": "arrow-up",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C9B5488A72978E90AC5F34BDD42C096E7016B82C2A6DDB16FF1016DFB2584F94",
+        "nativeEventsSha256": "E6C43A1DD9981BA38EF93B64A72557AE263359E6DCC8E22813746235D8B2A4D7",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "A1988045DCC3FA555569BBAE2AF74F912F6D66A8FDCD6C71F685C08905C9ECB9",
+      "sourceTraceSha256": "322F3EA1E8D073BAC532A596218BA5F2274171C8D740F3F9424F452FAAD40431"
+    },
+    {
+      "branchKey": "arrow-down",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "16755A27436A17DAC3A56FF142AC2496ADEAE8FD7093FD872EA9DFAA7293CC15",
+        "nativeEventsSha256": "7CDC2CCFC7C7A70C76CB72E30867FC91D1D4CA6F55F9449D5D9FC479EF4B58E0",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "9BA015FBEE66A0D3A1B1B694A132E6C25C44C9883D221662EF0DD404AD7C8CF2",
+      "sourceTraceSha256": "D03BB369124509FECD3142320AED1234066CDFD36AF0367BC599E28007760EF9"
+    },
+    {
+      "branchKey": "arrow-down",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "16755A27436A17DAC3A56FF142AC2496ADEAE8FD7093FD872EA9DFAA7293CC15",
+        "nativeEventsSha256": "7CDC2CCFC7C7A70C76CB72E30867FC91D1D4CA6F55F9449D5D9FC479EF4B58E0",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "9BA015FBEE66A0D3A1B1B694A132E6C25C44C9883D221662EF0DD404AD7C8CF2",
+      "sourceTraceSha256": "D03BB369124509FECD3142320AED1234066CDFD36AF0367BC599E28007760EF9"
+    },
+    {
+      "branchKey": "q-weapon",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "AE4D39DC3BA453D23FC08A4D3958071F5F10761B13B56A6F6F9763885A010B22",
+        "nativeEventsSha256": "C88530E64CD5A83FCF54F429F630C8A928B38C74EA959C804B3DD6F11C833468",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "25EE9E225DDF7FA9288283DD69D7D3050331EE57BC8B74C5ADAD84010B5E7BA9",
+      "sourceTraceSha256": "0650D1761D18C2B12C51324AB02D9F61DF0BE2CE65CD234FC611FB97A23C08A8"
+    },
+    {
+      "branchKey": "q-weapon",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "AE4D39DC3BA453D23FC08A4D3958071F5F10761B13B56A6F6F9763885A010B22",
+        "nativeEventsSha256": "C88530E64CD5A83FCF54F429F630C8A928B38C74EA959C804B3DD6F11C833468",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "global-gameplay",
+          "owner": "retained-window-capture-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "25EE9E225DDF7FA9288283DD69D7D3050331EE57BC8B74C5ADAD84010B5E7BA9",
+      "sourceTraceSha256": "0650D1761D18C2B12C51324AB02D9F61DF0BE2CE65CD234FC611FB97A23C08A8"
+    },
+    {
+      "branchKey": "escape",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "EB0E28C375E141B1F3FF6A8BA783EA10C1A887D27EC718E07A707680EFC37D42",
+        "nativeEventsSha256": "56470D3B6005B4288826391AEEF7CD51D06E4012219B5BEB03F27106FF0EEE90",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "active-coach",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "no-active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "619E789B17102CED329D20B5C72B20BC0F021EFFE7E5879FC9922F58874376F9",
+      "sourceTraceSha256": "384E9FA3753C69284EB5851247BF9051FBD2AE068172C67F53D363A5BA3641C9"
+    },
+    {
+      "branchKey": "escape",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "EB0E28C375E141B1F3FF6A8BA783EA10C1A887D27EC718E07A707680EFC37D42",
+        "nativeEventsSha256": "56470D3B6005B4288826391AEEF7CD51D06E4012219B5BEB03F27106FF0EEE90",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "active-coach",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "no-active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "619E789B17102CED329D20B5C72B20BC0F021EFFE7E5879FC9922F58874376F9",
+      "sourceTraceSha256": "384E9FA3753C69284EB5851247BF9051FBD2AE068172C67F53D363A5BA3641C9"
+    },
+    {
+      "branchKey": "tab",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C3562E5113623E0DD2907D7C9EC964F75CDC62C86B3140ED4B3D8C8542AD50AE",
+        "nativeEventsSha256": "8F78010CB9B5A007FD17FA2C66551708B2121F273801AE5D44AC78AE79AAA2A3",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "active-coach",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "no-active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "1AD8C3970F3430F55C5BC149312A40FA0DE61DCA454D030543679E6294CEB9BD",
+      "sourceTraceSha256": "7CF6751BBEEF759AFB10042B8D2B8682A82089B27C087F02C69C9776BCAEA913"
+    },
+    {
+      "branchKey": "tab",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C3562E5113623E0DD2907D7C9EC964F75CDC62C86B3140ED4B3D8C8542AD50AE",
+        "nativeEventsSha256": "8F78010CB9B5A007FD17FA2C66551708B2121F273801AE5D44AC78AE79AAA2A3",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "active-coach",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "no-active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "1AD8C3970F3430F55C5BC149312A40FA0DE61DCA454D030543679E6294CEB9BD",
+      "sourceTraceSha256": "7CF6751BBEEF759AFB10042B8D2B8682A82089B27C087F02C69C9776BCAEA913"
+    },
+    {
+      "branchKey": "shift-tab",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "D91C538EB63C854B6E0F8A1766E9380C3B9AA8FCA8EC6A12E25447A6D8B395B4",
+        "nativeEventsSha256": "D9190F8B9ABFD84C1B24CEAA45ACD6B7F13691BD91AE153E846CE540F460A647",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "active-coach",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "no-active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "368F9207B27E96E9EEF099FDA2CD67A449925492507C8FFD533A6602B6A63685",
+      "sourceTraceSha256": "59C9BD861F7D684E810E5B0930CAA7AE8F30C4BDE0D9114BC945881984462A0A"
+    },
+    {
+      "branchKey": "shift-tab",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "D91C538EB63C854B6E0F8A1766E9380C3B9AA8FCA8EC6A12E25447A6D8B395B4",
+        "nativeEventsSha256": "D9190F8B9ABFD84C1B24CEAA45ACD6B7F13691BD91AE153E846CE540F460A647",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "active-coach",
+          "owner": "dialog-focus-trap"
+        },
+        {
+          "key": "no-active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "368F9207B27E96E9EEF099FDA2CD67A449925492507C8FFD533A6602B6A63685",
+      "sourceTraceSha256": "59C9BD861F7D684E810E5B0930CAA7AE8F30C4BDE0D9114BC945881984462A0A"
+    },
+    {
+      "branchKey": "pointer",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "fine-pointer",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "7F5157E8AE9D88B13DC56528BA689E7F0C0ACE3AD72609FE625A358E3E4B1248",
+        "nativeEventsSha256": "2C724386B0F5BE80A204B57878B7F0EC68ADF2B3ABC8702975E99EFD22D16310",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "gameplay-world-canvas",
+          "owner": "retained-canvas-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "2B1B2E8AFE6BED0309D425C4DDB5037F4FAF4242ADBC0216762BC52907A6E905",
+      "sourceTraceSha256": "C669B380F672C852A17A4EF67C92B4614F6FE3D540221039B9AA404D1528F372"
+    },
+    {
+      "branchKey": "pointer",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "fine-pointer",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "7F5157E8AE9D88B13DC56528BA689E7F0C0ACE3AD72609FE625A358E3E4B1248",
+        "nativeEventsSha256": "2C724386B0F5BE80A204B57878B7F0EC68ADF2B3ABC8702975E99EFD22D16310",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "gameplay-world-canvas",
+          "owner": "retained-canvas-input-handler"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        },
+        {
+          "key": "active-dialog",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "2B1B2E8AFE6BED0309D425C4DDB5037F4FAF4242ADBC0216762BC52907A6E905",
+      "sourceTraceSha256": "C669B380F672C852A17A4EF67C92B4614F6FE3D540221039B9AA404D1528F372"
+    },
+    {
+      "branchKey": "touch",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "coarse-touch",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "35B61074553347DEEF4A454EBFF9D1B1A39B4A218B3FEB8EC5ED3D66739463E4",
+        "nativeEventsSha256": "2EABF580811BFC16CDD60FF677074940C1E7F2D595487B0DF650DD56F6340F36",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "semantic-control",
+          "owner": "preact-local-handler"
+        },
+        {
+          "key": "native-activation",
+          "owner": "native-activation"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "2A19D07C198A4E4EC6A2FCC5CE08901634AC7972A5B9D808B8B53F43A20D1EAE",
+      "sourceTraceSha256": "AEFC068E05222B70BD6FDAF91CED5C46130C766C573DB4A80ABB45A10EB6BAD7"
+    },
+    {
+      "branchKey": "touch",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "coarse-touch",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "35B61074553347DEEF4A454EBFF9D1B1A39B4A218B3FEB8EC5ED3D66739463E4",
+        "nativeEventsSha256": "2EABF580811BFC16CDD60FF677074940C1E7F2D595487B0DF650DD56F6340F36",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "semantic-control",
+          "owner": "preact-local-handler"
+        },
+        {
+          "key": "native-activation",
+          "owner": "native-activation"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "2A19D07C198A4E4EC6A2FCC5CE08901634AC7972A5B9D808B8B53F43A20D1EAE",
+      "sourceTraceSha256": "AEFC068E05222B70BD6FDAF91CED5C46130C766C573DB4A80ABB45A10EB6BAD7"
+    },
+    {
+      "branchKey": "native-activation",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "assistive-native",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "555A9827CB825836D097F18C7500BABE0E4E7E30B7917C71C277750DC25EEF09",
+        "nativeEventsSha256": "A2887A6A406EC4BD67248A566F07980F927B39EDB7B0D37411ED4B328974F430",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "focused-native-control",
+          "owner": "native-activation"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "755CC5927B9AE7A48D6702566CDA90BE6A1D6ED6E5A10587A7644856901EAF9F",
+      "sourceTraceSha256": "BBBE27596D956E4DD64E226EA99A8E7683D3B76EE4B7C045A216F0CAC7A53D9F"
+    },
+    {
+      "branchKey": "native-activation",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "assistive-native",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "555A9827CB825836D097F18C7500BABE0E4E7E30B7917C71C277750DC25EEF09",
+        "nativeEventsSha256": "A2887A6A406EC4BD67248A566F07980F927B39EDB7B0D37411ED4B328974F430",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "focused-native-control",
+          "owner": "native-activation"
+        },
+        {
+          "key": "disabled-or-inert",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "755CC5927B9AE7A48D6702566CDA90BE6A1D6ED6E5A10587A7644856901EAF9F",
+      "sourceTraceSha256": "BBBE27596D956E4DD64E226EA99A8E7683D3B76EE4B7C045A216F0CAC7A53D9F"
+    },
+    {
+      "branchKey": "disabled-noop",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C80CF73FEA9DFF9246EF70DCF997B63A64DD1DAB6F793AA8D8123ACF3214E848",
+        "nativeEventsSha256": "B9AD125E4BDCEA837CAB36D307267926BF51473BF24CD10013D967249A6AA7C9",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "disabled",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "D13132948E29D6F913B69736CF69C540490AC5C1C24F5F2D1A96E89D14724B2B",
+      "sourceTraceSha256": "BEE70DFAA936BA82D32DABEF45453D42F6073FB4DDB3E481D2D5EBD398B96F4C"
+    },
+    {
+      "branchKey": "disabled-noop",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C80CF73FEA9DFF9246EF70DCF997B63A64DD1DAB6F793AA8D8123ACF3214E848",
+        "nativeEventsSha256": "B9AD125E4BDCEA837CAB36D307267926BF51473BF24CD10013D967249A6AA7C9",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "disabled",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "D13132948E29D6F913B69736CF69C540490AC5C1C24F5F2D1A96E89D14724B2B",
+      "sourceTraceSha256": "BEE70DFAA936BA82D32DABEF45453D42F6073FB4DDB3E481D2D5EBD398B96F4C"
+    },
+    {
+      "branchKey": "dialog-route",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "route/lifecycle",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C7DFB4ED395B28572EC075A36D5E4DEEF95217914097AA6B5002D2C83C01B0F8",
+        "nativeEventsSha256": "E7B12307F09D3214B7F4850456B8194FF21FC4A35748EFE77523B2A0A6781F11",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "9A6365FD7E16F599B13C7DE960992C39D404F29AE7356B698E90A797F4467FDB",
+      "sourceTraceSha256": "0B956FE176FD98C42CFA7CEE4C529B83A74A5F905457C36F764715802361BEAC"
+    },
+    {
+      "branchKey": "dialog-route",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "route/lifecycle",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "C7DFB4ED395B28572EC075A36D5E4DEEF95217914097AA6B5002D2C83C01B0F8",
+        "nativeEventsSha256": "E7B12307F09D3214B7F4850456B8194FF21FC4A35748EFE77523B2A0A6781F11",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "9A6365FD7E16F599B13C7DE960992C39D404F29AE7356B698E90A797F4467FDB",
+      "sourceTraceSha256": "0B956FE176FD98C42CFA7CEE4C529B83A74A5F905457C36F764715802361BEAC"
+    },
+    {
+      "branchKey": "coach-route",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "route/lifecycle",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "1FD679FA754A2949141C7D4922DFC262AD9CCC0B9D295E111B2DBC80D830016E",
+        "nativeEventsSha256": "A30FFF187C9FE5C9181CF81A2036092D7A34FC876D734B2821B3C79AD4E5104A",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "352359C231585E3C46C30B3251C9CD2859C36F7369B0BCEB13F44BE73ED7B330",
+      "sourceTraceSha256": "D0FFD46DDB31F2DF174A697A2E476CFCD27180BE4CC0CB5A122263630F0C9E0B"
+    },
+    {
+      "branchKey": "coach-route",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "route/lifecycle",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "1FD679FA754A2949141C7D4922DFC262AD9CCC0B9D295E111B2DBC80D830016E",
+        "nativeEventsSha256": "A30FFF187C9FE5C9181CF81A2036092D7A34FC876D734B2821B3C79AD4E5104A",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "active-dialog-or-coach",
+          "owner": "dialog-focus-trap"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "352359C231585E3C46C30B3251C9CD2859C36F7369B0BCEB13F44BE73ED7B330",
+      "sourceTraceSha256": "D0FFD46DDB31F2DF174A697A2E476CFCD27180BE4CC0CB5A122263630F0C9E0B"
+    },
+    {
+      "branchKey": "ready-route",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "route/lifecycle",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "37517E5F3DC66819F61F5A7BB8ACE1921282415F10551D2DEFA5C3EB0985B570",
+        "nativeEventsSha256": "3426CB7BD8A47692E3CF74AD0A1B7EE06F73678238FDE9F4B8562D1AE6DFC7EE",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "ready-route",
+          "owner": "controller-lifecycle"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "A61E7F3CE85E9064F35F912457C50746D9784965E9D5E38CD7A5D4B3D561B059",
+      "sourceTraceSha256": "37806AE22CBFCCDB27EDC4E9D5457B35DBE713F65AF881F906B1D7DF5E2D4BE3"
+    },
+    {
+      "branchKey": "ready-route",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "route/lifecycle",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "37517E5F3DC66819F61F5A7BB8ACE1921282415F10551D2DEFA5C3EB0985B570",
+        "nativeEventsSha256": "3426CB7BD8A47692E3CF74AD0A1B7EE06F73678238FDE9F4B8562D1AE6DFC7EE",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "ready-route",
+          "owner": "controller-lifecycle"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "A61E7F3CE85E9064F35F912457C50746D9784965E9D5E38CD7A5D4B3D561B059",
+      "sourceTraceSha256": "37806AE22CBFCCDB27EDC4E9D5457B35DBE713F65AF881F906B1D7DF5E2D4BE3"
+    },
+    {
+      "branchKey": "fallback-noop",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "g0-07-browser-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "BF0B04E94D1EFF5165F3B7372CEE7865806133B3D3E534648554293D36EA5766",
+        "nativeEventsSha256": "04E03F4C474BE1258E1B66969434B307EBD71D627F281E65FE61E65496762E39",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "fallback",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "ready",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "27CCCA06B491FA0DAD05907A793977F1C0314DF5C0786E92C90EC581F28E5B82",
+      "sourceTraceSha256": "A5FC85FE47DAC99E4276F333E866D8D84FE01939A6960D35559EF60DBE9148EC"
+    },
+    {
+      "branchKey": "fallback-noop",
+      "disabledInertAriaIsolation": "disabled-and-inert-controls-never-activate-or-enter-focus-order",
+      "duplicateDispatchAllowed": false,
+      "evidenceClass": "target-contract-not-yet-runtime-observed",
+      "exactOnce": true,
+      "modality": "keyboard",
+      "nativeEventPolicy": {
+        "listenerInvocationsSha256": "BF0B04E94D1EFF5165F3B7372CEE7865806133B3D3E534648554293D36EA5766",
+        "nativeEventsSha256": "04E03F4C474BE1258E1B66969434B307EBD71D627F281E65FE61E65496762E39",
+        "order": "preserve-g0-07-capture-target-bubble-default-and-propagation"
+      },
+      "ownerContexts": [
+        {
+          "key": "fallback",
+          "owner": "no-op"
+        }
+      ],
+      "phase": "forced-fallback",
+      "pixiInputOwner": false,
+      "semanticOutcomeIdentitySha256": "27CCCA06B491FA0DAD05907A793977F1C0314DF5C0786E92C90EC581F28E5B82",
+      "sourceTraceSha256": "A5FC85FE47DAC99E4276F333E866D8D84FE01939A6960D35559EF60DBE9148EC"
+    }
+  ],
+  "modalJourneys": [
+    {
+      "key": "armory-inline-to-portal",
+      "sourceRecordSha256": "B8FA04F24471BCBE392CD923DCD9AFB3989CE03667A7663FA86A7A54CE9E9A28",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    },
+    {
+      "key": "settings-close",
+      "sourceRecordSha256": "54962F44E7A0C4B8E75E8ECA78E2EF32BDAAACB10FB116377DB6299033651AD5",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    },
+    {
+      "key": "settings-backdrop",
+      "sourceRecordSha256": "271A3F00B21AAB80C3F8E71D53CBD111785D976F46E1CAB88A4B5FF73C9D47B9",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    },
+    {
+      "key": "settings-escape",
+      "sourceRecordSha256": "BEC71159D85DEC02CBB4AD26297D6BCA825B320F1B396661E21F7C130D28F785",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    },
+    {
+      "key": "settings-tab-loop",
+      "sourceRecordSha256": "A701D8E722885AFAF7D3B0D596E8AF1FC3382ED5C8956C258165F67CD39E1746",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    },
+    {
+      "key": "first-salvo-enter",
+      "sourceRecordSha256": "00503055346CCADFB6B58CFA50A498BADDC4F1ED304C63B9B42C1CEC375900AA",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    },
+    {
+      "key": "first-salvo-skip",
+      "sourceRecordSha256": "3C449874FC0559112B1AC8D5F6886CE358E5550FAEE56FA05A847A67F352C67A",
+      "targetRequirements": [
+        "single-active-owner",
+        "trap-tab-and-shift-tab",
+        "escape-or-explicit-close",
+        "return-focus-to-recorded-origin",
+        "background-inert-and-aria-isolated"
+      ]
+    }
+  ],
+  "schema": "singedterra-input-accessibility/v1",
+  "semanticKeys": {
+    "listenerKeys": [
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-2",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-6",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-7",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-8",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-9",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-10",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-11",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-12",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-19",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-166",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-170",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-174",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-175",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-197",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-201",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-202",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-203",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-204",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-229",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-240",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-241",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-242",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-247",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-248",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-250",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-258",
+      "7d934489-ebe4-48de-93b9-23f3275a36bb:runtime-listener-262",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-2",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-7",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-11",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-250",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-12",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-6",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-251",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-252",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-253",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-258",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-262",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-268",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-269",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-170",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-275",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-19",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-166",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-167",
+      "8ae47b97-af3b-43fb-a5ef-f9cb53ceddd6:runtime-listener-204",
+      "240ae176-da81-4884-b6d9-fa1240115416:runtime-listener-7",
+      "240ae176-da81-4884-b6d9-fa1240115416:runtime-listener-11",
+      "240ae176-da81-4884-b6d9-fa1240115416:runtime-listener-167",
+      "240ae176-da81-4884-b6d9-fa1240115416:runtime-listener-242",
+      "240ae176-da81-4884-b6d9-fa1240115416:runtime-listener-250",
+      "7f98c774-1af5-4f11-9c4e-0dcff656b25c:runtime-listener-2",
+      "7f98c774-1af5-4f11-9c4e-0dcff656b25c:runtime-listener-7",
+      "7f98c774-1af5-4f11-9c4e-0dcff656b25c:runtime-listener-11",
+      "7f98c774-1af5-4f11-9c4e-0dcff656b25c:runtime-listener-250",
+      "7aa9ec83-89da-407c-9019-bebf71546618:runtime-listener-2",
+      "7aa9ec83-89da-407c-9019-bebf71546618:runtime-listener-7",
+      "7aa9ec83-89da-407c-9019-bebf71546618:runtime-listener-11",
+      "7aa9ec83-89da-407c-9019-bebf71546618:runtime-listener-250",
+      "8253158b-f3f3-4036-9fc0-ff87d404c0db:runtime-listener-174"
+    ],
+    "listenerKeysIdentitySha256": "2A476B74ADF96D461DA35BEE935B48F4A54D1442DC7F7B78CAE5F0F516432371",
+    "nodeKeys": [
+      "pause-origin::menu-trigger",
+      "node:region:Turn command console:1",
+      "command-console-host::commander",
+      "node:span:Commander:3",
+      "node:div:Active turnP1100 HP‹AFUEL100›DLast salvo:4",
+      "node:div:Active turnP1100 HP:5",
+      "node:img:P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.:6",
+      "node:status:P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.:7",
+      "node:div:Active turnP1100 HP:8",
+      "node:span:Active turn:9",
+      "node:span:P1:10",
+      "node:span:100 health remaining:11",
+      "node:div:‹AFUEL100›DLast salvo:12",
+      "node:group:Tank movement:13",
+      "node:button:Move tank left, 8 fuel maximum:14",
+      "node:span:‹:15",
+      "node:kbd:A:16",
+      "command-console-host::fuel",
+      "node:span:FUEL:18",
+      "node:span:100 fuel remaining:19",
+      "node:button:Move tank right, 8 fuel maximum:20",
+      "node:span:›:21",
+      "node:kbd:D:22",
+      "node:status:Last salvo:23",
+      "node:span:Last salvo:24",
+      "node:section:Firing solution:25",
+      "node:span:Ballistics:26",
+      "node:section:Weapon and ammunition:27",
+      "node:span:WeaponBaby Missile∞:28",
+      "node:span:Weapon:29",
+      "node:span:Baby Missile:30",
+      "node:span:Unlimited ammunition:31",
+      "node:button:Select next weapon, current Baby Missile:32",
+      "node:span:›:33",
+      "node:kbd:Q:34",
+      "armory-inline-host::weapon-trigger",
+      "node:span:Close Armory:36",
+      "node:group:Angle and power adjustments:37",
+      "command-console-host::angle",
+      "node:span:Angle:39",
+      "command-console-host::aim-left-control",
+      "node:span:−:41",
+      "node:kbd:←:42",
+      "node:output:Angle:43",
+      "node:button:Aim barrel right:44",
+      "node:span:+:45",
+      "node:kbd:→:46",
+      "command-console-host::power",
+      "node:span:Power:48",
+      "node:button:Decrease power:49",
+      "node:span:−:50",
+      "node:kbd:↓:51",
+      "node:output:Power:52",
+      "node:button:Increase power:53",
+      "node:span:+:54",
+      "node:kbd:↑:55",
+      "command-console-host::wind",
+      "node:span:Wind:57",
+      "node:output:Wind:58",
+      "node:region:First Salvo coach:59",
+      "node:status::60",
+      "first-salvo-coach::skip",
+      "node:section:Fire control phase:62",
+      "node:span:Fire control:63",
+      "node:status:Fire ready. Baby Missile · 45° · Power 50 · Wind 1.3 left.:64",
+      "node:span:Your firing decision:65",
+      "node:span:Confirm firing solution:66",
+      "node:span:Fire ready:67",
+      "command-console-host::settings-trigger",
+      "node:span:⚙:69",
+      "node:status:No shot in progress.:70",
+      "node:div:Fire:71",
+      "command-console-host::fire",
+      "node:span:Fire:73",
+      "node:dialog:Command Menu:74",
+      "node:div:Command MenuResumeBattle SettingsReturn to Lobby:75",
+      "node:h2:Command Menu:76",
+      "node:div:ResumeBattle Settings:77",
+      "node:button:Resume:78",
+      "pause-origin::settings-trigger",
+      "node:group:Leave this match:80",
+      "node:button:Return to Lobby:81",
+      "settings-dialog::backdrop",
+      "node:section:SettingsTrajectory guideGOffSoundMOffClose settings:83",
+      "settings-dialog::title",
+      "node:switch:Trajectory guide:85",
+      "node:span:Trajectory guide:86",
+      "node:kbd:G:87",
+      "node:span:Off:88",
+      "settings-dialog::switch-audio",
+      "node:span:Sound:90",
+      "node:kbd:M:91",
+      "node:span:Off:92",
+      "node:div:Close settings:93",
+      "settings-dialog::close",
+      "first-salvo-coach::briefing-dialog",
+      "node:section:Operational briefingFirst SalvoAimSet elevation toward the target.WindRead the v:96",
+      "node:div:Operational briefing:97",
+      "node:h2:First Salvo:98",
+      "node:ol:AimSet elevation toward the target.WindRead the vector before setting power.Comm:99",
+      "node:li:AimSet elevation toward the target.:100",
+      "node:strong:Aim:101",
+      "node:span:Set elevation toward the target.:102",
+      "node:li:WindRead the vector before setting power.:103",
+      "node:strong:Wind:104",
+      "node:span:Read the vector before setting power.:105",
+      "node:li:CommitFire once the solution is ready.:106",
+      "node:strong:Commit:107",
+      "node:span:Fire once the solution is ready.:108",
+      "first-salvo-coach::enter",
+      "armory-portal-host::armory-dialog",
+      "node:div:ArmoryCloseBaby MissileAmmo ∞RoleReliable precision shotTerrainCuts a small crat:111",
+      "node:div:ArmoryClose:112",
+      "node:span:Armory:113",
+      "node:button:Close Armory:114",
+      "node:status:Baby MissileAmmo ∞RoleReliable precision shotTerrainCuts a small crater at impac:115",
+      "node:div:Baby MissileAmmo ∞:116",
+      "node:h3:Baby Missile:117",
+      "node:span:Ammo ∞:118",
+      "node:p:RoleReliable precision shot:119",
+      "node:span:Role:120",
+      "node:span:Reliable precision shot:121",
+      "node:p:TerrainCuts a small crater at impact.:122",
+      "node:span:Terrain:123",
+      "node:span:Cuts a small crater at impact.:124",
+      "node:p:EffectLight, tight blast:125",
+      "node:span:Effect:126",
+      "node:span:Light, tight blast:127",
+      "node:p:UseUse to range a target or finish a wounded tank.:128",
+      "node:span:Use:129",
+      "node:span:Use to range a target or finish a wounded tank.:130",
+      "node:region:Weapon arsenal:131",
+      "node:button:Baby Missile∞:132",
+      "node:span:Baby Missile:133",
+      "node:span:∞:134",
+      "node:button:Missile4:135",
+      "node:span:Missile:136",
+      "node:span:4:137",
+      "node:button:Heavy Missile1:138",
+      "node:span:Heavy Missile:139",
+      "node:span:1:140",
+      "node:button:Baby Nuke0:141",
+      "node:span:Baby Nuke:142",
+      "node:span:0:143",
+      "node:button:Nuke0:144",
+      "node:span:Nuke:145",
+      "node:span:0:146",
+      "node:button:Dirt Bomb1:147",
+      "node:span:Dirt Bomb:148",
+      "node:span:1:149",
+      "node:button:Bouncing Betty2:150",
+      "node:span:Bouncing Betty:151",
+      "node:span:2:152",
+      "node:button:Funky Bomb1:153",
+      "node:span:Funky Bomb:154",
+      "node:span:1:155",
+      "node:button:Napalm1:156",
+      "node:span:Napalm:157",
+      "node:span:1:158",
+      "node:button:Cluster Bomb2:159",
+      "node:span:Cluster Bomb:160",
+      "node:span:2:161",
+      "node:button:MIRV0:162",
+      "node:span:MIRV:163",
+      "node:span:0:164",
+      "node:button:Death's Head0:165",
+      "node:span:Death's Head:166",
+      "node:span:0:167",
+      "node:button:Riot Bomb1:168",
+      "node:span:Riot Bomb:169",
+      "node:span:1:170",
+      "node:button:Hot Napalm0:171",
+      "node:span:Hot Napalm:172",
+      "node:span:0:173",
+      "node:button:Sandhog1:174",
+      "node:span:Sandhog:175",
+      "node:span:1:176",
+      "node:button:Tracer1:177",
+      "node:span:Tracer:178",
+      "node:span:1:179",
+      "node:button:Shield1:180",
+      "node:span:Shield:181",
+      "node:span:1:182",
+      "node:button:Heavy Shield1:183",
+      "node:span:Heavy Shield:184",
+      "node:span:1:185",
+      "node:section:Armory catalog:186",
+      "node:div:WeaponsCredits: $8,000:187",
+      "node:h3:Weapons:188",
+      "node:span:Credits: $8,000:189",
+      "node:div:MissileReliable direct-hit blast.Own 4Ammo 4EquipBuy $1,875+5Heavy MissileHeavy :190",
+      "node:div:MissileReliable direct-hit blast.Own 4Ammo 4EquipBuy $1,875+5:191",
+      "node:div:MissileReliable direct-hit blast.Own 4Ammo 4:192",
+      "node:div:Missile:193",
+      "node:span:Missile:194",
+      "node:span:Reliable direct-hit blast.:195",
+      "node:span:Own 4:196",
+      "node:span:Ammo 4:197",
+      "node:button:Equip Missile:198",
+      "node:button:Buy Missile for $1,875, bundle of 5:199",
+      "node:span:Buy $1,875:200",
+      "node:span:+5:201",
+      "node:div:Heavy MissileHeavy blast for fortified targets.Own 1Ammo 1EquipBuy $6,000+3:202",
+      "node:div:Heavy MissileHeavy blast for fortified targets.Own 1Ammo 1:203",
+      "node:div:Heavy Missile:204",
+      "node:span:Heavy Missile:205",
+      "node:span:Heavy blast for fortified targets.:206",
+      "node:span:Own 1:207",
+      "node:span:Ammo 1:208",
+      "node:button:Equip Heavy Missile:209",
+      "node:button:Buy Heavy Missile for $6,000, bundle of 3:210",
+      "node:span:Buy $6,000:211",
+      "node:span:+3:212",
+      "node:div:Baby NukeCompact nuclear blast.Own 0Ammo 0EquipBuy $10,000+3:213",
+      "node:div:Baby NukeCompact nuclear blast.Own 0Ammo 0:214",
+      "node:div:Baby Nuke:215",
+      "node:span:Baby Nuke:216",
+      "node:span:Compact nuclear blast.:217",
+      "node:span:Own 0:218",
+      "node:span:Ammo 0:219",
+      "node:button:Equip Baby Nuke:220",
+      "node:button:Buy Baby Nuke for $10,000, bundle of 3:221",
+      "node:span:Buy $10,000:222",
+      "node:span:+3:223",
+      "node:div:NukeMaximum-radius nuclear blast.Own 0Ammo 0EquipBuy $12,000+1:224",
+      "node:div:NukeMaximum-radius nuclear blast.Own 0Ammo 0:225",
+      "node:div:Nuke:226",
+      "node:span:Nuke:227",
+      "node:span:Maximum-radius nuclear blast.:228",
+      "node:span:Own 0:229",
+      "node:span:Ammo 0:230",
+      "node:button:Equip Nuke:231",
+      "node:button:Buy Nuke for $12,000, bundle of 1:232",
+      "node:span:Buy $12,000:233",
+      "node:span:+1:234",
+      "node:div:Bouncing BettyBounds through terrain with a blast at every hop.Own 2Ammo 2EquipB:235",
+      "node:div:Bouncing BettyBounds through terrain with a blast at every hop.Own 2Ammo 2:236",
+      "node:div:Bouncing Betty:237",
+      "node:span:Bouncing Betty:238",
+      "node:span:Bounds through terrain with a blast at every hop.:239",
+      "node:span:Own 2:240",
+      "node:span:Ammo 2:241",
+      "node:button:Equip Bouncing Betty:242",
+      "node:button:Buy Bouncing Betty for $6,000, bundle of 5:243",
+      "node:span:Buy $6,000:244",
+      "node:span:+5:245",
+      "node:div:Funky BombSplits into a wide mid-flight spread.Own 1Ammo 1EquipBuy $7,000+2:246",
+      "node:div:Funky BombSplits into a wide mid-flight spread.Own 1Ammo 1:247",
+      "node:div:Funky Bomb:248",
+      "node:span:Funky Bomb:249",
+      "node:span:Splits into a wide mid-flight spread.:250",
+      "node:span:Own 1:251",
+      "node:span:Ammo 1:252",
+      "node:button:Equip Funky Bomb:253",
+      "node:button:Buy Funky Bomb for $7,000, bundle of 2:254",
+      "node:span:Buy $7,000:255",
+      "node:span:+2:256",
+      "node:div:Cluster BombSplits at the apex into a tight bomblet carpet.Own 2Ammo 2EquipBuy $:257",
+      "node:div:Cluster BombSplits at the apex into a tight bomblet carpet.Own 2Ammo 2:258",
+      "node:div:Cluster Bomb:259",
+      "node:span:Cluster Bomb:260",
+      "node:span:Splits at the apex into a tight bomblet carpet.:261",
+      "node:span:Own 2:262",
+      "node:span:Ammo 2:263",
+      "node:button:Equip Cluster Bomb:264",
+      "node:button:Buy Cluster Bomb for $10,000, bundle of 3:265",
+      "node:span:Buy $10,000:266",
+      "node:span:+3:267",
+      "node:div:MIRVSplits at the apex into three heavy warheads.Own 0Ammo 0EquipBuy $14,000+2:268",
+      "node:div:MIRVSplits at the apex into three heavy warheads.Own 0Ammo 0:269",
+      "node:div:MIRV:270",
+      "node:span:MIRV:271",
+      "node:span:Splits at the apex into three heavy warheads.:272",
+      "node:span:Own 0:273",
+      "node:span:Ammo 0:274",
+      "node:button:Equip MIRV:275",
+      "node:button:Buy MIRV for $14,000, bundle of 2:276",
+      "node:span:Buy $14,000:277",
+      "node:span:+2:278",
+      "node:div:Death's HeadSplits at the apex into seven heavy warheads.Own 0Ammo 0EquipBuy $24:279",
+      "node:div:Death's HeadSplits at the apex into seven heavy warheads.Own 0Ammo 0:280",
+      "node:div:Death's Head:281",
+      "node:span:Death's Head:282",
+      "node:span:Splits at the apex into seven heavy warheads.:283",
+      "node:span:Own 0:284",
+      "node:span:Ammo 0:285",
+      "node:button:Equip Death's Head:286",
+      "node:button:Buy Death's Head for $24,000, bundle of 1:287",
+      "node:span:Buy $24,000:288",
+      "node:span:+1:289",
+      "node:div:TracerZero-damage shot that marks the real impact.Own 1Ammo 1EquipBuy $10+20:290",
+      "node:div:TracerZero-damage shot that marks the real impact.Own 1Ammo 1:291",
+      "node:div:Tracer:292",
+      "node:span:Tracer:293",
+      "node:span:Zero-damage shot that marks the real impact.:294",
+      "node:span:Own 1:295",
+      "node:span:Ammo 1:296",
+      "node:button:Equip Tracer:297",
+      "node:button:Buy Tracer for $10, bundle of 20:298",
+      "node:span:Buy $10:299",
+      "node:span:+20:300",
+      "node:div:Dirt BombRaises a mound instead of a crater.Own 1Ammo 1EquipBuy $5,000+5:301",
+      "node:div:Dirt BombRaises a mound instead of a crater.Own 1Ammo 1:302",
+      "node:div:Dirt Bomb:303",
+      "node:span:Dirt Bomb:304",
+      "node:span:Raises a mound instead of a crater.:305",
+      "node:span:Own 1:306",
+      "node:span:Ammo 1:307",
+      "node:button:Equip Dirt Bomb:308",
+      "node:button:Buy Dirt Bomb for $5,000, bundle of 5:309",
+      "node:span:Buy $5,000:310",
+      "node:span:+5:311",
+      "node:div:Riot BombCarves a wide crater without blast damage.Own 1Ammo 1EquipBuy $3,000+5:312",
+      "node:div:Riot BombCarves a wide crater without blast damage.Own 1Ammo 1:313",
+      "node:div:Riot Bomb:314",
+      "node:span:Riot Bomb:315",
+      "node:span:Carves a wide crater without blast damage.:316",
+      "node:span:Own 1:317",
+      "node:span:Ammo 1:318",
+      "node:button:Equip Riot Bomb:319",
+      "node:button:Buy Riot Bomb for $3,000, bundle of 5:320",
+      "node:span:Buy $3,000:321",
+      "node:span:+5:322",
+      "node:div:NapalmSpreads a lingering fire across the surface.Own 1Ammo 1EquipBuy $10,000+10:323",
+      "node:div:NapalmSpreads a lingering fire across the surface.Own 1Ammo 1:324",
+      "node:div:Napalm:325",
+      "node:span:Napalm:326",
+      "node:span:Spreads a lingering fire across the surface.:327",
+      "node:span:Own 1:328",
+      "node:span:Ammo 1:329",
+      "node:button:Equip Napalm:330",
+      "node:button:Buy Napalm for $10,000, bundle of 10:331",
+      "node:span:Buy $10,000:332",
+      "node:span:+10:333",
+      "node:div:Hot NapalmA wider, hotter, longer-burning fire field.Own 0Ammo 0EquipBuy $16,000:334",
+      "node:div:Hot NapalmA wider, hotter, longer-burning fire field.Own 0Ammo 0:335",
+      "node:div:Hot Napalm:336",
+      "node:span:Hot Napalm:337",
+      "node:span:A wider, hotter, longer-burning fire field.:338",
+      "node:span:Own 0:339",
+      "node:span:Ammo 0:340",
+      "node:button:Equip Hot Napalm:341",
+      "node:button:Buy Hot Napalm for $16,000, bundle of 5:342",
+      "node:span:Buy $16,000:343",
+      "node:span:+5:344",
+      "node:div:SandhogDrills underground before its endpoint blast.Own 1Ammo 1EquipBuy $16,750+:345",
+      "node:div:SandhogDrills underground before its endpoint blast.Own 1Ammo 1:346",
+      "node:div:Sandhog:347",
+      "node:span:Sandhog:348",
+      "node:span:Drills underground before its endpoint blast.:349",
+      "node:span:Own 1:350",
+      "node:span:Ammo 1:351",
+      "node:button:Equip Sandhog:352",
+      "node:button:Buy Sandhog for $16,750, bundle of 5:353",
+      "node:span:Buy $16,750:354",
+      "node:span:+5:355",
+      "node:div:ShieldAbsorbs incoming damage before it reaches your tank.Own 1Ammo 1EquipBuy $2:356",
+      "node:div:ShieldAbsorbs incoming damage before it reaches your tank.Own 1Ammo 1:357",
+      "node:div:Shield:358",
+      "node:span:Shield:359",
+      "node:span:Absorbs incoming damage before it reaches your tank.:360",
+      "node:span:Own 1:361",
+      "node:span:Ammo 1:362",
+      "node:button:Equip Shield:363",
+      "node:button:Buy Shield for $20,000, bundle of 3:364",
+      "node:span:Buy $20,000:365",
+      "node:span:+3:366",
+      "node:div:Heavy ShieldA stronger finite barrier for surviving heavy fire.Own 1Ammo 1EquipB:367",
+      "node:div:Heavy ShieldA stronger finite barrier for surviving heavy fire.Own 1Ammo 1:368",
+      "node:div:Heavy Shield:369",
+      "node:span:Heavy Shield:370",
+      "node:span:A stronger finite barrier for surviving heavy fire.:371",
+      "node:span:Own 1:372",
+      "node:span:Ammo 1:373",
+      "node:button:Equip Heavy Shield:374",
+      "node:button:Buy Heavy Shield for $30,000, bundle of 2:375",
+      "node:span:Buy $30,000:376",
+      "node:span:+2:377",
+      "node:section:SuppliesBattery+100 power cap.Cap 100Buy $5,000+10Fuel Tank+100 movement fuel.Fu:378",
+      "node:h3:Supplies:379",
+      "node:div:Battery+100 power cap.Cap 100Buy $5,000+10Fuel Tank+100 movement fuel.Fuel 100Bu:380",
+      "node:div:Battery+100 power cap.Cap 100Buy $5,000+10:381",
+      "node:div:Battery+100 power cap.Cap 100:382",
+      "node:span:Battery:383",
+      "node:span:+100 power cap.:384",
+      "node:span:Cap 100:385",
+      "node:button:Buy Battery for $5,000, bundle of 10:386",
+      "node:span:Buy $5,000:387",
+      "node:span:+10:388",
+      "node:div:Fuel Tank+100 movement fuel.Fuel 100Buy $10,000+10:389",
+      "node:div:Fuel Tank+100 movement fuel.Fuel 100:390",
+      "node:span:Fuel Tank:391",
+      "node:span:+100 movement fuel.:392",
+      "node:span:Fuel 100:393",
+      "node:button:Buy Fuel Tank for $10,000, bundle of 10:394",
+      "node:span:Buy $10,000:395",
+      "node:span:+10:396",
+      "node:div:ParachuteReduces one dangerous collapse fall to 25% damage.Parachutes 0Buy $4,00:397",
+      "node:div:ParachuteReduces one dangerous collapse fall to 25% damage.Parachutes 0:398",
+      "node:span:Parachute:399",
+      "node:span:Reduces one dangerous collapse fall to 25% damage.:400",
+      "node:span:Parachutes 0:401",
+      "node:button:Buy Parachute for $4,000, bundle of 1:402",
+      "node:span:Buy $4,000:403",
+      "node:span:+1:404"
+    ],
+    "nodeKeysIdentitySha256": "40553C8D894A47AC7ED1DA8023B0213E1E739B18780358535FC722B0E6C697EE",
+    "rootKeys": [
+      "command-console-host",
+      "armory-inline-host",
+      "first-salvo-coach",
+      "pause-origin",
+      "settings-dialog",
+      "armory-portal-host"
+    ],
+    "rootKeysIdentitySha256": "D4E1DF61953C4C6AA95DC8BBB0C703A9D14C6CE04B853AB7E338667FC950E75F"
+  }
+}

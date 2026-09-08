@@ -348,6 +348,8 @@ export class Lobby {
   private accountAuthenticationChangeCb: ((identityChanged: boolean) => void) | null = null;
   private readonly root: HTMLElement;
   private readonly onReady: (config: LobbyConfig) => void;
+  /** Owns every listener attached to the current replaceable lobby tree. */
+  private renderListeners = new AbortController();
 
   /** Owns the seven Edge-Function calls (create/join/list/heartbeat/ready/leave/update). */
   private readonly transport = new LobbyTransport();
@@ -891,6 +893,7 @@ export class Lobby {
   hide(): void {
     this.cleanupWaitingChannel();
     this.stopBrowsePoll();
+    this.renderListeners.abort();
     this.root.replaceChildren();
     this.root.hidden = true;
   }
@@ -1575,6 +1578,7 @@ export class Lobby {
         padding: 3px 2px;
         text-align: left;
       }
+      #app:not(.is-compact) #lobby .lobby-garage__slot { flex: 1 1 auto; }
       #lobby .lobby-garage__slot span,
       #lobby .lobby-garage__slot strong {
         display: block;
@@ -1808,8 +1812,9 @@ export class Lobby {
       @media (pointer: coarse) {
         #app.is-compact #lobby .lobby-swatch,
         #app.is-compact #lobby .lobby-rows.crowded .lobby-swatch {
-          width: 50px;
-          height: 50px;
+          width: max(50px, calc(24px / var(--battle-ui-scale, 1)));
+          height: max(50px, calc(24px / var(--battle-ui-scale, 1)));
+          flex-shrink: 0;
         }
         #app.is-compact #lobby .lobby-rows.crowded .lobby-row {
           grid-template-columns: minmax(60px, 1fr) 68px 50px;
@@ -3026,6 +3031,15 @@ export class Lobby {
         }
         #lobby .lobby-route-brief--online .online-status:empty { display: none; }
       }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-field:has(> .lobby-swatches) {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+      #app.is-compact #lobby .lobby-route-brief--online .lobby-field > .lobby-swatches {
+        grid-column: 1 / -1;
+        min-width: 0;
+        flex-wrap: wrap;
+      }
       #app.is-compact #lobby .lobby-route-brief {
         padding-left: 5px;
       }
@@ -3514,21 +3528,31 @@ export class Lobby {
 
   /** Re-render the lobby card from current working state. */
   private render(): void {
+    this.renderListeners.abort();
+    this.renderListeners = new AbortController();
     this.root.replaceChildren();
 
-    const vehiclePreview = this.renderVehiclePreview();
-    let content: HTMLElement;
-    if (this.activeTab === 'hotseat') {
-      content = this.renderHotSeatTab();
-    } else {
-      const onlineContent = this.onlineSubView === 'create'
-        ? this.renderCreateForm()
-        : this.onlineSubView === 'join'
-          ? this.renderJoinForm()
-          : this.onlineSubView === 'browse'
-            ? this.renderBrowse()
-            : this.renderWaitingRoom();
-      content = buildLobbyOnlineView(onlineContent);
+    // The chooser does not own preparation UI. Constructing it eagerly creates an
+    // entire listener-bearing DOM tree that is never mounted and therefore appears
+    // as retained detached DOM in a real Chromium heap snapshot.
+    let vehiclePreview: HTMLElement | undefined;
+    let content: HTMLElement | undefined;
+    let controls: HTMLElement | undefined;
+    if (this.surface === 'preparation') {
+      vehiclePreview = this.renderVehiclePreview();
+      controls = this.renderControlsLegend();
+      if (this.activeTab === 'hotseat') {
+        content = this.renderHotSeatTab();
+      } else {
+        const onlineContent = this.onlineSubView === 'create'
+          ? this.renderCreateForm()
+          : this.onlineSubView === 'join'
+            ? this.renderJoinForm()
+            : this.onlineSubView === 'browse'
+              ? this.renderBrowse()
+              : this.renderWaitingRoom();
+        content = buildLobbyOnlineView(onlineContent);
+      }
     }
 
     const accountOptions = (open: boolean, triggerOnly = false) => ({
@@ -3558,6 +3582,7 @@ export class Lobby {
         void this.accountSession.submit(mode, credentials);
       },
       onSignOut: () => { void this.accountSession.signOut(); },
+      listenerSignal: this.renderListeners.signal,
     });
 
     const accountPanel = buildAccountPanelView(accountOptions(this.accountPanelOpen, true));
@@ -3571,7 +3596,7 @@ export class Lobby {
       account: accountPanel,
       vehiclePreview,
       content,
-      controls: this.renderControlsLegend(),
+      controls,
       onTabChange: (tab) => {
         this.activeTab = tab;
         this.surface = 'preparation';
@@ -3593,6 +3618,7 @@ export class Lobby {
           .find((button) => button.textContent === choice)
           ?.focus();
       },
+      listenerSignal: this.renderListeners.signal,
     });
 
     this.root.append(card);
@@ -3605,6 +3631,7 @@ export class Lobby {
           variant: 'account',
           body: accountContent,
           onClose: accountOptions(true).onClose,
+          listenerSignal: this.renderListeners.signal,
         }));
       }
     } else if (this.diagnosticsIntentActive) {
@@ -3631,6 +3658,7 @@ export class Lobby {
         },
         onClose: () => { this.closeDiagnostics(); },
         resolveReturnFocus: () => this.diagnosticsReturnFocus(),
+        listenerSignal: this.renderListeners.signal,
       }));
     } else if (this.settingsOpen) {
       const advanced = this.renderAdvancedOverlay();
@@ -3645,6 +3673,7 @@ export class Lobby {
             this.render();
             this.root.querySelector<HTMLButtonElement>('.lobby-advanced-trigger')?.focus();
           },
+          listenerSignal: this.renderListeners.signal,
         }));
       }
     }
@@ -3887,7 +3916,7 @@ export class Lobby {
     open.setAttribute('aria-label', `Customize ${ownerLabel} tank`);
     open.addEventListener('click', () => {
       this.openGarage(owner);
-    });
+    }, { signal: this.renderListeners.signal });
 
     const close = document.createElement('button');
     close.type = 'button';
@@ -3896,7 +3925,7 @@ export class Lobby {
     close.setAttribute('aria-label', 'Done customizing tank');
     close.addEventListener('click', () => {
       this.closeGarage(owner);
-    });
+    }, { signal: this.renderListeners.signal });
 
     const presets = document.createElement('div');
     presets.className = 'lobby-garage__presets';
@@ -3918,7 +3947,7 @@ export class Lobby {
         this.spotlightOwner = owner;
         onChange(presetLoadout(kit));
         this.focusGarageControl(owner, `[data-preset="${kit}"]`);
-      });
+      }, { signal: this.renderListeners.signal });
       presets.append(button);
     }
 
@@ -3947,7 +3976,7 @@ export class Lobby {
         this.spotlightOwner = owner;
         onChange({ ...loadout, [slot]: nextKit });
         this.focusGarageControl(owner, `[data-slot="${slot}"]`);
-      });
+      }, { signal: this.renderListeners.signal });
       slots.append(button);
     }
 
@@ -3989,7 +4018,7 @@ export class Lobby {
         event.preventDefault();
         first.focus();
       }
-    });
+    }, { signal: this.renderListeners.signal });
 
     if (editing) {
       garage.append(heading, summary, presetGroup, componentGroup, close);
@@ -4281,6 +4310,7 @@ export class Lobby {
           ...(settings ? { settings } : {}),
         });
       },
+      listenerSignal: this.renderListeners.signal,
     });
   }
 
@@ -4328,6 +4358,7 @@ export class Lobby {
         this.render();
       },
       onBrowse: () => { this.enterBrowse(); },
+      listenerSignal: this.renderListeners.signal,
     });
   }
 
@@ -4544,6 +4575,7 @@ export class Lobby {
         this.render();
       },
       onBrowse: () => { this.enterBrowse(); },
+      listenerSignal: this.renderListeners.signal,
     });
   }
 
@@ -4722,6 +4754,7 @@ export class Lobby {
       onJoin: (code) => { void this.joinByCode(code); },
       onCreate: () => { this.leaveBrowse('create'); },
       onJoinByCode: () => { this.leaveBrowse('join'); },
+      listenerSignal: this.renderListeners.signal,
     });
   }
 
@@ -4747,6 +4780,7 @@ export class Lobby {
       },
       onReady: () => { void this.handleReadyUp(); },
       onLeave: () => { void this.handleLeaveRoom(); },
+      listenerSignal: this.renderListeners.signal,
     });
   }
 
@@ -4948,7 +4982,7 @@ export class Lobby {
     nameInput.addEventListener('input', () => {
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
-    });
+    }, { signal: this.renderListeners.signal });
     const commitName = (): void => {
       const next = nameInput.value.trim();
       if (!next || next === me.name.trim()) return;
@@ -4956,8 +4990,8 @@ export class Lobby {
     };
     nameInput.addEventListener('keydown', (e) => {
       if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); commitName(); }
-    });
-    nameInput.addEventListener('blur', () => { commitName(); });
+    }, { signal: this.renderListeners.signal });
+    nameInput.addEventListener('blur', () => { commitName(); }, { signal: this.renderListeners.signal });
 
     const applyBtn = document.createElement('button');
     applyBtn.type = 'button';
@@ -4965,7 +4999,7 @@ export class Lobby {
     applyBtn.style.cssText = 'padding:6px 12px;font-size:13px;';
     applyBtn.textContent = 'Apply';
     applyBtn.disabled = this.onlineBusy;
-    applyBtn.addEventListener('click', () => { commitName(); });
+    applyBtn.addEventListener('click', () => { commitName(); }, { signal: this.renderListeners.signal });
 
     nameField.append(nameInput, applyBtn);
     wrapper.append(nameField);
@@ -4989,7 +5023,7 @@ export class Lobby {
         if (taken || this.onlineBusy || color.value === me.color) return;
         this.spotlightOwner = 'online-player';
         void this.updateMe({ color: color.value });
-      });
+      }, { signal: this.renderListeners.signal });
       swatches.append(swatch);
     }
     wrapper.append(swatches);
@@ -5108,7 +5142,7 @@ export class Lobby {
       onName(nameInput.value);
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
-    });
+    }, { signal: this.renderListeners.signal });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -5125,7 +5159,7 @@ export class Lobby {
         if (taken) return;
         this.spotlightOwner = 'online-player';
         onColor(color.value);
-      });
+      }, { signal: this.renderListeners.signal });
       swatches.append(swatch);
     }
 
@@ -5152,7 +5186,7 @@ export class Lobby {
     if (opts.step !== undefined) input.step = String(opts.step);
     input.placeholder = opts.placeholder;
     input.value = value;
-    input.addEventListener('input', () => { onChange(input.value); });
+    input.addEventListener('input', () => { onChange(input.value); }, { signal: this.renderListeners.signal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';
@@ -5185,7 +5219,7 @@ export class Lobby {
       this.activatePreviewOwner(owner);
       this.syncPreviewName(owner, name.value);
       this.refreshStartState();
-    });
+    }, { signal: this.renderListeners.signal });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -5205,7 +5239,7 @@ export class Lobby {
         this.spotlightOwner = `player-${index + 1}`;
         player.color = color.value;
         this.render();
-      });
+      }, { signal: this.renderListeners.signal });
       swatches.append(swatch);
     }
 
@@ -5235,7 +5269,7 @@ export class Lobby {
         player.name = `CPU ${index + 1}`;
       }
       this.render();
-    });
+    }, { signal: this.renderListeners.signal });
 
     row.append(name, swatches, control);
     row.append(this.renderGarage(
@@ -5266,7 +5300,7 @@ export class Lobby {
       this.accountPanelOpen = false;
       this.settingsOpen = true;
       this.render();
-    });
+    }, { signal: this.renderListeners.signal });
     return trigger;
   }
 
@@ -5393,7 +5427,7 @@ export class Lobby {
     input.value = this.settings[key];
     input.addEventListener('input', () => {
       this.settings[key] = input.value;
-    });
+    }, { signal: this.renderListeners.signal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';
@@ -5451,7 +5485,7 @@ export class Lobby {
       option.selected = choice.value === value;
       select.append(option);
     }
-    select.addEventListener('change', () => onChange(select.value));
+    select.addEventListener('change', () => onChange(select.value), { signal: this.renderListeners.signal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';

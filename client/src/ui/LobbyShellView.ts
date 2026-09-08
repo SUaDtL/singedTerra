@@ -19,14 +19,15 @@ export interface LobbyShellViewOptions {
   showBack: boolean;
   rejoinAvailable: boolean;
   account: HTMLElement | null;
-  vehiclePreview: HTMLElement;
-  content: HTMLElement;
-  controls: HTMLElement;
+  vehiclePreview?: HTMLElement;
+  content?: HTMLElement;
+  controls?: HTMLElement;
   onTabChange: (tab: LobbyPrimaryTab) => void;
   quickOperations?: readonly { readonly id: string; readonly title: string; readonly briefing: string }[];
   onQuickDuel: (operationId: string) => void;
   onRejoin: () => void;
   onBack: () => void;
+  listenerSignal?: AbortSignal;
 }
 
 export function buildLobbyOnlineView(content: HTMLElement): HTMLElement {
@@ -69,7 +70,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     button.type = 'button';
     button.className = 'lobby-btn primary';
     button.textContent = 'Rejoin your game';
-    button.addEventListener('click', () => { options.onRejoin(); });
+    button.addEventListener('click', () => { options.onRejoin(); }, { signal: options.listenerSignal });
     banner.append(text, button);
     masthead.append(banner);
   }
@@ -88,7 +89,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       button.type = 'button';
       button.className = className;
       button.textContent = label;
-      button.addEventListener('click', onClick);
+      button.addEventListener('click', onClick, { signal: options.listenerSignal });
       return button;
     };
 
@@ -129,7 +130,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       cardBriefing.className = 'lobby-quick-operation__card-briefing';
       cardBriefing.textContent = operation.briefing;
       card.append(cardTitle, cardBriefing);
-      card.addEventListener('click', () => { selectOperation(operation); });
+      card.addEventListener('click', () => { selectOperation(operation); }, { signal: options.listenerSignal });
       cardButtons.push(card);
       operationCards.append(card);
     }
@@ -160,12 +161,17 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     return card;
   }
 
+  const { content, vehiclePreview, controls } = options;
+  if (!content || !vehiclePreview || !controls) {
+    throw new Error('Lobby preparation content is required for the preparation surface');
+  }
+
   const back = options.showBack ? document.createElement('button') : null;
   if (back) {
     back.type = 'button';
     back.className = 'lobby-btn lobby-deployment__back';
     back.textContent = 'Back to deployment choices';
-    back.addEventListener('click', () => { options.onBack(); });
+    back.addEventListener('click', () => { options.onBack(); }, { signal: options.listenerSignal });
   }
 
   const context = document.createElement('section');
@@ -180,10 +186,10 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
   panel.id = MODE_PANEL_ID;
   panel.setAttribute('role', 'tabpanel');
   panel.setAttribute('aria-label', `${MODE_CONTEXT[options.activeTab].title} preparation`);
-  panel.append(options.content);
+  panel.append(content);
   deployment.append(masthead);
   if (back) deployment.append(back);
-  deployment.append(context, panel, options.vehiclePreview, options.controls);
+  deployment.append(context, panel, vehiclePreview, controls);
   card.append(deployment);
   return card;
 }

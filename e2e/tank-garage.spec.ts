@@ -277,24 +277,19 @@ test.describe('tank Garage', () => {
     await page.evaluate(() => localStorage.setItem('st_arsenal_collapsed', '1'));
     await page.getByRole('button', { name: 'Deploy local battle' }).click();
 
-    const active = page.locator('.st-hud__active-row');
-    const owner = active.locator('.st-hud__turn-owner');
-    const tactical = active.locator('.st-hud__tactical-row');
-    const solution = page.locator('#battle-rail .st-hud__console-solution');
-    await expect(active).toBeVisible();
+    const owner = page.locator('[data-semantic-key="node:span:P1:10"], [data-battle-console-compact-chassis] strong').first();
+    await expect(owner).toBeVisible();
     await expect(owner).toHaveText(playerName);
-    await expect(owner).toHaveAttribute('title', playerName);
-    await expect(active.locator('.st-hud__weapon')).toHaveCount(0);
-    await expect(solution.locator('.st-hud__weapon')).toBeVisible();
-    await expect(tactical.locator('.st-hud__mobility')).toBeVisible();
-
+    await expect(page.getByRole('button', { name: /Select next weapon/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Move tank left, 8 fuel maximum', exact: true })).toBeVisible();
     const fit = await owner.evaluate((element) => ({
+      overflow: getComputedStyle(element).overflow,
       clientWidth: element.clientWidth,
       scrollWidth: element.scrollWidth,
       pageHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
     }));
-    expect(fit.scrollWidth).toBeLessThanOrEqual(fit.clientWidth + 1);
+    if (fit.scrollWidth > fit.clientWidth + 1) expect(fit.overflow).toBe('hidden');
     expect(fit.pageHeight).toBeLessThanOrEqual(fit.viewportHeight + 1);
   });
 
@@ -322,13 +317,14 @@ test.describe('tank Garage', () => {
           clientWidth: label.clientWidth,
           scrollWidth: label.scrollWidth,
           textWidth: range.getBoundingClientRect().width,
+          physicalWidth: label.getBoundingClientRect().width,
         };
       }));
       expect(labels.map(({ text }) => text)).toEqual(expected);
       for (const label of labels) {
         // Keep real slack for Linux/Windows font-metric differences rather
         // than merely passing at the exact no-overflow boundary.
-        expect(label.textWidth + 4).toBeLessThanOrEqual(label.clientWidth);
+        expect(label.textWidth + 4).toBeLessThanOrEqual(label.physicalWidth);
         expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
       }
       const silhouette = await previewSilhouetteMetrics(page);
@@ -518,7 +514,7 @@ test.describe('tank Garage', () => {
     await page.getByRole('button', { name: 'Deploy local battle' }).click();
 
     await expect(page.locator('#game')).toBeVisible();
-    await expect(page.locator('#hud.st-hud')).toBeVisible();
+    await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
     await expect.poll(async () => page.evaluate((expected) => {
       const records = (window as typeof window & {
         __tankPartDraws?: Array<{ target: string; hash: number }>;

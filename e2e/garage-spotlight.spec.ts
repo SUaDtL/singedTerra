@@ -1,6 +1,21 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { enterBattleIfBriefed, openHotSeatCustomization } from './support';
 
+async function expectLiveLoadout(page: Page, owner: string, signature: string): Promise<void> {
+  await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
+  const compact = await page.locator('[data-battle-console-compact-chassis]').count() > 0;
+  if (compact) {
+    const description = signature.includes('|foundry|')
+      ? 'Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.'
+      : 'Mobility: Spider Legs. Hull: Scout Hull. Turret: Sensor Pod. Barrel: Railgun.';
+    await expect(page.getByRole('group', { name: `${owner}'s tank. ${description}`, exact: true })).toBeVisible();
+  } else {
+    const portrait = page.locator('[data-battle-console-portrait]');
+    await expect(portrait).toHaveAttribute('aria-label', `${owner}'s tank.`);
+    await expect(portrait).toHaveAttribute('data-tank-preview-signature', signature);
+  }
+}
+
 interface LayoutBox {
   left: number;
   top: number;
@@ -254,21 +269,16 @@ test.describe('Garage spotlight', () => {
 
     await page.getByRole('button', { name: 'Deploy local battle' }).click();
     await enterBattleIfBriefed(page);
-    const portrait = page.locator('.st-hud__tank-portrait');
-    await expect(portrait).toHaveAttribute(
-      'aria-label',
-      "Player 1's tank. Mobility: Tracks. Hull: Armor Hull. "
-      + 'Turret: Cupola. Barrel: Cannon.',
-    );
+    await expectLiveLoadout(page, 'Player 1', 'tactical|#e84d4d|foundry|foundry|foundry|foundry');
 
-    for (let index = 0; index < 16; index++) await page.keyboard.press('KeyQ');
-    await expect(page.locator('.st-hud__weapon-value')).toHaveText('Shield');
-    await page.keyboard.press('Space');
-    await expect(portrait).toHaveAttribute(
-      'aria-label',
-      "Player 2's tank. Mobility: Spider Legs. Hull: Scout Hull. "
-      + 'Turret: Sensor Pod. Barrel: Railgun.',
-    );
+    await page.getByRole('button', { name: 'Open Armory', exact: true }).click();
+    const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
+    await armory.locator('article').filter({ has: page.getByRole('heading', { name: 'Shield', exact: true }) })
+      .getByRole('button', { name: 'Equip', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Select next weapon, current Shield', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Fire Shield', exact: true }).click();
+    await expectLiveLoadout(page, 'Player 2', 'tactical|#4d8ce8|ranger|ranger|ranger|ranger');
   });
 
   test('keeps customization legible, interactive, focused, and fitted', async ({
@@ -386,10 +396,6 @@ test.describe('Garage spotlight', () => {
     await expect(start).toBeEnabled();
     await start.click();
     await expect(page.locator('#game')).toBeVisible();
-    await expect(page.locator('.st-hud__tank-portrait')).toHaveAttribute(
-      'aria-label',
-      "Player 1's tank. Mobility: Tracks. Hull: Armor Hull. "
-      + 'Turret: Cupola. Barrel: Cannon.',
-    );
+    await expectLiveLoadout(page, 'Player 1', 'tactical|#e84d4d|foundry|foundry|foundry|foundry');
   });
 });

@@ -228,18 +228,17 @@ test.describe('bounded aim guide', () => {
     await page.keyboard.press('ArrowUp');
     await expect.poll(() => changedCanvasPixels(page)).toBeGreaterThan(20);
 
-    const action = page.locator('.st-hud__primary-action');
+    const action = page.locator('button[data-battle-console-action="fire"]');
     for (let shot = 0; shot < 2; shot++) {
       await expect(action).toBeEnabled();
       await action.click();
-      await expect(page.locator('.st-hud__command-console'))
-        .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+      await expect(page.locator('[data-battle-console-surface]'))
+        .toHaveAttribute('data-battle-console-phase', /firing|resolving/);
       await expect(action).toBeEnabled({ timeout: 15_000 });
       if (shot === 0) {
-        // The numerical firing solution is the live angle owner; the retired
-        // analogue gauge must not return as a second source of truth.
-        await expect(page.locator('[data-control="angle"] output'))
-          .toHaveText('45°');
+        // The semantic readout reports the next tank's left-facing world angle.
+        await expect(page.locator('[data-semantic-key="node:output:Angle:43"]'))
+          .toHaveText('135°');
       }
     }
 
@@ -262,10 +261,10 @@ test.describe('bounded aim guide', () => {
   }) => {
     const right = await composedGuideSeam(page, 45);
 
-    const action = page.locator('.st-hud__primary-action');
+    const action = page.locator('button[data-battle-console-action="fire"]');
     await action.click();
-    await expect(page.locator('.st-hud__command-console'))
-      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    await expect(page.locator('[data-battle-console-surface]'))
+      .toHaveAttribute('data-battle-console-phase', /firing|resolving/);
     await expect(action).toBeEnabled({ timeout: 15_000 });
     // The new turn has the same bounded wind/turn-handoff flourishes as initial
     // load. Let them expire before isolating a guide-only frame delta.

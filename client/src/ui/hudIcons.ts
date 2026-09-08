@@ -12,6 +12,7 @@ import {
   Plus,
   RefreshCw,
   ScanLine,
+  X,
   createElement,
 } from 'lucide';
 
@@ -30,6 +31,7 @@ const HUD_ICONS = {
   move: { icon: MoveHorizontal, symbol: 'mobility' },
   weapon: { icon: RefreshCw, symbol: 'cycle' },
   menu: { icon: Menu, symbol: 'menu' },
+  close: { icon: X, symbol: 'close' },
   store: { icon: Coins, symbol: 'credits' },
   arsenal: { icon: Bomb, symbol: 'ordnance' },
   disclosure: { icon: ChevronDown, symbol: 'disclosure' },

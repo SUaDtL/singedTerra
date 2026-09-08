@@ -41,13 +41,18 @@ export interface AccountPanelViewOptions {
   onModeChange: (mode: AccountMode) => void
   onSubmit: (mode: AccountMode, credentials: AccountCredentials) => void
   onSignOut: () => void
+  listenerSignal?: AbortSignal
 }
 
-function actionButton(text: string, onClick: () => void): HTMLButtonElement {
+function actionButton(
+  text: string,
+  onClick: () => void,
+  listenerSignal?: AbortSignal,
+): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.textContent = text
-  button.addEventListener('click', onClick)
+  button.addEventListener('click', onClick, { signal: listenerSignal })
   return button
 }
 
@@ -98,7 +103,7 @@ export function buildAccountPanelView(
   root.setAttribute('aria-label', 'Player account')
 
   if (options.state.status === 'loading') {
-    const loading = actionButton('Account loading…', () => undefined)
+    const loading = actionButton('Account loading…', () => undefined, options.listenerSignal)
     loading.className = 'account-panel__summary'
     loading.disabled = true
     root.append(loading)
@@ -115,6 +120,7 @@ export function buildAccountPanelView(
     const disclosure = actionButton(
       triggerLabel,
       options.open && !options.triggerOnly ? options.onClose : options.onOpen,
+      options.listenerSignal,
     )
     disclosure.className = 'account-panel__account-trigger'
     disclosure.setAttribute('aria-expanded', String(options.open))
@@ -253,10 +259,10 @@ export function buildAccountPanelView(
       summary.className = 'account-panel__summary-unavailable'
       summary.textContent = 'Progress summary unavailable'
     }
-    const signOut = actionButton('Sign out', options.onSignOut)
+    const signOut = actionButton('Sign out', options.onSignOut, options.listenerSignal)
     signOut.className = 'account-panel__secondary'
     signOut.disabled = options.state.busy
-    const close = actionButton('Close', options.onClose)
+    const close = actionButton('Close', options.onClose, options.listenerSignal)
     close.className = 'account-panel__secondary account-panel__close'
     root.append(summary)
     if (careerPanel) root.append(careerPanel)
@@ -273,7 +279,7 @@ export function buildAccountPanelView(
     error.className = 'account-panel__error'
     error.setAttribute('role', 'alert')
     error.textContent = options.state.error
-    const signOut = actionButton('Sign out', options.onSignOut)
+    const signOut = actionButton('Sign out', options.onSignOut, options.listenerSignal)
     signOut.className = 'account-panel__secondary'
     signOut.disabled = options.state.busy
     root.append(identity, error, signOut)
@@ -281,7 +287,7 @@ export function buildAccountPanelView(
   }
 
   if (!options.open || options.triggerOnly) {
-    const open = actionButton('Account', options.onOpen)
+    const open = actionButton('Account', options.onOpen, options.listenerSignal)
     open.className = 'account-panel__summary'
     root.append(open)
     return root
@@ -293,14 +299,14 @@ export function buildAccountPanelView(
   header.className = 'account-panel__header'
   const heading = document.createElement('strong')
   heading.textContent = options.mode === 'create' ? 'Create account' : 'Sign in'
-  const close = actionButton('Close', options.onClose)
+  const close = actionButton('Close', options.onClose, options.listenerSignal)
   close.className = 'account-panel__secondary'
   header.append(heading, close)
 
   const modes = document.createElement('div')
   modes.className = 'account-panel__modes'
-  const signInMode = actionButton('Sign in', () => options.onModeChange('sign-in'))
-  const createMode = actionButton('Create account', () => options.onModeChange('create'))
+  const signInMode = actionButton('Sign in', () => options.onModeChange('sign-in'), options.listenerSignal)
+  const createMode = actionButton('Create account', () => options.onModeChange('create'), options.listenerSignal)
   signInMode.classList.toggle('active', options.mode === 'sign-in')
   createMode.classList.toggle('active', options.mode === 'create')
   signInMode.setAttribute('aria-pressed', String(options.mode === 'sign-in'))
@@ -352,7 +358,7 @@ export function buildAccountPanelView(
     if (displayName) credentials.displayName = displayName.value
     password.input.value = ''
     options.onSubmit(options.mode, credentials)
-  })
+  }, { signal: options.listenerSignal })
 
   root.append(header, modes, form)
   return root

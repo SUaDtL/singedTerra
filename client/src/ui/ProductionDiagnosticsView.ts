@@ -25,6 +25,7 @@ export interface ProductionDiagnosticsViewOptions {
   readonly onCancelCompletionRetryProbe: () => void
   readonly onRunPagesProvenance: () => void
   readonly onClose: () => void
+  readonly listenerSignal?: AbortSignal
 }
 
 function pagesProvenanceCopy(state: PagesProvenanceState): string {
@@ -47,7 +48,7 @@ function buildPagesProvenanceTool(options: ProductionDiagnosticsViewOptions): HT
   run.disabled = !isRunEnabled(options.state.status) || options.pagesProvenance.status === 'RUNNING'
   run.addEventListener('click', () => {
     if (!run.disabled) options.onRunPagesProvenance()
-  })
+  }, { signal: options.listenerSignal })
   section.append(heading, state, run)
   return section
 }
@@ -89,7 +90,7 @@ function buildCompletionRetryProbe(options: ProductionDiagnosticsViewOptions): H
     || options.completionRetryProbe.status === 'response-discarded'
   arm.addEventListener('click', () => {
     if (!arm.disabled) options.onArmCompletionRetryProbe()
-  })
+  }, { signal: options.listenerSignal })
   const cancel = document.createElement('button')
   cancel.type = 'button'
   cancel.className = 'production-diagnostics__cancel-retry'
@@ -97,7 +98,7 @@ function buildCompletionRetryProbe(options: ProductionDiagnosticsViewOptions): H
   cancel.disabled = options.completionRetryProbe.status !== 'armed'
   cancel.addEventListener('click', () => {
     if (!cancel.disabled) options.onCancelCompletionRetryProbe()
-  })
+  }, { signal: options.listenerSignal })
   section.append(heading, description, state)
   if (options.completionRetryProbe.status === 'PASS') {
     const award = document.createElement('code')
@@ -141,6 +142,7 @@ function isRunEnabled(status: ProductionDiagnosticsState['status']): boolean {
 function buildAccountAction(
   state: ProductionDiagnosticsState,
   onOpenAccount: () => void,
+  listenerSignal?: AbortSignal,
 ): HTMLButtonElement | undefined {
   if (
     state.status !== 'anonymous'
@@ -158,7 +160,7 @@ function buildAccountAction(
     } catch {
       // Account recovery remains available after a synchronous caller failure.
     }
-  })
+  }, { signal: listenerSignal })
   return account
 }
 
@@ -250,7 +252,7 @@ export function buildProductionDiagnosticsView(
     } catch {
       run.disabled = false
     }
-  })
+  }, { signal: options.listenerSignal })
   const copy = document.createElement('button')
   copy.type = 'button'
   copy.className = 'production-diagnostics__copy'
@@ -263,10 +265,10 @@ export function buildProductionDiagnosticsView(
     } catch {
       // Copy feedback is owned by the caller; keep this render unchanged.
     }
-  })
+  }, { signal: options.listenerSignal })
   actions.append(run, copy)
 
-  const account = buildAccountAction(options.state, options.onOpenAccount)
+  const account = buildAccountAction(options.state, options.onOpenAccount, options.listenerSignal)
   if (account) actions.append(account)
   const completionRetryProbe = buildCompletionRetryProbe(options)
   const pagesProvenance = buildPagesProvenanceTool(options)
@@ -319,6 +321,7 @@ export function buildProductionDiagnosticsView(
         // A hostile or detached target must not escape the modal close path.
       }
     },
+    listenerSignal: options.listenerSignal,
   })
   return overlay
 }

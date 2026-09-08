@@ -88,22 +88,56 @@ export class ImpactMonitorPainter {
       ctx.restore();
       savedDepth -= 1;
 
+      ctx.beginPath();
+      ctx.roundRect(
+        scale,
+        scale,
+        frame.width - 2 * scale,
+        frame.height - 2 * scale,
+        8 * scale,
+      );
+      ctx.lineWidth = 1.5 * scale;
+      ctx.strokeStyle = 'rgba(214, 160, 70, 0.78)';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.roundRect(
+        5 * scale,
+        5 * scale,
+        frame.width - 10 * scale,
+        frame.height - 10 * scale,
+        6 * scale,
+      );
       ctx.lineWidth = scale;
-      ctx.strokeStyle = ACCENT.gold;
-      ctx.strokeRect(0.5 * scale, 0.5 * scale, frame.width - scale, frame.height - scale);
-      ctx.strokeStyle = 'rgba(255, 210, 63, 0.34)';
-      ctx.strokeRect(4.5 * scale, 4.5 * scale, frame.width - 9 * scale, frame.height - 9 * scale);
+      ctx.strokeStyle = 'rgba(255, 210, 63, 0.22)';
+      ctx.stroke();
 
-      ctx.fillStyle = BACKDROP;
-      ctx.fillRect(12 * scale, 7 * scale, 111 * scale, 19 * scale);
+      // The monitor is part of the same blackened field-console family as the
+      // DOM HUD, but remains an atomic canvas composite so it cannot leave a
+      // partial overlay behind if the final battlefield paint fails.
+      ctx.beginPath();
+      ctx.roundRect(10 * scale, 6 * scale, 118 * scale, 22 * scale, 4 * scale);
+      ctx.fillStyle = 'rgba(14, 10, 15, 0.96)';
+      ctx.fill();
+      ctx.lineWidth = scale;
+      ctx.strokeStyle = 'rgba(214, 160, 70, 0.72)';
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(214, 160, 70, 0.22)';
+      ctx.fillRect(14 * scale, 10 * scale, 2 * scale, 14 * scale);
       ctx.fillStyle = TEXT.gold;
       ctx.font = `700 ${11 * scale}px ${FONT.mono}`;
       ctx.textBaseline = 'middle';
       ctx.fillText('IMPACT MONITOR', 18 * scale, 21 * scale);
 
       if (cue !== null) {
-        ctx.fillStyle = 'rgba(12, 7, 22, 0.88)';
-        ctx.fillRect(10 * scale, 96 * scale, 200 * scale, 34 * scale);
+        ctx.beginPath();
+        ctx.roundRect(10 * scale, 94 * scale, 200 * scale, 36 * scale, 4 * scale);
+        ctx.fillStyle = 'rgba(12, 9, 14, 0.94)';
+        ctx.fill();
+        ctx.lineWidth = scale;
+        ctx.strokeStyle = 'rgba(214, 160, 70, 0.48)';
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(93, 170, 221, 0.28)';
+        ctx.fillRect(14 * scale, 99 * scale, 2 * scale, 25 * scale);
         ctx.fillStyle = TEXT.body;
         ctx.font = `700 ${10 * scale}px ${FONT.mono}`;
         ctx.fillText(

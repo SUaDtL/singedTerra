@@ -12,7 +12,7 @@ import { expect, type Page } from '@playwright/test';
  * Dismisses the splash overlay so it can't intercept anything.
  */
 export async function enterBattleIfBriefed(page: Page): Promise<void> {
-  const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+  const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });
   await briefing.waitFor({ state: 'visible', timeout: 300 }).catch(() => undefined);
   if (await briefing.isVisible()) {
     await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
@@ -45,7 +45,7 @@ export async function gotoRunningGame(
   // At ordinary aspect ratios Match is deliberately a closed drawer; its DOM
   // proves the HUD has built without permanently reserving canvas width.
   await expect(page.locator('#hud.st-hud')).toHaveCount(1);
-  await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
+  await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toBeVisible();
   // A forced tutorial query intentionally overrides the stored preference; cross
   // that public entry control if a caller explicitly requests the forced path.
   await enterBattleIfBriefed(page);

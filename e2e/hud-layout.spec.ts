@@ -1,2062 +1,323 @@
-import { test, expect, type Page } from '@playwright/test';
-import { GameEngine } from '../shared/src/engine/GameEngine';
-import { TANK_PART_SETS } from '../client/src/renderer/tankPartCatalog';
-import { maximumTankRecoilDownPx } from '../client/src/renderer/tankRecoil';
-import { ARENA_FLOOR_Y, CANVAS_HEIGHT } from '../shared/src/engine/Terrain';
-import {
-  gotoRunningGame,
-  isCompact,
-  findHudLayoutViolations,
-} from './support';
+import { test, expect, type Locator } from '@playwright/test';
+import { gotoRunningGame } from './support';
+import { STORE_CATALOG } from '../client/src/ui/storeCatalog';
+import { WEAPONS, ACCESSORIES } from '../shared/src/engine/WeaponSystem';
 
-const ARSENAL_WEAPONS = [
-  ['baby_missile', 'Baby Missile'],
-  ['missile', 'Missile'],
-  ['heavy_missile', 'Heavy Missile'],
-  ['baby_nuke', 'Baby Nuke'],
-  ['nuke', 'Nuke'],
-  ['dirt_bomb', 'Dirt Bomb'],
-  ['bouncing_betty', 'Bouncing Betty'],
-  ['funky_bomb', 'Funky Bomb'],
-  ['napalm', 'Napalm'],
-  ['cluster_bomb', 'Cluster Bomb'],
-  ['mirv', 'MIRV'],
-  ['deaths_head', "Death's Head"],
-  ['riot_bomb', 'Riot Bomb'],
-  ['hot_napalm', 'Hot Napalm'],
-  ['sandhog', 'Sandhog'],
-  ['tracer', 'Tracer'],
-  ['shield', 'Shield'],
-  ['heavy_shield', 'Heavy Shield'],
-] as const;
-
-const STORE_WEAPONS = ARSENAL_WEAPONS.slice(1);
-
-async function openArmory(page: Page): Promise<void> {
-  await page.getByRole('button', { name: /^Open Armory .*equip or buy weapons$/ }).click();
-  const armory = page.locator('[data-ui="arsenal-drawer"]');
-  await expect(armory).toBeVisible();
+/** Accepted Preact console successor coverage map:
+ * Retired .st-hud command-card, SVG-gauge, painted-cutout, old arsenal preference,
+ * plate-pixel and per-recess assertions described the replaced DOM/art implementation.
+ * Their behavioral obligations remain in the following named successors:
+ * - Flex crush, command bay/rail ownership, gauge/value containment, physical targets:
+ *   fitted semantic controls below + product-completion/console.spec.ts AC-01/02/03.
+ * - Fuel spending, equip/buy, wind read-only, Settings persistence and turn progression:
+ *   product-completion/console.spec.ts AC-03/05/08 (real engine, five viewport profiles).
+ * - Old arsenal banks, purchase keys and scroll reachability: complete catalog below.
+ * - Match header/gutter/drawer/text fitting: Match clearance below plus
+ *   product-completion/compact-readability.spec.ts and e2e/command-menu.spec.ts.
+ * - Input state, Space, fast-forward and modal focus: interaction journeys below.
+ * - Round-shop geometry and actual next-round transition: retained test below.
+ * - Long identities: actual fitted DOM fixtures below (never frozen-marker geometry).
+ * - Pixi fallback, dynamic needle and resource cleanup: compositor-failure-state,
+ *   pixi/live-instruments, mount.runtime, lifecycle.runtime and adapter-lifecycle tests.
+ * Removed assertions do not define new gameplay or obsolete visual acceptance gates.
+ */
+async function contained(child: Locator, owner: Locator): Promise<void> {
+  const inner = (await child.boundingBox())!;
+  const outer = (await owner.boundingBox())!;
+  expect(inner).not.toBeNull();
+  expect(outer).not.toBeNull();
+  expect(inner.x).toBeGreaterThanOrEqual(outer.x - 1);
+  expect(inner.y).toBeGreaterThanOrEqual(outer.y - 1);
+  expect(inner.x + inner.width).toBeLessThanOrEqual(outer.x + outer.width + 1);
+  expect(inner.y + inner.height).toBeLessThanOrEqual(outer.y + outer.height + 1);
 }
 
-/**
- * HUD rendering-guardrail suite. Runs across the viewport matrix (desktop-fine,
- * pixel-touch, small-window) defined in playwright.config.ts. Every assertion
- * reads COMPUTED GEOMETRY from real Chromium â€” not DOM presence â€” because the bug
- * these guard against (the Fire Control flex-crushed to ~10.6px) had the
- * right DOM but the wrong layout.
- */
-test.describe('HUD layout guardrails', () => {
+test.describe('accepted battle console rendering guardrails', () => {
   test.beforeEach(async ({ page }) => {
     await gotoRunningGame(page);
-    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
-    if (await briefing.isVisible()) {
-      await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
-      await expect(briefing).toBeHidden();
-    }
-    const coachSkip = page.getByRole('button', { name: 'Skip', exact: true });
-    if (await coachSkip.isVisible()) await coachSkip.click();
+    await expect(page.locator('[data-battle-console-surface]')).toHaveAttribute('data-battle-console-ready', 'true');
   });
 
-  test('integrated firing controls are not flex-crushed', async ({ page }) => {
-    const compact = await isCompact(page);
-    const box = await page.locator('#battle-rail .st-hud__solution-adjustments').boundingBox();
-    expect(box, 'integrated firing controls should have a rendered box').not.toBeNull();
-    expect(box!.height).toBeGreaterThan(compact ? 24 : 40);
-  });
-
-  test('console material remains a non-interactive fallback-backed decoration', async ({ page }) => {
-    const material = await page.locator('#battle-rail').evaluate((rail) => {
-      const style = getComputedStyle(rail);
-      const console = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
-      return {
-        texture: rail.style.getPropertyValue('--st-console-texture'),
-        backgroundImage: style.backgroundImage,
-        backgroundColor: style.backgroundColor,
-        railPointerEvents: style.pointerEvents,
-        pseudoContent: getComputedStyle(rail, '::before').content,
-        railName: rail.getAttribute('aria-label'),
-        consoleName: console.getAttribute('aria-label'),
-      };
-    });
-
-    expect(material.texture).toBe('url(/battle-console-plate.webp)');
-    expect(material.backgroundImage).toMatch(/url\("[^)]*battle-console-plate\.webp"\)/);
-    expect(material.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
-    expect(material.railPointerEvents).toBe('none');
-    expect(material.pseudoContent).toBe('none');
-    expect(material.railName ?? '').not.toContain('battle-console-plate');
-    expect(material.consoleName).toBe('Turn command console');
-  });
-
-  test('field instruments share a compact, banded battle-console rail', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'desktop geometry is the fine-pointer contract');
-    const geometry = await page.locator('#battle-rail .st-hud__solution-adjustments').evaluate((controls) => {
-      const stage = document.getElementById('stage')!.getBoundingClientRect();
-      const rail = document.getElementById('battle-rail')!.getBoundingClientRect();
-      const contains = (outer: DOMRect, inner: DOMRect): boolean =>
-        inner.left >= outer.left - 1 && inner.right <= outer.right + 1
-        && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
-      const instruments = ['angle', 'power', 'wind'].map((name) => {
-        const owner = controls.querySelector<HTMLElement>(`[data-instrument="${name}"]`)!;
-        const svg = owner.querySelector<SVGSVGElement>('svg')!;
-        const value = owner.querySelector<HTMLOutputElement>('output')!;
-        const buttons = [...owner.querySelectorAll<HTMLButtonElement>('button')];
-        const ownerRect = owner.getBoundingClientRect();
-        const svgRect = svg.getBoundingClientRect();
-        const valueRect = value.getBoundingClientRect();
-        const buttonRects = buttons.map((button) => button.getBoundingClientRect());
-        return {
-          name,
-          owner: ownerRect.toJSON(),
-          contained: [svgRect, valueRect, ...buttonRects].every((rect) => contains(ownerRect, rect)),
-          svgBottom: svgRect.bottom,
-          valueTop: valueRect.top,
-          valueBottom: valueRect.bottom,
-          buttonTop: Math.min(...buttonRects.map((rect) => rect.top)),
-        };
-      });
-      return {
-        stageHeight: stage.height,
-        railHeight: rail.height,
-        instruments,
-      };
-    });
-
-    expect(geometry.railHeight / geometry.stageHeight).toBeCloseTo(198 / 600, 2);
-    const [first, ...rest] = geometry.instruments;
-    for (const instrument of geometry.instruments) {
-      expect(instrument.contained, `${instrument.name} content stays in its owner`).toBe(true);
-      expect(instrument.svgBottom, `${instrument.name} SVG precedes its value`).toBeLessThanOrEqual(instrument.valueTop + 1);
-      expect(instrument.valueBottom, `${instrument.name} value precedes its controls`).toBeLessThanOrEqual(instrument.buttonTop + 1);
-      expect(instrument.owner.top, `${instrument.name} shares the rail top: ${JSON.stringify(geometry)}`).toBeCloseTo(first!.owner.top, 1);
-      expect(instrument.owner.bottom, `${instrument.name} shares the rail bottom: ${JSON.stringify(geometry)}`).toBeCloseTo(first!.owner.bottom, 1);
-    }
-    expect(rest).toHaveLength(2);
-  });
-
-  test('fine command spine occupies the complete protected recoil-safe band', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
-
-    for (const viewport of [
-      { width: 1600, height: 900 },
-      { width: 900, height: 520 },
-      { width: 2048, height: 864 },
-    ]) {
-      await page.setViewportSize(viewport);
-      const geometry = await page.locator('#battle-rail').evaluate((rail) => {
-        const app = document.getElementById('app')!.getBoundingClientRect();
-        const stage = document.getElementById('stage')!.getBoundingClientRect();
-        const spine = rail.querySelector<HTMLElement>('.st-hud__command-console')!;
-        const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
-        const terminal = solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
-        const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
-        const settings = terminal.querySelector<HTMLButtonElement>('[aria-label="Battle settings"]')!;
-        const bays = [
-          spine.querySelector<HTMLElement>('.st-hud__console-context')!,
-          solution.querySelector<HTMLElement>('.st-hud__weapon')!,
-          solution.querySelector<HTMLElement>('[data-instrument="angle"]')!,
-          solution.querySelector<HTMLElement>('[data-instrument="power"]')!,
-          solution.querySelector<HTMLElement>('[data-instrument="wind"]')!,
-          solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
-        ].map((bay) => ({
-          name: bay.dataset['instrument'] ?? bay.className,
-          rect: bay.getBoundingClientRect().toJSON(),
-          live: [...bay.querySelectorAll<HTMLElement>('button, output, svg, canvas, [role="status"]')]
-            .filter((node) => {
-              const rect = node.getBoundingClientRect();
-              return rect.width > 0 && rect.height > 0;
-            })
-            .map((node) => node.getBoundingClientRect().toJSON()),
-        }));
-        const scale = stage.height / 600;
-        return {
-          app: app.toJSON(),
-          stage: stage.toJSON(),
-          rail: rail.getBoundingClientRect().toJSON(),
-          spine: spine.getBoundingClientRect().toJSON(),
-          scale,
-          bays,
-          fireTerminal: {
-            state: state.getBoundingClientRect().toJSON(),
-            settings: settings.getBoundingClientRect().toJSON(),
-          },
-          fineStepHeights: [...solution.querySelectorAll<HTMLElement>(
-            '[data-instrument="angle"] .st-hud__solution-control, [data-instrument="power"] .st-hud__solution-control',
-          )].map((button) => button.getBoundingClientRect().height / scale),
-        };
-      });
-
-      expect(Math.abs(geometry.stage.bottom - geometry.rail.bottom), `${viewport.width}x${viewport.height} rail reaches stage bottom`).toBeLessThanOrEqual(1);
-      expect(Math.abs(geometry.stage.bottom - geometry.app.bottom), `${viewport.width}x${viewport.height} app reaches stage bottom`).toBeLessThanOrEqual(1);
-      expect(geometry.spine.width / geometry.scale).toBeCloseTo(1176, 1);
-      expect(geometry.spine.height / geometry.scale).toBeCloseTo(180, 1);
-
-      const expectedWidths = [230, 210, 190, 190, 150, 206];
-      const [firstBay, ...remainingBays] = geometry.bays;
-      for (const [index, bay] of geometry.bays.entries()) {
-        expect(bay.rect.width / geometry.scale, `${viewport.width}x${viewport.height} bay ${index} width`)
-          .toBeCloseTo(expectedWidths[index]!, 1);
-        expect(bay.rect.top, `${viewport.width}x${viewport.height} bay ${index} shares the useful top`)
-          .toBeCloseTo(firstBay!.rect.top, 1);
-        expect(bay.rect.bottom, `${viewport.width}x${viewport.height} bay ${index} shares the useful bottom`)
-          .toBeCloseTo(firstBay!.rect.bottom, 1);
-        expect(bay.live.length, `${viewport.width}x${viewport.height} bay ${index} has direct live content`).toBeGreaterThan(0);
-        for (const live of bay.live) {
-          expect(live.top).toBeGreaterThanOrEqual(bay.rect.top - 1);
-          expect(live.bottom).toBeLessThanOrEqual(bay.rect.bottom + 1);
-        }
-      }
-      for (const [index, bay] of remainingBays.entries()) {
-        const prior = geometry.bays[index]!;
-        expect(bay.rect.left, `${viewport.width}x${viewport.height} bays stay separated`)
-          .toBeGreaterThanOrEqual(prior.rect.right - 1);
-      }
-      for (const height of geometry.fineStepHeights) {
-        expect(height, `${viewport.width}x${viewport.height} fine steps remain precise`).toBeGreaterThanOrEqual(34);
-        expect(height, `${viewport.width}x${viewport.height} fine steps do not inflate`).toBeLessThanOrEqual(48);
-      }
-      const state = geometry.fireTerminal.state;
-      const settings = geometry.fireTerminal.settings;
-      const stateSettingsOverlap = Math.min(state.right, settings.right) - Math.max(state.left, settings.left);
-      expect(stateSettingsOverlap, `${viewport.width}x${viewport.height} Fire status and settings remain separate`)
-        .toBeLessThanOrEqual(1);
-      await page.screenshot({
-        path: testInfo.outputPath(`command-spine-${viewport.width}x${viewport.height}.png`),
-      });
-    }
-  });
-
-  test('flight keeps every authored command bay in its decision footprint', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
-    await page.setViewportSize({ width: 1600, height: 900 });
-
-    const commandBays = async () => page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
-      const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
-      const bays = [
-        spine.querySelector<HTMLElement>('.st-hud__console-context')!,
-        solution.querySelector<HTMLElement>('.st-hud__weapon')!,
-        solution.querySelector<HTMLElement>('[data-instrument="angle"]')!,
-        solution.querySelector<HTMLElement>('[data-instrument="power"]')!,
-        solution.querySelector<HTMLElement>('[data-instrument="wind"]')!,
-        solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
-      ];
-      return bays.map((bay) => bay.getBoundingClientRect().toJSON());
-    });
-    const decision = await commandBays();
-
-    await page.locator('.st-hud__primary-action').click();
-    await expect(page.locator('.st-hud__command-console'))
-      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
-    await expect(page.locator('.st-hud__console-state-phase'))
-      .toBeHidden();
-    await expect(page.locator('.st-hud__console-state-label'))
-      .toBeVisible();
-    const flight = await commandBays();
-    await page.screenshot({ path: testInfo.outputPath('command-spine-flight-1600x900.png') });
-
-    for (const [index, bay] of flight.entries()) {
-      expect(bay.left, `flight bay ${index} keeps its authored left`).toBeCloseTo(decision[index]!.left, 1);
-      expect(bay.right, `flight bay ${index} keeps its authored right`).toBeCloseTo(decision[index]!.right, 1);
-      for (const [otherIndex, other] of flight.entries()) {
-        if (otherIndex <= index) continue;
-        const overlapWidth = Math.min(bay.right, other.right) - Math.max(bay.left, other.left);
-        const overlapHeight = Math.min(bay.bottom, other.bottom) - Math.max(bay.top, other.top);
-        expect(overlapWidth > 1 && overlapHeight > 1, `flight bays ${index}/${otherIndex} do not intersect`).toBe(false);
+  test('semantic controls remain fitted, reachable and paired with inert Pixi', async ({ page }) => {
+    const surface = page.locator('[data-battle-console-surface]');
+    const canvas = page.locator('[data-battle-console-pixi]');
+    await expect(canvas).toHaveAttribute('aria-hidden', 'true');
+    expect(await canvas.evaluate(e => getComputedStyle(e).pointerEvents)).toBe('none');
+    const controls = page.locator('[data-battle-console-target-key]');
+    await expect(controls).toHaveCount(10);
+    for (const control of await controls.all()) {
+      const name = await control.getAttribute('aria-label');
+      await contained(control, surface);
+      const box = (await control.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(30);
+      expect(box.height).toBeGreaterThanOrEqual(30);
+      if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
+        expect(box.width, `${name} width`).toBeGreaterThanOrEqual(44);
+        expect(box.height, `${name} height`).toBeGreaterThanOrEqual(44);
       }
     }
-  });
-
-  test('fine flight gives one unclipped outcome owner the whole Fire bay', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
-
-    const commandBays = async () => page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
-      const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
-      return [
-        spine.querySelector<HTMLElement>('.st-hud__console-context')!,
-        solution.querySelector<HTMLElement>('.st-hud__weapon')!,
-        solution.querySelector<HTMLElement>('[data-instrument="angle"]')!,
-        solution.querySelector<HTMLElement>('[data-instrument="power"]')!,
-        solution.querySelector<HTMLElement>('[data-instrument="wind"]')!,
-        solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!,
-      ].map((bay) => bay.getBoundingClientRect().toJSON());
-    });
-    const outcome = async (labelText?: string) => page.locator('#battle-rail .st-hud__fire-terminal').evaluate((terminal, labelText) => {
-      const visible = (element: HTMLElement): boolean => {
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return !element.hidden && style.display !== 'none' && style.visibility !== 'hidden'
-          && rect.width > 0 && rect.height > 0;
-      };
-      const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
-      const label = state.querySelector<HTMLElement>('.st-hud__console-state-label')!;
-      if (labelText !== undefined) label.textContent = labelText;
-      const owners = [
-        ['state label', label],
-        ['explanation', terminal.querySelector<HTMLElement>('.st-hud__commitment-explanation')!],
-        ['aim', terminal.querySelector<HTMLElement>('.st-hud__aim')!],
-      ].filter(([, element]) => visible(element)) as Array<[string, HTMLElement]>;
-      const stateRect = state.getBoundingClientRect();
-      const terminalRect = terminal.getBoundingClientRect();
-      const labelRange = document.createRange();
-      labelRange.selectNodeContents(label);
-      const labelRect = labelRange.getBoundingClientRect();
-      return {
-        owners: owners.map(([name, element]) => ({ name, text: element.textContent?.trim() ?? '' })),
-        state: {
-          clientWidth: state.clientWidth,
-          scrollWidth: state.scrollWidth,
-          clientHeight: state.clientHeight,
-          scrollHeight: state.scrollHeight,
-          rect: stateRect.toJSON(),
-        },
-        label: labelRect.toJSON(),
-        terminal: terminalRect.toJSON(),
-      };
-    }, labelText);
-
-    for (const viewport of [
-      { width: 1600, height: 900 },
-      { width: 900, height: 520 },
-      { width: 2048, height: 864 },
-    ]) {
-      await page.setViewportSize(viewport);
-      await page.reload();
-      await gotoRunningGame(page);
-      const briefing = page.locator('[data-ui="first-salvo-briefing"]');
-      if (await briefing.isVisible()) {
-        await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
-        await expect(briefing).toBeHidden();
-      }
-      const coachSkip = page.getByRole('button', { name: 'Skip', exact: true });
-      if (await coachSkip.isVisible()) await coachSkip.click();
-      const decision = await commandBays();
-      await page.locator('.st-hud__primary-action').click();
-      await expect(page.locator('.st-hud__command-console'))
-        .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
-
-      const flight = await commandBays();
-      for (const label of [
-        'Tracking shot · P1',
-        'Tracking shot · Player 1',
-        'Tracking shot · ABCDEFGHIJKLMNOPQRST',
-      ]) {
-        // This follows a real Fire transition, then substitutes only a legal
-        // display string to prove name length cannot change bay geometry.
-        const status = await outcome(label);
-        expect(status.owners, `${viewport.width}x${viewport.height} ${label} has one visible outcome owner`)
-          .toEqual([expect.objectContaining({ name: 'state label', text: label })]);
-        expect(status.state.clientWidth, `${viewport.width}x${viewport.height} ${label} has no horizontal scroll`)
-          .toBeGreaterThanOrEqual(status.state.scrollWidth);
-        expect(status.state.clientHeight, `${viewport.width}x${viewport.height} ${label} has no vertical scroll`)
-          .toBeGreaterThanOrEqual(status.state.scrollHeight);
-        expect(status.label.left, `${viewport.width}x${viewport.height} ${label} starts inside its owner`)
-          .toBeGreaterThanOrEqual(status.state.rect.left - 1);
-        expect(status.label.right, `${viewport.width}x${viewport.height} ${label} ends inside its owner`)
-          .toBeLessThanOrEqual(status.state.rect.right + 1);
-        expect(status.label.top, `${viewport.width}x${viewport.height} ${label} starts inside its owner vertically`)
-          .toBeGreaterThanOrEqual(status.state.rect.top - 1);
-        expect(status.label.bottom, `${viewport.width}x${viewport.height} ${label} ends inside its owner vertically`)
-          .toBeLessThanOrEqual(status.state.rect.bottom + 1);
-        expect(status.state.rect.left, `${viewport.width}x${viewport.height} outcome starts at its Fire bay`)
-          .toBeCloseTo(status.terminal.left, 1);
-        expect(status.state.rect.right, `${viewport.width}x${viewport.height} outcome reaches its Fire bay end`)
-          .toBeCloseTo(status.terminal.right, 1);
-      }
-      for (const [index, bay] of flight.entries()) {
-        expect(bay.left, `${viewport.width}x${viewport.height} flight bay ${index} keeps its left`)
-          .toBeCloseTo(decision[index]!.left, 1);
-        expect(bay.width, `${viewport.width}x${viewport.height} flight bay ${index} keeps its width`)
-          .toBeCloseTo(decision[index]!.width, 1);
-        for (const [otherIndex, other] of flight.entries()) {
-          if (otherIndex <= index) continue;
-          const overlapWidth = Math.min(bay.right, other.right) - Math.max(bay.left, other.left);
-          const overlapHeight = Math.min(bay.bottom, other.bottom) - Math.max(bay.top, other.top);
-          expect(overlapWidth > 1 && overlapHeight > 1,
-            `${viewport.width}x${viewport.height} flight bays ${index}/${otherIndex} do not intersect`).toBe(false);
-        }
-      }
-      await page.screenshot({ path: testInfo.outputPath(`command-spine-flight-${viewport.width}x${viewport.height}.png`) });
+    for (const key of ['node:output:Angle:43', 'node:output:Power:52', 'node:output:Wind:58']) {
+      await contained(page.locator(`[data-semantic-key="${key}"]`), surface);
     }
+    const field = (await page.locator('#game').boundingBox())!;
+    const rail = (await surface.boundingBox())!;
+    expect(Math.abs(field.x - rail.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(field.width - rail.width)).toBeLessThanOrEqual(2);
   });
 
-  test('fine command bays have no unexplained authored vacancy', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'the authored spine is the fine-pointer contract');
-    await page.setViewportSize({ width: 1600, height: 900 });
-
-    const gaps = await page.locator('#battle-rail .st-hud__command-console').evaluate((spine) => {
-      const stage = document.getElementById('stage')!.getBoundingClientRect();
-      const scale = stage.height / 600;
-      const textRect = (element: HTMLElement): DOMRect | null => {
-        if (element.textContent?.trim() === '') return null;
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        const rect = range.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0 ? rect : null;
-      };
-      const maxGap = (owner: HTMLElement, content: Array<DOMRect | null>): number => {
-        const bounds = owner.getBoundingClientRect();
-        const intervals = content
-          .filter((rect): rect is DOMRect => rect !== null
-            && rect.width > 0
-            && rect.height > 0
-            && rect.top >= bounds.top - 1
-            && rect.bottom <= bounds.bottom + 1)
-          .map((rect) => ({ top: rect.top, bottom: rect.bottom }))
-          .sort((left, right) => left.top - right.top);
-        let cursor = bounds.top;
-        let largest = 0;
-        for (const interval of intervals) {
-          largest = Math.max(largest, interval.top - cursor);
-          cursor = Math.max(cursor, interval.bottom);
-        }
-        return Math.max(largest, bounds.bottom - cursor) / scale;
-      };
-      const solution = spine.querySelector<HTMLElement>('.st-hud__console-solution')!;
-      const commander = spine.querySelector<HTMLElement>('.st-hud__console-context')!;
-      const weapon = solution.querySelector<HTMLElement>('.st-hud__weapon')!;
-      const wind = solution.querySelector<HTMLElement>('[data-instrument="wind"]')!;
-      const terminal = solution.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
-      const mobility = [...commander.querySelectorAll<HTMLElement>('.st-hud__move-btn, .st-hud__fuel-meter')]
-        .map((element) => {
-          const rect = element.getBoundingClientRect();
-          return (rect.top + rect.bottom) / 2;
-        });
-      return {
-        commander: maxGap(commander, [
-          commander.querySelector<HTMLElement>('.st-hud__tank-portrait-frame')!.getBoundingClientRect(),
-          textRect(commander.querySelector<HTMLElement>('.st-hud__turn-kicker')!),
-          textRect(commander.querySelector<HTMLElement>('.st-hud__turn-owner')!),
-          textRect(commander.querySelector<HTMLElement>('.st-hud__commander-health')!),
-          ...[...commander.querySelectorAll<HTMLElement>('.st-hud__move-btn, .st-hud__fuel-meter')]
-            .map((element) => element.getBoundingClientRect()),
-        ]),
-        weapon: maxGap(weapon, [
-          weapon.querySelector<HTMLElement>('.st-hud__weapon-icon')!.getBoundingClientRect(),
-          textRect(weapon.querySelector<HTMLElement>('.st-hud__weapon-label')!),
-          textRect(weapon.querySelector<HTMLElement>('.st-hud__weapon-value')!),
-          textRect(weapon.querySelector<HTMLElement>('.st-hud__weapon-ammo')!),
-          weapon.querySelector<HTMLElement>('.st-hud__arsenal-trigger')!.getBoundingClientRect(),
-        ]),
-        wind: maxGap(wind, [
-          wind.querySelector<HTMLElement>('svg')!.getBoundingClientRect(),
-          wind.querySelector<HTMLElement>('output')!.getBoundingClientRect(),
-        ]),
-        fire: maxGap(terminal, [
-          textRect(terminal.querySelector<HTMLElement>('.st-hud__console-state-phase')!),
-          textRect(terminal.querySelector<HTMLElement>('.st-hud__console-state-label')!),
-          terminal.querySelector<HTMLElement>('.st-hud__console-state-guidance')
-            ? textRect(terminal.querySelector<HTMLElement>('.st-hud__console-state-guidance')!)
-            : null,
-          textRect(terminal.querySelector<HTMLElement>('.st-hud__aim-text')!),
-          terminal.querySelector<HTMLElement>('[aria-label="Battle settings"]')!.getBoundingClientRect(),
-          terminal.querySelector<HTMLElement>('.st-hud__primary-action')!.getBoundingClientRect(),
-        ]),
-        mobility,
-      };
-    });
-    for (const center of gaps.mobility) {
-      expect(center, 'Commander move and fuel controls share one rocker row')
-        .toBeCloseTo(gaps.mobility[0]!, 1);
-    }
-    for (const [bay, gap] of Object.entries({
-      commander: gaps.commander,
-      weapon: gaps.weapon,
-      wind: gaps.wind,
-      fire: gaps.fire,
-    })) {
-      expect(gap, `${bay} uses the full protected command band`).toBeLessThanOrEqual(16);
-    }
-    await page.screenshot({ path: testInfo.outputPath('command-spine-vacancy-1600x900.png') });
-  });
-
-  test('live firing values stay inside their integrated controls across phase states', async ({
-    page,
-  }) => {
-    const solutionViolations = async (): Promise<string[]> =>
-      page.locator('.st-hud__solution-adjustments').evaluate((controls) => {
-        const contains = (outer: DOMRect, inner: DOMRect): boolean =>
-          inner.left >= outer.left - 1 && inner.right <= outer.right + 1
-          && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
-        const failures: string[] = [];
-        const railRect = document.querySelector<HTMLElement>('#battle-rail')!.getBoundingClientRect();
-        for (const owner of controls.querySelectorAll<HTMLElement>('[data-value-owner]')) {
-          const value = owner.querySelector<HTMLElement>('output, .st-hud__solution-wind-value')!;
-          if (!contains(owner.getBoundingClientRect(), value.getBoundingClientRect())) failures.push(`${owner.dataset.valueOwner} value escapes owner`);
-          if (!contains(railRect, value.getBoundingClientRect())) failures.push(`${owner.dataset.valueOwner} value escapes rail`);
-          if (value.clientWidth < value.scrollWidth) {
-            failures.push(`${owner.dataset.valueOwner} value is clipped`);
-          }
-          for (const button of owner.querySelectorAll<HTMLElement>('button')) {
-            if (!contains(railRect, button.getBoundingClientRect())) {
-              failures.push(`${owner.dataset.valueOwner} control escapes rail`);
-            }
-          }
-        }
-        return failures;
-      });
-
-    expect(await solutionViolations(), 'decision solution ancestry').toEqual([]);
-    await page.locator('.st-hud__primary-action').click();
-    await expect(page.locator('.st-hud__command-console'))
-      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
-    expect(await solutionViolations(), 'flight solution ancestry').toEqual([]);
-  });
-
-  test('right rail is a readable match ledger with a reachable Menu', async ({ page }, testInfo) => {
-    await page.setViewportSize({ width: 1600, height: 900 });
-    const ledger = page.locator('#hud');
-    const matchDrawer = page.getByRole('button', { name: 'Open match ledger', exact: true });
-    const close = ledger.getByRole('button', { name: 'Close match ledger', exact: true });
-    const menu = ledger.getByRole('button', { name: 'Menu', exact: true });
-    await expect(ledger).toBeHidden();
-    await expect(matchDrawer).toBeVisible();
-    await matchDrawer.click();
-    await expect(ledger).toBeVisible();
-    await expect(close).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(ledger).toBeHidden();
-    await expect(matchDrawer).toBeFocused();
-    await matchDrawer.click();
-    await expect(ledger).toBeVisible();
-    await expect(ledger).toHaveAttribute('data-ui', 'match-ledger');
-    await expect(ledger).toHaveAttribute('aria-label', 'Match ledger');
-    await expect(ledger.locator('[data-ui="match-mode"]')).toHaveText('Free-for-all');
-    await expect(ledger.locator('.st-hud__round')).toBeVisible();
-    await expect(ledger.locator('.st-hud__players')).toHaveAttribute('aria-label', 'Turn order');
-    await expect(ledger.locator('.st-hud__player')).toHaveCount(2);
-    await expect(ledger.locator('.st-hud__conn')).toContainText('Ready');
-    const [ledgerBox, stageBox, appBox] = await Promise.all([
-      ledger.boundingBox(),
-      page.locator('#stage').boundingBox(),
-      page.locator('#app').boundingBox(),
-    ]);
-    expect(ledgerBox).not.toBeNull();
-    expect(stageBox).not.toBeNull();
-    expect(appBox).not.toBeNull();
-    expect(ledgerBox!.height).toBeLessThan(stageBox!.height * 0.6);
-    // Ordinary desktop opens Match on demand over the field rather than
-    // permanently reducing it. The app remains exactly the battlefield wide.
-    expect(Math.abs(appBox!.width - stageBox!.width)).toBeLessThanOrEqual(1);
-    expect(ledgerBox!.x + ledgerBox!.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width);
-
-    const forbidden = ledger.locator([
-      '[data-ui="weapon-bay"]',
-      '[data-control="angle"]',
-      '[data-control="power"]',
-      '[data-ui="arsenal-drawer"]',
-      '.st-hud__store-btn',
-      '.st-hud__primary-action',
-      '.st-hud__trajectory-guide',
-    ].join(','));
-    await expect(forbidden).toHaveCount(0);
-    await expect(ledger).not.toContainText(/Fire Control/i);
-
-    await expect(menu).toBeVisible();
-    await expect(menu).toBeEnabled();
-    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
-    if (await briefing.isVisible()) {
-      await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
-      await expect(briefing).toBeHidden();
-    }
-    await menu.focus();
-    await expect(menu).toBeFocused();
-    await menu.click();
-    const resume = page.getByRole('button', { name: 'Resume', exact: true });
-    await expect(resume).toBeFocused();
-    await resume.click();
-    await expect(menu).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(ledger).toBeHidden();
-    await expect(matchDrawer).toBeFocused();
-  });
-
-  test('docks Match only on an ultrawide fine-pointer stage without shrinking the battlefield', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'coarse pointer always uses the reachable Match drawer');
-    await page.setViewportSize({ width: 2048, height: 838 });
-    const ledger = page.locator('#hud');
-    const drawer = page.getByRole('button', { name: 'Open match ledger', exact: true });
-    await expect(ledger).toBeVisible();
-    await expect(drawer).toBeHidden();
-    const geometry = await page.evaluate(() => {
-      const game = document.querySelector<HTMLCanvasElement>('#game')!;
-      const stage = document.getElementById('stage')!;
-      const ledger = document.getElementById('hud')!;
-      const card = ledger.querySelector<HTMLElement>('.st-hud__match-card')!;
-      const gameBox = game.getBoundingClientRect();
-      const stageBox = stage.getBoundingClientRect();
-      const ledgerBox = ledger.getBoundingClientRect();
-      const cardBox = card.getBoundingClientRect();
-      const ledgerStyle = getComputedStyle(ledger);
-      return {
-        scale: gameBox.width / game.width,
-        stage: stageBox.toJSON(),
-        ledger: ledgerBox.toJSON(),
-        card: cardBox.toJSON(),
-        ledgerBackground: ledgerStyle.backgroundImage,
-        ledgerBorderLeft: ledgerStyle.borderLeftWidth,
-        ledgerOutline: ledgerStyle.outlineStyle,
-      };
-    });
-    expect(geometry.scale).toBeGreaterThan(1);
-    expect(geometry.ledger.x).toBeGreaterThanOrEqual(geometry.stage.x + geometry.stage.width - 1);
-    expect(geometry.ledger.y).toBeCloseTo(geometry.stage.y, 1);
-    expect(geometry.card.height).toBeLessThan(geometry.stage.height * 0.6);
-    expect(geometry.ledger.height).toBeLessThanOrEqual(geometry.card.height + 1);
-    expect(geometry.ledgerBackground).toBe('none');
-    expect(geometry.ledgerBorderLeft).toBe('0px');
-    expect(geometry.ledgerOutline).toBe('none');
-  });
-
-  test('keeps Match as a drawer on a wide coarse-pointer viewport', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the native coarse-pointer profile');
-    const ledger = page.locator('#hud');
-    const drawer = page.getByRole('button', { name: 'Open match ledger', exact: true });
-    await expect(ledger).toBeHidden();
-    await expect(drawer).toBeVisible();
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-    expect(drawerBox!.width).toBeGreaterThanOrEqual(44);
-    expect(drawerBox!.height).toBeGreaterThanOrEqual(44);
-    await drawer.click();
-    const close = ledger.locator('.st-hud__match-drawer-close');
-    await expect(close).toBeVisible();
-    const closeBox = await close.boundingBox();
-    expect(closeBox).not.toBeNull();
-    expect(closeBox!.width).toBeGreaterThanOrEqual(44);
-    expect(closeBox!.height).toBeGreaterThanOrEqual(44);
-    await close.click();
-    await expect(ledger).toBeHidden();
-  });
-
-  test('keeps the Fire terminal compact rather than reserving a second command card', async ({ page }) => {
-    const proportions = await page.evaluate(() => {
-      const solution = document.querySelector<HTMLElement>('#battle-rail .st-hud__console-solution')!;
-      const terminal = document.querySelector<HTMLElement>('#battle-rail .st-hud__fire-terminal')!;
-      const solutionRect = solution.getBoundingClientRect();
-      const terminalRect = terminal.getBoundingClientRect();
-      return {
-        ratio: terminalRect.width / solutionRect.width,
-        terminalRect: terminalRect.toJSON(),
-        coarsePointer: matchMedia('(pointer: coarse)').matches,
-      };
-    });
-    // Coarse layouts reserve a 44px physical terminal target; fine-pointer
-    // layouts give the structured Fire terminal its authored 206px spine bay.
-    if (proportions.coarsePointer) {
-      expect(proportions.ratio).toBeLessThanOrEqual(0.68);
-    } else {
-      expect(proportions.ratio).toBeCloseTo(206 / 946, 2);
-    }
-    expect(proportions.terminalRect.height).toBeGreaterThan(0);
-  });
-
-  test('decision-state Fire terminal uses its height for live status as well as the action', async ({ page }) => {
-    const geometry = await page.locator('#battle-rail .st-hud__fire-terminal').evaluate((terminal) => {
-      const terminalRect = terminal.getBoundingClientRect();
-      const state = terminal.querySelector<HTMLElement>('.st-hud__console-state')!;
-      const summary = terminal.querySelector<HTMLElement>('.st-hud__commitment-explanation')!;
-      const fire = terminal.querySelector<HTMLElement>('.st-hud__primary-action')!;
-      const stateRect = state.getBoundingClientRect();
-      const summaryRect = summary.getBoundingClientRect();
-      const fireRect = fire.getBoundingClientRect();
-      const stateStyle = getComputedStyle(state);
-      const terminalStyle = getComputedStyle(terminal);
-      return {
-        stateVisible: stateStyle.clip === 'auto' && stateRect.width > 1 && stateRect.height > 1,
-        summaryHidden: summary.hidden,
-        state: { top: stateRect.top, bottom: stateRect.bottom },
-        summary: { top: summaryRect.top, bottom: summaryRect.bottom },
-        fire: { top: fireRect.top, height: fireRect.height },
-        terminal: { top: terminalRect.top, bottom: terminalRect.bottom, height: terminalRect.height },
-        terminalVisualDecoration: {
-          backgroundImage: terminalStyle.backgroundImage,
-          borderLeftWidth: terminalStyle.borderLeftWidth,
-        },
-      };
-    });
-    expect(geometry.stateVisible).toBe(true);
-    expect(geometry.summaryHidden).toBe(true);
-    expect(geometry.state.top).toBeGreaterThanOrEqual(geometry.terminal.top);
-    expect(geometry.fire.top).toBeGreaterThanOrEqual(geometry.state.bottom);
-    expect(geometry.fire.height).toBeLessThanOrEqual(geometry.terminal.height * 0.62);
-    expect(geometry.terminalVisualDecoration.backgroundImage).toBe('none');
-    expect(geometry.terminalVisualDecoration.borderLeftWidth).toBe('0px');
-  });
-
-  test('no direct #hud child is crushed or content-clipped (generalized invariant)', async ({
-    page,
-  }) => {
-    const violations = await findHudLayoutViolations(page);
-    expect(
-      violations,
-      `#hud children must not be crushed/clipped, got: ${JSON.stringify(violations, null, 2)}`,
-    ).toEqual([]);
-  });
-
-  test('one responsive battle rail owns every rendered combat command and stays fitted', async ({
-    page,
-  }, testInfo) => {
-    const rail = page.locator('#battle-rail');
-    const console = rail.locator('.st-hud__command-console');
-    await expect(page.locator('#game-overlay .st-hud__touch-strip')).toHaveCount(0);
-    await expect(console).toBeVisible();
-
-    const widestChassisBasesByRoster = [2, 3, 4].map((count) => {
-      const state = new GameEngine({
-        players: Array.from({ length: count }, (_, index) => ({
-          name: `Commander ${index + 1}`,
-          color: ['#e84d4d', '#4d8ce8', '#4de87a', '#e8c84d'][index]!,
-          loadout: {
-            treads: 'ranger' as const,
-            hull: 'jackal' as const,
-            turret: 'jackal' as const,
-            barrel: 'jackal' as const,
-          },
-        })),
-        maxPlayers: count,
-        seed: 1,
-      }).getState();
-      const tread = TANK_PART_SETS.ranger.parts.treads;
-      return state.tanks.map((tank) => Math.max(tank.y, ARENA_FLOOR_Y)
-        + tread.offsetY + tread.height);
-    });
-    const recoilY = maximumTankRecoilDownPx();
-    const geometry = await console.evaluate((node, { chassisBasesByRoster, recoil }) => {
-      const rail = document.getElementById('battle-rail')!;
-      const game = document.querySelector<HTMLCanvasElement>('#game')!;
-      const railRect = rail.getBoundingClientRect();
-      const gameRect = game.getBoundingClientRect();
-      const consoleRect = node.getBoundingClientRect();
-      const scale = gameRect.width / game.width;
-      const rendered = (element: HTMLElement): boolean => {
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden'
-          && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
-      };
-      const targets = [...node.querySelectorAll<HTMLButtonElement>('button')]
-        .filter(rendered)
-        .map((button) => ({
-          label: button.getAttribute('aria-label') ?? button.textContent ?? '',
-          className: button.className,
-          authoredWidth: getComputedStyle(button).width,
-          authoredMinWidth: getComputedStyle(button).minWidth,
-          rect: button.getBoundingClientRect().toJSON(),
-        }));
-      const labels = [...node.querySelectorAll<HTMLElement>([
-        '.st-hud__turn-owner',
-        '.st-hud__weapon-label',
-        '.st-hud__weapon-value',
-        '.st-hud__weapon-ammo',
-        '.st-hud__solution-adjustment-label',
-        '.st-hud__solution-direction',
-        '.st-hud__trajectory-guide',
-        '.st-hud__first-salvo-progress',
-        '.st-hud__first-salvo-copy',
-        '.st-hud__first-salvo-skip',
-        '.st-hud__commitment-explanation',
-      ].join(','))].filter(rendered).map((label) => ({
-        text: label.textContent,
-        renderedFontSize: label instanceof SVGTextElement
-          ? label.getBoundingClientRect().height
-          : parseFloat(getComputedStyle(label).fontSize)
-            * (document.getElementById('app')!.getBoundingClientRect().width
-              / document.getElementById('app')!.offsetWidth),
-        clientWidth: label.clientWidth,
-        scrollWidth: label.scrollWidth,
-        clientHeight: label.clientHeight,
-        scrollHeight: label.scrollHeight,
-      }));
-      return {
-        rail: railRect.toJSON(),
-        logicalRailHeight: railRect.height / scale,
-        console: consoleRect.toJSON(),
-        targets,
-        labels,
-        allTargetsInRail: targets.every(({ rect }) => rect.left >= railRect.left - 1
-          && rect.right <= railRect.right + 1
-          && rect.top >= railRect.top - 1
-          && rect.bottom <= railRect.bottom + 1),
-        widestChassisClearOfRail: chassisBasesByRoster.every((bases) => bases.every((baseY) =>
-          gameRect.top + (baseY + recoil) * scale < railRect.top)),
-        documentOverflowX: document.documentElement.scrollWidth - innerWidth,
-        documentOverflowY: document.documentElement.scrollHeight - innerHeight,
-      };
-    }, { chassisBasesByRoster: widestChassisBasesByRoster, recoil: recoilY });
-
-    expect(geometry.allTargetsInRail).toBe(true);
-    expect(geometry.widestChassisClearOfRail).toBe(true);
-    expect(geometry.logicalRailHeight, 'the protected command rail must not consume the battlefield')
-      .toBeLessThanOrEqual(200.5);
-    expect(geometry.documentOverflowX).toBeLessThanOrEqual(0);
-    expect(geometry.documentOverflowY).toBeLessThanOrEqual(0);
-    expect(geometry.console.x).toBeGreaterThanOrEqual(geometry.rail.x - 1);
-    expect(geometry.console.y).toBeGreaterThanOrEqual(geometry.rail.y - 1);
-    expect(geometry.console.x + geometry.console.width)
-      .toBeLessThanOrEqual(geometry.rail.x + geometry.rail.width + 1);
-    expect(geometry.console.y + geometry.console.height)
-      .toBeLessThanOrEqual(geometry.rail.y + geometry.rail.height + 1);
-    for (const label of geometry.labels) {
-      expect.soft(label.renderedFontSize, `${label.text} must render at a readable size`)
-        .toBeGreaterThanOrEqual(11);
-      expect.soft(label.scrollWidth, `${label.text} must not clip horizontally`)
-        .toBeLessThanOrEqual(label.clientWidth + 1);
-      expect.soft(label.scrollHeight, `${label.text} must not clip vertically`)
-        .toBeLessThanOrEqual(label.clientHeight + 1);
-    }
-    const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
-    for (const target of geometry.targets) {
-      expect(
-        target.rect.width,
-        `${target.label} target width (${target.className}; width ${target.authoredWidth}; min ${target.authoredMinWidth})`,
-      ).toBeGreaterThanOrEqual(targetFloor);
-      expect(target.rect.height, `${target.label} target height`).toBeGreaterThanOrEqual(targetFloor);
-    }
-
-    const briefing = page.locator('[data-ui="first-salvo-briefing"]');
-    if (await briefing.isVisible()) await page.getByRole('button', { name: 'Enter battle' }).click();
-    const before = await rail.boundingBox();
-    await page.locator('.st-hud__primary-action').click();
-    await expect(console).toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
-    const after = await rail.boundingBox();
-    expect(after?.height).toBeCloseTo(before!.height, 1);
-    expect(after?.y).toBeCloseTo(before!.y, 1);
-  });
-
-  test('Pixel compact command text stays inside its component without collisions', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires compact coarse-pointer geometry');
-
-    const commandViolations = async (): Promise<string[]> =>
-      page.locator('#battle-rail').evaluate((rail) => {
-        const rendered = (element: Element): element is HTMLElement | SVGElement => {
-          const style = getComputedStyle(element);
-          const box = element.getBoundingClientRect();
-          return style.display !== 'none' && style.visibility !== 'hidden'
-            && Number(style.opacity) > 0 && box.width > 0 && box.height > 0;
-        };
-        const contains = (outer: DOMRect, inner: DOMRect): boolean =>
-          inner.left >= outer.left - 1 && inner.right <= outer.right + 1
-          && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
-        const intersects = (a: DOMRect, b: DOMRect): boolean =>
-          a.left < b.right - 1 && a.right > b.left + 1
-          && a.top < b.bottom - 1 && a.bottom > b.top + 1;
-        const failures: string[] = [];
-        const assertContained = (owner: Element, child: Element, label: string): void => {
-          if (rendered(child)
-            && !contains(owner.getBoundingClientRect(), child.getBoundingClientRect())) {
-            failures.push(`${label} escapes ${owner.className}`);
-          }
-        };
-        const assertSeparated = (first: Element, second: Element, label: string): void => {
-          if (rendered(first) && rendered(second)
-            && intersects(first.getBoundingClientRect(), second.getBoundingClientRect())) {
-            failures.push(`${label} intersects`);
-          }
-        };
-
-        const weapon = rail.querySelector('.st-hud__weapon')!;
-        for (const child of weapon.querySelectorAll(
-          '.st-hud__weapon-value, .st-hud__weapon-ammo',
-        )) {
-          assertContained(weapon, child, child.textContent ?? child.className);
-        }
-
-        const context = rail.querySelector<HTMLElement>('.st-hud__console-context')!;
-        const commander = context.querySelector<HTMLElement>('.st-hud__active-row')!;
-        if (context.scrollWidth > context.clientWidth || context.scrollHeight > context.clientHeight) {
-          failures.push('commander context scrolls instead of fitting');
-        }
-        assertContained(context, commander, 'active commander');
-        for (const child of commander.querySelectorAll<HTMLElement>(
-          '.st-hud__identity-lockup, .st-hud__mobility, .st-hud__fuel-meter, .st-hud__move-btn',
-        )) {
-          assertContained(context, child, child.className);
-        }
-
-        for (const group of rail.querySelectorAll('.st-hud__solution-adjustment')) {
-          const label = group.querySelector('.st-hud__solution-adjustment-label')!;
-          assertContained(group, label, label.textContent ?? 'adjustment label');
-          for (const button of group.querySelectorAll('button')) {
-            assertContained(group, button, button.getAttribute('aria-label') ?? 'adjustment button');
-            assertSeparated(
-              label,
-              button,
-              `${label.textContent} / ${button.getAttribute('aria-label')}`,
-            );
-          }
-        }
-
-        const solution = rail.querySelector('.st-hud__console-solution')!;
-        const terminal = solution.querySelector('.st-hud__fire-terminal')!;
-        const settings = terminal.querySelector('[aria-label="Battle settings"]')!;
-        const coach = solution.querySelector('[data-ui="first-salvo-coach"]');
-        assertContained(terminal, settings, 'Battle settings');
-        if (coach) {
-          assertSeparated(settings, coach, 'Battle settings / First Salvo');
-          const coachProgress = coach.querySelector('.st-hud__first-salvo-progress')!;
-          const coachCopy = coach.querySelector('.st-hud__first-salvo-copy')!;
-          const coachSkip = coach.querySelector('.st-hud__first-salvo-skip')!;
-          for (const child of [coachProgress, coachCopy, coachSkip]) {
-            assertContained(coach, child, child.textContent ?? child.className);
-          }
-          assertSeparated(coachProgress, coachCopy, 'First Salvo progress / copy');
-          assertSeparated(coachCopy, coachSkip, 'First Salvo copy / skip');
-        }
-        return failures;
-      });
-
-    expect(await commandViolations(), 'decision state geometry').toEqual([]);
-    await page.locator('.st-hud__primary-action').click();
-    await expect(page.locator('.st-hud__command-console'))
-      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
-    expect(await commandViolations(), 'flight state geometry').toEqual([]);
-  });
-
-  test('Pixel touch stalled recovery stays in the protected rail and can leave', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
-    let leaveCount = 0;
-    await page.exposeFunction('__recordTurnWatchLeave', () => { leaveCount += 1; });
-    await page.evaluate(() => {
-      const seam = (window as typeof window & {
-        __SINGED_TERRA_E2E_HUD__?: { setTurnWatch: (state: string, playerName: string) => void };
-      }).__SINGED_TERRA_E2E_HUD__;
-      if (!seam) throw new Error('Missing E2E HUD turn-watch seam');
-      seam.setTurnWatch('stalled', 'P2');
-      document.querySelector<HTMLButtonElement>('.st-hud__turnwatch-leave')!
-        .addEventListener('click', () => void (window as typeof window & {
-          __recordTurnWatchLeave: () => void;
-        }).__recordTurnWatchLeave());
-    });
-    const rail = page.locator('#battle-rail');
-    const watch = page.locator('.st-hud__turnwatch');
-    const leave = page.locator('.st-hud__turnwatch-leave');
-    await expect(watch).toBeVisible();
-    await expect(leave).toBeVisible();
-    const geometry = await page.evaluate(() => {
-      const rail = document.querySelector<HTMLElement>('#battle-rail')!.getBoundingClientRect();
-      const watch = document.querySelector<HTMLElement>('.st-hud__turnwatch')!.getBoundingClientRect();
-      const leave = document.querySelector<HTMLButtonElement>('.st-hud__turnwatch-leave')!.getBoundingClientRect();
-      return {
-        contained: watch.top >= rail.top - 1 && watch.bottom <= rail.bottom + 1,
-        targetHeight: leave.height,
-      };
-    });
-    expect(geometry.contained).toBe(true);
-    expect(geometry.targetHeight).toBeGreaterThanOrEqual(44);
-    await leave.click();
-    expect(leaveCount).toBe(1);
-  });
-
-  test('real Fire transition prioritizes outcome progress and restores decision focus', async ({
-    page,
-  }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    const hud = page.locator('#hud');
-    const rail = page.locator('#battle-rail');
-    const overlay = page.locator('#game-overlay');
-    const fire = page.locator('.st-hud__primary-action');
-    await expect(hud).toHaveAttribute('data-combat-focus', 'decision');
-    await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
-    await expect(rail).toHaveAttribute('data-combat-focus', 'decision');
-
-    await fire.click();
-    await expect(hud).toHaveAttribute('data-combat-focus', 'outcome');
-    await expect(overlay).toHaveAttribute('data-combat-focus', 'outcome');
-    await expect(rail).toHaveAttribute('data-combat-focus', 'outcome');
-    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
-    if (await page.evaluate(() => matchMedia('(pointer: fine)').matches)) {
-      await expect(page.locator('.st-hud__aim')).toBeHidden();
-      await expect(page.locator('.st-hud__console-state-label')).toBeVisible();
-    } else {
-      await expect(page.locator('.st-hud__aim')).toBeVisible();
-    }
-    await expect(page.locator('.st-hud__active-row')).toBeVisible();
-    await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
-    await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
-    await expect(page.locator('.st-hud__command-console')).toHaveAttribute(
-      'aria-label',
-      'Turn command console',
-    );
-    await expect(page.locator('#hud .st-hud__menu')).toBeEnabled();
-
-    await expect(hud).toHaveAttribute('data-combat-focus', 'decision', { timeout: 20_000 });
-    await expect(overlay).toHaveAttribute('data-combat-focus', 'decision');
-    await expect(rail).toHaveAttribute('data-combat-focus', 'decision');
-    await expect(page.locator('.st-hud__command-console')).not.toHaveAttribute('aria-disabled', /.+/);
-    await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
-    await expect(page.locator('.st-hud__command-console')).toHaveAttribute('aria-label', 'Turn command console');
-    await expect(page.locator('.st-hud__active-row')).toBeVisible();
-    await expect(page.locator('.st-hud__primary-action')).toHaveCount(1);
-  });
-
-  test('keeps Space bound to fire after a gameplay control takes focus', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === 'pixel-touch', 'keyboard command deck is hidden');
-
-    const aimLeft = page.getByRole('button', { name: 'Aim barrel left' });
-    const fire = page.locator('.st-hud__primary-action');
-    await aimLeft.click();
-    await expect(aimLeft).toBeFocused();
-    await expect(fire).toBeEnabled();
-
-    await page.keyboard.press('Space');
-
-    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
-  });
-
-  test('active custom tank has a combat-readable tactical identity card', async ({
-    page,
-  }, testInfo) => {
-    const frame = page.locator('.st-hud__tank-portrait-frame');
-    const portrait = frame.locator('.st-hud__tank-portrait');
-    if (testInfo.project.name === 'pixel-touch') {
-      // Touch spends the rail's finite height on live movement and firing
-      // targets. Identity, health and fuel remain; the decorative portrait is
-      // deliberately removed rather than cramped into an unreadable card.
-      await expect(frame).toBeHidden();
-      await expect(page.locator('[data-ui="commander-health"]')).toHaveText('100 HP');
-      await expect(page.getByRole('progressbar', { name: 'Movement fuel' })).toHaveAttribute('aria-valuenow', '100');
-      return;
-    }
-    await expect(frame).toBeVisible();
-    await expect(portrait).toBeVisible();
-    await expect(portrait).toHaveAttribute('width', '144');
-    await expect(portrait).toHaveAttribute('height', '80');
-
-    const geometry = await frame.evaluate((node) => {
-      const frameBox = node.getBoundingClientRect();
-      const portraitBox = node.querySelector('canvas')!.getBoundingClientRect();
-      const contextBox = node.closest('.st-hud__console-context')!.getBoundingClientRect();
-      return {
-        frame: frameBox.toJSON(),
-        portrait: portraitBox.toJSON(),
-        context: contextBox.toJSON(),
-      };
-    });
-    expect(Math.abs(geometry.frame.width - geometry.portrait.width)).toBeLessThan(1);
-    expect(Math.abs(geometry.frame.height - geometry.portrait.height)).toBeLessThan(1);
-    expect(geometry.frame.width / geometry.frame.height).toBeGreaterThanOrEqual(1.75);
-    expect(geometry.frame.width / geometry.frame.height).toBeLessThanOrEqual(1.85);
-    expect(geometry.frame.left).toBeGreaterThanOrEqual(geometry.context.left);
-    expect(geometry.frame.right).toBeLessThanOrEqual(geometry.context.right);
-
-    if (testInfo.project.name === 'desktop-fine') {
-      expect(geometry.frame.width).toBeGreaterThanOrEqual(140);
-      expect(geometry.frame.height).toBeGreaterThanOrEqual(78);
-    } else if (testInfo.project.name === 'pixel-touch') {
-      expect(geometry.frame.width).toBeLessThanOrEqual(72);
-      expect(geometry.frame.height).toBeLessThanOrEqual(40);
-    } else {
-      expect(geometry.frame.width).toBeLessThanOrEqual(90);
-      expect(geometry.frame.height).toBeLessThanOrEqual(50);
-    }
-  });
-
-  test('combat command glyphs stay semantic, framed, and fitted', async ({
-    page,
-  }, testInfo) => {
-    const icons = page.locator('svg.st-ui-icon');
-    const glyphs = page.locator('.st-ui-glyph');
-    const visibleGlyphs = page.locator('.st-ui-glyph:visible');
-    const railIcons = page.locator('#battle-rail svg.st-ui-icon');
-    const railGlyphs = page.locator('#battle-rail .st-ui-glyph');
-
-    expect(await icons.count()).toBeGreaterThan(0);
-    expect(await glyphs.count()).toBeGreaterThan(0);
-    await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
-    expect(await railIcons.count()).toBeGreaterThan(0);
-    expect(await railGlyphs.count()).toBeGreaterThan(0);
-
-    const arsenal = page.locator('[data-icon="arsenal"]');
-    await expect(arsenal.locator('circle[r="9"]')).toHaveCount(1);
-    await expect(page.getByRole('button', { name: /^Open Armory .*equip or buy weapons$/ })).toBeVisible();
-    const drawerTrigger = page.getByRole('button', { name: 'Open match ledger', exact: true });
-    if (await drawerTrigger.count()) {
-      await expect(drawerTrigger).toBeVisible();
-    } else {
-      await expect(page.locator('#hud .st-hud__menu')).toBeVisible();
-    }
-    await expect(page.locator('.st-hud__primary-action')).toBeVisible();
-
-    const geometry = await page.evaluate(() => ({
-      glyphSizes: [...document.querySelectorAll<HTMLElement>('.st-ui-glyph')]
-        .filter((glyph) => glyph.getBoundingClientRect().width > 0)
-        .map(
-        (glyph) => {
-          const glyphRect = glyph.getBoundingClientRect();
-          const iconRect = glyph.querySelector('svg')!.getBoundingClientRect();
-          return {
-            frameWidth: glyphRect.width,
-            frameHeight: glyphRect.height,
-            iconWidth: iconRect.width,
-            iconHeight: iconRect.height,
-          };
-        },
-      ),
-      scrollWidth: document.documentElement.scrollWidth,
-      scrollHeight: document.documentElement.scrollHeight,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-    }));
-    expect(geometry.glyphSizes).toHaveLength(await visibleGlyphs.count());
-    const glyphFloor = testInfo.project.name === 'pixel-touch' ? 12 : 15;
-    const iconFloor = testInfo.project.name === 'pixel-touch' ? 9.5 : 12;
-    for (const size of geometry.glyphSizes) {
-      expect(size.frameWidth).toBeGreaterThanOrEqual(glyphFloor);
-      expect(size.frameHeight).toBeGreaterThanOrEqual(glyphFloor);
-      expect(size.iconWidth).toBeGreaterThanOrEqual(iconFloor);
-      expect(size.iconHeight).toBeGreaterThanOrEqual(iconFloor);
-    }
-    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth);
-    expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-  });
-
-  test('weapon-family glyphs remain visible inside the unified gameplay Armory', async ({
-    page,
-  }) => {
-    await openArmory(page);
-    const arsenalCatalog = await page.locator(
-      '.st-hud__weapon-btn',
-    ).evaluateAll((buttons) => buttons.map((button) => ({
-      weapon: (button as HTMLElement).dataset['weapon'],
-      iconWeapon: button.querySelector('.st-weapon-icon')
-        ?.getAttribute('data-weapon'),
-      name: button.querySelector('.st-hud__weapon-btn-name')?.textContent,
-    })));
-    expect(arsenalCatalog).toEqual(ARSENAL_WEAPONS.map(([weapon, name]) => ({
-      weapon,
-      iconWeapon: weapon,
-      name,
-    })));
-
-    const arsenalIcons = page.locator(
-      '.st-hud__weapon-btn:not(.st-hud__weapon-btn--hidden) .st-weapon-icon',
-    );
-    expect(await arsenalIcons.count()).toBeGreaterThanOrEqual(10);
-    const arsenalSizes = await arsenalIcons.evaluateAll((icons) =>
-      icons.map((icon) => {
-        const rect = icon.getBoundingClientRect();
-        const button = icon.closest('button')!.getBoundingClientRect();
-        return {
-          width: rect.width,
-          height: rect.height,
-          contained:
-            rect.left >= button.left - 1
-            && rect.right <= button.right + 1
-            && rect.top >= button.top - 1
-            && rect.bottom <= button.bottom + 1,
-        };
-      }),
-    );
-    for (const size of arsenalSizes) {
-      expect(size.width).toBeGreaterThanOrEqual(11);
-      expect(size.height).toBeGreaterThanOrEqual(11);
-      expect(size.contained).toBe(true);
-    }
-
-    const armoryIcons = page.locator('.st-hud__armory-name-line .st-weapon-icon');
-    const armoryCatalog = await page.locator(
-      '.st-hud__armory-name-line',
-    ).evaluateAll((lines) => lines.map((line) => ({
-      weapon: line.querySelector('.st-weapon-icon')
-        ?.getAttribute('data-weapon'),
-      name: line.querySelector('.st-hud__armory-name')?.textContent,
-    })));
-    expect(armoryCatalog).toHaveLength(STORE_WEAPONS.length);
-    expect(armoryCatalog).toEqual(expect.arrayContaining(STORE_WEAPONS.map(([weapon, name]) => ({
-      weapon,
-      name,
-    }))));
-    await expect(armoryIcons).toHaveCount(STORE_WEAPONS.length);
-    const firstArmoryIcon = await armoryIcons.first().boundingBox();
-    expect(firstArmoryIcon).not.toBeNull();
-    expect(firstArmoryIcon!.width).toBeGreaterThanOrEqual(11);
-    expect(firstArmoryIcon!.height).toBeGreaterThanOrEqual(11);
-    await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
-  });
-
-  test('unified Armory cards and commerce actions stay contained at every scale', async ({
-    page,
-  }, testInfo) => {
-    await openArmory(page);
-    const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
-    const catalog = armory.locator('.st-hud__armory-catalog');
-    await expect(page.locator('[role="dialog"]:visible')).toHaveCount(1);
-    await expect(page.locator('#modal-layer.st-hud__modal-layer--armory-open')).toHaveCount(1);
-    await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
-    await expect(catalog).toBeVisible();
-
-    const geometry = await armory.evaluate((dialog) => {
-      const tolerance = 1;
-      const containsHorizontally = (outer: DOMRect, inner: DOMRect): boolean =>
-        inner.left >= outer.left - tolerance && inner.right <= outer.right + tolerance;
-      const dialogRect = dialog.getBoundingClientRect();
-      const catalog = dialog.querySelector<HTMLElement>('.st-hud__armory-catalog')!;
-      const catalogRect = catalog.getBoundingClientRect();
-      const cards = [...dialog.querySelectorAll<HTMLElement>('.st-hud__armory-card')];
-      const cardRects = cards.map((card) => card.getBoundingClientRect());
-      const overlaps: Array<[number, number]> = [];
-      for (let left = 0; left < cardRects.length; left += 1) {
-        for (let right = left + 1; right < cardRects.length; right += 1) {
-          const a = cardRects[left];
-          const b = cardRects[right];
-          if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > tolerance
-            && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > tolerance) {
-            overlaps.push([left, right]);
-          }
-        }
-      }
-      const text = [...dialog.querySelectorAll<HTMLElement>('[data-armory-ammo], .st-hud__armory-price')]
-        .map((element) => {
-          const rect = element.getBoundingClientRect();
-          const card = element.closest<HTMLElement>('.st-hud__armory-card')!.getBoundingClientRect();
-          return {
-            content: element.textContent?.trim() ?? '',
-            rendered: rect.width > 0 && rect.height > 0,
-            horizontallyContained: containsHorizontally(card, rect),
-          };
-        });
-      const actions = [...dialog.querySelectorAll<HTMLButtonElement>(
-        '.st-hud__armory-buy, .st-hud__armory-equip',
-      )].map((button) => ({
-        action: button.dataset['action'],
-        height: button.getBoundingClientRect().height,
-        cardContained: containsHorizontally(
-          button.closest<HTMLElement>('.st-hud__armory-card')!.getBoundingClientRect(),
-          button.getBoundingClientRect(),
-        ),
-      }));
-      return {
-        dialogContained:
-          dialogRect.left >= -tolerance
-          && dialogRect.top >= -tolerance
-          && dialogRect.right <= window.innerWidth + tolerance
-          && dialogRect.bottom <= window.innerHeight + tolerance,
-        catalogContained:
-          catalogRect.left >= dialogRect.left - tolerance
-          && catalogRect.top >= dialogRect.top - tolerance
-          && catalogRect.right <= dialogRect.right + tolerance
-          && catalogRect.bottom <= dialogRect.bottom + tolerance,
-        catalogOverflowY: getComputedStyle(catalog).overflowY,
-        catalogScrollable: catalog.scrollHeight > catalog.clientHeight,
-        cardsHorizontallyContained: cardRects.every((rect) => containsHorizontally(catalogRect, rect)),
-        overlaps,
-        text,
-        actions,
-        documentWidth: document.documentElement.scrollWidth,
-        documentHeight: document.documentElement.scrollHeight,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-      };
-    });
-
-    expect(geometry.dialogContained).toBe(true);
-    expect(geometry.catalogContained).toBe(true);
-    expect(geometry.catalogOverflowY).toBe('auto');
-    expect(geometry.catalogScrollable).toBe(true);
-    expect(geometry.cardsHorizontallyContained).toBe(true);
-    expect(geometry.overlaps).toEqual([]);
-    expect(geometry.text.length).toBeGreaterThan(STORE_WEAPONS.length);
-    for (const text of geometry.text) {
-      expect(text.content).not.toBe('');
-      expect(text.rendered).toBe(true);
-      expect(text.horizontallyContained).toBe(true);
-    }
-    expect(geometry.actions.length).toBeGreaterThan(STORE_WEAPONS.length);
-    for (const action of geometry.actions) {
-      expect(action.cardContained).toBe(true);
-      expect(action.height).toBeGreaterThanOrEqual(
-        testInfo.project.name === 'pixel-touch' ? 44 : 43.5,
-      );
-    }
-    expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
-    expect(geometry.documentHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-
-    const lastCard = armory.locator('.st-hud__armory-card').last();
-    await lastCard.scrollIntoViewIfNeeded();
-    await expect(lastCard.locator('.st-hud__armory-price')).toBeVisible();
-    const lastCardBox = await lastCard.boundingBox();
-    const catalogBox = await catalog.boundingBox();
-    expect(lastCardBox).not.toBeNull();
-    expect(catalogBox).not.toBeNull();
-    expect(lastCardBox!.y).toBeGreaterThanOrEqual(catalogBox!.y - 1);
-    expect(lastCardBox!.y + lastCardBox!.height)
-      .toBeLessThanOrEqual(catalogBox!.y + catalogBox!.height + 1);
-  });
-
-  test('Armory isolates network quick chat, traps focus, and releases it on dismiss', async ({
-    page,
-  }) => {
-    const quickChatRoot = page.locator('.st-hud__quick-chat');
-    await quickChatRoot.evaluate((element) => {
-      element.classList.remove('st-hud__quick-chat--hidden');
-    });
+  test('all catalog items and their complete actions can be scrolled into the Armory frame', async ({ page }) => {
+    // Reuse the network quick-chat surface in the deterministic hot-seat fixture.
+    await page.locator('.st-hud__quick-chat').evaluate(element => element.classList.remove('st-hud__quick-chat--hidden'));
     const quickChat = page.getByRole('button', { name: 'Open quick chat', exact: true });
     await expect(quickChat).toBeVisible();
-    await openArmory(page);
-
-    await expect.poll(() => page.locator('#game-overlay').evaluate((element) => element.inert)).toBe(true);
-    let clickWasBlocked = false;
-    try {
-      await quickChat.click({ trial: true, timeout: 500 });
-    } catch {
-      clickWasBlocked = true;
+    await page.getByRole('button', { name: 'Open Armory', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Armory', exact: true });
+    const scroll = dialog.locator('[data-battle-console-armory-scroll]');
+    const items = dialog.locator('[data-battle-console-armory-item]');
+    await expect(quickChat.click({ trial: true, timeout: 500 })).rejects.toThrow();
+    const entries = STORE_CATALOG.flatMap(section => section.entries);
+    await expect(items).toHaveCount(entries.length);
+    for (const entry of entries) {
+      const name = entry.kind === 'weapon' ? WEAPONS[entry.type].name : ACCESSORIES[entry.type].name;
+      const item = items.filter({ has: page.getByRole('heading', { name, exact: true }) });
+      const buy = item.getByRole('button', { name: /^Buy / });
+      await buy.scrollIntoViewIfNeeded();
+      await contained(buy, scroll);
+      await contained(buy, item);
+      await expect(item.locator('[data-battle-console-bundle]')).toContainText('per purchase');
     }
-    expect(clickWasBlocked).toBe(true);
-    const lastAction = page.locator(
-      '[data-ui="arsenal-drawer"] .st-hud__armory-buy:not(:disabled), '
-      + '[data-ui="arsenal-drawer"] .st-hud__armory-equip:not(:disabled)',
-    ).last();
-    await lastAction.focus();
+    const lastEnabled = dialog.locator('button:not(:disabled)').last();
+    await lastEnabled.focus();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Close Armory', exact: true })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Close Armory' })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(lastAction).toBeFocused();
-
+    await expect(lastEnabled).toBeFocused();
     await page.keyboard.press('Escape');
-    const trigger = page.getByRole('button', { name: /^Open Armory .*equip or buy weapons$/ });
-    await expect(trigger).toBeFocused();
-    await expect.poll(() => page.locator('#game-overlay').evaluate((element) => element.inert)).toBe(false);
+    await expect(page.getByRole('button', { name: 'Open Armory', exact: true })).toBeFocused();
     await quickChat.click();
     await expect(quickChat).toHaveAttribute('aria-expanded', 'true');
-    await quickChat.click();
-
-    await trigger.click();
-    const modalLayer = page.locator('#modal-layer.st-hud__modal-layer--armory-open');
-    await modalLayer.click({ position: { x: 2, y: 2 } });
-    await expect(trigger).toBeFocused();
-    await expect(page.getByRole('dialog', { name: 'Armory', exact: true })).toBeHidden();
   });
 
-  test('one numerical firing solution replaces the retired analog computer at every scale', async ({ page }) => {
-    const solution = page.locator('#battle-rail .st-hud__console-solution');
-    await expect(page.locator('.st-hud__gauge-row')).toHaveCount(0);
-    await expect(solution.locator('.st-hud__solution-adjustment')).toHaveCount(2);
-    const wind = solution.locator('.st-hud__solution-wind');
-    await expect(wind).toHaveCount(1);
-    await expect(solution.locator('[data-ui="deterministic-aim-guide"]')).toHaveCount(0);
-    const settingsTrigger = page.getByRole('button', { name: 'Battle settings', exact: true });
-    await expect(settingsTrigger).toHaveCount(1);
-    const settingsGeometry = await settingsTrigger.evaluate((trigger) => {
-      const target = trigger.getBoundingClientRect();
-      const terminal = trigger.closest('.st-hud__fire-terminal')!.getBoundingClientRect();
-      return {
-        contained: target.left >= terminal.left - 1 && target.right <= terminal.right + 1
-          && target.top >= terminal.top - 1 && target.bottom <= terminal.bottom + 1,
-        width: target.width,
-        height: target.height,
-      };
+  test('Match title clears its menu and long names stay in the player row', async ({ page }) => {
+    const match = page.locator('#hud .st-hud__match-card');
+    if (!await match.isVisible()) await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
+    await contained(match, page.locator('#game'));
+    const title = await page.locator('#hud .st-hud__match-title').evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return { x: range.getBoundingClientRect().x };
     });
-    expect(settingsGeometry.contained).toBe(true);
-    expect(settingsGeometry.width).toBeGreaterThanOrEqual(44);
-    expect(settingsGeometry.height).toBeGreaterThanOrEqual(44);
-    await settingsTrigger.click();
-    const settingsDialog = page.getByRole('dialog', { name: 'Battle Settings', exact: true });
-    await expect(settingsDialog).toBeVisible();
-    await expect(settingsDialog.getByRole('switch')).toHaveCount(2);
+    const menu = (await page.locator('#hud .st-hud__menu').boundingBox())!;
+    expect(menu.x + menu.width).toBeLessThanOrEqual(title.x + 1);
+    // A detached-copy fixture changes only text, preserving the actual generated CSS.
+    const result = await page.locator('#hud .st-hud__player').first().evaluate(player => {
+      const copy = player.cloneNode(true) as HTMLElement;
+      player.replaceWith(copy);
+      const name = copy.querySelector<HTMLElement>('.st-hud__name')!;
+      name.textContent = 'LongRangeCommander20';
+      const row = copy.getBoundingClientRect();
+      const text = name.getBoundingClientRect();
+      return { left: text.left - row.left, right: row.right - text.right, overflow: name.scrollWidth - name.clientWidth };
+    });
+    expect(result.left).toBeGreaterThanOrEqual(-1);
+    expect(result.right).toBeGreaterThanOrEqual(-1);
+    expect(result.overflow).toBeLessThanOrEqual(1);
+  });
+
+  test('legal long Commander and weapon labels remain bounded by their live DOM cells', async ({ page }) => {
+    const readings = await page.locator('[data-console-owner="preact"]').evaluate(inline => {
+      // Freeze this presentation fixture for typography measurement, without changing engine state.
+      const copy = inline.cloneNode(true) as HTMLElement;
+      inline.replaceWith(copy);
+      const commander = copy.querySelector<HTMLElement>('[data-semantic-key="node:span:P1:10"]')
+        ?? copy.querySelector<HTMLElement>('[data-battle-console-compact-chassis] strong')!;
+      const weapon = copy.querySelector<HTMLElement>('[data-semantic-key="node:span:Baby Missile:30"]')
+        ?? copy.querySelector<HTMLElement>('[data-battle-console-target-key="weapon-next"] > span')!;
+      commander.textContent = 'LongRangeCommander20';
+      commander.setAttribute('data-battle-console-long-name', '');
+      weapon.textContent = 'Bouncing Betty';
+      return [commander, weapon].map(element => {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return { width: box.width, height: box.height, overflow: style.overflow,
+          scrollWidth: element.scrollWidth, clientWidth: element.clientWidth,
+          scrollHeight: element.scrollHeight, clientHeight: element.clientHeight };
+      });
+    });
+    for (const reading of readings) {
+      expect(reading.width).toBeGreaterThan(30);
+      expect(reading.height).toBeGreaterThan(10);
+      // Ellipsis is allowed for a bounded name; overflowing ink is not.
+      if (reading.scrollWidth > reading.clientWidth || reading.scrollHeight > reading.clientHeight) {
+        expect(reading.overflow).toBe('hidden');
+      }
+    }
+  });
+
+  test('Space fires once after an aim control takes focus and locks commands through flight', async ({ page }) => {
+    const surface = page.locator('[data-battle-console-surface]');
+    const commander = await surface.getAttribute('data-active-commander');
+    await page.getByRole('button', { name: 'Aim barrel right', exact: true }).click();
+    await page.keyboard.press('Space');
+    await expect(surface).toHaveAttribute('data-battle-console-phase', /firing|resolving/);
+    for (const name of ['Aim barrel left', 'Aim barrel right', 'Decrease power', 'Increase power']) {
+      await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
+    }
+    await page.keyboard.down('f');
+    try {
+      await expect(page.locator('.st-hud__toast')).not.toContainText('Fast-forward');
+      await expect.poll(() => surface.getAttribute('data-active-commander'), { timeout: 30_000 }).not.toBe(commander);
+    } finally { await page.keyboard.up('f'); }
+    await expect(page.locator('#game')).toHaveCount(1);
+  });
+
+  test('Settings contains focus and prevents aim changes behind its modal', async ({ page }) => {
+    const angle = page.locator('[data-semantic-key="node:output:Angle:43"]');
+    const before = await angle.textContent();
+    await page.getByRole('button', { name: 'Battle settings', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Battle Settings', exact: true });
+    await expect(dialog.getByRole('switch', { name: 'Trajectory guide' })).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(angle).toHaveText(before!);
+    await dialog.getByRole('button', { name: 'Close settings', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('switch', { name: 'Trajectory guide' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: 'Close settings', exact: true })).toBeFocused();
     await page.keyboard.press('Escape');
-    await expect(settingsDialog).toBeHidden();
-    await expect(settingsTrigger).toBeFocused();
-
-    // Live numerical firing values must stay inside their owner regions.
-    const geometry = await solution.evaluate((node) => {
-      const solution = node.getBoundingClientRect();
-      const controls = [...node.querySelectorAll<HTMLElement>(
-        '.st-hud__solution-adjustment, .st-hud__solution-wind',
-      )];
-      const contained = (rect: DOMRect) =>
-        rect.left >= solution.left - 1 && rect.right <= solution.right + 1
-        && rect.top >= solution.top - 1 && rect.bottom <= solution.bottom + 1;
-      return controls.map((control) => ({
-        text: control.textContent?.trim(),
-        contained: contained(control.getBoundingClientRect()),
-      }));
-    });
-    expect(geometry).toHaveLength(3);
-    expect(
-      geometry.every((control) => control.contained),
-      `integrated solution controls must remain contained: ${JSON.stringify(geometry)}`,
-    ).toBe(true);
-    expect(geometry.map((control) => control.text).join(' ')).toMatch(/Angle.*Power.*Wind/s);
+    await expect(page.getByRole('button', { name: 'Battle settings', exact: true })).toBeFocused();
   });
+  test('real Round Shop owns the completed-round transition and reference frame', async ({ page }, testInfo) => {
+    await page.goto('?e2e=round-shop');
+    await page.evaluate(() => document.getElementById('st-splash')?.remove());
 
-  test('compact firing instruments keep their rendered SVGs inside the single owner', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === 'desktop-fine', 'compact viewport contract');
-    const instruments = await page.locator('#battle-rail .st-hud__solution-adjustments')
-      .evaluate((controls) => {
-        const contained = (outer: DOMRect, inner: DOMRect): boolean =>
-          inner.left >= outer.left - 1 && inner.right <= outer.right + 1
-          && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
-        return ['angle', 'power', 'wind'].map((name) => {
-          const owner = controls.querySelector<HTMLElement>(`[data-instrument="${name}"]`)!;
-          const svg = owner.querySelector<SVGSVGElement>('.st-hud__instrument-svg')!;
-          const ownerRect = owner.getBoundingClientRect();
-          const svgRect = svg.getBoundingClientRect();
-          const style = getComputedStyle(svg);
+    const dialog = page.getByRole('dialog', { name: /Round 1.*Player 1 won.*Round 2 of 3/i });
+    const panel = page.locator('.st-hud__overlay-panel--round-shop');
+    await expect(dialog).toBeVisible();
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.st-hud__overlay-text')).toContainText('Round 1 complete');
+    await expect(panel.locator('.st-hud__roundshop-title')).toHaveText('Round shop');
+    await expect(panel.locator('.st-hud__roundshop-sel')).toHaveValue(/.+/);
+    await expect(page.locator('#modal-layer [role="dialog"]:visible')).toHaveCount(1);
+    await expect(page.locator('#modal-layer [aria-label="Store"]:visible')).toHaveCount(0);
+    await expect(page.locator('#modal-layer [data-ui="arsenal-drawer"]:visible')).toHaveCount(0);
+    await expect(panel.locator('.st-hud__roundshop-sel')).toBeFocused();
+
+    const geometry = await panel.evaluate((owner) => {
+      const panelRect = owner.getBoundingClientRect();
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const gridRect = owner.querySelector<HTMLElement>('.st-hud__roundshop-grid')!.getBoundingClientRect();
+      const interactive = [...owner.querySelectorAll<HTMLElement>('button:not(:disabled), select:not(:disabled)')]
+        .filter((element) => {
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          const clippedByGrid = element.closest('.st-hud__roundshop-grid') !== null
+            && (rect.top < gridRect.top - 1 || rect.bottom > gridRect.bottom + 1);
+          return style.display !== 'none'
+            && style.visibility !== 'hidden'
+            && rect.width > 0
+            && rect.height > 0
+            && !clippedByGrid;
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
           return {
-            name,
-            rendered: style.display !== 'none' && style.visibility !== 'hidden'
-              && Number(style.opacity) > 0 && svgRect.width > 0 && svgRect.height > 0,
-            contained: contained(ownerRect, svgRect),
-            buttons: [...owner.querySelectorAll<HTMLButtonElement>('button')].map((button) => {
-              const rect = button.getBoundingClientRect();
-              return { width: rect.width, height: rect.height };
-            }),
+            text: element.textContent?.trim() ?? '',
+            left: rect.left,
+            top: rect.top,
+            right: rect.right,
+            bottom: rect.bottom,
+            width: rect.width,
+            height: rect.height,
+            clientWidth: element.clientWidth,
+            clientHeight: element.clientHeight,
+            scrollWidth: element.scrollWidth,
+            scrollHeight: element.scrollHeight,
           };
         });
-      });
-
-    expect(instruments).toHaveLength(3);
-    for (const instrument of instruments) {
-      expect(instrument.rendered, `${instrument.name} SVG is visibly rendered`).toBe(true);
-      expect(instrument.contained, `${instrument.name} SVG stays inside its owner`).toBe(true);
-      if (testInfo.project.name === 'pixel-touch') {
-        for (const button of instrument.buttons) {
-          expect(button.width, `${instrument.name} touch target width`).toBeGreaterThanOrEqual(44);
-          expect(button.height, `${instrument.name} touch target height`).toBeGreaterThanOrEqual(44);
-        }
-      }
-    }
-  });
-
-  test('Fire Control uses the full live rail instead of decorative empty cards', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'pixel-touch', 'touch uses a strengthened one-row numerical-control topology');
-    const geometry = await page.locator('#battle-rail .st-hud__console-solution').evaluate((solution) => {
-      const rect = solution.getBoundingClientRect();
-      const box = (selector: string) => {
-        const node = solution.querySelector<HTMLElement>(selector)!;
-        const value = node.getBoundingClientRect();
-        return { top: value.top, bottom: value.bottom, height: value.height };
-      };
-      const angle = solution.querySelector<HTMLElement>('[data-value-owner="angle"]')!;
-      const power = solution.querySelector<HTMLElement>('[data-value-owner="power"]')!;
-      const band = (owner: HTMLElement) => {
-        const label = owner.querySelector<HTMLElement>('.st-hud__solution-adjustment-label')!.getBoundingClientRect();
-        const value = owner.querySelector<HTMLElement>('output')!.getBoundingClientRect();
-        const buttons = [...owner.querySelectorAll<HTMLElement>('button')].map((button) => button.getBoundingClientRect());
+      const title = owner.querySelector<HTMLElement>('.st-hud__roundshop-title')!;
+      const credits = owner.querySelector<HTMLElement>('.st-hud__roundshop-credits')!;
+      const titleRect = title.getBoundingClientRect();
+      const creditsRect = credits.getBoundingClientRect();
+      const selector = owner.querySelector<HTMLSelectElement>('.st-hud__roundshop-sel')!;
+      const visibleCards = [...owner.querySelectorAll<HTMLElement>('.st-hud__roundshop-grid .st-hud__store-buy')]
+        .filter((card) => {
+          const rect = card.getBoundingClientRect();
+          return rect.top >= gridRect.top - 1 && rect.bottom <= gridRect.bottom + 1;
+        });
+      const visibleCardNames = visibleCards.map((card) => {
+        const name = card.querySelector<HTMLElement>('.st-hud__roundshop-item-name')!;
+        const style = getComputedStyle(name);
         return {
-          labelBottom: label.bottom,
-          valueTop: value.top,
-          valueBottom: value.bottom,
-          buttonTop: Math.min(...buttons.map((button) => button.top)),
+          text: name.textContent ?? '',
+          clientWidth: name.clientWidth,
+          clientHeight: name.clientHeight,
+          scrollWidth: name.scrollWidth,
+          scrollHeight: name.scrollHeight,
+          textOverflow: style.textOverflow,
         };
-      };
+      });
       return {
-        solution: { top: rect.top, bottom: rect.bottom, height: rect.height },
-        weapon: box('.st-hud__weapon'),
-        angle: box('[data-value-owner="angle"]'),
-        power: box('[data-value-owner="power"]'),
-        wind: box('[data-value-owner="wind"]'),
-        terminal: box('.st-hud__fire-terminal'),
-        terminalState: box('.st-hud__console-state'),
-        fire: box('.st-hud__primary-action'),
-        angleBand: band(angle),
-        powerBand: band(power),
-      };
-    });
-    for (const [name, cell] of Object.entries({
-      weapon: geometry.weapon,
-      angle: geometry.angle,
-      power: geometry.power,
-      wind: geometry.wind,
-      terminal: geometry.terminal,
-    })) {
-      expect(cell.height, `${name} must occupy the live Fire Control row`)
-        .toBeGreaterThanOrEqual(geometry.solution.height * 0.72);
-      expect(cell.top, `${name} starts in the shared row`).toBeLessThanOrEqual(geometry.solution.top + 8);
-      expect(cell.bottom, `${name} ends in the shared row`).toBeGreaterThanOrEqual(geometry.solution.bottom - 8);
-    }
-    expect(geometry.terminalState.top, 'phase starts the terminal hierarchy')
-      .toBeGreaterThanOrEqual(geometry.terminal.top);
-    expect(geometry.fire.top, 'the one commit action follows phase state')
-      .toBeGreaterThanOrEqual(geometry.terminalState.bottom);
-    expect(geometry.fire.height, 'Fire remains a bounded terminal action')
-      .toBeLessThanOrEqual(geometry.terminal.height * 0.62);
-    for (const [name, band] of Object.entries({ angle: geometry.angleBand, power: geometry.powerBand })) {
-      expect(band.labelBottom, `${name} label precedes live value`).toBeLessThanOrEqual(band.valueTop);
-      expect(band.valueBottom, `${name} value precedes controls`).toBeLessThanOrEqual(band.buttonTop);
-    }
-  });
-
-  test('Commander and Fire Control consume the full command rail with no orphaned track', async ({ page }) => {
-    const geometry = await page.locator('#battle-rail .st-hud__command-console').evaluate((console) => {
-      const rect = console.getBoundingClientRect();
-      const directChildren = [...console.children].filter((node) => node instanceof HTMLElement) as HTMLElement[];
-      const context = console.querySelector<HTMLElement>(':scope > .st-hud__console-context')!;
-      const solution = console.querySelector<HTMLElement>(':scope > .st-hud__console-solution')!;
-      const contextRect = context.getBoundingClientRect();
-      const solutionRect = solution.getBoundingClientRect();
-      return {
-        directChildClasses: directChildren.map((child) => child.className),
-        console: { left: rect.left, right: rect.right },
-        context: { left: contextRect.left, right: contextRect.right },
-        solution: { left: solutionRect.left, right: solutionRect.right },
-      };
-    });
-    expect(geometry.directChildClasses).toEqual([
-      expect.stringContaining('st-hud__console-context'),
-      expect.stringContaining('st-hud__console-solution'),
-    ]);
-    expect(geometry.context.left).toBeLessThanOrEqual(geometry.console.left + 1);
-    expect(geometry.solution.right).toBeGreaterThanOrEqual(geometry.console.right - 1);
-    expect(geometry.solution.left).toBeGreaterThanOrEqual(geometry.context.right - 1);
-  });
-
-  test('desktop Commander spends its full column on live tactical identity instead of blank rail', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine', 'touch intentionally removes the decorative portrait');
-    const geometry = await page.locator('#battle-rail .st-hud__console-context').evaluate((context) => {
-      const contextRect = context.getBoundingClientRect();
-      const active = context.querySelector<HTMLElement>('.st-hud__active-row')!.getBoundingClientRect();
-      const portrait = context.querySelector<HTMLElement>('.st-hud__tank-portrait-frame')!.getBoundingClientRect();
-      const mobility = context.querySelector<HTMLElement>('.st-hud__mobility')!.getBoundingClientRect();
-      return {
-        context: { top: contextRect.top, bottom: contextRect.bottom, height: contextRect.height },
-        active: { top: active.top, bottom: active.bottom, height: active.height },
-        portrait: { top: portrait.top, bottom: portrait.bottom, width: portrait.width, height: portrait.height },
-        mobility: { top: mobility.top, bottom: mobility.bottom },
-      };
-    });
-    expect(geometry.active.bottom).toBeGreaterThanOrEqual(geometry.context.bottom - 4);
-    // The compact 200px protected rail keeps Commander useful without taking
-    // back battlefield height. The portrait remains a substantial identity cue
-    // while mobility anchors the lower edge of the same live panel.
-    expect(geometry.portrait.height).toBeGreaterThanOrEqual(geometry.active.height * 0.35);
-    expect(geometry.portrait.width / geometry.portrait.height,
-      'Commander tank art must remain a landscape vehicle, not stretch vertically').toBeGreaterThan(1.7);
-    // Commander keeps a deliberate 7px inner panel inset; anything beyond this
-    // would be the blank lower-third regression this test guards.
-    expect(geometry.mobility.bottom).toBeGreaterThanOrEqual(geometry.context.bottom - 14);
-  });
-
-  test('turn command console is coherent, complete, and fitted', async ({ page }, testInfo) => {
-    if (testInfo.project.name === 'desktop-fine') {
-      await page.setViewportSize({ width: 1440, height: 900 });
-    }
-    const console = page.getByRole('region', { name: 'Turn command console' });
-    const activeRow = console.locator('.st-hud__active-row');
-    const solution = console.locator('.st-hud__console-solution');
-    const commitment = console.locator('.st-hud__fire-terminal');
-    const player = activeRow.locator('.st-hud__turn-owner');
-    const health = activeRow.locator('[data-ui="commander-health"]');
-    const weapon = solution.locator('.st-hud__weapon-value');
-    const portrait = activeRow.getByRole('img', { name: /Mobility:/ });
-    const meter = activeRow.getByRole('progressbar', { name: 'Movement fuel' });
-    const fire = console.locator('.st-hud__primary-action');
-
-    await expect(console).toBeVisible();
-    await expect(activeRow).toBeVisible();
-    await expect(player).toHaveText('P1');
-    await expect(health).toHaveText('100 HP');
-    await expect(weapon).toHaveText('Baby Missile');
-    if (testInfo.project.name === 'pixel-touch') {
-      await expect(portrait).toHaveCount(0);
-    } else {
-      await expect(portrait).toHaveCount(1);
-      await expect(portrait).toHaveAttribute(
-        'aria-label',
-        "P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.",
-      );
-    }
-    await expect(activeRow.locator('.st-hud__turn-kicker')).toBeVisible();
-    await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
-      .toHaveAttribute('data-weapon', 'baby_missile');
-    await expect(meter).toHaveAttribute('aria-valuenow', '100');
-    await expect(fire).toBeVisible();
-    await expect(console.locator('.st-hud__primary-action')).toHaveCount(1);
-    await expect(commitment.locator('[data-ui="shot-readback"]')).toHaveCount(0);
-    await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
-      'aria-label',
-      "P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.",
-    );
-
-    await openArmory(page);
-    if (testInfo.project.name === 'pixel-touch') return;
-
-    await page.locator('.st-hud__weapon-btn[data-weapon="sandhog"]').click();
-    await page.getByRole('button', { name: 'Close Armory' }).click();
-    await expect(weapon).toHaveText('Sandhog');
-    await expect(commitment.locator('[data-ui="shot-readback"]')).toHaveCount(0);
-    await expect(solution.locator('.st-hud__weapon-icon .st-weapon-icon'))
-      .toHaveAttribute('data-weapon', 'sandhog');
-    await expect(fire).toHaveAttribute('aria-label', 'Fire Sandhog');
-    await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
-      'aria-label',
-      "P1's turn. 100 health. Weapon Sandhog. 100 fuel remaining.",
-    );
-    await expect.poll(async () => portrait.evaluate((canvas) => {
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (ctx === null) return false;
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      let visible = 0;
-      const colors = new Set<string>();
-      for (let index = 0; index < pixels.length; index += 4) {
-        const alpha = pixels[index + 3]!;
-        if (alpha <= 32) continue;
-        visible++;
-        colors.add(
-          `${pixels[index]},${pixels[index + 1]},${pixels[index + 2]},${alpha}`,
-        );
-      }
-      // The immediate geometric fallback occupies fewer than 1,000 pixels and
-      // has a tiny palette. These floors require the decoded authored atlas.
-      return visible > 1_000 && colors.size > 100;
-    }), {
-      message: 'the active portrait should decode and paint recognizable authored tank art',
-    }).toBe(true);
-
-    const portraitBox = await portrait.boundingBox();
-    const activeRowBox = await activeRow.boundingBox();
-    expect(portraitBox).not.toBeNull();
-    expect(activeRowBox).not.toBeNull();
-    expect(portraitBox!.width).toBeGreaterThanOrEqual(42);
-    expect(portraitBox!.height).toBeGreaterThanOrEqual(24);
-    expect(portraitBox!.x).toBeGreaterThanOrEqual(activeRowBox!.x - 1);
-    expect(portraitBox!.x + portraitBox!.width)
-      .toBeLessThanOrEqual(activeRowBox!.x + activeRowBox!.width + 1);
-    expect(portraitBox!.y).toBeGreaterThanOrEqual(activeRowBox!.y - 1);
-    expect(portraitBox!.y + portraitBox!.height)
-      .toBeLessThanOrEqual(activeRowBox!.y + activeRowBox!.height + 1);
-
-    // Exercise the exact maximum-name / longest-weapon layout contract with
-    // production markup and computed browser geometry.
-    const geometry = await console.evaluate((node) => {
-      const hud = document.getElementById('hud')!;
-      const playerNode = node.querySelector<HTMLElement>('.st-hud__turn-owner')!;
-      const weaponNode = node.querySelector<HTMLElement>('.st-hud__weapon-value')!;
-      const commitmentNode = node.querySelector<HTMLElement>('.st-hud__fire-terminal')!;
-      // Mutate and measure in one browser task so the live HUD update loop
-      // cannot restore the fixture name between the probe and geometry read.
-      playerNode.textContent = 'Commander Longname X';
-      const bounds = node.getBoundingClientRect();
-      const visibleTargets = [...node.querySelectorAll<HTMLElement>('button')]
-        .filter((target) => {
-          const rect = target.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        });
-      const targetRects = visibleTargets.map((target) => target.getBoundingClientRect());
-      return {
-        consoleClientHeight: node.clientHeight,
-        consoleScrollHeight: node.scrollHeight,
-        consoleClientWidth: node.clientWidth,
-        consoleScrollWidth: node.scrollWidth,
-        hudClientHeight: hud.clientHeight,
-        hudScrollHeight: hud.scrollHeight,
-        playerClientWidth: playerNode.clientWidth,
-        playerScrollWidth: playerNode.scrollWidth,
-        weaponClientWidth: weaponNode.clientWidth,
-        weaponScrollWidth: weaponNode.scrollWidth,
-        targetViolations: targetRects
-          .map((target, index) => ({ target, className: visibleTargets[index]!.className }))
-          .filter(({ target }) => target.left < bounds.left - 1
-            || target.right > bounds.right + 1
-            || target.top < bounds.top - 1
-            || target.bottom > bounds.bottom + 1)
-          .map(({ target, className }) => ({ className, ...target.toJSON() })),
-        commitmentHasSolutionReadback: commitmentNode.querySelector('[data-ui="shot-readback"]') !== null,
-        solutionValueCounts: {
-          weapon: node.querySelectorAll('.st-hud__console-solution .st-hud__weapon-value').length,
-          elevation: node.querySelectorAll('.st-hud__console-solution [data-value-owner="angle"]').length,
-          power: node.querySelectorAll('.st-hud__console-solution [data-value-owner="power"]').length,
-          wind: node.querySelectorAll('.st-hud__console-solution [data-value-owner="wind"]').length,
+        panel: {
+          left: panelRect.left,
+          top: panelRect.top,
+          right: panelRect.right,
+          bottom: panelRect.bottom,
+          width: panelRect.width,
+          height: panelRect.height,
+          clientWidth: owner.clientWidth,
+          clientHeight: owner.clientHeight,
+          scrollWidth: owner.scrollWidth,
+          scrollHeight: owner.scrollHeight,
         },
-        childHeights: [...node.children].map((child) => ({
-          className: child.className,
-          clientHeight: (child as HTMLElement).clientHeight,
-          scrollHeight: (child as HTMLElement).scrollHeight,
-        })),
-        targetMetrics: visibleTargets.map((target) => ({
-          className: target.className,
-          height: target.getBoundingClientRect().height,
-          minHeight: getComputedStyle(target).minHeight,
-        })),
-      };
-    });
-    expect(geometry.consoleScrollHeight, JSON.stringify(geometry.childHeights))
-      .toBeLessThanOrEqual(geometry.consoleClientHeight + 1);
-    expect(geometry.consoleScrollWidth).toBeLessThanOrEqual(geometry.consoleClientWidth + 1);
-    expect(geometry.hudScrollHeight).toBeLessThanOrEqual(geometry.hudClientHeight + 1);
-    expect(geometry.playerScrollWidth).toBeLessThanOrEqual(geometry.playerClientWidth + 1);
-    expect(geometry.weaponScrollWidth).toBeLessThanOrEqual(geometry.weaponClientWidth + 1);
-    expect(geometry.targetViolations, JSON.stringify(geometry)).toEqual([]);
-    expect(geometry.commitmentHasSolutionReadback).toBe(false);
-    expect(geometry.solutionValueCounts).toEqual({ weapon: 1, elevation: 1, power: 1, wind: 1 });
-    const targetFloor = testInfo.project.name === 'pixel-touch' ? 44 : 24;
-    for (const target of geometry.targetMetrics) {
-      expect(
-        target.height,
-        `${target.className} (${target.minHeight}) must retain a ${targetFloor}px rendered target`,
-      ).toBeGreaterThanOrEqual(targetFloor);
-    }
-  });
-
-  test('fine Commander mobility remains inside the console after Armory closes', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === 'pixel-touch', 'coarse Commander topology is independent');
-    if (testInfo.project.name === 'desktop-fine') {
-      await page.setViewportSize({ width: 1440, height: 900 });
-    }
-
-    await openArmory(page);
-    await page.getByRole('button', { name: 'Close Armory' }).click();
-
-    const geometry = await page.locator('.st-hud__active-row').evaluate((activeRow) => {
-      const console = activeRow.closest<HTMLElement>('.st-hud__command-console')!;
-      const context = activeRow.closest<HTMLElement>('.st-hud__console-context')!;
-      const portrait = activeRow.querySelector<HTMLElement>('.st-hud__tank-portrait-frame')!;
-      const movement = [...activeRow.querySelectorAll<HTMLButtonElement>('.st-hud__move-btn')]
-        .map((button) => ({
-          box: button.getBoundingClientRect().toJSON(),
-          authoredMinHeight: Number.parseFloat(getComputedStyle(button).minHeight),
-        }));
-      return {
-        console: console.getBoundingClientRect().toJSON(),
-        contextClientHeight: context.clientHeight,
-        contextScrollHeight: context.scrollHeight,
-        portrait: portrait.getBoundingClientRect().toJSON(),
-        movement,
+        viewport,
+        interactive,
+        headTextIntersects: titleRect.left < creditsRect.right - 1
+          && titleRect.right > creditsRect.left + 1
+          && titleRect.top < creditsRect.bottom - 1
+          && titleRect.bottom > creditsRect.top + 1,
+        selectorAppearance: getComputedStyle(selector).appearance,
+        visibleCardIconCounts: visibleCards.map((card) => card.querySelectorAll('.st-weapon-icon, .st-ui-glyph').length),
+        visibleCardNames,
+        nextRoundGlyphCount: owner.querySelectorAll('.st-hud__restart > .st-ui-glyph').length,
+        stageScale: document.getElementById('app')!.getBoundingClientRect().width / 1200,
+        coarse: matchMedia('(pointer: coarse)').matches,
       };
     });
 
-    expect(geometry.contextScrollHeight).toBeLessThanOrEqual(geometry.contextClientHeight + 1);
-    expect(geometry.portrait.width / geometry.portrait.height).toBeGreaterThanOrEqual(1.75);
-    expect(geometry.portrait.width / geometry.portrait.height).toBeLessThanOrEqual(1.85);
-    expect(geometry.movement).toHaveLength(2);
-    for (const movement of geometry.movement) {
-      expect(movement.authoredMinHeight).toBeGreaterThanOrEqual(34);
-      expect(movement.box.top).toBeGreaterThanOrEqual(geometry.console.top - 1);
-      expect(movement.box.bottom).toBeLessThanOrEqual(geometry.console.bottom + 1);
+    await panel.screenshot({ path: testInfo.outputPath(`round-shop-reference-lock-${testInfo.project.name}.png`) });
+
+    expect(geometry.panel.left).toBeGreaterThanOrEqual(-1);
+    expect(geometry.panel.top).toBeGreaterThanOrEqual(-1);
+    expect(geometry.panel.right).toBeLessThanOrEqual(geometry.viewport.width + 1);
+    expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.viewport.height + 1);
+    expect(geometry.panel.scrollWidth).toBeLessThanOrEqual(geometry.panel.clientWidth + 1);
+    expect(geometry.panel.scrollHeight).toBeLessThanOrEqual(geometry.panel.clientHeight + 1);
+    expect(geometry.headTextIntersects, 'Round Shop title and credits occupy separate hardware labels').toBe(false);
+    expect(geometry.selectorAppearance, 'tank selector uses authored hardware instead of browser-native chrome').toBe('none');
+    expect(geometry.visibleCardIconCounts.length).toBeGreaterThanOrEqual(3);
+    expect(geometry.visibleCardIconCounts.every((count) => count === 1), 'every visible commerce key has one semantic-family glyph').toBe(true);
+    for (const name of geometry.visibleCardNames) {
+      expect(name.textOverflow, `${name.text} is shown in full instead of ellipsized`).not.toBe('ellipsis');
+      expect(name.scrollWidth, `${name.text} fits its commerce-key name well`).toBeLessThanOrEqual(name.clientWidth + 1);
+      expect(name.scrollHeight, `${name.text} fits its commerce-key name well`).toBeLessThanOrEqual(name.clientHeight + 1);
     }
-  });
-
-  test('noncompact touch keeps every command target at least 44 rendered pixels', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch', 'requires the coarse-pointer project');
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await expect.poll(() => isCompact(page)).toBe(false);
-
-    const commandConsole = page.getByRole('region', { name: 'Turn command console' });
-    const geometry = await commandConsole.evaluate((node) => {
-      const hud = document.getElementById('hud')!;
-      const visibleTargets = [...node.querySelectorAll<HTMLElement>('button')]
-        .filter((target) => {
-          const rect = target.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        });
-      return {
-        hudClientHeight: hud.clientHeight,
-        hudScrollHeight: hud.scrollHeight,
-        targets: visibleTargets.map((target) => ({
-          className: target.className,
-          height: target.getBoundingClientRect().height,
-        })),
-      };
-    });
-
-    expect(geometry.hudScrollHeight).toBeLessThanOrEqual(geometry.hudClientHeight + 1);
-    for (const target of geometry.targets) {
-      expect(
-        target.height,
-        `${target.className} must retain a 44px rendered target on noncompact touch`,
-      ).toBeGreaterThanOrEqual(44);
-    }
-  });
-
-  test('mobility rocker stays fitted and spends authoritative fuel without ending the turn', async ({
-    page,
-  }, testInfo) => {
-    const activeRow = page.locator('.st-hud__active-row');
-    const mobility = activeRow.locator('.st-hud__mobility');
-    const left = mobility.locator('[data-move="-8"]');
-    const right = mobility.locator('[data-move="8"]');
-    const fuel = mobility.locator('.st-hud__fuel-value');
-    const fuelLabel = mobility.locator('.st-hud__fuel-label');
-    const meter = mobility.getByRole('progressbar', { name: 'Movement fuel' });
-
-    await expect(mobility).toBeVisible();
-    await expect(mobility).toHaveAttribute('role', 'group');
-    await expect(mobility).toHaveAttribute('aria-label', 'Tank movement');
-    await expect(left).toBeEnabled();
-    await expect(right).toBeEnabled();
-    await expect(fuel).toHaveText('100');
-    await expect(fuelLabel).toHaveText('FUEL');
-    await expect(meter).toHaveAttribute('data-fuel-band', 'normal');
-    await expect(meter).toHaveAttribute('data-ui', 'fuel-meter');
-
-    const rowBox = await activeRow.boundingBox();
-    const mobilityBox = await mobility.boundingBox();
-    const meterBox = await meter.boundingBox();
-    const fuelBox = await fuel.boundingBox();
-    const fuelLabelBox = await fuelLabel.boundingBox();
-    expect(rowBox).not.toBeNull();
-    expect(mobilityBox).not.toBeNull();
-    expect(meterBox).not.toBeNull();
-    expect(fuelBox).not.toBeNull();
-    expect(fuelLabelBox).not.toBeNull();
-    expect(mobilityBox!.x).toBeGreaterThanOrEqual(rowBox!.x - 1);
-    expect(mobilityBox!.x + mobilityBox!.width)
-      .toBeLessThanOrEqual(rowBox!.x + rowBox!.width + 1);
-    expect(Math.abs((mobilityBox!.x + mobilityBox!.width / 2) - (rowBox!.x + rowBox!.width / 2)))
-      .toBeLessThanOrEqual(2);
-    expect(await mobility.evaluate((node) => [...node.children].map((child) => child.className)))
-      .toEqual(['st-hud__move-btn', 'st-hud__fuel-meter st-hud__fuel-capsule', 'st-hud__move-btn']);
-    const authoredCapsuleSize = await meter.evaluate((node) => {
-      const style = getComputedStyle(node);
-      return {
-        width: parseFloat(style.width),
-        height: parseFloat(style.height),
-        overflow: style.overflow,
-        backgroundImage: style.backgroundImage,
-      };
-    });
-    expect(authoredCapsuleSize.width / authoredCapsuleSize.height).toBeGreaterThanOrEqual(2);
-    expect(meterBox!.width / meterBox!.height).toBeGreaterThanOrEqual(2);
-    expect(authoredCapsuleSize.overflow).toBe('hidden');
-    expect(authoredCapsuleSize.backgroundImage).toContain('linear-gradient');
-    expect(fuelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);
-    expect(fuelBox!.x + fuelBox!.width).toBeLessThanOrEqual(meterBox!.x + meterBox!.width);
-    expect(fuelLabelBox!.x).toBeGreaterThanOrEqual(meterBox!.x);
-    expect(fuelLabelBox!.x + fuelLabelBox!.width)
-      .toBeLessThanOrEqual(meterBox!.x + meterBox!.width);
-    expect(
-      fuelBox!.x + fuelBox!.width <= fuelLabelBox!.x + 1
-        || fuelLabelBox!.x + fuelLabelBox!.width <= fuelBox!.x + 1,
-      'fuel label and value must occupy separate horizontal space',
-    ).toBe(true);
-    const fuelTypography = await meter.evaluate((node) => {
-      const value = node.querySelector<HTMLElement>('.st-hud__fuel-value')!;
-      const label = node.querySelector<HTMLElement>('.st-hud__fuel-label')!;
-      return {
-        valueFontSize: parseFloat(getComputedStyle(value).fontSize),
-        labelFontSize: parseFloat(getComputedStyle(label).fontSize),
-      };
-    });
-    const compact = testInfo.project.name !== 'desktop-fine';
-    expect(fuelTypography.valueFontSize).toBeGreaterThanOrEqual(11);
-    expect(fuelTypography.labelFontSize).toBeGreaterThanOrEqual(8);
-    expect(fuelBox!.height).toBeGreaterThanOrEqual(8);
-    expect(fuelLabelBox!.height).toBeGreaterThanOrEqual(8);
-    await expect.poll(() => meter.evaluate(
-      (node) => getComputedStyle(node).backgroundImage,
-    )).toContain('linear-gradient');
-    const tierColors = await meter.evaluate((node) => {
-      const color = () => getComputedStyle(node).getPropertyValue('--st-fuel-color');
-      const base = color();
-      node.dataset['fuelTone'] = 'reserve';
-      const reserve = color();
-      node.dataset['fuelTone'] = 'deep-reserve';
-      const deepReserve = color();
-      node.dataset['fuelTone'] = 'base';
-      return { base, reserve, deepReserve };
-    });
-    expect(new Set(Object.values(tierColors)).size).toBe(3);
-    await meter.evaluate((node) => { node.dataset['identityProbe'] = 'stable'; });
-    const fullFuelFill = await meter.evaluate((node) => getComputedStyle(node, '::before').width);
-
-    const activeRight = right;
-    await activeRight.click();
-    await expect.poll(() => fuel.textContent()).not.toBe('100');
-    const remaining = Number(await fuel.textContent());
-    expect(remaining).toBeGreaterThanOrEqual(92);
-    expect(remaining).toBeLessThan(100);
-    await expect(meter).toHaveAttribute('aria-valuenow', String(remaining));
-    await expect(meter).toHaveAttribute('data-identity-probe', 'stable');
-    await expect.poll(() => meter.evaluate(
-      (node) => getComputedStyle(node, '::before').width,
-    )).not.toBe(fullFuelFill);
-    await expect(activeRow.locator('.st-hud__turn-owner')).toHaveText('P1');
-    await expect(activeRow.locator('.st-hud__turn-status')).toHaveAttribute(
-      'aria-label',
-      `P1's turn. 100 health. Weapon Baby Missile. ${remaining} fuel remaining.`,
-    );
-
-    const geometry = await page.evaluate(() => ({
-      hudClient: document.querySelector<HTMLElement>('#hud')!.clientHeight,
-      hudScroll: document.querySelector<HTMLElement>('#hud')!.scrollHeight,
-      pageWidth: document.documentElement.scrollWidth,
-      pageHeight: document.documentElement.scrollHeight,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-    }));
-    expect(geometry.hudScroll).toBeLessThanOrEqual(geometry.hudClient + 1);
-    expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewportWidth);
-    expect(geometry.pageHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-  });
-
-  test('Commander identity keeps its x-position when the active selector changes', async ({ page }) => {
-    const owner = page.locator('.st-hud__active-row .st-hud__turn-owner');
-    await expect(owner).toHaveText('P1');
-    const initial = await owner.boundingBox();
-    expect(initial).not.toBeNull();
-
-    await page.locator('.st-hud__primary-action').click();
-    await expect(owner).toHaveText('P2', { timeout: 15_000 });
-    const handoff = await owner.boundingBox();
-    expect(handoff).not.toBeNull();
-    expect(handoff!.x, 'active turn styling must not shift the Commander identity column')
-      .toBeCloseTo(initial!.x, 1);
-  });
-
-  test('one primary action stays visible, in-bounds, and drives the live fire path', async ({
-    page,
-  }, testInfo) => {
-    const action = page.locator('.st-hud__primary-action');
-    await expect(action).toHaveCount(1);
-    await expect(action).toBeVisible();
-    await expect(action).toBeEnabled();
-    await expect(action).toContainText('Fire');
-    await expect(page.locator('.st-hud__touch-fire')).toHaveCount(0);
-
-    const railBox = await page.locator('#battle-rail').boundingBox();
-    const actionBox = await action.boundingBox();
-    expect(railBox).not.toBeNull();
-    expect(actionBox).not.toBeNull();
-    expect(actionBox!.x).toBeGreaterThanOrEqual(railBox!.x - 1);
-    expect(actionBox!.x + actionBox!.width)
-      .toBeLessThanOrEqual(railBox!.x + railBox!.width + 1);
-    expect(actionBox!.y).toBeGreaterThanOrEqual(railBox!.y - 1);
-    expect(actionBox!.y + actionBox!.height)
-      .toBeLessThanOrEqual(railBox!.y + railBox!.height + 1);
-    if (testInfo.project.name === 'pixel-touch') {
-      expect(actionBox!.height).toBeGreaterThanOrEqual(44);
+    expect(geometry.nextRoundGlyphCount, 'Next Round has one registered command glyph').toBe(1);
+    expect(geometry.interactive.length).toBeGreaterThanOrEqual(4);
+    for (const control of geometry.interactive) {
+      expect(control.left, `${control.text} starts inside the Round Shop frame`).toBeGreaterThanOrEqual(geometry.panel.left - 1);
+      expect(control.top, `${control.text} starts inside the Round Shop frame`).toBeGreaterThanOrEqual(geometry.panel.top - 1);
+      expect(control.right, `${control.text} ends inside the Round Shop frame`).toBeLessThanOrEqual(geometry.panel.right + 1);
+      expect(control.bottom, `${control.text} ends inside the Round Shop frame`).toBeLessThanOrEqual(geometry.panel.bottom + 1);
+      expect(control.scrollWidth, `${control.text} has no horizontal clipping`).toBeLessThanOrEqual(control.clientWidth + 1);
+      expect(control.scrollHeight, `${control.text} has no vertical clipping`).toBeLessThanOrEqual(control.clientHeight + 1);
+      if (geometry.coarse) expect(control.height, `${control.text} remains touch-safe`).toBeGreaterThanOrEqual(44);
     }
 
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    let reachedAction = false;
-    for (let index = 0; index < 20 && !reachedAction; index++) {
-      await page.keyboard.press('Tab');
-      reachedAction = await action.evaluate((element) => document.activeElement === element);
-    }
-    expect(reachedAction, 'Tab should reach the primary action').toBe(true);
-    await page.keyboard.press('Enter');
-    await expect(page.locator('.st-hud__primary-action')).toHaveCount(0);
+    await panel.getByRole('button', { name: 'Start Next Round', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toBeVisible();
   });
 
-  test('compact touch starts fitted with arsenal collapsed', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch');
-    const strip = page.locator('.st-hud__strip');
-    await expect(strip).toHaveClass(/st-hud__strip--collapsed/);
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
-    await expect(page.locator('.st-hud__strip-scroll-hint')).toBeHidden();
-    const geometry = await page.locator('#hud').evaluate((hud) => ({
-      clientHeight: hud.clientHeight,
-      scrollHeight: hud.scrollHeight,
-    }));
-    expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight + 1);
-  });
 
-  test('arsenal opens as a fitted drawer without changing rail height', async ({ page }) => {
-    const rail = page.locator('#battle-rail');
-    const modalLayer = page.locator('#modal-layer');
-    const before = await rail.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      scrollHeight: element.scrollHeight,
-    }));
-    const trigger = page.locator('.st-hud__strip-toggle');
-    await trigger.focus();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('.st-hud__strip-grid')).toBeVisible();
-    await expect(page.locator('.st-hud__strip')).toHaveClass(/st-hud__strip--open/);
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.st-hud__arsenal-drawer-close')).toBeFocused();
-    await expect(trigger).toHaveAttribute('aria-hidden', 'true');
-    const modalBox = await modalLayer.boundingBox();
-    const drawerBox = await page.locator('.st-hud__strip').boundingBox();
-    expect(modalBox).not.toBeNull();
-    expect(drawerBox).not.toBeNull();
-    expect(drawerBox!.x).toBeGreaterThanOrEqual(modalBox!.x - 1);
-    expect(drawerBox!.x + drawerBox!.width)
-      .toBeLessThanOrEqual(modalBox!.x + modalBox!.width + 1);
-    expect(drawerBox!.y).toBeGreaterThanOrEqual(modalBox!.y - 1);
-    expect(drawerBox!.y + drawerBox!.height)
-      .toBeLessThanOrEqual(modalBox!.y + modalBox!.height + 1);
-    for (const locator of [
-      page.locator('.st-hud__strip-grid'),
-      page.locator('.st-hud__arsenal-drawer-close'),
-    ]) {
-      const childBox = await locator.boundingBox();
-      expect(childBox).not.toBeNull();
-      expect(childBox!.x).toBeGreaterThanOrEqual(drawerBox!.x - 1);
-      expect(childBox!.x + childBox!.width)
-        .toBeLessThanOrEqual(drawerBox!.x + drawerBox!.width + 1);
-      expect(childBox!.y).toBeGreaterThanOrEqual(drawerBox!.y - 1);
-      expect(childBox!.y + childBox!.height)
-        .toBeLessThanOrEqual(drawerBox!.y + drawerBox!.height + 1);
-    }
-    const open = await rail.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      scrollHeight: element.scrollHeight,
-    }));
-    expect(open.scrollHeight).toBeLessThanOrEqual(open.clientHeight + 1);
-    expect(open.scrollHeight).toBe(before.scrollHeight);
-
-    const inertSiblings = await page.locator('#hud').evaluate((hud) =>
-      [...hud.children]
-        .filter((child) => !child.classList.contains('st-hud__strip'))
-        .every((child) => (child as HTMLElement).inert),
-    );
-    expect(inertSiblings).toBe(true);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
-    await expect(page.locator('.st-hud__strip')).not.toHaveClass(/st-hud__strip--open/);
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('.st-hud__strip-toggle')).toBeFocused();
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute(
-      'aria-label',
-      /^Open Armory .*equip or buy weapons$/,
-    );
-    const releasedSiblings = await page.locator('#hud').evaluate((hud) =>
-      [...hud.children]
-        .filter((child) => !child.classList.contains('st-hud__strip'))
-        .every((child) => !(child as HTMLElement).inert),
-    );
-    expect(releasedSiblings).toBe(true);
-  });
-});
-
-test.describe('HUD arsenal responsive defaults', () => {
-  test('desktop-fine starts with a closed arsenal drawer', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-fine');
-    await gotoRunningGame(page);
-    await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  test('small fine-pointer windows start collapsed and keep the HUD fitted', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'small-window');
-    await gotoRunningGame(page);
-    await expect(page.locator('.st-hud__strip-grid')).toBeHidden();
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'false');
-    const geometry = await page.locator('#hud').evaluate((hud) => ({
-      clientHeight: hud.clientHeight,
-      scrollHeight: hud.scrollHeight,
-    }));
-    expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight + 1);
-  });
-
-  test('saved expanded preference wins on compact touch', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pixel-touch');
-    await page.addInitScript(() => localStorage.setItem('st_arsenal_collapsed', '0'));
-    await gotoRunningGame(page);
-    await expect(page.locator('.st-hud__strip')).not.toHaveClass(/st-hud__strip--collapsed/);
-    await expect(page.locator('.st-hud__strip-toggle')).toHaveAttribute('aria-expanded', 'true');
-    const geometry = await page.locator('#hud').evaluate((hud) => ({
-      clientHeight: hud.clientHeight,
-      scrollHeight: hud.scrollHeight,
-    }));
-    expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight + 1);
-  });
 });

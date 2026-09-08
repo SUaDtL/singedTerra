@@ -4,14 +4,15 @@ export interface LobbyOverlayViewOptions {
   variant: 'account' | 'operations'
   body: HTMLElement
   onClose: () => void
+  listenerSignal?: AbortSignal
 }
 
-function closeButton(onClose: () => void): HTMLButtonElement {
+function closeButton(onClose: () => void, listenerSignal?: AbortSignal): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'lobby-overlay__close'
   button.textContent = 'Close'
-  button.addEventListener('click', onClose)
+  button.addEventListener('click', onClose, { signal: listenerSignal })
   return button
 }
 
@@ -30,6 +31,7 @@ export function buildLobbyOverlayView(options: LobbyOverlayViewOptions): HTMLEle
     for (const [sibling, wasInert] of priorInert) sibling.inert = wasInert
     priorInert.clear()
   }
+  options.listenerSignal?.addEventListener('abort', releaseBackground, { once: true })
   const requestClose = () => {
     releaseBackground()
     options.onClose()
@@ -39,7 +41,7 @@ export function buildLobbyOverlayView(options: LobbyOverlayViewOptions): HTMLEle
   backdrop.type = 'button'
   backdrop.className = 'lobby-overlay__backdrop'
   backdrop.setAttribute('aria-label', `Close ${options.label}`)
-  backdrop.addEventListener('click', requestClose)
+  backdrop.addEventListener('click', requestClose, { signal: options.listenerSignal })
 
   const dialog = document.createElement('section')
   dialog.className = 'lobby-overlay__surface'
@@ -60,7 +62,7 @@ export function buildLobbyOverlayView(options: LobbyOverlayViewOptions): HTMLEle
   heading.className = 'lobby-overlay__title'
   heading.textContent = options.label
   headingGroup.append(heading)
-  header.append(headingGroup, closeButton(requestClose))
+  header.append(headingGroup, closeButton(requestClose, options.listenerSignal))
 
   const body = document.createElement('div')
   body.className = 'lobby-overlay__body'
@@ -83,7 +85,7 @@ export function buildLobbyOverlayView(options: LobbyOverlayViewOptions): HTMLEle
     }
     const offset = event.shiftKey ? -1 : 1
     controls[(current + offset + controls.length) % controls.length]?.focus()
-  })
+  }, { signal: options.listenerSignal })
 
   overlay.append(backdrop, dialog)
   queueMicrotask(() => {

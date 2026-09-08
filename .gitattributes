@@ -1,1 +1,4 @@
 *.sh text eol=lf
+
+# Asset recipes pin exact contract bytes across Windows and Linux.
+.codearbiter/contracts/battle-console/** -text

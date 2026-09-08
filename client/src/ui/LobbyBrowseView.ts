@@ -17,6 +17,7 @@ export interface LobbyBrowseViewOptions {
   onJoin: (code: string) => void;
   onCreate: () => void;
   onJoinByCode: () => void;
+  listenerSignal?: AbortSignal;
 }
 
 export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLElement {
@@ -76,7 +77,7 @@ export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLEleme
       join.addEventListener('click', () => {
         if (full) return;
         options.onJoin(room.code);
-      });
+      }, { signal: options.listenerSignal });
 
       row.append(name, meta, join);
       list.append(row);
@@ -87,7 +88,7 @@ export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLEleme
   root.append(header, crew, operations, buildOnlineRouteActions(null, [
     { id: 'create', label: 'Create a room', onClick: options.onCreate },
     { id: 'join-code', label: 'Join with a code', onClick: options.onJoinByCode },
-  ]));
+  ], options.listenerSignal));
 
   return root;
 }

@@ -2,7 +2,12 @@ import type { TankState } from '@shared/types/GameState';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { TankPartArt } from './TankPartArt';
 
-const previewArt = new TankPartArt();
+let previewArt: TankPartArt | null = null;
+
+function currentPreviewArt(): TankPartArt {
+  previewArt ??= new TankPartArt();
+  return previewArt;
+}
 interface PreviewSubscription {
   readonly canvas: WeakRef<HTMLCanvasElement>;
   readonly unsubscribe: () => void;
@@ -34,6 +39,14 @@ function pruneDetachedPreviewSubscriptions(): void {
       removePreviewSubscription(subscription);
     }
   }
+}
+
+/** Release page-shared preview art while no lobby/HUD preview generation is active. */
+export function releaseTankLoadoutPreviewResources(): void {
+  for (const subscription of [...activePreviewSubscriptions]) {
+    removePreviewSubscription(subscription);
+  }
+  previewArt = null;
 }
 
 export type TankLoadoutPreviewMode = 'thumbnail' | 'spotlight' | 'tactical';
@@ -71,7 +84,7 @@ const PREVIEW_PROFILES: Readonly<
     tankX: 72,
     tankY: 70,
     contextScale: 1,
-    artScale: 2,
+    artScale: 2.68,
   },
 };
 
@@ -155,6 +168,7 @@ export function paintTankLoadoutPreview(
     // DOM-only test environments do not implement Canvas; the live browser does.
   }
   if (ctx === null) return;
+  const art = currentPreviewArt();
   ctx.clearRect(0, 0, profile.width, profile.height);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -170,20 +184,20 @@ export function paintTankLoadoutPreview(
     loadout,
   } as TankState;
   const staticReady = profile.artScale === undefined
-    ? previewArt.drawStatic(ctx, tank)
-    : previewArt.drawStatic(ctx, tank, profile.artScale);
+    ? art.drawStatic(ctx, tank)
+    : art.drawStatic(ctx, tank, profile.artScale);
   const barrelReady = staticReady && (
     profile.artScale === undefined
-      ? previewArt.drawBarrel(ctx, tank)
-      : previewArt.drawBarrel(ctx, tank, profile.artScale)
+      ? art.drawBarrel(ctx, tank)
+      : art.drawBarrel(ctx, tank, profile.artScale)
   );
   if (!staticReady || !barrelReady) drawFallback(ctx, color, profile);
   ctx.restore();
 
-  if (previewArt.state === 'loading' || previewArt.state === 'timed_out') {
+  if (art.state === 'loading' || art.state === 'timed_out') {
     const canvasRef = new WeakRef(canvas);
     let subscription: PreviewSubscription;
-    const unsubscribe = previewArt.onReady(() => {
+    const unsubscribe = art.onReady(() => {
       activePreviewSubscriptions.delete(subscription);
       const currentCanvas = canvasRef.deref();
       if (!currentCanvas) return;

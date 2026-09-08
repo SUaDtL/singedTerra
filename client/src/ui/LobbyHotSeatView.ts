@@ -16,6 +16,7 @@ export interface LobbyHotSeatViewOptions {
   onPlayerCountChange: (count: number) => void;
   onCustomizationToggle: (open: boolean) => void;
   onStart: () => void;
+  listenerSignal?: AbortSignal;
 }
 
 export interface LobbyQuickOperation {
@@ -53,6 +54,7 @@ function buildCommanderDossier(fieldOrder: FieldOrder | null): HTMLElement | nul
 function buildVerifiedDeployment(
   options: LobbyHotSeatVerifiedDeploymentOptions,
   includeFieldOrderDossier = true,
+  listenerSignal?: AbortSignal,
 ): HTMLElement {
   const verified = document.createElement('section');
   verified.className = 'lobby-verified-deployment';
@@ -95,7 +97,7 @@ function buildVerifiedDeployment(
       ? 'Resume verified deployment'
       : 'Start verified deployment';
   launch.disabled = options.busy;
-  launch.addEventListener('click', options.onLaunch);
+  launch.addEventListener('click', options.onLaunch, { signal: listenerSignal });
   actions.append(launch);
 
   if (options.action === 'resume') {
@@ -104,7 +106,7 @@ function buildVerifiedDeployment(
     abandon.className = 'lobby-btn secondary lobby-verified-deployment__abandon';
     abandon.textContent = 'Abandon verified deployment';
     abandon.disabled = options.busy;
-    abandon.addEventListener('click', options.onRequestAbandon);
+    abandon.addEventListener('click', options.onRequestAbandon, { signal: listenerSignal });
     actions.append(abandon);
 
     const confirmation = document.createElement('div');
@@ -116,12 +118,12 @@ function buildVerifiedDeployment(
     confirm.type = 'button';
     confirm.className = 'lobby-btn lobby-verified-deployment__confirm-abandon';
     confirm.textContent = 'Confirm abandon';
-    confirm.addEventListener('click', options.onConfirmAbandon);
+    confirm.addEventListener('click', options.onConfirmAbandon, { signal: listenerSignal });
     const keep = document.createElement('button');
     keep.type = 'button';
     keep.className = 'lobby-btn secondary lobby-verified-deployment__keep';
     keep.textContent = 'Keep deployment';
-    keep.addEventListener('click', options.onCancelAbandon);
+    keep.addEventListener('click', options.onCancelAbandon, { signal: listenerSignal });
     confirmation.append(warning, confirm, keep);
     actions.append(confirmation);
   }
@@ -135,6 +137,7 @@ function buildVerifiedDeployment(
 function buildPracticeLane(
   operations: readonly LobbyQuickOperation[],
   onQuickOperation: (operationId: string) => void,
+  listenerSignal?: AbortSignal,
 ): HTMLElement {
   const practice = document.createElement('section');
   practice.dataset.operationLane = 'practice';
@@ -158,7 +161,7 @@ function buildPracticeLane(
     const briefing = document.createElement('span');
     briefing.textContent = operation.briefing;
     card.append(label, briefing);
-    card.addEventListener('click', () => { onQuickOperation(operation.id); });
+    card.addEventListener('click', () => { onQuickOperation(operation.id); }, { signal: listenerSignal });
     cards.append(card);
   }
   const compactLaunch = document.createElement('div');
@@ -174,13 +177,13 @@ function buildPracticeLane(
   }
   selector.addEventListener('change', () => {
     selectedOperation = operations.find((operation) => operation.id === selector.value) ?? operations[0]!;
-  });
+  }, { signal: listenerSignal });
   const launch = document.createElement('button');
   launch.type = 'button';
   launch.className = 'lobby-btn secondary';
   launch.dataset.ui = 'launch-practice-operation';
   launch.textContent = 'Launch practice';
-  launch.addEventListener('click', () => { onQuickOperation(selectedOperation.id); });
+  launch.addEventListener('click', () => { onQuickOperation(selectedOperation.id); }, { signal: listenerSignal });
   compactLaunch.append(selector, launch);
   practice.append(title, purpose, cards, compactLaunch);
   return practice;
@@ -190,6 +193,7 @@ function buildCommanderOperations(
   verifiedDeployment: LobbyHotSeatVerifiedDeploymentOptions,
   operations: readonly LobbyQuickOperation[],
   onQuickOperation: (operationId: string) => void,
+  listenerSignal?: AbortSignal,
 ): HTMLElement {
   const board = document.createElement('section');
   board.dataset.ui = 'commander-operations';
@@ -207,9 +211,9 @@ function buildCommanderOperations(
     : renderFieldOrder(verifiedDeployment.fieldOrder).brief;
   career.append(title, order);
 
-  const verified = buildVerifiedDeployment(verifiedDeployment, false);
+  const verified = buildVerifiedDeployment(verifiedDeployment, false, listenerSignal);
   verified.dataset.operationLane = 'verified';
-  board.append(career, verified, buildPracticeLane(operations, onQuickOperation));
+  board.append(career, verified, buildPracticeLane(operations, onQuickOperation, listenerSignal));
   return board;
 }
 
@@ -264,7 +268,7 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   }
   countSelect.addEventListener('change', () => {
     options.onPlayerCountChange(Number(countSelect.value));
-  });
+  }, { signal: options.listenerSignal });
   countField.append(countLabel, countSelect);
   const rows = document.createElement('div');
   rows.className = 'lobby-rows';
@@ -294,14 +298,14 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
       return;
     }
     options.onCustomizationToggle(customization.open);
-  });
+  }, { signal: options.listenerSignal });
 
   const start = document.createElement('button');
   start.type = 'button';
   start.className = 'lobby-start lobby-btn primary';
   start.textContent = 'Deploy local battle';
   start.disabled = options.validationMessage !== null;
-  start.addEventListener('click', options.onStart);
+  start.addEventListener('click', options.onStart, { signal: options.listenerSignal });
   wrapper.append(brief, ready);
   if (options.verifiedDeployment && options.quickOperations && options.onQuickOperation) {
     const dossier = buildCommanderDossier(options.verifiedDeployment.fieldOrder);
@@ -310,9 +314,10 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
       options.verifiedDeployment,
       options.quickOperations,
       options.onQuickOperation,
+      options.listenerSignal,
     ));
   } else if (options.verifiedDeployment) {
-    wrapper.append(buildVerifiedDeployment(options.verifiedDeployment));
+    wrapper.append(buildVerifiedDeployment(options.verifiedDeployment, true, options.listenerSignal));
   }
   wrapper.append(customization, start);
 

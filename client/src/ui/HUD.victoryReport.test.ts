@@ -8,6 +8,8 @@ import type {
 import type { VerifiedDeploymentReceipt } from '../client/verifiedDeployment';
 import { HUD } from './HUD';
 
+const mountedHuds: HUD[] = [];
+
 const verifiedPromotionReceipt: VerifiedDeploymentReceipt = {
   result: {
     sessionId: '00000000-0000-4000-8000-000000000061',
@@ -71,6 +73,7 @@ function mount(): {
   const modal = document.querySelector<HTMLElement>('#modal-layer')!;
   const overlay = document.querySelector<HTMLElement>('#game-overlay')!;
   const hud = new HUD(root, overlay, modal, overlay);
+  mountedHuds.push(hud);
   const state = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },
@@ -104,7 +107,8 @@ beforeEach(() => {
   vi.useFakeTimers();
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await Promise.all(mountedHuds.splice(0).map((hud) => hud.destroy()));
   document.body.innerHTML = '';
   document.head.querySelector('#st-hud-style')?.remove();
   localStorage.clear();
@@ -349,6 +353,33 @@ describe('HUD Victory After-Action Report', () => {
     expect(returnToBattery).toHaveBeenCalledOnce();
   });
 
+  it('restores the live battle focus owner after continuing casually from verified expiry', async () => {
+    const { root, modal, hud, state } = mount();
+    state.phase = 'PLAYER_TURN';
+    state.winner = null;
+    hud.update(state);
+    await vi.waitFor(() => {
+      expect(root.querySelector<HTMLButtonElement>('[aria-label="Battle settings"]')).not.toBeNull();
+    }, { timeout: 5_000 });
+    const settingsTrigger = root.querySelector<HTMLButtonElement>('[aria-label="Battle settings"]')!;
+    settingsTrigger.focus();
+    hud.onVerifiedContinueCasual(() => hud.setVerifiedDeployment(null));
+
+    hud.setVerifiedDeployment({
+      status: 'expired', humanSalvos: 4, cpuSalvos: 4, humanLimit: 6, cpuLimit: 6,
+      deadline: { remainingMs: 0, warning: 'expired', acceptsInput: false, canComplete: false },
+    });
+    const decision = modal.querySelector<HTMLElement>('.st-hud__verified-expiry')!;
+    const casual = decision.querySelector<HTMLButtonElement>('.st-hud__verified-continue')!;
+    expect(document.activeElement).toBe(casual);
+
+    casual.click();
+
+    expect(decision.hidden).toBe(true);
+    expect(document.activeElement).toBe(settingsTrigger);
+    expect(root.inert).toBe(false);
+  });
+
   it.each([
     ['loss', false, 100, 'Verified loss · +100 XP'],
     ['draw', false, 100, 'Verified draw · +100 XP'],
@@ -458,6 +489,9 @@ describe('HUD Victory After-Action Report', () => {
     expect(report.getAttribute('aria-labelledby')).toBe(title.id);
     expect(report.querySelector('.st-hud__victory-eyebrow')?.textContent)
       .toBe('After action report');
+    expect(
+      report.querySelector('.st-hud__overlay-panel--victory > .st-hud__victory-eyebrow')?.textContent,
+    ).toBe('After action report');
     expect(title.textContent).toBe('Alice wins');
     expect(report.querySelector('.st-hud__victory-status')?.textContent)
       .toBe('Match winner');

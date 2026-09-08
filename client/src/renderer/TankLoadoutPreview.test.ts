@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_TANK_LOADOUT } from '@shared/types/TankLoadout';
 
 const art = vi.hoisted(() => ({
+  constructed: 0,
   state: 'loading' as 'loading' | 'timed_out' | 'ready' | 'failed',
   drawStatic: vi.fn((..._args: unknown[]) => false),
   drawBarrel: vi.fn((..._args: unknown[]) => false),
@@ -10,6 +11,7 @@ const art = vi.hoisted(() => ({
 
 vi.mock('./TankPartArt', () => ({
   TankPartArt: class {
+    constructor() { art.constructed += 1; }
     get state() {
       return art.state;
     }
@@ -25,6 +27,7 @@ vi.mock('./TankPartArt', () => ({
 import {
   clearTankLoadoutPreview,
   paintTankLoadoutPreview,
+  releaseTankLoadoutPreviewResources,
 } from './TankLoadoutPreview';
 
 function fakeContext(): CanvasRenderingContext2D {
@@ -42,6 +45,12 @@ function fakeContext(): CanvasRenderingContext2D {
   } as unknown as CanvasRenderingContext2D;
 }
 
+function stub2DContext(ctx: CanvasRenderingContext2D): void {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+    ((contextId: string) => (contextId === '2d' ? ctx : null)) as HTMLCanvasElement['getContext'],
+  );
+}
+
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -56,13 +65,26 @@ afterEach(() => {
 });
 
 describe('tank loadout preview lifecycle', () => {
+  it('releases the shared atlas owner between inactive presentation generations', () => {
+    vi.stubGlobal('navigator', { userAgent: 'Chrome' });
+    art.state = 'failed';
+    stub2DContext(fakeContext());
+    const before = art.constructed;
+
+    paintTankLoadoutPreview(document.createElement('canvas'), '#e84d4d', DEFAULT_TANK_LOADOUT);
+    expect(art.constructed).toBe(before + 1);
+
+    releaseTankLoadoutPreviewResources();
+    paintTankLoadoutPreview(document.createElement('canvas'), '#4d8ce8', DEFAULT_TANK_LOADOUT);
+    expect(art.constructed).toBe(before + 2);
+  });
   it('preserves the compact thumbnail profile by default', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     art.state = 'failed';
     art.drawStatic.mockReturnValue(true);
     art.drawBarrel.mockReturnValue(true);
     const ctx = fakeContext();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    stub2DContext(ctx);
     const canvas = document.createElement('canvas');
 
     paintTankLoadoutPreview(canvas, '#e84d4d', DEFAULT_TANK_LOADOUT);
@@ -82,7 +104,7 @@ describe('tank loadout preview lifecycle', () => {
     art.drawStatic.mockReturnValue(true);
     art.drawBarrel.mockReturnValue(true);
     const ctx = fakeContext();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    stub2DContext(ctx);
     const canvas = document.createElement('canvas');
 
     paintTankLoadoutPreview(
@@ -102,13 +124,13 @@ describe('tank loadout preview lifecycle', () => {
     expect(art.drawBarrel.mock.calls[0]?.[2]).toBe(4);
   });
 
-  it('renders a combat-readable tactical card from direct scale-two variants', () => {
+  it('renders a combat-readable tactical card that fills the commander recess', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     art.state = 'ready';
     art.drawStatic.mockReturnValue(true);
     art.drawBarrel.mockReturnValue(true);
     const ctx = fakeContext();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    stub2DContext(ctx);
     const canvas = document.createElement('canvas');
 
     paintTankLoadoutPreview(
@@ -122,15 +144,15 @@ describe('tank loadout preview lifecycle', () => {
       width: 144,
       height: 80,
     });
-    expect(art.drawStatic.mock.calls[0]?.[2]).toBe(2);
-    expect(art.drawBarrel.mock.calls[0]?.[2]).toBe(2);
+    expect(art.drawStatic.mock.calls[0]?.[2]).toBe(2.68);
+    expect(art.drawBarrel.mock.calls[0]?.[2]).toBe(2.68);
     expect(ctx.scale).not.toHaveBeenCalled();
   });
 
   it('repaints only the current presentation when late art becomes ready', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     const ctx = fakeContext();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    stub2DContext(ctx);
     const canvas = document.createElement('canvas');
     document.body.append(canvas);
 
@@ -162,7 +184,7 @@ describe('tank loadout preview lifecycle', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     art.state = 'failed';
     const ctx = fakeContext();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    stub2DContext(ctx);
     const canvas = document.createElement('canvas');
 
     paintTankLoadoutPreview(
@@ -180,7 +202,7 @@ describe('tank loadout preview lifecycle', () => {
   it('invalidates a late-art repaint when the portrait is cleared', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     const ctx = fakeContext();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
+    stub2DContext(ctx);
     const canvas = document.createElement('canvas');
     document.body.append(canvas);
 
@@ -202,8 +224,7 @@ describe('tank loadout preview lifecycle', () => {
   it('prunes detached timed-out previews across repeated lobby replacement', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     art.state = 'timed_out';
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
-      .mockReturnValue(fakeContext());
+    stub2DContext(fakeContext());
 
     let current = document.createElement('canvas');
     document.body.append(current);
@@ -228,8 +249,7 @@ describe('tank loadout preview lifecycle', () => {
   it('keeps every preview painted while a lobby subtree is being assembled', async () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     art.state = 'timed_out';
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
-      .mockReturnValue(fakeContext());
+    stub2DContext(fakeContext());
     const subtree = document.createElement('section');
     const canvases = Array.from({ length: 3 }, () => {
       const canvas = document.createElement('canvas');

@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { HUD } from './HUD';
+
+const mountedHuds: HUD[] = [];
 
 function mount(): {
   stage: HTMLElement;
@@ -20,6 +22,7 @@ function mount(): {
   app.append(stage, root, lobby, modal);
   document.body.append(app);
   const hud = new HUD(root, overlay, modal, overlay);
+  mountedHuds.push(hud);
   const state = new GameEngine({
     players: [
       { name: 'Alice', color: '#e84d4d' },
@@ -32,13 +35,25 @@ function mount(): {
   return { stage, lobby, root, overlay, modal, hud };
 }
 
-afterEach(() => {
+afterEach(async () => {
+  await Promise.all(mountedHuds.splice(0).map((hud) => hud.destroy()));
   document.body.innerHTML = '';
   document.head.querySelector('#st-hud-style')?.remove();
   localStorage.clear();
 });
 
 describe('HUD Command Menu', () => {
+  it('uses one decorative menu icon with the accessible Menu name', () => {
+    const { root, overlay } = mount();
+    const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;
+    const match = overlay.querySelector<HTMLButtonElement>('[data-ui="match-drawer-toggle"]')!;
+    expect(menu.textContent).toBe('');
+    expect(menu.getAttribute('aria-label')).toBe('Menu');
+    expect(match.textContent).toBe('Match');
+    expect(menu.querySelector('svg[data-icon="menu"][aria-hidden="true"]')).not.toBeNull();
+    expect(match.querySelector('svg, .st-ui-glyph')).toBeNull();
+  });
+
   it('opens a named command navigation dialog with Resume as its first action', () => {
     const { root, modal } = mount();
 
@@ -52,6 +67,22 @@ describe('HUD Command Menu', () => {
     expect(menu.querySelector<HTMLButtonElement>('button')?.textContent).toBe('Resume');
   });
 
+  it('retires transient rail notices when Command Menu owns the interaction', () => {
+    const { root, modal, hud } = mount();
+    hud.flashMessage('This battle is not accepting local input.');
+    const toast = root.querySelector<HTMLElement>('.st-hud__toast')!;
+    expect(toast.classList.contains('st-hud__toast--hidden')).toBe(false);
+
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+
+    expect(modal.querySelector('[data-ui="command-menu"]')).not.toBeNull();
+    expect(toast.classList.contains('st-hud__toast--hidden')).toBe(true);
+
+    hud.flashMessage('A later transient notice');
+    expect(toast.textContent).toBe('A later transient notice');
+    expect(toast.classList.contains('st-hud__toast--hidden')).toBe(true);
+  });
+
   it('keeps weapon purchasing out of the Command Menu', () => {
     const { root, modal } = mount();
 
@@ -60,7 +91,7 @@ describe('HUD Command Menu', () => {
       .some((button) => button.textContent === 'Open Store')).toBe(false);
   });
 
-  it('routes Battle Settings from Command Menu to the shared settings dialog', () => {
+  it('routes Battle Settings from Command Menu to the successor settings dialog', async () => {
     const { root, modal } = mount();
 
     root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
@@ -68,22 +99,29 @@ describe('HUD Command Menu', () => {
 
     expect(modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!.classList
       .contains('st-hud__overlay--hidden')).toBe(true);
-    expect(modal.querySelector<HTMLElement>('[data-ui="battle-settings"]')!.classList
-      .contains('st-hud__overlay--hidden')).toBe(false);
-  });
+    await vi.waitFor(() => {
+      expect(modal.querySelector<HTMLElement>(
+        '[data-battle-console-dialog="settings"][role="dialog"][aria-label="Battle Settings"]',
+      ))
+        .not.toBeNull();
+    }, { timeout: 10_000 });
+  }, 15_000);
 
-  it('keeps Armory equip and purchase controls in the live Fire Control surface', () => {
+  it('keeps Armory equip and purchase controls in the live successor console', async () => {
     const { root, modal } = mount();
 
-    const fireControl = root.querySelector<HTMLElement>('[aria-label="Firing solution"]')!;
-    expect(fireControl.querySelector<HTMLButtonElement>('[aria-label="Open Armory — equip or buy weapons"]'))
-      .toBeTruthy();
-    expect(fireControl.querySelector(':scope > .st-hud__store-btn')).toBeNull();
-    const missile = fireControl.querySelector<HTMLElement>(
-      '[data-ui="arsenal-drawer"] [data-weapon="missile"].st-hud__armory-card',
-    )!;
-    expect(missile.querySelector<HTMLButtonElement>('[data-action="equip"]')?.textContent).toBe('Equip');
-    expect(missile.querySelector<HTMLButtonElement>('[data-action="buy"]')?.textContent).toContain('Buy');
+    await vi.waitFor(() => {
+      expect(root.querySelector<HTMLButtonElement>('[aria-label="Open Armory"]')).not.toBeNull();
+    });
+    root.querySelector<HTMLButtonElement>('[aria-label="Open Armory"]')!.click();
+    await vi.waitFor(() => {
+      expect(modal.querySelector<HTMLElement>('[role="dialog"][aria-label="Armory"]')).not.toBeNull();
+    });
+    const armory = modal.querySelector<HTMLElement>('[role="dialog"][aria-label="Armory"]')!;
+    const missile = [...armory.querySelectorAll<HTMLElement>('[data-battle-console-armory-item]')]
+      .find((item) => item.querySelector('h3')?.textContent === 'Missile')!;
+    expect([...missile.querySelectorAll('button')].map((button) => button.textContent))
+      .toEqual(expect.arrayContaining(['Equip', expect.stringContaining('Buy')]));
     expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
   });
 
@@ -98,6 +136,21 @@ describe('HUD Command Menu', () => {
     resume.click();
 
     expect(document.activeElement).toBe(menuButton);
+  });
+
+  it('closes the compact Match drawer when Resume returns to live play', () => {
+    const { root, overlay, modal } = mount();
+    const match = overlay.querySelector<HTMLButtonElement>('[data-ui="match-drawer-toggle"]')!;
+    match.click();
+    expect(root.classList.contains('st-hud--match-drawer-open')).toBe(true);
+
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+    expect(root.classList.contains('st-hud--match-drawer-open')).toBe(false);
+    modal.querySelector<HTMLButtonElement>('[data-ui="command-menu"] button')!.click();
+
+    expect(root.classList.contains('st-hud--match-drawer-open')).toBe(false);
+    expect(match.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(match);
   });
 
   it('cycles Tab within Command Menu instead of escaping to the match', () => {

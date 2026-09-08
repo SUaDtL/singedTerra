@@ -6,6 +6,8 @@ filename order by the "Deploy backend" workflow (`supabase db push`).
 
 ## Rules
 
+For migration 017, follow the [Verified V2 cutover and forward-recovery procedure](../../docs/VERIFIED_V2_CUTOVER.md). It records admission draining, backend-before-client ordering, compatible recovery, and immutable-result preservation.
+
 1. **Immutable once applied.** Never edit a migration that has shipped. Fix or
    change a shipped object with a **new, higher-numbered** migration. (See `009`
    re-declaring `007`'s function rather than editing it in place.)

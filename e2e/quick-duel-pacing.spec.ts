@@ -19,8 +19,10 @@ for (const [id, title, briefing] of OPERATIONS) {
     await expect(page.locator('[data-ui="quick-operation-briefing"]')).toHaveText(briefing);
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 
-    await expect(page.locator('#battle-rail .st-hud__console-solution')).toBeVisible();
-    await expect(page.locator('#battle-rail .st-hud__fire-terminal')).toBeVisible();
+    await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
+    const entry = page.getByRole('button', { name: 'Enter battle', exact: true });
+    if (await entry.isVisible()) await entry.click();
+    await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
     await expect(page.locator('#hud [data-ui="quick-operation"]')).toHaveText(`${title} · ${briefing}`);
     const round = page.locator('.st-hud__round');
     await expect(round).toBeVisible();
@@ -35,17 +37,15 @@ test('a selected operation retains its ledger identity through one real salvo', 
   await page.locator('[data-operation-id="crosswind-range"]').click();
   await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 
-  const briefing = page.locator('[data-ui="first-salvo-briefing"]');
-  if (await briefing.isVisible()) {
-    await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
-    await expect(briefing).toBeHidden();
-  }
+  const briefing = page.getByRole('dialog', { name: 'First salvo briefing' });
+  await expect(briefing).toBeVisible();
+  await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
+  await expect(briefing).toBeHidden();
 
-  await page.locator('#battle-rail .st-hud__primary-action').click();
-  await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
-    .toHaveAttribute('data-command-mode', /tracking|resolving/);
-  await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
-    .toHaveAttribute('data-command-mode', 'handoff', { timeout: 30_000 });
+  await page.getByRole('button', { name: /^Fire / }).click();
+  await expect(page.getByText(/^(Tracking shot|Resolving impact)$/)).toBeVisible();
+  await expect(page.locator('[data-console-owner="preact"]').getByText('CPU 1', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
   await expect(page.locator('#hud [data-ui="quick-operation"]'))
     .toHaveText('Crosswind Range · Wraparound walls turn shifting wind into a ranging test.');
 });

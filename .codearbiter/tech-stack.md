@@ -21,11 +21,21 @@ Both workspace packages are `private: true`.
 
 ## Key libraries
 
-- **Vite** `8.1.5` (Rolldown/Oxc-powered client dev server + production build).
+- **Vite** `8.2.2` (Rolldown/Oxc-powered client dev server + production build).
 - **@supabase/supabase-js** `2.111.0` (browser client); Edge Functions use the same exact `2.111.0` through esm.sh.
-- **lucide** `1.28.0` (client-only exact named SVG icon nodes). The package has
+- **lucide** `1.33.0` (client-only exact named SVG icon nodes). The package has
   no runtime transitives; importing its all-icons registry is prohibited.
-- Canvas 2D — pure browser API, no rendering lib.
+- Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,
+  projectiles, explosions, and world-space effects).
+- **Approved battle-HUD architecture (ADR-0017):** exact `pixi.js@8.20.0` is
+  installed in the client workspace for a lazy-loaded visual compositor, and
+  exact `sharp@0.35.3` is installed at the root as a development-only
+  deterministic asset compiler. Both passed the 2026-08-21 dependency review,
+  signature/attestation verification, high-severity audit, Windows/Node 24
+  install check, and production build. Pixi is visual/non-interactive;
+  semantic DOM remains the input, text, focus, and accessibility owner. Sharp
+  and libvips are not shipped in the browser bundle. Static Vite/GitHub Pages
+  hosting is unchanged.
 - Root tooling: `concurrently`, `typescript`, `@types/node`.
 - **tsx** `^4.23.1` — used by the `check` script via `npx tsx` to run `.mjs` harnesses against TS engine sources directly (no build step).
 - **Supabase CLI** `2.105.0` — exact development-only deployment tool pinned in `package-lock.json`; deploy scripts use the local binary so CLI defaults cannot drift between reviewed and applied configuration.
@@ -58,9 +68,9 @@ Three test layers, by runtime:
   fastForward, strata, audioEdges, …).
 - **Edge Functions** — Deno `*.test.ts` (`npm run check:edge` → `deno test`), covering the pure
   referee logic (validate/authorize/coerce/reap) extracted from the handlers.
-- **Client (DOM + fetch)** — **Vitest** `4.1.10` with the **jsdom** environment (`npm run test:client`),
+- **Client (DOM + fetch)** — **Vitest** `4.1.11` with the **jsdom** environment (`npm run test:client`),
   giving the DOM- and `fetch`-heavy client code (Lobby, HUD, NetworkClient) a seam the tsx harnesses
-  cannot reach. **Coverage:** `@vitest/coverage-v8` `4.1.10` via
+  cannot reach. **Coverage:** `@vitest/coverage-v8` `4.1.11` via
   `npm run coverage:client` — this is the command the
   `/ca:refactor` Phase-2 gate reads. Added 2026-07-03 to unblock the client refactor backlog
   (#85/#87/#91); vitest/vite/esbuild are dev-only (not in the shipped bundle).
@@ -68,6 +78,10 @@ Three test layers, by runtime:
   comparable to Vitest 2 reports; the executable test set remains the governing
   compatibility oracle until a global threshold is adopted.
 - CI runs all three layers (`.github/workflows/ci.yml`).
+
+### Battle console asset verification
+
+Run `npm run test:assets:battle-console` for deterministic generation, source-bound geometry, responsive pixel preservation, and repaired instrument faces. Run `npx playwright test -c playwright.product-completion.config.ts` for the five-profile browser suite. CI runs this separately from the general game journeys. Local runs reuse the single preview at port 5198.
 
 ## License
 

@@ -25,11 +25,9 @@ async function readHotSeatProbe(page: Page): Promise<HotSeatProbe> {
 }
 
 async function acknowledgeBriefing(page: Page): Promise<void> {
-  const briefing = page.locator('[data-ui="first-salvo-briefing"]');
+  const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });
   await expect(briefing).toBeVisible();
-  await expect(briefing).toContainText('Aim');
-  await expect(briefing).toContainText('Wind');
-  await expect(briefing).toContainText('Commit');
+  await expect(briefing.getByRole('heading', { name: 'Field briefing' })).toBeVisible();
   const enter = briefing.getByRole('button', { name: 'Enter battle', exact: true });
   await expect(enter).toBeFocused();
   await page.keyboard.press('Enter');
@@ -39,35 +37,34 @@ async function acknowledgeBriefing(page: Page): Promise<void> {
 }
 
 async function chooseMissileAndRestoreArsenalFocus(page: Page, purchase = true): Promise<void> {
-  const trigger = page.getByRole('button', { name: 'Open Armory — equip or buy weapons', exact: true });
+  const trigger = page.getByRole('button', { name: 'Open Armory', exact: true });
   await trigger.click();
-  const drawer = page.locator('[data-ui="arsenal-drawer"]');
-  await expect(drawer).toHaveClass(/st-hud__strip--open/);
+  const drawer = page.getByRole('dialog', { name: 'Armory', exact: true });
+  await expect(drawer).toBeVisible();
   await expect(drawer.getByRole('button', { name: 'Close Armory', exact: true })).toBeFocused();
-  const missile = drawer.locator('[data-weapon="missile"].st-hud__armory-card');
-  await expect(missile.locator('[data-armory-ammo]')).toHaveText('Ammo 4');
+  const missile = drawer.locator('[data-battle-console-armory-item]').filter({ has: page.getByRole('heading', { name: 'Missile', exact: true }) });
+  await expect(missile.locator('[data-battle-console-owned]')).toHaveText('4 ammo');
+  await missile.getByRole('button', { name: 'Equip', exact: true }).click();
   if (purchase) {
-    await missile.getByRole('button', { name: /Buy Missile/ }).click();
-    await expect(missile.locator('[data-armory-ammo]')).toHaveText('Ammo 9');
-    await expect(drawer.locator('.st-hud__armory-credits')).toHaveText('Credits: $6,125');
-    await expect(missile.getByRole('button', { name: 'Missile is current', exact: true })).toBeDisabled();
-  } else {
-    await drawer.locator('button[data-weapon="missile"]').click();
+    await missile.getByRole('button', { name: /^Buy/ }).click();
+    await expect(missile.locator('[data-battle-console-owned]')).toHaveText('9 ammo');
+    await expect(drawer.locator('[data-battle-console-credits]')).toHaveText('$6,125');
   }
-  await expect(page.locator('#battle-rail .st-hud__weapon-value')).toHaveText('Missile');
+  await expect(missile.getByRole('button', { name: 'Equipped', exact: true })).toBeDisabled();
+  await expect(page.locator('[data-battle-console-target-key="weapon-next"]')).toHaveAccessibleName('Select next weapon, current Missile');
   await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(drawer).toHaveClass(/st-hud__strip--collapsed/);
+  await expect(drawer).toBeHidden();
   await expect(trigger).toBeFocused();
 }
 
 async function adjustSolutionAndMove(page: Page): Promise<void> {
-  const fuel = page.getByRole('progressbar', { name: 'Movement fuel' });
-  const fuelBefore = Number(await fuel.getAttribute('aria-valuenow'));
+  const fuel = page.locator('[data-semantic-key="node:span:100 fuel remaining:19"]');
+  const fuelBefore = Number(await fuel.textContent());
   await page.getByRole('button', { name: 'Aim barrel left', exact: true }).click();
   await page.getByRole('button', { name: 'Increase power', exact: true }).click();
   await page.getByRole('button', { name: 'Move tank right, 8 fuel maximum', exact: true }).click();
-  await expect.poll(async () => Number(await fuel.getAttribute('aria-valuenow')))
+  await expect.poll(async () => Number(await fuel.textContent()))
     .toBeLessThan(fuelBefore);
 }
 
@@ -206,9 +203,9 @@ test.describe('adaptive command console causal journeys', () => {
     await page.goto('?e2e=hotseat&tutorial=first-salvo&seed=1337');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
     await expect(page.locator('#hud.st-hud')).toHaveCount(1);
-    const angle = page.locator('[data-value-owner="angle"] output');
-    const power = page.locator('[data-value-owner="power"] output');
-    const wind = page.locator('[data-value-owner="wind"] output');
+    const angle = page.locator('[data-semantic-key="node:output:Angle:43"]');
+    const power = page.locator('[data-semantic-key="node:output:Power:52"]');
+    const wind = page.locator('[data-semantic-key="node:output:Wind:58"]');
     await expect(angle).toHaveCount(1);
     await expect(power).toHaveCount(1);
     await expect(wind).toHaveCount(1);
@@ -232,18 +229,13 @@ test.describe('adaptive command console causal journeys', () => {
     const rosterBefore = await readRosterCoordinates(page);
 
     const before = await readHotSeatProbe(page);
-    const fire = page.locator('#battle-rail .st-hud__primary-action');
+    const fire = page.locator('[data-battle-console-action="fire"]');
     await expect(fire).toHaveCount(1);
     await fire.click();
-    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
-      .toHaveAttribute('data-command-mode', /tracking|resolving/);
-    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
-    const lastSalvo = page.locator('[data-ui="last-salvo-cue"]');
-    await expect(lastSalvo).not.toHaveAttribute('hidden', '', { timeout: 30_000 });
-    await expect(lastSalvo).toBeVisible();
-    const lastSalvoReceipt = await lastSalvo.textContent() ?? '';
-    expect(lastSalvoReceipt).toMatch(/PX|DIRECT HIT|ON LINE/);
-    expect(lastSalvoReceipt).toMatch(/SHIFT IMPACT|HOLD COURSE/);
+    await expect(fire).toBeDisabled();
+    // Legacy Last Salvo receipt was explicitly retired with its HUD owner.
+    // Real impact/handoff and held-key suppression remain proven by the engine probe.
+    await expect.poll(async () => (await readHotSeatProbe(page)).phase).toMatch(/FIRING|RESOLVING/);
     await page.keyboard.down('f');
     await expect.poll(() => readHotSeatProbe(page), { timeout: 20_000 }).toMatchObject({
       phase: 'PLAYER_TURN',
@@ -253,9 +245,7 @@ test.describe('adaptive command console causal journeys', () => {
       forwardedActions: { fire: before.forwardedActions.fire + 1 },
     });
     await page.keyboard.up('f');
-    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
-      .toHaveAttribute('data-command-mode', 'decision');
-    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(1);
+    await expect(fire).toBeEnabled();
     expect(await readRosterCoordinates(page)).toEqual(rosterBefore);
     expect((await readHotSeatProbe(page)).forwardedActions.fire).toBe(before.forwardedActions.fire + 1);
     expect(browserErrors).toEqual([]);
@@ -274,111 +264,120 @@ test.describe('adaptive command console causal journeys', () => {
     await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
       .locator('select').first().selectOption('1');
     await page.getByRole('button', { name: 'Create operation', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Ready Up', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
-    await expect(page.locator('#battle-rail .st-hud__weapon-value')).toHaveText('Baby Missile');
-    await expect(page.locator('[data-value-owner="angle"]')).toBeVisible();
+    await expect(page.locator('[data-battle-console-target-key="weapon-next"]')).toHaveAccessibleName('Select next weapon, current Baby Missile');
+    await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toBeVisible();
     await acknowledgeBriefing(page);
     await chooseMissileAndRestoreArsenalFocus(page, false);
 
     await page.getByRole('button', { name: 'Aim barrel left', exact: true }).click();
     await page.getByRole('button', { name: 'Increase power', exact: true }).click();
     await page.getByRole('button', { name: 'Move tank right, 8 fuel maximum', exact: true }).click();
-    const fire = page.locator('#battle-rail .st-hud__primary-action');
+    const fire = page.locator('[data-battle-console-action="fire"]');
     await expect(fire).toHaveCount(1);
     await fire.click();
     await page.keyboard.down('f');
-    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
-      .toHaveAttribute('data-command-mode', 'submitting');
+    await expect(fire).toBeDisabled();
     await expect.poll(() => fixture.rows.map((row) => row.action['type']))
       .toEqual(['move', 'fire']);
     await expect.poll(() => fixture.submissions.filter((body) => (
       body['action'] as Record<string, unknown>
     )['type'] === 'fire' && body['actingPlayerId'] === undefined).length).toBe(1);
 
-    await expect(page.locator('#battle-rail .st-hud__fire-terminal'), 'watchdog log resync must recover the accepted canonical shot')
-      .toHaveAttribute('data-command-mode', /tracking|resolving|handoff/, { timeout: 15_000 });
+    // Canonical CPU submission below proves watchdog replay recovered the human shot.
+
     await expect.poll(() => fixture.submissions.filter((body) => (
       body['action'] as Record<string, unknown>
     )['type'] === 'fire' && typeof body['actingPlayerId'] === 'string').length, { timeout: 20_000 })
       .toBe(1);
     await page.keyboard.up('f');
-    await expect(page.locator('#battle-rail .st-hud__fire-terminal'))
-      .toHaveAttribute('data-command-mode', 'handoff');
-    await expect(page.locator('#battle-rail .st-hud__console-state')).toContainText('CPU');
-    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
+    await expect(fire).toBeDisabled();
     expect(fixture.submissions.filter((body) => (
       body['action'] as Record<string, unknown>
     )['type'] === 'fire' && body['actingPlayerId'] === undefined)).toHaveLength(1);
   });
 });
 
+test('Armory and Battle Settings own keyboard input instead of firing behind their dialogs', async ({
+  page,
+}) => {
+  await gotoRunningGame(page);
+
+  const assertNoCombatMutation = async (surface: 'Armory' | 'Battle Settings'): Promise<void> => {
+    if (surface === 'Armory') await page.locator('[data-battle-console-armory-scroll]').focus();
+    const before = await readHotSeatProbe(page);
+    const weaponBefore = await page.locator('[data-battle-console-target-key="weapon-next"]').textContent();
+
+    // Check on keydown, before Space can activate the focused modal control on
+    // keyup. The gameplay InputHandler also consumes keydown, so this is the
+    // causal boundary that previously launched an unseen shot behind the dialog.
+    await page.keyboard.down('Space');
+    await expect.poll(async () => (await readHotSeatProbe(page)).forwardedActions.fire,
+      `${surface} suppresses the gameplay Fire hotkey`).toBe(before.forwardedActions.fire);
+    await page.keyboard.up('Space');
+
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('q');
+    expect((await readHotSeatProbe(page)).forwardedActions).toEqual(before.forwardedActions);
+    await expect(page.locator('[data-battle-console-target-key="weapon-next"]')).toHaveText(weaponBefore ?? '');
+  };
+
+  const armoryTrigger = page.getByRole('button', { name: 'Open Armory', exact: true });
+  await armoryTrigger.click();
+  const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
+  await expect(armory).toBeVisible();
+  await assertNoCombatMutation('Armory');
+  if (await armory.isVisible()) await page.keyboard.press('Escape');
+
+  // Re-open independently because Space may activate the focused Close control
+  // on keyup. The dialog's own trusted Equip action must remain live even while
+  // background gameplay hotkeys are suppressed.
+  await armoryTrigger.click();
+  await armory.locator('[data-battle-console-armory-item]').filter({ has: page.getByRole('heading', { name: 'Missile', exact: true }) }).getByRole('button', { name: 'Equip', exact: true }).click();
+  await expect(page.locator('[data-battle-console-target-key="weapon-next"]')).toHaveAccessibleName('Select next weapon, current Missile');
+  await expect(armory).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Battle settings', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: 'Battle Settings', exact: true });
+  await expect(settings).toBeVisible();
+  await assertNoCombatMutation('Battle Settings');
+  await expect(settings).toBeVisible();
+});
+
 test('command console retains its visual contract through the decision phase', async ({ page }) => {
   await gotoRunningGame(page);
-  const contract = await page.locator('#battle-rail').evaluate((rail) => {
-    const visible = (element: Element): element is HTMLElement => {
-      if (!(element instanceof HTMLElement)) return false;
-      const style = getComputedStyle(element);
-      const box = element.getBoundingClientRect();
-      return !element.hidden && style.display !== 'none' && style.visibility !== 'hidden'
-        && box.width > 0 && box.height > 0;
-    };
-    const physicalFont = (element: HTMLElement): number => {
-      const logical = Number.parseFloat(getComputedStyle(element).fontSize);
-      const app = document.getElementById('app')!;
-      const zoomScale = app.offsetWidth > 0
-        ? app.getBoundingClientRect().width / app.offsetWidth
-        : 1;
-      return logical * zoomScale;
-    };
-    const meaningful = [...rail.querySelectorAll<HTMLElement>(
-      '.st-hud__turn-owner, .st-hud__fuel-label, .st-hud__fuel-value, .st-hud__weapon-label, .st-hud__weapon-value, .st-hud__weapon-ammo, .st-hud__solution-adjustment-label, .st-hud__console-state, .st-hud__primary-action-label, .st-hud__move-btn kbd, .st-hud__solution-control kbd',
-    )].filter(visible);
-    const critical = [...rail.querySelectorAll<HTMLElement>(
-      '.st-hud__turn-owner, .st-hud__fuel-value, .st-hud__weapon-value, .st-hud__console-state, .st-hud__primary-action-label',
-    )].filter(visible);
-    const smallest = (elements: HTMLElement[]) => elements
-      .map((element) => ({
-        value: physicalFont(element),
-        className: element.className,
-        text: element.textContent?.trim(),
-      }))
-      .sort((left, right) => left.value - right.value)[0]!;
-    const zones = [...rail.querySelectorAll<HTMLElement>(
-      ':scope > .st-hud__console-context, :scope > .st-hud__console-solution',
-    )].map((element) => element.getBoundingClientRect().toJSON());
-    const overlaps = zones.flatMap((left, index) => zones.slice(index + 1).map((right) => (
-      left.left < right.right - 1 && left.right > right.left + 1
-      && left.top < right.bottom - 1 && left.bottom > right.top + 1
-    ))).filter(Boolean).length;
-    const ledger = document.getElementById('hud')!;
-    return {
-      windVisible: visible(rail.querySelector('[data-value-owner="wind"]')!),
-      minimumMeaningfulFont: smallest(meaningful),
-      minimumCriticalFont: smallest(critical),
-      overlaps,
-      activeCommits: [...rail.querySelectorAll<HTMLButtonElement>('.st-hud__primary-action')]
-        .filter((button) => visible(button) && !button.disabled).length,
-      ledgerCombat: ledger.querySelectorAll(
-        '[data-ui="weapon-bay"], [data-control="angle"], [data-control="power"], [data-ui="arsenal-drawer"], .st-hud__primary-action',
-      ).length,
-      overflowX: document.documentElement.scrollWidth - window.innerWidth,
-      overflowY: document.documentElement.scrollHeight - window.innerHeight,
-      alternateDecks: document.querySelectorAll('.st-hud__touch-strip').length,
-    };
-  });
-  expect(contract.windVisible).toBe(true);
-  expect(
-    contract.minimumMeaningfulFont.value,
-    `smallest meaningful command text: ${JSON.stringify(contract.minimumMeaningfulFont)}`,
-  ).toBeGreaterThanOrEqual(11);
-  expect(
-    contract.minimumCriticalFont.value,
-    `smallest critical command text: ${JSON.stringify(contract.minimumCriticalFont)}`,
-  ).toBeGreaterThanOrEqual(12);
-  expect(contract.overlaps).toBe(0);
-  expect(contract.activeCommits).toBe(1);
-  expect(contract.ledgerCombat).toBe(0);
-  expect(contract.overflowX).toBeLessThanOrEqual(1);
-  expect(contract.overflowY).toBeLessThanOrEqual(1);
-  expect(contract.alternateDecks).toBe(0);
+  const console = page.locator('[data-battle-console-surface]');
+  const field = (await page.locator('#game').boundingBox())!;
+  const box = (await console.boundingBox())!;
+  expect(Math.abs(box.x - field.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(box.width - field.width)).toBeLessThanOrEqual(2);
+  await expect(page.locator('[data-semantic-key="node:output:Wind:58"]')).toBeVisible();
+  await expect(console.locator('[data-battle-console-action="fire"]:enabled')).toHaveCount(1);
+  for (const key of ['node:output:Angle:43', 'node:output:Power:52', 'node:output:Wind:58', 'node:span:100 fuel remaining:19']) {
+    const reading = console.locator(`[data-semantic-key="${key}"]`);
+    const geometry = await reading.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const copy = range.getBoundingClientRect();
+      const cell = element.getBoundingClientRect();
+      return { copy: copy.toJSON(), cell: cell.toJSON(), physicalFont: Number.parseFloat(getComputedStyle(element).fontSize) * cell.height / (element as HTMLElement).offsetHeight };
+    });
+    expect(geometry.copy.left, key).toBeGreaterThanOrEqual(geometry.cell.left - 1);
+    expect(geometry.copy.right, key).toBeLessThanOrEqual(geometry.cell.right + 1);
+    // Font ascent/descent boxes can exceed a tight line box without painted ink overflow.
+    // Preserve the original readability floor and contain the instrument in its console.
+    expect(geometry.physicalFont, key).toBeGreaterThanOrEqual(12);
+    expect(geometry.cell.top, key).toBeGreaterThanOrEqual(box.y);
+    expect(geometry.cell.bottom, key).toBeLessThanOrEqual(box.y + box.height);
+  }
+  await expect(page.locator('#hud [data-battle-console-action="fire"], #hud [data-battle-console-target-key="armory"]')).toHaveCount(0);
+  const overflow = await page.evaluate(() => ({
+    x: document.documentElement.scrollWidth - innerWidth,
+    y: document.documentElement.scrollHeight - innerHeight,
+  }));
+  expect(overflow.x).toBeLessThanOrEqual(1);
+  expect(overflow.y).toBeLessThanOrEqual(1);
+  await expect(page.locator('.st-hud__touch-strip')).toHaveCount(0);
 });

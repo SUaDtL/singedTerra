@@ -1,231 +1,50 @@
 import { test, expect } from '@playwright/test';
 import { gotoRunningGame } from './support';
 
+// The replacement Armory keeps descriptions with their inventory cards; the
+// retired hover dossier is no longer a second presentation of the same weapon.
 test.describe('weapon intel battlefield composition', () => {
   test('buys a finite weapon inside the sole Armory dialog', async ({ page }) => {
     await gotoRunningGame(page);
-    await page.getByRole('button', { name: 'Open Armory — equip or buy weapons' }).click();
-    const armory = page.locator('[data-ui="arsenal-drawer"]');
-    const missile = armory.locator('[data-weapon="missile"].st-hud__armory-card');
-    const ammo = missile.locator('[data-armory-ammo]');
-    const credits = armory.locator('.st-hud__armory-credits');
-
-    await expect(armory).toHaveAccessibleName('Armory');
-    await expect(ammo).toHaveText('Ammo 4');
-    await expect(credits).toHaveText('Credits: $8,000');
-    await missile.getByRole('button', { name: /Buy Missile/ }).click();
-    await expect(ammo).toHaveText('Ammo 9');
-    await expect(credits).toHaveText('Credits: $6,125');
+    await page.getByRole('button', { name: 'Open Armory' }).click();
+    const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
+    const missile = armory.locator('article').filter({ has: page.getByRole('heading', { name: 'Missile', exact: true }) });
+    const ammo = missile.locator('[data-battle-console-owned]');
+    const credits = armory.getByLabel('Available credits');
+    await expect(ammo).toHaveText('4 ammo');
+    await expect(credits).toHaveText('$8,000');
+    await missile.getByRole('button', { name: 'Buy $1,875', exact: true }).click();
+    await expect(ammo).toHaveText('9 ammo');
+    await expect(credits).toHaveText('$6,125');
     await expect(page.getByRole('dialog')).toHaveCount(1);
     await expect(page.getByRole('dialog', { name: 'Store' })).toHaveCount(0);
-    await expect(page.locator('.st-hud__store')).toHaveCount(0);
   });
 
-  test('previews tactics through the active input mode and stays inside the arsenal layer', async ({
-    page,
-  }, testInfo) => {
+  test('exposes each inventory description and equips with the active input mode', async ({ page }, testInfo) => {
     await gotoRunningGame(page);
-    const hud = page.locator('#hud');
-    const drawer = page.locator('.st-hud__strip');
-    const panel = page.locator('.st-hud__weapon-intel');
-    const before = await hud.evaluate((node) => node.scrollHeight);
-
-    const openArsenal = page.getByRole('button', { name: 'Open Armory — equip or buy weapons' });
-    if (testInfo.project.name === 'pixel-touch') await openArsenal.tap();
-    else await openArsenal.click();
-    await expect(drawer).toHaveAttribute('role', 'dialog');
-    await expect(drawer).toHaveAttribute('aria-modal', 'true');
-    await expect(drawer).toHaveAccessibleName('Armory');
-    if (testInfo.project.name === 'pixel-touch') {
-      const match = page.getByRole('button', { name: 'Open match ledger', exact: true });
-      expect(await match.evaluate((element) => (element as HTMLElement).inert)).toBe(true);
-      await page.keyboard.press('Escape');
-      await expect(drawer).toHaveClass(/st-hud__strip--collapsed/);
-      expect(await drawer.evaluate((element) =>
-        element.parentElement?.classList.contains('st-hud__console-solution'))).toBe(true);
-      await expect(openArsenal).toBeFocused();
-      expect(await match.evaluate((element) => (element as HTMLElement).inert)).toBe(false);
-      await openArsenal.tap();
+    const open = page.getByRole('button', { name: 'Open Armory' });
+    if (testInfo.project.name === 'pixel-touch') await open.tap();
+    else await open.click();
+    const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
+    await expect(armory).toHaveAttribute('aria-modal', 'true');
+    const cards = armory.locator('article');
+    expect(await cards.count()).toBeGreaterThan(10);
+    for (const card of await cards.all()) {
+      await card.scrollIntoViewIfNeeded();
+      await expect(card.getByRole('heading')).toBeVisible();
+      await expect(card.locator('p')).not.toBeEmpty();
+      const fit = await card.evaluate((node) => ({ width: node.clientWidth, scroll: node.scrollWidth }));
+      expect(fit.scroll).toBeLessThanOrEqual(fit.width + 1);
     }
-    await expect(panel).toBeVisible();
-    await expect(panel).toHaveAttribute('data-weapon', 'baby_missile');
-    await expect(panel).toContainText('Reliable precision shot');
-    const scrollDossierToBottom = () => panel.evaluate((node) => {
-      node.scrollTop = node.scrollHeight;
-      return node.scrollTop;
-    });
-    const expectHeadingVisible = async (name: string) => {
-      const visibility = await panel.evaluate((node, expectedName) => {
-        const heading = node.querySelector<HTMLElement>('.st-hud__weapon-intel-name')!;
-        const panelRect = node.getBoundingClientRect();
-        const headingRect = heading.getBoundingClientRect();
-        return {
-          name: heading.textContent,
-          scrollTop: node.scrollTop,
-          visible: headingRect.top >= panelRect.top && headingRect.bottom <= panelRect.bottom,
-        };
-      }, name);
-      expect(visibility).toEqual({ name, scrollTop: 0, visible: true });
-    };
-    const missile = page.locator('.st-hud__weapon-btn[data-weapon="missile"]');
-    await expect(missile).toBeVisible();
-    if (testInfo.project.name === 'pixel-touch') {
-      await missile.tap();
-      await expect(panel).toHaveAttribute('data-weapon', 'missile');
-      await expectHeadingVisible('Missile');
-      await expect(page.locator('.st-hud__weapon-value')).toHaveText('Missile');
-    } else {
-      await page.getByRole('button', { name: 'Close Armory' }).focus();
-      await page.keyboard.press('Tab');
-      await expect(panel).toBeFocused();
-      await page.keyboard.press('Tab');
-      await expect(page.locator('.st-hud__weapon-btn[data-weapon="baby_missile"]')).toBeFocused();
-      await page.keyboard.press('Tab');
-      await expect(missile).toBeFocused();
-      await expect(panel).toHaveAttribute('data-weapon', 'missile');
-      if (testInfo.project.name === 'small-window') await expectHeadingVisible('Missile');
-      await expect(panel).toContainText('Balanced direct attack');
-
-      const dirtBomb = page.locator('.st-hud__weapon-btn[data-weapon="dirt_bomb"]');
-      await expect(dirtBomb).toBeVisible();
-      await missile.click();
-      const beforeHover = await panel.boundingBox();
-      await dirtBomb.hover();
-      const afterHover = await panel.boundingBox();
-      expect(afterHover?.y).toBeCloseTo(beforeHover!.y, 0);
-      if (testInfo.project.name === 'small-window') {
-        expect(afterHover?.height).toBeCloseTo(beforeHover!.height, 0);
-      }
-      await expect(panel).toHaveAttribute('data-weapon', 'dirt_bomb');
-      if (testInfo.project.name === 'small-window') await expectHeadingVisible('Dirt Bomb');
-      await expect(panel).toContainText('Raises a mound');
-      await missile.hover();
-      await expect(panel).toHaveAttribute('data-weapon', 'missile');
-
-      const snapshotPointerLayout = () => page.evaluate(() => {
-        const panelNode = document.querySelector<HTMLElement>('.st-hud__weapon-intel')!;
-        const gridNode = document.querySelector<HTMLElement>('.st-hud__strip-grid')!;
-        const buttons = [...document.querySelectorAll<HTMLElement>('.st-hud__weapon-btn')]
-          .filter((node) => getComputedStyle(node).display !== 'none')
-          .map((node) => ({
-            weapon: node.dataset['weapon'],
-            offsetTop: node.offsetTop,
-            offsetLeft: node.offsetLeft,
-            offsetWidth: node.offsetWidth,
-            offsetHeight: node.offsetHeight,
-          }));
-        return {
-          panelHeight: panelNode.offsetHeight,
-          gridTop: gridNode.offsetTop,
-          gridHeight: gridNode.clientHeight,
-          buttons,
-        };
-      });
-      const pointerLayout = await snapshotPointerLayout();
-      const visibleWeapons = page.locator('.st-hud__weapon-btn:not(.st-hud__weapon-btn--hidden)');
-      for (let index = 0; index < await visibleWeapons.count(); index += 1) {
-        const weaponButton = visibleWeapons.nth(index);
-        const type = await weaponButton.getAttribute('data-weapon');
-        const box = await weaponButton.boundingBox();
-        await panel.evaluate((node) => {
-          const tracked = node as HTMLElement & {
-            weaponIntelObserver?: MutationObserver;
-            weaponIntelTransitions?: string[];
-          };
-          tracked.weaponIntelTransitions = [];
-          tracked.weaponIntelObserver?.disconnect();
-          tracked.weaponIntelObserver = new MutationObserver((records) => {
-            if (records.some((record) => record.type === 'attributes')) {
-              tracked.weaponIntelTransitions!.push(tracked.dataset['weapon'] ?? '');
-            }
-          });
-          tracked.weaponIntelObserver.observe(tracked, {
-            attributes: true,
-            attributeFilter: ['data-weapon'],
-          });
-        });
-        await weaponButton.hover({ position: { x: box!.width / 2, y: Math.min(4, box!.height / 2) } });
-        await expect(panel).toHaveAttribute('data-weapon', type!);
-        await page.waitForTimeout(50);
-        await expect(panel).toHaveAttribute('data-weapon', type!);
-        const transitions = await panel.evaluate((node) => {
-          const tracked = node as HTMLElement & {
-            weaponIntelObserver?: MutationObserver;
-            weaponIntelTransitions?: string[];
-          };
-          tracked.weaponIntelObserver?.disconnect();
-          return tracked.weaponIntelTransitions ?? [];
-        });
-        expect(transitions.length).toBeLessThanOrEqual(1);
-        if (transitions.length === 1) expect(transitions[0]).toBe(type);
-        expect(await snapshotPointerLayout()).toEqual(pointerLayout);
-      }
-    }
-
-    const geometry = await page.evaluate(() => {
-      const rect = (selector: string) =>
-        document.querySelector<HTMLElement>(selector)!.getBoundingClientRect().toJSON();
-      const hudNode = document.querySelector<HTMLElement>('#hud')!;
-      const panelNode = document.querySelector<HTMLElement>('.st-hud__weapon-intel')!;
-      const targets = [...document.querySelectorAll<HTMLElement>('.st-hud__weapon-btn')]
-        .filter((node) => node.getBoundingClientRect().height > 0)
-        .map((node) => node.getBoundingClientRect().height);
-      const app = document.querySelector<HTMLElement>('#app')!;
-      const zoom = Number.parseFloat(getComputedStyle(app).zoom || '1');
-      const physicalFontSize = (selector: string) =>
-        Number.parseFloat(getComputedStyle(document.querySelector<HTMLElement>(selector)!).fontSize) * zoom;
-      return {
-        drawer: rect('.st-hud__strip'),
-        panel: rect('.st-hud__weapon-intel'),
-        stage: rect('#stage'),
-        canvas: rect('#game'),
-        rail: rect('#battle-rail'),
-        hudScrollHeight: hudNode.scrollHeight,
-        panelClientWidth: panelNode.clientWidth,
-        panelScrollWidth: panelNode.scrollWidth,
-        panelClientHeight: panelNode.clientHeight,
-        panelScrollHeight: panelNode.scrollHeight,
-        pageWidth: document.documentElement.scrollWidth,
-        pageHeight: document.documentElement.scrollHeight,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-        targets,
-        fonts: {
-          name: physicalFontSize('.st-hud__weapon-intel-name'),
-          ammo: physicalFontSize('.st-hud__weapon-intel-ammo'),
-          label: physicalFontSize('.st-hud__weapon-intel-label'),
-          value: physicalFontSize('.st-hud__weapon-intel-value'),
-        },
-      };
-    });
-
-    expect(geometry.panel.left).toBeGreaterThanOrEqual(geometry.drawer.left - 1);
-    expect(geometry.panel.right).toBeLessThanOrEqual(geometry.drawer.right + 1);
-    expect(geometry.panel.top).toBeGreaterThanOrEqual(geometry.drawer.top - 1);
-    expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.drawer.bottom + 1);
-    // Armory is a gameplay modal opened from Fire Control, not a rail-sized
-    // sheet that could push its selectable cards behind the battlefield.
-    expect(geometry.drawer.left).toBeGreaterThanOrEqual(geometry.stage.left - 1);
-    expect(geometry.drawer.right).toBeLessThanOrEqual(geometry.stage.right + 1);
-    expect(geometry.drawer.top).toBeGreaterThanOrEqual(geometry.stage.top - 1);
-    expect(geometry.drawer.bottom).toBeLessThanOrEqual(geometry.stage.bottom + 1);
-    expect(geometry.hudScrollHeight).toBe(before);
-    expect(geometry.panelScrollWidth).toBeLessThanOrEqual(geometry.panelClientWidth + 1);
-    if (testInfo.project.name === 'desktop-fine') {
-      expect(geometry.panelScrollHeight).toBeLessThanOrEqual(geometry.panelClientHeight + 1);
-    } else {
-      expect(geometry.panelClientHeight).toBeGreaterThan(0);
-    }
-    expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewportWidth);
-    expect(geometry.pageHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-    if (testInfo.project.name === 'pixel-touch') {
-      expect(Math.min(...geometry.targets)).toBeGreaterThanOrEqual(44);
-    }
-    if (testInfo.project.name === 'pixel-touch' || testInfo.project.name === 'small-window') {
-      expect(geometry.fonts.name).toBeGreaterThanOrEqual(11.5);
-      expect(geometry.fonts.ammo).toBeGreaterThanOrEqual(9.5);
-      expect(geometry.fonts.label).toBeGreaterThanOrEqual(8.5);
-      expect(geometry.fonts.value).toBeGreaterThanOrEqual(10.5);
-    }
+    const missile = cards.filter({ has: page.getByRole('heading', { name: 'Missile', exact: true }) });
+    await expect(missile.locator('p')).toContainText('Reliable direct-hit blast');
+    await missile.getByRole('button', { name: 'Equip', exact: true }).click();
+    await expect(missile.getByRole('button', { name: 'Equipped', exact: true })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(armory).toHaveCount(0);
+    await expect(open).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Select next weapon, current Missile', exact: true })).toBeVisible();
+    const fit = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, viewport: innerWidth }));
+    expect(fit.width).toBeLessThanOrEqual(fit.viewport);
   });
 });

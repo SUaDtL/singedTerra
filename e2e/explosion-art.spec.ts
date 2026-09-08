@@ -112,7 +112,7 @@ test.describe('authored explosion sheet', () => {
     await gotoRunningGame(page);
     await assetResponse;
 
-    await page.locator('.st-hud__primary-action').click();
+    await page.locator('[data-battle-console-action="fire"]').click();
     await expect.poll(async () => page.evaluate(() => (
       (window as typeof window & { __singedTerraExplosionDraws?: number[][] })
         .__singedTerraExplosionDraws?.length ?? 0
