@@ -50,6 +50,10 @@ function verifiedStart(resumed = false, expiresAt?: string) {
 
 async function installAuthenticatedFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
+    // These journeys exercise verified sessions after onboarding. Persist the
+    // public Skip preference before launch; a slow first frame must not race
+    // the optional briefing against the Match ledger interaction.
+    window.localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
     window.localStorage.setItem(`sb-${window.location.hostname.split('.')[0]}-auth-token`, JSON.stringify({
       access_token: ['e2e', 'public', 'session', 'token'].join('-'),
       refresh_token: ['e2e', 'public', 'refresh', 'token'].join('-'),
