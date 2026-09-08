@@ -1587,9 +1587,9 @@
   font: 700 19px/1 var(--font-display);
   box-shadow: inset 0 0 0 2px rgba(3, 3, 5, .58), 0 2px 5px rgba(0, 0, 0, .52);
 }
-.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(1)::before { content: '\\25B6'; }
-.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(2)::before { content: '\\2699'; }
-.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(3)::before { content: '\\21BB'; }
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(1)::before { content: '\25B6'; }
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(2)::before { content: '\2699'; }
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(3)::before { content: '\21BB'; }
 .st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:hover:not(:disabled) {
   border-color: rgba(240, 190, 92, .72);
   background:
