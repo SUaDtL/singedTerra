@@ -25,7 +25,7 @@ export class OrderedActionSession<Action> {
   }
 
   buffer(seq: number, action: Action): boolean {
-    if (!shouldBufferSeq(seq, this.expectedSeq)) return false;
+    if (this.disposed || !shouldBufferSeq(seq, this.expectedSeq)) return false;
     this.pending.set(seq, action);
     return true;
   }
@@ -47,6 +47,7 @@ export class OrderedActionSession<Action> {
   }
 
   acceptResync(rows: OrderedActionRow<Action>[]): boolean {
+    if (this.disposed) return false;
     for (const row of rows) this.buffer(row.seq, row.action);
     return true;
   }

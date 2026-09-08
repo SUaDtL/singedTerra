@@ -48,10 +48,12 @@ describe('OrderedActionSession', () => {
     expect(events).toEqual(['first', 'settled', 'second', 'settled']);
   });
 
-  it('merges overlapping live resyncs', () => {
+  it('merges overlapping live resyncs and ignores fetches after disposal', () => {
     const session = new OrderedActionSession<string>();
     expect(session.acceptResync([])).toBe(true);
     expect(session.acceptResync([{ seq: 0, action: 'canonical' }])).toBe(true);
+    session.dispose();
+    expect(session.acceptResync([{ seq: 1, action: 'late' }])).toBe(false);
   });
 
   it('rejects NaN through the shared admission rule', () => {

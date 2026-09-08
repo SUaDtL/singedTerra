@@ -317,6 +317,23 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().phase).toBe('FIRING');
   });
 
+  it('ignores a resync response that arrives after stop', async () => {
+    let resolveResync!: (result: QueryResult) => void;
+    const resync = new Promise<QueryResult>((resolve) => { resolveResync = resolve; });
+    const { supabase, captured } = makeFakeSupabase([
+      { data: [], error: null }, resync,
+    ]);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    await client.initialize();
+    captured.statusCb?.('SUBSCRIBED');
+    client.stop();
+    resolveResync({ data: [row(0, fire()).new], error: null });
+    await settle();
+
+    expect(client.getState().phase).toBe('PLAYER_TURN');
+    expect(client.getState().turn).toBe(0);
+  });
+
   it('sendAction(fire) POSTs submit_action and does NOT apply the shot locally', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
