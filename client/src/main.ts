@@ -12,6 +12,7 @@ import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { quickOperationById } from './client/quickOperations';
 import { rematchToConfig } from './client/rematchConfig';
+import { MatchSessionLifecycle } from './client/MatchSessionLifecycle';
 import { InputHandler } from './input/InputHandler';
 import {
   resolveActivePlayerOwnership,
@@ -219,7 +220,7 @@ function bootstrap(): void {
   // Renderer-owned images and offscreen canvases belong to one game generation.
   // Keep no idle-lobby instance: dropping the generation after teardown lets the
   // browser collect those non-DOM presentation resources before the next match.
-  let renderer: Renderer | null = null;
+  const matchSession = new MatchSessionLifecycle<GameClient, InputHandler, Renderer>();
   const hud = new HUD(hudRoot, overlayRoot, modalRoot, battleRailRoot);
   if (E2E_MODE === 'hotseat') {
     (
@@ -248,7 +249,7 @@ function bootstrap(): void {
   audio.unlockOnGesture();
   const syncBattleSettings = (): void => {
     hud.setBattleSettingsState?.({
-      aimGuideEnabled: renderer?.isAimGuideEnabled ?? true,
+      aimGuideEnabled: matchSession.renderer?.isAimGuideEnabled ?? true,
       soundEnabled: !audio.isMuted,
     });
   };
@@ -327,13 +328,13 @@ function bootstrap(): void {
       },
       onMiss: () => audio.fizzle(),
     });
-    renderer = next;
+    matchSession.ownRenderer(next);
     syncBattleSettings();
     return next;
   };
   const toggleAimGuide = (): void => {
-    if (!renderer) return;
-    const on = renderer.toggleAimGuide();
+    if (!matchSession.renderer) return;
+    const on = matchSession.renderer.toggleAimGuide();
     syncBattleSettings();
     markDirty(); // reflect it on a static decision frame as well as in flight
     hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
@@ -359,21 +360,17 @@ function bootstrap(): void {
     } else if (e.code === 'KeyF' && !gameplayInputBlocked()) {
       // Hold F to fast-forward the shot animation (review #7). Local view pacing only;
       // never a logged action. Repeats while held (idempotent); released on keyup.
-      client?.setFastForward?.(true);
+      matchSession.client?.setFastForward?.(true);
     }
   });
   window.addEventListener('keyup', (e) => {
-    if (e.code === 'KeyF') client?.setFastForward?.(false);
+    if (e.code === 'KeyF') matchSession.client?.setFastForward?.(false);
   });
 
   // Per-game wiring that gets torn down and rebuilt on restart.
-  let client: GameClient | null = null;
-  let input: InputHandler | null = null;
-  let unsubscribe: (() => void) | null = null;
   let lastActiveId: string | null = null;
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
-  let gameGeneration = 0;
   let progressionSignInHandled = false;
   let verifiedController: VerifiedDuelController | null = null;
   let verifiedClient: SwitchableVerifiedClient | null = null;
@@ -392,7 +389,7 @@ function bootstrap(): void {
   let e2eRoundShopPending = E2E_MODE === 'round-shop';
 
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
-    const state = client?.getState();
+    const state = matchSession.client?.getState();
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
     if (!state || !activeTank) return null;
     return {
@@ -409,7 +406,7 @@ function bootstrap(): void {
   }
 
   function directAimAllowed(): boolean {
-    const state = client?.getState();
+    const state = matchSession.client?.getState();
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
     return !!state
       && state.phase === 'PLAYER_TURN'
@@ -423,7 +420,7 @@ function bootstrap(): void {
   }
 
   function currentLiveMatchSnapshot() {
-    const activeClient = client;
+    const activeClient = matchSession.client;
     const state = activeClient?.getState();
     const config = currentConfig;
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
@@ -555,7 +552,6 @@ function bootstrap(): void {
   // so we act ONCE per (turn, tank) and skip until the turn changes.
   let aiActedKey: string | null = null;
   // Pending bot "think" timers, cleared on teardown so a torn-down game never fires.
-  let aiTimers: ReturnType<typeof setTimeout>[] = [];
 
   /** ms the bot waits before swinging its barrel, then before firing — so the
    *  human sees it aim and shoot rather than an instant teleport-kill. */
@@ -563,69 +559,43 @@ function bootstrap(): void {
   const AI_FIRE_DELAY = 550;
 
   function clearAiTimers(): void {
-    for (const t of aiTimers) clearTimeout(t);
-    aiTimers = [];
+    matchSession.clearTimers();
   }
 
   /** Tear down the current game's client/input/subscription (idempotent). */
-  async function teardown(): Promise<void> {
-    gameGeneration += 1;
-    clearAiTimers();
-    unsubscribe?.();
-    unsubscribe = null;
-    input?.detach();
-    input = null;
-    client?.stop();
-    client = null;
-    // Release any sustained napalm loop so its source/gain nodes don't leak when a
-    // game is quit mid-burn — napalmStop is otherwise only called on the audio
-    // edge when a burn ends naturally (reliability-001).
-    audio.napalmStop();
-    lastActiveId = null;
-    // Force a full redraw on the next game's first frame, and clear the phase latch so
-    // its opening phase counts as a change (otherwise the fresh static PLAYER_TURN
-    // could be skipped because isAnimating() is false and nothing marked us dirty).
-    renderDirty = true;
-    lastPhase = null;
-    activeIsAi = false;
-    activeIsLocal = false;
-    liveMatchTransport = 'not-applicable';
-    aiActedKey = null;
-    verifiedController = null;
-    verifiedClient = null;
-    verifiedCasual = false;
-    verifiedCompletionStarted = false;
-    fieldOrder = null;
-    terminalImpactObserved = false;
-    terminalImpactNotified = false;
-    // Clear any opponent-turn banner so it can't leak across games (P1-6b) — e.g.
-    // a networked "Waiting for…" surviving into a later hot-seat game (which has no
-    // turn-watch to reset it).
-    hud.setTurnWatch({ state: 'clear' });
-    // Explicitly tear down the end-of-game overlays. syncOverlay/syncRoundOver only
-    // hide them while the render loop runs; once we unsubscribe above, nothing would
-    // otherwise clear a lingering "{winner} wins!" banner when quitting to the menu
-    // (it would sit on top of the lobby) — #13.
-    hud.hideEndScreens();
-    hud.setVerifiedDeployment(null);
-    hud.setFieldOrder(null);
-    hud.setFirstSalvoStep(null);
-    await hud.leaveBattleConsole?.();
-    // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
-    // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
-    // mark while the fresh engine restarts explosion ids at 1, so early explosions fail
-    // the dedupe (no boom/shake/debris/damage-numbers/bloom) — plus a stale last-shot
-    // crosshair leaks across games. (Branch-review finding.)
-    renderer?.reset();
-    renderer = null;
+  async function teardown(): Promise<number> {
+    const generation = await matchSession.retire(async () => {
+      audio.napalmStop();
+      lastActiveId = null;
+      renderDirty = true;
+      lastPhase = null;
+      activeIsAi = false;
+      activeIsLocal = false;
+      liveMatchTransport = 'not-applicable';
+      aiActedKey = null;
+      verifiedController = null;
+      verifiedClient = null;
+      verifiedCasual = false;
+      verifiedCompletionStarted = false;
+      fieldOrder = null;
+      terminalImpactObserved = false;
+      terminalImpactNotified = false;
+      hud.setTurnWatch({ state: 'clear' });
+      hud.hideEndScreens();
+      hud.setVerifiedDeployment(null);
+      hud.setFieldOrder(null);
+      hud.setFirstSalvoStep(null);
+      await hud.leaveBattleConsole?.();
+    });
     releaseTankLoadoutPreviewResources();
+    return generation;
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
     await teardown();
     progressionSignInHandled = false;
-    const currentGameGeneration = gameGeneration;
+    const currentGameGeneration = matchSession.currentGeneration;
     // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
     // callback. Restart (restartCb) and network rematch (onRematch) call startGame()
     // directly, so without this a Restart issued while the lobby is showing (i.e. after
@@ -653,7 +623,7 @@ function bootstrap(): void {
     } else {
       newClient = await createClient(config);
     }
-    client = newClient;
+    matchSession.ownClient(newClient);
     const gameRenderer = createRenderer();
     const selectedBattlefield = selectClientBattlefieldWorld(
       newClient,
@@ -752,16 +722,14 @@ function bootstrap(): void {
       report: (result) => lobby.recordHotSeatMatch(result),
       onRecorded: (result, receipt) => {
         if (
-          gameGeneration !== currentGameGeneration
-          || client !== newClient
+          !matchSession.isCurrent(currentGameGeneration, newClient)
           || newClient.getState()?.phase !== 'GAME_OVER'
         ) return;
         hud.setProgressionReceipt({ won: result.won, receipt });
       },
       onUnrecorded: () => {
         if (
-          gameGeneration !== currentGameGeneration
-          || client !== newClient
+          !matchSession.isCurrent(currentGameGeneration, newClient)
           || newClient.getState()?.phase !== 'GAME_OVER'
           || !lobby.isAccountAnonymous()
         ) return;
@@ -823,7 +791,7 @@ function bootstrap(): void {
       canDirectAim: directAimAllowed,
       canHandleCommand: () => !gameplayInputBlocked(),
     });
-    input = newInput;
+    matchSession.ownInput(newInput);
     newInput.attach();
     // Seed the weapon cursor from the opening active tank too (mirrors aim).
     if (activeTank) newInput.setWeapon(activeTank.selectedWeapon);
@@ -870,22 +838,21 @@ function bootstrap(): void {
       void request.then((receipt) => {
         if (
           !receipt
-          || gameGeneration !== currentGameGeneration
-          || client !== newClient
+          || !matchSession.isCurrent(currentGameGeneration, newClient)
           || verifiedCasual
         ) {
-          if (gameGeneration === currentGameGeneration && client === newClient) syncVerifiedHud();
+          if (matchSession.isCurrent(currentGameGeneration, newClient)) syncVerifiedHud();
           return;
         }
         hud.setVerifiedProgressionReceipt(receipt);
         hud.setVerifiedDeployment(null);
         void lobby.refreshAccount();
       }).catch(() => {
-        if (gameGeneration === currentGameGeneration && client === newClient) syncVerifiedHud();
+        if (matchSession.isCurrent(currentGameGeneration, newClient)) syncVerifiedHud();
       });
     };
 
-    unsubscribe = newClient.onStateChange((state) => {
+    const unsubscribe = newClient.onStateChange((state) => {
       hotSeatProgression?.observe(state);
       if (verifiedController?.complete && !verifiedCasual && state.phase !== 'GAME_OVER') {
         const result = verifiedController.result();
@@ -986,6 +953,7 @@ function bootstrap(): void {
       // Computer-opponent driver: if a CPU tank holds the turn, plan + play it.
       maybeDriveAi(state);
     });
+    matchSession.ownSubscription(unsubscribe);
 
     newClient.start();
   }
@@ -1010,7 +978,7 @@ function bootstrap(): void {
     // Plan with the engine's EFFECTIVE gravity (sudden death ramps it past the threshold)
     // so the bot aims for the arc the engine will actually fly; falls back to the configured
     // base gravity if the client can't report it.
-    const gravity = client?.getEffectiveGravity() ?? currentConfig?.settings?.gravity ?? GRAVITY;
+    const gravity = matchSession.client?.getEffectiveGravity() ?? currentConfig?.settings?.gravity ?? GRAVITY;
     const plan = computeAiPlan(
       state,
       active.id,
@@ -1025,19 +993,19 @@ function bootstrap(): void {
     // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first — the
     // HotSeatClient applies it synchronously, so the select_weapon + fire below use
     // the just-restocked ammo. (aiActedKey already gates this to once per turn.)
-    aiTimers.push(setTimeout(() => {
-      if (plan.buy) client?.sendAction({ type: 'buy', weapon: plan.buy });
-      if (plan.buyAccessory) client?.sendAction({ type: 'buy', accessory: plan.buyAccessory });
-      client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
-      client?.sendAction({ type: 'set_angle', angle: plan.angle });
-      client?.sendAction({ type: 'set_power', power: plan.power });
+    matchSession.schedule(() => {
+      if (plan.buy) matchSession.client?.sendAction({ type: 'buy', weapon: plan.buy });
+      if (plan.buyAccessory) matchSession.client?.sendAction({ type: 'buy', accessory: plan.buyAccessory });
+      matchSession.client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
+      matchSession.client?.sendAction({ type: 'set_angle', angle: plan.angle });
+      matchSession.client?.sendAction({ type: 'set_power', power: plan.power });
       // The bot's barrel swing happens during the static PLAYER_TURN phase, so force
       // a redraw to show it (no human input marked us dirty for the CPU's turn).
       markDirty();
-    }, AI_AIM_DELAY));
-    aiTimers.push(setTimeout(() => {
-      client?.sendAction(plan.weapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
-    }, AI_AIM_DELAY + AI_FIRE_DELAY));
+    }, AI_AIM_DELAY);
+    matchSession.schedule(() => {
+      matchSession.client?.sendAction(plan.weapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
+    }, AI_AIM_DELAY + AI_FIRE_DELAY);
   }
 
   // Register restart ONCE on the persistent HUD. Hot-seat rebuilds a fresh local
@@ -1047,7 +1015,7 @@ function bootstrap(): void {
   hud.onRestart(() => {
     if (!currentConfig) return;
     if (currentConfig.mode === 'network') {
-      void client?.requestRematch?.();
+      void matchSession.client?.requestRematch?.();
     } else {
       void startGame(currentConfig);
     }
@@ -1080,8 +1048,8 @@ function bootstrap(): void {
     // gameplay input, but still obeys turn ownership and verified-play gates.
     if (!localTurnAllowsActions()) return;
     markDirty(); // weapon pick can change aim-guide/HUD context — repaint next frame
-    client?.sendAction({ type: 'select_weapon', weapon });
-    input?.setWeapon(weapon);
+    matchSession.client?.sendAction({ type: 'select_weapon', weapon });
+    matchSession.input?.setWeapon(weapon);
   });
 
   // Register the store Buy callback ONCE on the persistent HUD. A buy is a
@@ -1091,12 +1059,12 @@ function bootstrap(): void {
     markDirty(); // a buy changes ammo/credits surfaced in the scene — repaint next frame
     // `purchase` carries exactly one of weapon/accessory; forward it verbatim (the engine + referee
     // re-validate the "exactly one" invariant, affordability, the arms gate, and whose turn it is).
-    client?.sendAction({ type: 'buy', ...purchase, ...(tankId ? { tankId } : {}) });
+    matchSession.client?.sendAction({ type: 'buy', ...purchase, ...(tankId ? { tankId } : {}) });
     // Auto-select a bought WEAPON so the active weapon becomes the one just bought
     // (review #9). select_weapon is local-only (never logged) — pure client convenience.
     // Accessory buys (battery, …) must NOT hijack the weapon slot, hence the narrow.
     if ('weapon' in purchase && purchase.weapon) {
-      client?.sendAction({ type: 'select_weapon', weapon: purchase.weapon });
+      matchSession.client?.sendAction({ type: 'select_weapon', weapon: purchase.weapon });
     }
   });
 
@@ -1104,7 +1072,7 @@ function bootstrap(): void {
   // action: hot-seat applies it locally; networked commits it to the log so every
   // client leaves the shop in lockstep.
   hud.onNextRound(() => {
-    client?.sendAction({ type: 'next_round' });
+    matchSession.client?.sendAction({ type: 'next_round' });
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
@@ -1130,20 +1098,20 @@ function bootstrap(): void {
     if (!verifiedController || verifiedCasual || !currentConfig?.verifiedDeployment) return;
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     if (deployment.status !== 'retryable' || !deployment.deadline.canComplete) return;
-    const retryGeneration = gameGeneration;
-    const retryClient = client;
+    const retryGeneration = matchSession.currentGeneration;
+    const retryClient = matchSession.client;
     const request = lobby.retryVerifiedDeploymentCompletion();
     syncVerifiedHud();
     void request.then((receipt) => {
-      if (!receipt || gameGeneration !== retryGeneration || client !== retryClient) {
-        if (gameGeneration === retryGeneration && client === retryClient) syncVerifiedHud();
+      if (!receipt || !matchSession.isCurrent(retryGeneration, retryClient)) {
+        if (matchSession.isCurrent(retryGeneration, retryClient)) syncVerifiedHud();
         return;
       }
       hud.setVerifiedProgressionReceipt(receipt);
       hud.setVerifiedDeployment(null);
       void lobby.refreshAccount();
     }).catch(() => {
-      if (gameGeneration === retryGeneration && client === retryClient) syncVerifiedHud();
+      if (matchSession.isCurrent(retryGeneration, retryClient)) syncVerifiedHud();
     });
   });
 
@@ -1156,7 +1124,7 @@ function bootstrap(): void {
     verifiedClient.continueCasually();
     hud.setVerifiedDeployment(null);
     hud.setFieldOrder(null);
-    input?.setDirectAimEnabled(directAimAllowed());
+    matchSession.input?.setDirectAimEnabled(directAimAllowed());
   });
 
   hud.onVerifiedReturnToBattery(() => {
@@ -1198,23 +1166,23 @@ function bootstrap(): void {
   });
 
   hud.onPauseChange((paused) => {
-    if (paused) input?.setDirectAimEnabled(false);
-    else input?.setDirectAimEnabled(directAimAllowed());
+    if (paused) matchSession.input?.setDirectAimEnabled(false);
+    else matchSession.input?.setDirectAimEnabled(directAimAllowed());
   });
 
   // Touch-aim strip callbacks (M2 mobile). Registered once on the persistent HUD;
   // `input` is the mutable per-game closure var so these always drive the live handler.
   // Same gate as the keyboard path (startGame): dropped on a CPU turn or while paused (#52).
-  hud.onTouchAngle((delta) => { if (localInputAllowed()) input?.stepAngle(delta); });
-  hud.onTouchPower((delta) => { if (localInputAllowed()) input?.stepPower(delta); });
-  hud.onTouchWeapon(()     => { if (localInputAllowed()) input?.nextWeapon(); });
+  hud.onTouchAngle((delta) => { if (localInputAllowed()) matchSession.input?.stepAngle(delta); });
+  hud.onTouchPower((delta) => { if (localInputAllowed()) matchSession.input?.stepPower(delta); });
+  hud.onTouchWeapon(()     => { if (localInputAllowed()) matchSession.input?.nextWeapon(); });
   // Narrow presentation harnesses may provide an older HUD-shaped seam. The
   // production HUD always exposes both Settings callbacks; keep those fixtures
   // from becoming an unrelated integration dependency.
   hud.onAimGuide?.(()        => toggleAimGuide());
   hud.onToggleSound?.(()     => toggleSound());
-  hud.onMove((delta)        => { if (localInputAllowed()) input?.stepMove(delta); });
-  hud.onPrimaryAction(()   => { if (localInputAllowed()) input?.triggerFire(); });
+  hud.onMove((delta)        => { if (localInputAllowed()) matchSession.input?.stepMove(delta); });
+  hud.onPrimaryAction(()   => { if (localInputAllowed()) matchSession.input?.triggerFire(); });
 
   window.addEventListener('pagehide', () => {
     void hud.destroy();
