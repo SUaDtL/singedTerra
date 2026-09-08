@@ -17,6 +17,7 @@ const seams = vi.hoisted(() => ({
   inputAction: null as null | ((action: Record<string, unknown>) => void),
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererConstructed: 0,
+  rendererResets: 0,
   rendererAnimating: false,
   terminalImpactNotifies: 0,
   recorded: [] as Array<{ matchId: string; won: boolean }>,
@@ -118,7 +119,7 @@ vi.mock('./renderer/Renderer', () => ({
     isTerminalImpactAnimating() { return seams.rendererAnimating }
     currentImpactLearningCue() { return seams.rendererImpactCue }
     render() {}
-    reset() {}
+    reset() { seams.rendererResets += 1 }
     setAimGuide() {}
     setEvents(events: { onExplosion?: (radius: number, impact: unknown) => void }) {
       seams.rendererEvents = events
@@ -492,6 +493,7 @@ describe('production hot-seat progression composition', () => {
     seams.inputAction = null
     seams.rendererEvents = null
     seams.rendererConstructed = 0
+    seams.rendererResets = 0
     seams.rendererAnimating = false
     seams.terminalImpactNotifies = 0
     seams.recorded.length = 0
@@ -582,11 +584,12 @@ describe('production hot-seat progression composition', () => {
     leaveResolvers[1]!()
     await vi.waitFor(() => expect(newer.start).toHaveBeenCalledOnce())
     leaveResolvers[0]!()
-    await Promise.resolve()
+    await new Promise<void>((resolve) => { setTimeout(resolve, 0) })
 
     expect(seams.lobbyHides).toBe(1)
     expect(seams.quickOperations).toEqual([{ id: 'newer' }])
     expect(seams.rendererConstructed).toBe(1)
+    expect(seams.rendererResets).toBe(0)
     expect(newer.stop).not.toHaveBeenCalled()
   })
 
