@@ -48,6 +48,42 @@ describe('battle command state', () => {
     expect(command.commitment.commit).toEqual({ label: 'Fire', enabled: true });
   });
 
+  it('withdraws Fire when the selected finite weapon is exhausted and restores it after resupply', () => {
+    const state = stateFor('PLAYER_TURN');
+    const tank = state.tanks.find((candidate) => candidate.id === state.activePlayerId)!;
+    tank.selectedWeapon = 'heavy_missile';
+    tank.inventory.heavy_missile = { count: 1, unlimited: false };
+    expect(battleCommandStateFor(state, false, true).commitment.commit?.enabled).toBe(true);
+    tank.inventory.heavy_missile.count = 0;
+    const empty = battleCommandStateFor(state, false, true);
+    expect(empty.commitment).toEqual({
+      phase: 'decision', label: 'Out of ammo',
+      explanation: 'Choose another weapon or resupply in the Armory.', commit: null,
+    });
+    expect(empty.solution?.weapon).toBe('heavy_missile');
+    tank.inventory.heavy_missile.count = 3;
+    expect(battleCommandStateFor(state, false, true).commitment.commit?.enabled).toBe(true);
+  });
+
+  it('allows an unlimited weapon with a zero count', () => {
+    const state = stateFor('PLAYER_TURN');
+    const tank = state.tanks.find((candidate) => candidate.id === state.activePlayerId)!;
+    tank.inventory.baby_missile = { count: 0, unlimited: true };
+    expect(battleCommandStateFor(state, false, true).commitment.commit?.enabled).toBe(true);
+  });
+
+  it('keeps authority and submission reasons ahead of an empty-ammo explanation', () => {
+    const state = stateFor('PLAYER_TURN');
+    const tank = state.tanks.find((candidate) => candidate.id === state.activePlayerId)!;
+    tank.selectedWeapon = 'heavy_missile';
+    tank.inventory.heavy_missile = { count: 0, unlimited: false };
+    expect(battleCommandStateFor(state, true, true).commitment.label).toBe('Submitting shot');
+    expect(battleCommandStateFor(state, false, false, { activeIsLocal: false }).commitment.label).toBe('Awaiting remote action');
+    expect(battleCommandStateFor(state, false, true, { verifiedInputAllowed: false }).commitment.label).toBe('Input unavailable');
+    tank.ai = 'easy';
+    expect(battleCommandStateFor(state, false, true).commitment.label).toBe('Awaiting CPU action');
+  });
+
   it('gives a controllable turn an exact shot readback instead of an empty commitment panel', () => {
     const state = stateFor('PLAYER_TURN');
     state.wind = -2;

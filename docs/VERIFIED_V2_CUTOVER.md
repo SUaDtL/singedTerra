@@ -2,6 +2,12 @@
 
 The battle-console branch includes commit `209b7c6`, which changes network rules to V4 and verified deployment to contract 2 / engine 2 / ruleset 4. Publish the client only after the matching backend is ready. Merging to `main` automatically starts GitHub Pages deployment; opening a PR does not.
 
+Production observation after PR #443: the Supabase GitHub integration also applied pending migrations and deployed Edge Functions when the PR merged. This automation is configured outside the repository's Pages workflow. Before any future protocol transition, inspect that integration and complete the admission drain before merging; do not assume the backend waits for a manual CLI deployment. Recheck migration history and deployed function versions before issuing duplicate deployment commands.
+
+Live verification found two database defects that mocked Edge tests did not detect: an immediate foreign key rejected rematch pointer publication before the successor existed, and PL/pgSQL output variables made the V2 start query ambiguous. Forward migrations 018 and 019 repair these without changing replay semantics or historical results. The follow-up adds real PostgreSQL regression coverage for these boundaries. Keep V2 admissions disabled until the corrected start path is verified.
+
+Run `npm run check:database` for the isolated PostgreSQL regression suite used in CI. It uses a disposable database, preserves the immediate rematch foreign key, and exercises V2 creation, resume, expiry, and admission controls. It must never target the linked production database.
+
 This procedure follows the forward-only migration policy in [the migration conventions](../supabase/migrations/README.md). It preserves V1 records and avoids replaying V1 evidence with the V2 engine. Do not revert migration 017, delete results, or re-enable V1 after the transition.
 
 ## Observed production state

@@ -16,7 +16,65 @@ import {
 import type { StoredPlayer } from '../_shared/mod.ts'
 import { DEFAULT_TANK_LOADOUT } from '../_shared/mod.ts'
 
+// The production FK is immediate: publishing a pointer before its room exists
+// fails with 23503. This boundary model rejects that order rather than letting
+// a fluent mock hide the database invariant.
+Deno.test('rematch publishes an existing successor with its seat credentials', async () => {
+  const roomId = '00000000-0000-4000-8000-000000000001'
+  const oldRoom = { id: roomId, options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rulesetVersion: 4 },
+    players: [{ id: 'uid-a', name: 'Ana', color: '#f00', ready: true }] }
+  let successor: Record<string, unknown> | null = null
+  let seatsCopied = false
+  let pointer: string | null = null
+  const query = {
+    eq: () => query, neq: () => query, is: () => query,
+    maybeSingle: () => Promise.resolve({ data: oldRoom, error: null }),
+    select: () => Promise.resolve({ data: null, error: { code: '23503', message: 'successor does not exist' } }),
+  }
+  const supabase = {
+    from: () => ({ select: (columns: string) => columns === '*' ? query : {
+      eq: () => ({ neq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
+    }, update: () => query }),
+    rpc: (_name: string, args: Record<string, unknown>) => {
+      successor = { id: args.p_new_room_id, code: args.p_code, seed: args.p_seed,
+        options: args.p_options, players: args.p_players }
+      seatsCopied = true
+      pointer = args.p_new_room_id as string
+      return Promise.resolve({ data: pointer, error: null })
+    },
+  }
+  const response = await handleRestartGame({ roomId, playerId: 'uid-a' }, undefined,
+    { supabase: supabase as never, verifySeat: () => Promise.resolve(true) })
+  assertEquals(response.status, 200)
+  assertEquals(seatsCopied, true)
+  assertEquals(pointer, (successor as Record<string, unknown> | null)?.id)
+})
+
 const NOW = 1_700_000_000_000
+
+for (const authenticated of [false, true]) {
+  Deno.test(`rematch ${authenticated ? 'contains a transaction failure' : 'refuses an invalid seat before the transaction'}`, async () => {
+    let rpcCalls = 0
+    const query = {
+      eq: () => query, neq: () => query,
+      maybeSingle: () => Promise.resolve({ data: {
+        options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rulesetVersion: 4 },
+        players: [{ id: 'uid-a', name: 'Ana', color: '#f00', ready: true }],
+      }, error: null }),
+    }
+    const supabase = {
+      from: () => ({ select: (columns: string) => columns === '*' ? query : {
+        eq: () => ({ neq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
+      } }),
+      rpc: () => { rpcCalls++; return Promise.resolve({ data: null, error: { message: 'private database detail' } }) },
+    }
+    const response = await handleRestartGame({ roomId: '00000000-0000-4000-8000-000000000001', playerId: 'uid-a' },
+      undefined, { supabase: supabase as never, verifySeat: () => Promise.resolve(authenticated) })
+    assertEquals(response.status, authenticated ? 500 : 403)
+    assertEquals(rpcCalls, authenticated ? 1 : 0)
+    assertEquals((await response.text()).includes('private database detail'), false)
+  })
+}
 
 Deno.test('buildRematchPlayers preserves the ai flag on bot seats', () => {
   const players: StoredPlayer[] = [
@@ -265,6 +323,10 @@ Deno.test('handleRestartGame persists normalized walls through the successor ins
     }
     const supabase = {
       from: (table: string) => table === 'rooms' ? rooms : roomSeats,
+      rpc: (_name: string, args: Record<string, unknown>) => {
+        insertedRoom = { options: args.p_options }
+        return Promise.resolve({ data: args.p_new_room_id, error: null })
+      },
     }
 
     const response = await handleRestartGame(

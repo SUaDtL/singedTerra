@@ -298,6 +298,13 @@ export type Database = {
     };
     Views: {};
     Functions: {
+      create_room_rematch: {
+        Args: {
+          p_room_id: string; p_player_id: string; p_new_room_id: string;
+          p_code: string; p_seed: number; p_options: StoredOptions; p_players: StoredPlayer[];
+        };
+        Returns: string;
+      };
       apply_room_reap: {
         Args: { p_dead: string[]; p_trims: RoomReapTrim[] };
         Returns: undefined;

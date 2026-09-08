@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test';
-import { gotoRunningGame } from './support';
+import { assertFireControlHeight, gotoRunningGame, isCompact } from './support';
 import { STORE_CATALOG } from '../client/src/ui/storeCatalog';
 import { WEAPONS, ACCESSORIES } from '../shared/src/engine/WeaponSystem';
 
@@ -39,6 +39,8 @@ test.describe('accepted battle console rendering guardrails', () => {
   });
 
   test('semantic controls remain fitted, reachable and paired with inert Pixi', async ({ page }) => {
+    // Run the publication geometry gate before merge as well as after deploy.
+    await assertFireControlHeight(page, await isCompact(page));
     const surface = page.locator('[data-battle-console-surface]');
     const canvas = page.locator('[data-battle-console-pixi]');
     await expect(canvas).toHaveAttribute('aria-hidden', 'true');

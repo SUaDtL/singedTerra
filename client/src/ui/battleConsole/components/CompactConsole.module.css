@@ -82,5 +82,8 @@
   }
   .weapon .control, .fire .control { height: 160px; font-size: 34px; overflow-wrap: anywhere; }
   .weapon small, .fire small, .fire strong, .wind output { font-size: 34px; }
+  .fire button:first-child { padding: 3px; gap: 0; }
+  .fire strong { font-size: 32px; line-height: 1; }
+  .fire small { font-size: 29px; line-height: 1; white-space: normal; }
   .wind { text-align: center; }
 }
