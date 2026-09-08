@@ -11,6 +11,8 @@
 
 import type { StoredPlayer } from '../_shared/mod.ts'
 import { ACCESSORY_TYPES } from '../_shared/mod.ts'
+import { WEAPON_TYPES } from './weaponTypes.ts'
+export { WEAPON_TYPES } from './weaponTypes.ts'
 
 // ---------------------------------------------------------------------------
 // Re-declare NetworkAction locally (supabase/functions/ must NOT import from
@@ -57,10 +59,6 @@ export type NetworkAction =
 // ---------------------------------------------------------------------------
 // Known-weapon allowlist
 //
-// MUST match the `WeaponType` union / `WEAPONS` keys in
-// shared/src/engine/WeaponSystem.ts. Re-declared here because the Deno referee
-// must not import shared/ (ADR-0005) — accepted duplication like NetworkAction.
-//
 // Why the referee validates this: a fire/buy weapon string is committed verbatim
 // to the permanent action log. If an UNKNOWN weapon string were accepted, every
 // client replaying that row would hit `getWeapon(unknown)` and crash on the
@@ -69,27 +67,6 @@ export type NetworkAction =
 // an older client). Rejecting unknown weapons at the boundary keeps a bad string
 // out of the canonical log entirely.
 // ---------------------------------------------------------------------------
-
-export const WEAPON_TYPES: ReadonlySet<string> = new Set([
-  'baby_missile',
-  'missile',
-  'heavy_missile',
-  'baby_nuke',
-  'nuke',
-  'dirt_bomb',
-  'bouncing_betty',
-  'funky_bomb',
-  'napalm',
-  'cluster_bomb',
-  'mirv',
-  'deaths_head',
-  'riot_bomb',
-  'hot_napalm',
-  'sandhog',
-  'tracer',
-  'shield',
-  'heavy_shield',
-])
 
 // ---------------------------------------------------------------------------
 // endsTurn
