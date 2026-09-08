@@ -218,46 +218,10 @@ export async function handleRestartGame(
     return json({ error: 'ruleset_unavailable' }, 409)
   }
 
-  // --- Atomic claim ---------------------------------------------------------
-  // Generate the successor id up front, then claim the old room's pointer with a
-  // conditional UPDATE (only when still NULL). The UPDATE's returned rows are the
-  // lock: exactly one concurrent caller flips NULL -> newRoomId and "wins" the
-  // right to create the room; everyone else (the loser, or a double-click /
-  // retry) reads the already-set pointer and returns that same successor. This
-  // guarantees both players converge on ONE room with no orphan creation.
+  // The service-only RPC serializes contenders and publishes only a complete
+  // successor, preserving the immediate rooms.rematch_room_id foreign key.
   const newRoomId = crypto.randomUUID()
 
-  const { data: claimed, error: claimError } = await supabase
-    .from('rooms')
-    .update({ rematch_room_id: newRoomId })
-    .eq('id', roomId)
-    .is('rematch_room_id', null)
-    .select('id')
-
-  if (claimError) {
-    console.error('restart_game: claim error', { roomId, playerId, error: safeErrorMessage(claimError) })
-    return json({ error: 'Failed to claim rematch' }, 500)
-  }
-
-  if (!claimed || claimed.length === 0) {
-    // Lost the race (or pointer was already set on a prior call): return the
-    // winner's successor room so this client migrates to the same place.
-    const { data: refetched } = await supabase
-      .from('rooms')
-      .select('rematch_room_id')
-      .eq('id', roomId)
-      .maybeSingle()
-    const existingId = refetched?.rematch_room_id as string | null | undefined
-    if (existingId) {
-      const info = await fetchRematchInfo(supabase, existingId)
-      if (info) {
-        return json({ ok: true, ...info }, 200)
-      }
-    }
-    return json({ error: 'Rematch pointer unresolved' }, 500)
-  }
-
-  // --- We own the claim: build the successor room ---------------------------
   const nowMs = Date.now()
 
   const seedBuf = new Uint32Array(1)
@@ -285,60 +249,27 @@ export async function handleRestartGame(
     if (!existing) { code = candidate; break }
   }
   if (!code) {
-    // Could not allocate a code — release the claim so a retry can succeed.
-    await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
     return json({ error: 'Could not generate unique room code' }, 500)
   }
 
-  const { error: insertError } = await supabase
-    .from('rooms')
-    .insert({
-      id: newRoomId,
-      code,
-      seed,
-      status: 'active',
-      options: oldOptions,
-      players: newPlayers,
-      active_player_index: 0,
-      turn: 0,
-      winner: null,
-    })
-
-  if (insertError) {
-    console.error('restart_game: insert error', { roomId, playerId, newRoomId, error: safeErrorMessage(insertError) })
-    // Roll back the claim so the pointer never dangles at a room that does not exist.
-    await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
+  const { data: successorId, error: rematchError } = await supabase.rpc('create_room_rematch', {
+    p_room_id: roomId,
+    p_player_id: playerId,
+    p_new_room_id: newRoomId,
+    p_code: code,
+    p_seed: seed,
+    p_options: oldOptions,
+    p_players: newPlayers,
+  })
+  if (rematchError || typeof successorId !== 'string' || !UUID_REGEX.test(successorId)) {
+    console.error('restart_game: transaction failed', { roomId, playerId, code: 'rematch_failed' })
     return json({ error: 'Failed to create rematch room' }, 500)
   }
-
-  // Copy the old room's seat tokens forward so every human keeps their credential
-  // (seat ids are preserved across rematch by buildRematchPlayers). Bot seats never
-  // had a room_seats row, so there is nothing to copy for them.
-  const { data: oldSeats, error: oldSeatsError } = await supabase
-    .from('room_seats')
-    .select('seat_id, token')
-    .eq('room_id', roomId)
-
-  if (oldSeatsError) {
-    console.error('restart_game: old seats fetch error', { roomId, playerId, newRoomId, error: safeErrorMessage(oldSeatsError) })
-    await supabase.from('rooms').delete().eq('id', newRoomId)
-    await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
-    return json({ error: 'Failed to create rematch room' }, 500)
+  if (successorId !== newRoomId) {
+    const existing = await fetchRematchInfo(supabase, successorId)
+    return existing ? json({ ok: true, ...existing }, 200)
+      : json({ error: 'Rematch pointer unresolved' }, 500)
   }
-
-  if (oldSeats && oldSeats.length > 0) {
-    const { error: seatCopyError } = await supabase
-      .from('room_seats')
-      .insert(oldSeats.map((s: { seat_id: string; token: string }) => ({ room_id: newRoomId, seat_id: s.seat_id, token: s.token })))
-
-    if (seatCopyError) {
-      console.error('restart_game: seat copy error', { roomId, playerId, newRoomId, error: safeErrorMessage(seatCopyError) })
-      await supabase.from('rooms').delete().eq('id', newRoomId)
-      await supabase.from('rooms').update({ rematch_room_id: null }).eq('id', roomId).eq('rematch_room_id', newRoomId)
-      return json({ error: 'Failed to create rematch room' }, 500)
-    }
-  }
-
   const info = projectCreatedRematchInfo(newRoomId, code, seed, oldOptions, newPlayers)
 
   return json({ ok: true, ...info }, 200)

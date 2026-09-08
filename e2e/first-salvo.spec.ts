@@ -102,7 +102,9 @@ test.describe('First Salvo semantic console contract', () => {
           event.preventDefault(); // Require the native touch path, not compatibility mouse events.
         }, { capture: true, once: true });
       });
-      await page.touchscreen.tap(x, y);
+      // Resolve the canvas origin at dispatch after its post-briefing layout
+      // settles, while still sending a native touch contact.
+      await canvas.tap({ position: { x: bounds!.width * 0.55, y: bounds!.height * 0.36 } });
       await expect(canvas).toHaveAttribute('data-last-pointer-type', 'touch');
     } else await page.mouse.click(x, y);
     await expect.poll(() => readAimProbe(page)).toMatchObject({

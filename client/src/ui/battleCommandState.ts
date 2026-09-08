@@ -186,6 +186,13 @@ export function battleCommandStateFor(
     });
   }
   if (state.phase === 'PLAYER_TURN' && tank !== null && canControl && verifiedInputAllowed) {
+    const ammo = tank.inventory[tank.selectedWeapon];
+    if (!ammo.unlimited && ammo.count <= 0) {
+      return projectedState(state, tank, 'Your firing decision', {
+        phase: 'decision', label: 'Out of ammo',
+        explanation: 'Choose another weapon or resupply in the Armory.', commit: null,
+      });
+    }
     const solution = solutionFor(state, tank);
     return projectedState(state, tank, 'Your firing decision', {
       phase: 'decision', label: 'Fire ready',

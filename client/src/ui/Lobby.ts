@@ -1578,7 +1578,11 @@ export class Lobby {
         padding: 3px 2px;
         text-align: left;
       }
-      #app:not(.is-compact) #lobby .lobby-garage__slot { flex: 1 1 auto; }
+      #app:not(.is-compact) #lobby .lobby-garage__slot {
+        flex: 1 0 auto;
+        min-width: max-content;
+      }
+      #app:not(.is-compact) #lobby .lobby-garage__slot strong { padding-right: 4px; }
       #lobby .lobby-garage__slot span,
       #lobby .lobby-garage__slot strong {
         display: block;

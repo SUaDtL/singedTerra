@@ -19,6 +19,12 @@ test.describe('@live production render smoke', () => {
     await gotoRunningGame(page);
     const compact = await isCompact(page);
     await assertFireControlHeight(page, compact);
+    // Match is a drawer in standard/touch layouts. Open it so the retained
+    // child-layout guard measures a visible ledger rather than passing vacuously.
+    if (!await page.locator('#hud').isVisible()) {
+      await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
+    }
+    await expect(page.locator('#hud')).toBeVisible();
     const violations = await findHudLayoutViolations(page);
     expect(
       violations,

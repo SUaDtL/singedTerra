@@ -208,6 +208,7 @@ type _TableKeysAreExact = AssertExact<
 type _RpcKeysAreExact = AssertExact<
   keyof Functions,
   | "apply_room_reap"
+  | "create_room_rematch"
   | "bump_rate_limit"
   | "submit_room_action"
   | "start_verified_deployment"
@@ -236,6 +237,12 @@ type _ApplyRoomReapArgsAreExact = AssertExact<
   Functions["apply_room_reap"]["Args"],
   { p_dead: string[]; p_trims: ExpectedRoomReapTrim[] }
 >;
+type _CreateRoomRematchArgsAreExact = AssertExact<
+  Functions["create_room_rematch"]["Args"],
+  { p_room_id: string; p_player_id: string; p_new_room_id: string; p_code: string;
+    p_seed: number; p_options: ExpectedStoredOptions; p_players: ExpectedStoredPlayer[] }
+>;
+type _CreateRoomRematchReturnsAreExact = AssertExact<Functions["create_room_rematch"]["Returns"], string>;
 type _ApplyRoomReapReturnsAreExact = AssertExact<
   Functions["apply_room_reap"]["Returns"],
   undefined
@@ -605,6 +612,8 @@ type _RoomSeatsRelationshipMustMatchEveryLiteral = AssertTrue<
 type _AllExactContracts = AssertAll<{
   tableKeys: _TableKeysAreExact;
   rpcKeys: _RpcKeysAreExact;
+  createRoomRematchArgs: _CreateRoomRematchArgsAreExact;
+  createRoomRematchReturns: _CreateRoomRematchReturnsAreExact;
   viewKeys: _ViewKeysAreExact;
   enumKeys: _EnumKeysAreExact;
   compositeTypeKeys: _CompositeTypeKeysAreExact;

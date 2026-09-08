@@ -206,11 +206,71 @@ export async function findHudLayoutViolations(page: Page): Promise<LayoutViolati
  * boundingBox heights shrink with it) but still far above a clipped console.
  */
 export async function assertFireControlHeight(page: Page, compact: boolean): Promise<void> {
-  const box = await page.locator('#battle-rail .st-hud__console-solution').boundingBox();
+  const fire = page.locator('#battle-rail button[data-battle-console-action="fire"]');
+  await expect(fire).toBeVisible();
+  const box = await fire.boundingBox();
   expect(box, 'Fire Control should have a rendered box').not.toBeNull();
   const floor = compact ? 24 : 40;
   expect(
     box!.height,
     `Fire Control height ${box!.height.toFixed(1)}px should clear ${floor}px (crush guard)`,
   ).toBeGreaterThan(floor);
+  // The replacement console has one semantic Fire button and three live DOM
+  // instruments. Test their actual rendered ink and bounds, not retired art bays.
+  const geometry = await page.locator('[data-battle-console-surface]').evaluate((surface) => {
+    const owner = surface.getBoundingClientRect();
+    const rail = document.getElementById('battle-rail')!.getBoundingClientRect();
+    const selectors = [
+      'button[data-battle-console-action="fire"]',
+      '[data-battle-console-text-key="commander.health"]',
+      '[data-semantic-key="node:span:100 fuel remaining:19"]',
+      '[data-semantic-key="node:output:Angle:43"]',
+      '[data-semantic-key="node:output:Power:52"]',
+      '[data-semantic-key="node:output:Wind:58"]',
+    ];
+    const fits = (inner: DOMRect, outer: DOMRect) => inner.left >= outer.left - 1
+      && inner.top >= outer.top - 1 && inner.right <= outer.right + 1 && inner.bottom <= outer.bottom + 1;
+    return {
+      inRail: fits(owner, rail),
+      inViewport: owner.left >= -1 && owner.top >= -1 && owner.right <= innerWidth + 1 && owner.bottom <= innerHeight + 1,
+      coarse: matchMedia('(pointer: coarse)').matches,
+      statusFont: (() => {
+        const status = surface.querySelector<HTMLElement>('[data-battle-console-action="fire"] small');
+        if (!status) return null;
+        return Number.parseFloat(getComputedStyle(status).fontSize)
+          * status.getBoundingClientRect().width / status.offsetWidth;
+      })(),
+      controls: selectors.map(selector => {
+        const element = surface.querySelector<HTMLElement>(selector)!;
+        const bounds = element.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const ink = range.getBoundingClientRect();
+        return {
+          selector, width: bounds.width, height: bounds.height, bounds: bounds.toJSON(), ink: ink.toJSON(),
+          contained: fits(bounds, owner),
+          // Range includes a font's ascent/descent beyond a tight output line
+          // box. Guard horizontal ink and real scroll clipping for readouts;
+          // the full Fire label must fit its actual button on both axes.
+          inkContained: selector.startsWith('button') ? fits(ink, bounds)
+            : ink.left >= bounds.left - 1 && ink.right <= bounds.right + 1 && fits(ink, owner),
+          unclipped: element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1,
+        };
+      }),
+    };
+  });
+  expect(geometry.inRail, 'Console stays inside the battle rail').toBe(true);
+  expect(geometry.inViewport, 'Console stays inside the viewport').toBe(true);
+  for (const control of geometry.controls) {
+    expect(control.width, control.selector).toBeGreaterThan(4);
+    expect(control.height, control.selector).toBeGreaterThan(4);
+    expect(control.contained, `${control.selector} stays in its console`).toBe(true);
+    expect(control.inkContained, `${control.selector} ink stays in its cell: ${JSON.stringify(control)}`).toBe(true);
+    expect(control.unclipped, `${control.selector} content is not clipped`).toBe(true);
+  }
+  if (geometry.coarse) {
+    expect(box!.width, 'Fire physical touch width').toBeGreaterThanOrEqual(44);
+    expect(box!.height, 'Fire physical touch height').toBeGreaterThanOrEqual(44);
+    if (geometry.statusFont !== null) expect(geometry.statusFont, 'Fire status physical font').toBeGreaterThanOrEqual(12);
+  }
 }
