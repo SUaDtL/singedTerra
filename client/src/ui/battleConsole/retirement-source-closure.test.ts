@@ -72,7 +72,11 @@ const embeddedCss = cssInitializer && ts.isNoSubstitutionTemplateLiteral(cssInit
 const hudWithoutEmbeddedCss = cssMember
   ? `${hudSource.slice(0, cssMember.getFullStart())}${hudSource.slice(cssMember.end)}`
   : hudSource;
-const helperSources = ['client/src/ui/hudIcons.ts', 'client/src/ui/weaponIcons.ts']
+const helperSources = [
+  'client/src/ui/hudIcons.ts',
+  'client/src/ui/weaponIcons.ts',
+  'client/src/ui/RoundOverView.ts',
+]
   .map((path) => readFileSync(resolve(repositoryRoot, path), 'utf8'))
   .join('\n');
 const liveLegacyClasses = legacyClassTokens(`${hudWithoutEmbeddedCss}\n${helperSources}`);
