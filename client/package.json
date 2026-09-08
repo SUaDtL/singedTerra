@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "@singedterra/shared": "*",
-    "@supabase/supabase-js": "2.111.0",
-    "lucide": "1.33.0",
-    "pixi.js": "8.20.0",
+    "@supabase/supabase-js": "2.115.0",
+    "lucide": "1.41.0",
+    "pixi.js": "8.20.1",
     "preact": "10.29.8"
   },
   "devDependencies": {

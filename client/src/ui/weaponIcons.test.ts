@@ -51,6 +51,10 @@ function silhouetteSignature(icon: SVGElement): string {
   }).join('|');
 }
 
+function circleDotSignature(icon: SVGElement): string[] {
+  return silhouetteSignature(icon).split('|').sort();
+}
+
 describe('weapon glyph catalog', () => {
   it('maps every weapon to stable decorative family geometry', () => {
     for (const [weapon, family] of Object.entries(EXPECTED_FAMILIES) as [
@@ -66,9 +70,14 @@ describe('weapon glyph catalog', () => {
       expect(icon.getAttribute('aria-hidden')).toBe('true');
       expect(icon.getAttribute('focusable')).toBe('false');
       expect(icon.children.length).toBeGreaterThan(0);
-      expect(silhouetteSignature(icon)).toContain(
-        EXPECTED_SILHOUETTES[family]!,
-      );
+      const expectedSilhouette = EXPECTED_SILHOUETTES[family]!;
+      if (family === 'bounce' || family === 'tracer') {
+        // CircleDot is two disjoint, stroke-only circles with the same center.
+        // Their DOM order does not affect the painted icon.
+        expect(circleDotSignature(icon)).toEqual(expectedSilhouette.split('|').sort());
+      } else {
+        expect(silhouetteSignature(icon)).toContain(expectedSilhouette);
+      }
     }
   });
 });
