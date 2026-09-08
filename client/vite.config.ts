@@ -113,6 +113,7 @@ export default defineConfig({
   // per-refactor-surface by /ca:refactor, not globally here.
   test: {
     environment: 'jsdom',
+    css: { include: /(?:HUD|Lobby)\.css(?:\?|$)/ },
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
