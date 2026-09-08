@@ -19,7 +19,9 @@ try {
   docker(['run', '--detach', '--name', name, '--network', 'none', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', image]);
   started = true;
   for (let attempt = 0; ; attempt++) {
-    try { docker(['exec', name, 'pg_isready', '-U', 'postgres']); break; }
+    // The image's initialization server accepts Unix sockets before shutting
+    // down. Only the final server accepts TCP on the isolated loopback device.
+    try { docker(['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-t', '1'], { timeout: 5000 }); break; }
     catch (error) {
       if (attempt >= 29) throw error;
       await new Promise((done) => setTimeout(done, 1000));
