@@ -90,6 +90,25 @@ Inside the shared engine:
 
 `shared/` must not import from `client/`.
 
+## Extending weapons and network ordering
+
+A normal data-driven weapon starts in `shared/src/engine/WeaponSystem.ts`, but
+the complete roster also appears in the tank's starting inventory, the store
+catalog, and exhaustive renderer/UI maps. Run `npm run check` after changing
+the roster; its `weapon_contract.mjs` harness verifies that the shared catalog and the
+`submit_action` referee accept the same weapon names. New flight state also
+needs coverage in `GameEngine.clone()` and deterministic replay harnesses. If
+the change alters canonical outcomes, deliver it through a reviewed version
+transition rather than changing active match semantics in place.
+
+`client/src/client/OrderedActionSession.ts` owns the canonical sequence cursor,
+pending action buffer, replay state, contiguous drain, and disposal boundary.
+`client/src/client/NetworkClient.ts` owns Supabase queries and Realtime channels,
+then passes committed rows to that owner and applies admitted actions to the
+engine. Add gap and drain-order tests to `OrderedActionSession.test.ts`; add
+reconnect, overlapping fetch, and post-stop transport regressions to
+`NetworkClient.lockstep.test.ts`.
+
 ## Supabase
 
 The repository contains migrations and Edge Functions, not a Node game server.

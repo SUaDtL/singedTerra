@@ -41,7 +41,7 @@ interface Captured {
 }
 
 /** Minimal SupabaseClient stand-in (see NetworkClient.initializeGap.test.ts for the shape). */
-function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient; captured: Captured } {
+function makeFakeSupabase(results: Array<QueryResult | Promise<QueryResult>>): { supabase: SupabaseClient; captured: Captured } {
   const state = { idx: 0 };
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'eq', 'gte', 'order', 'abortSignal']) builder[m] = () => builder;
@@ -293,6 +293,45 @@ describe('NetworkClient — deterministic lockstep core', () => {
     // replay, a live/resync apply is NOT ticked to completion here — the RAF loop
     // (start(), not called in this unit test) would advance the turn to p2.
     expect(client.getState().phase).toBe('FIRING');
+  });
+
+  it('merges a late older resync after a newer resync completes empty', async () => {
+    let resolveOlder!: (result: QueryResult) => void;
+    let resolveNewer!: (result: QueryResult) => void;
+    const older = new Promise<QueryResult>((resolve) => { resolveOlder = resolve; });
+    const newer = new Promise<QueryResult>((resolve) => { resolveNewer = resolve; });
+    const { supabase, captured } = makeFakeSupabase([
+      { data: [], error: null }, older, newer,
+    ]);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    await client.initialize();
+    captured.statusCb?.('SUBSCRIBED');
+    captured.statusCb?.('CHANNEL_ERROR');
+    captured.statusCb?.('SUBSCRIBED');
+
+    resolveNewer({ data: [], error: null });
+    await settle();
+    resolveOlder({ data: [row(0, fire()).new], error: null });
+    await settle();
+
+    expect(client.getState().phase).toBe('FIRING');
+  });
+
+  it('ignores a resync response that arrives after stop', async () => {
+    let resolveResync!: (result: QueryResult) => void;
+    const resync = new Promise<QueryResult>((resolve) => { resolveResync = resolve; });
+    const { supabase, captured } = makeFakeSupabase([
+      { data: [], error: null }, resync,
+    ]);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    await client.initialize();
+    captured.statusCb?.('SUBSCRIBED');
+    client.stop();
+    resolveResync({ data: [row(0, fire()).new], error: null });
+    await settle();
+
+    expect(client.getState().phase).toBe('PLAYER_TURN');
+    expect(client.getState().turn).toBe(0);
   });
 
   it('sendAction(fire) POSTs submit_action and does NOT apply the shot locally', async () => {
