@@ -22,7 +22,7 @@ import { claimCompletedMatch } from './matchClaim';
 import { fastForwardTicks } from './fastForward';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 import { clearSession } from '../lib/sessionDescriptor';
-import { normalizeNetworkRulesetVersion } from './networkRuleset';
+import { CURRENT_NETWORK_RULESET_VERSION, normalizeNetworkRulesetVersion } from './networkRuleset';
 import { isQuickChatKey, parseQuickChatPayload, type QuickChatKey } from './quickChat';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
@@ -870,6 +870,11 @@ export class NetworkClient implements GameClient {
       color: string;
       loadout?: TankLoadout;
     }>;
+    if (normalizeNetworkRulesetVersion(opts.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
+      console.warn('NetworkClient.handleRematch: incompatible successor ruleset', newRoomId);
+      this._rematchHandled = false;
+      return;
+    }
     listener({
       roomId:  data.id as string,
       code:    data.code as string,

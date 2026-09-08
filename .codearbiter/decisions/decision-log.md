@@ -523,3 +523,54 @@ ADR-0016 governs the diagnostics runner, modal view, lobby activation seam, Auth
 **Corrects:** DECISION-0019 record separation only
 
 DECISION-0019 was appended without a separating blank line or terminal newline. Its text and semantics remain authoritative and unchanged; this append-only correction records the formatting defect without rewriting audit history.
+
+
+## DECISION-0020 - ADR-0017 - Adopt a hybrid PixiJS HUD compositor with semantic DOM controls
+
+**Date:** 2026-08-21
+**Status:** accepted
+**Supersedes:** DECISION-0004
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly approved the PixiJS and Sharp hybrid after removing prototype-era dependency restrictions)
+**Decision category:** architecture / UI / dependency boundary
+**Artifact-section-hash:** cc296acbf661fb1c1cb655ad9274bf2e1d33d7247c31d6332c75c56dfc6a8929
+
+### Variance summary
+- **Artifact position:** ADR-0004 requires every HUD visual to remain HTML/CSS and prohibits canvas-rendered UI.
+- **Scaffold position:** The approved product-stage design uses PixiJS for non-interactive HUD visuals, Sharp for deterministic assets, and DOM for semantics.
+- **Status type:** same-level-conflict-resolution
+
+### Decision
+Adopt PixiJS as a lazy-loaded, non-interactive battle-HUD visual compositor and Sharp as the deterministic asset-build dependency. Keep gameplay-world Canvas 2D rendering and live DOM semantics, focus, text, input, dialogs, and callbacks. Supersede only ADR-0004's visual-rendering and implicit no-dependency restrictions.
+
+### SMARTS rationale
+Maintainable and Testable favor one typed socket/layout model over the current overlapping CSS cascade. Reliable and Securable preserve DOM input, accessibility, and gameplay authority while making Pixi visual-only and fail-soft. Available favors lazy loading and static Vite hosting; Scalable is adequate because three authored layout modes replace per-resolution patches. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0017 governs the battle HUD compositor, layout manifest, asset pipeline, Pixi/DOM layering, dependency pins, responsive modes, and component-by-component migration. CONTEXT, tech-stack, coding standards, and the active resume manifest must stop presenting CSS-only rendering as a live constraint.
+
+---
+
+## DECISION-0021 - ADR-0018 - Replace battle-console semantic ownership with one Preact tree
+
+**Date:** 2026-08-23
+**Status:** accepted
+**Supersedes:** DECISION-0020
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly approved spec revision 15 and plan revision 7, including the governing ownership replacement)
+**Decision category:** architecture / UI ownership / lifecycle
+**Artifact-section-hash:** 6a41e9a6b3abfe23179c3cb6978d9e6269688ce67e78717bdde751dc3ce75094
+
+### Variance summary
+- **Artifact position:** The approved integrated-console specification requires one Preact-owned semantic tree, typed callback-free presentation state and intents, complete-console migration, and PixiJS only as a non-authoritative visual compositor.
+- **Scaffold position:** ADR-0017 preserved imperative callback and node ownership while migrating component-by-component.
+- **Status type:** same-level-conflict-resolution
+
+### Decision
+Replace the in-scope imperative battle-console owner with one Preact semantic tree. The controller/domain layer produces `BattleConsolePresentationState` and consumes `BattleConsoleIntent`; Preact owns semantic rendering, portals, focus, and lifecycle, while Canvas 2D retains gameplay-world authority and PixiJS remains lazy, visual-only, non-interactive, and fail-soft. Supersede ADR-0017 only where it preserves raw DOM identity, callback ownership, or component-by-component dual ownership; retain its engine, accessibility, asset, layout, hosting, and dependency boundaries.
+
+### SMARTS rationale
+Maintainable removes selector and raw-node coupling behind typed state and intent contracts. Reliable establishes one mount/update/destroy lifecycle and one semantic source of truth. Securable keeps behavior out of styling selectors and non-semantic renderers. Testable makes ownership, focus, input arbitration, portal cleanup, and fail-soft behavior explicit and independently verifiable. Scalable and Available preserve responsive typed layout, battle-only lazy loading, static hosting, and a complete semantic fallback. Recommendation strength: strong.
+
+### Implementation implication
+ADR-0018 governs the in-scope battle-console semantic owner, typed presentation/intent boundary, Preact root and portals, lifecycle and focus behavior, component-scoped styles, Pixi/DOM projection, dependency/toolchain changes, and full-console acceptance. The approved spec and plan remain the implementation authority; the ADR artifact remains proposed until its exact bytes receive the separate direct maintainer approval required by G1-01.
+
+---

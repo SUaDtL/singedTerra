@@ -40,8 +40,6 @@ import {
 } from '../ui/lobbyValidation';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
-  LEGACY_NETWORK_RULESET_VERSION,
-  TERRAIN_HAZARD_NETWORK_RULESET_VERSION,
 } from './networkRuleset';
 
 /** Room visibility for created online rooms. */
@@ -213,9 +211,7 @@ export class LobbyTransport {
       playerName: params.playerName,
       color: params.color,
       loadout: params.loadout,
-      rulesetVersion: params.hazards === 'lava'
-        ? TERRAIN_HAZARD_NETWORK_RULESET_VERSION
-        : CURRENT_NETWORK_RULESET_VERSION,
+      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
       ...(params.bots.length > 0 ? { bots: params.bots } : {}),
       options: {
         maxPlayers: params.maxPlayers,
@@ -248,21 +244,9 @@ export class LobbyTransport {
         rulesetVersion,
       });
 
-    const result = await request(CURRENT_NETWORK_RULESET_VERSION);
-    const requiredRoomVersion = result.status === 409
-      && result.data?.error === 'ruleset_mismatch'
-      ? result.data.requiredRulesetVersion
-      : undefined;
-
-    // The referee checks this mismatch before roster mutation. A single explicit
-    // v1 retry lets a freshly deployed browser enter a still-open legacy lobby
-    // without ever downgrading a new v2 room or retrying an unrelated failure.
-    return requiredRoomVersion !== CURRENT_NETWORK_RULESET_VERSION
-      && (requiredRoomVersion === LEGACY_NETWORK_RULESET_VERSION
-      || requiredRoomVersion === 2
-      || requiredRoomVersion === TERRAIN_HAZARD_NETWORK_RULESET_VERSION)
-      ? request(requiredRoomVersion)
-      : result;
+    // A post-floor client must never create a GameEngine from a legacy room.
+    // The referee returns incompatibility before roster mutation.
+    return request(CURRENT_NETWORK_RULESET_VERSION);
   }
 
   listRooms(): Promise<EdgeResult<ListRoomsResponse>> {

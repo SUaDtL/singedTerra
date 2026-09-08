@@ -76,7 +76,7 @@ test.describe('impact monitor', () => {
     });
 
     await gotoRunningGame(page);
-    await page.locator('.st-hud__primary-action').click();
+    await page.locator('button[data-battle-console-action="fire"]').click();
 
     await expect.poll(async () => page.evaluate(() => (
       (window as typeof window & {

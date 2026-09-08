@@ -10,6 +10,7 @@ export interface LobbyJoinViewOptions {
   onJoin: () => void;
   onCreate: () => void;
   onBrowse: () => void;
+  listenerSignal?: AbortSignal;
 }
 
 export function buildLobbyJoinView(options: LobbyJoinViewOptions): HTMLElement {
@@ -42,7 +43,7 @@ export function buildLobbyJoinView(options: LobbyJoinViewOptions): HTMLElement {
   codeInput.placeholder = 'XXXX';
   codeInput.addEventListener('input', () => {
     codeInput.value = options.onCodeInput(codeInput.value);
-  });
+  }, { signal: options.listenerSignal });
   codeField.append(codeLabel, codeInput);
   setup.append(codeField, options.nameColor, options.garage, options.status);
 
@@ -51,11 +52,11 @@ export function buildLobbyJoinView(options: LobbyJoinViewOptions): HTMLElement {
   joinButton.className = 'lobby-btn primary';
   joinButton.textContent = options.busy ? 'Joining...' : 'Join Room';
   joinButton.disabled = options.busy;
-  joinButton.addEventListener('click', options.onJoin);
+  joinButton.addEventListener('click', options.onJoin, { signal: options.listenerSignal });
 
   root.append(brief, setup, buildOnlineRouteActions(joinButton, [
     { id: 'create', label: 'Create a room', onClick: options.onCreate },
     { id: 'browse', label: 'Browse public rooms', onClick: options.onBrowse },
-  ]));
+  ], options.listenerSignal));
   return root;
 }

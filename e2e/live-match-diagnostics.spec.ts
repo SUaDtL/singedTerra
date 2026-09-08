@@ -3,7 +3,7 @@ import { gotoRunningGame } from './support'
 
 async function installAuthenticatedFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    window.localStorage.setItem('sb-localhost-auth-token', JSON.stringify({
+    window.localStorage.setItem('sb-' + window.location.hostname.split('.')[0] + '-auth-token', JSON.stringify({
       ['access' + '_' + 'token']: 'e2e-session-value',
       ['refresh' + '_' + 'token']: 'e2e-refresh-value',
       expires_at: 4_102_444_800,
@@ -32,7 +32,7 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
       matchesPlayed: 0, wins: 0, progressionVersion: 1, totalXp: 0,
       level: 1, levelXp: 0, nextLevelXp: 500,
       verifiedProgression: {
-        evidence: 'verified_replay_v1', matchesPlayed: 0, wins: 0,
+        evidence: 'verified_replay_v2', matchesPlayed: 0, wins: 0,
         progressionVersion: 1, totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500,
       },
     }),
@@ -42,9 +42,9 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
 test('an anonymous diagnostics query never exposes the live match inspector', async ({ page }) => {
   await gotoRunningGame(page, '?e2e=hotseat&diagnostics=1')
 
-  await expect(page.getByRole('button', { name: 'Inspect live match', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Inspect live match/ })).toHaveCount(0)
   await expect(page.getByRole('dialog', { name: 'Live match inspector', exact: true })).toHaveCount(0)
-  await expect(page.locator('.st-hud__primary-action')).toBeEnabled()
+  await expect(page.locator('[data-battle-console-action="fire"]')).toBeEnabled()
 })
 
 test('an authenticated diagnostics query opens, copies, and closes the redacted live snapshot without blocking Fire', async ({ page, context }) => {
@@ -60,8 +60,8 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
     .getByRole('button', { name: 'Close', exact: true }).click()
   await page.getByRole('button', { name: 'Local Battle', exact: true }).click()
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click()
-  await expect(page.locator('#hud.st-hud')).toBeVisible()
-  const briefing = page.locator('[data-ui="first-salvo-briefing"]')
+  await expect(page.locator('[data-console-owner="preact"]')).toBeVisible()
+  const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true })
   if (await briefing.isVisible()) {
     await page.getByRole('button', { name: 'Enter battle', exact: true }).click()
     await expect(briefing).toBeHidden()
@@ -72,13 +72,13 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
   const skipCoach = page.getByRole('button', { name: 'Skip', exact: true })
   if (await skipCoach.isVisible()) await skipCoach.click()
 
-  const fire = page.locator('.st-hud__primary-action')
+  const fire = page.locator('[data-battle-console-action="fire"]')
   const ledger = page.locator('#hud')
-  await expect(ledger.getByRole('button', { name: 'Inspect live match', exact: true })).toHaveCount(0)
-  await expect(ledger.locator(':scope > button')).toHaveCount(1)
+  await expect(ledger.getByRole('button', { name: /Inspect live match/ })).toHaveCount(0)
+  if (!await ledger.isVisible()) await page.getByRole('button', { name: 'Open match ledger', exact: true }).click()
   const menu = ledger.getByRole('button', { name: 'Menu', exact: true })
   await menu.click()
-  const trigger = page.getByRole('button', { name: 'Inspect live match', exact: true })
+  const trigger = page.getByRole('button', { name: /Inspect live match/ })
   await expect(page.getByRole('dialog', { name: 'Command Menu', exact: true })).toBeVisible()
   await expect(trigger).toBeVisible()
   // Touch opens the existing Command Menu to reach this action. That menu
@@ -98,6 +98,10 @@ test('an authenticated diagnostics query opens, copies, and closes the redacted 
 
   await inspector.getByRole('button', { name: 'Close inspector', exact: true }).click()
   await expect(inspector).toHaveCount(0)
-  await expect(menu).toBeFocused()
+  const returnTarget = await menu.isVisible()
+    ? menu
+    : page.getByRole('button', { name: 'Open match ledger', exact: true })
+  await expect(returnTarget).toBeVisible()
+  await expect(returnTarget).toBeFocused()
   await expect(fire).toBeEnabled()
 })

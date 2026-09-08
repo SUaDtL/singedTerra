@@ -1,0 +1,241 @@
+{
+  "schema": "singedterra-battle-console-assets/v1",
+  "fixture": {
+    "path": ".codearbiter/contracts/battle-console/fixtures/asset-build.json",
+    "sha256": "E34E0CACD5F0C5E3CE936B388177171EDDA2D16D571F07D121345D169E360483"
+  },
+  "source": {
+    "path": ".codearbiter/contracts/battle-console/reference/blank-static-chrome.png",
+    "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439",
+    "width": 1388,
+    "height": 212
+  },
+  "dynamicSource": {
+    "path": ".codearbiter/contracts/battle-console/reference/canonical-pixi-layer.png",
+    "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530",
+    "width": 1388,
+    "height": 212
+  },
+  "semanticSource": {
+    "path": ".codearbiter/contracts/battle-console/reference/normalized-wide.png",
+    "sha256": "F72CD13D4C1FEF69CB1EECEEC13EFC46484616ACA646C17307B55B1698E139D3",
+    "width": 1388,
+    "height": 212
+  },
+  "responsive": {
+    "kernel": "lanczos3",
+    "ownerBleedPx": 3,
+    "atlasGapPx": 1,
+    "assemblies": {
+      "path": ".codearbiter/contracts/battle-console/reference/assemblies.json",
+      "sha256": "52C8CA6CDA4A593D15DAF98FC9191E26619CA924E2A336E9E95B12BD8AF040D6"
+    },
+    "chromeSockets": {
+      "path": ".codearbiter/contracts/battle-console/topology/chrome-sockets.json",
+      "sha256": "5C6F95E43E0235666FA28F36B536A8FE39CC6995B04864392A3BDE5284ECE985"
+    },
+    "modes": {
+      "standard": {
+        "source": ".codearbiter/contracts/battle-console/reference/normalized-standard.png",
+        "sha256": "54C092180634002025BAA00051AE1A3F4FE86E4D43B478EFEEB4EE5407FAD703",
+        "width": 1180,
+        "height": 180,
+        "numerator": 295,
+        "denominator": 347
+      },
+      "compact": {
+        "source": ".codearbiter/contracts/battle-console/reference/normalized-compact.png",
+        "sha256": "5DD18E25D18859B272EB1707E18807384A207972922738E73704730FA1F1B4A6",
+        "width": 960,
+        "height": 147,
+        "numerator": 240,
+        "denominator": 347
+      }
+    }
+  },
+  "output": {
+    "root": "client/public/art/battle-console-integrated",
+    "file": "static-chrome.png",
+    "dynamicFile": "canonical-pixi-layer.png",
+    "semanticFile": "canonical-semantic-atlas.png",
+    "responsivePattern": "{kind}-{mode}.png",
+    "manifest": "manifest.json",
+    "format": "png",
+    "colorSpace": "srgb",
+    "alpha": "straight-rgba",
+    "compressionLevel": 9,
+    "adaptiveFiltering": false,
+    "palette": false,
+    "progressive": false
+  },
+  "staticRestorations": [
+    {
+      "reason": "Restore right brass edge of wind inset erased by historical live-text mask; no lettering in this crop.",
+      "x": 946,
+      "y": 122,
+      "width": 10,
+      "height": 25
+    }
+  ],
+  "dialRepairs": [
+    {
+      "centerX": 609,
+      "centerY": 102,
+      "radius": 51,
+      "bottom": 111,
+      "sourceRect": {
+        "x": 554,
+        "y": 43,
+        "width": 110,
+        "height": 106
+      },
+      "readout": {
+        "x": 574,
+        "y": 121,
+        "width": 69,
+        "height": 20
+      }
+    },
+    {
+      "centerX": 753,
+      "centerY": 102,
+      "radius": 51,
+      "bottom": 111,
+      "sourceRect": {
+        "x": 698,
+        "y": 43,
+        "width": 110,
+        "height": 106
+      },
+      "readout": {
+        "x": 719,
+        "y": 121,
+        "width": 69,
+        "height": 20
+      }
+    },
+    {
+      "centerX": 900,
+      "centerY": 102,
+      "radius": 51,
+      "bottom": 111,
+      "sourceRect": {
+        "x": 845,
+        "y": 43,
+        "width": 110,
+        "height": 106
+      },
+      "readout": {
+        "x": 867,
+        "y": 121,
+        "width": 73,
+        "height": 20
+      }
+    }
+  ],
+  "materialInfills": [
+    {
+      "rect": {
+        "x": 838,
+        "y": 149,
+        "width": 126,
+        "height": 47
+      },
+      "interior": {
+        "x": 846,
+        "y": 153,
+        "width": 110,
+        "height": 37
+      },
+      "sample": {
+        "x": 360,
+        "y": 21,
+        "width": 110,
+        "height": 12
+      },
+      "brightness": 0.85,
+      "bottomTrimSource": {
+        "x": 850,
+        "y": 143,
+        "width": 102,
+        "height": 7
+      },
+      "bottomTrimTarget": {
+        "x": 850,
+        "y": 189,
+        "width": 102,
+        "height": 7
+      },
+      "clip": {
+        "x": 849,
+        "y": 154,
+        "width": 102,
+        "height": 35,
+        "radius": 6
+      }
+    }
+  ],
+  "fireFaceRepair": {
+    "rect": {
+      "x": 1018,
+      "y": 115,
+      "width": 270,
+      "height": 68
+    },
+    "face": {
+      "x": 1039,
+      "y": 132,
+      "width": 232,
+      "height": 43
+    },
+    "sample": {
+      "x": 1043,
+      "y": 132,
+      "width": 45,
+      "height": 43
+    },
+    "reticle": {
+      "x": 1097,
+      "y": 133,
+      "width": 42,
+      "height": 39
+    }
+  },
+  "blankExtensions": [
+    {
+      "sample": {
+        "x": 91,
+        "y": 119,
+        "width": 112,
+        "height": 1
+      },
+      "rect": {
+        "x": 91,
+        "y": 120,
+        "width": 112,
+        "height": 3
+      }
+    }
+  ],
+  "roundedWellRepairs": [
+    {
+      "rect": {
+        "x": 220,
+        "y": 83,
+        "width": 85,
+        "height": 31
+      },
+      "interior": {
+        "x": 224,
+        "y": 88,
+        "width": 76,
+        "height": 21
+      },
+      "radius": 10,
+      "sample": {
+        "x": 262,
+        "y": 89
+      }
+    }
+  ]
+}

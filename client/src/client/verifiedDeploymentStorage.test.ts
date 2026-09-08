@@ -10,9 +10,9 @@ const sessionId = '00000000-0000-4000-8000-000000000061'
 const descriptor: VerifiedDeploymentDescriptor = {
   sessionId,
   expiresAt: '2026-08-12T13:30:00.000Z',
-  contractVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  contractVersion: 2,
+  engineVersion: 2,
+  rulesetVersion: 4,
   limits: {
     humanSalvos: 6,
     cpuSalvos: 6,
@@ -119,9 +119,9 @@ describe('VerifiedDeploymentStorage', () => {
     ['corrupt JSON', '{'],
     ['widened envelope', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor, transcript: [], terminal: false }], token: 'private' })],
     ['unknown storage version', JSON.stringify({ storageVersion: 1, deployments: [{ descriptor, transcript: [], terminal: false }] })],
-    ['unknown contract version', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor: { ...descriptor, contractVersion: 2 }, transcript: [], terminal: false }] })],
-    ['unknown engine version', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor: { ...descriptor, engineVersion: 2 }, transcript: [], terminal: false }] })],
-    ['unknown ruleset version', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor: { ...descriptor, rulesetVersion: 4 }, transcript: [], terminal: false }] })],
+    ['unknown contract version', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor: { ...descriptor, contractVersion: 1 }, transcript: [], terminal: false }] })],
+    ['unknown engine version', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor: { ...descriptor, engineVersion: 1 }, transcript: [], terminal: false }] })],
+    ['unknown ruleset version', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor: { ...descriptor, rulesetVersion: 3 }, transcript: [], terminal: false }] })],
     ['widened transcript fire', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor, transcript: [{ angle: 37, power: 64, cpu: true }], terminal: false }] })],
     ['lost terminal transcript', JSON.stringify({ storageVersion: 2, deployments: [{ descriptor, transcript: [], terminal: true }] })],
   ])('clears and refuses %s', (_label, raw) => {

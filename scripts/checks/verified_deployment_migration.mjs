@@ -8,7 +8,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveFinalGitExecutable, resolveFinalRepositoryRoot } from './final-repository-root.mjs';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const gitRoot = resolveFinalRepositoryRoot(root);
+const gitExecutable = resolveFinalGitExecutable();
 const migrationPath = join(root, 'supabase', 'migrations', '016_verified_deployments.sql');
 const packagePath = join(root, 'package.json');
 
@@ -994,9 +998,9 @@ function expectRejected(sql, mutate, label) {
   }
 }
 
-function assertHistoricalMigrationsUnchanged(cwd, files) {
-  execFileSync('git', ['diff', '--exit-code', '--', ...files], { cwd, stdio: 'pipe' });
-  execFileSync('git', ['diff', '--cached', '--exit-code', '--', ...files], { cwd, stdio: 'pipe' });
+function assertHistoricalMigrationsUnchanged(cwd, files, executable = 'git') {
+  execFileSync(executable, ['diff', '--exit-code', '--', ...files], { cwd, stdio: 'pipe' });
+  execFileSync(executable, ['diff', '--cached', '--exit-code', '--', ...files], { cwd, stdio: 'pipe' });
 }
 
 async function proveStagedHistoricalMutationRejected() {
@@ -1031,12 +1035,12 @@ try {
   throw error;
 }
 
-const historicalMigrations = execFileSync('git', ['ls-files', 'supabase/migrations/*.sql'], { cwd: root, encoding: 'utf8' })
+const historicalMigrations = execFileSync(gitExecutable, ['ls-files', 'supabase/migrations/*.sql'], { cwd: gitRoot, encoding: 'utf8' })
   .trim()
   .split(/\r?\n/)
   .filter((path) => /\/0(?:0[1-9]|1[0-5])_[^/]+\.sql$/.test(path));
 assert.equal(historicalMigrations.length, 15, 'oracle must enumerate exactly the tracked migrations 001-015');
-assertHistoricalMigrationsUnchanged(root, historicalMigrations);
+assertHistoricalMigrationsUnchanged(gitRoot, historicalMigrations, gitExecutable);
 await proveStagedHistoricalMutationRejected();
 
 validateSql(migration);

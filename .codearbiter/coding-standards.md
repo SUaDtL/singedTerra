@@ -52,7 +52,12 @@ defined by ADR-0013. That third execution context is outside `GameClient` and li
 
 - **Angle:** degrees, `0 = right`, `90 = up`. **Power:** 0–100. **Health:** 0–100.
 - Tunable values (gravity `0.15`, `POWER_SCALE 0.165`, `MAX_WIND`, explosion radii, damage falloff, credit constants) are **named constants**, not inline magic numbers — they are tuned during playtesting.
-- **HUD is HTML/CSS overlaid on the canvas**, never drawn into it.
+- **Battle HUD follows the ADR-0017 hybrid boundary.** Canvas 2D continues to
+  draw the gameplay world. A lazy PixiJS layer may draw non-interactive HUD
+  chrome, nine-slice hardware, instruments, and illumination. Live DOM remains
+  the sole owner of text, focus, accessibility, dialogs, input, and gameplay
+  callbacks, and both layers consume one typed socket/layout result. Do not
+  recreate the layout independently in CSS or give Pixi gameplay authority.
 - Tank art is geometric, explosions are canvas circles — no sprite sheets / particle libs.
 - Harnesses (`scripts/checks/*.mjs`): lowercase dimension names, no `.test`/`.spec` suffix; each top comment states the contract it proves + its run line; expected values are pinned inline as assertions (no golden files).
 

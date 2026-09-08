@@ -117,8 +117,8 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     await expect(client.requestRematch()).resolves.toEqual({ ok: false, error: 'Network error' });
   });
 
-  it('normalizes walls and preserves either authoritative ruleset when resolving a successor', async () => {
-    async function resolveSuccessor(walls: unknown, rulesetVersion: 1 | 2) {
+  it('normalizes walls only for a protected-floor successor', async () => {
+    async function resolveSuccessor(walls: unknown, rulesetVersion: 1 | 4) {
       const query = {
         select: () => query,
         eq: () => query,
@@ -150,15 +150,36 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
       return listener.mock.calls[0]![0];
     }
 
-    const legacy = await resolveSuccessor('wrap', 1);
-    expect(legacy.options.walls).toBe('wrap');
-    expect(legacy.options.rulesetVersion).toBe(1);
-
-    const current = await resolveSuccessor('wrap', 2);
+    const current = await resolveSuccessor('wrap', 4);
     expect(current.options.walls).toBe('wrap');
-    expect(current.options.rulesetVersion).toBe(2);
+    expect(current.options.rulesetVersion).toBe(4);
 
-    expect((await resolveSuccessor('invalid', 2)).options.walls).toBe('open');
+    expect((await resolveSuccessor('invalid', 4)).options.walls).toBe('open');
+  });
+
+  it('refuses a legacy successor before it can construct a mixed-floor rematch', async () => {
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: () => Promise.resolve({
+        data: {
+          id: 'room-legacy', code: 'OLD42', seed: 42,
+          options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, rulesetVersion: 3 },
+          players: [
+            { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
+            { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
+          ],
+        },
+        error: null,
+      }),
+    };
+    const client = makeClient({ from: () => query } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+
+    await (client as unknown as { handleRematch(newRoomId: string): Promise<void> }).handleRematch('room-legacy');
+
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it('keeps polling when the successor appears after the old eight-attempt cutoff', async () => {
@@ -167,7 +188,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
       id: 'room-late',
       code: 'LATE42',
       seed: 42,
-      options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, rulesetVersion: 2 },
+      options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, rulesetVersion: 4 },
       players: [
         { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
         { id: 'player-def', name: 'Bob', color: '#4d8ce8' },

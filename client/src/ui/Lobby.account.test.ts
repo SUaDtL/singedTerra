@@ -32,7 +32,7 @@ function verifiedAccountState(matchesPlayed: number): Extract<AccountState, { st
     status: 'authenticated', busy: false, error: '',
     profile: {
       id: 'user-1', displayName: 'Ranger',
-      summary: { ...progression, verifiedProgression: { evidence: 'verified_replay_v1', ...progression } },
+      summary: { ...progression, verifiedProgression: { evidence: 'verified_replay_v2', ...progression } },
     },
   }
 }
@@ -83,9 +83,9 @@ const verifiedStart: VerifiedDeploymentStart = {
   descriptor: {
     sessionId: verifiedSessionId,
     expiresAt: '2026-08-12T13:30:00.000Z',
-    contractVersion: 1,
-    engineVersion: 1,
-    rulesetVersion: 3,
+    contractVersion: 2,
+    engineVersion: 2,
+    rulesetVersion: 4,
     limits: {
       humanSalvos: 6,
       cpuSalvos: 6,
@@ -118,13 +118,13 @@ const verifiedStart: VerifiedDeploymentStart = {
 const verifiedReceipt: VerifiedDeploymentReceipt = {
   result: { sessionId: verifiedSessionId, won: true, outcome: 'win', verifiedXp: 200 },
   progression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: {
-      evidence: 'verified_replay_v1', matchesPlayed: 0, wins: 0, progressionVersion: 1,
+      evidence: 'verified_replay_v2', matchesPlayed: 0, wins: 0, progressionVersion: 1,
       totalXp: 0, level: 1, levelXp: 0, nextLevelXp: 500,
     },
     current: {
-      evidence: 'verified_replay_v1', matchesPlayed: 1, wins: 1, progressionVersion: 1,
+      evidence: 'verified_replay_v2', matchesPlayed: 1, wins: 1, progressionVersion: 1,
       totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500,
     },
   },
@@ -1391,7 +1391,7 @@ describe('Lobby account composition', () => {
   it.each([
     ['session', { ...verifiedStart.descriptor, sessionId: '00000000-0000-4000-8000-000000000062' }],
     ['config', { ...verifiedStart.descriptor, config: { ...verifiedStart.descriptor.config, seed: 42 } }],
-    ['version', { ...verifiedStart.descriptor, engineVersion: 2 }],
+    ['version', { ...verifiedStart.descriptor, engineVersion: 1 }],
     ['expiry', { ...verifiedStart.descriptor, expiresAt: '2026-08-12T13:31:00.000Z' }],
   ])('keeps the rightful owner frozen when fresh resume has a mismatched %s identity', async (_label, descriptor) => {
     vi.useFakeTimers()
@@ -1466,7 +1466,7 @@ describe('Lobby account composition', () => {
       account = new FakeAccountSession(onChange, authenticatedState())
       account.startVerifiedDeployment.mockResolvedValue({
         ...verifiedStart,
-        descriptor: { ...verifiedStart.descriptor, contractVersion: 2 },
+        descriptor: { ...verifiedStart.descriptor, contractVersion: 1 },
       } as never)
       return account
     })
@@ -1563,7 +1563,7 @@ describe('Lobby account composition', () => {
         suddenDeathTurn: 0,
         armsLevel: 0,
         teamMode: false,
-        rulesetVersion: 3,
+        rulesetVersion: 4,
       },
       verifiedDeployment: {
         descriptor: verifiedStart.descriptor,

@@ -37,6 +37,7 @@ export {
 export {
   LEGACY_NETWORK_RULESET_VERSION,
   PREPARED_NETWORK_RULESET_VERSION,
+  PROTECTED_FLOOR_NETWORK_RULESET_VERSION,
   resolveCreatableRulesetVersion,
   resolveRequestedRulesetVersion,
   resolveStoredRulesetVersion,

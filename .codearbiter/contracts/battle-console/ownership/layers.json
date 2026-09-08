@@ -1,0 +1,4119 @@
+{
+  "allowedOwners": [
+    "canvas-2d-gameplay-world",
+    "inert-static-pixi-chrome",
+    "inert-dynamic-pixi-chrome",
+    "preact-semantic-dom",
+    "preact-fallback-physical-chrome",
+    "external-page-shell",
+    "retained-hud-pause-shell"
+  ],
+  "authorities": {
+    "assemblies": {
+      "bytes": 6077,
+      "identitySha256": "DB50E870D81A33041CF969A3238EC3A3BD4F01E339B4432B5A939CA233C55160",
+      "path": ".codearbiter/contracts/battle-console/reference/assemblies.json",
+      "sha256": "52C8CA6CDA4A593D15DAF98FC9191E26619CA924E2A336E9E95B12BD8AF040D6"
+    },
+    "blankStaticChrome": {
+      "bytes": 503474,
+      "path": ".codearbiter/contracts/battle-console/reference/blank-static-chrome.png",
+      "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+    },
+    "brief": {
+      "bytes": 11587,
+      "path": ".superpowers/sdd/battle-console-integrated-visual-system/task-G1-10-brief.md",
+      "sha256": "01690222C4C36B5FE56DE84CBAF15B103CFB102D1C59DB49BA12585FD102A819"
+    },
+    "canonicalPixiLayer": {
+      "bytes": 559644,
+      "path": ".codearbiter/contracts/battle-console/reference/canonical-pixi-layer.png",
+      "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+    },
+    "correctionBrief": {
+      "bytes": 5307,
+      "path": ".superpowers/sdd/battle-console-integrated-visual-system/task-G1-10R-brief.md",
+      "sha256": "031B8EAAD373D559F3E564F6DD263A419AC7655367FA37A2BEE499ADA1F2A016"
+    },
+    "inputAccessibility": {
+      "bytes": 90818,
+      "identitySha256": "19ACF299FBBB974DCC959DF94624CE3E4BD4AF5C6524601A883F20BE127A7C43",
+      "path": ".codearbiter/contracts/battle-console/state/input-accessibility.json",
+      "sha256": "0BD270FF1793C6F2AB949345ADB66746667BBC0DF30C5CBE596706CADCF348D7"
+    },
+    "inputArbiter": {
+      "bytes": 247129,
+      "identitySha256": "EC453FA5120951B43F330625E9E8EDE9B8AE1EADF73601BE316940BEA91AE0A1",
+      "path": ".codearbiter/contracts/battle-console/state/input-arbiter.json",
+      "sha256": "7D740057AC7B5DFC7CC42A75DF3A2293242A80298B22256C1CC2AB7EFC52156E"
+    },
+    "intentTransitionTraces": {
+      "bytes": 252798,
+      "identitySha256": "9257D0336B6ED120F132021C47D3E3332438B400C17CDBB4A217141C9CB74D55",
+      "path": ".codearbiter/contracts/battle-console/topology/intent-transition-traces.json",
+      "sha256": "6BD57D63E6F27BEC2BBA9FCBB452DC1F61FDC012AF014EBB91FBF01A866D5090"
+    },
+    "landmarks": {
+      "bytes": 11216,
+      "path": ".codearbiter/contracts/battle-console/reference/landmarks.json",
+      "sha256": "6E103E00EA9F860C162EFF6815207DBDD00A2E17B930EC01944AC5E839870629"
+    },
+    "plan": {
+      "bytes": 65151,
+      "path": ".codearbiter/plans/battle-console-integrated-visual-system.md",
+      "sha256": "C312256C8193D02B13D10FBAA52ECEB3254DE3996241437F1E26F78D316F569B"
+    },
+    "presentationArchitecture": {
+      "bytes": 415660,
+      "identitySha256": "EA46803F384B95B1D74D0A49327848FD13376765E9884B3D8E215E44E58F4D75",
+      "path": ".codearbiter/contracts/battle-console/topology/presentation-architecture.json",
+      "sha256": "F8969360844CF88E0FC40ED88E08F49D1E98889B2D2F28BA95C21DB2BB53A7FB"
+    },
+    "semanticOwners": {
+      "bytes": 501650,
+      "identitySha256": "37A7C248806DBAE726C5133AD669FEF76D708288AC07C3B71685F7D893546FDA",
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-owners.json",
+      "sha256": "69223585BB3C9314288498D32FC7BB13A70611BA1D02E08162E17B10B3C6D3B4"
+    },
+    "semanticReview": {
+      "bytes": 4747,
+      "path": ".codearbiter/contracts/battle-console/review/units/semantic-architecture.json",
+      "sha256": "A7AEC143CECD6F030AD559F38928B52A6082BC9F2A17C8A0E69DDA8CAD103C81"
+    },
+    "snapshotDescriptor": {
+      "bytes": 8735047,
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-baseline-snapshot.json",
+      "sha256": "0522BAC1A7762EF117611D104F76D025944F3D51ABE838410719A1F5C7CEEDAE"
+    },
+    "specification": {
+      "bytes": 82191,
+      "path": ".codearbiter/specs/battle-console-integrated-visual-system.md",
+      "sha256": "8261162F81F19609754781785945A2CA3A1C59B0D0F30F2DE3B781BE5DAEB3F7"
+    },
+    "staticMask": {
+      "bytes": 1321,
+      "path": ".codearbiter/contracts/battle-console/reference/static-mask.png",
+      "sha256": "8970E12973EFD1CE73E65F58BE7C80FBC4D52AE76F6A1678DC5DD025B1768D4E"
+    },
+    "styleScope": {
+      "bytes": 509858,
+      "identitySha256": "B762CA2A2421FAF4B1D05DCFB47A0DB2CFC66BEB32AFFE6B41CEC3BA794C776F",
+      "path": ".codearbiter/contracts/battle-console/topology/style-scope.json",
+      "sha256": "C44D06E6878AA50AA897DF0124BCA786D1E6F9AE19E9167206C4D134870B20A3"
+    },
+    "visualReview": {
+      "bytes": 6477,
+      "path": ".codearbiter/contracts/battle-console/review/units/visual-fidelity.json",
+      "sha256": "93CE7D905DA0F9CD54F179E711A0ABC878E03A9A2FA67984E0093AEF2D2E08E5"
+    }
+  },
+  "campaign": "singedterra.battle-console.hybrid",
+  "cardinalities": {
+    "records": 443
+  },
+  "claims": {
+    "candidateRuntimeObserved": false,
+    "pixiGameplayAuthority": false,
+    "pixiInputAuthority": false,
+    "pixiSemanticAuthority": false,
+    "productImplemented": false
+  },
+  "identitySha256": "C0B3C367CBC381D8994D2A05B2FA84ED906F56D27AA181A27B4E31B3BDD3C772",
+  "records": [
+    {
+      "fallbackOwner": "canvas-2d-gameplay-world",
+      "key": "gameplay-world",
+      "kind": "gameplay-world",
+      "readyOwner": "canvas-2d-gameplay-world",
+      "sourceKeys": []
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:chassis",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:0:367D3688F350F77E07A70F5775BE21D894C2F71E428AFF6464B1E9AD831F0617"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:commander",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:1:DED3D850C01C264FF479FB53E0F9DE5AD1C8DAAAE026EEA1FAE44A731E7097B7"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:fuel",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:2:6AEBE9C4486A4C77602F6F48328E0CAFF1B649106D775CF1840D0DE17D54996D"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:weapon-armory",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:3:AA63FB759A0F9F33B9672FC4A6A64B94FD7977019F6F84AAA64DBA161F4A118C"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:angle",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:4:440311487F464040701374655B25014678DC373675CE4DD88E41BFBF46E19567"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:power",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:5:B321FD695E8597B33E4CFAB3ED87306BFA1E6F0037A9D467AB61700962DE69E8"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:wind",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:6:F8EC99DA8E3F0C5CA25E526E2934D20807F17C13034D8DC00DAE51A1ABA059F0"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:fire-control",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:7:85ADC3BF8A73D3ABA9D5FB1D46C122D919699F7A5599BA2869C79E5A6C818A3E"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:settings",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:8:ABAB3FD7A4F4F29912730CF5A9CAEDDCF0B10CFE9B06FB57B85BCA07036E0615"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "assembly:fire-action",
+      "kind": "static-physical-chrome",
+      "readyOwner": "inert-static-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:assemblies:9:0CE33960B321E2BD2E254392500BB806CE9FAAAC35C4BF1C81415E16BF7BD75F"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:tank-portrait",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:0:3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E",
+        "landmarks:physicalDisplayBoxes:0:3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:fuel-live-fill",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:1:42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA",
+        "landmarks:physicalDisplayBoxes:1:42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:weapon-art",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:2:61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235",
+        "landmarks:physicalDisplayBoxes:2:61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:angle-arc",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:3:EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B",
+        "landmarks:physicalDisplayBoxes:3:EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:angle-needle",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:4:1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3",
+        "landmarks:physicalDisplayBoxes:4:1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:power-arc",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:5:890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA",
+        "landmarks:physicalDisplayBoxes:5:890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:power-needle",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:6:AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D",
+        "landmarks:physicalDisplayBoxes:6:AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:wind-glyph",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:7:F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC",
+        "landmarks:physicalDisplayBoxes:7:F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:ready-icon",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:8:675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097",
+        "landmarks:physicalDisplayBoxes:8:675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:ready-lamps",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:9:3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855",
+        "landmarks:physicalDisplayBoxes:9:3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "key": "socket:fire-reticle",
+      "kind": "dynamic-physical-chrome",
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "sourceKeys": [
+        "assemblies:dynamicPixiRegions:10:864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B",
+        "landmarks:physicalDisplayBoxes:10:864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:commander-title",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:0:BF827013A5D9C76B4EA07213AADAA347B5B1FEA778D97AB1DD4A9984B0EF6FBF"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:player-name",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:1:3B304138260FED2E5E39A1D379BF8D5AC85A4CB577C10B7A5E468DC8051075DC"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:health-value",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:2:4E7D233A5216844AD8BB88861E4284F6AB50118C1AE8A28EB2A25B687D6F1034"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:fuel-label",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:3:F397F279F30E4A654919F5FEA9D3728B0FA145E1E6499FC980FEDDE9B0ADC8D8"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:fuel-value",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:4:750FBADC4595779DC02E17F7C51974EF70F6999D0BFE302A00F3254853F70039"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:weapon-label",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:5:D0AA5CBBE40D36CFD063EA2E2038E6ED01FDE7F5174B8EC77EBBD939C3D92BB5"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:weapon-name",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:6:B319CB82D7EC888DD0A47A0D3E5BF8865589C12619634A800D90C88092D7127B"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:armory-label",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:7:0DB6E338C82D22306642BFFF6165CE9D42C64C1EAE9724908C24CD4D22875AC3"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:ballistics-title",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:8:252E24BECD681817FE11309CC9337A53E8C65755B303FE3DF7C3ACF72B4CD658"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:angle-value",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:9:DB4E3AC4D83BCB15495343D7EC473C1EC5C5D9C993DCEB1C8D4D7427F490A448"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:power-value",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:10:FCEEE50F5C78D922E0BFF57390D0F9DF087623B6D01934251A05F15757177017"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:wind-value",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:11:B6AF0D85273B92E8C8C9C02912EB3CD4D0036750B9D8C229042505884B23AD5D"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:fire-control-title",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:12:DE05071E869317CE0242C74EF32EA5A64F395D0D018FD3BFB9D5D6410C80A9DB"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:fire-ready-text",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:13:44A7F8CA0F664A860C4926C75E9681B972CB916F4FEAB9E95F9E11669A5E659E"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-region:fire-action-text",
+      "kind": "semantic-ink-region",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "assemblies:semanticRegions:14:91486D11B3DA30194F6AB69BF830E3F405F5E8AC87FB261F4FBEF7BB469D258D"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:region:Turn command console:1",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:region:Turn command console:1"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::commander",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::commander"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Commander:3",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Commander:3"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Active turnP1100 HP‹AFUEL100›DLast salvo:4",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Active turnP1100 HP‹AFUEL100›DLast salvo:4"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Active turnP1100 HP:5",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Active turnP1100 HP:5"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:img:P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.:6",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:img:P1's tank. Mobility: Tracks. Hull: Armor Hull. Turret: Cupola. Barrel: Cannon.:6"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:status:P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.:7",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:status:P1's turn. 100 health. Weapon Baby Missile. 100 fuel remaining.:7"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Active turnP1100 HP:8",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Active turnP1100 HP:8"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Active turn:9",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Active turn:9"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:P1:10",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:P1:10"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:100 health remaining:11",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:100 health remaining:11"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:‹AFUEL100›DLast salvo:12",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:‹AFUEL100›DLast salvo:12"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:group:Tank movement:13",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:group:Tank movement:13"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Move tank left, 8 fuel maximum:14",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Move tank left, 8 fuel maximum:14"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:‹:15",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:‹:15"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:A:16",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:A:16"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::fuel",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::fuel"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:FUEL:18",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:FUEL:18"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:100 fuel remaining:19",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:100 fuel remaining:19"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Move tank right, 8 fuel maximum:20",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Move tank right, 8 fuel maximum:20"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:›:21",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:›:21"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:D:22",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:D:22"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:status:Last salvo:23",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:status:Last salvo:23"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Last salvo:24",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Last salvo:24"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:Firing solution:25",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:Firing solution:25"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ballistics:26",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ballistics:26"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:Weapon and ammunition:27",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:Weapon and ammunition:27"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:WeaponBaby Missile∞:28",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:WeaponBaby Missile∞:28"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Weapon:29",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Weapon:29"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Baby Missile:30",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Baby Missile:30"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Unlimited ammunition:31",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Unlimited ammunition:31"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Select next weapon, current Baby Missile:32",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Select next weapon, current Baby Missile:32"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:›:33",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:›:33"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:Q:34",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:Q:34"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:armory-inline-host::weapon-trigger",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "armory-inline-host::weapon-trigger"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Close Armory:36",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Close Armory:36"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:group:Angle and power adjustments:37",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:group:Angle and power adjustments:37"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::angle",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::angle"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Angle:39",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Angle:39"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::aim-left-control",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::aim-left-control"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:−:41",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:−:41"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:←:42",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:←:42"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:output:Angle:43",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:output:Angle:43"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Aim barrel right:44",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Aim barrel right:44"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+:45",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+:45"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:→:46",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:→:46"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::power",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::power"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Power:48",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Power:48"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Decrease power:49",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Decrease power:49"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:−:50",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:−:50"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:↓:51",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:↓:51"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:output:Power:52",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:output:Power:52"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Increase power:53",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Increase power:53"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+:54",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+:54"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:↑:55",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:↑:55"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::wind",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::wind"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Wind:57",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Wind:57"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:output:Wind:58",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:output:Wind:58"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:region:First Salvo coach:59",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:region:First Salvo coach:59"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:status::60",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:status::60"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:first-salvo-coach::skip",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "first-salvo-coach::skip"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:Fire control phase:62",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:Fire control phase:62"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Fire control:63",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Fire control:63"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:status:Fire ready. Baby Missile · 45° · Power 50 · Wind 1.3 left.:64",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:status:Fire ready. Baby Missile · 45° · Power 50 · Wind 1.3 left.:64"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Your firing decision:65",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Your firing decision:65"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Confirm firing solution:66",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Confirm firing solution:66"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Fire ready:67",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Fire ready:67"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::settings-trigger",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::settings-trigger"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:⚙:69",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:⚙:69"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:status:No shot in progress.:70",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:status:No shot in progress.:70"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Fire:71",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Fire:71"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:command-console-host::fire",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "command-console-host::fire"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Fire:73",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Fire:73"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:settings-dialog::backdrop",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "settings-dialog::backdrop"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:SettingsTrajectory guideGOffSoundMOffClose settings:83",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:SettingsTrajectory guideGOffSoundMOffClose settings:83"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:settings-dialog::title",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "settings-dialog::title"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:switch:Trajectory guide:85",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:switch:Trajectory guide:85"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Trajectory guide:86",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Trajectory guide:86"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:G:87",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:G:87"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Off:88",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Off:88"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:settings-dialog::switch-audio",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "settings-dialog::switch-audio"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Sound:90",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Sound:90"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:kbd:M:91",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:kbd:M:91"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Off:92",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Off:92"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Close settings:93",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Close settings:93"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:settings-dialog::close",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "settings-dialog::close"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:first-salvo-coach::briefing-dialog",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "first-salvo-coach::briefing-dialog"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:Operational briefingFirst SalvoAimSet elevation toward the target.WindRead the v:96",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:Operational briefingFirst SalvoAimSet elevation toward the target.WindRead the v:96"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Operational briefing:97",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Operational briefing:97"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:h2:First Salvo:98",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:h2:First Salvo:98"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:ol:AimSet elevation toward the target.WindRead the vector before setting power.Comm:99",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:ol:AimSet elevation toward the target.WindRead the vector before setting power.Comm:99"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:li:AimSet elevation toward the target.:100",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:li:AimSet elevation toward the target.:100"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:strong:Aim:101",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:strong:Aim:101"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Set elevation toward the target.:102",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Set elevation toward the target.:102"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:li:WindRead the vector before setting power.:103",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:li:WindRead the vector before setting power.:103"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:strong:Wind:104",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:strong:Wind:104"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Read the vector before setting power.:105",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Read the vector before setting power.:105"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:li:CommitFire once the solution is ready.:106",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:li:CommitFire once the solution is ready.:106"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:strong:Commit:107",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:strong:Commit:107"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Fire once the solution is ready.:108",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Fire once the solution is ready.:108"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:first-salvo-coach::enter",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "first-salvo-coach::enter"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:armory-portal-host::armory-dialog",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "armory-portal-host::armory-dialog"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:ArmoryCloseBaby MissileAmmo ∞RoleReliable precision shotTerrainCuts a small crat:111",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:ArmoryCloseBaby MissileAmmo ∞RoleReliable precision shotTerrainCuts a small crat:111"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:ArmoryClose:112",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:ArmoryClose:112"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Armory:113",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Armory:113"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Close Armory:114",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Close Armory:114"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:status:Baby MissileAmmo ∞RoleReliable precision shotTerrainCuts a small crater at impac:115",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:status:Baby MissileAmmo ∞RoleReliable precision shotTerrainCuts a small crater at impac:115"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Baby MissileAmmo ∞:116",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Baby MissileAmmo ∞:116"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:h3:Baby Missile:117",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:h3:Baby Missile:117"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo ∞:118",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo ∞:118"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:p:RoleReliable precision shot:119",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:p:RoleReliable precision shot:119"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Role:120",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Role:120"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Reliable precision shot:121",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Reliable precision shot:121"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:p:TerrainCuts a small crater at impact.:122",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:p:TerrainCuts a small crater at impact.:122"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Terrain:123",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Terrain:123"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Cuts a small crater at impact.:124",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Cuts a small crater at impact.:124"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:p:EffectLight, tight blast:125",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:p:EffectLight, tight blast:125"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Effect:126",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Effect:126"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Light, tight blast:127",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Light, tight blast:127"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:p:UseUse to range a target or finish a wounded tank.:128",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:p:UseUse to range a target or finish a wounded tank.:128"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Use:129",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Use:129"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Use to range a target or finish a wounded tank.:130",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Use to range a target or finish a wounded tank.:130"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:region:Weapon arsenal:131",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:region:Weapon arsenal:131"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Baby Missile∞:132",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Baby Missile∞:132"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Baby Missile:133",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Baby Missile:133"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:∞:134",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:∞:134"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Missile4:135",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Missile4:135"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Missile:136",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Missile:136"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:4:137",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:4:137"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Heavy Missile1:138",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Heavy Missile1:138"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Heavy Missile:139",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Heavy Missile:139"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:140",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:140"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Baby Nuke0:141",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Baby Nuke0:141"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Baby Nuke:142",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Baby Nuke:142"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:0:143",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:0:143"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Nuke0:144",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Nuke0:144"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Nuke:145",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Nuke:145"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:0:146",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:0:146"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Dirt Bomb1:147",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Dirt Bomb1:147"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Dirt Bomb:148",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Dirt Bomb:148"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:149",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:149"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Bouncing Betty2:150",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Bouncing Betty2:150"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Bouncing Betty:151",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Bouncing Betty:151"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:2:152",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:2:152"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Funky Bomb1:153",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Funky Bomb1:153"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Funky Bomb:154",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Funky Bomb:154"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:155",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:155"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Napalm1:156",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Napalm1:156"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Napalm:157",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Napalm:157"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:158",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:158"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Cluster Bomb2:159",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Cluster Bomb2:159"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Cluster Bomb:160",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Cluster Bomb:160"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:2:161",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:2:161"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:MIRV0:162",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:MIRV0:162"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:MIRV:163",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:MIRV:163"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:0:164",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:0:164"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Death's Head0:165",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Death's Head0:165"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Death's Head:166",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Death's Head:166"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:0:167",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:0:167"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Riot Bomb1:168",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Riot Bomb1:168"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Riot Bomb:169",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Riot Bomb:169"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:170",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:170"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Hot Napalm0:171",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Hot Napalm0:171"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Hot Napalm:172",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Hot Napalm:172"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:0:173",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:0:173"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Sandhog1:174",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Sandhog1:174"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Sandhog:175",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Sandhog:175"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:176",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:176"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Tracer1:177",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Tracer1:177"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Tracer:178",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Tracer:178"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:179",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:179"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Shield1:180",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Shield1:180"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Shield:181",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Shield:181"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:182",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:182"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Heavy Shield1:183",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Heavy Shield1:183"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Heavy Shield:184",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Heavy Shield:184"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:1:185",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:1:185"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:Armory catalog:186",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:Armory catalog:186"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:WeaponsCredits: $8,000:187",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:WeaponsCredits: $8,000:187"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:h3:Weapons:188",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:h3:Weapons:188"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Credits: $8,000:189",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Credits: $8,000:189"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:MissileReliable direct-hit blast.Own 4Ammo 4EquipBuy $1,875+5Heavy MissileHeavy :190",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:MissileReliable direct-hit blast.Own 4Ammo 4EquipBuy $1,875+5Heavy MissileHeavy :190"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:MissileReliable direct-hit blast.Own 4Ammo 4EquipBuy $1,875+5:191",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:MissileReliable direct-hit blast.Own 4Ammo 4EquipBuy $1,875+5:191"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:MissileReliable direct-hit blast.Own 4Ammo 4:192",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:MissileReliable direct-hit blast.Own 4Ammo 4:192"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Missile:193",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Missile:193"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Missile:194",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Missile:194"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Reliable direct-hit blast.:195",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Reliable direct-hit blast.:195"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 4:196",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 4:196"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 4:197",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 4:197"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Missile:198",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Missile:198"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Missile for $1,875, bundle of 5:199",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Missile for $1,875, bundle of 5:199"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $1,875:200",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $1,875:200"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+5:201",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+5:201"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Heavy MissileHeavy blast for fortified targets.Own 1Ammo 1EquipBuy $6,000+3:202",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Heavy MissileHeavy blast for fortified targets.Own 1Ammo 1EquipBuy $6,000+3:202"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Heavy MissileHeavy blast for fortified targets.Own 1Ammo 1:203",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Heavy MissileHeavy blast for fortified targets.Own 1Ammo 1:203"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Heavy Missile:204",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Heavy Missile:204"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Heavy Missile:205",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Heavy Missile:205"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Heavy blast for fortified targets.:206",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Heavy blast for fortified targets.:206"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:207",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:207"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:208",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:208"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Heavy Missile:209",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Heavy Missile:209"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Heavy Missile for $6,000, bundle of 3:210",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Heavy Missile for $6,000, bundle of 3:210"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $6,000:211",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $6,000:211"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+3:212",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+3:212"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Baby NukeCompact nuclear blast.Own 0Ammo 0EquipBuy $10,000+3:213",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Baby NukeCompact nuclear blast.Own 0Ammo 0EquipBuy $10,000+3:213"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Baby NukeCompact nuclear blast.Own 0Ammo 0:214",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Baby NukeCompact nuclear blast.Own 0Ammo 0:214"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Baby Nuke:215",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Baby Nuke:215"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Baby Nuke:216",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Baby Nuke:216"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Compact nuclear blast.:217",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Compact nuclear blast.:217"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 0:218",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 0:218"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 0:219",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 0:219"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Baby Nuke:220",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Baby Nuke:220"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Baby Nuke for $10,000, bundle of 3:221",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Baby Nuke for $10,000, bundle of 3:221"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $10,000:222",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $10,000:222"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+3:223",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+3:223"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:NukeMaximum-radius nuclear blast.Own 0Ammo 0EquipBuy $12,000+1:224",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:NukeMaximum-radius nuclear blast.Own 0Ammo 0EquipBuy $12,000+1:224"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:NukeMaximum-radius nuclear blast.Own 0Ammo 0:225",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:NukeMaximum-radius nuclear blast.Own 0Ammo 0:225"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Nuke:226",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Nuke:226"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Nuke:227",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Nuke:227"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Maximum-radius nuclear blast.:228",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Maximum-radius nuclear blast.:228"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 0:229",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 0:229"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 0:230",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 0:230"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Nuke:231",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Nuke:231"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Nuke for $12,000, bundle of 1:232",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Nuke for $12,000, bundle of 1:232"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $12,000:233",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $12,000:233"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+1:234",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+1:234"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Bouncing BettyBounds through terrain with a blast at every hop.Own 2Ammo 2EquipB:235",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Bouncing BettyBounds through terrain with a blast at every hop.Own 2Ammo 2EquipB:235"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Bouncing BettyBounds through terrain with a blast at every hop.Own 2Ammo 2:236",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Bouncing BettyBounds through terrain with a blast at every hop.Own 2Ammo 2:236"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Bouncing Betty:237",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Bouncing Betty:237"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Bouncing Betty:238",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Bouncing Betty:238"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Bounds through terrain with a blast at every hop.:239",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Bounds through terrain with a blast at every hop.:239"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 2:240",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 2:240"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 2:241",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 2:241"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Bouncing Betty:242",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Bouncing Betty:242"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Bouncing Betty for $6,000, bundle of 5:243",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Bouncing Betty for $6,000, bundle of 5:243"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $6,000:244",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $6,000:244"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+5:245",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+5:245"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Funky BombSplits into a wide mid-flight spread.Own 1Ammo 1EquipBuy $7,000+2:246",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Funky BombSplits into a wide mid-flight spread.Own 1Ammo 1EquipBuy $7,000+2:246"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Funky BombSplits into a wide mid-flight spread.Own 1Ammo 1:247",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Funky BombSplits into a wide mid-flight spread.Own 1Ammo 1:247"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Funky Bomb:248",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Funky Bomb:248"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Funky Bomb:249",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Funky Bomb:249"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Splits into a wide mid-flight spread.:250",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Splits into a wide mid-flight spread.:250"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:251",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:251"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:252",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:252"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Funky Bomb:253",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Funky Bomb:253"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Funky Bomb for $7,000, bundle of 2:254",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Funky Bomb for $7,000, bundle of 2:254"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $7,000:255",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $7,000:255"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+2:256",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+2:256"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Cluster BombSplits at the apex into a tight bomblet carpet.Own 2Ammo 2EquipBuy $:257",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Cluster BombSplits at the apex into a tight bomblet carpet.Own 2Ammo 2EquipBuy $:257"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Cluster BombSplits at the apex into a tight bomblet carpet.Own 2Ammo 2:258",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Cluster BombSplits at the apex into a tight bomblet carpet.Own 2Ammo 2:258"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Cluster Bomb:259",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Cluster Bomb:259"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Cluster Bomb:260",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Cluster Bomb:260"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Splits at the apex into a tight bomblet carpet.:261",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Splits at the apex into a tight bomblet carpet.:261"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 2:262",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 2:262"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 2:263",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 2:263"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Cluster Bomb:264",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Cluster Bomb:264"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Cluster Bomb for $10,000, bundle of 3:265",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Cluster Bomb for $10,000, bundle of 3:265"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $10,000:266",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $10,000:266"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+3:267",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+3:267"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:MIRVSplits at the apex into three heavy warheads.Own 0Ammo 0EquipBuy $14,000+2:268",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:MIRVSplits at the apex into three heavy warheads.Own 0Ammo 0EquipBuy $14,000+2:268"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:MIRVSplits at the apex into three heavy warheads.Own 0Ammo 0:269",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:MIRVSplits at the apex into three heavy warheads.Own 0Ammo 0:269"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:MIRV:270",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:MIRV:270"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:MIRV:271",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:MIRV:271"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Splits at the apex into three heavy warheads.:272",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Splits at the apex into three heavy warheads.:272"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 0:273",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 0:273"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 0:274",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 0:274"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip MIRV:275",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip MIRV:275"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy MIRV for $14,000, bundle of 2:276",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy MIRV for $14,000, bundle of 2:276"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $14,000:277",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $14,000:277"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+2:278",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+2:278"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Death's HeadSplits at the apex into seven heavy warheads.Own 0Ammo 0EquipBuy $24:279",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Death's HeadSplits at the apex into seven heavy warheads.Own 0Ammo 0EquipBuy $24:279"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Death's HeadSplits at the apex into seven heavy warheads.Own 0Ammo 0:280",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Death's HeadSplits at the apex into seven heavy warheads.Own 0Ammo 0:280"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Death's Head:281",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Death's Head:281"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Death's Head:282",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Death's Head:282"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Splits at the apex into seven heavy warheads.:283",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Splits at the apex into seven heavy warheads.:283"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 0:284",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 0:284"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 0:285",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 0:285"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Death's Head:286",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Death's Head:286"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Death's Head for $24,000, bundle of 1:287",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Death's Head for $24,000, bundle of 1:287"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $24,000:288",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $24,000:288"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+1:289",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+1:289"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:TracerZero-damage shot that marks the real impact.Own 1Ammo 1EquipBuy $10+20:290",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:TracerZero-damage shot that marks the real impact.Own 1Ammo 1EquipBuy $10+20:290"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:TracerZero-damage shot that marks the real impact.Own 1Ammo 1:291",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:TracerZero-damage shot that marks the real impact.Own 1Ammo 1:291"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Tracer:292",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Tracer:292"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Tracer:293",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Tracer:293"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Zero-damage shot that marks the real impact.:294",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Zero-damage shot that marks the real impact.:294"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:295",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:295"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:296",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:296"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Tracer:297",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Tracer:297"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Tracer for $10, bundle of 20:298",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Tracer for $10, bundle of 20:298"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $10:299",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $10:299"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+20:300",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+20:300"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Dirt BombRaises a mound instead of a crater.Own 1Ammo 1EquipBuy $5,000+5:301",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Dirt BombRaises a mound instead of a crater.Own 1Ammo 1EquipBuy $5,000+5:301"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Dirt BombRaises a mound instead of a crater.Own 1Ammo 1:302",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Dirt BombRaises a mound instead of a crater.Own 1Ammo 1:302"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Dirt Bomb:303",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Dirt Bomb:303"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Dirt Bomb:304",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Dirt Bomb:304"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Raises a mound instead of a crater.:305",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Raises a mound instead of a crater.:305"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:306",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:306"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:307",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:307"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Dirt Bomb:308",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Dirt Bomb:308"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Dirt Bomb for $5,000, bundle of 5:309",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Dirt Bomb for $5,000, bundle of 5:309"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $5,000:310",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $5,000:310"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+5:311",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+5:311"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Riot BombCarves a wide crater without blast damage.Own 1Ammo 1EquipBuy $3,000+5:312",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Riot BombCarves a wide crater without blast damage.Own 1Ammo 1EquipBuy $3,000+5:312"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Riot BombCarves a wide crater without blast damage.Own 1Ammo 1:313",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Riot BombCarves a wide crater without blast damage.Own 1Ammo 1:313"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Riot Bomb:314",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Riot Bomb:314"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Riot Bomb:315",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Riot Bomb:315"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Carves a wide crater without blast damage.:316",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Carves a wide crater without blast damage.:316"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:317",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:317"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:318",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:318"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Riot Bomb:319",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Riot Bomb:319"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Riot Bomb for $3,000, bundle of 5:320",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Riot Bomb for $3,000, bundle of 5:320"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $3,000:321",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $3,000:321"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+5:322",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+5:322"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:NapalmSpreads a lingering fire across the surface.Own 1Ammo 1EquipBuy $10,000+10:323",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:NapalmSpreads a lingering fire across the surface.Own 1Ammo 1EquipBuy $10,000+10:323"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:NapalmSpreads a lingering fire across the surface.Own 1Ammo 1:324",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:NapalmSpreads a lingering fire across the surface.Own 1Ammo 1:324"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Napalm:325",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Napalm:325"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Napalm:326",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Napalm:326"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Spreads a lingering fire across the surface.:327",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Spreads a lingering fire across the surface.:327"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:328",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:328"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:329",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:329"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Napalm:330",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Napalm:330"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Napalm for $10,000, bundle of 10:331",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Napalm for $10,000, bundle of 10:331"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $10,000:332",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $10,000:332"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+10:333",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+10:333"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Hot NapalmA wider, hotter, longer-burning fire field.Own 0Ammo 0EquipBuy $16,000:334",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Hot NapalmA wider, hotter, longer-burning fire field.Own 0Ammo 0EquipBuy $16,000:334"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Hot NapalmA wider, hotter, longer-burning fire field.Own 0Ammo 0:335",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Hot NapalmA wider, hotter, longer-burning fire field.Own 0Ammo 0:335"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Hot Napalm:336",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Hot Napalm:336"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Hot Napalm:337",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Hot Napalm:337"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:A wider, hotter, longer-burning fire field.:338",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:A wider, hotter, longer-burning fire field.:338"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 0:339",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 0:339"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 0:340",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 0:340"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Hot Napalm:341",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Hot Napalm:341"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Hot Napalm for $16,000, bundle of 5:342",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Hot Napalm for $16,000, bundle of 5:342"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $16,000:343",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $16,000:343"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+5:344",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+5:344"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:SandhogDrills underground before its endpoint blast.Own 1Ammo 1EquipBuy $16,750+:345",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:SandhogDrills underground before its endpoint blast.Own 1Ammo 1EquipBuy $16,750+:345"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:SandhogDrills underground before its endpoint blast.Own 1Ammo 1:346",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:SandhogDrills underground before its endpoint blast.Own 1Ammo 1:346"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Sandhog:347",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Sandhog:347"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Sandhog:348",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Sandhog:348"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Drills underground before its endpoint blast.:349",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Drills underground before its endpoint blast.:349"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:350",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:350"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:351",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:351"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Sandhog:352",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Sandhog:352"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Sandhog for $16,750, bundle of 5:353",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Sandhog for $16,750, bundle of 5:353"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $16,750:354",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $16,750:354"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+5:355",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+5:355"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:ShieldAbsorbs incoming damage before it reaches your tank.Own 1Ammo 1EquipBuy $2:356",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:ShieldAbsorbs incoming damage before it reaches your tank.Own 1Ammo 1EquipBuy $2:356"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:ShieldAbsorbs incoming damage before it reaches your tank.Own 1Ammo 1:357",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:ShieldAbsorbs incoming damage before it reaches your tank.Own 1Ammo 1:357"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Shield:358",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Shield:358"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Shield:359",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Shield:359"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Absorbs incoming damage before it reaches your tank.:360",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Absorbs incoming damage before it reaches your tank.:360"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:361",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:361"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:362",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:362"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Shield:363",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Shield:363"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Shield for $20,000, bundle of 3:364",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Shield for $20,000, bundle of 3:364"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $20,000:365",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $20,000:365"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+3:366",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+3:366"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Heavy ShieldA stronger finite barrier for surviving heavy fire.Own 1Ammo 1EquipB:367",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Heavy ShieldA stronger finite barrier for surviving heavy fire.Own 1Ammo 1EquipB:367"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Heavy ShieldA stronger finite barrier for surviving heavy fire.Own 1Ammo 1:368",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Heavy ShieldA stronger finite barrier for surviving heavy fire.Own 1Ammo 1:368"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Heavy Shield:369",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Heavy Shield:369"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Heavy Shield:370",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Heavy Shield:370"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:A stronger finite barrier for surviving heavy fire.:371",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:A stronger finite barrier for surviving heavy fire.:371"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Own 1:372",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Own 1:372"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Ammo 1:373",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Ammo 1:373"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Equip Heavy Shield:374",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Equip Heavy Shield:374"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Heavy Shield for $30,000, bundle of 2:375",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Heavy Shield for $30,000, bundle of 2:375"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $30,000:376",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $30,000:376"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+2:377",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+2:377"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:section:SuppliesBattery+100 power cap.Cap 100Buy $5,000+10Fuel Tank+100 movement fuel.Fu:378",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:section:SuppliesBattery+100 power cap.Cap 100Buy $5,000+10Fuel Tank+100 movement fuel.Fu:378"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:h3:Supplies:379",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:h3:Supplies:379"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Battery+100 power cap.Cap 100Buy $5,000+10Fuel Tank+100 movement fuel.Fuel 100Bu:380",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Battery+100 power cap.Cap 100Buy $5,000+10Fuel Tank+100 movement fuel.Fuel 100Bu:380"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Battery+100 power cap.Cap 100Buy $5,000+10:381",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Battery+100 power cap.Cap 100Buy $5,000+10:381"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Battery+100 power cap.Cap 100:382",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Battery+100 power cap.Cap 100:382"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Battery:383",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Battery:383"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+100 power cap.:384",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+100 power cap.:384"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Cap 100:385",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Cap 100:385"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Battery for $5,000, bundle of 10:386",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Battery for $5,000, bundle of 10:386"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $5,000:387",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $5,000:387"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+10:388",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+10:388"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Fuel Tank+100 movement fuel.Fuel 100Buy $10,000+10:389",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Fuel Tank+100 movement fuel.Fuel 100Buy $10,000+10:389"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:Fuel Tank+100 movement fuel.Fuel 100:390",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:Fuel Tank+100 movement fuel.Fuel 100:390"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Fuel Tank:391",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Fuel Tank:391"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+100 movement fuel.:392",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+100 movement fuel.:392"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Fuel 100:393",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Fuel 100:393"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Fuel Tank for $10,000, bundle of 10:394",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Fuel Tank for $10,000, bundle of 10:394"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $10,000:395",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $10,000:395"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+10:396",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+10:396"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:ParachuteReduces one dangerous collapse fall to 25% damage.Parachutes 0Buy $4,00:397",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:ParachuteReduces one dangerous collapse fall to 25% damage.Parachutes 0Buy $4,00:397"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:div:ParachuteReduces one dangerous collapse fall to 25% damage.Parachutes 0:398",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:div:ParachuteReduces one dangerous collapse fall to 25% damage.Parachutes 0:398"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Parachute:399",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Parachute:399"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Reduces one dangerous collapse fall to 25% damage.:400",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Reduces one dangerous collapse fall to 25% damage.:400"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Parachutes 0:401",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Parachutes 0:401"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:button:Buy Parachute for $4,000, bundle of 1:402",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:button:Buy Parachute for $4,000, bundle of 1:402"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:Buy $4,000:403",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:Buy $4,000:403"
+      ]
+    },
+    {
+      "fallbackOwner": "preact-semantic-dom",
+      "key": "semantic-node:node:span:+1:404",
+      "kind": "semantic-node",
+      "readyOwner": "preact-semantic-dom",
+      "sourceKeys": [
+        "node:span:+1:404"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:pause-origin::menu-trigger",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "pause-origin::menu-trigger"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:dialog:Command Menu:74",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:dialog:Command Menu:74"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:div:Command MenuResumeBattle SettingsReturn to Lobby:75",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:div:Command MenuResumeBattle SettingsReturn to Lobby:75"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:h2:Command Menu:76",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:h2:Command Menu:76"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:div:ResumeBattle Settings:77",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:div:ResumeBattle Settings:77"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:button:Resume:78",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:button:Resume:78"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:pause-origin::settings-trigger",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "pause-origin::settings-trigger"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:group:Leave this match:80",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:group:Leave this match:80"
+      ]
+    },
+    {
+      "fallbackOwner": "retained-hud-pause-shell",
+      "key": "retained-semantic-node:node:button:Return to Lobby:81",
+      "kind": "retained-hud-semantic-node",
+      "readyOwner": "retained-hud-pause-shell",
+      "sourceKeys": [
+        "node:button:Return to Lobby:81"
+      ]
+    },
+    {
+      "fallbackOwner": "external-page-shell",
+      "key": "external-page-shell",
+      "kind": "external-shell",
+      "readyOwner": "external-page-shell",
+      "sourceKeys": []
+    }
+  ],
+  "schema": "singedterra-layer-ownership/v2"
+}

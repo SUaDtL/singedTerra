@@ -9,11 +9,12 @@ import type { GamePhase, GameState, TankState } from '../../../shared/src/types/
 
 export const VERIFIED_REPLAY_MAX_ACTIONS = 15
 export const VERIFIED_REPLAY_MAX_TURN_ACTIONS = 14
-export const VERIFIED_REPLAY_MAX_TICKS = 453
-// The reviewed maximum-turn replay reaches the protected arena floor on its
-// 221st tick. Keep this as the authoritative verifier ceiling: callers may
-// tighten it, but can never expand it.
-export const VERIFIED_REPLAY_MAX_TICKS_PER_TURN = 221
+// The protected 200px arena floor has one reviewed maximum lifecycle of 448
+// ticks. Callers may tighten this resource ceiling, never expand it.
+export const VERIFIED_REPLAY_MAX_TICKS = 448
+// Hot Napalm is the longest reviewed legal single-turn path at 194 ticks.
+// Callers may tighten this resource ceiling, never expand it.
+export const VERIFIED_REPLAY_MAX_TICKS_PER_TURN = 194
 
 export type VerifiedReplayErrorCode =
   | 'invalid_config'
@@ -56,8 +57,8 @@ export interface VerifiedReplayLimits {
 }
 
 interface VerifiedMatchConfig {
-  engineVersion: 1
-  rulesetVersion: 3
+  engineVersion: 2
+  rulesetVersion: 4
   options: GameOptions
 }
 
@@ -121,7 +122,7 @@ function parsePlayer(value: unknown): NonNullable<GameOptions['players']>[number
 
 function parseConfig(value: unknown): VerifiedMatchConfig {
   if (!isRecord(value) || !hasExactKeys(value, CONFIG_KEYS)) fail('invalid_config')
-  if (value.engineVersion !== 1 || value.rulesetVersion !== 3 || !isRecord(value.options)) fail('invalid_config')
+  if (value.engineVersion !== 2 || value.rulesetVersion !== 4 || !isRecord(value.options)) fail('invalid_config')
   const options = value.options
   if (!hasExactKeys(options, OPTION_KEYS)) fail('invalid_config')
   if (!safeIntegerBetween(options.maxPlayers, 2, 4)) fail('invalid_config')
@@ -153,8 +154,8 @@ function parseConfig(value: unknown): VerifiedMatchConfig {
   if (options.starterWeaponFalloff !== 'decisive') fail('invalid_config')
 
   return {
-    engineVersion: 1,
-    rulesetVersion: 3,
+    engineVersion: 2,
+    rulesetVersion: 4,
     options: {
       maxPlayers: options.maxPlayers,
       players: parsedPlayers,
@@ -169,7 +170,7 @@ function parseConfig(value: unknown): VerifiedMatchConfig {
       armsLevel: options.armsLevel,
       teamMode: options.teamMode,
       starterWeaponFalloff: 'decisive',
-      rulesetVersion: 3,
+      rulesetVersion: 4,
     },
   }
 }

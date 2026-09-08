@@ -28,6 +28,7 @@ const localBaseURL = `${localOrigin}${localBasePath}`;
 
 export default defineConfig({
   testDir: 'e2e',
+  testIgnore: ['**/product-completion/**', '**/battle-console-integrated/**'],
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,

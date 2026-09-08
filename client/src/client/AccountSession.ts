@@ -42,7 +42,7 @@ export interface AccountSummary {
 }
 
 export interface VerifiedAccountProgression {
-  evidence: 'verified_replay_v1'
+  evidence: 'verified_replay_v2'
   matchesPlayed: number
   wins: number
   progressionVersion: 1
@@ -190,7 +190,7 @@ function progressionFields(value: unknown): Omit<AccountSummary, 'verifiedProgre
 function verifiedProgression(value: unknown): VerifiedAccountProgression | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const { evidence, ...progression } = value as Record<string, unknown>
-  if (evidence !== 'verified_replay_v1') return null
+  if (evidence !== 'verified_replay_v2') return null
   const parsed = progressionFields(progression)
   return parsed ? { evidence, ...parsed } : null
 }
@@ -384,7 +384,7 @@ function progressionSnapshot(
     || !Number.isSafeInteger(counts.wins) || counts.wins < 0 || counts.wins > counts.matchesPlayed
     || !Number.isSafeInteger(counts.totalXp) || counts.totalXp !== totalXp) return null
   return Object.freeze({
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     matchesPlayed: counts.matchesPlayed,
     wins: counts.wins,
     progressionVersion: 1,
@@ -668,7 +668,7 @@ export class AccountSession {
         const receipt: VerifiedDeploymentReceipt = Object.freeze({
           result: serverReceipt.result,
           progression: Object.freeze({
-            evidence: 'verified_replay_v1' as const,
+            evidence: 'verified_replay_v2' as const,
             prior,
             current,
           }),

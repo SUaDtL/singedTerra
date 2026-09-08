@@ -20,6 +20,7 @@ import {
 import { Renderer } from './renderer/Renderer';
 import { selectClientBattlefieldWorld } from './renderer/selectClientBattlefield';
 import { resolveAimGuidePresentation } from './renderer/aimGuidePresentation';
+import { releaseTankLoadoutPreviewResources } from './renderer/TankLoadoutPreview';
 import { AudioEngine } from './audio/AudioEngine';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
@@ -38,6 +39,9 @@ import { observeFieldOrder, type FieldOrder } from './client/fieldOrder';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
+const E2E_BATTLE_CONSOLE_REFERENCE = E2E_PARAMS.get('battle-console-reference') === '1';
+const E2E_VICTORY_LONG_NAME = E2E_MODE === 'victory'
+  && E2E_PARAMS.get('winner-name') === 'long';
 const E2E_QUICK_OPERATION = E2E_MODE === 'victory' && E2E_PARAMS.has('quick-operation')
   ? quickOperationById(E2E_PARAMS.get('quick-operation'))
   : null;
@@ -212,7 +216,10 @@ function bootstrap(): void {
   rootStyle.setProperty('--battle-rail-top-y', `${battleRailTop}px`);
   for (const [prop, value] of Object.entries(crtCssVars())) rootStyle.setProperty(prop, value);
 
-  const renderer = new Renderer(canvas);
+  // Renderer-owned images and offscreen canvases belong to one game generation.
+  // Keep no idle-lobby instance: dropping the generation after teardown lets the
+  // browser collect those non-DOM presentation resources before the next match.
+  let renderer: Renderer | null = null;
   const hud = new HUD(hudRoot, overlayRoot, modalRoot, battleRailRoot);
   if (E2E_MODE === 'hotseat') {
     (
@@ -239,6 +246,12 @@ function bootstrap(): void {
   // state the renderer draws, never touching the deterministic engine.
   const audio = new AudioEngine();
   audio.unlockOnGesture();
+  const syncBattleSettings = (): void => {
+    hud.setBattleSettingsState?.({
+      aimGuideEnabled: renderer?.isAimGuideEnabled ?? true,
+      soundEnabled: !audio.isMuted,
+    });
+  };
   let terminalImpactObserved = false;
   let terminalImpactNotified = false;
 
@@ -289,44 +302,64 @@ function bootstrap(): void {
     boomFlash.style.opacity = '0';
   }
 
-  renderer.setEvents({
-    onLaunch: () => audio.launch(),
-    onExplosion: (radius, impact) => {
-      terminalImpactObserved = true;
-      const receipt = (window as typeof window & {
-        __SINGED_TERRA_T8__?: Readonly<TerminalPayoffE2EReceipt>;
-      }).__SINGED_TERRA_T8__;
-      publishTerminalPayoffE2EReceipt({
-        terminalExplosionCount: (receipt?.terminalExplosionCount ?? 0) + 1,
-        terminalExplosionObservedAt: performance.now(),
-      });
-      audio.explosion(radius);
-      if (impact) audio.impact(impact.impactType, impact.radius);
-      flashBloom(radius);
-    },
-    onWallImpact: (side, walls) => audio.wallContact(walls, side),
-    onHop: () => audio.hopTick(),
-    onFireActive: (active) => {
-      if (active) audio.napalmStart();
-      else audio.napalmStop();
-    },
-    onMiss: () => audio.fizzle(),
-  });
+  const createRenderer = (): Renderer => {
+    const next = new Renderer(canvas);
+    next.setEvents({
+      onLaunch: () => audio.launch(),
+      onExplosion: (radius, impact) => {
+        terminalImpactObserved = true;
+        const receipt = (window as typeof window & {
+          __SINGED_TERRA_T8__?: Readonly<TerminalPayoffE2EReceipt>;
+        }).__SINGED_TERRA_T8__;
+        publishTerminalPayoffE2EReceipt({
+          terminalExplosionCount: (receipt?.terminalExplosionCount ?? 0) + 1,
+          terminalExplosionObservedAt: performance.now(),
+        });
+        audio.explosion(radius);
+        if (impact) audio.impact(impact.impactType, impact.radius);
+        flashBloom(radius);
+      },
+      onWallImpact: (side, walls) => audio.wallContact(walls, side),
+      onHop: () => audio.hopTick(),
+      onFireActive: (active) => {
+        if (active) audio.napalmStart();
+        else audio.napalmStop();
+      },
+      onMiss: () => audio.fizzle(),
+    });
+    renderer = next;
+    syncBattleSettings();
+    return next;
+  };
+  const toggleAimGuide = (): void => {
+    if (!renderer) return;
+    const on = renderer.toggleAimGuide();
+    syncBattleSettings();
+    markDirty(); // reflect it on a static decision frame as well as in flight
+    hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
+  };
+  const toggleSound = (): void => {
+    const muted = audio.toggleMute();
+    syncBattleSettings();
+    hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
+  };
+  // Production HUD owns every modal surface. Narrow composition tests may use
+  // an older HUD-shaped seam, so retain their First Salvo fallback while the
+  // live app consumes the complete modal-ownership contract.
+  const gameplayInputBlocked = (): boolean =>
+    hud.isGameplayInputBlocked?.() ?? hud.isFirstSalvoBriefingOpen();
+
   // Mute toggle (M). Document-level so it works on any screen; 'M' is unused by
   // InputHandler (which owns arrows/space/Q), so there's no key conflict.
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyM' && !e.repeat) {
-      const muted = audio.toggleMute();
-      hud.flashMessage(muted ? '🔇 Sound off' : '🔊 Sound on');
+      toggleSound();
     } else if (e.code === 'KeyG' && !e.repeat) {
-      const on = renderer.toggleAimGuide();
-      markDirty(); // show/hide the aim guide on the next frame even on a static turn
-      hud.flashMessage(on ? '🎯 Aim guide on' : '🎯 Aim guide off');
-    } else if (e.code === 'KeyF') {
+      toggleAimGuide();
+    } else if (e.code === 'KeyF' && !gameplayInputBlocked()) {
       // Hold F to fast-forward the shot animation (review #7). Local view pacing only;
       // never a logged action. Repeats while held (idempotent); released on keyup.
       client?.setFastForward?.(true);
-      if (!e.repeat) hud.flashMessage('⏩ Fast-forward');
     }
   });
   window.addEventListener('keyup', (e) => {
@@ -353,6 +386,10 @@ function bootstrap(): void {
   let e2eVictoryPending = E2E_MODE === 'victory'
     || E2E_MODE === 'victory-anonymous'
     || E2E_MODE === 'victory-payoff';
+  // Deterministic presentation fixture for the real between-round HUD lifecycle.
+  // It mutates the local hot-seat engine's opening snapshot once, mirroring the
+  // existing victory fixture while leaving every production entry path unchanged.
+  let e2eRoundShopPending = E2E_MODE === 'round-shop';
 
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
     const state = client?.getState();
@@ -381,7 +418,7 @@ function bootstrap(): void {
         activeIsLocal,
         paused: hud.isPaused(),
       })
-      && !hud.isFirstSalvoBriefingOpen()
+      && !gameplayInputBlocked()
       && verifiedInputAllowed();
   }
 
@@ -531,7 +568,7 @@ function bootstrap(): void {
   }
 
   /** Tear down the current game's client/input/subscription (idempotent). */
-  function teardown(): void {
+  async function teardown(): Promise<void> {
     gameGeneration += 1;
     clearAiTimers();
     unsubscribe?.();
@@ -573,17 +610,20 @@ function bootstrap(): void {
     hud.setVerifiedDeployment(null);
     hud.setFieldOrder(null);
     hud.setFirstSalvoStep(null);
+    await hud.leaveBattleConsole?.();
     // Reset the page-singleton renderer's per-game visual state. Otherwise game #2+ in
     // the same tab drops all its juice: lastSeenExplosionId keeps game #1's high-water
     // mark while the fresh engine restarts explosion ids at 1, so early explosions fail
     // the dedupe (no boom/shake/debris/damage-numbers/bloom) — plus a stale last-shot
     // crosshair leaks across games. (Branch-review finding.)
-    renderer.reset();
+    renderer?.reset();
+    renderer = null;
+    releaseTankLoadoutPreviewResources();
   }
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
-    teardown();
+    await teardown();
     progressionSignInHandled = false;
     const currentGameGeneration = gameGeneration;
     // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
@@ -614,7 +654,22 @@ function bootstrap(): void {
       newClient = await createClient(config);
     }
     client = newClient;
-    selectClientBattlefieldWorld(newClient, renderer, currentConfig?.settings?.battlefieldWorld);
+    const gameRenderer = createRenderer();
+    const selectedBattlefield = selectClientBattlefieldWorld(
+      newClient,
+      gameRenderer,
+      currentConfig?.settings?.battlefieldWorld,
+    );
+    if (selectedBattlefield) {
+      document.documentElement.style.setProperty(
+        '--st-current-battlefield',
+        `url(${import.meta.env.BASE_URL}${selectedBattlefield.asset})`,
+      );
+      document.documentElement.style.setProperty(
+        '--st-theater-backdrop',
+        `url(${import.meta.env.BASE_URL}art/battlefield-theater-${selectedBattlefield.id}-v3.webp)`,
+      );
+    }
     firstSalvo.startNewGame();
     e2eForwardedActionCounts = { setAngle: 0, setPower: 0, fire: 0 };
 
@@ -630,10 +685,31 @@ function bootstrap(): void {
     // arrow keys step from that tank's real angle/power (set_angle/set_power
     // carry ABSOLUTE values). getState() may be null before the first snapshot.
     const initial = newClient.getState();
+    if (e2eRoundShopPending && initial) {
+      e2eRoundShopPending = false;
+      const winner = initial.tanks[0]!;
+      const runnerUp = initial.tanks[1]!;
+      winner.playerName = 'Player 1';
+      winner.roundWins = 1;
+      winner.kills = 1;
+      winner.totalDamage = 86;
+      winner.credits = 8_000;
+      runnerUp.playerName = 'LongRangeCommander20';
+      runnerUp.kills = 0;
+      runnerUp.totalDamage = 54;
+      runnerUp.credits = 6_250;
+      initial.phase = 'ROUND_OVER';
+      initial.round = 2;
+      initial.totalRounds = 3;
+      initial.lastRoundWinnerId = winner.id;
+    }
     if (e2eVictoryPending && initial) {
       e2eVictoryPending = false;
       initial.phase = 'GAME_OVER';
       initial.winner = initial.tanks[0]!.id;
+      if (E2E_VICTORY_LONG_NAME) {
+        initial.tanks[0]!.playerName = 'LongRangeCommander20';
+      }
       initial.tanks[0]!.alive = true;
       initial.tanks[0]!.health = 72;
       initial.tanks[0]!.kills = 2;
@@ -700,7 +776,7 @@ function bootstrap(): void {
     // rAF loop keeps running underneath either way (networked lockstep stays
     // in sync); only this LOCAL emit is suppressed.
     const newInput = new InputHandler(canvas, (action) => {
-      if (hud.isFirstSalvoBriefingOpen()
+      if (gameplayInputBlocked()
         || !shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
         || !verifiedInputAllowed()) return;
       // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
@@ -745,7 +821,7 @@ function bootstrap(): void {
       initialAngle: activeTank?.angle,
       initialPower: activeTank?.power,
       canDirectAim: directAimAllowed,
-      canHandleCommand: () => !hud.isFirstSalvoBriefingOpen(),
+      canHandleCommand: () => !gameplayInputBlocked(),
     });
     input = newInput;
     newInput.attach();
@@ -838,7 +914,7 @@ function bootstrap(): void {
       });
       activeIsLocal = aimGuide.visible;
       newInput.setDirectAimEnabled(directAimAllowed());
-      renderer.setAimGuide(aimGuide.visible, aimGuide.gravity);
+      gameRenderer.setAimGuide(aimGuide.visible, aimGuide.gravity);
       syncFirstSalvo();
       // Feed the active tank's barrel-origin (logical px) so mouse drag-aim can
       // derive angle/power from the drag vector (pivot = body top, y − 16).
@@ -862,12 +938,12 @@ function bootstrap(): void {
       // frame (anything animating) OR an input/aim/weapon change marked us dirty. A
       // static PLAYER_TURN scene is otherwise redrawn at 60fps for nothing. The HUD
       // (cheap DOM diff) still updates every frame so turn/score/wind stay live.
-      if (renderDirty || renderer.isAnimating(state)) {
-        renderer.render(state);
+      if (renderDirty || gameRenderer.isAnimating(state)) {
+        gameRenderer.render(state);
         renderDirty = false;
       }
       const verifiedControlsAllowed = verifiedInputAllowed();
-      hud.setImpactLearningCue(renderer.currentImpactLearningCue());
+      hud.setImpactLearningCue(gameRenderer.currentImpactLearningCue());
       hud.update(
         state,
         newClient.isFiring ?? false,
@@ -884,7 +960,7 @@ function bootstrap(): void {
       if (
         state.phase === 'GAME_OVER'
         && terminalEffectsSettled
-        && !renderer.isTerminalImpactAnimating(state)
+        && !gameRenderer.isTerminalImpactAnimating(state)
         && !terminalImpactNotified
       ) {
         terminalImpactNotified = true;
@@ -977,11 +1053,13 @@ function bootstrap(): void {
     }
   });
 
-  const localInputAllowed = (): boolean => shouldAcceptLocalInput({
+  const localTurnAllowsActions = (): boolean => shouldAcceptLocalInput({
     activeIsAi,
     activeIsLocal,
     paused: hud.isPaused(),
-  }) && !hud.isFirstSalvoBriefingOpen() && verifiedInputAllowed();
+  }) && verifiedInputAllowed();
+  const localInputAllowed = (): boolean =>
+    localTurnAllowsActions() && !gameplayInputBlocked();
 
   hud.onFirstSalvoSkip(() => {
     firstSalvo.skip();
@@ -997,7 +1075,10 @@ function bootstrap(): void {
   // Q cycling stays in sync with the mouse pick. client/input are the
   // mutable per-game closure vars (null between teardown and startGame).
   hud.onWeaponSelect((weapon) => {
-    if (!localInputAllowed()) return;
+    // This callback is the Armory owner's explicit trusted Equip action. It is
+    // allowed while that dialog owns focus, unlike background keyboard/touch
+    // gameplay input, but still obeys turn ownership and verified-play gates.
+    if (!localTurnAllowsActions()) return;
     markDirty(); // weapon pick can change aim-guide/HUD context — repaint next frame
     client?.sendAction({ type: 'select_weapon', weapon });
     input?.setWeapon(weapon);
@@ -1082,8 +1163,7 @@ function bootstrap(): void {
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     if (deployment.status !== 'expired') return;
     if (!lobby.returnVerifiedDeploymentToBattery()) return;
-    teardown();
-    lobby.show();
+    void teardown().then(() => lobby.show());
   });
 
   hud.onVerifiedNextOrder(() => {
@@ -1097,8 +1177,7 @@ function bootstrap(): void {
       || deployment.receipt.result.sessionId !== descriptor.sessionId
       || !lobby.returnVerifiedDeploymentToBattery()
     ) return;
-    teardown();
-    lobby.show({ focusVerifiedDeployment: true });
+    void teardown().then(() => lobby.show({ focusVerifiedDeployment: true }));
   });
 
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
@@ -1106,16 +1185,16 @@ function bootstrap(): void {
   // (which covers the now-frozen canvas). For networked games this stops the
   // client; the room is reaped server-side by the heartbeat/lazy-GC.
   hud.onQuit(() => {
-    teardown();
-    lobby.show();
+    void teardown().then(() => lobby.show());
   });
 
   hud.onProgressionSignIn(() => {
     if (progressionSignInHandled) return;
     progressionSignInHandled = true;
-    teardown();
-    lobby.show();
-    lobby.showAccountSignIn();
+    void teardown().then(() => {
+      lobby.show();
+      lobby.showAccountSignIn();
+    });
   });
 
   hud.onPauseChange((paused) => {
@@ -1129,8 +1208,17 @@ function bootstrap(): void {
   hud.onTouchAngle((delta) => { if (localInputAllowed()) input?.stepAngle(delta); });
   hud.onTouchPower((delta) => { if (localInputAllowed()) input?.stepPower(delta); });
   hud.onTouchWeapon(()     => { if (localInputAllowed()) input?.nextWeapon(); });
+  // Narrow presentation harnesses may provide an older HUD-shaped seam. The
+  // production HUD always exposes both Settings callbacks; keep those fixtures
+  // from becoming an unrelated integration dependency.
+  hud.onAimGuide?.(()        => toggleAimGuide());
+  hud.onToggleSound?.(()     => toggleSound());
   hud.onMove((delta)        => { if (localInputAllowed()) input?.stepMove(delta); });
   hud.onPrimaryAction(()   => { if (localInputAllowed()) input?.triggerFire(); });
+
+  window.addEventListener('pagehide', () => {
+    void hud.destroy();
+  }, { once: true });
 
   // Deterministic E2E entrypoint (rendering-guardrail suite). When the page is
   // loaded with `?e2e=hotseat`, skip the splash/lobby and immediately start a
@@ -1141,18 +1229,22 @@ function bootstrap(): void {
   // hot-seat game (fixed seed, two human seats) — no backend, no secrets, no auth.
   if (
     E2E_MODE === 'hotseat'
+    || E2E_MODE === 'round-shop'
     || E2E_MODE === 'victory'
     || E2E_MODE === 'victory-anonymous'
     || E2E_MODE === 'victory-payoff'
   ) {
     if (E2E_MODE === 'victory-anonymous') lobby.show();
+    const e2ePlayerNames = E2E_BATTLE_CONSOLE_REFERENCE
+      ? ['Player 1', 'Player 2']
+      : ['P1', 'P2'];
     void startGame({
       mode: 'hotseat',
       players: [
-        { name: 'P1', color: '#e84d4d' },
-        { name: 'P2', color: '#4d8ce8' },
+        { name: e2ePlayerNames[0]!, color: '#e84d4d' },
+        { name: e2ePlayerNames[1]!, color: '#4d8ce8' },
       ],
-      playerNames: ['P1', 'P2'],
+      playerNames: e2ePlayerNames,
       settings: { seed: E2E_HOT_SEAT_SEED },
       quickOperation: E2E_QUICK_OPERATION === null ? undefined : {
         id: E2E_QUICK_OPERATION.id,
@@ -1166,24 +1258,49 @@ function bootstrap(): void {
 
   // JS-driven scale via CSS zoom (NOT transform: scale).
   //
-  // zoom is used because it affects layout: a 1464×600 #app at zoom s takes up
-  // 1464s×600s in document flow, so the body can center it without overflow.
-  // transform:scale() leaves the layout box at 1464×600 regardless of the visual
+  // zoom is used because it affects layout: a 1200×600 #app at zoom s takes up
+  // 1200s×600s in document flow, so the body can center it without overflow.
+  // transform:scale() leaves the layout box at 1200×600 regardless of the visual
   // size — body overflow:hidden then clips visible content.
   //
-  // The 1464×600 divisor MUST mirror --stage-w / --stage-h in style.css (the full
-  // stage = 1200×600 canvas + 264px HUD panel); keep them in sync.
+  // The 1200×600 divisor MUST mirror --stage-w / --stage-h in style.css. Match
+  // is a content-fit overlay and never changes the stage scale denominator.
   //
   // Cap at 2× so 4K monitors don't get an absurdly large stage.
   const appEl = document.getElementById('app');
+  // Continue the authored battlefield palette through ultrawide gutters. The
+  // panorama is presentation-only; the fixed logical stage and every gameplay
+  // coordinate remain unchanged. Resolve it through Vite's base so Pages and
+  // root-hosted previews share the same asset contract.
+  document.documentElement.style.setProperty(
+    '--st-theater-backdrop',
+    `url(${import.meta.env.BASE_URL}art/battlefield-theater-ultrawide-v2.webp)`,
+  );
   // Below this scale the console strengthens its analog strokes and labels so
   // telemetry stays legible after whole-stage zoom. Key it from the ACTUAL scale,
   // not pointer type: a small or remote fine-pointer window is equally reduced.
   const COMPACT_SCALE = 0.8;
   function updateScale(): void {
     if (!appEl) return;
-    const s = Math.min(window.innerWidth / 1464, window.innerHeight / 600, 2);
+    const stageWidth = 1200;
+    const s = Math.min(window.innerWidth / stageWidth, window.innerHeight / 600, 2);
     appEl.style.zoom = String(s);
+    appEl.style.setProperty('--battle-ui-scale', String(s));
+    // Keep the persistent Match ledger wholly outside gameplay. Smaller gutters
+    // use the existing deliberate drawer instead of obscuring terrain or tanks.
+    const sideGutter = (window.innerWidth - stageWidth * s) / 2;
+    appEl.dataset['matchDocked'] = String(sideGutter >= (184 + 24) * s);
+    // The console is grounded on the viewport floor. Continue the selected
+    // panorama through any aspect-ratio remainder above the stage so ordinary
+    // desktop windows read as one theater, not a second unrelated sky strip.
+    const stageTop = Math.max(0, window.innerHeight - 600 * s);
+    document.documentElement.style.setProperty('--st-stage-top', `${stageTop}px`);
+    document.documentElement.style.setProperty('--st-stage-visual-width', `${stageWidth * s}px`);
+    document.documentElement.style.setProperty('--st-stage-visual-height', `${600 * s}px`);
+    // Renderer overscans the world by 18 logical pixels and begins the image
+    // nine pixels above the canvas. Sample that same row at the canopy seam.
+    document.documentElement.style.setProperty('--st-backdrop-seam-offset', `${9 * s}px`);
+    document.documentElement.style.setProperty('--st-canopy-blend-alpha', stageTop > 1 ? '.48' : '0');
     // Store buy controls need a 44px physical touch target even when the entire
     // stage is zoomed below the compact design scale. Round upward so browser
     // subpixel layout cannot undercut that presentation-only floor.
@@ -1193,6 +1310,11 @@ function bootstrap(): void {
     appEl.style.setProperty('--st-command-choice-target', `${commandChoiceTarget}px`);
     const deploymentChoiceTarget = Math.ceil(44 / Math.max(s, Number.EPSILON));
     appEl.style.setProperty('--st-deployment-choice-target', `${deploymentChoiceTarget}px`);
+    // CSS zoom can snap a nominal 2px outline down to a single physical pixel.
+    // Compensate in logical stage space so the authored brass focus keyline
+    // remains at least two physical pixels at every supported viewport.
+    const focusRingSize = Math.ceil(2 / Math.max(s, Number.EPSILON));
+    appEl.style.setProperty('--st-focus-ring-size', `${focusRingSize}px`);
     // The whole stage is zoomed. Give the persistent command rail a logical
     // type size that still resolves to at least 11 physical pixels.
     const commandReadabilitySize = Math.max(11, Math.ceil(11 / Math.max(s, Number.EPSILON)));

@@ -26,7 +26,7 @@ Deno.test('completion contract accepts only canonical human evidence and project
   assertEquals(projectVerifiedDeploymentReceipt({ sessionId, won: true, outcome: 'win', verifiedXp: 200 }, { matchesPlayed: 1, wins: 1, totalXp: 200 }), {
     result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
     progression: {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
       current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
     },

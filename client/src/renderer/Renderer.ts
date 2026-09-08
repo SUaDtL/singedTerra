@@ -54,7 +54,7 @@ import {
   drawSidewalls,
   type WallContactVisual,
 } from './sidewallVisuals';
-import { BattlefieldBackdrop } from './BattlefieldBackdrop';
+import { BattlefieldBackdrop, type BattlefieldWorld } from './BattlefieldBackdrop';
 import { ExplosionArt } from './ExplosionArt';
 import { ImpactMonitorPainter } from './ImpactMonitorPainter';
 import { WorldAtmosphereLayer } from './worldAtmosphere';
@@ -416,6 +416,11 @@ export class Renderer {
     return this.aimGuideEnabled;
   }
 
+  /** Persisted master preference projected by the Battle Settings dialog. */
+  get isAimGuideEnabled(): boolean {
+    return this.aimGuideEnabled;
+  }
+
   /**
    * Reset all PER-GAME visual state. The Renderer is a page-level singleton reused
    * across games (a fresh GameEngine — with its own explosionSeq restarting at 0 — is
@@ -646,7 +651,10 @@ export class Renderer {
   }
 
   /** Freeze one complete deterministic world from the client's pristine terrain. */
-  selectBattlefieldWorld(terrain: Uint8Array, requestedWorld?: BattlefieldWorldId): void {
+  selectBattlefieldWorld(
+    terrain: Uint8Array,
+    requestedWorld?: BattlefieldWorldId,
+  ): BattlefieldWorld | undefined {
     const world = requestedWorld === undefined
       ? this.battlefieldBackdrop?.select?.(terrain)
       : this.battlefieldBackdrop?.select?.(terrain, requestedWorld);
@@ -654,6 +662,7 @@ export class Renderer {
       this.terrain?.selectWorld?.(world);
       this.worldAtmosphere?.select?.(world);
     }
+    return world;
   }
 
   /** Copy the strongest live detonation after all world transforms are restored. */

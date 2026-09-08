@@ -303,7 +303,7 @@ describe('InputHandler public contract', () => {
 
   it('lets the dedicated Fire control own Space/Enter without a second global fire', () => {
     const button = document.createElement('button');
-    button.className = 'st-hud__primary-action';
+    button.dataset.battleConsoleAction = 'fire';
     const clicks = vi.fn();
     button.addEventListener('click', clicks);
     document.body.append(button);

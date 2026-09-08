@@ -23,9 +23,9 @@ export const CANVAS_HEIGHT = 600;
 /**
  * Logical top edge of the protected bottom instrumentation rail. Gameplay
  * terrain and projectile collision end here; the bitmap still retains the
- * covered 260px base for its fixed 1200 by 600 representation.
+ * covered 200px base for its fixed 1200 by 600 representation.
  */
-export const ARENA_FLOOR_Y = 340;
+export const ARENA_FLOOR_Y = 400;
 
 /** Surface kept within these vertical bounds so tanks have sky above / ground below. */
 const MIN_SURFACE_Y = Math.floor(CANVAS_HEIGHT * 0.35); // 210 — tallest allowed hill

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ACCENT, BACKDROP, TEXT } from '../ui/theme';
+import { BACKDROP, TEXT } from '../ui/theme';
 import {
   ImpactMonitorPainter,
   type ImpactMonitorCanvasFactory,
@@ -61,6 +61,8 @@ function harness(options: {
   const scratchRoundRect = vi.fn(() => operations.push('content-path'));
   const scratchClip = vi.fn(() => operations.push('content-clip'));
   const scratchStrokeRect = vi.fn(() => operations.push('frame-stroke'));
+  const scratchFill = vi.fn(() => operations.push('shape-fill'));
+  const scratchStroke = vi.fn(() => operations.push('shape-stroke'));
   const scratchFillText = vi.fn(() => operations.push('label'));
   const scratch = {
     save: scratchSave,
@@ -70,6 +72,8 @@ function harness(options: {
     beginPath: vi.fn(),
     roundRect: scratchRoundRect,
     clip: scratchClip,
+    fill: scratchFill,
+    stroke: scratchStroke,
     fillRect: vi.fn(() => operations.push('frame-fill')),
     strokeRect: scratchStrokeRect,
     fillText: scratchFillText,
@@ -212,14 +216,18 @@ describe('ImpactMonitorPainter', () => {
     const probe = harness();
     const monitor = new ImpactMonitorPainter(probe.factory);
 
-    expect(monitor.draw(probe.target, geometry, false)).toBe(true);
+    expect(monitor.draw(probe.target, geometry, false, cue)).toBe(true);
     expect(probe.scratchRoundRect).toHaveBeenCalledWith(11, 7, 198, 121, 7);
+    expect(probe.scratchRoundRect).toHaveBeenCalledWith(1, 1, 218, 134, 8);
+    expect(probe.scratchRoundRect).toHaveBeenCalledWith(5, 5, 210, 126, 6);
+    expect(probe.scratchRoundRect).toHaveBeenCalledWith(10, 6, 118, 22, 4);
+    expect(probe.scratchRoundRect).toHaveBeenCalledWith(10, 94, 200, 36, 4);
     expect(probe.scratchClip).toHaveBeenCalledOnce();
-    expect(probe.scratchStrokeRect).toHaveBeenCalledTimes(2);
+    expect(probe.scratchStrokeRect).not.toHaveBeenCalled();
     expect(probe.scratchFillText).toHaveBeenCalledWith('IMPACT MONITOR', 18, 21);
     expect(probe.styles.fill).toContain(BACKDROP);
     expect(probe.styles.fill).toContain(TEXT.gold);
-    expect(probe.styles.stroke).toContain(ACCENT.gold);
+    expect(probe.styles.stroke).toContain('rgba(214, 160, 70, 0.78)');
     expect(probe.targetFillRect).not.toHaveBeenCalled();
     expect(probe.targetStrokeRect).not.toHaveBeenCalled();
   });

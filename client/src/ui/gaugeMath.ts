@@ -40,6 +40,32 @@ export function elevationDegrees(angle: number): number {
   return a <= 90 ? a : 180 - a;
 }
 
+/** Endpoint for the elevation needle in the compact 100×100 SVG instrument. */
+export function elevationArcEndPoint(angle: number): { readonly x: number; readonly y: number } {
+  const radians = elevationNeedleDeg(angle) * Math.PI / 180;
+  return {
+    x: Math.round(50 + 36 * Math.cos(radians)),
+    y: Math.round(50 - 36 * Math.sin(radians)),
+  };
+}
+
+/** Endpoint for the power fill across the compact semicircular SVG instrument. */
+export function powerArcEndPoint(power: number): { readonly x: number; readonly y: number } {
+  const radians = (180 - gaugeFraction(power, 0, 100) * 180) * Math.PI / 180;
+  return {
+    x: Math.round(50 + 36 * Math.cos(radians)),
+    y: Math.round(50 - 36 * Math.sin(radians)),
+  };
+}
+
+/** Endpoint for the signed wind vector in the compact 100×100 SVG instrument. */
+export function windVectorEndPoint(
+  wind: number,
+  maxWind: number,
+): { readonly x: number; readonly y: number } {
+  return { x: Math.round(50 + windNeedleOffset(wind, maxWind) * 36), y: 50 };
+}
+
 /** Aim-direction glyph: ▶ right, ◀ left, ▲ straight up. */
 export function aimDirectionGlyph(angle: number): string {
   const a = Math.round(angle);

@@ -231,10 +231,12 @@ console.log('[4] deform at bitmap EDGES (cx near 0 / near 800): no OOR / NaN');
   deform(b, CANVAS_WIDTH + 50, 300, 40); // center well off right
   assertCleanBitmap(b, 'deform cx=850 r=40');
 
-  // A centered crater + gravity actually LOWERS the surface (surfaceAt grows).
-  b = flatBitmap(300);
+  // A centered crater in the mutable band (not the protected rail floor) +
+  // gravity actually LOWERS the surface (surfaceAt grows).
+  const mutableSurfaceY = ARENA_FLOOR_Y - 40;
+  b = flatBitmap(mutableSurfaceY);
   const surfaceBefore = surfaceAt(b, 400);
-  const range = deform(b, 400, 300, 20);
+  const range = deform(b, 400, mutableSurfaceY, 20);
   ok(range !== null, 'centered crater wrote pixels (deform returned a range)');
   if (range !== null) applyGravity(b, range.xStart, range.xEnd);
   ok(surfaceAt(b, 400) > surfaceBefore,

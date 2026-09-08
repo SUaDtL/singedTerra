@@ -8,7 +8,7 @@ async function openLocalPreparation(page: Page): Promise<void> {
 
 async function gotoProductionAccountFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    window.localStorage.setItem('sb-localhost-auth-token', JSON.stringify({
+    window.localStorage.setItem('sb-' + window.location.hostname.split('.')[0] + '-auth-token', JSON.stringify({
       access_token: 'e2e-public-session-token',
       refresh_token: 'e2e-public-refresh-token',
       expires_at: 4_102_444_800,
@@ -48,7 +48,7 @@ async function gotoProductionAccountFixture(page: Page): Promise<void> {
         levelXp: 0,
         nextLevelXp: 500,
         verifiedProgression: {
-          evidence: 'verified_replay_v1',
+          evidence: 'verified_replay_v2',
           matchesPlayed: 8,
           wins: 4,
           progressionVersion: 1,

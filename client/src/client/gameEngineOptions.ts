@@ -1,7 +1,10 @@
 import type { GameOptions } from '@shared/types/GameOptions';
 import { normalizeTankLoadout } from '@shared/types/TankLoadout';
 import type { LobbyConfig } from '../ui/Lobby';
-import { normalizeNetworkRulesetVersion } from './networkRuleset';
+import {
+  CURRENT_NETWORK_RULESET_VERSION,
+  normalizeNetworkRulesetVersion,
+} from './networkRuleset';
 
 type EnginePlayer = NonNullable<GameOptions['players']>[number];
 type NetworkEnginePlayer = EnginePlayer & { id: string };
@@ -36,6 +39,11 @@ export function buildClientEngineOptions(
 
   if (config.mode === 'network') {
     const rulesetVersion = normalizeNetworkRulesetVersion(settings?.rulesetVersion);
+    // Terrain/floor semantics participate in every replayed collision. Do not
+    // instantiate an engine for a room created by a prior deterministic build.
+    if (rulesetVersion !== CURRENT_NETWORK_RULESET_VERSION) {
+      throw new Error('network_ruleset_incompatible');
+    }
     const players = config.players.map((player) => ({
       ...player,
       id: player.id!,
@@ -56,7 +64,7 @@ export function buildClientEngineOptions(
       armsLevel: settings?.armsLevel,
       teamMode: settings?.teamMode,
       rulesetVersion,
-      starterWeaponFalloff: rulesetVersion === 2 || rulesetVersion === 3 ? 'decisive' : 'linear',
+      starterWeaponFalloff: rulesetVersion === 2 || rulesetVersion === 3 || rulesetVersion === 4 ? 'decisive' : 'linear',
     };
   }
 

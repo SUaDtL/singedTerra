@@ -1,0 +1,975 @@
+.root {
+  --battle-console-ink: #f8f0dc;
+  --battle-console-muted: #d5b96e;
+  --battle-console-ready: #b7ff58;
+  --battle-console-danger: #fff1dc;
+  --battle-console-scale: 1;
+
+  position: relative;
+  z-index: 2;
+  width: 1388px;
+  height: 212px;
+  overflow: visible;
+  isolation: isolate;
+  color: var(--battle-console-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: auto;
+  transform: scale(var(--battle-console-scale));
+  transform-origin: 0 0;
+}
+
+.inline {
+  position: absolute;
+  inset: 0;
+  width: 1388px;
+  height: 212px;
+}
+
+.weaponIcon {
+  position: absolute;
+  left: 363px;
+  top: 74px;
+  z-index: 1;
+  display: flex;
+  width: 37px;
+  height: 37px;
+  border-radius: 3px;
+  background: #171719;
+  color: #dfc278;
+  align-items: center;
+  justify-content: center;
+  font-size: 31px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.semanticNode {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: transparent;
+  font: inherit;
+}
+
+.root .semanticNode:not(button, output, span, img, kbd, strong) {
+  display: contents;
+}
+
+.root .semanticNode:is(span, output, img, kbd, strong) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.root button.semanticNode {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 64px;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.root button.semanticNode > .semanticNode {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  color: inherit;
+  white-space: nowrap;
+  clip-path: none;
+}
+
+.root button.semanticNode > kbd.semanticNode {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  color: transparent;
+  clip-path: inset(50%);
+}
+
+.root button.semanticNode:focus-visible {
+  outline: 3px solid #ffcf64;
+  outline-offset: -4px;
+  filter: drop-shadow(0 0 5px rgb(255 196 64 / 80%));
+}
+
+.root button.semanticNode:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.root .semanticNode[hidden] {
+  display: none !important;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Commander:3"] {
+  left: 151px;
+  top: 23px;
+  width: 90px;
+  height: 16px;
+  color: var(--battle-console-muted);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:P1:10"] {
+  left: 220px;
+  top: 56px;
+  width: 88px;
+  height: 22px;
+  color: #ffe9a8;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:100 health remaining:11"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  left: 228px;
+  top: 88px;
+  width: 70px;
+  height: 20px;
+  color: #ffd36a;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  clip-path: none;
+}
+
+.root .semanticNode[data-battle-console-portrait] {
+  position: absolute;
+  display: block;
+  left: 97px;
+  top: 61px;
+  width: 108px;
+  height: 60px;
+  overflow: hidden;
+  object-fit: contain;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:FUEL:18"] {
+  left: 160px;
+  top: 139px;
+  width: 51px;
+  height: 15px;
+  color: #302510;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:100 fuel remaining:19"] {
+  left: 164px;
+  top: 157px;
+  width: 48px;
+  height: 18px;
+  color: #23190c;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:button:Move tank left, 8 fuel maximum:14"] {
+  left: 66px;
+  top: 130px;
+  color: #d5b45f;
+  font-size: 28px;
+}
+
+.root .semanticNode[data-semantic-key="node:button:Move tank right, 8 fuel maximum:20"] {
+  left: 265px;
+  top: 130px;
+  color: #d5b45f;
+  font-size: 28px;
+}
+
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:button:Move tank left, 8 fuel maximum:14"],
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:button:Move tank right, 8 fuel maximum:20"] {
+  color: transparent;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Ballistics:26"] {
+  left: 652px;
+  top: 12px;
+  width: 105px;
+  height: 20px;
+  color: var(--battle-console-muted);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-align: center;
+  text-transform: uppercase;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Weapon:29"] {
+  left: 411px;
+  top: 49px;
+  width: 57px;
+  height: 14px;
+  color: var(--battle-console-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Baby Missile:30"] {
+  left: 410px;
+  top: 70px;
+  width: 96px;
+  height: 32px;
+  color: #ffd45e;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:button:Select next weapon, current Baby Missile:32"] {
+  left: 480px;
+  top: 53px;
+  color: #d5b45f;
+  font-size: 25px;
+}
+
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:button:Select next weapon, current Baby Missile:32"] {
+  color: transparent;
+}
+
+.root .semanticNode[data-semantic-key="armory-inline-host::weapon-trigger"] {
+  left: 360px;
+  top: 125px;
+  width: 164px;
+  color: #e3c16d;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Angle:39"],
+.root .semanticNode[data-semantic-key="node:span:Power:48"],
+.root .semanticNode[data-semantic-key="node:span:Wind:57"] {
+  top: 47px;
+  height: 15px;
+  color: var(--battle-console-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Angle:39"] { left: 591px; width: 60px; }
+.root .semanticNode[data-semantic-key="node:span:Power:48"] { left: 732px; width: 50px; }
+.root .semanticNode[data-semantic-key="node:span:Wind:57"] { left: 872px; width: 84px; }
+
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:span:Angle:39"],
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:span:Power:48"],
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:span:Wind:57"] {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.root .semanticNode[data-semantic-key="node:output:Angle:43"],
+.root .semanticNode[data-semantic-key="node:output:Power:52"],
+.root .semanticNode[data-semantic-key="node:output:Wind:58"] {
+  top: 121px;
+  height: 20px;
+  color: #ffe7a0;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:output:Angle:43"] { left: 574px; width: 69px; }
+.root .semanticNode[data-semantic-key="node:output:Power:52"] { left: 719px; width: 69px; }
+.root .semanticNode[data-semantic-key="node:output:Wind:58"] { left: 867px; width: 73px; font-size: 14px; }
+
+.root .semanticNode[data-semantic-key="command-console-host::aim-left-control"] { left: 551px; top: 136px; color: #d5b45f; font-size: 22px; }
+.root .semanticNode[data-semantic-key="node:button:Aim barrel right:44"] { left: 616px; top: 136px; color: #d5b45f; font-size: 22px; }
+.root .semanticNode[data-semantic-key="node:button:Decrease power:49"] { left: 697px; top: 136px; color: #d5b45f; font-size: 22px; }
+.root .semanticNode[data-semantic-key="node:button:Increase power:53"] { left: 760px; top: 136px; color: #d5b45f; font-size: 22px; }
+
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="command-console-host::aim-left-control"],
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:button:Aim barrel right:44"],
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:button:Decrease power:49"],
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="node:button:Increase power:53"] {
+  color: transparent;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Fire control:63"] {
+  left: 1080px;
+  top: 22px;
+  width: 120px;
+  height: 19px;
+  color: var(--battle-console-muted);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-align: center;
+  text-transform: uppercase;
+  clip-path: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Fire ready:67"] {
+  left: 1090px;
+  top: 64px;
+  width: 110px;
+  height: 25px;
+  color: var(--battle-console-ready);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  clip-path: none;
+  text-shadow: 0 0 8px rgb(139 255 58 / 58%);
+}
+
+.root .semanticNode[data-semantic-key="command-console-host::settings-trigger"] {
+  left: 1241px;
+  top: 49px;
+  width: 65px;
+  height: 65px;
+  color: #e7bd55;
+  font-size: 30px;
+}
+
+.root[data-battle-console-state="ready"] .semanticNode[data-semantic-key="command-console-host::settings-trigger"] {
+  color: transparent;
+}
+
+.root[data-battle-console-canonical-ink~="commander-title"] .semanticNode[data-semantic-key="node:span:Commander:3"],
+.root[data-battle-console-canonical-ink~="player-name"] .semanticNode[data-semantic-key="node:span:P1:10"],
+.root[data-battle-console-canonical-ink~="health-value"] .semanticNode[data-semantic-key="node:span:100 health remaining:11"],
+.root[data-battle-console-canonical-ink~="fuel-label"] .semanticNode[data-semantic-key="node:span:FUEL:18"],
+.root[data-battle-console-canonical-ink~="fuel-value"] .semanticNode[data-semantic-key="node:span:100 fuel remaining:19"],
+.root[data-battle-console-canonical-ink~="weapon-label"] .semanticNode[data-semantic-key="node:span:Weapon:29"],
+.root[data-battle-console-canonical-ink~="weapon-name"] .semanticNode[data-semantic-key="node:span:Baby Missile:30"],
+.root[data-battle-console-canonical-ink~="armory-label"] .semanticNode[data-semantic-key="armory-inline-host::weapon-trigger"],
+.root[data-battle-console-canonical-ink~="ballistics-title"] .semanticNode[data-semantic-key="node:span:Ballistics:26"],
+.root[data-battle-console-canonical-ink~="angle-value"] .semanticNode[data-semantic-key="node:output:Angle:43"],
+.root[data-battle-console-canonical-ink~="power-value"] .semanticNode[data-semantic-key="node:output:Power:52"],
+.root[data-battle-console-canonical-ink~="wind-value"] .semanticNode[data-semantic-key="node:output:Wind:58"],
+.root[data-battle-console-canonical-ink~="fire-control-title"] .semanticNode[data-semantic-key="node:span:Fire control:63"],
+.root[data-battle-console-canonical-ink~="fire-ready-text"] .semanticNode[data-semantic-key="node:span:Fire ready:67"],
+.root[data-battle-console-canonical-ink~="fire-action-text"] .semanticNode[data-semantic-key="command-console-host::fire"] {
+  color: transparent;
+  text-shadow: none;
+}
+
+.root .semanticNode[data-semantic-key="command-console-host::fire"] {
+  left: 1018px;
+  top: 115px;
+  width: 270px;
+  height: 68px;
+  padding-left: 60px;
+  color: var(--battle-console-danger);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px #3b0505;
+}
+
+/* Live readings use the same fitted DOM treatment at every value (AC-02/03). */
+.root .semanticNode[data-battle-console-fuel-well] {
+  z-index: 0;
+  left: 140px;
+  top: 138px;
+  width: 112px;
+  height: 40px;
+  border: 1px solid #916325;
+  border-radius: 24px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 11px, rgb(255 230 147 / 12%) 11px 12px),
+    linear-gradient(#9d651e, #edc465 35%, #d9a73f 68%, #84551f);
+  box-shadow: inset 0 2px 5px #5f3a13, inset 0 -2px 5px #87591d;
+  clip-path: none;
+  pointer-events: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:FUEL:18"] {
+  z-index: 1;
+  left: 145px;
+  top: 141px;
+  width: 102px;
+  height: 14px;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.root .semanticNode[data-semantic-key="node:span:100 fuel remaining:19"] {
+  z-index: 1;
+  left: 145px;
+  top: 155px;
+  width: 102px;
+  height: 21px;
+  font-size: 18px;
+  line-height: 21px;
+  font-variant-numeric: tabular-nums;
+}
+
+.root .semanticNode[data-semantic-key="node:span:P1:10"],
+.root .semanticNode[data-semantic-key="node:span:Baby Missile:30"],
+.root .semanticNode[data-semantic-key="node:span:Fire ready:67"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Baby Missile:30"] {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.root .semanticNode[data-semantic-key="node:span:100 health remaining:11"],
+.root .semanticNode[data-semantic-key="node:output:Angle:43"],
+.root .semanticNode[data-semantic-key="node:output:Power:52"],
+.root .semanticNode[data-semantic-key="node:output:Wind:58"] {
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Fire ready:67"] {
+  font-size: 16px;
+}
+
+.root .semanticNode[data-battle-console-wind-label] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  left: 850px;
+  top: 158px;
+  width: 98px;
+  height: 26px;
+  background: transparent;
+  color: #c9ad72;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-shadow: 0 1px 1px #090809;
+  clip-path: none;
+  pointer-events: none;
+}
+
+.root .semanticNode[data-semantic-key="node:span:P1:10"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: 54px;
+  height: 32px;
+  padding: 2px;
+  border-radius: 3px;
+  background: transparent;
+  font-size: 16px;
+  line-height: 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Baby Missile:30"] {
+  padding: 2px;
+  border-radius: 3px;
+  background: linear-gradient(#242021, #181719);
+}
+
+.root .semanticNode[data-semantic-key="node:span:100 health remaining:11"] {
+  border-radius: 4px;
+  background: transparent;
+}
+
+.root .semanticNode[data-semantic-key="node:span:Fire ready:67"] {
+  background: linear-gradient(#121912, #182015);
+}
+
+.root .semanticNode[data-semantic-key="node:span:Unlimited ammunition:31"] {
+  left: 410px;
+  top: 104px;
+  width: 96px;
+  height: 12px;
+  overflow: hidden;
+  color: #d5b96e;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 12px;
+  text-align: left;
+  clip-path: none;
+}
+
+.root .semanticNode[data-battle-console-long-name] {
+  font-size: 13px;
+  line-height: 14px;
+}
+
+/* The wind reading stays within the brass inset; do not extend a painted text mask. */
+.root .semanticNode[data-semantic-key="node:output:Wind:58"] {
+  background: transparent;
+}
+
+.portal {
+  z-index: 40;
+  box-sizing: border-box;
+  color: var(--battle-console-ink, #f8f0dc);
+  font-family: var(--font-display);
+  pointer-events: auto;
+  font-size: max(16px, calc(14px / var(--battle-ui-scale, 1)));
+  line-height: 1.35;
+}
+
+.portal[data-battle-console-dialog="armory"] {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  grid-template-rows: max(62px, var(--st-store-buy-target, 44px)) minmax(0, 1fr);
+  width: min(1160px, calc(100% - 24px));
+  height: min(560px, calc(100% - 24px));
+  padding: 24px 48px 36px;
+  transform: translate(-50%, -50%);
+  background: #171518 url('../../assets/battle-console/battle-armory-frame-ultrawide-v3.webp') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 18px 34px rgb(0 0 0 / 70%));
+  overflow: hidden;
+  font-size: calc(16px / var(--battle-ui-scale, 1));
+}
+
+.portal[data-battle-console-settings-backdrop] {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(4 5 12 / 64%);
+}
+
+.portal [data-battle-console-dialog="settings"] {
+  box-sizing: border-box;
+  position: relative;
+  width: min(460px, calc(100% - 32px));
+  height: min(560px, calc(100% - 24px));
+  padding: 0;
+  background: url('../../assets/battle-console/battle-settings-frame-v2.webp') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 18px 34px rgb(0 0 0 / 72%));
+}
+
+.portal [data-battle-console-dialog="settings"] [data-battle-console-portal-header] {
+  position: absolute;
+  inset: 8% 20% auto;
+  display: grid;
+  place-items: center;
+  height: 10%;
+  min-height: 0;
+  justify-content: center;
+  padding: 0;
+}
+
+.portal [data-battle-console-dialog="settings"] [data-battle-console-eyebrow] {
+  display: none;
+}
+
+.portal [data-battle-console-dialog="settings"] h2 {
+  margin: 0;
+  font-size: max(24px, calc(18px / var(--battle-ui-scale, 1)));
+  text-align: center;
+}
+
+.portal[data-battle-console-dialog="armory"] [data-battle-console-portal-header] {
+  position: relative;
+  align-items: center;
+  padding: 0 10px 10px;
+}
+
+.portal[data-battle-console-dialog="armory"] [data-battle-console-portal-header] > div {
+  position: absolute;
+  top: 7px;
+  left: 35%;
+  display: grid;
+  place-items: center;
+  width: 30%;
+  height: calc(100% - 10px);
+}
+
+.portal[data-battle-console-dialog="armory"] [data-battle-console-eyebrow] {
+  display: none;
+}
+
+.portal[data-battle-console-dialog="armory"] [data-battle-console-portal-header] h2 {
+  margin: 0;
+  font-size: calc(24px / var(--battle-ui-scale, 1));
+  text-align: center;
+}
+
+.portal [data-battle-console-armory-budget] {
+  display: flex;
+  align-items: baseline;
+  gap: calc(10px / var(--battle-ui-scale, 1));
+  max-width: 32%;
+  margin-top: 7px;
+  padding-left: 12px;
+  color: #c5b58f;
+  white-space: nowrap;
+}
+
+.portal [data-battle-console-credits] {
+  color: #ffe09a;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.portal[data-battle-console-dialog="armory"] [data-battle-console-portal-header] > button {
+  margin-left: auto;
+}
+
+.portal [data-battle-console-portal-header] {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0;
+  padding: 0 16px 10px;
+  border-bottom: 0;
+}
+
+.portal h2,
+.portal h3,
+.portal p,
+.portal dl {
+  margin: 0;
+}
+
+.portal h2 {
+  margin-top: 4px;
+  color: #ffe09a;
+  font-size: 28px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.portal [data-battle-console-eyebrow] {
+  color: #c59a47;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.portal button {
+  min-width: var(--st-store-buy-target, 44px);
+  min-height: var(--st-store-buy-target, 44px);
+  padding: 10px 14px;
+  border: 2px solid #856639;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #554a40 0%, #2d2825 12%, #211f20 86%, #131315 100%);
+  box-shadow: inset 0 1px 0 #a38c61, inset 0 0 0 2px #151414, 0 2px 2px #0b0b0c;
+  color: #f4d584;
+  font: inherit;
+  font-weight: 700;
+  text-shadow: 0 1px 1px #100e0d;
+  cursor: pointer;
+}
+
+.portal button:hover:not(:disabled),
+.portal button:focus-visible {
+  border-color: #d6a84f;
+  outline: 2px solid rgb(255 207 100 / 70%);
+  outline-offset: 2px;
+}
+
+.portal button:disabled {
+  color: #958a73;
+  border-color: #4f483a;
+  cursor: not-allowed;
+}
+
+.portal [data-battle-console-armory-grid] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(10px / var(--battle-ui-scale, 1));
+  padding: calc(10px / var(--battle-ui-scale, 1));
+}
+
+.portal [data-battle-console-armory-scroll] {
+  min-height: 0;
+  overflow: hidden auto;
+  scrollbar-color: #8d6429 #151116;
+  scrollbar-width: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  border: 2px solid #6e5435;
+  border-radius: 6px;
+  background: #151416;
+  box-shadow: inset 0 0 0 3px #08090a, 0 0 0 3px #211b17;
+  scroll-padding: 12px;
+}
+
+.portal [data-battle-console-armory-scroll]::-webkit-scrollbar { width: 10px; }
+.portal [data-battle-console-armory-scroll]::-webkit-scrollbar-track {
+  background: #151116;
+  border-left: 1px solid #4e351d;
+}
+.portal [data-battle-console-armory-scroll]::-webkit-scrollbar-thumb {
+  border: 2px solid #151116;
+  border-radius: 8px;
+  background: linear-gradient(#b17a30, #61411f);
+}
+
+.portal [data-battle-console-armory-item] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  gap: calc(8px / var(--battle-ui-scale, 1));
+  min-width: 0;
+  padding: calc(12px / var(--battle-ui-scale, 1));
+  border: 1px solid rgb(119 80 34 / 75%);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(219 158 65 / 10%), transparent 55%),
+    linear-gradient(145deg, rgb(49 40 37 / 92%), rgb(18 16 18 / 98%));
+  box-shadow: inset 0 1px 0 #594838, inset 0 0 0 3px #181618;
+}
+
+.portal [data-battle-console-armory-item] > header,
+.portal [data-battle-console-portal-actions] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.portal [data-battle-console-armory-item] > header {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.portal [data-battle-console-armory-item] > header > span {
+  color: #c5b58f;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.portal [data-battle-console-armory-item] > p {
+  grid-column: 1;
+  grid-row: 2;
+  overflow-wrap: anywhere;
+}
+
+.portal [data-battle-console-armory-item] > [data-battle-console-portal-actions] {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: stretch;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: calc(8px / var(--battle-ui-scale, 1));
+  padding-top: calc(8px / var(--battle-ui-scale, 1));
+  border-top: 1px solid #44392b;
+}
+
+.portal [data-battle-console-armory-item] > [data-battle-console-portal-actions] button {
+  min-height: var(--st-store-buy-target, 44px);
+  padding: calc(7px / var(--battle-ui-scale, 1)) calc(10px / var(--battle-ui-scale, 1));
+}
+
+.portal [data-battle-console-armory-item] h3 {
+  color: #ffd45e;
+  font-size: 1.15em;
+  overflow-wrap: anywhere;
+}
+
+.portal [data-battle-console-armory-item] p {
+  min-height: 0;
+  color: #d8cfbe;
+  line-height: 1.3;
+}
+
+.portal [data-battle-console-bundle] {
+  margin-right: auto;
+  color: #bba979;
+  font-size: .8125em;
+  white-space: nowrap;
+}
+
+.portal [data-battle-console-settings-grid] {
+  position: absolute;
+  inset: 25% 15% auto;
+  height: 49%;
+  display: grid;
+  grid-template-rows: 42% 42%;
+  align-content: space-between;
+}
+
+.portal [data-battle-console-settings-grid] button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--st-store-buy-target, 44px);
+  padding: 12px 18px;
+  font-size: inherit;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.portal [data-battle-console-settings-grid] button strong {
+  min-width: 54px;
+  color: #b7ff58;
+  text-align: right;
+}
+
+.portal [data-battle-console-settings-grid] button[aria-checked="false"] strong {
+  color: #b6a98d;
+}
+
+.portal [data-battle-console-settings-footer] {
+  position: absolute;
+  inset: 81% 27% auto;
+  height: 9%;
+  display: grid;
+  place-items: center;
+}
+
+.portal [data-battle-console-settings-close] {
+  width: 100%;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.portal .semanticNode {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  margin: revert;
+  padding: revert;
+  color: inherit;
+  white-space: normal;
+  clip-path: none;
+}
+
+.portal button.semanticNode {
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .portal {
+    scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 800px), (max-height: 520px) {
+  .portal [data-battle-console-armory-budget] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin-top: 0;
+    padding-left: 0;
+    font-size: .875em;
+  }
+  .portal[data-battle-console-dialog="armory"] [data-battle-console-portal-header] > div { top: 0; }
+  .portal[data-battle-console-dialog="armory"] {
+    grid-template-rows: max(58px, var(--st-store-buy-target, 44px)) minmax(0, 1fr);
+    padding: 28px 34px 32px;
+  }
+  .portal [data-battle-console-armory-grid] { grid-template-columns: 1fr; }
+  .portal [data-battle-console-dialog="settings"] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(580px, calc(100% - 40px));
+    height: min(500px, calc(100% - 40px));
+    gap: 16px;
+    padding: 24px;
+    border: 5px ridge #806543;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #302a27, #171619 45%, #242020);
+    box-shadow: inset 0 0 0 4px #100f11;
+  }
+  .portal [data-battle-console-dialog="settings"] [data-battle-console-portal-header] {
+    position: static;
+    height: auto;
+    padding: 8px;
+    border-bottom: 1px solid #806543;
+  }
+  .portal [data-battle-console-settings-grid] {
+    position: static;
+    height: auto;
+    grid-template-rows: repeat(2, minmax(var(--st-store-buy-target, 44px), 1fr));
+    gap: 12px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .portal [data-battle-console-settings-grid] button {
+    border: 2px solid #6e5435;
+    background: #191719;
+    box-shadow: inset 0 1px #806543;
+  }
+  .portal [data-battle-console-settings-footer] {
+    position: static;
+    height: auto;
+    justify-self: center;
+    min-width: 50%;
+  }
+  .portal [data-battle-console-settings-close] {
+    padding: 8px 16px;
+    border: 2px solid #806543;
+    background: linear-gradient(#413832, #211e1e);
+    box-shadow: inset 0 1px #ab8c59;
+  }
+}
+
+@media (min-width: 1900px) and (min-height: 521px) {
+  .portal [data-battle-console-armory-grid] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

@@ -257,7 +257,14 @@ export function mountSplash(): void {
     dismissed = true;
     overlay.classList.add('st-splash--out');
     window.removeEventListener('keydown', dismiss);
-    window.setTimeout(() => overlay.remove(), FADE_MS);
+    window.setTimeout(() => {
+      overlay.remove();
+      // The running HUD may have opened its one-action First Salvo briefing
+      // underneath this transition.  Announce the end of the focus-owning
+      // splash so that modal can take focus after—not before—this button is
+      // detached from the document.
+      window.dispatchEvent(new Event('st:splash-dismissed'));
+    }, FADE_MS);
   };
 
   // Any meaningful interaction starts the game.

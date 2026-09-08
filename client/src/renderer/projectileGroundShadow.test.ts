@@ -31,26 +31,26 @@ function byteHash(bytes: Uint8Array): number {
 
 describe('getProjectileGroundShadow', () => {
   it('projects onto the current live terrain column without mutating either input', () => {
-    const terrain = terrainWithSurface([[100, 320], [101, 300]]);
+    const terrain = terrainWithSurface([[100, 280], [101, 260]]);
     const terrainBefore = byteHash(terrain);
-    const projectile = { x: 100.75, y: 260 } as const;
+    const projectile = { x: 100.75, y: 220 } as const;
     const projectileBefore = { ...projectile };
 
     const first = getProjectileGroundShadow(projectile, terrain);
-    const craterWall = getProjectileGroundShadow({ x: 101, y: 260 }, terrain);
+    const craterWall = getProjectileGroundShadow({ x: 101, y: 220 }, terrain);
 
     expect(first?.x).toBe(100.75);
-    expect(first?.groundY).toBe(320);
+    expect(first?.groundY).toBe(280);
     expect(first?.altitude).toBe(60);
-    expect(craterWall?.groundY).toBe(300);
+    expect(craterWall?.groundY).toBe(260);
     expect(craterWall?.altitude).toBe(40);
     expect(projectile).toEqual(projectileBefore);
     expect(byteHash(terrain)).toBe(terrainBefore);
   });
 
   it('widens and softens monotonically with altitude, then stays capped', () => {
-    const terrain = terrainWithSurface([[200, 320]]);
-    const low = getProjectileGroundShadow({ x: 200, y: 310 }, terrain);
+    const terrain = terrainWithSurface([[200, 280]]);
+    const low = getProjectileGroundShadow({ x: 200, y: 270 }, terrain);
     const middle = getProjectileGroundShadow({ x: 200, y: 170 }, terrain);
     const high = getProjectileGroundShadow({ x: 200, y: -500 }, terrain);
 
@@ -69,10 +69,10 @@ describe('getProjectileGroundShadow', () => {
   });
 
   it('pins the exact bounded altitude envelope at low, middle, and cap', () => {
-    const terrain = terrainWithSurface([[300, 320]]);
-    const low = getProjectileGroundShadow({ x: 300, y: 320 - 1 }, terrain);
-    const middle = getProjectileGroundShadow({ x: 300, y: 320 - 160 }, terrain);
-    const cap = getProjectileGroundShadow({ x: 300, y: 320 - 320 }, terrain);
+    const terrain = terrainWithSurface([[300, 280]]);
+    const low = getProjectileGroundShadow({ x: 300, y: 280 - 1 }, terrain);
+    const middle = getProjectileGroundShadow({ x: 300, y: 280 - 160 }, terrain);
+    const cap = getProjectileGroundShadow({ x: 300, y: 280 - 320 }, terrain);
 
     expect(low!.radiusX).toBeCloseTo(GROUND_SHADOW_MIN_RADIUS_X + (21 / 320));
     expect(low!.radiusY).toBeCloseTo(GROUND_SHADOW_MIN_RADIUS_Y + (4 / 320));
@@ -86,15 +86,15 @@ describe('getProjectileGroundShadow', () => {
   });
 
   it('fails closed off-canvas, at/below ground, and for malformed state', () => {
-    const terrain = terrainWithSurface([[10, 320]]);
+    const terrain = terrainWithSurface([[10, 280]]);
     const shortTerrain = new Uint8Array(20);
     const invalid = [
       { projectile: { x: -0.01, y: 20 }, terrain },
       { projectile: { x: CANVAS_WIDTH, y: 20 }, terrain },
       { projectile: { x: Number.NaN, y: 20 }, terrain },
       { projectile: { x: 10, y: Number.POSITIVE_INFINITY }, terrain },
-      { projectile: { x: 10, y: 320 }, terrain },
-      { projectile: { x: 10, y: 321 }, terrain },
+      { projectile: { x: 10, y: 280 }, terrain },
+      { projectile: { x: 10, y: 281 }, terrain },
       { projectile: { x: 10, y: 20 }, terrain: shortTerrain },
     ];
 

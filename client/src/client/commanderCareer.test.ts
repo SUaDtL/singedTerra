@@ -5,7 +5,7 @@ import {
 } from './commanderCareer'
 
 const verified = (level: number) => ({
-  evidence: 'verified_replay_v1' as const,
+  evidence: 'verified_replay_v2' as const,
   progressionVersion: 1 as const,
   level,
 })

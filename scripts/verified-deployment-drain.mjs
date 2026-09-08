@@ -129,8 +129,8 @@ export async function run(argv, options = {}) {
     write: options.write ?? ((line) => console.log(line)),
   };
   const [command, ...extra] = argv;
-  if (extra.length > 0 || !['disable', 'status', 'enable'].includes(command)) {
-    throw new Error('usage: verified-deployment-drain <disable|status|enable>');
+  if (extra.length > 0 || !['disable', 'status'].includes(command)) {
+    throw new Error('usage: verified-deployment-drain <disable|status>');
   }
 
   if (command === 'disable') {
@@ -149,20 +149,7 @@ export async function run(argv, options = {}) {
     return;
   }
 
-  const decision = readiness({
-    ...row,
-    unexpired_sessions: Number(row.unexpired_sessions),
-  }, dependencies.now());
-  if (!decision.ready) throw new Error(`enable_refused_${decision.reason}`);
-  const control = await rpc('set_verified_deployment_starts', {
-    p_contract_version: CONTRACT_VERSION,
-    p_starts_enabled: true,
-  }, dependencies, (row) => validateControl(row, true));
-  dependencies.write(JSON.stringify({
-    contractVersion: control.contract_version,
-    starts_enabled: control.starts_enabled,
-    rolloutOrder: ROLLOUT_ORDER,
-  }));
+  throw new Error('verified_deployment_legacy_reenable_forbidden');
 }
 
 const invokedPath = process.argv[1] ? new URL(`file:///${process.argv[1].replace(/\\/g, '/')}`).href : '';

@@ -34,7 +34,7 @@ export interface AccountProgression {
 }
 
 export interface VerifiedAccountProgression extends AccountProgression {
-  evidence: 'verified_replay_v1'
+  evidence: 'verified_replay_v2'
   matchesPlayed: number
   wins: number
 }
@@ -98,7 +98,7 @@ function verifiedProgressionFromSummary(value: unknown): VerifiedAccountProgress
   const expectedTotalXp = row.verified_matches * MATCH_XP + row.verified_wins * WIN_XP
   if (!Number.isSafeInteger(expectedTotalXp) || row.total_xp !== expectedTotalXp) return null
   return {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     matchesPlayed: row.verified_matches,
     wins: row.verified_wins,
     ...progressionFromTotalXp(row.total_xp),

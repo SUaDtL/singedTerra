@@ -6,9 +6,9 @@ import {
   VERIFIED_DUEL_MAX_HUMAN_SALVOS,
 } from '@shared/net/verifiedDuel'
 
-export const VERIFIED_DEPLOYMENT_CONTRACT_VERSION = 1 as const
-export const VERIFIED_DEPLOYMENT_ENGINE_VERSION = 1 as const
-export const VERIFIED_DEPLOYMENT_RULESET_VERSION = 3 as const
+export const VERIFIED_DEPLOYMENT_CONTRACT_VERSION = 2 as const
+export const VERIFIED_DEPLOYMENT_ENGINE_VERSION = 2 as const
+export const VERIFIED_DEPLOYMENT_RULESET_VERSION = 4 as const
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
@@ -47,9 +47,9 @@ export interface VerifiedDeploymentConfig {
 export interface VerifiedDeploymentDescriptor {
   readonly sessionId: string
   readonly expiresAt: string
-  readonly contractVersion: 1
-  readonly engineVersion: 1
-  readonly rulesetVersion: 3
+  readonly contractVersion: 2
+  readonly engineVersion: 2
+  readonly rulesetVersion: 4
   readonly limits: VerifiedDeploymentLimits
   readonly config: VerifiedDeploymentConfig
 }
@@ -81,14 +81,14 @@ export interface VerifiedDeploymentProgressionCounts {
 export interface VerifiedDeploymentServerReceipt {
   readonly result: VerifiedDeploymentResultReceipt
   readonly progression: {
-    readonly evidence: 'verified_replay_v1'
+    readonly evidence: 'verified_replay_v2'
     readonly prior: VerifiedDeploymentProgressionCounts
     readonly current: VerifiedDeploymentProgressionCounts
   }
 }
 
 export interface VerifiedDeploymentProgressionSnapshot extends VerifiedDeploymentProgressionCounts {
-  readonly evidence: 'verified_replay_v1'
+  readonly evidence: 'verified_replay_v2'
   readonly progressionVersion: 1
   readonly level: number
   readonly levelXp: number
@@ -98,7 +98,7 @@ export interface VerifiedDeploymentProgressionSnapshot extends VerifiedDeploymen
 export interface VerifiedDeploymentReceipt {
   readonly result: VerifiedDeploymentResultReceipt
   readonly progression: {
-    readonly evidence: 'verified_replay_v1'
+    readonly evidence: 'verified_replay_v2'
     readonly prior: VerifiedDeploymentProgressionSnapshot
     readonly current: VerifiedDeploymentProgressionSnapshot
   }
@@ -314,7 +314,7 @@ export function parseVerifiedDeploymentCompletionResponse(value: unknown): Verif
     || (rawResult.outcome !== 'win' && rawResult.outcome !== 'loss' && rawResult.outcome !== 'draw')
     || (rawResult.verifiedXp !== 100 && rawResult.verifiedXp !== 200)
     || !exactKeys(rawProgression, ['evidence', 'prior', 'current'])
-    || rawProgression.evidence !== 'verified_replay_v1') return null
+    || rawProgression.evidence !== 'verified_replay_v2') return null
   const correctResult = (rawResult.won && rawResult.outcome === 'win' && rawResult.verifiedXp === 200)
     || (!rawResult.won && (rawResult.outcome === 'loss' || rawResult.outcome === 'draw') && rawResult.verifiedXp === 100)
   if (!correctResult) return null
@@ -332,7 +332,7 @@ export function parseVerifiedDeploymentCompletionResponse(value: unknown): Verif
   }) as VerifiedDeploymentResultReceipt
   return Object.freeze({
     result,
-    progression: Object.freeze({ evidence: 'verified_replay_v1' as const, prior, current }),
+    progression: Object.freeze({ evidence: 'verified_replay_v2' as const, prior, current }),
   })
 }
 

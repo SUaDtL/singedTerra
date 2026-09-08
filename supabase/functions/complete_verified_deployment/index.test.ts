@@ -29,9 +29,9 @@ function context(overrides: Record<string, unknown> = {}) {
     session_id: sessionId,
     user_id: userId,
     config,
-    contract_version: 1,
-    engine_version: 1,
-    ruleset_version: 3,
+    contract_version: 2,
+    engine_version: 2,
+    ruleset_version: 4,
     status: 'active',
     expires_at: '2026-08-11T12:30:00.000Z',
     transcript: null,
@@ -134,8 +134,8 @@ Deno.test('completion validates owner, lifecycle, expiry, and versioned server c
     context({ status: 'abandoned' }),
     context({ status: 'expired' }),
     context({ status: 'active', expires_at: '2026-08-11T11:59:59.999Z' }),
-    context({ contract_version: 2 }),
-    context({ engine_version: 2 }),
+    context({ contract_version: 3 }),
+    context({ engine_version: 1 }),
     context({ ruleset_version: 2 }),
     context({ config: { seed: 109 } }),
     context({ config: { ...config, options: { ...config.options, maxWind: 7 } } }),
@@ -195,7 +195,7 @@ Deno.test('completion independently replays server seed, maps the deterministic 
   assertEquals(await response.json(), {
     result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
     progression: {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
       current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
     },
@@ -244,7 +244,7 @@ Deno.test('completed same-evidence retry returns the immutable receipt without r
   assertEquals(await response.json(), {
     result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
     progression: {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       prior: { matchesPlayed: 3, wins: 1, totalXp: 400 },
       current: { matchesPlayed: 4, wins: 2, totalXp: 600 },
     },
@@ -259,6 +259,32 @@ Deno.test('completed same-evidence retry returns the immutable receipt without r
   })
   assertEquals(conflictResponse.status, 409)
   assertEquals(conflict.calls.map((call) => call.name), ['verified_deployment_completion_context'])
+})
+
+Deno.test('V2 completion never replays an active V1 session but can return its immutable completed receipt', async () => {
+  const active = dependencies({ context: context({ contract_version: 1, engine_version: 1, ruleset_version: 3 }) })
+  let replayed = 0
+  const denied = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
+    supabase: active.supabase as never,
+    replay: () => { replayed += 1; return replayResult() as never },
+    now: () => new Date('2026-08-11T12:00:00.000Z'), logger: () => undefined,
+  })
+  assertEquals([denied.status, replayed, active.calls.map((call) => call.name)], [409, 0, ['verified_deployment_completion_context']])
+
+  const completed = dependencies({ context: context({
+    contract_version: 1, engine_version: 1, ruleset_version: 3, status: 'completed', transcript,
+    won: true, outcome: 'win', verified_xp: 200,
+    prior_verified_matches: 0, prior_verified_wins: 0, prior_total_xp: 0,
+    current_verified_matches: 1, current_verified_wins: 1, current_total_xp: 200,
+    result_created_at: '2026-08-11T12:01:00.000Z',
+  }) })
+  const receipt = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
+    supabase: completed.supabase as never,
+    replay: () => { throw new Error('legacy receipt must not replay') },
+    now: () => new Date('2026-08-11T13:00:00.000Z'), logger: () => undefined,
+  })
+  assertEquals(receipt.status, 200)
+  assertEquals((await receipt.json()).progression.evidence, 'verified_replay_v1')
 })
 
 Deno.test('completion rejects widened, conflicting, or non-singleton atomic result rows without an award receipt', async () => {
@@ -320,7 +346,7 @@ Deno.test('same-account completions keep immutable result-specific progression o
     now: () => new Date('2026-08-11T12:00:00.000Z'),
   })
   assertEquals((await firstResponse.json()).progression, {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: { matchesPlayed: 4, wins: 2, totalXp: 600 },
     current: { matchesPlayed: 5, wins: 3, totalXp: 800 },
   })
@@ -340,7 +366,7 @@ Deno.test('same-account completions keep immutable result-specific progression o
     now: () => new Date('2026-08-11T12:00:00.000Z'),
   })
   assertEquals((await secondResponse.json()).progression, {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: { matchesPlayed: 5, wins: 3, totalXp: 800 },
     current: { matchesPlayed: 6, wins: 4, totalXp: 1000 },
   })
@@ -400,7 +426,7 @@ Deno.test('starts-disabled drain refuses new starts while existing resume, aband
       if (name === 'start_verified_deployment') {
         const existing = [...active][0]
         return existing && args.p_user_id === userId
-          ? { data: [{ id: existing, user_id: userId, config: buildVerifiedDeploymentConfig('Ash Walker', 17), contract_version: 1, engine_version: 1, ruleset_version: 3, status: 'active', expires_at: '2026-08-11T12:30:00.000Z', created_at: '2026-08-11T12:00:00.000Z', resumed: true }], error: null }
+          ? { data: [{ id: existing, user_id: userId, config: buildVerifiedDeploymentConfig('Ash Walker', 17), contract_version: 2, engine_version: 2, ruleset_version: 4, status: 'active', expires_at: '2026-08-11T12:30:00.000Z', created_at: '2026-08-11T12:00:00.000Z', resumed: true }], error: null }
           : { data: null, error: { message: 'verified_deployment_starts_disabled' } }
       }
       if (name === 'abandon_verified_deployment') {

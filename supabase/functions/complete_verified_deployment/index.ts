@@ -3,6 +3,9 @@ import {
   createVerifiedRequestHandler,
   parseVerifiedDeploymentCompletion,
   projectVerifiedDeploymentReceipt,
+  VERIFIED_CONTRACT_VERSION,
+  VERIFIED_ENGINE_VERSION,
+  VERIFIED_RULESET_VERSION,
   type VerifiedDeploymentCompletionRequest,
   type VerifiedDeploymentResultReceipt,
   type VerifiedHumanFire,
@@ -55,6 +58,13 @@ function validStoredConfig(value: unknown): value is StoredConfig {
 function validContext(value: unknown, userId: string, sessionId: string): value is CompletionContextRow {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const row = value as Record<string, unknown>
+  const currentTuple = row.contract_version === VERIFIED_CONTRACT_VERSION
+    && row.engine_version === VERIFIED_ENGINE_VERSION
+    && row.ruleset_version === VERIFIED_RULESET_VERSION
+  // Historical V1 results are immutable receipts. They may be returned without
+  // replay, but no active V1 session is ever interpreted by this engine.
+  const historicalCompletedV1 = row.status === 'completed'
+    && row.contract_version === 1 && row.engine_version === 1 && row.ruleset_version === 3
   return exactKeys(row, [
     'session_id', 'user_id', 'config', 'contract_version', 'engine_version', 'ruleset_version',
     'status', 'expires_at', 'transcript', 'won', 'outcome', 'verified_xp',
@@ -62,7 +72,7 @@ function validContext(value: unknown, userId: string, sessionId: string): value 
     'current_verified_matches', 'current_verified_wins', 'current_total_xp', 'result_created_at',
   ])
     && row.session_id === sessionId && row.user_id === userId && validStoredConfig(row.config)
-    && row.contract_version === 1 && row.engine_version === 1 && row.ruleset_version === 3
+    && (currentTuple || historicalCompletedV1)
     && typeof row.status === 'string' && typeof row.expires_at === 'string' && Number.isFinite(Date.parse(row.expires_at))
 }
 
@@ -71,6 +81,7 @@ type ProjectedReceipt = NonNullable<ReturnType<typeof projectVerifiedDeploymentR
 function projectResultSpecificReceipt(
   result: VerifiedDeploymentResultReceipt,
   row: Record<string, unknown>,
+  evidence: 'verified_replay_v1' | 'verified_replay_v2' = 'verified_replay_v2',
 ): ProjectedReceipt | null {
   const progressionKeys = [
     'prior_verified_matches', 'prior_verified_wins', 'prior_total_xp',
@@ -81,7 +92,7 @@ function projectResultSpecificReceipt(
     matchesPlayed: row.current_verified_matches as number,
     wins: row.current_verified_wins as number,
     totalXp: row.current_total_xp as number,
-  })
+  }, evidence)
   if (!receipt
     || receipt.progression.prior.matchesPlayed !== row.prior_verified_matches
     || receipt.progression.prior.wins !== row.prior_verified_wins
@@ -117,7 +128,13 @@ function completedReceipt(row: CompletionContextRow, userId: string, sessionId: 
   const receipt = { sessionId, won: row.won, outcome: row.outcome, verifiedXp: row.verified_xp } as VerifiedDeploymentResultReceipt
   const validResult = (receipt.won && receipt.outcome === 'win' && receipt.verifiedXp === 200)
     || (!receipt.won && (receipt.outcome === 'loss' || receipt.outcome === 'draw') && receipt.verifiedXp === 100)
-  return validResult ? projectResultSpecificReceipt(receipt, row as unknown as Record<string, unknown>) : null
+  return validResult
+    ? projectResultSpecificReceipt(
+      receipt,
+      row as unknown as Record<string, unknown>,
+      row.contract_version === 1 ? 'verified_replay_v1' : 'verified_replay_v2',
+    )
+    : null
 }
 
 export async function handleCompleteVerifiedDeployment(
@@ -138,13 +155,13 @@ export async function handleCompleteVerifiedDeployment(
     })
     const context = Array.isArray(contextResult.data) && contextResult.data.length === 1 ? contextResult.data[0] : null
     if (contextResult.error || !validContext(context, userId, request.sessionId)) return unavailable(409)
-    if (new Date(context.expires_at).getTime() <= (dependencies.now ?? (() => new Date()))().getTime()) return unavailable(409)
 
     const stored = completedReceipt(context, userId, request.sessionId, request.transcript)
     if (context.status === 'completed') {
       if (!stored) return unavailable(409)
       return json(stored)
     }
+    if (new Date(context.expires_at).getTime() <= (dependencies.now ?? (() => new Date()))().getTime()) return unavailable(409)
     if (context.status !== 'active' || context.transcript !== null || context.won !== null || context.outcome !== null
       || context.verified_xp !== null || context.prior_verified_matches !== null || context.prior_verified_wins !== null
       || context.prior_total_xp !== null || context.current_verified_matches !== null || context.current_verified_wins !== null

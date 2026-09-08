@@ -15,6 +15,7 @@ export interface LobbyWaitingViewOptions {
   onCopyInvite: (button: HTMLButtonElement, status: HTMLElement) => void;
   onReady: () => void;
   onLeave: () => void;
+  listenerSignal?: AbortSignal;
 }
 
 export function buildLobbyWaitingView(options: LobbyWaitingViewOptions): HTMLElement {
@@ -74,7 +75,7 @@ export function buildLobbyWaitingView(options: LobbyWaitingViewOptions): HTMLEle
   inviteStatus.setAttribute('aria-live', 'polite');
   copyInvite.addEventListener('click', () => {
     options.onCopyInvite(copyInvite, inviteStatus);
-  });
+  }, { signal: options.listenerSignal });
   invite.append(copyInvite, inviteStatus);
   mission.append(codeLabel, codeDisplay, invite);
 
@@ -151,13 +152,13 @@ export function buildLobbyWaitingView(options: LobbyWaitingViewOptions): HTMLEle
     ready.textContent = 'Ready Up';
     ready.disabled = options.busy;
   }
-  ready.addEventListener('click', options.onReady);
+  ready.addEventListener('click', options.onReady, { signal: options.listenerSignal });
 
   const leave = document.createElement('button');
   leave.type = 'button';
   leave.className = 'lobby-btn secondary';
   leave.textContent = 'Leave';
-  leave.addEventListener('click', options.onLeave);
+  leave.addEventListener('click', options.onLeave, { signal: options.listenerSignal });
 
   actions.append(ready, leave);
   root.append(header, mission, roster, actions);

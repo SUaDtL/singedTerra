@@ -16,7 +16,7 @@ async function openRoom(
     await page.keyboard.press('Escape');
   }
   await page.getByRole('button', { name: 'Deploy local battle' }).click();
-  await expect(page.locator('#hud.st-hud')).toBeVisible();
+  await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
 }
 
 async function countConcretePixels(

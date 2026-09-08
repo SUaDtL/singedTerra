@@ -18,8 +18,8 @@ const CHECK_LABEL = 'Verified replay runtime'
 const SAFE_DETAILS = {
   ok: true,
   probeVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  engineVersion: 2,
+  rulesetVersion: 4,
   fixtures: {
     maximumLifecycle: {
       phase: 'GAME_OVER',
@@ -27,8 +27,8 @@ const SAFE_DETAILS = {
       winnerTeam: 2,
       turn: 13,
       actionCount: 15,
-      tickCount: 453,
-      maxTurnTickCount: 36,
+      tickCount: 448,
+      maxTurnTickCount: 34,
     },
     maximumTurn: {
       phase: 'GAME_OVER',
@@ -36,8 +36,8 @@ const SAFE_DETAILS = {
       winnerTeam: null,
       turn: 3,
       actionCount: 4,
-      tickCount: 316,
-      maxTurnTickCount: 221,
+      tickCount: 266,
+      maxTurnTickCount: 171,
     },
   },
 } as const

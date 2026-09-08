@@ -172,9 +172,9 @@ const startResponse = {
   sessionId,
   resumed: false,
   expiresAt: '2026-08-12T13:30:00.000Z',
-  contractVersion: 1,
-  engineVersion: 1,
-  rulesetVersion: 3,
+  contractVersion: 2,
+  engineVersion: 2,
+  rulesetVersion: 4,
   limits: {
     humanSalvos: 6,
     cpuSalvos: 6,
@@ -206,7 +206,7 @@ const startResponse = {
 const completionResponse = {
   result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
   progression: {
-    evidence: 'verified_replay_v1',
+    evidence: 'verified_replay_v2',
     prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
     current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
   },
@@ -221,9 +221,9 @@ describe('verified deployment client contracts', () => {
       descriptor: {
         sessionId,
         expiresAt: '2026-08-12T13:30:00.000Z',
-        contractVersion: 1,
-        engineVersion: 1,
-        rulesetVersion: 3,
+        contractVersion: 2,
+        engineVersion: 2,
+        rulesetVersion: 4,
         limits: startResponse.limits,
         config: startResponse.config,
       },
@@ -294,9 +294,9 @@ describe('verified deployment client contracts', () => {
 
   it.each([
     ['widened response', { ...startResponse, userId: 'account-private-id' }],
-    ['unsupported contract', { ...startResponse, contractVersion: 2 }],
-    ['unsupported engine', { ...startResponse, engineVersion: 2 }],
-    ['unsupported ruleset', { ...startResponse, rulesetVersion: 4 }],
+    ['unsupported contract', { ...startResponse, contractVersion: 1 }],
+    ['unsupported engine', { ...startResponse, engineVersion: 1 }],
+    ['unsupported ruleset', { ...startResponse, rulesetVersion: 3 }],
     ['widened config', { ...startResponse, config: { ...startResponse.config, userId: 'account-private-id' } }],
     ['request-owned seed', { ...startResponse, config: { ...startResponse.config, seed: 18 } }],
     ['widened limits', { ...startResponse, limits: { ...startResponse.limits, humanSalvos: 7 } }],

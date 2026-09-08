@@ -9,7 +9,7 @@ const players = [
 
 function config<Mode extends LobbyConfig['mode']>(
   mode: Mode,
-  rulesetVersion?: 1 | 2,
+  rulesetVersion?: 1 | 2 | 4,
 ): LobbyConfig & { mode: Mode } {
   return {
     mode,
@@ -27,29 +27,14 @@ function config<Mode extends LobbyConfig['mode']>(
 }
 
 describe('buildClientEngineOptions', () => {
-  it('maps legacy network ruleset 1 to the linear curve', () => {
-    expect(buildClientEngineOptions(config('network', 1))).toMatchObject({
-      starterWeaponFalloff: 'linear',
-      rulesetVersion: 1,
-      seed: 17,
-      maxWind: 8,
-      gravity: 0.2,
-      walls: 'wrap',
-      battlefieldWorld: 'glassstorm-expanse',
-    });
+  it.each([undefined, 1, 2] as const)('refuses network ruleset %s before constructing an engine', (rulesetVersion) => {
+    expect(() => buildClientEngineOptions(config('network', rulesetVersion))).toThrow('network_ruleset_incompatible');
   });
 
-  it('maps prepared network ruleset 2 to the decisive curve', () => {
-    expect(buildClientEngineOptions(config('network', 2))).toMatchObject({
+  it('maps protected-floor network ruleset 4 to the decisive curve', () => {
+    expect(buildClientEngineOptions(config('network', 4))).toMatchObject({
       starterWeaponFalloff: 'decisive',
-      rulesetVersion: 2,
-    });
-  });
-
-  it('fails an omitted network ruleset closed to legacy linear behavior', () => {
-    expect(buildClientEngineOptions(config('network'))).toMatchObject({
-      starterWeaponFalloff: 'linear',
-      rulesetVersion: 1,
+      rulesetVersion: 4,
     });
   });
 
@@ -65,7 +50,7 @@ describe('buildClientEngineOptions', () => {
   });
 
   it('carries the opt-in hazard mode through both engine-option builders', () => {
-    const withHazards = { ...config('hotseat'), settings: { ...config('hotseat').settings, hazards: 'lava' as const } };
+    const withHazards = { ...config('hotseat'), settings: { ...config('hotseat').settings, hazards: 'lava' as const, rulesetVersion: 4 as const } };
     expect(buildClientEngineOptions(withHazards)).toMatchObject({ hazards: 'lava' });
     expect(buildClientEngineOptions({ ...withHazards, mode: 'network' })).toMatchObject({ hazards: 'lava' });
   });

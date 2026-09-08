@@ -1,0 +1,1602 @@
+{
+  "authorities": {
+    "adr": {
+      "bytes": 6057,
+      "path": ".codearbiter/decisions/0018-preact-battle-console-semantic-ownership.md",
+      "sha256": "2A1A1F186D26DAC2EF96414A85C9804737D5B6AC2B3EA169490AA5A2DC778015"
+    },
+    "intentTransitionTraces": {
+      "bytes": 250281,
+      "identitySha256": "56A7911BAC76E03091EAA491C8A76442827EF79029BB7069250C2C3BAC93AB6C",
+      "path": ".codearbiter/contracts/battle-console/topology/intent-transition-traces.json",
+      "sha256": "D1880E2BCAA5EADFB2E20925C525B09644E0F00BFF4121D8121939A6E481F83D"
+    },
+    "plan": {
+      "bytes": 65151,
+      "path": ".codearbiter/plans/battle-console-integrated-visual-system.md",
+      "sha256": "C312256C8193D02B13D10FBAA52ECEB3254DE3996241437F1E26F78D316F569B"
+    },
+    "presentationArchitecture": {
+      "bytes": 414109,
+      "identitySha256": "FAA55212FFAD7CE4A188B04821ED2B9ADABBBE371023CA02B31CA444A1206EA0",
+      "path": ".codearbiter/contracts/battle-console/topology/presentation-architecture.json",
+      "sha256": "F90933A90FA3A329B44D9E55E5220279B21B43FD34EC2357944D3B414F34D9AB"
+    },
+    "semanticBaseline": {
+      "bytes": 615267,
+      "identitySha256": "4B13AC710D3D409B8B79693DC921021B762A5FC158D62320CA98C597BC439644",
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-baseline.json",
+      "sha256": "90A0102F2BA33F69042F2DE3E3605347AB4AF6B0B6222D7BD17C5B63828F271E"
+    },
+    "semanticOwners": {
+      "bytes": 500102,
+      "identitySha256": "5435E01A60DA5C8B0E052AF9F2F32672E1E1CE785DEAF6CE6EEB53611DC146A3",
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-owners.json",
+      "sha256": "3450CF71C04B8B4EB7C79C1674B6FD4C31FDCE6EFA7BAE31B6F9D6D67B272705"
+    },
+    "snapshotDescriptor": {
+      "bytes": 8735047,
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-baseline-snapshot.json",
+      "sha256": "0522BAC1A7762EF117611D104F76D025944F3D51ABE838410719A1F5C7CEEDAE"
+    },
+    "specification": {
+      "bytes": 82191,
+      "path": ".codearbiter/specs/battle-console-integrated-visual-system.md",
+      "sha256": "8261162F81F19609754781785945A2CA3A1C59B0D0F30F2DE3B781BE5DAEB3F7"
+    },
+    "taskBrief": {
+      "bytes": 11783,
+      "path": ".superpowers/sdd/battle-console-integrated-visual-system/task-G1-08-brief.md",
+      "sha256": "F47174E86AC5DDF130944F7977E6A469D29EA948C170FFE402E84EBFCDF625DB"
+    }
+  },
+  "campaign": "singedterra.battle-console.hybrid",
+  "claims": {
+    "browserCdpResourceProofComplete": false,
+    "productImplementationComplete": false,
+    "runtimeLifecycleProofComplete": false,
+    "sourceAndSpecContractLocked": true
+  },
+  "evidenceMapping": {
+    "conditionalNonExposedKeys": [
+      "rematch-during-load",
+      "quit-during-load",
+      "destroy-during-lazy-import",
+      "stale-completion"
+    ],
+    "records": [
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "initial-create",
+        "sourceRecordSha256": "5788CF0ED8C9B45366351AC46A9A08059C9AB1C33D30B163A761D1BE14259B67",
+        "targetTriggerKeys": [
+          "initial-application-create"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "ready",
+        "sourceRecordSha256": "D64304CC86577731BD748770EF29AF130992AEF8F20371C2979F1B1EE8F01E9D",
+        "targetTriggerKeys": [
+          "initial-application-create"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "settings-opening",
+        "sourceRecordSha256": "FFE014C0CC7BB5B24FD5D2A93BC16B7DC46DBB4BCDF6666B97F95A3C5BCA6047",
+        "targetTriggerKeys": [
+          "initial-application-create"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "settings-open",
+        "sourceRecordSha256": "4EB0ED5958996BB5204708B8D2BAEEBEB743E0EC87214EC85F24C92824DAF2A1",
+        "targetTriggerKeys": [
+          "initial-application-create"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "settings-closing",
+        "sourceRecordSha256": "DCE3DB2C715D324C255415DBF264BAD8D4B8CCE035E5475494BABBE5C6CFCF1A",
+        "targetTriggerKeys": [
+          "initial-application-create"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "coach-open",
+        "sourceRecordSha256": "ECA167ADEB9DC8D1BAE3173181A78D6EF42F3E592345EA88623D10A3A5AA1707",
+        "targetTriggerKeys": [
+          "initial-application-create"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "hotseat-enter",
+        "sourceRecordSha256": "F13B319F14E6117C116D45274C53D21A0E6068472FDC9EF391F48BD402CA0E04",
+        "targetTriggerKeys": [
+          "hotseat-battle-entry"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "hotseat-leave",
+        "sourceRecordSha256": "8BCAA712CE9BE1EB486CB322D3410C9FDFE6419D57E742B03539BDA55E5C0C0D",
+        "targetTriggerKeys": [
+          "hotseat-battle-leave"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "network-enter",
+        "sourceRecordSha256": "105EF8B7E0E1EB0AABF0FAFA5E11503B487B573B100FA8153268DEA17711FDAB",
+        "targetTriggerKeys": [
+          "network-battle-entry"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "network-leave",
+        "sourceRecordSha256": "3EA9845F2BEA5A709382324936FEA64451809719C5CBDAD0237DA74936D615B4",
+        "targetTriggerKeys": [
+          "network-battle-leave"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "restart",
+        "sourceRecordSha256": "46405AE43463E2F4D519512656FCA27305AF23672A9464E660AE2F172BF28A4C",
+        "targetTriggerKeys": [
+          "hotseat-restart"
+        ]
+      },
+      {
+        "evidenceKind": "composed-source-causal-test",
+        "exposed": true,
+        "sourceJourneyKey": "rematch",
+        "sourceRecordSha256": "6D77FC8896FCDC4501501DC3BD313950F183800797E18F01533FA271FBB56CB2",
+        "targetTriggerKeys": [
+          "network-rematch"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "quit",
+        "sourceRecordSha256": "BAB65974DC3DC0558412E37B18695439D9B1970A5521E95721A05D5EC4775B28",
+        "targetTriggerKeys": [
+          "hotseat-quit",
+          "network-quit"
+        ]
+      },
+      {
+        "evidenceKind": "frozen-source-causal-test",
+        "exposed": true,
+        "sourceJourneyKey": "account-route",
+        "sourceRecordSha256": "6D265F9A83937267DA33BABA4A6F4A2DD1C1F5A70A4B9BA2812B20B2466DEF61",
+        "targetTriggerKeys": [
+          "progression-account-route"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "page-teardown",
+        "sourceRecordSha256": "007B2FE41203E3932DFC448259934DB21952687E74E04463BB12B9B8D9765EF6",
+        "targetTriggerKeys": [
+          "page-teardown"
+        ]
+      },
+      {
+        "evidenceKind": "browser-runtime",
+        "exposed": true,
+        "sourceJourneyKey": "create-rejection",
+        "sourceRecordSha256": "6D01312FB2B079FAB5FA25247F2F5EBFF69F8DDB32A93FEB21C79766D4FBB3A4",
+        "targetTriggerKeys": [
+          "rejected-client-create-promise"
+        ]
+      },
+      {
+        "evidenceKind": "task-local-causal-fixture",
+        "exposed": true,
+        "sourceJourneyKey": "restore-rejection",
+        "sourceRecordSha256": "E9D0A71AE0BEA94E44738BFFF801A8D8A051F614796FE6F60159D50983A59AAD",
+        "targetTriggerKeys": [
+          "synchronous-verified-restore-failure"
+        ]
+      },
+      {
+        "evidenceKind": "frozen-source-causal-test",
+        "exposed": true,
+        "sourceJourneyKey": "overlapping-starts",
+        "sourceRecordSha256": "78153020F719A77473BA4C47414E0E9423A75D6F437EECD92B2AEF310684FD9B",
+        "targetTriggerKeys": [
+          "overlapping-starts"
+        ]
+      },
+      {
+        "evidenceKind": "frozen-source-causal-test",
+        "exposed": true,
+        "sourceJourneyKey": "superseded-start",
+        "sourceRecordSha256": "D82B680E144643AB184AF839C9C9BFC1F7809D9439273D90A05AC5EE1519715F",
+        "targetTriggerKeys": [
+          "superseded-generation-start"
+        ]
+      },
+      {
+        "evidenceKind": "conditional-non-exposed",
+        "exposed": false,
+        "sourceJourneyKey": "rematch-during-load",
+        "sourceRecordSha256": "45689C4AF1A21B6B5F433C3FD205CD9103A502E9A948C9A581E84C030DA654A2",
+        "targetTriggerKeys": [
+          "rematch-during-load"
+        ]
+      },
+      {
+        "evidenceKind": "conditional-non-exposed",
+        "exposed": false,
+        "sourceJourneyKey": "quit-during-load",
+        "sourceRecordSha256": "D529FD4129595B293181A1D531904EB2E4DD1F37EF2E4EAB61F21B056F764689",
+        "targetTriggerKeys": [
+          "quit-during-load"
+        ]
+      },
+      {
+        "evidenceKind": "conditional-non-exposed",
+        "exposed": false,
+        "sourceJourneyKey": "destroy-during-lazy-import",
+        "sourceRecordSha256": "BBE93D74F62392CA58C43E6A08C4FF525D18145F64B8564A97E4C212AF1A1E0F",
+        "targetTriggerKeys": [
+          "destroy-during-lazy-import"
+        ]
+      },
+      {
+        "evidenceKind": "conditional-non-exposed",
+        "exposed": false,
+        "sourceJourneyKey": "stale-completion",
+        "sourceRecordSha256": "8283008889469A04849378CD2A89E9BE97592EE3F665CD778BB58DD1CE7B4053",
+        "targetTriggerKeys": [
+          "stale-lazy-client-completion"
+        ]
+      }
+    ],
+    "sourceJourneyKeys": [
+      "initial-create",
+      "ready",
+      "settings-opening",
+      "settings-open",
+      "settings-closing",
+      "coach-open",
+      "hotseat-enter",
+      "hotseat-leave",
+      "network-enter",
+      "network-leave",
+      "restart",
+      "rematch",
+      "quit",
+      "account-route",
+      "page-teardown",
+      "create-rejection",
+      "restore-rejection",
+      "overlapping-starts",
+      "superseded-start",
+      "rematch-during-load",
+      "quit-during-load",
+      "destroy-during-lazy-import",
+      "stale-completion"
+    ]
+  },
+  "identitySha256": "2BA7D3A844FADA9A4E45416C65F7A0ED0AE49D6BEB24A9321E2295BC81D6141E",
+  "indices": {
+    "sourceJourneyKeys": [
+      "initial-create",
+      "ready",
+      "settings-opening",
+      "settings-open",
+      "settings-closing",
+      "coach-open",
+      "hotseat-enter",
+      "hotseat-leave",
+      "network-enter",
+      "network-leave",
+      "restart",
+      "rematch",
+      "quit",
+      "account-route",
+      "page-teardown",
+      "create-rejection",
+      "restore-rejection",
+      "overlapping-starts",
+      "superseded-start",
+      "rematch-during-load",
+      "quit-during-load",
+      "destroy-during-lazy-import",
+      "stale-completion"
+    ],
+    "triggerKeys": [
+      "initial-application-create",
+      "hotseat-battle-entry",
+      "network-battle-entry",
+      "hotseat-battle-leave",
+      "network-battle-leave",
+      "hotseat-restart",
+      "network-restart-request",
+      "network-rematch",
+      "hotseat-quit",
+      "network-quit",
+      "progression-account-route",
+      "non-battle-route-transition",
+      "page-teardown",
+      "hotseat-battle-lobby-battle",
+      "network-battle-lobby-battle",
+      "synchronous-client-create-failure",
+      "synchronous-verified-restore-failure",
+      "rejected-client-create-promise",
+      "rejected-restore-completion-promise",
+      "overlapping-starts",
+      "superseded-generation-start",
+      "rematch-during-load",
+      "quit-during-load",
+      "destroy-during-lazy-import",
+      "stale-lazy-client-completion",
+      "repeated-destroy",
+      "ready-context-loss-fallback"
+    ]
+  },
+  "legacyFacts": {
+    "generationGuardedAsyncCompletion": true,
+    "generationInvalidatedAtTeardownStart": true,
+    "hudCreatedOnceAtApplicationBootstrap": true,
+    "hudDestroyCalledByProductionTeardown": false,
+    "hudDestroyScope": "decorative-battle-hud-compositor-only",
+    "networkClientUsesLazyImport": true,
+    "pageTeardownOwnsExplicitCleanupHook": false
+  },
+  "ordering": {
+    "contextLoss": "ready->release-pixi->same-key-operable-fallback; no-in-place-gpu-recovery",
+    "exit": "invalidate-generation-before-release-or-await",
+    "repeatedDestroy": "idempotent-single-cleanup",
+    "restart": "invalidate->destroy->zero->allocate-generation->load->one-winning-mount",
+    "staleCompletion": "reject-without-mutation"
+  },
+  "resourceRegistry": [
+    "preactRoots",
+    "portalOwners",
+    "semanticKeySets",
+    "effects",
+    "timers",
+    "refs",
+    "observers",
+    "domListeners",
+    "intentBridges",
+    "controllerAdapters",
+    "pixiControllers",
+    "pixiApplications",
+    "canvases",
+    "gpuContexts",
+    "textures",
+    "loaders",
+    "pendingImports",
+    "pendingPromises",
+    "loadResources"
+  ],
+  "resourceStates": {
+    "destroyed": {
+      "canvases": 0,
+      "controllerAdapters": 0,
+      "domListeners": 0,
+      "effects": 0,
+      "gpuContexts": 0,
+      "intentBridges": 0,
+      "loadResources": 0,
+      "loaders": 0,
+      "observers": 0,
+      "pendingImports": 0,
+      "pendingPromises": 0,
+      "pixiApplications": 0,
+      "pixiControllers": 0,
+      "portalOwners": 0,
+      "preactRoots": 0,
+      "refs": 0,
+      "semanticKeySets": 0,
+      "textures": 0,
+      "timers": 0
+    },
+    "fallback": {
+      "canvases": 0,
+      "controllerAdapters": 1,
+      "domListeners": "semantic-listeners-indexed",
+      "effects": "semantic-effects-indexed",
+      "gpuContexts": 0,
+      "intentBridges": 1,
+      "loadResources": 0,
+      "loaders": 0,
+      "observers": 0,
+      "pendingImports": 0,
+      "pendingPromises": 0,
+      "pixiApplications": 0,
+      "pixiControllers": 0,
+      "portalOwners": 2,
+      "preactRoots": 1,
+      "refs": "semantic-refs-indexed",
+      "semanticKeySets": 1,
+      "textures": 0,
+      "timers": 0
+    },
+    "loading": {
+      "canvases": 0,
+      "controllerAdapters": 0,
+      "domListeners": 0,
+      "effects": 0,
+      "gpuContexts": 0,
+      "intentBridges": 0,
+      "loadResources": "indexed-by-active-generation",
+      "loaders": 0,
+      "observers": 0,
+      "pendingImports": "indexed-by-active-generation",
+      "pendingPromises": "indexed-by-active-generation",
+      "pixiApplications": 0,
+      "pixiControllers": 0,
+      "portalOwners": 0,
+      "preactRoots": 0,
+      "refs": 0,
+      "semanticKeySets": 0,
+      "textures": 0,
+      "timers": 0
+    },
+    "ready": {
+      "canvases": "zero-or-one",
+      "controllerAdapters": 1,
+      "domListeners": "semantic-listeners-indexed",
+      "effects": "semantic-effects-indexed",
+      "gpuContexts": "zero-or-one",
+      "intentBridges": 1,
+      "loadResources": 0,
+      "loaders": 0,
+      "observers": 0,
+      "pendingImports": 0,
+      "pendingPromises": 0,
+      "pixiApplications": "zero-or-one",
+      "pixiControllers": "zero-or-one",
+      "portalOwners": 2,
+      "preactRoots": 1,
+      "refs": "semantic-refs-indexed",
+      "semanticKeySets": 1,
+      "textures": 0,
+      "timers": 0
+    },
+    "unmounted": {
+      "canvases": 0,
+      "controllerAdapters": 0,
+      "domListeners": 0,
+      "effects": 0,
+      "gpuContexts": 0,
+      "intentBridges": 0,
+      "loadResources": 0,
+      "loaders": 0,
+      "observers": 0,
+      "pendingImports": 0,
+      "pendingPromises": 0,
+      "pixiApplications": 0,
+      "pixiControllers": 0,
+      "portalOwners": 0,
+      "preactRoots": 0,
+      "refs": 0,
+      "semanticKeySets": 0,
+      "textures": 0,
+      "timers": 0
+    }
+  },
+  "schema": "singedterra-lifecycle-triggers/v1",
+  "snapshotSources": {
+    "hud": {
+      "bytes": 487506,
+      "path": "client/src/ui/HUD.ts",
+      "sha256": "E5CF7FA8B396BA2F69492604291C5D1135C3B4FB0186D22EFFFC65672CF6965B"
+    },
+    "main": {
+      "bytes": 63377,
+      "path": "client/src/main.ts",
+      "sha256": "CA196772F4E864EA243745E2580C153B6BFEB2889C1418FD2057422E1C3F0CCD"
+    },
+    "progressionTest": {
+      "bytes": 55081,
+      "path": "client/src/main.hotSeatProgression.test.ts",
+      "sha256": "7D78F307B0251E158D86FCD52E4E6DF8838EA5DC39B0D32BC2EB2FCCE840D569"
+    },
+    "rematchTest": {
+      "bytes": 7985,
+      "path": "client/src/client/NetworkClient.requestRematch.test.ts",
+      "sha256": "7B7068890E56D5B40BBBC5330517B4891438D8CAFBE19052B368109F2014CC0A"
+    }
+  },
+  "sourceAnchors": {
+    "accountRoute": {
+      "file": "client/src/main.ts",
+      "line": 1179,
+      "lineSha256": "D72FBA50F3881792B893D15A996A6D666367AF0314BFA63913E882A79DD1D838",
+      "text": "  hud.onProgressionSignIn(() => {"
+    },
+    "generationGuard": {
+      "file": "client/src/main.ts",
+      "line": 740,
+      "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+      "text": "          gameGeneration !== currentGameGeneration"
+    },
+    "hudCreated": {
+      "file": "client/src/main.ts",
+      "line": 218,
+      "lineSha256": "7EA6F0FAE465B9F8DA0746BE07770B229F0D94D3BB2D44400F87E33001929395",
+      "text": "  const hud = new HUD(hudRoot, overlayRoot, modalRoot, battleRailRoot);"
+    },
+    "hudDestroy": {
+      "file": "client/src/ui/HUD.ts",
+      "line": 590,
+      "lineSha256": "F24070E52BE2F55E096D4CD6F1C63A96384B1FD119E1C11C933EF70267DC34ED",
+      "text": "  destroy(): Promise<void> {"
+    },
+    "lazyNetworkImport": {
+      "file": "client/src/main.ts",
+      "line": 1415,
+      "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+      "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+    },
+    "quit": {
+      "file": "client/src/main.ts",
+      "line": 1174,
+      "lineSha256": "6DF30C4CBD22F76BA4DFED58C29BCAA98FE458069EDA487BD393A5AC7A82B2C3",
+      "text": "  hud.onQuit(() => {"
+    },
+    "restart": {
+      "file": "client/src/main.ts",
+      "line": 1032,
+      "lineSha256": "8027B1AD75A5326CF3A08FD8DAF0D87DB46CDE816269276933326AC80FEB6A25",
+      "text": "  hud.onRestart(() => {"
+    },
+    "restore": {
+      "file": "client/src/main.ts",
+      "line": 625,
+      "lineSha256": "2DE1D978600FD0D52D5133818FE25503A607B76DDE345B36C570E554D369451F",
+      "text": "        const restored = restoreVerifiedController("
+    },
+    "startGame": {
+      "file": "client/src/main.ts",
+      "line": 611,
+      "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+      "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+    },
+    "teardown": {
+      "file": "client/src/main.ts",
+      "line": 560,
+      "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+      "text": "  function teardown(): void {"
+    }
+  },
+  "stateMachine": {
+    "destroyedIsTerminalForGeneration": true,
+    "transitions": [
+      "unmounted->loading",
+      "loading->ready",
+      "loading->fallback",
+      "loading->destroyed",
+      "ready->fallback",
+      "ready->destroyed",
+      "fallback->destroyed"
+    ]
+  },
+  "triggers": [
+    {
+      "cancellationDisposition": "active-owner-only",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "initial-application-create",
+      "kind": "entry",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "allocate-generation",
+        "enter-loading",
+        "resolve-client",
+        "commit-one-winning-semantic-mount",
+        "enter-ready-or-fallback"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "active-owner-only",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "hotseat-battle-entry",
+      "kind": "entry",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "allocate-generation",
+        "enter-loading",
+        "resolve-client",
+        "commit-one-winning-semantic-mount",
+        "enter-ready-or-fallback"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "active-owner-only",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "network-battle-entry",
+      "kind": "entry",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "allocate-generation",
+        "enter-loading",
+        "resolve-client",
+        "commit-one-winning-semantic-mount",
+        "enter-ready-or-fallback"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "hotseat-battle-leave",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 1174,
+          "lineSha256": "6DF30C4CBD22F76BA4DFED58C29BCAA98FE458069EDA487BD393A5AC7A82B2C3",
+          "text": "  hud.onQuit(() => {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "network-battle-leave",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "hotseat-restart",
+      "kind": "restart",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 1032,
+          "lineSha256": "8027B1AD75A5326CF3A08FD8DAF0D87DB46CDE816269276933326AC80FEB6A25",
+          "text": "  hud.onRestart(() => {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "invalidate-generation",
+        "destroy-active-lifecycle",
+        "observe-zero-resources",
+        "allocate-generation",
+        "enter-loading",
+        "commit-one-winning-semantic-mount"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "network-restart-request",
+      "kind": "restart",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "current-terminal-lifecycle-until-rematch",
+      "steps": [
+        "request-successor",
+        "retain-current-terminal-lifecycle",
+        "await-successor-allocation"
+      ],
+      "terminalResourceState": "current-terminal-lifecycle-until-rematch"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "network-rematch",
+      "kind": "restart",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "invalidate-generation",
+        "destroy-active-lifecycle",
+        "observe-zero-resources",
+        "allocate-generation",
+        "enter-loading",
+        "commit-one-winning-semantic-mount"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "hotseat-quit",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 1174,
+          "lineSha256": "6DF30C4CBD22F76BA4DFED58C29BCAA98FE458069EDA487BD393A5AC7A82B2C3",
+          "text": "  hud.onQuit(() => {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "network-quit",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "progression-account-route",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 1179,
+          "lineSha256": "D72FBA50F3881792B893D15A996A6D666367AF0314BFA63913E882A79DD1D838",
+          "text": "  hud.onProgressionSignIn(() => {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "non-battle-route-transition",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "page-teardown",
+      "kind": "exit",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "invalidate-generation",
+        "cancel-pending-work",
+        "destroy-active-lifecycle",
+        "observe-zero-resources"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "hotseat-battle-lobby-battle",
+      "kind": "restart",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "invalidate-generation",
+        "destroy-active-lifecycle",
+        "observe-zero-resources",
+        "allocate-generation",
+        "enter-loading",
+        "commit-one-winning-semantic-mount"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "fresh-explicit-entry-target",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "fresh-bridge-only-after-winning-mount",
+      "key": "network-battle-lobby-battle",
+      "kind": "restart",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "ready-or-fallback",
+      "steps": [
+        "invalidate-generation",
+        "destroy-active-lifecycle",
+        "observe-zero-resources",
+        "allocate-generation",
+        "enter-loading",
+        "commit-one-winning-semantic-mount"
+      ],
+      "terminalResourceState": "ready-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "synchronous-client-create-failure",
+      "kind": "failure",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed-or-fallback",
+      "steps": [
+        "invalidate-or-retain-active-generation",
+        "reject-failed-result",
+        "release-failed-resources",
+        "observe-zero-or-operable-fallback"
+      ],
+      "terminalResourceState": "destroyed-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "synchronous-verified-restore-failure",
+      "kind": "failure",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 625,
+          "lineSha256": "2DE1D978600FD0D52D5133818FE25503A607B76DDE345B36C570E554D369451F",
+          "text": "        const restored = restoreVerifiedController("
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed-or-fallback",
+      "steps": [
+        "invalidate-or-retain-active-generation",
+        "reject-failed-result",
+        "release-failed-resources",
+        "observe-zero-or-operable-fallback"
+      ],
+      "terminalResourceState": "destroyed-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "rejected-client-create-promise",
+      "kind": "failure",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed-or-fallback",
+      "steps": [
+        "invalidate-or-retain-active-generation",
+        "reject-failed-result",
+        "release-failed-resources",
+        "observe-zero-or-operable-fallback"
+      ],
+      "terminalResourceState": "destroyed-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "rejected-restore-completion-promise",
+      "kind": "failure",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 625,
+          "lineSha256": "2DE1D978600FD0D52D5133818FE25503A607B76DDE345B36C570E554D369451F",
+          "text": "        const restored = restoreVerifiedController("
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed-or-fallback",
+      "steps": [
+        "invalidate-or-retain-active-generation",
+        "reject-failed-result",
+        "release-failed-resources",
+        "observe-zero-or-operable-fallback"
+      ],
+      "terminalResourceState": "destroyed-or-fallback"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "overlapping-starts",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed-or-one-winning-lifecycle",
+      "steps": [
+        "capture-generation-and-cancellation",
+        "supersede-or-destroy",
+        "reject-stale-completion",
+        "observe-zero-before-any-winning-mount"
+      ],
+      "terminalResourceState": "destroyed-or-one-winning-lifecycle"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "superseded-generation-start",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed-or-one-winning-lifecycle",
+      "steps": [
+        "capture-generation-and-cancellation",
+        "supersede-or-destroy",
+        "reject-stale-completion",
+        "observe-zero-before-any-winning-mount"
+      ],
+      "terminalResourceState": "destroyed-or-one-winning-lifecycle"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "rematch-during-load",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed-or-one-winning-lifecycle",
+      "steps": [
+        "capture-generation-and-cancellation",
+        "supersede-or-destroy",
+        "reject-stale-completion",
+        "observe-zero-before-any-winning-mount"
+      ],
+      "terminalResourceState": "destroyed-or-one-winning-lifecycle"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "quit-during-load",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 1174,
+          "lineSha256": "6DF30C4CBD22F76BA4DFED58C29BCAA98FE458069EDA487BD393A5AC7A82B2C3",
+          "text": "  hud.onQuit(() => {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed-or-one-winning-lifecycle",
+      "steps": [
+        "capture-generation-and-cancellation",
+        "supersede-or-destroy",
+        "reject-stale-completion",
+        "observe-zero-before-any-winning-mount"
+      ],
+      "terminalResourceState": "destroyed-or-one-winning-lifecycle"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "destroy-during-lazy-import",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed-or-one-winning-lifecycle",
+      "steps": [
+        "capture-generation-and-cancellation",
+        "supersede-or-destroy",
+        "reject-stale-completion",
+        "observe-zero-before-any-winning-mount"
+      ],
+      "terminalResourceState": "destroyed-or-one-winning-lifecycle"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "stale-lazy-client-completion",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/main.ts",
+          "line": 611,
+          "lineSha256": "ACF3D08D548920BCAA2EDFBA355748E2A641BE0D4731AE977652FC92184D6B70",
+          "text": "  async function startGame(config: LobbyConfig): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 1415,
+          "lineSha256": "5A6A8BE12E1B5A3C3C3B013F3605EA0EB8484498231EDD036F0F144B3EF1DCDA",
+          "text": "    const { NetworkClient } = await import('./client/NetworkClient');"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 740,
+          "lineSha256": "46DE1CE7D06A4EF74CB06FEFFD57DBD5E92B0B97124A3B82CE53A79EEAC75188",
+          "text": "          gameGeneration !== currentGameGeneration"
+        }
+      ],
+      "stateDisposition": "destroyed-or-one-winning-lifecycle",
+      "steps": [
+        "capture-generation-and-cancellation",
+        "supersede-or-destroy",
+        "reject-stale-completion",
+        "observe-zero-before-any-winning-mount"
+      ],
+      "terminalResourceState": "destroyed-or-one-winning-lifecycle"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "repeated-destroy",
+      "kind": "race",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/ui/HUD.ts",
+          "line": 590,
+          "lineSha256": "F24070E52BE2F55E096D4CD6F1C63A96384B1FD119E1C11C933EF70267DC34ED",
+          "text": "  destroy(): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "destroyed",
+      "steps": [
+        "observe-destroyed-or-destroying",
+        "return-existing-cleanup-promise",
+        "perform-no-second-cleanup"
+      ],
+      "terminalResourceState": "destroyed"
+    },
+    {
+      "cancellationDisposition": "cancel-or-reject-before-mutation",
+      "evidenceClass": "immutable-spec-and-source-derived",
+      "focusDisposition": "clear-or-route-explicitly",
+      "generationOwnership": "monotonic-controller-generation-and-cancellation-token",
+      "intentDisposition": "drop-all-stale-intents",
+      "key": "ready-context-loss-fallback",
+      "kind": "fallback",
+      "moduleCacheDisposition": "module-bytes-may-remain-cached; lifecycle-resources-may-not",
+      "sourceAnchors": [
+        {
+          "file": "client/src/ui/HUD.ts",
+          "line": 590,
+          "lineSha256": "F24070E52BE2F55E096D4CD6F1C63A96384B1FD119E1C11C933EF70267DC34ED",
+          "text": "  destroy(): Promise<void> {"
+        },
+        {
+          "file": "client/src/main.ts",
+          "line": 560,
+          "lineSha256": "C9E12833AE1E3069238314C07D06ABA42686BD06EABCBB3B53DE330C0FC16AC1",
+          "text": "  function teardown(): void {"
+        }
+      ],
+      "stateDisposition": "same-semantic-keys-operable-fallback",
+      "steps": [
+        "invalidate-pixi-generation",
+        "release-all-pixi-resources",
+        "preserve-semantic-key-topology",
+        "enter-operable-fallback"
+      ],
+      "terminalResourceState": "fallback"
+    }
+  ]
+}

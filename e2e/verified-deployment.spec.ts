@@ -12,9 +12,9 @@ function verifiedDescriptor(
   return {
     sessionId,
     expiresAt,
-    contractVersion: 1,
-    engineVersion: 1,
-    rulesetVersion: 3,
+    contractVersion: 2,
+    engineVersion: 2,
+    rulesetVersion: 4,
     limits: {
       humanSalvos: 6,
       cpuSalvos: 6,
@@ -50,7 +50,7 @@ function verifiedStart(resumed = false, expiresAt?: string) {
 
 async function installAuthenticatedFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    window.localStorage.setItem('sb-localhost-auth-token', JSON.stringify({
+    window.localStorage.setItem(`sb-${window.location.hostname.split('.')[0]}-auth-token`, JSON.stringify({
       access_token: ['e2e', 'public', 'session', 'token'].join('-'),
       refresh_token: ['e2e', 'public', 'refresh', 'token'].join('-'),
       expires_at: 4_102_444_800,
@@ -84,7 +84,7 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
       levelXp: 0,
       nextLevelXp: 500,
       verifiedProgression: {
-        evidence: 'verified_replay_v1',
+        evidence: 'verified_replay_v2',
         matchesPlayed: 0,
         wins: 0,
         progressionVersion: 1,
@@ -105,6 +105,14 @@ async function openLocalBattery(page: Page, search = './'): Promise<void> {
   await expect(page.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
 }
 
+/** Verified mission state lives in the adaptive Match ledger on non-ultrawide layouts. */
+async function openVerifiedLedger(page: Page) {
+  await enterBattleIfBriefed(page);
+  const toggle = page.getByRole('button', { name: 'Open match ledger' });
+  if (await toggle.isVisible()) await toggle.click();
+  return page.locator('#hud .st-hud__verified-deployment');
+}
+
 async function installOnlineCpuFixture(page: Page): Promise<void> {
   const players = [
     { id: 'verified-absence-human', name: 'Ranger', color: '#e84d4d', ready: false },
@@ -114,7 +122,7 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
     maxPlayers: 2,
     maxWind: 6,
     gravity: 0.15,
-    rulesetVersion: 2,
+    rulesetVersion: 4,
     walls: 'open',
     rounds: 1,
     armsLevel: 0,
@@ -262,8 +270,8 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(verified.getByRole('button', { name: 'Verified deployment busy' })).toBeDisabled();
     await assertLobbyFrame(page);
     releaseStart();
-
-    const hud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    await expect(page.locator('#lobby')).toBeHidden();
+    const hud = await openVerifiedLedger(page);
     await expect(hud).toBeVisible();
     await expect(hud.getByText('Salvos · You 0 / 6 · CPU 0 / 6')).toBeVisible();
     await expect(hud.getByText('Deployment active')).toBeVisible();
@@ -271,7 +279,7 @@ test.describe('verified deployment production-browser journey', () => {
       /First Strike.*Damage the CPU within your first three salvos\..*3 salvos remaining/,
     )).toBeVisible();
     await expect(page.locator('#lobby')).toBeHidden();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
 
     const geometry = await page.evaluate(() => ({
       documentWidth: document.documentElement.scrollWidth,
@@ -301,9 +309,10 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page);
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     await enterBattleIfBriefed(page);
-    await page.locator('#hud .st-hud__menu, [data-command="menu"]').filter({ visible: true }).first().click();
+    await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
     const menu = page.getByRole('dialog', { name: 'Command Menu' });
     await menu.getByRole('button', { name: 'Return to Lobby' }).click();
     await expect(page.locator('#lobby')).toBeVisible();
@@ -350,14 +359,14 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
-    const hud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    const hud = await openVerifiedLedger(page);
     await expect(hud.getByText('Salvos · You 1 / 6 · CPU 1 / 6')).toBeVisible();
     expect(await page.evaluate(() => JSON.parse(
       localStorage.getItem('singedterra:verified-deployment') ?? 'null',
     )?.deployments?.[0]?.transcript)).toEqual([{ angle: 0, power: 5 }]);
   });
 
-  test('warns at both thresholds, freezes expired input, and exposes both expiry choices', async ({ page }) => {
+  test('warns at both thresholds, freezes expired input, and exposes both expiry choices', async ({ page }, testInfo) => {
     const initialNow = Date.parse('2026-08-12T12:00:00.000Z');
     const expiresAt = new Date(initialNow + 30 * 60_000).toISOString();
     await page.addInitScript((start) => {
@@ -374,7 +383,7 @@ test.describe('verified deployment production-browser journey', () => {
 
     await openLocalBattery(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
-    const hud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    const hud = await openVerifiedLedger(page);
     const setNow = (value: number) => page.evaluate((next) => {
       const setter = (window as typeof window & { __setVerifiedNow?: (time: number) => void })
         .__setVerifiedNow;
@@ -396,10 +405,29 @@ test.describe('verified deployment production-browser journey', () => {
     ).__SINGED_TERRA_E2E__?.forwardedActions.fire ?? 0);
     await setNow(initialNow + 31 * 60_000);
     const expiry = page.getByRole('dialog', { name: 'Verification expired' });
+    const expiryPanel = expiry.locator('.st-hud__verified-expiry-panel');
     const casual = expiry.getByRole('button', { name: 'Continue casually' });
     const battery = expiry.getByRole('button', { name: 'Return to Battery' });
     await expect(expiry).toBeVisible();
+    // The successor chassis retires the old briefing bitmap; retain the actual
+    // expiry decision's readable, contained presentation across input profiles.
+    const expiryFit = await expiryPanel.evaluate((panel) => {
+      const bounds = panel.getBoundingClientRect();
+      return bounds.left >= 0 && bounds.top >= 0
+        && bounds.right <= innerWidth && bounds.bottom <= innerHeight
+        && panel.scrollWidth <= panel.clientWidth + 1
+        && [...panel.querySelectorAll('button')].every((button) => {
+          const target = button.getBoundingClientRect();
+          return target.left >= bounds.left && target.right <= bounds.right
+            && target.top >= bounds.top && target.bottom <= bounds.bottom;
+        });
+    });
+    expect(expiryFit, 'Expiry copy and both recovery choices must fit their panel').toBe(true);
     await expect(casual).toBeFocused();
+    await page.screenshot({
+      path: testInfo.outputPath(`verified-expiry-reference-lock-${testInfo.project.name}.png`),
+      fullPage: true,
+    });
     await page.keyboard.press('Tab');
     await expect(battery).toBeFocused();
     await page.keyboard.press('Tab');
@@ -440,7 +468,7 @@ test.describe('verified deployment production-browser journey', () => {
   test('retries terminal evidence and renders only the server-confirmed verified promotion', async ({ page }) => {
     const transcript = Array.from({ length: 6 }, () => ({ angle: 0, power: 5 }));
     const prior = {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       matchesPlayed: 10,
       wins: 8,
       progressionVersion: 1,
@@ -450,7 +478,7 @@ test.describe('verified deployment production-browser journey', () => {
       nextLevelXp: 500,
     } as const;
     const current = {
-      evidence: 'verified_replay_v1',
+      evidence: 'verified_replay_v2',
       matchesPlayed: 11,
       wins: 9,
       progressionVersion: 1,
@@ -511,7 +539,7 @@ test.describe('verified deployment production-browser journey', () => {
         body: JSON.stringify({
           result: { sessionId: SESSION_ID, won: true, outcome: 'win', verifiedXp: 200 },
           progression: {
-            evidence: 'verified_replay_v1',
+            evidence: 'verified_replay_v2',
             prior: { matchesPlayed: 10, wins: 8, totalXp: 1_800 },
             current: { matchesPlayed: 11, wins: 9, totalXp: 2_000 },
           },
@@ -525,9 +553,9 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(firstReport).toBeVisible({ timeout: 10_000 });
     await expect(firstReport.locator('.st-hud__victory-progression-receipt')).toBeHidden();
     await expect.poll(() => completionCalls).toBe(1);
-    const recoveryCommitment = page.locator('#battle-rail .st-hud__console-commitment');
-    await expect(recoveryCommitment).toHaveAttribute('data-command-mode', 'recovery');
-    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
+    const fire = page.locator('[data-battle-console-action="fire"]');
+    await expect(fire).toBeDisabled();
+    await expect(page.locator('[data-battle-console-action="fire"]:enabled')).toHaveCount(0);
     const retryVerification = page.getByRole('button', {
       name: 'Retry verification',
       exact: true,
@@ -547,7 +575,7 @@ test.describe('verified deployment production-browser journey', () => {
 
     const acceptedReport = page.locator('.st-hud__overlay--victory');
     await expect(acceptedReport).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#battle-rail .st-hud__primary-action')).toHaveCount(0);
+    await expect(page.locator('[data-battle-console-action="fire"]:enabled')).toHaveCount(0);
     await expect(page.getByRole('button', {
       name: 'Retry verification',
       exact: true,
@@ -594,7 +622,7 @@ test.describe('verified deployment production-browser journey', () => {
         levelXp: matchesPlayed * 200,
         nextLevelXp: 500,
         verifiedProgression: {
-          evidence: 'verified_replay_v1',
+          evidence: 'verified_replay_v2',
           matchesPlayed,
           wins: matchesPlayed,
           progressionVersion: 1,
@@ -624,7 +652,7 @@ test.describe('verified deployment production-browser journey', () => {
         body: JSON.stringify({
           result: { sessionId: SESSION_ID, won: true, outcome: 'win', verifiedXp: 200 },
           progression: {
-            evidence: 'verified_replay_v1',
+            evidence: 'verified_replay_v2',
             prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
             current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
           },
@@ -655,10 +683,13 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(page.getByRole('region', { name: 'Commander Operations' }).getByText(
       /Fire for Effect.*Damage the CPU on two separate human salvos\./,
     )).toBeVisible();
-    await expect(fieldOrderStatus).toHaveCount(0);
+    // Reusable semantic nodes now remain in hidden, inert parking between games.
+    // A completed Field Order must be absent from the active Match presentation.
+    await expect(fieldOrderStatus).toBeHidden();
+    await expect(page.locator('#hud [data-ui="field-order"]')).toHaveCount(0);
 
     await verified.getByRole('button', { name: 'Start verified deployment' }).click();
-    const freshHud = page.getByRole('status').filter({ hasText: 'Verified deployment' });
+    const freshHud = await openVerifiedLedger(page);
     await expect(freshHud.getByText(/Salvos.*You 0 \/ 6.*CPU 0 \/ 6/)).toBeVisible();
     await expect(freshHud.getByText(
       /Fire for Effect.*Damage the CPU on two separate human salvos.*0 of 2 damaging salvos/,
@@ -671,13 +702,13 @@ test.describe('verified deployment production-browser journey', () => {
   test('keeps Field Orders absent from ordinary, Quick Duel, and network routes', async ({ page }) => {
     await page.goto('?e2e=hotseat');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 
     await installOnlineCpuFixture(page);
@@ -689,7 +720,7 @@ test.describe('verified deployment production-browser journey', () => {
       .locator('select').first().selectOption('1');
     await page.getByRole('button', { name: 'Create operation', exact: true }).click();
     await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
   });
 });
@@ -700,7 +731,7 @@ test('keeps Field Orders absent from the anonymous local route', async ({ page }
   await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Verified deployment' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click();
-  await expect(page.locator('.st-hud__instruments')).toBeVisible();
+  await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
   await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 });
 
@@ -709,7 +740,7 @@ test('Quick Duel publishes a bounded query-gated seed receipt on every redeploym
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
-    await expect(page.locator('.st-hud__instruments')).toBeVisible();
+    await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     return page.evaluate(() => {
       const probe = (window as typeof window & { __singedTerraE2E?: { quickDuelSeed?: number } })
         .__singedTerraE2E;

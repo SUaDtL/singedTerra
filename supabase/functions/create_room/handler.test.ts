@@ -180,6 +180,16 @@ Deno.test('handleCreateRoom: stores and echoes explicit ruleset 2', async () => 
   assertEquals(response.options, storedOptions)
 })
 
+Deno.test('handleCreateRoom: stores and echoes protected-floor ruleset 4', async () => {
+  const capture = captureRoomInsert()
+  const res = await createRoomHandler({ serviceClient: capture.serviceClient as never })({
+    playerName: 'Ana', color: '#e84d4d', rulesetVersion: 4, options: { maxPlayers: 2 },
+  })
+  assertEquals(res.status, 200)
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).rulesetVersion, 4)
+  assertEquals((await res.json()).options.rulesetVersion, 4)
+})
+
 Deno.test('handleCreateRoom: lava requires hazard ruleset 3 and is stored', async () => {
   const blocked = await createRoomHandler({ serviceClient: captureRoomInsert().serviceClient as never })({
     playerName: 'Ana', color: '#e84d4d', rulesetVersion: 2,
@@ -194,6 +204,18 @@ Deno.test('handleCreateRoom: lava requires hazard ruleset 3 and is stored', asyn
   })
   assertEquals(allowed.status, 200)
   assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).hazards, 'lava')
+})
+
+Deno.test('handleCreateRoom: protected-floor ruleset 4 retains the Caldera hazard capability', async () => {
+  const capture = captureRoomInsert()
+  const response = await createRoomHandler({ serviceClient: capture.serviceClient as never })({
+    playerName: 'Ash', color: '#e84d4d', rulesetVersion: 4,
+    options: { maxPlayers: 2, hazards: 'lava' },
+  })
+
+  assertEquals(response.status, 200)
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).hazards, 'lava')
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).rulesetVersion, 4)
 })
 
 Deno.test('handleCreateRoom: omitted ruleset stores and echoes legacy version 1', async () => {

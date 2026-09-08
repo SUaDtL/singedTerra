@@ -67,7 +67,8 @@ function validStartRow(value: unknown, userId: string): value is StartRow {
   const row = value as Record<string, unknown>
   return typeof row.id === 'string' && UUID_REGEX.test(row.id)
     && row.user_id === userId
-    && row.status === 'active' && row.contract_version === 1 && row.engine_version === 1 && row.ruleset_version === 3
+    && row.status === 'active' && row.contract_version === VERIFIED_CONTRACT_VERSION
+    && row.engine_version === VERIFIED_ENGINE_VERSION && row.ruleset_version === VERIFIED_RULESET_VERSION
     && typeof row.expires_at === 'string' && Number.isFinite(Date.parse(row.expires_at))
     && typeof row.created_at === 'string' && Number.isFinite(Date.parse(row.created_at))
     && typeof row.resumed === 'boolean'

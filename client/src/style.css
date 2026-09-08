@@ -10,8 +10,8 @@
   /* Stage = the 1200x600 play canvas + a right-side HUD panel. */
   --canvas-w: 1200px;
   --canvas-h: 600px;
-  --panel-w: 264px;
-  --stage-w: 1464px; /* canvas-w + panel-w — the full app width */
+  --panel-w: 0px;
+  --stage-w: 1200px;
   --stage-h: 600px;
 
   /* ===== singedTerra art tokens (Sprint 5) — mirror client/src/ui/theme.ts ===== */
@@ -105,12 +105,32 @@ body {
      full-screen height (address bar hidden), but window.innerHeight is shorter
      when the address bar is shown. Using fixed positioning means the body is
      always exactly the visible viewport, so #app (sized by zoom to match
-     window.innerHeight) centers without overflowing or being clipped. */
+     window.innerHeight) anchors to the visible floor without overflowing or
+     being clipped. Any aspect-ratio remainder stays above the battlefield;
+     the physical command console never floats over a lower letterbox. */
   position: fixed;
   inset: 0;
   display: grid;
-  place-items: center;
+  place-items: end center;
   overflow: hidden;
+}
+
+/* The game is an instrument surface, not a document. Prevent drag gestures
+ * from leaving browser selection paint across labels and controls; real form
+ * fields remain editable/selectable in the lobby and account surfaces. */
+#app,
+#modal-layer,
+#game-overlay {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app input,
+#app textarea,
+#app select,
+#app [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /*
@@ -129,10 +149,41 @@ body::before {
     radial-gradient(circle at 13% 18%, var(--ambient-star) 0 1px, transparent 2px),
     radial-gradient(circle at 78% 11%, var(--ambient-star) 0 1px, transparent 2px),
     radial-gradient(circle at 91% 29%, var(--ambient-star) 0 1px, transparent 2px),
-    radial-gradient(ellipse 58% 22% at 50% 100%, var(--ambient-ember), transparent 74%),
-    radial-gradient(ellipse 72% 24% at 50% 64%, var(--ambient-ember), transparent 72%),
-    radial-gradient(ellipse 112% 62% at 50% 54%, var(--ambient-horizon), transparent 68%),
+    linear-gradient(180deg, rgba(9, 5, 20, .42), rgba(11, 6, 19, .78)),
+    radial-gradient(ellipse 58% 22% at 50% 100%, rgba(129, 46, 27, .26), transparent 74%),
+    radial-gradient(ellipse 72% 24% at 50% 64%, rgba(103, 29, 67, .2), transparent 72%),
+    var(--st-theater-backdrop, none) center / cover no-repeat,
     linear-gradient(180deg, var(--ambient-zenith) 0%, var(--ambient-mid) 54%, var(--backdrop) 100%);
+}
+
+/*
+ * When the 2:1 stage is height-limited, grounding the physical command shell
+ * leaves a shallow remainder above it. Reflect the top of the SAME selected
+ * battlefield panorama into that remainder: the boundary shares one exact
+ * source row, while the mirrored sky provides a deliberate canopy instead of
+ * a disconnected second backdrop. This owns no layout or interaction.
+ */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--st-stage-top, 0px);
+  box-sizing: border-box;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--st-current-battlefield, none) center calc(-1 * var(--st-backdrop-seam-offset, 0px)) /
+      var(--st-stage-visual-width, 1200px) var(--st-stage-visual-height, 600px) no-repeat;
+  transform: scaleY(-1);
+  transform-origin: center;
+}
+
+/* Full-app dialogs own the complete viewport theater, including the reflected
+   canopy outside #app. Without this, a terminal/commerce scrim stops at the
+   stage edge and turns the canopy back into a bright disconnected strip. */
+body:has(#modal-layer > .st-hud__overlay:not(.st-hud__overlay--hidden):not([hidden]))::after {
+  filter: brightness(.28) saturate(.72);
 }
 
 /*
@@ -152,8 +203,6 @@ body::before {
   box-shadow:
     0 18px 70px rgba(0, 0, 0, 0.72),
     0 0 90px rgba(142, 47, 83, 0.22),
-    0 0 0 3px var(--line-ink),
-    inset 0 0 0 2px rgba(255, 210, 63, 0.34),
     inset 0 0 34px rgba(255, 122, 31, 0.08);
   border-radius: 6px;
   overflow: hidden;
@@ -173,6 +222,11 @@ body::before {
   z-index: 30;
   pointer-events: none;
   background:
+    linear-gradient(
+      180deg,
+      rgba(20, 5, 4, var(--st-canopy-blend-alpha, 0)) 0,
+      rgba(20, 5, 4, 0) 42px
+    ),
     radial-gradient(120% 90% at 50% 38%, rgba(142, 47, 83, 0.22) 0%, rgba(22, 13, 46, 0) 55%),
     radial-gradient(140% 120% at 50% 122%, rgba(255, 122, 31, 0.16) 0%, rgba(22, 13, 46, 0) 50%);
   mix-blend-mode: screen;
@@ -272,7 +326,9 @@ body::before {
   left: 0;
   box-sizing: border-box;
   height: calc(var(--arena-height) - var(--battle-rail-top-y));
-  z-index: 6;
+  /* The registered console art already owns its scanlines and vignette. Keep
+     it above #app's generic CRT washes so those pixels are not tinted twice. */
+  z-index: 32;
   display: flex;
   align-items: stretch;
   padding: 8px 12px;
@@ -287,6 +343,76 @@ body::before {
     inset 0 18px 30px rgba(255, 122, 31, 0.045),
     0 -10px 24px rgba(12, 7, 22, 0.28);
 }
+
+/* The authored wide chassis is 1388x212 logical pixels. When the viewport
+ * aspect ratio selects that projection, let it extend through the 1200x198
+ * stage rail instead of cropping its side wings and lower edge. */
+@media (pointer: fine) and (min-aspect-ratio: 347/150) {
+  #battle-rail {
+    overflow: visible;
+  }
+}
+
+/* The optional compositor is visual-only. Its transparent pixels preserve the
+ * existing non-migrated chassis, while its painted Commander/Fuel regions sit
+ * above that parent background and below every semantic assembly. Loading and
+ * fallback intentionally keep all current CSS paint. */
+#battle-rail > .st-battle-hud-canvas {
+  position: absolute;
+  inset: auto;
+  z-index: 1;
+  display: block;
+  pointer-events: none;
+}
+
+/* One projected socket model owns all ready-state geometry. Fixed positioning
+ * is scoped to the rail's transformed containing block, so nested semantic
+ * owners consume the same host-relative coordinates as the Pixi canvas. */
+#battle-rail[data-battle-hud-status='ready'] {
+  transform: translateZ(0) !important;
+}
+
+#battle-rail[data-battle-hud-status='ready'] [data-battle-hud-socket] {
+  position: fixed !important;
+  inset: auto !important;
+  top: var(--battle-hud-y) !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: var(--battle-hud-x) !important;
+  box-sizing: border-box !important;
+  width: var(--battle-hud-width) !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: var(--battle-hud-height) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  transform: none !important;
+  translate: none !important;
+  rotate: none !important;
+  scale: none !important;
+  aspect-ratio: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  place-self: auto !important;
+  flex: none !important;
+  order: 0 !important;
+}
+
+#battle-rail[data-battle-hud-status='ready'] [data-battle-hud-socket='commander-panel'],
+#battle-rail[data-battle-hud-status='ready'] [data-battle-hud-socket='fuel-rocker'] {
+  display: block !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  grid-template: none !important;
+}
+
+#battle-rail[data-battle-hud-status='ready'] [data-battle-hud-socket='commander-panel'] {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 /*
  * #hud is the RIGHT SIDE PANEL — all status widgets (players, wind, weapon, aim,
  * arsenal, menu) stack here, OFF the play field, so nothing covers the tanks.
@@ -294,13 +420,32 @@ body::before {
 #hud {
   position: relative;
   flex: 0 0 auto;
+  align-self: flex-start;
   box-sizing: border-box;
   width: var(--panel-w);
-  height: 100%;
+  height: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  overflow: visible;
+  pointer-events: auto;
+}
+#hud::before {
+  display: none;
+}
+#hud .st-hud__match-card {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: fit-content;
   padding: 10px 12px 12px;
   background:
     radial-gradient(100% 45% at 50% 0%, rgba(255, 210, 63, 0.08), rgba(255, 210, 63, 0) 62%),
@@ -314,9 +459,8 @@ body::before {
     inset 18px 0 28px rgba(255, 122, 31, 0.045),
     -10px 0 24px rgba(12, 7, 22, 0.36);
   overflow: hidden;
-  pointer-events: auto;
 }
-#hud::before {
+#hud .st-hud__match-card::before {
   content: '';
   position: absolute;
   inset: 7px;
@@ -328,26 +472,13 @@ body::before {
     inset 0 0 22px rgba(255, 210, 63, 0.045),
     inset 0 -22px 34px rgba(255, 122, 31, 0.055);
 }
-#hud::after {
-  content: 'BATTLE STATUS';
-  position: absolute;
-  right: 13px;
-  bottom: 8px;
-  z-index: 0;
-  pointer-events: none;
-  color: rgba(255, 233, 168, 0.13);
-  font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: 2.4px;
-}
-#hud > * {
+#hud .st-hud__match-card > * {
   position: relative;
   z-index: 1;
 }
 
-/* One rail, not a stack of cards. Top-level regions share separator rhythm;
-   the ballistic computer is the deliberate raised-instrument exception. */
-#hud > .st-ui-section:not(.st-ui-section--instrument) {
+/* One rail, not a stack of cards. Top-level regions share separator rhythm. */
+#hud .st-hud__match-card > .st-ui-section {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
@@ -358,42 +489,11 @@ body::before {
   background: transparent;
   box-shadow: none;
 }
-#hud > .st-ui-section--instrument {
-  margin: var(--ui-space-2) 0;
-}
-#app.is-compact #hud > .st-ui-section--instrument {
-  /* Preserve the full-size dials while reclaiming rail height from whitespace. */
-  margin-block: var(--ui-space-1);
-}
-#hud > .st-ui-section--active {
-  padding-block: 0 var(--ui-space-2);
-}
-#hud > .st-ui-section.st-hud__command-console {
-  margin: var(--ui-space-1) 0 var(--ui-space-2);
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid rgba(255, 210, 63, 0.48);
-  border-radius: var(--ui-radius-lg);
-  background:
-    linear-gradient(135deg, rgba(255, 210, 63, 0.055), transparent 42%),
-    rgba(9, 5, 16, 0.58);
-  box-shadow:
-    inset 0 0 24px rgba(255, 122, 31, 0.075),
-    0 8px 18px rgba(0, 0, 0, 0.32);
-}
-#app.is-compact #hud > .st-ui-section.st-hud__command-console {
-  margin-block: 0;
-}
-#hud > .st-ui-section--actions {
-  justify-content: flex-start;
-  gap: var(--ui-space-2);
-  color: var(--ui-copy);
-}
-#hud > .st-ui-section--roster {
+#hud .st-hud__match-card > .st-ui-section--roster {
   color: color-mix(in srgb, var(--ui-copy) 88%, transparent);
   background: linear-gradient(180deg, rgba(9, 5, 16, 0.22), transparent);
 }
-#hud > .st-hud__match-mode {
+#hud .st-hud__match-card > .st-hud__match-mode {
   padding-top: 13px;
   color: var(--ui-muted);
   font-family: var(--font-mono);
@@ -402,12 +502,12 @@ body::before {
   letter-spacing: 1.2px;
   text-transform: uppercase;
 }
-#hud > .st-hud__round {
+#hud .st-hud__match-card > .st-hud__round {
   color: var(--text-gold);
   font-size: 13px;
   letter-spacing: 0.8px;
 }
-#hud > .st-hud__conn {
+#hud .st-hud__match-card > .st-hud__conn {
   position: relative;
   inset: auto;
   z-index: 1;
@@ -424,7 +524,7 @@ body::before {
   box-shadow: none;
   white-space: normal;
 }
-#hud > .st-hud__conn::before {
+#hud .st-hud__match-card > .st-hud__conn::before {
   content: '';
   width: 8px;
   height: 8px;
@@ -433,35 +533,108 @@ body::before {
   background: #6fd7a9;
   box-shadow: 0 0 8px rgba(111, 215, 169, 0.46);
 }
-#hud > .st-hud__conn[data-connection-state='connecting']::before,
-#hud > .st-hud__conn[data-connection-state='reconnecting']::before {
+#hud .st-hud__match-card > .st-hud__conn[data-connection-state='connecting']::before,
+#hud .st-hud__match-card > .st-hud__conn[data-connection-state='reconnecting']::before {
   background: var(--ember);
   box-shadow: 0 0 8px rgba(255, 122, 31, 0.52);
 }
-#battle-rail .st-ui-section.st-hud__strip--open {
-  position: absolute;
-  inset: 4px;
-  z-index: 20;
-  width: auto;
-  height: auto;
-  max-height: calc(100% - 8px);
-  margin: 0;
-  padding: var(--ui-space-3);
-  overflow: hidden;
-  border: 1px solid var(--ui-line-strong);
-  border-radius: var(--ui-radius-lg);
-  background:
-    linear-gradient(180deg, rgba(255, 210, 63, 0.06), transparent 38%),
-    var(--ui-surface-raised);
-  box-shadow:
-    0 18px 42px rgba(0, 0, 0, 0.66),
-    0 0 0 1px rgba(9, 4, 13, 0.9),
-    inset 0 1px 0 rgba(255, 233, 168, 0.08);
+
+/* Approved Match plate: the bitmap contains only frame material. All roster,
+   mode, round, connection, and controls remain live HTML inside its recess. */
+#hud .st-hud__match-card {
+  min-height: 0;
+  padding: 64px 20px 22px;
+  border: 0;
+  border-radius: 22px;
+  outline: 0;
+  background: url('./assets/battle-console/battle-match-frame-v2.webp') center / 100% 100% no-repeat;
+  box-shadow: none;
+  overflow: visible;
 }
-.st-ui-action:focus-visible,
-.st-ui-icon-action:focus-visible,
-.st-hud__weapon-btn:focus-visible,
-.st-hud__touch-btn:focus-visible {
+#hud .st-hud__match-card::before {
+  display: none;
+}
+#hud .st-hud__match-title {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  left: 64px;
+  right: 24px;
+  width: auto;
+  margin: 0;
+  transform: none;
+  color: #f0c96d;
+  font: 800 19px/1 var(--font-display);
+  letter-spacing: 1.2px;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px #000, 0 0 7px rgba(240, 201, 109, .2);
+  pointer-events: none;
+}
+#hud .st-hud__match-card > .st-ui-section,
+#hud .st-hud__match-card > .st-hud__match-mode,
+#hud .st-hud__match-card > .st-hud__round,
+#hud .st-hud__match-card > .st-hud__conn {
+  padding-inline: 3px;
+}
+#hud .st-hud__match-card > .st-hud__round {
+  margin-block: 5px;
+  padding-block: 11px;
+  border-block: 1px solid rgba(198, 137, 51, .32);
+  font-size: 14px;
+  text-align: center;
+}
+#hud .st-hud__match-card > .st-hud__menu {
+  position: absolute;
+  z-index: 3;
+  top: 4%;
+  left: 20px;
+  width: 40px;
+  min-width: 40px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  align-items: flex-start;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #edca83;
+  font: 750 10px/1 var(--font-display);
+  letter-spacing: .35px;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+#hud .st-hud__match-card > .st-hud__menu::before {
+  content: none;
+}
+#hud .st-hud__match-card > .st-hud__menu > .st-ui-glyph {
+  display: none;
+}
+#hud .st-hud__match-card > .st-hud__menu > span:not(.st-ui-glyph) {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 0;
+  clip-path: polygon(2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px);
+  background:
+    repeating-linear-gradient(174deg, #ccb49606 0 1px, transparent 1px 3px) padding-box,
+    linear-gradient(180deg, #302a27, #211e20 40%, #1b191c) padding-box,
+    linear-gradient(135deg, #716049, #a3885d 22%, #4a3928 48%, #736043 78%, #362a20) border-box;
+  box-shadow: inset 0 1px #ab906b42, inset 0 -1px #080709;
+  text-shadow: 0 1px #080608;
+}
+#hud .st-hud__match-card > .st-hud__menu:hover > span {
+  color: #ffe2a0;
+  filter: brightness(1.14);
+}
+#hud .st-hud__match-card > .st-hud__menu:active > span {
+  filter: brightness(.85);
+}
+.st-ui-action:focus-visible {
   outline: none;
   box-shadow: var(--ui-focus);
 }
@@ -577,6 +750,11 @@ body::before {
 }
 #modal-layer button {
   pointer-events: auto;
+}
+
+body:has(#modal-layer [data-battle-console-dialog]) #game-overlay > .st-hud__match-drawer-toggle,
+body:has(#modal-layer [data-battle-console-dialog]) #hud {
+  display: none;
 }
 
 /*
@@ -793,6 +971,299 @@ body::before {
   #portrait-launch { transition: none; }
 }
 
+/*
+ * Match is information, not permanently reserved scenery.  At ordinary aspect
+ * ratios its ledger is a light drawer over the field; only an actually wide
+ * display earns a dock without reducing the 1200px battlefield.
+ */
+:root {
+  --stage-w: 1200px;
+}
+
+#hud {
+  display: none;
+}
+
+#hud.st-hud--match-drawer-open {
+  display: flex;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 232px;
+  max-height: calc(var(--canvas-h) - 24px);
+  z-index: 12;
+  overflow: visible;
+}
+
+#hud.st-hud--match-drawer-open .st-hud__match-card {
+  min-height: 0;
+  max-height: calc(var(--canvas-h) - 24px);
+  overflow: hidden auto;
+  scrollbar-color: #8d6429 #151116;
+  scrollbar-width: thin;
+}
+#hud.st-hud--match-drawer-open .st-hud__match-title {
+  right: 64px;
+}
+
+#hud .st-hud__match-drawer-close {
+  display: none;
+}
+
+#hud.st-hud--match-drawer-open .st-hud__match-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  position: absolute;
+  z-index: 4;
+  top: 10px;
+  right: 20px;
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 4px;
+  color: var(--gold);
+  background: linear-gradient(180deg, rgba(255, 210, 63, 0.11), rgba(12, 7, 22, 0.9));
+  overflow: hidden;
+  font: 800 0/1 var(--font-display);
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+#hud.st-hud--match-drawer-open .st-hud__match-drawer-close::before {
+  content: '\00d7';
+  font-size: 26px;
+  line-height: 1;
+}
+
+#app.is-compact #hud.st-hud--match-drawer-open {
+  font-size: var(--st-command-readability-size, 23px);
+}
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__menu,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__player,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__conn,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__round,
+#app.is-compact #hud.st-hud--match-drawer-open [data-ui="match-mode"] {
+  font-size: var(--st-command-readability-size, 23px);
+}
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__match-title,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__turn-order,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__ammo {
+  font-size: var(--st-command-readability-size, 23px);
+}
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__match-title {
+  line-height: 1.12;
+  letter-spacing: .5px;
+}
+@media (pointer: coarse) {
+  #hud.st-hud--match-drawer-open .st-hud__match-title {
+    font-size: 16px;
+    letter-spacing: .5px;
+  }
+}
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__player-row {
+  column-gap: 3px;
+}
+
+#game-overlay > .st-hud__match-drawer-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 13;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  pointer-events: auto;
+}
+
+#game-overlay > .st-hud__match-drawer-toggle[aria-hidden='true'],
+#game-overlay[inert] > .st-hud__match-drawer-toggle,
+#game-overlay[aria-hidden='true'] > .st-hud__match-drawer-toggle,
+#stage[inert] #game-overlay > .st-hud__match-drawer-toggle,
+#stage[aria-hidden='true'] #game-overlay > .st-hud__match-drawer-toggle {
+  display: none;
+  pointer-events: none;
+}
+
+#game-overlay[inert] > .st-hud__quick-chat,
+#game-overlay[aria-hidden='true'] > .st-hud__quick-chat,
+#stage[inert] #game-overlay > .st-hud__quick-chat,
+#stage[aria-hidden='true'] #game-overlay > .st-hud__quick-chat {
+  display: none;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  #hud.st-hud--match-drawer-open {
+    width: 320px;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__player-row {
+    grid-template-columns: 28px minmax(0, 1fr) 16px 44px 14px;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-card {
+    /* The coarse header owns two 91px touch targets. Keep Match metadata
+       below that header instead of letting it flow behind either target. */
+    padding-top: 105px;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-title {
+    top: 18px;
+    right: 105px;
+    left: 105px;
+    width: auto;
+    transform: none;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-drawer-close {
+    min-width: var(--st-deployment-choice-target, 91px);
+    min-height: var(--st-deployment-choice-target, 91px);
+    top: 4px;
+    right: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    /* Keep the authored close glyph as the sole visual owner. The button's
+       aria-label remains the complete accessible name. */
+    font-size: 0;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-drawer-close::before {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(214, 163, 74, .65);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(73, 55, 42, .78), rgba(15, 12, 17, .95));
+    box-shadow: inset 0 1px rgba(255, 232, 177, .14), 0 3px 8px rgba(0, 0, 0, .5);
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-card > .st-hud__menu {
+    top: 4px;
+    align-items: center;
+    left: 4px;
+    width: var(--st-deployment-choice-target, 91px);
+    min-width: var(--st-deployment-choice-target, 91px);
+    height: var(--st-deployment-choice-target, 91px);
+    min-height: var(--st-deployment-choice-target, 91px);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-card > .st-hud__menu > span {
+    display: grid;
+    width: 58px;
+    height: 32px;
+    font-size: 15px;
+  }
+  #hud.st-hud--match-drawer-open .st-hud__match-card > .st-hud__menu::before {
+    content: none;
+  }
+  #game-overlay > .st-hud__match-drawer-toggle {
+    width: var(--st-deployment-choice-target, 91px);
+    min-width: var(--st-deployment-choice-target, 91px);
+    max-width: var(--st-deployment-choice-target, 91px);
+    min-height: var(--st-deployment-choice-target, 91px);
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    border: 1px solid rgba(205, 155, 72, 0.72);
+    border-radius: 7px;
+    color: #f0c96d;
+    background: linear-gradient(180deg, rgba(70, 57, 43, .94), rgba(18, 16, 18, .99));
+    box-shadow: inset 0 0 0 2px rgba(5, 5, 7, .7), inset 0 1px rgba(255, 229, 169, .14), 0 6px 16px rgba(0, 0, 0, .5);
+    font: 750 var(--st-command-readability-size, 23px)/1 var(--font-display);
+    text-transform: uppercase;
+  }
+  #game-overlay > .st-hud__match-drawer-toggle::before {
+    content: none;
+  }
+}
+
+/* A true ultrawide fine-pointer stage earns the reference Match instrument.
+   It floats over sky, stays content-fit, and reserves no stage or gutter width. */
+@media (min-aspect-ratio: 7/3) and (pointer: fine) {
+  :root {
+    --panel-w: 0px;
+    --stage-w: 1200px;
+  }
+
+  #app {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  #game {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 2.5%, #000 97.5%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 2.5%, #000 97.5%, transparent 100%);
+  }
+
+  #hud {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 12;
+    display: flex;
+    width: 184px;
+    max-height: calc(var(--canvas-h) - 24px);
+    overflow: visible;
+  }
+
+  #hud .st-hud__match-card {
+    max-height: calc(var(--canvas-h) - 24px);
+    padding: 50px 14px 14px;
+    overflow: auto;
+  }
+
+  #hud .st-hud__match-title {
+    top: 13px;
+    left: 52px;
+    right: 20px;
+    width: auto;
+  }
+
+  #hud .st-hud__match-card > .st-hud__menu {
+    top: 4%;
+    left: 14px;
+    width: 34px;
+    min-width: 34px;
+    height: 26px;
+    min-height: 26px;
+  }
+
+  #hud .st-hud__match-card > .st-hud__match-mode {
+    padding-top: 7px;
+  }
+
+  #hud .st-hud__match-card > .st-hud__round {
+    margin-block: 2px;
+    padding-block: 7px;
+  }
+
+  #hud .st-hud__match-card > .st-hud__conn {
+    padding-block: 6px;
+  }
+
+  #hud .st-hud__player-row {
+    padding-block: 3px;
+  }
+
+  #game-overlay > .st-hud__match-drawer-toggle {
+    display: none;
+  }
+}
+
+/* Persistent Match occupies the theater gutter, never the gameplay canvas. */
+@media (min-aspect-ratio: 7/3) and (pointer: fine) {
+  #app[data-match-docked="true"] { overflow: visible; }
+  #app[data-match-docked="true"] #hud {
+    left: calc(100% + 12px);
+    right: auto;
+  }
+  #app[data-match-docked="false"] #hud:not(.st-hud--match-drawer-open) { display: none; }
+  #app[data-match-docked="false"] #game-overlay > .st-hud__match-drawer-toggle { display: flex; }
+}
 /* ===== Authenticated production diagnostics ============================
  * The operator console shares the lobby overlay's hard-edged modal frame,
  * then adds a compact command-deck hierarchy inside it. Keep the surface
@@ -1069,4 +1540,119 @@ body::before {
   #lobby .production-diagnostics__receipt-data {
     scroll-behavior: auto;
   }
+}
+
+/* AC-01/07 compact ledger: preserve 14px physical copy through stage scaling. */
+@media (pointer: coarse), (max-height: 510px) {
+  #app.is-compact #hud.st-hud--match-drawer-open { width: min(440px, calc(var(--canvas-w) - 24px)); }
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__match-card { padding-top: 90px; }
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__match-title {
+    left: 100px;
+    right: 100px;
+    top: 32px;
+    font-size: calc(14px / var(--battle-ui-scale, 1));
+    letter-spacing: .5px;
+  }
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__player,
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__turn-order,
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__ammo,
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__hp,
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__conn,
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__round,
+  #app.is-compact #hud.st-hud--match-drawer-open [data-ui="match-mode"] {
+    font-size: calc(14px / var(--battle-ui-scale, 1));
+    letter-spacing: 0;
+    line-height: 1.25;
+  }
+  #app.is-compact #hud.st-hud--match-drawer-open .st-hud__player-row {
+    grid-template-columns: 32px minmax(0, 1fr) 28px 52px 14px;
+  }
+}
+
+/* The narrow desktop ledger still lives inside the reduced stage, even while
+   its card stays open. Give its roster and metadata the same physical floor. */
+@media (max-width: 1199px), (max-height: 599px) {
+  #app #hud .st-hud__match-card :is(
+    .st-hud__match-title, .st-hud__player, .st-hud__turn-order,
+    .st-hud__ammo, .st-hud__hp, .st-hud__conn, .st-hud__round,
+    [data-ui="match-mode"]
+  ) {
+    font-size: calc(14px / var(--battle-ui-scale, 1));
+    letter-spacing: 0;
+    line-height: 1.25;
+  }
+}
+
+/* Register header content to the painted nameplate (source y45..143/1231),
+   so short and tall Match cards share one optical center. */
+#app #hud .st-hud__match-card > h2.st-hud__match-title,
+#app.is-compact #hud.st-hud--match-drawer-open .st-hud__match-card > h2.st-hud__match-title {
+  top: 3.656%;
+  left: 27%;
+  right: 27%;
+  width: auto;
+  height: 7.961%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  font-size: max(13px, calc(14px / var(--battle-ui-scale, 1)));
+  line-height: 1;
+  letter-spacing: .8px;
+}
+#app #hud .st-hud__match-card > .st-hud__menu {
+  top: 7.636%;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  box-shadow: none;
+}
+#app #hud .st-hud__match-card > .st-hud__menu > .st-ui-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  color: #e0b866;
+  filter: drop-shadow(0 1px 0 #090709);
+}
+@media (pointer: coarse) {
+  #app #hud .st-hud__match-card > .st-hud__menu > .st-ui-icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Header glyphs sit within the plate; larger targets carry no painted box. */
+#app #hud .st-hud__match-card > .st-hud__menu,
+#app #hud.st-hud--match-drawer-open .st-hud__match-card > .st-hud__match-drawer-close {
+  top: 7.636%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  width: max(26px, calc(44px / var(--battle-ui-scale, 1)));
+  min-width: 0;
+  height: max(26px, calc(44px / var(--battle-ui-scale, 1)));
+  min-height: 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#app #hud .st-hud__match-card > .st-hud__menu { left: 22%; }
+#app #hud.st-hud--match-drawer-open .st-hud__match-card > .st-hud__match-drawer-close { left: 78%; }
+#app #hud.st-hud--match-drawer-open .st-hud__match-drawer-close::before { content: none; }
+#app #hud.st-hud--match-drawer-open .st-hud__match-drawer-close > .st-ui-icon {
+  width: 14px;
+  height: 14px;
+  color: #e0b866;
+  filter: drop-shadow(0 1px 0 #090709);
+}
+#app #hud .st-hud__match-card > :is(.st-hud__menu, .st-hud__match-drawer-close):focus-visible {
+  outline: 1px solid #e0b866;
+  outline-offset: -4px;
+}
+@media (pointer: coarse) {
+  #app #hud.st-hud--match-drawer-open .st-hud__match-drawer-close > .st-ui-icon { width: 24px; height: 24px; }
 }

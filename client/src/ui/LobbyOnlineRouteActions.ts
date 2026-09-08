@@ -9,6 +9,7 @@ export interface OnlineRouteAlternative {
 export function buildOnlineRouteActions(
   primary: HTMLButtonElement | null,
   alternatives: readonly OnlineRouteAlternative[],
+  listenerSignal?: AbortSignal,
 ): HTMLElement {
   const root = document.createElement('div');
   root.className = 'lobby-online-actions';
@@ -34,7 +35,7 @@ export function buildOnlineRouteActions(
     button.className = 'lobby-btn secondary';
     button.dataset.onlineRoute = alternative.id;
     button.textContent = alternative.label;
-    button.addEventListener('click', alternative.onClick);
+    button.addEventListener('click', alternative.onClick, { signal: listenerSignal });
     buttons.append(button);
   }
 

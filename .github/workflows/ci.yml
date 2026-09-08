@@ -84,3 +84,5 @@ jobs:
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
       - run: npm run test:e2e   # builds client/dist, serves it via vite preview, asserts real HUD geometry
+      - name: Battle console responsive and interaction checks
+        run: npx playwright test -c playwright.product-completion.config.ts

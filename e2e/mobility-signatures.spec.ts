@@ -176,7 +176,7 @@ async function startGarageMatch(page: Page, kit: Kit): Promise<void> {
   await page.getByRole('button', { name: 'Deploy local battle' }).click();
   await expect(page.locator('#game')).toBeVisible();
   await enterBattleIfBriefed(page);
-  await expect(page.locator('.st-hud__fuel-value')).toHaveText('100');
+  await expect(page.locator('[data-semantic-key="node:span:100 fuel remaining:19"]')).toHaveText('100');
 }
 
 function undercarriageMask(kit: Kit, draw: TankDraw): Mask {
@@ -281,8 +281,8 @@ async function assertFitted(page: Page): Promise<void> {
 async function exerciseMove(page: Page, kit: Kit): Promise<{ mask: Mask; baseline: TankDraw; moved: TankDraw; evidence: PixelDifference; probe: ProbeState }> {
   const baseline = await waitForStableCanvas(page, kit);
   await clearProbe(page);
-  const fuel = page.locator('.st-hud__fuel-value');
-  const move = page.locator('#battle-rail .st-hud__mobility [data-move="8"]');
+  const fuel = page.locator('[data-semantic-key="node:span:100 fuel remaining:19"]');
+  const move = page.getByRole('button', { name: 'Move tank right, 8 fuel maximum', exact: true });
   await move.click();
   await expect(fuel).toHaveText('92');
   await expect.poll(async () => {
@@ -334,8 +334,8 @@ test.describe('Mobility signatures in the production bundle', () => {
     await startGarageMatch(page, kit);
     const baseline = await waitForStableCanvas(page, kit);
     await clearProbe(page);
-    const fuel = page.locator('.st-hud__fuel-value');
-    const move = page.locator('#battle-rail .st-hud__mobility [data-move="8"]');
+    const fuel = page.locator('[data-semantic-key="node:span:100 fuel remaining:19"]');
+    const move = page.getByRole('button', { name: 'Move tank right, 8 fuel maximum', exact: true });
     await move.click();
     await expect(fuel).toHaveText('92');
     await expect.poll(async () => (await probeState(page, kit)).tankDraws.at(-1)?.x ?? null).toBe(baseline.x + 8);

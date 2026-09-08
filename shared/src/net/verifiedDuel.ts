@@ -73,7 +73,7 @@ export function createVerifiedDuelOptions(seed: number): GameOptions {
     ],
     seed, maxWind: VERIFIED_DUEL_MAX_WIND, gravity: GRAVITY, walls: 'open', hazards: 'none', rounds: 1,
     interestRate: 0, suddenDeathTurn: 0, armsLevel: 0, teamMode: false,
-    starterWeaponFalloff: 'decisive', rulesetVersion: 3,
+    starterWeaponFalloff: 'decisive', rulesetVersion: 4,
   }
 }
 

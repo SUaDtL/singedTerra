@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GameClient } from '../client/GameClient';
+import { BATTLEFIELD_WORLDS } from './BattlefieldBackdrop';
 import { selectClientBattlefieldWorld } from './selectClientBattlefield';
 
 describe('selectClientBattlefieldWorld', () => {
@@ -10,9 +11,10 @@ describe('selectClientBattlefieldWorld', () => {
       getInitialTerrain: () => pristineTerrain,
       getState: () => ({ terrain: crateredTerrain }),
     } as Pick<GameClient, 'getInitialTerrain' | 'getState'>;
-    const selectBattlefieldWorld = vi.fn();
+    const selectedWorld = BATTLEFIELD_WORLDS[1]!;
+    const selectBattlefieldWorld = vi.fn(() => selectedWorld);
 
-    selectClientBattlefieldWorld(client, {
+    const result = selectClientBattlefieldWorld(client, {
       selectBattlefieldWorld,
     });
 
@@ -20,5 +22,6 @@ describe('selectClientBattlefieldWorld', () => {
     expect(selectBattlefieldWorld).toHaveBeenCalledOnce();
     expect(selectBattlefieldWorld).toHaveBeenCalledWith(pristineTerrain);
     expect(selectBattlefieldWorld).not.toHaveBeenCalledWith(crateredTerrain);
+    expect(result).toBe(selectedWorld);
   });
 });

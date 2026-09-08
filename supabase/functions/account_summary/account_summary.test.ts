@@ -102,7 +102,7 @@ function withVerifiedProgression(casual: Record<string, unknown>, verified: Reco
 }): Record<string, unknown> {
   return {
     ...casual,
-    verifiedProgression: { evidence: 'verified_replay_v1', ...verified },
+    verifiedProgression: { evidence: 'verified_replay_v2', ...verified },
   }
 }
 

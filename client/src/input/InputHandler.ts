@@ -230,7 +230,7 @@ export class InputHandler {
     const isSpaceKey = event.key === ' ' || event.key === 'Spacebar' || event.code === 'Space';
     const isTextEntry = targetElement?.closest('input, textarea, [contenteditable="true"]');
     const isDedicatedFireControl = targetElement?.closest(
-      'button.st-hud__primary-action, button[data-command-action="fire-space"], button[data-command-action="fire-enter"]',
+      'button[data-battle-console-action="fire"], button[data-command-action="fire-space"], button[data-command-action="fire-enter"]',
     );
 
     // Non-text controls retain focus after a click. Keep Space global for

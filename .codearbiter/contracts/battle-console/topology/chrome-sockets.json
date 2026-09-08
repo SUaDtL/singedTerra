@@ -1,0 +1,1787 @@
+{
+  "authorities": {
+    "assemblies": {
+      "bytes": 6077,
+      "identitySha256": "DB50E870D81A33041CF969A3238EC3A3BD4F01E339B4432B5A939CA233C55160",
+      "path": ".codearbiter/contracts/battle-console/reference/assemblies.json",
+      "sha256": "52C8CA6CDA4A593D15DAF98FC9191E26619CA924E2A336E9E95B12BD8AF040D6"
+    },
+    "blankStaticChrome": {
+      "bytes": 503474,
+      "path": ".codearbiter/contracts/battle-console/reference/blank-static-chrome.png",
+      "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+    },
+    "brief": {
+      "bytes": 11587,
+      "path": ".superpowers/sdd/battle-console-integrated-visual-system/task-G1-10-brief.md",
+      "sha256": "01690222C4C36B5FE56DE84CBAF15B103CFB102D1C59DB49BA12585FD102A819"
+    },
+    "canonicalPixiLayer": {
+      "bytes": 559644,
+      "path": ".codearbiter/contracts/battle-console/reference/canonical-pixi-layer.png",
+      "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+    },
+    "correctionBrief": {
+      "bytes": 5307,
+      "path": ".superpowers/sdd/battle-console-integrated-visual-system/task-G1-10R-brief.md",
+      "sha256": "031B8EAAD373D559F3E564F6DD263A419AC7655367FA37A2BEE499ADA1F2A016"
+    },
+    "inputAccessibility": {
+      "bytes": 90818,
+      "identitySha256": "19ACF299FBBB974DCC959DF94624CE3E4BD4AF5C6524601A883F20BE127A7C43",
+      "path": ".codearbiter/contracts/battle-console/state/input-accessibility.json",
+      "sha256": "0BD270FF1793C6F2AB949345ADB66746667BBC0DF30C5CBE596706CADCF348D7"
+    },
+    "inputArbiter": {
+      "bytes": 247129,
+      "identitySha256": "EC453FA5120951B43F330625E9E8EDE9B8AE1EADF73601BE316940BEA91AE0A1",
+      "path": ".codearbiter/contracts/battle-console/state/input-arbiter.json",
+      "sha256": "7D740057AC7B5DFC7CC42A75DF3A2293242A80298B22256C1CC2AB7EFC52156E"
+    },
+    "intentTransitionTraces": {
+      "bytes": 252798,
+      "identitySha256": "9257D0336B6ED120F132021C47D3E3332438B400C17CDBB4A217141C9CB74D55",
+      "path": ".codearbiter/contracts/battle-console/topology/intent-transition-traces.json",
+      "sha256": "6BD57D63E6F27BEC2BBA9FCBB452DC1F61FDC012AF014EBB91FBF01A866D5090"
+    },
+    "landmarks": {
+      "bytes": 11216,
+      "path": ".codearbiter/contracts/battle-console/reference/landmarks.json",
+      "sha256": "6E103E00EA9F860C162EFF6815207DBDD00A2E17B930EC01944AC5E839870629"
+    },
+    "plan": {
+      "bytes": 65151,
+      "path": ".codearbiter/plans/battle-console-integrated-visual-system.md",
+      "sha256": "C312256C8193D02B13D10FBAA52ECEB3254DE3996241437F1E26F78D316F569B"
+    },
+    "presentationArchitecture": {
+      "bytes": 415660,
+      "identitySha256": "EA46803F384B95B1D74D0A49327848FD13376765E9884B3D8E215E44E58F4D75",
+      "path": ".codearbiter/contracts/battle-console/topology/presentation-architecture.json",
+      "sha256": "F8969360844CF88E0FC40ED88E08F49D1E98889B2D2F28BA95C21DB2BB53A7FB"
+    },
+    "semanticOwners": {
+      "bytes": 501650,
+      "identitySha256": "37A7C248806DBAE726C5133AD669FEF76D708288AC07C3B71685F7D893546FDA",
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-owners.json",
+      "sha256": "69223585BB3C9314288498D32FC7BB13A70611BA1D02E08162E17B10B3C6D3B4"
+    },
+    "semanticReview": {
+      "bytes": 4747,
+      "path": ".codearbiter/contracts/battle-console/review/units/semantic-architecture.json",
+      "sha256": "A7AEC143CECD6F030AD559F38928B52A6082BC9F2A17C8A0E69DDA8CAD103C81"
+    },
+    "snapshotDescriptor": {
+      "bytes": 8735047,
+      "path": ".codearbiter/contracts/battle-console/topology/semantic-baseline-snapshot.json",
+      "sha256": "0522BAC1A7762EF117611D104F76D025944F3D51ABE838410719A1F5C7CEEDAE"
+    },
+    "specification": {
+      "bytes": 82191,
+      "path": ".codearbiter/specs/battle-console-integrated-visual-system.md",
+      "sha256": "8261162F81F19609754781785945A2CA3A1C59B0D0F30F2DE3B781BE5DAEB3F7"
+    },
+    "staticMask": {
+      "bytes": 1321,
+      "path": ".codearbiter/contracts/battle-console/reference/static-mask.png",
+      "sha256": "8970E12973EFD1CE73E65F58BE7C80FBC4D52AE76F6A1678DC5DD025B1768D4E"
+    },
+    "styleScope": {
+      "bytes": 509858,
+      "identitySha256": "B762CA2A2421FAF4B1D05DCFB47A0DB2CFC66BEB32AFFE6B41CEC3BA794C776F",
+      "path": ".codearbiter/contracts/battle-console/topology/style-scope.json",
+      "sha256": "C44D06E6878AA50AA897DF0124BCA786D1E6F9AE19E9167206C4D134870B20A3"
+    },
+    "visualReview": {
+      "bytes": 6477,
+      "path": ".codearbiter/contracts/battle-console/review/units/visual-fidelity.json",
+      "sha256": "93CE7D905DA0F9CD54F179E711A0ABC878E03A9A2FA67984E0093AEF2D2E08E5"
+    }
+  },
+  "campaign": "singedterra.battle-console.hybrid",
+  "cardinalities": {
+    "assemblies": 10,
+    "landmarkRecords": 75,
+    "sockets": 11,
+    "sourceSocketRecords": 22
+  },
+  "claims": {
+    "browserObserved": false,
+    "candidateRuntimeObserved": false,
+    "inputAuthority": false,
+    "productImplemented": false,
+    "semanticAuthority": false
+  },
+  "identitySha256": "3BBA0D0CC9A470F6AF66AB46078D14AD1C6CEF19E9AE12E55E3E8A26BA7C40A1",
+  "indices": {
+    "sourceRecordToSocket": [
+      {
+        "socketKeys": [
+          "tank-portrait"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:0:3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E"
+      },
+      {
+        "socketKeys": [
+          "tank-portrait"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:0:3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E"
+      },
+      {
+        "socketKeys": [
+          "fuel-live-fill"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:1:42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA"
+      },
+      {
+        "socketKeys": [
+          "fuel-live-fill"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:1:42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA"
+      },
+      {
+        "socketKeys": [
+          "weapon-art"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:2:61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235"
+      },
+      {
+        "socketKeys": [
+          "weapon-art"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:2:61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235"
+      },
+      {
+        "socketKeys": [
+          "angle-arc"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:3:EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B"
+      },
+      {
+        "socketKeys": [
+          "angle-arc"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:3:EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B"
+      },
+      {
+        "socketKeys": [
+          "angle-needle"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:4:1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3"
+      },
+      {
+        "socketKeys": [
+          "angle-needle"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:4:1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3"
+      },
+      {
+        "socketKeys": [
+          "power-arc"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:5:890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA"
+      },
+      {
+        "socketKeys": [
+          "power-arc"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:5:890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA"
+      },
+      {
+        "socketKeys": [
+          "power-needle"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:6:AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D"
+      },
+      {
+        "socketKeys": [
+          "power-needle"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:6:AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D"
+      },
+      {
+        "socketKeys": [
+          "wind-glyph"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:7:F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC"
+      },
+      {
+        "socketKeys": [
+          "wind-glyph"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:7:F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC"
+      },
+      {
+        "socketKeys": [
+          "ready-icon"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:8:675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097"
+      },
+      {
+        "socketKeys": [
+          "ready-icon"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:8:675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097"
+      },
+      {
+        "socketKeys": [
+          "ready-lamps"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:9:3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855"
+      },
+      {
+        "socketKeys": [
+          "ready-lamps"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:9:3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855"
+      },
+      {
+        "socketKeys": [
+          "fire-reticle"
+        ],
+        "sourceKey": "assemblies:dynamicPixiRegions:10:864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B"
+      },
+      {
+        "socketKeys": [
+          "fire-reticle"
+        ],
+        "sourceKey": "landmarks:physicalDisplayBoxes:10:864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B"
+      }
+    ]
+  },
+  "landmarkInventory": [
+    {
+      "assembly": null,
+      "category": "alignments",
+      "sourceKey": "landmarks:alignments:0:CB8B5F02473960CF3E146EAC72B74B824C8EC407184897D5F37879DCA6DC8DF3",
+      "sourceRecord": {
+        "assemblies": [
+          "angle",
+          "power",
+          "wind"
+        ],
+        "axis": "y",
+        "coordinate": 138,
+        "id": "instrument-baseline",
+        "tolerance": 1
+      },
+      "sourceRecordSha256": "CB8B5F02473960CF3E146EAC72B74B824C8EC407184897D5F37879DCA6DC8DF3"
+    },
+    {
+      "assembly": null,
+      "category": "alignments",
+      "sourceKey": "landmarks:alignments:1:FCF524E53FDE90586139BEF18EBDEC88B26D9D98E3D283225E09D4448153E288",
+      "sourceRecord": {
+        "assemblies": [
+          "fire-control",
+          "fire-action"
+        ],
+        "axis": "x",
+        "coordinateNumerator": 2306,
+        "denominator": 2,
+        "id": "fire-control-center",
+        "tolerance": 2
+      },
+      "sourceRecordSha256": "FCF524E53FDE90586139BEF18EBDEC88B26D9D98E3D283225E09D4448153E288"
+    },
+    {
+      "assembly": "chassis",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:0:110F9FC1799A80374767D0F0EA64FB121EE23FA46EC8F00A91390A5EB2DBB15C",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 1388,
+          "yNumerator": 212
+        }
+      },
+      "sourceRecordSha256": "110F9FC1799A80374767D0F0EA64FB121EE23FA46EC8F00A91390A5EB2DBB15C"
+    },
+    {
+      "assembly": "commander",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:1:009E924FCA0C913645F0DD959669D23667F6A53A96689063A4B05050264742F8",
+      "sourceRecord": {
+        "assembly": "commander",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 380,
+          "yNumerator": 211
+        }
+      },
+      "sourceRecordSha256": "009E924FCA0C913645F0DD959669D23667F6A53A96689063A4B05050264742F8"
+    },
+    {
+      "assembly": "fuel",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:2:48305775FBFC807DC5478104261628BEE080F7B99E19BC6871C15D0806B17A6D",
+      "sourceRecord": {
+        "assembly": "fuel",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 394,
+          "yNumerator": 324
+        }
+      },
+      "sourceRecordSha256": "48305775FBFC807DC5478104261628BEE080F7B99E19BC6871C15D0806B17A6D"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:3:7867C1281F263379B71E48EA8C79DC6D0592363345EABE4A272C02F11104120A",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 880,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "7867C1281F263379B71E48EA8C79DC6D0592363345EABE4A272C02F11104120A"
+    },
+    {
+      "assembly": "angle",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:4:273482B0CFC504B024A05EC2D8E2912C5DF9C5A164231FC48413F4312CF3F0EA",
+      "sourceRecord": {
+        "assembly": "angle",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 1229,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "273482B0CFC504B024A05EC2D8E2912C5DF9C5A164231FC48413F4312CF3F0EA"
+    },
+    {
+      "assembly": "power",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:5:70889EEB7B6D7BFECBF384A0AF417C0D406EF6CA51B5EF6930636EC3EBE64ADB",
+      "sourceRecord": {
+        "assembly": "power",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 1519,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "70889EEB7B6D7BFECBF384A0AF417C0D406EF6CA51B5EF6930636EC3EBE64ADB"
+    },
+    {
+      "assembly": "wind",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:6:0DF0A9B34F6721610DA1B4F7F8F636F30C44159CC58385C2876AFC731D360973",
+      "sourceRecord": {
+        "assembly": "wind",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 1830,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "0DF0A9B34F6721610DA1B4F7F8F636F30C44159CC58385C2876AFC731D360973"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:7:453FE08F2861ABA0AFF082D2E0973527C0BA00617DBE48B39C602687C1F4F139",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 2347,
+          "yNumerator": 211
+        }
+      },
+      "sourceRecordSha256": "453FE08F2861ABA0AFF082D2E0973527C0BA00617DBE48B39C602687C1F4F139"
+    },
+    {
+      "assembly": "settings",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:8:CE79240396F61C6B44321C678A4F87D67318AAD3F573DBCABCA09708D26F4E95",
+      "sourceRecord": {
+        "assembly": "settings",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 2547,
+          "yNumerator": 163
+        }
+      },
+      "sourceRecordSha256": "CE79240396F61C6B44321C678A4F87D67318AAD3F573DBCABCA09708D26F4E95"
+    },
+    {
+      "assembly": "fire-action",
+      "category": "assemblyCenters",
+      "sourceKey": "landmarks:assemblyCenters:9:6FCD56D837CF79484AC1BA02236E961CBC8BF1BF83C82F1513429CC57BA1210F",
+      "sourceRecord": {
+        "assembly": "fire-action",
+        "center": {
+          "denominator": 2,
+          "xNumerator": 2306,
+          "yNumerator": 298
+        }
+      },
+      "sourceRecordSha256": "6FCD56D837CF79484AC1BA02236E961CBC8BF1BF83C82F1513429CC57BA1210F"
+    },
+    {
+      "assembly": "chassis",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:0:C995B87C8445C2383BF72BF9F8F8F86EFF6CA75889DBACF035730C8DD5804CBC",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "edges": {
+          "bottom": 212,
+          "left": 0,
+          "right": 1388,
+          "top": 0
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 1388,
+          "yNumerator": 212
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 1388,
+          "yNumerator": 212
+        }
+      },
+      "sourceRecordSha256": "C995B87C8445C2383BF72BF9F8F8F86EFF6CA75889DBACF035730C8DD5804CBC"
+    },
+    {
+      "assembly": "commander",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:1:9DBBDFDF8412E387036AD01C6BA6188131B9F812BBD06B073949BF1DB8F3D4FB",
+      "sourceRecord": {
+        "assembly": "commander",
+        "edges": {
+          "bottom": 199,
+          "left": 42,
+          "right": 338,
+          "top": 12
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 380,
+          "yNumerator": 211
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 380,
+          "yNumerator": 211
+        }
+      },
+      "sourceRecordSha256": "9DBBDFDF8412E387036AD01C6BA6188131B9F812BBD06B073949BF1DB8F3D4FB"
+    },
+    {
+      "assembly": "fuel",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:2:D77D7662765174EF2FD9BE2B03168ABE06BC61911F871DB8778B338A2D76DC40",
+      "sourceRecord": {
+        "assembly": "fuel",
+        "edges": {
+          "bottom": 194,
+          "left": 62,
+          "right": 332,
+          "top": 130
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 394,
+          "yNumerator": 324
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 394,
+          "yNumerator": 324
+        }
+      },
+      "sourceRecordSha256": "D77D7662765174EF2FD9BE2B03168ABE06BC61911F871DB8778B338A2D76DC40"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:3:1009AEA881BE49536FF1C995AD4C3389670A3F2CF60A0551DB2BCA5CAC1BD89C",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "edges": {
+          "bottom": 196,
+          "left": 340,
+          "right": 540,
+          "top": 33
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 880,
+          "yNumerator": 229
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 880,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "1009AEA881BE49536FF1C995AD4C3389670A3F2CF60A0551DB2BCA5CAC1BD89C"
+    },
+    {
+      "assembly": "angle",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:4:C40451E98CF57351034A4458561D12D2B7835C408D8F6AF8D6C73BBF3F4CF441",
+      "sourceRecord": {
+        "assembly": "angle",
+        "edges": {
+          "bottom": 197,
+          "left": 542,
+          "right": 687,
+          "top": 32
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 1229,
+          "yNumerator": 229
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 1229,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "C40451E98CF57351034A4458561D12D2B7835C408D8F6AF8D6C73BBF3F4CF441"
+    },
+    {
+      "assembly": "power",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:5:4B39530E8AF15186DD609794F83B26D0DF0039192BEA12E0BCA27E94B7017A7A",
+      "sourceRecord": {
+        "assembly": "power",
+        "edges": {
+          "bottom": 197,
+          "left": 690,
+          "right": 829,
+          "top": 32
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 1519,
+          "yNumerator": 229
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 1519,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "4B39530E8AF15186DD609794F83B26D0DF0039192BEA12E0BCA27E94B7017A7A"
+    },
+    {
+      "assembly": "wind",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:6:06DDBF1C927AFCAB6D8689FC216348DB14F8F8BEAF050B54BD9163169F58DCE0",
+      "sourceRecord": {
+        "assembly": "wind",
+        "edges": {
+          "bottom": 197,
+          "left": 832,
+          "right": 998,
+          "top": 32
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 1830,
+          "yNumerator": 229
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 1830,
+          "yNumerator": 229
+        }
+      },
+      "sourceRecordSha256": "06DDBF1C927AFCAB6D8689FC216348DB14F8F8BEAF050B54BD9163169F58DCE0"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:7:AB3D02133335EDEF53BF5BF78A3147C2B3C1E99FA137A8CF057303C222522C8F",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "edges": {
+          "bottom": 199,
+          "left": 1000,
+          "right": 1347,
+          "top": 12
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 2347,
+          "yNumerator": 211
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 2347,
+          "yNumerator": 211
+        }
+      },
+      "sourceRecordSha256": "AB3D02133335EDEF53BF5BF78A3147C2B3C1E99FA137A8CF057303C222522C8F"
+    },
+    {
+      "assembly": "settings",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:8:1A7F963B13AA72137CF2360F09524327415B592543A4770B428D99D9585C7DE2",
+      "sourceRecord": {
+        "assembly": "settings",
+        "edges": {
+          "bottom": 114,
+          "left": 1241,
+          "right": 1306,
+          "top": 49
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 2547,
+          "yNumerator": 163
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 2547,
+          "yNumerator": 163
+        }
+      },
+      "sourceRecordSha256": "1A7F963B13AA72137CF2360F09524327415B592543A4770B428D99D9585C7DE2"
+    },
+    {
+      "assembly": "fire-action",
+      "category": "assemblyGeometry",
+      "sourceKey": "landmarks:assemblyGeometry:9:5B7E2EC272BA3F7A541F9EA40FA0327D1671A9F470E0DC06FCE8DDAE53E39B83",
+      "sourceRecord": {
+        "assembly": "fire-action",
+        "edges": {
+          "bottom": 183,
+          "left": 1018,
+          "right": 1288,
+          "top": 115
+        },
+        "opticalCenter": {
+          "denominator": 2,
+          "xNumerator": 2306,
+          "yNumerator": 298
+        },
+        "visualCenter": {
+          "denominator": 2,
+          "xNumerator": 2306,
+          "yNumerator": 298
+        }
+      },
+      "sourceRecordSha256": "5B7E2EC272BA3F7A541F9EA40FA0327D1671A9F470E0DC06FCE8DDAE53E39B83"
+    },
+    {
+      "assembly": "commander",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:0:369F64AE4A3CE944AA2A787D13BCC5E19DBCD5BC2F52121703F47F72EC247D3C",
+      "sourceRecord": {
+        "assembly": "commander",
+        "id": "commander-title-baseline",
+        "kind": "title",
+        "region": "commander-title",
+        "y": 37
+      },
+      "sourceRecordSha256": "369F64AE4A3CE944AA2A787D13BCC5E19DBCD5BC2F52121703F47F72EC247D3C"
+    },
+    {
+      "assembly": "commander",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:1:1ABE57D11CF89330203ECA360B3F8C734A256C41B45A0E5198B082A7CF1E1C74",
+      "sourceRecord": {
+        "assembly": "commander",
+        "id": "player-name-baseline",
+        "kind": "value",
+        "region": "player-name",
+        "y": 76
+      },
+      "sourceRecordSha256": "1ABE57D11CF89330203ECA360B3F8C734A256C41B45A0E5198B082A7CF1E1C74"
+    },
+    {
+      "assembly": "commander",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:2:E2C0CC0563ED8A042D90DE31222EEE9F13425F9AC98B435CC4A31CC67A3E9D2A",
+      "sourceRecord": {
+        "assembly": "commander",
+        "id": "health-value-baseline",
+        "kind": "value",
+        "region": "health-value",
+        "y": 107
+      },
+      "sourceRecordSha256": "E2C0CC0563ED8A042D90DE31222EEE9F13425F9AC98B435CC4A31CC67A3E9D2A"
+    },
+    {
+      "assembly": "fuel",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:3:6C90947789EF197C9CD09F10030D58075AAD74EA5F363EA8991C175B7E9A626C",
+      "sourceRecord": {
+        "assembly": "fuel",
+        "id": "fuel-label-baseline",
+        "kind": "title",
+        "region": "fuel-label",
+        "y": 150
+      },
+      "sourceRecordSha256": "6C90947789EF197C9CD09F10030D58075AAD74EA5F363EA8991C175B7E9A626C"
+    },
+    {
+      "assembly": "fuel",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:4:A9C1968AD72CD5E550A0C36EE16370AF27DDAA3ED534E84063D8655FC23746B5",
+      "sourceRecord": {
+        "assembly": "fuel",
+        "id": "fuel-value-baseline",
+        "kind": "value",
+        "region": "fuel-value",
+        "y": 174
+      },
+      "sourceRecordSha256": "A9C1968AD72CD5E550A0C36EE16370AF27DDAA3ED534E84063D8655FC23746B5"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:5:B17C0BD13F45EDA55CF7D245A4D59C939B3564BAE74E92B23C1FE8511D93654A",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "id": "weapon-label-baseline",
+        "kind": "title",
+        "region": "weapon-label",
+        "y": 61
+      },
+      "sourceRecordSha256": "B17C0BD13F45EDA55CF7D245A4D59C939B3564BAE74E92B23C1FE8511D93654A"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:6:EBECC5B0AC10A6259B45C601E1EDD8E28D626E27BB805EEC843F31C616499E77",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "id": "weapon-name-baseline",
+        "kind": "value",
+        "region": "weapon-name",
+        "y": 94
+      },
+      "sourceRecordSha256": "EBECC5B0AC10A6259B45C601E1EDD8E28D626E27BB805EEC843F31C616499E77"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:7:DE66E50A26A1AA60F1271F2E2F39DAD5DDE6C2E3A98D411E55B9153FF987E9A3",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "id": "armory-control-baseline",
+        "kind": "control",
+        "region": "armory-label",
+        "y": 160
+      },
+      "sourceRecordSha256": "DE66E50A26A1AA60F1271F2E2F39DAD5DDE6C2E3A98D411E55B9153FF987E9A3"
+    },
+    {
+      "assembly": "chassis",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:8:D92C56FE07E68AF7BF46A562ECBBF64DCD0C1A653E277389577FF3F0534D5E1A",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "id": "ballistics-title-baseline",
+        "kind": "title",
+        "region": "ballistics-title",
+        "y": 29
+      },
+      "sourceRecordSha256": "D92C56FE07E68AF7BF46A562ECBBF64DCD0C1A653E277389577FF3F0534D5E1A"
+    },
+    {
+      "assembly": "angle",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:9:5176177BF6634FF4AFA6E3B394F001D1FFE1A77B625E4BBA6520E517325EFF47",
+      "sourceRecord": {
+        "assembly": "angle",
+        "id": "angle-value-baseline",
+        "kind": "value",
+        "region": "angle-value",
+        "y": 141
+      },
+      "sourceRecordSha256": "5176177BF6634FF4AFA6E3B394F001D1FFE1A77B625E4BBA6520E517325EFF47"
+    },
+    {
+      "assembly": "power",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:10:40841550F4D4E755F311B3988DD25E9F923D77D15ED12FF715410F5BA47E0D3F",
+      "sourceRecord": {
+        "assembly": "power",
+        "id": "power-value-baseline",
+        "kind": "value",
+        "region": "power-value",
+        "y": 141
+      },
+      "sourceRecordSha256": "40841550F4D4E755F311B3988DD25E9F923D77D15ED12FF715410F5BA47E0D3F"
+    },
+    {
+      "assembly": "wind",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:11:6E4EF4FDDE0A98D0036E40738652A28B13DF093FA205375F47A3A956331FC8D0",
+      "sourceRecord": {
+        "assembly": "wind",
+        "id": "wind-value-baseline",
+        "kind": "value",
+        "region": "wind-value",
+        "y": 141
+      },
+      "sourceRecordSha256": "6E4EF4FDDE0A98D0036E40738652A28B13DF093FA205375F47A3A956331FC8D0"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:12:3F8CDB535F1927F7515DBC3157372ABE8AB4D7A70A2EB523694219BE3ABFA8C3",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "id": "fire-control-title-baseline",
+        "kind": "title",
+        "region": "fire-control-title",
+        "y": 37
+      },
+      "sourceRecordSha256": "3F8CDB535F1927F7515DBC3157372ABE8AB4D7A70A2EB523694219BE3ABFA8C3"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:13:A436F34555DC5CA485C55C0700BF553FAB851419E1DD1FEED1050F056A869B32",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "id": "fire-ready-baseline",
+        "kind": "value",
+        "region": "fire-ready-text",
+        "y": 86
+      },
+      "sourceRecordSha256": "A436F34555DC5CA485C55C0700BF553FAB851419E1DD1FEED1050F056A869B32"
+    },
+    {
+      "assembly": "fire-action",
+      "category": "baselines",
+      "sourceKey": "landmarks:baselines:14:1073543A157FD5B908A2EF1C84FAA0300F59A78DF218466622CC4719EB5D18B2",
+      "sourceRecord": {
+        "assembly": "fire-action",
+        "id": "fire-action-control-baseline",
+        "kind": "control",
+        "region": "fire-action-text",
+        "y": 164
+      },
+      "sourceRecordSha256": "1073543A157FD5B908A2EF1C84FAA0300F59A78DF218466622CC4719EB5D18B2"
+    },
+    {
+      "assembly": null,
+      "category": "containment",
+      "sourceKey": "landmarks:containment:0:84BE1D228BA8550AFBFE610CAC3CE93D10C8344663E8287305A4D54593C4D428",
+      "sourceRecord": {
+        "id": "health-inside-commander",
+        "innerRegion": "health-value",
+        "minimumClearance": 4,
+        "outerAssembly": "commander"
+      },
+      "sourceRecordSha256": "84BE1D228BA8550AFBFE610CAC3CE93D10C8344663E8287305A4D54593C4D428"
+    },
+    {
+      "assembly": null,
+      "category": "containment",
+      "sourceKey": "landmarks:containment:1:3DB23659925431AF0E99BEC15F6188E1309D8EBD360C1014C7824988DE1B71D4",
+      "sourceRecord": {
+        "id": "health-inside-pill",
+        "innerVisibleInk": "health-value-visible-ink",
+        "minimumClearance": 7,
+        "outerRecess": "health-pill"
+      },
+      "sourceRecordSha256": "3DB23659925431AF0E99BEC15F6188E1309D8EBD360C1014C7824988DE1B71D4"
+    },
+    {
+      "assembly": null,
+      "category": "containment",
+      "sourceKey": "landmarks:containment:2:E6DBE0C028A7FB7FDD186122EE689032C2B013F6D7736D53827D8B07201BB063",
+      "sourceRecord": {
+        "id": "fuel-inside-commander",
+        "innerAssembly": "fuel",
+        "minimumClearance": 4,
+        "outerAssembly": "commander"
+      },
+      "sourceRecordSha256": "E6DBE0C028A7FB7FDD186122EE689032C2B013F6D7736D53827D8B07201BB063"
+    },
+    {
+      "assembly": null,
+      "category": "containment",
+      "sourceKey": "landmarks:containment:3:DB93127C19205AB0774C98CB000CB29DC614AB202CC2229C5DB88A292A421F36",
+      "sourceRecord": {
+        "id": "settings-inside-fire-control",
+        "innerAssembly": "settings",
+        "minimumClearance": 4,
+        "outerAssembly": "fire-control"
+      },
+      "sourceRecordSha256": "DB93127C19205AB0774C98CB000CB29DC614AB202CC2229C5DB88A292A421F36"
+    },
+    {
+      "assembly": null,
+      "category": "containment",
+      "sourceKey": "landmarks:containment:4:ECB1523D90A2A7878C8085F9E6DF03106E4A3955E31623CC687BAAD2E5FE32A0",
+      "sourceRecord": {
+        "id": "fire-action-inside-fire-control",
+        "innerAssembly": "fire-action",
+        "minimumClearance": 4,
+        "outerAssembly": "fire-control"
+      },
+      "sourceRecordSha256": "ECB1523D90A2A7878C8085F9E6DF03106E4A3955E31623CC687BAAD2E5FE32A0"
+    },
+    {
+      "assembly": "commander",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:0:FB98FFF0C4384E497D1C986FE2E3C9C14D99B68EB8FA123E727252451B4EC7C6",
+      "sourceRecord": {
+        "assembly": "commander",
+        "axis": "y",
+        "coordinate": 129,
+        "end": 338,
+        "id": "commander-fuel-divider",
+        "start": 42
+      },
+      "sourceRecordSha256": "FB98FFF0C4384E497D1C986FE2E3C9C14D99B68EB8FA123E727252451B4EC7C6"
+    },
+    {
+      "assembly": "commander",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:1:DC9EEAC85FABF9A78C50836E58E51911CADAA27BB142360DF4ED854B48FE09D3",
+      "sourceRecord": {
+        "assembly": "commander",
+        "axis": "x",
+        "coordinate": 214,
+        "end": 129,
+        "id": "commander-state-divider",
+        "start": 47
+      },
+      "sourceRecordSha256": "DC9EEAC85FABF9A78C50836E58E51911CADAA27BB142360DF4ED854B48FE09D3"
+    },
+    {
+      "assembly": "chassis",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:2:C3DF669E09C862DC0D528284CD652AB4850C2D21247EBF90EE86619F81309BB5",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "axis": "x",
+        "coordinate": 339,
+        "end": 199,
+        "id": "commander-weapon-divider",
+        "start": 12
+      },
+      "sourceRecordSha256": "C3DF669E09C862DC0D528284CD652AB4850C2D21247EBF90EE86619F81309BB5"
+    },
+    {
+      "assembly": "chassis",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:3:28FCCFA43EA9941AB7150AE5EFF0E45545CBB8F88601A4F3E2573F091331DD85",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "axis": "x",
+        "coordinate": 541,
+        "end": 198,
+        "id": "weapon-angle-divider",
+        "start": 32
+      },
+      "sourceRecordSha256": "28FCCFA43EA9941AB7150AE5EFF0E45545CBB8F88601A4F3E2573F091331DD85"
+    },
+    {
+      "assembly": "chassis",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:4:9227A36A04AFE0E5D3050139A38213C7999A020256A1155EA36849741BCA4A06",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "axis": "x",
+        "coordinate": 688,
+        "end": 198,
+        "id": "angle-power-divider",
+        "start": 32
+      },
+      "sourceRecordSha256": "9227A36A04AFE0E5D3050139A38213C7999A020256A1155EA36849741BCA4A06"
+    },
+    {
+      "assembly": "chassis",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:5:395FD9AFF99193605D113D464F7A1602613E58F14C9BC5B97CBB57C95B4D0C33",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "axis": "x",
+        "coordinate": 830,
+        "end": 198,
+        "id": "power-wind-divider",
+        "start": 32
+      },
+      "sourceRecordSha256": "395FD9AFF99193605D113D464F7A1602613E58F14C9BC5B97CBB57C95B4D0C33"
+    },
+    {
+      "assembly": "chassis",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:6:A5E812261EEB1EB1F4910236337B3EBF6CA398592CD831B64199FA93EA56E355",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "axis": "x",
+        "coordinate": 999,
+        "end": 199,
+        "id": "wind-fire-divider",
+        "start": 12
+      },
+      "sourceRecordSha256": "A5E812261EEB1EB1F4910236337B3EBF6CA398592CD831B64199FA93EA56E355"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "dividerLines",
+      "sourceKey": "landmarks:dividerLines:7:86E0F30806B37B429A9211FB1D0D357E8A74F2668CDF9A73B85EB2257A050806",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "axis": "y",
+        "coordinate": 114,
+        "end": 1347,
+        "id": "fire-control-action-divider",
+        "start": 1000
+      },
+      "sourceRecordSha256": "86E0F30806B37B429A9211FB1D0D357E8A74F2668CDF9A73B85EB2257A050806"
+    },
+    {
+      "assembly": "angle",
+      "category": "gaugeRelationships",
+      "sourceKey": "landmarks:gaugeRelationships:0:8141795BAB6834EE9904990AF96307D8CDB5E1A826A2493B487A4BCC0BA751DF",
+      "sourceRecord": {
+        "assembly": "angle",
+        "center": {
+          "x": 616,
+          "y": 82
+        },
+        "pivot": {
+          "x": 616,
+          "y": 91
+        },
+        "radius": 47,
+        "valueBaselineY": 138
+      },
+      "sourceRecordSha256": "8141795BAB6834EE9904990AF96307D8CDB5E1A826A2493B487A4BCC0BA751DF"
+    },
+    {
+      "assembly": "power",
+      "category": "gaugeRelationships",
+      "sourceKey": "landmarks:gaugeRelationships:1:F811442431ADEA37F001130D337EF953F5B20DE68C7981C2224CC047ED7094F1",
+      "sourceRecord": {
+        "assembly": "power",
+        "center": {
+          "x": 758,
+          "y": 82
+        },
+        "pivot": {
+          "x": 758,
+          "y": 91
+        },
+        "radius": 47,
+        "valueBaselineY": 138
+      },
+      "sourceRecordSha256": "F811442431ADEA37F001130D337EF953F5B20DE68C7981C2224CC047ED7094F1"
+    },
+    {
+      "assembly": "wind",
+      "category": "gaugeRelationships",
+      "sourceKey": "landmarks:gaugeRelationships:2:012FD9FB50B161C2A1CD6F2CE82F84D4D3DB9F4EACFC40B0DC04A969FE6D223B",
+      "sourceRecord": {
+        "assembly": "wind",
+        "center": {
+          "x": 915,
+          "y": 82
+        },
+        "pivot": {
+          "x": 915,
+          "y": 91
+        },
+        "radius": 47,
+        "valueBaselineY": 138
+      },
+      "sourceRecordSha256": "012FD9FB50B161C2A1CD6F2CE82F84D4D3DB9F4EACFC40B0DC04A969FE6D223B"
+    },
+    {
+      "assembly": "chassis",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:0:07CC315EE059B1E36EA1CB312510E7E41257E5F88DD81369295AF386E7E7E11A",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "id": "chassis-top-left",
+        "x": 42,
+        "y": 11
+      },
+      "sourceRecordSha256": "07CC315EE059B1E36EA1CB312510E7E41257E5F88DD81369295AF386E7E7E11A"
+    },
+    {
+      "assembly": "chassis",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:1:34467CD33BFDCCF960E6D5F4DD2551D9C141AB0CBFDE11D462D64069B1598412",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "id": "chassis-top-right",
+        "x": 1345,
+        "y": 11
+      },
+      "sourceRecordSha256": "34467CD33BFDCCF960E6D5F4DD2551D9C141AB0CBFDE11D462D64069B1598412"
+    },
+    {
+      "assembly": "chassis",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:2:64EE9E65612ABE012DE776217CE0CB8B6EE2A4DA381D45F0289F992F76ECA8EF",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "id": "chassis-bottom-left",
+        "x": 42,
+        "y": 198
+      },
+      "sourceRecordSha256": "64EE9E65612ABE012DE776217CE0CB8B6EE2A4DA381D45F0289F992F76ECA8EF"
+    },
+    {
+      "assembly": "chassis",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:3:CA2B1A712BB3BD3C88CC760F8E9A63663B5328F9FC981EA8ABB508B56C265C05",
+      "sourceRecord": {
+        "assembly": "chassis",
+        "id": "chassis-bottom-right",
+        "x": 1345,
+        "y": 198
+      },
+      "sourceRecordSha256": "CA2B1A712BB3BD3C88CC760F8E9A63663B5328F9FC981EA8ABB508B56C265C05"
+    },
+    {
+      "assembly": "commander",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:4:055B287F7413FF784E4771EC30610583FDB21F652D442C50EF99886BCA9192C4",
+      "sourceRecord": {
+        "assembly": "commander",
+        "id": "commander-left-divider",
+        "x": 42,
+        "y": 106
+      },
+      "sourceRecordSha256": "055B287F7413FF784E4771EC30610583FDB21F652D442C50EF99886BCA9192C4"
+    },
+    {
+      "assembly": "commander",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:5:6C8C9EB83513EA9E431793DF62E2AE7B649673A752B88C8C9DF96D13837A807B",
+      "sourceRecord": {
+        "assembly": "commander",
+        "id": "commander-right-divider",
+        "x": 337,
+        "y": 106
+      },
+      "sourceRecordSha256": "6C8C9EB83513EA9E431793DF62E2AE7B649673A752B88C8C9DF96D13837A807B"
+    },
+    {
+      "assembly": "fuel",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:6:DDB504B4E862207D2561C55BA50FAAD7B437E24B7A9883BCD0B81C80CE0B6FDC",
+      "sourceRecord": {
+        "assembly": "fuel",
+        "id": "fuel-top-edge",
+        "x": 196,
+        "y": 130
+      },
+      "sourceRecordSha256": "DDB504B4E862207D2561C55BA50FAAD7B437E24B7A9883BCD0B81C80CE0B6FDC"
+    },
+    {
+      "assembly": "fuel",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:7:54C0351A73D2D63EDD6F1003DCC1BEF833D4E51506D66D19224766EBF4FC62E1",
+      "sourceRecord": {
+        "assembly": "fuel",
+        "id": "fuel-bottom-edge",
+        "x": 196,
+        "y": 193
+      },
+      "sourceRecordSha256": "54C0351A73D2D63EDD6F1003DCC1BEF833D4E51506D66D19224766EBF4FC62E1"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:8:8F18451822036B8FDEE3513B33614B863674A04E05EE3E570B64267636AE58A8",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "id": "weapon-left-edge",
+        "x": 340,
+        "y": 110
+      },
+      "sourceRecordSha256": "8F18451822036B8FDEE3513B33614B863674A04E05EE3E570B64267636AE58A8"
+    },
+    {
+      "assembly": "weapon-armory",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:9:5F13505BAF9E917D1939DDE3FD9C0955E0FD5934DFC0225B080E7206E1AC5773",
+      "sourceRecord": {
+        "assembly": "weapon-armory",
+        "id": "weapon-right-edge",
+        "x": 539,
+        "y": 110
+      },
+      "sourceRecordSha256": "5F13505BAF9E917D1939DDE3FD9C0955E0FD5934DFC0225B080E7206E1AC5773"
+    },
+    {
+      "assembly": "angle",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:10:5E81F278C8490C4E1ABBB3C0DA716FA7F1188B8F5B74D8A47E09730266E022C0",
+      "sourceRecord": {
+        "assembly": "angle",
+        "id": "angle-rim-top",
+        "x": 616,
+        "y": 33
+      },
+      "sourceRecordSha256": "5E81F278C8490C4E1ABBB3C0DA716FA7F1188B8F5B74D8A47E09730266E022C0"
+    },
+    {
+      "assembly": "angle",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:11:400C1F0AD0D1968D7A6A2E4EDD0B491AED1F71DCD7DDE3D0008D7BA7FDFC6B91",
+      "sourceRecord": {
+        "assembly": "angle",
+        "id": "angle-rim-bottom",
+        "x": 616,
+        "y": 196
+      },
+      "sourceRecordSha256": "400C1F0AD0D1968D7A6A2E4EDD0B491AED1F71DCD7DDE3D0008D7BA7FDFC6B91"
+    },
+    {
+      "assembly": "power",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:12:A37E0401AA86D7835BD8E77168BF561DE3F122CD4085391BD05E1E37B548C135",
+      "sourceRecord": {
+        "assembly": "power",
+        "id": "power-rim-top",
+        "x": 759,
+        "y": 33
+      },
+      "sourceRecordSha256": "A37E0401AA86D7835BD8E77168BF561DE3F122CD4085391BD05E1E37B548C135"
+    },
+    {
+      "assembly": "power",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:13:BAD297A81B07D31768FD1C8C8DD3B07913056F2BF387D931891BBE07AFCDC3D7",
+      "sourceRecord": {
+        "assembly": "power",
+        "id": "power-rim-bottom",
+        "x": 759,
+        "y": 196
+      },
+      "sourceRecordSha256": "BAD297A81B07D31768FD1C8C8DD3B07913056F2BF387D931891BBE07AFCDC3D7"
+    },
+    {
+      "assembly": "wind",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:14:A7A20A664EA77F6C95EC63EF36BE62F7C8411974D63F20D87442BDF716CCA6C4",
+      "sourceRecord": {
+        "assembly": "wind",
+        "id": "wind-rim-top",
+        "x": 914,
+        "y": 33
+      },
+      "sourceRecordSha256": "A7A20A664EA77F6C95EC63EF36BE62F7C8411974D63F20D87442BDF716CCA6C4"
+    },
+    {
+      "assembly": "wind",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:15:45E4F58A6C3440E31028A627B7DDBED0BCF276A0CEE03BE4F0DCBC8EEF6D3048",
+      "sourceRecord": {
+        "assembly": "wind",
+        "id": "wind-rim-bottom",
+        "x": 914,
+        "y": 196
+      },
+      "sourceRecordSha256": "45E4F58A6C3440E31028A627B7DDBED0BCF276A0CEE03BE4F0DCBC8EEF6D3048"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:16:38F523AC8E3C87AA45272C01AAC41EF16E241BE45085B8C7C239DB39F7382470",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "id": "fire-left-divider",
+        "x": 1000,
+        "y": 106
+      },
+      "sourceRecordSha256": "38F523AC8E3C87AA45272C01AAC41EF16E241BE45085B8C7C239DB39F7382470"
+    },
+    {
+      "assembly": "fire-control",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:17:99EB31CF4BC7042DE97E0BF1490F9C333B2247C08D2FA95757734BD3686FAB57",
+      "sourceRecord": {
+        "assembly": "fire-control",
+        "id": "fire-right-edge",
+        "x": 1346,
+        "y": 106
+      },
+      "sourceRecordSha256": "99EB31CF4BC7042DE97E0BF1490F9C333B2247C08D2FA95757734BD3686FAB57"
+    },
+    {
+      "assembly": "settings",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:18:3E290C9D57B2BB65CA127920920FD5318AE9D530F4A44F1A53D5FDC58DA2E551",
+      "sourceRecord": {
+        "assembly": "settings",
+        "id": "settings-top-edge",
+        "x": 1273,
+        "y": 49
+      },
+      "sourceRecordSha256": "3E290C9D57B2BB65CA127920920FD5318AE9D530F4A44F1A53D5FDC58DA2E551"
+    },
+    {
+      "assembly": "settings",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:19:E303B5F9FC305C8991A5BCA4A26BCD0C0B19DD96711394F363DD2BF8AD00C091",
+      "sourceRecord": {
+        "assembly": "settings",
+        "id": "settings-bottom-edge",
+        "x": 1273,
+        "y": 113
+      },
+      "sourceRecordSha256": "E303B5F9FC305C8991A5BCA4A26BCD0C0B19DD96711394F363DD2BF8AD00C091"
+    },
+    {
+      "assembly": "fire-action",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:20:152D0C6F6BB957B014E2143766B144315F63717A872D50202C29C171B5AC1683",
+      "sourceRecord": {
+        "assembly": "fire-action",
+        "id": "fire-action-top-edge",
+        "x": 1153,
+        "y": 115
+      },
+      "sourceRecordSha256": "152D0C6F6BB957B014E2143766B144315F63717A872D50202C29C171B5AC1683"
+    },
+    {
+      "assembly": "fire-action",
+      "category": "structuralEdgeSamples",
+      "sourceKey": "landmarks:structuralEdgeSamples:21:3A29BA69503F78D655479A820E197BA397AC2FFF194E8C43D4DF62B10E3E5F53",
+      "sourceRecord": {
+        "assembly": "fire-action",
+        "id": "fire-action-bottom-edge",
+        "x": 1153,
+        "y": 182
+      },
+      "sourceRecordSha256": "3A29BA69503F78D655479A820E197BA397AC2FFF194E8C43D4DF62B10E3E5F53"
+    }
+  ],
+  "schema": "singedterra-chrome-sockets/v1",
+  "sockets": [
+    {
+      "assembly": "commander",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "tank-portrait",
+      "physicalBox": {
+        "height": 57,
+        "width": 112,
+        "x": 91,
+        "y": 63
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 57,
+        "width": 112,
+        "x": 91,
+        "y": 63
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:0:3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E",
+          "sha256": "3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:0:3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E",
+          "sha256": "3850D18092A70D6BE1AA636EAA1681748B9DB3ADBC33EF331AAEA11E24584E5E"
+        }
+      ]
+    },
+    {
+      "assembly": "fuel",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "fuel-live-fill",
+      "physicalBox": {
+        "height": 30,
+        "width": 110,
+        "x": 145,
+        "y": 143
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 30,
+        "width": 110,
+        "x": 145,
+        "y": 143
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:1:42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA",
+          "sha256": "42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:1:42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA",
+          "sha256": "42F69A882A20C401DD21D4FC5972BAA0893ABEB87E0B5BA4697B4AFE934646DA"
+        }
+      ]
+    },
+    {
+      "assembly": "weapon-armory",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "weapon-art",
+      "physicalBox": {
+        "height": 40,
+        "width": 35,
+        "x": 365,
+        "y": 65
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 40,
+        "width": 35,
+        "x": 365,
+        "y": 65
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:2:61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235",
+          "sha256": "61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:2:61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235",
+          "sha256": "61B84FFA3CDDAF7CCE05E3BF63612DE5899099325369F2DCD1BAA81040477235"
+        }
+      ]
+    },
+    {
+      "assembly": "angle",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "angle-arc",
+      "physicalBox": {
+        "height": 27,
+        "width": 54,
+        "x": 573,
+        "y": 59
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 27,
+        "width": 54,
+        "x": 573,
+        "y": 59
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:3:EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B",
+          "sha256": "EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:3:EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B",
+          "sha256": "EA5D937C53A75EC215DDB442EB2B9D2141CB1E7E222BFD07376785BC6532040B"
+        }
+      ]
+    },
+    {
+      "assembly": "angle",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "angle-needle",
+      "physicalBox": {
+        "height": 57,
+        "width": 45,
+        "x": 604,
+        "y": 48
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 57,
+        "width": 45,
+        "x": 604,
+        "y": 48
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:4:1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3",
+          "sha256": "1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:4:1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3",
+          "sha256": "1BB6E14CF42654EC71C7B9ED2429C0A05E71FD2ABEF4FA7AB1E1D219D13E44A3"
+        }
+      ]
+    },
+    {
+      "assembly": "power",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "power-arc",
+      "physicalBox": {
+        "height": 48,
+        "width": 57,
+        "x": 710,
+        "y": 57
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 48,
+        "width": 57,
+        "x": 710,
+        "y": 57
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:5:890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA",
+          "sha256": "890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:5:890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA",
+          "sha256": "890E9967814CE47A06EE2E87677B305318F434B7E51DEFFB9A7F4ED30C39A5BA"
+        }
+      ]
+    },
+    {
+      "assembly": "power",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "power-needle",
+      "physicalBox": {
+        "height": 55,
+        "width": 14,
+        "x": 750,
+        "y": 46
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 55,
+        "width": 14,
+        "x": 750,
+        "y": 46
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:6:AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D",
+          "sha256": "AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:6:AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D",
+          "sha256": "AAFF89CF27A7CC4F3F69853A70EAC29C536029C314FEDC86FC49897ABD9F624D"
+        }
+      ]
+    },
+    {
+      "assembly": "wind",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "wind-glyph",
+      "physicalBox": {
+        "height": 43,
+        "width": 65,
+        "x": 875,
+        "y": 63
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 43,
+        "width": 65,
+        "x": 875,
+        "y": 63
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:7:F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC",
+          "sha256": "F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:7:F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC",
+          "sha256": "F276B4B143D4AA2FF106D75F2810C282583CCDAC9A572EEBBBA40425C12C7BDC"
+        }
+      ]
+    },
+    {
+      "assembly": "fire-control",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "ready-icon",
+      "physicalBox": {
+        "height": 45,
+        "width": 50,
+        "x": 1030,
+        "y": 60
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 45,
+        "width": 50,
+        "x": 1030,
+        "y": 60
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:8:675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097",
+          "sha256": "675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:8:675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097",
+          "sha256": "675C0B222B080227F702F97711E42E44F729C2472CB9203F055C423E13E5E097"
+        }
+      ]
+    },
+    {
+      "assembly": "fire-control",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "ready-lamps",
+      "physicalBox": {
+        "height": 14,
+        "width": 80,
+        "x": 1102,
+        "y": 93
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 14,
+        "width": 80,
+        "x": 1102,
+        "y": 93
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:9:3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855",
+          "sha256": "3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:9:3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855",
+          "sha256": "3EEC18BC76BD8D7EDCDC0AD0B80E91696AD883D8C2F928E85DE7C0517B629855"
+        }
+      ]
+    },
+    {
+      "assembly": "fire-action",
+      "blankAuthority": {
+        "expectedInk": "blank",
+        "sha256": "4F956981AEE7F3B8328961FF1F92C83A641EFBF045A39AD69161312660405439"
+      },
+      "canonicalAuthority": {
+        "expectedInk": "dynamic-nonsemantic",
+        "sha256": "9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530"
+      },
+      "fallbackOwner": "preact-fallback-physical-chrome",
+      "inputAuthority": false,
+      "key": "fire-reticle",
+      "physicalBox": {
+        "height": 39,
+        "width": 42,
+        "x": 1097,
+        "y": 133
+      },
+      "readyOwner": "inert-dynamic-pixi-chrome",
+      "rect": {
+        "height": 39,
+        "width": 42,
+        "x": 1097,
+        "y": 133
+      },
+      "semanticAuthority": false,
+      "sourceRecords": [
+        {
+          "key": "assemblies:dynamicPixiRegions:10:864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B",
+          "sha256": "864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B"
+        },
+        {
+          "key": "landmarks:physicalDisplayBoxes:10:864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B",
+          "sha256": "864DB0C6E58B7C4AE5B8882071E2CCC0F6E958ECC45AB084A15D8C6178F6591B"
+        }
+      ]
+    }
+  ]
+}

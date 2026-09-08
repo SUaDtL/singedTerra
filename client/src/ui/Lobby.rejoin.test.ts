@@ -48,7 +48,7 @@ function activeRoom(overrides: Partial<FetchedRoom> = {}): FetchedRoom {
     id: 'room-1',
     code: 'ABCD',
     seed: 1,
-    options: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
+    options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4 },
     players: [{ id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true }],
     status: 'active',
     ...overrides,
@@ -223,7 +223,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'concrete', rounds: 3, rulesetVersion: 2 },
+      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'concrete', rounds: 3, rulesetVersion: 4 },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
@@ -266,7 +266,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
       gravity: 0.2,
       walls: 'concrete',
       rounds: 3,
-      rulesetVersion: 2,
+      rulesetVersion: 4,
     });
   });
 
@@ -275,7 +275,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, walls: 'wrap' },
+      options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, walls: 'wrap', rulesetVersion: 4 },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },

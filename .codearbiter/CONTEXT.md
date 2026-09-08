@@ -15,7 +15,12 @@ destructible terrain, adjusting angle/power against wind and gravity.
 
 Recreate the feel of classic artillery dueling in the browser, with both **hot-seat**
 (all players in one tab) and **networked** (each player in their own browser) play, plus
-single-player vs. deterministic AI bots. Built as a personal project / technical exercise.
+single-player vs. deterministic AI bots. singedTerra is now a sustained game project.
+The maintainer has invested in its gameplay, production deployment, progression,
+security, and presentation and expects architectural choices to optimize for player
+experience, maintainability, and reliable delivery. Early proof-of-concept constraints
+remain historical evidence, not permanent bans on dependencies, rendering libraries,
+or deeper product work.
 
 ## How it works (one-line architecture)
 
@@ -29,6 +34,21 @@ same engine, but it is never in the live turn path and MUST NOT become a duplica
 or a general game server (ADR-0013). No `GameState` is ever shipped over the wire. See
 `coding-standards.md` for the determinism rules and layering; `tech-stack.md` for the
 stack; `security-controls.md` for the backend posture.
+
+**Battle HUD architecture (ADR-0017):** the gameplay world remains Canvas 2D,
+while a lazy-loaded, non-interactive PixiJS layer renders authored battle-HUD
+visuals from one typed layout/socket model. Semantic DOM remains the owner of
+text, focus, accessibility, dialogs, input, and gameplay callbacks. Sharp is a
+development-only deterministic asset compiler. The static Vite/GitHub Pages
+deployment model is unchanged. See
+[`decisions/0017-hybrid-pixi-hud-compositor.md`](decisions/0017-hybrid-pixi-hud-compositor.md)
+and
+[`specs/battle-console-hybrid-compositor.md`](specs/battle-console-hybrid-compositor.md).
+
+ADR-0001, ADR-0004, ADR-0005, and ADR-0006 have forward supersession chains;
+see
+[`plans/prototype-era-adr-review.md`](plans/prototype-era-adr-review.md)
+for the retained principles and superseded prototype-era absolutes.
 
 The **authenticated production diagnostics console** is a maintainer/test interface activated
 only by the exact `diagnostics=1` query parameter and absent from normal player navigation. Its
@@ -62,12 +82,16 @@ possible-future, not in scope now (updated with maintainer 2026-08-04):
 - A native mobile app (browser-only, including mobile web).
 - Monetization (no payments, ads, or in-game purchases — it's a free game).
 
-## Strategic direction (decided 2026-06-20; identity updated 2026-08-04)
+## Strategic direction (product-stage clarification 2026-08-21)
 
-The organizing principle is a **staged-seriousness ladder**: ship a friendly prototype
-now, and let heavier commitments *gate in together* as the project proves it's worth
-getting serious about (a strong "we play this all the time" signal, or a move toward a
-mobile release). Architect so none of these is foreclosed, but build none ahead of need.
+singedTerra began under a staged-seriousness ladder intended to prevent a
+proof of concept from accumulating unnecessary paid infrastructure or broad
+dependencies. The project has crossed that product-interest threshold. The
+maintainer explicitly directs future architecture to favor making the game
+better and easier to sustain, including reviewed dependencies or rendering
+technology when they materially help. Costly hosted services, backend
+rewrites, and irreversible operational commitments still require explicit
+decisions; they do not imply a blanket ban on client libraries or tooling.
 
 - **Cheat-protection (CONFIRM-01):** Trust-the-client now (referee validates turn
   ownership, never simulates). Plan for tiered protection — partial validation, then a
@@ -90,9 +114,14 @@ mobile release). Architect so none of these is foreclosed, but build none ahead 
 
 ## Maturity
 
-Stage **1** (prototype) per maintainer — despite being deployed to production (Netlify
-client + Supabase backend) and playable, it is treated as an early/experimental solo
-project with lighter gates.
+**Product maturity:** sustained playable game under active product and visual
+development, deployed publicly with hot-seat, networked play, accounts,
+progression, verification, and responsive browser support.
+
+**Governance maturity:** CodeArbiter remains configured at Stage 1 until the
+maintainer explicitly changes that setting. Stage 1 controls gate weight; it
+does not mean “throwaway prototype” and must not be cited to reject otherwise
+justified dependencies, visual systems, testing, or maintainability work.
 
 **Coverage-denominator policy (decided 2026-07-03, maintainer):** the stage-1 ≥60%
 client-coverage gate measures *assertable logic only*. `client/vite.config.ts`

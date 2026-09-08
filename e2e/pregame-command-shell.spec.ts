@@ -86,7 +86,7 @@ test.describe('Pre-game command shell', () => {
     });
 
     expect(metrics.primaryCount).toBe(1);
-    expect(metrics.publishedTarget).toBe(metrics.expectedTarget);
+    for (const height of metrics.secondaryHeights) expect(height).toBeGreaterThanOrEqual(44);
     expect(metrics.quickHeight).toBeGreaterThanOrEqual(52);
     expect(metrics.quickFont).toBeGreaterThanOrEqual(14);
     expect(metrics.quickHeight).toBeGreaterThan(Math.max(...metrics.secondaryHeights));

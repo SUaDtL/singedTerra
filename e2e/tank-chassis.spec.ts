@@ -214,14 +214,14 @@ test.describe('authored tank chassis integration', () => {
     expect(redVariantPixels).toBeGreaterThan(20);
     expect(blueVariantPixels).toBeGreaterThan(20);
 
-    const action = page.locator('.st-hud__primary-action');
+    const action = page.locator('button[data-battle-console-action="fire"]');
     await expect(action).toBeEnabled();
     await action.click();
-    await expect(page.locator('.st-hud__command-console'))
-      .toHaveAttribute('data-command-phase', /submitting|tracking|resolving/);
+    await expect(page.locator('[data-battle-console-surface]'))
+      .toHaveAttribute('data-battle-console-phase', /firing|resolving/);
     await expect(action).toBeEnabled({ timeout: 15_000 });
-    await expect(page.getByRole('img', { name: 'Elevation gauge' }))
-      .toContainText(/45.*◀/);
+    await expect(page.locator('[data-semantic-key="node:output:Angle:43"]'))
+      .toHaveText('135°');
 
     const geometry = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,

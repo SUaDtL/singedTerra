@@ -140,13 +140,13 @@ Deno.test('normalizeRematchOptions preserves team mode only for four-seat rematc
   assertEquals(normalizeRematchOptions({ ...teamOptions, teamMode: false }, 4).teamMode, undefined)
 })
 
-Deno.test('successor normalization and both response projectors preserve rulesets 1 and 2', () => {
+Deno.test('successor normalization and both response projectors preserve rulesets 1 through 4', () => {
   const players: StoredPlayer[] = [
     { id: 'uid-a', name: 'Ana', color: '#f00', ready: true },
     { id: 'uid-b', name: 'Bo', color: '#00f', ready: true },
   ]
 
-  for (const rulesetVersion of [1, 2] as const) {
+  for (const rulesetVersion of [1, 2, 3, 4] as const) {
     const options = {
       maxPlayers: 2,
       maxWind: 7,
