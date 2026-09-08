@@ -51,6 +51,12 @@ import type {
   BattleConsoleIntent,
   BattleConsolePresentationState,
 } from './battleConsole/types';
+import {
+  RoundOverView,
+  type RoundOverPurchase,
+  type RoundOverViewProjection,
+} from './RoundOverView';
+
 
 function publicBattleConsoleHostMode(mode: BattleConsoleLayoutMode): BattleConsoleHostMode {
   return mode === 'compact' ? 'compact-touch' : mode;
@@ -62,7 +68,7 @@ function publicBattleConsoleHostMode(mode: BattleConsoleLayoutMode): BattleConso
  * caller (main.ts) forwards it verbatim into a `buy` action — so the store stays decoupled from the
  * action/transport layer.
  */
-export type StorePurchase = { weapon?: WeaponType; accessory?: AccessoryType };
+export type StorePurchase = RoundOverPurchase;
 
 /** Renderer/audio-owned local preferences projected by the Battle Settings dialog. */
 export interface HUDBattleSettingsState {
@@ -248,17 +254,11 @@ export class HUD {
   /** Highest round number seen, to fire the one-shot round-transition banner. */
   private lastSeenRound = 1;
   // ROUND_OVER between-rounds shop modal.
-  private roundOverEl!: HTMLElement;
-  private roundOverTitleEl!: HTMLElement;
-  private roundOverScoreEl!: HTMLElement;
-  private roundOverShopEl!: HTMLElement;
-  private roundOverTankSel!: HTMLSelectElement;
-  private roundOverCreditsEl!: HTMLElement;
-  /** Per-weapon buy cells in the ROUND_OVER shop (button + owned count). */
-  private roundOverCells = new Map<WeaponType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
-  /** Whether the ROUND_OVER modal is currently shown (build standings once on entry). */
+  private roundOverView!: RoundOverView;
+  /** Whether the ROUND_OVER modal is currently shown. */
   private roundOverShown = false;
-  private roundOverPreviousFocus: HTMLElement | null = null;
+  private roundOverScoreboardKey: string | null = null;
+  private roundOverScoreboardMarkup = '';
   /** Tank id selected in the between-rounds shop (which tank a buy targets). */
   private shopTankId: string | null = null;
   /** Shrink-wrapped presentation owner for Match-only information. */
@@ -277,9 +277,6 @@ export class HUD {
   private quickChatRootEl!: HTMLElement;
   private quickChatPanelEl!: HTMLElement;
   private quickChatToggleEl!: HTMLButtonElement;
-  /** Per-accessory cells in the ROUND_OVER between-rounds shop. */
-  private roundOverAccessoryCells = new Map<AccessoryType, { buyBtn: HTMLButtonElement; owned: HTMLElement }>();
-
   /** Room arms level (0–4), set once per game via {@link setArmsLevel}. Above-level store rows are
    *  shown disabled. Defaults to the max (4 => nothing gated) for full back-compat. UI-only — the
    *  engine independently enforces the same gate, so this never affects determinism. */
@@ -949,11 +946,19 @@ export class HUD {
     this.buildRound();
     this.buildDeploymentStatus();
     this.buildEndScreens();
-    this.buildRoundShop();
     const menu = this.buildMenu();
     this.buildMatchDrawer();
     this.buildLiveness();
     this.buildLiveMatchDiagnostics();
+    this.roundOverView = new RoundOverView({
+      host: this.modalRoot,
+      onBuy: (purchase, tankId) => this.buyCb?.(purchase, tankId),
+      onNextRound: () => this.nextRoundCb?.(),
+      onTankSelect: (tankId) => { this.shopTankId = tankId; },
+      focusFallback: () => this.railRoot.querySelector<HTMLElement>(
+        '[data-semantic-key="command-console-host::fire"]',
+      ) ?? this.matchDrawerBtnEl,
+    });
 
     this.matchCardEl = document.createElement('div');
     this.matchCardEl.className = 'st-hud__match-card';
@@ -986,7 +991,6 @@ export class HUD {
     this.modalRoot.append(
       this.terminalPayoffStatusEl,
       this.overlayEl,
-      this.roundOverEl,
       this.pauseEl,
       this.verifiedExpiryEl,
       this.liveMatchInspectorEl,
@@ -1352,118 +1356,6 @@ export class HUD {
         : (current < 0 || current === actions.length - 1 ? 0 : current + 1);
       event.preventDefault();
       actions[next]?.focus({ preventScroll: true });
-    });
-  }
-
-  /** ROUND_OVER between-rounds shop modal. */
-  private buildRoundShop(): void {
-    // ROUND_OVER between-rounds shop modal (hidden until phase === ROUND_OVER).
-    this.roundOverEl = document.createElement('div');
-    this.roundOverEl.className = 'st-hud__overlay st-hud__overlay--hidden';
-    this.roundOverEl.setAttribute('role', 'dialog');
-    this.roundOverEl.setAttribute('aria-modal', 'true');
-    this.roundOverEl.setAttribute('aria-labelledby', 'st-round-over-title');
-    const roPanel = document.createElement('div');
-    roPanel.className = 'st-hud__overlay-panel st-hud__overlay-panel--round-shop';
-    this.roundOverTitleEl = document.createElement('div');
-    this.roundOverTitleEl.className = 'st-hud__overlay-text';
-    this.roundOverTitleEl.id = 'st-round-over-title';
-    this.roundOverScoreEl = document.createElement('div');
-    this.roundOverScoreEl.className = 'st-hud__score';
-
-    // Shop: a tank selector + that tank's credits, then a grid of buy buttons.
-    this.roundOverShopEl = document.createElement('div');
-    this.roundOverShopEl.className = 'st-hud__roundshop';
-    const shopHead = document.createElement('div');
-    shopHead.className = 'st-hud__roundshop-head';
-    const shopTitle = document.createElement('span');
-    shopTitle.className = 'st-hud__roundshop-title';
-    shopTitle.textContent = 'Round shop';
-    this.roundOverTankSel = document.createElement('select');
-    this.roundOverTankSel.className = 'st-hud__roundshop-sel';
-    this.roundOverTankSel.addEventListener('change', () => {
-      this.shopTankId = this.roundOverTankSel.value || null;
-    });
-    this.roundOverCreditsEl = document.createElement('span');
-    this.roundOverCreditsEl.className = 'st-hud__roundshop-credits';
-    const selectorWell = document.createElement('div');
-    selectorWell.className = 'st-hud__roundshop-select-well';
-    selectorWell.append(this.roundOverTankSel, makeHudIcon('disclosure', 18));
-    shopHead.append(shopTitle, this.roundOverCreditsEl, selectorWell);
-
-    const shopGrid = document.createElement('div');
-    shopGrid.className = 'st-hud__roundshop-grid';
-    for (const type of STORE_WEAPONS) {
-      const def = WEAPONS[type];
-      const buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'st-hud__store-buy st-hud__roundshop-buy';
-      buyBtn.dataset['weapon'] = type;
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'st-hud__roundshop-item-name';
-      nameSpan.textContent = def.name;
-      const priceSpan = document.createElement('span');
-      priceSpan.className = 'st-hud__store-price';
-      priceSpan.textContent = `$${def.price.toLocaleString()}`;
-      const owned = document.createElement('span');
-      owned.className = 'st-hud__store-bundle';
-      buyBtn.append(makeWeaponIcon(type, 18), nameSpan, priceSpan, owned);
-      buyBtn.addEventListener('click', () => {
-        if (this.shopTankId) this.buyCb?.({ weapon: type }, this.shopTankId);
-      });
-      this.roundOverCells.set(type, { buyBtn, owned });
-      shopGrid.append(buyBtn);
-    }
-    // Accessory cells (Battery etc.) in the between-rounds shop — buy for the selected tank.
-    for (const key of STORE_ACCESSORIES) {
-      const acc = ACCESSORIES[key];
-      const buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'st-hud__store-buy st-hud__roundshop-buy';
-      buyBtn.dataset['accessory'] = key;
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'st-hud__roundshop-item-name';
-      nameSpan.textContent = acc.name;
-      const priceSpan = document.createElement('span');
-      priceSpan.className = 'st-hud__store-price';
-      priceSpan.textContent = `$${acc.price.toLocaleString()}`;
-      const owned = document.createElement('span');
-      owned.className = 'st-hud__store-bundle';
-      buyBtn.append(makeHudGlyph('store', 18), nameSpan, priceSpan, owned);
-      buyBtn.addEventListener('click', () => {
-        if (this.shopTankId) this.buyCb?.({ accessory: key }, this.shopTankId);
-      });
-      this.roundOverAccessoryCells.set(key, { buyBtn, owned });
-      shopGrid.append(buyBtn);
-    }
-    this.roundOverShopEl.append(shopHead, shopGrid);
-
-    const nextRoundBtn = document.createElement('button');
-    nextRoundBtn.className = 'st-hud__restart';
-    nextRoundBtn.type = 'button';
-    const nextRoundLabel = document.createElement('span');
-    nextRoundLabel.className = 'st-hud__restart-label';
-    nextRoundLabel.textContent = 'Start Next Round';
-    nextRoundBtn.append(makeHudGlyph('right', 17), nextRoundLabel);
-    nextRoundBtn.addEventListener('click', () => this.nextRoundCb?.());
-
-    roPanel.append(this.roundOverTitleEl, this.roundOverScoreEl, this.roundOverShopEl, nextRoundBtn);
-    this.roundOverEl.append(roPanel);
-    this.roundOverEl.addEventListener('keydown', (event) => {
-      if (event.key !== 'Tab') return;
-      const focusable = [...this.roundOverEl.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), select:not(:disabled)',
-      )].filter((element) => !element.hidden && !element.closest('[hidden]'));
-      if (focusable.length === 0) return;
-      const first = focusable[0]!;
-      const last = focusable.at(-1)!;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus({ preventScroll: true });
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus({ preventScroll: true });
-      }
     });
   }
 
@@ -2520,10 +2412,8 @@ export class HUD {
    */
   hideEndScreens(): void {
     if (this.built) this.hideVictoryReport(false);
-    if (this.roundOverShown) this.setRoundOverIsolation(false);
-    this.roundOverEl.classList.add('st-hud__overlay--hidden');
+    if (this.roundOverShown) this.roundOverView.hide(false);
     this.roundOverShown = false;
-    this.roundOverPreviousFocus = null;
     this.lastPresentedTurnKey = null;
     if (this.built) {
       for (const row of this.rows.values()) {
@@ -2532,63 +2422,12 @@ export class HUD {
     }
   }
 
-  /** Exclude every app/modal peer while the between-round report owns focus. */
-  private setRoundOverIsolation(active: boolean): void {
-    if (active) this.hideTransientMessage();
-    const appSiblings = this.modalRoot.parentElement
-      ? [...this.modalRoot.parentElement.children]
-        .filter((element): element is HTMLElement =>
-          element instanceof HTMLElement && element !== this.modalRoot)
-      : [];
-    const modalSiblings = [...this.modalRoot.children]
-      .filter((element): element is HTMLElement =>
-        element instanceof HTMLElement && element !== this.roundOverEl);
-
-    for (const surface of [...appSiblings, ...modalSiblings]) {
-      if (active) {
-        if (surface.dataset['roundOverPreviousInert'] !== undefined) continue;
-        surface.dataset['roundOverPreviousInert'] = surface.inert ? 'true' : 'false';
-        surface.dataset['roundOverPreviousAriaHidden'] =
-          surface.getAttribute('aria-hidden') ?? '__absent__';
-        surface.inert = true;
-        surface.setAttribute('aria-hidden', 'true');
-        continue;
-      }
-      const previousInert = surface.dataset['roundOverPreviousInert'];
-      if (previousInert === undefined) continue;
-      surface.inert = previousInert === 'true';
-      const previousAria = surface.dataset['roundOverPreviousAriaHidden'];
-      if (previousAria === '__absent__' || previousAria === undefined) {
-        surface.removeAttribute('aria-hidden');
-      } else {
-        surface.setAttribute('aria-hidden', previousAria);
-      }
-      delete surface.dataset['roundOverPreviousInert'];
-      delete surface.dataset['roundOverPreviousAriaHidden'];
-    }
-  }
-
-  /**
-   * Show/update the ROUND_OVER between-rounds shop. On entry it builds the standings
-   * + the tank selector once; while shown it keeps the selected tank's credits and
-   * each buy button's affordability/owned-count live (a buy mutates state without a
-   * phase change, so the modal stays open and reflects the purchase next frame).
-   */
+  /** Show/update the ROUND_OVER between-rounds shop through its semantic view owner. */
   private syncRoundOver(state: GameState): void {
     if (state.phase !== 'ROUND_OVER') {
-      const wasShown = this.roundOverShown;
-      this.roundOverEl.classList.add('st-hud__overlay--hidden');
-      this.roundOverShown = false;
-      if (wasShown) {
-        this.setRoundOverIsolation(false);
-        const previous = this.roundOverPreviousFocus;
-        this.roundOverPreviousFocus = null;
-        const focusTarget = previous?.isConnected && !previous.closest('[inert]')
-          ? previous
-          : (this.railRoot.querySelector<HTMLElement>(
-            '[data-semantic-key="command-console-host::fire"]',
-          ) ?? this.matchDrawerBtnEl);
-        focusTarget.focus({ preventScroll: true });
+      if (this.roundOverShown) {
+        this.roundOverView.hide();
+        this.roundOverShown = false;
       }
       return;
     }
@@ -2597,64 +2436,63 @@ export class HUD {
     this.battleConsoleSettingsOpen = false;
     this.battleConsoleCoachBriefingOpen = false;
 
+    const completed = state.round - 1;
+    const winner = state.tanks.find((tank) => tank.id === state.lastRoundWinnerId);
+    const humans = state.tanks.filter((tank) => !tank.ai);
+    if (!this.shopTankId || !humans.some((tank) => tank.id === this.shopTankId)) {
+      this.shopTankId = humans[0]?.id ?? null;
+    }
+    const tank = state.tanks.find((candidate) => candidate.id === this.shopTankId);
+    const scoreboard = this.scoreboardMarkup(state);
+    const projection: RoundOverViewProjection = {
+      title: `Round ${completed} complete · ${state.round}/${state.totalRounds}`,
+      titleLabel: winner
+        ? `Round ${completed}: ${winner.playerName} won. Round ${state.round} of ${state.totalRounds}.`
+        : `Round ${completed}: draw. Round ${state.round} of ${state.totalRounds}.`,
+      scoreboard: scoreboard.markup,
+      scoreboardColumns: scoreboard.columns,
+      tanks: humans.map((candidate) => ({ id: candidate.id, label: candidate.playerName })),
+      selectedTankId: this.shopTankId,
+      shopVisible: humans.length > 0,
+      credits: tank ? `${tank.credits.toLocaleString()} cr` : '',
+      weapons: STORE_WEAPONS.map((type) => {
+        const definition = WEAPONS[type];
+        const slot = tank?.inventory[type];
+        const locked = definition.armsLevel > this.armsLevel;
+        return {
+          key: type,
+          name: definition.name,
+          price: `$${definition.price.toLocaleString()}`,
+          owned: locked ? `🔒 Lv ${definition.armsLevel}` : slot ? `have ${slot.count}` : '',
+          disabled: !tank || locked || tank.credits < definition.price,
+          purchase: { weapon: type },
+        };
+      }),
+      accessories: STORE_ACCESSORIES.map((key) => {
+        const definition = ACCESSORIES[key];
+        const locked = definition.armsLevel > this.armsLevel;
+        return {
+          key,
+          name: definition.name,
+          price: `$${definition.price.toLocaleString()}`,
+          owned: locked
+            ? `🔒 Lv ${definition.armsLevel}`
+            : key === 'battery'
+              ? `cap ${tank?.powerCap ?? 100}`
+              : key === 'parachute'
+                ? `parachutes ${tank?.accessories.parachute ?? 0}`
+                : `fuel ${Math.max(0, Math.floor(tank?.fuel ?? 0))}`,
+          disabled: !tank || locked || tank.credits < definition.price,
+          purchase: { accessory: key },
+        };
+      }),
+    };
     if (!this.roundOverShown) {
-      const focused = document.activeElement;
-      this.roundOverPreviousFocus = focused instanceof HTMLElement ? focused : null;
-      const completed = state.round - 1;
-      const winner = state.tanks.find((t) => t.id === state.lastRoundWinnerId);
-      this.roundOverTitleEl.textContent = `Round ${completed} complete · ${state.round}/${state.totalRounds}`;
-      this.roundOverTitleEl.setAttribute(
-        'aria-label',
-        winner
-          ? `Round ${completed}: ${winner.playerName} won. Round ${state.round} of ${state.totalRounds}.`
-          : `Round ${completed}: draw. Round ${state.round} of ${state.totalRounds}.`,
-      );
-      this.buildScoreboard(state, this.roundOverScoreEl);
-
-      // Tank selector: human tanks only (bots shop via the AI on their own turn).
-      const humans = state.tanks.filter((t) => !t.ai);
-      this.roundOverTankSel.innerHTML = '';
-      for (const t of humans) {
-        const opt = document.createElement('option');
-        opt.value = t.id;
-        opt.textContent = t.playerName;
-        this.roundOverTankSel.append(opt);
-      }
-      this.roundOverShopEl.style.display = humans.length > 0 ? '' : 'none';
-      if (!this.shopTankId || !humans.some((t) => t.id === this.shopTankId)) {
-        this.shopTankId = humans[0]?.id ?? null;
-      }
-      if (this.shopTankId) this.roundOverTankSel.value = this.shopTankId;
-      this.roundOverEl.classList.remove('st-hud__overlay--hidden');
+      this.hideTransientMessage();
+      this.roundOverView.show(projection);
       this.roundOverShown = true;
-      this.setRoundOverIsolation(true);
-      const focusTarget = humans.length > 0
-        ? this.roundOverTankSel
-        : this.roundOverEl.querySelector<HTMLButtonElement>('.st-hud__restart');
-      focusTarget?.focus({ preventScroll: true });
-    }
-
-    // Live shop sync for the selected tank (credits + per-weapon affordability).
-    const tank = state.tanks.find((t) => t.id === this.shopTankId);
-    this.roundOverCreditsEl.textContent = tank ? `${tank.credits.toLocaleString()} cr` : '';
-    for (const [type, cell] of this.roundOverCells) {
-      const def = WEAPONS[type];
-      const slot = tank?.inventory[type];
-      const locked = def.armsLevel > this.armsLevel;
-      cell.owned.textContent = locked ? `🔒 Lv ${def.armsLevel}` : slot ? `have ${slot.count}` : '';
-      cell.buyBtn.disabled = !tank || locked || tank.credits < def.price;
-    }
-    for (const [key, cell] of this.roundOverAccessoryCells) {
-      const acc = ACCESSORIES[key];
-      const locked = acc.armsLevel > this.armsLevel;
-      cell.owned.textContent = locked
-        ? `🔒 Lv ${acc.armsLevel}`
-        : key === 'battery'
-          ? `cap ${tank?.powerCap ?? 100}`
-          : key === 'parachute'
-            ? `parachutes ${tank?.accessories.parachute ?? 0}`
-            : `fuel ${Math.max(0, Math.floor(tank?.fuel ?? 0))}`;
-      cell.buyBtn.disabled = !tank || locked || tank.credits < acc.price;
+    } else {
+      this.roundOverView.update(projection);
     }
   }
 
@@ -2663,6 +2501,29 @@ export class HUD {
    * multi-round matches), kills, and total damage dealt, ordered by round wins then
    * damage. Used by the GAME_OVER panel and the ROUND_OVER standings.
    */
+  private scoreboardMarkup(state: GameState): { markup: string; columns: 3 | 4 } {
+    const columns: 3 | 4 = state.totalRounds > 1 ? 4 : 3;
+    const key = JSON.stringify({
+      totalRounds: state.totalRounds,
+      tanks: state.tanks.map((tank) => ({
+        id: tank.id,
+        playerName: tank.playerName,
+        ai: tank.ai,
+        team: tank.team,
+        roundWins: tank.roundWins,
+        kills: tank.kills,
+        totalDamage: tank.totalDamage,
+        winner: tank.id === state.winner,
+      })),
+    });
+    if (this.roundOverScoreboardKey === key) return { markup: this.roundOverScoreboardMarkup, columns };
+    const el = document.createElement('div');
+    this.buildScoreboard(state, el);
+    this.roundOverScoreboardKey = key;
+    this.roundOverScoreboardMarkup = el.innerHTML;
+    return { markup: this.roundOverScoreboardMarkup, columns };
+  }
+
   private buildScoreboard(state: GameState, el: HTMLElement): void {
     const multi = state.totalRounds > 1;
     const ranked = [...state.tanks].sort(

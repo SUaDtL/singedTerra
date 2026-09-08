@@ -22,12 +22,14 @@ In the last 100 commits touching client/shared sources at the baseline, Lobby ap
 
 - [x] Finish PR 445, exact-head CI, Pages and backend deployment proof.
 - [x] Extract verified-deployment lifecycle from Lobby and prove existing caller behavior unchanged.
-- [ ] Extract match-session ownership from main: start/stop, subscriptions, timers, renderer disposal. One owner must dispose each resource exactly once.
+- [x] Extract match-session ownership from main: start/stop, subscriptions, timers, renderer disposal. `MatchSessionLifecycle` landed in PR 451; `main` still retains composition, AI scheduling, verified transcript replay, and input policy.
 - [ ] Split remaining Lobby/HUD workflows into controllers and semantic views; move authored styles out of TypeScript independently so behavioral diffs stay reviewable.
-  - Garage presentation is extracted in PR 449. Lobby retains loadout and focus ownership; the view receives explicit intents and a live editing predicate. Remaining workflows and authored styles still need assessment.
-- [ ] Isolate network action sequencing/recovery from room transport without changing canonical action order or referee contracts.
-- [ ] Audit renderer and engine extension points using a representative new-weapon/change walkthrough; extract only responsibilities with a stable contract.
-- [ ] Evaluate replacement dependencies against actual maintenance burden and measured capability gaps. Record adoption/rejection, migration cost, bundle/runtime cost, accessibility, determinism, and hosting compatibility.
+  - Garage presentation is extracted in PR 449. Lobby retains loadout and focus ownership; the view receives explicit intents and a live editing predicate.
+  - Authored Lobby/HUD CSS landed in PR 453.
+  - The ROUND_OVER shop is isolated in `RoundOverView` in PR 454, pending exact-head delivery; GAME_OVER and verified-progression reporting remain in HUD.
+- [x] Isolate network action sequencing/recovery from room transport without changing canonical action order or referee contracts. The boundary landed in PR 452; room transport and ordered recovery contracts remain explicit.
+- [x] Audit renderer and engine extension points using a representative new-weapon/change walkthrough; extract only responsibilities with a stable contract.
+- [x] Evaluate replacement dependencies against actual maintenance burden and measured capability gaps. Record adoption/rejection, migration cost, bundle/runtime cost, accessibility, determinism, and hosting compatibility.
 
 ## First refactor contract
 
@@ -62,7 +64,7 @@ Initial dependency assessment, checked 2026-09-08:
 | Phaser Arcade/Matter physics | The bundled physics systems are not evidence of parity with this game's per-pixel terrain and canonical replay. No replacement is selected. Require pinned transcript equivalence and a migration-cost estimate before proposing adoption. [Official physics documentation](https://docs.phaser.io/phaser/concepts/physics) |
 | XState | Pure transition functions and invoked actors are relevant to account/mission/session races. After extraction, compare one transition model against the existing tests and evaluate whether it removes more custom lifecycle machinery than it adds. No dependency is installed in this slice. [Transitions](https://stately.ai/docs/transitions), [actors](https://stately.ai/docs/invoke) |
 
-These fit assessments are engineering inferences from the current code and documented capabilities, not completed migration benchmarks.
+The current `MatchSessionLifecycle` and `OrderedActionSession` seams are small (about 70 and 60 lines respectively) and already have explicit lifecycle/action contracts. No measured maintenance gap currently justifies XState, Phaser scenes, or another rendering/physics engine. No migration benchmark has been performed; Canvas/Pixi and the deterministic engine remain the selected implementation boundary.
 
 ## Gameplay finding to address separately
 
@@ -78,11 +80,9 @@ Ship bounded slices; do not combine dependency upgrades with behavioral refactor
 
 ## Current execution assignments
 
-Parent Astra owns architecture, integration, and delivery review. Sol owns the next match-session lifecycle extraction from `main.ts`. Luna owns a separate Garage view extraction from Lobby, preserving loadout state and focus behavior. Both work in isolated worktrees and retain existing tests unchanged. Prefer Luna for bounded, explicit contracts; use Sol where asynchronous ownership needs broader reasoning.
+Parent Astra owns architecture, integration, and delivery review. PR 449 Garage extraction, PR 450 runtime weapon-roster agreement, PR 451 match-session lifecycle ownership, PR 452 NetworkClient action-order/recovery ownership, and PR 453 authored CSS extraction are landed on the current main line. PR 454 carries the reviewed RoundOverView slice and awaits exact-head delivery. Remaining work is the coupled terminal HUD workflows; do not treat pending delivery as complete.
 
-The next reviewed slices are PR 450 (runtime weapon catalog agreement) and PR 451 (match resource ownership plus explicit stale-start fixes). Sol is extracting ordered action admission/draining from NetworkClient; overlapping live fetches must merge, while disposed sessions reject late results. Luna is moving authored Lobby/HUD CSS into CSS files while preserving the cooked runtime strings, injection order, and IDs.
-
-The weapon extension audit found that ordinary blast weapons already fit the data-driven `WEAPONS` definitions. The remaining edits include inventory, catalog, and exhaustive presentation maps. Exhaustive TypeScript maps are useful coverage; the separately maintained `submit_action/validate.ts` weapon allowlist is a synchronization hazard. A future slice should enforce agreement across the Deno referee and shared catalog without making the referee import browser or engine code. New flight behaviors still require deliberate engine state, clone, and replay changes; do not obscure those contracts behind a generic plugin interface.
+The extension audit found that ordinary weapons fit the data-driven `WEAPONS` registry plus exhaustive inventory, visual, store, and referee catalogs; PR 450 guards agreement with the Deno referee without importing browser or engine code. Novel flight modes still require explicit `GameEngine` state, clone, and replay work. Game-mode changes continue to cross configuration, engine, and transport boundaries, so that coupling remains recovery debt. The dependency evaluation supports no adoption in this batch: no benchmark was performed, and no prototype is promised or implied. This adds zero dependency bundle or runtime cost and leaves semantic accessibility and static hosting unchanged; migration effort and parity benchmarks remain unmeasured, so there is no claim that a replacement would be cheaper or faster.
 
 ## Evidence log
 
@@ -90,9 +90,11 @@ The weapon extension audit found that ordinary blast weapons already fit the dat
 - PR 445 final review passed; its PostgreSQL container bootstrap readiness race was fixed before merge using a bounded TCP readiness probe.
 - First slice baseline: 1,638 client tests; Windows Lobby coverage 89.45% lines / 77.42% branches. New seam suite failed on the missing controller before extraction.
 - After extraction: 1,644 client tests, no pre-existing test edits; combined Lobby/controller coverage 89.64% lines / 77.88% branches. The controller alone has 92.62% lines / 86.39% branches. Compare the combined surface because moving covered code changes each individual file's denominator.
-- Typecheck, build and deterministic harnesses pass. Independent review compared all 12 moved lifecycle/helper bodies against the baseline AST and found parity, with no blocking findings. Full browser verification passed: 324 checks across desktop, touch, and smaller-window profiles; 12 existing profile-specific skips and zero touch-move events.
+- Typecheck, build and deterministic harnesses pass. Independent review compared all 12 moved lifecycle/helper bodies against the baseline AST and found parity, with no blocking findings. Full browser verification passed: 324 checks across desktop, touch, and smaller-window profiles; 12 existing profile-specific skips, no retries.
 - PR 445 merged as `cfbbead9c624cb43f27862bd62d37783664cfd69`; Pages run `34229994141` passed publication, provenance and live smoke. Supabase automatically applied 018/019 and deployed the rematch handler. Hosted replay passed; V2 start succeeded after guarded admission enablement. A rolled-back production rematch RPC check passed without changing the earlier test room.
 - Production V2 completion retry passed: deliberately discarded one accepted response, then the normal Retry returned the identical immutable receipt. Diagnostics reported one match, one win, 200 XP; database counts confirmed one completed V2 session and one award.
 - Integration with dependency merge `9d0aaa0`: 1,644 client tests, 359 Edge tests, deterministic harnesses, typecheck, build, and secret scan passed. Dependency release Pages run `34234727895` completed successfully. PR 446 requires fresh CI after this base update before merge.
 - PR 446 merged as `81dddd1` after exact-head CI passed, including responsive interaction checks. Garage PR 449 retains all existing tests unchanged and adds direct callback, focus-trap, live editing, and listener cancellation tests. Initial Garage coverage: 98.18% lines / 87.5% branches. Its integrated client suite passes 1,648 tests after the verified lifecycle extraction.
-- PR 449 merged as `9f24e29`. Its rendering job was still running when GitHub accepted the merge; all jobs subsequently passed. Pages run `34282966487` and published metadata confirm deployment. Browser evidence: 320 initial passes, one touch-drag retry pass, 12 configured skips; product-completion suite: 81 passes and 19 configured skips. Follow up the intermittent `first-salvo.spec.ts:117` touch drag: forwarded aim remained zero on its first run. Do not relax the assertion or treat the retry as proof of a diagnosed cause.
+- PR 449 merged as `9f24e29`. Its rendering job was still running when GitHub accepted the merge; all jobs subsequently passed. Pages run `34282966487` and published metadata confirm deployment. Browser evidence: 320 initial passes, one touch-drag retry pass, 12 configured skips; product-completion suite: 81 passes and 19 configured skips. Follow up the intermittent `first-salvo.spec.ts:117` touch drag: the first run observed zero touch-move events; this did not prove zero forwarded aim. Local repeated runs and an instrumented probe did not reproduce it. Do not relax the assertion or treat the retry as a diagnosed cause.
+- PR 452 merged as `d58551a4139095df9988e99354b8fb787c00d7b5`, completing the reviewed NetworkClient action-order/recovery ownership slice.
+- Current remaining debt is explicit: `main.ts` still owns composition, AI scheduling, verified transcript replay, and input policy; HUD still owns GAME_OVER and verified-progression reporting; and verified CPU policy remains versioned gameplay behavior requiring a reviewed V2 transition before any scoring change.
