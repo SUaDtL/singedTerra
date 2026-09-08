@@ -25,11 +25,11 @@ In the last 100 commits touching client/shared sources at the baseline, Lobby ap
 - [x] Extract match-session ownership from main: start/stop, subscriptions, timers, renderer disposal. `MatchSessionLifecycle` landed in PR 451; `main` still retains composition, AI scheduling, verified transcript replay, and input policy.
 - [ ] Split remaining Lobby/HUD workflows into controllers and semantic views; move authored styles out of TypeScript independently so behavioral diffs stay reviewable.
   - Garage presentation is extracted in PR 449. Lobby retains loadout and focus ownership; the view receives explicit intents and a live editing predicate.
-  - Authored Lobby/HUD CSS is extracted in PR 453, pending delivery review.
-  - The ROUND_OVER shop is now isolated in an uncommitted `RoundOverView` review slice; GAME_OVER and verified-progression reporting remain in HUD.
+  - Authored Lobby/HUD CSS landed in PR 453.
+  - The ROUND_OVER shop is isolated in `RoundOverView` in PR 454, pending exact-head delivery; GAME_OVER and verified-progression reporting remain in HUD.
 - [x] Isolate network action sequencing/recovery from room transport without changing canonical action order or referee contracts. The boundary landed in PR 452; room transport and ordered recovery contracts remain explicit.
-- [ ] Audit renderer and engine extension points using a representative new-weapon/change walkthrough; extract only responsibilities with a stable contract.
-- [ ] Evaluate replacement dependencies against actual maintenance burden and measured capability gaps. Record adoption/rejection, migration cost, bundle/runtime cost, accessibility, determinism, and hosting compatibility.
+- [x] Audit renderer and engine extension points using a representative new-weapon/change walkthrough; extract only responsibilities with a stable contract.
+- [x] Evaluate replacement dependencies against actual maintenance burden and measured capability gaps. Record adoption/rejection, migration cost, bundle/runtime cost, accessibility, determinism, and hosting compatibility.
 
 ## First refactor contract
 
@@ -80,9 +80,9 @@ Ship bounded slices; do not combine dependency upgrades with behavioral refactor
 
 ## Current execution assignments
 
-Parent Astra owns architecture, integration, and delivery review. PR 449 Garage extraction, PR 450 runtime weapon-roster agreement, PR 451 match-session lifecycle ownership, and PR 452 NetworkClient action-order/recovery ownership are landed on the current main line. PR 453 authored CSS extraction remains pending delivery review. The current RoundOverView slice is uncommitted and awaits parent review. Remaining work is the coupled terminal HUD workflows; do not treat pending delivery or review as complete.
+Parent Astra owns architecture, integration, and delivery review. PR 449 Garage extraction, PR 450 runtime weapon-roster agreement, PR 451 match-session lifecycle ownership, PR 452 NetworkClient action-order/recovery ownership, and PR 453 authored CSS extraction are landed on the current main line. PR 454 carries the reviewed RoundOverView slice and awaits exact-head delivery. Remaining work is the coupled terminal HUD workflows; do not treat pending delivery as complete.
 
-The weapon extension audit found that ordinary blast weapons already fit the data-driven `WEAPONS` definitions. Adding one still touches inventory/catalog presentation maps and the Deno referee contract; PR 450 now checks the shared and referee rosters at runtime without importing browser or engine code. New flight behaviors still require deliberate engine state, clone, and replay changes; do not obscure those contracts behind a generic plugin interface.
+The extension audit found that ordinary weapons fit the data-driven `WEAPONS` registry plus exhaustive inventory, visual, store, and referee catalogs; PR 450 guards agreement with the Deno referee without importing browser or engine code. Novel flight modes still require explicit `GameEngine` state, clone, and replay work. Game-mode changes continue to cross configuration, engine, and transport boundaries, so that coupling remains recovery debt. The dependency evaluation supports no adoption in this batch: no benchmark was performed, and no prototype is promised or implied.
 
 ## Evidence log
 
