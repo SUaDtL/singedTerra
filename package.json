@@ -35,14 +35,14 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@playwright/test": "1.62.1",
+    "@playwright/test": "1.63.0",
     "@types/node": "24.13.3",
     "@typescript/native": "npm:typescript@7.0.2",
     "concurrently": "10.0.5",
     "pixelmatch": "7.2.0",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "supabase": "2.105.0",
-    "tsx": "4.23.12",
+    "tsx": "4.23.13",
     "typescript": "npm:@typescript/typescript6@6.0.2"
   }
 }

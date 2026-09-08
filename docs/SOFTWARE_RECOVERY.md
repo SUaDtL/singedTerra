@@ -75,12 +75,19 @@ Next work: pin the harmful-versus-safe-miss case as a gameplay regression, evalu
 
 Ship bounded slices; do not combine dependency upgrades with behavioral refactors. Keep existing public boundaries until consumers migrate. Prefer responsibility ownership over generic utility buckets or pass-through wrappers. Add dependency-boundary checks where they prevent a demonstrated regression. Keep a concise evidence record here rather than accumulating duplicate campaign artifacts.
 
+## Current execution assignments
+
+Parent Astra owns architecture, integration, and delivery review. Sol owns the next match-session lifecycle extraction from `main.ts`. Luna owns a separate Garage view extraction from Lobby, preserving loadout state and focus behavior. Both work in isolated worktrees and retain existing tests unchanged. Prefer Luna for bounded, explicit contracts; use Sol where asynchronous ownership needs broader reasoning.
+
+The weapon extension audit found that ordinary blast weapons already fit the data-driven `WEAPONS` definitions. The remaining edits include inventory, catalog, and exhaustive presentation maps. Exhaustive TypeScript maps are useful coverage; the separately maintained `submit_action/validate.ts` weapon allowlist is a synchronization hazard. A future slice should enforce agreement across the Deno referee and shared catalog without making the referee import browser or engine code. New flight behaviors still require deliberate engine state, clone, and replay changes; do not obscure those contracts behind a generic plugin interface.
+
 ## Evidence log
 
-- Initial dependency audit: zero npm advisories; GitHub Dependabot alert API disabled. Terra agent owns package/action upgrade review separately.
-- PR 445 final review passed; CI exposed a PostgreSQL container bootstrap readiness race, under repair before merge.
+- Dependency PRs 447 and 448 merged with exact-head green CI. Dependabot monitoring is enabled with zero open alerts; npm audit reported zero vulnerabilities. Supabase CLI remains at 2.105.0 pending a separate review of the newer CLI runtime graph and deployment compatibility.
+- PR 445 final review passed; its PostgreSQL container bootstrap readiness race was fixed before merge using a bounded TCP readiness probe.
 - First slice baseline: 1,638 client tests; Windows Lobby coverage 89.45% lines / 77.42% branches. New seam suite failed on the missing controller before extraction.
 - After extraction: 1,644 client tests, no pre-existing test edits; combined Lobby/controller coverage 89.64% lines / 77.88% branches. The controller alone has 92.62% lines / 86.39% branches. Compare the combined surface because moving covered code changes each individual file's denominator.
 - Typecheck, build and deterministic harnesses pass. Independent review compared all 12 moved lifecycle/helper bodies against the baseline AST and found parity, with no blocking findings. Full browser verification passed: 324 checks across desktop, touch, and smaller-window profiles; 12 existing profile-specific skips, no retries.
 - PR 445 merged as `cfbbead9c624cb43f27862bd62d37783664cfd69`; Pages run `34229994141` passed publication, provenance and live smoke. Supabase automatically applied 018/019 and deployed the rematch handler. Hosted replay passed; V2 start succeeded after guarded admission enablement. A rolled-back production rematch RPC check passed without changing the earlier test room.
 - Production V2 completion retry passed: deliberately discarded one accepted response, then the normal Retry returned the identical immutable receipt. Diagnostics reported one match, one win, 200 XP; database counts confirmed one completed V2 session and one award.
+- Integration with dependency merge `9d0aaa0`: 1,644 client tests, 359 Edge tests, deterministic harnesses, typecheck, build, and secret scan passed. Dependency release Pages run `34234727895` completed successfully. PR 446 requires fresh CI after this base update before merge.
