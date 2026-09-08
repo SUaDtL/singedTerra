@@ -58,7 +58,7 @@ const FAIL_STATE: Extract<DiagnosticCheckResult, { status: 'FAIL' }> = {
 }
 
 const DIAGNOSTICS_STYLE_SOURCE = readFileSync(join(process.cwd(), 'src', 'style.css'), 'utf8')
-const LOBBY_STYLE_SOURCE = readFileSync(join(process.cwd(), 'src', 'ui', 'Lobby.ts'), 'utf8')
+const LOBBY_STYLE_SOURCE = readFileSync(join(process.cwd(), 'src', 'ui', 'Lobby.css'), 'utf8')
 
 type ProductionDiagnosticsReceipt = NonNullable<ReturnType<typeof productionDiagnosticsReceiptForState>>
 
