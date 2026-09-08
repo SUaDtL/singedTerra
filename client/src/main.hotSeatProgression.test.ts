@@ -43,6 +43,8 @@ const seams = vi.hoisted(() => ({
   anonymousHandoffs: 0,
   accountSignInShows: 0,
   lobbyShows: 0,
+  lobbyHides: 0,
+  leaveBattleConsole: (): void | Promise<void> => undefined,
   lobbyShowOptions: [] as unknown[],
   accountAnonymous: false,
   accountAuthenticated: false,
@@ -165,6 +167,7 @@ vi.mock('./ui/HUD', () => ({
     hideEndScreens() {}
     isPaused() { return false }
     isFirstSalvoBriefingOpen() { return seams.firstSalvoBriefingOpen }
+    leaveBattleConsole() { return seams.leaveBattleConsole() }
     onBuy() {}
     onFirstSalvoReplay() {}
     onFirstSalvoSkip() {}
@@ -228,7 +231,7 @@ vi.mock('./ui/Lobby', () => ({
     constructor(_root: HTMLElement, onReady: (config: Record<string, unknown>) => void) {
       seams.onLobbyReady = onReady
     }
-    hide() {}
+    hide() { seams.lobbyHides += 1 }
     show(options?: unknown) {
       seams.lobbyShows += 1
       seams.lobbyShowOptions.push(options)
@@ -515,6 +518,8 @@ describe('production hot-seat progression composition', () => {
     seams.anonymousHandoffs = 0
     seams.accountSignInShows = 0
     seams.lobbyShows = 0
+    seams.lobbyHides = 0
+    seams.leaveBattleConsole = () => undefined
     seams.lobbyShowOptions.length = 0
     seams.accountAnonymous = false
     seams.accountAuthenticated = false
@@ -527,6 +532,62 @@ describe('production hot-seat progression composition', () => {
     seams.completeVerified = () => Promise.resolve(verifiedReceipt)
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('retires a late asynchronous network start after a newer start owns the match', async () => {
+    let finishFirst!: () => void
+    let finishSecond!: () => void
+    const first = fakeClient(gameState())
+    const second = fakeClient(gameState())
+    first.initialize = vi.fn(() => new Promise<undefined>((resolve) => {
+      finishFirst = () => resolve(undefined)
+    }))
+    second.initialize = vi.fn(() => new Promise<undefined>((resolve) => {
+      finishSecond = () => resolve(undefined)
+    }))
+    seams.clients.push(first, second)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'network', roomId: 'first', playerId: 'p1', players: [] })
+    await vi.waitFor(() => expect(first.initialize).toHaveBeenCalledOnce())
+    seams.onLobbyReady({ mode: 'network', roomId: 'second', playerId: 'p2', players: [] })
+    await vi.waitFor(() => expect(second.initialize).toHaveBeenCalledOnce())
+
+    finishSecond()
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    finishFirst()
+    await vi.waitFor(() => expect(first.stop).toHaveBeenCalledOnce())
+
+    expect(first.start).not.toHaveBeenCalled()
+    expect(second.stop).not.toHaveBeenCalled()
+    expect(seams.rendererConstructed).toBe(1)
+    expect(seams.lobbyHides).toBe(2)
+  })
+
+  it('keeps each start bound to its own asynchronous teardown generation', async () => {
+    const leaveResolvers: Array<() => void> = []
+    seams.leaveBattleConsole = () => new Promise<void>((resolve) => {
+      leaveResolvers.push(resolve)
+    })
+    const newer = fakeClient(gameState())
+    seams.clients.push(newer)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'hotseat', players: [], quickOperation: { id: 'older' } })
+    seams.onLobbyReady({ mode: 'hotseat', players: [], quickOperation: { id: 'newer' } })
+    await vi.waitFor(() => expect(leaveResolvers).toHaveLength(2))
+
+    leaveResolvers[1]!()
+    await vi.waitFor(() => expect(newer.start).toHaveBeenCalledOnce())
+    leaveResolvers[0]!()
+    await Promise.resolve()
+
+    expect(seams.lobbyHides).toBe(1)
+    expect(seams.quickOperations).toEqual([{ id: 'newer' }])
+    expect(seams.rendererConstructed).toBe(1)
+    expect(newer.stop).not.toHaveBeenCalled()
   })
 
   it('owns renderer resources only for an active game generation', async () => {
@@ -565,6 +626,7 @@ describe('production hot-seat progression composition', () => {
         briefing: 'Lava terrain turns every crater into a positional risk.',
       },
     })
+    await vi.waitFor(() => expect(seams.quickOperations).toHaveLength(1))
     seams.onLobbyReady({ mode: 'hotseat', players: [] })
 
     await vi.waitFor(() => expect(seams.quickOperations).toEqual([

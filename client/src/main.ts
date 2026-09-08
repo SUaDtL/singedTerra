@@ -593,9 +593,9 @@ function bootstrap(): void {
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
-    await teardown();
+    const currentGameGeneration = await teardown();
+    if (!matchSession.isCurrent(currentGameGeneration)) return;
     progressionSignInHandled = false;
-    const currentGameGeneration = matchSession.currentGeneration;
     // Hide the lobby on EVERY entry into a game — not only via the lobby's own start
     // callback. Restart (restartCb) and network rematch (onRematch) call startGame()
     // directly, so without this a Restart issued while the lobby is showing (i.e. after
@@ -623,7 +623,7 @@ function bootstrap(): void {
     } else {
       newClient = await createClient(config);
     }
-    matchSession.ownClient(newClient);
+    if (!matchSession.ownClient(currentGameGeneration, newClient)) return;
     const gameRenderer = createRenderer();
     const selectedBattlefield = selectClientBattlefieldWorld(
       newClient,

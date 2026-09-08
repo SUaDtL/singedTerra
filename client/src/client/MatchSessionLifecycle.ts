@@ -25,8 +25,13 @@ export class MatchSessionLifecycle<
       && (client === undefined || client === this.ownedClient);
   }
 
-  ownClient(client: Client): void {
+  ownClient(generation: number, client: Client): boolean {
+    if (generation !== this.generation) {
+      client.stop();
+      return false;
+    }
     this.ownedClient = client;
+    return true;
   }
 
   ownInput(input: Input): void { this.ownedInput = input; }

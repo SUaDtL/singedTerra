@@ -10,7 +10,7 @@ describe('MatchSessionLifecycle', () => {
     vi.useFakeTimers();
     const events: string[] = [];
     const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
-    lifecycle.ownClient({ stop: () => events.push('client') });
+    lifecycle.ownClient(lifecycle.currentGeneration, { stop: () => events.push('client') });
     lifecycle.ownInput({ detach: () => events.push('input') });
     lifecycle.ownSubscription(() => events.push('subscription'));
     lifecycle.ownRenderer({ reset: () => events.push('renderer') });
@@ -43,9 +43,20 @@ describe('MatchSessionLifecycle', () => {
     const generation = lifecycle.currentGeneration;
 
     expect(lifecycle.isCurrent(generation, null)).toBe(true);
-    lifecycle.ownClient({ stop: vi.fn() });
+    lifecycle.ownClient(generation, { stop: vi.fn() });
     expect(lifecycle.isCurrent(generation, null)).toBe(false);
     expect(lifecycle.isCurrent(generation)).toBe(true);
+  });
+
+  it('stops a client created after its start generation was replaced', async () => {
+    const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
+    const staleGeneration = await lifecycle.retire(() => undefined);
+    await lifecycle.retire(() => undefined);
+    const staleClient = { stop: vi.fn() };
+
+    expect(lifecycle.ownClient(staleGeneration, staleClient)).toBe(false);
+    expect(staleClient.stop).toHaveBeenCalledOnce();
+    expect(lifecycle.client).toBeNull();
   });
 
   it('resets only the renderer captured by each overlapping teardown', async () => {
