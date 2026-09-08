@@ -1,0 +1,1891 @@
+
+.st-hud {
+  font-family: var(--font-sans);
+  color: var(--text);
+  font-size: var(--ui-type-title);
+}
+/* The generated plate is a low-opacity material layer, never an interface.
+   Gradients retain the full readable fall-back if the optional asset is absent. */
+.st-hud__players {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.st-hud__player-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 16px 28px 14px;
+  align-items: center;
+  gap: 0;
+  padding: 5px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  border-radius: 0;
+  background: transparent;
+  font-size: 13px;
+  transition: box-shadow 160ms ease, background 160ms ease, opacity 220ms ease;
+}
+.st-hud__turn-order {
+  grid-column: 1;
+  color: var(--ui-muted);
+  font: 700 10px/1 var(--font-mono);
+  text-align: center;
+}
+.st-hud__player--active {
+  background:
+    linear-gradient(90deg, var(--ui-surface-active), rgba(142, 47, 83, 0.16) 58%, transparent);
+  box-shadow: inset 10px 0 18px rgba(255, 122, 31, 0.06);
+}
+.st-hud__player-active-marker {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 0;
+  width: 2px;
+  background: var(--ui-action);
+  opacity: 0;
+  pointer-events: none;
+}
+.st-hud__player--active .st-hud__player-active-marker { opacity: 1; }
+.st-hud__player--handoff {
+  animation: st-hud-roster-handoff 560ms ease-out;
+}
+.st-hud__player--dead {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+/* Damage flash — a fading red wash on the ::after layer so it never fights the
+   active-player pulse animation on the element itself. */
+.st-hud__player--hit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  pointer-events: none;
+  background: rgba(232, 77, 77, 0.6);
+  animation: st-hud-flash 420ms ease forwards;
+}
+.st-hud__name {
+  display: block;
+  grid-column: 2;
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+  padding-block: 1px;
+  text-overflow: clip;
+  white-space: normal;
+}
+.st-hud__ammo {
+  grid-column: 3;
+  color: var(--ui-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.st-hud__hp {
+  grid-column: 4;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-gold);
+}
+.st-hud__bar {
+  grid-column: 5;
+  display: block;
+  box-sizing: border-box;
+  width: 14px;
+  height: 8px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.st-hud__bar-fill {
+  display: block;
+  height: 100%;
+  transition: width 160ms ease;
+}
+.st-hud__menu {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--ui-space-2);
+  width: 100%;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 7px 2px 9px;
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ui-muted);
+  font-family: var(--font-sans);
+  font-size: var(--ui-type-body);
+  letter-spacing: 0.5px;
+  transition: background 130ms ease, border-color 130ms ease;
+}
+.st-hud__menu:hover { background: var(--ui-surface-active); color: var(--ui-action); }
+/* One modal owner and one intercepting backdrop: covered overlay controls never
+ * receive pointer input while Armory owns the dialog focus scope. */
+/* The Armory is reparented into the modal layer while open. Keep that modal
+ * independently bounded: the old rail-only open rule left it at natural
+ * content height on touch, extending past the fitted stage. */
+/* Collapsed: fold the button grid away, keep the header + toggle. */
+/* Owned-only: hide weapons the tank doesn't hold (and isn't aiming with).
+ * Compound selector (0,0,2,0) so it outranks the base .st-hud__weapon-btn
+ * display:flex regardless of source order. */
+.st-weapon-icon {
+  display: block;
+  flex: 0 0 auto;
+  color: var(--ui-muted);
+  stroke: currentColor;
+  filter: drop-shadow(0 0 3px rgba(255, 233, 168, 0.08));
+}
+.st-weapon-icon[data-family='nuclear'],
+.st-weapon-icon[data-family='death'] { color: var(--tank-red-lite); }
+.st-weapon-icon[data-family='fire'],
+.st-weapon-icon[data-family='volatile'] { color: var(--ember); }
+.st-weapon-icon[data-family='defense'] { color: var(--tank-blue-lite); }
+.st-weapon-icon[data-weapon='heavy_shield'] { color: #b77aff; }
+.st-weapon-icon[data-family='terrain'] { color: #c49359; }
+.st-weapon-icon[data-family='drill'] { color: #f3a83b; }
+.st-weapon-icon[data-family='tracer'] { color: #55e6ff; }
+/* First Salvo becomes a compact in-console ribbon after its one-time briefing. */
+.st-hud__restart:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+.st-hud__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 7, 22, 0.66);
+  pointer-events: auto;
+}
+.st-hud__overlay--hidden { display: none; }
+/* Networked liveness widgets (P1-6): connection banner + transient toast. */
+.st-hud__quick-chat {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 42;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  font: 600 12px/1.2 system-ui, sans-serif;
+}
+.st-hud__quick-chat--hidden { display: none; }
+.st-hud__quick-chat-toggle,
+.st-hud__quick-chat-option {
+  border: 1px solid rgba(255, 210, 63, 0.58);
+  border-radius: 5px;
+  padding: 6px 10px;
+  color: var(--text-gold, #ffe9b0);
+  background: rgba(30, 18, 48, 0.94);
+  font: inherit;
+  cursor: pointer;
+}
+.st-hud__quick-chat-toggle:hover,
+.st-hud__quick-chat-option:hover { background: rgba(100, 54, 28, 0.96); }
+.st-hud__quick-chat-toggle:focus-visible,
+.st-hud__quick-chat-option:focus-visible {
+  outline: 2px solid var(--ui-focus, #fff);
+  outline-offset: 2px;
+}
+.st-hud__quick-chat-panel {
+  display: grid;
+  gap: 4px;
+  min-width: 148px;
+}
+.st-hud__quick-chat-panel--hidden { display: none; }
+.st-hud__conn {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: #ffe9b0;
+  background: rgba(120, 60, 10, 0.92);
+  border: 1px solid rgba(255, 180, 80, 0.7);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__conn--hidden { display: none; }
+.st-hud__toast {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  color: #ffd7d7;
+  background: rgba(90, 20, 28, 0.92);
+  border: 1px solid rgba(255, 120, 120, 0.7);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__toast--hidden { display: none; }
+/* Opponent-turn watchdog banner (P1-6b): top-center, below the conn/toast slot. */
+.st-hud__turnwatch {
+  position: absolute;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--text-gold, #ffe9b0);
+  background: rgba(40, 28, 60, 0.92);
+  border: 1px solid rgba(255, 210, 63, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.st-hud__turnwatch--stalled {
+  color: #ffd7d7;
+  background: rgba(90, 20, 28, 0.92);
+  border-color: rgba(255, 120, 120, 0.7);
+}
+.st-hud__turnwatch--hidden { display: none; }
+.st-hud__turnwatch-leave {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--gold, #ffd23f);
+  background: transparent;
+  color: var(--gold, #ffd23f);
+  font: 600 12px/1 system-ui, sans-serif;
+}
+.st-hud__turnwatch-leave:hover { background: rgba(255, 210, 63, 0.16); }
+.st-hud__overlay-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 40px;
+  border-radius: 8px;
+  background: rgba(12, 7, 22, 0.92);
+  border: 2px solid var(--gold);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 122, 31, 0.25);
+}
+.st-hud__overlay-text {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(255, 122, 31, 0.5);
+}
+.st-hud__restart {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 9px 24px;
+  border: none;
+  border-radius: 4px;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  transition: background 130ms ease, transform 80ms ease;
+}
+.st-hud__restart:hover { background: var(--ember); }
+.st-hud__restart:active { transform: translateY(1px); }
+.st-hud__overlay-btns { display: flex; gap: 12px; }
+.st-hud__command-menu-exit {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 210, 63, 0.28);
+}
+.st-hud__restart--ghost {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+.st-hud__restart--ghost:hover { background: rgba(255, 210, 63, 0.16); }
+
+/* Command Menu is another physical console surface, not a generic web modal.
+ * The generated frame is decorative only; every action remains live DOM. */
+.st-hud__command-menu-panel {
+  display: grid;
+  grid-template-rows: 17% 49% 22%;
+  align-items: stretch;
+  gap: 6%;
+  box-sizing: border-box;
+  width: min(780px, calc(100vw - 32px), calc((100vh - 24px) * 1.52));
+  aspect-ratio: 1.52;
+  max-height: calc(100vh - 24px);
+  padding: 50px 72px 54px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--st-command-menu-frame) center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+.st-hud__command-menu-panel > .st-hud__overlay-text {
+  align-self: center;
+  margin: 0;
+  color: var(--text-gold);
+  font-size: clamp(19px, 2.6vh, 28px);
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.st-hud__command-menu-panel > .st-hud__overlay-btns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 2.8%;
+  min-width: 0;
+  padding: 3% 2.5%;
+}
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart {
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid rgba(219, 164, 75, .62);
+  border-radius: 7px;
+  background:
+    linear-gradient(180deg, rgba(80, 61, 48, .82), rgba(13, 11, 15, .94));
+  color: var(--text-gold);
+  box-shadow:
+    inset 0 0 0 3px rgba(3, 3, 6, .52),
+    inset 0 1px rgba(255, 232, 177, .13),
+    0 4px 10px rgba(0, 0, 0, .36);
+}
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:first-child {
+  border-color: rgba(255, 204, 88, .7);
+  background: linear-gradient(180deg, rgba(155, 104, 44, .78), rgba(61, 36, 22, .94));
+}
+.st-hud__command-menu-panel > .st-hud__command-menu-exit {
+  align-self: stretch;
+  justify-self: center;
+  width: 58%;
+  padding: 0;
+  border: 0;
+}
+.st-hud__command-menu-panel > .st-hud__command-menu-exit .st-hud__restart {
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  border-color: rgba(205, 155, 74, .42);
+  background: linear-gradient(180deg, rgba(65, 46, 38, .54), rgba(12, 10, 14, .88));
+}
+@media (pointer: coarse) {
+  .st-hud__command-menu-panel {
+    width: 840px;
+    max-height: none;
+    padding: 50px 72px 54px;
+  }
+  .st-hud__command-menu-panel > .st-hud__overlay-text { font-size: 26px; }
+  .st-hud__command-menu-panel .st-hud__restart {
+    min-height: 91px;
+    padding: 8px;
+    font-size: 24px;
+  }
+}
+@media (pointer: fine) and (min-width: 1001px) and (min-height: 601px) {
+  .st-hud__command-menu-panel {
+    width: 580px;
+    padding: 38px 50px 42px;
+  }
+}
+
+/* ---- Victory after-action report ------------------------------------- */
+.st-hud__overlay--victory {
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 38% 48%, color-mix(in srgb, var(--st-victory-color, #ffd23f) 15%, transparent), transparent 36%),
+    rgba(5, 3, 11, 0.84);
+}
+.st-hud__overlay--victory::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(6, 3, 12, 0.70), transparent 42%, rgba(6, 3, 12, 0.76)),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 4px);
+  pointer-events: none;
+}
+.st-hud__overlay-panel--victory {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 36.5%) minmax(0, 63.5%);
+  align-items: stretch;
+  gap: 0;
+  box-sizing: border-box;
+  width: min(920px, calc(100% - 30px));
+  aspect-ratio: 1860 / 845;
+  max-height: calc(100% - 36px);
+  min-height: 0;
+  padding: 52px 54px 38px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background-image: var(--st-victory-frame);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  box-shadow: none;
+  animation: st-hud-victory-arrive 360ms cubic-bezier(.2,.82,.2,1) both;
+}
+.st-hud__victory-hero {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px 8px 14px;
+  overflow: visible;
+  border-right: 0;
+  background:
+    radial-gradient(circle at 50% 68%, color-mix(in srgb, var(--st-victory-color, #ffd23f) 24%, transparent), transparent 45%),
+    linear-gradient(155deg, rgba(255,255,255,0.035), rgba(0,0,0,0.18));
+}
+.st-hud__victory-hero::before {
+  content: none;
+}
+.st-hud__victory-eyebrow,
+.st-hud__victory-status,
+.st-hud__victory-score-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+.st-hud__victory-eyebrow {
+  position: relative;
+  z-index: 1;
+  color: var(--text-gold);
+  font-size: 12px;
+}
+.st-hud__victory-tank-frame {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  animation: st-hud-victory-float 3.6s ease-in-out infinite;
+}
+.st-hud__victory-tank-frame::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 20px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--st-victory-color, #ffd23f) 36%, transparent);
+  filter: blur(14px);
+  opacity: 0.72;
+}
+.st-hud__victory-tank {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 18px 16px rgba(0,0,0,0.58));
+}
+.st-hud__victory-report {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding: 16px 22px 12px;
+}
+.st-hud__victory-status {
+  color: var(--st-victory-color, var(--gold));
+  font-size: 12px;
+  font-weight: 700;
+}
+.st-hud__victory-operation {
+  margin-top: 8px;
+  color: #ffe0a0;
+  font: 700 10px/1.4 var(--font-mono);
+  letter-spacing: 0.03em;
+}
+.st-hud__victory-operation[hidden] { display: none; }
+.st-hud__victory-field-order {
+  margin-top: 8px;
+  color: #c5f0c4;
+  font: 700 10px var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.st-hud__victory-field-order[hidden] { display: none; }
+.st-hud__victory-progression-receipt {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 10px;
+  align-self: flex-start;
+  width: min(100%, 430px);
+  box-sizing: border-box;
+  margin-top: 12px;
+  padding: 5px 8px;
+  color: #c5f0c4;
+  border: 1px solid rgba(151, 229, 149, 0.48);
+  border-radius: 4px;
+  background: rgba(78, 147, 74, 0.16);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.st-hud__victory-progression-summary {
+  grid-column: 1 / -1;
+}
+.st-hud__victory-progression-receipt[hidden] { display: none; }
+.st-hud__victory-progression-receipt--promotion {
+  border-color: rgba(255, 210, 63, 0.72);
+  background: linear-gradient(135deg, rgba(255, 210, 63, 0.16), rgba(78, 147, 74, 0.14));
+}
+.st-hud__victory-promotion {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 10px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 210, 63, 0.28);
+}
+.st-hud__victory-promotion-kicker {
+  grid-column: 1 / -1;
+  color: var(--gold);
+  font-size: 9px;
+}
+.st-hud__victory-promotion-code,
+.st-hud__victory-promotion-insignia {
+  color: var(--gold);
+  font-size: 17px;
+}
+.st-hud__victory-promotion-title { color: var(--text); }
+.st-hud__victory-career-next {
+  grid-column: 1 / -1;
+  color: var(--text-dim);
+  font-size: 9px;
+}
+#app.is-compact .st-hud__victory-progression-summary {
+  font-size: calc(var(--st-store-buy-target) * 0.2);
+}
+.st-hud__victory-progression-handoff {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.st-hud__victory-progression-handoff[hidden] { display: none; }
+.st-hud__victory-progression-handoff p { margin: 0; }
+.st-hud__victory-progression-sign-in {
+  min-width: var(--st-store-buy-target, 44px);
+  min-height: max(36px, var(--st-store-buy-target, 44px));
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 210, 63, 0.42);
+  border-radius: 7px;
+  background: rgba(255, 210, 63, 0.08);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.st-hud__victory-progression-sign-in:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+.st-hud__victory-title {
+  margin: 6px 0 16px;
+  padding-block: 2px;
+  color: var(--text);
+  font-size: clamp(26px, 2.3vw, 30px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--st-victory-color, #ffd23f) 28%, transparent);
+}
+.st-hud__victory-score-label {
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+.st-hud__overlay-panel--victory .st-hud__score {
+  width: 100%;
+  margin: 7px 0 18px;
+  gap: 0;
+  font-size: 13px;
+}
+.st-hud__overlay-panel--victory .st-hud__score > * {
+  padding: 7px 9px;
+  border-bottom: 1px solid rgba(255, 232, 179, 0.08);
+}
+.st-hud__overlay-panel--victory .st-hud__score-th {
+  padding-top: 4px;
+  font-size: 12px;
+  color: var(--ui-muted);
+  border-bottom-color: rgba(255, 232, 179, 0.16);
+}
+.st-hud__score-cell--winner {
+  color: #fff6d6;
+  background: color-mix(in srgb, var(--st-victory-color, #ffd23f) 15%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--st-victory-color, #ffd23f) 24%, transparent) !important;
+}
+.st-hud__score-name.st-hud__score-cell--winner {
+  box-shadow: 3px 0 0 var(--st-victory-color, var(--gold)) inset;
+  font-weight: 800;
+}
+.st-hud__overlay-panel--victory .st-hud__overlay-btns { width: 100%; }
+.st-hud__overlay-panel--victory .st-hud__restart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-height: 44px;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 0 0 3px rgba(4, 4, 6, .5),
+    inset 0 1px rgba(255, 234, 181, .16),
+    0 4px 10px rgba(0, 0, 0, .36);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.st-hud__overlay-panel--victory .st-hud__restart > .st-ui-glyph {
+  width: 31px;
+  height: 31px;
+  border-color: rgba(236, 187, 91, .58);
+  border-radius: 50%;
+  color: #e9b953;
+  background: radial-gradient(circle at 42% 35%, rgba(255, 231, 166, .16), rgba(14, 11, 12, .96) 68%);
+  box-shadow: inset 0 0 0 2px rgba(3, 3, 5, .58), 0 2px 5px rgba(0, 0, 0, .52);
+}
+.st-hud__overlay-panel--victory .st-hud__restart > .st-ui-glyph > .st-ui-icon {
+  width: 19px;
+  height: 19px;
+}
+.st-hud__victory-action-label { white-space: nowrap; }
+.st-hud__victory-primary {
+  border: 1px solid color-mix(in srgb, var(--st-victory-color, #ffd23f) 74%, #fff 12%);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--st-victory-color, #ffd23f) 78%, #fff 8%),
+    color-mix(in srgb, var(--st-victory-color, #ffd23f) 72%, #000 22%));
+  color: #fff5d7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .82);
+}
+@keyframes st-hud-victory-arrive {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes st-hud-victory-float {
+  50% { transform: translateY(-4px); }
+}
+
+/* ---- Turn actions + Store ---- */
+.st-hud__store-buy {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 78px;
+  padding: 5px 10px;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: rgba(255, 210, 63, 0.12);
+  color: var(--text-gold);
+  font-family: var(--font-mono);
+  transition: background 120ms ease;
+}
+.st-hud__store-buy:hover { background: rgba(255, 210, 63, 0.26); }
+
+/* Round indicator (side panel) — "Round N of M". */
+.st-hud__round {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--text-gold);
+  text-transform: uppercase;
+  text-align: center;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.18);
+}
+.st-hud__round--hidden { display: none; }
+
+.st-hud__verified-deployment {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid rgba(91, 190, 255, 0.34);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(34, 79, 112, 0.28), rgba(15, 18, 32, 0.78));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.st-hud__verified-deployment[hidden] { display: none; }
+.st-hud__verified-title {
+  color: #8dd6ff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.st-hud__verified-budget { color: var(--text); }
+.st-hud__verified-deadline { color: var(--gold); }
+.st-hud__verified-state { color: var(--text-dim); }
+.st-hud__field-order {
+  color: #c5f0c4;
+  font-weight: 700;
+}
+.st-hud__field-order[hidden] { display: none; }
+.st-hud__verified-retry {
+  min-height: 36px;
+  margin-top: 3px;
+  border: 1px solid rgba(141, 214, 255, 0.62);
+  border-radius: 4px;
+  background: rgba(63, 120, 184, 0.22);
+  color: #bfe8ff;
+  font: 700 10px var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.st-hud__verified-retry[hidden] { display: none; }
+.st-hud__verified-expiry {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 8, 16, 0.84);
+  backdrop-filter: blur(5px);
+}
+.st-hud__verified-expiry[hidden] { display: none; }
+.st-hud__verified-expiry-panel {
+  position: relative;
+  display: block;
+  width: min(520px, calc(100% - 24px));
+  aspect-ratio: 1559 / 1009;
+  box-sizing: border-box;
+  padding: 5.3% 8.7% 6.8%;
+  border: 0;
+  border-radius: 18px;
+  background-image: var(--st-first-salvo-frame);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  box-shadow: none;
+  color: var(--text);
+  overflow: hidden;
+}
+.st-hud__verified-expiry-panel h2 {
+  position: absolute;
+  top: 4%;
+  left: 25%;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 50%;
+  height: 10%;
+  margin: 0;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.st-hud__verified-expiry-panel p {
+  position: absolute;
+  top: 27%;
+  left: 15%;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 70%;
+  height: 38%;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 16px;
+  text-align: center;
+}
+.st-hud__verified-expiry-actions {
+  position: absolute;
+  top: 73%;
+  left: 10%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 80%;
+  height: 18%;
+  margin: 0;
+}
+.st-hud__verified-expiry-actions button {
+  min-height: 0;
+  border: 1px solid rgba(255, 210, 63, 0.48);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(78, 54, 36, .72), rgba(13, 11, 14, .94));
+  color: var(--text);
+  font: 700 11px var(--font-display);
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+.st-hud__terminal-payoff-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+#app.is-compact .st-hud__verified-expiry-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (pointer: coarse) {
+  .st-hud__verified-expiry { padding: 0; }
+  .st-hud__verified-expiry-panel {
+    width: 650px;
+    max-width: none;
+  }
+  .st-hud__verified-expiry-panel h2 { font-size: 25px; }
+  .st-hud__verified-expiry-panel p { font-size: 19px; }
+  .st-hud__verified-expiry-actions button { min-height: 91px; font-size: 17px; }
+}
+
+/* Final scoreboard grid inside the GAME_OVER panel. */
+.st-hud__score {
+  display: grid;
+  grid-template-columns: 1fr repeat(calc(var(--score-cols, 3) - 1), auto);
+  gap: 4px 14px;
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__score-th {
+  font-family: var(--font-display);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 210, 63, 0.18);
+}
+.st-hud__score-name { text-align: left; }
+.st-hud__score-num { text-align: right; font-family: var(--font-mono); }
+
+/* ROUND_OVER between-rounds shop. */
+.st-hud__roundshop {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 210, 63, 0.2);
+  border-radius: 6px;
+  background: rgba(12, 7, 22, 0.5);
+}
+.st-hud__roundshop-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.st-hud__roundshop-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-gold);
+}
+.st-hud__roundshop-sel {
+  pointer-events: auto;
+  background: rgba(12, 7, 22, 0.8);
+  color: var(--text);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: var(--font-sans);
+}
+.st-hud__roundshop-credits {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--text-gold);
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__roundshop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+@media (pointer: fine) and (max-width: 1000px),
+  (pointer: fine) and (max-height: 600px) {
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+    .st-hud__victory-title { margin-bottom: 6px; }
+  .st-hud__victory-eyebrow,
+  .st-hud__victory-status,
+  .st-hud__victory-score-label,
+  .st-hud__overlay-panel--victory .st-hud__score,
+  .st-hud__overlay-panel--victory .st-hud__score > *,
+  .st-hud__overlay-panel--victory .st-hud__restart {
+    font-size: 15px;
+  }
+}
+@media (pointer: coarse) {
+  .st-hud__overlay-panel--victory {
+    width: 1080px;
+    max-height: none;
+    padding: 52px 54px 38px;
+  }
+  .st-hud__victory-eyebrow,
+  .st-hud__victory-status,
+  .st-hud__victory-score-label { font-size: 22px; }
+  .st-hud__victory-title { font-size: 42px; }
+  .st-hud__overlay-panel--victory .st-hud__score,
+  .st-hud__overlay-panel--victory .st-hud__score > * { font-size: 22px; }
+  .st-hud__overlay-panel--victory .st-hud__restart { min-height: 91px; font-size: 22px; }
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden])) {
+    display: grid;
+    grid-template-rows: auto 91px auto auto minmax(0, 1fr) 91px;
+    align-content: stretch;
+    gap: 4px;
+    padding: 7px 22px;
+  }
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+    .st-hud__victory-progression-handoff {
+    grid-template-columns: minmax(0, 1fr) 120px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0;
+    font-size: 22px;
+    line-height: 1.1;
+  }
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+    .st-hud__victory-progression-sign-in {
+    width: 120px;
+    min-width: 120px;
+    height: 91px;
+    min-height: 91px;
+    padding: 0 10px;
+    font-size: 22px;
+  }
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+    .st-hud__victory-title {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.05;
+  }
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+    .st-hud__score {
+    margin: 0;
+  }
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+    .st-hud__score > * {
+    padding-block: 2px;
+  }
+}
+
+/* The between-round shop is the same physical quartermaster surface as Armory,
+ * not a legacy Store card stacked on top of it. Live commerce remains DOM. */
+.st-hud__overlay-panel--round-shop {
+  position: relative;
+  box-sizing: border-box;
+  width: min(1000px, calc(100vw - 24px), calc((100vh - 18px) * 1.75));
+  aspect-ratio: 1.75;
+  max-height: calc(100vh - 18px);
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: var(--st-armory-frame) center / 100% 100% no-repeat;
+  box-shadow: none;
+  overflow: hidden;
+}
+.st-hud__overlay-panel--round-shop > .st-hud__overlay-text {
+  position: absolute;
+  top: 5%;
+  left: 29%;
+  display: grid;
+  place-items: center;
+  width: 42%;
+  height: 9%;
+  margin: 0;
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 1.08;
+  letter-spacing: 1.4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.st-hud__overlay-panel--round-shop > .st-hud__score {
+  position: absolute;
+  top: 17%;
+  left: 8%;
+  align-content: start;
+  box-sizing: border-box;
+  width: 51%;
+  height: 25%;
+  margin: 0;
+  padding: 3.5% 3%;
+  overflow: hidden;
+}
+.st-hud__overlay-panel--round-shop > .st-hud__roundshop {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-head {
+  position: absolute;
+  top: 17%;
+  left: 62%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(44px, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+  box-sizing: border-box;
+  width: 30%;
+  height: 25%;
+  margin: 0;
+  padding: 4% 5%;
+  overflow: hidden;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-title {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-credits {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  white-space: nowrap;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-select-well {
+  position: relative;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-select-well > .st-ui-icon {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  color: #f1cb70;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-sel {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding-inline: 13px 42px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-grid {
+  position: absolute;
+  top: 49%;
+  left: 8%;
+  box-sizing: border-box;
+  width: 84%;
+  height: 168px;
+  padding: 5px 15px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 48px;
+  gap: 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(211, 162, 75, .58) rgba(8, 8, 11, .72);
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-buy {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr) auto;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  column-gap: 8px;
+  box-sizing: border-box;
+  height: 48px;
+  min-width: 0;
+  min-height: 0;
+  padding: 3px 10px;
+  border-color: rgba(205, 155, 74, .34);
+  background: linear-gradient(180deg, rgba(43, 35, 31, .76), rgba(11, 10, 13, .92));
+  line-height: 1.05;
+  text-align: left;
+  overflow: hidden;
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-buy > .st-weapon-icon,
+.st-hud__overlay-panel--round-shop .st-hud__store-buy > .st-ui-glyph {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  place-self: center;
+  width: 19px;
+  height: 19px;
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-item-name {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-price,
+.st-hud__overlay-panel--round-shop .st-hud__store-bundle {
+  grid-column: 3;
+  font-size: 10px;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-price { grid-row: 1; align-self: end; }
+.st-hud__overlay-panel--round-shop .st-hud__store-bundle { grid-row: 2; align-self: start; }
+.st-hud__overlay-panel--round-shop > .st-hud__restart {
+  position: absolute;
+  top: 84%;
+  left: 31%;
+  display: grid;
+  grid-template-columns: 32px auto;
+  place-content: center;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 38%;
+  height: 8%;
+  min-height: 0;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid rgba(224, 173, 76, .62);
+  background: linear-gradient(180deg, rgba(117, 65, 28, .92), rgba(49, 25, 17, .98));
+  color: var(--text-gold);
+  text-transform: uppercase;
+}
+.st-hud__overlay-panel--round-shop > .st-hud__restart > .st-ui-glyph {
+  width: 30px;
+  height: 30px;
+}
+@media (pointer: coarse) {
+  .st-hud__overlay-panel--round-shop {
+    width: 1000px;
+    max-height: none;
+    padding: 0;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__overlay-text {
+    font-size: 22px;
+    line-height: 1.12;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score {
+    font-size: 17px;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-head {
+    grid-template-rows: 36px 91px;
+    gap: 4px 12px;
+    padding-block: 4px;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-title,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-sel,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-credits { font-size: 18px; }
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-title { white-space: nowrap; }
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-sel,
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy,
+  .st-hud__overlay-panel--round-shop > .st-hud__restart {
+    min-height: 91px;
+    font-size: 18px;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy { height: 91px; }
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-grid {
+    top: 47%;
+    height: 199px;
+    grid-auto-rows: 91px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__restart {
+    top: 84%;
+    height: 16%;
+    min-height: 91px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__restart {
+    isolation: isolate;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__restart::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: 18px 0;
+    border: 1px solid rgba(224, 173, 76, .62);
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(117, 65, 28, .92), rgba(49, 25, 17, .98));
+  }
+}
+@keyframes st-hud-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes st-hud-turn-handoff {
+  0% {
+    filter: brightness(1.65);
+    box-shadow: 0 0 18px rgba(255, 210, 63, 0.24);
+  }
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(255, 210, 63, 0);
+  }
+}
+@keyframes st-hud-roster-handoff {
+  0% { filter: brightness(1.55); }
+  100% { filter: brightness(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-hud__overlay-panel--victory,
+  .st-hud__victory-tank-frame { animation: none; }
+  .st-hud__player--active { animation: none; }
+  .st-hud__player--handoff { animation: none; }
+  .st-hud__player--hit::after { animation: none; opacity: 0; }
+  .st-hud__bar-fill,
+  .st-hud__restart { transition: none; }
+}
+
+/* ===== Coarse-pointer (touch) overrides ================================ */
+/* Enlarge interactive targets to ≥44px and hide the keyboard legend. */
+@media (pointer: coarse) {
+  #hud .st-ui-glyph { width: 31px; height: 31px; }
+  #hud .st-ui-glyph > .st-ui-icon { width: 25px; height: 25px; }
+  .st-hud__conn { top: 176px; }
+  .st-hud__toast { top: 214px; }
+  .st-hud__turnwatch { top: 252px; }
+  /* The fixed stage scales to ~0.488 on Pixel 5 landscape. Match the drawer
+     toggle's authored 91px floor so weapon choices remain >=44 rendered px. */
+  .st-hud__store-buy { min-height: 44px; }
+  .st-hud__restart    { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
+  #hud .st-hud__menu  { display: none; }
+  /* The supported Pixel 5 landscape viewport zooms the fixed stage to 0.488x,
+     so 91 logical px preserves a >=44 CSS-pixel hit target after scaling. */
+  .st-hud__turnwatch-leave { min-height: 44px; padding: 0 14px; }
+}
+
+/* Touch uses the same semantic command console. */
+/* One command surface: identity first, tactics second, commitment last. */
+/* Shot progress replaces the owner row during submit, flight, and resolution. */
+
+/* ===== Battle command surface ==========================================
+ * The protected rail is the active-turn workspace, not a second side panel.
+ * Commander context and the nested Fire Control surface stay in one scan path
+ * from left to right.  The terminal action belongs to Fire Control; it must
+ * never reserve an empty outer grid track. */
+/* Fine-pointer Commander is a genuine dossier, not a small card stranded in
+   a tall rail column.  The portrait consumes the available identity band;
+   mobility remains pinned to the operational edge. */
+  @media (pointer: coarse) {
+  #hud .st-hud__menu {
+    display: flex;
+    min-height: var(--st-rail-touch-target, var(--st-deployment-choice-target, 91px));
+  }
+
+  /* At the narrow Pixel-landscape envelope, keep only information that changes
+     shot decisions. Redundant headings remain available through the region,
+     group, and SVG accessible names while the live values get real space. */
+}
+/* The completed firing surface has one working row.  A collapsed Armory is
+   represented by its trigger in the weapon bay; it must not reserve a blank
+   second row.  The live guide rides with Wind instead of becoming a fourth card. */
+/* Consolidated Fire Control: one equal-height live decision surface, not a
+   collection of decorative cards. */
+/* The terminal earns its area in the decision phase: live phase/ownership at
+   the top, the deterministic shot readback in the middle, and the one commit
+   action anchored at the bottom.  Fire is important, but it is not a blank
+   red billboard. */
+.st-hud__match-drawer-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid rgba(205, 155, 72, 0.72);
+  border-radius: 7px;
+  color: #f0c96d;
+  background: linear-gradient(180deg, rgba(70, 57, 43, .94), rgba(18, 16, 18, .99));
+  box-shadow: inset 0 0 0 2px rgba(5, 5, 7, .7), inset 0 1px rgba(255, 229, 169, .14), 0 5px 14px rgba(0, 0, 0, .48);
+  font: 700 var(--st-command-readability-size, 11px)/1 var(--font-display);
+  letter-spacing: 0.8px;
+  cursor: pointer;
+}
+.st-hud__match-drawer-toggle > .st-ui-icon,
+.st-hud__match-drawer-toggle > .st-ui-glyph { display: none; }
+.st-hud__match-drawer-toggle::before {
+  content: none;
+}
+.st-hud__match-drawer-toggle:hover { border-color: var(--gold); color: var(--gold); }
+.st-hud__match-drawer-toggle:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+@media (pointer: coarse) {
+  /* Touch spends the constrained rail height on live inputs, not a duplicate
+     tank portrait. Commander identity, health, fuel and movement remain. */
+
+  /* This is the terminal compact topology.  Keep it last: earlier cockpit
+     rules used the third track for a detached commitment card, whereas the
+     terminal is now Fire Control's third cell. */
+}
+
+/* The 200px protected rail has exactly one coarse touch row.  Each numerical
+   adjustment keeps its two real actions beside its live value rather than
+   stacking two 44px physical targets vertically. */
+
+/* Final fine-pointer instrument topology: keep these after the compact touch
+   overrides so the equal-height desktop spine is never reopened into cards. */
+
+/* Preferences live at the terminal edge rather than repeating a live Wind-row action. */
+
+/* Fine-pointer owns the complete recoil-safe rail: the 198px protected band
+   leaves a 1176 x 180 command spine after the rail frame and its 12px gutters.
+   These authored columns are a continuous instrument panel; separators carry
+   grouping so the live controls do not read as six floating cards. */
+
+/* Gunner's Console -------------------------------------------------------
+ * One manufactured chassis, three assemblies. The outer frame owns the
+ * material and silhouette; the children are coordinated cutouts, not cards. */
+
+/* Approved ornamental field-console reference ---------------------------
+ * The generated plate supplies only material, bevels, fasteners and recesses.
+ * Every label, value, gauge and control below remains live DOM/SVG. */
+
+/* Reference-aligned desktop geometry ------------------------------------
+ * These coordinates are normalized from the approved 1897x340 chassis art.
+ * The raster and the live DOM therefore share one layout system instead of
+ * painting an independent grid over the authored wells. */
+@media (pointer: fine) and (min-width: 1001px) and (min-height: 601px) {
+
+  /* Final reference pass: the chassis recesses, rather than legacy HUD accents,
+   * own the visual hierarchy. All live values remain DOM/SVG. */
+}
+
+/* Coarse input uses its own two-row instrument deck. The desktop chassis has
+ * circular wells in positions that cannot coexist with 91px touch targets, so
+ * touch keeps the material language but never paints those desktop cutouts. */
+@media (pointer: coarse),
+  (pointer: fine) and (max-width: 1000px),
+  (pointer: fine) and (max-height: 600px) {
+
+  /* These rules intentionally close the compact cascade: one upper weapon
+   * recess, one lower Armory recess, and a stacked fuel readout. */
+}
+
+/* A compact fine-pointer window uses the same authored two-row topology as
+ * touch, but its smaller pointer targets leave enough width for a substantial
+ * fuel capsule. Keep every rocker child in normal grid flow. */
+
+/* Final compact chassis ownership. The 1176x180 deck is exactly two authored
+ * rows: an 89px readout row and a 91px action row. Every live descendant is
+ * placed in one raster recess; no desktop absolute coordinates leak into this
+ * topology. */
+@media (pointer: coarse),
+  (pointer: fine) and (max-width: 1000px),
+  (pointer: fine) and (max-height: 600px) {
+
+  /* Close higher-specificity legacy compact placement that otherwise creates
+   * implicit grid tracks and squeezes the Commander name beside its HP badge. */
+}
+
+/* Compact chassis, final asset-aligned map. The source plate is 1897 x 338;
+ * at 1176px wide its undistorted height is 210px. The protected battlefield
+ * boundary leaves 198px, so the authored shell is cropped only by that bounded
+ * 6% and every live owner is registered to the same map. */
+
+/* Two local preferences do not earn a full-height portrait dialog. Keep the
+ * authored settings plate, but shrink-wrap its live controls so every framed
+ * recess contains a purpose instead of decorative vacancy. */
+
+/* The selected weapon is a summary, not a second scrolling catalog. Its live
+ * facts fit the upper Armory viewport at every supported scale. */
+
+.st-hud__command-menu-panel > .st-hud__overlay-text {
+  font-size: clamp(18px, 2.2vh, 23px);
+  letter-spacing: 1.6px;
+}
+
+.st-hud__command-menu-panel > .st-hud__command-menu-exit {
+  align-self: center;
+  height: 64%;
+}
+
+.st-hud__command-menu-panel > .st-hud__command-menu-exit .st-hud__restart {
+  display: grid;
+  place-items: center;
+  padding: 0 24px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* The selector viewport is a machined recess, not a teaser carousel. Size its
+ * implicit rows from the viewport so opening Armory always reveals whole
+ * weapon tiles. Additional weapons remain vertically scrollable. */
+/* Authored frames own the visible silhouette. A second generic card or a
+ * poster-sized shadow behind transparent corners makes every modal read as a
+ * pasted rectangle, so all generated overlay surfaces share one restrained
+ * drop shadow and no fallback paint layer. */
+.st-hud__command-menu-panel,
+.st-hud__verified-expiry-panel,
+.st-hud__overlay-panel--round-shop,
+.st-hud__overlay-panel--victory {
+  background-color: transparent;
+  box-shadow: none;
+}
+.st-hud__verified-expiry-panel {
+  background-image: var(--st-first-salvo-frame);
+}
+.st-hud__overlay-panel--victory {
+  background-image: var(--st-victory-frame);
+}
+
+/* Generated modal plates have a real engraved header. Register the live title
+ * in that header and explicitly retain the content/action rows below it. */
+.st-hud__command-menu-panel {
+  position: relative;
+}
+.st-hud__command-menu-panel > .st-hud__overlay-text {
+  position: absolute;
+  grid-row: auto;
+  top: 5%;
+  left: 25%;
+  display: grid;
+  place-items: center;
+  width: 50%;
+  height: 10%;
+}
+.st-hud__command-menu-panel > .st-hud__overlay-btns { grid-row: 2; }
+.st-hud__command-menu-panel > .st-hud__command-menu-exit { grid-row: 3; }
+.st-hud__command-menu-panel > .st-hud__command-menu-exit {
+  border-top: 1px solid rgba(205, 155, 74, .28);
+}
+.st-hud__overlay-panel--victory .st-hud__victory-hero { position: static; }
+.st-hud__overlay-panel--victory .st-hud__victory-eyebrow {
+  position: absolute;
+  top: 3%;
+  left: 29%;
+  display: grid;
+  place-items: center;
+  width: 42%;
+  height: 9%;
+  text-align: center;
+  white-space: nowrap;
+}
+.st-hud__overlay-panel--victory .st-hud__victory-tank-frame { margin-top: auto; }
+@media (pointer: fine) and (min-width: 1001px) and (min-height: 601px) {
+
+  /* Reference registration closeout. The chassis raster already owns every
+   * bevel and recess; these coordinates register the live DOM to those wells
+   * instead of letting earlier grid-era dimensions spill across the metal. */
+}
+
+@media (pointer: coarse) {
+  /* One coarse map owns readable identity, weapon telemetry, and semantic
+     glyph sizing. These dimensions are logical stage pixels and therefore
+     compensate for the native Pixel landscape scale. */
+}
+
+/* The compact chassis keeps the instrument name, live face, and readout in
+ * separate authored bands. The wide SVG viewport needs its actual arc enlarged
+ * inside the face; otherwise preserveAspectRatio letterboxes the 100x100 dial
+ * into a tiny decorative mark instead of a readable field instrument. */
+@media (pointer: coarse),
+  (pointer: fine) and (max-width: 1000px),
+  (pointer: fine) and (max-height: 600px) {
+@media (pointer: fine) and (max-width: 1000px),
+  (pointer: fine) and (max-height: 600px) {
+  .st-hud__verified-expiry-actions button { font-size: 16px; }
+}
+@media (pointer: coarse) {
+  .st-hud__verified-expiry-panel p,
+  .st-hud__verified-expiry-actions button { font-size: 22px; }
+}
+}
+
+/* Interaction-state closeout. Earlier rules accidentally supplied the
+ * multi-shadow --ui-focus token as an outline color, so Chromium discarded the
+ * declaration and keyboard focus disappeared. Keep the active state inside the
+ * authored recess: a brass inner keyline plus a restrained warm halo, shared by
+ * the field console and every modal control. */
+#hud button:focus-visible,
+#modal-layer button:focus-visible,
+#modal-layer [role="switch"]:focus-visible,
+#game-overlay button:focus-visible {
+  outline: var(--st-focus-ring-size, 2px) solid #ffd23f !important;
+  outline-offset: calc(-1 * var(--st-focus-ring-size, 2px)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 185, .26),
+    0 0 calc(var(--st-focus-ring-size, 2px) * 3) rgba(255, 174, 45, .36) !important;
+}
+
+/* One authored interaction language -------------------------------------------------
+ * Modals are parts of the same field console, not separate web apps wearing metal
+ * wallpaper. Controls therefore share recessed blackened-steel faces, a restrained
+ * brass hover lift, and state lamps that illuminate only the information that changed. */
+
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(63, 53, 48, .88), rgba(13, 12, 15, .97)),
+    var(--st-console-texture) center / cover;
+}
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart::before {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(218, 166, 79, .54);
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 35%, rgba(255, 226, 157, .18), rgba(16, 13, 14, .96) 68%);
+  color: #e6b95d;
+  font: 700 19px/1 var(--font-display);
+  box-shadow: inset 0 0 0 2px rgba(3, 3, 5, .58), 0 2px 5px rgba(0, 0, 0, .52);
+}
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(1)::before { content: '\25B6'; }
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(2)::before { content: '\2699'; }
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:nth-child(3)::before { content: '\21BB'; }
+.st-hud__command-menu-panel > .st-hud__overlay-btns > .st-hud__restart:hover:not(:disabled) {
+  border-color: rgba(240, 190, 92, .72);
+  background:
+    linear-gradient(180deg, rgba(76, 56, 42, .9), rgba(17, 13, 16, .97)),
+    var(--st-console-texture) center / cover;
+  box-shadow: inset 0 1px rgba(255, 231, 174, .15), 0 0 9px rgba(204, 135, 44, .16);
+}
+
+/* Commerce and session-expiry states belong to the same physical field
+   console as the live controls.  Keep their meaning in DOM text, while the
+   non-semantic plate texture and inset hardware treatment prevent either
+   surface from falling back to a generic application dialog. */
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-sel {
+  border: 1px solid rgba(194, 145, 66, .62);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(37, 31, 30, .94), rgba(8, 8, 11, .98)),
+    var(--st-console-texture) center / cover;
+  color: #ead6a8;
+  box-shadow:
+    inset 0 0 0 2px rgba(2, 2, 4, .62),
+    inset 0 1px rgba(255, 229, 170, .12);
+}
+.st-hud__overlay-panel--round-shop .st-hud__roundshop-sel:focus-visible {
+  outline: 2px solid #f1c85f;
+  outline-offset: -4px;
+  box-shadow:
+    inset 0 0 0 2px rgba(2, 2, 4, .72),
+    inset 0 1px rgba(255, 236, 184, .18),
+    0 0 12px rgba(239, 177, 55, .28);
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-buy {
+  justify-content: center;
+  border-color: rgba(194, 145, 66, .48);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(48, 39, 34, .91), rgba(9, 9, 12, .98)),
+    var(--st-console-texture) center / cover;
+  color: #ecd7a7;
+  font-family: var(--font-display);
+  font-weight: 760;
+  letter-spacing: .35px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .9);
+  box-shadow:
+    inset 0 0 0 2px rgba(3, 3, 5, .55),
+    inset 0 1px rgba(255, 231, 178, .1),
+    0 2px 4px rgba(0, 0, 0, .34);
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-buy:focus-visible {
+  outline: 2px solid #f1c85f;
+  outline-offset: -4px;
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-buy:disabled {
+  cursor: not-allowed;
+  filter: saturate(.68);
+  opacity: .5;
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-buy:hover:not(:disabled) {
+  border-color: rgba(239, 184, 82, .78);
+  background:
+    linear-gradient(180deg, rgba(73, 51, 34, .94), rgba(14, 11, 13, .98)),
+    var(--st-console-texture) center / cover;
+  box-shadow:
+    inset 0 1px rgba(255, 232, 174, .16),
+    0 0 9px rgba(213, 143, 42, .2);
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-price {
+  color: #f3c45f;
+  font-family: var(--font-mono);
+  letter-spacing: .2px;
+}
+.st-hud__overlay-panel--round-shop .st-hud__store-bundle {
+  color: #aa9a7d;
+  font-family: var(--font-mono);
+}
+.st-hud__overlay-panel--round-shop > .st-hud__restart {
+  border-color: rgba(246, 180, 63, .72);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(160, 54, 28, .95), rgba(79, 18, 20, .98)),
+    var(--st-console-texture) center / cover;
+  color: #ffe8b1;
+  box-shadow:
+    inset 0 1px rgba(255, 229, 166, .24),
+    inset 0 0 0 3px rgba(56, 13, 13, .58),
+    inset 0 -3px rgba(53, 7, 10, .62),
+    0 0 10px rgba(218, 104, 32, .18),
+    0 3px 5px rgba(0, 0, 0, .46);
+}
+.st-hud__overlay-panel--round-shop > .st-hud__restart > .st-ui-glyph {
+  border: 1px solid rgba(246, 199, 106, .52);
+  border-radius: 3px;
+  background: rgba(23, 14, 14, .66);
+  color: #ffe5a2;
+  box-shadow: inset 0 0 0 2px rgba(4, 4, 6, .55);
+}
+.st-hud__overlay-panel--round-shop > .st-hud__restart::before {
+  display: none;
+}
+
+/* The compact shop is still a purchasing surface, not a scaled-down report.
+ * Keep every decision-bearing line at the same deployed readability floor as
+ * the live command console while preserving the authored wells. */
+@media (pointer: fine) and (max-width: 1000px),
+  (pointer: fine) and (max-height: 600px) {
+  .st-hud__overlay-panel--round-shop > .st-hud__score,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-title,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-credits,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-sel,
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy,
+  .st-hud__overlay-panel--round-shop .st-hud__store-price,
+  .st-hud__overlay-panel--round-shop .st-hud__store-bundle,
+  .st-hud__overlay-panel--round-shop > .st-hud__restart {
+    font-size: 14px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score {
+    column-gap: 7px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score > * {
+    min-width: 0;
+    font-size: 14px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score > .st-hud__score-name {
+    overflow-wrap: anywhere;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy {
+    padding-block: 1px;
+    line-height: 1;
+  }
+}
+@media (pointer: coarse) {
+  .st-hud__overlay-panel--round-shop > .st-hud__score,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-title,
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-credits {
+    font-size: 18px;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__roundshop-sel,
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy,
+  .st-hud__overlay-panel--round-shop .st-hud__store-price,
+  .st-hud__overlay-panel--round-shop .st-hud__store-bundle,
+  .st-hud__overlay-panel--round-shop > .st-hud__restart {
+    font-size: 22px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score {
+    column-gap: 8px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score > * {
+    min-width: 0;
+    font-size: 22px;
+  }
+  .st-hud__overlay-panel--round-shop > .st-hud__score > .st-hud__score-name {
+    overflow-wrap: anywhere;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy {
+    padding-block: 2px;
+    line-height: 1;
+  }
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy > .st-weapon-icon,
+  .st-hud__overlay-panel--round-shop .st-hud__store-buy > .st-ui-glyph {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.st-hud__verified-expiry-panel p {
+  color: #e6d6b5;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .88);
+}
+.st-hud__verified-expiry-actions button {
+  border-color: rgba(198, 148, 68, .58);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(53, 43, 37, .94), rgba(9, 9, 12, .98)),
+    var(--st-console-texture) center / cover;
+  color: #ead6a9;
+  font-family: var(--font-display);
+  font-weight: 760;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .9);
+  box-shadow:
+    inset 0 0 0 2px rgba(3, 3, 5, .58),
+    inset 0 1px rgba(255, 232, 179, .12),
+    0 2px 5px rgba(0, 0, 0, .42);
+}
+.st-hud__verified-expiry-actions button:first-child {
+  border-color: rgba(245, 178, 63, .7);
+  background:
+    linear-gradient(180deg, rgba(151, 53, 28, .94), rgba(69, 17, 20, .98)),
+    var(--st-console-texture) center / cover;
+  color: #ffe6ad;
+}
+.st-hud__verified-expiry-actions button:hover:not(:disabled) {
+  border-color: rgba(248, 193, 85, .86);
+  filter: brightness(1.08);
+}
+
+/* Once a shot commits, the action leaves the accessibility tree and the one
+   truthful outcome display takes over the complete Fire recess.  A decorative
+   shutter here looked like an unused control and recreated the dead bay the
+   authored chassis was meant to eliminate. */
+
+/* The approved Commander recess gives the vehicle and commander identity the
+   hierarchy.  "Active turn" repeated information already owned by the Match
+   marker, and the tiny text-arrow treatment, both made this bay read like a
+   conventional HUD layered over the plate rather than fitted hardware. */
+#hud .st-hud__name[data-name-fit="compact"] {
+  padding-block: 2px;
+}
+
+@media (pointer: fine) and (min-width: 1001px) and (min-height: 601px) {
+  #hud .st-hud__name[data-name-fit="compact"] {
+    font-size: 10.5px;
+    line-height: 1.08;
+    letter-spacing: -.15px;
+  }
+}
+
+@media (pointer: fine) and (max-width: 1000px),
+       (pointer: fine) and (max-height: 600px) {
+  #hud .st-hud__name[data-name-fit="compact"] {
+    font-size: 15px;
+    line-height: 1.05;
+    letter-spacing: -.35px;
+  }
+}
+
+@media (pointer: coarse) {
+  #hud .st-hud__name[data-name-fit="compact"] {
+    font-size: 22.55px;
+    line-height: 22px;
+    letter-spacing: -1px;
+    min-height: 50px;
+  }
+}
+
+/* Ultrawide reference silhouette ---------------------------------------
+ * The approved 2048 treatment carries the physical chassis almost edge to
+ * edge, while the live 1176px deck remains registered to the untouched
+ * central raster recesses.  The additional width is therefore authored as
+ * non-semantic side wings instead of stretching gauges, type, or controls. */
+
+@media (pointer: fine) and (min-aspect-ratio: 347/150) {
+  #app {
+    overflow: visible;
+  }
+}
+
+/* Final live-overlay registration --------------------------------------
+ * Generated plates define the hardware safe areas. These rules seat the live
+ * DOM/SVG paint inside those areas instead of letting it merely overlap the
+ * artwork while remaining technically inside its outer owner. */
+@media (pointer: fine) and (min-width: 1001px) and (min-height: 601px) {
+
+  .st-hud__command-menu-panel > .st-hud__overlay-text {
+    font-size: clamp(18px, 2.2vh, 23px);
+    letter-spacing: 1.6px;
+  }
+
+  .st-hud__command-menu-panel > .st-hud__command-menu-exit {
+    align-self: center;
+    height: 68%;
+  }
+
+  .st-hud__command-menu-panel > .st-hud__command-menu-exit .st-hud__restart {
+    display: grid;
+    place-items: center;
+    padding: 0 24px;
+    font-size: 18px;
+    line-height: 1;
+  }
+}
+
+/* Armory switch bank ---------------------------------------------------
+ * The authored plate supplies the outside silhouette; live controls must
+ * still read as retained hardware inside it. Weapon selection is therefore
+ * a bank of deep switches, while commerce is a row of replaceable cassettes
+ * with full-height action keys instead of ordinary application cards. */
+
+/* Live instrument glass ------------------------------------------------
+ * The chassis image owns bezels and bolts, while these layers make the live
+ * SVGs read as illuminated instruments behind glass rather than diagrams
+ * hovering over the artwork. Values use their own shallow engraved windows. */
+
+/* Pixel/touch Fire Control is registered to the integrated compact-v3 chassis.
+ * Transparent hit boxes keep the required physical target size while the
+ * illuminated faces register to the chassis' actual two-up / one-down
+ * recesses. */
+
+/* The supplied ultrawide Armory reference treats the selector as a bank of
+ * retained hardware, not a dense application list. Keep its live typography
+ * and close key at the physical scale of the widened v3 chassis. */
+
+/* The 2048 reference uses the full 1388px physical chassis. Register every
+ * live owner to the v8 recess map; the ordinary 1176px and compact maps remain
+ * independently authored above. */
+
+/* Numerical Fire Control is reduced-motion-safe: its values update as text and
+   controls do not animate between decision states. */

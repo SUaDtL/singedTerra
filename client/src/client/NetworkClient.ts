@@ -16,12 +16,12 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
-import { shouldBufferSeq } from '@shared/net/seqGuard';
 import { postOnceWithRetry } from './retry';
 import { claimCompletedMatch } from './matchClaim';
 import { fastForwardTicks } from './fastForward';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 import { clearSession } from '../lib/sessionDescriptor';
+import { OrderedActionSession } from './OrderedActionSession';
 import { CURRENT_NETWORK_RULESET_VERSION, normalizeNetworkRulesetVersion } from './networkRuleset';
 import { isQuickChatKey, parseQuickChatPayload, type QuickChatKey } from './quickChat';
 
@@ -132,9 +132,11 @@ export class NetworkClient implements GameClient {
   // Sequence ordering buffer for out-of-order Realtime delivery.
   // Supabase Realtime does not guarantee delivery order; events with
   // seq > nextExpectedSeq are held here until the gap fills in.
-  private pendingActions:   Map<number, NetworkAction>;
-  private nextExpectedSeq:  number;
-  private isReplaying:      boolean;
+  private orderedActions:   OrderedActionSession<NetworkAction>;
+  private get pendingActions(): ReadonlyMap<number, NetworkAction> {
+    return this.orderedActions.pendingActions;
+  }
+  private get nextExpectedSeq(): number { return this.orderedActions.nextExpectedSeq; }
   private _isFiring         = false;
   private _gameOverReported = false;
   private _fastForward      = false;   // local view pacing (review #7); never affects the log
@@ -246,9 +248,7 @@ export class NetworkClient implements GameClient {
     this.channel          = null;
     this.roomsChannel     = null;
     this.quickChatChannel = null;
-    this.pendingActions   = new Map();
-    this.nextExpectedSeq  = 0;
-    this.isReplaying      = false;
+    this.orderedActions   = new OrderedActionSession();
 
     // Build the Supabase UUID → engine tank ID mapping from the ordered players
     // array. players[0] → 'p1', players[1] → 'p2', etc. This must match the
@@ -306,7 +306,7 @@ export class NetworkClient implements GameClient {
     const REPLAY_CHUNK_SIZE = 16;
 
     const rows = (existingActions ?? []) as RoomActionRow[];
-    this.isReplaying = true;
+    this.orderedActions.beginReplay();
     await replayInChunks(
       rows,
       (row) => {
@@ -316,10 +316,7 @@ export class NetworkClient implements GameClient {
       REPLAY_CHUNK_SIZE,
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
-    this.isReplaying = false;
-
-    // nextExpectedSeq is now the count of replayed actions.
-    this.nextExpectedSeq = (existingActions ?? []).length;
+    this.orderedActions.finishReplay((existingActions ?? []).length);
 
     // 2. Subscribe to new room_actions rows via Realtime Postgres Changes.
     this.channel = this.supabase
@@ -337,12 +334,11 @@ export class NetworkClient implements GameClient {
           // Drop already-applied rows before buffering to prevent a slow memory
           // leak where stale keys below nextExpectedSeq accumulate indefinitely
           // (flushPendingActions only ever consumes the exact nextExpectedSeq key).
-          if (!shouldBufferSeq(row.seq, this.nextExpectedSeq)) return;
+          if (!this.orderedActions.buffer(row.seq, row.action as NetworkAction)) return;
           // Buffer the incoming action keyed by its seq number.
           // Do not apply immediately — Supabase Realtime does not guarantee
           // delivery order, so seq=6 may arrive before seq=5. Buffer and flush
           // in strict order.
-          this.pendingActions.set(row.seq, row.action as NetworkAction);
           this.flushPendingActions();
           // Diagnostic (obs-008): a healthy stream buffers at most a small transient
           // burst before nextExpectedSeq fills the gap. If the buffer STILL holds more
@@ -350,11 +346,11 @@ export class NetworkClient implements GameClient {
           // and the engine is stalling on the gap — a state the turn-stall watchdog
           // reports to the user but which is otherwise indistinguishable in logs from a
           // legitimately idle opponent.
-          if (this.pendingActions.size > 3) {
+          if (this.orderedActions.pendingSize > 3) {
             console.warn('NetworkClient: pending-action gap — actions buffered behind a missing seq', {
               roomId: this.roomId,
-              expected: this.nextExpectedSeq,
-              buffered: [...this.pendingActions.keys()],
+              expected: this.orderedActions.nextExpectedSeq,
+              buffered: this.orderedActions.pendingSequences,
             });
           }
         }
@@ -500,6 +496,7 @@ export class NetworkClient implements GameClient {
   stop(): void {
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
+    this.orderedActions.dispose();
     if (this.fireWatchdog !== null) {
       clearTimeout(this.fireWatchdog);
       this.fireWatchdog = null;
@@ -767,7 +764,7 @@ export class NetworkClient implements GameClient {
         .from('room_actions')
         .select('*')
         .eq('room_id', this.roomId)
-        .gte('seq', this.nextExpectedSeq)
+        .gte('seq', this.orderedActions.nextExpectedSeq)
         .order('seq', { ascending: true })
         .abortSignal(controller.signal));
     } catch (e) {
@@ -780,13 +777,9 @@ export class NetworkClient implements GameClient {
       console.error('NetworkClient.resyncLog: failed to re-fetch log:', error.message);
       return;
     }
-    for (const row of (data ?? []) as RoomActionRow[]) {
-      // nextExpectedSeq may have advanced between the .gte() fetch and now
-      // (a Realtime event could have been applied in the interim). Guard here
-      // to match the insertion-site policy and prevent stale key accumulation.
-      if (!shouldBufferSeq(row.seq, this.nextExpectedSeq)) continue;
-      this.pendingActions.set(row.seq, row.action as NetworkAction);
-    }
+    if (!this.orderedActions.acceptResync(
+      (data ?? []) as RoomActionRow[],
+    )) return;
     this.flushPendingActions();
   }
 
@@ -1078,7 +1071,7 @@ export class NetworkClient implements GameClient {
         roomId: this.roomId,
         turn: this.engine.getState().turn,
         phase: this.engine.getState().phase,
-        seq: this.nextExpectedSeq,
+        seq: this.orderedActions.nextExpectedSeq,
       });
       // Don't leave the client SILENTLY frozen (reliability-006). The engine is wedged
       // in FIRING/RESOLVING, so flushPendingActions will never drain again and the board
@@ -1109,20 +1102,18 @@ export class NetworkClient implements GameClient {
    * forever and the client would freeze on the scoreboard.
    */
   private flushPendingActions(): void {
-    while (
-      (this.engine.getState().phase === 'PLAYER_TURN' || this.engine.getState().phase === 'ROUND_OVER') &&
-      this.pendingActions.has(this.nextExpectedSeq)
-    ) {
-      const action = this.pendingActions.get(this.nextExpectedSeq)!;
-      this.pendingActions.delete(this.nextExpectedSeq);
-      this.nextExpectedSeq++;
-      this.setFiring(false); // our action (or any) echoed → release the input lock + watchdog
-      this.applyNetworkAction(action);
-      // During initialize() replay there is no RAF loop, so tick the flight to
-      // completion synchronously to return to PLAYER_TURN for the next action.
-      if (this.isReplaying) this.tickToCompletion();
-      this.emitState();
-    }
+    this.orderedActions.drain(
+      () => {
+        const phase = this.engine.getState().phase;
+        return phase === 'PLAYER_TURN' || phase === 'ROUND_OVER';
+      },
+      (action) => {
+        this.setFiring(false);
+        this.applyNetworkAction(action);
+      },
+      () => this.tickToCompletion(),
+      () => this.emitState(),
+    );
   }
 
   private emitState(): void {
@@ -1217,7 +1208,7 @@ export class NetworkClient implements GameClient {
    * winning row is the same action, by determinism).
    */
   private maybeDriveBot(state: GameState): void {
-    if (this.isReplaying) return;                 // history replay drives itself
+    if (this.orderedActions.isReplaying) return;  // history replay drives itself
     if (state.phase !== 'PLAYER_TURN') return;
     if (this.botByTank.size === 0) return;        // no CPU seats in this room
 
