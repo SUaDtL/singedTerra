@@ -126,7 +126,7 @@ if (!process.argv.includes('--policy-only')) {
     'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9',
     'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
     'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
-    'actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128',
+    'actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346',
     'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
     'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
     'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9',
@@ -172,7 +172,7 @@ if (!process.argv.includes('--policy-only')) {
   assert.equal(freshness.match(new RegExp(exactGuardScript.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))?.length, 1);
   assert.equal(publish.match(new RegExp(exactGuardScript.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))?.length, 1);
   assert.match(workflow, /actions\/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d/);
-  assert.match(publish, /actions\/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128/);
+  assert.match(publish, /actions\/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346/);
   const inLockGuard = publish.indexOf('name: Verify source is still current main');
   const deploy = publish.indexOf('id: deployment');
   const provenance = publish.indexOf('name: Verify deployed provenance');
@@ -180,10 +180,10 @@ if (!process.argv.includes('--policy-only')) {
   assert.ok(publish.includes(
     '          node scripts/ci/pagesFreshness.mjs check "$GITHUB_SHA" "$current_sha"\n' +
     '      - id: deployment\n' +
-    '        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0\n',
+    '        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1\n',
   ));
   const deployUses = publish.indexOf(
-    'uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128',
+    'uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346',
   );
   const deployStepStart = publish.lastIndexOf('\n      - ', deployUses);
   const deployStepEnd = publish.indexOf('\n      - ', deployUses);
