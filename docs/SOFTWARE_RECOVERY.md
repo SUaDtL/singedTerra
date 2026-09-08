@@ -16,6 +16,8 @@ The starting tree is PR 445 head `41a0acd`. Physical source sizes are indicators
 4. NetworkClient combines action ordering, transport recovery, room lifecycle/rematch, bot driving, and progression submission.
 5. Renderer/GameEngine require further change-coupling and profile evidence before decomposition; their size alone is insufficient justification.
 
+In the last 100 commits touching client/shared sources at the baseline, Lobby appears 48 times, HUD 31, main 25, and Renderer 14. This supports the ownership order above. `main.ts` is excluded from unit coverage as bootstrap glue, but currently contains verified restoration and session policy; those responsibilities need direct tests as they leave the entry point.
+
 ## Delivery sequence
 
 - [ ] Finish PR 445, exact-head CI, Pages and backend deployment proof.
@@ -50,6 +52,16 @@ The exported `LobbyVerifiedDeploymentState` remains an alias for callers; the co
 ## Dependency/engine decision boundary
 
 A rendering engine cannot fix account/session ownership. Retain Canvas gameplay and inert Pixi presentation during initial recovery. Consider a state-machine library only after an explicit state boundary exists and its transition complexity warrants the dependency. Any proposed physics engine must prove deterministic replay compatibility or include an explicitly reviewed protocol migration. Raise an ADR conflict with the proposed alternative and migration plan, rather than treating the ADR as a veto.
+
+Initial dependency assessment, checked 2026-09-08:
+
+| Candidate | Fit and next evidence |
+| --- | --- |
+| Phaser scenes | Provides lifecycle sections with init/preload/create/update. It could replace client scene orchestration, but adopting it alongside current Canvas/Pixi presentation first introduces another lifecycle owner. Reassess after the match-session boundary exists using one isolated scene prototype. [Official scene documentation](https://docs.phaser.io/phaser/concepts/scenes) |
+| Phaser Arcade/Matter physics | The bundled physics systems are not evidence of parity with this game's per-pixel terrain and canonical replay. No replacement is selected. Require pinned transcript equivalence and a migration-cost estimate before proposing adoption. [Official physics documentation](https://docs.phaser.io/phaser/concepts/physics) |
+| XState | Pure transition functions and invoked actors are relevant to account/mission/session races. After extraction, compare one transition model against the existing tests and evaluate whether it removes more custom lifecycle machinery than it adds. No dependency is installed in this slice. [Transitions](https://stately.ai/docs/transitions), [actors](https://stately.ai/docs/invoke) |
+
+These fit assessments are engineering inferences from the current code and documented capabilities, not completed migration benchmarks.
 
 ## Working rules
 
