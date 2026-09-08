@@ -1,3 +1,4 @@
+import { VerifiedDeploymentSession, type VerifiedDeploymentState as LobbyVerifiedDeploymentState, type VerifiedDeploymentAccountPort } from '../client/VerifiedDeploymentSession';
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
   normalizeBattlefieldWorldId,
@@ -51,10 +52,6 @@ import {
 import { createFieldOrder, type FieldOrder } from '../client/fieldOrder';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import {
-  parseVerifiedDeploymentDescriptor,
-  sameVerifiedDeploymentDescriptor,
-  verifiedDeploymentDeadline,
-  type VerifiedDeploymentDeadline,
   type VerifiedDeploymentDescriptor,
   type VerifiedDeploymentReceipt,
   type VerifiedDeploymentStart,
@@ -276,49 +273,17 @@ type LobbyTab = 'hotseat' | 'online';
 /** Sub-view within the Play Online tab. */
 type OnlineSubView = 'create' | 'join' | 'browse' | 'waiting';
 
-export interface AccountSessionPort {
+export interface AccountSessionPort extends VerifiedDeploymentAccountPort {
   readonly state: AccountState;
   initialize(): Promise<void>;
   submit(mode: AccountMode, credentials: AccountCredentials): Promise<void>;
   signOut(): Promise<void>;
   refresh(): Promise<void>;
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null>;
-  startVerifiedDeployment?(): Promise<VerifiedDeploymentStart | null>;
-  abandonVerifiedDeployment?(sessionId: string): Promise<boolean>;
-  completeVerifiedDeployment?(
-    sessionId: string,
-    transcript: readonly VerifiedHumanFire[],
-  ): Promise<VerifiedDeploymentReceipt | null>;
+
 }
 
-interface LobbyVerifiedDeploymentDetails {
-  readonly descriptor: VerifiedDeploymentDescriptor;
-  readonly transcript: readonly VerifiedHumanFire[];
-  readonly deadline: VerifiedDeploymentDeadline;
-  readonly fieldOrder: FieldOrder | null;
-}
-
-export type LobbyVerifiedDeploymentState =
-  | { readonly status: 'idle' }
-  | ({ readonly status: 'active' | 'completion-pending' } & LobbyVerifiedDeploymentDetails)
-  | ({
-      readonly status: 'retryable';
-      readonly error: 'Verification is pending. Retry before the deployment deadline.';
-    } & LobbyVerifiedDeploymentDetails)
-  | ({
-      readonly status: 'expired';
-      readonly choices: readonly ['continue-casual', 'return-to-battery'];
-    } & LobbyVerifiedDeploymentDetails)
-  | { readonly status: 'verified'; readonly receipt: VerifiedDeploymentReceipt }
-  | { readonly status: 'casual' }
-  | ({
-      readonly status: 'frozen';
-      readonly error: 'Return to the deployment owner account to resume verification.';
-    } & LobbyVerifiedDeploymentDetails)
-  | {
-      readonly status: 'failed';
-      readonly error: 'Verified deployment is unavailable. Try again.';
-    };
+export type { VerifiedDeploymentState as LobbyVerifiedDeploymentState } from '../client/VerifiedDeploymentSession';
 
 type AccountSessionFactory = (
   onChange: (state: AccountState) => void,
@@ -355,13 +320,7 @@ export class Lobby {
   private readonly transport = new LobbyTransport();
   private readonly session: LobbySession;
   private readonly accountSession: AccountSessionPort;
-  private readonly verifiedStorage: VerifiedDeploymentStorage;
-  private verifiedNow = Date.now();
-  private verifiedOwnerId: string | null = null;
-  private verifiedCurrent: LobbyVerifiedDeploymentState = Object.freeze({ status: 'idle' as const });
-  private verifiedAccountIdentity: string | null = null;
-  private verifiedAccountGeneration = 0;
-  private verifiedRecoveryGeneration = 0;
+  private readonly verifiedSession: VerifiedDeploymentSession;
   private verifiedLaunchBusy = false;
   private verifiedAbandonIntent = false;
   private accountPanelOpen = false;
@@ -468,8 +427,9 @@ export class Lobby {
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
-    this.verifiedAccountIdentity = this.authenticatedAccountId();
-    this.verifiedStorage = new VerifiedDeploymentStorage(localStorage, () => this.verifiedNow);
+    this.verifiedSession = new VerifiedDeploymentSession(
+      this.accountSession, (now) => new VerifiedDeploymentStorage(localStorage, now),
+    );
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
     const diagnosticsParams = new URL(window.location.href).searchParams;
@@ -493,19 +453,13 @@ export class Lobby {
     if (this.accountSession.state.status !== 'authenticated') {
       cancelVerifiedCompletionResponseDiagnostic();
     }
-    const accountIdentity = this.authenticatedAccountId();
-    const identityChanged = accountIdentity !== this.verifiedAccountIdentity;
-    if (identityChanged) {
-      cancelVerifiedCompletionResponseDiagnostic();
-      this.verifiedAccountIdentity = accountIdentity;
-      this.verifiedAccountGeneration += 1;
-    }
-    const recoveryGeneration = ++this.verifiedRecoveryGeneration;
+    const identityChanged = this.verifiedSession.syncAccountIdentity(cancelVerifiedCompletionResponseDiagnostic);
+    const recoveryGeneration = this.verifiedSession.advanceRecoveryGeneration();
     const restoreFocus = this.accountPanelOpen;
     const restoreLocalBattleFocus = document.activeElement instanceof HTMLButtonElement
       && this.root.contains(document.activeElement)
       && document.activeElement.textContent === 'Local Battle';
-    this.freezeVerifiedDeploymentForAccountChange();
+    this.verifiedSession.freezeVerifiedDeploymentForAccountChange();
     this.syncOnlineNameFromAccount();
     this.syncDiagnosticsReadiness();
     this.maybeAutorunDiagnostics();
@@ -513,7 +467,7 @@ export class Lobby {
     this.accountAuthenticationChangeCb?.(identityChanged);
     if (restoreFocus) this.focusAccountOverlay();
     else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
-    void this.revalidateFrozenVerifiedDeployment(recoveryGeneration);
+    void this.verifiedSession.revalidateFrozenVerifiedDeployment(recoveryGeneration);
   }
 
   private syncOnlineNameFromAccount(): void {
@@ -907,228 +861,39 @@ export class Lobby {
   }
 
   get verifiedDeployment(): LobbyVerifiedDeploymentState {
-    return this.verifiedCurrent;
+    return this.verifiedSession.verifiedDeployment;
   }
 
   async startVerifiedDeployment(now = Date.now()): Promise<VerifiedDeploymentStart | null> {
-    this.verifiedNow = now;
-    const account = this.accountSession.state;
-    if (account.status !== 'authenticated' || account.busy) return null;
-    if (!this.accountSession.startVerifiedDeployment) return null;
-    const accountId = account.profile.id;
-    const priorDeployment = this.verifiedCurrent;
-    const accountGeneration = this.verifiedAccountGeneration;
-    let started: VerifiedDeploymentStart | null;
-    try {
-      started = await this.accountSession.startVerifiedDeployment();
-    } catch {
-      if (accountGeneration === this.verifiedAccountGeneration) {
-        this.verifiedCurrent = Object.freeze({
-          status: 'failed',
-          error: 'Verified deployment is unavailable. Try again.',
-        });
-      }
-      return null;
-    }
-    if (accountGeneration !== this.verifiedAccountGeneration
-      || this.accountSession.state.status !== 'authenticated'
-      || this.accountSession.state.profile.id !== accountId) return null;
-    const descriptor = parseVerifiedDeploymentDescriptor(started?.descriptor);
-    if (!started || typeof started.resumed !== 'boolean' || !descriptor) {
-      this.verifiedCurrent = Object.freeze({
-        status: 'failed',
-        error: 'Verified deployment is unavailable. Try again.',
-      });
-      return null;
-    }
-    const deadline = verifiedDeploymentDeadline(descriptor.expiresAt, now);
-    if (!deadline.canComplete) {
-      this.verifiedStorage.clear(descriptor);
-      this.verifiedCurrent = Object.freeze({
-        status: 'failed',
-        error: 'Verified deployment is unavailable. Try again.',
-      });
-      return null;
-    }
-    const recovered = this.verifiedStorage.recover(descriptor);
-    if (!recovered && !this.verifiedStorage.begin(descriptor)) {
-      this.verifiedCurrent = Object.freeze({
-        status: 'failed',
-        error: 'Verified deployment is unavailable. Try again.',
-      });
-      return null;
-    }
-    const transcript = recovered?.transcript ?? Object.freeze([]);
-    const sameBoundDescriptor = (
-      priorDeployment.status === 'active'
-      || priorDeployment.status === 'completion-pending'
-      || priorDeployment.status === 'retryable'
-      || priorDeployment.status === 'expired'
-      || priorDeployment.status === 'frozen'
-    ) && sameVerifiedDeploymentDescriptor(priorDeployment.descriptor, descriptor);
-    const fieldOrder = sameBoundDescriptor
-      ? priorDeployment.fieldOrder
-      : createFieldOrder(account.profile.summary?.verifiedProgression);
-    this.verifiedOwnerId = accountId;
-    this.verifiedCurrent = recovered?.terminal
-      ? Object.freeze({
-          status: 'retryable',
-          descriptor,
-          transcript,
-          deadline,
-          fieldOrder,
-          error: 'Verification is pending. Retry before the deployment deadline.',
-        })
-      : Object.freeze({ status: 'active', descriptor, transcript, deadline, fieldOrder });
-    return Object.freeze({ resumed: started.resumed, descriptor });
+    return this.verifiedSession.startVerifiedDeployment(now);
   }
 
   recordVerifiedDeploymentFire(value: VerifiedHumanFire, now = Date.now()): boolean {
-    this.refreshVerifiedDeploymentDeadline(now);
-    const current = this.verifiedCurrent;
-    if (current.status !== 'active' || !this.ownsVerifiedDeployment()) return false;
-    if (!this.verifiedStorage.recordAcceptedFire(current.descriptor, value)) return false;
-    const recovered = this.verifiedStorage.recover(current.descriptor);
-    if (!recovered) {
-      this.verifiedCurrent = Object.freeze({
-        status: 'failed',
-        error: 'Verified deployment is unavailable. Try again.',
-      });
-      return false;
-    }
-    this.verifiedCurrent = Object.freeze({
-      status: 'active',
-      descriptor: current.descriptor,
-      transcript: recovered.transcript,
-      deadline: verifiedDeploymentDeadline(current.descriptor.expiresAt, now),
-      fieldOrder: current.fieldOrder,
-    });
-    return true;
+    return this.verifiedSession.recordVerifiedDeploymentFire(value, now);
   }
 
   refreshVerifiedDeploymentDeadline(now = Date.now()): LobbyVerifiedDeploymentState {
-    this.verifiedNow = now;
-    const current = this.verifiedCurrent;
-    if (current.status !== 'active' && current.status !== 'completion-pending'
-      && current.status !== 'retryable' && current.status !== 'expired') return current;
-    const deadline = verifiedDeploymentDeadline(current.descriptor.expiresAt, now);
-    if (!deadline.canComplete) {
-      this.verifiedCurrent = Object.freeze({
-        status: 'expired',
-        descriptor: current.descriptor,
-        transcript: current.transcript,
-        deadline,
-        fieldOrder: null,
-        choices: Object.freeze(['continue-casual', 'return-to-battery'] as const),
-      });
-      return this.verifiedCurrent;
-    }
-    if (current.status === 'expired') return current;
-    this.verifiedCurrent = current.status === 'retryable'
-      ? Object.freeze({ ...current, deadline })
-      : Object.freeze({ ...current, deadline });
-    return this.verifiedCurrent;
+    return this.verifiedSession.refreshVerifiedDeploymentDeadline(now);
   }
 
   async completeVerifiedDeployment(now = Date.now()): Promise<VerifiedDeploymentReceipt | null> {
-    this.refreshVerifiedDeploymentDeadline(now);
-    const current = this.verifiedCurrent;
-    if ((current.status !== 'active' && current.status !== 'retryable')
-      || !current.deadline.canComplete || !this.ownsVerifiedDeployment()
-      || current.transcript.length === 0 || !this.accountSession.completeVerifiedDeployment) return null;
-    if (current.status === 'active' && !this.verifiedStorage.markTerminal(current.descriptor)) {
-      this.verifiedCurrent = Object.freeze({
-        status: 'failed',
-        error: 'Verified deployment is unavailable. Try again.',
-      });
-      return null;
-    }
-    this.verifiedCurrent = Object.freeze({
-      status: 'completion-pending',
-      descriptor: current.descriptor,
-      transcript: current.transcript,
-      deadline: current.deadline,
-      fieldOrder: current.fieldOrder,
-    });
-    const accountGeneration = this.verifiedAccountGeneration;
-    const receipt = await this.accountSession.completeVerifiedDeployment(
-      current.descriptor.sessionId,
-      current.transcript,
-    );
-    const completedAt = Date.now();
-    this.verifiedNow = completedAt;
-    if (accountGeneration !== this.verifiedAccountGeneration || !this.ownsVerifiedDeployment()) return null;
-    this.refreshVerifiedDeploymentDeadline(completedAt);
-    if (receipt && receipt.result.sessionId === current.descriptor.sessionId
-      && receipt.progression.evidence === 'verified_replay_v2') {
-      this.verifiedStorage.clear(current.descriptor);
-      this.verifiedCurrent = Object.freeze({ status: 'verified', receipt });
-      return receipt;
-    }
-    const deadline = verifiedDeploymentDeadline(current.descriptor.expiresAt, completedAt);
-    this.verifiedCurrent = deadline.canComplete
-      ? Object.freeze({
-          status: 'retryable',
-          descriptor: current.descriptor,
-          transcript: current.transcript,
-          deadline,
-          fieldOrder: current.fieldOrder,
-          error: 'Verification is pending. Retry before the deployment deadline.',
-        })
-      : Object.freeze({
-          status: 'expired',
-          descriptor: current.descriptor,
-          transcript: current.transcript,
-          deadline,
-          fieldOrder: null,
-          choices: Object.freeze(['continue-casual', 'return-to-battery'] as const),
-        });
-    return null;
+    return this.verifiedSession.completeVerifiedDeployment(now);
   }
 
   retryVerifiedDeploymentCompletion(now = Date.now()): Promise<VerifiedDeploymentReceipt | null> {
-    if (this.refreshVerifiedDeploymentDeadline(now).status !== 'retryable') return Promise.resolve(null);
-    return this.completeVerifiedDeployment(now);
+    return this.verifiedSession.retryVerifiedDeploymentCompletion(now);
   }
 
   async abandonVerifiedDeployment(): Promise<boolean> {
-    const current = this.refreshVerifiedDeploymentDeadline(Date.now());
-    if ((current.status !== 'active' && current.status !== 'retryable')
-      || !current.deadline.canComplete || !this.ownsVerifiedDeployment()
-      || !this.accountSession.abandonVerifiedDeployment) return false;
-    const accountGeneration = this.verifiedAccountGeneration;
-    let abandoned = false;
-    try {
-      abandoned = await this.accountSession.abandonVerifiedDeployment(current.descriptor.sessionId);
-    } catch {
-      return false;
-    }
-    const abandonedAt = Date.now();
-    this.verifiedNow = abandonedAt;
-    if (accountGeneration !== this.verifiedAccountGeneration || !this.ownsVerifiedDeployment()) return false;
-    this.refreshVerifiedDeploymentDeadline(abandonedAt);
-    if (!abandoned) return false;
-    this.verifiedStorage.clear(current.descriptor);
-    this.verifiedOwnerId = null;
-    this.verifiedCurrent = Object.freeze({ status: 'idle' as const });
-    return true;
+    return this.verifiedSession.abandonVerifiedDeployment();
   }
 
   continueVerifiedDeploymentCasually(): boolean {
-    if (this.verifiedCurrent.status !== 'expired') return false;
-    this.verifiedStorage.clear(this.verifiedCurrent.descriptor);
-    this.verifiedOwnerId = null;
-    this.verifiedCurrent = Object.freeze({ status: 'casual' as const });
-    return true;
+    return this.verifiedSession.continueVerifiedDeploymentCasually();
   }
 
   returnVerifiedDeploymentToBattery(): boolean {
-    const current = this.verifiedCurrent;
-    if (current.status !== 'expired' && current.status !== 'verified') return false;
-    if (current.status === 'expired') this.verifiedStorage.clear(current.descriptor);
-    this.verifiedOwnerId = null;
-    this.verifiedCurrent = Object.freeze({ status: 'idle' as const });
-    return true;
+    return this.verifiedSession.returnVerifiedDeploymentToBattery();
   }
 
   isAccountAnonymous(): boolean {
@@ -1141,67 +906,6 @@ export class Lobby {
 
   onAccountAuthenticationChange(callback: (identityChanged: boolean) => void): void {
     this.accountAuthenticationChangeCb = callback;
-  }
-
-  private ownsVerifiedDeployment(): boolean {
-    const account = this.accountSession.state;
-    return this.verifiedOwnerId !== null
-      && account.status === 'authenticated'
-      && account.profile.id === this.verifiedOwnerId;
-  }
-
-  private authenticatedAccountId(): string | null {
-    const account = this.accountSession.state;
-    return account.status === 'authenticated' ? account.profile.id : null;
-  }
-
-  private freezeVerifiedDeploymentForAccountChange(): void {
-    const current = this.verifiedCurrent;
-    if (this.verifiedOwnerId === null || this.ownsVerifiedDeployment()
-      || (current.status !== 'active' && current.status !== 'completion-pending'
-        && current.status !== 'retryable' && current.status !== 'expired')) return;
-    this.verifiedCurrent = Object.freeze({
-      status: 'frozen',
-      descriptor: current.descriptor,
-      transcript: current.transcript,
-      deadline: current.deadline,
-      fieldOrder: null,
-      error: 'Return to the deployment owner account to resume verification.',
-    });
-  }
-
-  private async revalidateFrozenVerifiedDeployment(recoveryGeneration: number): Promise<void> {
-    const current = this.verifiedCurrent;
-    if (current.status !== 'frozen' || !this.ownsVerifiedDeployment()
-      || this.accountSession.state.status !== 'authenticated' || this.accountSession.state.busy
-      || !this.accountSession.startVerifiedDeployment) return;
-    let started: VerifiedDeploymentStart | null;
-    try {
-      started = await this.accountSession.startVerifiedDeployment();
-    } catch {
-      return;
-    }
-    const resumedAt = Date.now();
-    this.verifiedNow = resumedAt;
-    if (recoveryGeneration !== this.verifiedRecoveryGeneration
-      || this.verifiedCurrent !== current || !this.ownsVerifiedDeployment()) return;
-    const descriptor = parseVerifiedDeploymentDescriptor(started?.descriptor);
-    if (!started || started.resumed !== true || !descriptor
-      || !sameVerifiedDeploymentDescriptor(descriptor, current.descriptor)) return;
-    const deadline = verifiedDeploymentDeadline(descriptor.expiresAt, resumedAt);
-    if (!deadline.canComplete) return;
-    const recovered = this.verifiedStorage.recover(descriptor);
-    if (!recovered) return;
-    this.verifiedCurrent = recovered.terminal
-      ? Object.freeze({
-          status: 'retryable',
-          descriptor,
-          transcript: recovered.transcript,
-          deadline,
-          fieldOrder: null,
-          error: 'Verification is pending. Retry before the deployment deadline.',
-        })
-      : Object.freeze({ status: 'active', descriptor, transcript: recovered.transcript, deadline, fieldOrder: null });
   }
 
   showAccountSignIn(): void {
@@ -4055,7 +3759,7 @@ export class Lobby {
   }
 
   private emitVerifiedDeployment(): boolean {
-    const current = this.verifiedCurrent;
+    const current = this.verifiedSession.verifiedDeployment;
     if (current.status !== 'active' && current.status !== 'retryable') return false;
     const { descriptor, transcript, fieldOrder } = current;
     const options = descriptor.config.options;
@@ -4100,7 +3804,7 @@ export class Lobby {
   private verifiedHotSeatView() {
     const account = this.accountSession.state;
     if (account.status !== 'authenticated') return null;
-    const current = this.verifiedCurrent;
+    const current = this.verifiedSession.verifiedDeployment;
     const resumable = current.status === 'active'
       || current.status === 'completion-pending'
       || current.status === 'retryable'
