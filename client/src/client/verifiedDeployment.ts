@@ -10,6 +10,15 @@ export const VERIFIED_DEPLOYMENT_CONTRACT_VERSION = 2 as const
 export const VERIFIED_DEPLOYMENT_ENGINE_VERSION = 2 as const
 export const VERIFIED_DEPLOYMENT_RULESET_VERSION = 4 as const
 
+export type VerifiedDeploymentVersionTuple =
+  | Readonly<{ contractVersion: 2; engineVersion: 2; rulesetVersion: 4 }>
+  | Readonly<{ contractVersion: 3; engineVersion: 3; rulesetVersion: 4 }>
+
+export const VERIFIED_DEPLOYMENT_CAPABILITIES: readonly VerifiedDeploymentVersionTuple[] = Object.freeze([
+  Object.freeze({ contractVersion: 2, engineVersion: 2, rulesetVersion: 4 }),
+  Object.freeze({ contractVersion: 3, engineVersion: 3, rulesetVersion: 4 }),
+])
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
 export function normalizeVerifiedDeploymentSessionId(value: unknown): string | null {
@@ -44,15 +53,14 @@ export interface VerifiedDeploymentConfig {
   }
 }
 
-export interface VerifiedDeploymentDescriptor {
+interface VerifiedDeploymentDescriptorBase {
   readonly sessionId: string
   readonly expiresAt: string
-  readonly contractVersion: 2
-  readonly engineVersion: 2
-  readonly rulesetVersion: 4
   readonly limits: VerifiedDeploymentLimits
   readonly config: VerifiedDeploymentConfig
 }
+
+export type VerifiedDeploymentDescriptor = VerifiedDeploymentDescriptorBase & VerifiedDeploymentVersionTuple
 
 export interface VerifiedDeploymentStart {
   readonly resumed: boolean
@@ -81,7 +89,7 @@ export interface VerifiedDeploymentProgressionCounts {
 export interface VerifiedDeploymentServerReceipt {
   readonly result: VerifiedDeploymentResultReceipt
   readonly progression: {
-    readonly evidence: 'verified_replay_v2'
+    readonly evidence: 'verified_replay_v2' | 'verified_replay_v3'
     readonly prior: VerifiedDeploymentProgressionCounts
     readonly current: VerifiedDeploymentProgressionCounts
   }
@@ -98,7 +106,7 @@ export interface VerifiedDeploymentProgressionSnapshot extends VerifiedDeploymen
 export interface VerifiedDeploymentReceipt {
   readonly result: VerifiedDeploymentResultReceipt
   readonly progression: {
-    readonly evidence: 'verified_replay_v2'
+    readonly evidence: 'verified_replay_v2' | 'verified_replay_v3'
     readonly prior: VerifiedDeploymentProgressionSnapshot
     readonly current: VerifiedDeploymentProgressionSnapshot
   }
@@ -220,23 +228,23 @@ export function parseVerifiedDeploymentDescriptor(value: unknown): VerifiedDeplo
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const descriptor = value as Record<string, unknown>
   const expiresAt = canonicalIsoTimestamp(descriptor.expiresAt)
+  const versionTuple = VERIFIED_DEPLOYMENT_CAPABILITIES.find((tuple) =>
+    tuple.contractVersion === descriptor.contractVersion
+    && tuple.engineVersion === descriptor.engineVersion
+    && tuple.rulesetVersion === descriptor.rulesetVersion)
   if (!exactKeys(descriptor, [
     'sessionId', 'expiresAt', 'contractVersion', 'engineVersion', 'rulesetVersion', 'limits', 'config',
   ])
     || !normalizeVerifiedDeploymentSessionId(descriptor.sessionId)
     || !expiresAt
-    || descriptor.contractVersion !== VERIFIED_DEPLOYMENT_CONTRACT_VERSION
-    || descriptor.engineVersion !== VERIFIED_DEPLOYMENT_ENGINE_VERSION
-    || descriptor.rulesetVersion !== VERIFIED_DEPLOYMENT_RULESET_VERSION) return null
+    || !versionTuple) return null
   const limits = parseLimits(descriptor.limits)
   const config = parseConfig(descriptor.config)
   if (!limits || !config) return null
   return Object.freeze({
     sessionId: normalizeVerifiedDeploymentSessionId(descriptor.sessionId)!,
     expiresAt,
-    contractVersion: VERIFIED_DEPLOYMENT_CONTRACT_VERSION,
-    engineVersion: VERIFIED_DEPLOYMENT_ENGINE_VERSION,
-    rulesetVersion: VERIFIED_DEPLOYMENT_RULESET_VERSION,
+    ...versionTuple,
     limits,
     config,
   })
@@ -314,7 +322,8 @@ export function parseVerifiedDeploymentCompletionResponse(value: unknown): Verif
     || (rawResult.outcome !== 'win' && rawResult.outcome !== 'loss' && rawResult.outcome !== 'draw')
     || (rawResult.verifiedXp !== 100 && rawResult.verifiedXp !== 200)
     || !exactKeys(rawProgression, ['evidence', 'prior', 'current'])
-    || rawProgression.evidence !== 'verified_replay_v2') return null
+    || (rawProgression.evidence !== 'verified_replay_v2'
+      && rawProgression.evidence !== 'verified_replay_v3')) return null
   const correctResult = (rawResult.won && rawResult.outcome === 'win' && rawResult.verifiedXp === 200)
     || (!rawResult.won && (rawResult.outcome === 'loss' || rawResult.outcome === 'draw') && rawResult.verifiedXp === 100)
   if (!correctResult) return null
@@ -332,7 +341,7 @@ export function parseVerifiedDeploymentCompletionResponse(value: unknown): Verif
   }) as VerifiedDeploymentResultReceipt
   return Object.freeze({
     result,
-    progression: Object.freeze({ evidence: 'verified_replay_v2' as const, prior, current }),
+    progression: Object.freeze({ evidence: rawProgression.evidence, prior, current }),
   })
 }
 

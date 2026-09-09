@@ -231,8 +231,11 @@ export class VerifiedDeploymentSession {
     this.verifiedNow = completedAt;
     if (accountGeneration !== this.verifiedAccountGeneration || !this.ownsVerifiedDeployment()) return null;
     this.refreshVerifiedDeploymentDeadline(completedAt);
+    const expectedEvidence = current.descriptor.contractVersion === 3
+      ? 'verified_replay_v3'
+      : 'verified_replay_v2';
     if (receipt && receipt.result.sessionId === current.descriptor.sessionId
-      && receipt.progression.evidence === 'verified_replay_v2') {
+      && receipt.progression.evidence === expectedEvidence) {
       this.verifiedStorage.clear(current.descriptor);
       this.verifiedCurrent = Object.freeze({ status: 'verified', receipt });
       return receipt;

@@ -57,16 +57,38 @@ const verifiedReceipt: VerifiedDeploymentReceipt = {
   },
 }
 
+type PolicyVersion = 2 | 3;
 
-function setup() {
+function startFor(version: PolicyVersion, resumed = false): VerifiedDeploymentStart {
+  return version === 2
+    ? { ...verifiedStart, resumed }
+    : {
+        resumed,
+        descriptor: { ...verifiedStart.descriptor, contractVersion: 3, engineVersion: 3 },
+      };
+}
+
+function receiptFor(version: PolicyVersion): VerifiedDeploymentReceipt {
+  return {
+    ...verifiedReceipt,
+    progression: {
+      ...verifiedReceipt.progression,
+      evidence: version === 2 ? 'verified_replay_v2' : 'verified_replay_v3',
+    },
+  };
+}
+
+function setup(version: PolicyVersion = 2) {
+  const start = startFor(version);
+  const receipt = receiptFor(version);
   const account: { -readonly [K in keyof VerifiedDeploymentAccountPort]: VerifiedDeploymentAccountPort[K] } = {
     state: { status: 'authenticated', busy: false, error: '', profile: { id: 'owner', displayName: 'Ranger', summary: null } },
-    startVerifiedDeployment: vi.fn(async () => verifiedStart),
-    completeVerifiedDeployment: vi.fn(async () => verifiedReceipt),
+    startVerifiedDeployment: vi.fn(async () => start),
+    completeVerifiedDeployment: vi.fn(async () => receipt),
     abandonVerifiedDeployment: vi.fn(async () => true),
   };
   const session = new VerifiedDeploymentSession(account, (now) => new VerifiedDeploymentStorage(localStorage, now));
-  return { account, session };
+  return { account, session, start, receipt };
 }
 
 beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); vi.setSystemTime(new Date('2026-08-12T13:00:00Z')); });
@@ -84,33 +106,44 @@ describe('verified deployment session boundary', () => {
     expect(session.returnVerifiedDeploymentToBattery()).toBe(true);
     expect(session.verifiedDeployment.status).toBe('idle');
   });
-  it('retains terminal evidence for a retry without appending another shot', async () => {
-    const { account, session } = setup();
+  it.each([2, 3] as const)('retains V%s terminal evidence for a retry without appending another shot', async (version) => {
+    const { account, session, receipt } = setup(version);
     vi.mocked(account.completeVerifiedDeployment!).mockResolvedValueOnce(null);
     await session.startVerifiedDeployment();
     session.recordVerifiedDeploymentFire({ angle: 37, power: 64 });
     await expect(session.completeVerifiedDeployment()).resolves.toBeNull();
     expect(session.recordVerifiedDeploymentFire({ angle: 0, power: 0 })).toBe(false);
-    await expect(session.retryVerifiedDeploymentCompletion()).resolves.toEqual(verifiedReceipt);
+    await expect(session.retryVerifiedDeploymentCompletion()).resolves.toEqual(receipt);
     expect(account.completeVerifiedDeployment).toHaveBeenNthCalledWith(2, verifiedSessionId, [{ angle: 37, power: 64 }]);
   });
-  it('expires input and requires an explicit casual choice', async () => {
-    const { session } = setup();
+  it.each([[2, 3], [3, 2]] as const)(
+    'rejects V%s descriptor completion carrying V%s evidence',
+    async (descriptorVersion, receiptVersion) => {
+      const mismatch = setup(descriptorVersion);
+      vi.mocked(mismatch.account.completeVerifiedDeployment!).mockResolvedValue(receiptFor(receiptVersion));
+      await mismatch.session.startVerifiedDeployment();
+      mismatch.session.recordVerifiedDeploymentFire({ angle: 37, power: 64 });
+      await expect(mismatch.session.completeVerifiedDeployment()).resolves.toBeNull();
+      expect(mismatch.session.verifiedDeployment.status).toBe('retryable');
+    },
+  );
+  it.each([2, 3] as const)('expires V%s input and requires an explicit casual choice', async (version) => {
+    const { session, start } = setup(version);
     await session.startVerifiedDeployment();
     expect(session.continueVerifiedDeploymentCasually()).toBe(false);
-    expect(session.refreshVerifiedDeploymentDeadline(Date.parse(verifiedStart.descriptor.expiresAt)).status).toBe('expired');
+    expect(session.refreshVerifiedDeploymentDeadline(Date.parse(start.descriptor.expiresAt)).status).toBe('expired');
     expect(session.continueVerifiedDeploymentCasually()).toBe(true);
     expect(session.verifiedDeployment.status).toBe('casual');
   });
-  it('abandons only the active owner descriptor', async () => {
-    const { account, session } = setup();
+  it.each([2, 3] as const)('abandons only the active V%s owner descriptor', async (version) => {
+    const { account, session } = setup(version);
     await session.startVerifiedDeployment();
     await expect(session.abandonVerifiedDeployment()).resolves.toBe(true);
     expect(account.abandonVerifiedDeployment).toHaveBeenCalledWith(verifiedSessionId);
     expect(session.verifiedDeployment.status).toBe('idle');
   });
-  it('freezes on account change and revalidates the same descriptor for its owner', async () => {
-    const { account, session } = setup();
+  it.each([2, 3] as const)('freezes V%s on account change and revalidates the same descriptor for its owner', async (version) => {
+    const { account, session, start } = setup(version);
     const owner = account.state;
     await session.startVerifiedDeployment();
     account.state = { status: 'anonymous', busy: false, error: '' };
@@ -119,10 +152,28 @@ describe('verified deployment session boundary', () => {
     expect(session.verifiedDeployment.status).toBe('frozen');
     account.state = owner;
     expect(session.syncAccountIdentity()).toBe(true);
-    vi.mocked(account.startVerifiedDeployment!).mockResolvedValue({ ...verifiedStart, resumed: true });
+    vi.mocked(account.startVerifiedDeployment!).mockResolvedValue({ ...start, resumed: true });
     await session.revalidateFrozenVerifiedDeployment(session.advanceRecoveryGeneration());
     expect(session.verifiedDeployment.status).toBe('active');
   });
+  it.each([[2, 3], [3, 2]] as const)(
+    'rejects resumed same-session tuple substitution from V%s to V%s',
+    async (storedVersion, resumedVersion) => {
+      const { account, session } = setup(storedVersion);
+      const owner = account.state;
+      await session.startVerifiedDeployment();
+      account.state = { status: 'anonymous', busy: false, error: '' };
+      session.syncAccountIdentity();
+      session.freezeVerifiedDeploymentForAccountChange();
+      account.state = owner;
+      session.syncAccountIdentity();
+      vi.mocked(account.startVerifiedDeployment!).mockResolvedValue(startFor(resumedVersion, true));
+
+      await session.revalidateFrozenVerifiedDeployment(session.advanceRecoveryGeneration());
+
+      expect(session.verifiedDeployment.status).toBe('frozen');
+    },
+  );
   it('ignores a deferred start that completes after an account switch', async () => {
     const { account, session } = setup();
     let finish!: (value: VerifiedDeploymentStart) => void;

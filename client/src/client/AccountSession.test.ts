@@ -1497,7 +1497,7 @@ describe('verified deployment Supabase adapter', () => {
     config: verifiedDescriptor.config,
   }
 
-  it('invokes start without a body and abandon/complete with only their exact accepted bodies', async () => {
+  it('advertises both exact deployment capabilities and keeps abandon/complete bodies bounded', async () => {
     const invoke = vi.fn(async (name: string) => {
       if (name === 'start_verified_deployment') return { data: rawStart, error: null }
       if (name === 'abandon_verified_deployment') {
@@ -1513,7 +1513,10 @@ describe('verified deployment Supabase adapter', () => {
     await expect(gateway.completeVerifiedDeployment(verifiedSessionId, transcript))
       .resolves.toEqual(verifiedServerReceipt)
     expect(invoke.mock.calls).toEqual([
-      ['start_verified_deployment'],
+      ['start_verified_deployment', { body: { capabilities: [
+        { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+        { contractVersion: 3, engineVersion: 3, rulesetVersion: 4 },
+      ] } }],
       ['abandon_verified_deployment', { body: { sessionId: verifiedSessionId } }],
       ['complete_verified_deployment', { body: { sessionId: verifiedSessionId, transcript } }],
     ])
@@ -1789,6 +1792,53 @@ describe('AccountSession verified deployment lifecycle', () => {
         },
       })
     expect(loadProfile).toHaveBeenCalledTimes(2)
+  })
+
+  it('accepts a resumed V2 descriptor while advertising the full exact capability set', async () => {
+    const invoke = vi.fn(async () => ({
+      data: { ...verifiedDescriptor, resumed: true },
+      error: null,
+    }))
+    const gateway = createSupabaseAccountBackend({ auth: {}, functions: { invoke } } as never)
+
+    await expect(gateway.startVerifiedDeployment()).resolves.toEqual({ ...verifiedStart, resumed: true })
+    expect(invoke).toHaveBeenCalledWith('start_verified_deployment', { body: { capabilities: [
+      { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+      { contractVersion: 3, engineVersion: 3, rulesetVersion: 4 },
+    ] } })
+  })
+
+  it('preserves V3 result evidence across the aggregate V2 summary refresh', async () => {
+    const v3ServerReceipt: VerifiedDeploymentServerReceipt = {
+      ...verifiedServerReceipt,
+      progression: { ...verifiedServerReceipt.progression, evidence: 'verified_replay_v3' },
+    }
+    const refreshed = {
+      ...verifiedZeroProgression,
+      matchesPlayed: 1,
+      wins: 1,
+      totalXp: 200,
+      levelXp: 200,
+    }
+    const loadProfile = vi.fn()
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary() })
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: exactSummary(refreshed) })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => backend({
+        restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+        loadProfile,
+        completeVerifiedDeployment: vi.fn(async () => v3ServerReceipt),
+      }),
+    })
+    await session.initialize()
+
+    const receipt = await session.completeVerifiedDeployment(verifiedSessionId, [{ angle: 37, power: 64 }])
+
+    expect(receipt?.progression.evidence).toBe('verified_replay_v3')
+    expect(receipt?.progression.current.evidence).toBe('verified_replay_v2')
+    expect(session.state.status === 'authenticated'
+      && session.state.profile.summary?.verifiedProgression.evidence).toBe('verified_replay_v2')
   })
 
   it('does not suppress an authoritative completion receipt when the pre-match account summary is unavailable', async () => {
