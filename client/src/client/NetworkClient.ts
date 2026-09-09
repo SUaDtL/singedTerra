@@ -1,3 +1,4 @@
+import { projectNetworkPlayers } from './modeConfig';
 import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js';
 import type { GameClient, RematchInfo, ConnectionState, TurnWatch, QuickChatMessage } from './GameClient';
 import type { GameState } from '@shared/types/GameState';
@@ -12,7 +13,6 @@ import {
 } from '@shared/types/GameOptions';
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
-  normalizeTankLoadout,
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { GameEngine } from '@shared/engine/GameEngine';
@@ -902,14 +902,7 @@ export class NetworkClient implements GameClient {
         ...(typeof opts.armsLevel === 'number' ? { armsLevel: opts.armsLevel } : {}),
         ...(opts.teamMode === true ? { teamMode: true } : {}),
       },
-      players: players.map(p => ({
-        id: p.id,
-        name: p.name,
-        color: p.color,
-        ...(p.ai ? { ai: p.ai } : {}),
-        ...(p.team === 1 || p.team === 2 ? { team: p.team } : {}),
-        loadout: normalizeTankLoadout(p.loadout),
-      })),
+      players: projectNetworkPlayers(players),
     });
   }
 
