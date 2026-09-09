@@ -43,7 +43,8 @@ import {
   type LobbySessionEvent,
   type LobbyWaitingState,
 } from '../client/LobbySession';
-import { writeSession, clearSession, readSession, isLiveSession, type SessionDescriptor } from '../lib/sessionDescriptor';
+import { LobbyRoomController } from '../client/LobbyRoomController';
+import type { SessionDescriptor } from '../lib/sessionDescriptor';
 import {
   AccountSession,
   type AccountCredentials,
@@ -152,41 +153,6 @@ export interface LobbyConfig {
     readonly transcript: readonly VerifiedHumanFire[];
     readonly fieldOrder: FieldOrder | null;
   };
-}
-
-// localStorage key under which a seat's SECRET token is persisted, keyed by the
-// PUBLIC playerId (not roomId) — playerId is stable across a rematch (the
-// server copies the token to the successor room under the same seat id), so
-// this key keeps resolving to a valid token after migration. All access is
-// guarded by try/catch: private-mode / disabled storage must not crash the game.
-const SEAT_TOKEN_PREFIX = 'singedterra:seat:';
-
-function seatTokenKey(playerId: string): string {
-  return `${SEAT_TOKEN_PREFIX}${playerId}`;
-}
-
-/** Best-effort persist of a seat token; never throws. */
-function writeSeatToken(playerId: string, token: string): void {
-  try {
-    localStorage.setItem(seatTokenKey(playerId), token);
-  } catch {
-    /* localStorage unavailable — token just isn't persisted across reloads */
-  }
-}
-
-/**
- * Best-effort read of a persisted seat token; never throws. Mirrors
- * `readSeatToken` in `client/src/client/NetworkClient.ts` (same key scheme) —
- * used by T-10's `handleRejoin()` to pass the stored secret explicitly (belt
- * and suspenders: NetworkClient also falls back to this same localStorage
- * read internally when the constructor's `token` param is empty).
- */
-function readSeatToken(playerId: string): string | undefined {
-  try {
-    return localStorage.getItem(seatTokenKey(playerId)) ?? undefined;
-  } catch {
-    return undefined; // localStorage unavailable — nothing persisted
-  }
 }
 
 /** Fixed color palette; each player must pick a unique entry. */
@@ -320,6 +286,7 @@ export class Lobby {
   /** Owns the seven Edge-Function calls (create/join/list/heartbeat/ready/leave/update). */
   private readonly transport = new LobbyTransport();
   private readonly session: LobbySession;
+  private readonly roomController: LobbyRoomController;
   private readonly accountSession: AccountSessionPort;
   private readonly verifiedSession: VerifiedDeploymentSession;
   private verifiedLaunchBusy = false;
@@ -402,20 +369,6 @@ export class Lobby {
   // Browse (public rooms) sub-view state.
   private browseRooms: BrowseRoom[] = [];
 
-  // Shared online status message
-  private onlineError = '';
-  private onlineBusy = false;
-  private leavingRoom = false;
-
-  /**
-   * T-09 (rejoin-after-refresh, AC-05) — the validated rejoin candidate, set
-   * only once `checkRejoinCandidate()` confirms the stored session descriptor
-   * points at a still-`active` room with the stored seat present. `null` means
-   * "no affordance": either no descriptor was stored, validation hasn't
-   * resolved yet, or the room turned out to be stale/invalid.
-   */
-  private rejoinCandidate: { descriptor: SessionDescriptor; room: FetchedRoom } | null = null;
-
   constructor(
     root: HTMLElement,
     onReady: (config: LobbyConfig) => void,
@@ -427,6 +380,13 @@ export class Lobby {
     this.onReady = onReady;
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
+    this.roomController = new LobbyRoomController(
+      this.transport,
+      this.session,
+      () => this.render(),
+      (intent) => { this.onlineSubView = intent; },
+      (handoff) => this.onReady(handoff),
+    );
     this.accountSession = createAccountSession(() => { this.renderForAccountChange(); });
     this.verifiedSession = new VerifiedDeploymentSession(
       this.accountSession, (now) => new VerifiedDeploymentStorage(localStorage, now),
@@ -739,6 +699,30 @@ export class Lobby {
     return this.session.waiting.roomId;
   }
 
+  private get onlineBusy(): boolean {
+    return this.roomController.projection.busy;
+  }
+
+  private set onlineBusy(busy: boolean) {
+    this.roomController.setBusy(busy);
+  }
+
+  private get onlineError(): string {
+    return this.roomController.projection.error;
+  }
+
+  private set onlineError(error: string) {
+    this.roomController.setError(error);
+  }
+
+  private get rejoinCandidate(): { descriptor: SessionDescriptor; room: FetchedRoom } | null {
+    return this.roomController.projection.rejoinCandidate;
+  }
+
+  private set rejoinCandidate(candidate: { descriptor: SessionDescriptor; room: FetchedRoom } | null) {
+    this.roomController.setRejoinCandidate(candidate);
+  }
+
   private set waitingRoomId(roomId: LobbyWaitingState['roomId']) {
     this.session.replaceWaiting({ ...this.session.waiting, roomId });
   }
@@ -826,22 +810,7 @@ export class Lobby {
    * (`fetchRooms` mutates state then calls `this.render()`).
    */
   private async checkRejoinCandidate(): Promise<void> {
-    const descriptor = readSession();
-    if (!descriptor) {
-      this.rejoinCandidate = null;
-      return;
-    }
-    const room = await this.transport.fetchRoom(descriptor.roomId);
-    if (isLiveSession(descriptor, room)) {
-      this.rejoinCandidate = { descriptor, room: room! };
-      this.render();
-    } else {
-      // T-11 (AC-07) — a stale descriptor (finished/deleted/seat-removed room)
-      // is forgotten silently on passive load: no banner, no error message,
-      // and no more re-validating a room that will never come back.
-      this.rejoinCandidate = null;
-      clearSession();
-    }
+    await this.roomController.checkRejoinCandidate();
   }
 
   /** Hide the lobby overlay (e.g. once the game starts). */
@@ -1341,66 +1310,7 @@ export class Lobby {
    * re-renders back to the normal (no-affordance) lobby.
    */
   private async handleRejoin(): Promise<void> {
-    if (!this.rejoinCandidate) return;
-    const { descriptor } = this.rejoinCandidate;
-
-    const room = await this.transport.fetchRoom(descriptor.roomId);
-    if (!isLiveSession(descriptor, room)) {
-      clearSession();
-      this.rejoinCandidate = null;
-      this.onlineError = 'That game is no longer available.';
-      this.render();
-      return;
-    }
-    const liveRoom = room!;
-    if (normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
-      clearSession();
-      this.rejoinCandidate = null;
-      this.onlineError = 'This room uses an older game build and cannot be resumed here.';
-      this.render();
-      return;
-    }
-
-    // The secret seat token never lives in the session descriptor (ADR-0009) —
-    // read it back from its own localStorage key, keyed by the public playerId.
-    const token = readSeatToken(descriptor.playerId) ?? '';
-
-    const config: LobbyConfig = {
-      mode: 'network',
-      players: liveRoom.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        color: p.color,
-        loadout: normalizeTankLoadout(p.loadout),
-        ...(p.ai ? { ai: p.ai } : {}),
-      })),
-      playerNames: liveRoom.players.map((p) => p.name),
-      roomCode: liveRoom.code,
-      roomId: liveRoom.id,
-      playerId: descriptor.playerId,
-      token,
-      settings: {
-        seed: liveRoom.seed,
-        maxWind: liveRoom.options.maxWind,
-        gravity: liveRoom.options.gravity,
-        ...(normalizeWallMode(liveRoom.options.walls) !== 'open'
-          ? { walls: normalizeWallMode(liveRoom.options.walls) }
-          : {}),
-        ...(normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) !== undefined
-          ? { battlefieldWorld: normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) }
-          : {}),
-        ...(normalizeTerrainHazardMode(liveRoom.options.hazards) !== 'none'
-          ? { hazards: normalizeTerrainHazardMode(liveRoom.options.hazards) }
-          : {}),
-        ...(liveRoom.options.rounds !== undefined ? { rounds: liveRoom.options.rounds } : {}),
-        ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
-        ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
-        ...(liveRoom.options.armsLevel !== undefined ? { armsLevel: liveRoom.options.armsLevel } : {}),
-        ...(liveRoom.options.teamMode === true ? { teamMode: true } : {}),
-        rulesetVersion: normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion),
-      },
-    };
-    this.onReady(config);
+    await this.roomController.rejoin();
   }
 
   // ---- Hot Seat tab ----
@@ -1692,88 +1602,41 @@ export class Lobby {
       this.render();
       return;
     }
-    this.onlineBusy = true;
-    this.onlineError = '';
-    this.render();
-
-    try {
-      const rounds = this.parseOnlineRounds();
-      const economy = this.parseOnlineEconomy();
-
-      // Build CPU seats with palette colors unique vs the creator + each other.
-      const used = new Set<string>([this.onlineColor]);
-      const bots: Array<{
-        name: string;
-        color: string;
-        ai: AiDifficulty;
-        loadout: TankLoadout;
-      }> = [];
-      for (let i = 0; i < this.onlineBots; i++) {
-        const c = PALETTE.find((p) => !used.has(p.value));
-        if (!c) break; // ran out of distinct colors
-        used.add(c.value);
-        bots.push({
-          name: `CPU ${i + 1}`,
-          color: c.value,
-          ai: this.onlineBotDifficulty,
-          loadout: presetLoadout(
-            TANK_KIT_IDS[(i + 1) % TANK_KIT_IDS.length]!,
-          ),
-        });
-      }
-
-      const { ok, data } = await this.transport.createRoom({
-        playerName: name,
-        color: this.onlineColor,
-        loadout: normalizeTankLoadout(this.onlineLoadout),
-        bots,
-        maxPlayers: this.onlineMaxPlayers,
-        visibility: this.onlineVisibility,
-        maxWind: this.onlineMaxWind,
-        gravity: this.onlineGravity,
-        walls: this.onlineWalls,
-        battlefieldWorld: this.onlineBattlefieldWorld,
-        hazards: this.onlineHazards,
-        rounds: this.onlineRounds,
-        interestRate: this.onlineInterestRate,
-        suddenDeath: this.onlineSuddenDeath,
-        armsLevel: this.onlineArmsLevel,
-        teamMode: this.onlineTeamMode,
+    const rounds = this.parseOnlineRounds();
+    const economy = this.parseOnlineEconomy();
+    const used = new Set<string>([this.onlineColor]);
+    const bots: Array<{ name: string; color: string; ai: AiDifficulty; loadout: TankLoadout }> = [];
+    for (let i = 0; i < this.onlineBots; i++) {
+      const color = PALETTE.find((candidate) => !used.has(candidate.value));
+      if (!color) break;
+      used.add(color.value);
+      bots.push({
+        name: `CPU ${i + 1}`,
+        color: color.value,
+        ai: this.onlineBotDifficulty,
+        loadout: presetLoadout(TANK_KIT_IDS[(i + 1) % TANK_KIT_IDS.length]!),
       });
-
-      if (!ok || data?.error) {
-        this.onlineError = data?.error ?? 'Failed to create room.';
-        this.onlineBusy = false;
-        this.render();
-        return;
-      }
-
-      // Guard against a structurally-wrong 200 (contract drift): without this, the
-      // `!` assertions below would assign undefined-as-string and silently break the
-      // Realtime subscription with no visible error (dx-007).
-      if (!data?.roomId || !data.code || !data.playerId || !data.token) {
-        this.onlineError = 'Unexpected server response — please try again.';
-        this.onlineBusy = false;
-        this.render();
-        return;
-      }
-
-      // Transition to waiting room. Prefer the server's full players array (it
-      // includes any CPU seats with their generated ids); fall back to just us.
-      this.waitingRoomId = data.roomId;
-      this.waitingRoomCode = data.code;
-      this.waitingPlayerId = data.playerId;
-      this.waitingToken = data.token;
-      writeSeatToken(data.playerId, data.token);
-      writeSession({ roomId: this.waitingRoomId, roomCode: this.waitingRoomCode, playerId: this.waitingPlayerId });
-      this.waitingPlayers = data.players ?? [{
-        id: data.playerId,
-        name,
-        color: this.onlineColor,
-        ready: false,
-        loadout: normalizeTankLoadout(this.onlineLoadout),
-      }];
-      const fallbackOptions: RoomOptions = {
+    }
+    await this.roomController.create({
+      playerName: name,
+      color: this.onlineColor,
+      loadout: normalizeTankLoadout(this.onlineLoadout),
+      bots,
+      maxPlayers: this.onlineMaxPlayers,
+      visibility: this.onlineVisibility,
+      maxWind: this.onlineMaxWind,
+      gravity: this.onlineGravity,
+      walls: this.onlineWalls,
+      battlefieldWorld: this.onlineBattlefieldWorld,
+      hazards: this.onlineHazards,
+      rounds: this.onlineRounds,
+      interestRate: this.onlineInterestRate,
+      suddenDeath: this.onlineSuddenDeath,
+      armsLevel: this.onlineArmsLevel,
+      teamMode: this.onlineTeamMode,
+    }, () => ({
+      seed: this.waitingSeed,
+      options: {
         maxPlayers: this.onlineMaxPlayers,
         maxWind: parseNumber(this.onlineMaxWind) !== undefined
           ? clamp(parseNumber(this.onlineMaxWind)!, WIND_MIN, WIND_MAX)
@@ -1791,26 +1654,16 @@ export class Lobby {
         ...(rounds !== undefined ? { rounds } : {}),
         ...economy,
         ...(this.onlineTeamMode && this.onlineMaxPlayers === 4 ? { teamMode: true } : {}),
-      };
-      const authoritativeOptions = data.options ?? fallbackOptions;
-      this.waitingOptions = {
-        ...authoritativeOptions,
-        rulesetVersion: normalizeNetworkRulesetVersion(authoritativeOptions.rulesetVersion),
-      };
-      this.waitingThisPlayerReady = false;
-      this.onlineSubView = 'waiting';
-      this.onlineError = '';
-      this.onlineBusy = false;
-      this.render();
-      void this.subscribeWaitingRoom();
-    } catch (err) {
-      console.error('Lobby.createRoom: network error —', err);
-      this.onlineError = 'Network error. Try again.';
-      this.onlineBusy = false;
-      this.render();
-    }
+      },
+      players: [{
+        id: '',
+        name,
+        color: this.onlineColor,
+        ready: false,
+        loadout: normalizeTankLoadout(this.onlineLoadout),
+      }],
+    }));
   }
-
   // ---- Join Room sub-view ----
 
   private renderJoinForm(): HTMLElement {
@@ -1877,74 +1730,19 @@ export class Lobby {
       this.render();
       return;
     }
-    this.onlineBusy = true;
-    this.onlineError = '';
-    this.render();
-
-    try {
-      const { ok, data } = await this.transport.joinRoom({
-        code,
-        playerName: name,
-        color: this.joinColor,
-        loadout: normalizeTankLoadout(this.onlineLoadout),
-      });
-
-      if (!ok || data?.error) {
-        this.onlineError = data?.error ?? 'Failed to join room.';
-        this.onlineBusy = false;
-        this.render();
-        return;
-      }
-
-      if (!data?.roomId || !data.playerId || !data.token) {
-        this.onlineError = 'Unexpected server response — please try again.';
-        this.onlineBusy = false;
-        this.render();
-        return;
-      }
-
-      if (normalizeNetworkRulesetVersion(data.options?.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
-        this.onlineError = 'This room uses an older game build and cannot be joined here.';
-        this.onlineBusy = false;
-        this.render();
-        return;
-      }
-
-      // Joined successfully — stop browsing and enter the waiting room.
-      this.stopBrowsePoll();
-      this.waitingRoomId = data.roomId;
-      this.waitingRoomCode = code;
-      this.waitingPlayerId = data.playerId;
-      this.waitingToken = data.token;
-      writeSeatToken(data.playerId, data.token);
-      writeSession({ roomId: this.waitingRoomId, roomCode: this.waitingRoomCode, playerId: this.waitingPlayerId });
-      this.waitingSeed = data.seed ?? 0;
-      const authoritativeOptions = data.options ?? {
-        maxPlayers: 2,
-        maxWind: 10,
-        gravity: 0.15,
-        walls: 'open' as const,
-        rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
-      };
-      this.waitingOptions = {
-        ...authoritativeOptions,
-        rulesetVersion: normalizeNetworkRulesetVersion(authoritativeOptions.rulesetVersion),
-      };
-      this.waitingPlayers = data.players ?? [];
-      this.waitingThisPlayerReady = false;
-      this.onlineSubView = 'waiting';
-      this.onlineError = '';
-      this.onlineBusy = false;
-      this.render();
-      void this.subscribeWaitingRoom();
-    } catch (err) {
-      console.error('Lobby.joinRoom: network error —', err);
-      this.onlineError = 'Network error. Try again.';
-      this.onlineBusy = false;
-      this.render();
-    }
+    await this.roomController.join({
+      code,
+      playerName: name,
+      color: this.joinColor,
+      loadout: normalizeTankLoadout(this.onlineLoadout),
+    }, code, {
+      maxPlayers: 2,
+      maxWind: 10,
+      gravity: 0.15,
+      walls: 'open',
+      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
+    });
   }
-
   // ---- Browse (public rooms) sub-view ----
 
   /** Switch to the browse view and start polling list_rooms. */
@@ -2353,24 +2151,8 @@ export class Lobby {
    * view.
    */
   private async handleLeaveRoom(): Promise<void> {
-    if (this.leavingRoom) return;
-    this.leavingRoom = true;
-    this.onlineBusy = true;
-    this.render();
-    try {
-      await this.session.leaveRoom();
-    } catch (err) {
-      console.debug('Lobby.leaveRoom: best-effort leave failed —', err);
-      // Best-effort — leave the room locally regardless.
-    }
-    this.leavingRoom = false;
-    clearSession(); // explicit leave forgets the rejoin session (AC-04) regardless of POST outcome
-    this.onlineSubView = 'create';
-    this.onlineBusy = false;
-    this.onlineError = '';
-    this.render();
+    await this.roomController.leave();
   }
-
   private cleanupWaitingChannel(): void {
     this.session.cleanupWaitingChannel();
   }
