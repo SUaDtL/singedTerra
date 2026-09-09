@@ -558,6 +558,73 @@ describe('production hot-seat progression composition', () => {
     mountDom()
   })
 
+  it('stops an unadopted network candidate when initialization rejects after acquiring a resource', async () => {
+    let rejectInitialization!: (reason: unknown) => void
+    let activeResources = 0
+    const candidate = fakeClient(gameState())
+    candidate.initialize = vi.fn(() => {
+      activeResources += 1
+      return new Promise<undefined>((_resolve, reject) => { rejectInitialization = reject })
+    })
+    candidate.stop = vi.fn(() => { activeResources -= 1 })
+    seams.clients.push(candidate)
+    const { createClient } = await import('./main')
+    const failure = new Error('initial channel setup failed')
+    const pending = createClient({ mode: 'network', roomId: 'candidate', playerId: 'p1', players: [], playerNames: [] })
+    const rejection = expect(pending).rejects.toBe(failure)
+    await vi.waitFor(() => expect(candidate.initialize).toHaveBeenCalledOnce())
+    expect(activeResources).toBe(1)
+    rejectInitialization(failure)
+    await rejection
+
+    expect(candidate.stop).toHaveBeenCalledOnce()
+    expect(activeResources).toBe(0)
+    expect(candidate.start).not.toHaveBeenCalled()
+    expect(seams.rendererConstructed).toBe(0)
+    expect(seams.inputAction).toBeNull()
+  })
+
+  it('cleans a rejected old factory candidate without disturbing a newer Lobby match', async () => {
+    let rejectInitialization!: (reason: unknown) => void
+    let oldResources = 0
+    const older = fakeClient(gameState())
+    older.initialize = vi.fn(() => {
+      oldResources += 1
+      return new Promise<undefined>((_resolve, reject) => { rejectInitialization = reject })
+    })
+    older.stop = vi.fn(() => { oldResources -= 1 })
+    const newer = fakeClient(gameState())
+    seams.clients.push(older, newer)
+    const { createClient } = await import('./main')
+    const failure = new Error('old candidate initialization failed')
+    const pending = createClient({ mode: 'network', roomId: 'old', playerId: 'p1', players: [], playerNames: [] })
+    const rejection = expect(pending).rejects.toBe(failure)
+    await vi.waitFor(() => expect(older.initialize).toHaveBeenCalledOnce())
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'network', roomId: 'new', playerId: 'p2', players: [], playerNames: [] })
+    await vi.waitFor(() => expect(newer.start).toHaveBeenCalledOnce())
+    const activeInput = seams.inputAction
+    const activeRenderer = seams.rendererEvents
+    const lobbyShows = seams.lobbyShows
+    const lobbyHides = seams.lobbyHides
+    const hudUpdates = seams.hudUpdates.length
+    rejectInitialization(failure)
+    await rejection
+
+    expect(older.stop).toHaveBeenCalledOnce()
+    expect(oldResources).toBe(0)
+    expect(older.start).not.toHaveBeenCalled()
+    expect(newer.stop).not.toHaveBeenCalled()
+    expect(seams.inputAction).toBe(activeInput)
+    expect(seams.rendererEvents).toBe(activeRenderer)
+    expect(seams.rendererConstructed).toBe(1)
+    expect(seams.rendererResets).toBe(0)
+    expect(seams.lobbyShows).toBe(lobbyShows)
+    expect(seams.lobbyHides).toBe(lobbyHides)
+    newer.emit(gameState())
+    expect(seams.hudUpdates.length).toBeGreaterThan(hudUpdates)
+  })
+
   it('retires a late asynchronous network start after a newer start owns the match', async () => {
     let finishFirst!: () => void
     let finishSecond!: () => void
