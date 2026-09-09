@@ -131,6 +131,37 @@ initial engine state in `modeConfigCharacterization.test.ts`,
 `gameEngineOptions.ts` remains the engine-input boundary; client construction
 and lifecycle orchestration remain separate from normalization.
 
+`client/src/client/modeConfig.extension.test.ts` is an executable extension
+example using an explicit four-seat lava/wrap variation of existing settings.
+It checks literal engine options, team/AI preservation, gravity, and the complete
+initial state (including every terrain byte) through real `HotSeatClient` and
+`NetworkClient` constructors against an independently configured `GameEngine`.
+It ships no new mode and does not initialize network transport. The companion
+`GameSessionComposition.extension.test.ts` sends the same typed setup through
+the real composition owner and `createModeClient`, including network
+initialization against a local Supabase boundary double. It replaces only
+renderer, input, transport, and animation effects, then compares the complete
+initial state and terrain bytes with an independently configured engine.
+
+Run this example from the repository root:
+
+```sh
+npm exec --workspace client vitest -- run src/client/modeConfig.extension.test.ts
+npm exec --workspace client vitest -- run src/client/GameSessionComposition.extension.test.ts
+```
+
+The example requires no HUD or Lobby presentation changes. `GameSessionComposition`
+owns retirement, acquisition, renderer/input/subscription adoption, and client
+start order through explicit ports; mode normalization remains in `modeConfig.ts`.
+
+For a new rule, extend `shared/src/types/GameOptions.ts` and the deterministic engine
+first, then the normalization and engine-option boundary. Network rules also
+require matching Edge admission/referee validation, room compatibility/version
+handling, and replay tests; this constructor fixture does not prove those paths.
+Keep lobby selection, rematch/rejoin handoffs, persistence, and visual controls
+explicit follow-up integration work rather than treating option parity as a
+complete new-mode implementation.
+
 ## Supabase
 
 The repository contains migrations and Edge Functions, not a Node game server.
