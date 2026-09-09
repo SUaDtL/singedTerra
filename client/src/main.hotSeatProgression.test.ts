@@ -3,6 +3,8 @@ import type { GameState } from '@shared/types/GameState'
 import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
 import type { FieldOrder } from './client/fieldOrder'
 import type { VerifiedDeploymentDescriptor } from './client/verifiedDeployment'
+import type { RematchInfo } from './client/GameClient'
+import { clearSession, readSession, writeSession } from './lib/sessionDescriptor'
 
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
@@ -479,9 +481,11 @@ function fakeVerifiedController(state: GameState, damageOnHumanSalvo?: number) {
 
 function fakeClient(initial: GameState) {
   let listener: ((state: GameState) => void) | null = null
+  let rematchListener: ((info: RematchInfo) => void) | null = null
   return {
     controller: null as null | { applyHumanAction?: (action: Record<string, unknown>) => boolean },
     emit(state: GameState) { listener?.(state) },
+    emitRematch(info: RematchInfo) { rematchListener?.(info) },
     getEffectiveGravity: () => 0.15,
     getState: () => initial,
     isFiring: false,
@@ -490,6 +494,10 @@ function fakeClient(initial: GameState) {
       if (seams.setupFailureStage === 'subscription') throw seams.setupFailure
       listener = next
       return () => { seams.unsubscribes += 1; listener = null }
+    },
+    onRematch(next: (info: RematchInfo) => void) {
+      rematchListener = next
+      return () => { if (rematchListener === next) rematchListener = null }
     },
     sendAction(action: Record<string, unknown>) {
       seams.forwardedActions.push(action)
@@ -576,6 +584,7 @@ describe('production hot-seat progression composition', () => {
       current: { progressionVersion: 1 as const, totalXp: 200, level: 1, levelXp: 200, nextLevelXp: 500 },
     })
     seams.completeVerified = () => Promise.resolve(verifiedReceipt)
+    clearSession()
     window.history.replaceState({}, '', '/')
     mountDom()
   })
@@ -676,6 +685,79 @@ describe('production hot-seat progression composition', () => {
     expect(second.stop).not.toHaveBeenCalled()
     expect(seams.rendererConstructed).toBe(1)
     expect(seams.lobbyHides).toBe(2)
+  })
+
+  it('writes only the public successor descriptor when a finished network match rematches', async () => {
+    const finished = fakeClient(gameState())
+    const successor = fakeClient(liveVerifiedState())
+    let resolveSuccessorInitialization!: () => void
+    successor.initialize = vi.fn(() => new Promise<undefined>((resolve) => {
+      resolveSuccessorInitialization = () => resolve(undefined)
+    }))
+    seams.clients.push(finished, successor)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'network', roomId: 'finished-room', roomCode: 'OLDR', playerId: 'player-1', players: [],
+    })
+    await vi.waitFor(() => expect(finished.start).toHaveBeenCalledOnce())
+
+    // NetworkClient clears the old GAME_OVER descriptor before it emits its rematch callback.
+    writeSession({ roomId: 'finished-room', roomCode: 'OLDR', playerId: 'player-1' })
+    clearSession()
+    expect(readSession()).toBeNull()
+
+    finished.emitRematch({
+      roomId: 'successor-room', code: 'NEXT', seed: 91,
+      options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rounds: 1 },
+      players: [
+        { id: 'player-1', name: 'Ranger', color: '#e8554d' },
+        { id: 'player-2', name: 'Scout', color: '#3f78b8' },
+      ],
+    })
+
+    // Persist before the successor is initialized: a failed initializer must
+    // leave the admitted room available for the Lobby's existing retry path.
+    expect(readSession()).toEqual({
+      roomId: 'successor-room', roomCode: 'NEXT', playerId: 'player-1',
+    })
+    await vi.waitFor(() => expect(successor.initialize).toHaveBeenCalledOnce())
+    expect(successor.start).not.toHaveBeenCalled()
+    resolveSuccessorInitialization()
+    await vi.waitFor(() => expect(successor.start).toHaveBeenCalledOnce())
+    expect(readSession()).toEqual({
+      roomId: 'successor-room', roomCode: 'NEXT', playerId: 'player-1',
+    })
+    expect(localStorage.getItem('singedterra:session')).not.toContain('token')
+  })
+
+  it('does not let a retired match callback replace the newer session descriptor', async () => {
+    const older = fakeClient(gameState())
+    const newer = fakeClient(liveVerifiedState())
+    const staleSuccessor = fakeClient(liveVerifiedState())
+    seams.clients.push(older, newer, staleSuccessor)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'network', roomId: 'older-room', roomCode: 'OLD', playerId: 'older-player', players: [] })
+    await vi.waitFor(() => expect(older.start).toHaveBeenCalledOnce())
+    seams.onLobbyReady({ mode: 'network', roomId: 'newer-room', roomCode: 'LIVE', playerId: 'newer-player', players: [] })
+    await vi.waitFor(() => expect(newer.start).toHaveBeenCalledOnce())
+    writeSession({ roomId: 'newer-room', roomCode: 'LIVE', playerId: 'newer-player' })
+
+    older.emitRematch({
+      roomId: 'stale-successor', code: 'STALE', seed: 92,
+      options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rounds: 1 },
+      players: [
+        { id: 'older-player', name: 'Ranger', color: '#e8554d' },
+        { id: 'player-2', name: 'Scout', color: '#3f78b8' },
+      ],
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(newer.stop).not.toHaveBeenCalled()
+    expect(staleSuccessor.start).not.toHaveBeenCalled()
+    expect(readSession()).toEqual({ roomId: 'newer-room', roomCode: 'LIVE', playerId: 'newer-player' })
   })
 
   it('keeps each start bound to its own asynchronous teardown generation', async () => {
