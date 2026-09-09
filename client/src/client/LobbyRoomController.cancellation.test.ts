@@ -350,6 +350,48 @@ function realSessionFixture() {
   return { channels, transport, session }
 }
 
+it('rejected stale admission cleanup settles without disturbing the newer seat or channel', async () => {
+  const fixture = realSessionFixture()
+  const test = setup()
+  const obsolete = deferred<EdgeResult<CreateRoomResponse>>()
+  const cleanup = deferred<EdgeResult<unknown>>()
+  vi.mocked(test.transport.createRoom).mockReturnValue(obsolete.promise)
+  vi.mocked(test.transport.joinRoom).mockResolvedValue(acceptedRoom('new', 'new-p', 'new-t'))
+  vi.mocked(test.transport.leaveRoom).mockReturnValue(cleanup.promise)
+  const controller = new LobbyRoomController(
+    test.transport, fixture.session, test.onChanged, vi.fn(), test.handoff, test.persistence,
+  )
+  try {
+    const pending = controller.create(createParams, test.fallback)
+    await controller.join(joinParams, 'NEW', emptyWaiting.options)
+    await Promise.resolve()
+    const currentChannel = [...fixture.channels][0]
+    expect(fixture.channels.size).toBe(1)
+    const projection = controller.projection
+    const notifications = test.onChanged.mock.calls.length
+
+    obsolete.resolve(acceptedRoom('old', 'old-p', 'old-t'))
+    await Promise.resolve()
+    expect(test.transport.leaveRoom).toHaveBeenCalledExactlyOnceWith({
+      roomId: 'old', playerId: 'old-p', token: 'old-t',
+    })
+    cleanup.reject(new Error('offline cleanup'))
+    await expect(pending).resolves.toBeUndefined()
+
+    expect(controller.projection).toEqual(projection)
+    expect(test.onChanged).toHaveBeenCalledTimes(notifications)
+    expect(test.persistence.writeSession).toHaveBeenCalledExactlyOnceWith({
+      roomId: 'new', roomCode: 'NEW', playerId: 'new-p',
+    })
+    expect(test.persistence.writeSeatToken).toHaveBeenCalledExactlyOnceWith('new-p', 'new-t')
+    expect(test.persistence.clearSession).not.toHaveBeenCalled()
+    expect([...fixture.channels]).toEqual([currentChannel])
+    expect(test.handoff).not.toHaveBeenCalled()
+  } finally {
+    fixture.session.cleanupWaitingChannel()
+  }
+})
+
 it('a retiring real LobbySession cannot clear a newer waiting subscription', async () => {
   const fixture = realSessionFixture()
   const leaving = deferred<EdgeResult<unknown>>()
