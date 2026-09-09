@@ -312,6 +312,7 @@ function bootstrap(): void {
 
   const createRenderer = (): Renderer => {
     const next = new Renderer(canvas);
+    matchSession.ownRenderer(next);
     next.setEvents({
       onLaunch: () => audio.launch(),
       onExplosion: (radius, impact) => {
@@ -335,7 +336,6 @@ function bootstrap(): void {
       },
       onMiss: () => audio.fizzle(),
     });
-    matchSession.ownRenderer(next);
     syncBattleSettings();
     return next;
   };
@@ -633,6 +633,7 @@ function bootstrap(): void {
       newClient = await createClient(config);
     }
     if (!matchSession.ownClient(currentGameGeneration, newClient)) return;
+    try {
     const gameRenderer = createRenderer();
     const initial = newClient.getState();
     const terminalHistoryPrimed = config.verifiedDeployment !== undefined
@@ -997,6 +998,10 @@ function bootstrap(): void {
     matchSession.ownSubscription(unsubscribe);
 
     newClient.start();
+    } catch (error) {
+      matchSession.rollbackIfCurrent(currentGameGeneration, newClient);
+      throw error;
+    }
   }
 
   /**
@@ -1119,7 +1124,7 @@ function bootstrap(): void {
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
     // startGame() now hides the lobby itself (see its body), so the start callback no
     // longer needs to — keeping lobby-visibility owned by a single place (#13).
-    void startGame(config);
+    return startGame(config);
   });
   const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
     if (identityChanged) {

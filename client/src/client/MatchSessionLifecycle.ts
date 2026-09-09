@@ -38,6 +38,30 @@ export class MatchSessionLifecycle<
   ownSubscription(unsubscribe: () => void): void { this.unsubscribe = unsubscribe; }
   ownRenderer(renderer: Renderer): void { this.ownedRenderer = renderer; }
 
+  /** Roll back only the partially-built match that still owns this generation. */
+  rollbackIfCurrent(generation: number, client: Client): boolean {
+    if (!this.isCurrent(generation, client)) return false;
+    this.generation += 1;
+    const unsubscribe = this.unsubscribe;
+    const input = this.ownedInput;
+    const ownedClient = this.ownedClient;
+    const renderer = this.ownedRenderer;
+    this.unsubscribe = null;
+    this.ownedInput = null;
+    this.ownedClient = null;
+    this.ownedRenderer = null;
+    this.clearTimers();
+    for (const dispose of [
+      () => unsubscribe?.(),
+      () => input?.detach(),
+      () => ownedClient?.stop(),
+      () => renderer?.reset(),
+    ]) {
+      try { dispose(); } catch { /* preserve the original setup failure */ }
+    }
+    return true;
+  }
+
   schedule(callback: () => void, delayMs: number): void {
     this.timers.push(setTimeout(callback, delayMs));
   }
