@@ -76,23 +76,44 @@ function replayControllerState(
   return { state: controller.engine.getState(), ticks }
 }
 
+function expectCanonicalState(
+  actual: ReturnType<GameEngine['getState']>,
+  expected: ReturnType<GameEngine['getState']>,
+): void {
+  const { terrain: actualTerrain, ...actualState } = actual
+  const { terrain: expectedTerrain, ...expectedState } = expected
+  expect(actualTerrain.byteLength).toBe(expectedTerrain.byteLength)
+  const actualBytes = Buffer.from(actualTerrain.buffer, actualTerrain.byteOffset, actualTerrain.byteLength)
+  const expectedBytes = Buffer.from(expectedTerrain.buffer, expectedTerrain.byteOffset, expectedTerrain.byteLength)
+  if (Buffer.compare(actualBytes, expectedBytes) !== 0) {
+    let mismatch = 0
+    while (mismatch < actualTerrain.byteLength && actualTerrain[mismatch] === expectedTerrain[mismatch]) mismatch += 1
+    expect.fail(
+      `canonical terrain differs at byte ${mismatch}: actual=${actualTerrain[mismatch]} expected=${expectedTerrain[mismatch]}`,
+    )
+  }
+  expect(actualState).toEqual(expectedState)
+}
+
+const verifiedPolicyScenarios = ([2, 3] as const).flatMap((policy) => [
+  { policy, outcome: 'terminal', length: 6, angle: 0, power: 5 },
+  { policy, outcome: 'cap', length: 6, angle: 20, power: 100 },
+])
+
 describe('VerifiedDeploymentRecorder', () => {
-  it.each([2, 3] as const)(
-    'uses shared policy V%s through HotSeatClient and matches canonical verifier state at terminal and cap outcomes',
-    (policy) => {
-      for (const { length, angle, power } of [
-        { length: 6, angle: 0, power: 5 },
-        { length: 6, angle: 20, power: 100 },
-      ]) {
-        const raf = animationFrames()
-        vi.stubGlobal('requestAnimationFrame', raf.request)
-        vi.stubGlobal('cancelAnimationFrame', raf.cancel)
-        const controller = policy === 2
-          ? VerifiedDuelController.create(17)
-          : VerifiedDuelController.createForPolicy(17, policy)
-        const client = new HotSeatClient(controller)
-        client.setFastForward(true)
-        client.start()
+  it.each(verifiedPolicyScenarios)(
+    'uses shared policy V$policy through HotSeatClient and matches canonical verifier state at the $outcome outcome',
+    ({ policy, length, angle, power }) => {
+      const raf = animationFrames()
+      vi.stubGlobal('requestAnimationFrame', raf.request)
+      vi.stubGlobal('cancelAnimationFrame', raf.cancel)
+      const controller = policy === 2
+        ? VerifiedDuelController.create(17)
+        : VerifiedDuelController.createForPolicy(17, policy)
+      const client = new HotSeatClient(controller)
+      client.setFastForward(true)
+      client.start()
+      try {
         const transcript = Array.from({ length }, () => ({ angle, power }))
         for (const shot of transcript) {
           client.sendAction({ type: 'set_angle', angle: shot.angle })
@@ -115,7 +136,8 @@ describe('VerifiedDeploymentRecorder', () => {
           expect(JSON.stringify(controller.result())).toBe(JSON.stringify(replayed))
         }
         expect(replayedController.ticks).toBeLessThan(VERIFIED_DUEL_LIVE_TICKS_TOTAL)
-        expect(controller.engine.getState()).toEqual(replayedController.state)
+        expectCanonicalState(controller.engine.getState(), replayedController.state)
+      } finally {
         client.stop()
         vi.unstubAllGlobals()
       }
