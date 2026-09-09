@@ -577,6 +577,8 @@ test.describe('Lobby layout guardrails', () => {
     // Preserve the projects' native viewports above; this is the published
     // 1440×900 clipping envelope that must use the waiting board's own scroll.
     await page.setViewportSize({ width: 1440, height: 900 });
+    await board.evaluate((element) => { element.scrollTop = 0; });
+    await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBe(0);
     await board.hover();
     await page.mouse.wheel(0, 900);
     await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
