@@ -42,13 +42,15 @@ export interface VerifiedRequestDependencies {
   bumpRateLimit?: (bucket: string, window: number) => Promise<{ data: unknown; error: unknown }>
   authenticate?: (req: Request) => Promise<string | null>
   readJson?: (body: ReadableStream<Uint8Array> | null, limit: number) => Promise<unknown>
+  readOptionalJson?: (body: ReadableStream<Uint8Array> | null, limit: number) => Promise<unknown>
   now?: () => number
   logger?: (message: string, context: Record<string, unknown>) => void
 }
 
 export interface VerifiedRequestOptions {
   operation: VerifiedOperation
-  bodyLimit: 0 | 128 | 1024
+  bodyLimit: 0 | 128 | 256 | 1024
+  bodyMode?: 'none' | 'required-json' | 'optional-json'
 }
 
 export type VerifiedRequestHandler = (
@@ -118,6 +120,19 @@ export async function readBoundedJson(
   options: { readTimeoutMs?: number; cancelTimeoutMs?: number } = {},
 ): Promise<unknown> {
   const raw = await readBytes(body, limit, options)
+  try {
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(raw))
+  } catch {
+    throw new InvalidVerifiedBodyError()
+  }
+}
+
+export async function readBoundedOptionalJson(
+  body: ReadableStream<Uint8Array> | null,
+  limit: number,
+): Promise<unknown> {
+  const raw = await readBytes(body, limit)
+  if (raw.byteLength === 0) return undefined
   try {
     return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(raw))
   } catch {
@@ -199,9 +214,12 @@ export function createVerifiedRequestHandler(
     }
     let body: unknown = undefined
     try {
-      if (options.bodyLimit === 0) {
+      const bodyMode = options.bodyMode ?? (options.bodyLimit === 0 ? 'none' : 'required-json')
+      if (bodyMode === 'none') {
         const raw = await readBytes(req.body, 0)
         if (raw.byteLength !== 0) return json({ error: 'invalid_request' }, 400)
+      } else if (bodyMode === 'optional-json') {
+        body = await (dependencies.readOptionalJson ?? readBoundedOptionalJson)(req.body, options.bodyLimit)
       } else {
         body = await (dependencies.readJson ?? readBoundedJson)(req.body, options.bodyLimit)
       }

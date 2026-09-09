@@ -317,6 +317,15 @@ export type Database = {
         Args: { p_user_id: string; p_config: Record<string, unknown>; p_expires_at: string };
         Returns: Array<Database["public"]["Tables"]["verified_deployments"]["Row"] & { resumed: boolean }>;
       };
+      start_verified_deployment_for_contracts: {
+        Args: {
+          p_user_id: string;
+          p_config: Record<string, unknown>;
+          p_expires_at: string;
+          p_supported_contract_versions: number[];
+        };
+        Returns: Array<Database["public"]["Tables"]["verified_deployments"]["Row"] & { resumed: boolean }>;
+      };
       abandon_verified_deployment: {
         Args: { p_user_id: string; p_session_id: string };
         Returns: Database["public"]["Tables"]["verified_deployments"]["Row"][];
