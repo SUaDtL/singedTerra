@@ -109,6 +109,28 @@ engine. Add gap and drain-order tests to `OrderedActionSession.test.ts`; add
 reconnect, overlapping fetch, and post-stop transport regressions to
 `NetworkClient.lockstep.test.ts`.
 
+## Extending mode configuration
+
+`client/src/client/modeConfig.ts` owns setup types and pure normalization.
+Use `normalizeRawModeSettings` for form text: blank fields remain omitted so
+engine defaults apply. Create-room requests use `normalizeCreateRoomRequest`;
+the deferred fallback uses `normalizeCreateRoomFallback` with separate captured
+name/rounds/economy and response-time form inputs. Preserve those observation
+times when changing lobby forms.
+
+Ready, rejoin, and rematch use `projectAuthoritativeNetworkMode`. It preserves
+authoritative numbers and valid team assignments without form clamping. Keep
+ready/rejoin ruleset rejection before handoff; the engine builder remains the
+final compatibility check. Rematch's successor parsing retains its own legacy
+numeric defaults before projection. `ClientModeSetup` provides discriminated
+mode types; `ModeSetup` and UI aliases retain existing caller compatibility.
+
+Pin option presence, deferred fallback timing, callback payloads, and exact
+initial engine state in `modeConfigCharacterization.test.ts`,
+`modeConfigHandoffCharacterization.test.ts`, and the team regression tests.
+`gameEngineOptions.ts` remains the engine-input boundary; client construction
+and lifecycle orchestration remain separate from normalization.
+
 ## Supabase
 
 The repository contains migrations and Edge Functions, not a Node game server.
