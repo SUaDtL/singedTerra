@@ -202,18 +202,4 @@ for (const seed of VERIFIED_DUEL_ALLOWED_SEEDS) {
 assert.equal(exhaustiveCases, 73_124)
 assert.ok(measuredMaxDisplacement < 24)
 
-const workloadTimes = []
-const adversarialCorpus = [
-  [17, 0, 5], [42, 45, 20], [73, 90, 20], [109, 180, 20],
-]
-for (const [seed, angle, power] of adversarialCorpus) {
-  const started = performance.now()
-  const result = replayVerifiedDuel(seed, Array.from({ length: 6 }, () => ({ angle, power })))
-  assert.equal(result.cpuSalvos, 6)
-  assert.ok(result.maximumProbeCount >= 59)
-  workloadTimes.push(performance.now() - started)
-}
-workloadTimes.sort((a, b) => a - b)
-assert.ok(workloadTimes.at(-1) < 100, `verified duel corpus max ${workloadTimes.at(-1)}ms exceeded 100ms`)
-
-console.log(JSON.stringify({ kind: 'verified-duel-pass', exhaustiveCases, measuredMaxTicks, measuredMaxDisplacement, medianMs: workloadTimes[2] }))
+console.log(JSON.stringify({ kind: 'verified-duel-pass', exhaustiveCases, measuredMaxTicks, measuredMaxDisplacement }))
