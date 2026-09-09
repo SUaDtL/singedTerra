@@ -13,6 +13,7 @@ import {
   parseVerifiedDeploymentStartResponse,
   parseVerifiedTranscript,
   normalizeVerifiedDeploymentSessionId,
+  VERIFIED_DEPLOYMENT_CAPABILITIES,
   type VerifiedDeploymentProgressionCounts,
   type VerifiedDeploymentProgressionSnapshot,
   type VerifiedDeploymentReceipt,
@@ -266,7 +267,9 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
 
     async startVerifiedDeployment() {
       const result = await withVerifiedDeploymentTimeout(
-        client.functions.invoke('start_verified_deployment'),
+        client.functions.invoke('start_verified_deployment', {
+          body: { capabilities: VERIFIED_DEPLOYMENT_CAPABILITIES },
+        }),
       )
       if (result.error) throw new Error('Verified deployment is unavailable.')
       const parsed = parseVerifiedDeploymentStartResponse(result.data)
@@ -668,7 +671,7 @@ export class AccountSession {
         const receipt: VerifiedDeploymentReceipt = Object.freeze({
           result: serverReceipt.result,
           progression: Object.freeze({
-            evidence: 'verified_replay_v2' as const,
+            evidence: serverReceipt.progression.evidence,
             prior,
             current,
           }),

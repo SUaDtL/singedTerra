@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
 import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
 import type { FieldOrder } from './client/fieldOrder'
+import type { VerifiedDeploymentDescriptor } from './client/verifiedDeployment'
 
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
   verifiedControllers: [] as Array<Record<string, unknown>>,
   verifiedControllerSeeds: [] as number[],
+  verifiedControllerPolicies: [] as number[],
+  verifiedControllerTuples: [] as Array<{ contractVersion: number; engineVersion: number; rulesetVersion: number }>,
   hotSeatConstructorArgs: [] as unknown[],
   onLobbyReady: null as null | ((config: Record<string, unknown>) => void),
   onQuit: null as null | (() => void),
@@ -68,6 +71,19 @@ vi.mock('@shared/net/verifiedDuel', () => ({
       if (!controller) throw new Error('Missing verified controller fixture')
       return controller
     }
+    static createForPolicy(seed: number, policy: number) {
+      seams.verifiedControllerSeeds.push(seed)
+      seams.verifiedControllerPolicies.push(policy)
+      const controller = seams.verifiedControllers.shift()
+      if (!controller) throw new Error('Missing verified controller fixture')
+      return controller
+    }
+  },
+  verifiedCpuPolicyForTuple: (tuple: { contractVersion: number; engineVersion: number; rulesetVersion: number }) => {
+    seams.verifiedControllerTuples.push(tuple)
+    if (tuple.contractVersion === 2 && tuple.engineVersion === 2 && tuple.rulesetVersion === 4) return 2
+    if (tuple.contractVersion === 3 && tuple.engineVersion === 3 && tuple.rulesetVersion === 4) return 3
+    throw new Error('unsupported_verified_replay_version')
   },
 }))
 vi.mock('./client/gameEngineOptions', () => ({ buildClientEngineOptions: (config: unknown) => config }))
@@ -372,13 +388,14 @@ function verifiedConfig(
     instruction: 'Damage the CPU within your first three salvos.',
     progress: { salvosRemaining: 3 }, result: null,
   },
+  descriptor: VerifiedDeploymentDescriptor = verifiedDescriptor,
 ) {
   return {
     mode: 'hotseat',
-    players: verifiedDescriptor.config.options.players,
+    players: descriptor.config.options.players,
     playerNames: ['Ranger', 'CPU 1'],
     settings: {
-      seed: 17,
+      seed: descriptor.config.seed,
       maxWind: 6,
       gravity: 0.15,
       walls: 'open',
@@ -391,7 +408,7 @@ function verifiedConfig(
       rulesetVersion: 4,
     },
     verifiedDeployment: {
-      descriptor: verifiedDescriptor,
+      descriptor,
       transcript,
       fieldOrder,
     },
@@ -483,6 +500,8 @@ describe('production hot-seat progression composition', () => {
     seams.clients.length = 0
     seams.verifiedControllers.length = 0
     seams.verifiedControllerSeeds.length = 0
+    seams.verifiedControllerPolicies.length = 0
+    seams.verifiedControllerTuples.length = 0
     seams.hotSeatConstructorArgs.length = 0
     seams.onLobbyReady = null
     seams.onQuit = null
@@ -763,6 +782,39 @@ describe('production hot-seat progression composition', () => {
     })
   })
 
+  it.each([
+    ['fresh V2', 2, []],
+    ['resumed V2', 2, [{ angle: 31, power: 62 }]],
+    ['fresh V3', 3, []],
+    ['resumed V3', 3, [{ angle: 31, power: 62 }]],
+  ] as const)('restores %s through its exact tuple policy', async (_label, version, transcript) => {
+    const descriptor: VerifiedDeploymentDescriptor = version === 2
+      ? verifiedDescriptor
+      : { ...verifiedDescriptor, contractVersion: 3, engineVersion: 3 }
+    const state = liveVerifiedState()
+    const controller = fakeVerifiedController(state)
+    const client = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(client)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor, transcript,
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+
+    seams.onLobbyReady(verifiedConfig(transcript, undefined, descriptor))
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    expect(seams.verifiedControllerPolicies).toEqual([version])
+    expect(seams.verifiedControllerTuples).toEqual([{
+      contractVersion: version,
+      engineVersion: version,
+      rulesetVersion: 4,
+    }])
+    expect(controller.applyHumanAction).toHaveBeenCalledTimes(transcript.length * 3)
+  })
+
   it('replays recovery through the shared controller, persists only accepted human fire, and submits one verified terminal result', async () => {
     const state = liveVerifiedState()
     const controller = fakeVerifiedController(state)
@@ -782,6 +834,10 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
     if (!seams.inputAction) throw new Error('Expected verified input wiring')
     expect(seams.verifiedControllerSeeds).toEqual([17])
+    expect(seams.verifiedControllerPolicies).toEqual([2])
+    expect(seams.verifiedControllerTuples).toEqual([
+      { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+    ])
     expect(seams.hotSeatConstructorArgs).toEqual([controller])
     expect(controller.applyHumanAction.mock.calls.slice(0, 3).map(([action]) => action)).toEqual([
       { type: 'set_angle', angle: 31 },
@@ -878,6 +934,11 @@ describe('production hot-seat progression composition', () => {
     freshClient.emit(freshState)
 
     expect(seams.verifiedControllerSeeds).toEqual([17, 42])
+    expect(seams.verifiedControllerPolicies).toEqual([2, 2])
+    expect(seams.verifiedControllerTuples).toEqual([
+      { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+      { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+    ])
     expect(seams.verifiedHudStates.at(-1)).toMatchObject({
       status: 'active', humanSalvos: 0, cpuSalvos: 0, humanLimit: 6, cpuLimit: 6,
     })
