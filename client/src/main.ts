@@ -5,7 +5,7 @@ import { GRAVITY } from '@shared/engine/Physics';
 import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
 import type { GameState } from '@shared/types/GameState';
-import { VerifiedDuelController } from '@shared/net/verifiedDuel';
+import { VerifiedDuelController, verifiedCpuPolicyForTuple } from '@shared/net/verifiedDuel';
 import type { ConnectionState, GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
@@ -162,8 +162,14 @@ function restoreVerifiedController(
   seed: number,
   transcript: readonly VerifiedHumanFire[],
   initialFieldOrder: FieldOrder | null,
+  versions: { readonly contractVersion: number; readonly engineVersion: number; readonly rulesetVersion: number },
 ): { controller: VerifiedDuelController; fieldOrder: FieldOrder | null } {
-  const controller = VerifiedDuelController.create(seed);
+  const policy = verifiedCpuPolicyForTuple({
+    contractVersion: versions.contractVersion,
+    engineVersion: versions.engineVersion,
+    rulesetVersion: versions.rulesetVersion,
+  });
+  const controller = VerifiedDuelController.createForPolicy(seed, policy);
   let fieldOrder = initialFieldOrder;
   for (const [index, shot] of transcript.entries()) {
     if (controller.complete
@@ -610,6 +616,7 @@ function bootstrap(): void {
           config.verifiedDeployment.descriptor.config.seed,
           config.verifiedDeployment.transcript,
           config.verifiedDeployment.fieldOrder,
+          config.verifiedDeployment.descriptor,
         );
         verifiedController = restored.controller;
         fieldOrder = restored.fieldOrder;

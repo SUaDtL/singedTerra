@@ -162,6 +162,26 @@ describe('VerifiedDeploymentStorage', () => {
     expect(storage.recover(descriptor)?.transcript).toEqual([{ angle: 37, power: 64 }])
   })
 
+  it('stores V2 and V3 deployments in the existing version-two envelope without tuple substitution', () => {
+    const backing = memoryStorage()
+    const storage = new VerifiedDeploymentStorage(backing, () => Date.parse('2026-08-12T13:00:00.000Z'))
+    const v3Descriptor: VerifiedDeploymentDescriptor = {
+      ...descriptor,
+      sessionId: '00000000-0000-4000-8000-000000000062',
+      contractVersion: 3,
+      engineVersion: 3,
+    }
+    storage.begin(descriptor)
+    storage.recordAcceptedFire(descriptor, { angle: 37, power: 64 })
+    storage.begin(v3Descriptor)
+    storage.recordAcceptedFire(v3Descriptor, { angle: 91, power: 80 })
+
+    expect(JSON.parse(backing.getItem(VERIFIED_DEPLOYMENT_STORAGE_KEY) ?? '{}').storageVersion).toBe(2)
+    expect(storage.recover(descriptor)?.transcript).toEqual([{ angle: 37, power: 64 }])
+    expect(storage.recover(v3Descriptor)?.transcript).toEqual([{ angle: 91, power: 80 }])
+    expect(storage.recover({ ...descriptor, contractVersion: 3, engineVersion: 3 })).toBeNull()
+  })
+
   it('fails closed when synchronous browser storage is unavailable', () => {
     const unavailable = {
       getItem: vi.fn(() => { throw new Error('raw private-mode failure') }),

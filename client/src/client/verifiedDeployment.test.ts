@@ -9,7 +9,12 @@ import {
   VerifiedDeploymentRecorder,
 } from './verifiedDeployment'
 import { HotSeatClient } from './HotSeatClient'
-import { VerifiedDuelController, replayVerifiedDuel } from '@shared/net/verifiedDuel'
+import {
+  VerifiedDuelController,
+  VERIFIED_DUEL_LIVE_TICKS_TOTAL,
+  replayVerifiedDuel,
+  replayVerifiedDuelForPolicy,
+} from '@shared/net/verifiedDuel'
 
 function engine(): GameEngine {
   return new GameEngine({
@@ -50,37 +55,72 @@ function animationFrames() {
   }
 }
 
-describe('VerifiedDeploymentRecorder', () => {
-  it('uses the shared controller through HotSeatClient and matches verifier bytes at terminal and cap outcomes', () => {
-    for (const { length, angle, power } of [
-      { length: 6, angle: 0, power: 5 },
-      { length: 6, angle: 20, power: 100 },
-    ]) {
-      const raf = animationFrames()
-      vi.stubGlobal('requestAnimationFrame', raf.request)
-      vi.stubGlobal('cancelAnimationFrame', raf.cancel)
-      const controller = VerifiedDuelController.create(17)
-      const client = new HotSeatClient(controller)
-      client.setFastForward(true)
-      client.start()
-      const transcript = Array.from({ length }, () => ({ angle, power }))
-      for (const shot of transcript) {
-        client.sendAction({ type: 'set_angle', angle: shot.angle })
-        client.sendAction({ type: 'set_power', power: shot.power })
-        client.sendAction({ type: 'fire' })
-        let frames = 0
-        while (!controller.complete && client.getState()?.phase !== 'PLAYER_TURN' && frames < 1_000) {
-          raf.runNext()
-          frames += 1
-        }
-        expect(frames).toBeLessThan(1_000)
-        if (controller.complete) break
-      }
-      expect(JSON.stringify(controller.result())).toBe(JSON.stringify(replayVerifiedDuel(17, transcript)))
-      client.stop()
-      vi.unstubAllGlobals()
+function replayControllerState(
+  seed: number,
+  transcript: readonly { angle: number; power: number }[],
+  policy: 2 | 3,
+): { state: ReturnType<GameEngine['getState']>; ticks: number } {
+  const controller = VerifiedDuelController.createForPolicy(seed, policy)
+  let ticks = 0
+  for (const shot of transcript) {
+    if (controller.complete) break
+    controller.applyHumanAction({ type: 'set_angle', angle: shot.angle })
+    controller.applyHumanAction({ type: 'set_power', power: shot.power })
+    controller.applyHumanAction({ type: 'fire' })
+    while (!controller.complete && controller.engine.getState().phase !== 'PLAYER_TURN'
+      && ticks < VERIFIED_DUEL_LIVE_TICKS_TOTAL) {
+      controller.tick()
+      ticks += 1
     }
-  })
+  }
+  return { state: controller.engine.getState(), ticks }
+}
+
+describe('VerifiedDeploymentRecorder', () => {
+  it.each([2, 3] as const)(
+    'uses shared policy V%s through HotSeatClient and matches canonical verifier state at terminal and cap outcomes',
+    (policy) => {
+      for (const { length, angle, power } of [
+        { length: 6, angle: 0, power: 5 },
+        { length: 6, angle: 20, power: 100 },
+      ]) {
+        const raf = animationFrames()
+        vi.stubGlobal('requestAnimationFrame', raf.request)
+        vi.stubGlobal('cancelAnimationFrame', raf.cancel)
+        const controller = policy === 2
+          ? VerifiedDuelController.create(17)
+          : VerifiedDuelController.createForPolicy(17, policy)
+        const client = new HotSeatClient(controller)
+        client.setFastForward(true)
+        client.start()
+        const transcript = Array.from({ length }, () => ({ angle, power }))
+        for (const shot of transcript) {
+          client.sendAction({ type: 'set_angle', angle: shot.angle })
+          client.sendAction({ type: 'set_power', power: shot.power })
+          client.sendAction({ type: 'fire' })
+          let frames = 0
+          while (!controller.complete && client.getState()?.phase !== 'PLAYER_TURN' && frames < 1_000) {
+            raf.runNext()
+            frames += 1
+          }
+          expect(frames).toBeLessThan(1_000)
+          if (controller.complete) break
+        }
+        const replayed = policy === 2
+          ? replayVerifiedDuel(17, transcript)
+          : replayVerifiedDuelForPolicy(17, transcript, policy)
+        const replayedController = replayControllerState(17, transcript, policy)
+        expect(controller.result()).toEqual(replayed)
+        if (policy === 2) {
+          expect(JSON.stringify(controller.result())).toBe(JSON.stringify(replayed))
+        }
+        expect(replayedController.ticks).toBeLessThan(VERIFIED_DUEL_LIVE_TICKS_TOTAL)
+        expect(controller.engine.getState()).toEqual(replayedController.state)
+        client.stop()
+        vi.unstubAllGlobals()
+      }
+    },
+  )
 
   it('keeps ordinary HotSeatClient behavior independent of verified CPU driving', () => {
     const game = engine()
@@ -234,6 +274,26 @@ describe('verified deployment client contracts', () => {
     expect(JSON.stringify(parsed)).not.toContain('userId')
   })
 
+  it('accepts and preserves each canonical deployment tuple', () => {
+    for (const tuple of [
+      { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+      { contractVersion: 3, engineVersion: 3, rulesetVersion: 4 },
+    ] as const) {
+      const parsed = parseVerifiedDeploymentStartResponse({ ...startResponse, ...tuple })
+
+      expect(parsed?.descriptor).toMatchObject(tuple)
+      expect(Object.isFrozen(parsed?.descriptor)).toBe(true)
+    }
+  })
+
+  it.each([
+    ['V2 contract with V3 engine', { contractVersion: 2, engineVersion: 3, rulesetVersion: 4 }],
+    ['V3 contract with V2 engine', { contractVersion: 3, engineVersion: 2, rulesetVersion: 4 }],
+    ['unknown future tuple', { contractVersion: 4, engineVersion: 4, rulesetVersion: 4 }],
+  ])('rejects %s instead of mixing or inferring versions', (_label, tuple) => {
+    expect(parseVerifiedDeploymentStartResponse({ ...startResponse, ...tuple })).toBeNull()
+  })
+
   it('accepts the equivalent UTC offset spelling emitted by Postgres and canonicalizes the deadline', () => {
     const parsed = parseVerifiedDeploymentStartResponse({
       ...startResponse,
@@ -312,6 +372,15 @@ describe('verified deployment client contracts', () => {
     expect(parsed).toEqual(completionResponse)
     expect(Object.isFrozen(parsed?.progression.prior)).toBe(true)
     expect(Object.isFrozen(parsed?.progression.current)).toBe(true)
+  })
+
+  it('preserves V3 result evidence without relabeling aggregate progression', () => {
+    const parsed = parseVerifiedDeploymentCompletionResponse({
+      ...completionResponse,
+      progression: { ...completionResponse.progression, evidence: 'verified_replay_v3' },
+    })
+
+    expect(parsed?.progression.evidence).toBe('verified_replay_v3')
   })
 
   it.each([
