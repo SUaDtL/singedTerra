@@ -331,7 +331,7 @@ test.describe('Victory After-Action Report', () => {
       .toBeLessThanOrEqual(geometry.panelBottom + 1);
   });
 
-  test('keeps the four-seat receipt fixture contained, scroll-reachable, and keyboard-causal', async ({ page }, testInfo) => {
+  test('keeps the four-seat receipt fixture contained, scroll-reachable, and keyboard-causal', async ({ page }) => {
     for (const viewport of [
       { name: 'wide', width: 3440, height: 1215 },
       { name: 'standard', width: 1440, height: 900 },
@@ -386,8 +386,6 @@ test.describe('Victory After-Action Report', () => {
         expect(bounds.top, `${name} is reachable at the report top`).toBeGreaterThanOrEqual(reportTop.panel.top - 1);
         expect(bounds.bottom, `${name} is reachable at the report top`).toBeLessThanOrEqual(reportTop.panel.bottom + 1);
       }
-      await page.screenshot({ path: testInfo.outputPath(`terminal-${viewport.name}-verified-four-row-top.png`) });
-
       const primary = report.getByRole('button', { name: 'Brief next order' });
       const menu = report.getByRole('button', { name: 'Main Menu' });
       await primary.scrollIntoViewIfNeeded();
@@ -422,7 +420,6 @@ test.describe('Victory After-Action Report', () => {
       await expect(menu).toBeFocused();
       await page.keyboard.press('Shift+Tab');
       await expect(primary).toBeFocused();
-      await page.screenshot({ path: testInfo.outputPath(`terminal-${viewport.name}-verified-four-row.png`) });
       await menu.press('Enter');
       await expect(page.locator('#lobby')).toBeVisible();
     }
