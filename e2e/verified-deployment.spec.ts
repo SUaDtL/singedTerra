@@ -49,12 +49,12 @@ function verifiedStart(resumed = false, expiresAt?: string) {
 }
 
 async function installAuthenticatedFixture(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+  await page.addInitScript((authStorageKey: string | null) => {
     // These journeys exercise verified sessions after onboarding. Persist the
     // public Skip preference before launch; a slow first frame must not race
     // the optional briefing against the Match ledger interaction.
     window.localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
-    window.localStorage.setItem(`sb-${window.location.hostname.split('.')[0]}-auth-token`, JSON.stringify({
+    window.localStorage.setItem(authStorageKey ?? `sb-${window.location.hostname.split('.')[0]}-auth-token`, JSON.stringify({
       access_token: ['e2e', 'public', 'session', 'token'].join('-'),
       refresh_token: ['e2e', 'public', 'refresh', 'token'].join('-'),
       expires_at: 4_102_444_800,
@@ -70,7 +70,7 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
         created_at: '2026-08-10T00:00:00.000Z',
       },
     }));
-  });
+  }, process.env['E2E_AUTH_STORAGE_KEY'] ?? null);
   await page.route('**/rest/v1/profiles**', async (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
