@@ -212,6 +212,7 @@ type _RpcKeysAreExact = AssertExact<
   | "bump_rate_limit"
   | "submit_room_action"
   | "start_verified_deployment"
+  | "start_verified_deployment_for_contracts"
   | "abandon_verified_deployment"
   | "complete_verified_deployment"
   | "verified_progression_summary"
@@ -262,6 +263,11 @@ type _StartVerifiedDeploymentArgsAreExact = AssertExact<
 type _StartVerifiedDeploymentReturnsAuthoritativeResumed = AssertExact<
   Functions["start_verified_deployment"]["Returns"][number]["resumed"],
   boolean
+>;
+type _StartVerifiedDeploymentForContractsArgsAreExact = AssertExact<
+  Functions["start_verified_deployment_for_contracts"]["Args"],
+  { p_user_id: string; p_config: Record<string, unknown>; p_expires_at: string;
+    p_supported_contract_versions: number[] }
 >;
 type _AbandonVerifiedDeploymentArgsAreExact = AssertExact<
   Functions["abandon_verified_deployment"]["Args"],

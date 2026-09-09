@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { buildVerifiedDeploymentConfig, createStartVerifiedDeploymentHandler, handleStartVerifiedDeployment } from './index.ts'
+import { buildVerifiedDeploymentConfig, createStartVerifiedDeploymentHandler, handleStartVerifiedDeployment, parseVerifiedStartCapabilities } from './index.ts'
 
 const userId = '11111111-1111-4111-8111-111111111111'
 const sessionId = '22222222-2222-4222-8222-222222222222'
@@ -20,7 +20,7 @@ Deno.test('start constructs only the frozen server-owned config and exact RPC ar
   const test = dependencies()
   const response = await handleStartVerifiedDeployment(undefined, new Request('https://x.test'), userId, { supabase: test.supabase as never, chooseSeed: () => 17, now: () => new Date('2026-08-11T12:00:00.000Z') })
   assertEquals(response.status, 200)
-  assertEquals(test.calls, [{ name: 'start_verified_deployment', args: { p_user_id: userId, p_config: buildVerifiedDeploymentConfig('Ash Walker', 17), p_expires_at: '2026-08-11T12:30:00.000Z' } }])
+  assertEquals(test.calls, [{ name: 'start_verified_deployment_for_contracts', args: { p_user_id: userId, p_config: buildVerifiedDeploymentConfig('Ash Walker', 17), p_expires_at: '2026-08-11T12:30:00.000Z', p_supported_contract_versions: [2] } }])
   assertEquals(await response.json(), {
     sessionId, resumed: false, expiresAt: '2026-08-11T12:30:00.000Z', contractVersion: 2, engineVersion: 2, rulesetVersion: 4,
     limits: { humanSalvos: 6, cpuSalvos: 6, angle: { min: 0, max: 180 }, power: { min: 0, max: 100 } },
@@ -83,16 +83,57 @@ Deno.test('start refuses a widened or request-influenced stored config instead o
   assertEquals(JSON.stringify(await response.json()).includes(userId), false)
 })
 
-Deno.test('start wrapper is exactly no-body and rejects unknown keys after both limiters', async () => {
+Deno.test('start wrapper accepts only bounded optional capability JSON after both limiters', async () => {
   const calls: unknown[][] = []
   const sentinel = async () => new Response('sentinel')
   const created = createStartVerifiedDeploymentHandler(((...args: unknown[]) => { calls.push(args); return sentinel }) as never)
   assertEquals(created, sentinel)
-  assertEquals(calls[0]?.[1], { operation: 'start_verified_deployment', bodyLimit: 0 })
+  assertEquals(calls[0]?.[1], { operation: 'start_verified_deployment', bodyLimit: 256, bodyMode: 'optional-json' })
 })
 
-Deno.test('start ignores every request-owned seed or config value at the domain seam', async () => {
+Deno.test('start capabilities accept exact canonical tuples and reject malformed or ambiguous claims before storage', async () => {
+  const v2 = { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 } as const
+  const v3 = { contractVersion: 3, engineVersion: 3, rulesetVersion: 4 } as const
+  assertEquals(parseVerifiedStartCapabilities(undefined), [v2])
+  assertEquals(parseVerifiedStartCapabilities({ capabilities: [v2, v3] }), [v2, v3])
+  for (const body of [null, {}, [], { capabilities: [] }, { capabilities: [v2, v2] },
+    { capabilities: [{ ...v3, contractVersion: 3.5 }] },
+    { capabilities: [{ ...v3, engineVersion: 2 }] },
+    { capabilities: [{ ...v3, rulesetVersion: 5 }] },
+    { capabilities: [v2], seed: 17 }]) {
+    assertEquals(parseVerifiedStartCapabilities(body), null)
+    const test = dependencies()
+    const response = await handleStartVerifiedDeployment(body, new Request('https://x.test'), userId, { supabase: test.supabase as never })
+    assertEquals(response.status, 400)
+    assertEquals(test.calls, [])
+  }
+})
+
+Deno.test('start passes capable contracts and projects the exact persisted V3 tuple', async () => {
+  const test = dependencies({ contract_version: 3, engine_version: 3, ruleset_version: 4 })
+  const capabilities = [
+    { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+    { contractVersion: 3, engineVersion: 3, rulesetVersion: 4 },
+  ]
+  const response = await handleStartVerifiedDeployment({ capabilities }, new Request('https://x.test'), userId, {
+    supabase: test.supabase as never, chooseSeed: () => 17, now: () => new Date('2026-08-11T12:00:00.000Z'),
+  })
+  assertEquals((test.calls[0]!.args as { p_supported_contract_versions: number[] }).p_supported_contract_versions, [2, 3])
+  const body = await response.json()
+  assertEquals([body.contractVersion, body.engineVersion, body.rulesetVersion], [3, 3, 4])
+})
+
+Deno.test('legacy empty start refuses a canonical V3 row outside its advertised capability', async () => {
+  const test = dependencies({ contract_version: 3, engine_version: 3, ruleset_version: 4 })
+  const response = await handleStartVerifiedDeployment(undefined, new Request('https://x.test'), userId, {
+    supabase: test.supabase as never, logger: () => undefined,
+  })
+  assertEquals(response.status, 500)
+})
+
+Deno.test('start rejects request-owned seed or config values at the domain seam', async () => {
   const test = dependencies()
-  await handleStartVerifiedDeployment({ seed: 109, maxWind: 99 }, new Request('https://x.test'), userId, { supabase: test.supabase as never, chooseSeed: () => 17, now: () => new Date('2026-08-11T12:00:00.000Z') })
-  assertEquals((test.calls[0]!.args as { p_config: { seed: number } }).p_config.seed, 17)
+  const response = await handleStartVerifiedDeployment({ seed: 109, maxWind: 99 }, new Request('https://x.test'), userId, { supabase: test.supabase as never })
+  assertEquals(response.status, 400)
+  assertEquals(test.calls, [])
 })
