@@ -492,6 +492,42 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       await flush();
     });
 
+    it('PARITY: reads fallback presentation and existing seed after create resolves', async () => {
+      let resolve!: (response: FakeResponse) => void;
+      const fetchMock = vi.fn(() => new Promise<FakeResponse>((done) => { resolve = done; }));
+      vi.stubGlobal('fetch', fetchMock);
+      Object.assign(internals(lobby), {
+        onlineName: 'Solo',
+        onlineColor: '#e84d4d',
+        onlineMaxPlayers: 2,
+        onlineMaxWind: '',
+        waitingSeed: 73,
+      });
+
+      const pending = internals(lobby).handleCreateRoom();
+      Object.assign(internals(lobby), {
+        onlineColor: '#a855f7',
+        onlineLoadout: MIXED_LOADOUT,
+        onlineMaxPlayers: 4,
+        onlineMaxWind: '6',
+        waitingSeed: 42,
+      });
+      resolve({
+        ok: true,
+        status: 200,
+        json: () => ({ roomId: 'r', code: 'CCCC', playerId: 'me', token: 't' }),
+      });
+      await pending;
+
+      expect(callAt(fetchMock).body).toMatchObject({ color: '#e84d4d', options: { maxPlayers: 2 } });
+      expect(internals(lobby).waitingSeed).toBe(42);
+      expect(internals(lobby).waitingOptions).toMatchObject({ maxPlayers: 4, maxWind: 6 });
+      expect(internals(lobby).waitingPlayers).toEqual([{
+        id: 'me', name: 'Solo', color: '#a855f7', ready: false, loadout: MIXED_LOADOUT,
+      }]);
+      await flush();
+    });
+
     it('ERROR: { error } response surfaces the message and does NOT transition', async () => {
       const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'Name already taken' }) });
       internals(lobby).onlineName = 'Alice';
