@@ -1446,7 +1446,7 @@ function exposeDeterministicHotSeatProbe(state: GameState): void {
 }
 
 /** Build the GameClient for the selected mode (SPEC §5). */
-async function createClient(config: LobbyConfig): Promise<GameClient> {
+export async function createClient(config: LobbyConfig): Promise<GameClient> {
   if (config.mode === 'network') {
     if (!config.roomId)   throw new Error('createClient: missing roomId for network mode');
     if (!config.playerId) throw new Error('createClient: missing playerId for network mode');
@@ -1459,7 +1459,13 @@ async function createClient(config: LobbyConfig): Promise<GameClient> {
     const gameOptions = buildClientEngineOptions({ ...config, mode: 'network' });
 
     const nc = new NetworkClient(supabase, config.roomId, config.playerId, gameOptions, config.token);
-    await nc.initialize();
+    try {
+      await nc.initialize();
+    } catch (error) {
+      // The match lifecycle cannot own this candidate until initialization succeeds.
+      nc.stop();
+      throw error;
+    }
     return nc;
   }
 
