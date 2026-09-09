@@ -7,10 +7,6 @@ import { MAX_MOVE_DELTA } from '@shared/engine/Movement';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
 import { STORE_CATALOG } from './storeCatalog';
 import { makeWeaponIcon } from './weaponIcons';
-import {
-  clearTankLoadoutPreview,
-  paintTankLoadoutPreview,
-} from '../renderer/TankLoadoutPreview';
 import type { FirstSalvoStep } from './firstSalvoCoach';
 import { QUICK_CHAT_MESSAGES, type QuickChatKey } from '../client/quickChat';
 import {
@@ -56,6 +52,7 @@ import {
   type RoundOverPurchase,
   type RoundOverViewProjection,
 } from './RoundOverView';
+import { TerminalMatchView, type TerminalMatchProjection } from './TerminalMatchView';
 
 
 function publicBattleConsoleHostMode(mode: BattleConsoleLayoutMode): BattleConsoleHostMode {
@@ -207,6 +204,7 @@ export class HUD {
   private quickOperationEl!: HTMLElement;
   private quickOperation: { readonly title: string; readonly briefing: string } | null = null;
   private overlayEl!: HTMLElement;
+  private terminalView!: TerminalMatchView;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
    *  the client/engine keeps running underneath, so Resume returns to the live game. */
   private pauseEl!: HTMLElement;
@@ -218,21 +216,9 @@ export class HUD {
     aimGuideEnabled: true,
     soundEnabled: true,
   };
-  private overlayTextEl!: HTMLElement;
-  /** Final scoreboard table inside the GAME_OVER panel (round wins / kills / damage). */
-  private overlayScoreEl!: HTMLElement;
-  private overlayStatusEl!: HTMLElement;
-  private overlayQuickOperationEl!: HTMLElement;
-  private overlayFieldOrderEl!: HTMLElement;
-  private overlayProgressionReceiptEl!: HTMLElement;
-  private overlayProgressionHandoffEl!: HTMLElement;
-  private overlayProgressionSignInBtnEl!: HTMLButtonElement;
-  private overlayVerifiedRetryBtnEl!: HTMLButtonElement;
-  private overlayTankEl!: HTMLCanvasElement;
-  private overlayPrimaryBtnEl!: HTMLButtonElement;
-  private overlayPrimaryLabelEl!: HTMLSpanElement;
-  private overlayMenuBtnEl!: HTMLButtonElement;
-  private overlayPreviousFocus: HTMLElement | null = null;
+  private terminalFieldOrder: string | null = null;
+  private terminalProgressionReceipt: TerminalMatchProjection['progressionReceipt'] = null;
+  private terminalProgressionHandoff: TerminalMatchProjection['progressionHandoff'] = null;
   private terminalPayoffStatusEl!: HTMLElement;
   private terminalState: GameState | null = null;
   private terminalImpactComplete = false;
@@ -449,6 +435,7 @@ export class HUD {
   destroy(): Promise<void> {
     if (this.destroyPromise) return this.destroyPromise;
     this.destroyed = true;
+    if (this.built) this.terminalView.destroy();
     this.battleConsoleActive = false;
     this.battleConsoleEntering = null;
     window.removeEventListener('resize', this.handleBattleConsoleEnvironmentChange);
@@ -482,8 +469,6 @@ export class HUD {
     this.semanticParkingEl = parking;
     for (const node of [
       this.liveMatchInspectorMenuEl,
-      this.overlayProgressionSignInBtnEl,
-      this.overlayVerifiedRetryBtnEl,
       this.verifiedStatusEl,
       this.fieldOrderEl,
     ]) {
@@ -1034,11 +1019,8 @@ export class HUD {
     if (!this.built) this.build();
     this.quickOperation = operation;
     this.quickOperationEl.hidden = operation === null;
-    this.overlayQuickOperationEl.hidden = operation === null;
-    this.overlayQuickOperationEl.textContent = operation === null
-      ? ''
-      : `Operation · ${operation.title} — ${operation.briefing}`;
     this.quickOperationEl.textContent = operation === null ? '' : `${operation.title} · ${operation.briefing}`;
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
   /** Retained verified-play status, deliberately separate from the retired battle-console owner. */
@@ -1149,145 +1131,19 @@ export class HUD {
     this.terminalPayoffStatusEl.setAttribute('aria-live', 'polite');
     this.terminalPayoffStatusEl.setAttribute('aria-atomic', 'true');
 
-    // GAME_OVER overlay (hidden until phase === GAME_OVER).
-    this.overlayEl = document.createElement('div');
-    this.overlayEl.className =
-      'st-hud__overlay st-hud__overlay--victory st-hud__overlay--hidden';
-    this.overlayEl.setAttribute('role', 'dialog');
-    this.overlayEl.setAttribute('aria-modal', 'true');
-    this.overlayEl.setAttribute('aria-labelledby', 'st-victory-title');
-    this.overlayEl.setAttribute('aria-hidden', 'true');
-
-    const panel = document.createElement('div');
-    panel.className = 'st-hud__overlay-panel st-hud__overlay-panel--victory';
-
-    const hero = document.createElement('section');
-    hero.className = 'st-hud__victory-hero';
-    const eyebrow = document.createElement('div');
-    eyebrow.className = 'st-hud__victory-eyebrow';
-    eyebrow.textContent = 'After action report';
-    const tankFrame = document.createElement('div');
-    tankFrame.className = 'st-hud__victory-tank-frame';
-    this.overlayTankEl = document.createElement('canvas');
-    this.overlayTankEl.className = 'st-hud__victory-tank';
-    this.overlayTankEl.setAttribute('aria-hidden', 'true');
-    this.overlayTankEl.hidden = true;
-    tankFrame.append(this.overlayTankEl);
-    hero.append(tankFrame);
-
-    const report = document.createElement('section');
-    report.className = 'st-hud__victory-report';
-    this.overlayStatusEl = document.createElement('div');
-    this.overlayStatusEl.className = 'st-hud__victory-status';
-    this.overlayQuickOperationEl = document.createElement('div');
-    this.overlayQuickOperationEl.className = 'st-hud__victory-operation';
-    this.overlayQuickOperationEl.dataset['ui'] = 'quick-operation-report';
-    this.overlayQuickOperationEl.hidden = true;
-    this.overlayFieldOrderEl = document.createElement('div');
-    this.overlayFieldOrderEl.className = 'st-hud__victory-field-order';
-    this.overlayFieldOrderEl.setAttribute('role', 'status');
-    this.overlayFieldOrderEl.hidden = true;
-    this.overlayProgressionReceiptEl = document.createElement('div');
-    this.overlayProgressionReceiptEl.className = 'st-hud__victory-progression-receipt';
-    this.overlayProgressionReceiptEl.setAttribute('role', 'status');
-    this.overlayProgressionReceiptEl.setAttribute('aria-live', 'polite');
-    this.overlayProgressionReceiptEl.hidden = true;
-    this.overlayProgressionHandoffEl = document.createElement('div');
-    this.overlayProgressionHandoffEl.className = 'st-hud__victory-progression-handoff';
-    this.overlayProgressionHandoffEl.setAttribute('role', 'status');
-    this.overlayProgressionHandoffEl.setAttribute('aria-live', 'polite');
-    this.overlayProgressionHandoffEl.setAttribute('aria-atomic', 'true');
-    this.overlayProgressionHandoffEl.hidden = true;
-    const handoffPrompt = document.createElement('p');
-    handoffPrompt.textContent = 'Sign in to record future matches.';
-    this.overlayProgressionSignInBtnEl = document.createElement('button');
-    this.overlayProgressionSignInBtnEl.className = 'st-hud__victory-progression-sign-in';
-    this.overlayProgressionSignInBtnEl.type = 'button';
-    this.overlayProgressionSignInBtnEl.textContent = 'Sign in';
-    this.overlayProgressionSignInBtnEl.addEventListener('click', () => this.progressionSignInCb?.());
-    this.overlayProgressionHandoffEl.append(handoffPrompt);
-    this.overlayTextEl = document.createElement('h1');
-    this.overlayTextEl.id = 'st-victory-title';
-    this.overlayTextEl.className = 'st-hud__overlay-text st-hud__victory-title';
-    const scoreLabel = document.createElement('div');
-    scoreLabel.className = 'st-hud__victory-score-label';
-    scoreLabel.textContent = 'Final standings';
-    // Final scoreboard (round wins / kills / damage), populated in syncOverlay.
-    this.overlayScoreEl = document.createElement('div');
-    this.overlayScoreEl.className = 'st-hud__score';
-    const restartBtn = document.createElement('button');
-    restartBtn.className = 'st-hud__restart st-hud__victory-primary';
-    restartBtn.type = 'button';
-    this.overlayPrimaryLabelEl = document.createElement('span');
-    this.overlayPrimaryLabelEl.className = 'st-hud__victory-action-label';
-    this.overlayPrimaryLabelEl.textContent = 'Play again';
-    restartBtn.append(makeHudGlyph('weapon', 18), this.overlayPrimaryLabelEl);
-    // Listener attached ONCE here (never in update) — fires the stored callback.
-    restartBtn.addEventListener('click', () => {
-      if (!this.overlayShown) return;
-      if (this.verifiedNextOrderArmed) {
-        restartBtn.blur();
-        this.verifiedNextOrderCb?.();
-        return;
-      }
-      this.restartCb?.();
+    // GAME_OVER presentation is owned by the semantic terminal view. HUD keeps the
+    // payoff gate and supplies immutable display projections.
+    this.terminalView = new TerminalMatchView({
+      host: this.modalRoot,
+      onRestart: () => this.restartCb?.(),
+      onVerifiedNextOrder: () => this.verifiedNextOrderCb?.(),
+      onQuit: () => this.quitCb?.(),
+      onRetry: () => this.verifiedRetryCb?.(),
+      onSignIn: () => this.progressionSignInCb?.(),
+      focusFallback: () => this.matchDrawerBtnEl,
+      isolationExclusions: [this.terminalPayoffStatusEl],
     });
-    const overlayMenuBtn = document.createElement('button');
-    overlayMenuBtn.className = 'st-hud__restart st-hud__restart--ghost';
-    overlayMenuBtn.type = 'button';
-    const overlayMenuLabel = document.createElement('span');
-    overlayMenuLabel.className = 'st-hud__victory-action-label';
-    overlayMenuLabel.textContent = 'Main Menu';
-    overlayMenuBtn.append(makeHudGlyph('menu', 18), overlayMenuLabel);
-    overlayMenuBtn.addEventListener('click', () => {
-      if (this.overlayShown) this.quitCb?.();
-    });
-    this.overlayVerifiedRetryBtnEl = document.createElement('button');
-    this.overlayVerifiedRetryBtnEl.className = 'st-hud__restart st-hud__victory-verified-retry';
-    this.overlayVerifiedRetryBtnEl.type = 'button';
-    this.overlayVerifiedRetryBtnEl.textContent = 'Retry verification';
-    this.overlayVerifiedRetryBtnEl.addEventListener('click', () => {
-      if (this.overlayShown && this.overlayVerifiedRetryBtnEl.parentElement === this.overlayPrimaryBtnEl.parentElement && !this.overlayVerifiedRetryBtnEl.disabled) {
-        this.verifiedRetryCb?.();
-      }
-    });
-    const overlayBtns = document.createElement('div');
-    overlayBtns.className = 'st-hud__overlay-btns';
-    overlayBtns.append(restartBtn, overlayMenuBtn);
-    this.overlayPrimaryBtnEl = restartBtn;
-    this.overlayMenuBtnEl = overlayMenuBtn;
-    report.append(
-      this.overlayStatusEl,
-      this.overlayQuickOperationEl,
-      this.overlayFieldOrderEl,
-      this.overlayProgressionReceiptEl,
-      this.overlayProgressionHandoffEl,
-      this.overlayTextEl,
-      scoreLabel,
-      this.overlayScoreEl,
-      overlayBtns,
-    );
-    // The generated frame owns one engraved header across both content bays.
-    // Keep its live title as a direct child so it registers to that hardware
-    // instead of inheriting the left portrait bay's grid/static position.
-    panel.append(eyebrow, hero, report);
-    this.overlayEl.append(panel);
-    this.overlayEl.addEventListener('keydown', (event) => {
-      if (event.key !== 'Tab' || !this.overlayShown) return;
-      event.preventDefault();
-      const actions = [
-        ...(this.overlayProgressionHandoffEl.hidden ? [] : [this.overlayProgressionSignInBtnEl]),
-        ...(this.overlayVerifiedRetryBtnEl.parentElement === this.overlayPrimaryBtnEl.parentElement
-          && !this.overlayVerifiedRetryBtnEl.disabled ? [this.overlayVerifiedRetryBtnEl] : []),
-        this.overlayPrimaryBtnEl,
-        this.overlayMenuBtnEl,
-      ];
-      const current = actions.indexOf(document.activeElement as HTMLButtonElement);
-      const next = event.shiftKey
-        ? (current <= 0 ? actions.length - 1 : current - 1)
-        : (current < 0 || current === actions.length - 1 ? 0 : current + 1);
-      actions[next]!.focus({ preventScroll: true });
-    });
+    this.overlayEl = this.terminalView.root;
 
     // PAUSE overlay — opened by the side-panel Menu button. Non-destructive: it does
     // NOT tear the game down and does NOT stop the client loop (REQUIRED for networked
@@ -2004,14 +1860,7 @@ export class HUD {
     this.verifiedRetryBtnEl.hidden = true;
     this.verifiedRetryBtnEl.disabled = true;
     const isRetryable = state?.status === 'retryable';
-    const retiringFocusedOverlayRetry = !isRetryable
-      && this.overlayShown
-      && document.activeElement === this.overlayVerifiedRetryBtnEl;
-    this.overlayVerifiedRetryBtnEl.disabled = !isRetryable;
-    if (!isRetryable) {
-      if (retiringFocusedOverlayRetry) this.overlayPrimaryBtnEl.focus({ preventScroll: true });
-      this.overlayVerifiedRetryBtnEl.remove();
-    }
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
     if (state === null) {
       this.verifiedStatusEl.hidden = true;
       this.verifiedStatusEl.remove();
@@ -2049,10 +1898,6 @@ export class HUD {
       this.verifiedStateEl.textContent = 'Verification needs another attempt.';
       this.verifiedRetryBtnEl.hidden = false;
       this.verifiedRetryBtnEl.disabled = false;
-      this.overlayVerifiedRetryBtnEl.disabled = false;
-      if (this.overlayVerifiedRetryBtnEl.parentElement !== this.overlayPrimaryBtnEl.parentElement) {
-        this.overlayPrimaryBtnEl.before(this.overlayVerifiedRetryBtnEl);
-      }
     } else if (state.status === 'expired') {
       this.verifiedStateEl.textContent = 'Verification expired.';
     } else if (state.deadline.warning === 'five-minutes') {
@@ -2098,14 +1943,14 @@ export class HUD {
     if (order === null) {
       this.fieldOrderEl.textContent = '';
       this.fieldOrderEl.remove();
-      this.overlayFieldOrderEl.hidden = true;
-      this.overlayFieldOrderEl.textContent = '';
+      this.terminalFieldOrder = null;
+      if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
       return;
     }
     const copy = renderFieldOrder(order);
     this.fieldOrderEl.textContent = copy.status;
-    this.overlayFieldOrderEl.textContent = copy.report;
-    this.overlayFieldOrderEl.hidden = order.result === null;
+    this.terminalFieldOrder = order.result === null ? null : copy.report;
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
   /** Isolate every full-app surface except the active terminal report. */
@@ -2153,21 +1998,10 @@ export class HUD {
       this.terminalPayoffTimer = null;
     }
     this.unlockTerminalPayoff();
-    this.overlayEl.classList.add('st-hud__overlay--hidden');
-    this.overlayEl.setAttribute('aria-hidden', 'true');
     this.setVictoryIsolation(false);
-    this.overlayTankEl.hidden = true;
-    if (this.overlayTankEl.dataset['tankPreviewSignature'] !== undefined) {
-      clearTankLoadoutPreview(this.overlayTankEl);
-    }
-    this.overlayEl.style.removeProperty('--st-victory-color');
-    this.overlayProgressionReceiptEl.hidden = true;
-    this.overlayProgressionReceiptEl.textContent = '';
-    this.overlayProgressionReceiptEl.classList.remove(
-      'st-hud__victory-progression-receipt--promotion',
-    );
+    this.terminalView.hide(restoreFocus);
+    this.terminalProgressionReceipt = null;
     this.verifiedNextOrderArmed = false;
-    this.overlayPrimaryLabelEl.textContent = 'Play again';
     this.clearAnonymousProgressionHandoff();
     this.overlayShown = false;
     this.terminalState = null;
@@ -2177,15 +2011,6 @@ export class HUD {
     delete this.terminalPayoffStatusEl.dataset['payoffReadyAt'];
     this.terminalPayoffStatusEl.textContent = '';
 
-    const previousFocus = this.overlayPreviousFocus;
-    this.overlayPreviousFocus = null;
-    if (
-      restoreFocus
-      && previousFocus?.isConnected
-      && !previousFocus.closest('[inert]')
-    ) {
-      previousFocus.focus({ preventScroll: true });
-    }
   }
 
   /** Name the accepted XP and next server-derived level milestone without adding another action. */
@@ -2197,16 +2022,11 @@ export class HUD {
     const summary = receipt.receipt.current;
     const remainingXp = summary.nextLevelXp - summary.levelXp;
     const outcome = receipt.won ? 'Victory' : 'Match complete';
-    this.overlayProgressionReceiptEl.classList.remove(
-      'st-hud__victory-progression-receipt--promotion',
-    );
-    const summaryLine = document.createElement('span');
-    summaryLine.className = 'st-hud__victory-progression-summary';
-    summaryLine.textContent =
-      `${outcome} · +${earnedXp} XP · ${remainingXp} XP to Level ${summary.level + 1}`;
-    this.overlayProgressionReceiptEl.replaceChildren(summaryLine);
-    this.overlayProgressionReceiptEl.hidden = false;
+    this.terminalProgressionReceipt = {
+      summary: `${outcome} · +${earnedXp} XP · ${remainingXp} XP to Level ${summary.level + 1}`,
+    };
     this.clearAnonymousProgressionHandoff();
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
   /** Render rank language only from the accepted verified-replay receipt. */
@@ -2233,62 +2053,34 @@ export class HUD {
     const outcome = receipt.result.outcome === 'win'
       ? 'victory'
       : receipt.result.outcome;
-    const summaryLine = document.createElement('span');
-    summaryLine.className = 'st-hud__victory-progression-summary';
-    summaryLine.textContent =
-      `Verified ${outcome} · +${receipt.result.verifiedXp} XP · Level ${current.level} · ${current.levelXp} / ${current.nextLevelXp} XP`;
-    const children: HTMLElement[] = [summaryLine];
-    this.overlayProgressionReceiptEl.classList.toggle(
-      'st-hud__victory-progression-receipt--promotion',
-      promotion !== null,
-    );
-    if (promotion) {
-      const promotionCard = document.createElement('section');
-      promotionCard.className = 'st-hud__victory-promotion';
-      const kicker = document.createElement('div');
-      kicker.className = 'st-hud__victory-promotion-kicker';
-      kicker.textContent = 'Commander promoted';
-      const code = document.createElement('div');
-      code.className = 'st-hud__victory-promotion-code';
-      code.textContent = promotion.code;
-      const insignia = document.createElement('div');
-      insignia.className = 'st-hud__victory-promotion-insignia';
-      insignia.setAttribute('aria-label', promotion.insignia.label);
-      insignia.textContent = promotion.insignia.mark;
-      const title = document.createElement('div');
-      title.className = 'st-hud__victory-promotion-title';
-      title.textContent = promotion.title;
-      promotionCard.append(kicker, code, insignia, title);
-      children.push(promotionCard);
-    }
+    const summaryText = `Verified ${outcome} · +${receipt.result.verifiedXp} XP · Level ${current.level} · ${current.levelXp} / ${current.nextLevelXp} XP`;
+    let careerNext: string | undefined;
     if (career?.next) {
-      const next = document.createElement('div');
-      next.className = 'st-hud__victory-career-next';
       const xpToNext = Math.max(
         0,
         (career.next.level - current.level) * current.nextLevelXp - current.levelXp,
       );
-      next.textContent =
-        `${xpToNext.toLocaleString('en-US')} XP to ${career.next.code} ${career.next.title} at Level ${career.next.level}`;
-      children.push(next);
+      careerNext = `${xpToNext.toLocaleString('en-US')} XP to ${career.next.code} ${career.next.title} at Level ${career.next.level}`;
     }
-    this.overlayProgressionReceiptEl.replaceChildren(...children);
-    this.overlayProgressionReceiptEl.hidden = false;
+    this.terminalProgressionReceipt = {
+      summary: summaryText,
+      ...(promotion ? { promotion: { code: promotion.code, insignia: promotion.insignia, title: promotion.title } } : {}),
+      ...(careerNext ? { careerNext } : {}),
+    };
     this.verifiedNextOrderArmed = true;
-    this.overlayPrimaryLabelEl.textContent = 'Brief next order';
     this.clearAnonymousProgressionHandoff();
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
   private clearAnonymousProgressionHandoff(): void {
-    this.overlayProgressionHandoffEl.hidden = true;
-    this.overlayProgressionSignInBtnEl.remove();
+    this.terminalProgressionHandoff = null;
   }
 
   /** Show the future-only account handoff for an anonymous local match. */
   setAnonymousProgressionHandoff(): void {
-    if (!this.overlayProgressionReceiptEl.hidden) return;
-    this.overlayProgressionHandoffEl.append(this.overlayProgressionSignInBtnEl);
-    this.overlayProgressionHandoffEl.hidden = false;
+    if (this.terminalProgressionReceipt) return;
+    this.terminalProgressionHandoff = { message: 'Sign in to record future matches.', signIn: true };
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
   private lockTerminalPayoff(): void {
@@ -2336,50 +2128,41 @@ export class HUD {
 
   private showVictoryReport(state: GameState): void {
     this.unlockTerminalPayoff();
-    this.overlayQuickOperationEl.hidden = this.quickOperation === null;
-    this.overlayQuickOperationEl.textContent = this.quickOperation === null
-      ? ''
-      : `Operation · ${this.quickOperation.title} — ${this.quickOperation.briefing}`;
-    if (state.winner === null) {
-      // 0 alive (mutual kill) / round-win tie => DRAW per engine contract.
-      this.overlayTextEl.textContent = 'Draw';
-      this.overlayStatusEl.textContent = 'No tank standing';
-      this.overlayTankEl.hidden = true;
-      if (this.overlayTankEl.dataset['tankPreviewSignature'] !== undefined) {
-        clearTankLoadoutPreview(this.overlayTankEl);
-      }
-      this.overlayEl.style.setProperty('--st-victory-color', '#ffd23f');
-    } else {
-      const winner = state.tanks.find((t) => t.id === state.winner);
-      this.overlayTextEl.textContent = winner
-        ? `${winner.playerName}${state.winnerTeam ? ` — Team ${state.winnerTeam}` : ''} wins`
-        : 'Game Over';
-      this.overlayStatusEl.textContent = winner ? 'Match winner' : 'Match complete';
-      if (winner) {
-        this.overlayTankEl.hidden = false;
-        this.overlayEl.style.setProperty('--st-victory-color', winner.color);
-        paintTankLoadoutPreview(
-          this.overlayTankEl,
-          winner.color,
-          winner.loadout,
-          'spotlight',
-        );
-      } else {
-        this.overlayTankEl.hidden = true;
-        if (this.overlayTankEl.dataset['tankPreviewSignature'] !== undefined) {
-          clearTankLoadoutPreview(this.overlayTankEl);
-        }
-        this.overlayEl.style.setProperty('--st-victory-color', '#ffd23f');
-      }
-    }
-    this.buildScoreboard(state, this.overlayScoreEl);
-    this.setVictoryIsolation(true);
-    this.overlayEl.classList.remove('st-hud__overlay--hidden');
-    this.overlayEl.setAttribute('aria-hidden', 'false');
+    this.setVictoryIsolation(false);
+    this.terminalView.show(this.terminalProjection(state));
     this.overlayShown = true;
     this.terminalPayoffStatusEl.dataset['payoffReadyAt'] = String(performance.now());
     this.terminalPayoffStatusEl.textContent = 'After action report ready.';
-    this.overlayPrimaryBtnEl.focus({ preventScroll: true });
+  }
+
+  private terminalProjection(state: GameState): TerminalMatchProjection {
+    const winner = state.winner === null ? undefined : state.tanks.find((tank) => tank.id === state.winner);
+    const scoreboard = this.scoreboardMarkup(state);
+    const retryable = this.verifiedDeploymentState?.status === 'retryable';
+    return {
+      title: state.winner === null
+        ? 'Draw'
+        : winner
+          ? `${winner.playerName}${state.winnerTeam ? ` — Team ${state.winnerTeam}` : ''} wins`
+          : 'Game Over',
+      status: state.winner === null ? 'No tank standing' : winner ? 'Match winner' : 'Match complete',
+      quickOperation: this.quickOperation === null
+        ? null
+        : `Operation · ${this.quickOperation.title} — ${this.quickOperation.briefing}`,
+      winner: winner ? { color: winner.color, loadout: winner.loadout } : null,
+      scoreboard: scoreboard.markup,
+      scoreboardColumns: scoreboard.columns,
+      fieldOrder: this.terminalFieldOrder,
+      progressionReceipt: this.terminalProgressionReceipt,
+      progressionHandoff: this.terminalProgressionHandoff,
+      primary: {
+        label: this.verifiedNextOrderArmed ? 'Brief next order' : 'Play again',
+        kind: this.verifiedNextOrderArmed ? 'next-order' : 'restart',
+        disabled: false,
+      },
+      retry: { visible: retryable, disabled: !retryable },
+      menu: { label: 'Main Menu', disabled: false },
+    };
   }
 
   /** Show/hide the GAME_OVER overlay, sequenced after terminal impact completion. */
@@ -2395,8 +2178,7 @@ export class HUD {
     if (this.terminalState === null) {
       // A networked game may end beneath Pause; terminal state supersedes it.
       if (this.paused) this.togglePause(false);
-      const focused = document.activeElement;
-      this.overlayPreviousFocus = focused instanceof HTMLElement ? focused : null;
+      this.terminalView.prepare();
       this.terminalState = state;
       this.lockTerminalPayoff();
     }

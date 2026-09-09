@@ -165,11 +165,30 @@ describe('HUD Victory After-Action Report', () => {
     vi.advanceTimersByTime(1);
     expect(report.classList.contains('st-hud__overlay--hidden')).toBe(false);
     expect(announcement.textContent).toBe('After action report ready.');
+    expect(announcement.getAttribute('aria-hidden')).toBeNull();
 
     playAgain.click();
     mainMenu.click();
     expect(restart).toHaveBeenCalledOnce();
     expect(quit).toHaveBeenCalledOnce();
+  });
+
+  it('captures focus at payoff entry and restores it when the report is cancelled before show', () => {
+    const { stage, modal, hud, state } = mount();
+    const opener = document.createElement('button');
+    const later = document.createElement('button');
+    stage.append(opener, later);
+    opener.focus();
+    hud.update(state);
+    later.focus();
+    state.phase = 'PLAYER_TURN';
+    state.winner = null;
+    hud.update(state);
+    expect(stage.inert).toBe(false);
+    expect(document.activeElement).toBe(opener);
+    expect(modal.querySelector('.st-hud__overlay--victory')?.getAttribute('aria-hidden')).toBe('true');
+    opener.remove();
+    later.remove();
   });
 
   it('shortens reduced motion without skipping the readable terminal transition', () => {
