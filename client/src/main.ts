@@ -634,6 +634,13 @@ function bootstrap(): void {
     }
     if (!matchSession.ownClient(currentGameGeneration, newClient)) return;
     const gameRenderer = createRenderer();
+    const initial = newClient.getState();
+    const terminalHistoryPrimed = config.verifiedDeployment !== undefined
+      && verifiedController?.complete === true
+      && initial?.phase === 'GAME_OVER';
+    if (terminalHistoryPrimed) {
+      gameRenderer.primeHistoricalImpactEvents(initial);
+    }
     const selectedBattlefield = selectClientBattlefieldWorld(
       newClient,
       gameRenderer,
@@ -663,7 +670,6 @@ function bootstrap(): void {
     // Seed the input handler's locally-tracked aim from the active tank so the
     // arrow keys step from that tank's real angle/power (set_angle/set_power
     // carry ABSOLUTE values). getState() may be null before the first snapshot.
-    const initial = newClient.getState();
     if (e2eRoundShopPending && initial) {
       e2eRoundShopPending = false;
       const winner = initial.tanks[0]!;
@@ -957,7 +963,8 @@ function bootstrap(): void {
         verifiedControlsAllowed,
       );
       const terminalEffectsSettled = terminalImpactObserved
-        || state.projectiles.length === 0;
+        || terminalHistoryPrimed
+        || (state.projectiles.length === 0 && state.explosions.length === 0);
       if (
         state.phase === 'GAME_OVER'
         && terminalEffectsSettled

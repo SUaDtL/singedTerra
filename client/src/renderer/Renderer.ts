@@ -422,18 +422,10 @@ export class Renderer {
   }
 
   /**
-   * Reset all PER-GAME visual state. The Renderer is a page-level singleton reused
-   * across games (a fresh GameEngine — with its own explosionSeq restarting at 0 — is
-   * built per game), so without this the previous game's state leaks. Most importantly
-   * `lastSeenExplosionId` keeps its high-water mark while the new engine's explosion ids
-   * restart at 1, so every early explosion of the next same-tab game fails the
-   * `id > lastSeenExplosionId` dedupe and its boom / shake / debris / damage-numbers /
-   * bloom are ALL silently dropped — the V1 juice vanishing on restart/rematch. Also
-   * clears the stale last-shot crosshair, per-tank health deltas, shake, and FIRING
-   * latch, and invalidates the terrain offscreen cache (which is ALSO keyed on the
-   * per-engine terrainVersion — if game #1's final version equals game #2's initial
-   * one, the cache would blit game #1's stale terrain until the next deformation).
-   * Call on every new game. Client-only — touches no engine/replayed state.
+   * Reset all PER-GAME visual state before this renderer starts a game. This keeps
+   * the explosion high-water mark, cached terrain, and transient effects aligned
+   * with the engine whose state will be painted. Client-only — touches no engine or
+   * replayed state.
    */
   reset(): void {
     this.bursts.length = 0;
@@ -470,6 +462,23 @@ export class Renderer {
     this.prevBounces.clear();
     this.hadProjectileLastFrame = false;
     this.events?.onFireActive(false); // tell audio to stop the sustained crackle
+  }
+
+  /**
+   * Mark impact events already incorporated into a recovered terminal snapshot as
+   * seen, without replaying their transient visual or audio effects.
+   */
+  primeHistoricalImpactEvents(
+    state: Pick<GameState, 'explosions' | 'lastExplosion'>,
+  ): void {
+    const events = state.explosions.length > 0
+      ? state.explosions
+      : state.lastExplosion !== null
+        ? [state.lastExplosion]
+        : [];
+    for (const event of events) {
+      this.lastSeenExplosionId = Math.max(this.lastSeenExplosionId, event.id);
+    }
   }
 
   /** Draw a single frame for the given state. */
