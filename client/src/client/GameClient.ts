@@ -3,8 +3,11 @@ import type { PlayerAction } from '@shared/types/PlayerAction';
 import type {
   BattlefieldWorldId,
   NetworkRulesetVersion,
+  TeamId,
+  TerrainHazardMode,
   WallMode,
 } from '@shared/types/GameOptions';
+import type { AiDifficulty } from '@shared/types/GameState';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import type { QuickChatKey } from './quickChat';
 
@@ -24,12 +27,19 @@ export interface RematchInfo {
     rulesetVersion?: NetworkRulesetVersion;
     walls?: WallMode;
     battlefieldWorld?: BattlefieldWorldId;
+    hazards?: TerrainHazardMode;
     rounds?: number;
+    interestRate?: number;
+    suddenDeathTurn?: number;
+    armsLevel?: number;
+    teamMode?: boolean;
   };
   players: Array<{
     id: string;
     name: string;
     color: string;
+    ai?: AiDifficulty;
+    team?: TeamId;
     loadout?: TankLoadout;
   }>;
 }

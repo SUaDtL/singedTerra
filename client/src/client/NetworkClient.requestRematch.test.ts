@@ -16,6 +16,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NetworkClient } from './NetworkClient';
+import { buildClientEngineOptions } from './gameEngineOptions';
+import { rematchToConfig } from './rematchConfig';
+import { GameEngine } from '@shared/engine/GameEngine';
 
 // requestRematch() never touches `supabase` (it only builds a fetch request from
 // roomId/playerId/token), so an empty stand-in is sufficient — GameEngine
@@ -216,5 +219,68 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     expect(reads).toBe(9);
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener.mock.calls[0]![0].roomId).toBe('room-late');
+  });
+
+  it('preserves every authoritative successor option and CPU seat through callback, config, and engine projection', async () => {
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: () => Promise.resolve({
+        data: {
+          id: 'room-rich',
+          code: 'RICH42',
+          seed: 4242,
+          options: {
+            maxPlayers: 4,
+            maxWind: 6,
+            gravity: 0.25,
+            rulesetVersion: 4,
+            walls: 'reflective',
+            battlefieldWorld: 'obsidian-caldera',
+            hazards: 'lava',
+            rounds: 5,
+            interestRate: 0.15,
+            suddenDeathTurn: 12,
+            armsLevel: 3,
+            teamMode: true,
+          },
+          players: [
+            { id: 'player-abc', name: 'Alice', color: '#e84d4d', team: 1 },
+            { id: 'player-def', name: 'CPU Bob', color: '#4d8ce8', ai: 'medium', team: 1 },
+            { id: 'player-ghi', name: 'Carol', color: '#a855f7', team: 2 },
+            { id: 'player-jkl', name: 'Dan', color: '#f59e0b', team: 2 },
+          ],
+        },
+        error: null,
+      }),
+    };
+    const client = makeClient({ from: () => query } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+
+    await (client as unknown as { handleRematch(newRoomId: string): Promise<void> }).handleRematch('room-rich');
+
+    const info = listener.mock.calls[0]![0];
+    const config = rematchToConfig(info, 'player-abc');
+    const options = buildClientEngineOptions({ ...config, mode: 'network' });
+    expect(options).toMatchObject({
+      maxPlayers: 4,
+      maxWind: 6,
+      gravity: 0.25,
+      walls: 'reflective',
+      battlefieldWorld: 'obsidian-caldera',
+      hazards: 'lava',
+      rounds: 5,
+      interestRate: 0.15,
+      suddenDeathTurn: 12,
+      armsLevel: 3,
+      teamMode: true,
+    });
+    expect(options.players[1]).toMatchObject({ id: 'player-def', ai: 'medium' });
+    const engine = new GameEngine(options);
+    expect(engine.getState()).toMatchObject({ round: 1, totalRounds: 5 });
+    expect(engine.getState().tanks).toHaveLength(4);
+    expect(engine.getState().tanks.map((tank) => tank.team)).toEqual([1, 1, 2, 2]);
+    expect(engine.getState().tanks[1]).toMatchObject({ id: 'p2', ai: 'medium' });
   });
 });
