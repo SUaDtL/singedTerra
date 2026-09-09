@@ -143,4 +143,16 @@ exported 60-probe cap. The full configured `npm run check` and secrets scan
 passed. A2 policy and database admission remain unimplemented at this
 checkpoint.
 
+Package C implementation checkpoint: `TerminalMatchView` now owns the terminal
+report DOM, stable receipt and scoreboard updates, winner preview lifecycle,
+actions, focus containment/restoration, isolation, and disposal. HUD retains
+the terminal-impact payoff gate, game-state interpretation, scoreboard
+escaping, and progression/Field Order derivation. The combined client suite
+passed 190 files and 1,676 tests; the configured three-profile terminal browser
+set passed 51 of 51 checks. Coverage measured before the final additive
+Sign-in identity test reported 85.98% branch and 99.60% line coverage for the
+new view, with repository-wide statement, branch, function, and line coverage
+all above the pre-extraction baseline. This is structural and rendered-browser
+evidence; package-level real-backend acceptance remains pending.
+
 A harness checkpoint: standalone commit `057d21d` repairs the two stale outcome fixtures, retains their original inputs as explicit incomplete cases, pins V2 replay outputs, and adds `verified_duel.mjs` to `npm run check`. Sol reports the focused harness and fresh full `npm run check` passed, plus the secrets gate. Initial worktree dependency failures were repaired using exact lockfile dependencies; no policy code changed. A narrow version-dispatch/corpus checkpoint is next, then Sol takes the preserved C draft. An accidental dependency junction alias was moved outside the worktree to `recovery-cpu-policy-node_modules-junction-old`; it points to the primary dependency tree and must not be recursively removed or followed for cleanup.
