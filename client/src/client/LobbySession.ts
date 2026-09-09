@@ -219,7 +219,16 @@ export class LobbySession {
     const seat = this.seat()
     this.actionLifecycleOpen = false
     this.cleanupWaitingChannel()
-    await this.transport.leaveRoom(seat)
+    const retirementGeneration = this.operationGeneration
+    try {
+      const result = await this.transport.leaveRoom(seat)
+      if (!result.ok) throw new Error(`Room leave failed (${result.status}).`)
+    } catch (error) {
+      if (retirementGeneration === this.operationGeneration && seat.roomId === this.state.roomId) {
+        this.actionLifecycleOpen = true
+      }
+      throw error
+    }
   }
 
   private async getSupabase(): Promise<SessionSupabase> {

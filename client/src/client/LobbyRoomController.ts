@@ -23,7 +23,7 @@ import {
 // player id because that identity survives a room migration/rematch.
 const SEAT_TOKEN_PREFIX = 'singedterra:seat:'
 
-type RoomTransport = Pick<LobbyTransport, 'createRoom' | 'joinRoom' | 'fetchRoom'>
+type RoomTransport = Pick<LobbyTransport, 'createRoom' | 'joinRoom' | 'fetchRoom' | 'leaveRoom'>
 type RoomSession = Pick<
   LobbySession,
   'waiting' | 'replaceWaiting' | 'subscribeWaitingRoom' | 'stopBrowsePoll' | 'leaveRoom'
@@ -87,6 +87,8 @@ export class LobbyRoomController {
   private busy = false
   private error = ''
   private leaving = false
+  private lifecycleOpen = true
+  private operationGeneration = 0
   /**
    * A rejoin affordance exists only after the stored public descriptor has
    * been checked against an active room that still contains its player id.
@@ -115,13 +117,42 @@ export class LobbyRoomController {
     this.rejoinCandidate = candidate
   }
 
+  activate(): void {
+    this.operationGeneration += 1
+    this.lifecycleOpen = true
+    if (this.busy || this.leaving) this.error = ''
+    this.busy = false
+    this.leaving = false
+  }
+
+  accountIdentityChanged(): void {
+    this.operationGeneration += 1
+    this.busy = false
+    this.leaving = false
+    this.error = ''
+    this.rejoinCandidate = null
+  }
+
+  /** Invalidate every pending continuation before Lobby releases its resources. */
+  retire(): void {
+    this.operationGeneration += 1
+    this.lifecycleOpen = false
+    this.busy = false
+    this.leaving = false
+    this.error = ''
+    this.rejoinCandidate = null
+  }
+
   async checkRejoinCandidate(): Promise<void> {
+    const generation = this.beginOperation(false)
+    if (generation === null) return
     const descriptor = this.persistence.readSession()
     if (!descriptor) {
       this.rejoinCandidate = null
       return
     }
     const room = await this.transport.fetchRoom(descriptor.roomId)
+    if (!this.isCurrent(generation)) return
     if (isLiveSession(descriptor, room)) {
       this.rejoinCandidate = { descriptor, room: room! }
       this.onChanged()
@@ -133,8 +164,11 @@ export class LobbyRoomController {
 
   async rejoin(): Promise<void> {
     if (!this.rejoinCandidate) return
+    const generation = this.beginOperation(false)
+    if (generation === null) return
     const { descriptor } = this.rejoinCandidate
     const room = await this.transport.fetchRoom(descriptor.roomId)
+    if (!this.isCurrent(generation)) return
     if (!isLiveSession(descriptor, room)) {
       this.rejectRejoin('That game is no longer available.')
       return
@@ -184,9 +218,14 @@ export class LobbyRoomController {
     readonly seed: number
     readonly options: RoomOptions
   }): Promise<void> {
-    this.begin()
+    const generation = this.beginOperation()
+    if (generation === null) return
     try {
       const { ok, data } = await this.transport.createRoom(params)
+      if (!this.isCurrent(generation)) {
+        if (ok && !data?.error) await this.releaseStaleAdmission(data)
+        return
+      }
       if (!ok || data?.error) return this.fail(data?.error ?? 'Failed to create room.')
       // A structurally wrong 200 must not create an undefined room identity or
       // attempt a Realtime subscription that can never be cleaned up.
@@ -205,15 +244,21 @@ export class LobbyRoomController {
         options: this.options(data.options ?? currentFallback.options), thisPlayerReady: false,
       })
     } catch (error) {
+      if (!this.isCurrent(generation)) return
       console.error('Lobby.createRoom: network error —', error)
       this.fail('Network error. Try again.')
     }
   }
 
   async join(params: JoinRoomParams, code: string, fallbackOptions: RoomOptions): Promise<void> {
-    this.begin()
+    const generation = this.beginOperation()
+    if (generation === null) return
     try {
       const { ok, data } = await this.transport.joinRoom(params)
+      if (!this.isCurrent(generation)) {
+        if (ok && !data?.error) await this.releaseStaleAdmission(data)
+        return
+      }
       if (!ok || data?.error) return this.fail(data?.error ?? 'Failed to join room.')
       if (!data?.roomId || !data.playerId || !data.token) {
         return this.fail('Unexpected server response — please try again.')
@@ -228,6 +273,7 @@ export class LobbyRoomController {
         options: this.options(data.options ?? fallbackOptions), thisPlayerReady: false,
       })
     } catch (error) {
+      if (!this.isCurrent(generation)) return
       console.error('Lobby.joinRoom: network error —', error)
       this.fail('Network error. Try again.')
     }
@@ -235,14 +281,17 @@ export class LobbyRoomController {
 
   async leave(): Promise<void> {
     if (this.leaving) return
+    const generation = this.beginOperation()
+    if (generation === null) return
     this.leaving = true
-    this.busy = true
     this.onChanged()
     try {
       await this.session.leaveRoom()
     } catch (error) {
+      if (!this.isCurrent(generation)) return
       console.debug('Lobby.leaveRoom: best-effort leave failed —', error)
     }
+    if (!this.isCurrent(generation)) return
     this.persistence.clearSession()
     this.leaving = false
     this.busy = false
@@ -251,10 +300,41 @@ export class LobbyRoomController {
     this.onChanged()
   }
 
-  private begin(): void {
+  private beginOperation(showBusy = true): number | null {
+    if (!this.lifecycleOpen) return null
+    const generation = ++this.operationGeneration
+    if (!showBusy) {
+      const retiredForegroundOperation = this.busy || this.leaving
+      this.busy = false
+      this.leaving = false
+      if (retiredForegroundOperation) this.error = ''
+      if (retiredForegroundOperation) this.onChanged()
+      return generation
+    }
+    this.leaving = false
     this.busy = true
     this.error = ''
     this.onChanged()
+    return generation
+  }
+
+  private isCurrent(generation: number): boolean {
+    return this.lifecycleOpen && generation === this.operationGeneration
+  }
+
+  private async releaseStaleAdmission(data: {
+    roomId?: string
+    playerId?: string
+    token?: string
+  } | null | undefined): Promise<void> {
+    if (!data?.roomId || !data.playerId || !data.token) return
+    const current = this.session.waiting
+    if (current.roomId === data.roomId && current.playerId === data.playerId && current.token === data.token) return
+    try {
+      await this.transport.leaveRoom({ roomId: data.roomId, playerId: data.playerId, token: data.token })
+    } catch (error) {
+      console.debug('Lobby admission cleanup: best-effort leave failed —', error)
+    }
   }
 
   private fail(message: string): void {
