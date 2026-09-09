@@ -62,7 +62,6 @@ function recoverableVerifiedTerminalState(): GameState {
   if (state.explosions.length === 0 || state.lastExplosion === null) {
     throw new Error('verified terminal fixture has no retained impact history')
   }
-  state.phase = 'GAME_OVER'
   verifiedTerminalFixture = state
   return structuredClone(verifiedTerminalFixture)
 }
@@ -99,6 +98,7 @@ function rendererSeam(onExplosion = vi.fn()): { renderer: RendererHistorySeam; o
 describe('Renderer recovered terminal impact history', () => {
   it('replays unprimed terminal history as a live impact and becomes busy', () => {
     const state = recoverableVerifiedTerminalState()
+    expect(state.phase).toBe('PLAYER_TURN')
     const { renderer, onExplosion } = rendererSeam()
 
     renderer.consumeExplosion(state)

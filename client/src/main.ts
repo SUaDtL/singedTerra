@@ -638,7 +638,7 @@ function bootstrap(): void {
     const initial = newClient.getState();
     const terminalHistoryPrimed = config.verifiedDeployment !== undefined
       && verifiedController?.complete === true
-      && initial?.phase === 'GAME_OVER';
+      && initial !== null;
     if (terminalHistoryPrimed) {
       gameRenderer.primeHistoricalImpactEvents(initial);
     }
