@@ -5,11 +5,15 @@ import {
 } from './index.ts'
 import { buildVerifiedDeploymentConfig, handleStartVerifiedDeployment } from '../start_verified_deployment/index.ts'
 import { handleAbandonVerifiedDeployment } from '../abandon_verified_deployment/index.ts'
+import { replayVerifiedDuelForPolicy } from '../../../shared/src/net/verifiedDuel.ts'
+import replayFixture from '../../../scripts/checks/fixtures/verified_cpu_replays.json' with { type: 'json' }
 
 const userId = '11111111-1111-4111-8111-111111111111'
 const otherUserId = '33333333-3333-4333-8333-333333333333'
 const sessionId = '22222222-2222-4222-8222-222222222222'
 const transcript = [{ angle: 90, power: 100 }]
+const cappedTranscript = replayFixture.transcript
+const pinnedReplays = replayFixture.policies
 
 const config = {
   seed: 17,
@@ -71,7 +75,9 @@ function dependencies(options: {
   complete?: Record<string, unknown> | null
   completeRows?: unknown
   errorAt?: string
+  transcript?: readonly { angle: number; power: number }[]
 } = {}) {
+  const canonicalTranscript = options.transcript ?? transcript
   const calls: Array<{ name: string; args: unknown }> = []
   const supabase = {
     rpc: async (name: string, args: unknown) => {
@@ -82,7 +88,7 @@ function dependencies(options: {
         data: options.completeRows ?? (options.complete === null ? null : [{
           session_id: sessionId,
           user_id: userId,
-          transcript,
+          transcript: canonicalTranscript,
           won: true,
           outcome: 'win',
           verified_xp: 200,
@@ -135,6 +141,11 @@ Deno.test('completion validates owner, lifecycle, expiry, and versioned server c
     context({ status: 'expired' }),
     context({ status: 'active', expires_at: '2026-08-11T11:59:59.999Z' }),
     context({ contract_version: 3 }),
+    context({ contract_version: null }),
+    context({ engine_version: undefined }),
+    context({ engine_version: 2.5 }),
+    context({ contract_version: 3, engine_version: 3, ruleset_version: 3 }),
+    context({ contract_version: 99, engine_version: 99, ruleset_version: 4 }),
     context({ engine_version: 1 }),
     context({ ruleset_version: 2 }),
     context({ config: { seed: 109 } }),
@@ -183,11 +194,11 @@ Deno.test('completion independently replays server seed, maps the deterministic 
   const replayCalls: unknown[] = []
   const response = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
     supabase: test.supabase as never,
-    replay: (seed: number, evidence: unknown) => { replayCalls.push([seed, evidence]); return replayResult({ outcome: 'human_win', reason: 'alive' }) as never },
+    replay: (seed: number, evidence: unknown, policyVersion: number) => { replayCalls.push([seed, evidence, policyVersion]); return replayResult({ outcome: 'human_win', reason: 'alive' }) as never },
     now: () => new Date('2026-08-11T12:00:00.000Z'),
   })
   assertEquals(response.status, 200)
-  assertEquals(replayCalls, [[17, transcript]])
+  assertEquals(replayCalls, [[17, transcript, 2]])
   assertEquals(test.calls, [
     { name: 'verified_deployment_completion_context', args: { p_user_id: userId, p_session_id: sessionId } },
     { name: 'complete_verified_deployment', args: { p_user_id: userId, p_session_id: sessionId, p_transcript: transcript, p_won: true, p_outcome: 'win', p_verified_xp: 200 } },
@@ -198,6 +209,70 @@ Deno.test('completion independently replays server seed, maps the deterministic 
       evidence: 'verified_replay_v2',
       prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
       current: { matchesPlayed: 1, wins: 1, totalXp: 200 },
+    },
+  })
+})
+
+Deno.test('V3 completion dispatches the persisted tuple and returns a canonical V3 replay receipt', async () => {
+  const v3Transcript = cappedTranscript
+  assertEquals<unknown>(replayVerifiedDuelForPolicy(17, cappedTranscript, 2), pinnedReplays[2])
+  assertEquals<unknown>(replayVerifiedDuelForPolicy(17, cappedTranscript, 3), pinnedReplays[3])
+  const test = dependencies({
+    context: context({ contract_version: 3, engine_version: 3, ruleset_version: 4 }),
+    transcript: v3Transcript,
+    complete: { won: false, outcome: 'loss', verified_xp: 100, current_verified_wins: 0, current_total_xp: 100 },
+  })
+  const replayCalls: unknown[] = []
+  const response = await handleCompleteVerifiedDeployment({ sessionId, transcript: v3Transcript }, new Request('https://x.test'), userId, {
+    supabase: test.supabase as never,
+    replay: (seed, evidence, policyVersion) => {
+      replayCalls.push([seed, evidence, policyVersion])
+      return replayVerifiedDuelForPolicy(seed, evidence, policyVersion)
+    },
+    now: () => new Date('2026-08-11T12:00:00.000Z'),
+  })
+  assertEquals(response.status, 200)
+  assertEquals(replayCalls, [[17, v3Transcript, 3]])
+  assertEquals(test.calls[1], {
+    name: 'complete_verified_deployment',
+    args: { p_user_id: userId, p_session_id: sessionId, p_transcript: v3Transcript, p_won: false, p_outcome: 'loss', p_verified_xp: 100 },
+  })
+  assertEquals(await response.json(), {
+    result: { sessionId, won: false, outcome: 'loss', verifiedXp: 100 },
+    progression: {
+      evidence: 'verified_replay_v3',
+      prior: { matchesPlayed: 0, wins: 0, totalXp: 0 },
+      current: { matchesPlayed: 1, wins: 0, totalXp: 100 },
+    },
+  })
+})
+
+Deno.test('completed V3 retry returns its immutable receipt without replay or another award', async () => {
+  const completed = dependencies({ context: context({
+    contract_version: 3, engine_version: 3, ruleset_version: 4,
+    status: 'completed', transcript: cappedTranscript, won: false, outcome: 'loss', verified_xp: 100,
+    prior_verified_matches: 4, prior_verified_wins: 2, prior_total_xp: 700,
+    current_verified_matches: 5, current_verified_wins: 2, current_total_xp: 800,
+    result_created_at: '2026-08-11T12:01:00.000Z',
+  }) })
+  let replayed = 0
+  const response = await handleCompleteVerifiedDeployment(
+    { sessionId, transcript: cappedTranscript }, new Request('https://x.test'), userId,
+    {
+      supabase: completed.supabase as never,
+      replay: () => { replayed += 1; return pinnedReplays[3] as never },
+      now: () => new Date('2026-08-11T12:00:00.000Z'),
+    },
+  )
+  assertEquals(response.status, 200)
+  assertEquals(replayed, 0)
+  assertEquals(completed.calls.map((call) => call.name), ['verified_deployment_completion_context'])
+  assertEquals(await response.json(), {
+    result: { sessionId, won: false, outcome: 'loss', verifiedXp: 100 },
+    progression: {
+      evidence: 'verified_replay_v3',
+      prior: { matchesPlayed: 4, wins: 2, totalXp: 700 },
+      current: { matchesPlayed: 5, wins: 2, totalXp: 800 },
     },
   })
 })
@@ -398,7 +473,7 @@ Deno.test('completion fails generically without mutation after replay failure an
 
 Deno.test('completion responses and logs remain identifier-free across storage and replay failures', async () => {
   const logs: unknown[] = []
-  const privateToken = 'Bearer private-completion-token'
+  const privateToken = ['Bearer', 'test-only-auth-value'].join(' ')
   const response = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test', { headers: { authorization: privateToken } }), userId, {
     supabase: { rpc: async () => { throw new Error(`${privateToken}:${userId}:${sessionId}`) } } as never,
     now: () => new Date('2026-08-11T12:00:00.000Z'),

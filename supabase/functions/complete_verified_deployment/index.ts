@@ -10,7 +10,10 @@ import {
   type VerifiedDeploymentResultReceipt,
   type VerifiedHumanFire,
 } from '../_shared/verifiedDeployment.ts'
-import { replayVerifiedDuel } from '../../../shared/src/net/verifiedDuel.ts'
+import {
+  replayVerifiedDuelForPolicy,
+  verifiedCpuPolicyForTuple,
+} from '../../../shared/src/net/verifiedDuel.ts'
 
 type StoredConfig = { seed: 17 | 42 | 73 | 109; options: Record<string, unknown> }
 
@@ -21,7 +24,7 @@ type CompletionServiceClient = Pick<ServiceClient, 'rpc'>
 
 export interface CompleteVerifiedDeploymentDependencies {
   supabase?: CompletionServiceClient
-  replay?: typeof replayVerifiedDuel
+  replay?: typeof replayVerifiedDuelForPolicy
   now?: () => Date
   logger?: (message: string, context: Record<string, unknown>) => void
 }
@@ -61,6 +64,9 @@ function validContext(value: unknown, userId: string, sessionId: string): value 
   const currentTuple = row.contract_version === VERIFIED_CONTRACT_VERSION
     && row.engine_version === VERIFIED_ENGINE_VERSION
     && row.ruleset_version === VERIFIED_RULESET_VERSION
+  const nextTuple = row.contract_version === 3
+    && row.engine_version === 3
+    && row.ruleset_version === 4
   // Historical V1 results are immutable receipts. They may be returned without
   // replay, but no active V1 session is ever interpreted by this engine.
   const historicalCompletedV1 = row.status === 'completed'
@@ -72,7 +78,7 @@ function validContext(value: unknown, userId: string, sessionId: string): value 
     'current_verified_matches', 'current_verified_wins', 'current_total_xp', 'result_created_at',
   ])
     && row.session_id === sessionId && row.user_id === userId && validStoredConfig(row.config)
-    && (currentTuple || historicalCompletedV1)
+    && (currentTuple || nextTuple || historicalCompletedV1)
     && typeof row.status === 'string' && typeof row.expires_at === 'string' && Number.isFinite(Date.parse(row.expires_at))
 }
 
@@ -81,7 +87,7 @@ type ProjectedReceipt = NonNullable<ReturnType<typeof projectVerifiedDeploymentR
 function projectResultSpecificReceipt(
   result: VerifiedDeploymentResultReceipt,
   row: Record<string, unknown>,
-  evidence: 'verified_replay_v1' | 'verified_replay_v2' = 'verified_replay_v2',
+  evidence: 'verified_replay_v1' | 'verified_replay_v2' | 'verified_replay_v3' = 'verified_replay_v2',
 ): ProjectedReceipt | null {
   const progressionKeys = [
     'prior_verified_matches', 'prior_verified_wins', 'prior_total_xp',
@@ -100,7 +106,13 @@ function projectResultSpecificReceipt(
   return receipt
 }
 
-function receiptFromRow(value: unknown, userId: string, sessionId: string, expectedTranscript: readonly VerifiedHumanFire[]): ProjectedReceipt | null {
+function receiptFromRow(
+  value: unknown,
+  userId: string,
+  sessionId: string,
+  expectedTranscript: readonly VerifiedHumanFire[],
+  evidence: 'verified_replay_v2' | 'verified_replay_v3',
+): ProjectedReceipt | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const raw = value as Record<string, unknown>
   if (!exactKeys(raw, [
@@ -116,7 +128,7 @@ function receiptFromRow(value: unknown, userId: string, sessionId: string, expec
   const receipt = { sessionId, won: row.won, outcome: row.outcome, verifiedXp: row.verified_xp } as VerifiedDeploymentResultReceipt
   const validResult = (receipt.won && receipt.outcome === 'win' && receipt.verifiedXp === 200)
     || (!receipt.won && (receipt.outcome === 'loss' || receipt.outcome === 'draw') && receipt.verifiedXp === 100)
-  return validResult ? projectResultSpecificReceipt(receipt, raw) : null
+  return validResult ? projectResultSpecificReceipt(receipt, raw, evidence) : null
 }
 
 function completedReceipt(row: CompletionContextRow, userId: string, sessionId: string, transcript: readonly VerifiedHumanFire[]): ProjectedReceipt | null {
@@ -132,7 +144,9 @@ function completedReceipt(row: CompletionContextRow, userId: string, sessionId: 
     ? projectResultSpecificReceipt(
       receipt,
       row as unknown as Record<string, unknown>,
-      row.contract_version === 1 ? 'verified_replay_v1' : 'verified_replay_v2',
+      row.contract_version === 1
+        ? 'verified_replay_v1'
+        : row.contract_version === 3 ? 'verified_replay_v3' : 'verified_replay_v2',
     )
     : null
 }
@@ -146,7 +160,7 @@ export async function handleCompleteVerifiedDeployment(
   const request = parseVerifiedDeploymentCompletion(body)
   if (!request) return json({ error: 'invalid_request' }, 400)
   const supabase = dependencies.supabase ?? getServiceClient()
-  const replay = dependencies.replay ?? replayVerifiedDuel
+  const replay = dependencies.replay ?? replayVerifiedDuelForPolicy
   const logger = dependencies.logger ?? ((message, context) => console.error(message, context))
   const unavailable = (status: number) => json({ error: 'verified_deployment_unavailable' }, status)
   try {
@@ -169,7 +183,12 @@ export async function handleCompleteVerifiedDeployment(
 
     let replayed
     try {
-      replayed = replay(context.config.seed, request.transcript)
+      const policyVersion = verifiedCpuPolicyForTuple({
+        contractVersion: context.contract_version,
+        engineVersion: context.engine_version,
+        rulesetVersion: context.ruleset_version,
+      })
+      replayed = replay(context.config.seed, request.transcript, policyVersion)
     } catch {
       logger('complete_verified_deployment: replay refused', { stage: 'replay', code: 'replay_failed' })
       return unavailable(409)
@@ -189,7 +208,10 @@ export async function handleCompleteVerifiedDeployment(
       p_won: result.won, p_outcome: result.outcome, p_verified_xp: result.verifiedXp,
     })
     const storedResult = Array.isArray(completion.data) && completion.data.length === 1
-      ? receiptFromRow(completion.data[0], userId, request.sessionId, request.transcript)
+      ? receiptFromRow(
+        completion.data[0], userId, request.sessionId, request.transcript,
+        context.contract_version === 3 ? 'verified_replay_v3' : 'verified_replay_v2',
+      )
       : null
     if (completion.error || !storedResult || storedResult.result.won !== result.won
       || storedResult.result.outcome !== result.outcome || storedResult.result.verifiedXp !== result.verifiedXp) return unavailable(409)

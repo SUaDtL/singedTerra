@@ -11,10 +11,11 @@ import {
   WIND_FACTOR,
 } from '../engine/Physics.ts'
 import { CANVAS_HEIGHT, COLLAPSE_PX_PER_TICK } from '../engine/Terrain.ts'
+import { selectVerifiedCpuFireV3, VERIFIED_DUEL_CPU_MAX_PROBES } from './verifiedCpuPolicyV3.ts'
+export { VERIFIED_DUEL_CPU_MAX_PROBES } from './verifiedCpuPolicyV3.ts'
 
 export const VERIFIED_DUEL_ALLOWED_SEEDS = Object.freeze([17, 42, 73, 109] as const)
 export const VERIFIED_DUEL_MAX_HUMAN_SALVOS = 6
-export const VERIFIED_DUEL_CPU_MAX_PROBES = 60
 export const VERIFIED_DUEL_MAX_POWER = 100
 export const VERIFIED_DUEL_MAX_WIND = 6
 export const VERIFIED_DUEL_SETTLE_TICKS = Math.ceil(CANVAS_HEIGHT / COLLAPSE_PX_PER_TICK) + 1
@@ -40,6 +41,33 @@ export const VERIFIED_DUEL_SWEPT_SAMPLES = VERIFIED_DUEL_CPU_SIMULATION_TICKS * 
 const VERIFIED_DUEL_CONTROLLER_CONSTRUCTION = Symbol('verified-duel-controller-construction')
 
 export interface VerifiedHumanFire { readonly angle: number; readonly power: number }
+export type VerifiedCpuPolicyVersion = 2 | 3
+export interface VerifiedReplayVersionTuple {
+  readonly contractVersion: number
+  readonly engineVersion: number
+  readonly rulesetVersion: number
+}
+
+function verifiedCpuPolicyVersion(value: unknown): VerifiedCpuPolicyVersion {
+  if (value === 2 || value === 3) return value
+  throw new Error('unsupported_verified_cpu_policy')
+}
+
+export function verifiedCpuPolicyForTuple(tuple: unknown): VerifiedCpuPolicyVersion {
+  if (!tuple || typeof tuple !== 'object' || Array.isArray(tuple)) {
+    throw new Error('unsupported_verified_replay_version')
+  }
+  const value = tuple as Record<string, unknown>
+  if (Object.keys(value).length !== 3
+    || !Number.isSafeInteger(value.contractVersion)
+    || !Number.isSafeInteger(value.engineVersion)
+    || !Number.isSafeInteger(value.rulesetVersion)) {
+    throw new Error('unsupported_verified_replay_version')
+  }
+  if (value.contractVersion === 2 && value.engineVersion === 2 && value.rulesetVersion === 4) return 2
+  if (value.contractVersion === 3 && value.engineVersion === 3 && value.rulesetVersion === 4) return 3
+  throw new Error('unsupported_verified_replay_version')
+}
 export interface VerifiedCpuFire extends VerifiedHumanFire {
   readonly weapon: 'baby_missile'
   readonly probeCount: number
@@ -152,6 +180,12 @@ export function selectVerifiedCpuFire(engine: GameEngine): VerifiedCpuFire {
   })
 }
 
+export function selectVerifiedCpuFireForPolicy(engine: GameEngine, version: number): VerifiedCpuFire {
+  return verifiedCpuPolicyVersion(version) === 2
+    ? selectVerifiedCpuFire(engine)
+    : selectVerifiedCpuFireV3(engine)
+}
+
 export function adjudicateVerifiedDuelCap(state: GameState): VerifiedDuelAdjudication {
   const [human, cpu] = state.tanks
   if (!human || !cpu) return { outcome: 'draw', winnerId: null, reason: 'draw' }
@@ -174,6 +208,7 @@ export function adjudicateVerifiedDuelCap(state: GameState): VerifiedDuelAdjudic
 export class VerifiedDuelController {
   readonly engine: GameEngine
   private readonly seed: number
+  private readonly cpuPolicyVersion: VerifiedCpuPolicyVersion
   private readonly commitments: VerifiedHumanFire[] = []
   /** CPU damage snapshots, one per fully settled accepted human salvo. */
   private readonly humanDamageBySalvo: number[] = []
@@ -188,20 +223,32 @@ export class VerifiedDuelController {
   private completed = false
 
   static create(seed: number): VerifiedDuelController {
+    return VerifiedDuelController.createForPolicy(seed, 2)
+  }
+
+  static createForPolicy(seed: number, cpuPolicyVersion: number): VerifiedDuelController {
+    const validatedPolicyVersion = verifiedCpuPolicyVersion(cpuPolicyVersion)
     return new VerifiedDuelController(
       VERIFIED_DUEL_CONTROLLER_CONSTRUCTION,
       new GameEngine(createVerifiedDuelOptions(seed)),
       seed,
+      validatedPolicyVersion,
     )
   }
 
-  private constructor(construction: symbol, engine: GameEngine, seed: number) {
+  private constructor(
+    construction: symbol,
+    engine: GameEngine,
+    seed: number,
+    cpuPolicyVersion: VerifiedCpuPolicyVersion,
+  ) {
     if (construction !== VERIFIED_DUEL_CONTROLLER_CONSTRUCTION) {
       throw new Error('private_verified_duel_controller_constructor')
     }
     if (!(VERIFIED_DUEL_ALLOWED_SEEDS as readonly number[]).includes(seed)) throw new Error('invalid_verified_duel_seed')
     this.engine = engine
     this.seed = seed
+    this.cpuPolicyVersion = cpuPolicyVersion
   }
 
   get complete(): boolean { return this.completed }
@@ -278,7 +325,7 @@ export class VerifiedDuelController {
 
     const cpu = this.engine.getState().tanks.find((tank) => tank.id === this.engine.getState().activePlayerId)
     if (!cpu?.ai) throw new Error('verified_duel_turn_mismatch')
-    const plan = selectVerifiedCpuFire(this.engine)
+    const plan = selectVerifiedCpuFireForPolicy(this.engine, this.cpuPolicyVersion)
     this.cpuSimulationTicks += plan.simulationTicks
     this.maximumProbeCount = Math.max(this.maximumProbeCount, plan.probeCount)
     this.engine.applyAction({ type: 'select_weapon', weapon: 'baby_missile' })
@@ -308,6 +355,15 @@ export class VerifiedDuelController {
 }
 
 export function replayVerifiedDuel(seed: number, rawTranscript: readonly VerifiedHumanFire[]): VerifiedDuelReplayResult {
+  return replayVerifiedDuelForPolicy(seed, rawTranscript, 2)
+}
+
+export function replayVerifiedDuelForPolicy(
+  seed: number,
+  rawTranscript: readonly VerifiedHumanFire[],
+  cpuPolicyVersion: number,
+): VerifiedDuelReplayResult {
+  const validatedPolicyVersion = verifiedCpuPolicyVersion(cpuPolicyVersion)
   if (!Array.isArray(rawTranscript) || rawTranscript.length === 0 || rawTranscript.length > VERIFIED_DUEL_MAX_HUMAN_SALVOS) {
     throw new Error('invalid_verified_duel_transcript')
   }
@@ -318,7 +374,7 @@ export function replayVerifiedDuel(seed: number, rawTranscript: readonly Verifie
     }
     return Object.freeze({ angle: entry.angle, power: entry.power })
   })
-  const controller = VerifiedDuelController.create(seed)
+  const controller = VerifiedDuelController.createForPolicy(seed, validatedPolicyVersion)
   for (const [index, shot] of transcript.entries()) {
     if (controller.complete) throw new Error('trailing_verified_duel_action')
     if (!controller.applyHumanAction({ type: 'set_angle', angle: shot.angle })

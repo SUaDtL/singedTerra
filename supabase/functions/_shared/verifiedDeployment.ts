@@ -287,10 +287,10 @@ function validProgressionCounts(value: VerifiedProgressionCounts): boolean {
 export function projectVerifiedDeploymentReceipt(
   result: VerifiedDeploymentResultReceipt,
   current: VerifiedProgressionCounts,
-  evidence: 'verified_replay_v1' | 'verified_replay_v2' = 'verified_replay_v2',
+  evidence: 'verified_replay_v1' | 'verified_replay_v2' | 'verified_replay_v3' = 'verified_replay_v2',
 ): {
   result: VerifiedDeploymentResultReceipt
-  progression: { evidence: 'verified_replay_v1' | 'verified_replay_v2'; prior: VerifiedProgressionCounts; current: VerifiedProgressionCounts }
+  progression: { evidence: 'verified_replay_v1' | 'verified_replay_v2' | 'verified_replay_v3'; prior: VerifiedProgressionCounts; current: VerifiedProgressionCounts }
 } | null {
   const correctAward = (result.won && result.outcome === 'win' && result.verifiedXp === 200)
     || (!result.won && (result.outcome === 'loss' || result.outcome === 'draw') && result.verifiedXp === 100)

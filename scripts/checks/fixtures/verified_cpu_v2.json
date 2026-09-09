@@ -1,0 +1,943 @@
+{
+  "schema": "verified-cpu-v2-corpus",
+  "generatedBy": "scripts/checks/verified_cpu_corpus.mjs",
+  "contractVersion": 2,
+  "engineVersion": 2,
+  "rulesetVersion": 4,
+  "input": {
+    "seeds": "0..31",
+    "humanOpening": {
+      "angle": 45,
+      "power": 50
+    },
+    "config": {
+      "maxPlayers": 2,
+      "players": [
+        {
+          "name": "Commander",
+          "color": "#e84d4d"
+        },
+        {
+          "name": "CPU",
+          "color": "#4d8ce8",
+          "ai": "hard"
+        }
+      ],
+      "maxWind": 6,
+      "gravity": 0.15,
+      "walls": "open",
+      "hazards": "none",
+      "rounds": 1,
+      "interestRate": 0,
+      "suddenDeathTurn": 0,
+      "armsLevel": 0,
+      "teamMode": false,
+      "starterWeaponFalloff": "decisive",
+      "rulesetVersion": 4
+    }
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 68,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3923,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 53,
+        "damageToHuman": 0,
+        "selfDamage": 14.036770512655067,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 1,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 73,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 135,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4797,
+        "coarseBest": {
+          "angle": 135,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 138,
+        "damageToHuman": 31.420241856454282,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 2,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 76,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3816,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 33.12690151378462,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 3,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 73,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3844,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 32.4843739673108,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 4,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 79,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3852,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 33.08271649938554,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 5,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 67,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3725,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 30.87725913885177,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 6,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 78,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 147,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4225,
+        "coarseBest": {
+          "angle": 150,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 115,
+        "damageToHuman": 27.528037439002233,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 7,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 81,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 141,
+        "power": 96,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 5074,
+        "coarseBest": {
+          "angle": 135,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 123,
+        "damageToHuman": 30.82303655572386,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 8,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 78,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4047,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 55,
+        "damageToHuman": 0,
+        "selfDamage": 20.14542647374806,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 9,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 81,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 147,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4578,
+        "coarseBest": {
+          "angle": 150,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 113,
+        "damageToHuman": 19.496218099824404,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 10,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 83,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 150,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4368,
+        "coarseBest": {
+          "angle": 150,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 103,
+        "damageToHuman": 30.97886514591761,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 11,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 77,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4245,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 54,
+        "damageToHuman": 0,
+        "selfDamage": 19.41490699847155,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 12,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 86,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4322,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 55,
+        "damageToHuman": 0,
+        "selfDamage": 25.378441609944957,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 13,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 65,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3854,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 33.01369357102709,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 14,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 70,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4075,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 54,
+        "damageToHuman": 0,
+        "selfDamage": 1.8548884087236104,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 15,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 83,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 141,
+        "power": 96,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4820,
+        "coarseBest": {
+          "angle": 135,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 122,
+        "damageToHuman": 32.87798634919045,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 16,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 64,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3935,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 33.13113602135661,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 17,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 80,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4042,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 32.63169695244437,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 18,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 83,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 138,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4372,
+        "coarseBest": {
+          "angle": 135,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 119,
+        "damageToHuman": 30.85477768851581,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 19,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 79,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 147,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4028,
+        "coarseBest": {
+          "angle": 150,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 108,
+        "damageToHuman": 32.20522298190262,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 20,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 71,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 150,
+        "power": 100,
+        "weapon": "baby_missile",
+        "probeCount": 49,
+        "simulationTicks": 4326,
+        "coarseBest": {
+          "angle": 150,
+          "power": 100
+        }
+      },
+      "cpuResult": {
+        "ticks": 111,
+        "damageToHuman": 13.096653620563174,
+        "selfDamage": 0,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 21,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 71,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3959,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 55,
+        "damageToHuman": 0,
+        "selfDamage": 13.000090940020897,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 22,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 68,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4080,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 30.416353934311033,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 23,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 85,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4138,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 54,
+        "damageToHuman": 0,
+        "selfDamage": 21.05869545578082,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 24,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 77,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4019,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 57,
+        "damageToHuman": 0,
+        "selfDamage": 27.597764285430486,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 25,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 73,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3966,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 32.5650778907188,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 26,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 69,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4051,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 56,
+        "damageToHuman": 0,
+        "selfDamage": 25.69829872989284,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 27,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 73,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4273,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 33.11526698465771,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 28,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 65,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3756,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 30.64251876330762,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 29,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 92,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4137,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 32.93267740200699,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 30,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 81,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 3895,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 32.36376151517615,
+        "phase": "PLAYER_TURN"
+      }
+    },
+    {
+      "seed": 31,
+      "humanOpening": {
+        "angle": 45,
+        "power": 50
+      },
+      "humanOpeningResult": {
+        "ticks": 77,
+        "damageToCpu": 0
+      },
+      "cpuChoice": {
+        "angle": 90,
+        "power": 20,
+        "weapon": "baby_missile",
+        "probeCount": 59,
+        "simulationTicks": 4055,
+        "coarseBest": {
+          "angle": 90,
+          "power": 20
+        }
+      },
+      "cpuResult": {
+        "ticks": 51,
+        "damageToHuman": 0,
+        "selfDamage": 32.730146556649615,
+        "phase": "PLAYER_TURN"
+      }
+    }
+  ],
+  "maxima": {
+    "probeCount": 59,
+    "simulationTicks": 5074,
+    "humanOpeningTicks": 92,
+    "cpuTicks": 138
+  }
+}

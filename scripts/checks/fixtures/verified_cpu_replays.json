@@ -1,0 +1,43 @@
+{
+  "schema": "verified-cpu-replay-v2-v3",
+  "transcript": [
+    { "angle": 0, "power": 5 },
+    { "angle": 0, "power": 5 },
+    { "angle": 0, "power": 5 },
+    { "angle": 0, "power": 5 },
+    { "angle": 0, "power": 5 },
+    { "angle": 0, "power": 5 }
+  ],
+  "policies": {
+    "2": {
+      "seed": 17,
+      "outcome": "human_win",
+      "winnerId": "p1",
+      "reason": "health",
+      "humanSalvos": 6,
+      "cpuSalvos": 6,
+      "liveTicks": 632,
+      "cpuSimulationTicks": 24155,
+      "maximumProbeCount": 59,
+      "transcript": [
+        { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 },
+        { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 }
+      ]
+    },
+    "3": {
+      "seed": 17,
+      "outcome": "cpu_win",
+      "winnerId": "p2",
+      "reason": "health",
+      "humanSalvos": 6,
+      "cpuSalvos": 6,
+      "liveTicks": 830,
+      "cpuSimulationTicks": 24639,
+      "maximumProbeCount": 49,
+      "transcript": [
+        { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 },
+        { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 }, { "angle": 0, "power": 5 }
+      ]
+    }
+  }
+}
