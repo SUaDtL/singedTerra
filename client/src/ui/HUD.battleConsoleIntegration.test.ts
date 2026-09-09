@@ -279,7 +279,7 @@ describe('P-08 live battle-console integration', () => {
     }
   });
 
-  it('restores parked diagnostics and retry controls to their active owners', async () => {
+  it('restores parked diagnostics to its active owner', async () => {
     const { hud, state } = mount();
     try {
       hud.update(state, false, true, true, true);
@@ -288,39 +288,25 @@ describe('P-08 live battle-console integration', () => {
       await hud.leaveBattleConsole();
       const internals = hud as unknown as Record<string, HTMLElement>;
       const inspector = internals['liveMatchInspectorMenuEl']!;
-      const retry = internals['overlayVerifiedRetryBtnEl']!;
       expect(inspector.closest('[data-hud-semantic-parking]')).not.toBeNull();
-      expect(retry.closest('[data-hud-semantic-parking]')).not.toBeNull();
       hud.setLiveMatchDiagnostics(() => undefined);
       expect(inspector.parentElement).toBe(internals['pauseActionsEl']);
-      hud.setVerifiedDeployment({
-        status: 'retryable', humanSalvos: 6, cpuSalvos: 6, humanLimit: 6, cpuLimit: 6,
-        deadline: { remainingMs: 30_000, warning: 'one-minute', acceptsInput: false, canComplete: true },
-      });
-      expect(retry.parentElement).toBe(internals['overlayPrimaryBtnEl']!.parentElement);
-      expect(retry.nextElementSibling).toBe(internals['overlayPrimaryBtnEl']);
       hud.setLiveMatchDiagnostics(null);
-      hud.setVerifiedDeployment(null);
       expect(inspector.isConnected).toBe(false);
-      expect(retry.isConnected).toBe(false);
     } finally {
       await hud.destroy();
     }
   });
 
-  it('excludes parked retry controls from terminal-report keyboard navigation', async () => {
+  it('keeps the terminal owner connected through battle-console retirement', async () => {
     const { hud, state } = mount();
     try {
       hud.update(state, false, true, true, true);
-      hud.setVerifiedDeployment(null);
+      const report = document.querySelector<HTMLElement>('[aria-labelledby="st-victory-title"]')!;
       await hud.leaveBattleConsole();
-      const internals = hud as unknown as Record<string, HTMLElement>;
-      const primary = internals['overlayPrimaryBtnEl']!;
-      const menu = internals['overlayMenuBtnEl']!;
-      (hud as unknown as { overlayShown: boolean }).overlayShown = true;
-      primary.focus();
-      primary.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
-      expect(document.activeElement).toBe(menu);
+      expect(report.isConnected).toBe(true);
+      expect(report.querySelector('[data-terminal-primary]')).not.toBeNull();
+      expect(report.querySelector('[data-terminal-menu]')).not.toBeNull();
     } finally {
       await hud.destroy();
     }
