@@ -22,6 +22,7 @@ import {
   normalizeWallMode,
   type BattlefieldWorldId,
   type NetworkRulesetVersion,
+  type TeamId,
   type WallMode,
   type TerrainHazardMode,
 } from '@shared/types/GameOptions';
@@ -51,6 +52,8 @@ export interface NetworkPlayer {
   name: string;
   color: string;
   ready: boolean;
+  /** Authoritative team assignment; absent on free-for-all or legacy rooms. */
+  team?: TeamId;
   /** CPU difficulty for bot seats; absent => human. */
   ai?: AiDifficulty;
   /** Presentation-only authored part selection; absent on legacy rooms. */
