@@ -11,7 +11,7 @@ const seams = vi.hoisted(() => ({
   verifiedControllerPolicies: [] as number[],
   verifiedControllerTuples: [] as Array<{ contractVersion: number; engineVersion: number; rulesetVersion: number }>,
   hotSeatConstructorArgs: [] as unknown[],
-  onLobbyReady: null as null | ((config: Record<string, unknown>) => void),
+  onLobbyReady: null as null | ((config: Record<string, unknown>) => Promise<void>),
   onQuit: null as null | (() => void),
   onVerifiedRetry: null as null | (() => void),
   onVerifiedContinueCasual: null as null | (() => void),
@@ -21,7 +21,12 @@ const seams = vi.hoisted(() => ({
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererPrimedStates: [] as GameState[],
   rendererConstructed: 0,
+  setupFailureStage: null as null | 'renderer' | 'renderer-events' | 'input-attach' | 'subscription' | 'start',
+  setupFailure: null as Error | null,
+  setupFailureBeforeThrow: null as null | (() => void),
   rendererResets: 0,
+  inputDetaches: 0,
+  unsubscribes: 0,
   rendererAnimating: false,
   terminalImpactNotifies: 0,
   recorded: [] as Array<{ matchId: string; won: boolean }>,
@@ -131,7 +136,10 @@ vi.mock('./ui/firstSalvoController', () => ({
 }))
 vi.mock('./renderer/Renderer', () => ({
   Renderer: class {
-    constructor() { seams.rendererConstructed += 1 }
+    constructor() {
+      seams.rendererConstructed += 1
+      if (seams.setupFailureStage === 'renderer') throw seams.setupFailure
+    }
     isAnimating() { return seams.rendererAnimating }
     isTerminalImpactAnimating() { return seams.rendererAnimating }
     currentImpactLearningCue() { return seams.rendererImpactCue }
@@ -139,6 +147,10 @@ vi.mock('./renderer/Renderer', () => ({
     reset() { seams.rendererResets += 1 }
     setAimGuide() {}
     setEvents(events: { onExplosion?: (radius: number, impact: unknown) => void }) {
+      if (seams.setupFailureStage === 'renderer-events') {
+        seams.setupFailureBeforeThrow?.()
+        throw seams.setupFailure
+      }
       seams.rendererEvents = events
     }
     primeHistoricalImpactEvents(state: GameState) { seams.rendererPrimedStates.push(state) }
@@ -167,8 +179,10 @@ vi.mock('./input/InputHandler', () => ({
     constructor(_canvas: HTMLCanvasElement, onAction: (action: Record<string, unknown>) => void) {
       seams.inputAction = onAction
     }
-    attach() {}
-    detach() {}
+    attach() {
+      if (seams.setupFailureStage === 'input-attach') throw seams.setupFailure
+    }
+    detach() { seams.inputDetaches += 1 }
     nextWeapon() {}
     setActiveTankScreenPos() {}
     setAim() {}
@@ -247,7 +261,7 @@ vi.mock('./ui/HUD', () => ({
 }))
 vi.mock('./ui/Lobby', () => ({
   Lobby: class {
-    constructor(_root: HTMLElement, onReady: (config: Record<string, unknown>) => void) {
+    constructor(_root: HTMLElement, onReady: (config: Record<string, unknown>) => Promise<void>) {
       seams.onLobbyReady = onReady
     }
     hide() { seams.lobbyHides += 1 }
@@ -473,8 +487,9 @@ function fakeClient(initial: GameState) {
     isFiring: false,
     initialize: async () => undefined,
     onStateChange(next: (state: GameState) => void) {
+      if (seams.setupFailureStage === 'subscription') throw seams.setupFailure
       listener = next
-      return () => { listener = null }
+      return () => { seams.unsubscribes += 1; listener = null }
     },
     sendAction(action: Record<string, unknown>) {
       seams.forwardedActions.push(action)
@@ -482,7 +497,9 @@ function fakeClient(initial: GameState) {
       else (this.controller as { applyAction?: (value: Record<string, unknown>) => boolean } | null)
         ?.applyAction?.(action)
     },
-    start: vi.fn(),
+    start: vi.fn(() => {
+      if (seams.setupFailureStage === 'start') throw seams.setupFailure
+    }),
     stop: vi.fn(),
   }
 }
@@ -515,7 +532,12 @@ describe('production hot-seat progression composition', () => {
     seams.rendererEvents = null
     seams.rendererPrimedStates.length = 0
     seams.rendererConstructed = 0
+    seams.setupFailureStage = null
+    seams.setupFailure = null
+    seams.setupFailureBeforeThrow = null
     seams.rendererResets = 0
+    seams.inputDetaches = 0
+    seams.unsubscribes = 0
     seams.rendererAnimating = false
     seams.terminalImpactNotifies = 0
     seams.recorded.length = 0
@@ -702,6 +724,83 @@ describe('production hot-seat progression composition', () => {
     seams.onLobbyReady({ mode: 'hotseat', players: [] })
     await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
     expect(seams.rendererConstructed).toBe(2)
+  })
+
+  it('owns the state subscription before start can synchronously emit its first snapshot', async () => {
+    const first = gameState({ winner: 'p2' })
+    const client = fakeClient(first)
+    client.start.mockImplementation(() => {
+      client.emit(first)
+      seams.onQuit?.()
+    })
+    seams.clients.push(client)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    expect(seams.hudFrames[0]).toEqual({
+      phase: first.phase,
+      activePlayerId: first.activePlayerId,
+      isFiring: false,
+    })
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    expect(seams.unsubscribes).toBe(1)
+  })
+
+  it.each([
+    { stage: 'renderer', rendererResets: 0, inputDetaches: 0, unsubscribes: 0 },
+    { stage: 'renderer-events', rendererResets: 1, inputDetaches: 0, unsubscribes: 0 },
+    { stage: 'input-attach', rendererResets: 1, inputDetaches: 1, unsubscribes: 0 },
+    { stage: 'subscription', rendererResets: 1, inputDetaches: 1, unsubscribes: 0 },
+    { stage: 'start', rendererResets: 1, inputDetaches: 1, unsubscribes: 1 },
+  ] as const)('rolls back acquired resources once when $stage aborts setup', async ({
+    stage, rendererResets, inputDetaches, unsubscribes,
+  }) => {
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.setupFailureStage = stage
+    const setupFailure = new Error(`${stage} setup failed`)
+    seams.setupFailure = setupFailure
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    const failure = seams.onLobbyReady({ mode: 'hotseat', players: [] })
+
+    await expect(failure).rejects.toBe(setupFailure)
+    expect(client.stop).toHaveBeenCalledOnce()
+    expect(seams.rendererResets).toBe(rendererResets)
+    expect(seams.inputDetaches).toBe(inputDetaches)
+    expect(seams.unsubscribes).toBe(unsubscribes)
+    expect(client.start).toHaveBeenCalledTimes(stage === 'start' ? 1 : 0)
+  })
+
+  it('does not let a stale setup failure retire the newer match generation', async () => {
+    const older = fakeClient(gameState())
+    const newer = fakeClient(gameState({ winner: 'p2' }))
+    seams.clients.push(older)
+    seams.setupFailureStage = 'renderer-events'
+    const setupFailure = new Error('renderer-events setup failed')
+    seams.setupFailure = setupFailure
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.setupFailureBeforeThrow = () => {
+      seams.setupFailureStage = null
+      seams.clients.push(newer)
+      void seams.onLobbyReady?.({ mode: 'hotseat', players: [] })
+    }
+    const staleFailure = seams.onLobbyReady({ mode: 'hotseat', players: [] })
+
+    await expect(staleFailure).rejects.toBe(setupFailure)
+    await vi.waitFor(() => expect(newer.start).toHaveBeenCalledOnce())
+    expect(older.stop).toHaveBeenCalledOnce()
+    expect(seams.rendererResets).toBe(1)
+    expect(newer.stop).not.toHaveBeenCalled()
+    const frames = seams.hudFrames.length
+    newer.emit(gameState({ winner: 'p2' }))
+    expect(seams.hudFrames.length).toBeGreaterThan(frames)
   })
 
   it('projects Quick Duel operation identity only from the explicitly local launch config', async () => {

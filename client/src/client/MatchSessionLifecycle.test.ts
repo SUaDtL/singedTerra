@@ -76,4 +76,45 @@ describe('MatchSessionLifecycle', () => {
     expect(events).toEqual(['second-renderer', 'first-renderer']);
     expect(lifecycle.renderer).toBeNull();
   });
+
+  it('rolls back one matching partial setup and ignores stale or duplicate rollback', () => {
+    const events: string[] = [];
+    const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
+    const generation = lifecycle.currentGeneration;
+    const client = { stop: () => events.push('client') };
+    lifecycle.ownClient(generation, client);
+    lifecycle.ownRenderer({ reset: () => events.push('renderer') });
+    lifecycle.ownInput({ detach: () => events.push('input') });
+    lifecycle.ownSubscription(() => events.push('subscription'));
+
+    expect(lifecycle.rollbackIfCurrent(generation, client)).toBe(true);
+    expect(lifecycle.rollbackIfCurrent(generation, client)).toBe(false);
+    expect(events).toEqual(['subscription', 'input', 'client', 'renderer']);
+    expect(lifecycle.client).toBeNull();
+    expect(lifecycle.input).toBeNull();
+    expect(lifecycle.renderer).toBeNull();
+  });
+
+  it('continues rollback after a disposer throws and keeps a duplicate call inert', () => {
+    vi.useFakeTimers();
+    const events: string[] = [];
+    const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
+    const generation = lifecycle.currentGeneration;
+    const client = { stop: () => events.push('client') };
+    lifecycle.ownClient(generation, client);
+    lifecycle.ownRenderer({ reset: () => events.push('renderer') });
+    lifecycle.ownInput({ detach: () => events.push('input') });
+    lifecycle.ownSubscription(() => {
+      events.push('subscription');
+      throw new Error('unsubscribe failed');
+    });
+    lifecycle.schedule(() => events.push('timer'), 10);
+
+    expect(lifecycle.rollbackIfCurrent(generation, client)).toBe(true);
+    expect(lifecycle.rollbackIfCurrent(generation, client)).toBe(false);
+    vi.runAllTimers();
+
+    expect(events).toEqual(['subscription', 'input', 'client', 'renderer']);
+    vi.useRealTimers();
+  });
 });
