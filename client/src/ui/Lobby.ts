@@ -415,6 +415,7 @@ export class Lobby {
       cancelVerifiedCompletionResponseDiagnostic();
     }
     const identityChanged = this.verifiedSession.syncAccountIdentity(cancelVerifiedCompletionResponseDiagnostic);
+    if (identityChanged) this.roomController.accountIdentityChanged();
     const recoveryGeneration = this.verifiedSession.advanceRecoveryGeneration();
     const restoreFocus = this.accountPanelOpen;
     const restoreLocalBattleFocus = document.activeElement instanceof HTMLButtonElement
@@ -788,6 +789,7 @@ export class Lobby {
    * a unique color. A Start button validates and hands a config to onReady.
    */
   show(options: { readonly focusVerifiedDeployment?: boolean } = {}): void {
+    this.roomController.activate();
     this.injectStyle();
     this.startDiagnostics();
     this.render();
@@ -815,6 +817,7 @@ export class Lobby {
 
   /** Hide the lobby overlay (e.g. once the game starts). */
   hide(): void {
+    this.roomController.retire();
     this.cleanupWaitingChannel();
     this.stopBrowsePoll();
     this.renderListeners.abort();
