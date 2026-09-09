@@ -1,14 +1,48 @@
 # Software recovery implementation plan
 
-Requested by Brenn on 2026-09-08. Status: execution started by user goal on 2026-09-08.
+Requested by Brenn on 2026-09-08. Packages A through D are delivered.
+
+## Current checkpoint: 2026-09-09 delivery record through PR473 head
+
+- Runtime delivery checkpoint: published `87283aca03954569e3e6e5a1d1b9c1cc345d95d7` (PR473) on 2026-09-09. Pages run `34327066205`, public `deploy-meta.json`, and hosted smoke matched that head. PR469 through PR473 are published.
+- A is delivered through PR457, PR460, and PR462. The retained rollout record proves V2 and V3 completion, immutable retry, disabled-admission fallback, drain, and re-enable. V2 session `6d5689ad-9479-401f-8f82-3be00dc572e7` completed with a win and 200 XP, changing matches 7 to 8 and XP 1300 to 1500; its retry retained one award. V3 session `59a825cd-397f-4fa7-8dc7-67c870f6b1a5` started at `04:29:56.848286Z`, completed a loss with 100 XP at `04:37:22.562585Z`, and changed matches 8 to 9 and XP 1500 to 1600 while new V3 admission was disabled at `04:30:15.831929Z`; its retry retained one award. V2 fallback session `52aae01f-b9c3-4782-b2ec-df444afd6320` remains abandoned as tuple `(2, 2, 4)`. The drain read found zero active V3 sessions at `05:00:08Z` after the `04:59:56.848286Z` safe-after time, then re-enabled V3 at `05:00:22.620174Z`. The 2026-09-09 07:57:42Z database read confirmed V3 starts enabled with no unexpired V3 sessions. Both replay verifiers remain required for eligible historical sessions. The fixed corpus observed and pinned maximum ticks 5,074, V2 maximum candidates 59, V3 maximum candidates 49, and 12 damaging V3 choices with zero self-damage. Those are corpus observations under the bound tests, not a configured hard tick cap.
+- B is delivered through PR458, PR461, and PR472. `LobbyRoomController` owns admission, recovery, leave, cancellation, and the room workflow. It delegates actual waiting subscriptions to the existing `LobbySession` resource owner. Its controlled tests count one subscription after entry and zero after teardown. Public guest archive `recovery-terminal-resume/.artifacts/guest-live-2026-09-09T07-47-36-037Z/evidence.json` proves create/join/start, transport recovery, report/rematch, and same-context reload/Rejoin. Archive `guest-leave-rejoin-2026-09-09T07-53-19-414Z/evidence.json` proves normal Leave, host roster removal, same-context code re-entry, ready, start, and one accepted action per guest. The final-match screens did not expose Leave, so those rooms were not claimed as explicitly cleaned.
+- C is delivered through PR456, PR464, and PR471. `TerminalMatchView` owns terminal DOM and listeners; view, HUD, main, and browser tests cover stable children, modal isolation, both Tab directions, retry, expiry, casual continuation, and wide, standard, and compact reports. Session `aa829618-df99-48a7-bfdd-240174793914` proved a six-shot cap draw receipt, Menu/Resume, and immutable result count with parent database comparison. Immediate post-Resume cap frames were missed, so there is no live cap-silence claim. Session `bd4650cd-af8b-4bf2-b6a0-e6cd1f558563` proved the separate natural GAME_OVER route: four normal 45/50 shots, a 100 XP loss, Menu/Resume, earliest post-Resume resolving frame at `07:54:04.551Z` retaining the old lobby paint, clean recovered battlefield/report at `07:54:05.404Z`, receipt at `07:54:06.248Z`, and settled view at `07:54:07.950Z`. The parent comparison recorded one immutable result, unchanged timestamp and transcript, and progression from matches 12 to 13 and XP 1900 to 2000. The natural frames are visual evidence, while PR471's automated tests cover both PLAYER_TURN and GAME_OVER terminal-history phases. Durable summary records are `Temp/singedterra-c-terminal-final-visual-proof.md` and `Temp/singedterra-pr471-cap-live-checkpoint.md`; the six frame captures remain in the Luna CUA record.
+- D is delivered through PR467 and PR473. PR473 merged and published as `87283aca03954569e3e6e5a1d1b9c1cc345d95d7` at 08:03:39Z after exact-head CI `34325857032` and CodeQL `34325857018` passed. Its core job `102382834267` passed the integrated full client suite: 200 files and 1,776 tests at 07:53:29Z, including both 32-seed corpora at observed maxima 59/5,074 and 49/5,074. Pages run `34327066205` succeeded with public deployment metadata matching that SHA and run; its hosted live smoke passed 1 check in 3.0 seconds. Luna's final preview confirmed local Quick Duel and public published play both progressed from 45/50 to 46/51 after Fire, then showed CPU 1 active with Napalm and changed wind; health was 149/100 locally and 142/100 publicly. The public preview metadata matched PR473 and the served index was `index-C-MPwFhY.js`; its local preview was clean at the same head. The smoke did not use an authenticated receipt or verified session. `GameSessionComposition` now owns ordered retirement, acquisition, configuration, subscription, and start. `MatchSessionLifecycle` remains the resource owner. The actual `createModeClient` extension path and full state and terrain oracle pass.
+- The console-entry ADR decision remains separate and unresolved. No claim here says the repository has no remaining debt.
+
+### Current verified-deployment compatibility
+
+| Persisted or requested tuple | Current behavior | Source and proof boundary |
+| --- | --- | --- |
+| Eligible V2 `(2, 2, 4)` | Resume, completion, and retry retain V2 replay semantics. | Tuple dispatch in `shared/src/net/verifiedDuel.ts`, recovery tests in `client/src/client/VerifiedDeploymentSession.test.ts`, and the retained rollout record. |
+| Eligible V3 `(3, 3, 4)` | Resume, completion, and retry retain V3 replay semantics even when new V3 admission is disabled. | Migration `020_verified_deployment_v3.sql`, `verifiedDeployment.ts`, PR460 and PR462 tests, and rollout evidence. |
+| Expired uncompleted tuple | Input and completion freeze. The only choices are explicit casual continuation or return to the Battery. A completed result retains its immutable retry path. | `VerifiedDeploymentSession`, `HUD.victoryReport.test.ts`, `main.hotSeatProgression.test.ts`, and `e2e/verified-deployment.spec.ts`. |
+| Completed result retry | The receipt remains result-specific and immutable. Retry cannot mint another award. | Completion referee tests, `AccountSession.test.ts`, and the aa829618 database comparison. |
+| Legacy zero-body request with no capabilities | Start treats the request as V2-only. | `start_verified_deployment/index.ts` and its capability tests. |
+| Explicit empty capabilities or malformed request | Reject before storage. | `start_verified_deployment/index.test.ts` capability test at line 94. |
+| New dual-capabilities request | Admission selects the enabled supported tuple and stores it with the session. | Start referee, migration 020, and PR460 database checks. |
+| Mixed-field tuple or unknown tuple | Reject without substituting a different replay policy. | `verifiedCpuPolicyForTuple`, replay/referee tests, and client recovery tests. |
+
+- Preserve unrelated primary dirty work, retained worktrees, dependency junctions, and rematch stash `163ea7acd19cddabee797ea594a5bb6ef02a245b`. The retained `.artifacts/software-recovery-history-through-pr472-20260909.md` is historical evidence, not work to repeat.
+
+Update this current section in place after meaningful changes. Do not append another chronology of superseded resume points. Package requirements below remain binding.
 
 ## Objective and authority
 
+### Reusable goal entry
+
+```text
+/goal Complete C:\Users\brenn\projects\singedTerra\docs\SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md. Resume from its current checkpoint, verifying live repository and delivery state before repeating work. Parent GPT-6 Astra owns architecture, scoped delegation, review, and integration. Prefer Luna for bounded implementation, regression tests, documentation, and CI monitoring; use Terra for intermediate tasks and Sol for deterministic protocols, asynchronous ownership, and complex composition. Give each worker explicit files, contracts, exclusions, acceptance tests, and a return artifact; prevent overlapping writers and reuse existing agents. Finish all four packages through reviewed PRs, exact-head green CI, authorized merges, and deployment plus live behavior verification. Preserve unrelated dirty work, deterministic replay, historical evidence, and the accepted UI. Keep this plan current. Do not substitute an audit, wrappers, or unmerged changes for completion; raise actual architectural conflicts and missing external prerequisites while continuing independent work.
+```
+
+This entry resumes the recorded work. It does not authorize restarting completed packages or discarding existing worktrees. Completion criteria and staged rollout controls below remain binding.
+
 Complete the four work packages below: improve verified CPU shot selection safely, separate room/session ownership from Lobby, extract terminal match presentation from HUD, and simplify mode configuration and application composition. Preserve the accepted game interface and existing online, hot-seat, replay, and award behavior except for the explicitly versioned CPU improvement.
 
-This request creates a plan only. Execution begins when the user invokes the accompanying goal. During execution, deliver each package through reviewed PRs, exact-head CI, merge, and deployment verification. Do not stop at an audit, wrappers around unchanged ownership, or an unmerged implementation. Do not claim the entire codebase is free of debt after these bounded packages.
+Execution is authorized by the active user goal. During execution, deliver each package through reviewed PRs, exact-head CI, merge, and deployment verification. Do not stop at an audit, wrappers around unchanged ownership, or an unmerged implementation. Do not claim the entire codebase is free of debt after these bounded packages.
 
-## Starting point and recovery
+## Original baseline (historical; use the current checkpoint above)
 
 - Repository: `C:\Users\brenn\projects\singedTerra`; remote: `https://github.com/SUaDtL/singedTerra.git`.
 - Delivered baseline: main `84754c32deb5fe60bee335064dd95b9e6651a829`, through PR454. Revalidate remote main and open PRs before implementation; this SHA is a checkpoint, not an instruction to revert newer work.
@@ -52,6 +86,8 @@ Use a pinned corpus of seeds 0 through 31 with the standard verified configurati
 
 Rollback by stage: before admission, revert the new client/admission path while retaining compatible backend support; after new sessions exist, disable only new starts and preserve both verifiers through eligible completion and retry. Never roll back by reinterpreting or deleting a session. Record the exact operational commands after discovering the current controls and prove them in the test environment before production use.
 
+A4/A5 operational sequence, verified against migration020: publish the dual-capability client while V3 is disabled and prove V2 fallback first. Read `public.verified_deployment_drain_status(3::smallint)` before enabling through `public.set_verified_deployment_starts(3::smallint, true)`. After a real V3 session starts, disable new V3 admission with `public.set_verified_deployment_starts(3::smallint, false)` and prove the same active V3 tuple resumes, completes, and retries without a duplicate award. A subsequent new session must use V2 while V3 remains disabled; abandon that test session through its normal UI after proving fallback. Re-enable V3 only when the SQL control permits it: server time must reach `last_started_at + 30 minutes` and no unexpired active V3 sessions may remain. Completion alone does not bypass that time gate. Continue D work during this bounded wait. Preserve both verifiers and all immutable receipts. The legacy `scripts/verified-deployment-drain.mjs` is fixed to V1 and is not a generic V3 control tool.
+
 Done: the harmful-choice regression is fixed for new-version sessions, V2 fixtures and historical verification remain unchanged, bounded replay cost and browser/Edge equivalence pass, and the deployed transition is demonstrated. Local tests alone do not complete this package.
 
 ## B. Give room sessions one owner
@@ -78,6 +114,10 @@ Done: HUD no longer owns terminal DOM construction/listeners; existing verified 
 
 ## D. Centralize mode configuration and simplify composition
 
+Current-source architecture review: `gameEngineOptions.ts` and `rematchConfig.ts` still import configuration types from `ui/Lobby`; `lobbyValidation.ts` repeats rounds/economy coercion between hot-seat and online helpers; `LobbyRoomController` rejoin, Lobby ready handoff, and rematch each project the same authoritative options. D1 must remove these concrete dependencies and duplicate policies, not merely wrap the existing builder. Move the client setup types into a non-UI module and give raw-form coercion and authoritative-room projection explicit entrypoints at one client configuration boundary. Preserve their different trust and omission semantics; never clamp authoritative room data using form rules without parity evidence. Keep engine defaults and Edge admission validation in their deliberate execution boundaries.
+
+D1's initial review artifact must include a before/after caller map and table-driven characterization of blank, malformed, explicit, default, and four-seat team configurations across hot-seat, create, join, rejoin, and rematch. D2 then extracts the mode client factory and directly related setup orchestration from main through explicit construction ports, consuming the landed configuration boundary and MatchSessionLifecycle. It must preserve verified controller tuple dispatch, initialization failures, cancellation/disposal, and resource ownership. UI markup and accepted styling are excluded. Start production migration only after B2 and A4 integration; read-only contract preparation may proceed earlier.
+
 Starting sources: `shared/src/types/GameOptions.ts`, engine mode/round/team tests, Lobby configuration, `client/src/main.ts`, both GameClient implementations, and relevant referee contracts.
 
 Map a representative existing mode from selection through normalized options, client creation, engine setup, and network admission. Extract a pure normalization/configuration boundary and a client-side composition owner with explicit ports. Remove duplicated defaults and scattered interpretation after callers migrate. Keep mode rules in the deterministic engine and external request validation at the referee boundary; shared code must not import browser code and Edge must not import the engine to validate requests.
@@ -87,6 +127,11 @@ Retain existing mode options and defaults. Characterize malformed/omitted option
 Deliver D1 normalization/defaults and D2 composition/caller migration as separate PRs. Pin a table of every currently supported mode's omitted/default and explicit options before migration, comparing normalized output and engine initialization exactly for hot-seat and networked setup. At completion, callers must not duplicate defaults or normalization for the migrated fields; referee input validation remains intentionally separate. The test-only extension fixture adds a configuration variant through the new registry/normalizer and produces expected normalized options and initial engine state in both modes without edits to HUD or Lobby presentation. Record the exact files changed in that fixture as extension evidence.
 
 Done: mode normalization has one documented owner, main/Lobby no longer duplicate the migrated policy, existing modes behave identically, and a disposable test fixture representing a new mode variation can traverse setup without unrelated UI edits. Do not ship an unsolicited new game mode. Update `docs/DEVELOPMENT.md` with exact extension points, remaining deliberate engine/referee edits, and runnable tests.
+
+
+### D2 composition review notes (source-verified, implementation deferred until D1)
+
+Current `main.ts` factory owns network room/player prerequisite checks, lazy NetworkClient/Supabase imports, options construction, network initialize, and hot-seat engine/client construction. `startGame` separately owns verified tuple restoration, switchable client construction, generation adoption, recovered terminal-history priming, input/subscription registration, and start ordering. Extract these construction/setup responsibilities through explicit ports; moving only the small factory does not finish D2. Preserve MatchSessionLifecycle as the sole resource owner, and keep UI/AI per-frame behavior outside the extraction. Pin initialization rejection and stale async completion before migration, including whether a constructed network client is stopped when initialization rejects. If characterization reveals an actual leak, deliver its fix separately rather than concealing it in parity work. Preserve missing-room then missing-player validation order, dynamic import behavior, verified restore failure presentation, and historical impact priming before first paint. Review D2 signatures after D1 types land.
 
 ## Verification and delivery contract
 
@@ -102,7 +147,7 @@ Use small reviewable PRs with separate behavioral fixes and structural changes w
 
 For each merged head, verify Pages publication, public `deploy-meta.json`, and post-deployment smoke. For backend changes, verify actual migration/function versions and the served implementation. If credentials or a real environment are unavailable, keep that acceptance item open and state the precise missing evidence. Do not fabricate live proof from mocks or mark a temporary wait as blocked.
 
-Named live evidence: extend `e2e/verified-deployment.spec.ts` and the existing start/complete/verified replay Edge tests for A/C; use `scripts/checks/rematch_postgres.sql` through the database harness for rematch persistence and a real two-browser scenario for visible rematch behavior. For B, add a focused room recovery browser spec if the current suite lacks one. Run local integration against the real local Supabase/Postgres stack or an isolated staging project with two dedicated test accounts and isolated rooms, then smoke the published client against the deployed backend. Required transitions are join/wait/start, disconnect/rejoin, leave/rejoin, complete/retry with one immutable award, and rematch with preserved configuration. Record environment, account aliases (no tokens), room/session identifiers, before/after state, and cleanup of only test-created resources. Production smoke must not alter other users' rooms or awards. A rollback-only SQL check does not replace the visible two-browser scenario. If staging, credentials, or safe test identities are missing, request that specific prerequisite and continue independent packages while it remains pending.
+Named live evidence: extend `e2e/verified-deployment.spec.ts` and the existing start/complete/verified replay Edge tests for A/C; use `scripts/checks/rematch_postgres.sql` through the database harness for rematch persistence and a real two-browser scenario for visible rematch behavior. For B, add a focused room recovery browser spec if the current suite lacks one. Use real isolated private guest rooms for ordinary two-client lifecycle proof; ordinary room admission uses seat credentials and does not require signed-in accounts. Rejoin must retain the original browser context and its stored seat descriptor. Verified award acceptance uses the dedicated authenticated test account. Local or staging integration is useful when available; published-client smoke against the deployed backend remains required. Required transitions are join/wait/start, disconnect/rejoin, leave/rejoin, complete/retry with one immutable award, and rematch with preserved configuration. Record environment, account aliases (no tokens), room/session identifiers, before/after state, and cleanup of only test-created resources. Production smoke must not alter other users' rooms or awards. A rollback-only SQL check does not replace the visible two-browser scenario. If staging, credentials, or safe test identities are missing, request that specific prerequisite and continue independent packages while it remains pending.
 
 ## Durable progress and completion
 
@@ -110,49 +155,12 @@ Update this file in implementation branches after each meaningful checkpoint. Ke
 
 | Item | Status | Evidence required |
 | --- | --- | --- |
-| A: versioned CPU improvement | A1 in progress, Sol | Regression, V2 preservation, new policy parity/budget, deployed transition |
-| B: room/session ownership | Planned | Ownership removal, race tests, real two-client recovery |
-| C: terminal presentation | Contract/baseline in progress, Luna | Stable semantic view, unchanged awards, responsive and retry/rematch proof |
-| D: mode/configuration boundary | Planned | Central policy, caller migration, extension fixture and guide |
-| Integrated delivery | Planned | Reviewed exact heads, green CI, merged PRs, deployed provenance/smoke |
+| A: versioned CPU improvement | Delivered through PR457, PR460, and PR462; V2/V3 retention and operational transition proved | Replay corpus and limits, V2 preservation, Edge parity, deployed transition |
+| B: room/session ownership | Delivered through PR458, PR461, and PR472; public recovery and Leave/re-entry evidence passed | Ownership removal, cancellation and subscription tests, real two-client lifecycle |
+| C: terminal presentation | Delivered through PR456, PR464, and PR471; cap and natural recovery evidence passed | Stable semantic view, unchanged awards, responsive and retry/rematch proof |
+| D: mode/configuration boundary | Delivered through PR467 and PR473; exact Pages provenance, hosted smoke, final preview, and normal-casual smoke passed | Central policy, caller migration, extension fixture and guide |
+| Integrated delivery | Delivered; all four package rows have reviewed source, test, and runtime evidence | Reviewed exact heads, green CI, merged PRs, deployed provenance/smoke |
 
 Completion requires every row to be proven against current code and deployment. A plan, audit, isolated green test, draft PR, or recorded future debt does not complete one of these four packages. Additional unrelated debt may remain, but do not relabel an unfinished package as future work to close the goal. Stop adding new packages once these are complete; provide a concise handoff with the remaining debt and evidence links.
 
 Plan review: a Sol review on 2026-09-08 requested explicit version binding, staged rollback, fixed CPU acceptance inputs/budgets, separate parity/race PRs, serialized symbol ownership, and named live evidence. Those requirements are incorporated above. No implementation or deployment was performed to create this plan.
-
-Execution checkpoint, 2026-09-08: remote main revalidated as `84754c32deb5fe60bee335064dd95b9e6651a829`; primary dirty work preserved. Sol assigned A1 in `recovery-cpu-policy`, Luna assigned C contract/baseline in `recovery-terminal-view`, each on its own `codex/` branch from main. Parent reviews initial contracts before expansion. Existing preview listener is PID 24756 on 5198; Docker daemon was unavailable at initial environment check and database proof remains unverified until a real runtime is available. B and D have not started.
-
-First review checkpoint: C's unchanged baseline passed 6 files / 84 tests; parent approved TerminalMatchView owning terminal DOM/listeners/focus while HUD retains payoff timing, interpretation, and protocol callbacks. A1 found unchanged `scripts/checks/verified_duel.mjs` failing with `incomplete_verified_duel` at an early-terminal fixture; root cause investigation is underway, not treated as a green baseline or repaired by changing V2 semantics. Proposed A tuple `(3,3,4)` and capability-negotiated disabled-first rollout received directional review; expansion still requires fixture/version evidence. Docker Desktop executable startup exited without a daemon; supported `docker desktop start` is running under execution session 41786 and must be polled before any restart.
-
-Environment follow-up: session 41786 was interrupted after logs proved the backend had crashed on inaccessible `Docker/run/dockerInference`. Preserving that socket by a single-file rename also failed; no Docker data was removed or changed. A user question is pending for a restored Docker runtime or isolated Supabase staging with two test identities. Independent A/C implementation continues; real database/two-client acceptance remains open. Sol traced the replay harness failure to stale early-terminal expectations after commit `209b7c6`, and confirmed the harness was never wired into CI. Parent approved a separate, evidence-backed harness repair preserving those original inputs as incomplete cases and adding the harness to normal checks before the CPU policy change.
-
-C initial-slice review: new view and three focused tests exist, but HUD integration is not approved yet. Parent found the modal ancestor incorrectly included in inert isolation, omitted field-order/promotion structure, missing action glyphs, and callback/focus parity gaps. Luna is repairing the concrete baseline mapping and tests before integration. The initial missing-module run executed zero tests and is structural evidence only, not an observed behavioral regression.
-
-C reassignment: second review still found incomplete receipt/focus parity and HUD edits starting before repaired-slice approval. Luna production editing was stopped; the dirty draft is preserved. Runtime rejected a fresh Terra agent (thread limit) and a child-model override, so no Terra task was actually started. Luna is producing a read-only handoff; Sol will take the repair after its next A checkpoint, with A/C implementation serialized. The harness repair diff in A is reviewed and approved pending observed checks; CPU behavior is unchanged so far.
-
-B preparation: read-only current-main inventory identifies existing `LobbySession` as owner of waiting subscriptions, heartbeat, stale generations, ready/gone events, and cleanup, backed by `LobbySession.test.ts`. `LobbyTransport` already owns Edge IO and room reads. B must reuse these and extract remaining create/join/rejoin admission, persistence, and configuration/handoff state from Lobby, rather than create a competing subscription owner. Baselines to run include Lobby.network, Lobby.rejoin, Lobby.sessionLifecycle, Lobby.gonePendingAction, Lobby.sessionEventOrdering, Lobby.sessionStaleActions, LobbySession, and LobbyTransport.ruleset tests. This inventory is preparation, not B implementation or live proof.
-
-A1 baseline checkpoint: commit `057d21d` repairs the previously unwired
-verified-duel harness without changing V2 production behavior. The two inputs
-whose outcomes changed with ruleset 4 remain pinned as incomplete; current
-terminal replacements and the exact seed-17 V2 replay summary are pinned, and
-`npm run check` now executes the harness. The focused run covered 73,124 flight
-cases with a measured maximum of 185 ticks, maximum displacement
-16.34969385993998, and observed maximum policy probe count 59 under the
-exported 60-probe cap. The full configured `npm run check` and secrets scan
-passed. A2 policy and database admission remain unimplemented at this
-checkpoint.
-
-Package C implementation checkpoint: `TerminalMatchView` now owns the terminal
-report DOM, stable receipt and scoreboard updates, winner preview lifecycle,
-actions, focus containment/restoration, isolation, and disposal. HUD retains
-the terminal-impact payoff gate, game-state interpretation, scoreboard
-escaping, and progression/Field Order derivation. The combined client suite
-passed 190 files and 1,676 tests; the configured three-profile terminal browser
-set passed 51 of 51 checks. Coverage measured before the final additive
-Sign-in identity test reported 85.98% branch and 99.60% line coverage for the
-new view, with repository-wide statement, branch, function, and line coverage
-all above the pre-extraction baseline. This is structural and rendered-browser
-evidence; package-level real-backend acceptance remains pending.
-
-A harness checkpoint: standalone commit `057d21d` repairs the two stale outcome fixtures, retains their original inputs as explicit incomplete cases, pins V2 replay outputs, and adds `verified_duel.mjs` to `npm run check`. Sol reports the focused harness and fresh full `npm run check` passed, plus the secrets gate. Initial worktree dependency failures were repaired using exact lockfile dependencies; no policy code changed. A narrow version-dispatch/corpus checkpoint is next, then Sol takes the preserved C draft. An accidental dependency junction alias was moved outside the worktree to `recovery-cpu-policy-node_modules-junction-old`; it points to the primary dependency tree and must not be recursively removed or followed for cleanup.
