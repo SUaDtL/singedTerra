@@ -43,6 +43,7 @@ const E2E_MODE = E2E_PARAMS.get('e2e');
 const E2E_BATTLE_CONSOLE_REFERENCE = E2E_PARAMS.get('battle-console-reference') === '1';
 const E2E_VICTORY_LONG_NAME = E2E_MODE === 'victory'
   && E2E_PARAMS.get('winner-name') === 'long';
+const E2E_VICTORY_VERIFIED_FOUR = E2E_MODE === 'victory-verified-four';
 const E2E_QUICK_OPERATION = E2E_MODE === 'victory' && E2E_PARAMS.has('quick-operation')
   ? quickOperationById(E2E_PARAMS.get('quick-operation'))
   : null;
@@ -388,7 +389,8 @@ function bootstrap(): void {
   // A Play again action consumes the fixture and restarts into an ordinary match.
   let e2eVictoryPending = E2E_MODE === 'victory'
     || E2E_MODE === 'victory-anonymous'
-    || E2E_MODE === 'victory-payoff';
+    || E2E_MODE === 'victory-payoff'
+    || E2E_VICTORY_VERIFIED_FOUR;
   // Deterministic presentation fixture for the real between-round HUD lifecycle.
   // It mutates the local hot-seat engine's opening snapshot once, mirroring the
   // existing victory fixture while leaving every production entry path unchanged.
@@ -632,6 +634,13 @@ function bootstrap(): void {
     }
     if (!matchSession.ownClient(currentGameGeneration, newClient)) return;
     const gameRenderer = createRenderer();
+    const initial = newClient.getState();
+    const terminalHistoryPrimed = config.verifiedDeployment !== undefined
+      && verifiedController?.complete === true
+      && initial?.phase === 'GAME_OVER';
+    if (terminalHistoryPrimed) {
+      gameRenderer.primeHistoricalImpactEvents(initial);
+    }
     const selectedBattlefield = selectClientBattlefieldWorld(
       newClient,
       gameRenderer,
@@ -661,7 +670,6 @@ function bootstrap(): void {
     // Seed the input handler's locally-tracked aim from the active tank so the
     // arrow keys step from that tank's real angle/power (set_angle/set_power
     // carry ABSOLUTE values). getState() may be null before the first snapshot.
-    const initial = newClient.getState();
     if (e2eRoundShopPending && initial) {
       e2eRoundShopPending = false;
       const winner = initial.tanks[0]!;
@@ -701,6 +709,31 @@ function bootstrap(): void {
       initial.tanks[1]!.health = 0;
       initial.tanks[1]!.kills = 0;
       initial.tanks[1]!.totalDamage = 52;
+      if (E2E_VICTORY_VERIFIED_FOUR) {
+        initial.totalRounds = 3;
+        const fixtureRows = [
+          { name: 'Ranger Actualname', wins: 3, kills: 9, damage: 2460 },
+          { name: 'CPU 1 Ridgebreaker', wins: 2, kills: 7, damage: 2110 },
+          { name: 'CPU 2 Longshot', wins: 1, kills: 5, damage: 1720 },
+          { name: 'CPU 3 Undertow', wins: 0, kills: 3, damage: 1080 },
+        ];
+        for (const [index, tank] of initial.tanks.entries()) {
+          const row = fixtureRows[index];
+          if (!row) continue;
+          tank.playerName = row.name;
+          tank.roundWins = row.wins;
+          tank.kills = row.kills;
+          tank.totalDamage = row.damage;
+        }
+        hud.setVerifiedProgressionReceipt({
+          result: { sessionId: '123e4567-e89b-42d3-a456-426614174000', won: true, outcome: 'win', verifiedXp: 200 },
+          progression: {
+            evidence: 'verified_replay_v2',
+            prior: { evidence: 'verified_replay_v2', matchesPlayed: 10, wins: 8, totalXp: 1950, progressionVersion: 1, level: 4, levelXp: 450, nextLevelXp: 500 },
+            current: { evidence: 'verified_replay_v2', matchesPlayed: 11, wins: 9, totalXp: 2150, progressionVersion: 1, level: 5, levelXp: 150, nextLevelXp: 500 },
+          },
+        });
+      }
       if (E2E_MODE === 'victory-payoff') {
         const defeated = initial.tanks[1]!;
         const terminalExplosion = {
@@ -930,6 +963,7 @@ function bootstrap(): void {
         verifiedControlsAllowed,
       );
       const terminalEffectsSettled = terminalImpactObserved
+        || terminalHistoryPrimed
         || (state.projectiles.length === 0 && state.explosions.length === 0);
       if (
         state.phase === 'GAME_OVER'
@@ -1208,17 +1242,22 @@ function bootstrap(): void {
     || E2E_MODE === 'victory'
     || E2E_MODE === 'victory-anonymous'
     || E2E_MODE === 'victory-payoff'
+    || E2E_VICTORY_VERIFIED_FOUR
   ) {
     if (E2E_MODE === 'victory-anonymous') lobby.show();
-    const e2ePlayerNames = E2E_BATTLE_CONSOLE_REFERENCE
+    const e2ePlayerNames = E2E_VICTORY_VERIFIED_FOUR
+      ? ['Ranger Actualname', 'CPU 1 Ridgebreaker', 'CPU 2 Longshot', 'CPU 3 Undertow']
+      : E2E_BATTLE_CONSOLE_REFERENCE
       ? ['Player 1', 'Player 2']
       : ['P1', 'P2'];
+    const e2eColors = ['#e84d4d', '#4d8ce8', '#70ad47', '#d58a32'];
     void startGame({
       mode: 'hotseat',
-      players: [
-        { name: e2ePlayerNames[0]!, color: '#e84d4d' },
-        { name: e2ePlayerNames[1]!, color: '#4d8ce8' },
-      ],
+      players: e2ePlayerNames.map((name, index) => ({
+        name,
+        color: e2eColors[index]!,
+        ...(E2E_VICTORY_VERIFIED_FOUR && index > 0 ? { ai: 'hard' as const } : {}),
+      })),
       playerNames: e2ePlayerNames,
       settings: { seed: E2E_HOT_SEAT_SEED },
       quickOperation: E2E_QUICK_OPERATION === null ? undefined : {

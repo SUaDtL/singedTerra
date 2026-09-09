@@ -19,6 +19,7 @@ const seams = vi.hoisted(() => ({
   onVerifiedNextOrder: null as null | (() => void),
   inputAction: null as null | ((action: Record<string, unknown>) => void),
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
+  rendererPrimedStates: [] as GameState[],
   rendererConstructed: 0,
   rendererResets: 0,
   rendererAnimating: false,
@@ -140,6 +141,7 @@ vi.mock('./renderer/Renderer', () => ({
     setEvents(events: { onExplosion?: (radius: number, impact: unknown) => void }) {
       seams.rendererEvents = events
     }
+    primeHistoricalImpactEvents(state: GameState) { seams.rendererPrimedStates.push(state) }
     toggleAimGuide() { return true }
   },
 }))
@@ -511,6 +513,7 @@ describe('production hot-seat progression composition', () => {
     seams.onVerifiedNextOrder = null
     seams.inputAction = null
     seams.rendererEvents = null
+    seams.rendererPrimedStates.length = 0
     seams.rendererConstructed = 0
     seams.rendererResets = 0
     seams.rendererAnimating = false
@@ -1127,6 +1130,7 @@ describe('production hot-seat progression composition', () => {
     if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
     seams.onLobbyReady(verifiedConfig())
     await vi.waitFor(() => expect(verifiedClient.start).toHaveBeenCalledOnce())
+    expect(seams.rendererPrimedStates).toEqual([])
     if (!seams.inputAction || !seams.onVerifiedRetry || !seams.onVerifiedContinueCasual
       || !seams.onVerifiedReturnToBattery) throw new Error('Expected verified controls')
 
@@ -1230,6 +1234,7 @@ describe('production hot-seat progression composition', () => {
     if (!seams.onLobbyReady) throw new Error('Expected renderer wiring')
     seams.onLobbyReady({ mode: 'hotseat', players: [] })
     await vi.waitFor(() => expect(terminal.start).toHaveBeenCalledOnce())
+    expect(seams.rendererPrimedStates).toEqual([])
     if (!seams.rendererEvents) throw new Error('Expected active-game renderer wiring')
 
     seams.rendererEvents.onExplosion?.(40, null)
@@ -1238,6 +1243,52 @@ describe('production hot-seat progression composition', () => {
     seams.rendererAnimating = false
     terminal.emit(gameState())
     terminal.emit(gameState())
+    expect(seams.terminalImpactNotifies).toBe(1)
+  })
+
+  it('primes retained terminal history before painting an already-complete verified recovery', async () => {
+    const terminalState = liveVerifiedState()
+    const historicalExplosion = {
+      id: 1,
+      weaponType: 'baby_missile' as const,
+      cx: 700,
+      cy: 300,
+      radius: 34,
+      impactType: 'tank' as const,
+      style: 'blast' as const,
+      color: '#ffb347',
+      durationFrames: 32,
+    }
+    terminalState.explosions = [historicalExplosion]
+    terminalState.lastExplosion = historicalExplosion
+    const controller = fakeVerifiedController(terminalState)
+    controller.tick.mockImplementation(() => {
+      terminalState.phase = 'GAME_OVER'
+      terminalState.winner = 'p2'
+      controller.complete = true
+    })
+    const restored = fakeClient(terminalState)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(restored)
+    const descriptor = { ...verifiedDescriptor, contractVersion: 3, engineVersion: 3 } as VerifiedDeploymentDescriptor
+    seams.verifiedDeployment = {
+      status: 'active', descriptor, transcript: [{ angle: 45, power: 50 }],
+      deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: true, canComplete: true },
+    }
+    seams.rendererAnimating = true
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected renderer wiring')
+    seams.onLobbyReady(verifiedConfig([{ angle: 45, power: 50 }], undefined, descriptor))
+    await vi.waitFor(() => expect(restored.start).toHaveBeenCalledOnce())
+    expect(seams.rendererPrimedStates).toHaveLength(1)
+    expect(seams.rendererPrimedStates[0]).toBe(terminalState)
+
+    restored.emit(terminalState)
+    expect(seams.terminalImpactNotifies).toBe(0)
+
+    seams.rendererAnimating = false
+    restored.emit(terminalState)
+    restored.emit(terminalState)
     expect(seams.terminalImpactNotifies).toBe(1)
   })
 
