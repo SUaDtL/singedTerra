@@ -1412,51 +1412,53 @@ describe('production hot-seat progression composition', () => {
     expect(seams.terminalImpactNotifies).toBe(1)
   })
 
-  it('primes retained terminal history before painting an already-complete verified recovery', async () => {
-    const terminalState = liveVerifiedState()
-    const historicalExplosion = {
-      id: 1,
-      weaponType: 'baby_missile' as const,
-      cx: 700,
-      cy: 300,
-      radius: 34,
-      impactType: 'tank' as const,
-      style: 'blast' as const,
-      color: '#ffb347',
-      durationFrames: 32,
-    }
-    terminalState.explosions = [historicalExplosion]
-    terminalState.lastExplosion = historicalExplosion
-    const controller = fakeVerifiedController(terminalState)
-    controller.tick.mockImplementation(() => {
-      terminalState.phase = 'GAME_OVER'
-      terminalState.winner = 'p2'
-      controller.complete = true
-    })
-    const restored = fakeClient(terminalState)
-    seams.verifiedControllers.push(controller)
-    seams.clients.push(restored)
-    const descriptor = { ...verifiedDescriptor, contractVersion: 3, engineVersion: 3 } as VerifiedDeploymentDescriptor
-    seams.verifiedDeployment = {
-      status: 'active', descriptor, transcript: [{ angle: 45, power: 50 }],
-      deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: true, canComplete: true },
-    }
-    seams.rendererAnimating = true
-    await import('./main')
-    if (!seams.onLobbyReady) throw new Error('Expected renderer wiring')
-    seams.onLobbyReady(verifiedConfig([{ angle: 45, power: 50 }], undefined, descriptor))
-    await vi.waitFor(() => expect(restored.start).toHaveBeenCalledOnce())
-    expect(seams.rendererPrimedStates).toHaveLength(1)
-    expect(seams.rendererPrimedStates[0]).toBe(terminalState)
+  it.each(['PLAYER_TURN', 'GAME_OVER'] as const)(
+    'primes retained terminal history before projecting a cap-complete %s verified recovery',
+    async (completedPhase) => {
+      const terminalState = liveVerifiedState()
+      const historicalExplosion = {
+        id: 1,
+        weaponType: 'baby_missile' as const,
+        cx: 700,
+        cy: 300,
+        radius: 34,
+        impactType: 'tank' as const,
+        style: 'blast' as const,
+        color: '#ffb347',
+        durationFrames: 32,
+      }
+      terminalState.explosions = [historicalExplosion]
+      terminalState.lastExplosion = historicalExplosion
+      const controller = fakeVerifiedController(terminalState)
+      controller.tick.mockImplementation(() => {
+        terminalState.phase = completedPhase
+        controller.complete = true
+      })
+      const restored = fakeClient(terminalState)
+      seams.verifiedControllers.push(controller)
+      seams.clients.push(restored)
+      const descriptor = { ...verifiedDescriptor, contractVersion: 3, engineVersion: 3 } as VerifiedDeploymentDescriptor
+      seams.verifiedDeployment = {
+        status: 'active', descriptor, transcript: [{ angle: 45, power: 50 }],
+        deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: true, canComplete: true },
+      }
+      seams.rendererAnimating = true
+      await import('./main')
+      if (!seams.onLobbyReady) throw new Error('Expected renderer wiring')
+      seams.onLobbyReady(verifiedConfig([{ angle: 45, power: 50 }], undefined, descriptor))
+      await vi.waitFor(() => expect(restored.start).toHaveBeenCalledOnce())
+      expect(seams.rendererPrimedStates).toHaveLength(1)
+      expect(seams.rendererPrimedStates[0]).toBe(terminalState)
 
-    restored.emit(terminalState)
-    expect(seams.terminalImpactNotifies).toBe(0)
+      restored.emit(terminalState)
+      expect(seams.terminalImpactNotifies).toBe(0)
 
-    seams.rendererAnimating = false
-    restored.emit(terminalState)
-    restored.emit(terminalState)
-    expect(seams.terminalImpactNotifies).toBe(1)
-  })
+      seams.rendererAnimating = false
+      restored.emit(terminalState)
+      restored.emit(terminalState)
+      expect(seams.terminalImpactNotifies).toBe(1)
+    },
+  )
 
   it('reports human Player 1 once per match, uses fresh ids, and excludes AI and network games', async () => {
     await import('./main')
