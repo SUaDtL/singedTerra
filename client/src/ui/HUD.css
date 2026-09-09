@@ -445,7 +445,8 @@
   max-height: calc(100% - 36px);
   min-height: 0;
   padding: 52px 54px 38px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 0;
   border-radius: 18px;
   background-image: var(--st-victory-frame);
@@ -950,6 +951,12 @@
 }
 @media (pointer: fine) and (max-width: 1000px),
   (pointer: fine) and (max-height: 600px) {
+  .st-hud__overlay-panel--victory {
+    aspect-ratio: auto;
+    height: auto;
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+  }
   .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
     .st-hud__victory-title { margin-bottom: 6px; }
   .st-hud__victory-eyebrow,

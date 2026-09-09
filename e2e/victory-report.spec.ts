@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 async function gotoVictory(
   page: import('@playwright/test').Page,
-  mode: 'victory' | 'victory-anonymous' = 'victory',
+  mode: 'victory' | 'victory-anonymous' | 'victory-verified-four' = 'victory',
 ): Promise<void> {
   await page.goto(`?e2e=${mode}`);
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
@@ -304,6 +304,125 @@ test.describe('Victory After-Action Report', () => {
       await expect(page.locator('#lobby')).not.toHaveAttribute('inert', '');
     }
     await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
+  });
+
+  test('keeps the anonymous terminal report and actions inside the compact panel', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 });
+    await gotoVictory(page, 'victory-anonymous');
+
+    const panel = page.locator('.st-hud__overlay-panel--victory');
+    const geometry = await panel.evaluate((element) => {
+      const panelBox = element.getBoundingClientRect();
+      const report = element.querySelector<HTMLElement>('.st-hud__victory-report');
+      const actions = element.querySelector<HTMLElement>('.st-hud__overlay-btns');
+      if (!report || !actions) throw new Error('Missing terminal report structure');
+      const reportBox = report.getBoundingClientRect();
+      const actionsBox = actions.getBoundingClientRect();
+      return {
+        panelBottom: panelBox.bottom,
+        reportBottom: reportBox.bottom,
+        actionsBottom: actionsBox.bottom,
+      };
+    });
+
+    expect(geometry.reportBottom, 'terminal report stays inside the compact panel')
+      .toBeLessThanOrEqual(geometry.panelBottom + 1);
+    expect(geometry.actionsBottom, 'terminal actions stay inside the compact panel')
+      .toBeLessThanOrEqual(geometry.panelBottom + 1);
+  });
+
+  test('keeps the four-seat receipt fixture contained, scroll-reachable, and keyboard-causal', async ({ page }) => {
+    for (const viewport of [
+      { name: 'wide', width: 3440, height: 1215 },
+      { name: 'standard', width: 1440, height: 900 },
+      { name: 'compact', width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await gotoVictory(page, 'victory-verified-four');
+      const report = page.locator('.st-hud__overlay--victory');
+      const panel = report.locator('.st-hud__overlay-panel--victory');
+      await panel.evaluate(async (element) => {
+        const entry = element.getAnimations().find((animation) =>
+          animation instanceof CSSAnimation && animation.animationName === 'st-hud-victory-arrive');
+        if (entry) await entry.finished;
+      });
+      await expect(report.locator('.st-hud__score-name')).toHaveCount(4);
+      await expect(report.getByText(/Verified victory · \+200 XP · Level 5/)).toBeVisible();
+      await expect(report.getByText('Battery Captain')).toBeVisible();
+
+      const geometry = await panel.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          panel: box.toJSON(),
+          viewport: { width: innerWidth, height: innerHeight },
+          document: { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight },
+          overflowY: getComputedStyle(element).overflowY,
+          fineCompact: matchMedia('(pointer: fine)').matches && (innerWidth <= 1000 || innerHeight <= 600),
+        };
+      });
+      expect(geometry.panel.left).toBeGreaterThanOrEqual(-1);
+      expect(geometry.panel.top).toBeGreaterThanOrEqual(-1);
+      expect(geometry.panel.right).toBeLessThanOrEqual(geometry.viewport.width + 1);
+      expect(geometry.panel.bottom).toBeLessThanOrEqual(geometry.viewport.height + 1);
+      expect(geometry.document.width).toBe(geometry.viewport.width);
+      expect(geometry.document.height).toBe(geometry.viewport.height);
+      expect(geometry.overflowY).toBe('auto');
+
+      await panel.evaluate((element) => { element.scrollTop = 0; });
+      const reportTop = await panel.evaluate((element) => {
+        const panelBox = element.getBoundingClientRect();
+        const bounds = (selector: string) => {
+          const target = element.querySelector<HTMLElement>(selector);
+          if (!target) throw new Error(`Missing ${selector}`);
+          return target.getBoundingClientRect().toJSON();
+        };
+        return {
+          panel: panelBox.toJSON(),
+          eyebrow: bounds('.st-hud__victory-eyebrow'),
+          receipt: bounds('.st-hud__victory-progression-receipt'),
+        };
+      });
+      for (const [name, bounds] of Object.entries({ eyebrow: reportTop.eyebrow, receipt: reportTop.receipt })) {
+        expect(bounds.top, `${name} is reachable at the report top`).toBeGreaterThanOrEqual(reportTop.panel.top - 1);
+        expect(bounds.bottom, `${name} is reachable at the report top`).toBeLessThanOrEqual(reportTop.panel.bottom + 1);
+      }
+      const primary = report.getByRole('button', { name: 'Brief next order' });
+      const menu = report.getByRole('button', { name: 'Main Menu' });
+      await primary.scrollIntoViewIfNeeded();
+      await expect(primary).toBeVisible();
+      const scrollTop = await panel.evaluate((element) => element.scrollTop);
+      if (viewport.name === 'wide') expect(scrollTop, 'long wide reports must scroll to their actions').toBeGreaterThan(0);
+      const actionBounds = await panel.evaluate((element) => {
+        const panelBox = element.getBoundingClientRect();
+        const bounds = (selector: string) => {
+          const target = element.querySelector<HTMLElement>(selector);
+          if (!target) throw new Error(`Missing ${selector}`);
+          return target.getBoundingClientRect().toJSON();
+        };
+        return {
+          panel: panelBox.toJSON(),
+          primary: bounds('[data-terminal-primary]'),
+          menu: bounds('[data-terminal-menu]'),
+        };
+      });
+      for (const [name, bounds] of Object.entries({ primary: actionBounds.primary, menu: actionBounds.menu })) {
+        expect(bounds.left, `${name} remains inside the terminal panel`).toBeGreaterThanOrEqual(actionBounds.panel.left - 1);
+        expect(bounds.right, `${name} remains inside the terminal panel`).toBeLessThanOrEqual(actionBounds.panel.right + 1);
+        expect(bounds.top, `${name} remains inside the terminal panel`).toBeGreaterThanOrEqual(actionBounds.panel.top - 1);
+        expect(bounds.bottom, `${name} remains inside the terminal panel`).toBeLessThanOrEqual(actionBounds.panel.bottom + 1);
+      }
+      await primary.focus();
+      await page.keyboard.press('Tab');
+      await expect(menu).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(primary).toBeFocused();
+      await page.keyboard.press('Shift+Tab');
+      await expect(menu).toBeFocused();
+      await page.keyboard.press('Shift+Tab');
+      await expect(primary).toBeFocused();
+      await menu.press('Enter');
+      await expect(page.locator('#lobby')).toBeVisible();
+    }
   });
 
 });
