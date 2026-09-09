@@ -930,7 +930,7 @@ function bootstrap(): void {
         verifiedControlsAllowed,
       );
       const terminalEffectsSettled = terminalImpactObserved
-        || (state.projectiles.length === 0 && state.explosions.length === 0);
+        || state.projectiles.length === 0;
       if (
         state.phase === 'GAME_OVER'
         && terminalEffectsSettled

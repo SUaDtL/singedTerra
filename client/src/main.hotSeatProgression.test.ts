@@ -1241,6 +1241,38 @@ describe('production hot-seat progression composition', () => {
     expect(seams.terminalImpactNotifies).toBe(1)
   })
 
+  it('unblocks a restored terminal snapshot with retained explosion history after renderer work settles', async () => {
+    const terminalState = gameState()
+    const historicalExplosion = {
+      id: 1,
+      weaponType: 'baby_missile' as const,
+      cx: 700,
+      cy: 300,
+      radius: 34,
+      impactType: 'tank' as const,
+      style: 'blast' as const,
+      color: '#ffb347',
+      durationFrames: 32,
+    }
+    terminalState.explosions = [historicalExplosion]
+    terminalState.lastExplosion = historicalExplosion
+    const restored = fakeClient(terminalState)
+    seams.clients.push(restored)
+    seams.rendererAnimating = true
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected renderer wiring')
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(restored.start).toHaveBeenCalledOnce())
+
+    restored.emit(terminalState)
+    expect(seams.terminalImpactNotifies).toBe(0)
+
+    seams.rendererAnimating = false
+    restored.emit(terminalState)
+    restored.emit(terminalState)
+    expect(seams.terminalImpactNotifies).toBe(1)
+  })
+
   it('reports human Player 1 once per match, uses fresh ids, and excludes AI and network games', async () => {
     await import('./main')
     if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
