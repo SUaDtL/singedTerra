@@ -103,6 +103,12 @@ assert.deepEqual(adjudicateVerifiedDuelCap(capState), { outcome: 'draw', winnerI
 const replayA = replayVerifiedDuel(17, Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })))
 const replayB = replayVerifiedDuel(17, Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })))
 assert.deepEqual(replayA, replayB)
+assert.deepEqual(replayA, {
+  seed: 17, outcome: 'human_win', winnerId: 'p1', reason: 'health',
+  humanSalvos: 6, cpuSalvos: 6, liveTicks: 632, cpuSimulationTicks: 24_155,
+  maximumProbeCount: 59,
+  transcript: Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })),
+})
 assert.ok(replayA.humanSalvos <= 6)
 assert.ok(replayA.cpuSalvos <= 6)
 assert.ok(replayA.liveTicks <= VERIFIED_DUEL_LIVE_TICKS_TOTAL)
@@ -117,14 +123,38 @@ for (let length = 1; length <= 5; length += 1) {
     /incomplete_verified_duel/,
   )
 }
-for (const { seed, length, angle, power } of [
-  { seed: 17, length: 3, angle: 45, power: 0 },
-  { seed: 42, length: 4, angle: 45, power: 0 },
-  { seed: 17, length: 5, angle: 20, power: 20 },
+for (const { seed, length, angle, power, expected } of [
+  {
+    seed: 17, length: 3, angle: 45, power: 0,
+    expected: { outcome: 'cpu_win', winnerId: 'p2', liveTicks: 251, cpuSimulationTicks: 8_484, maximumProbeCount: 59 },
+  },
+  {
+    seed: 42, length: 5, angle: 45, power: 0,
+    expected: { outcome: 'cpu_win', winnerId: 'p2', liveTicks: 364, cpuSimulationTicks: 15_353, maximumProbeCount: 59 },
+  },
 ]) {
   const earlyTerminal = replayVerifiedDuel(seed, Array.from({ length }, () => ({ angle, power })))
   assert.equal(earlyTerminal.reason, 'terminal')
   assert.equal(earlyTerminal.humanSalvos, length)
+  assert.deepEqual({
+    outcome: earlyTerminal.outcome,
+    winnerId: earlyTerminal.winnerId,
+    liveTicks: earlyTerminal.liveTicks,
+    cpuSimulationTicks: earlyTerminal.cpuSimulationTicks,
+    maximumProbeCount: earlyTerminal.maximumProbeCount,
+  }, expected)
+}
+
+// Ruleset 4 (209b7c6) changed these once-terminal fixtures. Retain them as
+// explicit incomplete cases so future policy work cannot silently reinterpret them.
+for (const { seed, length, angle, power } of [
+  { seed: 42, length: 4, angle: 45, power: 0 },
+  { seed: 17, length: 5, angle: 20, power: 20 },
+]) {
+  assert.throws(
+    () => replayVerifiedDuel(seed, Array.from({ length }, () => ({ angle, power }))),
+    /incomplete_verified_duel/,
+  )
 }
 
 const incremental = VerifiedDuelController.create(17)
