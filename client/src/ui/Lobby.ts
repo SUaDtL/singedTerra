@@ -1904,6 +1904,7 @@ export class Lobby {
         color: p.color,
         loadout: normalizeTankLoadout(p.loadout),
         ...(p.ai ? { ai: p.ai } : {}),
+        ...(p.team === 1 || p.team === 2 ? { team: p.team } : {}),
       })),
       playerNames: room.players.map((p) => p.name),
       roomCode: this.waitingRoomCode,

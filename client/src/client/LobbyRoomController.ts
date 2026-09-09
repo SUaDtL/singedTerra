@@ -41,7 +41,7 @@ export interface LobbyRoomProjection {
 
 export interface LobbyRoomHandoff {
   readonly mode: 'network'
-  readonly players: Array<Pick<NetworkPlayer, 'id' | 'name' | 'color' | 'loadout' | 'ai'>>
+  readonly players: Array<Pick<NetworkPlayer, 'id' | 'name' | 'color' | 'loadout' | 'ai' | 'team'>>
   readonly playerNames: string[]
   readonly roomCode: string
   readonly roomId: string
@@ -184,6 +184,7 @@ export class LobbyRoomController {
         id: player.id, name: player.name, color: player.color,
         loadout: normalizeTankLoadout(player.loadout),
         ...(player.ai ? { ai: player.ai } : {}),
+        ...(player.team === 1 || player.team === 2 ? { team: player.team } : {}),
       })),
       playerNames: liveRoom.players.map((player) => player.name),
       roomCode: liveRoom.code,
