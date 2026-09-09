@@ -1,7 +1,5 @@
+import { projectAuthoritativeNetworkMode, type AdmittedNetworkModeSetup } from './modeConfig'
 import { normalizeNetworkRulesetVersion, CURRENT_NETWORK_RULESET_VERSION } from './networkRuleset'
-import { normalizeBattlefieldWorldId, normalizeWallMode } from '@shared/types/GameOptions'
-import { normalizeTerrainHazardMode } from '@shared/engine/Terrain'
-import { normalizeTankLoadout } from '@shared/types/TankLoadout'
 import type {
   CreateRoomParams,
   JoinRoomParams,
@@ -39,29 +37,7 @@ export interface LobbyRoomProjection {
   readonly rejoinCandidate: { descriptor: SessionDescriptor; room: FetchedRoom } | null
 }
 
-export interface LobbyRoomHandoff {
-  readonly mode: 'network'
-  readonly players: Array<Pick<NetworkPlayer, 'id' | 'name' | 'color' | 'loadout' | 'ai' | 'team'>>
-  readonly playerNames: string[]
-  readonly roomCode: string
-  readonly roomId: string
-  readonly playerId: string
-  readonly token: string
-  readonly settings: {
-    seed: number
-    maxWind: number
-    gravity: number
-    walls?: ReturnType<typeof normalizeWallMode>
-    battlefieldWorld?: NonNullable<ReturnType<typeof normalizeBattlefieldWorldId>>
-    hazards?: Exclude<ReturnType<typeof normalizeTerrainHazardMode>, 'none'>
-    rounds?: number
-    interestRate?: number
-    suddenDeathTurn?: number
-    armsLevel?: number
-    teamMode?: boolean
-    rulesetVersion: ReturnType<typeof normalizeNetworkRulesetVersion>
-  }
-}
+export type LobbyRoomHandoff = AdmittedNetworkModeSetup & { token: string }
 
 interface PersistencePort {
   writeSeatToken(playerId: string, token: string): void
@@ -178,40 +154,11 @@ export class LobbyRoomController {
       this.rejectRejoin('This room uses an older game build and cannot be resumed here.')
       return
     }
-    this.onHandoff({
-      mode: 'network',
-      players: liveRoom.players.map((player) => ({
-        id: player.id, name: player.name, color: player.color,
-        loadout: normalizeTankLoadout(player.loadout),
-        ...(player.ai ? { ai: player.ai } : {}),
-        ...(player.team === 1 || player.team === 2 ? { team: player.team } : {}),
-      })),
-      playerNames: liveRoom.players.map((player) => player.name),
-      roomCode: liveRoom.code,
+    this.onHandoff(projectAuthoritativeNetworkMode({
+      ...liveRoom,
       roomId: liveRoom.id,
-      playerId: descriptor.playerId,
-      token: this.persistence.readSeatToken(descriptor.playerId) ?? '',
-      settings: {
-        seed: liveRoom.seed,
-        maxWind: liveRoom.options.maxWind,
-        gravity: liveRoom.options.gravity,
-        ...(normalizeWallMode(liveRoom.options.walls) !== 'open'
-          ? { walls: normalizeWallMode(liveRoom.options.walls) }
-          : {}),
-        ...(normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld) !== undefined
-          ? { battlefieldWorld: normalizeBattlefieldWorldId(liveRoom.options.battlefieldWorld)! }
-          : {}),
-        ...(normalizeTerrainHazardMode(liveRoom.options.hazards) !== 'none'
-          ? { hazards: normalizeTerrainHazardMode(liveRoom.options.hazards) as Exclude<ReturnType<typeof normalizeTerrainHazardMode>, 'none'> }
-          : {}),
-        ...(liveRoom.options.rounds !== undefined ? { rounds: liveRoom.options.rounds } : {}),
-        ...(liveRoom.options.interestRate !== undefined ? { interestRate: liveRoom.options.interestRate } : {}),
-        ...(liveRoom.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: liveRoom.options.suddenDeathTurn } : {}),
-        ...(liveRoom.options.armsLevel !== undefined ? { armsLevel: liveRoom.options.armsLevel } : {}),
-        ...(liveRoom.options.teamMode === true ? { teamMode: true } : {}),
-        rulesetVersion: normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion),
-      },
-    })
+      options: { ...liveRoom.options, rulesetVersion: normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion) },
+    }, { playerId: descriptor.playerId, token: this.persistence.readSeatToken(descriptor.playerId) ?? '' }))
   }
 
   async create(params: CreateRoomParams, fallback: () => {

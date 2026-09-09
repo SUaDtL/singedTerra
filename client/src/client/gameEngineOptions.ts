@@ -1,6 +1,6 @@
 import type { GameOptions } from '@shared/types/GameOptions';
 import { normalizeTankLoadout } from '@shared/types/TankLoadout';
-import type { LobbyConfig } from '../ui/Lobby';
+import type { ModeSetup } from './modeConfig';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
   normalizeNetworkRulesetVersion,
@@ -27,13 +27,13 @@ export interface NetworkClientEngineOptions extends Omit<GameOptions, 'players'>
  * linear until the Edge referee can reject mismatched room rulesets.
  */
 export function buildClientEngineOptions(
-  config: LobbyConfig & { mode: 'network' },
+  config: ModeSetup & { mode: 'network' },
 ): NetworkClientEngineOptions;
 export function buildClientEngineOptions(
-  config: LobbyConfig & { mode: 'hotseat' },
+  config: ModeSetup & { mode: 'hotseat' },
 ): ClientEngineOptions;
 export function buildClientEngineOptions(
-  config: LobbyConfig,
+  config: ModeSetup,
 ): ClientEngineOptions | NetworkClientEngineOptions {
   const settings = config.settings;
 

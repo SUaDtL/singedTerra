@@ -1,11 +1,7 @@
+import { normalizeCreateRoomFallback, projectAuthoritativeNetworkMode, WIND_DEFAULT, GRAVITY_DEFAULT, type ModeSetup, type ModePlayer } from '../client/modeConfig';
 import lobbyCss from './Lobby.css?raw';
 import { VerifiedDeploymentSession, type VerifiedDeploymentState as LobbyVerifiedDeploymentState, type VerifiedDeploymentAccountPort } from '../client/VerifiedDeploymentSession';
 import type { AiDifficulty } from '@shared/types/GameState';
-import {
-  normalizeBattlefieldWorldId,
-  normalizeWallMode,
-} from '@shared/types/GameOptions';
-import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 import {
   DEFAULT_TANK_LOADOUT,
   TANK_KIT_IDS,
@@ -95,7 +91,6 @@ import {
   ARMS_MIN,
   ARMS_MAX,
   ARMS_DEFAULT,
-  parseNumber,
   parseOnlineRounds,
   parseOnlineEconomy,
   coerceSettings,
@@ -115,36 +110,10 @@ export type { LobbySettings } from './lobbyValidation';
 export type GameMode = 'hotseat' | 'network';
 
 /** A single player entry chosen in the lobby (name + unique color). */
-export interface LobbyPlayer {
-  /** Supabase-assigned UUID; present in network mode, absent in hot-seat. */
-  id?: string;
-  name: string;
-  color: string;
-  /** CPU difficulty when this seat is a computer opponent (hot-seat only);
-   *  absent => human. */
-  ai?: AiDifficulty;
-  /** Presentation-only authored part selection. */
-  loadout?: TankLoadout;
-}
+export type LobbyPlayer = ModePlayer;
 
 /** Configuration produced by the lobby once the player(s) are ready. */
-export interface LobbyConfig {
-  mode: GameMode;
-  /** Chosen players (2-4) with unique colors. Consumed by main.ts. */
-  players: LobbyPlayer[];
-  /** Convenience list of names, kept for compatibility. */
-  playerNames: string[];
-  /** Room code for network mode (4-char alphanumeric), if applicable. */
-  roomCode?: string;
-  /** UUID of the room (network mode only). */
-  roomId?: string;
-  /** UUID assigned to this client's player (network mode only). */
-  playerId?: string;
-  /** Secret per-seat credential issued by create_room/join_room (network mode
-   *  only). Required on every mutating request; ADR-0009 split-identity. */
-  token?: string;
-  /** Optional advanced engine settings; only set fields are present. */
-  settings?: LobbySettings;
+export interface LobbyConfig extends ModeSetup {
   /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
   quickOperation?: { readonly id: string; readonly title: string; readonly briefing: string };
   /** Auth-owned verified execution context. Server config and recovery transcript stay immutable. */
@@ -192,9 +161,7 @@ function browserQuickDuelSeed(): number {
 // View-only advanced-settings defaults/steps (placeholders + input granularity).
 // The bounds (WIND_MIN/MAX, GRAVITY_MIN/MAX, ROUNDS_*, INTEREST_*, SUDDEN_DEATH_*,
 // ARMS_*) live in ./lobbyValidation alongside the coercion that enforces them.
-const WIND_DEFAULT = 10;
 const GRAVITY_STEP = 0.01;
-const GRAVITY_DEFAULT = 0.15;
 const INTEREST_STEP = 0.05;
 const INTEREST_DEFAULT = 0;
 const SUDDEN_DEATH_DEFAULT = 0;
@@ -1637,34 +1604,17 @@ export class Lobby {
       suddenDeath: this.onlineSuddenDeath,
       armsLevel: this.onlineArmsLevel,
       teamMode: this.onlineTeamMode,
-    }, () => ({
+    }, () => normalizeCreateRoomFallback({ name, rounds, economy }, {
       seed: this.waitingSeed,
-      options: {
-        maxPlayers: this.onlineMaxPlayers,
-        maxWind: parseNumber(this.onlineMaxWind) !== undefined
-          ? clamp(parseNumber(this.onlineMaxWind)!, WIND_MIN, WIND_MAX)
-          : WIND_DEFAULT,
-        gravity: parseNumber(this.onlineGravity) !== undefined
-          ? clamp(parseNumber(this.onlineGravity)!, GRAVITY_MIN, GRAVITY_MAX)
-          : GRAVITY_DEFAULT,
-        walls: normalizeWallMode(this.onlineWalls),
-        ...(normalizeBattlefieldWorldId(this.onlineBattlefieldWorld) !== undefined
-          ? { battlefieldWorld: normalizeBattlefieldWorldId(this.onlineBattlefieldWorld) }
-          : {}),
-        ...(normalizeTerrainHazardMode(this.onlineHazards) !== 'none'
-          ? { hazards: normalizeTerrainHazardMode(this.onlineHazards) }
-          : {}),
-        ...(rounds !== undefined ? { rounds } : {}),
-        ...economy,
-        ...(this.onlineTeamMode && this.onlineMaxPlayers === 4 ? { teamMode: true } : {}),
-      },
-      players: [{
-        id: '',
-        name,
-        color: this.onlineColor,
-        ready: false,
-        loadout: normalizeTankLoadout(this.onlineLoadout),
-      }],
+      maxPlayers: this.onlineMaxPlayers,
+      maxWind: this.onlineMaxWind,
+      gravity: this.onlineGravity,
+      walls: this.onlineWalls,
+      battlefieldWorld: this.onlineBattlefieldWorld,
+      hazards: this.onlineHazards,
+      teamMode: this.onlineTeamMode,
+      color: this.onlineColor,
+      loadout: this.onlineLoadout,
     }));
   }
   // ---- Join Room sub-view ----
@@ -1896,47 +1846,12 @@ export class Lobby {
       this.render();
       return;
     }
-    const config: LobbyConfig = {
-      mode: 'network',
-      players: room.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        color: p.color,
-        loadout: normalizeTankLoadout(p.loadout),
-        ...(p.ai ? { ai: p.ai } : {}),
-        ...(p.team === 1 || p.team === 2 ? { team: p.team } : {}),
-      })),
-      playerNames: room.players.map((p) => p.name),
-      roomCode: this.waitingRoomCode,
+    const config = projectAuthoritativeNetworkMode({
+      ...room,
       roomId: this.waitingRoomId,
-      playerId: this.waitingPlayerId,
-      token: this.waitingToken,
-      settings: {
-        seed: room.seed,
-        maxWind: room.options.maxWind,
-        gravity: room.options.gravity,
-        ...(normalizeWallMode(room.options.walls) !== 'open'
-          ? { walls: normalizeWallMode(room.options.walls) }
-          : {}),
-        ...(normalizeBattlefieldWorldId(room.options.battlefieldWorld) !== undefined
-          ? { battlefieldWorld: normalizeBattlefieldWorldId(room.options.battlefieldWorld) }
-          : {}),
-        ...(normalizeTerrainHazardMode(room.options.hazards) !== 'none'
-          ? { hazards: normalizeTerrainHazardMode(room.options.hazards) }
-          : {}),
-        // Best-of-N comes from the SYNCED room row so every client's engine agrees
-        // (a per-client value would desync the deterministic lockstep). Absent on
-        // pre-feature rooms => engine defaults to a single round.
-        ...(room.options.rounds !== undefined ? { rounds: room.options.rounds } : {}),
-        // SE-parity economy — same sourcing as rounds: from the synced room row, so every
-        // client builds an identical engine. Absent on pre-feature rooms => engine defaults.
-        ...(room.options.interestRate !== undefined ? { interestRate: room.options.interestRate } : {}),
-        ...(room.options.suddenDeathTurn !== undefined ? { suddenDeathTurn: room.options.suddenDeathTurn } : {}),
-        ...(room.options.armsLevel !== undefined ? { armsLevel: room.options.armsLevel } : {}),
-        ...(room.options.teamMode === true ? { teamMode: true } : {}),
-        rulesetVersion: normalizeNetworkRulesetVersion(room.options.rulesetVersion),
-      },
-    };
+      code: this.waitingRoomCode,
+      options: { ...room.options, rulesetVersion: normalizeNetworkRulesetVersion(room.options.rulesetVersion) },
+    }, { playerId: this.waitingPlayerId, token: this.waitingToken });
     this.onReady(config);
   }
 

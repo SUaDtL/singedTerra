@@ -13,32 +13,19 @@
  *
  * Body construction is moved verbatim from the Lobby's inline call sites: the
  * conditional spreads for maxWind/gravity/rounds/bots/economy, the
- * parseNumber/clamp usage, and the `...fields` spread all live here now, reusing
- * the pure helpers/constants already extracted into ../ui/lobbyValidation.
+ * normalized create payload is delegated to the pure non-UI modeConfig boundary.
  */
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
-  normalizeBattlefieldWorldId,
-  normalizeWallMode,
   type BattlefieldWorldId,
   type NetworkRulesetVersion,
   type TeamId,
   type WallMode,
   type TerrainHazardMode,
 } from '@shared/types/GameOptions';
-import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 import type { TankLoadout } from '@shared/types/TankLoadout';
-import { clamp } from '@shared/engine/math';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
-import {
-  WIND_MIN,
-  WIND_MAX,
-  GRAVITY_MIN,
-  GRAVITY_MAX,
-  parseNumber,
-  parseOnlineRounds,
-  parseOnlineEconomy,
-} from '../ui/lobbyValidation';
+import { normalizeCreateRoomRequest, type CreateRoomModeInput as CreateRoomParams } from './modeConfig';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
 } from './networkRuleset';
@@ -155,30 +142,7 @@ export interface FetchedRoom {
 
 /** Inputs for the create_room body. `bots` is pre-built by the Lobby (it owns the
  *  color palette); the advanced-settings fields arrive raw and are parsed here. */
-export interface CreateRoomParams {
-  playerName: string;
-  color: string;
-  loadout: TankLoadout;
-  bots: Array<{
-    name: string;
-    color: string;
-    ai: AiDifficulty;
-    loadout: TankLoadout;
-  }>;
-  maxPlayers: number;
-  visibility: RoomVisibility;
-  /** Raw advanced-settings inputs, exactly as typed into the UI. */
-  maxWind: string;
-  gravity: string;
-  walls: string;
-  battlefieldWorld?: string;
-  hazards?: string;
-  rounds: string;
-  interestRate: string;
-  suddenDeath: string;
-  armsLevel: string;
-  teamMode?: boolean;
-}
+export type { CreateRoomModeInput as CreateRoomParams } from './modeConfig';
 
 export interface JoinRoomParams {
   /** Room code, already trimmed + upper-cased by the caller. */
@@ -205,36 +169,7 @@ export interface UpdatePlayerParams extends SeatParams {
  */
 export class LobbyTransport {
   createRoom(params: CreateRoomParams): Promise<EdgeResult<CreateRoomResponse>> {
-    const maxWind = parseNumber(params.maxWind);
-    const gravity = parseNumber(params.gravity);
-    const rounds = parseOnlineRounds(params.rounds);
-    const economy = parseOnlineEconomy(params.interestRate, params.suddenDeath, params.armsLevel);
-
-    const body: Record<string, unknown> = {
-      playerName: params.playerName,
-      color: params.color,
-      loadout: params.loadout,
-      rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
-      ...(params.bots.length > 0 ? { bots: params.bots } : {}),
-      options: {
-        maxPlayers: params.maxPlayers,
-        visibility: params.visibility,
-        walls: normalizeWallMode(params.walls),
-        ...(normalizeBattlefieldWorldId(params.battlefieldWorld) !== undefined
-          ? { battlefieldWorld: normalizeBattlefieldWorldId(params.battlefieldWorld) }
-          : {}),
-        ...(normalizeTerrainHazardMode(params.hazards) !== 'none'
-          ? { hazards: normalizeTerrainHazardMode(params.hazards) }
-          : {}),
-        ...(maxWind !== undefined ? { maxWind: clamp(maxWind, WIND_MIN, WIND_MAX) } : {}),
-        ...(gravity !== undefined ? { gravity: clamp(gravity, GRAVITY_MIN, GRAVITY_MAX) } : {}),
-        ...(rounds !== undefined ? { rounds } : {}),
-        ...economy,
-        ...(params.teamMode && params.maxPlayers === 4 ? { teamMode: true } : {}),
-      },
-    };
-
-    return callFunction<CreateRoomResponse>('create_room', body);
+    return callFunction<CreateRoomResponse>('create_room', normalizeCreateRoomRequest(params));
   }
 
   async joinRoom(params: JoinRoomParams): Promise<EdgeResult<JoinRoomResponse>> {
