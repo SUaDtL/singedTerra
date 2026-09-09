@@ -13,6 +13,7 @@ import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { quickOperationById } from './client/quickOperations';
 import { rematchToConfig } from './client/rematchConfig';
 import { MatchSessionLifecycle } from './client/MatchSessionLifecycle';
+import { writeSession } from './lib/sessionDescriptor';
 import { InputHandler } from './input/InputHandler';
 import {
   resolveActivePlayerOwnership,
@@ -841,9 +842,20 @@ function bootstrap(): void {
     // migrate into it with the SAME roster + THIS client's preserved playerId.
     // Both clients receive this independently, so the rematch is symmetric.
     newClient.onRematch?.((info) => {
-      const myId = currentConfig?.playerId;
+      if (!matchSession.isCurrent(currentGameGeneration, newClient)) return;
+      const myId = config.playerId;
       if (!myId) return;
-      void startGame(rematchToConfig(info, myId));
+      const successor = rematchToConfig(info, myId);
+      if (!matchSession.isCurrent(currentGameGeneration, newClient)) return;
+      // NetworkClient clears the completed room's descriptor before it notifies
+      // this callback. Keep the admitted successor available for a reload even
+      // if its initialization later fails and the Lobby must offer retry.
+      writeSession({
+        roomId: successor.roomId,
+        roomCode: successor.roomCode,
+        playerId: successor.playerId,
+      });
+      void startGame(successor);
     });
 
     // Networked liveness (P1-6): surface Realtime connection state as a banner and
