@@ -3,8 +3,11 @@ import type { GameClient, RematchInfo, ConnectionState, TurnWatch, QuickChatMess
 import type { GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import {
+  normalizeBattlefieldWorldId,
   normalizeWallMode,
   type GameOptions,
+  type TeamId,
+  type TerrainHazardMode,
   type WallMode,
 } from '@shared/types/GameOptions';
 import type { AiDifficulty } from '@shared/types/GameState';
@@ -13,6 +16,7 @@ import {
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { GameEngine } from '@shared/engine/GameEngine';
+import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
@@ -54,6 +58,7 @@ interface NetworkPlayerEntry {
   name:  string;
   color: string;
   ai?:   AiDifficulty;
+  team?: TeamId;
   loadout?: TankLoadout;
 }
 
@@ -855,12 +860,20 @@ export class NetworkClient implements GameClient {
       gravity?: number;
       rulesetVersion?: unknown;
       walls?: WallMode;
+      battlefieldWorld?: string;
+      hazards?: TerrainHazardMode;
       rounds?: number;
+      interestRate?: number;
+      suddenDeathTurn?: number;
+      armsLevel?: number;
+      teamMode?: boolean;
     };
     const players = (data.players ?? []) as Array<{
       id: string;
       name: string;
       color: string;
+      ai?: AiDifficulty;
+      team?: TeamId;
       loadout?: TankLoadout;
     }>;
     if (normalizeNetworkRulesetVersion(opts.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
@@ -878,13 +891,23 @@ export class NetworkClient implements GameClient {
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
         rulesetVersion: normalizeNetworkRulesetVersion(opts.rulesetVersion),
         walls:      normalizeWallMode(opts.walls),
+        ...(normalizeBattlefieldWorldId(opts.battlefieldWorld) !== undefined
+          ? { battlefieldWorld: normalizeBattlefieldWorldId(opts.battlefieldWorld) }
+          : {}),
+        hazards:    normalizeTerrainHazardMode(opts.hazards),
         // Carry best-of-N across a rematch so the successor match keeps the format.
         ...(typeof opts.rounds === 'number' ? { rounds: opts.rounds } : {}),
+        ...(typeof opts.interestRate === 'number' ? { interestRate: opts.interestRate } : {}),
+        ...(typeof opts.suddenDeathTurn === 'number' ? { suddenDeathTurn: opts.suddenDeathTurn } : {}),
+        ...(typeof opts.armsLevel === 'number' ? { armsLevel: opts.armsLevel } : {}),
+        ...(opts.teamMode === true ? { teamMode: true } : {}),
       },
       players: players.map(p => ({
         id: p.id,
         name: p.name,
         color: p.color,
+        ...(p.ai ? { ai: p.ai } : {}),
+        ...(p.team === 1 || p.team === 2 ? { team: p.team } : {}),
         loadout: normalizeTankLoadout(p.loadout),
       })),
     });
