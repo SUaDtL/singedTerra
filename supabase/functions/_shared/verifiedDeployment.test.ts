@@ -224,3 +224,20 @@ Deno.test('start no-body mode accepts an absent body and rejects every unknown b
   assertEquals((await wrapped(new Request('https://x.test', { method: 'POST', headers, body: '{"seed":17}' }))).status, 400)
   assertEquals(events, ['ip', 'auth', 'account'])
 })
+
+Deno.test('optional-json mode distinguishes a zero-byte legacy request from bounded capability JSON', async () => {
+  const received: unknown[] = []
+  const wrapped = createVerifiedRequestHandler((body) => {
+    received.push(body)
+    return new Response('{}')
+  }, { operation: 'start_verified_deployment', bodyLimit: 256, bodyMode: 'optional-json' }, {
+    bumpRateLimit: async () => ({ data: 1, error: null }),
+    authenticate: async () => 'user-7',
+  })
+  const headers = { authorization: 'Bearer accepted' }
+  assertEquals((await wrapped(new Request('https://x.test', { method: 'POST', headers }))).status, 200)
+  assertEquals((await wrapped(new Request('https://x.test', { method: 'POST', headers, body: '{"capabilities":[]}' }))).status, 200)
+  assertEquals(received, [undefined, { capabilities: [] }])
+  assertEquals((await wrapped(new Request('https://x.test', { method: 'POST', headers, body: '{bad' }))).status, 400)
+  assertEquals((await wrapped(new Request('https://x.test', { method: 'POST', headers, body: ' '.repeat(257) }))).status, 400)
+})

@@ -498,7 +498,7 @@ Deno.test('starts-disabled drain refuses new starts while existing resume, aband
   const supabase = {
     from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { display_name: 'Ash Walker' }, error: null }) }) }) }),
     rpc: async (name: string, args: Record<string, unknown>) => {
-      if (name === 'start_verified_deployment') {
+      if (name === 'start_verified_deployment_for_contracts') {
         const existing = [...active][0]
         return existing && args.p_user_id === userId
           ? { data: [{ id: existing, user_id: userId, config: buildVerifiedDeploymentConfig('Ash Walker', 17), contract_version: 2, engine_version: 2, ruleset_version: 4, status: 'active', expires_at: '2026-08-11T12:30:00.000Z', created_at: '2026-08-11T12:00:00.000Z', resumed: true }], error: null }

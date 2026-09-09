@@ -3,18 +3,40 @@ import {
   chooseVerifiedSeed,
   createVerifiedRequestHandler,
   normalizeVerifiedDisplayName,
-  VERIFIED_CONTRACT_VERSION,
   VERIFIED_DEPLOYMENT_OPTIONS,
-  VERIFIED_ENGINE_VERSION,
-  VERIFIED_RULESET_VERSION,
   type VerifiedServiceClient,
 } from '../_shared/verifiedDeployment.ts'
 
 type StartRow = { id: string; user_id: string; config: unknown; contract_version: number; engine_version: number; ruleset_version: number; status: string; expires_at: string; created_at: string; resumed: boolean }
+type VerifiedCapability = { contractVersion: 2 | 3; engineVersion: 2 | 3; rulesetVersion: 4 }
+
+const VERIFIED_CAPABILITIES: readonly VerifiedCapability[] = [
+  { contractVersion: 2, engineVersion: 2, rulesetVersion: 4 },
+  { contractVersion: 3, engineVersion: 3, rulesetVersion: 4 },
+]
 
 function exactKeys(value: Record<string, unknown>, keys: string[]): boolean {
   const actual = Object.keys(value).sort()
   return actual.length === keys.length && actual.every((key, index) => key === [...keys].sort()[index])
+}
+
+export function parseVerifiedStartCapabilities(body: unknown): readonly VerifiedCapability[] | null {
+  if (body === undefined) return [VERIFIED_CAPABILITIES[0]!]
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null
+  const request = body as Record<string, unknown>
+  if (!exactKeys(request, ['capabilities']) || !Array.isArray(request.capabilities)
+    || request.capabilities.length < 1 || request.capabilities.length > VERIFIED_CAPABILITIES.length) return null
+  const parsed: VerifiedCapability[] = []
+  for (const value of request.capabilities) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+    const tuple = value as Record<string, unknown>
+    if (!exactKeys(tuple, ['contractVersion', 'engineVersion', 'rulesetVersion'])) return null
+    const canonical = VERIFIED_CAPABILITIES.find((candidate) => candidate.contractVersion === tuple.contractVersion
+      && candidate.engineVersion === tuple.engineVersion && candidate.rulesetVersion === tuple.rulesetVersion)
+    if (!canonical || parsed.some((candidate) => candidate.contractVersion === canonical.contractVersion)) return null
+    parsed.push(canonical)
+  }
+  return parsed
 }
 
 function validStoredConfig(value: unknown): boolean {
@@ -62,13 +84,15 @@ export function buildVerifiedDeploymentConfig(displayName: string, seed: 17 | 42
   }
 }
 
-function validStartRow(value: unknown, userId: string): value is StartRow {
+function validStartRow(value: unknown, userId: string, capabilities: readonly VerifiedCapability[]): value is StartRow {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const row = value as Record<string, unknown>
+  const canonicalTuple = VERIFIED_CAPABILITIES.some((candidate) => candidate.contractVersion === row.contract_version
+    && candidate.engineVersion === row.engine_version && candidate.rulesetVersion === row.ruleset_version)
   return typeof row.id === 'string' && UUID_REGEX.test(row.id)
     && row.user_id === userId
-    && row.status === 'active' && row.contract_version === VERIFIED_CONTRACT_VERSION
-    && row.engine_version === VERIFIED_ENGINE_VERSION && row.ruleset_version === VERIFIED_RULESET_VERSION
+    && row.status === 'active' && canonicalTuple
+    && capabilities.some(({ contractVersion }) => contractVersion === row.contract_version)
     && typeof row.expires_at === 'string' && Number.isFinite(Date.parse(row.expires_at))
     && typeof row.created_at === 'string' && Number.isFinite(Date.parse(row.created_at))
     && typeof row.resumed === 'boolean'
@@ -76,11 +100,13 @@ function validStartRow(value: unknown, userId: string): value is StartRow {
 }
 
 export async function handleStartVerifiedDeployment(
-  _body: unknown,
+  body: unknown,
   _req: Request,
   userId: string,
   dependencies: StartVerifiedDeploymentDependencies = {},
 ): Promise<Response> {
+  const capabilities = parseVerifiedStartCapabilities(body)
+  if (!capabilities) return json({ error: 'invalid_request' }, 400)
   const supabase = dependencies.supabase ?? getServiceClient()
   const logger = dependencies.logger ?? ((message, context) => console.error(message, context))
   const fail = (status = 500) => json({ error: 'verified_deployment_unavailable' }, status)
@@ -94,15 +120,20 @@ export async function handleStartVerifiedDeployment(
     const config = buildVerifiedDeploymentConfig(profile.data.display_name, seed)
     const now = (dependencies.now ?? (() => new Date()))()
     const expiresAt = new Date(now.getTime() + 30 * 60 * 1000).toISOString()
-    const result = await supabase.rpc('start_verified_deployment', { p_user_id: userId, p_config: config, p_expires_at: expiresAt })
+    const result = await supabase.rpc('start_verified_deployment_for_contracts', {
+      p_user_id: userId,
+      p_config: config,
+      p_expires_at: expiresAt,
+      p_supported_contract_versions: capabilities.map(({ contractVersion }) => contractVersion),
+    })
     const row = Array.isArray(result.data) && result.data.length === 1 ? result.data[0] : null
-    if (result.error || !validStartRow(row, userId)) {
+    if (result.error || !validStartRow(row, userId, capabilities)) {
       logger('start_verified_deployment: start unavailable', { stage: 'rpc', code: 'request_failed' })
       return fail(result.error && String((result.error as { message?: unknown }).message).includes('starts_disabled') ? 503 : 500)
     }
     return json({
       sessionId: row.id.toLowerCase(), resumed: row.resumed, expiresAt: row.expires_at,
-      contractVersion: VERIFIED_CONTRACT_VERSION, engineVersion: VERIFIED_ENGINE_VERSION, rulesetVersion: VERIFIED_RULESET_VERSION,
+      contractVersion: row.contract_version, engineVersion: row.engine_version, rulesetVersion: row.ruleset_version,
       limits: { humanSalvos: 6, cpuSalvos: 6, angle: { min: 0, max: 180 }, power: { min: 0, max: 100 } },
       config: row.config,
     })
@@ -115,7 +146,9 @@ export async function handleStartVerifiedDeployment(
 export function createStartVerifiedDeploymentHandler(
   wrap: typeof createVerifiedRequestHandler = createVerifiedRequestHandler,
 ) {
-  return wrap(handleStartVerifiedDeployment, { operation: 'start_verified_deployment', bodyLimit: 0 })
+  return wrap(handleStartVerifiedDeployment, {
+    operation: 'start_verified_deployment', bodyLimit: 256, bodyMode: 'optional-json',
+  })
 }
 
 export const serveStartVerifiedDeployment = createStartVerifiedDeploymentHandler()
