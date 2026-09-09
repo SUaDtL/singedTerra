@@ -572,5 +572,34 @@ test.describe('Lobby layout guardrails', () => {
       page,
       '#lobby .lobby-btn-row:last-child .lobby-btn:not(.secondary)',
     );
+    await assertLobbyControlReachable(page, '#lobby .lobby-btn-row:last-child .lobby-btn.secondary');
+
+    // Preserve the projects' native viewports above; this is the published
+    // 1440×900 clipping envelope that must use the waiting board's own scroll.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await board.evaluate((element) => { element.scrollTop = 0; });
+    await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBe(0);
+    await board.hover();
+    await page.mouse.wheel(0, 900);
+    await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    const postWheel = await Promise.all([
+      readyUp.boundingBox(),
+      page.getByRole('button', { name: 'Leave', exact: true }).boundingBox(),
+      board.boundingBox(),
+    ]);
+    for (const control of postWheel.slice(0, 2)) {
+      expect(control).not.toBeNull();
+      expect(control!.y).toBeGreaterThanOrEqual(postWheel[2]!.y - 1);
+      expect(control!.y + control!.height).toBeLessThanOrEqual(postWheel[2]!.y + postWheel[2]!.height + 1);
+    }
+    const readyCalls = await fulfillFunction(page, 'ready_up', {
+      started: false,
+      players: [
+        { id: 'player-host', name: 'Oracle Host', color: '#e84d4d', ready: true },
+        { id: 'cpu-1', name: 'CPU 1', color: '#4d8ce8', ready: true, ai: 'medium' },
+      ],
+    });
+    await readyUp.click();
+    await assertSameOriginFunctionCall(page, readyCalls, 'ready_up');
   });
 });
