@@ -1,5 +1,29 @@
 import { expect, test } from '@playwright/test';
 
+type RenderedBox = Readonly<{ x: number; y: number; width: number; height: number }>;
+
+async function expectOracleToReject(label: string, assertion: () => Promise<void>): Promise<void> {
+  let rejected = false;
+  try {
+    await assertion();
+  } catch {
+    rejected = true;
+  }
+  expect(rejected, `${label} must be rejected by the real-control oracle`).toBe(true);
+}
+
+async function expectContained(inner: RenderedBox, outer: RenderedBox, label: string): Promise<void> {
+  expect(inner.x, `${label} left`).toBeGreaterThanOrEqual(outer.x);
+  expect(inner.x + inner.width, `${label} right`).toBeLessThanOrEqual(outer.x + outer.width);
+  expect(inner.y, `${label} top`).toBeGreaterThanOrEqual(outer.y);
+  expect(inner.y + inner.height, `${label} bottom`).toBeLessThanOrEqual(outer.y + outer.height);
+}
+
+async function expectNoSyntheticAppearanceHook(page: import('@playwright/test').Page): Promise<void> {
+  expect(await page.evaluate(() => '__battleConsoleVisualTest__' in window)).toBe(false);
+  await expect(page.locator('[data-battle-console-appearance-key]')).toHaveCount(0);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped'));
   await page.goto('?e2e=hotseat');
@@ -133,4 +157,69 @@ test('AC-03/05/08 movement, settings, fire and turn progression remain coherent'
   await expect.poll(() => host.getAttribute('data-active-commander'), { timeout: 30_000 }).not.toBe(commander);
   await expect(page.locator('#game')).toHaveCount(1);
   await page.screenshot({ path: `test-results/product-completion/${testInfo.project.name}-next-turn.png` });
+});
+
+test('AC-010/011/012 compact font oracle rejects an actual unreadable control', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'compact', 'Compact physical-font control');
+  await expectNoSyntheticAppearanceHook(page);
+  const fuel = page.locator('[data-battle-console-compact-chassis] [data-semantic-key="node:span:100 fuel remaining:19"]');
+  const expectReadableFuel = async () => {
+    const physicalSize = await fuel.evaluate(element => {
+      const chassis = element.closest<HTMLElement>('[data-battle-console-compact-chassis]')!;
+      return Number.parseFloat(getComputedStyle(element).fontSize)
+        * chassis.getBoundingClientRect().width / 1388;
+    });
+    expect(physicalSize, 'Fuel remains physically readable').toBeGreaterThanOrEqual(13.99);
+  };
+
+  await expectReadableFuel();
+  const mutation = await page.addStyleTag({
+    content: '[data-battle-console-compact-chassis] [data-semantic-key="node:span:100 fuel remaining:19"] { font-size: 1px !important; }',
+  });
+  await expectOracleToReject('Unreadable fuel text', expectReadableFuel);
+  await mutation.evaluate(element => element.remove());
+  await expectReadableFuel();
+});
+
+test('AC-010/011/012 real containment, disabled and focus oracles reject broken controls', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'standard', 'One representative full-console profile');
+  await expectNoSyntheticAppearanceHook(page);
+
+  const settingsTrigger = page.getByRole('button', { name: 'Battle settings', exact: true });
+  await settingsTrigger.click();
+  const settingsDialog = page.getByRole('dialog', { name: 'Battle Settings', exact: true });
+  const sound = settingsDialog.getByRole('switch', { name: 'Sound', exact: true });
+  const expectSoundContained = async () => {
+    await expectContained((await sound.boundingBox())!, (await settingsDialog.boundingBox())!, 'Sound control');
+  };
+
+  await expectSoundContained();
+  const containmentMutation = await page.addStyleTag({
+    content: '[role="dialog"][aria-label="Battle Settings"] [role="switch"][aria-label="Sound"] { transform: translateX(200vw) !important; }',
+  });
+  await expectOracleToReject('Escaped settings control', expectSoundContained);
+  await containmentMutation.evaluate(element => element.remove());
+  await expectSoundContained();
+
+  await page.keyboard.press('Escape');
+  await expect(settingsTrigger).toBeFocused();
+  await page.locator('#game').evaluate(element => {
+    element.setAttribute('tabindex', '-1');
+    (element as HTMLElement).focus();
+  });
+  await expectOracleToReject('Lost settings return focus', async () => expect(settingsTrigger).toBeFocused());
+  await settingsTrigger.focus();
+  await expect(settingsTrigger).toBeFocused();
+
+  await page.getByRole('button', { name: 'Open Armory', exact: true }).click();
+  const missile = page.locator('[data-battle-console-armory-item]').filter({
+    has: page.getByRole('heading', { name: 'Missile', exact: true }),
+  });
+  await missile.getByRole('button', { name: 'Equip', exact: true }).click();
+  const equipped = missile.getByRole('button', { name: 'Equipped', exact: true });
+  await expect(equipped).toBeDisabled();
+  await equipped.evaluate(button => { (button as HTMLButtonElement).disabled = false; });
+  await expectOracleToReject('Enabled equipped action', async () => expect(equipped).toBeDisabled());
+  await equipped.evaluate(button => { (button as HTMLButtonElement).disabled = true; });
+  await expect(equipped).toBeDisabled();
 });

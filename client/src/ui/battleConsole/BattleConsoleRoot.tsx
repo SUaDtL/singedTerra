@@ -7,10 +7,6 @@ import matchFrameUrl from '../../assets/battle-console/battle-match-frame-v2.web
 import armoryFrameUrl from '../../assets/battle-console/battle-armory-frame-ultrawide-v3.webp';
 import type { JSX } from 'preact';
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
-import {
-  observeRenderedAppearance,
-  type BattleConsoleAppearanceRecord,
-} from './appearanceRuntime';
 import { CompactConsole } from './components/CompactConsole';
 import { WeaponIcon } from './components/WeaponIcon';
 import { SemanticContractTree, type SemanticNodeDefinition } from './components/SemanticContractTree';
@@ -209,60 +205,6 @@ function RuntimeContractInstrumentation({
         style={markerStyle({ x: 224, y: 87, width: 78, height: 28 })}
       />
     </div>
-  );
-}
-
-function RuntimeAppearanceProbe({ record }: Readonly<{ record: BattleConsoleAppearanceRecord }>) {
-  const marker = useRef<HTMLElement>(null);
-  const socketRect = record.physicalSocketKeys
-    ?.map((key) => socketSourceRects.get(key))
-    .find((rect): rect is RuntimeRect => rect !== undefined);
-  const rect = socketRect ?? { x: 8, y: 8, width: 16, height: 16 };
-  useLayoutEffect(() => {
-    if (!marker.current) return;
-    marker.current.dataset['battleConsoleAppearanceObservation'] = JSON.stringify(
-      observeRenderedAppearance(marker.current),
-    );
-  }, [record]);
-  return (
-    <i
-      ref={marker}
-      aria-hidden="true"
-      data-battle-console-appearance-key={record.key}
-      data-appearance-font-file={record.fontFile ?? ''}
-      data-appearance-font-weight={record.fontWeight ?? 'none'}
-      data-appearance-baseline={record.baseline}
-      data-appearance-baseline-offset-px={record.baselineOffsetPx}
-      data-appearance-icon-or-glyph={record.iconOrGlyph ?? ''}
-      data-appearance-fill-or-angle={record.fillOrAngle === null ? '' : JSON.stringify(record.fillOrAngle)}
-      data-appearance-alignment={record.alignment}
-      data-appearance-overflow={record.overflow}
-      data-appearance-wrapping={record.wrapping}
-      data-appearance-clearance-px={record.clearancePx}
-      style={{
-        ...markerStyle(rect),
-        '--battle-console-appearance-font-stack': record.fontStack,
-        alignItems: 'center',
-        backgroundColor: record.rgba,
-        color: record.rgba,
-        display: 'flex',
-        fontFamily: record.fontStack,
-        fontSize: `${record.fontSizePx}px`,
-        fontWeight: record.fontWeight ?? 400,
-        justifyContent: record.alignment === 'center' ? 'center' : 'flex-start',
-        letterSpacing: `${record.trackingEm}em`,
-        opacity: record.opacity,
-        outlineColor: record.outlineRgba,
-        outlineStyle: 'solid',
-        outlineWidth: `${record.outlineWidthPx}px`,
-        overflow: 'hidden',
-        textAlign: record.alignment === 'socket-center' ? 'center' : record.alignment,
-        whiteSpace: 'nowrap',
-        zIndex: 3,
-      } as JSX.CSSProperties}
-    >
-      {record.iconOrGlyph ? '◆' : '\u00a0'}
-    </i>
   );
 }
 
@@ -539,7 +481,6 @@ export interface BattleConsoleRootProps {
   readonly classNames?: BattleConsoleClassNames;
   readonly layoutMode?: BattleConsoleLayoutMode;
   readonly scale?: number;
-  readonly appearanceProbe?: BattleConsoleAppearanceRecord | null;
 }
 
 export function BattleConsoleRoot({
@@ -550,7 +491,6 @@ export function BattleConsoleRoot({
   classNames = unstyledClassNames,
   layoutMode = 'wide',
   scale = 1,
-  appearanceProbe = null,
 }: BattleConsoleRootProps) {
   const root = useRef<HTMLDivElement>(null);
   const settingsWasOpen = useRef(state.settings.open);
@@ -634,7 +574,6 @@ export function BattleConsoleRoot({
       {lifecycleStatus === 'ready' && layoutMode !== 'compact' && (
         <CanonicalSemanticInk state={state} layoutMode={layoutMode} scale={scale} />
       )}
-      {appearanceProbe && <RuntimeAppearanceProbe record={appearanceProbe} />}
       {coachBriefingOpen && (
         <BattleConsolePortal host={portalHosts.coach}>
           <CoachPanel state={state} dispatch={dispatch} className={classNames.portal} />

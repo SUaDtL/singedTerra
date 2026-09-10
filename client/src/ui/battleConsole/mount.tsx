@@ -17,20 +17,6 @@ import type {
   BattleConsolePresentationState,
   BattleConsoleIntent,
 } from './types';
-import {
-  projectPresentationStateForAppearance,
-  resolveAppearanceRequest,
-  type BattleConsoleAppearanceRecord,
-  type BattleConsoleAppearanceRequest,
-} from './appearanceRuntime';
-
-declare global {
-  interface Window {
-    __battleConsoleVisualTest__?: {
-      applyAppearanceExpectation(value: unknown): Promise<void>;
-    };
-  }
-}
 
 function requiredModuleClass(name: string): string {
   const className = styles[name];
@@ -125,7 +111,6 @@ export async function mountBattleConsoleGeneration({
   let pixi: BattleConsolePixiAdapter | null = null;
   let state = initialState;
   let projectedLayout = layout;
-  let appearanceProbe: BattleConsoleAppearanceRecord | null = null;
   let status: Extract<BattleConsoleLifecycleStatus, 'ready' | 'fallback'> = 'ready';
   let destroyPromise: Promise<BattleConsoleResourceSnapshot> | null = null;
   const surface = semanticHost.parentElement?.hasAttribute('data-battle-console-surface')
@@ -154,38 +139,11 @@ export async function mountBattleConsoleGeneration({
         classNames={battleConsoleClassNames}
         layoutMode={projectedLayout.mode}
         scale={projectedLayout.scale}
-        appearanceProbe={appearanceProbe}
       />,
       semanticHost,
     );
   };
-  const visualTestHook = {
-    async applyAppearanceExpectation(value: unknown): Promise<void> {
-      if (!generationToken.isCurrent() || resources.closed) {
-        throw new Error('battle-console visual-test generation is not current');
-      }
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        throw new Error('battle-console appearance request must be an object');
-      }
-      appearanceProbe = resolveAppearanceRequest(value as BattleConsoleAppearanceRequest);
-      state = projectPresentationStateForAppearance(state, appearanceProbe);
-      renderSemanticRoot(status);
-      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-      const committed = semanticHost.querySelector<HTMLElement>(
-        `[data-battle-console-appearance-key=${JSON.stringify(appearanceProbe.key)}]`,
-      );
-      if (!committed?.dataset['battleConsoleAppearanceObservation']) {
-        throw new Error(`appearance ${appearanceProbe.key} did not commit an observation`);
-      }
-    },
-  };
-  const visualTestEnabled = typeof window !== 'undefined'
-    && new URLSearchParams(window.location.search).has('e2e');
-  if (visualTestEnabled) window.__battleConsoleVisualTest__ = visualTestHook;
   const destroyOwnedResources = async (): Promise<BattleConsoleResourceSnapshot> => {
-    if (visualTestEnabled && window.__battleConsoleVisualTest__ === visualTestHook) {
-      delete window.__battleConsoleVisualTest__;
-    }
     publishSurfaceStatus('destroyed');
     render(null, semanticHost);
     await pixi?.destroy();
