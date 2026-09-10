@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
+import type { PlayerAction } from '@shared/types/PlayerAction'
 import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
 import type { FieldOrder } from './client/fieldOrder'
 import type { VerifiedDeploymentDescriptor } from './client/verifiedDeployment'
@@ -19,7 +20,12 @@ const seams = vi.hoisted(() => ({
   onVerifiedContinueCasual: null as null | (() => void),
   onVerifiedReturnToBattery: null as null | (() => void),
   onVerifiedNextOrder: null as null | (() => void),
-  inputAction: null as null | ((action: Record<string, unknown>) => void),
+  onBuy: null as null | ((purchase: Record<string, unknown>, tankId?: string) => void),
+  onNextRound: null as null | (() => void),
+  onTouchPower: null as null | ((delta: number) => void),
+  inputAction: null as null | ((action: PlayerAction) => void),
+  inputPowerCaps: [] as number[],
+  useActualInputHandler: false,
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererPrimedStates: [] as GameState[],
   aimGuideUpdates: [] as Array<{ visible: boolean; gravity: number | undefined }>,
@@ -182,10 +188,19 @@ vi.mock('./audio/AudioEngine', () => ({
     weaponCycle() {}
   },
 }))
-vi.mock('./input/InputHandler', () => ({
-  InputHandler: class {
-    constructor(_canvas: HTMLCanvasElement, onAction: (action: Record<string, unknown>) => void) {
+vi.mock('./input/InputHandler', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./input/InputHandler')>()
+  return { InputHandler: class {
+    private readonly delegate: InstanceType<typeof actual.InputHandler> | null
+    constructor(
+      canvas: HTMLCanvasElement,
+      onAction: (action: PlayerAction) => void,
+      options?: ConstructorParameters<typeof actual.InputHandler>[2],
+    ) {
       seams.inputAction = onAction
+      this.delegate = seams.useActualInputHandler
+        ? new actual.InputHandler(canvas, onAction, options)
+        : null
     }
     attach() {
       if (seams.setupFailureStage === 'input-attach') throw seams.setupFailure
@@ -193,15 +208,19 @@ vi.mock('./input/InputHandler', () => ({
     detach() { seams.inputDetaches += 1 }
     nextWeapon() {}
     setActiveTankScreenPos() {}
-    setAim() {}
+    setAim(angle: number, power: number) { this.delegate?.setAim(angle, power) }
     setDirectAimEnabled() {}
+    setPowerCap(powerCap: number) {
+      seams.inputPowerCaps.push(powerCap)
+      this.delegate?.setPowerCap(powerCap)
+    }
     setWeapon() {}
     stepAngle() {}
     stepMove() {}
-    stepPower() {}
+    stepPower(delta: number) { this.delegate?.stepPower(delta) }
     triggerFire() {}
-  },
-}))
+  } }
+})
 vi.mock('./ui/HUD', () => ({
   HUD: class {
     flashMessage() {}
@@ -209,11 +228,11 @@ vi.mock('./ui/HUD', () => ({
     isPaused() { return false }
     isFirstSalvoBriefingOpen() { return seams.firstSalvoBriefingOpen }
     leaveBattleConsole() { return seams.leaveBattleConsole() }
-    onBuy() {}
+    onBuy(callback: (purchase: Record<string, unknown>, tankId?: string) => void) { seams.onBuy = callback }
     onFirstSalvoReplay() {}
     onFirstSalvoSkip() {}
     onMove() {}
-    onNextRound() {}
+    onNextRound(callback: () => void) { seams.onNextRound = callback }
     onPauseChange() {}
     onProgressionSignIn(callback: () => void) { seams.onProgressionSignIn = callback }
     onPrimaryAction() {}
@@ -225,7 +244,7 @@ vi.mock('./ui/HUD', () => ({
     onVerifiedReturnToBattery(callback: () => void) { seams.onVerifiedReturnToBattery = callback }
     onVerifiedNextOrder(callback: () => void) { seams.onVerifiedNextOrder = callback }
     onTouchAngle() {}
-    onTouchPower() {}
+    onTouchPower(callback: (delta: number) => void) { seams.onTouchPower = callback }
     onTouchWeapon() {}
     onWeaponSelect() {}
     setProgressionReceipt(receipt: Record<string, unknown>) {
@@ -485,7 +504,11 @@ function fakeVerifiedController(state: GameState, damageOnHumanSalvo?: number) {
   return controller
 }
 
-function fakeClient(initial: GameState, gravity = 0.15) {
+function fakeClient(
+  initial: GameState,
+  gravity = 0.15,
+  onSendAction?: (action: Record<string, unknown>) => void,
+) {
   let listener: ((state: GameState) => void) | null = null
   let rematchListener: ((info: RematchInfo) => void) | null = null
   return {
@@ -507,6 +530,7 @@ function fakeClient(initial: GameState, gravity = 0.15) {
     },
     sendAction(action: Record<string, unknown>) {
       seams.forwardedActions.push(action)
+      onSendAction?.(action)
       if (this.controller?.applyHumanAction) this.controller.applyHumanAction(action)
       else (this.controller as { applyAction?: (value: Record<string, unknown>) => boolean } | null)
         ?.applyAction?.(action)
@@ -542,7 +566,12 @@ describe('production hot-seat progression composition', () => {
     seams.onVerifiedContinueCasual = null
     seams.onVerifiedReturnToBattery = null
     seams.onVerifiedNextOrder = null
+    seams.onBuy = null
+    seams.onNextRound = null
+    seams.onTouchPower = null
     seams.inputAction = null
+    seams.inputPowerCaps.length = 0
+    seams.useActualInputHandler = false
     seams.rendererEvents = null
     seams.rendererPrimedStates.length = 0
     seams.aimGuideUpdates.length = 0
@@ -997,6 +1026,110 @@ describe('production hot-seat progression composition', () => {
     expect(seams.hudFrames.at(-1)?.activePlayerId).toBe(state.tanks[1]!.id)
   })
 
+  it('refreshes the human power cap after Battery purchase, seat handoff, and a new round', async () => {
+    const state = liveVerifiedState()
+    Object.assign(state, { round: 1, totalRounds: 3 })
+    Object.assign(state.tanks[0]!, { powerCap: 100 })
+    Object.assign(state.tanks[1]!, { powerCap: 100 })
+    const client = fakeClient(state, undefined, (action) => {
+      if (action.type === 'buy' && action.accessory === 'battery') {
+        state.tanks[0]!.powerCap = 200
+      }
+      if (action.type === 'next_round') {
+        state.round = 2
+        state.phase = 'PLAYER_TURN'
+        state.activePlayerId = state.tanks[0]!.id
+      }
+    })
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      settings: { rounds: 3, armsLevel: 2 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+    expect(seams.inputPowerCaps.at(-1)).toBe(100)
+    if (!seams.onBuy) throw new Error('Expected Armory wiring')
+
+    seams.onBuy({ accessory: 'battery' }, state.tanks[0]!.id)
+    expect(state.tanks[0]!.powerCap).toBe(200)
+    expect(seams.inputPowerCaps.at(-1)).toBe(200)
+
+    state.activePlayerId = state.tanks[1]!.id
+    client.emit(state)
+    expect(seams.inputPowerCaps.at(-1)).toBe(100)
+
+    state.phase = 'ROUND_OVER'
+    if (!seams.onNextRound) throw new Error('Expected next-round wiring')
+    seams.onNextRound()
+    expect(state.round).toBe(2)
+    expect(seams.inputPowerCaps.at(-1)).toBe(200)
+  })
+
+  it('re-seeds real input aim when a new round keeps the same active seat and retained cap', async () => {
+    seams.useActualInputHandler = true
+    const state = liveVerifiedState()
+    Object.assign(state, { round: 1, totalRounds: 3 })
+    Object.assign(state.tanks[0]!, { power: 150, powerCap: 200 })
+    const activePlayerId = state.activePlayerId
+    const client = fakeClient(state, undefined, (action) => {
+      if (action.type !== 'next_round') return
+      state.round = 2
+      state.phase = 'PLAYER_TURN'
+      state.activePlayerId = activePlayerId
+      state.tanks[0]!.power = 50
+    })
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      settings: { rounds: 3, armsLevel: 2 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+    client.emit(state)
+    if (!seams.onNextRound || !seams.onTouchPower) throw new Error('Expected round and power wiring')
+
+    state.phase = 'ROUND_OVER'
+    seams.onNextRound()
+    client.emit(state)
+    expect(state.activePlayerId).toBe(activePlayerId)
+    expect(state.round).toBe(2)
+    expect(state.tanks[0]!.power).toBe(50)
+    expect(state.tanks[0]!.powerCap).toBe(200)
+
+    seams.onTouchPower(-1)
+    expect(seams.forwardedActions.filter((action) => action.type === 'set_power')).toEqual([
+      { type: 'set_power', power: 49 },
+    ])
+  })
+
+  it('keeps verified human input at the descriptor power maximum', async () => {
+    const state = liveVerifiedState()
+    state.tanks[0]!.powerCap = 200
+    const controller = fakeVerifiedController(state)
+    const client = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(client)
+    seams.verifiedDeployment = {
+      status: 'active',
+      descriptor: verifiedDescriptor,
+      transcript: [],
+      deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+    }
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+    seams.onLobbyReady(verifiedConfig())
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    client.emit(state)
+    expect(seams.inputPowerCaps.at(-1)).toBe(verifiedDescriptor.limits.power.max)
+  })
+
   it('drops every combat command while the First Salvo briefing is open and resumes after entry', async () => {
     const state = liveVerifiedState()
     const client = fakeClient(state)
@@ -1007,7 +1140,7 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
     client.emit(state)
     if (!seams.inputAction) throw new Error('Expected input wiring')
-    const combatActions = [
+    const combatActions: PlayerAction[] = [
       { type: 'fire' },
       { type: 'set_angle', angle: 46 },
       { type: 'set_power', power: 51 },

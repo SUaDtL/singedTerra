@@ -7,7 +7,7 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 |---|---|---|---|---|---|
 | R00 | AC-001, AC-002, AC-003 |  | gpt-6-astra / high | gpt-6-astra / high | ACCEPTED |
 | R01 | AC-004, AC-005, AC-006 | R00 | gpt-6-astra / high | gpt-6-astra / high | ACCEPTED |
-| R02 | AC-007, AC-008, AC-009 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
+| R02 | AC-007, AC-008, AC-009 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | IN_PROGRESS |
 | R03 | AC-010, AC-011, AC-012 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R04 | AC-013, AC-014, AC-015, AC-016 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R05 | AC-017, AC-018, AC-019 | R04 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
@@ -17,7 +17,7 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R09 | AC-033, AC-034, AC-035, AC-036 | R00, R03 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
 | R10 | AC-037, AC-038, AC-039, AC-040 | R00, R03 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R12 | AC-041, AC-042, AC-043, AC-044 | R00, R02 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
-| R13 | AC-045, AC-046, AC-047, AC-048 | R00 | gpt-5.6-terra / high | gpt-5.6-sol / high | IN_PROGRESS |
+| R13 | AC-045, AC-046, AC-047, AC-048 | R00 | gpt-5.6-terra / high | gpt-5.6-sol / high | ACCEPTED |
 | R14 | AC-049, AC-050, AC-051, AC-052 | R01, R13 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R15 | AC-053, AC-054, AC-055, AC-056 | R00 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
 | R16 | AC-057, AC-058, AC-059, AC-060 | R00, R02 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
@@ -26,21 +26,22 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R22 | AC-069, AC-070, AC-071 | R00, R21 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R23 | AC-072, AC-073, AC-074, AC-075 | R21, R22, R07 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R24 | AC-076, AC-077, AC-078 | R00 | gpt-5.6-terra / high | gpt-6-astra / high | ACCEPTED |
-| R25 | AC-079, AC-080, AC-081, AC-082 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | IN_PROGRESS |
+| R25 | AC-079, AC-080, AC-081, AC-082 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R20 | AC-083, AC-084, AC-085, AC-086 | R00, R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R12, R13, R14, R15, R16, R19, R21, R22, R23, R24, R25 | gpt-6-astra / high | gpt-5.6-sol / high | PENDING |
 
 ## Dispatch boundaries and verification
 
-Integration: C:/Users/brenn/projects/singedTerra-worktrees/evidence-recovery-v2, branch codex/evidence-recovery-v2; audit baseline 3902cad662aea03cec913d984d17aa9573b89bd0. R00/R01 records committed as aad9dce597f64e2f2befe1aef1ed533f9dea03fd after the governed commit gate, with a clean resulting tree. Parent alone owns this ledger, integration, commits, and the sole localhost. Task worktrees below share the audit baseline; task acceptance is distinct from release. No production or remote-setting action has occurred.
+Integration: C:/Users/brenn/projects/singedTerra-worktrees/evidence-recovery-v2, branch codex/evidence-recovery-v2; audit baseline 3902cad662aea03cec913d984d17aa9573b89bd0. R00/R01 records committed as aad9dce597f64e2f2befe1aef1ed533f9dea03fd and R24 as df9d9958e88becd1a2bef51c4eb1ced2f49a91c3 after governed commit gates, each with a clean resulting tree. Parent alone owns this ledger, integration, commits, and the sole localhost. Task worktrees below share the audit baseline; task acceptance is distinct from release. No production or remote-setting action has occurred.
 
 | Task | Current ownership and evidence |
 |---|---|
 | R00 | ACCEPTED after package/schema/graph/source/provenance checks and independent Astra/high review. Detailed baseline receipts remain below. |
+| R02 | Worktree ../recovery-v2-r02 at df9d995, branch codex/recovery-v2-r02. Sol/high initial repair frozen; parent normal harnesses0, nonlethal1 and genuine deferred-resolve1 reproduced. Fresh Astra/high raw review found oneMEDIUM: lethal deformation leaves no floating dirt, so omitting game-ending flush still exits0; AC007 partial. Sequential triage/aggregate pending before remediation lease. No integration yet. |
 | R01 | Seven reviewed documents plus task receipt integrated. Fresh Astra/high review, triage, and aggregate PASS AC-004..006. Parent verifies 20 relative links, preserved history/frontmatter, diff-check and secrets scan exit 0. Commit checks: test:client 200 files/1776 tests exit 0; npm run check exit 0, retained in ../recovery-v2-r01-commit-client.log and ../recovery-v2-r01-commit-check.log. One LOW existing version-prose discrepancy remains assigned R19; historical ADR-0018 approval receipt is unknown. |
 | R24 | Four-file fix and receipt integrated after R25 released shared paths. Fresh final Astra/high review, triage, aggregate PASS AC-076..078 with zero findings. Parent focused 53/53 exit 0; final integrated coverage/client suite 200 files/1779 tests exit 0, Windows lines 93.19% (8112/8704) and branches 81.62% (4771/5845). Full npm run check and build/typecheck exit 0. Logs: ../recovery-v2-r24-integrated-{coverage,check,build}.log. Preserves exact D09 plus real operation-selected opening/escalated/reset guide versus live projectile regression. Live browser/Supabase/verified replay is not claimed by route mocks. |
 | R21 | Worktree ../recovery-v2-r21, branch codex/recovery-v2-r21. Tier-filter fix plus four-file tests/receipt is CHANGES_REQUIRED. Fresh Astra/high review, triage, aggregate: HIGH ineffective preparation unchecked at NetworkClient.ts:1266/1292 and main.ts:1070; MEDIUM local fixture bypasses driver and failed preparation is untested. AC-068 incomplete; original receipt overstates coverage. AC-065..067 passed. Parent AI harness, NetworkClient 8/8 and complete npm run check exit 0; ../recovery-v2-r21-check.log. Sol/high /root/r21_recovery_preparation is read-only until shared files are free. Required driver-outcome handling stays R21; R22 waits. Ordinary mixed-client policy compatibility remains R06/R07/R19's release gate. |
-| R25 | Worktree ../recovery-v2-r25, branch codex/recovery-v2-r25. Initial source checks passed; genuine-entry browser proof now shows credit debit and cap200. Corrected coach-readiness setup and an invalid owned-count oracle (Battery changes cap/credits, not accessories.battery). Third run exposed retained Armory-button focus blocking gameplay arrows after a battlefield pointer gesture. Sol/high has a bounded InputHandler.ts/test lease to fix that actual interaction while preserving native/text/dialog handling; other source is frozen. Preview PID11048/session50855 at5198 matches the earlier R25 build, index SHA256 c0327d80d3db588cd59613fcf6a71e346a98ef59de5a0b248f37ddb310020f5e; rebuild/reverification required after the focus correction. No acceptance yet. |
-| R13 | Worktree ../recovery-v2-r13, branch codex/recovery-v2-r13. Source stable after reported six focused Git tests; full validation in progress after authorized unchanged-lock installation. Missing initial node_modules was not a source failure. Task-only receipt lease allowed; source re-edits require coordination. No final review yet. CI edits serialize before R04. |
+| R25 | ACCEPTED; integrated uncommitted atop df9d995. Same-seat round correction red149/green49, actual InputHandler via main with mocked client transition; actual engine reset-before-ROUND_OVER timing independently inspected. Fresh final Astra/high review, triage, aggregate PASS zero findings AC079..082. Parent combined R24/R25 coverage200files1789tests exit0, lines93.20%8123/8715 and branches81.67%4791/5866; build/typecheck0; full check0. Logs ../recovery-v2-r25-integrated-{coverage,build,browser}.log and ../recovery-v2-r13-r25-integrated-check.log. Combined-preview normal purchase/200power/fire/seatreset1/1 exit0. Single preview PID35612/session71382 port5198, integration client/dist index86f462bd6c2a6cd372a83a653b8332eb4a953ed8ebc6b673281d1cfa233a0976 and entryassets byte-verified. Startup from repo root failed for absent root dist; corrected client cwd, no second listener. Resolved R24/R25 test-helper signature conflict preserving gravity arg plus optional callback; source frozen for governed commit. |
+| R13 | ACCEPTED; integrated uncommitted atop df9d995. Fresh final Sol/high coverage/security review, triage, aggregate PASS zero findings AC045..048 after threeMEDIUM corrected. Parent integrated9/9 Git tests0, history20/comments26 check0, combined fullcheck0; ../recovery-v2-r13-r25-integrated-check.log. No SQL diff; remote Actions/SHAfetch not yet observed and no production-applied claim. Source frozen for governed commit. |
 
 Exclusive task paths:
 - R24: client/src/main.ts, renderer/aimGuidePresentation.ts and its test, main.hotSeatProgression.test.ts. Integrated; parent owns its commit. Source frozen.
@@ -61,6 +62,9 @@ Actual dispatch selections verified from session turn_context (no substitutions)
 | R24 final review | gpt-6-astra / high | 01a0892e-b24d-78f0-8bb2-e47f4d19fa47 |
 | R25 author | gpt-5.6-sol / high | 01a0891f-31e4-7ea0-82bb-4f76f565f756 |
 | R13 author | gpt-5.6-terra / high | 01a0892a-3314-7c01-bad6-fecd9dee120f |
+| R13 first review | gpt-5.6-sol / high | 01a08941-0eea-7d20-94ed-389b2f8f47b6 |
+| R25 first review | gpt-6-astra / high | 01a08947-aef5-7860-90f8-8798570bfec1 |
+| R02 author | gpt-5.6-sol / high | 01a08949-6e73-7390-b0c1-305406b41ca2 |
 
 Rollback: retain original dirty checkout and immutable input. Each unpromoted task can be reverted as its isolated change; destructive removal requires normal approval. Preserve existing ADRs, SQL history, verified receipts, and unrelated work. Task acceptance does not claim release or production proof. Dependency order is binding, with at most three active subagents and two nonoverlapping writers including the parent.
 
@@ -278,3 +282,11 @@ Acceptance: all mapped AC rows in the spec; fresh parent verification, independe
 - Sole current localhost listener is 127.0.0.1:5198 PID58328, served by recovery-final-preview Vite preview. It is not the recovery-v2 candidate; deploy-meta request returned HTML fallback, not provenance. Do not use it to accept changed source. Parent owns any preview replacement and will retain one localhost.
 - User restored Docker. Fresh docker version reports server 29.7.2, then npm run check:database exited 0 with actual disposable PostgreSQL FK, rollback, ACL, concurrent-rematch and verified-start/resume regressions. This baseline does not prove the new R06/R08 races, whose tests are still required.
 - Original R24 author (Terra/high) recorded right-reason red (3 new failures, 49 existing passes), then focused green (52 passes). Later remediation and the current lease state are recorded in the dispatch table above.
+
+## Parent dispatch correction
+
+Live session turn_context for parent 01a08903-975a-7d03-870c-716e809207fa records gpt-6-astra / medium, including latest active turn, despite the user goal requiring high. Earlier summary assumptions of parent high are withdrawn; worker/reviewer explicit selections remain independently verified. Parent is attempting the supported task follow-up model/effort override to gpt-6-astra/high, then must verify the next actual turn_context before claiming correction. No substitution is approved or claimed.
+
+Final reviewer selections verified: R13 gpt-5.6-sol/high session01a08950-e4ab-7f50-acd3-56901a15b580; R25 gpt-6-astra/high session01a08956-5955-73a3-9a8e-8bd7c6bb3d48; R02 gpt-6-astra/high session01a08957-e3c8-7b60-b095-c8065c66a987.
+
+Next-turn verification now records gpt-6-astra/high in the latest parent turn_context; the supported task override succeeded. The earlier medium-effort history remains disclosed. R02 aggregate is complete with AC007 partial; Sol/high author has the two collapse harnesses and task receipt leased for a necessary-compaction fixture and omitted-flush negative control. Parent owns the second writer slot for integration records and commits.

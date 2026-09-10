@@ -4,13 +4,16 @@ import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { clamp } from '@shared/engine/math';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
 import { MAX_MOVE_DELTA, isValidMoveDelta } from '@shared/engine/Movement';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 
 /** Optional seed for the handler's tracked aim state. */
 export interface InputHandlerOptions {
   /** Initial angle (degrees) the active tank starts at. Default 45. */
   initialAngle?: number;
-  /** Initial power (0–100) the active tank starts at. Default 50. */
+  /** Initial power the active tank starts at. Default 50. */
   initialPower?: number;
+  /** Active tank power ceiling. Default is the engine's baseline cap. */
+  powerCap?: number;
   /** Degrees changed per ArrowLeft/ArrowRight event. Default 2. */
   angleStep?: number;
   /** Power units changed per ArrowUp/ArrowDown event. Default 2. */
@@ -23,13 +26,12 @@ export interface InputHandlerOptions {
 
 /**
  * Aim limits, mirrored from GameEngine's clamps (SPEC §6: angle 0=right..180=left,
- * power 0–100). The engine re-clamps authoritatively; we clamp our locally-tracked
+ * power 0–the active tank cap). The engine re-clamps authoritatively; we clamp our locally-tracked
  * value so held-key repeat does not drift past the bounds and emit redundant actions.
  */
 const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
 const POWER_MIN = 0;
-const POWER_MAX = 100;
 
 /**
  * The implemented weapon roster, in stable WeaponSystem key order. Q cycles
@@ -81,6 +83,7 @@ export class InputHandler {
   /** Locally-tracked absolute aim state (the engine re-clamps on apply). */
   private angle: number;
   private power: number;
+  private powerCap: number;
 
   /**
    * Index into IMPLEMENTED_WEAPONS for the locally-tracked selected weapon. Starts
@@ -108,7 +111,8 @@ export class InputHandler {
     this.target = target;
     this.emit = emit;
     this.angle = clamp(options.initialAngle ?? DEFAULT_ANGLE, ANGLE_MIN, ANGLE_MAX);
-    this.power = clamp(options.initialPower ?? DEFAULT_POWER, POWER_MIN, POWER_MAX);
+    this.powerCap = this.normalizedPowerCap(options.powerCap);
+    this.power = clamp(options.initialPower ?? DEFAULT_POWER, POWER_MIN, this.powerCap);
     this.angleStep = options.angleStep ?? DEFAULT_ANGLE_STEP;
     this.powerStep = options.powerStep ?? DEFAULT_POWER_STEP;
     this.canDirectAim = options.canDirectAim ?? (() => true);
@@ -122,7 +126,13 @@ export class InputHandler {
    */
   setAim(angle: number, power: number): void {
     this.angle = clamp(angle, ANGLE_MIN, ANGLE_MAX);
-    this.power = clamp(power, POWER_MIN, POWER_MAX);
+    this.power = clamp(power, POWER_MIN, this.powerCap);
+  }
+
+  /** Refresh the active tank's cap without emitting. Legal selected power is preserved. */
+  setPowerCap(powerCap: number): void {
+    this.powerCap = this.normalizedPowerCap(powerCap);
+    this.power = clamp(this.power, POWER_MIN, this.powerCap);
   }
 
   /** Feed the active tank's LOGICAL (canvas-space) barrel-origin position so direct
@@ -306,7 +316,7 @@ export class InputHandler {
   }
 
   private adjustPower(delta: number): void {
-    const next = clamp(this.power + delta, POWER_MIN, POWER_MAX);
+    const next = clamp(this.power + delta, POWER_MIN, this.powerCap);
     if (next === this.power) return; // already at bound — skip redundant emit
     this.power = next;
     this.emit({ type: 'set_power', power: this.power });
@@ -351,6 +361,12 @@ export class InputHandler {
       this.activePointerId = null;
       return;
     }
+    // Pointer aim is the explicit return to the battlefield after a HUD action.
+    // Make the canvas programmatically focusable without adding it to Tab order,
+    // then transfer focus so subsequent gameplay keys are not owned by the stale
+    // Armory/settings button that restored focus when its dialog closed.
+    if (!this.target.hasAttribute('tabindex')) this.target.tabIndex = -1;
+    this.target.focus({ preventScroll: true });
     this.applyPointerAim(event);
   };
 
@@ -409,7 +425,7 @@ export class InputHandler {
     const dy = my - this.activeTankY;
     let deg = (Math.atan2(-dy, dx) * 180) / Math.PI; // upper hemisphere => 0..180
     if (deg < 0) deg = 0; // clamp a below-horizontal drag up to flat
-    const power = (Math.hypot(dx, dy) / FULL_POWER_DRAG_PX) * POWER_MAX;
+    const power = (Math.hypot(dx, dy) / FULL_POWER_DRAG_PX) * this.powerCap;
     this.setAngleAbsolute(deg);
     this.setPowerAbsolute(power);
   }
@@ -424,9 +440,14 @@ export class InputHandler {
 
   /** Set power to an ABSOLUTE value (clamped), emitting only on a real change. */
   private setPowerAbsolute(power: number): void {
-    const next = clamp(Math.round(power), POWER_MIN, POWER_MAX);
+    const next = clamp(Math.round(power), POWER_MIN, this.powerCap);
     if (next === this.power) return;
     this.power = next;
     this.emit({ type: 'set_power', power: this.power });
+  }
+
+  private normalizedPowerCap(powerCap: number | undefined): number {
+    if (powerCap === undefined || !Number.isFinite(powerCap)) return DEFAULT_POWER_CAP;
+    return Math.max(POWER_MIN, powerCap);
   }
 }

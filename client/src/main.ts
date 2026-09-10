@@ -3,6 +3,7 @@ import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
 import { GRAVITY } from '@shared/engine/Physics';
 import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
 import type { GameState } from '@shared/types/GameState';
 import { VerifiedDuelController, verifiedCpuPolicyForTuple } from '@shared/net/verifiedDuel';
@@ -379,6 +380,7 @@ function bootstrap(): void {
 
   // Per-game wiring that gets torn down and rebuilt on restart.
   let lastActiveId: string | null = null;
+  let lastInputAimRound: number | null = null;
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
   let progressionSignInHandled = false;
@@ -428,6 +430,22 @@ function bootstrap(): void {
       })
       && !gameplayInputBlocked()
       && verifiedInputAllowed();
+  }
+
+  function activeInputPowerCap(powerCap: number | undefined): number {
+    const liveCap = powerCap !== undefined && Number.isFinite(powerCap)
+      ? Math.max(0, powerCap)
+      : DEFAULT_POWER_CAP;
+    const verifiedMaximum = currentConfig?.verifiedDeployment && !verifiedCasual
+      ? currentConfig.verifiedDeployment.descriptor.limits.power.max
+      : null;
+    return verifiedMaximum === null ? liveCap : Math.min(liveCap, verifiedMaximum);
+  }
+
+  function syncActiveInputPowerCap(): void {
+    const state = matchSession.client?.getState();
+    const tank = state?.tanks.find((candidate) => candidate.id === state.activePlayerId);
+    matchSession.input?.setPowerCap(activeInputPowerCap(tank?.powerCap));
   }
 
   function currentLiveMatchSnapshot() {
@@ -577,6 +595,7 @@ function bootstrap(): void {
   async function resetMatchPresentation(): Promise<void> {
     audio.napalmStop();
     lastActiveId = null;
+    lastInputAimRound = null;
     renderDirty = true;
     lastPhase = null;
     activeIsAi = false;
@@ -781,6 +800,7 @@ function bootstrap(): void {
           },
         });
         lastActiveId = initial?.activePlayerId ?? null;
+        lastInputAimRound = initial?.round ?? null;
       },
       constructInput: ({ client: newClient, initial }) => {
         const activeTank = initial?.tanks.find((tank) => tank.id === initial.activePlayerId);
@@ -834,6 +854,7 @@ function bootstrap(): void {
         }, {
           initialAngle: activeTank?.angle,
           initialPower: activeTank?.power,
+          powerCap: activeInputPowerCap(activeTank?.powerCap),
           canDirectAim: directAimAllowed,
           canHandleCommand: () => !gameplayInputBlocked(),
         });
@@ -937,6 +958,7 @@ function bootstrap(): void {
           // human turn in hot-seat, or (networked) the active tank is THIS client's id.
           // Never for a CPU seat or a remote opponent's turn.
           const activeTank = state.tanks.find((t) => t.id === state.activePlayerId);
+          newInput.setPowerCap(activeInputPowerCap(activeTank?.powerCap));
           const aimGuide = resolveAimGuidePresentation({
             mode: config.mode,
             activePlayerOwned: resolveActivePlayerOwnership(
@@ -1002,14 +1024,15 @@ function bootstrap(): void {
             publishTerminalPayoffE2EReceipt({ impactCompletedAt: performance.now() });
             hud.notifyTerminalImpactComplete();
           }
-          // When the active player changes, re-seed the input handler's aim AND
-          // weapon cursor from the new active tank so each player's arrows start
-          // from their own tank's current angle/power and their Q cycles from
-          // their own selected weapon. Neither setter emits an action.
-          if (state.activePlayerId !== lastActiveId) {
+          // Re-seed when either the active seat or round changes. A new round can
+          // retain the prior opener while the engine resets that tank's aim, so
+          // player ID alone is not enough to identify the mirrored input state.
+          const inputAimRound = state.round ?? null;
+          if (state.activePlayerId !== lastActiveId || inputAimRound !== lastInputAimRound) {
             lastActiveId = state.activePlayerId;
-            // Active tank changed (turn handoff): the emphasis + aim-guide ownership
-            // shift, so force at least one redraw even if the new scene is static.
+            lastInputAimRound = inputAimRound;
+            // Seat or round baseline changed: refresh presentation even if the
+            // new scene is otherwise static.
             markDirty();
             const next = state.tanks.find((t) => t.id === state.activePlayerId);
             if (next) {
@@ -1135,6 +1158,10 @@ function bootstrap(): void {
     if ('weapon' in purchase && purchase.weapon) {
       matchSession.client?.sendAction({ type: 'select_weapon', weapon: purchase.weapon });
     }
+    // Hot-seat applies purchases synchronously, so the newly raised Battery cap
+    // is usable before the next render frame. Networked clients refresh again
+    // when the committed action snapshot arrives.
+    syncActiveInputPowerCap();
   });
 
   // Start the next round from the ROUND_OVER between-rounds shop. Like a turn
@@ -1142,6 +1169,7 @@ function bootstrap(): void {
   // client leaves the shop in lockstep.
   hud.onNextRound(() => {
     matchSession.client?.sendAction({ type: 'next_round' });
+    syncActiveInputPowerCap();
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {

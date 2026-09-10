@@ -71,6 +71,8 @@ export interface BattleConsolePresentationState {
   readonly ballistics: {
     readonly angle: number;
     readonly power: number;
+    /** Missing only in historical contract fixtures; live HUD state always supplies it. */
+    readonly powerCap?: number;
     readonly wind: number;
   };
   readonly fireControl: {

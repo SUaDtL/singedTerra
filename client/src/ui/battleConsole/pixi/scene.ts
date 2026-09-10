@@ -1,4 +1,5 @@
 import type { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import type { BattleConsolePresentationState } from '../types';
 import chromeContract from '../../../../../.codearbiter/contracts/battle-console/topology/chrome-sockets.json';
 import appearanceContract from '../../../../../.codearbiter/contracts/battle-console/state/dynamic-appearance.json';
@@ -128,7 +129,10 @@ function createLiveInstruments(constructors: BattleConsolePixiConstructors, root
     project(layout: ResponsiveLayoutProjection, state: BattleConsolePresentationState) {
       layer.scale.set(battleConsoleModeAssets[layout.mode].surface.width / BATTLE_CONSOLE_LOGICAL_SIZE.width);
       angleNeedle.rotation = -Math.max(0, Math.min(180, state.ballistics.angle)) * Math.PI / 180;
-      const power = Math.max(0, Math.min(100, state.ballistics.power)) / 100;
+      const powerCap = Math.max(0, state.ballistics.powerCap ?? DEFAULT_POWER_CAP);
+      const power = powerCap === 0
+        ? 0
+        : Math.max(0, Math.min(powerCap, state.ballistics.power)) / powerCap;
       powerNeedle.rotation = Math.PI * (power - 1);
       if (power !== paintedPower) {
         powerArc.clear();
