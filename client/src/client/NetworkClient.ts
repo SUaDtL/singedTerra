@@ -18,6 +18,7 @@ import {
 import { GameEngine } from '@shared/engine/GameEngine';
 import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
 import { computeAiPlan } from '@shared/engine/AI';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 import { postOnceWithRetry } from './retry';
@@ -65,6 +66,52 @@ interface NetworkPlayerEntry {
 // GameOptions extended with the network-mode player id field.
 interface NetworkGameOptions extends Omit<GameOptions, 'players'> {
   players?: NetworkPlayerEntry[];
+}
+
+interface BotActionAttempt {
+  phaseKey: string;
+  round: number;
+  turn: number;
+  tankId: string;
+  action: NetworkAction;
+  settlement: 'pending' | 'conflict';
+  sawCanonicalProgress: boolean;
+}
+
+type BotSubmitSettlement = 'accepted' | 'conflict' | 'failed';
+
+/** Match GameEngine's room-option normalization before passing the tier to the AI. */
+function normalizeRoomArmsLevel(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(4, Math.max(0, Math.floor(value)))
+    : 4;
+}
+
+function hasUsableWeapon(state: GameState, tankId: string, weapon: WeaponType): boolean {
+  const ammo = state.tanks.find((tank) => tank.id === tankId)?.inventory[weapon];
+  return !!ammo && (ammo.unlimited || ammo.count > 0);
+}
+
+function networkActionsEqual(left: NetworkAction, right: NetworkAction): boolean {
+  if (left.type !== right.type) return false;
+  switch (left.type) {
+    case 'fire':
+      return right.type === 'fire'
+        && left.angle === right.angle
+        && left.power === right.power
+        && left.weapon === right.weapon;
+    case 'use_shield':
+      return right.type === 'use_shield' && left.weapon === right.weapon;
+    case 'buy':
+      return right.type === 'buy'
+        && left.weapon === right.weapon
+        && left.accessory === right.accessory
+        && left.tankId === right.tankId;
+    case 'move':
+      return right.type === 'move' && left.delta === right.delta;
+    case 'next_round':
+      return right.type === 'next_round';
+  }
 }
 
 type StateChangeListener = (state: GameState) => void;
@@ -212,15 +259,23 @@ export class NetworkClient implements GameClient {
   private supaIdByTank:     Map<string, string>;
   // Per-room gravity (for the AI's trajectory sim to match the engine).
   private gravity:          number;
+  // Engine-normalized store tier, so the planner never proposes a buy replay will reject.
+  private armsLevel:        number;
   // Guards one bot submission per (turn, bot) from THIS client; the seq-unique +
   // referee cursor make the cross-client race exactly-once regardless. `lastBotKey`
-  // latches a phase only once it is COMMITTED (ours accepted, or a racer's identical
-  // action won); `botSubmitPendingKey` marks the phase whose POST is currently in
+  // latches our accepted intent or an exact matching ordered row; a conflict waits
+  // for its canonical row because the winning intent may differ. Weapon preparation
+  // succeeds only when canonical replay proves usable inventory. `botSubmitPendingKey`
+  // marks the phase whose POST is currently in
   // flight, so the ~60fps emitState cadence does not spam duplicate submits while one
   // is outstanding. A transient failure clears the pending mark WITHOUT latching, so
   // the next frame re-attempts instead of wedging the room (#119 / reliability-002).
   private lastBotKey:       string | null = null;
   private botSubmitPendingKey: string | null = null;
+  private botActionAttempt: BotActionAttempt | null = null;
+  private botPreparationFailedKey: string | null = null;
+  private botPreparationFailureMessage: string | null = null;
+  private pendingBotPreparationNotice: string | null = null;
 
   // For computing the NEXT active seat after a turn-ending action (P0-3): the
   // room options (to build a throwaway engine) and the ordered log of actions
@@ -273,6 +328,7 @@ export class NetworkClient implements GameClient {
       if (p.ai) this.botByTank.set(tankId, p.ai);
     });
     this.gravity = options.gravity ?? GRAVITY;
+    this.armsLevel = normalizeRoomArmsLevel(options.armsLevel);
 
     // Instantiate local engine. Cast to GameOptions — the engine reads
     // { name, color, ai } from each player entry, ignoring any extra fields.
@@ -322,6 +378,7 @@ export class NetworkClient implements GameClient {
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
     this.orderedActions.finishReplay((existingActions ?? []).length);
+    this.clearStaleBotPreparationFailure();
 
     // 2. Subscribe to new room_actions rows via Realtime Postgres Changes.
     this.channel = this.supabase
@@ -529,6 +586,10 @@ export class NetworkClient implements GameClient {
     }
     this.quickChatListeners.clear();
     this.accountProgressListeners.clear();
+    this.botActionAttempt = null;
+    this.botPreparationFailedKey = null;
+    this.botPreparationFailureMessage = null;
+    this.pendingBotPreparationNotice = null;
   }
 
   /**
@@ -689,6 +750,11 @@ export class NetworkClient implements GameClient {
   /** Subscribe to fire/shield submission failures (rejected or never echoed). */
   onFireFailed(listener: (message: string) => void): () => void {
     this.fireFailedListeners.add(listener);
+    if (this.pendingBotPreparationNotice) {
+      const message = this.pendingBotPreparationNotice;
+      this.pendingBotPreparationNotice = null;
+      listener(message);
+    }
     return () => this.fireFailedListeners.delete(listener);
   }
 
@@ -916,12 +982,11 @@ export class NetworkClient implements GameClient {
     actingPlayerId?: string,
     attempt = 0,
     roundOver = false,
-    // Terminal-outcome hook for the bot driver (#119). Called once the POST resolves:
-    // committed=true  -> the action is on the canonical log (ours accepted, a racer's
-    //                    identical action won, or the turn already advanced) — stop trying.
-    // committed=false -> a transient failure that did NOT commit — safe to re-attempt.
-    // Only the bot path passes it; human submits leave it undefined.
-    onSettle?: (committed: boolean) => void,
+    // Transport-outcome hook for the bot driver (#119). An accepted response proves
+    // this exact intent committed. A conflict only proves that some action won the seq;
+    // the ordered row must identify whether it matches before this intent is latched.
+    // A failed response did not commit and is safe to re-attempt.
+    onSettle?: (settlement: BotSubmitSettlement) => void,
   ): void {
     // For TURN-ENDING actions, tell the server which seat is active NEXT (this client's
     // engine skips eliminated tanks AND re-seats the opener at a round boundary; the
@@ -992,7 +1057,7 @@ export class NetworkClient implements GameClient {
             });
             // For a bot proxy this means the turn already advanced (someone committed):
             // treat as committed so the driver latches instead of re-attempting.
-            onSettle?.(true);
+            onSettle?.('accepted');
           } else if (!isConflict) {
             // A non-conflict rejection (e.g. a 5xx where the RPC errored) — the action
             // did NOT commit.
@@ -1002,32 +1067,44 @@ export class NetworkClient implements GameClient {
             // doesn't trap them (P1-6). Bot proxies don't hold the lock.
             if (!actingPlayerId) this.failFire('Shot failed — try again.');
             // Transient for a bot proxy: clear the in-flight mark so the next frame retries.
-            onSettle?.(false);
+            onSettle?.('failed');
           } else {
-            // isConflict && !retryOnConflict: a bot's lost race. Another client committed
-            // the identical bot action, so the phase IS on the log — latch, don't retry.
-            onSettle?.(true);
+            // A bot lost this seq race. Do not assume the winning intent was identical:
+            // wait for the ordered row to prove a match or release this intent.
+            onSettle?.('conflict');
           }
         } else {
           // Accepted: our submit is the committed row for this phase.
-          onSettle?.(true);
+          onSettle?.('accepted');
         }
       })
       .catch(err => {
         console.error('NetworkClient: submit_action network error:', err);
         if (!actingPlayerId) this.failFire('Connection problem — shot not sent. Try again.');
         // Network error: nothing committed — let the bot driver re-attempt next frame.
-        onSettle?.(false);
+        onSettle?.('failed');
       });
   }
 
   /**
    * Apply a logged network action to the local engine and RECORD it in the
    * applied log (used to compute the next active seat — see computeNextSeat).
+   * Preparation recovery is derived here from canonical before/after state so
+   * live observers, resyncs, and late-history replays reach the same decision.
    */
   private applyNetworkAction(action: NetworkAction): void {
+    const before = this.engine.getState();
+    const context = {
+      phase: before.phase,
+      round: before.round,
+      turn: before.turn,
+      tankId: before.activePlayerId,
+    };
+    const preparation = this.describeBotPreparation(action, before);
     replayNetworkAction(this.engine, action);
     this.appliedLog.push(action);
+    if (preparation) this.reconcileBotPreparation(preparation);
+    this.reconcileBotActionAttempt(action, context);
   }
 
   /**
@@ -1099,6 +1176,102 @@ export class NetworkClient implements GameClient {
     }
   }
 
+  private describeBotPreparation(
+    action: NetworkAction,
+    state: GameState,
+  ): { outcomeKey: string; tankId: string; weapon: WeaponType } | null {
+    if (state.phase !== 'PLAYER_TURN' || action.type !== 'buy' || !action.weapon) return null;
+    const tankId = state.activePlayerId;
+    const difficulty = this.botByTank.get(tankId);
+    if (!difficulty) return null;
+    const plan = computeAiPlan(
+      state,
+      tankId,
+      difficulty,
+      this.engine.getEffectiveGravity(),
+      this.armsLevel,
+    );
+    if (!plan?.buy || plan.buy !== action.weapon) return null;
+    return {
+      outcomeKey: `${state.round}:${state.turn}:${tankId}:${plan.buy}`,
+      tankId,
+      weapon: plan.buy,
+    };
+  }
+
+  /**
+   * The ordered action and its before/after engine state are canonical. Every
+   * same-build client therefore records the same bounded recovery even if it did
+   * not submit the buy itself or is replaying it from history.
+   */
+  private reconcileBotPreparation(
+    preparation: { outcomeKey: string; tankId: string; weapon: WeaponType },
+  ): void {
+    const state = this.engine.getState();
+    if (hasUsableWeapon(state, preparation.tankId, preparation.weapon)) {
+      if (this.botPreparationFailedKey === preparation.outcomeKey) {
+        this.botPreparationFailedKey = null;
+        this.botPreparationFailureMessage = null;
+        this.pendingBotPreparationNotice = null;
+      }
+      return;
+    }
+
+    const message = hasUsableWeapon(state, preparation.tankId, 'baby_missile')
+      ? 'CPU restock failed — using Baby Missile.'
+      : 'CPU has no usable ammunition — reload to continue.';
+    if (
+      this.botPreparationFailedKey === preparation.outcomeKey
+      && this.botPreparationFailureMessage === message
+    ) return;
+    this.botPreparationFailedKey = preparation.outcomeKey;
+    this.botPreparationFailureMessage = message;
+    if (this.fireFailedListeners.size === 0) {
+      this.pendingBotPreparationNotice = message;
+      return;
+    }
+    for (const listener of this.fireFailedListeners) listener(message);
+  }
+
+  private reconcileBotActionAttempt(
+    action: NetworkAction,
+    context: { phase: GameState['phase']; round: number; turn: number; tankId: string },
+  ): void {
+    const attempt = this.botActionAttempt;
+    if (
+      !attempt
+      || context.phase !== 'PLAYER_TURN'
+      || context.round !== attempt.round
+      || context.turn !== attempt.turn
+      || context.tankId !== attempt.tankId
+    ) return;
+    if (networkActionsEqual(action, attempt.action)) {
+      this.lastBotKey = attempt.phaseKey;
+      if (this.botSubmitPendingKey === attempt.phaseKey) this.botSubmitPendingKey = null;
+      this.botActionAttempt = null;
+      return;
+    }
+
+    // A different canonical row proves only that the log advanced, not that this
+    // request settled. Keep an unresolved request owned so emitState cannot submit
+    // the same phase again before its HTTP result arrives. If conflict arrived
+    // first, this retained row is the winner that releases one deterministic replan.
+    attempt.sawCanonicalProgress = true;
+    if (attempt.settlement !== 'conflict') return;
+    if (this.botSubmitPendingKey === attempt.phaseKey) this.botSubmitPendingKey = null;
+    this.botActionAttempt = null;
+  }
+
+  private clearStaleBotPreparationFailure(): void {
+    if (!this.botPreparationFailedKey) return;
+    const state = this.engine.getState();
+    const turnKey = `${state.round}:${state.turn}:${state.activePlayerId}:`;
+    if (this.botPreparationFailedKey.startsWith(turnKey)) return;
+    this.botPreparationFailedKey = null;
+    this.botPreparationFailureMessage = null;
+    this.pendingBotPreparationNotice = null;
+  }
+
   /**
    * Flush buffered Realtime events in strict seq order.
    * Called after every buffered insertion AND from the RAF loop when a shot
@@ -1135,6 +1308,7 @@ export class NetworkClient implements GameClient {
   private emitState(): void {
     if (this._disposed) return; // client torn down — nothing left to notify
     const state = this.engine.getState();
+    this.clearStaleBotPreparationFailure();
     if (state.phase === 'GAME_OVER' && !this._gameOverReported) {
       this._gameOverReported = true;
       clearSession(); // match ended — the rejoin session descriptor is no longer valid (AC-04)
@@ -1236,44 +1410,81 @@ export class NetworkClient implements GameClient {
     // bot aims for the arc the engine will actually fly — not a flat base-gravity arc that
     // lands short once sudden death kicks in. Deterministic: every client's engine is at the
     // same turn, so all compute the identical plan (lockstep preserved).
-    const plan = computeAiPlan(state, tankId, difficulty, this.engine.getEffectiveGravity());
+    const plan = computeAiPlan(
+      state,
+      tankId,
+      difficulty,
+      this.engine.getEffectiveGravity(),
+      this.armsLevel,
+    );
     if (!plan) return;                             // no target (shouldn't happen)
 
     // Buy-to-restock (P1-7b) is a TWO-PHASE turn: a turn-neutral buy, then the
-    // shot. The buy does NOT advance the turn, so the guard is keyed on the PHASE
-    // (buy vs act), not just (turn, tank). After the buy commits and replays, the
-    // bot owns the weapon, so the recomputed plan has no `buy` and this driver
-    // submits the fire on the next pass. Every client recomputes the same
-    // transition deterministically, so buy and fire land as two ordered log rows.
-    const phase = plan.buy ? 'buy' : 'act';
+    // shot. HTTP acceptance only latches the transport phase; the ordered echo is
+    // what proves the planned ammo became usable. One ineffective echo takes the
+    // deterministic Baby Missile fallback instead of repeating the buy or firing
+    // unavailable ammunition.
+    const preparationOutcomeKey = plan.buy
+      ? `${state.round}:${state.turn}:${tankId}:${plan.buy}`
+      : null;
+    const recoveringPreparation = preparationOutcomeKey !== null
+      && preparationOutcomeKey === this.botPreparationFailedKey;
+    const attackWeapon: WeaponType = recoveringPreparation ? 'baby_missile' : plan.weapon;
+    if (recoveringPreparation && !hasUsableWeapon(state, tankId, attackWeapon)) return;
+    const plannedBuy = recoveringPreparation ? undefined : plan.buy;
+    const phase = plannedBuy ? 'buy' : 'act';
     const key = `${state.turn}:${tankId}:${phase}`;
     if (key === this.lastBotKey) return;           // already committed this phase
     if (key === this.botSubmitPendingKey) return;  // a submit for this phase is in flight
+    if (key === this.botActionAttempt?.phaseKey) return; // conflict awaits its canonical row
 
     const actingId = this.supaIdByTank.get(tankId);
     if (!actingId) return;
 
-    const action: NetworkAction = plan.buy
-      ? { type: 'buy', weapon: plan.buy }
-      : plan.weapon === 'shield'
+    const action: NetworkAction = plannedBuy
+      ? { type: 'buy', weapon: plannedBuy }
+      : attackWeapon === 'shield'
         ? { type: 'use_shield' }
-        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
+        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: attackWeapon };
 
     // Mark this phase in flight BEFORE the POST so the per-frame emitState cadence
-    // does not fire a second submit while this one is outstanding. No seq-conflict
-    // retry: a conflict means another client already committed the (same) bot action.
-    // The onSettle callback decides the phase's fate once the POST resolves:
-    //   committed (accepted, or a racer's identical action won / turn advanced) -> latch
-    //   transient failure (network error, or a non-conflict 5xx that did not commit)
-    //     -> clear the pending mark WITHOUT latching, so the next frame re-attempts.
+    // does not fire a second submit while this one is outstanding. The transport
+    // result and ordered row jointly decide the phase's fate: acceptance latches our
+    // intent, failure releases a retry, and conflict waits for canonical progress to
+    // identify the winner before releasing a replan or latching an exact match.
     // This is the self-heal (#119): a dropped bot submit no longer wedges a single-
     // driver room. Determinism is untouched — the re-attempt is the SAME deterministic
     // action, and the referee's seq-unique + cursor keep it exactly-once.
     this.botSubmitPendingKey = key;
-    this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (committed) => {
-      if (this.botSubmitPendingKey !== key) return; // superseded by a newer turn/phase
-      this.botSubmitPendingKey = null;
-      if (committed) this.lastBotKey = key;
+    const attempt: BotActionAttempt = {
+      phaseKey: key,
+      round: state.round,
+      turn: state.turn,
+      tankId,
+      action,
+      settlement: 'pending',
+      sawCanonicalProgress: false,
+    };
+    this.botActionAttempt = attempt;
+    this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (settlement) => {
+      if (this.botActionAttempt !== attempt) return; // canonical row already resolved/superseded it
+      if (this.botSubmitPendingKey === key) this.botSubmitPendingKey = null;
+      if (settlement === 'accepted') {
+        this.lastBotKey = key;
+        this.botActionAttempt = null;
+      } else if (settlement === 'failed') {
+        this.botActionAttempt = null;
+      } else {
+        // A seq conflict says only that some row won. Canonical progress already
+        // observed releases one replan; otherwise retain this intent until live
+        // delivery or the existing bounded resync reveals the winning row.
+        if (attempt.sawCanonicalProgress) {
+          this.botActionAttempt = null;
+          return;
+        }
+        attempt.settlement = 'conflict';
+        void this.resyncLog();
+      }
     });
   }
 

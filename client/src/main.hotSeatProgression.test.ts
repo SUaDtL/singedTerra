@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameState } from '@shared/types/GameState'
 import type { PlayerAction } from '@shared/types/PlayerAction'
 import type { HotSeatProgressionReceipt } from './client/hotSeatProgression'
@@ -26,6 +26,7 @@ const seams = vi.hoisted(() => ({
   inputAction: null as null | ((action: PlayerAction) => void),
   inputPowerCaps: [] as number[],
   useActualInputHandler: false,
+  useActualAiPlan: false,
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererPrimedStates: [] as GameState[],
   aimGuideUpdates: [] as Array<{ visible: boolean; gravity: number | undefined }>,
@@ -53,6 +54,8 @@ const seams = vi.hoisted(() => ({
   hudUpdates: [] as unknown[][],
   hudFrames: [] as Array<{ phase: GameState['phase']; activePlayerId: string; isFiring: boolean }>,
   forwardedActions: [] as Array<Record<string, unknown>>,
+  aiPlan: null as null | { weapon: string; angle: number; power: number; buy?: string },
+  flashMessages: [] as string[],
   firstSalvoBriefingOpen: false,
   hudImpactCues: [] as unknown[],
   rendererImpactCue: null as unknown,
@@ -77,7 +80,14 @@ const seams = vi.hoisted(() => ({
 }))
 
 vi.mock('@shared/engine/GameEngine', () => ({ GameEngine: class {} }))
-vi.mock('@shared/engine/AI', () => ({ computeAiPlan: () => null }))
+vi.mock('@shared/engine/AI', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@shared/engine/AI')>()
+  return {
+    computeAiPlan: (...args: Parameters<typeof actual.computeAiPlan>) => (
+      seams.useActualAiPlan ? actual.computeAiPlan(...args) : seams.aiPlan
+    ),
+  }
+})
 vi.mock('@shared/net/verifiedDuel', () => ({
   VerifiedDuelController: class VerifiedDuelController {
     static create(seed: number) {
@@ -223,7 +233,7 @@ vi.mock('./input/InputHandler', async (importOriginal) => {
 })
 vi.mock('./ui/HUD', () => ({
   HUD: class {
-    flashMessage() {}
+    flashMessage(message: string) { seams.flashMessages.push(message) }
     hideEndScreens() {}
     isPaused() { return false }
     isFirstSalvoBriefingOpen() { return seams.firstSalvoBriefingOpen }
@@ -551,7 +561,86 @@ function mountDom(): void {
     </div>`
 }
 
+async function localBotPreparationFixture(options: {
+  restockSucceeds: boolean
+  fallbackUsable?: boolean
+}) {
+  const { GameEngine } = await vi.importActual<typeof import('@shared/engine/GameEngine')>(
+    '@shared/engine/GameEngine',
+  )
+  const engine = new GameEngine({
+    maxPlayers: 2,
+    seed: 0x5eed1234,
+    armsLevel: 1,
+    players: [
+      { name: 'Ranger', color: '#e8554d' },
+      { name: 'CPU 1', color: '#3f78b8', ai: 'hard' },
+    ],
+  })
+  const state = engine.getState()
+  const human = state.tanks[0]
+  const bot = state.tanks[1]
+  if (!human || !bot) throw new Error('Expected local CPU fixture tanks')
+  state.activePlayerId = bot.id
+  state.turn = 1
+  human.health = 100
+  for (const slot of Object.values(bot.inventory)) {
+    if (!slot.unlimited) slot.count = 0
+  }
+  if (options.fallbackUsable === false) {
+    bot.inventory.baby_missile.unlimited = false
+    bot.inventory.baby_missile.count = 0
+  }
+  bot.credits = 20_000
+
+  const client = fakeClient(state, 0.15, (action) => {
+    if (action.type === 'buy' && action.weapon === 'nuke' && !options.restockSucceeds) return
+    engine.applyAction(action as unknown as PlayerAction)
+  })
+  return { client, engine, state, bot }
+}
+
+async function realDefaultArmsBotFixture() {
+  const { GameEngine } = await vi.importActual<typeof import('@shared/engine/GameEngine')>(
+    '@shared/engine/GameEngine',
+  )
+  const { HotSeatClient } = await vi.importActual<typeof import('./client/HotSeatClient')>(
+    './client/HotSeatClient',
+  )
+  const engine = new GameEngine({
+    maxPlayers: 2,
+    seed: 0x5eed1234,
+    players: [
+      { name: 'Ranger', color: '#e8554d' },
+      { name: 'CPU 1', color: '#3f78b8', ai: 'hard' },
+    ],
+  })
+  const state = engine.getState()
+  const human = state.tanks[0]
+  const bot = state.tanks[1]
+  if (!human || !bot) throw new Error('Expected real local CPU fixture tanks')
+  state.activePlayerId = bot.id
+  state.turn = 1
+  human.health = 100
+  for (const slot of Object.values(bot.inventory)) {
+    if (!slot.unlimited) slot.count = 0
+  }
+  bot.credits = 20_000
+  return { client: new HotSeatClient(engine), engine, state, bot }
+}
+
+function tickEngineToRest(engine: { getState(): GameState; tick(): void }): void {
+  let ticks = 0
+  while (['FIRING', 'RESOLVING'].includes(engine.getState().phase) && ticks < 100_000) {
+    engine.tick()
+    ticks += 1
+  }
+  expect(ticks).toBeLessThan(100_000)
+}
+
 describe('production hot-seat progression composition', () => {
+  afterEach(() => { vi.useRealTimers() })
+
   beforeEach(() => {
     vi.resetModules()
     seams.clients.length = 0
@@ -572,6 +661,7 @@ describe('production hot-seat progression composition', () => {
     seams.inputAction = null
     seams.inputPowerCaps.length = 0
     seams.useActualInputHandler = false
+    seams.useActualAiPlan = false
     seams.rendererEvents = null
     seams.rendererPrimedStates.length = 0
     seams.aimGuideUpdates.length = 0
@@ -599,6 +689,8 @@ describe('production hot-seat progression composition', () => {
     seams.hudUpdates.length = 0
     seams.hudFrames.length = 0
     seams.forwardedActions.length = 0
+    seams.aiPlan = null
+    seams.flashMessages.length = 0
     seams.firstSalvoBriefingOpen = false
     seams.hudImpactCues.length = 0
     seams.rendererImpactCue = null
@@ -623,6 +715,188 @@ describe('production hot-seat progression composition', () => {
     clearSession()
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('fires the planned weapon only after local preparation creates usable ammo — AC-068', async () => {
+    const { client, engine, state, bot } = await localBotPreparationFixture({ restockSucceeds: true })
+    const startingTurn = state.turn
+    seams.aiPlan = { weapon: 'nuke', buy: 'nuke', angle: 120, power: 70 }
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [{ name: 'Ranger' }, { name: 'CPU 1', ai: 'hard' }],
+      settings: { seed: 0x5eed1234, armsLevel: 1 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    vi.useFakeTimers()
+    client.emit(state)
+    vi.advanceTimersByTime(600)
+    expect(bot.inventory.nuke.count).toBeGreaterThan(0)
+    vi.advanceTimersByTime(550)
+    expect(state.phase).toBe('FIRING')
+    tickEngineToRest(engine)
+
+    expect(state.turn).toBe(startingTurn + 1)
+    expect(seams.forwardedActions).toEqual([
+      { type: 'buy', weapon: 'nuke' },
+      { type: 'select_weapon', weapon: 'nuke' },
+      { type: 'set_angle', angle: 120 },
+      { type: 'set_power', power: 70 },
+      { type: 'fire' },
+    ])
+    expect(seams.flashMessages).toEqual([])
+    vi.useRealTimers()
+  })
+
+  it('uses the engine full-tier default for a real omitted-arms CPU restock and turn — AC-067', async () => {
+    seams.useActualAiPlan = true
+    const { client, engine, state, bot } = await realDefaultArmsBotFixture()
+    const startingTurn = state.turn
+    const forwarded: PlayerAction[] = []
+    const sendAction = client.sendAction.bind(client)
+    vi.spyOn(client, 'sendAction').mockImplementation((action) => {
+      forwarded.push(action)
+      sendAction(action)
+    })
+    seams.clients.push(client as unknown as Record<string, unknown>)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+
+    vi.useFakeTimers()
+    await seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [{ name: 'Ranger' }, { name: 'CPU 1', ai: 'hard' }],
+      settings: { seed: 0x5eed1234 },
+    })
+    await vi.advanceTimersByTimeAsync(600)
+    expect(bot.inventory.nuke.count).toBe(1)
+    await vi.advanceTimersByTimeAsync(550)
+    expect(state.phase).toBe('FIRING')
+    client.stop()
+    tickEngineToRest(engine)
+
+    expect(state.turn).toBe(startingTurn + 1)
+    expect(forwarded).toEqual([
+      { type: 'buy', weapon: 'nuke' },
+      { type: 'select_weapon', weapon: 'nuke' },
+      expect.objectContaining({ type: 'set_angle' }),
+      expect.objectContaining({ type: 'set_power' }),
+      { type: 'fire' },
+    ])
+  })
+
+  it('does not run a prepared local attack after in-place state mutation reaches a later turn for the same CPU seat — AC-068', async () => {
+    const { client, state } = await localBotPreparationFixture({ restockSucceeds: true })
+    seams.aiPlan = { weapon: 'nuke', buy: 'nuke', angle: 120, power: 70 }
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [{ name: 'Ranger' }, { name: 'CPU 1', ai: 'hard' }],
+      settings: { seed: 0x5eed1234, armsLevel: 1 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    vi.useFakeTimers()
+    client.emit(state)
+    vi.advanceTimersByTime(600)
+    state.turn += 2
+    vi.advanceTimersByTime(550)
+
+    expect(seams.forwardedActions.some((action) => action.type === 'fire')).toBe(false)
+    expect(seams.flashMessages).toEqual([])
+    vi.useRealTimers()
+  })
+
+  it('rechecks prepared ammo immediately before the local attack timer fires — AC-068', async () => {
+    const { client, state, bot } = await localBotPreparationFixture({ restockSucceeds: true })
+    seams.aiPlan = { weapon: 'nuke', buy: 'nuke', angle: 120, power: 70 }
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [{ name: 'Ranger' }, { name: 'CPU 1', ai: 'hard' }],
+      settings: { seed: 0x5eed1234, armsLevel: 1 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    vi.useFakeTimers()
+    client.emit(state)
+    vi.advanceTimersByTime(600)
+    bot.inventory.nuke.count = 0
+    vi.advanceTimersByTime(550)
+
+    expect(state.phase).toBe('PLAYER_TURN')
+    expect(seams.forwardedActions.some((action) => action.type === 'fire')).toBe(false)
+    expect(seams.flashMessages).toEqual(['CPU has no usable ammunition — reload to continue.'])
+    vi.useRealTimers()
+  })
+
+  it('falls back visibly and advances after local preparation leaves planned ammo unusable — AC-065/068', async () => {
+    const { client, engine, state, bot } = await localBotPreparationFixture({ restockSucceeds: false })
+    const startingTurn = state.turn
+    seams.aiPlan = { weapon: 'nuke', buy: 'nuke', angle: 120, power: 70 }
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [{ name: 'Ranger' }, { name: 'CPU 1', ai: 'hard' }],
+      settings: { seed: 0x5eed1234, armsLevel: 1 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    vi.useFakeTimers()
+    client.emit(state)
+    vi.advanceTimersByTime(600)
+    expect(bot.inventory.nuke.count).toBe(0)
+    vi.advanceTimersByTime(550)
+    expect(state.phase).toBe('FIRING')
+    tickEngineToRest(engine)
+
+    expect(state.turn).toBe(startingTurn + 1)
+    expect(seams.forwardedActions).toEqual([
+      { type: 'buy', weapon: 'nuke' },
+      { type: 'select_weapon', weapon: 'baby_missile' },
+      { type: 'set_angle', angle: 120 },
+      { type: 'set_power', power: 70 },
+      { type: 'fire' },
+    ])
+    expect(seams.flashMessages).toEqual(['CPU restock failed — using Baby Missile.'])
+    vi.useRealTimers()
+  })
+
+  it('stops visibly without attacking when local preparation and fallback ammo are both unusable — AC-068', async () => {
+    const { client, state } = await localBotPreparationFixture({
+      restockSucceeds: false,
+      fallbackUsable: false,
+    })
+    const startingTurn = state.turn
+    seams.aiPlan = { weapon: 'nuke', buy: 'nuke', angle: 120, power: 70 }
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [{ name: 'Ranger' }, { name: 'CPU 1', ai: 'hard' }],
+      settings: { seed: 0x5eed1234, armsLevel: 1 },
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    vi.useFakeTimers()
+    client.emit(state)
+    vi.advanceTimersByTime(1_150)
+
+    expect(state.turn).toBe(startingTurn)
+    expect(state.phase).toBe('PLAYER_TURN')
+    expect(seams.forwardedActions).toEqual([{ type: 'buy', weapon: 'nuke' }])
+    expect(seams.flashMessages).toEqual(['CPU has no usable ammunition — reload to continue.'])
+    vi.useRealTimers()
   })
 
   it('forwards the active client gravity to the aim guide for local, network, and verified entry paths', async () => {

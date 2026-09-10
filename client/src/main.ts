@@ -1,6 +1,7 @@
 import './style.css';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { GRAVITY } from '@shared/engine/Physics';
 import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
@@ -64,6 +65,13 @@ const E2E_HOT_SEAT_SEED = (
   : 1337;
 const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE = E2E_MODE === 'hotseat'
   || E2E_MODE === 'verified-lifecycle';
+
+/** Match GameEngine's room-option normalization before passing the tier to the AI. */
+function normalizeRoomArmsLevel(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(4, Math.max(0, Math.floor(value)))
+    : 4;
+}
 
 interface TerminalPayoffE2EReceipt {
   readonly terminalExplosionCount?: number;
@@ -1076,19 +1084,50 @@ function bootstrap(): void {
       active.id,
       active.ai!,
       gravity,
-      currentConfig?.settings?.armsLevel ?? 0,
+      normalizeRoomArmsLevel(currentConfig?.settings?.armsLevel),
     );
     if (!plan) return; // no target (game effectively over) — nothing to do
 
     clearAiTimers();
+    const plannedRound = state.round;
+    const plannedTurn = state.turn;
+    const plannedTankId = active.id;
+    let attackWeapon: WeaponType | null = null;
+    const weaponIsUsable = (snapshot: GameState, weapon: WeaponType): boolean => {
+      const tank = snapshot.tanks.find((candidate) => candidate.id === plannedTankId);
+      const ammo = tank?.inventory[weapon];
+      return !!ammo && (ammo.unlimited || ammo.count > 0);
+    };
+    const currentBotTurn = (): GameState | null => {
+      const current = matchSession.client?.getState() ?? null;
+      return current?.phase === 'PLAYER_TURN'
+        && current.round === plannedRound
+        && current.turn === plannedTurn
+        && current.activePlayerId === plannedTankId
+        ? current
+        : null;
+    };
     // Swing the barrel to the planned aim first (visible), then fire after a beat.
-    // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first — the
-    // HotSeatClient applies it synchronously, so the select_weapon + fire below use
-    // the just-restocked ammo. (aiActedKey already gates this to once per turn.)
+    // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first. The
+    // HotSeatClient applies it synchronously, so inspect the resulting inventory
+    // before arming the later fire timer. One ineffective preparation falls back to
+    // the always-legal Baby Missile; corrupt inventory stops visibly and stays bounded.
     matchSession.schedule(() => {
+      if (!currentBotTurn()) return;
       if (plan.buy) matchSession.client?.sendAction({ type: 'buy', weapon: plan.buy });
       if (plan.buyAccessory) matchSession.client?.sendAction({ type: 'buy', accessory: plan.buyAccessory });
-      matchSession.client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
+      const prepared = currentBotTurn();
+      if (!prepared) return;
+      if (weaponIsUsable(prepared, plan.weapon)) {
+        attackWeapon = plan.weapon;
+      } else if (weaponIsUsable(prepared, 'baby_missile')) {
+        attackWeapon = 'baby_missile';
+        hud.flashMessage('CPU restock failed — using Baby Missile.');
+      } else {
+        hud.flashMessage('CPU has no usable ammunition — reload to continue.');
+        return;
+      }
+      matchSession.client?.sendAction({ type: 'select_weapon', weapon: attackWeapon });
       matchSession.client?.sendAction({ type: 'set_angle', angle: plan.angle });
       matchSession.client?.sendAction({ type: 'set_power', power: plan.power });
       // The bot's barrel swing happens during the static PLAYER_TURN phase, so force
@@ -1096,7 +1135,14 @@ function bootstrap(): void {
       markDirty();
     }, AI_AIM_DELAY);
     matchSession.schedule(() => {
-      matchSession.client?.sendAction(plan.weapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
+      const prepared = currentBotTurn();
+      if (!prepared || !attackWeapon) return;
+      if (!weaponIsUsable(prepared, attackWeapon)) {
+        attackWeapon = null;
+        hud.flashMessage('CPU has no usable ammunition — reload to continue.');
+        return;
+      }
+      matchSession.client?.sendAction(attackWeapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
     }, AI_AIM_DELAY + AI_FIRE_DELAY);
   }
 

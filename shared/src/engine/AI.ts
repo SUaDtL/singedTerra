@@ -263,7 +263,7 @@ function chooseLoadout(
   const leftSurface = surfaceAt(state.terrain, me.x - 24);
   const rightSurface = surfaceAt(state.terrain, me.x + 24);
   const riskyLedge = Math.abs(leftSurface - rightSurface) >= PARACHUTE_SLOPE_RISK;
-  const weaponBuy = difficulty === 'hard' ? chooseBuy(me, target, personality) : null;
+  const weaponBuy = difficulty === 'hard' ? chooseBuy(me, target, armsLevel, personality) : null;
   const weaponBuyCost = weaponBuy ? getWeapon(weaponBuy).price : 0;
   const buyAccessory = difficulty === 'hard'
     && parachuteCount === 0
@@ -317,13 +317,19 @@ const AREA_DENIAL_ORDER: readonly WeaponType[] = [
  * the buy and the fire land as two ordered log entries with no extra coordination.
  * Pure function of state => deterministic.
  */
-function chooseBuy(me: TankState, target: TankState, personality: AiPersonality): WeaponType | null {
+function chooseBuy(
+  me: TankState,
+  target: TankState,
+  armsLevel: number,
+  personality: AiPersonality,
+): WeaponType | null {
   const candidates = (Object.keys(AI_EFFECTIVE_DAMAGE) as WeaponType[])
     .filter((w) => {
       const slot = me.inventory[w];
       if (slot.unlimited || slot.count > 0) return false; // only restock what we lack
       const def = getWeapon(w);
       return def.implemented
+        && def.armsLevel <= armsLevel                // legal in this room's store
         && def.price <= me.credits                  // affordable now
         && AI_EFFECTIVE_DAMAGE[w]! >= target.health; // and finishes the target
     })
