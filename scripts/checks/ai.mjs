@@ -10,7 +10,8 @@
 //      resolves (no stalemate / infinite lobbing).
 //   3. DIFFICULTY ORDERING: across many maps, 'hard' deals MORE mean damage with
 //      its opening shot than 'easy' (finer search + far smaller aim error).
-//   4. EDGE CASES: a dead tank or a tank with no living enemy yields null (no shot).
+//   4. EDGE CASES: dead tanks, FFA team metadata, and equal-distance targets keep
+//      the planner's established deterministic behavior.
 //
 // Deterministic: no Math.random, no Date. Imports shared TS directly.
 // Run: npx tsx scripts/checks/ai.mjs
@@ -29,6 +30,27 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 
 function engine(seed, options = {}) {
   return new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed, ...options });
+}
+function fourSeatEngine(seed = 0x5eed1234) {
+  return new GameEngine({
+    players: [
+      { name: 'P1', color: '#e84d4d' },
+      { name: 'P2', color: '#4d8ce8' },
+      { name: 'P3', color: '#4de87a' },
+      { name: 'P4', color: '#e8c84d' },
+    ],
+    maxPlayers: 4,
+    seed,
+  });
+}
+function prepareTargetingState(st) {
+  const [me, first, second, unused] = st.tanks;
+  Object.assign(me, { x: 400, y: 300 });
+  Object.assign(first, { x: 300, y: 300, health: 12 });
+  Object.assign(second, { x: 700, y: 300, health: 100 });
+  Object.assign(unused, { x: 780, y: 300, health: 0, alive: false });
+  me.inventory.nuke.count = 1;
+  return { me, first, second };
 }
 function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 function humanOpening(e) {
@@ -186,6 +208,47 @@ function playGame(seed, difficulty, turnCap = 120) {
   if (computeAiPlan(st, 'p2', 'hard') !== null) fail('a dead tank should not produce a plan');
   if (computeAiPlan(st, 'nope', 'hard') !== null) fail('an unknown tank id should return null');
   if (!failed) log('PASS: edge cases (dead self / no enemy / unknown id) return null.');
+}
+
+// --- Check 4b (R22 / AC-070): no-team and malformed team values remain FFA.
+//     Equal-distance targets retain the existing first-in-roster tie break, and a
+//     closer dead tank remains ineligible. Target choice is observed through the
+//     real planner's health-scaled weapon selection; no internal helper is exposed. ---
+{
+  for (const teamValue of [null, undefined, 3, 'invalid']) {
+    const st = fourSeatEngine().getState();
+    const { me, first } = prepareTargetingState(st);
+    me.team = teamValue;
+    first.team = teamValue;
+    const plan = computeAiPlan(st, me.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+    const repeat = computeAiPlan(st, me.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+    if (plan?.weapon !== 'baby_missile') {
+      fail(`FFA team=${String(teamValue)} should target the nearer 12hp tank, got ${plan?.weapon}`);
+    }
+    if (JSON.stringify(plan) !== JSON.stringify(repeat)) {
+      fail(`FFA team=${String(teamValue)} target selection is not deterministic`);
+    }
+  }
+
+  const tied = fourSeatEngine().getState();
+  const { me: tieShooter, first: firstTied, second: secondTied } = prepareTargetingState(tied);
+  secondTied.x = 500;
+  const tiePlan = computeAiPlan(tied, tieShooter.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+  if (tiePlan?.weapon !== 'baby_missile') {
+    fail(`equal-distance tie should retain the first roster target (${firstTied.id}), got ${tiePlan?.weapon}`);
+  }
+
+  const deadNearest = fourSeatEngine().getState();
+  const { me: survivor, first: dead, second: living } = prepareTargetingState(deadNearest);
+  dead.alive = false;
+  dead.health = 0;
+  living.x = 700;
+  const livingPlan = computeAiPlan(deadNearest, survivor.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+  if (livingPlan?.weapon !== 'nuke') {
+    fail(`dead nearest tank should be skipped for the living 100hp target, got ${livingPlan?.weapon}`);
+  }
+
+  if (!failed) log('PASS: FFA metadata, equal-distance ties, and dead-target handling remain deterministic.');
 }
 
 // --- Check 5: a hurt hard bot with a shield raises it; a healthy one does not ---

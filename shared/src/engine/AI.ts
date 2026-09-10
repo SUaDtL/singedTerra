@@ -21,6 +21,7 @@
  */
 
 import type { GameState, TankState, AiDifficulty, AiPersonality } from '../types/GameState';
+import { normalizeTeamId } from '../types/GameOptions';
 import { GRAVITY } from './Physics';
 import { TANK_HEIGHT } from './Tank';
 import { searchShot, simulateImpact } from './AiShotSearch';
@@ -171,14 +172,16 @@ function recoverableEasyOpeningAim(
   return safest?.aim ?? { angle, power };
 }
 
-/** Nearest living enemy tank (Euclidean, body-center), or null. */
+/** Nearest living non-allied tank (Euclidean, body-center), or null. */
 function nearestEnemy(state: GameState, me: TankState): TankState | null {
   let best: TankState | null = null;
   let bestD = Infinity;
   const mx = me.x;
   const my = me.y - TANK_HEIGHT / 2;
+  const myTeam = normalizeTeamId(me.team);
   for (const t of state.tanks) {
     if (t.id === me.id || !t.alive) continue;
+    if (myTeam !== undefined && normalizeTeamId(t.team) === myTeam) continue;
     const d = Math.hypot(t.x - mx, t.y - TANK_HEIGHT / 2 - my);
     if (d < bestD) { bestD = d; best = t; }
   }
