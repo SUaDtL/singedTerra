@@ -22,6 +22,7 @@ const seams = vi.hoisted(() => ({
   inputAction: null as null | ((action: Record<string, unknown>) => void),
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
   rendererPrimedStates: [] as GameState[],
+  aimGuideUpdates: [] as Array<{ visible: boolean; gravity: number | undefined }>,
   rendererConstructed: 0,
   setupFailureStage: null as null | 'renderer' | 'renderer-events' | 'input-attach' | 'subscription' | 'start',
   setupFailure: null as Error | null,
@@ -111,7 +112,10 @@ vi.mock('./client/NetworkClient', () => ({
 vi.mock('./lib/supabase', () => ({ supabase: {} }))
 vi.mock('./renderer/selectClientBattlefield', () => ({ selectClientBattlefieldWorld: () => undefined }))
 vi.mock('./renderer/aimGuidePresentation', () => ({
-  resolveAimGuidePresentation: () => ({ visible: true, gravity: 0.15 }),
+  resolveAimGuidePresentation: (
+    _ownership: unknown,
+    gravity: unknown,
+  ) => ({ visible: true, gravity }),
 }))
 vi.mock('./input/inputGate', () => ({
   resolveActivePlayerOwnership: () => true,
@@ -147,7 +151,9 @@ vi.mock('./renderer/Renderer', () => ({
     currentImpactLearningCue() { return seams.rendererImpactCue }
     render() {}
     reset() { seams.rendererResets += 1 }
-    setAimGuide() {}
+    setAimGuide(visible: boolean, gravity?: number) {
+      seams.aimGuideUpdates.push({ visible, gravity })
+    }
     setEvents(events: { onExplosion?: (radius: number, impact: unknown) => void }) {
       if (seams.setupFailureStage === 'renderer-events') {
         seams.setupFailureBeforeThrow?.()
@@ -479,14 +485,14 @@ function fakeVerifiedController(state: GameState, damageOnHumanSalvo?: number) {
   return controller
 }
 
-function fakeClient(initial: GameState) {
+function fakeClient(initial: GameState, gravity = 0.15) {
   let listener: ((state: GameState) => void) | null = null
   let rematchListener: ((info: RematchInfo) => void) | null = null
   return {
     controller: null as null | { applyHumanAction?: (action: Record<string, unknown>) => boolean },
     emit(state: GameState) { listener?.(state) },
     emitRematch(info: RematchInfo) { rematchListener?.(info) },
-    getEffectiveGravity: () => 0.15,
+    getEffectiveGravity: vi.fn(() => gravity),
     getState: () => initial,
     isFiring: false,
     initialize: async () => undefined,
@@ -539,6 +545,7 @@ describe('production hot-seat progression composition', () => {
     seams.inputAction = null
     seams.rendererEvents = null
     seams.rendererPrimedStates.length = 0
+    seams.aimGuideUpdates.length = 0
     seams.rendererConstructed = 0
     seams.setupFailureStage = null
     seams.setupFailure = null
@@ -587,6 +594,54 @@ describe('production hot-seat progression composition', () => {
     clearSession()
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('forwards the active client gravity to the aim guide for local, network, and verified entry paths', async () => {
+    const stateAtD09Boundary = liveVerifiedState()
+    Object.assign(stateAtD09Boundary, { round: 2, turn: 6 })
+    const local = fakeClient(stateAtD09Boundary, 0.15)
+    const network = fakeClient(stateAtD09Boundary, 0.15)
+    const verifiedState = liveVerifiedState()
+    const verified = fakeClient(verifiedState, 0.15)
+    const controller = fakeVerifiedController(verifiedState)
+    seams.clients.push(local, network)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+
+    seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 42, gravity: 0.15, rounds: 3, suddenDeathTurn: 2 },
+    })
+    await vi.waitFor(() => expect(local.start).toHaveBeenCalledOnce())
+    local.emit(stateAtD09Boundary)
+    expect(local.getEffectiveGravity).toHaveBeenCalled()
+    expect(seams.aimGuideUpdates.at(-1)).toEqual({ visible: true, gravity: 0.15 })
+
+    seams.onLobbyReady({
+      mode: 'network',
+      roomId: 'gravity-room',
+      playerId: 'p1',
+      players: [],
+      playerNames: [],
+      settings: { seed: 42, gravity: 0.15, rounds: 3, suddenDeathTurn: 2 },
+    })
+    await vi.waitFor(() => expect(network.start).toHaveBeenCalledOnce())
+    network.emit(stateAtD09Boundary)
+    expect(network.getEffectiveGravity).toHaveBeenCalled()
+    expect(seams.aimGuideUpdates.at(-1)).toEqual({ visible: true, gravity: 0.15 })
+
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(verified)
+    seams.verifiedDeployment = {
+      status: 'active', descriptor: verifiedDescriptor, transcript: [],
+      deadline: { remainingMs: 120_000, warning: 'five-minutes', acceptsInput: true, canComplete: true },
+    }
+    seams.onLobbyReady(verifiedConfig())
+    await vi.waitFor(() => expect(verified.start).toHaveBeenCalledOnce())
+    verified.emit(verifiedState)
+    expect(verified.getEffectiveGravity).toHaveBeenCalled()
+    expect(seams.aimGuideUpdates.at(-1)).toEqual({ visible: true, gravity: 0.15 })
   })
 
   it('stops an unadopted network candidate when initialization rejects after acquiring a resource', async () => {

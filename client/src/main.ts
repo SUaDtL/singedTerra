@@ -945,11 +945,7 @@ function bootstrap(): void {
               state.activePlayerId,
             ),
             activeIsAi: !!activeTank?.ai,
-          }, {
-            baseGravity: config.settings?.gravity ?? GRAVITY,
-            turn: state.turn,
-            suddenDeathTurn: config.settings?.suddenDeathTurn ?? 0,
-          });
+          }, newClient.getEffectiveGravity());
           activeIsLocal = aimGuide.visible;
           newInput.setDirectAimEnabled(directAimAllowed());
           gameRenderer.setAimGuide(aimGuide.visible, aimGuide.gravity);
