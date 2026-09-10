@@ -15,10 +15,11 @@ import { defineConfig, devices } from '@playwright/test';
  *     via `vite preview`, then run the layout specs against it across the viewport
  *     matrix. Dev-mode CSS can differ from prod, so we deliberately test the built
  *     artifact.
- *   - Live smoke (E2E_LIVE_URL set): point baseURL at the deployed site and run
- *     ONLY the @live-tagged subset (post-deploy guard, no local server).
+ *   - External artifact (E2E_LIVE_URL set): point baseURL at an already-served
+ *     candidate or deployed site, with no build or local webServer.
  */
 const liveURL = process.env['E2E_LIVE_URL'];
+const denyExternalNetwork = process.env['E2E_DENY_EXTERNAL_NETWORK'] === '1';
 const PORT = 4173;
 const requestedBase = process.env['VITE_BASE'] ?? '/';
 const trimmedBase = requestedBase.replace(/^\/+|\/+$/g, '');
@@ -37,6 +38,13 @@ export default defineConfig({
   use: {
     baseURL: liveURL ?? localBaseURL,
     trace: 'on-first-retry',
+    // Candidate verification serves the release payload on loopback while its
+    // compiled public Supabase origin remains real. Unmocked traffic must fail
+    // closed instead of reaching that backend; Playwright route fixtures still
+    // fulfill their matching requests before the proxy is consulted.
+    proxy: denyExternalNetwork
+      ? { server: 'http://127.0.0.1:9', bypass: '127.0.0.1,localhost' }
+      : undefined,
   },
 
   // Local runs skip the @live smoke (it targets the deployed URL); the live smoke

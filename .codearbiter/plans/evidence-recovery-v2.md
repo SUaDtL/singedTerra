@@ -9,7 +9,7 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R01 | AC-004, AC-005, AC-006 | R00 | gpt-6-astra / high | gpt-6-astra / high | ACCEPTED |
 | R02 | AC-007, AC-008, AC-009 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R03 | AC-010, AC-011, AC-012 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | IN_PROGRESS |
-| R04 | AC-013, AC-014, AC-015, AC-016 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | IN_REVIEW |
+| R04 | AC-013, AC-014, AC-015, AC-016 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | LOCAL_VERIFIED |
 | R05 | AC-017, AC-018, AC-019 | R04 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
 | R06 | AC-020, AC-021, AC-022, AC-023, AC-024 | R00, R01, R13 | gpt-5.6-sol / xhigh | gpt-6-astra / high | ACCEPTED |
 | R07 | AC-025, AC-026, AC-027, AC-028 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
@@ -29,9 +29,13 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R25 | AC-079, AC-080, AC-081, AC-082 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R20 | AC-083, AC-084, AC-085, AC-086 | R00, R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R12, R13, R14, R15, R16, R19, R21, R22, R23, R24, R25 | gpt-6-astra / high | gpt-5.6-sol / high | PENDING |
 
-## Current ownership, 2026-09-10 01:59 local
+## Current ownership, 2026-09-10 02:09 local
 
 Parent Astra/high owns integration and records; R03 Sol/high owns only its restored console/test/receipt lease. R04 and R06 corrected reviews are complete. No other writer is active. The historical entries below retain prior outcomes; this status table and current section supersede their old ownership statements.
+
+- R06 governed commit430a715c17ffda15f5885ff2df9391d3d93c95a4 succeeded, immediate status clean. Genuine reviewed security and migration gate records were created by the plugin helpers; no override or production schema application. R04 then integrated13 byte-equal files atop that commit: fresh18/18 helpers, fullcheck68702, build/typecheck and strict artifact/metadata CLI checks all exit0. R04 is LOCAL_VERIFIED; corrected independent review PASS, while hosted transport/configuration/promotion remain required external evidence. Governed R04 commit next.
+- New read-only preparation: R07 /root/r07_preparation session01a089e5-8b1b-7ca1-a32c-d745ad6deee8 verified Sol/high, isolated worktree recovery-v2-r07 at430a715; R15 /root/r15_preparation session01a089e8-c382-7943-9396-d6f4ab7c28b5 verified Terra/high. Neither owns source, receipt or artifact writes. R07 implementation waits for the second writer lease; R15 must preserve the exact-candidate workflow while preparing ordinary-entry browser evidence.
+- R03 targeted RED2fail/2profile-skip and GREEN2pass/2profile-skip are terminal. Parent GREEN build0 and HTTP byte comparisons bind the unchanged sole PID61264/exec43293 to indexSHA744d7c7fc7fcdbe25ac116d83ea084b1d44194a30ab65a3ce84a9c377a63e18a and entrySHA80db0f47c9bbc9d5c89e05358a0d2596f512cdeecd3945dbd1b45e83516fc3f2. Full product matrix76402 was confirmed running with110 cases; do not rewrite served bytes until terminal. Exact expectation records remain unchanged; fresh review still required.
 
 - R22: AC069–071 locally accepted after fresh reviewer 01a089d3-5021-7ab1-a453-4141dd9a1c86, separate triage and aggregate PASS, zero findings across all three matched units. Independent teams/AI and 144-pair actual-planner metadata matrix passed. Parent verified all three source files byte-identical to the frozen author diff, integrated atop ef137055, and ran full check (92032), client (1985: 200 files, 1817 tests), build/typecheck, configured secrets scan (empty), and whitespace checks, all exit0. Logs: C:/Users/brenn/AppData/Local/Temp/recovery-v2-r22-integrated-{check,test-client,build}.log. Governed commit next; multiplayer promotion remains R06/R07/R19-gated.
 - R04: original Sol/high froze its correction after regression RED11/4 then GREEN18/18. Parent independently confirmed18/18 and exact raw metadata SHA256 09c1156f823396da6b85ca061e50680725f69e0c4a23256cb459453ef1cca133. Fresh reviewer /root/r04_corrected_review session01a089da-1b1b-7070-a7a1-4e8cf7927b32 is verified Astra/high; full corrected CI-attempt, metadata-binding and rollback graph review is pending. Existing browser proof remains local, not hosted.

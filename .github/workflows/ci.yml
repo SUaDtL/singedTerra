@@ -54,6 +54,8 @@ jobs:
           node scripts/checks/migration_classification.mjs --check history --base "$base" --head "$head"
       - name: Migration-history disposable Git regressions
         run: node --test scripts/checks/migration_classification.test.mjs
+      - name: Release-candidate policy and digest regressions
+        run: node --test scripts/ci/releaseCandidate.test.mjs scripts/ci/releaseWorkflow.test.mjs
       - run: npm ci
       - name: Audit runtime and build dependencies
         run: npm run audit:deps
