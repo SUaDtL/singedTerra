@@ -1,8 +1,45 @@
 # Architecture
 
-singedTerra has one deterministic game engine and two execution contexts. The
-browser owns rendering and input in both modes. Supabase coordinates online
-rooms but never runs a continuous physics loop.
+singedTerra has one deterministic game engine, two live execution contexts, and
+one bounded verification-only context. The browser owns rendering and input.
+Supabase coordinates online rooms and separately verifies eligible completed
+transcripts; it never runs a continuous live physics loop.
+
+## Current scope and sources
+
+The [approved recovery scope](../.codearbiter/specs/evidence-recovery-v2.md)
+defines the current corrections. The parent-owned
+[execution ledger](../.codearbiter/plans/evidence-recovery-v2.md) is their sole
+status source. A listed acceptance criterion is not an implemented fix.
+
+| Question | Source |
+| --- | --- |
+| What may change now, and what evidence is required? | Approved scope and execution ledger above; the assigned task's exact write paths. |
+| Which architectural decisions endure? | Accepted artifacts under `.codearbiter/decisions/`, including their explicit supersession boundaries; current coding and security contracts. |
+| Who owns existing behavior? | The owner map below and its implementation files. Source and executable tests establish current behavior, including defects. |
+| What was delivered previously? | [Software recovery delivery record](SOFTWARE_RECOVERY.md), with its recorded revisions and evidence limits. Older plans, decision-log entries, audit inputs, and build histories retain their historical meaning. |
+| What commands and runtime contracts execute? | Current manifests, workflows, shared replay contracts, Edge handlers, and migrations. R19 owns the approved runtime/operations documentation reconciliation. |
+
+This map replaces conflicting descriptive guidance only for the authorized
+recovery. It does not amend accepted ADRs, reinterpret verified results, edit
+applied migrations, or create another backlog. Preserve historical replay and
+immutable receipt compatibility. Changes to those enduring contracts require
+their applicable decision and compatibility evidence.
+
+## Existing owners
+
+| Owner | Responsibility retained during recovery |
+| --- | --- |
+| `client/src/client/GameSessionComposition.ts` | Ordered client acquisition, presentation/input construction, subscription wiring, and start sequencing through explicit ports. |
+| `client/src/client/MatchSessionLifecycle.ts` | The match resource ledger and generation invalidation: client, input, renderer, subscriptions, timers, retirement, and rollback. |
+| `client/src/client/LobbyRoomController.ts` and `LobbySession.ts` | The controller owns admission, recovery, leave, and cancellation workflows; `LobbySession` owns waiting subscriptions and their handles. |
+| `client/src/ui/TerminalMatchView.ts` and `HUD.ts` | The view owns terminal DOM, listeners, focus, and presentation intents; HUD retains domain callback wiring. |
+| `client/src/ui/battleConsole/` | One Preact semantic tree renders typed presentation state and emits typed intents, including its portals and focus lifecycle. Canvas owns the gameplay world; Pixi owns only optional decoration. |
+| `shared/src/engine/`, `shared/src/net/replay.ts`, and the existing clients | The shared engine determines simulation outcomes; replay translates ordered actions. `HotSeatClient` and `NetworkClient` own their execution and transport paths behind `GameClient`. |
+
+Retain these boundaries while fixing their assigned defects. This recovery has
+no compulsory file-size or module-count targets and does not require another
+coordinator, engine, or presentation framework.
 
 ```mermaid
 flowchart LR
@@ -84,7 +121,9 @@ shared/                 (imports from neither client nor Supabase)
 - `client/` contains renderers, input, UI, audio, hot-seat orchestration, and
   online transport.
 - `supabase/functions/` runs in Deno and validates request and database
-  contracts. It does not import or execute the shared physics engine.
+  contracts. Ordinary referees do not execute physics. ADR-0013 permits only
+  bounded verification-only replay through `_shared/verifiedMatchReplay.ts`
+  into the shared engine, outside the live turn path.
 
 ## Determinism contract
 
@@ -149,7 +188,8 @@ ordering; the engine determines physical results.
 
 ## Trust boundary
 
-Online play uses ephemeral room identities rather than end-user accounts.
+Casual online gameplay uses per-seat credentials. Optional account identity is
+separate from seat authorization and does not make a casual result verified.
 
 - The Supabase anon key is public and shipped with the client.
 - Row-Level Security denies direct anonymous mutations.
@@ -162,8 +202,22 @@ reporting path.
 
 ## Rendering and UI
 
-The battlefield is Canvas 2D at 1200×600 logical pixels. HTML and CSS own the
-HUD, lobby, store, menus, and accessibility surface.
+The battlefield is Canvas 2D at 1200×600 logical pixels. ADR-0018 gives the
+in-scope battle console one Preact semantic tree, including portaled settings
+and first-salvo coach content. Typed presentation state and intents separate
+domain behavior from rendering. Lazy, non-interactive Pixi draws console
+decoration beneath the semantic tree; both consume one typed responsive layout
+projection. HTML remains the accessibility and input surface. Lobby and account
+routes retain their clean-load boundary.
+
+ADR-0018 supersedes ADR-0017 only for imperative node/callback ownership and
+the component-by-component migration assumption. Canvas world authority,
+visual-only Pixi, deterministic asset tooling, lazy battle entry, accessibility,
+and static hosting remain. The ADR-0018 artifact has an accepted header; the
+older decision-log entry still describes a pending direct approval receipt.
+That historical receipt has not been located in this recovery. Its provenance
+is unknown; this documentation neither invents approval evidence nor changes
+the accepted artifact. Any actual decision conflict goes to the owner.
 
 The composition is a fitted stage:
 

@@ -2,7 +2,17 @@
 
 Requested by Brenn on 2026-09-08. This record describes the bounded software-recovery program. It is not a claim that all repository debt is closed.
 
-## Current delivery state
+## Current recovery entry
+
+Current correction scope and acceptance criteria are in the
+[evidence-backed recovery v2 spec](../.codearbiter/specs/evidence-recovery-v2.md),
+with status maintained only in its
+[parent-owned execution ledger](../.codearbiter/plans/evidence-recovery-v2.md).
+The [architecture owner map](ARCHITECTURE.md#existing-owners) describes the
+existing boundaries to retain. The packages below remain delivered as recorded;
+new defect reproductions do not undo that delivery or prove their correction.
+
+## Historical delivery checkpoint
 
 Runtime delivery checkpoint: published `87283aca03954569e3e6e5a1d1b9c1cc345d95d7` through PR473 on 2026-09-09. Pages run `34327066205`, public deployment metadata, and hosted smoke matched that revision; the smoke passed 1 check in 3.0 seconds.
 
@@ -13,7 +23,13 @@ Runtime delivery checkpoint: published `87283aca03954569e3e6e5a1d1b9c1cc345d95d7
 | C. Terminal match presentation | Delivered | PR456, PR464, and PR471; semantic view, browser geometry and focus tests, cap and natural terminal recovery proof. |
 | D. Mode configuration and composition | Delivered | PR467 and PR473 are published. PR473 Pages run `34327066205`, its public metadata, hosted smoke, final preview, and normal-casual smoke match `87283aca03954569e3e6e5a1d1b9c1cc345d95d7`. |
 
-The reusable goal and binding requirements remain in [SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md](SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md). That plan is the source for future resumption and operational limits.
+The reusable goal and package requirements in
+[SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md](SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md)
+belong to the prior four-package program. Preserve its delivery evidence and
+enduring compatibility requirements, including historical verified replay and
+immutable receipts. Its old resume instructions are superseded for the current
+recovery by the scope and ledger above, because they target already-delivered
+packages and a different dispatch plan. They confer no new operational authority.
 
 ## Delivered scope
 

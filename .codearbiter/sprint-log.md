@@ -4335,3 +4335,16 @@ Userrejected maskedgaugecloseup; wholeconsoleacceptance notgranted. Completegaug
 2026-09-07 | Final fit and player clearance | Hamburger restored; MATCH proportional nameplate fit; wind window contour clipped and arrow lowered; persistent Match moved outside canvas or collapsed when no gutter fits. Client1628/1628, asset2/2, browser22passed/8skips, typecheck/build pass. Existing preview refreshed. User visual acceptance pending.
 
 2026-09-07 | Drawer header controls | Matching inset menu/close SVG icons, transparent44px targets, preserved focus. Browser RED/GREEN9pass1skip; menu13/13; build/typecheck pass; preview refreshed, visual acceptance pending.
+
+## 2026-09-09 Evidence recovery v2 authorization · confidence: high · intent: per active user goal
+- SMARTS Step 0 answered: execute the approved R20 prerequisite closure with exact assigned models, independent review and isolated worktrees. No new scope approval is inferred.
+- Scope: 23 records comprising R00-R10, R12-R16 and R19-R25. Optional R11/R17/R18 and P-series remain excluded.
+- Integration branch codex/evidence-recovery-v2 starts at fetched audit SHA 3902cad662aea03cec913d984d17aa9573b89bd0. Original dirty checkout and all prior worktrees remain preserved.
+- Explicit operation boundaries and all acceptance criteria are recorded in the matching evidence-recovery-v2 spec and canonical plan ledger. A local green cannot stand for remote policy or production proof.
+- R25 necessarily includes HUD.ts as the existing power-state producer. This resolves task paths without adding an owner or changing the approved outcome.
+- Audit append rejection diagnosed: H-05 interpreter regex matches interpreter names inside quoted prose. This plain tail append preserves all prior bytes and takes no override.
+
+## 2026-09-09 R24 fixture premise correction · confidence: high · intent: per approved verified compatibility constraint
+- Two type failures in the new verified forwarding fixture exposed an invalid multi-round assumption. Parent stopped incremental casts and reexamined the contract.
+- Decision: retain legal D09 engine/client proof in ordinary hot-seat; exercise verified forwarding using the existing supported single-round descriptor. No historical verified configuration or policy change.
+- SMARTS Step 0 answered by approved R24 preservation requirement. Runtime correction remains the same getter forwarding; only the fixture returns to a valid contract.

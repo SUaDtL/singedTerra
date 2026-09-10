@@ -35,15 +35,25 @@ or a general game server (ADR-0013). No `GameState` is ever shipped over the wir
 `coding-standards.md` for the determinism rules and layering; `tech-stack.md` for the
 stack; `security-controls.md` for the backend posture.
 
-**Battle HUD architecture (ADR-0017):** the gameplay world remains Canvas 2D,
-while a lazy-loaded, non-interactive PixiJS layer renders authored battle-HUD
-visuals from one typed layout/socket model. Semantic DOM remains the owner of
-text, focus, accessibility, dialogs, input, and gameplay callbacks. Sharp is a
-development-only deterministic asset compiler. The static Vite/GitHub Pages
-deployment model is unchanged. See
-[`decisions/0017-hybrid-pixi-hud-compositor.md`](decisions/0017-hybrid-pixi-hud-compositor.md)
-and
-[`specs/battle-console-hybrid-compositor.md`](specs/battle-console-hybrid-compositor.md).
+**Battle HUD architecture (ADR-0018, retaining ADR-0017's visual boundary):**
+one Preact semantic tree renders typed `BattleConsolePresentationState` and
+emits `BattleConsoleIntent` values to the controller/domain owner. Preact owns
+text, focus, accessibility, dialogs, input, and portals; DOM nodes do not own
+gameplay callbacks. Canvas 2D remains the gameplay-world renderer. Lazy,
+non-interactive Pixi draws decoration from the same typed layout/socket
+projection. Sharp remains a development-only deterministic asset compiler;
+static Vite/GitHub Pages hosting is unchanged. See
+[`decisions/0018-preact-battle-console-semantic-ownership.md`](decisions/0018-preact-battle-console-semantic-ownership.md)
+for the precise supersession boundary.
+
+**Current recovery:** follow the [approved scope](specs/evidence-recovery-v2.md)
+and [sole execution ledger](plans/evidence-recovery-v2.md). The
+[architecture owner map](../docs/ARCHITECTURE.md#existing-owners) retains
+`GameSessionComposition`, `MatchSessionLifecycle`, the room workflow/subscription
+owners, and existing presentation owners. Older plans and delivery records are
+historical context, not instructions to recreate delivered components. Accepted
+ADR conflicts require the owner; historical approval receipts are not inferred
+from implementation or a green test.
 
 ADR-0001, ADR-0004, ADR-0005, and ADR-0006 have forward supersession chains;
 see

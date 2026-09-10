@@ -27,13 +27,17 @@ Both workspace packages are `private: true`.
   no runtime transitives; importing its all-icons registry is prohibited.
 - Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,
   projectiles, explosions, and world-space effects).
-- **Approved battle-HUD architecture (ADR-0017):** exact `pixi.js@8.20.0` is
+- **Preact** is installed in the client workspace. ADR-0018 gives the in-scope
+  battle console one semantic tree with typed presentation state and intents,
+  portal/focus ownership, and lazy battle entry. It supersedes ADR-0017's
+  imperative node/callback preservation, retaining its visual boundary.
+- **Battle-HUD visual tooling (ADR-0017, retained by ADR-0018):** exact `pixi.js@8.20.0` is
   installed in the client workspace for a lazy-loaded visual compositor, and
   exact `sharp@0.35.3` is installed at the root as a development-only
   deterministic asset compiler. Both passed the 2026-08-21 dependency review,
   signature/attestation verification, high-severity audit, Windows/Node 24
   install check, and production build. Pixi is visual/non-interactive;
-  semantic DOM remains the input, text, focus, and accessibility owner. Sharp
+  Preact semantic DOM remains the input, text, focus, and accessibility owner. Sharp
   and libvips are not shipped in the browser bundle. Static Vite/GitHub Pages
   hosting is unchanged.
 - Root tooling: `concurrently`, `typescript`, `@types/node`.
