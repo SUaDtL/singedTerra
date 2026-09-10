@@ -30,6 +30,13 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, settleStep } from '../../shared/src/engine
 
 const PALETTE = ['#e84d4d', '#4d8ce8'];
 const MAX_TICKS = 100_000;
+const PATH_B_TARGET_X = 754;
+const PATH_B_OVERHANG_X_START = 765;
+const PATH_B_OVERHANG_X_END = 770;
+const PATH_B_OVERHANG_TOP = 340;
+const pathBNonlethalControl = process.argv.includes('--path-b-nonlethal');
+const pathBDelayedTerminalControl = process.argv.includes('--path-b-delayed-terminal');
+const pathBOmitFlushControl = process.argv.includes('--path-b-omit-flush');
 
 let failed = false;
 const log = (...a) => console.log(...a);
@@ -41,6 +48,67 @@ function freshEngine(seed) {
     maxPlayers: 2,
     seed,
   });
+}
+
+function surfaceYAt(e, x) {
+  const terrain = e.getState().terrain;
+  for (let y = 0; y < CANVAS_HEIGHT; y++) {
+    if (terrain[y * CANVAS_WIDTH + x] !== 0) return y;
+  }
+  throw new Error(`[path-B] fixture prerequisite failed: no terrain surface at x=${x}`);
+}
+
+function configurePathBTarget(e) {
+  const terrain = e.getState().terrain;
+  const target = e.getState().tanks[1];
+  target.x = PATH_B_TARGET_X;
+  target.y = surfaceYAt(e, PATH_B_TARGET_X);
+  target.health = pathBNonlethalControl ? 100 : 1;
+
+  // Construct a settled wall just beyond the target. The incoming shell hits
+  // P2 first; its real blast then cuts an air gap through these columns and
+  // leaves their upper dirt unsupported for Path B to compact.
+  for (let x = PATH_B_OVERHANG_X_START; x <= PATH_B_OVERHANG_X_END; x++) {
+    for (let y = PATH_B_OVERHANG_TOP; y < CANVAS_HEIGHT; y++) {
+      terrain[y * CANVAS_WIDTH + x] = 1;
+    }
+  }
+}
+
+// Mutation control: delay the real resolve() call once. The source branch still
+// flushes and publishes RESOLVING, then the next real tick invokes the original
+// resolve(). A correct Path B oracle must reject that observable one-tick delay.
+function installDelayedTerminalMutation(e) {
+  const resolveImmediately = e.resolve.bind(e);
+  let deferred = false;
+  e.resolve = () => {
+    if (!deferred) {
+      deferred = true;
+      return;
+    }
+    resolveImmediately();
+  };
+}
+
+function observeTerminalFlush(e) {
+  const flushImmediately = e.flushSettleInstant.bind(e);
+  const observation = {
+    calls: 0,
+    pendingCalls: 0,
+    hadUnsettledDirt: false,
+    pendingRange: null,
+  };
+  e.flushSettleInstant = () => {
+    observation.calls++;
+    if (e.pendingSettle !== null) {
+      observation.pendingCalls++;
+      observation.hadUnsettledDirt ||= hasUnsettledDirt(e);
+      observation.pendingRange = { ...e.pendingSettle };
+      if (pathBOmitFlushControl) return;
+    }
+    flushImmediately();
+  };
+  return observation;
 }
 
 // Count solid pixels in the live terrain — a deform (crater) changes this, so it
@@ -123,9 +191,13 @@ function hasUnsettledDirt(e) {
 // terrain fully settled at GAME_OVER, and a winner is decided.
 // ==========================================================================
 {
-  // seed 0x5eed1234, missile angle=20 power=75: deforms terrain AND kills P2(1HP).
+  // This seed/aim detonates at x~=745. Place P2 on the terrain at x=754 so the
+  // real projectile-to-tank collision is both deforming and lethal at 1 HP.
   const e = freshEngine(0x5eed1234);
-  e.getState().tanks[1].health = 1;
+  configurePathBTarget(e);
+  const unsettledBeforeShot = hasUnsettledDirt(e);
+  if (pathBDelayedTerminalControl) installDelayedTerminalMutation(e);
+  const flushObservation = observeTerminalFlush(e);
 
   const solidBefore = solidPixels(e);
 
@@ -142,34 +214,65 @@ function hasUnsettledDirt(e) {
     ticks++;
   }
 
+  const firstPostFiringPhase = e.getState().phase;
+  let resolvingTicks = 0;
+  while (e.getState().phase === 'RESOLVING' && resolvingTicks < MAX_TICKS) {
+    sawResolving = true;
+    e.tick();
+    resolvingTicks++;
+  }
+
   const st = e.getState();
   const deformed = solidBefore !== solidPixels(e);
-  log(`[path-B] phase=${st.phase} P2alive=${st.tanks[1].alive} sawResolving=${sawResolving} terrainDeformed=${deformed} unsettledAtEnd=${hasUnsettledDirt(e)} winner=${st.winner}`);
+  const unsettledAtEnd = hasUnsettledDirt(e);
+  log(`[path-B] firstPostFiringPhase=${firstPostFiringPhase} finalPhase=${st.phase} P2alive=${st.tanks[1].alive} resolvingTicks=${resolvingTicks} terrainDeformed=${deformed} unsettledBeforeShot=${unsettledBeforeShot} flushCalls=${flushObservation.calls} pendingFlushCalls=${flushObservation.pendingCalls} unsettledBeforeFlush=${flushObservation.hadUnsettledDirt} pendingRange=${JSON.stringify(flushObservation.pendingRange)} unsettledAtEnd=${unsettledAtEnd} winner=${st.winner}`);
 
   if (ticks >= MAX_TICKS) {
     fail('[path-B] missile never resolved (possible infinite flight)');
-  } else if (st.tanks[1].alive) {
-    // The shot missed/under-damaged — can't assert the game-ending path. Honest skip.
-    log('[path-B] SKIPPED (could not construct): shot did not kill P2, no game-ending detonation produced');
   } else {
+    let prerequisitesMet = true;
+    if (st.tanks[1].alive) {
+      fail('[path-B] fixture prerequisite failed: shot did not kill P2, so branch B was not exercised');
+      prerequisitesMet = false;
+    }
     if (!deformed) {
-      // Without a deform there is no pendingSettle to flush — the assertion would be vacuous.
-      log('[path-B] note: shot did not deform terrain (no pendingSettle to flush) — still asserting direct GAME_OVER');
+      fail('[path-B] fixture prerequisite failed: shot did not deform terrain, so no pending settle required an instant flush');
+      prerequisitesMet = false;
     }
-    if (st.phase !== 'GAME_OVER') {
-      fail(`[path-B] game-ending shot ended in ${st.phase}, expected GAME_OVER`);
+    if (unsettledBeforeShot) {
+      fail('[path-B] fixture prerequisite failed: constructed terrain was already unsettled before the shot');
+      prerequisitesMet = false;
     }
-    if (sawResolving) {
-      fail('[path-B] #14 broken: game-ending detonation passed through a multi-tick RESOLVING settle instead of an instant flush');
+    if (!st.tanks[1].alive) {
+      if (flushObservation.pendingCalls !== 1) {
+        fail(`[path-B] expected exactly one flush with pending terrain, got ${flushObservation.pendingCalls}`);
+        prerequisitesMet = false;
+      }
+      if (!flushObservation.hadUnsettledDirt) {
+        fail('[path-B] fixture prerequisite failed: deformation created no unsupported dirt for the terminal flush to compact');
+        prerequisitesMet = false;
+      }
     }
-    if (hasUnsettledDirt(e)) {
-      fail('[path-B] terrain left UNSETTLED at GAME_OVER — the game-ending flush was not instant');
+    if (resolvingTicks >= MAX_TICKS) {
+      fail('[path-B] terminal resolution did not complete (possible infinite RESOLVING phase)');
+      prerequisitesMet = false;
     }
-    if (st.winner == null) {
-      fail('[path-B] expected a decided winner at GAME_OVER, got null');
-    }
-    if (!failed) {
-      log(`PASS [path-B]: game-ending detonation went FIRING -> GAME_OVER directly, terrain instant-flushed (settled), winner=${st.winner}.`);
+    if (prerequisitesMet) {
+      if (st.phase !== 'GAME_OVER') {
+        fail(`[path-B] game-ending shot ended in ${st.phase}, expected GAME_OVER`);
+      }
+      if (sawResolving) {
+        fail('[path-B] #14 broken: game-ending detonation passed through a multi-tick RESOLVING settle instead of an instant flush');
+      }
+      if (unsettledAtEnd) {
+        fail('[path-B] terrain left UNSETTLED at GAME_OVER — the game-ending flush was not instant');
+      }
+      if (st.winner == null) {
+        fail('[path-B] expected a decided winner at GAME_OVER, got null');
+      }
+      if (!failed) {
+        log(`PASS [path-B]: game-ending detonation went FIRING -> GAME_OVER directly, terrain instant-flushed (settled), winner=${st.winner}.`);
+      }
     }
   }
 }
