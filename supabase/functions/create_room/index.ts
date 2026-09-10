@@ -22,6 +22,7 @@ import {
   coerceTeamMode,
   coerceTerrainHazards,
 } from './validate.ts'
+import { resolveRequestedCommandVersion } from '../_shared/commandProtocol.ts'
 
 interface CreateRoomDependencies {
   serviceClient?: ReturnType<typeof getServiceClient>
@@ -31,11 +32,12 @@ async function handleCreateRoomWithDependencies(
   body: unknown,
   dependencies: CreateRoomDependencies,
 ): Promise<Response> {
-  const { playerName, color, loadout, rulesetVersion, options, bots } = body as {
+  const { playerName, color, loadout, rulesetVersion, commandProtocolVersion, options, bots } = body as {
     playerName?: unknown
     color?: unknown
     loadout?: unknown
     rulesetVersion?: unknown
+    commandProtocolVersion?: unknown
     options?: {
       maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown; walls?: unknown; battlefieldWorld?: unknown
       // SE-parity economy (optional, additive). Coerced by coerceEconomyOptions.
@@ -90,6 +92,10 @@ async function handleCreateRoomWithDependencies(
   const requestedRuleset = resolveCreatableRulesetVersion(rulesetVersion)
   if (!requestedRuleset.ok) {
     return json({ error: 'Invalid input: rulesetVersion' }, 400)
+  }
+  const requestedCommandProtocol = resolveRequestedCommandVersion(commandProtocolVersion)
+  if (!requestedCommandProtocol.ok) {
+    return json({ error: 'Invalid input: commandProtocolVersion' }, 400)
   }
   const requestedHazards = coerceTerrainHazards(options.hazards)
   if (requestedHazards !== undefined && requestedRuleset.version !== 3 && requestedRuleset.version !== 4) {
@@ -201,6 +207,7 @@ async function handleCreateRoomWithDependencies(
     maxWind: coerceMaxWind(options.maxWind, DEFAULT_MAX_WIND),
     gravity: coerceGravity(options.gravity, DEFAULT_GRAVITY),
     rulesetVersion: requestedRuleset.version,
+    commandProtocolVersion: requestedCommandProtocol.version,
     walls: coerceWallMode(options.walls),
     visibility,
     ...(coerceBattlefieldWorld(options.battlefieldWorld) !== undefined

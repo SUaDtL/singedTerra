@@ -14,6 +14,11 @@ import {
   type StoredOptions,
   type StoredPlayer,
 } from '../_shared/mod.ts'
+import {
+  commandVersionCompatibility,
+  resolveRequestedCommandVersion,
+  resolveStoredCommandVersion,
+} from '../_shared/commandProtocol.ts'
 
 /**
  * Pure post-reap join eligibility: capacity, then color, then name conflict (name
@@ -47,12 +52,13 @@ async function handleJoinRoomWithDependencies(
   body: unknown,
   dependencies: JoinRoomDependencies,
 ): Promise<Response> {
-  const { code, playerName, color, loadout, rulesetVersion } = body as {
+  const { code, playerName, color, loadout, rulesetVersion, commandProtocolVersion } = body as {
     code?: unknown
     playerName?: unknown
     color?: unknown
     loadout?: unknown
     rulesetVersion?: unknown
+    commandProtocolVersion?: unknown
   }
 
   // Validate code
@@ -82,6 +88,10 @@ async function handleJoinRoomWithDependencies(
   const requestedRuleset = resolveRequestedRulesetVersion(rulesetVersion)
   if (!requestedRuleset.ok) {
     return json({ error: 'Invalid input: rulesetVersion' }, 400)
+  }
+  const requestedCommandProtocol = resolveRequestedCommandVersion(commandProtocolVersion)
+  if (!requestedCommandProtocol.ok) {
+    return json({ error: 'Invalid input: commandProtocolVersion' }, 400)
   }
 
   const normalizedCode = code.trim().toUpperCase()
@@ -118,6 +128,20 @@ async function handleJoinRoomWithDependencies(
     return json({
       error: compatibility.error,
       requiredRulesetVersion: compatibility.requiredRulesetVersion,
+    }, 409)
+  }
+  const storedCommandProtocol = resolveStoredCommandVersion(roomOptions)
+  if (!storedCommandProtocol.ok) {
+    return json({ error: 'command_protocol_unavailable' }, 409)
+  }
+  const commandCompatibility = commandVersionCompatibility(
+    requestedCommandProtocol.version,
+    storedCommandProtocol.version,
+  )
+  if (!commandCompatibility.ok) {
+    return json({
+      error: 'command_protocol_mismatch',
+      requiredCommandProtocolVersion: commandCompatibility.requiredCommandProtocolVersion,
     }, 409)
   }
 
@@ -193,7 +217,7 @@ async function handleJoinRoomWithDependencies(
     playerId,
     token,
     seed: room.seed,
-    options: roomOptions,
+    options: { ...roomOptions, commandProtocolVersion: storedCommandProtocol.version },
     players: updatedPlayers,
   }, 200)
 }

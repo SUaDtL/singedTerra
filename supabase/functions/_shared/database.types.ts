@@ -15,6 +15,7 @@ export interface StoredOptions {
   maxWind: number;
   gravity: number;
   rulesetVersion?: 1 | 2 | 3 | 4;
+  commandProtocolVersion?: 1 | 2;
   walls?: "open" | "reflective" | "wrap" | "concrete";
   battlefieldWorld?: "ember-dusk" | "obsidian-caldera" | "glassstorm-expanse";
   hazards?: "none" | "lava";
@@ -26,12 +27,13 @@ export interface StoredOptions {
   teamMode?: boolean;
 }
 
-export type StoredAction =
+export type StoredAction = (
   | { type: "fire"; angle: number; power: number; weapon: string }
   | { type: "use_shield" }
   | { type: "buy"; weapon?: string; accessory?: string; tankId?: string }
   | { type: "next_round" }
-  | { type: "move"; delta: number };
+  | { type: "move"; delta: number }
+) & { commandActor?: { role: "engine-seat" | "shop-seat" | "transition-initiator"; tankId: string } };
 
 export interface StoredScoreEntry {
   tankId: string;
@@ -129,6 +131,13 @@ export type Database = {
           seq: number;
           player_id: string;
           action: StoredAction;
+          command_version: number | null;
+          intent_id: string | null;
+          expected_revision: number | null;
+          submitted_by: string | null;
+          command_ends_turn: boolean | null;
+          command_next_index: number | null;
+          command_round_over: boolean | null;
           created_at: string;
         };
         Insert: {
@@ -137,6 +146,13 @@ export type Database = {
           seq: number;
           player_id: string;
           action: StoredAction;
+          command_version?: number | null;
+          intent_id?: string | null;
+          expected_revision?: number | null;
+          submitted_by?: string | null;
+          command_ends_turn?: boolean | null;
+          command_next_index?: number | null;
+          command_round_over?: boolean | null;
           created_at?: string;
         };
         Update: {
@@ -145,6 +161,13 @@ export type Database = {
           seq?: number;
           player_id?: string;
           action?: StoredAction;
+          command_version?: number | null;
+          intent_id?: string | null;
+          expected_revision?: number | null;
+          submitted_by?: string | null;
+          command_ends_turn?: boolean | null;
+          command_next_index?: number | null;
+          command_round_over?: boolean | null;
           created_at?: string;
         };
         Relationships: [
@@ -397,6 +420,22 @@ export type Database = {
           p_next_turn: number;
         };
         Returns: number;
+      };
+      submit_room_command_v2: {
+        Args: {
+          p_room_id: string;
+          p_submitter_id: string;
+          p_token: string;
+          p_command_version: number;
+          p_intent_id: string;
+          p_expected_revision: number;
+          p_actor_id: string;
+          p_action: StoredAction;
+          p_next_index: number | null;
+          p_round_over: boolean;
+          p_ruleset_version: number;
+        };
+        Returns: Record<string, unknown>;
       };
     };
     Enums: {};

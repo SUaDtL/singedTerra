@@ -1,5 +1,11 @@
 import type { GameEngine } from '../engine/GameEngine.ts';
 import type { WeaponType, AccessoryType } from '../engine/WeaponSystem.ts';
+import type { CommandActorBinding } from './roomCommand.ts';
+
+interface ActorBoundNetworkAction {
+  /** Present only on command-protocol-v2 rows; legacy rows remain unbound. */
+  commandActor?: CommandActorBinding;
+}
 
 /**
  * The networked action log contract — the SHARED source of truth.
@@ -23,18 +29,18 @@ import type { WeaponType, AccessoryType } from '../engine/WeaponSystem.ts';
  * Aim-only actions (set_angle/set_power/select_weapon) are NEVER logged — they are
  * local UI state, folded into the `fire` row's committed aim.
  */
-export interface NetworkFireAction {
+export interface NetworkFireAction extends ActorBoundNetworkAction {
   type:   'fire';
   angle:  number;   // degrees, 0 = right, 90 = up
   power:  number;   // 0–100
   weapon: string;   // WeaponType value
 }
-export interface NetworkShieldAction {
+export interface NetworkShieldAction extends ActorBoundNetworkAction {
   type: 'use_shield';
   /** Omitted on legacy rows; defaults to the standard Shield. */
   weapon?: 'shield' | 'heavy_shield';
 }
-export interface NetworkBuyAction {
+export interface NetworkBuyAction extends ActorBoundNetworkAction {
   type:    'buy';
   /** The weapon to buy. Present for a weapon purchase; omitted when `accessory` is set. */
   weapon?: string;
@@ -44,10 +50,10 @@ export interface NetworkBuyAction {
   /** The tank buying. Present only in the ROUND_OVER shop (per-tank shopping); omitted during a normal turn. */
   tankId?: string;
 }
-export interface NetworkNextRoundAction {
+export interface NetworkNextRoundAction extends ActorBoundNetworkAction {
   type: 'next_round';
 }
-export interface NetworkMoveAction {
+export interface NetworkMoveAction extends ActorBoundNetworkAction {
   type: 'move';
   delta: number;
 }
@@ -102,6 +108,25 @@ export async function replayInChunks<A>(
  * wall-clock and randomness so every client lands on the identical state.
  */
 export function replayNetworkAction(engine: GameEngine, action: NetworkAction): void {
+  const binding = action.commandActor;
+  if (binding) {
+    const state = engine.getState();
+    if (!['engine-seat', 'shop-seat', 'transition-initiator'].includes(binding.role)) {
+      throw new Error(`Unknown command actor role ${String(binding.role)}`);
+    }
+    if (!state.tanks.some((tank) => tank.id === binding.tankId)) {
+      throw new Error(`Command actor ${binding.tankId} is not present in the replay roster`);
+    }
+    if (binding.role === 'engine-seat' && state.activePlayerId !== binding.tankId) {
+      throw new Error(`Command actor ${binding.tankId} does not hold the active turn`);
+    }
+    if (binding.role === 'shop-seat' && (action.type !== 'buy' || action.tankId !== binding.tankId)) {
+      throw new Error(`Shop command actor ${binding.tankId} does not match its tank target`);
+    }
+    if (binding.role === 'transition-initiator' && action.type !== 'next_round') {
+      throw new Error('Transition initiator binding is only valid for next_round');
+    }
+  }
   switch (action.type) {
     case 'use_shield':
       engine.applyAction({ type: 'use_shield', ...(action.weapon ? { weapon: action.weapon } : {}) });

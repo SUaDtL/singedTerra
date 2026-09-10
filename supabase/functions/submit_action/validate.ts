@@ -89,6 +89,64 @@ export type ValidationResult =
   | { ok: true }
   | { ok: false; status: number; error: string }
 
+export interface RoomCommandEnvelopeV2 {
+  version: 2
+  intentId: string
+  expectedRevision: number
+  actorPlayerId: string
+  action: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; accessory?: unknown; tankId?: unknown; delta?: unknown }
+  nextActiveIndex?: number
+  roundOver: boolean
+}
+
+export type CommandEnvelopeResult =
+  | { ok: true; command: RoomCommandEnvelopeV2 }
+  | { ok: false; status: 400; error: string }
+
+export function validateRoomCommandEnvelope(value: unknown): CommandEnvelopeResult {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ok: false, status: 400, error: 'Invalid input: command' }
+  }
+  const command = value as Record<string, unknown>
+  const allowed = new Set(['version', 'intentId', 'expectedRevision', 'actorPlayerId', 'action', 'nextActiveIndex', 'roundOver'])
+  if (Object.keys(command).some((key) => !allowed.has(key))) {
+    return { ok: false, status: 400, error: 'Invalid input: command fields' }
+  }
+  if (command.version !== 2) {
+    return { ok: false, status: 400, error: 'Invalid input: command.version' }
+  }
+  if (typeof command.intentId !== 'string' || command.intentId.length < 1 || command.intentId.length > 200) {
+    return { ok: false, status: 400, error: 'Invalid input: command.intentId' }
+  }
+  if (typeof command.expectedRevision !== 'number' || !Number.isSafeInteger(command.expectedRevision) || command.expectedRevision < 0 || command.expectedRevision > 2147483647) {
+    return { ok: false, status: 400, error: 'Invalid input: command.expectedRevision' }
+  }
+  if (typeof command.actorPlayerId !== 'string' || command.actorPlayerId.length < 1 || command.actorPlayerId.length > 200) {
+    return { ok: false, status: 400, error: 'Invalid input: command.actorPlayerId' }
+  }
+  if (!command.action || typeof command.action !== 'object' || Array.isArray(command.action)) {
+    return { ok: false, status: 400, error: 'Invalid input: action' }
+  }
+  if (command.nextActiveIndex !== undefined && (typeof command.nextActiveIndex !== 'number' || !Number.isInteger(command.nextActiveIndex) || command.nextActiveIndex < 0)) {
+    return { ok: false, status: 400, error: 'Invalid input: command.nextActiveIndex' }
+  }
+  if (command.roundOver !== undefined && typeof command.roundOver !== 'boolean') {
+    return { ok: false, status: 400, error: 'Invalid input: command.roundOver' }
+  }
+  return {
+    ok: true,
+    command: {
+      version: 2,
+      intentId: command.intentId,
+      expectedRevision: command.expectedRevision as number,
+      actorPlayerId: command.actorPlayerId,
+      action: command.action as RoomCommandEnvelopeV2['action'],
+      ...(command.nextActiveIndex === undefined ? {} : { nextActiveIndex: command.nextActiveIndex as number }),
+      roundOver: command.roundOver === true,
+    },
+  }
+}
+
 /**
  * Validate the raw parsed-JSON request body for shape correctness.
  * Returns `{ ok: true }` when everything is valid, or

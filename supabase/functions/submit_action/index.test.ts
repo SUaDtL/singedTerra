@@ -13,7 +13,7 @@
 // Run: "C:/Users/brenn/.deno/bin/deno.exe" test supabase/functions/submit_action/index.test.ts
 
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { rpcResultToResponse } from './index.ts'
+import { commandRpcResultToResponse, rpcResultToResponse } from './index.ts'
 
 // ---------------------------------------------------------------------------
 // (a) Success path — RPC returns a scalar seq
@@ -61,4 +61,15 @@ Deno.test('rpcResultToResponse: generic error returns 500', async () => {
   assertEquals(body.ok, false)
   // Must not leak internal details — just confirm the error field is present
   assertEquals(typeof body.error, 'string')
+})
+
+Deno.test('commandRpcResultToResponse preserves a stable receipt and typed conflicts', async () => {
+  const receipt = { ok: true, protocolVersion: 2, intentId: 'intent-1', seq: 4, revision: 5, actorPlayerId: 'seat-a', actorTankId: 'p1' }
+  const accepted = commandRpcResultToResponse({ data: receipt, error: null })
+  assertEquals(accepted.status, 200)
+  assertEquals(await accepted.json(), receipt)
+
+  const conflict = commandRpcResultToResponse({ data: { ok: false, error: 'intent_conflict' }, error: null })
+  assertEquals(conflict.status, 409)
+  assertEquals(await conflict.json(), { ok: false, error: 'intent_conflict' })
 })

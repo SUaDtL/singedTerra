@@ -40,6 +40,7 @@ type ExpectedStoredOptions = {
   maxWind: number;
   gravity: number;
   rulesetVersion?: 1 | 2 | 3 | 4;
+  commandProtocolVersion?: 1 | 2;
   walls?: "open" | "reflective" | "wrap" | "concrete";
   battlefieldWorld?: "ember-dusk" | "obsidian-caldera" | "glassstorm-expanse";
   hazards?: "none" | "lava";
@@ -50,12 +51,17 @@ type ExpectedStoredOptions = {
   suddenDeathTurn?: number;
   teamMode?: boolean;
 };
-type ExpectedStoredAction =
+type ExpectedCommandActor = {
+  role: "engine-seat" | "shop-seat" | "transition-initiator";
+  tankId: string;
+};
+type ExpectedStoredAction = (
   | { type: "fire"; angle: number; power: number; weapon: string }
   | { type: "use_shield" }
   | { type: "buy"; weapon?: string; accessory?: string; tankId?: string }
   | { type: "next_round" }
-  | { type: "move"; delta: number };
+  | { type: "move"; delta: number }
+) & { commandActor?: ExpectedCommandActor };
 type ExpectedStoredScoreEntry = {
   tankId: string;
   playerName: string;
@@ -101,6 +107,13 @@ type ExpectedRoomActionsRow = {
   seq: number;
   player_id: string;
   action: ExpectedStoredAction;
+  command_version: number | null;
+  intent_id: string | null;
+  expected_revision: number | null;
+  submitted_by: string | null;
+  command_ends_turn: boolean | null;
+  command_next_index: number | null;
+  command_round_over: boolean | null;
   created_at: string;
 };
 type ExpectedRoomActionsInsert = {
@@ -109,6 +122,13 @@ type ExpectedRoomActionsInsert = {
   seq: number;
   player_id: string;
   action: ExpectedStoredAction;
+  command_version?: number | null;
+  intent_id?: string | null;
+  expected_revision?: number | null;
+  submitted_by?: string | null;
+  command_ends_turn?: boolean | null;
+  command_next_index?: number | null;
+  command_round_over?: boolean | null;
   created_at?: string;
 };
 type ExpectedRoomActionsUpdate = Partial<ExpectedRoomActionsRow>;
@@ -211,6 +231,7 @@ type _RpcKeysAreExact = AssertExact<
   | "create_room_rematch"
   | "bump_rate_limit"
   | "submit_room_action"
+  | "submit_room_command_v2"
   | "start_verified_deployment"
   | "start_verified_deployment_for_contracts"
   | "abandon_verified_deployment"
@@ -352,6 +373,26 @@ type _SubmitRoomActionArgsAreExact = AssertExact<
 type _SubmitRoomActionReturnsAreExact = AssertExact<
   Functions["submit_room_action"]["Returns"],
   number
+>;
+type _SubmitRoomCommandV2ArgsAreExact = AssertExact<
+  Functions["submit_room_command_v2"]["Args"],
+  {
+    p_room_id: string;
+    p_submitter_id: string;
+    p_token: string;
+    p_command_version: number;
+    p_intent_id: string;
+    p_expected_revision: number;
+    p_actor_id: string;
+    p_action: ExpectedStoredAction;
+    p_next_index: number | null;
+    p_round_over: boolean;
+    p_ruleset_version: number;
+  }
+>;
+type _SubmitRoomCommandV2ReturnsAreExact = AssertExact<
+  Functions["submit_room_command_v2"]["Returns"],
+  Record<string, unknown>
 >;
 
 type _RoomsRowKeysAreExact = AssertExact<
@@ -643,6 +684,8 @@ type _AllExactContracts = AssertAll<{
   completionContextReturns: _CompletionContextReturnsAreExact;
   submitRoomActionArgs: _SubmitRoomActionArgsAreExact;
   submitRoomActionReturns: _SubmitRoomActionReturnsAreExact;
+  submitRoomCommandV2Args: _SubmitRoomCommandV2ArgsAreExact;
+  submitRoomCommandV2Returns: _SubmitRoomCommandV2ReturnsAreExact;
   roomsRowKeys: _RoomsRowKeysAreExact;
   roomsRowValues: _RoomsRowValuesAreExact;
   roomsInsert: _RoomsInsertIsExact;

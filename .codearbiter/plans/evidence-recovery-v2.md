@@ -11,7 +11,7 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R03 | AC-010, AC-011, AC-012 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | IN_PROGRESS |
 | R04 | AC-013, AC-014, AC-015, AC-016 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | IN_REVIEW |
 | R05 | AC-017, AC-018, AC-019 | R04 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
-| R06 | AC-020, AC-021, AC-022, AC-023, AC-024 | R00, R01, R13 | gpt-5.6-sol / xhigh | gpt-6-astra / high | IN_REVIEW |
+| R06 | AC-020, AC-021, AC-022, AC-023, AC-024 | R00, R01, R13 | gpt-5.6-sol / xhigh | gpt-6-astra / high | ACCEPTED |
 | R07 | AC-025, AC-026, AC-027, AC-028 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R08 | AC-029, AC-030, AC-031, AC-032 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R09 | AC-033, AC-034, AC-035, AC-036 | R00, R03 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
@@ -29,15 +29,16 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R25 | AC-079, AC-080, AC-081, AC-082 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R20 | AC-083, AC-084, AC-085, AC-086 | R00, R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R12, R13, R14, R15, R16, R19, R21, R22, R23, R24, R25 | gpt-6-astra / high | gpt-5.6-sol / high | PENDING |
 
-## Current ownership, 2026-09-10 01:53 local
+## Current ownership, 2026-09-10 01:59 local
 
-Parent Astra/high owns integration and records; R03 Sol/high owns only its restored console/test/receipt lease. R04 and R06 are frozen under fresh Astra/high read-only review. No other writer is active. The historical entries below retain prior outcomes; this status table and current section supersede their old ownership statements.
+Parent Astra/high owns integration and records; R03 Sol/high owns only its restored console/test/receipt lease. R04 and R06 corrected reviews are complete. No other writer is active. The historical entries below retain prior outcomes; this status table and current section supersede their old ownership statements.
 
 - R22: AC069–071 locally accepted after fresh reviewer 01a089d3-5021-7ab1-a453-4141dd9a1c86, separate triage and aggregate PASS, zero findings across all three matched units. Independent teams/AI and 144-pair actual-planner metadata matrix passed. Parent verified all three source files byte-identical to the frozen author diff, integrated atop ef137055, and ran full check (92032), client (1985: 200 files, 1817 tests), build/typecheck, configured secrets scan (empty), and whitespace checks, all exit0. Logs: C:/Users/brenn/AppData/Local/Temp/recovery-v2-r22-integrated-{check,test-client,build}.log. Governed commit next; multiplayer promotion remains R06/R07/R19-gated.
 - R04: original Sol/high froze its correction after regression RED11/4 then GREEN18/18. Parent independently confirmed18/18 and exact raw metadata SHA256 09c1156f823396da6b85ca061e50680725f69e0c4a23256cb459453ef1cca133. Fresh reviewer /root/r04_corrected_review session01a089da-1b1b-7070-a7a1-4e8cf7927b32 is verified Astra/high; full corrected CI-attempt, metadata-binding and rollback graph review is pending. Existing browser proof remains local, not hosted.
-- R06: original Sol/xhigh froze the allowlisted structured refusal warning after production-handler RED1 then GREEN1, focused84, full Edge378 and typecheck0. Fresh reviewer /root/r06_corrected_review session01a089da-5a24-7981-bfdb-c2b04fcc5c91 is verified Astra/high. Review and integration remain pending; unchanged SQL's prior parent real-Postgres proof remains distinct. No pass markers yet.
+- R06: corrected fresh Astra/high reviewer01a089da-5a24 completed all five units, separate triage and aggregate PASS, zero findings;125 focused Deno tests and lockstep independently passed. Parent verified baseline and byte equality for all21 files, integrated atop f88eebafa687a12ecc53599e505a04f5297d6431, and freshly passed full check26267, client83975 (1817), Edge6941 (378), build/typecheck, real database46829, and diff checks. Seven honest scanner matches remain independently classified synthetic noncredentials. Logs: Temp/recovery-v2-r06-integrated-{check,test-client,build,check-edge,check-database}.log. AC020–024 locally accepted; genuine security/migration pass records and governed commit next. R07 activation, R08 result persistence and R19 documentation remain separate.
 - R03: original /root/r03_preparation session01a0896e-7909-71b3-8cc4-122fe4930fb8 resumed and reverified Sol/high. Parent verified preserved89-line console test diff at dad0c506. Lease: console.spec.ts, BattleConsoleRoot.tsx, mount.tsx, appearanceRuntime.ts, pixi/dynamic-appearance.test.ts and its receipt only. Prepare regression execution, preserve124 expectation rows; browser/server handoff belongs to parent.
-- Sole listener remains127.0.0.1:5198, PID35800, serving the unchanged R04 extraction. Original checkout still214cf4e with17modified/2untracked; fetched origin/main remains3902cad. Input manifest hashes reverified. No remote, merge, production or cleanup action.
+- R22 governed commit f88eebafa687a12ecc53599e505a04f5297d6431 succeeded; immediate status clean. R04 corrected review now also has separate triage/aggregate PASS, zero findings across four units; integration and hosted evidence remain pending.
+- Parent stopped only verified R04 PID35800 after all its tests ended, preserving its extraction. Sole listener is now127.0.0.1:5198, R03 Vite PID61264/exec43293, serving dad0c506 runtime built by parent (build0). HTTP index/entry/Tank/CSS bytes match R03 dist; indexSHA86f462bd6c2a6cd372a83a653b8332eb4a953ed8ebc6b673281d1cfa233a0976. R03 may run targeted RED; served bytes stay frozen until its browser handle ends. Original checkout still214cf4e with17modified/2untracked; fetched origin/main remains3902cad. No remote, merge, production or cleanup action.
 
 ## Historical dispatch boundaries and verification
 
