@@ -20,7 +20,13 @@ shared/ depends on nothing.
 
 The whole networked design (deterministic lockstep) depends on this. When touching `shared/engine/`:
 
-- **Fixed 16ms timestep.** One `engine.tick()` per rAF frame; never scale by wall-clock elapsed time (`HotSeatClient`). `timestep.mjs` asserts trajectory depends only on tick count.
+- **Fixed simulation step.** Each `engine.tick()` advances one fixed 16ms step;
+  elapsed time must not scale the physics within a tick. Client scheduling may
+  choose how many complete ticks to run. `timestep.mjs` asserts trajectory
+  depends only on tick count. The old one-tick-per-rAF description is not a
+  determinism requirement and already excludes fast-forward behavior; R12 owns
+  refresh-rate pacing and RAF-stop corrections, with acceptance in the current
+  recovery ledger.
 - **No `Math.random()`, `Date.now()`, or `performance.now()`** anywhere in physics/engine paths. Use the seeded RNG (`shared/src/engine/Random.ts` `createRng`). Wind and terrain are seeded once per round from `seed` + round index and fed in as inputs.
 - `terrainVersion` is render-only dirty-flag metadata — it MUST never affect physics/state.
 - The log→engine translation lives **only** in `shared/src/net/replay.ts` (`replayNetworkAction`) so the live client and the harnesses can't diverge. Don't reimplement it elsewhere.
@@ -50,14 +56,21 @@ defined by ADR-0013. That third execution context is outside `GameClient` and li
 
 ## Conventions
 
-- **Angle:** degrees, `0 = right`, `90 = up`. **Power:** 0–100. **Health:** 0–100.
+- **Angle:** degrees, `0 = right`, `90 = up`. **Power:** the default range is
+  0–100; Battery purchases raise `TankState.powerCap`, which the engine uses
+  when clamping power. Controls must respect the active mode/seat limit,
+  including verified-mode restrictions. R25 owns the pending human-control
+  correction; this contract does not assert that every control already does so.
+  **Health:** 0–100 is the base range.
 - Tunable values (gravity `0.15`, `POWER_SCALE 0.165`, `MAX_WIND`, explosion radii, damage falloff, credit constants) are **named constants**, not inline magic numbers — they are tuned during playtesting.
-- **Battle HUD follows the ADR-0017 hybrid boundary.** Canvas 2D continues to
-  draw the gameplay world. A lazy PixiJS layer may draw non-interactive HUD
-  chrome, nine-slice hardware, instruments, and illumination. Live DOM remains
-  the sole owner of text, focus, accessibility, dialogs, input, and gameplay
-  callbacks, and both layers consume one typed socket/layout result. Do not
-  recreate the layout independently in CSS or give Pixi gameplay authority.
+- **Battle HUD follows ADR-0018's semantic ownership and retained ADR-0017
+  visual boundary.** Canvas 2D draws the gameplay world. One Preact tree owns
+  semantic rendering, portals, text, focus, accessibility, dialogs, and input.
+  The controller/domain layer supplies typed presentation state and consumes
+  typed intents; raw DOM nodes do not own gameplay callbacks. Lazy Pixi may
+  draw non-interactive chrome and instruments. Both layers consume one typed
+  socket/layout result. Do not recreate layout independently in CSS or give
+  Pixi gameplay authority.
 - Tank art is geometric, explosions are canvas circles — no sprite sheets / particle libs.
 - Harnesses (`scripts/checks/*.mjs`): lowercase dimension names, no `.test`/`.spec` suffix; each top comment states the contract it proves + its run line; expected values are pinned inline as assertions (no golden files).
 

@@ -46,7 +46,7 @@ const setups: ClientModeSetup[] = [
   { mode: 'hotseat', players, playerNames: players.map((player) => player.name), settings },
   {
     mode: 'network', players, playerNames: players.map((player) => player.name),
-    settings: { ...settings, rulesetVersion: 4 },
+    settings: { ...settings, rulesetVersion: 4, commandProtocolVersion: 2 },
     roomId: 'extension-room', roomCode: 'EXTEND', playerId: 'extension-seat-a',
   },
 ];

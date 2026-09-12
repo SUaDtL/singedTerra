@@ -10,7 +10,8 @@
 //      resolves (no stalemate / infinite lobbing).
 //   3. DIFFICULTY ORDERING: across many maps, 'hard' deals MORE mean damage with
 //      its opening shot than 'easy' (finer search + far smaller aim error).
-//   4. EDGE CASES: a dead tank or a tank with no living enemy yields null (no shot).
+//   4. EDGE CASES: dead tanks, FFA team metadata, and equal-distance targets keep
+//      the planner's established deterministic behavior.
 //
 // Deterministic: no Math.random, no Date. Imports shared TS directly.
 // Run: npx tsx scripts/checks/ai.mjs
@@ -18,6 +19,7 @@
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
 import { computeAiPlan } from '../../shared/src/engine/AI.ts';
 import { CANVAS_WIDTH } from '../../shared/src/engine/Terrain.ts';
+import { getWeapon } from '../../shared/src/engine/WeaponSystem.ts';
 
 const MAX_TICKS = 100_000;
 const PALETTE = ['#e84d4d', '#4d8ce8'];
@@ -26,8 +28,29 @@ let failed = false;
 const log = (...a) => console.log(...a);
 const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 
-function engine(seed) {
-  return new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed });
+function engine(seed, options = {}) {
+  return new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed, ...options });
+}
+function fourSeatEngine(seed = 0x5eed1234) {
+  return new GameEngine({
+    players: [
+      { name: 'P1', color: '#e84d4d' },
+      { name: 'P2', color: '#4d8ce8' },
+      { name: 'P3', color: '#4de87a' },
+      { name: 'P4', color: '#e8c84d' },
+    ],
+    maxPlayers: 4,
+    seed,
+  });
+}
+function prepareTargetingState(st) {
+  const [me, first, second, unused] = st.tanks;
+  Object.assign(me, { x: 400, y: 300 });
+  Object.assign(first, { x: 300, y: 300, health: 12 });
+  Object.assign(second, { x: 700, y: 300, health: 100 });
+  Object.assign(unused, { x: 780, y: 300, health: 0, alive: false });
+  me.inventory.nuke.count = 1;
+  return { me, first, second };
 }
 function tickToRest(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 function humanOpening(e) {
@@ -187,6 +210,47 @@ function playGame(seed, difficulty, turnCap = 120) {
   if (!failed) log('PASS: edge cases (dead self / no enemy / unknown id) return null.');
 }
 
+// --- Check 4b (R22 / AC-070): no-team and malformed team values remain FFA.
+//     Equal-distance targets retain the existing first-in-roster tie break, and a
+//     closer dead tank remains ineligible. Target choice is observed through the
+//     real planner's health-scaled weapon selection; no internal helper is exposed. ---
+{
+  for (const teamValue of [null, undefined, 3, 'invalid']) {
+    const st = fourSeatEngine().getState();
+    const { me, first } = prepareTargetingState(st);
+    me.team = teamValue;
+    first.team = teamValue;
+    const plan = computeAiPlan(st, me.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+    const repeat = computeAiPlan(st, me.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+    if (plan?.weapon !== 'baby_missile') {
+      fail(`FFA team=${String(teamValue)} should target the nearer 12hp tank, got ${plan?.weapon}`);
+    }
+    if (JSON.stringify(plan) !== JSON.stringify(repeat)) {
+      fail(`FFA team=${String(teamValue)} target selection is not deterministic`);
+    }
+  }
+
+  const tied = fourSeatEngine().getState();
+  const { me: tieShooter, first: firstTied, second: secondTied } = prepareTargetingState(tied);
+  secondTied.x = 500;
+  const tiePlan = computeAiPlan(tied, tieShooter.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+  if (tiePlan?.weapon !== 'baby_missile') {
+    fail(`equal-distance tie should retain the first roster target (${firstTied.id}), got ${tiePlan?.weapon}`);
+  }
+
+  const deadNearest = fourSeatEngine().getState();
+  const { me: survivor, first: dead, second: living } = prepareTargetingState(deadNearest);
+  dead.alive = false;
+  dead.health = 0;
+  living.x = 700;
+  const livingPlan = computeAiPlan(deadNearest, survivor.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+  if (livingPlan?.weapon !== 'nuke') {
+    fail(`dead nearest tank should be skipped for the living 100hp target, got ${livingPlan?.weapon}`);
+  }
+
+  if (!failed) log('PASS: FFA metadata, equal-distance ties, and dead-target handling remain deterministic.');
+}
+
 // --- Check 5: a hurt hard bot with a shield raises it; a healthy one does not ---
 {
   const e = engine(0x5eed1234);
@@ -302,6 +366,92 @@ function playGame(seed, difficulty, turnCap = 120) {
     fail(`weapon and parachute buys must respect combined credits, got weapon=${combinedPlan?.buy} accessory=${combinedPlan?.buyAccessory}`);
   }
   if (!failed) log('PASS: hard AI buys one affordable parachute only for a deterministic risky ledge.');
+}
+
+// --- Check 7c (R21 / AC-065..067): restock plans obey every room arms tier.
+//     Easy/medium never buy; hard may buy only an unlocked finisher. The exact D01
+//     restricted-shop fixture must fall back to usable ammo and advance the turn. ---
+{
+  for (const armsLevel of [0, 1, 2, 3, 4]) {
+    const e = engine(0x5eed1234, { armsLevel });
+    const st = e.getState();
+    const me = st.tanks[0];
+    for (const slot of Object.values(me.inventory)) {
+      if (!slot.unlimited) slot.count = 0;
+    }
+    me.credits = 30_000;
+    st.tanks[1].health = 100;
+
+    for (const difficulty of ['easy', 'medium', 'hard']) {
+      const plan = computeAiPlan(st, 'p1', difficulty, undefined, armsLevel, 'conservative');
+      const repeat = computeAiPlan(st, 'p1', difficulty, undefined, armsLevel, 'conservative');
+      if (JSON.stringify(plan) !== JSON.stringify(repeat)) {
+        fail(`armsLevel ${armsLevel} ${difficulty} restock plan is not deterministic`);
+      }
+      if (difficulty !== 'hard' && plan?.buy) {
+        fail(`armsLevel ${armsLevel} ${difficulty} bot must not buy, got ${plan.buy}`);
+      }
+      if (difficulty !== 'hard' && plan?.weapon !== 'baby_missile') {
+        fail(`armsLevel ${armsLevel} exhausted ${difficulty} bot should use baby_missile, got ${plan?.weapon}`);
+      }
+      const expectedHardBuy = armsLevel === 0 ? undefined : 'nuke';
+      if (difficulty === 'hard' && plan?.buy !== expectedHardBuy) {
+        fail(`armsLevel ${armsLevel} hard restock expected buy=${expectedHardBuy}, got ${plan?.buy}`);
+      }
+      if (plan?.buy && getWeapon(plan.buy).armsLevel > armsLevel) {
+        fail(`armsLevel ${armsLevel} proposed forbidden purchase ${plan.buy} (level ${getWeapon(plan.buy).armsLevel})`);
+      }
+    }
+  }
+
+  const restricted = engine(0x5eed1234, { armsLevel: 0 });
+  const restrictedState = restricted.getState();
+  const restrictedBot = restrictedState.tanks[0];
+  for (const slot of Object.values(restrictedBot.inventory)) {
+    if (!slot.unlimited) slot.count = 0;
+  }
+  restrictedBot.credits = 20_000;
+  restrictedState.tanks[1].health = 100;
+  const plan = computeAiPlan(restrictedState, 'p1', 'hard', undefined, 0, 'conservative');
+  if (!plan) {
+    fail('D01 restricted-shop bot produced no plan');
+  } else {
+    if (plan.buy) fail(`D01 arms-level-0 bot proposed forbidden purchase ${plan.buy}`);
+    if (plan.weapon !== 'baby_missile') fail(`D01 bot should fall back to usable baby_missile, got ${plan.weapon}`);
+    restricted.applyAction({ type: 'select_weapon', weapon: plan.weapon });
+    restricted.applyAction({ type: 'set_angle', angle: plan.angle });
+    restricted.applyAction({ type: 'set_power', power: plan.power });
+    const accepted = restricted.applyAction({ type: 'fire' });
+    tickToRest(restricted);
+    if (!accepted || restricted.getState().turn !== 1 || restricted.getState().activePlayerId !== 'p2') {
+      fail(`D01 legal fallback did not advance the turn (accepted=${accepted}, turn=${restricted.getState().turn}, active=${restricted.getState().activePlayerId})`);
+    }
+  }
+
+  const unaffordable = engine(0x5eed1234, { armsLevel: 1 }).getState();
+  for (const slot of Object.values(unaffordable.tanks[0].inventory)) {
+    if (!slot.unlimited) slot.count = 0;
+  }
+  unaffordable.tanks[0].credits = getWeapon('nuke').price - 1;
+  unaffordable.tanks[1].health = 100;
+  const fallback = computeAiPlan(unaffordable, 'p1', 'hard', undefined, 1, 'conservative');
+  if (fallback?.buy || fallback?.weapon !== 'baby_missile') {
+    fail(`unaffordable level-1 restock must use baby_missile without buying, got ${JSON.stringify(fallback)}`);
+  }
+
+  const owned = engine(0x5eed1234, { armsLevel: 0 }).getState();
+  for (const slot of Object.values(owned.tanks[0].inventory)) {
+    if (!slot.unlimited) slot.count = 0;
+  }
+  owned.tanks[0].inventory.nuke.count = 1;
+  owned.tanks[0].credits = 0;
+  owned.tanks[1].health = 100;
+  const openingAmmo = computeAiPlan(owned, 'p1', 'hard', undefined, 0, 'conservative');
+  if (openingAmmo?.buy || openingAmmo?.weapon !== 'nuke') {
+    fail(`owned above-tier opening ammo must remain usable, got ${JSON.stringify(openingAmmo)}`);
+  }
+
+  if (!failed) log('PASS: every difficulty/arms tier is deterministic; purchases are legal and D01 advances via a usable fallback.');
 }
 
 // --- Check 8: a CPU-seat buy is IDEMPOTENT — duplicate bot buys (every networked

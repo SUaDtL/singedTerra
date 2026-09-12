@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { postOnceWithRetry, RETRY_DELAY_MS } from './retry';
+import { postOnceWithRetry, RETRY_DELAY_MS, settleWithDeadline } from './retry';
 
 describe('postOnceWithRetry', () => {
   afterEach(() => {
@@ -78,5 +78,36 @@ describe('postOnceWithRetry', () => {
     await expect(postOnceWithRetry(fn, 2, 0)).resolves.toEqual({ ok: true, value: 'done' });
     expect(fn).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('cancels before a stale continuation can make another attempt', async () => {
+    let active = true;
+    const fn = vi.fn().mockImplementation(async () => {
+      active = false;
+      throw new Error('uncertain');
+    });
+
+    const result = await postOnceWithRetry(fn, 2, 0, () => active);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected cancellation');
+    expect(result.error).toMatchObject({ message: 'retry_cancelled' });
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it('settles a non-cooperating operation at its deadline and ignores its late result', async () => {
+    vi.useFakeTimers();
+    let resolveLate!: (value: string) => void;
+    const operation = new Promise<string>((resolve) => { resolveLate = resolve; });
+    const onDeadline = vi.fn();
+
+    const pending = settleWithDeadline(operation, 25, onDeadline);
+    await vi.advanceTimersByTimeAsync(25);
+    await expect(pending).resolves.toMatchObject({ ok: false, error: { message: 'operation_deadline_exceeded' } });
+    expect(onDeadline).toHaveBeenCalledOnce();
+
+    resolveLate('too late');
+    await Promise.resolve();
+    await expect(pending).resolves.toMatchObject({ ok: false });
   });
 });

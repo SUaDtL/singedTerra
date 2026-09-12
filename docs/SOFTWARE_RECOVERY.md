@@ -2,7 +2,55 @@
 
 Requested by Brenn on 2026-09-08. This record describes the bounded software-recovery program. It is not a claim that all repository debt is closed.
 
-## Current delivery state
+## Current recovery entry
+
+Current correction scope and acceptance criteria are in the
+[evidence-backed recovery v2 spec](../.codearbiter/specs/evidence-recovery-v2.md),
+with status maintained only in its
+[parent-owned execution ledger](../.codearbiter/plans/evidence-recovery-v2.md).
+The [architecture owner map](ARCHITECTURE.md#existing-owners) describes the
+existing boundaries to retain. The packages below remain delivered as recorded;
+new defect reproductions do not undo that delivery or prove their correction.
+
+### Recovery v2 delivery evidence, 2026-09-12
+
+Backend capability PR [#475](https://github.com/SUaDtL/singedTerra/pull/475)
+merged as `10d6fe78409f8110cb25c2a484ae906656837f7d`. The explicitly approved
+[backend deployment](https://github.com/SUaDtL/singedTerra/actions/runs/34719526794)
+completed successfully on attempt 1. Its before/after inventory shows migrations
+001 through 022 were already applied; this run redeployed all 17 functions and
+did not newly apply a migration. The release receipt binds that source to
+manifest `43bb1cdd4f60ba5c56920631ade075a2d0c0c482bdaae23fda97466677c4f059`.
+The ledger records the independent deployment review, approved repository
+protections, environment configuration, and credential confinement.
+
+The client correction source at
+`4d4b336fa1fa75b2541976b4f36b9c5d5c38bf4f` has a tested local artifact containing
+60 files. The current integration's later changes before delivery preparation
+were documentation only. The general browser suite passed 330 checks with 18
+profile applicability skips; the separate five-profile product suite passed 83
+with 27 profile applicability skips. Edge tests passed 393 checks. Disposable
+PostgreSQL tests exercised synchronized command/completion transactions and
+forward-migration recovery. These are distinct proofs, and the local artifact's
+synthetic configuration is not a hosted client release.
+
+The client candidate's shared-source digest differs from the deployed backend
+digest. Versioned replay tests and the bounded comparison of real V2/V3
+controllers preserve the declared compatibility evidence; they do not claim
+the client candidate's shared bytes were deployed. Loaded legacy clients retain
+their backend contract, while the new client refuses incompatible legacy-room
+replay after refresh. Historical completed verified receipts remain versioned
+and immutable.
+
+Final candidate identity, delivery checks, independent R20 acceptance, and any
+approved client promotion are recorded in the canonical ledger. Merging the
+client delivery PR automatically publishes Pages and requires explicit owner
+approval. The optional synthetic production-capability smoke has not run and
+does not constitute natural gameplay evidence. The separately reported
+active-room cleanup defect and its 10-minute reconnect policy are separate
+work; no existing production rooms have been changed by that investigation.
+
+## Historical delivery checkpoint
 
 Runtime delivery checkpoint: published `87283aca03954569e3e6e5a1d1b9c1cc345d95d7` through PR473 on 2026-09-09. Pages run `34327066205`, public deployment metadata, and hosted smoke matched that revision; the smoke passed 1 check in 3.0 seconds.
 
@@ -13,7 +61,13 @@ Runtime delivery checkpoint: published `87283aca03954569e3e6e5a1d1b9c1cc345d95d7
 | C. Terminal match presentation | Delivered | PR456, PR464, and PR471; semantic view, browser geometry and focus tests, cap and natural terminal recovery proof. |
 | D. Mode configuration and composition | Delivered | PR467 and PR473 are published. PR473 Pages run `34327066205`, its public metadata, hosted smoke, final preview, and normal-casual smoke match `87283aca03954569e3e6e5a1d1b9c1cc345d95d7`. |
 
-The reusable goal and binding requirements remain in [SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md](SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md). That plan is the source for future resumption and operational limits.
+The reusable goal and package requirements in
+[SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md](SOFTWARE_RECOVERY_IMPLEMENTATION_PLAN.md)
+belong to the prior four-package program. Preserve its delivery evidence and
+enduring compatibility requirements, including historical verified replay and
+immutable receipts. Its old resume instructions are superseded for the current
+recovery by the scope and ledger above, because they target already-delivered
+packages and a different dispatch plan. They confer no new operational authority.
 
 ## Delivered scope
 

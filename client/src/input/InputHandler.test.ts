@@ -136,6 +136,61 @@ describe('InputHandler public contract', () => {
     ]);
   });
 
+  it('uses the live power cap for keyboard, touch, and direct pointer aim', () => {
+    createHandler({ initialPower: 98, powerStep: 5, powerCap: 200 }).attach();
+
+    dispatchKey('ArrowUp');
+    handler.stepPower(5);
+    expect(emitted()).toEqual([
+      { type: 'set_power', power: 103 },
+      { type: 'set_power', power: 108 },
+    ]);
+
+    emit.mockClear();
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300);
+    dispatchPointer('pointerdown', { clientX: 410, clientY: 20, pointerId: 41 });
+    expect(emitted()).toContainEqual({ type: 'set_power', power: 200 });
+  });
+
+  it('moves retained Armory-button focus to the battlefield before the next keyboard aim', () => {
+    createHandler({ initialPower: 200, powerCap: 200 }).attach();
+    const armory = document.createElement('button');
+    document.body.append(armory);
+    armory.focus();
+    expect(document.activeElement).toBe(armory);
+
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300);
+    dispatchPointer('pointerdown', { clientX: 410, clientY: 20, pointerId: 42 });
+    expect(document.activeElement).toBe(target);
+
+    emit.mockClear();
+    target.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: 'ArrowDown',
+    }));
+    expect(emitted()).toEqual([{ type: 'set_power', power: 198 }]);
+    armory.remove();
+  });
+
+  it('refreshes the cap without disturbing a legal selected power and clamps stale seat state', () => {
+    createHandler({ initialPower: 140, powerCap: 200 });
+    const liveCap = handler as InputHandler & { setPowerCap?: (powerCap: number) => void };
+
+    liveCap.setPowerCap?.(250);
+    handler.stepPower(1);
+    expect(emitted()).toEqual([{ type: 'set_power', power: 141 }]);
+
+    emit.mockClear();
+    liveCap.setPowerCap?.(100);
+    handler.stepPower(1);
+    expect(emitted()).toEqual([]);
+    handler.stepPower(-1);
+    expect(emitted()).toEqual([{ type: 'set_power', power: 99 }]);
+  });
+
   it('maps A and D to one bounded movement action per physical key press', () => {
     handler.attach();
 

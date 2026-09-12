@@ -56,7 +56,7 @@ export interface GameState {
    * raised dirt). Render-only metadata: the terrain is mutated in place (same
    * Uint8Array reference each snapshot), so a renderer can't detect a change by
    * identity. Comparing this integer lets the TerrainRenderer skip its offscreen
-   * rebuild when nothing changed, instead of hashing all 400k bytes every frame
+   * rebuild when nothing changed, instead of hashing all 720,000 bytes every frame
    * (REVIEW_BACKLOG P2-8). Not used by physics — never affects determinism.
    */
   terrainVersion: number;
@@ -118,6 +118,16 @@ export interface GameState {
   /** Winning team at GAME_OVER; null while the match is live or drawn. */
   winnerTeam?: TeamId | null;
 }
+
+/**
+ * Borrowed live state exposed to presentation callers. This protects only the
+ * top-level snapshot properties from accidental assignment (including phase,
+ * winner, and collection properties). Nested tank/event objects, arrays, and
+ * the Uint8Array terrain buffer remain shared mutable engine storage; this type
+ * deliberately does not claim deep immutability or allocate a 720,000-byte
+ * terrain copy for each frame.
+ */
+export type BorrowedGameState = Readonly<GameState>;
 
 /** One burning terrain column in the napalm fire field (see {@link GameState.fire}). */
 export interface FireCell {

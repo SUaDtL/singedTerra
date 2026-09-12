@@ -42,7 +42,7 @@ function deferred<T>() {
 }
 
 describe('P-06 generation-owned lifecycle', () => {
-  it('waits for an in-flight mount cleanup before reusing its shared resources', async () => {
+  it('lets restart commit while a stale mount is still pending, then destroys its late result', async () => {
     const semanticHost = document.createElement('div');
     const pixiHost = document.createElement('div');
     const pendingMount = deferred<BattleConsoleMountedGeneration>();
@@ -65,9 +65,9 @@ describe('P-06 generation-owned lifecycle', () => {
     await Promise.resolve();
     expect(mounts).toBe(1);
     const second = lifecycle.restart(request(semanticHost, pixiHost));
-    // Let restart cross its cleanup barrier if that barrier ignores the pending mount.
     for (let index = 0; index < 10; index++) await Promise.resolve();
-    expect(mounts).toBe(1);
+    expect(mounts).toBe(2);
+    await expect(second).resolves.toMatchObject({ committed: true, generation: 2 });
     pendingMount.resolve({
       generation: 1, status: 'ready', snapshot: () => new BattleConsoleResourceLedger().snapshot(),
       update() {}, async destroy() {
@@ -75,10 +75,84 @@ describe('P-06 generation-owned lifecycle', () => {
         return new BattleConsoleResourceLedger().close();
       },
     });
-    const [oldEntry, newEntry] = await Promise.all([first, second]);
+    const oldEntry = await first;
     expect(oldEntry.committed).toBe(false);
-    expect(newEntry.committed).toBe(true);
-    expect(events).toEqual(['destroy-predecessor', 'mount-winner']);
+    expect(events).toEqual(['mount-winner', 'destroy-predecessor']);
+    await lifecycle.destroy();
+  });
+
+  it('mounts the latest state and layout received while the lazy module is loading', async () => {
+    const semanticHost = document.createElement('div');
+    const pixiHost = document.createElement('div');
+    const moduleLoad = deferred<BattleConsoleMountModule>();
+    const observed: Array<{ state: BattleConsolePresentationState; mode: string }> = [];
+    const lifecycle = createBattleConsoleLifecycle({ loadMount: () => moduleLoad.promise });
+    const entering = lifecycle.enter(request(semanticHost, pixiHost));
+    const latestState: BattleConsolePresentationState = {
+      ...state,
+      ballistics: { ...state.ballistics, angle: 73 },
+      fireControl: { ...state.fireControl, status: 'Target acquired' },
+    };
+
+    lifecycle.update(latestState, projectResponsiveLayout('compact', 2));
+    moduleLoad.resolve({
+      async mountBattleConsoleGeneration(options) {
+        observed.push({ state: options.initialState, mode: options.layout.mode });
+        return {
+          generation: options.generationToken.generation,
+          status: 'ready',
+          snapshot: () => options.generationToken.resources.snapshot(),
+          update() {},
+          async destroy() { return options.generationToken.resources.close(); },
+        };
+      },
+    });
+
+    await expect(entering).resolves.toMatchObject({ committed: true, status: 'ready' });
+    expect(observed).toEqual([{ state: latestState, mode: 'compact' }]);
+    await lifecycle.destroy();
+  });
+
+  it('replays the latest state and layout received after semantic publication but before handle admission', async () => {
+    const semanticHost = document.createElement('div');
+    const pixiHost = document.createElement('div');
+    const updates: Array<{ state: BattleConsolePresentationState; mode: string }> = [];
+    const lifecycle = createBattleConsoleLifecycle({ loadMount: async () => ({
+      mountBattleConsoleGeneration(options) {
+        options.semanticHost.textContent = `${options.initialState.ballistics.angle}/${options.layout.mode}/${options.initialState.fireControl.status}`;
+        const mounted: BattleConsoleMountedGeneration = {
+          generation: options.generationToken.generation,
+          status: 'ready',
+          snapshot: () => options.generationToken.resources.snapshot(),
+          update(nextState, nextLayout) {
+            updates.push({ state: nextState, mode: nextLayout.mode });
+            options.semanticHost.textContent = `${nextState.ballistics.angle}/${nextLayout.mode}/${nextState.fireControl.status}`;
+          },
+          async destroy() {
+            options.semanticHost.replaceChildren();
+            return options.generationToken.resources.close();
+          },
+        };
+        return Promise.resolve(mounted);
+      },
+    }) });
+    const entering = lifecycle.enter(request(semanticHost, pixiHost));
+    for (let index = 0; index < 10 && semanticHost.textContent === ''; index++) {
+      await Promise.resolve();
+    }
+    expect(semanticHost.textContent).toBe('45/wide/Fire ready');
+    expect(lifecycle.snapshot().status).toBe('loading');
+
+    const latestState: BattleConsolePresentationState = {
+      ...state,
+      ballistics: { ...state.ballistics, angle: 73 },
+      fireControl: { ...state.fireControl, status: 'Target acquired' },
+    };
+    lifecycle.update(latestState, projectResponsiveLayout('compact', 2));
+
+    await expect(entering).resolves.toMatchObject({ committed: true, status: 'ready' });
+    expect(updates).toEqual([{ state: latestState, mode: 'compact' }]);
+    expect(semanticHost.textContent).toBe('73/compact/Target acquired');
     await lifecycle.destroy();
   });
 

@@ -74,7 +74,13 @@ function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient } 
 const TERMINAL_KILL_SHOT: NetworkAction = { type: 'fire', angle: 31, power: 96, weapon: 'napalm' };
 
 function row(seq: number, action: NetworkAction) {
-  return { new: { id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc', action, created_at: '' } };
+  return { new: {
+    id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc',
+    action: { ...action, commandActor: { role: 'engine-seat' as const, tankId: 'p1' } },
+    created_at: '', command_version: 2, intent_id: `history-${seq}`, expected_revision: seq,
+    submitted_by: 'player-abc', command_ends_turn: true, command_next_index: 1,
+    command_round_over: false,
+  } };
 }
 
 /** The private `engine` field, reached the same way the other NetworkClient
@@ -91,6 +97,7 @@ function engineOf(client: NetworkClient): EngineAccess['engine'] {
 
 describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
   let rafCb: FrameRequestCallback | null = null;
+  let rafTimestamp = 0;
 
   beforeEach(() => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
@@ -101,10 +108,13 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
       /* jsdom localStorage always present, but stay defensive */
     }
     rafCb = null;
+    rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
     vi.stubGlobal('cancelAnimationFrame', () => {});
   });
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -118,7 +128,7 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
     // emitState() — the TEST SETUP (napalm grant + low HP) is applied to the
     // engine BEFORE that replay runs.
     const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT).new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
 
     // TEST SETUP: grant Napalm to the shooter (P1) and lower the victim's (P2)
     // HP so the replayed burn is a deterministic opponent kill.
@@ -139,7 +149,8 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
     // emitState()'s one-shot GAME_OVER hook fires on the first real frame after
     // start(), same as live bootstrap (initialize() then start()).
     client.start();
-    rafCb?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCb?.(rafTimestamp);
 
     expect(readSession()).toBeNull();
   });

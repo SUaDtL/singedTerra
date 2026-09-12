@@ -71,7 +71,17 @@ function makeFakeSupabase(results: Array<QueryResult | Promise<QueryResult>>): {
 
 /** Build a room_actions INSERT payload. */
 function row(seq: number, action: NetworkAction) {
-  return { new: { id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc', action, created_at: '' } };
+  const actorPlayerId = seq % 2 === 0 ? 'player-abc' : 'player-def';
+  const actorTankId = seq % 2 === 0 ? 'p1' : 'p2';
+  const boundAction = { ...action, commandActor: { role: 'engine-seat' as const, tankId: actorTankId } };
+  return { new: {
+    id: `r${seq}`, room_id: 'room-1', seq, player_id: actorPlayerId,
+    action: boundAction, created_at: '', command_version: 2, intent_id: `intent-${seq}`,
+    expected_revision: seq, submitted_by: actorPlayerId,
+    command_ends_turn: action.type === 'fire' || action.type === 'use_shield',
+    command_next_index: action.type === 'fire' || action.type === 'use_shield' ? (seq + 1) % 2 : null,
+    command_round_over: false,
+  } };
 }
 
 const fire = (angle = 45, power = 50): NetworkAction => ({ type: 'fire', angle, power, weapon: 'baby_missile' });
@@ -109,7 +119,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
       maxPlayers: 4,
       seed: 1,
       players,
-    });
+    }, undefined, 2);
 
     for (let i = 1; i <= players.length; i += 1) {
       const enginePlayerId = `p${i}`;
@@ -120,7 +130,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
   it('replays the existing action log during initialize() — a logged fire advances the turn', async () => {
     // A single committed fire by p1 (the opener). After replay the round advances to p2.
     const { supabase } = makeFakeSupabase([{ data: [row(0, fire()).new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
 
     expect(client.getState().activePlayerId).toBe('p1');
     await client.initialize();
@@ -129,12 +139,23 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(client.getState().activePlayerId).toBe('p2');
   });
 
+  it('rejects a noncontiguous initial history before deriving the room revision', async () => {
+    const { supabase } = makeFakeSupabase([{
+      data: [row(0, fire()).new, row(2, fire()).new], error: null,
+    }]);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
+
+    await expect(client.initialize()).rejects.toThrow('noncontiguous room action history');
+    expect(client.getState().phase).toBe('PLAYER_TURN');
+    expect(client.getState().turn).toBe(0);
+  });
+
   it('preserves pristine terrain when replay craters mutate the live battlefield', async () => {
     const { supabase } = makeFakeSupabase([{
       data: [row(0, fire(45, 50)).new],
       error: null,
     }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     const pristine = client.getInitialTerrain();
     const pristineWorld = selectBattlefieldWorld(pristine);
 
@@ -147,7 +168,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
 
   it('buffers an out-of-order Realtime action and applies it only once the gap fills', async () => {
     const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     await settle();
@@ -165,6 +186,8 @@ describe('NetworkClient — deterministic lockstep core', () => {
   it('drains the next buffered fire after the live projectile resolves', async () => {
     const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }]);
     const rafQueue: FrameRequestCallback[] = [];
+    let rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     const cancelAnimationFrame = vi.fn();
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       rafQueue.push(cb);
@@ -172,7 +195,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     });
     vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
 
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     await settle();
@@ -192,7 +215,8 @@ describe('NetworkClient — deterministic lockstep core', () => {
     let frames = 0;
     while (rafQueue.length > 0 && frames < 2_000) {
       const frame = rafQueue.shift()!;
-      frame(0);
+      rafTimestamp += 1_000 / 60;
+      frame(rafTimestamp);
       frames++;
       if (client.getState().phase === 'PLAYER_TURN' && client.getState().turn >= 2) break;
     }
@@ -214,7 +238,10 @@ describe('NetworkClient — deterministic lockstep core', () => {
     const pendingFrames = rafQueue.splice(0);
     client.stop();
     expect(cancelAnimationFrame).toHaveBeenCalledOnce();
-    pendingFrames.forEach((frame) => frame(0));
+    pendingFrames.forEach((frame) => {
+      rafTimestamp += 1_000 / 60;
+      frame(rafTimestamp);
+    });
     expect({
       phase: client.getState().phase,
       turn: client.getState().turn,
@@ -227,7 +254,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
   it('drops a stale (already-applied) Realtime seq without double-applying', async () => {
     // Log already has seq=0 (a fire) → nextExpectedSeq becomes 1, engine on p2's turn.
     const { supabase, captured } = makeFakeSupabase([{ data: [row(0, fire()).new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     await settle();
@@ -253,7 +280,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
 
   it('reports connection state transitions to subscribers', async () => {
     const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }, { data: [], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     const seen: ConnectionState[] = [];
     client.onConnectionChange((s) => seen.push(s)); // primes with current state
 
@@ -278,7 +305,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
       { data: [], error: null },
       { data: [row(0, fire()).new], error: null },
     ]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
 
     captured.statusCb?.('SUBSCRIBED'); // first subscribe — resync #1 (empty)
@@ -303,7 +330,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     const { supabase, captured } = makeFakeSupabase([
       { data: [], error: null }, older, newer,
     ]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     captured.statusCb?.('CHANNEL_ERROR');
@@ -323,7 +350,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     const { supabase, captured } = makeFakeSupabase([
       { data: [], error: null }, resync,
     ]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     client.stop();
@@ -339,7 +366,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { supabase } = makeFakeSupabase([{ data: [], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
 
     // Commit an aim, then fire. It's p1's turn (this client).
@@ -353,7 +380,13 @@ describe('NetworkClient — deterministic lockstep core', () => {
     const body = JSON.parse(init.body as string);
     expect(body.roomId).toBe('room-1');
     expect(body.rulesetVersion).toBe(1);
-    expect(body.action).toMatchObject({ type: 'fire', angle: 30, power: 70, weapon: 'baby_missile' });
+    expect(body.command).toMatchObject({
+      version: 2,
+      expectedRevision: 0,
+      actorPlayerId: 'player-abc',
+      action: { type: 'fire', angle: 30, power: 70, weapon: 'baby_missile' },
+    });
+    expect(body.action).toBeUndefined();
 
     // The shot is applied by the Realtime echo, NOT locally — engine stays put, input locks.
     expect(client.getState().phase).toBe('PLAYER_TURN');
@@ -366,7 +399,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
 
     // Log already advanced the turn to p2 (opponent). This client is p1.
     const { supabase, captured } = makeFakeSupabase([{ data: [row(0, fire()).new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     captured.statusCb?.('SUBSCRIBED');
     await settle();
@@ -382,7 +415,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { supabase } = makeFakeSupabase([{ data: [], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
 
     client.sendAction({ type: 'set_angle', angle: 12 });
@@ -399,7 +432,7 @@ describe('NetworkClient — deterministic lockstep core', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     const beforeX = client.getState().tanks[0]!.x;
 
@@ -408,8 +441,8 @@ describe('NetworkClient — deterministic lockstep core', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
-    expect(body.action).toEqual({ type: 'move', delta: 8 });
-    expect(body.nextActiveIndex).toBeUndefined();
+    expect(body.command.action).toEqual({ type: 'move', delta: 8 });
+    expect(body.command.nextActiveIndex).toBeUndefined();
     expect(client.getState().tanks[0]!.x).toBe(beforeX);
     expect(client.getState().activePlayerId).toBe('p1');
     expect(client.isFiring).toBe(false);

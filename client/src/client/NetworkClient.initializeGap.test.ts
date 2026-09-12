@@ -96,8 +96,22 @@ async function settle(): Promise<void> {
 }
 
 const MISSED_FIRE = {
+  id: 'row-0',
+  room_id: 'room-123',
   seq: 0,
-  action: { type: 'fire', angle: 45, power: 50, weapon: 'baby_missile' },
+  player_id: 'player-abc',
+  action: {
+    type: 'fire', angle: 45, power: 50, weapon: 'baby_missile',
+    commandActor: { role: 'engine-seat', tankId: 'p1' },
+  },
+  created_at: '',
+  command_version: 2,
+  intent_id: 'gap-intent-0',
+  expected_revision: 0,
+  submitted_by: 'player-abc',
+  command_ends_turn: true,
+  command_next_index: 1,
+  command_round_over: false,
 };
 
 describe('NetworkClient.initialize() fetch-then-subscribe gap (#118)', () => {
@@ -109,7 +123,7 @@ describe('NetworkClient.initialize() fetch-then-subscribe gap (#118)', () => {
       { data: [MISSED_FIRE], error: null },
     ]);
 
-    const client = new NetworkClient(supabase, 'room-123', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-123', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
 
     // Precondition: the empty snapshot left the engine untouched, awaiting seq 0.
@@ -132,7 +146,7 @@ describe('NetworkClient.initialize() fetch-then-subscribe gap (#118)', () => {
       { data: [], error: null },
     ]);
 
-    const client = new NetworkClient(supabase, 'room-123', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-123', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
 
     captured.statusCb?.('SUBSCRIBED');

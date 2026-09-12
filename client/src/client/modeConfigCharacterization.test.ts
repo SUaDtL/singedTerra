@@ -131,7 +131,7 @@ describe('mode configuration characterization', () => {
       })
       const networkClient = new NetworkClient(
         {} as ConstructorParameters<typeof NetworkClient>[0],
-        'room-1', 'seat-1', networkOptions, 'seat-credential',
+        'room-1', 'seat-1', networkOptions, 'seat-credential', 2,
       )
       expectExactState(networkClient.getState(), canonical)
     }
@@ -185,7 +185,7 @@ describe('mode configuration characterization', () => {
     expect(networkOptions.seed).toBeUndefined()
     const networkClient = new NetworkClient(
       {} as ConstructorParameters<typeof NetworkClient>[0],
-      'room-1', 'seat-1', networkOptions, 'seat-credential',
+      'room-1', 'seat-1', networkOptions, 'seat-credential', 2,
     )
     expect(networkClient.getState()).toMatchObject({
       phase: 'PLAYER_TURN', totalRounds: 1, walls: 'open',
@@ -216,7 +216,7 @@ describe('mode configuration characterization', () => {
     expectOwnSettings(network, custom)
     const canonical = new GameEngine(expected)
     const hotClient = new HotSeatClient(new GameEngine(hot))
-    const networkClient = new NetworkClient({} as ConstructorParameters<typeof NetworkClient>[0], 'room', 'seat-1', network, 'seat-credential')
+    const networkClient = new NetworkClient({} as ConstructorParameters<typeof NetworkClient>[0], 'room', 'seat-1', network, 'seat-credential', 2)
     expectExactState(hotClient.getState(), canonical.getState())
     expectExactState(networkClient.getState(), canonical.getState())
     expect(hotClient.getEffectiveGravity()).toBe(0.22)
@@ -238,7 +238,7 @@ describe('mode configuration characterization', () => {
     expect(canonical.tanks.map(tank => tank.team)).toEqual(count === 4 ? [2, 1, 2, 1] : [null, null])
     expect(hot).toEqual(expected)
     expectExactState(new HotSeatClient(new GameEngine(hot)).getState(), canonical)
-    expectExactState(new NetworkClient({} as ConstructorParameters<typeof NetworkClient>[0], 'room', 'seat-1', network, 'seat-credential').getState(), canonical)
+    expectExactState(new NetworkClient({} as ConstructorParameters<typeof NetworkClient>[0], 'room', 'seat-1', network, 'seat-credential', 2).getState(), canonical)
   })
 
   it('pins all authored Quick Operation overlays and unknown-operation copy semantics', () => {

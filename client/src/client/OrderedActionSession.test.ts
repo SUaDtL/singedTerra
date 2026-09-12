@@ -32,6 +32,37 @@ describe('OrderedActionSession', () => {
     expect(session.nextExpectedSeq).toBe(1);
   });
 
+  it('does not consume a canonical row until its application succeeds', () => {
+    const session = new OrderedActionSession<string>();
+    session.buffer(0, 'actor-mismatch');
+    session.buffer(1, 'later');
+    const applied: string[] = [];
+
+    expect(() => session.drain(
+      () => true,
+      (action) => {
+        if (action === 'actor-mismatch') throw new Error('command actor mismatch');
+        applied.push(action);
+      },
+      () => undefined,
+      () => undefined,
+    )).toThrow('command actor mismatch');
+
+    expect(applied).toEqual([]);
+    expect(session.nextExpectedSeq).toBe(0);
+    expect(session.pendingSequences).toEqual([0, 1]);
+
+    session.drain(
+      () => true,
+      (action) => applied.push(action),
+      () => undefined,
+      () => undefined,
+    );
+    expect(applied).toEqual(['actor-mismatch', 'later']);
+    expect(session.nextExpectedSeq).toBe(2);
+    expect(session.pendingSize).toBe(0);
+  });
+
   it('ticks each replayed action to settlement before continuing', () => {
     const session = new OrderedActionSession<string>();
     session.beginReplay();

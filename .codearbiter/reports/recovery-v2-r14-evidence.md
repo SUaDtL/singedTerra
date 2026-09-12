@@ -414,3 +414,90 @@ Correction completion accounting:
   authorized; that evidence boundary is unchanged.
 - Rollback: restore the leased harness at its recorded pre-correction SHA-256;
   database state requires no rollback because both rehearsals were disposable.
+
+## 2026-09-12 activation release-check correction
+
+The clean-main activation worktree exposed two test-infrastructure defects while
+checking the already-reviewed staged recovery tree. The captured full-check log
+at
+`C:\Users\brenn\AppData\Local\Temp\recovery-v2-activation-commit-check.log`
+recorded 40 passing and 2 failing backend-release tests. The portability test
+combined an index inventory from `git ls-files` with file bytes from `HEAD`, so
+the staged addition `shared/src/net/roomCommand.ts` could not be read from
+`HEAD`. The job-scoped-credential rejection used an LF-only multiline
+replacement against the CRLF working workflow, so its mutation was a no-op and
+the expected rejection never ran against the intended counterexample.
+
+Regression-first evidence for the snapshot defect:
+
+```text
+node --test --test-name-pattern="Git source portability reads staged additions and deletions from one coherent snapshot" scripts/ci/backendRelease.test.mjs
+fatal: path 'tree/added.ts' exists on disk, but not in 'HEAD'
+tests 1; pass 0; fail 1
+exit 1
+```
+
+The pre-correction workflow regression independently remained causal against
+the physical CRLF workflow:
+
+```text
+node --test --test-name-pattern="workflow contract rejects job-scoped production credentials" scripts/ci/backendRelease.test.mjs
+AssertionError: Missing expected exception.
+tests 1; pass 0; fail 1
+exit 1
+```
+
+The correction resolves the current index once with `git write-tree`, then
+reads the manifest, full inventories, and every source blob from that immutable
+tree object with `git ls-tree` and `git show`. The disposable regression stages
+both an addition and a deletion and proves that the index tree includes the
+addition and excludes the deletion while the separate HEAD tree has the inverse
+inventory. The existing working-tree manifest validation remains unchanged and
+continues to validate the current manifest directly.
+
+The workflow fixture helper adapts the explicit mutation to the source newline
+form and asserts that the target exists and the result differs from the input.
+Every workflow rejection now also asserts that its candidate differs from the
+checked-in workflow. A focused regression exercises and rejects the
+job-scoped-credential candidate under both LF and CRLF. No credential boundary,
+workflow semantic assertion, deployment source, or release behavior changed.
+
+Focused GREEN evidence:
+
+```text
+node --test --test-name-pattern="(complete staged Git snapshot|Git source portability reads staged additions|job-scoped production credentials|job-scoped credential mutation)" scripts/ci/backendRelease.test.mjs
+tests 4; pass 4; fail 0
+exit 0
+```
+
+Complete release-check and manifest evidence after the final edit:
+
+```text
+npm run backend:release:check
+tests 44; pass 44; fail 0
+manifestSha256=1c6feecfef80aa06b5fec08dc12d4c7d5dc578b266b4fb3b66e53dcf85ae7dca
+migrationSetSha256=04e870421aec9f78d94143b7cd3921f739a002f2c0b529e7d5deb78273fa388e
+functionSetSha256=c77aba15e0edcb5991e5c35e2406eb890a8c5be6a5fd6e9d9f03c82b1199fc43
+supabaseCliVersion=2.105.0
+exit 0
+```
+
+Activation correction accounting:
+
+- Worktree HEAD remained
+  `10d6fe78409f8110cb25c2a484ae906656837f7d`.
+- The 128-path staged candidate remained exactly
+  `bb06ac7f0bd099257c885b0caea002e0d5a42eaf` before and after correction.
+- Leased test source SHA-256 changed from
+  `3e7f4ba3564f225e08ad139efc41b48f96abc2a2a1e538890007493eaa68057e`
+  to `a0d2faa2b1173e438567f9912561096c75c3bc1a364a253f8c6653d598a8b116`.
+- Corrected release path:
+  `scripts/ci/backendRelease.test.mjs` through
+  `npm run backend:release:check`, before any workflow deployment phase.
+- The source correction and this evidence extension remain unstaged. A
+  concurrent unstaged `docs/SOFTWARE_RECOVERY.md` edit is parent-owned and was
+  byte-preserved.
+- No production call, remote write, credential retrieval, dependency change,
+  workflow change, migration, commit, push, staging change, benchmark, browser,
+  or deployment occurred. The parent owns the root full check and subsequent
+  independent candidate review.

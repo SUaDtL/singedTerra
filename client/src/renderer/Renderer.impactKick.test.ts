@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ExplosionEvent, GameState, ProjectileState } from '@shared/types/GameState';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import type { GameEngine } from '@shared/engine/GameEngine';
+import { HotSeatClient } from '../client/HotSeatClient';
 import { Renderer } from './Renderer';
 import type { RenderEventSink } from './Renderer';
 import { getImpactDepthParallax } from './impactDepthParallax';
@@ -76,6 +78,7 @@ interface RendererImpactSeam {
   drawScorches: ReturnType<typeof vi.fn>;
   consumeExplosion(state: Pick<GameState, 'explosions' | 'lastExplosion'>): void;
   isAnimating(state: GameState): boolean;
+  isTerminalImpactAnimating(state: GameState): boolean;
   render(state: GameState): void;
   reset(): void;
 }
@@ -167,6 +170,61 @@ function rendererSeam(reduceMotion = false): RendererImpactSeam {
   return renderer;
 }
 
+function terminalPresentationDuration(displayHz: number, fastForward: boolean): number {
+  const callbacks: FrameRequestCallback[] = [];
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    callbacks.push(callback);
+    return callbacks.length;
+  });
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  vi.spyOn(performance, 'now').mockReturnValue(0);
+  const renderer = rendererSeam();
+  delete (renderer as unknown as Record<string, unknown>)['drawExplosions'];
+  const gradient = { addColorStop: vi.fn() } as unknown as CanvasGradient;
+  Object.assign(renderer.ctx, {
+    createRadialGradient: vi.fn(() => gradient),
+    beginPath: vi.fn(),
+    arc: vi.fn(),
+    ellipse: vi.fn(),
+    fill: vi.fn(),
+    globalAlpha: 1,
+  });
+  const frame = idleState();
+  frame.phase = 'RESOLVING';
+  frame.explosions = [explosion(1, 400, 300, 90)];
+  let ticks = 0;
+  const engine = {
+    tick: vi.fn(() => {
+      ticks += 1;
+      if (ticks === 16) frame.phase = 'GAME_OVER';
+    }),
+    getState: () => frame,
+    getEffectiveGravity: () => 0.15,
+  } as unknown as GameEngine;
+  const client = new HotSeatClient(engine);
+  client.setFastForward(fastForward);
+  let dirty = true;
+  client.onStateChange((state) => {
+    if (dirty || renderer.isAnimating(state)) {
+      renderer.render(state);
+      dirty = false;
+    }
+  });
+  client.start();
+
+  let elapsedMs = 0;
+  while (renderer.isTerminalImpactAnimating(frame) && elapsedMs < 5_000) {
+    elapsedMs += 1_000 / displayHz;
+    const callback = callbacks.shift();
+    if (!callback) throw new Error('Missing presentation animation callback');
+    callback(elapsedMs);
+  }
+  client.stop();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  return elapsedMs;
+}
+
 function idleState(): GameState {
   return {
     phase: 'PLAYER_TURN',
@@ -188,6 +246,15 @@ function required<T>(value: T | undefined, label: string): T {
 }
 
 describe('Renderer directional impact kick', () => {
+  it('keeps the real terminal impact package within one display frame across injected refresh rates', () => {
+    for (const fastForward of [false, true]) {
+      const durations = [30, 60, 120, 144]
+        .map((displayHz) => terminalPresentationDuration(displayHz, fastForward));
+      expect(Math.max(...durations)).toBeLessThan(5_000);
+      expect(Math.max(...durations) - Math.min(...durations)).toBeLessThanOrEqual(1_000 / 30);
+    }
+  });
+
   it('paints then advances world atmosphere between the sky and wind', () => {
     const renderer = rendererSeam();
 

@@ -1,9 +1,12 @@
 import 'pixi.js/unsafe-eval';
-import layersContract from '../../../../../.codearbiter/contracts/battle-console/ownership/layers.json';
 import type { Application, Texture } from 'pixi.js';
 import type { ResponsiveLayoutProjection } from '../projection';
 import type { BattleConsolePresentationState } from '../types';
-import type { BattleConsoleResourceLease, BattleConsoleResourceLedger } from '../resources';
+import {
+  BattleConsoleResourceWaiterSet,
+  type BattleConsoleResourceLease,
+  type BattleConsoleResourceLedger,
+} from '../resources';
 import {
   BATTLE_CONSOLE_ASSET_MODES,
   battleConsoleChromeUrl,
@@ -13,55 +16,283 @@ import {
   type BattleConsoleTextureSet,
 } from './scene';
 
-function primePixiProbeCaches(pixi: typeof import('pixi.js')): void {
-  const browserAdapter = pixi.DOMAdapter.get();
-  let contextLost = false;
-  const probeContext = {
-    COMPILE_STATUS: 1,
-    FRAGMENT_SHADER: 2,
-    HIGH_FLOAT: 3,
-    MAX_TEXTURE_IMAGE_UNITS: 4,
-    compileShader() {},
-    createShader: () => ({}),
-    deleteShader() {},
-    getExtension: (name: string) => name === 'WEBGL_lose_context'
-      ? { loseContext: () => { contextLost = true; } }
-      : null,
-    getParameter: () => 8,
-    getShaderParameter: () => true,
-    getShaderPrecisionFormat: () => ({ precision: 1 }),
-    isContextLost: () => contextLost,
-    shaderSource() {},
-  };
-  const probeAdapter = {
-    ...browserAdapter,
-    createCanvas: () => ({ getContext: () => probeContext }),
-  } as unknown as typeof browserAdapter;
+const DEFAULT_DECORATION_TIMEOUT_MS = 8_000;
 
-  pixi.DOMAdapter.set(probeAdapter);
+type PixiModule = typeof import('pixi.js');
+
+interface ClaimedPixiApplication {
+  readonly pixi: PixiModule;
+  readonly app: Application;
+}
+
+interface PixiApplicationAdmission {
+  claim(eligible: boolean): ClaimedPixiApplication | null;
+}
+
+interface SharedPixiApplicationAdmission {
+  readonly waiters: BattleConsoleResourceWaiterSet<PixiApplicationAdmission>;
+  status: 'pending' | 'settled';
+  app: Application | null;
+}
+
+type TextureLoadStatus = 'pending' | 'fulfilled';
+
+interface SharedTextureLoad {
+  readonly key: string;
+  readonly waiters: BattleConsoleResourceWaiterSet<readonly Texture[]>;
+  status: TextureLoadStatus;
+  textures: readonly Texture[] | null;
+}
+
+// Pixi Assets is a process-owned cache and has no per-request AbortSignal. Keep
+// one fixed asset request and one completion pair; generations attach removable
+// waiters without retaining one Promise callback per abandoned match.
+let sharedTextureLoad: SharedTextureLoad | null = null;
+let sharedApplicationAdmission: SharedPixiApplicationAdmission | null = null;
+
+function terminalAdmissionError(
+  message: string,
+  name: 'AbortError' | 'TimeoutError',
+): Error {
+  const error = new Error(message);
+  error.name = name;
+  return error;
+}
+
+function destroyPixiApplication(app: Application): void {
   try {
-    const existing = pixi.getTestContext();
-    const existingCanvas = existing?.canvas;
-    if (existingCanvas instanceof HTMLCanvasElement) {
-      existing.getExtension('WEBGL_lose_context')?.loseContext();
-      pixi.getTestContext();
-    }
-    pixi.getMaxFragmentPrecision();
-    pixi.getMaxTexturesPerBatch();
-  } finally {
-    pixi.DOMAdapter.set(browserAdapter);
+    app.destroy(true, { children: true, texture: false, textureSource: false });
+  } catch {
+    // Pixi can reject before assigning its renderer. A late initialized app is
+    // destroyed only after init settles, when the renderer is available.
   }
 }
 
-export function layerAuthorityDescriptor() {
+function clearSharedApplicationAdmission(record: SharedPixiApplicationAdmission): void {
+  if (sharedApplicationAdmission === record) sharedApplicationAdmission = null;
+}
+
+function getSharedApplicationAdmission(): SharedPixiApplicationAdmission {
+  if (sharedApplicationAdmission?.status === 'pending') return sharedApplicationAdmission;
+  if (sharedApplicationAdmission) {
+    throw new Error('Battle-console Pixi application admission is being transferred');
+  }
+
+  const record: SharedPixiApplicationAdmission = {
+    waiters: new BattleConsoleResourceWaiterSet<PixiApplicationAdmission>(),
+    status: 'pending',
+    app: null,
+  };
+  sharedApplicationAdmission = record;
+
+  // import() and Application.init() expose no AbortSignal. One process-owned
+  // operation absorbs that uncancellable work while generations attach only
+  // removable waiters. The neutral size avoids retaining generation layout.
+  void (async () => {
+    let pixi: PixiModule | null = null;
+    try {
+      pixi = await import('pixi.js');
+      if (record.waiters.size === 0) {
+        record.status = 'settled';
+        clearSharedApplicationAdmission(record);
+        return;
+      }
+
+      const app = new pixi.Application();
+      record.app = app;
+      await app.init({
+        width: 1,
+        height: 1,
+        resolution: 1,
+        autoDensity: true,
+        backgroundAlpha: 0,
+        antialias: true,
+        autoStart: false,
+        preference: 'webgl',
+      });
+
+      record.status = 'settled';
+      let reservations = record.waiters.size;
+      let claimed = false;
+      const admission: PixiApplicationAdmission = {
+        claim(eligible) {
+          if (reservations <= 0) return null;
+          reservations -= 1;
+          let result: ClaimedPixiApplication | null = null;
+          if (eligible && !claimed && record.app && pixi) {
+            claimed = true;
+            result = { pixi, app: record.app };
+            record.app = null;
+          }
+          if (claimed || reservations === 0) {
+            clearSharedApplicationAdmission(record);
+          }
+          if (!claimed && reservations === 0 && record.app) {
+            const unclaimed = record.app;
+            record.app = null;
+            destroyPixiApplication(unclaimed);
+          }
+          return result;
+        },
+      };
+
+      if (reservations === 0) {
+        const unclaimed = record.app;
+        record.app = null;
+        clearSharedApplicationAdmission(record);
+        if (unclaimed) destroyPixiApplication(unclaimed);
+        return;
+      }
+      // Resolving removes waiters synchronously, but reservations stay owned
+      // until each async consumer either claims or explicitly relinquishes.
+      clearSharedApplicationAdmission(record);
+      record.waiters.resolve(admission);
+    } catch (error) {
+      record.status = 'settled';
+      record.waiters.reject(error);
+      const failed = record.app;
+      record.app = null;
+      clearSharedApplicationAdmission(record);
+      if (failed) destroyPixiApplication(failed);
+    }
+  })();
+
+  return record;
+}
+
+function remainingDecorationTime(deadline: number): number {
+  return Math.max(0, deadline - Date.now());
+}
+
+async function claimSharedApplication(
+  resources: BattleConsoleResourceLedger,
+  signal: AbortSignal,
+  deadline: number,
+  isCurrentGeneration: () => boolean,
+): Promise<ClaimedPixiApplication | null> {
+  const record = getSharedApplicationAdmission();
+  const admission = await record.waiters.wait({
+    resources,
+    signal,
+    timeoutMs: remainingDecorationTime(deadline),
+    description: 'Battle-console Pixi renderer admission',
+  });
+  const timedOut = Date.now() >= deadline;
+  const eligible = !signal.aborted
+    && !timedOut
+    && !resources.closed
+    && isCurrentGeneration();
+  const claimed = admission.claim(eligible);
+  if (signal.aborted) {
+    throw terminalAdmissionError('Battle-console Pixi renderer admission was cancelled', 'AbortError');
+  }
+  if (timedOut) {
+    throw terminalAdmissionError('Battle-console Pixi renderer admission exceeded its deadline', 'TimeoutError');
+  }
+  return claimed;
+}
+
+export function getBattleConsolePixiAssetLoadDiagnostics(): Readonly<{
+  status: 'idle' | TextureLoadStatus;
+  waiters: number;
+}> {
   return Object.freeze({
-    gameplayWorld: 'canvas-2d',
-    pixi: 'non-interactive-chrome',
-    semantics: 'preact-dom',
-    input: 'preact-dom',
-    fallbackSemantics: 'same-preact-dom',
-    competingPhysicalOwner: false,
-    recordKeys: Object.freeze(layersContract.records.map((record) => record.key)),
+    status: sharedTextureLoad?.status ?? 'idle',
+    waiters: sharedTextureLoad?.waiters.size ?? 0,
+  });
+}
+
+function textureUrls(baseUrl: string): readonly string[] {
+  return Object.freeze(BATTLE_CONSOLE_ASSET_MODES.flatMap((mode) => [
+    battleConsoleChromeUrl(baseUrl, mode),
+    battleConsoleDynamicUrl(baseUrl, mode),
+  ]));
+}
+
+function normalizeLoadedTextures(
+  urls: readonly string[],
+  loaded: unknown,
+): readonly Texture[] {
+  if (Array.isArray(loaded)) {
+    if (loaded.length !== urls.length) throw new Error('Pixi returned an incomplete battle-console texture set');
+    return loaded as Texture[];
+  }
+  if (!loaded || typeof loaded !== 'object') {
+    throw new Error('Pixi returned an invalid battle-console texture set');
+  }
+  return urls.map((url) => {
+    const texture = (loaded as Record<string, Texture>)[url];
+    if (!texture) throw new Error(`Pixi omitted battle-console texture: ${url}`);
+    return texture;
+  });
+}
+
+function getSharedTextureLoad(
+  pixi: typeof import('pixi.js'),
+  urls: readonly string[],
+): SharedTextureLoad {
+  const key = urls.join('\n');
+  if (sharedTextureLoad?.key === key) return sharedTextureLoad;
+  if (sharedTextureLoad?.status === 'pending') {
+    throw new Error('Battle-console asset identity changed while the shared load was pending');
+  }
+
+  if (!pixi.loadTextures.config) {
+    throw new Error('Pixi texture loader configuration is unavailable');
+  }
+  // Pixi's blob-worker capability probe conflicts with the shipped strict CSP.
+  // Browser image loading is supported and remains lazy through Assets.
+  pixi.loadTextures.config.preferWorkers = false;
+
+  const record: SharedTextureLoad = {
+    key,
+    waiters: new BattleConsoleResourceWaiterSet<readonly Texture[]>(),
+    status: 'pending',
+    textures: null,
+  };
+  sharedTextureLoad = record;
+
+  let request: PromiseLike<unknown>;
+  try {
+    request = pixi.Assets.load([...urls]) as PromiseLike<unknown>;
+  } catch (error) {
+    if (sharedTextureLoad === record) sharedTextureLoad = null;
+    throw error;
+  }
+  void request.then(
+    (loaded) => {
+      try {
+        const textures = normalizeLoadedTextures(urls, loaded);
+        record.textures = textures;
+        record.status = 'fulfilled';
+        record.waiters.resolve(textures);
+      } catch (error) {
+        record.waiters.reject(error);
+        if (sharedTextureLoad === record) sharedTextureLoad = null;
+      }
+    },
+    (error) => {
+      record.waiters.reject(error);
+      if (sharedTextureLoad === record) sharedTextureLoad = null;
+    },
+  );
+  return record;
+}
+
+async function waitForSharedTextures(
+  pixi: typeof import('pixi.js'),
+  urls: readonly string[],
+  resources: BattleConsoleResourceLedger,
+  signal: AbortSignal,
+  timeoutMs: number,
+): Promise<readonly Texture[]> {
+  const record = getSharedTextureLoad(pixi, urls);
+  if (record.status === 'fulfilled') return record.textures!;
+  return record.waiters.wait({
+    resources,
+    signal,
+    timeoutMs,
+    description: 'Battle-console texture decoration',
   });
 }
 
@@ -78,6 +309,8 @@ export interface BattleConsolePixiAdapterOptions {
   readonly resources: BattleConsoleResourceLedger;
   readonly isCurrentGeneration: () => boolean;
   readonly onContextLoss: () => void;
+  readonly signal?: AbortSignal;
+  readonly decorationTimeoutMs?: number;
 }
 
 /** Lazy-loads Pixi and publishes a canvas only for the still-current generation. */
@@ -88,107 +321,79 @@ export async function createBattleConsolePixiAdapter({
   resources,
   isCurrentGeneration,
   onContextLoss,
+  signal = new AbortController().signal,
+  decorationTimeoutMs = DEFAULT_DECORATION_TIMEOUT_MS,
 }: BattleConsolePixiAdapterOptions): Promise<BattleConsolePixiAdapter | null> {
-  const pendingImport = resources.acquire('pendingImports');
-  const pendingPromise = resources.acquire('pendingPromises');
+  const decorationDeadline = Date.now() + Math.max(0, decorationTimeoutMs);
   let applicationLease: BattleConsoleResourceLease | null = null;
   let canvasLease: BattleConsoleResourceLease | null = null;
   let contextLease: BattleConsoleResourceLease | null = null;
   let controllerLease: BattleConsoleResourceLease | null = null;
   let textureLease: BattleConsoleResourceLease | null = null;
   let app: Application | null = null;
-  let loadedPixi: typeof import('pixi.js') | undefined;
-  const loadedTextures: Array<{ url: string; texture: Texture }> = [];
   let scene: BattleConsoleChromeScene | null = null;
   let ownershipTransferred = false;
+  let contextLossListener: ((event: Event) => void) | null = null;
 
-  const releasePartialState = async (pixi = loadedPixi) => {
+  const releasePartialState = async () => {
+    if (app && contextLossListener) {
+      app.canvas.removeEventListener('webglcontextlost', contextLossListener);
+      contextLossListener = null;
+    }
     scene?.destroy();
     scene = null;
     if (app) {
-      try {
-        // Pixi destroys its renderer, but Chromium can otherwise retain the
-        // detached zero-sized canvas through the still-live WebGL context.
-        // Explicit context loss releases that native back-reference first.
-        const context = app.canvas.getContext('webgl2') ?? app.canvas.getContext('webgl');
-        context?.getExtension('WEBGL_lose_context')?.loseContext();
-        app.destroy(true, { children: true, texture: false, textureSource: false });
-      } catch {
-        // Initialization may have rejected before Pixi installed a renderer.
-      }
+      destroyPixiApplication(app);
       app = null;
     }
-    if (pixi) {
-      for (const { url, texture } of loadedTextures.splice(0).reverse()) {
-        try {
-          await pixi.Assets.unload(url);
-        } catch {
-          texture.destroy(true);
-        }
-      }
-    }
     textureLease?.release();
+    textureLease = null;
     contextLease?.release();
+    contextLease = null;
     canvasLease?.release();
+    canvasLease = null;
     controllerLease?.release();
+    controllerLease = null;
     applicationLease?.release();
+    applicationLease = null;
   };
 
   try {
-    const pixi = await import('pixi.js');
-    loadedPixi = pixi;
-    pendingImport.release();
-    if (!isCurrentGeneration() || resources.closed) return null;
-
-    // Prime Pixi's module-level capability caches with a non-DOM probe so its
-    // internal getTestContext singleton cannot retain a detached zero-size
-    // canvas after the compositor generation is destroyed.
-    primePixiProbeCaches(pixi);
-
-    // Pixi's deprecated no-option Batcher fallback creates and module-caches a
-    // probe WebGL context. Eight texture units is the WebGL 1 guaranteed floor;
-    // setting the fallback avoids that permanent probe while renderer-owned
-    // batchers still receive the device-specific limit through BatcherPipe.
-    pixi.Batcher.defaultOptions.maxTextures = 8;
-
-    app = new pixi.Application();
+    const claimed = await claimSharedApplication(
+      resources,
+      signal,
+      decorationDeadline,
+      isCurrentGeneration,
+    );
+    if (!claimed) return null;
+    const { pixi } = claimed;
+    app = claimed.app;
     applicationLease = resources.acquire('pixiApplications');
-    await app.init({
-      width: layout.cssWidth,
-      height: layout.cssHeight,
-      resolution: layout.devicePixelRatio,
-      autoDensity: true,
-      backgroundAlpha: 0,
-      antialias: true,
-      autoStart: false,
-      preference: 'webgl',
-    });
-    if (!isCurrentGeneration() || resources.closed) {
-      await releasePartialState(pixi);
+    app.renderer.resize(layout.cssWidth, layout.cssHeight);
+    app.renderer.resolution = layout.devicePixelRatio;
+    if (!isCurrentGeneration() || resources.closed || signal.aborted) {
+      await releasePartialState();
       return null;
     }
 
-    // Pixi's worker capability probe uses a blob Worker that strict CSP blocks
-    // without emitting a rejection, so the default texture load can hang forever.
-    if (!pixi.loadTextures.config) {
-      throw new Error('Pixi texture loader configuration is unavailable');
-    }
-    pixi.loadTextures.config.preferWorkers = false;
-    const textureEntries = [] as Array<readonly [ResponsiveLayoutProjection['mode'], Texture, Texture]>;
-    for (const mode of BATTLE_CONSOLE_ASSET_MODES) {
-      const staticUrl = battleConsoleChromeUrl(import.meta.env.BASE_URL, mode);
-      const dynamicUrl = battleConsoleDynamicUrl(import.meta.env.BASE_URL, mode);
-      const staticTexture = await pixi.Assets.load<Texture>(staticUrl);
-      loadedTextures.push({ url: staticUrl, texture: staticTexture });
-      const dynamicTexture = await pixi.Assets.load<Texture>(dynamicUrl);
-      loadedTextures.push({ url: dynamicUrl, texture: dynamicTexture });
-      textureEntries.push([mode, staticTexture, dynamicTexture]);
-    }
-    if (!isCurrentGeneration() || resources.closed) {
-      await releasePartialState(pixi);
+    const urls = textureUrls(import.meta.env.BASE_URL);
+    const loadedTextures = await waitForSharedTextures(
+      pixi,
+      urls,
+      resources,
+      signal,
+      remainingDecorationTime(decorationDeadline),
+    );
+    if (!isCurrentGeneration() || resources.closed || signal.aborted) {
+      await releasePartialState();
       return null;
     }
 
+    const textureEntries = BATTLE_CONSOLE_ASSET_MODES.map((mode, index) => [
+      mode,
+      loadedTextures[index * 2]!,
+      loadedTextures[index * 2 + 1]!,
+    ] as const);
     textureLease = resources.acquire('textures');
     controllerLease = resources.acquire('pixiControllers');
     canvasLease = resources.acquire('canvases');
@@ -211,20 +416,18 @@ export async function createBattleConsolePixiAdapter({
     let destroyed = false;
     const mountedApp = app;
     const mountedScene = scene;
-    let handleContextLoss: (event: Event) => void;
     const destroyMounted = async () => {
       if (destroyed) return;
       destroyed = true;
-      mountedApp.canvas.removeEventListener('webglcontextlost', handleContextLoss);
       ownershipTransferred = false;
-      await releasePartialState(pixi);
+      await releasePartialState();
     };
-    handleContextLoss = (event: Event) => {
+    contextLossListener = (event: Event) => {
       event.preventDefault();
       if (destroyed) return;
       void destroyMounted().finally(onContextLoss);
     };
-    mountedApp.canvas.addEventListener('webglcontextlost', handleContextLoss, { once: true });
+    mountedApp.canvas.addEventListener('webglcontextlost', contextLossListener, { once: true });
     ownershipTransferred = true;
     let mountedLayout = layout;
 
@@ -250,8 +453,6 @@ export async function createBattleConsolePixiAdapter({
     await releasePartialState();
     throw error;
   } finally {
-    pendingImport.release();
-    pendingPromise.release();
     if (!ownershipTransferred && app) await releasePartialState();
   }
 }

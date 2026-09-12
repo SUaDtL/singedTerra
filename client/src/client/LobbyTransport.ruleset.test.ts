@@ -23,7 +23,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     callFunctionMock.mockReset();
   });
 
-  it('creates rooms and starts joins with protected-floor ruleset 4', async () => {
+  it('creates rooms and starts joins with protected ruleset and command floors', async () => {
     callFunctionMock.mockResolvedValue({ ok: false, status: 400, data: { error: 'stop' } });
     const transport = new LobbyTransport();
 
@@ -46,10 +46,12 @@ describe('LobbyTransport network ruleset rollout', () => {
 
     expect(callFunctionMock).toHaveBeenNthCalledWith(1, 'create_room', expect.objectContaining({
       rulesetVersion: 4,
+      commandProtocolVersion: 2,
     }));
     expect(callFunctionMock).toHaveBeenNthCalledWith(2, 'join_room', {
       ...joinParams,
       rulesetVersion: 4,
+      commandProtocolVersion: 2,
     });
   });
 
@@ -87,6 +89,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     });
     expect(callFunctionMock).toHaveBeenCalledWith('create_room', expect.objectContaining({
       rulesetVersion: 4,
+      commandProtocolVersion: 2,
       options: expect.objectContaining({ hazards: 'lava' }),
     }));
   });
@@ -106,6 +109,7 @@ describe('LobbyTransport network ruleset rollout', () => {
     expect(callFunctionMock).toHaveBeenNthCalledWith(1, 'join_room', {
       ...joinParams,
       rulesetVersion: 4,
+      commandProtocolVersion: 2,
     });
   });
 

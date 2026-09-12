@@ -1,7 +1,7 @@
 import { projectNetworkPlayers } from './modeConfig';
 import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js';
 import type { GameClient, RematchInfo, ConnectionState, TurnWatch, QuickChatMessage } from './GameClient';
-import type { GameState } from '@shared/types/GameState';
+import type { BorrowedGameState, GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import {
   normalizeBattlefieldWorldId,
@@ -17,17 +17,26 @@ import {
 } from '@shared/types/TankLoadout';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
-import { computeAiPlan } from '@shared/engine/AI';
+import { computeAiPlan, type AiPlan } from '@shared/engine/AI';
+import type { AccessoryType, WeaponType } from '@shared/engine/WeaponSystem';
 import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
-import { postOnceWithRetry } from './retry';
+import { postOnceWithRetry, settleWithDeadline } from './retry';
 import { claimCompletedMatch } from './matchClaim';
 import { fastForwardTicks } from './fastForward';
+import { FrameClock } from './frameClock';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 import { clearSession } from '../lib/sessionDescriptor';
 import { OrderedActionSession } from './OrderedActionSession';
 import { CURRENT_NETWORK_RULESET_VERSION, normalizeNetworkRulesetVersion } from './networkRuleset';
 import { isQuickChatKey, parseQuickChatPayload, type QuickChatKey } from './quickChat';
+import {
+  CURRENT_ROOM_COMMAND_VERSION,
+  cpuRoomIntentId,
+  type RoomCommandEnvelopeV2,
+  type RoomCommandReceiptV2,
+  type RoomCommandRowV2,
+} from '@shared/net/roomCommand';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -41,13 +50,22 @@ export type {
 } from '@shared/net/replay';
 
 // Shape of a row returned from room_actions
-interface RoomActionRow {
+interface RoomActionRow extends RoomCommandRowV2<NetworkAction> {
   id:         string;
   room_id:    string;
-  seq:        number;
-  player_id:  string;
-  action:     NetworkAction;
   created_at: string;
+}
+
+interface PendingRoomCommand {
+  generation: number;
+  envelope: RoomCommandEnvelopeV2<NetworkAction>;
+  body: string;
+  actorTankId: string;
+  humanTurnEnding: boolean;
+  deliveryEpoch: number;
+  state: 'delivering' | 'awaiting-echo' | 'recovering' | 'retryable';
+  transportAbort: AbortController | null;
+  onSettle?: (settlement: BotSubmitSettlement) => void;
 }
 
 // Extended player entry that includes the Supabase-assigned id for network mode.
@@ -67,7 +85,106 @@ interface NetworkGameOptions extends Omit<GameOptions, 'players'> {
   players?: NetworkPlayerEntry[];
 }
 
-type StateChangeListener = (state: GameState) => void;
+interface BotActionAttempt {
+  phaseKey: string;
+  round: number;
+  turn: number;
+  tankId: string;
+  action: NetworkAction;
+  settlement: 'pending' | 'accepted' | 'conflict';
+  sawCanonicalProgress: boolean;
+}
+
+interface BotPlanCache {
+  generation: number;
+  expectedRevision: number;
+  round: number;
+  turn: number;
+  tankId: string;
+  plan: AiPlan | null;
+  weaponPreparationComplete: boolean;
+  accessoryPreparationComplete: boolean;
+}
+
+type BotPreparation = {
+  generation: number;
+  expectedRevision: number;
+  round: number;
+  turn: number;
+} & (
+  | { key: string; tankId: string; kind: 'weapon'; weapon: WeaponType }
+  | { key: string; tankId: string; kind: 'accessory'; accessory: AccessoryType; previousCount: number }
+);
+
+const ROOM_COMMAND_CONFLICT_STATUS: Readonly<Record<string, number>> = {
+  revision_conflict: 409,
+  intent_conflict: 409,
+  not_your_turn: 403,
+};
+
+const ROOM_COMMAND_REFUSAL_STATUS: Readonly<Record<string, number>> = {
+  invalid_command: 400,
+  not_room_member: 403,
+  invalid_seat_token: 403,
+  actor_not_in_room: 403,
+  cannot_proxy_human: 403,
+  shop_actor_mismatch: 403,
+  room_not_found: 404,
+  room_not_active: 409,
+  command_protocol_mismatch: 409,
+  command_protocol_unavailable: 409,
+  ruleset_mismatch: 409,
+  ruleset_unavailable: 409,
+};
+
+function isMappedCommandResponse(
+  error: string | undefined,
+  status: number | undefined,
+  statusByError: Readonly<Record<string, number>>,
+): boolean {
+  if (error === undefined) return false;
+  const expectedStatus = statusByError[error];
+  return expectedStatus !== undefined && (status === undefined || status === expectedStatus);
+}
+
+type BotSubmitSettlement = 'accepted' | 'conflict' | 'failed';
+
+/** Match GameEngine's room-option normalization before passing the tier to the AI. */
+function normalizeRoomArmsLevel(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(4, Math.max(0, Math.floor(value)))
+    : 4;
+}
+
+function hasUsableWeapon(state: GameState, tankId: string, weapon: WeaponType): boolean {
+  const ammo = state.tanks.find((tank) => tank.id === tankId)?.inventory[weapon];
+  return !!ammo && (ammo.unlimited || ammo.count > 0);
+}
+
+function networkActionsEqual(left: NetworkAction, right: NetworkAction): boolean {
+  if (left.type !== right.type) return false;
+  switch (left.type) {
+    case 'fire':
+      return right.type === 'fire'
+        && left.angle === right.angle
+        && left.power === right.power
+        && left.weapon === right.weapon;
+    case 'use_shield':
+      return right.type === 'use_shield'
+        && (left.weapon ?? 'shield') === (right.weapon ?? 'shield');
+    case 'buy':
+      return right.type === 'buy'
+        && left.weapon === right.weapon
+        && left.accessory === right.accessory
+        && left.tankId === right.tankId;
+    case 'move':
+      return right.type === 'move' && left.delta === right.delta;
+    case 'next_round':
+      return right.type === 'next_round';
+  }
+}
+
+type StateChangeListener = (state: BorrowedGameState) => void;
 
 // localStorage key under which a seat's SECRET token is persisted, keyed by the
 // PUBLIC playerId (not roomId) — playerId is stable across a rematch (the server
@@ -122,7 +239,10 @@ export class NetworkClient implements GameClient {
   // didn't have one to pass in (e.g. a reload mid-room).
   private token:            string;
   private listeners:        Set<StateChangeListener>;
+  private readonly frameClock = new FrameClock();
   private rafId:            number | null;
+  private frameRunning = false;
+  private frameGeneration = 0;
   private channel:          RealtimeChannel | null;   // room_actions INSERT subscription
   private roomsChannel:     RealtimeChannel | null;   // rooms UPDATE subscription (lobby)
   private quickChatChannel: RealtimeChannel | null;
@@ -137,8 +257,8 @@ export class NetworkClient implements GameClient {
   // Sequence ordering buffer for out-of-order Realtime delivery.
   // Supabase Realtime does not guarantee delivery order; events with
   // seq > nextExpectedSeq are held here until the gap fills in.
-  private orderedActions:   OrderedActionSession<NetworkAction>;
-  private get pendingActions(): ReadonlyMap<number, NetworkAction> {
+  private orderedActions:   OrderedActionSession<RoomActionRow>;
+  private get pendingActions(): ReadonlyMap<number, RoomActionRow> {
     return this.orderedActions.pendingActions;
   }
   private get nextExpectedSeq(): number { return this.orderedActions.nextExpectedSeq; }
@@ -161,25 +281,20 @@ export class NetworkClient implements GameClient {
   private _disposed         = false;
   private connectionListeners = new Set<(s: ConnectionState) => void>();
   private fireFailedListeners = new Set<(msg: string) => void>();
-  // Watchdog: if a submitted fire/shield never echoes back, clear the input lock so
-  // the player isn't trapped in "Sending…" forever (lost submit, dropped echo, …).
-  private fireWatchdog:     ReturnType<typeof setTimeout> | null = null;
+  // One watchdog follows the pending command identity, including turn-neutral moves
+  // and buys. Empty recovery is still uncertain, so the envelope is retained for an
+  // explicit same-body retry while only its owned presentation lock is released.
+  private commandWatchdog:  ReturnType<typeof setTimeout> | null = null;
+  private fireLockOwner:    { pending: PendingRoomCommand; deliveryEpoch: number } | null = null;
   private static readonly FIRE_TIMEOUT_MS = 9000;
-  // Hard bound on the fire-recovery log re-fetch. Without it a hung (black-holed,
-  // not erroring) connection leaves resyncLog's await pending forever, so
-  // recoverStuckFire never reaches its failFire() line and the player is trapped in
-  // "Sending…" with no recovery but a reload (reliability-005 / #57). Aborting the
-  // fetch after this deadline surfaces as an error resyncLog already handles.
+  // Both the command delivery (fetch plus response parsing) and recovery query are
+  // raced against hard deadlines. Abort is only a best-effort resource cleanup; the
+  // race guarantees settlement even for a non-cooperating promise.
   private static readonly RESYNC_TIMEOUT_MS = 8000;
-  // Seq-collision retry (P2-10). Two humans firing near-simultaneously collide on
-  // UNIQUE(room_id,seq); the loser gets a 409. Retry with bounded exponential
-  // backoff (40,80,160,240,240ms) so the action lands instead of being dropped
-  // after a single one-shot. UNIQUE remains the corruption guard; this is liveness.
-  private static readonly MAX_SEQ_RETRIES = 5;
-  private static readonly SEQ_BACKOFF_MS = 40;
-  // Handle for the pending seq-conflict retry setTimeout, so stop() can cancel a
-  // scheduled retry before it fires a POST against a torn-down room.
-  private seqRetryTimer:    ReturnType<typeof setTimeout> | null = null;
+  private static readonly COMMAND_DELIVERY_TIMEOUT_MS = 9000;
+  private commandGeneration = 0;
+  private pendingRoomCommand: PendingRoomCommand | null = null;
+  private canonicalCommandFault = false;
 
   // --- Opponent-turn watchdog (P1-6b) --- When a REMOTE human holds the turn and
   // no action arrives, escalate a non-blocking banner: 'waiting' after WAIT_MS,
@@ -212,15 +327,25 @@ export class NetworkClient implements GameClient {
   private supaIdByTank:     Map<string, string>;
   // Per-room gravity (for the AI's trajectory sim to match the engine).
   private gravity:          number;
+  // Engine-normalized store tier, so the planner never proposes a buy replay will reject.
+  private armsLevel:        number;
   // Guards one bot submission per (turn, bot) from THIS client; the seq-unique +
   // referee cursor make the cross-client race exactly-once regardless. `lastBotKey`
-  // latches a phase only once it is COMMITTED (ours accepted, or a racer's identical
-  // action won); `botSubmitPendingKey` marks the phase whose POST is currently in
+  // latches our accepted intent or an exact matching ordered row; a conflict waits
+  // for its canonical row because the winning intent may differ. Weapon preparation
+  // succeeds only when canonical replay proves usable inventory. `botSubmitPendingKey`
+  // marks the phase whose POST is currently in
   // flight, so the ~60fps emitState cadence does not spam duplicate submits while one
   // is outstanding. A transient failure clears the pending mark WITHOUT latching, so
   // the next frame re-attempts instead of wedging the room (#119 / reliability-002).
   private lastBotKey:       string | null = null;
   private botSubmitPendingKey: string | null = null;
+  private botActionAttempt: BotActionAttempt | null = null;
+  private botPlanCache: BotPlanCache | null = null;
+  private botPreparationFailedKey: string | null = null;
+  private botAccessoryPreparationFailedKey: string | null = null;
+  private botPreparationFailureMessage: string | null = null;
+  private pendingBotPreparationNotice: string | null = null;
 
   // For computing the NEXT active seat after a turn-ending action (P0-3): the
   // room options (to build a throwaway engine) and the ordered log of actions
@@ -238,7 +363,11 @@ export class NetworkClient implements GameClient {
     playerId:  string,
     options:   NetworkGameOptions,
     token?:    string,
+    commandProtocolVersion?: unknown,
   ) {
+    if (commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+      throw new Error('NetworkClient: incompatible command protocol');
+    }
     this.supabase         = supabase;
     this.roomId           = roomId;
     this.playerId         = playerId;
@@ -273,6 +402,7 @@ export class NetworkClient implements GameClient {
       if (p.ai) this.botByTank.set(tankId, p.ai);
     });
     this.gravity = options.gravity ?? GRAVITY;
+    this.armsLevel = normalizeRoomArmsLevel(options.armsLevel);
 
     // Instantiate local engine. Cast to GameOptions — the engine reads
     // { name, color, ai } from each player entry, ignoring any extra fields.
@@ -311,17 +441,25 @@ export class NetworkClient implements GameClient {
     const REPLAY_CHUNK_SIZE = 16;
 
     const rows = (existingActions ?? []) as RoomActionRow[];
+    for (const [index, row] of rows.entries()) {
+      if (row.seq !== index) {
+        throw new Error(`NetworkClient: noncontiguous room action history at seq ${row.seq}`);
+      }
+      this.validateRoomActionRowShape(row);
+    }
     this.orderedActions.beginReplay();
     await replayInChunks(
       rows,
       (row) => {
-        this.applyNetworkAction(row.action);
+        this.applyRoomActionRow(row);
         this.tickToCompletion();
       },
       REPLAY_CHUNK_SIZE,
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
-    this.orderedActions.finishReplay((existingActions ?? []).length);
+    this.orderedActions.finishReplay(rows.length);
+    this.finishBotPlanReplay();
+    this.clearStaleBotPreparationFailure();
 
     // 2. Subscribe to new room_actions rows via Realtime Postgres Changes.
     this.channel = this.supabase
@@ -339,7 +477,7 @@ export class NetworkClient implements GameClient {
           // Drop already-applied rows before buffering to prevent a slow memory
           // leak where stale keys below nextExpectedSeq accumulate indefinitely
           // (flushPendingActions only ever consumes the exact nextExpectedSeq key).
-          if (!this.orderedActions.buffer(row.seq, row.action as NetworkAction)) return;
+          if (!this.orderedActions.buffer(row.seq, row)) return;
           // Buffer the incoming action keyed by its seq number.
           // Do not apply immediately — Supabase Realtime does not guarantee
           // delivery order, so seq=6 may arrive before seq=5. Buffer and flush
@@ -450,15 +588,14 @@ export class NetworkClient implements GameClient {
   }
 
   /**
-   * Begin the rAF loop. engine.tick() is called each frame (~60fps) and
-   * state is emitted to listeners.
+   * Begin the rAF loop. RAF timestamps produce fixed 60 Hz logical beats;
+   * each beat advances complete engine ticks and emits one presentation state.
    *
    * NOTE: In LIVE play a fire echo is applied in flushPendingActions WITHOUT
    * ticking to completion (tickToCompletion runs only during initialize() replay).
-   * The input lock + fire watchdog are released the moment the echo applies
-   * (setFiring(false) in flushPendingActions) — BEFORE this RAF loop animates the
-   * flight — so a long shot's animation can never trip the watchdog; it only guards
-   * a submit that never commits. This RAF loop renders the flight tick-by-tick and,
+   * The input lock and command watchdog are released only when the matching echo
+   * applies, before this RAF loop animates the flight. A long shot's animation cannot
+   * trip the watchdog. This RAF loop renders the flight tick-by-tick and,
    * when the engine leaves FIRING/RESOLVING, drains the next buffered action.
    */
   setFastForward(on: boolean): void {
@@ -466,50 +603,58 @@ export class NetworkClient implements GameClient {
   }
 
   start(): void {
-    const loop = () => {
-      // Fast-forward (review #7) runs several fixed-step ticks per frame while a shot
-      // is live — SAME tick count + outcome as 1/frame (deterministic), just fewer
-      // frames drawn. The per-tick wasBusy/!nowBusy drain below is UNCHANGED and still
-      // runs at most once per frame (we break on it), so the seq-ordered buffered-action
-      // hand-off at the shot boundary is preserved exactly — fast-forward is pure local
-      // view pacing and never touches the log or the lockstep drain.
-      const maxTicks = fastForwardTicks(this._fastForward, this.engine.getState().phase);
-      for (let i = 0; i < maxTicks; i++) {
-        const preTick = this.engine.getState().phase;
-        const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
-        this.engine.tick();
-        const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
-        // When the engine LEAVES the entire flight-resolution sequence (FIRING then
-        // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
-        // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
-        // the engine re-enters FIRING, so the RAF loop advances the queue between
-        // shots — this prevents a buffered N+1 from being dropped while N is still
-        // in the settle phase (P0-2 + RESOLVING regression).
-        if (wasBusy && !nowBusy) {
-          this.flushPendingActions();
-          break; // one drain per frame; next shot animates fresh next frame
-        }
-        if (!wasBusy) break; // input-accepting phase — tick() is a no-op, don't spin
-      }
-      this.emitState();
-      if (this._disposed) return;
-      this.rafId = requestAnimationFrame(loop);
+    if (this._disposed || this.frameRunning) return;
+    this.frameRunning = true;
+    const generation = ++this.frameGeneration;
+    this.frameClock.reset(performance.now());
+    const isCurrent = (): boolean => (
+      !this._disposed && this.frameRunning && this.frameGeneration === generation
+    );
+    const schedule = (loop: FrameRequestCallback): void => {
+      if (isCurrent()) this.rafId = requestAnimationFrame(loop);
     };
-    this.rafId = requestAnimationFrame(loop);
+    const loop: FrameRequestCallback = (timestamp): void => {
+      if (!isCurrent()) return;
+      this.rafId = null;
+      const logicalBeats = this.frameClock.advance(timestamp);
+      for (let beat = 0; beat < logicalBeats; beat++) {
+        if (!isCurrent()) return;
+        // Fast-forward runs eight fixed ticks per logical beat while a shot is
+        // busy. Ordered-action handoff remains limited to one drain per beat.
+        const maxTicks = fastForwardTicks(this._fastForward, this.engine.getState().phase);
+        for (let i = 0; i < maxTicks; i++) {
+          const preTick = this.engine.getState().phase;
+          const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
+          this.engine.tick();
+          const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
+          // When the engine LEAVES the entire flight-resolution sequence (FIRING then
+          // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
+          // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
+          // the engine re-enters FIRING, so the next logical beat advances that shot.
+          if (wasBusy && !nowBusy) {
+            this.flushPendingActions();
+            break;
+          }
+          if (!wasBusy) break;
+        }
+        if (!isCurrent()) return;
+        this.emitState();
+        if (!isCurrent()) return;
+      }
+      schedule(loop);
+    };
+    schedule(loop);
   }
 
   stop(): void {
+    this.frameRunning = false;
+    this.frameGeneration++;
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
+    this.retirePendingCommands();
     this.orderedActions.dispose();
-    if (this.fireWatchdog !== null) {
-      clearTimeout(this.fireWatchdog);
-      this.fireWatchdog = null;
-    }
-    if (this.seqRetryTimer !== null) {
-      clearTimeout(this.seqRetryTimer);
-      this.seqRetryTimer = null;
-    }
+    this.clearCommandWatchdog();
+    this.fireLockOwner = null;
     this.clearTurnWatchTimers();
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
@@ -529,6 +674,19 @@ export class NetworkClient implements GameClient {
     }
     this.quickChatListeners.clear();
     this.accountProgressListeners.clear();
+    this.botActionAttempt = null;
+    this.botPlanCache = null;
+    this.botPreparationFailedKey = null;
+    this.botAccessoryPreparationFailedKey = null;
+    this.botPreparationFailureMessage = null;
+    this.pendingBotPreparationNotice = null;
+  }
+
+  invalidatePendingCommands(): void {
+    if (this._disposed) return;
+    this.retirePendingCommands();
+    this.setFiring(false);
+    this.emitState();
   }
 
   /**
@@ -554,6 +712,15 @@ export class NetworkClient implements GameClient {
     }
 
     const state = this.engine.getState();
+
+    if (
+      this.pendingRoomCommand
+      && this.pendingRoomCommand.envelope.actorPlayerId === this.playerId
+      && (action.type === 'set_angle' || action.type === 'set_power' || action.type === 'select_weapon')
+    ) {
+      this.notifyCommandFailure('Another action is still pending.');
+      return;
+    }
 
     // ROUND_OVER between-rounds shop (V1 match structure, networked). Turn ownership
     // does NOT apply here — every player may shop their own tank, and the round is
@@ -621,7 +788,6 @@ export class NetworkClient implements GameClient {
       const shieldWeapon = action.weapon ?? (shielder.selectedWeapon === 'heavy_shield' ? 'heavy_shield' : 'shield');
       const ammo = shielder.inventory[shieldWeapon];
       if (!ammo.unlimited && ammo.count <= 0) return;
-      this.setFiring(true); // lock input until the Realtime echo applies it
       this.submitAction({ type: 'use_shield', weapon: shieldWeapon });
       return;
     }
@@ -649,11 +815,10 @@ export class NetworkClient implements GameClient {
       weapon: activeTank.selectedWeapon,
     };
 
-    this.setFiring(true);
     this.submitAction(networkAction);
   }
 
-  getState(): GameState {
+  getState(): BorrowedGameState {
     return this.engine.getState();
   }
 
@@ -689,6 +854,11 @@ export class NetworkClient implements GameClient {
   /** Subscribe to fire/shield submission failures (rejected or never echoed). */
   onFireFailed(listener: (message: string) => void): () => void {
     this.fireFailedListeners.add(listener);
+    if (this.pendingBotPreparationNotice) {
+      const message = this.pendingBotPreparationNotice;
+      this.pendingBotPreparationNotice = null;
+      listener(message);
+    }
     return () => this.fireFailedListeners.delete(listener);
   }
 
@@ -704,50 +874,50 @@ export class NetworkClient implements GameClient {
     for (const l of this.connectionListeners) l(state);
   }
 
-  /**
-   * Set the "firing" input lock. Arming it (true) starts a watchdog: if a submitted
-   * shot has not echoed back within FIRE_TIMEOUT_MS, the watchdog first attempts a
-   * RESYNC (re-fetch the canonical log) rather than failing outright — the submit may
-   * have committed while the Realtime echo was slow or dropped, in which case the
-   * resync applies our shot and self-heals. Only if the shot is STILL unresolved after
-   * the resync (it genuinely never committed) do we release the lock and notify for a
-   * retry — a clean retry that can no longer desync from a half-applied commit. The
-   * echo path (flushPendingActions) calls this with false, which also disarms the watchdog.
-   */
   private setFiring(value: boolean): void {
     this._isFiring = value;
-    if (this.fireWatchdog !== null) {
-      clearTimeout(this.fireWatchdog);
-      this.fireWatchdog = null;
-    }
-    if (value) {
-      this.fireWatchdog = setTimeout(() => {
-        this.fireWatchdog = null;
-        if (this._isFiring) void this.recoverStuckFire();
-      }, NetworkClient.FIRE_TIMEOUT_MS);
-    }
   }
 
-  /**
-   * Watchdog recovery: a fired shot has not echoed within FIRE_TIMEOUT_MS. Re-fetch
-   * the canonical log first — if our action committed (slow / dropped Realtime echo),
-   * resyncLog applies it and flushPendingActions clears the firing lock, so the shot
-   * resolves and we self-heal. If the lock is STILL set afterward, the submit never
-   * landed: release it and notify the player for a clean retry (no half-applied commit
-   * to desync from). resyncLog swallows its own fetch errors, so a dead network simply
-   * leaves the lock set and falls through to the retry notice.
-   */
-  private async recoverStuckFire(): Promise<void> {
-    await this.resyncLog();
-    if (this._isFiring) this.failFire('Shot timed out — try again.');
+  private clearCommandWatchdog(): void {
+    if (this.commandWatchdog === null) return;
+    clearTimeout(this.commandWatchdog);
+    this.commandWatchdog = null;
+  }
+
+  private armCommandWatchdog(pending: PendingRoomCommand, deliveryEpoch: number): void {
+    this.clearCommandWatchdog();
+    this.commandWatchdog = setTimeout(() => {
+      this.commandWatchdog = null;
+      if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
+      void this.recoverRoomCommand(pending, deliveryEpoch, 'Action timed out — retry the same action.');
+    }, NetworkClient.FIRE_TIMEOUT_MS);
+  }
+
+  private lockFiringFor(pending: PendingRoomCommand, deliveryEpoch: number): void {
+    this.fireLockOwner = { pending, deliveryEpoch };
+    this.setFiring(true);
+  }
+
+  private releaseFiringFor(pending: PendingRoomCommand, deliveryEpoch?: number): void {
+    const owner = this.fireLockOwner;
+    if (!owner || owner.pending !== pending) return;
+    if (deliveryEpoch !== undefined && owner.deliveryEpoch !== deliveryEpoch) return;
+    this.fireLockOwner = null;
+    this.setFiring(false);
   }
 
   /** Release a stuck fire lock and notify the UI so the player can re-aim. */
   private failFire(message: string): void {
     if (this._disposed) return; // client torn down — no lock to release, no one to notify
+    this.fireLockOwner = null;
     this.setFiring(false);
     this.emitState(); // re-render so the HUD drops "Sending…" immediately
     for (const l of this.fireFailedListeners) l(message);
+  }
+
+  private notifyCommandFailure(message: string): void {
+    if (this._disposed) return;
+    for (const listener of this.fireFailedListeners) listener(message);
   }
 
   /**
@@ -756,34 +926,35 @@ export class NetworkClient implements GameClient {
    * order — the canonical log is the source of truth, so this is a safe, idempotent
    * catch-up (rows we already have are skipped by the seq gate in flushPendingActions).
    */
-  private async resyncLog(): Promise<void> {
-    // Bound the fetch with an AbortController so a hung connection can't leave this
-    // await pending forever (which would trap the fire watchdog — #57). An abort
-    // surfaces as a thrown error / an { error } result; both fall through to the
-    // early return below, so recoverStuckFire() still reaches its failFire().
+  private async resyncLog(
+    commandGeneration = this.commandGeneration,
+    stillCurrent: () => boolean = () => true,
+  ): Promise<void> {
+    if (commandGeneration !== this.commandGeneration || this._disposed || !stillCurrent()) return;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), NetworkClient.RESYNC_TIMEOUT_MS);
-    let data: unknown, error: { message?: string } | null;
-    try {
-      ({ data, error } = await this.supabase
+    const query = this.supabase
         .from('room_actions')
         .select('*')
         .eq('room_id', this.roomId)
         .gte('seq', this.orderedActions.nextExpectedSeq)
         .order('seq', { ascending: true })
-        .abortSignal(controller.signal));
-    } catch (e) {
-      console.error('NetworkClient.resyncLog: log re-fetch aborted/failed:', (e as Error)?.message ?? e);
+        .abortSignal(controller.signal) as unknown as PromiseLike<{
+          data: unknown;
+          error: { message?: string } | null;
+        }>;
+    const settled = await settleWithDeadline(query, NetworkClient.RESYNC_TIMEOUT_MS, () => controller.abort());
+    if (commandGeneration !== this.commandGeneration || this._disposed || !stillCurrent()) return;
+    if (!settled.ok) {
+      console.error('NetworkClient.resyncLog: log re-fetch deadline/failed:', (settled.error as Error)?.message ?? settled.error);
       return;
-    } finally {
-      clearTimeout(timeout);
     }
+    const { data, error } = settled.value;
     if (error) {
       console.error('NetworkClient.resyncLog: failed to re-fetch log:', error.message);
       return;
     }
     if (!this.orderedActions.acceptResync(
-      (data ?? []) as RoomActionRow[],
+      ((data ?? []) as RoomActionRow[]).map((row) => ({ seq: row.seq, action: row })),
     )) return;
     this.flushPendingActions();
   }
@@ -859,6 +1030,7 @@ export class NetworkClient implements GameClient {
       maxWind?: number;
       gravity?: number;
       rulesetVersion?: unknown;
+      commandProtocolVersion?: unknown;
       walls?: WallMode;
       battlefieldWorld?: string;
       hazards?: TerrainHazardMode;
@@ -881,6 +1053,11 @@ export class NetworkClient implements GameClient {
       this._rematchHandled = false;
       return;
     }
+    if (opts.commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+      console.warn('NetworkClient.handleRematch: incompatible successor command protocol', newRoomId);
+      this._rematchHandled = false;
+      return;
+    }
     listener({
       roomId:  data.id as string,
       code:    data.code as string,
@@ -890,6 +1067,7 @@ export class NetworkClient implements GameClient {
         maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : MAX_WIND,
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
         rulesetVersion: normalizeNetworkRulesetVersion(opts.rulesetVersion),
+        commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
         walls:      normalizeWallMode(opts.walls),
         ...(normalizeBattlefieldWorldId(opts.battlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(opts.battlefieldWorld) }
@@ -906,31 +1084,34 @@ export class NetworkClient implements GameClient {
     });
   }
 
-  /**
-   * POST the fire action to the submit_action Edge Function.
-   * Fire-and-forget; errors are logged but not retried in MVP2 (see Appendix C item 3).
-   */
+  /** Submit exactly one immutable command envelope for the current room revision. */
   private submitAction(
     networkAction: NetworkAction,
-    retryOnConflict = true,
+    _retryOnConflict = true,
     actingPlayerId?: string,
-    attempt = 0,
+    _attempt = 0,
     roundOver = false,
-    // Terminal-outcome hook for the bot driver (#119). Called once the POST resolves:
-    // committed=true  -> the action is on the canonical log (ours accepted, a racer's
-    //                    identical action won, or the turn already advanced) — stop trying.
-    // committed=false -> a transient failure that did NOT commit — safe to re-attempt.
-    // Only the bot path passes it; human submits leave it undefined.
-    onSettle?: (committed: boolean) => void,
-  ): void {
-    // For TURN-ENDING actions, tell the server which seat is active NEXT (this client's
-    // engine skips eliminated tanks AND re-seats the opener at a round boundary; the
-    // server's modulo cursor can't do either). We also detect whether this action ENDS
-    // a round — if so the server must honor the reported seat unconditionally, because
-    // a round resets to the opener (seat 0), which may be the very seat that just fired
-    // (the modulo "you can't keep your own turn" guard would otherwise reject it).
-    // Turn-neutral buys / move and next_round don't move the cursor, so they
-    // report neither.
+    onSettle?: (settlement: BotSubmitSettlement) => void,
+  ): boolean {
+    if (this._disposed || this.canonicalCommandFault) return false;
+    const actorPlayerId = actingPlayerId ?? this.playerId;
+    const actorTankId = this.playerIndexMap.get(actorPlayerId);
+    if (!actorTankId) return false;
+    const existing = this.pendingRoomCommand;
+    if (existing) {
+      if (
+        existing.state === 'retryable'
+        && existing.envelope.expectedRevision === this.nextExpectedSeq
+        && existing.envelope.actorPlayerId === actorPlayerId
+        && networkActionsEqual(existing.envelope.action, networkAction)
+      ) {
+        this.beginRoomCommandDelivery(existing, onSettle);
+        return true;
+      } else if (!actingPlayerId) {
+        this.notifyCommandFailure('Another action is still pending.');
+      }
+      return false;
+    }
     const isTurnEnding = networkAction.type === 'fire' || networkAction.type === 'use_shield';
     let nextActiveIndex: number | undefined;
     let endsRound = roundOver; // ROUND_OVER buy / next_round pass this in directly
@@ -939,95 +1120,288 @@ export class NetworkClient implements GameClient {
       nextActiveIndex = seat.index;
       endsRound = endsRound || seat.endsRound;
     }
-    fetch(edgeUrl('submit_action'), {
-      method:  'POST',
-      headers: edgeHeaders(),
-      body: JSON.stringify({
-        roomId:   this.roomId,
-        playerId: this.playerId,
-        token:    this.token,
-        rulesetVersion: normalizeNetworkRulesetVersion(this.options.rulesetVersion),
-        ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
-        // roundOver: this action ends a round (the killing blow) or operates within the
-        // between-rounds shop (buy / next_round). Tells the referee to skip the turn gate
-        // (shop actions) or honor the reported opener seat unconditionally (killing blow).
-        ...(endsRound ? { roundOver: true } : {}),
-        // Present only when proxying a CPU seat — the seat the action is FOR.
-        ...(actingPlayerId ? { actingPlayerId } : {}),
-        action:   networkAction,
-      }),
-    })
-      .then(res => res.json())
-      .then((data: { ok?: boolean; error?: string; retry?: boolean; seq?: number }) => {
-        if (this._disposed) return; // client torn down while this request was in flight
-        if (!data.ok) {
-          const isConflict = data.error === 'seq_conflict' || data.retry === true;
-          if (isConflict && retryOnConflict && attempt < NetworkClient.MAX_SEQ_RETRIES) {
-            // Seq collision (humans only — bots pass retryOnConflict=false, since the
-            // winning row is the same bot action). Retry with bounded exponential
-            // backoff + jitter so a near-simultaneous human submit lands instead of
-            // being dropped after one shot (P2-10). Jitter decorrelates the racers.
-            const delay = Math.min(NetworkClient.SEQ_BACKOFF_MS * 2 ** attempt, 240)
-              + Math.floor(Math.random() * 25);
-            this.seqRetryTimer = setTimeout(
-              () => {
-                this.seqRetryTimer = null;
-                if (this._disposed) return; // stop() ran while the retry was scheduled
-                this.submitAction(networkAction, true, actingPlayerId, attempt + 1, roundOver);
-              },
-              delay,
-            );
-          } else if (isConflict && retryOnConflict) {
-            // Exhausted retries (a human action that kept colliding) — release the
-            // input lock so the player can re-fire rather than stay stuck.
-            console.error('NetworkClient: submit_action seq-conflict retries exhausted');
-            if (!actingPlayerId) this.failFire('Shot kept colliding — try again.');
-          } else if (!isConflict && data.error === 'Not your turn') {
-            // The canonical local-vs-referee desync signature: our engine thought it
-            // was our turn but the referee disagreed. Not an error (can be a benign
-            // race), but log it at warn so a real desync is diagnosable (obs-006).
-            console.warn('NetworkClient: submit_action "Not your turn" — possible desync', {
-              roomId: this.roomId,
-              localActivePlayerId: this.engine.getState().activePlayerId,
-            });
-            // For a bot proxy this means the turn already advanced (someone committed):
-            // treat as committed so the driver latches instead of re-attempting.
-            onSettle?.(true);
-          } else if (!isConflict) {
-            // A non-conflict rejection (e.g. a 5xx where the RPC errored) — the action
-            // did NOT commit.
-            console.error('NetworkClient: submit_action rejected:', data.error);
-            // A genuine rejection of OUR OWN turn-ending action (not a bot proxy):
-            // release the "Sending…" lock and tell the player, so a failed shot
-            // doesn't trap them (P1-6). Bot proxies don't hold the lock.
-            if (!actingPlayerId) this.failFire('Shot failed — try again.');
-            // Transient for a bot proxy: clear the in-flight mark so the next frame retries.
-            onSettle?.(false);
-          } else {
-            // isConflict && !retryOnConflict: a bot's lost race. Another client committed
-            // the identical bot action, so the phase IS on the log — latch, don't retry.
-            onSettle?.(true);
-          }
-        } else {
-          // Accepted: our submit is the committed row for this phase.
-          onSettle?.(true);
-        }
-      })
-      .catch(err => {
-        console.error('NetworkClient: submit_action network error:', err);
-        if (!actingPlayerId) this.failFire('Connection problem — shot not sent. Try again.');
-        // Network error: nothing committed — let the bot driver re-attempt next frame.
-        onSettle?.(false);
-      });
+    const expectedRevision = this.nextExpectedSeq;
+    const kind = networkAction.type === 'buy' ? 'buy' : 'act';
+    const intentId = actingPlayerId
+      ? cpuRoomIntentId({ roomId: this.roomId, expectedRevision, actorPlayerId, kind })
+      : crypto.randomUUID();
+    const envelope: RoomCommandEnvelopeV2<NetworkAction> = {
+      version: CURRENT_ROOM_COMMAND_VERSION,
+      intentId,
+      expectedRevision,
+      actorPlayerId,
+      action: networkAction,
+      ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
+      ...(endsRound ? { roundOver: true } : {}),
+    };
+    const body = JSON.stringify({
+      roomId: this.roomId,
+      playerId: this.playerId,
+      token: this.token,
+      rulesetVersion: normalizeNetworkRulesetVersion(this.options.rulesetVersion),
+      command: envelope,
+    });
+    const pending: PendingRoomCommand = {
+      generation: this.commandGeneration,
+      envelope,
+      body,
+      actorTankId,
+      humanTurnEnding: !actingPlayerId && isTurnEnding,
+      deliveryEpoch: 0,
+      state: 'retryable',
+      transportAbort: null,
+      ...(onSettle ? { onSettle } : {}),
+    };
+    this.pendingRoomCommand = pending;
+    this.beginRoomCommandDelivery(pending, onSettle);
+    return true;
+  }
+
+  private beginRoomCommandDelivery(
+    pending: PendingRoomCommand,
+    onSettle?: (settlement: BotSubmitSettlement) => void,
+  ): void {
+    this.clearCommandWatchdog();
+    pending.transportAbort?.abort();
+    pending.deliveryEpoch += 1;
+    pending.state = 'delivering';
+    if (onSettle) pending.onSettle = onSettle;
+    const deliveryEpoch = pending.deliveryEpoch;
+    if (pending.humanTurnEnding) this.lockFiringFor(pending, deliveryEpoch);
+    void this.deliverRoomCommand(pending, deliveryEpoch);
+  }
+
+  private async deliverRoomCommand(pending: PendingRoomCommand, deliveryEpoch: number): Promise<void> {
+    const current = (): boolean => this.isCurrentDelivery(pending, deliveryEpoch);
+    const controller = new AbortController();
+    pending.transportAbort = controller;
+    const attempts = postOnceWithRetry(
+      async () => {
+        const response = await fetch(edgeUrl('submit_action'), {
+          method: 'POST', headers: edgeHeaders(), body: pending.body, signal: controller.signal,
+        });
+        const data = await response.json() as unknown;
+        return {
+          status: Number.isInteger(response.status) ? response.status : undefined,
+          data,
+        };
+      },
+      2,
+      undefined,
+      current,
+    );
+    const bounded = await settleWithDeadline(
+      attempts,
+      NetworkClient.COMMAND_DELIVERY_TIMEOUT_MS,
+      () => controller.abort(),
+    );
+    if (!current()) return;
+    pending.transportAbort = null;
+    const result = bounded.ok ? bounded.value : bounded;
+    if (!result.ok) {
+      console.error('NetworkClient: submit_action transport uncertainty:', result.error);
+      await this.recoverRoomCommand(
+        pending,
+        deliveryEpoch,
+        'Connection problem — retry the same action.',
+      );
+      return;
+    }
+    const { data, status } = result.value;
+    if (status !== undefined && status >= 500) {
+      console.error('NetworkClient: submit_action server response is uncertain', { status });
+      await this.recoverRoomCommand(
+        pending,
+        deliveryEpoch,
+        'Server response uncertain — retry the same action.',
+      );
+      return;
+    }
+    if ((status === undefined || (status >= 200 && status < 300)) && this.isReceiptFor(pending, data)) {
+      pending.onSettle?.('accepted');
+      pending.state = 'awaiting-echo';
+      await this.resyncLog(pending.generation, current);
+      if (current()) this.armCommandWatchdog(pending, deliveryEpoch);
+      return;
+    }
+    const error = typeof data === 'object' && data !== null && typeof (data as { error?: unknown }).error === 'string'
+      ? (data as { error: string }).error
+      : undefined;
+    const mappedConflict = isMappedCommandResponse(error, status, ROOM_COMMAND_CONFLICT_STATUS);
+    const legacyNotYourTurn = status === undefined && error === 'Not your turn';
+    if (mappedConflict || legacyNotYourTurn) {
+      if (error === 'not_your_turn' || legacyNotYourTurn) {
+        console.warn('NetworkClient: submit_action "Not your turn" — possible desync', {
+          roomId: this.roomId,
+          localActivePlayerId: this.engine.getState().activePlayerId,
+        });
+      }
+      pending.onSettle?.('conflict');
+      pending.state = 'recovering';
+      await this.resyncLog(pending.generation, current);
+      if (!current()) return;
+      this.releaseFiringFor(pending, deliveryEpoch);
+      this.finishPendingCommand(pending);
+      if (pending.humanTurnEnding) this.emitState();
+      if (pending.envelope.actorPlayerId === this.playerId) {
+        this.notifyCommandFailure('Turn changed — review the updated game and try again.');
+      }
+      return;
+    }
+    const mappedRefusal = isMappedCommandResponse(error, status, ROOM_COMMAND_REFUSAL_STATUS);
+    const legacyRefusal = status === undefined && error !== undefined && error !== '';
+    if (mappedRefusal || legacyRefusal) {
+      console.error('NetworkClient: submit_action rejected:', error);
+      pending.onSettle?.('failed');
+      this.releaseFiringFor(pending, deliveryEpoch);
+      this.finishPendingCommand(pending);
+      if (pending.humanTurnEnding) this.emitState();
+      if (pending.envelope.actorPlayerId === this.playerId) this.notifyCommandFailure('Action failed — try again.');
+      return;
+    }
+    console.error('NetworkClient: submit_action returned an incompatible command receipt');
+    pending.state = 'awaiting-echo';
+    this.notifyCommandFailure('Command receipt mismatch — reload to continue.');
+    this.armCommandWatchdog(pending, deliveryEpoch);
+  }
+
+  private async recoverRoomCommand(
+    pending: PendingRoomCommand,
+    deliveryEpoch: number,
+    message: string,
+  ): Promise<void> {
+    if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
+    pending.state = 'recovering';
+    const current = (): boolean => this.isCurrentDelivery(pending, deliveryEpoch);
+    await this.resyncLog(pending.generation, current);
+    if (!current()) return;
+    if (this.orderedActions.nextExpectedSeq > pending.envelope.expectedRevision) {
+      const onSettle = pending.onSettle;
+      const shouldDriveBot = onSettle !== undefined;
+      this.releaseFiringFor(pending, deliveryEpoch);
+      this.finishPendingCommand(pending);
+      onSettle?.('failed');
+      if (pending.humanTurnEnding || shouldDriveBot) this.emitState();
+      if (pending.envelope.actorPlayerId === this.playerId) {
+        this.notifyCommandFailure('Turn changed — review the updated game and try again.');
+      }
+      return;
+    }
+    pending.state = 'retryable';
+    this.releaseFiringFor(pending, deliveryEpoch);
+    pending.onSettle?.('failed');
+    if (pending.humanTurnEnding) this.emitState();
+    if (pending.envelope.actorPlayerId === this.playerId) this.notifyCommandFailure(message);
+  }
+
+  private isReceiptFor(pending: PendingRoomCommand, value: unknown): value is RoomCommandReceiptV2 {
+    if (typeof value !== 'object' || value === null) return false;
+    const receipt = value as Partial<RoomCommandReceiptV2>;
+    return receipt.ok === true
+      && receipt.protocolVersion === CURRENT_ROOM_COMMAND_VERSION
+      && receipt.intentId === pending.envelope.intentId
+      && receipt.seq === pending.envelope.expectedRevision
+      && receipt.revision === pending.envelope.expectedRevision + 1
+      && receipt.actorPlayerId === pending.envelope.actorPlayerId
+      && receipt.actorTankId === pending.actorTankId;
+  }
+
+  private isCurrentCommand(pending: PendingRoomCommand): boolean {
+    return !this._disposed
+      && pending.generation === this.commandGeneration
+      && this.pendingRoomCommand === pending;
+  }
+
+  private isCurrentDelivery(pending: PendingRoomCommand, deliveryEpoch: number): boolean {
+    return this.isCurrentCommand(pending) && pending.deliveryEpoch === deliveryEpoch;
+  }
+
+  private finishPendingCommand(pending: PendingRoomCommand): void {
+    if (this.pendingRoomCommand !== pending) return;
+    this.clearCommandWatchdog();
+    pending.transportAbort?.abort();
+    pending.transportAbort = null;
+    pending.deliveryEpoch += 1;
+    this.pendingRoomCommand = null;
+  }
+
+  private retirePendingCommands(): void {
+    const pending = this.pendingRoomCommand;
+    this.clearCommandWatchdog();
+    pending?.transportAbort?.abort();
+    if (pending) pending.deliveryEpoch += 1;
+    if (pending) this.releaseFiringFor(pending);
+    this.commandGeneration += 1;
+    this.pendingRoomCommand = null;
+    this.botSubmitPendingKey = null;
+    this.botActionAttempt = null;
+    this.botPlanCache = null;
   }
 
   /**
    * Apply a logged network action to the local engine and RECORD it in the
    * applied log (used to compute the next active seat — see computeNextSeat).
+   * Preparation recovery is derived here from canonical before/after state so
+   * live observers, resyncs, and late-history replays reach the same decision.
    */
-  private applyNetworkAction(action: NetworkAction): void {
+  private applyNetworkAction(action: NetworkAction, expectedRevision = this.nextExpectedSeq): void {
+    const before = this.engine.getState();
+    const context = {
+      phase: before.phase,
+      round: before.round,
+      turn: before.turn,
+      tankId: before.activePlayerId,
+    };
+    const preparation = this.describeBotPreparation(action, before, expectedRevision);
     replayNetworkAction(this.engine, action);
     this.appliedLog.push(action);
+    if (preparation) this.reconcileBotPreparation(preparation);
+    this.reconcileBotActionAttempt(action, context);
+  }
+
+  private applyRoomActionRow(row: RoomActionRow): (() => string | undefined) | null {
+    this.validateRoomActionRowShape(row);
+    const pending = this.pendingRoomCommand;
+    if (pending && row.seq === pending.envelope.expectedRevision) {
+      const matches = row.intent_id === pending.envelope.intentId
+        && row.player_id === pending.envelope.actorPlayerId
+        && networkActionsEqual(row.action, pending.envelope.action);
+      this.applyNetworkAction(row.action, row.seq);
+      if (matches) {
+        return () => {
+          this.releaseFiringFor(pending);
+          this.finishPendingCommand(pending);
+          return undefined;
+        };
+      } else if (!pending.onSettle) {
+        return () => {
+          this.releaseFiringFor(pending);
+          this.finishPendingCommand(pending);
+          return pending.humanTurnEnding
+            ? 'Turn changed — review the updated game and try again.'
+            : undefined;
+        };
+      }
+      return null;
+    }
+
+    this.applyNetworkAction(row.action, row.seq);
+    return null;
+  }
+
+  private validateRoomActionRowShape(row: RoomActionRow): void {
+    const binding = row.action?.commandActor;
+    const mappedTankId = this.playerIndexMap.get(row.player_id);
+    if (
+      row.command_version !== CURRENT_ROOM_COMMAND_VERSION
+      || !row.intent_id
+      || row.expected_revision !== row.seq
+      || !binding
+      || !mappedTankId
+      || binding.tankId !== mappedTankId
+    ) {
+      throw new Error(`NetworkClient: incompatible command row at seq ${row.seq}`);
+    }
   }
 
   /**
@@ -1099,6 +1473,187 @@ export class NetworkClient implements GameClient {
     }
   }
 
+  private describeBotPreparation(
+    action: NetworkAction,
+    state: GameState,
+    expectedRevision: number,
+  ): BotPreparation | null {
+    if (state.phase !== 'PLAYER_TURN' || action.type !== 'buy') return null;
+    const tankId = state.activePlayerId;
+    const difficulty = this.botByTank.get(tankId);
+    if (!difficulty) return null;
+    const plan = this.getBotPlan(state, tankId, difficulty, expectedRevision);
+    if (!plan) return null;
+    const cache = this.botPlanCache;
+    if (!cache) return null;
+    const context = {
+      generation: cache.generation,
+      expectedRevision: cache.expectedRevision,
+      round: cache.round,
+      turn: cache.turn,
+    };
+    if (action.weapon && plan.buy === action.weapon) {
+      return {
+        ...context,
+        key: this.botPreparationKey(state, tankId, 'weapon', action.weapon),
+        tankId,
+        kind: 'weapon',
+        weapon: action.weapon,
+      };
+    }
+    if (action.accessory && plan.buyAccessory === action.accessory) {
+      const previousCount = state.tanks.find((tank) => tank.id === tankId)?.accessories[action.accessory] ?? 0;
+      return {
+        ...context,
+        key: this.botPreparationKey(state, tankId, 'accessory', action.accessory),
+        tankId,
+        kind: 'accessory',
+        accessory: action.accessory,
+        previousCount,
+      };
+    }
+    return null;
+  }
+
+  /**
+   * The ordered action and its before/after engine state are canonical. Every
+   * same-build client therefore records the same bounded recovery even if it did
+   * not submit the buy itself or is replaying it from history.
+   */
+  private reconcileBotPreparation(
+    preparation: BotPreparation,
+  ): void {
+    const state = this.engine.getState();
+    if (!this.advanceBotPlanPreparation(preparation, state)) this.botPlanCache = null;
+    if (preparation.kind === 'accessory') {
+      const currentCount = state.tanks.find((tank) => tank.id === preparation.tankId)
+        ?.accessories[preparation.accessory] ?? 0;
+      if (currentCount > preparation.previousCount) {
+        if (this.botAccessoryPreparationFailedKey === preparation.key) {
+          this.botAccessoryPreparationFailedKey = null;
+        }
+      } else {
+        this.botAccessoryPreparationFailedKey = preparation.key;
+      }
+      return;
+    }
+
+    if (hasUsableWeapon(state, preparation.tankId, preparation.weapon)) {
+      if (this.botPreparationFailedKey === preparation.key) {
+        this.botPreparationFailedKey = null;
+        this.botPreparationFailureMessage = null;
+        this.pendingBotPreparationNotice = null;
+      }
+      return;
+    }
+
+    const message = hasUsableWeapon(state, preparation.tankId, 'baby_missile')
+      ? 'CPU restock failed — using Baby Missile.'
+      : 'CPU has no usable ammunition — reload to continue.';
+    if (
+      this.botPreparationFailedKey === preparation.key
+      && this.botPreparationFailureMessage === message
+    ) return;
+    this.botPreparationFailedKey = preparation.key;
+    this.botPreparationFailureMessage = message;
+    if (this.fireFailedListeners.size === 0) {
+      this.pendingBotPreparationNotice = message;
+      return;
+    }
+    for (const listener of this.fireFailedListeners) listener(message);
+  }
+
+  private advanceBotPlanPreparation(preparation: BotPreparation, state: GameState): boolean {
+    const cache = this.botPlanCache;
+    if (
+      !cache
+      || !cache.plan
+      || cache.generation !== preparation.generation
+      || cache.generation !== this.commandGeneration
+      || cache.expectedRevision !== preparation.expectedRevision
+      || (!this.orderedActions.isReplaying && cache.expectedRevision !== this.nextExpectedSeq)
+      || cache.round !== preparation.round
+      || cache.turn !== preparation.turn
+      || cache.tankId !== preparation.tankId
+      || state.phase !== 'PLAYER_TURN'
+      || state.round !== preparation.round
+      || state.turn !== preparation.turn
+      || state.activePlayerId !== preparation.tankId
+    ) return false;
+
+    if (preparation.kind === 'weapon') {
+      if (cache.weaponPreparationComplete || cache.plan.buy !== preparation.weapon) return false;
+      cache.weaponPreparationComplete = true;
+    } else {
+      if (cache.accessoryPreparationComplete || cache.plan.buyAccessory !== preparation.accessory) return false;
+      cache.accessoryPreparationComplete = true;
+    }
+    // OrderedActions commits this exact row's cursor immediately after replay.
+    // Retain the original choices while advancing the single cached plan to that
+    // next canonical revision; unrelated progress cannot satisfy these checks.
+    cache.expectedRevision = preparation.expectedRevision + 1;
+    return true;
+  }
+
+  private finishBotPlanReplay(): void {
+    const cache = this.botPlanCache;
+    if (!cache) return;
+    const state = this.engine.getState();
+    if (
+      cache.generation !== this.commandGeneration
+      || cache.expectedRevision !== this.nextExpectedSeq
+      || cache.round !== state.round
+      || cache.turn !== state.turn
+      || cache.tankId !== state.activePlayerId
+      || state.phase !== 'PLAYER_TURN'
+    ) this.botPlanCache = null;
+  }
+
+  private reconcileBotActionAttempt(
+    action: NetworkAction,
+    context: { phase: GameState['phase']; round: number; turn: number; tankId: string },
+  ): void {
+    const attempt = this.botActionAttempt;
+    if (
+      !attempt
+      || context.phase !== 'PLAYER_TURN'
+      || context.round !== attempt.round
+      || context.turn !== attempt.turn
+      || context.tankId !== attempt.tankId
+    ) return;
+    if (networkActionsEqual(action, attempt.action)) {
+      this.lastBotKey = attempt.phaseKey;
+      if (this.botSubmitPendingKey === attempt.phaseKey) this.botSubmitPendingKey = null;
+      this.botActionAttempt = null;
+      return;
+    }
+
+    // A different canonical row proves only that the log advanced, not that this
+    // request settled. Keep an unresolved request owned so emitState cannot submit
+    // the same phase again before its HTTP result arrives. If conflict arrived
+    // first, this retained row is the winner that releases one deterministic replan.
+    attempt.sawCanonicalProgress = true;
+    if (attempt.settlement !== 'conflict') return;
+    if (this.botSubmitPendingKey === attempt.phaseKey) this.botSubmitPendingKey = null;
+    this.botActionAttempt = null;
+  }
+
+  private clearStaleBotPreparationFailure(): void {
+    const state = this.engine.getState();
+    const turnKey = `${state.round}:${state.turn}:${state.activePlayerId}:`;
+    if (this.botPreparationFailedKey && !this.botPreparationFailedKey.startsWith(turnKey)) {
+      this.botPreparationFailedKey = null;
+      this.botPreparationFailureMessage = null;
+      this.pendingBotPreparationNotice = null;
+    }
+    if (
+      this.botAccessoryPreparationFailedKey
+      && !this.botAccessoryPreparationFailedKey.startsWith(turnKey)
+    ) {
+      this.botAccessoryPreparationFailedKey = null;
+    }
+  }
+
   /**
    * Flush buffered Realtime events in strict seq order.
    * Called after every buffered insertion AND from the RAF loop when a shot
@@ -1118,23 +1673,40 @@ export class NetworkClient implements GameClient {
    * forever and the client would freeze on the scoreboard.
    */
   private flushPendingActions(): void {
-    this.orderedActions.drain(
-      () => {
-        const phase = this.engine.getState().phase;
-        return phase === 'PLAYER_TURN' || phase === 'ROUND_OVER';
-      },
-      (action) => {
-        this.setFiring(false);
-        this.applyNetworkAction(action);
-      },
-      () => this.tickToCompletion(),
-      () => this.emitState(),
-    );
+    if (this.canonicalCommandFault) return;
+    let afterCommit: (() => string | undefined) | null = null;
+    const feedback: string[] = [];
+    try {
+      this.orderedActions.drain(
+        () => {
+          const phase = this.engine.getState().phase;
+          return phase === 'PLAYER_TURN' || phase === 'ROUND_OVER';
+        },
+        (row) => { afterCommit = this.applyRoomActionRow(row); },
+        () => this.tickToCompletion(),
+        () => {
+          const effect = afterCommit;
+          afterCommit = null;
+          const message = effect?.();
+          this.emitState();
+          if (message) feedback.push(message);
+        },
+      );
+    } catch (error) {
+      this.canonicalCommandFault = true;
+      console.error('NetworkClient: canonical command rejected before sequence commit', error);
+      for (const listener of this.fireFailedListeners) {
+        listener('Game state mismatch — reload to continue.');
+      }
+      return;
+    }
+    for (const message of feedback) this.notifyCommandFailure(message);
   }
 
   private emitState(): void {
     if (this._disposed) return; // client torn down — nothing left to notify
     const state = this.engine.getState();
+    this.clearStaleBotPreparationFailure();
     if (state.phase === 'GAME_OVER' && !this._gameOverReported) {
       this._gameOverReported = true;
       clearSession(); // match ended — the rejoin session descriptor is no longer valid (AC-04)
@@ -1232,49 +1804,200 @@ export class NetworkClient implements GameClient {
     const difficulty = this.botByTank.get(tankId);
     if (!difficulty) return;                       // active seat is human
 
+    const actingId = this.supaIdByTank.get(tankId);
+    if (!actingId) return;
+
+    // Command ownership is cheaper and stronger than planning. While R07 owns an
+    // immutable CPU envelope, do not run the planner again. A retryable delivery is
+    // re-driven from that exact envelope so its body/intent/revision stay unchanged.
+    const pending = this.pendingRoomCommand;
+    if (pending) {
+      if (
+        pending.generation === this.commandGeneration
+        && pending.envelope.expectedRevision === this.nextExpectedSeq
+        && pending.envelope.actorPlayerId === actingId
+        && pending.actorTankId === tankId
+        && pending.state === 'retryable'
+        && !this.botActionAttempt
+      ) {
+        this.submitBotAction(state, tankId, actingId, pending.envelope.action, pending.envelope.expectedRevision);
+      }
+      return;
+    }
+    if (this.botActionAttempt || this.botSubmitPendingKey) return;
+
     // Use the engine's EFFECTIVE gravity (sudden death ramps it past the threshold) so the
     // bot aims for the arc the engine will actually fly — not a flat base-gravity arc that
     // lands short once sudden death kicks in. Deterministic: every client's engine is at the
     // same turn, so all compute the identical plan (lockstep preserved).
-    const plan = computeAiPlan(state, tankId, difficulty, this.engine.getEffectiveGravity());
+    const plan = this.getBotPlan(state, tankId, difficulty);
     if (!plan) return;                             // no target (shouldn't happen)
+    const cache = this.botPlanCache;
+    if (!cache) return;
 
-    // Buy-to-restock (P1-7b) is a TWO-PHASE turn: a turn-neutral buy, then the
-    // shot. The buy does NOT advance the turn, so the guard is keyed on the PHASE
-    // (buy vs act), not just (turn, tank). After the buy commits and replays, the
-    // bot owns the weapon, so the recomputed plan has no `buy` and this driver
-    // submits the fire on the next pass. Every client recomputes the same
-    // transition deterministically, so buy and fire land as two ordered log rows.
-    const phase = plan.buy ? 'buy' : 'act';
-    const key = `${state.turn}:${tankId}:${phase}`;
-    if (key === this.lastBotKey) return;           // already committed this phase
-    if (key === this.botSubmitPendingKey) return;  // a submit for this phase is in flight
-
-    const actingId = this.supaIdByTank.get(tankId);
-    if (!actingId) return;
-
+    // Match the local driver's explicit order: weapon restock, optional accessory,
+    // then attack. A canonical no-op is skipped for this turn/item even though its
+    // row advances the revision; otherwise each new revision would repeat it forever.
+    const weaponPreparationKey = plan.buy
+      ? this.botPreparationKey(state, tankId, 'weapon', plan.buy)
+      : null;
+    const accessoryPreparationKey = plan.buyAccessory
+      ? this.botPreparationKey(state, tankId, 'accessory', plan.buyAccessory)
+      : null;
+    const recoveringPreparation = weaponPreparationKey !== null
+      && weaponPreparationKey === this.botPreparationFailedKey;
+    const attackWeapon: WeaponType = recoveringPreparation ? 'baby_missile' : plan.weapon;
     const action: NetworkAction = plan.buy
+      && !cache.weaponPreparationComplete
+      && weaponPreparationKey !== this.botPreparationFailedKey
       ? { type: 'buy', weapon: plan.buy }
-      : plan.weapon === 'shield'
+      : plan.buyAccessory
+        && !cache.accessoryPreparationComplete
+        && accessoryPreparationKey !== this.botAccessoryPreparationFailedKey
+        ? { type: 'buy', accessory: plan.buyAccessory }
+      : attackWeapon === 'shield'
         ? { type: 'use_shield' }
-        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: plan.weapon };
+        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: attackWeapon };
+    if (recoveringPreparation && action.type !== 'buy' && !hasUsableWeapon(state, tankId, attackWeapon)) return;
+
+    this.submitBotAction(state, tankId, actingId, action, this.nextExpectedSeq);
+  }
+
+  private getBotPlan(
+    state: GameState,
+    tankId: string,
+    difficulty: AiDifficulty,
+    expectedRevision = this.nextExpectedSeq,
+  ): AiPlan | null {
+    const generation = this.commandGeneration;
+    const round = state.round;
+    const turn = state.turn;
+    const cached = this.botPlanCache;
+    if (
+      cached
+      && cached.generation === generation
+      && cached.expectedRevision === expectedRevision
+      && cached.round === round
+      && cached.turn === turn
+      && cached.tankId === tankId
+    ) return cached.plan;
+
+    const plan = computeAiPlan(
+      state,
+      tankId,
+      difficulty,
+      this.engine.getEffectiveGravity(),
+      this.armsLevel,
+    );
+    const current = this.engine.getState();
+    if (
+      this._disposed
+      || generation !== this.commandGeneration
+      || (!this.orderedActions.isReplaying && expectedRevision !== this.nextExpectedSeq)
+      || current.phase !== 'PLAYER_TURN'
+      || current.round !== round
+      || current.turn !== turn
+      || current.activePlayerId !== tankId
+    ) return null;
+    this.botPlanCache = {
+      generation,
+      expectedRevision,
+      round,
+      turn,
+      tankId,
+      plan,
+      weaponPreparationComplete: false,
+      accessoryPreparationComplete: false,
+    };
+    return plan;
+  }
+
+  private botPreparationKey(
+    state: Pick<GameState, 'round' | 'turn'>,
+    tankId: string,
+    kind: 'weapon' | 'accessory',
+    item: WeaponType | AccessoryType,
+  ): string {
+    return `${state.round}:${state.turn}:${tankId}:${kind}:${item}`;
+  }
+
+  private botPhaseKey(
+    state: Pick<GameState, 'round' | 'turn'>,
+    tankId: string,
+    expectedRevision: number,
+    action: NetworkAction,
+  ): string {
+    const phase = action.type === 'buy'
+      ? action.weapon ? `buy:weapon:${action.weapon}` : `buy:accessory:${action.accessory ?? 'unknown'}`
+      : `act:${action.type}`;
+    return `${state.round}:${state.turn}:${tankId}:${expectedRevision}:${phase}`;
+  }
+
+  private submitBotAction(
+    state: GameState,
+    tankId: string,
+    actingId: string,
+    action: NetworkAction,
+    expectedRevision: number,
+  ): void {
+    if (
+      this._disposed
+      || state.phase !== 'PLAYER_TURN'
+      || state.round !== this.engine.getState().round
+      || state.turn !== this.engine.getState().turn
+      || this.engine.getState().activePlayerId !== tankId
+      || expectedRevision !== this.nextExpectedSeq
+    ) return;
+    const key = this.botPhaseKey(state, tankId, expectedRevision, action);
+    if (key === this.lastBotKey) return;
+    if (key === this.botSubmitPendingKey) return;
+    if (key === this.botActionAttempt?.phaseKey) return;
 
     // Mark this phase in flight BEFORE the POST so the per-frame emitState cadence
-    // does not fire a second submit while this one is outstanding. No seq-conflict
-    // retry: a conflict means another client already committed the (same) bot action.
-    // The onSettle callback decides the phase's fate once the POST resolves:
-    //   committed (accepted, or a racer's identical action won / turn advanced) -> latch
-    //   transient failure (network error, or a non-conflict 5xx that did not commit)
-    //     -> clear the pending mark WITHOUT latching, so the next frame re-attempts.
+    // does not fire a second submit while this one is outstanding. The transport
+    // result and ordered row jointly decide the phase's fate: acceptance latches our
+    // intent, failure releases a retry, and conflict waits for canonical progress to
+    // identify the winner before releasing a replan or latching an exact match.
     // This is the self-heal (#119): a dropped bot submit no longer wedges a single-
     // driver room. Determinism is untouched — the re-attempt is the SAME deterministic
     // action, and the referee's seq-unique + cursor keep it exactly-once.
     this.botSubmitPendingKey = key;
-    this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (committed) => {
-      if (this.botSubmitPendingKey !== key) return; // superseded by a newer turn/phase
-      this.botSubmitPendingKey = null;
-      if (committed) this.lastBotKey = key;
+    const attempt: BotActionAttempt = {
+      phaseKey: key,
+      round: state.round,
+      turn: state.turn,
+      tankId,
+      action,
+      settlement: 'pending',
+      sawCanonicalProgress: false,
+    };
+    this.botActionAttempt = attempt;
+    const admitted = this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (settlement) => {
+      if (this.botActionAttempt !== attempt) return; // canonical row already resolved/superseded it
+      if (this.botSubmitPendingKey === key) this.botSubmitPendingKey = null;
+      if (settlement === 'accepted') {
+        // A receipt proves the command was appended, but only its ordered row proves
+        // this local cursor applied it. Keep the exact attempt owned through bounded
+        // echo recovery so a missing echo can retry the same immutable envelope.
+        attempt.settlement = 'accepted';
+      } else if (settlement === 'failed') {
+        this.botActionAttempt = null;
+      } else {
+        // A seq conflict says only that some row won. Canonical progress already
+        // observed releases one replan; otherwise retain this intent until live
+        // delivery or the existing bounded resync reveals the winning row.
+        if (attempt.sawCanonicalProgress) {
+          this.botActionAttempt = null;
+          return;
+        }
+        attempt.settlement = 'conflict';
+        void this.resyncLog();
+      }
     });
+    if (!admitted) {
+      if (this.botSubmitPendingKey === key) this.botSubmitPendingKey = null;
+      if (this.botActionAttempt === attempt) this.botActionAttempt = null;
+    }
   }
 
   private callFinishGame(winnerId: string | null): void {

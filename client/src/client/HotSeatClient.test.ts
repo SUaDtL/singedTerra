@@ -64,11 +64,16 @@ function makeRafQueue() {
     pendingIds(): number[] {
       return [...callbacks.keys()];
     },
-    run(id: number): void {
+    run(id: number, timestamp = 0): void {
       const callback = callbacks.get(id);
       if (!callback) throw new Error(`No queued animation frame ${id}`);
       callbacks.delete(id);
-      callback(0);
+      callback(timestamp);
+    },
+    runNext(timestamp: number): void {
+      const [id] = this.pendingIds();
+      if (id === undefined) throw new Error('No queued animation frame');
+      this.run(id, timestamp);
     },
   };
 }
@@ -80,6 +85,7 @@ describe('HotSeatClient', () => {
     raf = makeRafQueue();
     vi.stubGlobal('requestAnimationFrame', raf.request);
     vi.stubGlobal('cancelAnimationFrame', raf.cancel);
+    vi.spyOn(performance, 'now').mockReturnValue(0);
   });
 
   afterEach(() => {
@@ -88,6 +94,7 @@ describe('HotSeatClient', () => {
   });
 
   it('starts once, emits each frame, stops idempotently, and can restart', () => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     const initialState = makeState('PLAYER_TURN');
     const frameState = makeState('FIRING');
     const restartState = makeState('ROUND_OVER');
@@ -113,7 +120,7 @@ describe('HotSeatClient', () => {
     expect(listener).toHaveBeenCalledTimes(1);
     expect(raf.request).toHaveBeenCalledTimes(1);
 
-    raf.run(1);
+    raf.run(1, 1_000 / 60);
     expect(engine.tick).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledTimes(2);
     expect(listener).toHaveBeenLastCalledWith(frameState);
@@ -137,6 +144,7 @@ describe('HotSeatClient', () => {
   });
 
   it('uses one normal tick, eight live fast-forward ticks, and stops on settlement', () => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     const firingState = makeState('FIRING');
     const settledState = makeState('PLAYER_TURN');
     const engine = makeEngine(firingState);
@@ -145,14 +153,14 @@ describe('HotSeatClient', () => {
     client.onStateChange(listener);
     client.start();
 
-    raf.run(1);
+    raf.run(1, 1_000 / 60);
     expect(engine.tick).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledTimes(2);
     expect(raf.pendingIds()).toEqual([2]);
 
     client.setFastForward(true);
     engine.tick.mockClear();
-    raf.run(2);
+    raf.run(2, 2_000 / 60);
     expect(engine.tick).toHaveBeenCalledTimes(8);
     expect(listener).toHaveBeenCalledTimes(3);
     expect(raf.pendingIds()).toEqual([3]);
@@ -163,12 +171,108 @@ describe('HotSeatClient', () => {
       settleTick += 1;
       if (settleTick === 3) engine.setState(settledState);
     });
-    raf.run(3);
+    raf.run(3, 3_000 / 60);
     expect(engine.tick).toHaveBeenCalledTimes(3);
     expect(listener).toHaveBeenCalledTimes(4);
     expect(listener).toHaveBeenLastCalledWith(settledState);
     expect(raf.pendingIds()).toEqual([4]);
 
+    client.stop();
+  });
+
+  it.each([30, 60, 120, 144])(
+    'paces normal and fast-forward simulation at the declared 60 Hz logical rate on a %i Hz display',
+    (displayHz) => {
+      vi.spyOn(performance, 'now').mockReturnValue(0);
+      const state = makeState('FIRING');
+      const engine = makeEngine(state);
+      const client = new HotSeatClient(engine.engine);
+      const listener = vi.fn();
+      client.onStateChange(listener);
+      client.start();
+
+      for (let frame = 1; frame <= displayHz; frame++) {
+        raf.runNext(frame * (1_000 / displayHz));
+      }
+
+      expect(engine.tick).toHaveBeenCalledTimes(60);
+      expect(listener).toHaveBeenCalledTimes(61);
+
+      client.setFastForward(true);
+      engine.tick.mockClear();
+      listener.mockClear();
+      for (let frame = displayHz + 1; frame <= displayHz * 2; frame++) {
+        raf.runNext(frame * (1_000 / displayHz));
+      }
+
+      expect(engine.tick).toHaveBeenCalledTimes(60 * 8);
+      expect(listener).toHaveBeenCalledTimes(60);
+      client.stop();
+    },
+  );
+
+  it('bounds a hidden-tab resume to four logical beats and discards the suspended backlog', () => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    const engine = makeEngine(makeState('FIRING'));
+    const client = new HotSeatClient(engine.engine);
+    client.start();
+
+    raf.runNext(1_000 / 60);
+    client.setFastForward(true);
+    engine.tick.mockClear();
+    raf.runNext(5 * 60 * 1_000);
+    expect(engine.tick).toHaveBeenCalledTimes(4 * 8);
+
+    raf.runNext(5 * 60 * 1_000 + 1_000 / 60);
+    expect(engine.tick).toHaveBeenCalledTimes(5 * 8);
+    client.stop();
+  });
+
+  it('does not schedule when a listener stops the initial synchronous emission', () => {
+    const engine = makeEngine(makeState('FIRING'));
+    const client = new HotSeatClient(engine.engine);
+    client.onStateChange(() => client.stop());
+
+    client.start();
+
+    expect(raf.pendingIds()).toEqual([]);
+    expect(engine.tick).not.toHaveBeenCalled();
+  });
+
+  it('does not rearm when a listener stops a frame emission', () => {
+    const engine = makeEngine(makeState('FIRING'));
+    const client = new HotSeatClient(engine.engine);
+    let emissions = 0;
+    client.onStateChange(() => {
+      emissions += 1;
+      if (emissions === 2) client.stop();
+    });
+    client.start();
+
+    raf.run(1, 1_000 / 60);
+
+    expect(engine.tick).toHaveBeenCalledOnce();
+    expect(raf.pendingIds()).toEqual([]);
+  });
+
+  it('lets a listener restart once without the retired frame generation rearming', () => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    const engine = makeEngine(makeState('FIRING'));
+    const client = new HotSeatClient(engine.engine);
+    let emissions = 0;
+    client.onStateChange(() => {
+      emissions += 1;
+      if (emissions === 2) {
+        client.stop();
+        client.start();
+      }
+    });
+    client.start();
+
+    raf.run(1, 1_000 / 60);
+
+    expect(emissions).toBe(3);
+    expect(raf.pendingIds()).toHaveLength(1);
     client.stop();
   });
 

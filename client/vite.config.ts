@@ -33,6 +33,35 @@ function sha256(source: string | Uint8Array): string {
   return createHash('sha256').update(source).digest('hex').toUpperCase();
 }
 
+const battleConsoleArchivePath = '.codearbiter/contracts/battle-console/';
+
+export function createReleaseArchiveGuard() {
+  const assertChunkModules = (moduleIds: Iterable<string>): void => {
+    const archivedModule = [...moduleIds]
+      .map(canonicalModuleId)
+      .find((moduleId) => moduleId.includes(battleConsoleArchivePath));
+    if (archivedModule) {
+      throw new Error(`battle-console archive reached the production graph: ${archivedModule}`);
+    }
+  };
+
+  return Object.freeze({ assertChunkModules });
+}
+
+function releaseArchiveGuard(): Plugin {
+  const guard = createReleaseArchiveGuard();
+  return {
+    name: 'singedterra-release-battle-console-archive-guard',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      for (const output of Object.values(bundle)) {
+        if (output.type === 'chunk') guard.assertChunkModules(Object.keys(output.modules));
+      }
+    },
+  };
+}
+
 function browserBundleGraph(): Plugin {
   let resolvedBase = base;
   return {
@@ -89,7 +118,7 @@ function browserBundleGraph(): Plugin {
 
 export default defineConfig({
   base,
-  plugins: [browserBundleGraph()],
+  plugins: [releaseArchiveGuard(), browserBundleGraph()],
   // Vite 8's Oxc dev transform defaults TSX to react/jsx-dev-runtime and does
   // not inherit TypeScript's jsxImportSource at this boundary. Pin both serve
   // and build transforms to the Preact automatic runtime explicitly.
