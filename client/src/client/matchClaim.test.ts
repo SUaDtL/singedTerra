@@ -9,7 +9,7 @@ function sessionReader(
   return { getSession: vi.fn(async () => result) }
 }
 
-function post(result: Awaited<ReturnType<ClaimMatchPost>> = { ok: true, status: 200 }): ClaimMatchPost {
+function post(result: Awaited<ReturnType<ClaimMatchPost>> = { ok: true, status: 200, data: null }): ClaimMatchPost {
   return vi.fn(async () => result)
 }
 
@@ -57,7 +57,7 @@ describe('claimCompletedMatch', () => {
       error: null,
     })
 
-    await expect(claimCompletedMatch(auth, payload, post({ ok: true, status: 201 }))).resolves.toBe('linked')
+    await expect(claimCompletedMatch(auth, payload, post({ ok: true, status: 201, data: null }))).resolves.toBe('linked')
   })
 
   it('reports only the status when claim_match returns a non-success HTTP response', async () => {
@@ -69,12 +69,44 @@ describe('claimCompletedMatch', () => {
     await expect(claimCompletedMatch(
       auth,
       payload,
-      post({ ok: false, status: 403 }),
+      post({ ok: false, status: 403, data: null }),
     )).rejects.toThrow('claim_match HTTP 403')
     await expect(claimCompletedMatch(
       auth,
       payload,
-      post({ ok: false, status: 403 }),
+      post({ ok: false, status: 403, data: null }),
     )).rejects.not.toThrow('account-bearer-secret')
+  })
+
+  it('rejects a claim response that tries to upgrade casual linkage to verified evidence', async () => {
+    const auth = sessionReader({
+      data: { session: { access_token: 'account-bearer-secret' } },
+      error: null,
+    })
+    const send = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      data: { ok: true, linked: true, evidence: 'verified_replay_v2' },
+    })) as unknown as ClaimMatchPost
+
+    await expect(claimCompletedMatch(auth, payload, send))
+      .rejects.toThrow('Unexpected claim evidence.')
+  })
+
+  it.each(['match_not_ready', 'legacy_score_malformed'] as const)(
+    'surfaces typed recoverable %s without reflecting the response body', async (code) => {
+    const auth = sessionReader({
+      data: { session: { access_token: 'account-bearer-secret' } },
+      error: null,
+    })
+    const send = vi.fn(async () => ({
+      ok: false,
+      status: 409,
+      data: { error: code, retryable: true, detail: 'backend-secret' },
+    })) as unknown as ClaimMatchPost
+
+    const error = await claimCompletedMatch(auth, payload, send).catch((reason: unknown) => reason)
+    expect(error).toMatchObject({ name: 'MatchClaimError', code, retryable: true })
+    expect(String(error)).not.toContain('backend-secret')
   })
 })

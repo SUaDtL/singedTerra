@@ -29,6 +29,7 @@ const openPsqlSession = (label) => {
     for (const waiter of waiters.splice(0)) waiter();
   });
   child.stderr.on('data', (chunk) => { stderr += chunk; });
+  child.stdin.write("SELECT 'BACKEND_PID:' || pg_backend_pid();\n");
   const exited = new Promise((resolveExit, rejectExit) => {
     child.once('error', rejectExit);
     child.once('exit', (code) => {
@@ -50,9 +51,31 @@ const openPsqlSession = (label) => {
     send(input) { child.stdin.write(input); },
     close() { child.stdin.end(); },
     waitFor,
+    async backendPid() {
+      await waitFor('BACKEND_PID:');
+      const match = stdout.match(/BACKEND_PID:(\d+)/);
+      if (!match) throw new Error(`${label} did not expose its PostgreSQL backend PID`);
+      return Number(match[1]);
+    },
     exited,
     output() { return stdout; },
   };
+};
+
+const waitForBlockedBy = async (waiter, holder, ordering) => {
+  const [waiterPid, holderPid] = await Promise.all([waiter.backendPid(), holder.backendPid()]);
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const blocked = sql(`SELECT COALESCE(${holderPid}=ANY(pg_blocking_pids(${waiterPid})), false)::text;`).trim();
+    if (blocked === 'true') {
+      console.log(JSON.stringify({ kind: 'r08-lock-wait', ordering, holderPid, waiterPid }));
+      return;
+    }
+    await new Promise((done) => setTimeout(done, 25));
+  }
+  const activity = sql(`SELECT pid || ':' || state || ':' || COALESCE(wait_event_type, '') || ':' || COALESCE(wait_event, '')
+    FROM pg_stat_activity WHERE pid IN (${holderPid}, ${waiterPid}) ORDER BY pid;`).trim();
+  throw new Error(`${ordering} did not observe waiter ${waiterPid} blocked by holder ${holderPid}; ${activity}`);
 };
 let started = false;
 try {
@@ -67,13 +90,19 @@ try {
       await new Promise((done) => setTimeout(done, 1000));
     }
   }
-  sql(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+  sql(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
     CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);`);
   for (const migration of ['001_init', '002_rematch', '003_match_scores', '004_atomic_submit_action', '010_room_seats', '016_verified_deployments',
     '017_verified_deployment_v2', '018_atomic_rematch', '019_verified_deployment_start_qualification',
-    '020_verified_deployment_v3', '021_atomic_room_commands']) {
+    '020_verified_deployment_v3', '021_atomic_room_commands', '022_atomic_casual_completion']) {
     file(`supabase/migrations/${migration}.sql`);
   }
+  // Mirror the hosted service role's table access so service-only RPC ACL and
+  // nested helper execution are exercised as that role, not only as postgres.
+  sql(`GRANT SELECT, UPDATE ON public.rooms TO service_role;
+    GRANT SELECT ON public.room_seats TO service_role;
+    GRANT SELECT, INSERT ON public.room_actions TO service_role;
+    GRANT SELECT, INSERT, UPDATE ON public.match_scores TO service_role;`);
   file('scripts/checks/rematch_postgres.sql');
   file('scripts/checks/verified_deployment_start_postgres.sql');
   file('scripts/checks/verified_deployment_v3_postgres.sql');
@@ -219,6 +248,363 @@ try {
   assert.equal(sql(`SELECT status || ':' || (SELECT count(*) FROM room_actions WHERE room_id=rooms.id)
     FROM rooms WHERE id='41000000-0000-4000-8000-000000000003';`).trim(), 'finished:1');
 
+  // R08 RED: completion must live in the same room-lock transaction as the
+  // v2 action cursor and return an immutable participant-reported receipt.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000001','FIN1',1,'active','{"rounds":1,"teamMode":false}',
+      '[{"id":"fin-a","name":"A","color":"#f00","ready":true},{"id":"fin-b","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+      ('42000000-0000-4000-8000-00000000000f','FINA',1,'active','{"rounds":1}',
+        '[{"id":"other-seat","name":"Other","color":"#00f","ready":true},{"id":"other-peer","name":"Peer","color":"#ff0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000001','fin-a','fin-token-a'),
+      ('42000000-0000-4000-8000-00000000000f','other-seat','other-room-token');`);
+  const unfinishedCompletionState = () => sql(`SELECT r.status || ':' || COALESCE(r.winner, 'NULL') || ':'
+      || (SELECT count(*) FROM public.room_actions WHERE room_id=r.id) || ':'
+      || (SELECT count(*) FROM public.match_scores WHERE room_id=r.id)
+    FROM public.rooms r WHERE r.id='42000000-0000-4000-8000-000000000001';`).trim();
+  for (const attempt of [
+    { label: 'invalid target-room token', player: 'fin-a', token: 'wrong-token', error: 'invalid_seat_token' },
+    { label: 'token valid only for another room and seat', player: 'fin-a', token: 'other-room-token', error: 'invalid_seat_token' },
+    { label: 'nonmember with another room valid token', player: 'other-seat', token: 'other-room-token', error: 'not_room_member' },
+  ]) {
+    const refusal = sql(`SET ROLE service_role; SELECT public.finish_casual_match_v1(
+      '42000000-0000-4000-8000-000000000001','${attempt.player}','${attempt.token}','p1',1,
+      '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},
+        {"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":25}]'::jsonb); RESET ROLE;`);
+    assert.match(refusal, new RegExp(`"error": "${attempt.error}"`), attempt.label);
+    assert.equal(unfinishedCompletionState(), 'active:NULL:0:0', `${attempt.label} must not mutate terminal state`);
+  }
+  const firstCompletion = sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000001','fin-a','fin-token-a','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},
+      {"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":25}]'::jsonb);`).trim();
+  assert.match(firstCompletion, /"ok": true/);
+  assert.match(firstCompletion, /"evidence": "casual_participant_reported"/);
+  assert.equal(sql(`SELECT status || ':' || winner FROM public.rooms
+    WHERE id='42000000-0000-4000-8000-000000000001';`).trim(), 'finished:p1');
+  assert.equal(sql(`SELECT winner || ':' || completion_status || ':' || evidence_tier
+    FROM public.match_scores WHERE room_id='42000000-0000-4000-8000-000000000001';`).trim(),
+    'p1:complete:casual_participant_reported');
+  assert.match(sql(`SET ROLE service_role; SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000001','fin-a','fin-token-a','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},
+      {"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":25}]'::jsonb); RESET ROLE;`),
+  /"ok": true/, 'the hosted-style service role can execute the complete nested RPC path');
+  assert.throws(() => sql(`SET ROLE anon; SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000001','fin-a','fin-token-a','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},
+      {"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":25}]'::jsonb);`),
+  /permission denied for function finish_casual_match_v1/,
+  'anon cannot execute the casual completion RPC');
+  const completionRetry = sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000001','fin-a','fin-token-a','p1',1,
+    '[{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":25},
+      {"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100}]'::jsonb);`).trim();
+  assert.equal(completionRetry, firstCompletion, 'response-loss retry must return the exact immutable receipt');
+  assert.equal(sql(`SELECT count(*) FROM public.match_scores
+    WHERE room_id='42000000-0000-4000-8000-000000000001';`).trim(), '1');
+
+  // Contradictory reporters synchronize before the RPC. The room row lock must
+  // serialize them to one receipt and one explicit conflict, never mixed winners.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000002','FIN2',1,'active','{"rounds":1,"teamMode":false}',
+      '[{"id":"race-a","name":"A","color":"#f00","ready":true},{"id":"race-b","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000002','race-a','race-token-a'),
+      ('42000000-0000-4000-8000-000000000002','race-b','race-token-b');`);
+  const completionRacers = ['A', 'B'].map((label) => openPsqlSession(`completion-${label}`));
+  for (const [index, session] of completionRacers.entries()) {
+    session.send(`BEGIN; SELECT status FROM public.rooms WHERE id='42000000-0000-4000-8000-000000000002'; \\echo COMPLETION_READY_${index}\n`);
+  }
+  await Promise.all(completionRacers.map((session, index) => session.waitFor(`COMPLETION_READY_${index}`)));
+  completionRacers[0].send(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000002','race-a','race-token-a','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":10}]'); COMMIT; \\echo COMPLETION_DONE_A\n`);
+  completionRacers[1].send(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000002','race-b','race-token-b','p2',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":0,"kills":0,"totalDamage":10},{"tankId":"p2","playerName":"B","roundWins":1,"kills":1,"totalDamage":100}]'); COMMIT; \\echo COMPLETION_DONE_B\n`);
+  for (const session of completionRacers) session.close();
+  await Promise.all(completionRacers.map((session) => session.exited));
+  const completionRaceOutput = completionRacers.map((session) => session.output());
+  assert.equal(completionRaceOutput.filter((value) => /"ok": true/.test(value)).length, 1);
+  assert.equal(completionRaceOutput.filter((value) => /"error": "completion_conflict"/.test(value)).length, 1);
+  assert.equal(sql(`SELECT (r.winner IS NOT DISTINCT FROM s.winner)::text || ':' || count(*)
+    FROM public.rooms r JOIN public.match_scores s ON s.room_id=r.id
+    WHERE r.id='42000000-0000-4000-8000-000000000002' GROUP BY r.winner,s.winner;`).trim(), 'true:1');
+
+  // A score write failure aborts the whole statement, including the room status.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000003','FIN3',1,'active','{"rounds":1}',
+      '[{"id":"fail-a","name":"A","color":"#f00","ready":true},{"id":"fail-b","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000003','fail-a','fail-token-a');
+    CREATE FUNCTION public.reject_test_score() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+      IF NEW.room_id='42000000-0000-4000-8000-000000000003' THEN RAISE EXCEPTION 'forced score failure'; END IF;
+      RETURN NEW; END $$;
+    CREATE TRIGGER reject_test_score BEFORE INSERT ON public.match_scores
+      FOR EACH ROW EXECUTE FUNCTION public.reject_test_score();`);
+  assert.throws(() => sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000003','fail-a','fail-token-a','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');`),
+  /forced score failure/);
+  assert.equal(sql(`SELECT status || ':' || COALESCE(winner, 'NULL') FROM public.rooms
+    WHERE id='42000000-0000-4000-8000-000000000003';`).trim(), 'active:NULL');
+  assert.equal(sql(`SELECT count(*) FROM public.match_scores
+    WHERE room_id='42000000-0000-4000-8000-000000000003';`).trim(), '0');
+  sql('DROP TRIGGER reject_test_score ON public.match_scores; DROP FUNCTION public.reject_test_score();');
+
+  // Strict malformed reports, impossible winners and corrupt rosters leave the
+  // active room untouched so a corrected report remains recoverable.
+  for (const scoreboard of [
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100}]',
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p1","playerName":"A","roundWins":0,"kills":0,"totalDamage":0}]',
+    '[{"tankId":"p1","playerName":"A","roundWins":10,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]',
+  ]) {
+    assert.match(sql(`SELECT public.finish_casual_match_v1(
+      '42000000-0000-4000-8000-000000000003','fail-a','fail-token-a','p1',1,'${scoreboard}');`),
+    /"error": "invalid_scoreboard"/);
+  }
+  assert.match(sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000003','fail-a','fail-token-a','p2',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');`),
+  /"error": "winner_mismatch"/);
+  assert.equal(sql(`SELECT status FROM public.rooms WHERE id='42000000-0000-4000-8000-000000000003';`).trim(), 'active');
+
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000004','FIN4',1,'active','{"rounds":1}',
+      '[{"id":"dup-seat","name":"A","color":"#f00","ready":true},{"id":"dup-seat","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000004','dup-seat','dup-token');`);
+  assert.match(sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000004','dup-seat','dup-token','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');`),
+  /"error": "invalid_roster"/);
+
+  // Pre-scoreboard clients can still finish atomically, but their receipt is
+  // explicitly score_absent rather than being mislabeled complete.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000005','FIN5',1,'active','{}',
+      '[{"id":"old-a","name":"A","color":"#f00","ready":true},{"id":"old-b","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000005','old-a','old-token-a');`);
+  const absentReceipt = sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000005','old-a','old-token-a','p1',NULL,NULL);`).trim();
+  assert.match(absentReceipt, /"completionStatus": "score_absent"/);
+  assert.equal(sql(`SELECT completion_status || ':' || jsonb_array_length(scoreboard)
+    FROM public.match_scores WHERE room_id='42000000-0000-4000-8000-000000000005';`).trim(), 'score_absent:0');
+
+  // A legacy finished room whose score write was lost is repairable. A legacy
+  // malformed row is repairable only when its winner agrees with rooms.winner.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players,winner) VALUES
+    ('42000000-0000-4000-8000-000000000006','FIN6',1,'finished','{"rounds":1}',
+      '[{"id":"legacy-a","name":"A","color":"#f00","ready":true},{"id":"legacy-b","name":"B","color":"#0f0","ready":true}]','p1'),
+    ('42000000-0000-4000-8000-000000000007','FIN7',1,'finished','{"rounds":1}',
+      '[{"id":"legacy-c","name":"C","color":"#f00","ready":true},{"id":"legacy-d","name":"D","color":"#0f0","ready":true}]','p1');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000006','legacy-a','legacy-token-a'),
+      ('42000000-0000-4000-8000-000000000007','legacy-c','legacy-token-c');
+    INSERT INTO public.match_scores(room_id,winner,rounds,scoreboard) VALUES
+      ('42000000-0000-4000-8000-000000000007','p1',99,'[{"tankId":"p1"}]');`);
+  assert.match(sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000006','legacy-a','legacy-token-a','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');`),
+  /"ok": true/);
+  assert.match(sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000007','legacy-c','legacy-token-c','p1',1,
+    '[{"tankId":"p1","playerName":"C","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"D","roundWins":0,"kills":0,"totalDamage":0}]');`),
+  /"legacyRepaired": true/);
+  assert.equal(sql(`SELECT rounds || ':' || completion_status FROM public.match_scores
+    WHERE room_id='42000000-0000-4000-8000-000000000007';`).trim(), '1:complete');
+
+  assert.throws(() => sql(`UPDATE public.match_scores SET rounds=2
+    WHERE room_id='42000000-0000-4000-8000-000000000001';`),
+  /casual_completion_receipt_immutable/,
+  'a versioned participant-reported receipt must be immutable in the database');
+
+  // Finish-first: the completion RPC holds the room lock. A command that
+  // preread active must wait, then reject without appending after completion.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000008','FIN8',1,'active',
+      '{"rounds":1,"teamMode":false,"rulesetVersion":4,"commandProtocolVersion":2}',
+      '[{"id":"finish-lock-a","name":"A","color":"#f00","ready":true},{"id":"finish-lock-b","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000008','finish-lock-a','finish-lock-token');`);
+  const completionFirst = openPsqlSession('r08-completion-first');
+  completionFirst.send(`BEGIN; SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000008','finish-lock-a','finish-lock-token','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');
+    \\echo COMPLETION_LOCKED\n`);
+  await completionFirst.waitFor('COMPLETION_LOCKED');
+  const commandAfterCompletion = openPsqlSession('r08-command-after-completion');
+  commandAfterCompletion.send(`BEGIN; SELECT status FROM public.rooms
+    WHERE id='42000000-0000-4000-8000-000000000008'; \\echo COMMAND_SAW_ACTIVE\n`);
+  await commandAfterCompletion.waitFor('COMMAND_SAW_ACTIVE');
+  assert.match(commandAfterCompletion.output(), /active/);
+  commandAfterCompletion.send(`SELECT public.submit_room_command_v2(
+    '42000000-0000-4000-8000-000000000008','finish-lock-a','finish-lock-token',
+    2::smallint,'r08-finish-first',0,'finish-lock-a','{"type":"move","delta":1}',NULL,false,4::smallint);
+    COMMIT; \\echo COMMAND_AFTER_COMPLETION_DONE\n`);
+  await waitForBlockedBy(commandAfterCompletion, completionFirst, 'completion-first');
+  completionFirst.send('COMMIT; \\echo COMPLETION_FIRST_DONE\n');
+  completionFirst.close(); commandAfterCompletion.close();
+  await Promise.all([completionFirst.exited, commandAfterCompletion.exited]);
+  assert.match(commandAfterCompletion.output(), /"error": "room_not_active"/);
+  assert.equal(sql(`SELECT status || ':' || (SELECT count(*) FROM public.room_actions WHERE room_id=rooms.id)
+    || ':' || (SELECT terminal_revision FROM public.match_scores WHERE room_id=rooms.id)
+    FROM public.rooms WHERE id='42000000-0000-4000-8000-000000000008';`).trim(), 'finished:0:0');
+
+  // Action-first: the command holds the room lock. Completion waits, observes
+  // the committed action, and records its revision in the terminal receipt.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-000000000009','FIN9',1,'active',
+      '{"rounds":1,"teamMode":false,"rulesetVersion":4,"commandProtocolVersion":2}',
+      '[{"id":"action-lock-a","name":"A","color":"#f00","ready":true},{"id":"action-lock-b","name":"B","color":"#0f0","ready":true}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-000000000009','action-lock-a','action-lock-token');`);
+  const actionBeforeCompletion = openPsqlSession('r08-action-first');
+  actionBeforeCompletion.send(`BEGIN; SELECT public.submit_room_command_v2(
+    '42000000-0000-4000-8000-000000000009','action-lock-a','action-lock-token',
+    2::smallint,'r08-action-first',0,'action-lock-a','{"type":"move","delta":1}',NULL,false,4::smallint);
+    \\echo ACTION_FIRST_LOCKED\n`);
+  await actionBeforeCompletion.waitFor('ACTION_FIRST_LOCKED');
+  const completionAfterAction = openPsqlSession('r08-completion-after-action');
+  completionAfterAction.send(`BEGIN; SELECT status FROM public.rooms
+    WHERE id='42000000-0000-4000-8000-000000000009'; \\echo COMPLETION_SAW_ACTIVE\n`);
+  await completionAfterAction.waitFor('COMPLETION_SAW_ACTIVE');
+  completionAfterAction.send(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-000000000009','action-lock-a','action-lock-token','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');
+    COMMIT; \\echo COMPLETION_AFTER_ACTION_DONE\n`);
+  await waitForBlockedBy(completionAfterAction, actionBeforeCompletion, 'action-first');
+  actionBeforeCompletion.send('COMMIT; \\echo ACTION_FIRST_DONE\n');
+  actionBeforeCompletion.close(); completionAfterAction.close();
+  await Promise.all([actionBeforeCompletion.exited, completionAfterAction.exited]);
+  assert.match(completionAfterAction.output(), /"ok": true/);
+  assert.equal(sql(`SELECT status || ':' || (SELECT count(*) FROM public.room_actions WHERE room_id=rooms.id)
+    || ':' || (SELECT terminal_revision FROM public.match_scores WHERE room_id=rooms.id)
+    FROM public.rooms WHERE id='42000000-0000-4000-8000-000000000009';`).trim(), 'finished:1:1');
+
+  // Supported legacy v1 admission shares the same room lock with completion.
+  // Collect all three outcomes before asserting so a pre-fix RED reports both
+  // append-after-finish defects and the coherent action-first control together.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players,winner) VALUES
+    ('42000000-0000-4000-8000-00000000000c','FLC1',1,'finished','{"rounds":1}',
+      '[{"id":"late-v1-a","name":"A"},{"id":"late-v1-b","name":"B"}]','p1');`);
+  assert.equal(sql(`SELECT pg_get_function_result(p.oid) || ':' || p.prosecdef::text || ':'
+      || (p.proconfig IS NULL)::text
+    FROM pg_proc p
+    WHERE p.oid='public.submit_room_action(uuid,text,jsonb,boolean,integer,integer)'::regprocedure;`).trim(),
+  'integer:false:true', 'the replacement preserves the v1 scalar API, SECURITY INVOKER, and default search path');
+  assert.equal(sql(`SELECT has_function_privilege('service_role',
+      'public.submit_room_action(uuid,text,jsonb,boolean,integer,integer)','EXECUTE')::text || ':'
+      || has_function_privilege('anon',
+      'public.submit_room_action(uuid,text,jsonb,boolean,integer,integer)','EXECUTE')::text || ':'
+      || has_function_privilege('authenticated',
+      'public.submit_room_action(uuid,text,jsonb,boolean,integer,integer)','EXECUTE')::text;`).trim(),
+  'true:false:false', 'the replacement preserves service-only execution');
+  let lateLegacyRejected = false;
+  try {
+    sql(`SET ROLE service_role; SELECT public.submit_room_action(
+      '42000000-0000-4000-8000-00000000000c','late-v1-a',
+      '{"type":"move","delta":1}',false,0,0);`);
+  } catch {
+    lateLegacyRejected = true;
+  }
+  const lateLegacyCount = Number(sql(`SELECT count(*) FROM public.room_actions
+    WHERE room_id='42000000-0000-4000-8000-00000000000c';`).trim());
+
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-00000000000d','FLC2',1,'active','{"rounds":1}',
+      '[{"id":"finish-v1-a","name":"A"},{"id":"finish-v1-b","name":"B"}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-00000000000d','finish-v1-a','finish-v1-token');`);
+  const legacyCompletionFirst = openPsqlSession('legacy-completion-first');
+  legacyCompletionFirst.send(`BEGIN; SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-00000000000d','finish-v1-a','finish-v1-token','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');
+    \\echo LEGACY_COMPLETION_LOCKED\n`);
+  await legacyCompletionFirst.waitFor('LEGACY_COMPLETION_LOCKED');
+  const legacyCommandAfterCompletion = openPsqlSession('legacy-command-after-completion');
+  legacyCommandAfterCompletion.send(`BEGIN; SELECT status FROM public.rooms
+    WHERE id='42000000-0000-4000-8000-00000000000d'; \\echo LEGACY_COMMAND_SAW_ACTIVE\n`);
+  await legacyCommandAfterCompletion.waitFor('LEGACY_COMMAND_SAW_ACTIVE');
+  legacyCommandAfterCompletion.send(`SET LOCAL ROLE service_role; SELECT public.submit_room_action(
+    '42000000-0000-4000-8000-00000000000d','finish-v1-a','{"type":"move","delta":1}',false,0,0);
+    COMMIT; \\echo LEGACY_COMMAND_AFTER_COMPLETION_DONE\n`);
+  await waitForBlockedBy(legacyCommandAfterCompletion, legacyCompletionFirst, 'legacy-completion-first');
+  legacyCompletionFirst.send('COMMIT; \\echo LEGACY_COMPLETION_FIRST_DONE\n');
+  legacyCompletionFirst.close(); legacyCommandAfterCompletion.close();
+  const legacyCompletionSettlements = await Promise.allSettled([
+    legacyCompletionFirst.exited, legacyCommandAfterCompletion.exited,
+  ]);
+  const legacyCompletionFirstState = sql(`SELECT status || ':'
+    || (SELECT terminal_revision FROM public.match_scores WHERE room_id=rooms.id) || ':'
+    || (SELECT count(*) FROM public.room_actions WHERE room_id=rooms.id)
+    FROM public.rooms WHERE id='42000000-0000-4000-8000-00000000000d';`).trim();
+
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-00000000000e','FLC3',1,'active','{"rounds":1}',
+      '[{"id":"action-v1-a","name":"A"},{"id":"action-v1-b","name":"B"}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-00000000000e','action-v1-a','action-v1-token');`);
+  const legacyActionFirst = openPsqlSession('legacy-action-first');
+  legacyActionFirst.send(`BEGIN; SET LOCAL ROLE service_role; SELECT public.submit_room_action(
+    '42000000-0000-4000-8000-00000000000e','action-v1-a','{"type":"move","delta":1}',false,0,0);
+    \\echo LEGACY_ACTION_LOCKED\n`);
+  await legacyActionFirst.waitFor('LEGACY_ACTION_LOCKED');
+  const legacyCompletionAfterAction = openPsqlSession('legacy-completion-after-action');
+  legacyCompletionAfterAction.send(`BEGIN; SELECT status FROM public.rooms
+    WHERE id='42000000-0000-4000-8000-00000000000e'; \\echo LEGACY_COMPLETION_SAW_ACTIVE\n`);
+  await legacyCompletionAfterAction.waitFor('LEGACY_COMPLETION_SAW_ACTIVE');
+  legacyCompletionAfterAction.send(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-00000000000e','action-v1-a','action-v1-token','p1',1,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":100},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0}]');
+    COMMIT; \\echo LEGACY_COMPLETION_AFTER_ACTION_DONE\n`);
+  await waitForBlockedBy(legacyCompletionAfterAction, legacyActionFirst, 'legacy-action-first');
+  legacyActionFirst.send('COMMIT; \\echo LEGACY_ACTION_FIRST_DONE\n');
+  legacyActionFirst.close(); legacyCompletionAfterAction.close();
+  await Promise.all([legacyActionFirst.exited, legacyCompletionAfterAction.exited]);
+  const legacyActionFirstState = sql(`SELECT status || ':'
+    || (SELECT terminal_revision FROM public.match_scores WHERE room_id=rooms.id) || ':'
+    || (SELECT count(*) FROM public.room_actions WHERE room_id=rooms.id)
+    FROM public.rooms WHERE id='42000000-0000-4000-8000-00000000000e';`).trim();
+
+  assert.deepEqual({
+    lateLegacyRejected,
+    lateLegacyCount,
+    completionFirstCommandRejected: legacyCompletionSettlements[1].status === 'rejected',
+    legacyCompletionFirstState,
+    legacyActionFirstState,
+  }, {
+    lateLegacyRejected: true,
+    lateLegacyCount: 0,
+    completionFirstCommandRejected: true,
+    legacyCompletionFirstState: 'finished:0:0',
+    legacyActionFirstState: 'finished:1:1',
+  }, 'legacy v1 actions and completion must exclude each other under the shared room lock');
+
+  // Winner derivation is strict for draws and alternating-seat teams.
+  sql(`INSERT INTO public.rooms(id,code,seed,status,options,players) VALUES
+    ('42000000-0000-4000-8000-00000000000a','FIND',1,'active','{"rounds":1,"teamMode":false}',
+      '[{"id":"draw-a","name":"A"},{"id":"draw-b","name":"B"}]'),
+    ('42000000-0000-4000-8000-00000000000b','FINT',1,'active','{"rounds":3,"teamMode":true}',
+      '[{"id":"team-a","name":"A"},{"id":"team-b","name":"B"},{"id":"team-c","name":"C"},{"id":"team-d","name":"D"}]');
+    INSERT INTO public.room_seats(room_id,seat_id,token) VALUES
+      ('42000000-0000-4000-8000-00000000000a','draw-a','draw-token'),
+      ('42000000-0000-4000-8000-00000000000b','team-a','team-token');`);
+  const drawReceipt = sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-00000000000a','draw-a','draw-token',NULL,1,
+    '[{"tankId":"p1","playerName":"A","roundWins":0,"kills":0,"totalDamage":10},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":10}]');`).trim();
+  assert.match(drawReceipt, /"winnerId": null/, 'draw receipts must retain an explicit null winner');
+  assert.match(sql(`SELECT public.finish_casual_match_v1(
+    '42000000-0000-4000-8000-00000000000b','team-a','team-token','p1',3,
+    '[{"tankId":"p1","playerName":"A","roundWins":1,"kills":1,"totalDamage":50},{"tankId":"p2","playerName":"B","roundWins":0,"kills":0,"totalDamage":0},{"tankId":"p3","playerName":"C","roundWins":1,"kills":1,"totalDamage":50},{"tankId":"p4","playerName":"D","roundWins":0,"kills":0,"totalDamage":0}]');`),
+  /"ok": true/, 'team winner derives from the alternating-seat team total');
+
+  // The verified evidence store is separate and unchanged by casual completion.
+  assert.equal(sql('SELECT count(*) FROM public.verified_match_results;').trim(), '0');
+
   sql(`INSERT INTO auth.users(id) VALUES
     ('31000000-0000-4000-8000-000000000001'),
     ('31000000-0000-4000-8000-000000000002'),
@@ -273,7 +659,7 @@ try {
   }));
   assert.equal(outputs[0], outputs[1], 'concurrent rematches must return one successor');
   assert.equal(sql("SELECT count(*) FROM public.rooms WHERE code IN ('RC06','RC07');").trim(), '1');
-  console.log('PostgreSQL regressions PASS: atomic v2 command receipts, stale-preread serialization, action/finish ordering, ACL, rematch, verified start/resume.');
+  console.log('PostgreSQL regressions PASS: atomic v1/v2 action and casual completion receipts, synchronized action/finish orderings, rollback, immutable retry, legacy repair, ACL, rematch, verified start/resume.');
 } finally {
   if (started) docker(['rm', '--force', name]);
 }

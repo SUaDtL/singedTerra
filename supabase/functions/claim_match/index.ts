@@ -17,6 +17,55 @@ type ClaimRecord = {
   tank_id: string
 }
 
+type CasualScoreReceipt = {
+  room_id: string
+  winner: string | null
+  rounds: number
+  scoreboard: unknown
+  evidence_tier: 'casual_participant_reported'
+  completion_version: number | null
+  completion_status: 'complete' | 'score_absent' | 'legacy_unvalidated'
+}
+
+function strictScoreWinner(
+  scoreboard: unknown,
+  players: StoredPlayer[],
+  rounds: number,
+  teamMode: boolean,
+): { winner: string | null } | null {
+  const seatCount = players.length
+  if (!Array.isArray(scoreboard) || scoreboard.length !== seatCount
+    || seatCount < 2 || seatCount > 4
+    || new Set(players.map((player) => player.id)).size !== seatCount
+    || !Number.isInteger(rounds) || rounds < 1 || rounds > 9) return null
+  const ids = new Set<string>()
+  const wins = new Map<string, number>()
+  for (const value of scoreboard) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+    const row = value as Record<string, unknown>
+    if (typeof row.tankId !== 'string' || !/^p[1-4]$/.test(row.tankId)
+      || Number(row.tankId.slice(1)) > seatCount || ids.has(row.tankId)
+      || typeof row.playerName !== 'string'
+      || typeof row.roundWins !== 'number' || !Number.isInteger(row.roundWins)
+      || row.roundWins < 0 || row.roundWins > rounds
+      || typeof row.kills !== 'number' || !Number.isInteger(row.kills) || row.kills < 0 || row.kills > 36
+      || typeof row.totalDamage !== 'number' || !Number.isFinite(row.totalDamage)
+      || row.totalDamage < 0 || row.totalDamage > 3600) return null
+    ids.add(row.tankId)
+    wins.set(row.tankId, row.roundWins)
+  }
+  if (ids.size !== seatCount) return null
+  if (teamMode && seatCount === 4) {
+    if (wins.get('p1') !== wins.get('p3') || wins.get('p2') !== wins.get('p4')) return null
+    const teamOneWins = wins.get('p1') ?? 0
+    const teamTwoWins = wins.get('p2') ?? 0
+    return { winner: teamOneWins === teamTwoWins ? null : teamOneWins > teamTwoWins ? 'p1' : 'p2' }
+  }
+  const maxWins = Math.max(...wins.values())
+  const leaders = [...wins].filter(([, value]) => value === maxWins)
+  return { winner: leaders.length === 1 ? leaders[0][0] : null }
+}
+
 export interface ClaimMatchDependencies {
   supabase?: ServiceClient
   verifySeat?: typeof verifySeatTokenResult
@@ -43,6 +92,25 @@ function isExactClaim(record: ClaimRecord, expected: ClaimRecord): boolean {
 
 function isUniqueViolation(error: unknown): boolean {
   return !!error && typeof error === 'object' && (error as { code?: unknown }).code === '23505'
+}
+
+function parseCasualScoreReceipt(value: unknown): CasualScoreReceipt | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const row = value as Record<string, unknown>
+  if (typeof row.room_id !== 'string'
+    || (row.winner !== null && (typeof row.winner !== 'string' || !/^p[1-9]\d*$/.test(row.winner)))
+    || typeof row.rounds !== 'number'
+    || row.evidence_tier !== 'casual_participant_reported'
+    || !['complete', 'score_absent', 'legacy_unvalidated'].includes(String(row.completion_status))) return null
+  const completionStatus = row.completion_status as CasualScoreReceipt['completion_status']
+  if (completionStatus === 'legacy_unvalidated') {
+    if (row.completion_version !== null) return null
+    return row as CasualScoreReceipt
+  }
+  if (row.completion_version !== 1 || !Array.isArray(row.scoreboard)) return null
+  if (completionStatus === 'complete' && row.scoreboard.length === 0) return null
+  if (completionStatus === 'score_absent' && row.scoreboard.length !== 0) return null
+  return row as CasualScoreReceipt
 }
 
 /**
@@ -72,7 +140,7 @@ export async function handleClaimMatch(
 
   const { data: room, error: roomError } = await supabase
     .from('rooms')
-    .select('id, status, players')
+    .select('id, status, players, winner, options')
     .eq('id', body.roomId)
     .maybeSingle()
   if (roomError) {
@@ -93,18 +161,37 @@ export async function handleClaimMatch(
     return json({ error: 'seat_not_authorized' }, 403)
   }
 
-  if (room.status !== 'finished') return json({ error: 'match_not_ready' }, 409)
+  if (room.status !== 'finished') return json({ error: 'match_not_ready', retryable: true }, 409)
 
   const { data: score, error: scoreError } = await supabase
     .from('match_scores')
-    .select('room_id')
+    .select('room_id, winner, rounds, scoreboard, evidence_tier, completion_version, completion_status')
     .eq('room_id', body.roomId)
     .maybeSingle()
   if (scoreError) {
     logFailure('score lookup failed', scoreError)
     return json({ error: 'claim_failed' }, 500)
   }
-  if (!score) return json({ error: 'match_not_ready' }, 409)
+  if (!score) return json({ error: 'match_not_ready', retryable: true }, 409)
+  const receipt = parseCasualScoreReceipt(score)
+  if (!receipt) return json({ error: 'match_receipt_malformed', retryable: false }, 409)
+  if (receipt.winner !== (room as { winner?: unknown }).winner) {
+    return json({ error: 'completion_dispute', retryable: false }, 409)
+  }
+  if (receipt.completion_status !== 'score_absent') {
+    const scoreResult = strictScoreWinner(
+      receipt.scoreboard,
+      players,
+      receipt.rounds,
+      room.options?.teamMode === true,
+    )
+    if (!scoreResult || scoreResult.winner !== receipt.winner) return json({
+      error: receipt.completion_status === 'legacy_unvalidated'
+        ? 'legacy_score_malformed'
+        : 'match_receipt_malformed',
+      retryable: receipt.completion_status === 'legacy_unvalidated',
+    }, 409)
+  }
 
   const claim: ClaimRecord = {
     room_id: body.roomId,
@@ -113,7 +200,13 @@ export async function handleClaimMatch(
     tank_id: `p${playerIndex + 1}`,
   }
   const { error: insertError } = await supabase.from('match_participants').insert(claim)
-  if (!insertError) return json({ ok: true, linked: true })
+  const success = (linked: boolean) => json({
+    ok: true,
+    linked,
+    evidence: 'casual_participant_reported',
+    receiptStatus: receipt.completion_status,
+  })
+  if (!insertError) return success(true)
   if (!isUniqueViolation(insertError)) {
     logFailure('link insert failed', insertError)
     return json({ error: 'claim_failed' }, 500)
@@ -131,7 +224,7 @@ export async function handleClaimMatch(
   }
   if (existingForUser) {
     return isExactClaim(existingForUser, claim)
-      ? json({ ok: true, linked: false })
+      ? success(false)
       : json({ error: 'claim_conflict' }, 409)
   }
 

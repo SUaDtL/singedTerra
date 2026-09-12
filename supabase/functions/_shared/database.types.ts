@@ -187,6 +187,10 @@ export type Database = {
           winner: string | null;
           rounds: number;
           scoreboard: StoredScoreEntry[];
+          evidence_tier: "casual_participant_reported";
+          completion_version: number | null;
+          completion_status: "complete" | "score_absent" | "legacy_unvalidated";
+          terminal_revision: number | null;
           created_at: string;
         };
         Insert: {
@@ -195,6 +199,10 @@ export type Database = {
           winner?: string | null;
           rounds: number;
           scoreboard: StoredScoreEntry[];
+          evidence_tier?: "casual_participant_reported";
+          completion_version?: number | null;
+          completion_status?: "complete" | "score_absent" | "legacy_unvalidated";
+          terminal_revision?: number | null;
           created_at?: string;
         };
         Update: {
@@ -203,6 +211,10 @@ export type Database = {
           winner?: string | null;
           rounds?: number;
           scoreboard?: StoredScoreEntry[];
+          evidence_tier?: "casual_participant_reported";
+          completion_version?: number | null;
+          completion_status?: "complete" | "score_absent" | "legacy_unvalidated";
+          terminal_revision?: number | null;
           created_at?: string;
         };
         Relationships: [
@@ -434,6 +446,17 @@ export type Database = {
           p_next_index: number | null;
           p_round_over: boolean;
           p_ruleset_version: number;
+        };
+        Returns: Record<string, unknown>;
+      };
+      finish_casual_match_v1: {
+        Args: {
+          p_room_id: string;
+          p_player_id: string;
+          p_token: string;
+          p_winner: string | null;
+          p_rounds: number | null;
+          p_scoreboard: StoredScoreEntry[] | null;
         };
         Returns: Record<string, unknown>;
       };

@@ -138,6 +138,10 @@ type ExpectedMatchScoresRow = {
   winner: string | null;
   rounds: number;
   scoreboard: ExpectedStoredScoreEntry[];
+  evidence_tier: "casual_participant_reported";
+  completion_version: number | null;
+  completion_status: "complete" | "score_absent" | "legacy_unvalidated";
+  terminal_revision: number | null;
   created_at: string;
 };
 type ExpectedMatchScoresInsert = {
@@ -146,6 +150,10 @@ type ExpectedMatchScoresInsert = {
   winner?: string | null;
   rounds: number;
   scoreboard: ExpectedStoredScoreEntry[];
+  evidence_tier?: "casual_participant_reported";
+  completion_version?: number | null;
+  completion_status?: "complete" | "score_absent" | "legacy_unvalidated";
+  terminal_revision?: number | null;
   created_at?: string;
 };
 type ExpectedMatchScoresUpdate = Partial<ExpectedMatchScoresRow>;
@@ -232,6 +240,7 @@ type _RpcKeysAreExact = AssertExact<
   | "bump_rate_limit"
   | "submit_room_action"
   | "submit_room_command_v2"
+  | "finish_casual_match_v1"
   | "start_verified_deployment"
   | "start_verified_deployment_for_contracts"
   | "abandon_verified_deployment"
@@ -392,6 +401,21 @@ type _SubmitRoomCommandV2ArgsAreExact = AssertExact<
 >;
 type _SubmitRoomCommandV2ReturnsAreExact = AssertExact<
   Functions["submit_room_command_v2"]["Returns"],
+  Record<string, unknown>
+>;
+type _FinishCasualMatchV1ArgsAreExact = AssertExact<
+  Functions["finish_casual_match_v1"]["Args"],
+  {
+    p_room_id: string;
+    p_player_id: string;
+    p_token: string;
+    p_winner: string | null;
+    p_rounds: number | null;
+    p_scoreboard: ExpectedStoredScoreEntry[] | null;
+  }
+>;
+type _FinishCasualMatchV1ReturnsAreExact = AssertExact<
+  Functions["finish_casual_match_v1"]["Returns"],
   Record<string, unknown>
 >;
 
@@ -686,6 +710,8 @@ type _AllExactContracts = AssertAll<{
   submitRoomActionReturns: _SubmitRoomActionReturnsAreExact;
   submitRoomCommandV2Args: _SubmitRoomCommandV2ArgsAreExact;
   submitRoomCommandV2Returns: _SubmitRoomCommandV2ReturnsAreExact;
+  finishCasualMatchV1Args: _FinishCasualMatchV1ArgsAreExact;
+  finishCasualMatchV1Returns: _FinishCasualMatchV1ReturnsAreExact;
   roomsRowKeys: _RoomsRowKeysAreExact;
   roomsRowValues: _RoomsRowValuesAreExact;
   roomsInsert: _RoomsInsertIsExact;

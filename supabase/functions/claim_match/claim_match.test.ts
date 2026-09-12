@@ -26,7 +26,25 @@ interface FakeOptions {
   authError?: FakeError | null
 }
 
-const FINISHED_ROOM = { id: ROOM_ID, status: 'finished', players: [{ id: PLAYER_A }, { id: PLAYER_B }] }
+const FINISHED_ROOM = {
+  id: ROOM_ID,
+  status: 'finished',
+  winner: 'p1',
+  options: { teamMode: false },
+  players: [{ id: PLAYER_A, name: 'A' }, { id: PLAYER_B, name: 'B' }],
+}
+const COMPLETE_SCORE = {
+  room_id: ROOM_ID,
+  winner: 'p1',
+  rounds: 1,
+  scoreboard: [
+    { tankId: 'p1', playerName: 'A', roundWins: 1, kills: 1, totalDamage: 100 },
+    { tankId: 'p2', playerName: 'B', roundWins: 0, kills: 0, totalDamage: 0 },
+  ],
+  evidence_tier: 'casual_participant_reported',
+  completion_version: 1,
+  completion_status: 'complete',
+}
 const DUPLICATE: FakeError = { code: '23505', message: 'duplicate key' }
 
 function result(data: unknown, error: FakeError | null = null): QueryResult {
@@ -36,7 +54,7 @@ function result(data: unknown, error: FakeError | null = null): QueryResult {
 function roomQuery(room: unknown = FINISHED_ROOM, error: FakeError | null = null): QueryExpectation {
   return {
     table: 'rooms',
-    select: 'id, status, players',
+    select: 'id, status, players, winner, options',
     filters: [['id', ROOM_ID]],
     operation: 'maybeSingle',
     result: result(room, error),
@@ -57,10 +75,10 @@ function seatQuery(
   }
 }
 
-function scoreQuery(row: unknown = { room_id: ROOM_ID }, error: FakeError | null = null): QueryExpectation {
+function scoreQuery(row: unknown = COMPLETE_SCORE, error: FakeError | null = null): QueryExpectation {
   return {
     table: 'match_scores',
-    select: 'room_id',
+    select: 'room_id, winner, rounds, scoreboard, evidence_tier, completion_version, completion_status',
     filters: [['room_id', ROOM_ID]],
     operation: 'maybeSingle',
     result: result(row, error),
@@ -233,7 +251,7 @@ Deno.test('handleClaimMatch returns 404 for an absent room after authenticated i
 })
 
 Deno.test('handleClaimMatch rejects a player outside the ordered room roster (catches skipped membership authorization)', async () => {
-  const { payload } = await expectResponse({ queries: [roomQuery({ id: ROOM_ID, status: 'finished', players: [{ id: PLAYER_A }] })] }, validBody({ playerId: OTHER_USER_ID }), 403)
+  const { payload } = await expectResponse({ queries: [roomQuery({ id: ROOM_ID, status: 'finished', winner: 'p1', players: [{ id: PLAYER_A }] })] }, validBody({ playerId: OTHER_USER_ID }), 403)
   assertEquals(payload, { error: 'seat_not_authorized' })
 })
 
@@ -249,8 +267,8 @@ Deno.test('handleClaimMatch returns logged generic failure for a seat-table quer
 })
 
 Deno.test('handleClaimMatch rejects a room that has not finished (catches claims before match completion)', async () => {
-  const { payload } = await expectResponse({ queries: [roomQuery({ id: ROOM_ID, status: 'active', players: [{ id: PLAYER_A }] }), seatQuery()] }, validBody(), 409)
-  assertEquals(payload, { error: 'match_not_ready' })
+  const { payload } = await expectResponse({ queries: [roomQuery({ id: ROOM_ID, status: 'active', winner: null, players: [{ id: PLAYER_A }] }), seatQuery()] }, validBody(), 409)
+  assertEquals(payload, { error: 'match_not_ready', retryable: true })
 })
 
 Deno.test('handleClaimMatch returns 500 for a scoped match-score query failure (catches score errors treated as absent scores)', async () => {
@@ -260,7 +278,7 @@ Deno.test('handleClaimMatch returns 500 for a scoped match-score query failure (
 
 Deno.test('handleClaimMatch requires a persisted match score (catches links to unrecorded finished matches)', async () => {
   const { payload } = await expectResponse({ queries: [roomQuery(), seatQuery(), scoreQuery(null)] }, validBody(), 409)
-  assertEquals(payload, { error: 'match_not_ready' })
+  assertEquals(payload, { error: 'match_not_ready', retryable: true })
 })
 
 Deno.test('handleClaimMatch derives pN and ignores body identity, outcome, XP, and total fields (catches client-controlled linkage identity)', async () => {
@@ -273,19 +291,104 @@ Deno.test('handleClaimMatch derives pN and ignores body identity, outcome, XP, a
     xp: 99999,
     total: 99999,
   }), 200)
-  assertEquals(payload, { ok: true, linked: true })
+  assertEquals(payload, { ok: true, linked: true, evidence: 'casual_participant_reported', receiptStatus: 'complete' })
   assertEquals(fixture.inserts, [{ room_id: ROOM_ID, user_id: USER_ID, player_id: PLAYER_B, tank_id: 'p2' }])
 })
 
 Deno.test('handleClaimMatch reports a successful newly inserted account-seat link (catches ignored insert success)', async () => {
   const { payload } = await expectResponse({ queries: readyForInsert() }, validBody(), 200)
-  assertEquals(payload, { ok: true, linked: true })
+  assertEquals(payload, {
+    ok: true,
+    linked: true,
+    evidence: 'casual_participant_reported',
+    receiptStatus: 'complete',
+  })
 })
 
 Deno.test('handleClaimMatch treats the exact existing link as an idempotent replay (catches duplicate retry conflict)', async () => {
   const existing = { room_id: ROOM_ID, user_id: USER_ID, player_id: PLAYER_A, tank_id: 'p1' }
   const { payload } = await expectResponse({ queries: [...readyForInsert(PLAYER_A, 'p1', DUPLICATE), existingUserQuery(existing)] }, validBody(), 200)
-  assertEquals(payload, { ok: true, linked: false })
+  assertEquals(payload, { ok: true, linked: false, evidence: 'casual_participant_reported', receiptStatus: 'complete' })
+})
+
+Deno.test('handleClaimMatch rejects non-casual evidence before inserting a participant link', async () => {
+  const { payload } = await expectResponse({
+    queries: [roomQuery(), seatQuery(), scoreQuery({ ...COMPLETE_SCORE, evidence_tier: 'verified_replay_v2' })],
+  }, validBody(), 409)
+  assertEquals(payload, { error: 'match_receipt_malformed', retryable: false })
+})
+
+Deno.test('handleClaimMatch reports a room/score winner disagreement as an explicit dispute', async () => {
+  const { payload } = await expectResponse({
+    queries: [roomQuery(), seatQuery(), scoreQuery({ ...COMPLETE_SCORE, winner: 'p2' })],
+  }, validBody(), 409)
+  assertEquals(payload, { error: 'completion_dispute', retryable: false })
+})
+
+Deno.test('handleClaimMatch rejects a receipt whose winner contradicts its strict scoreboard', async () => {
+  const { payload } = await expectResponse({
+    queries: [roomQuery(), seatQuery(), scoreQuery({
+      ...COMPLETE_SCORE,
+      scoreboard: [
+        { tankId: 'p1', playerName: 'A', roundWins: 0, kills: 0, totalDamage: 0 },
+        { tankId: 'p2', playerName: 'B', roundWins: 1, kills: 1, totalDamage: 100 },
+      ],
+    })],
+  }, validBody(), 409)
+  assertEquals(payload, { error: 'match_receipt_malformed', retryable: false })
+})
+
+Deno.test('handleClaimMatch keeps malformed legacy scores typed and repairable before linkage', async () => {
+  const { payload } = await expectResponse({
+    queries: [roomQuery(), seatQuery(), scoreQuery({
+      ...COMPLETE_SCORE,
+      rounds: 99,
+      scoreboard: [{ tankId: 'p1' }],
+      completion_version: null,
+      completion_status: 'legacy_unvalidated',
+    })],
+  }, validBody(), 409)
+  assertEquals(payload, { error: 'legacy_score_malformed', retryable: true })
+})
+
+Deno.test('handleClaimMatch classifies every malformed legacy JSON scoreboard as repairable', async () => {
+  for (const scoreboard of [null, {}, 'invalid']) {
+    const { payload } = await expectResponse({
+      queries: [roomQuery(), seatQuery(), scoreQuery({
+        ...COMPLETE_SCORE,
+        scoreboard,
+        completion_version: null,
+        completion_status: 'legacy_unvalidated',
+      })],
+    }, validBody(), 409)
+    assertEquals(payload, { error: 'legacy_score_malformed', retryable: true })
+  }
+})
+
+Deno.test('handleClaimMatch keeps the same malformed JSON shapes fail-closed for versioned receipts', async () => {
+  for (const scoreboard of [null, {}, 'invalid']) {
+    const { payload } = await expectResponse({
+      queries: [roomQuery(), seatQuery(), scoreQuery({ ...COMPLETE_SCORE, scoreboard })],
+    }, validBody(), 409)
+    assertEquals(payload, { error: 'match_receipt_malformed', retryable: false })
+  }
+})
+
+Deno.test('handleClaimMatch keeps coherent legacy and score-absent receipts casual and typed', async () => {
+  for (const [score, status] of [
+    [{ ...COMPLETE_SCORE, completion_version: null, completion_status: 'legacy_unvalidated' }, 'legacy_unvalidated'],
+    [{ ...COMPLETE_SCORE, scoreboard: [], completion_status: 'score_absent' }, 'score_absent'],
+  ] as const) {
+    const { payload } = await expectResponse({
+      queries: [roomQuery(), seatQuery(), scoreQuery(score), insertQuery()],
+    }, validBody(), 200)
+    assertEquals(payload, {
+      ok: true,
+      linked: true,
+      evidence: 'casual_participant_reported',
+      receiptStatus: status,
+    })
+  }
 })
 
 Deno.test('handleClaimMatch returns 500 when the room-user duplicate diagnostic query fails (catches error being mistaken for no existing user link)', async () => {
