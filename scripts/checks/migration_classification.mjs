@@ -1,17 +1,16 @@
-// Contract check for the legacy-table data-classification migration (#125).
-// Run: node scripts/checks/migration_classification.mjs
+// Contract checks for migration history and legacy-table data classification (#125).
+// Run: node scripts/checks/migration_classification.mjs [--check all|history|classification] [--base <commit>] [--head <commit>]
 
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveFinalGitExecutable, resolveFinalRepositoryRoot } from './final-repository-root.mjs';
-
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const gitRoot = resolveFinalRepositoryRoot(root);
-const gitExecutable = resolveFinalGitExecutable();
-const migrationPath = join(root, 'supabase', 'migrations', '011_data_classification_comments.sql');
+const migrationDirectory = 'supabase/migrations';
+const classificationMigration = '011_data_classification_comments.sql';
+const defaultBase = 'origin/main';
+const defaultHead = 'HEAD';
 
 const requiredStatements = [
   "COMMENT ON TABLE rooms IS 'classification: PUBLIC",
@@ -49,6 +48,93 @@ const expectedTargets = new Set(requiredStatements.map((statement) => {
 
 const allowedCommentStatement = /^COMMENT\s+ON\s+(?:TABLE|COLUMN)\s+[a-z_]+(?:\.[a-z_]+)?\s+IS\s+'(?:[^']|'')*'$/i;
 
+function fail(message) {
+  throw new Error(`Migration classification check failed: ${message}`);
+}
+
+function git(repositoryRoot, args) {
+  const result = spawnSync('git', args, { cwd: repositoryRoot, encoding: 'utf8' });
+  if (result.error) fail(`Git ${args.join(' ')} could not start: ${result.error.message}`);
+  if (result.status !== 0) {
+    const detail = (result.stderr || result.stdout || `exit ${result.status}`).trim();
+    fail(`Git ${args.join(' ')} failed: ${detail}`);
+  }
+  return result.stdout;
+}
+
+function isZeroObject(reference) {
+  return /^0{40,64}$/.test(reference);
+}
+
+function resolveCommit(repositoryRoot, reference, label) {
+  if (!reference || isZeroObject(reference)) fail(`${label} commit is required and cannot be the all-zero GitHub sentinel`);
+  const commit = git(repositoryRoot, ['rev-parse', '--verify', `${reference}^{commit}`]).trim();
+  if (!commit) fail(`${label} commit did not resolve`);
+  git(repositoryRoot, ['cat-file', '-e', `${commit}^{commit}`]);
+  return commit;
+}
+
+function isMigrationSqlPath(path) {
+  return new RegExp(`^${migrationDirectory}/[^/]+\\.sql$`).test(path);
+}
+
+function lines(output) {
+  return output.split(/\r?\n/).filter(Boolean);
+}
+
+function migrationInventory(repositoryRoot, base) {
+  const inventory = lines(git(repositoryRoot, ['ls-tree', '-r', '--name-only', base, '--', migrationDirectory]))
+    .filter(isMigrationSqlPath);
+  if (inventory.length === 0) fail(`base ${base} contains no SQL migrations to protect`);
+  return new Set(inventory);
+}
+
+function parseNameStatus(output, label) {
+  return lines(output).map((line) => {
+    const fields = line.split('\t');
+    if (fields.length < 2 || !fields[0]) fail(`${label} returned an unparseable name-status record: ${line}`);
+    return { status: fields[0], paths: fields.slice(1) };
+  });
+}
+
+function protectedChanges(records, protectedPaths) {
+  return records.flatMap(({ status, paths }) => paths
+    .filter((path) => protectedPaths.has(path))
+    .map((path) => `${status}:${path}`));
+}
+
+function comparePaths(repositoryRoot, args, label, protectedPaths) {
+  const records = parseNameStatus(git(repositoryRoot, args), label);
+  return protectedChanges(records, protectedPaths);
+}
+
+export function checkMigrationHistory(repositoryRoot, { base = defaultBase, head = defaultHead } = {}) {
+  const baseCommit = resolveCommit(repositoryRoot, base, 'base');
+  const headCommit = resolveCommit(repositoryRoot, head, 'head');
+  const protectedPaths = migrationInventory(repositoryRoot, baseCommit);
+  const committedChanges = comparePaths(
+    repositoryRoot,
+    ['diff', '--name-status', '--find-renames', baseCommit, headCommit, '--', migrationDirectory],
+    'base/head migration diff',
+    protectedPaths,
+  );
+  const unstagedChanges = comparePaths(
+    repositoryRoot,
+    ['diff', '--name-status', '--find-renames', 'HEAD', '--', migrationDirectory],
+    'worktree migration diff',
+    protectedPaths,
+  );
+  const stagedChanges = comparePaths(
+    repositoryRoot,
+    ['diff', '--cached', '--name-status', '--find-renames', 'HEAD', '--', migrationDirectory],
+    'index migration diff',
+    protectedPaths,
+  );
+  const changed = [...committedChanges, ...unstagedChanges, ...stagedChanges];
+  if (changed.length > 0) fail(`base-tree applied migration inventory was changed: ${changed.join(', ')}`);
+  return { base: baseCommit, head: headCommit, protectedCount: protectedPaths.size };
+}
+
 function sqlStatements(text) {
   const withoutComments = text.replace(/^\s*--.*$/gm, '');
   const statements = [];
@@ -76,88 +162,77 @@ function sqlStatements(text) {
   return statements;
 }
 
-function hasOnlyAllowedCommentStatements(text) {
+export function hasOnlyAllowedCommentStatements(text) {
   return sqlStatements(text).every((statement) => allowedCommentStatement.test(statement));
 }
 
-let sql;
-try {
-  sql = await readFile(migrationPath, 'utf8');
-} catch (error) {
-  console.error(`FAIL: required migration is missing: ${migrationPath}`);
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
+export function validateClassificationSql(sql) {
+  if (!/^-- Lock profile:/im.test(sql)) fail('migration header must declare the expected lock profile');
+  const missing = requiredStatements.filter((statement) => !sql.includes(statement));
+  if (missing.length > 0) fail(`${missing.length} required classification comment(s) are missing: ${missing.join(', ')}`);
+  if (!hasOnlyAllowedCommentStatements(sql)) fail('migration contains a statement beyond the exact COMMENT ON TABLE/COLUMN allowlist');
+
+  const firstStatementEnd = sql.indexOf('COMMENT ON COLUMN rooms.id');
+  const mutationProbes = [
+    `${sql.slice(0, firstStatementEnd)} ALTER TABLE rooms ADD COLUMN injected text;${sql.slice(firstStatementEnd)}`,
+    `${sql}\nDROP TABLE rooms;`,
+    `${sql}\nDO $$\nBEGIN\n  EXECUTE 'DROP TABLE rooms';\nEND\n$$;`,
+  ];
+  if (mutationProbes.some(hasOnlyAllowedCommentStatements)) fail('SQL allowlist mutation probe was not rejected');
+
+  const actualTargets = [...sql.matchAll(/^COMMENT\s+ON\s+(?:TABLE|COLUMN)\s+([a-z_]+(?:\.[a-z_]+)?)\s+IS\s+/gim)].map((match) => match[1]);
+  const unexpectedTargets = actualTargets.filter((target) => !expectedTargets.has(target));
+  const duplicateTargets = actualTargets.filter((target, index) => actualTargets.indexOf(target) !== index);
+  if (actualTargets.length !== expectedTargets.size || unexpectedTargets.length > 0 || duplicateTargets.length > 0) {
+    fail(`migration must contain exactly one comment for each approved legacy target; expected ${expectedTargets.size}, found ${actualTargets.length}`);
+  }
+  if (/classification:\s*SECRET/i.test(sql)) fail('legacy public tables must not classify any field as SECRET');
+  return { requiredCommentCount: requiredStatements.length };
 }
 
-const changedMigrationPaths = new Set();
-for (const gitArgs of [
-  ['diff', '--name-only', 'HEAD', '--', 'supabase/migrations'],
-  ['diff', '--name-only', 'HEAD^', 'HEAD', '--', 'supabase/migrations'],
-]) {
+export async function checkClassificationMigration(repositoryRoot) {
+  const migrationPath = join(repositoryRoot, migrationDirectory, classificationMigration);
+  let sql;
   try {
-    for (const path of execFileSync(gitExecutable, gitArgs, { cwd: gitRoot, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean)) {
-      changedMigrationPaths.add(path.replaceAll('\\', '/'));
+    sql = await readFile(migrationPath, 'utf8');
+  } catch (error) {
+    fail(`required migration is missing: ${migrationPath}; ${error instanceof Error ? error.message : error}`);
+  }
+  return validateClassificationSql(sql);
+}
+
+function parseArguments(args) {
+  const options = { check: 'all', base: defaultBase, head: defaultHead };
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === '--check' || argument === '--base' || argument === '--head') {
+      const value = args[index + 1];
+      if (!value) fail(`${argument} requires a value`);
+      options[argument.slice(2)] = value;
+      index += 1;
+    } else {
+      fail(`unknown argument: ${argument}`);
     }
-  } catch {
-    // A shallow/unborn checkout may not have HEAD^; the working-tree check still applies.
+  }
+  if (!['all', 'history', 'classification'].includes(options.check)) fail(`unsupported check: ${options.check}`);
+  return options;
+}
+
+async function main() {
+  const options = parseArguments(process.argv.slice(2));
+  if (options.check === 'all' || options.check === 'history') {
+    const history = checkMigrationHistory(root, options);
+    console.log(`PASS: ${history.protectedCount} base-tree migration(s) unchanged from ${history.base} to ${history.head}.`);
+  }
+  if (options.check === 'all' || options.check === 'classification') {
+    const classification = await checkClassificationMigration(root);
+    console.log(`PASS: ${classification.requiredCommentCount} legacy-table classification comments are present and comment-only.`);
   }
 }
-const modifiedAppliedMigrations = [...changedMigrationPaths].filter((path) => /\/0(?:0[1-9]|10)_.*\.sql$/i.test(path));
-if (modifiedAppliedMigrations.length > 0) {
-  console.error(`FAIL: applied migration(s) were modified: ${modifiedAppliedMigrations.join(', ')}`);
-  process.exit(1);
-}
 
-if (!/^-- Lock profile:/im.test(sql)) {
-  console.error('FAIL: migration header must declare the expected lock profile');
-  process.exit(1);
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((error) => {
+    console.error(`FAIL: ${error instanceof Error ? error.message : error}`);
+    process.exitCode = 1;
+  });
 }
-
-const missing = requiredStatements.filter((statement) => !sql.includes(statement));
-if (missing.length > 0) {
-  console.error(`FAIL: ${missing.length} required classification comment(s) are missing`);
-  for (const statement of missing) console.error(`  - ${statement}`);
-  process.exit(1);
-}
-
-if (!hasOnlyAllowedCommentStatements(sql)) {
-  console.error('FAIL: migration contains a statement beyond the exact COMMENT ON TABLE/COLUMN allowlist');
-  process.exit(1);
-}
-
-const firstStatementEnd = sql.indexOf('COMMENT ON COLUMN rooms.id');
-const mutationProbes = [
-  {
-    label: 'same-line trailing ALTER',
-    sql: `${sql.slice(0, firstStatementEnd)} ALTER TABLE rooms ADD COLUMN injected text;${sql.slice(firstStatementEnd)}`,
-  },
-  { label: 'standalone DROP', sql: `${sql}\nDROP TABLE rooms;` },
-  {
-    label: 'multiline dynamic DROP',
-    sql: `${sql}\nDO $$\nBEGIN\n  EXECUTE 'DROP TABLE rooms';\nEND\n$$;`,
-  },
-];
-const acceptedMutationProbes = mutationProbes.filter(({ sql: probe }) => hasOnlyAllowedCommentStatements(probe));
-if (acceptedMutationProbes.length > 0) {
-  console.error('FAIL: SQL allowlist mutation probe(s) were not rejected');
-  for (const { label } of acceptedMutationProbes) console.error(`  - ${label}`);
-  process.exit(1);
-}
-
-const actualTargets = [...sql.matchAll(/^COMMENT\s+ON\s+(?:TABLE|COLUMN)\s+([a-z_]+(?:\.[a-z_]+)?)\s+IS\s+/gim)].map((match) => match[1]);
-const unexpectedTargets = actualTargets.filter((target) => !expectedTargets.has(target));
-const duplicateTargets = actualTargets.filter((target, index) => actualTargets.indexOf(target) !== index);
-if (actualTargets.length !== expectedTargets.size || unexpectedTargets.length > 0 || duplicateTargets.length > 0) {
-  console.error('FAIL: migration must contain exactly one comment for each approved legacy table/column target');
-  if (unexpectedTargets.length > 0) console.error(`  unexpected: ${unexpectedTargets.join(', ')}`);
-  if (duplicateTargets.length > 0) console.error(`  duplicate: ${duplicateTargets.join(', ')}`);
-  console.error(`  expected ${expectedTargets.size} targets, found ${actualTargets.length}`);
-  process.exit(1);
-}
-
-if (/classification:\s*SECRET/i.test(sql)) {
-  console.error('FAIL: legacy public tables must not classify any field as SECRET');
-  process.exit(1);
-}
-
-console.log(`PASS: ${requiredStatements.length} legacy-table classification comments are present and migration is comment-only.`);

@@ -209,16 +209,46 @@ async function fulfillFunction(
   };
 }
 
-async function assertSameOriginFunctionCall(
+async function assertExpectedFunctionCall(
   page: Page,
   calls: { count: () => number; urls: () => string[] },
   name: string,
 ): Promise<void> {
   expect(calls.count()).toBe(1);
   const requestUrl = new URL(calls.urls()[0]!);
-  expect(requestUrl.origin).toBe(new URL(page.url()).origin);
+  const configuredOrigin = process.env['E2E_EXPECTED_BACKEND_ORIGIN'];
+  const expectedOrigin = configuredOrigin
+    ? new URL(configuredOrigin).origin
+    : new URL(page.url()).origin;
+  expect(requestUrl.origin).toBe(expectedOrigin);
   expect(requestUrl.pathname).toBe(`/functions/v1/${name}`);
 }
+
+test('candidate verification denies unmocked external traffic', async ({ page }, testInfo) => {
+  test.skip(process.env['E2E_DENY_EXTERNAL_NETWORK'] !== '1');
+  test.skip(testInfo.project.name !== 'desktop-fine');
+  const backendOrigin = process.env['E2E_EXPECTED_BACKEND_ORIGIN'];
+  expect(backendOrigin, 'candidate mode must declare the compiled backend origin').toBeTruthy();
+  await page.route(`${backendOrigin}/functions/v1/fulfilled_candidate_probe`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/plain', body: 'fixture' });
+  });
+  const fulfilled = await page.goto(`${backendOrigin}/functions/v1/fulfilled_candidate_probe`);
+  expect(fulfilled?.status(), 'route fixtures must run before the deny proxy').toBe(200);
+
+  let blockedError = '';
+  try {
+    await page.goto('https://untrusted-candidate.invalid/unmocked_candidate_probe', {
+      timeout: 5_000,
+      waitUntil: 'commit',
+    });
+  } catch (error) {
+    blockedError = error instanceof Error ? error.message : String(error);
+  }
+  expect(
+    blockedError,
+    'an unmocked external request must fail because the candidate proxy is unreachable',
+  ).toContain('ERR_PROXY_CONNECTION_FAILED');
+});
 
 test.describe('Lobby layout guardrails', () => {
   test.beforeEach(async ({ page }) => {
@@ -505,7 +535,7 @@ test.describe('Lobby layout guardrails', () => {
     const alternatives = page.getByRole('navigation', { name: 'Other ways to play online', exact: true });
     await expect(alternatives.getByRole('button', { name: 'Create a room', exact: true })).toBeVisible();
     await expect(alternatives.getByRole('button', { name: 'Join with a code', exact: true })).toBeVisible();
-    await assertSameOriginFunctionCall(page, listRoomsCalls, 'list_rooms');
+    await assertExpectedFunctionCall(page, listRoomsCalls, 'list_rooms');
 
     await assertOperationsBoardFlow(page, '#lobby .lobby-operations-board--browse');
     await assertOperationRowsClear(page, '#lobby .lobby-operations-board--browse');
@@ -525,6 +555,7 @@ test.describe('Lobby layout guardrails', () => {
         maxPlayers: 4,
         maxWind: 10,
         gravity: 0.15,
+        commandProtocolVersion: 2,
         walls: 'open',
         rounds: 3,
         armsLevel: 2,
@@ -564,7 +595,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(readyUp).toBeEnabled();
     await expect(readyUp).toHaveClass(/primary/);
     await expect(page.getByRole('button', { name: 'Leave', exact: true })).toBeVisible();
-    await assertSameOriginFunctionCall(page, createRoomCalls, 'create_room');
+    await assertExpectedFunctionCall(page, createRoomCalls, 'create_room');
 
     await assertOperationsBoardFlow(page, '#lobby .lobby-operations-board--waiting');
     await assertLobbyFrame(page);
@@ -600,6 +631,6 @@ test.describe('Lobby layout guardrails', () => {
       ],
     });
     await readyUp.click();
-    await assertSameOriginFunctionCall(page, readyCalls, 'ready_up');
+    await assertExpectedFunctionCall(page, readyCalls, 'ready_up');
   });
 });

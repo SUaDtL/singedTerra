@@ -1,69 +1,256 @@
-# Manual backend deploy — Supabase migrations (db push) + Edge Functions.
-#
-# Mirrors the local `npm run deploy:backend` script, run from CI on the linked
-# project. Manual-dispatch only (no auto-deploy of schema changes to prod).
-#
-# Requires (Settings -> Secrets and variables -> Actions):
-#   secret   SUPABASE_ACCESS_TOKEN  -- a Supabase access token (mint a dedicated
-#                                       CI token at https://supabase.com/dashboard/account/tokens)
-#   secret   SUPABASE_DB_PASSWORD   -- the project's database password (needed by `db push`)
-#   variable SUPABASE_PROJECT_REF   -- the project ref (jdvxfxjpobtyasozxauh); non-secret
-#
-# The functions' RUNTIME secrets (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL, ...) are
-# already configured on the Supabase platform and are NOT set here.
-
+# Production backend release. The credential-free gate binds a reviewed
+# manifest to current main and its newest exact-SHA CI attempt. Production
+# credentials exist only on the separately protected environment job.
 name: Deploy backend (Supabase)
 
 on:
   workflow_dispatch:
     inputs:
-      deploy_migrations:
-        description: 'Run `supabase db push` (apply migrations to prod)'
-        type: boolean
-        default: true
-      deploy_functions:
-        description: 'Run `supabase functions deploy`'
-        type: boolean
-        default: true
+      candidate_sha:
+        description: Exact current-main commit approved for backend deployment
+        required: true
+        type: string
+      manifest_sha256:
+        description: SHA-256 of supabase/backend-release-manifest.json reviewed with that commit
+        required: true
+        type: string
+      confirmation:
+        description: Confirm this deployment proposal; environment approval remains separate
+        required: true
+        type: choice
+        options: [DEPLOY]
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-backend
+  group: production-backend
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  gate:
+    name: exact source, manifest, CI and environment gate
     runs-on: ubuntu-latest
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    timeout-minutes: 25
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      source_sha: ${{ steps.gate.outputs.source_sha }}
+      manifest_sha256: ${{ steps.gate.outputs.manifest_sha256 }}
+      migration_set_sha256: ${{ steps.gate.outputs.migration_set_sha256 }}
+      function_set_sha256: ${{ steps.gate.outputs.function_set_sha256 }}
+      required_ci_run_id: ${{ steps.gate.outputs.required_ci_run_id }}
+      required_ci_run_attempt: ${{ steps.gate.outputs.required_ci_run_attempt }}
+      configured_reviewers: ${{ steps.gate.outputs.configured_reviewers }}
+      prevent_self_review: ${{ steps.gate.outputs.prevent_self_review }}
+      admins_can_bypass: ${{ steps.gate.outputs.admins_can_bypass }}
+      supabase_cli_version: ${{ steps.gate.outputs.supabase_cli_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
         with:
-          version: latest
-
-      - name: Preflight — required config present
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify the immutable checkout before repository-owned code runs
+        shell: bash
         run: |
-          missing=0
-          [ -z "$SUPABASE_ACCESS_TOKEN" ] && { echo "::error::SUPABASE_ACCESS_TOKEN secret is not set"; missing=1; }
-          [ -z "$PROJECT_REF" ] && { echo "::error::SUPABASE_PROJECT_REF variable is not set"; missing=1; }
-          if [ "${{ inputs.deploy_migrations }}" = "true" ] && [ -z "$SUPABASE_DB_PASSWORD" ]; then
-            echo "::error::SUPABASE_DB_PASSWORD secret is required to run db push"; missing=1
-          fi
-          [ "$missing" = "1" ] && exit 1 || echo "preflight ok"
+          set -euo pipefail
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE_SHA" = "$GITHUB_SHA" ]]
+          [[ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]]
+          [[ "$GITHUB_REF" = refs/heads/main ]]
+          [[ "$GITHUB_WORKFLOW_REF" = "$GITHUB_REPOSITORY/.github/workflows/deploy-backend.yml@refs/heads/main" ]]
+          [[ "$CANDIDATE_MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$(sha256sum supabase/backend-release-manifest.json | cut -d' ' -f1)" = "$CANDIDATE_MANIFEST_SHA256" ]]
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Bind the exact approved release proposal
+        id: gate
+        run: |
+          test "$DEPLOY_CONFIRMATION" = DEPLOY
+          node scripts/ci/backendRelease.mjs gate
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+          DEPLOY_CONFIRMATION: ${{ inputs.confirmation }}
+          GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Link project
-        run: supabase link --project-ref "$PROJECT_REF"
-
-      - name: Push migrations
-        if: ${{ inputs.deploy_migrations }}
-        run: supabase db push --yes
-
-      - name: Deploy Edge Functions
-        if: ${{ inputs.deploy_functions }}
-        run: supabase functions deploy --use-api --project-ref "$PROJECT_REF"
+  deploy:
+    name: approved compatible backend deployment
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    environment:
+      name: production-backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.gate.outputs.source_sha }}
+          persist-credentials: false
+      - name: Verify the approved checkout before repository-owned code runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]]
+          [[ "$GITHUB_SHA" = "$CANDIDATE_SHA" ]]
+          [[ "$(sha256sum supabase/backend-release-manifest.json | cut -d' ' -f1)" = "$CANDIDATE_MANIFEST_SHA256" ]]
+        env:
+          CANDIDATE_SHA: ${{ needs.gate.outputs.source_sha }}
+          CANDIDATE_MANIFEST_SHA256: ${{ needs.gate.outputs.manifest_sha256 }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Revalidate source, manifest, CLI and exact CI attempt after approval
+        id: revalidate
+        run: node scripts/ci/backendRelease.mjs revalidate
+        env:
+          CANDIDATE_SHA: ${{ needs.gate.outputs.source_sha }}
+          CANDIDATE_MANIFEST_SHA256: ${{ needs.gate.outputs.manifest_sha256 }}
+          GITHUB_TOKEN: ${{ github.token }}
+          REQUIRED_CI_RUN_ID: ${{ needs.gate.outputs.required_ci_run_id }}
+          REQUIRED_CI_RUN_ATTEMPT: ${{ needs.gate.outputs.required_ci_run_attempt }}
+      - name: Require environment-scoped production configuration
+        id: configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_DB_PASSWORD"
+          [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]]
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Link the exact production project
+        id: link
+        run: npx --no-install supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Read config metadata before mutation
+        id: management_before
+        run: node scripts/ci/backendRelease.mjs management-snapshot > "$RUNNER_TEMP/management-before.json"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Read migration inventory before mutation
+        id: migrations_before
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --no-install supabase migration list --linked --output json > "$RUNNER_TEMP/migrations-before.json"
+          cat "$RUNNER_TEMP/migrations-before.json"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      - name: Prove the exact migration proposal without applying it
+        id: migration_dry_run
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --no-install supabase db push --linked --dry-run --output json > "$RUNNER_TEMP/migration-dry-run.txt"
+          cat "$RUNNER_TEMP/migration-dry-run.txt"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      - name: Read function versions before mutation
+        id: functions_before
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --no-install supabase functions list --project-ref "$SUPABASE_PROJECT_REF" --output json > "$RUNNER_TEMP/functions-before.json"
+          cat "$RUNNER_TEMP/functions-before.json"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Apply compatible forward migrations
+        id: migrations
+        run: npm run deploy:backend:migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      - name: Push the reviewed project configuration
+        id: config
+        run: npm run deploy:backend:config
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Deploy the exact compatible function inventory
+        id: functions
+        run: npm run deploy:backend:functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Read config metadata after attempted release
+        id: management_after
+        if: always() && steps.link.outcome == 'success'
+        run: node scripts/ci/backendRelease.mjs management-snapshot > "$RUNNER_TEMP/management-after.json"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Read migration inventory after attempted release
+        id: migrations_after
+        if: always() && steps.link.outcome == 'success'
+        run: npx --no-install supabase migration list --linked --output json > "$RUNNER_TEMP/migrations-after.json"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      - name: Read function versions after attempted release
+        id: functions_after
+        if: always() && steps.link.outcome == 'success'
+        run: npx --no-install supabase functions list --project-ref "$SUPABASE_PROJECT_REF" --output json > "$RUNNER_TEMP/functions-after.json"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Write a secret-free backend release receipt
+        id: receipt
+        if: always()
+        run: node scripts/ci/backendRelease.mjs receipt > "$RUNNER_TEMP/backend-release-receipt.json"
+        env:
+          CANDIDATE_MANIFEST_SHA256: ${{ needs.gate.outputs.manifest_sha256 }}
+          REQUIRED_CI_RUN_ID: ${{ needs.gate.outputs.required_ci_run_id }}
+          REQUIRED_CI_RUN_ATTEMPT: ${{ needs.gate.outputs.required_ci_run_attempt }}
+          MIGRATION_SET_SHA256: ${{ needs.gate.outputs.migration_set_sha256 }}
+          FUNCTION_SET_SHA256: ${{ needs.gate.outputs.function_set_sha256 }}
+          SUPABASE_CLI_VERSION: ${{ needs.gate.outputs.supabase_cli_version }}
+          CONFIGURED_REVIEWERS: ${{ needs.gate.outputs.configured_reviewers }}
+          PREVENT_SELF_REVIEW: ${{ needs.gate.outputs.prevent_self_review }}
+          ADMINS_CAN_BYPASS: ${{ needs.gate.outputs.admins_can_bypass }}
+          CONFIGURATION_OUTCOME: ${{ steps.configuration.outcome }}
+          LINK_OUTCOME: ${{ steps.link.outcome }}
+          MANAGEMENT_BEFORE_OUTCOME: ${{ steps.management_before.outcome }}
+          MIGRATIONS_BEFORE_OUTCOME: ${{ steps.migrations_before.outcome }}
+          MIGRATION_DRY_RUN_OUTCOME: ${{ steps.migration_dry_run.outcome }}
+          FUNCTIONS_BEFORE_OUTCOME: ${{ steps.functions_before.outcome }}
+          REVALIDATE_OUTCOME: ${{ steps.revalidate.outcome }}
+          MIGRATIONS_OUTCOME: ${{ steps.migrations.outcome }}
+          CONFIG_OUTCOME: ${{ steps.config.outcome }}
+          FUNCTIONS_OUTCOME: ${{ steps.functions.outcome }}
+          MANAGEMENT_AFTER_OUTCOME: ${{ steps.management_after.outcome }}
+          MIGRATIONS_AFTER_OUTCOME: ${{ steps.migrations_after.outcome }}
+          FUNCTIONS_AFTER_OUTCOME: ${{ steps.functions_after.outcome }}
+          MANAGEMENT_BEFORE_PATH: ${{ runner.temp }}/management-before.json
+          MIGRATIONS_BEFORE_PATH: ${{ runner.temp }}/migrations-before.json
+          MIGRATION_DRY_RUN_PATH: ${{ runner.temp }}/migration-dry-run.txt
+          FUNCTIONS_BEFORE_PATH: ${{ runner.temp }}/functions-before.json
+          MANAGEMENT_AFTER_PATH: ${{ runner.temp }}/management-after.json
+          MIGRATIONS_AFTER_PATH: ${{ runner.temp }}/migrations-after.json
+          FUNCTIONS_AFTER_PATH: ${{ runner.temp }}/functions-after.json
+      - name: Retain the backend release receipt
+        if: always() && steps.receipt.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-release-receipt-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/backend-release-receipt.json
+          if-no-files-found: error
+          retention-days: 90

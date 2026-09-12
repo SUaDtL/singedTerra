@@ -1,6 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
 // Local checks reuse the sole preview; CI owns a production preview for this suite.
+const externalURL = process.env['E2E_LIVE_URL'];
+const denyExternalNetwork = process.env['E2E_DENY_EXTERNAL_NETWORK'] === '1';
+
 export default defineConfig({
   testDir: 'e2e/product-completion',
   forbidOnly: !!process.env['CI'],
@@ -8,8 +11,15 @@ export default defineConfig({
   workers: 1,
   timeout: 45_000,
   reporter: 'list',
-  use: { baseURL: process.env['CI'] ? 'http://127.0.0.1:4173/' : 'http://127.0.0.1:5198/', screenshot: 'only-on-failure', trace: 'retain-on-failure' },
-  webServer: process.env['CI'] ? {
+  use: {
+    baseURL: externalURL ?? (process.env['CI'] ? 'http://127.0.0.1:4173/' : 'http://127.0.0.1:5198/'),
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+    proxy: denyExternalNetwork
+      ? { server: 'http://127.0.0.1:9', bypass: '127.0.0.1,localhost' }
+      : undefined,
+  },
+  webServer: externalURL ? undefined : process.env['CI'] ? {
     command: 'npm run build && npm -w @singedterra/client run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173/',
     timeout: 180_000,

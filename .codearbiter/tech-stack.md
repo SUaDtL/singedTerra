@@ -27,13 +27,17 @@ Both workspace packages are `private: true`.
   no runtime transitives; importing its all-icons registry is prohibited.
 - Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,
   projectiles, explosions, and world-space effects).
-- **Approved battle-HUD architecture (ADR-0017):** exact `pixi.js@8.20.0` is
+- **Preact** is installed in the client workspace. ADR-0018 gives the in-scope
+  battle console one semantic tree with typed presentation state and intents,
+  portal/focus ownership, and lazy battle entry. It supersedes ADR-0017's
+  imperative node/callback preservation, retaining its visual boundary.
+- **Battle-HUD visual tooling (ADR-0017, retained by ADR-0018):** exact `pixi.js@8.20.0` is
   installed in the client workspace for a lazy-loaded visual compositor, and
   exact `sharp@0.35.3` is installed at the root as a development-only
   deterministic asset compiler. Both passed the 2026-08-21 dependency review,
   signature/attestation verification, high-severity audit, Windows/Node 24
   install check, and production build. Pixi is visual/non-interactive;
-  semantic DOM remains the input, text, focus, and accessibility owner. Sharp
+  Preact semantic DOM remains the input, text, focus, and accessibility owner. Sharp
   and libvips are not shipped in the browser bundle. Static Vite/GitHub Pages
   hosting is unchanged.
 - Root tooling: `concurrently`, `typescript`, `@types/node`.
@@ -55,8 +59,9 @@ Both workspace packages are `private: true`.
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
 | Secrets scan | `python "<active-codearbiter-plugin-root>/hooks/preview.py" secrets` | codeArbiter's state-free scanner over staged, unstaged, and untracked changed files; the host resolves the active plugin root before invocation. |
-| Deploy backend | `npm run deploy:backend` | `supabase db push --yes && supabase config push && supabase functions deploy --use-api --yes` (lockfile-pinned CLI; config diff requires interactive confirmation) |
-| Deploy all | `npm run deploy` | backend then client |
+| Backend release proposal check | `npm run backend:release:check` | Credential-free validation of the pinned CLI, manifest, migration/config/function inventory, and release-source identity. It does not deploy. |
+| Deploy backend | `npm run deploy:backend` | Validates first, then uses the lockfile-pinned CLI to run `db push --linked --yes`, `config push --yes`, and the manifest's explicit function list. It is credentialed and is not a production-approval path. |
+| Deploy all | `npm run deploy` | Alias for the backend command only. Client publication is the Pages workflow after an approved merge to `main`. |
 
 ## Testing
 

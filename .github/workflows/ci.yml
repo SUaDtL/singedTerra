@@ -25,6 +25,37 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Verify immutable migration history against the event commits
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # On pull_request, github.sha is GitHub's verified synthetic merge result.
+          # The source branch SHA alone can omit a migration added to the current base.
+          PR_HEAD_SHA: ${{ github.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE_SHA"
+            head="$PR_HEAD_SHA"
+          else
+            base="$PUSH_BASE_SHA"
+            head="$PUSH_HEAD_SHA"
+          fi
+          if [ -z "$base" ] || [ -z "$head" ] || [[ "$base" =~ ^0+$ ]] || [[ "$head" =~ ^0+$ ]]; then
+            echo "Missing immutable base/head evidence for migration history" >&2
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 origin "+$base:refs/remotes/origin/migration-history-base" "+$head:refs/remotes/origin/migration-history-head"
+          git cat-file -e "$base^{commit}"
+          git cat-file -e "$head^{commit}"
+          git update-ref refs/remotes/origin/main "$base"
+          node scripts/checks/migration_classification.mjs --check history --base "$base" --head "$head"
+      - name: Migration-history disposable Git regressions
+        run: node --test scripts/checks/migration_classification.test.mjs
+      - name: Release-candidate policy and digest regressions
+        run: node --test scripts/ci/releaseCandidate.test.mjs scripts/ci/releaseWorkflow.test.mjs
       - run: npm ci
       - name: Audit runtime and build dependencies
         run: npm run audit:deps
@@ -88,3 +119,12 @@ jobs:
       - run: npm run test:e2e   # builds client/dist, serves it via vite preview, asserts real HUD geometry
       - name: Battle console responsive and interaction checks
         run: npx playwright test -c playwright.product-completion.config.ts
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-failure-artifacts-${{ github.run_attempt }}
+          path: |
+            test-results/**
+            playwright-report/**
+          if-no-files-found: warn

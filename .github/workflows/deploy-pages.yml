@@ -1,87 +1,290 @@
 name: Deploy client to GitHub Pages
 
-# Builds the Vite client and publishes it to GitHub Pages on every push to main
-# (and on demand). The Supabase backend is deployed separately (npm run deploy:backend).
+# A push to main first proves the exact source SHA passed the complete CI
+# workflow, then builds the Pages-configured client once. The uploaded artifact
+# is downloaded, digest-verified, and exercised by both browser suites before
+# the same uniquely named artifact is promoted.
 #
-# One-time setup in the repo:
-#   1. Settings → Pages → Build and deployment → Source: "GitHub Actions".
-#   2. Settings → Secrets and variables → Actions → New repository secret:
-#        VITE_SUPABASE_URL       = https://<project-ref>.supabase.co
-#        VITE_SUPABASE_ANON_KEY  = <anon public key>
-#      (These are inlined into the PUBLIC client bundle at build time and are safe to
-#       expose — the anon key is RLS-gated by design, ADR-0006. Without them the site
-#       still builds and hot-seat play works; only networked play needs them.)
-
+# Manual execution is rollback-only. It requires an explicit prior successful
+# push-run/source pair plus the current-main SHA the owner reviewed. The prior
+# tested payload is verified and re-uploaded unchanged; no source rebuild occurs.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      rollback_run_id:
+        description: Successful trusted Pages push run containing the prior tested candidate
+        required: true
+        type: string
+      rollback_source_sha:
+        description: Exact source SHA recorded by that candidate
+        required: true
+        type: string
+      expected_current_main_sha:
+        description: Current main SHA reviewed when approving this rollback
+        required: true
+        type: string
+      confirmation:
+        description: Confirm this separately approved production rollback
+        required: true
+        type: choice
+        options: [ROLLBACK]
 
-# Least-privilege default for checkout and Pages metadata configuration.
 permissions:
   contents: read
-  pages: read
 
 jobs:
-  build:
-    name: build client
+  gate:
+    name: exact source and required CI gate
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      source_sha: ${{ steps.release.outputs.source_sha }}
+      candidate_run_id: ${{ steps.release.outputs.candidate_run_id }}
+      required_ci_run_id: ${{ steps.release.outputs.required_ci_run_id }}
+      required_ci_run_attempt: ${{ steps.release.outputs.required_ci_run_attempt }}
+      expected_main_sha: ${{ steps.release.outputs.expected_main_sha }}
+      rollback_artifact_id: ${{ steps.release.outputs.rollback_artifact_id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'refs/heads/main' || github.sha }}
+          persist-credentials: false
+      - name: Require exact trusted CI or authorize an exact prior candidate
+        id: release
+        run: node scripts/ci/releaseCandidate.mjs gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ROLLBACK_RUN_ID: ${{ inputs.rollback_run_id }}
+          ROLLBACK_SOURCE_SHA: ${{ inputs.rollback_source_sha }}
+          EXPECTED_CURRENT_MAIN_SHA: ${{ inputs.expected_current_main_sha }}
+          ROLLBACK_CONFIRMATION: ${{ inputs.confirmation }}
+
+  build:
+    name: prepare one release candidate
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pages: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact_id }}
+      source_sha: ${{ needs.gate.outputs.source_sha }}
+      candidate_run_id: ${{ needs.gate.outputs.candidate_run_id }}
+      required_ci_run_id: ${{ needs.gate.outputs.required_ci_run_id || steps.rollback-meta.outputs.required_ci_run_id }}
+      payload_sha256: ${{ steps.built.outputs.payload_sha256 || steps.rollback-meta.outputs.payload_sha256 }}
+      public_config_sha256: ${{ steps.built.outputs.public_config_sha256 || steps.rollback-meta.outputs.public_config_sha256 }}
+      candidate_metadata_sha256: ${{ steps.built.outputs.candidate_metadata_sha256 || steps.rollback-meta.outputs.candidate_metadata_sha256 }}
+      base_path: ${{ steps.built.outputs.base_path || steps.rollback-meta.outputs.base_path }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.gate.outputs.expected_main_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: github.event_name == 'push'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        if: github.event_name == 'push'
+      - name: Build once with the deployment base and public configuration
+        id: built
+        if: github.event_name == 'push'
+        run: |
+          npm run build
+          cp client/dist/index.html client/dist/404.html
+          node scripts/ci/pagesFreshness.mjs write client/dist/deploy-meta.json "$CANDIDATE_SOURCE_SHA" "$CANDIDATE_RUN_ID"
+          node scripts/ci/releaseCandidate.mjs write client/dist
+        env:
+          CANDIDATE_SOURCE_SHA: ${{ needs.gate.outputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ needs.gate.outputs.candidate_run_id }}
+          REQUIRED_CI_RUN_ID: ${{ needs.gate.outputs.required_ci_run_id }}
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Verify current candidate metadata and bytes
+        id: current-meta
+        if: github.event_name == 'push'
+        run: node scripts/ci/releaseCandidate.mjs verify client/dist
+        env:
+          CANDIDATE_SOURCE_SHA: ${{ needs.gate.outputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ needs.gate.outputs.candidate_run_id }}
+          REQUIRED_CI_RUN_ID: ${{ needs.gate.outputs.required_ci_run_id }}
+          CANDIDATE_BASE_PATH: /${{ github.event.repository.name }}/
+          PUBLIC_CONFIG_SHA256: ${{ steps.built.outputs.public_config_sha256 }}
+          CANDIDATE_PAYLOAD_SHA256: ${{ steps.built.outputs.payload_sha256 }}
+          CANDIDATE_METADATA_SHA256: ${{ steps.built.outputs.candidate_metadata_sha256 }}
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Download the selected prior tested candidate
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          artifact-ids: ${{ needs.gate.outputs.rollback_artifact_id }}
+          path: rollback-artifact
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.rollback_run_id }}
+      - name: Extract the selected prior candidate without changing it
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf client/dist
+          mkdir -p client/dist
+          while IFS= read -r entry; do
+            case "$entry" in
+              /*|../*|*/../*|*/..) echo "Unsafe rollback artifact path." >&2; exit 1 ;;
+            esac
+          done < <(tar -tf rollback-artifact/artifact.tar)
+          tar --extract --file rollback-artifact/artifact.tar --directory client/dist --no-same-owner --no-same-permissions
+      - name: Verify selected rollback metadata and bytes
+        id: rollback-meta
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/ci/releaseCandidate.mjs verify-rollback client/dist
+        env:
+          CANDIDATE_SOURCE_SHA: ${{ needs.gate.outputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ needs.gate.outputs.candidate_run_id }}
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Upload the immutable Pages candidate
+        id: upload
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          name: github-pages-${{ github.run_id }}
+          path: client/dist
+          retention-days: 30
+          include-hidden-files: true
+
+  candidate-test:
+    name: test exact transported candidate
+    needs: [gate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.gate.outputs.expected_main_sha }}
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Build (project-site base + Supabase env)
-        run: npm run build
-        env:
-          # Vite base = "/<repo>/" so a GitHub Pages project site resolves assets correctly.
-          VITE_BASE: /${{ github.event.repository.name }}/
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: SPA fallback (404 = index)
-        # This canvas app has no deep routes, but a 404.html copy makes any stray path
-        # under the project base serve the app instead of a GitHub 404.
-        run: cp client/dist/index.html client/dist/404.html
-      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - name: Write deployment provenance
-        run: node scripts/ci/pagesFreshness.mjs write client/dist/deploy-meta.json "$GITHUB_SHA" "$GITHUB_RUN_ID"
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - name: Download the exact uploaded candidate by artifact ID
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          path: client/dist
-          include-hidden-files: true
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: candidate-artifact
+      - name: Extract and verify the transported candidate
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf client/dist
+          mkdir -p client/dist
+          while IFS= read -r entry; do
+            case "$entry" in
+              /*|../*|*/../*|*/..) echo "Unsafe candidate artifact path." >&2; exit 1 ;;
+            esac
+          done < <(tar -tf candidate-artifact/artifact.tar)
+          tar --extract --file candidate-artifact/artifact.tar --directory client/dist --no-same-owner --no-same-permissions
+          node scripts/ci/releaseCandidate.mjs verify client/dist
+        env:
+          CANDIDATE_SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ needs.build.outputs.candidate_run_id }}
+          REQUIRED_CI_RUN_ID: ${{ needs.build.outputs.required_ci_run_id }}
+          CANDIDATE_PAYLOAD_SHA256: ${{ needs.build.outputs.payload_sha256 }}
+          CANDIDATE_BASE_PATH: ${{ needs.build.outputs.base_path }}
+          PUBLIC_CONFIG_SHA256: ${{ needs.build.outputs.public_config_sha256 }}
+          CANDIDATE_METADATA_SHA256: ${{ needs.build.outputs.candidate_metadata_sha256 }}
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}
+      - name: Install Playwright browser (+ deps)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Run both browser suites against the exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          E2E_EXPECTED_BACKEND_ORIGIN="$(node -e "const fs=require('node:fs');const m=JSON.parse(fs.readFileSync('client/dist/release-candidate.json','utf8'));process.stdout.write(m.supabaseOrigin)")"
+          E2E_AUTH_STORAGE_KEY="$(node -e "const fs=require('node:fs');const m=JSON.parse(fs.readFileSync('client/dist/release-candidate.json','utf8'));const ref=new URL(m.supabaseOrigin).hostname.split('.')[0];if(!/^[a-z0-9-]+$/.test(ref))process.exit(1);process.stdout.write('sb-'+ref+'-auth-token')")"
+          export E2E_EXPECTED_BACKEND_ORIGIN E2E_AUTH_STORAGE_KEY
+          npm -w @singedterra/client run preview -- --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/candidate-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent --show-error --connect-timeout 2 --max-time 5 "$E2E_LIVE_URL" > /dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              cat "$RUNNER_TEMP/candidate-preview.log" >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          npm run test:e2e -- --grep-invert @live --workers=2
+          npx playwright test -c playwright.product-completion.config.ts
+        env:
+          VITE_BASE: ${{ needs.build.outputs.base_path }}
+          E2E_LIVE_URL: http://127.0.0.1:4173/${{ github.event.repository.name }}/
+          E2E_DENY_EXTERNAL_NETWORK: '1'
+      - name: Prove browser execution did not mutate candidate bytes
+        run: node scripts/ci/releaseCandidate.mjs verify client/dist
+        env:
+          CANDIDATE_SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ needs.build.outputs.candidate_run_id }}
+          REQUIRED_CI_RUN_ID: ${{ needs.build.outputs.required_ci_run_id }}
+          CANDIDATE_PAYLOAD_SHA256: ${{ needs.build.outputs.payload_sha256 }}
+          CANDIDATE_BASE_PATH: ${{ needs.build.outputs.base_path }}
+          PUBLIC_CONFIG_SHA256: ${{ needs.build.outputs.public_config_sha256 }}
+          CANDIDATE_METADATA_SHA256: ${{ needs.build.outputs.candidate_metadata_sha256 }}
 
   freshness:
-    name: verify current main
-    needs: build
+    name: verify approved main snapshot
+    needs: [gate, candidate-test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.gate.outputs.expected_main_sha }}
           persist-credentials: false
-      - name: Verify source is current main
+      - name: Verify source approval is still current main
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
-          node scripts/ci/pagesFreshness.mjs check "$GITHUB_SHA" "$current_sha"
+          node scripts/ci/pagesFreshness.mjs check "${{ needs.gate.outputs.expected_main_sha }}" "$current_sha"
 
   publish:
     name: deploy to Pages
-    needs: [build, freshness]
+    needs: [gate, build, candidate-test, freshness]
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       pages: write
       id-token: write
-    # Never run two Pages deploys at once; let an in-progress deploy finish (don't
-    # cancel a live publish). Freshness is rechecked after this lock is acquired.
     concurrency:
       group: pages
       cancel-in-progress: false
@@ -94,25 +297,46 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.gate.outputs.expected_main_sha }}
           persist-credentials: false
-      - name: Verify source is still current main
+      - name: Verify approved main snapshot after acquiring the deploy lock
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
-          node scripts/ci/pagesFreshness.mjs check "$GITHUB_SHA" "$current_sha"
+          node scripts/ci/pagesFreshness.mjs check "${{ needs.gate.outputs.expected_main_sha }}" "$current_sha"
+      - name: Revalidate the bound required CI attempt immediately before promotion
+        if: github.event_name == 'push'
+        run: node scripts/ci/releaseCandidate.mjs revalidate-ci
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CANDIDATE_SOURCE_SHA: ${{ needs.gate.outputs.source_sha }}
+          REQUIRED_CI_RUN_ID: ${{ needs.gate.outputs.required_ci_run_id }}
+          REQUIRED_CI_RUN_ATTEMPT: ${{ needs.gate.outputs.required_ci_run_attempt }}
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
-      - name: Verify deployed provenance
+        with:
+          artifact_name: github-pages-${{ github.run_id }}
+      - name: Verify public deployment provenance
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          CANDIDATE_SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ needs.build.outputs.candidate_run_id }}
+          REQUIRED_CI_RUN_ID: ${{ needs.build.outputs.required_ci_run_id }}
+          CANDIDATE_PAYLOAD_SHA256: ${{ needs.build.outputs.payload_sha256 }}
+          PUBLIC_CONFIG_SHA256: ${{ needs.build.outputs.public_config_sha256 }}
+          CANDIDATE_BASE_PATH: ${{ needs.build.outputs.base_path }}
+          CANDIDATE_METADATA_SHA256: ${{ needs.build.outputs.candidate_metadata_sha256 }}
         run: |
           set -euo pipefail
           for attempt in 1 2 3 4 5 6 7 8 9; do
             meta_url="${PAGE_URL%/}/deploy-meta.json?run=${GITHUB_RUN_ID}&attempt=${attempt}"
+            candidate_url="${PAGE_URL%/}/release-candidate.json?run=${GITHUB_RUN_ID}&attempt=${attempt}"
             if curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --max-filesize 4096 --retry 2 --retry-delay 1 --retry-max-time 50 --retry-all-errors "$meta_url" \
-              | node scripts/ci/pagesFreshness.mjs verify "$GITHUB_SHA" "$GITHUB_RUN_ID"; then
+              | node scripts/ci/pagesFreshness.mjs verify "$CANDIDATE_SOURCE_SHA" "$CANDIDATE_RUN_ID" \
+              && curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --max-filesize 4096 --retry 2 --retry-delay 1 --retry-max-time 50 --retry-all-errors "$candidate_url" \
+              | node scripts/ci/releaseCandidate.mjs verify-meta; then
               exit 0
             fi
             if [ "$attempt" -eq 9 ]; then
@@ -123,10 +347,6 @@ jobs:
           done
 
   live-smoke:
-    # Closes the loop with issue #104 ("merged but stale/clipped in prod"): after the
-    # bundle is LIVE, drive the real URL through the deterministic ?e2e=hotseat
-    # entrypoint and fail loudly if the served bundle renders the HUD instrument
-    # cluster crushed/clipped — i.e. if a broken or stale bundle reached users.
     name: post-deploy live smoke
     needs: publish
     runs-on: ubuntu-latest
@@ -155,8 +375,6 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
-      # E2E_LIVE_URL switches the config to no-webServer live mode; --grep @live +
-      # --project=pixel-touch run only the single live smoke on the compact viewport.
       - name: Live render smoke
         run: npm run test:e2e -- --grep @live --project=pixel-touch
         env:

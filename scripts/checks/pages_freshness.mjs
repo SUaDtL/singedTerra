@@ -96,64 +96,76 @@ try {
 
 if (!process.argv.includes('--policy-only')) {
   const workflow = readFileSync('.github/workflows/deploy-pages.yml', 'utf8').replace(/\r\n/g, '\n');
+  const gateStart = workflow.indexOf('\n  gate:');
   const buildStart = workflow.indexOf('\n  build:');
+  const candidateTestStart = workflow.indexOf('\n  candidate-test:');
   const freshnessStart = workflow.indexOf('\n  freshness:');
   const publishStart = workflow.indexOf('\n  publish:');
   const smokeStart = workflow.indexOf('\n  live-smoke:');
-  assert.ok(buildStart >= 0 && freshnessStart > buildStart && publishStart > freshnessStart && smokeStart > publishStart);
-  const build = workflow.slice(buildStart, freshnessStart);
+  assert.ok(
+    gateStart >= 0
+      && buildStart > gateStart
+      && candidateTestStart > buildStart
+      && freshnessStart > candidateTestStart
+      && publishStart > freshnessStart
+      && smokeStart > publishStart,
+  );
+  const gate = workflow.slice(gateStart, buildStart);
+  const build = workflow.slice(buildStart, candidateTestStart);
+  const candidateTest = workflow.slice(candidateTestStart, freshnessStart);
   const freshness = workflow.slice(freshnessStart, publishStart);
   const publish = workflow.slice(publishStart, smokeStart);
   const smoke = workflow.slice(smokeStart);
-  const header = workflow.slice(0, buildStart);
-  const triggerStart = header.indexOf('\non:');
-  const triggerEnd = header.indexOf('\n# Least-privilege', triggerStart);
-  assert.equal(
-    header.slice(triggerStart + 1, triggerEnd),
-    'on:\n  push:\n    branches: [main]\n  workflow_dispatch:\n',
-  );
-  assert.match(header, /permissions:\n  contents: read\n  pages: read\n/);
+  const header = workflow.slice(0, gateStart);
+  assert.match(header, /on:\n  push:\n    branches: \[main\]\n  workflow_dispatch:\n    inputs:/);
+  assert.match(header, /rollback_run_id:[\s\S]*rollback_source_sha:[\s\S]*expected_current_main_sha:[\s\S]*confirmation:/);
+  assert.doesNotMatch(header, /pull_request_target|workflow_run/);
+  assert.match(header, /permissions:\n  contents: read\n/);
   assert.doesNotMatch(header, /pages: write|id-token: write/);
   assert.equal(workflow.match(/pages: read/g)?.length, 1);
   assert.equal(workflow.match(/pages: write/g)?.length, 1);
   assert.equal(workflow.match(/id-token: write/g)?.length, 1);
   const actionUses = [...workflow.matchAll(/^\s+(?:-\s+)?uses:\s+([^\s#]+)/gm)]
     .map((match) => match[1]);
-  assert.deepEqual(actionUses, [
-    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
-    'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
-    'actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d',
-    'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9',
-    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
-    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
-    'actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346',
-    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
-    'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
-    'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9',
-  ]);
   assert.ok(actionUses.every((use) => /^[^/@]+\/[^/@]+@[0-9a-f]{40}$/.test(use)));
-  assert.doesNotMatch(build, /\n    permissions:/);
+  assert.match(gate, /releaseCandidate\.mjs gate/);
+  assert.match(gate, /required_ci_run_attempt: \$\{\{ steps\.release\.outputs\.required_ci_run_attempt \}\}/);
+  assert.match(gate, /actions: read/);
+  assert.doesNotMatch(gate, /pages: write|id-token: write/);
+  assert.match(build, /permissions:[\s\S]*actions: read[\s\S]*contents: read[\s\S]*pages: read/);
+  assert.doesNotMatch(build, /pages: write|id-token: write/);
+  assert.equal(workflow.match(/npm run build/g)?.length, 1);
+  assert.match(build, /VITE_BASE: \/\$\{\{ github\.event\.repository\.name \}\}\//);
+  assert.match(build, /VITE_SUPABASE_URL: \$\{\{ secrets\.VITE_SUPABASE_URL \}\}/);
+  assert.match(build, /VITE_SUPABASE_ANON_KEY: \$\{\{ secrets\.VITE_SUPABASE_ANON_KEY \}\}/);
+  assert.equal(build.match(/VITE_SUPABASE_ANON_KEY: \$\{\{ secrets\.VITE_SUPABASE_ANON_KEY \}\}/g)?.length, 2);
+  assert.match(build, /releaseCandidate\.mjs write client\/dist/);
+  assert.match(build, /releaseCandidate\.mjs verify client\/dist/);
+  assert.match(build, /name: github-pages-\$\{\{ github\.run_id \}\}/);
+  assert.match(build, /retention-days: 30/);
+  assert.match(candidateTest, /artifact-ids: \$\{\{ needs\.build\.outputs\.artifact_id \}\}/);
+  assert.match(candidateTest, /E2E_DENY_EXTERNAL_NETWORK: '1'/);
+  assert.match(candidateTest, /VITE_BASE: \$\{\{ needs\.build\.outputs\.base_path \}\}/);
+  assert.match(candidateTest, /npm run test:e2e -- --grep-invert @live --workers=2/);
+  assert.match(candidateTest, /playwright test -c playwright\.product-completion\.config\.ts/);
+  assert.match(candidateTest, /Prove browser execution did not mutate candidate bytes/);
+  assert.match(candidateTest, /CANDIDATE_METADATA_SHA256: \$\{\{ needs\.build\.outputs\.candidate_metadata_sha256 \}\}/);
+  assert.doesNotMatch(workflow, /needs\.build\.outputs\.supabase_origin/);
   assert.match(freshness, /permissions:\n      contents: read\n/);
   assert.doesNotMatch(freshness, /pages:|id-token:/);
   assert.match(
     publish,
-    /permissions:\n      contents: read\n      pages: write\n      id-token: write\n/,
+    /permissions:\n      actions: read\n      contents: read\n      pages: write\n      id-token: write\n/,
   );
   assert.match(smoke, /permissions:\n      contents: read\n/);
   assert.doesNotMatch(smoke, /pages:|id-token:/);
   const checkoutCount = workflow.match(/uses: actions\/checkout@/g)?.length ?? 0;
-  const noCredentialCheckouts = workflow.match(
-    /uses: actions\/checkout@[^\n]+\n        with:\n          persist-credentials: false/g,
-  )?.length ?? 0;
+  const noCredentialCheckouts = workflow.match(/persist-credentials: false/g)?.length ?? 0;
   assert.equal(noCredentialCheckouts, checkoutCount);
-  const metadata = build.indexOf('name: Write deployment provenance');
-  const upload = build.indexOf('actions/upload-pages-artifact@');
-  assert.ok(metadata >= 0 && upload > metadata);
-  assert.match(build, /path: client\/dist\n          include-hidden-files: true/);
-  assert.match(build, /pagesFreshness\.mjs write client\/dist\/deploy-meta\.json "\$GITHUB_SHA" "\$GITHUB_RUN_ID"/);
-  assert.match(freshness, /needs: build/);
-  assert.match(freshness, /name: Verify source is current main/);
-  assert.match(publish, /needs: \[build, freshness\]/);
+  assert.match(build, /path: client\/dist[\s\S]*include-hidden-files: true/);
+  assert.match(freshness, /needs: \[gate, candidate-test\]/);
+  assert.match(freshness, /name: Verify source approval is still current main/);
+  assert.match(publish, /needs: \[gate, build, candidate-test, freshness\]/);
   assert.match(publish, /concurrency:[\s\S]*group: pages/);
   assert.match(
     publish,
@@ -162,26 +174,16 @@ if (!process.argv.includes('--policy-only')) {
   assert.equal(workflow.match(/group: pages/g)?.length, 1);
   assert.doesNotMatch(workflow.slice(0, publishStart), /group: pages/);
   assert.equal(workflow.match(/git\/ref\/heads\/main/g)?.length, 2);
-  assert.equal(workflow.match(/pagesFreshness\.mjs check "\$GITHUB_SHA" "\$current_sha"/g)?.length, 2);
-  const exactGuardScript = [
-    '        run: |',
-    '          set -euo pipefail',
-    '          current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq \'.object.sha\')"',
-    '          node scripts/ci/pagesFreshness.mjs check "$GITHUB_SHA" "$current_sha"',
-  ].join('\n');
-  assert.equal(freshness.match(new RegExp(exactGuardScript.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))?.length, 1);
-  assert.equal(publish.match(new RegExp(exactGuardScript.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))?.length, 1);
+  assert.equal(workflow.match(/pagesFreshness\.mjs check "\$\{\{ needs\.gate\.outputs\.expected_main_sha \}\}" "\$current_sha"/g)?.length, 2);
   assert.match(workflow, /actions\/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d/);
   assert.match(publish, /actions\/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346/);
-  const inLockGuard = publish.indexOf('name: Verify source is still current main');
+  assert.match(publish, /artifact_name: github-pages-\$\{\{ github\.run_id \}\}/);
+  const inLockGuard = publish.indexOf('name: Verify approved main snapshot after acquiring the deploy lock');
+  const ciRevalidation = publish.indexOf('name: Revalidate the bound required CI attempt immediately before promotion');
   const deploy = publish.indexOf('id: deployment');
-  const provenance = publish.indexOf('name: Verify deployed provenance');
-  assert.ok(inLockGuard >= 0 && deploy > inLockGuard && provenance > deploy);
-  assert.ok(publish.includes(
-    '          node scripts/ci/pagesFreshness.mjs check "$GITHUB_SHA" "$current_sha"\n' +
-    '      - id: deployment\n' +
-    '        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1\n',
-  ));
+  const provenance = publish.indexOf('name: Verify public deployment provenance');
+  assert.ok(inLockGuard >= 0 && ciRevalidation > inLockGuard && deploy > ciRevalidation && provenance > deploy);
+  assert.match(publish, /releaseCandidate\.mjs revalidate-ci[\s\S]*REQUIRED_CI_RUN_ATTEMPT:[^\n]+\n      - id: deployment/);
   const deployUses = publish.indexOf(
     'uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346',
   );
@@ -201,8 +203,13 @@ if (!process.argv.includes('--policy-only')) {
   assert.match(provenanceCurl, /--retry-delay 1(?: |$)/);
   assert.match(provenanceCurl, /--retry-all-errors(?: |$)/);
   assert.match(provenanceCurl, /--retry-max-time 50(?: |$)/);
-  assert.match(publish, /pagesFreshness\.mjs verify "\$GITHUB_SHA" "\$GITHUB_RUN_ID"/);
+  assert.match(publish, /pagesFreshness\.mjs verify "\$CANDIDATE_SOURCE_SHA" "\$CANDIDATE_RUN_ID"/);
+  assert.match(publish, /releaseCandidate\.mjs verify-meta/);
+  assert.match(publish, /CANDIDATE_METADATA_SHA256: \$\{\{ needs\.build\.outputs\.candidate_metadata_sha256 \}\}/);
   assert.match(smoke, /needs: publish/);
+  assert.doesNotMatch(gate, /continue-on-error/);
+  assert.doesNotMatch(build, /continue-on-error/);
+  assert.doesNotMatch(candidateTest, /continue-on-error/);
   assert.doesNotMatch(freshness, /continue-on-error/);
   assert.doesNotMatch(publish, /continue-on-error/);
   const rootCheck = JSON.parse(readFileSync('package.json', 'utf8')).scripts.check;
