@@ -67,6 +67,7 @@ interface ActiveGeneration {
   mounted: BattleConsoleMountedGeneration | null;
   mounting: Promise<BattleConsoleMountedGeneration | null> | null;
   cleanup: Promise<BattleConsoleResourceSnapshot> | null;
+  request: BattleConsoleLifecycleEnterRequest;
 }
 
 const zeroResourceSnapshot = Object.freeze(Object.fromEntries(
@@ -87,10 +88,10 @@ export function createBattleConsoleLifecycle({
     generation.current = false;
     generation.cleanup ??= (async () => {
       try {
-        // A mount can already own DOM and shared Pixi assets before returning.
-        // Let its stale-generation cleanup finish before another mount reuses them.
-        const mounted = generation.mounted ?? await generation.mounting?.catch(() => null);
-        if (mounted) await mounted.destroy();
+        // A published semantic handle tears down synchronously enough to await.
+        // An implementation that has not returned a handle cannot hold restart
+        // hostage; its late result is destroyed by the enter continuation.
+        if (generation.mounted) await generation.mounted.destroy();
       } finally {
         lastResources = generation.resources.close();
       }
@@ -114,17 +115,6 @@ export function createBattleConsoleLifecycle({
   ): Promise<BattleConsoleLifecycleEntryResult> => {
     const generation = ++generationCounter;
     const predecessorCleanup = invalidateActive('loading');
-    await predecessorCleanup;
-
-    if (generation !== generationCounter) {
-      return Object.freeze({
-        generation,
-        committed: false,
-        status: 'destroyed',
-        resources: lastResources,
-      });
-    }
-
     const resources = new BattleConsoleResourceLedger();
     const record: ActiveGeneration = {
       generation,
@@ -133,8 +123,20 @@ export function createBattleConsoleLifecycle({
       mounted: null,
       mounting: null,
       cleanup: null,
+      request,
     };
     active = record;
+    await predecessorCleanup;
+
+    if (generation !== generationCounter || !record.current || active !== record) {
+      lastResources = resources.close();
+      return Object.freeze({
+        generation,
+        committed: false,
+        status: 'destroyed',
+        resources: lastResources,
+      });
+    }
     const pendingImport = resources.acquire('pendingImports');
     const pendingPromise = resources.acquire('pendingPromises');
     const loadResource = resources.acquire('loadResources');
@@ -150,7 +152,7 @@ export function createBattleConsoleLifecycle({
       }
 
       record.mounting = mountModule.mountBattleConsoleGeneration({
-        ...request,
+        ...record.request,
         generationToken: {
           generation,
           resources,
@@ -161,13 +163,20 @@ export function createBattleConsoleLifecycle({
       pendingPromise.release();
 
       if (!record.current || active !== record || resources.closed || !mounted) {
+        if (mounted) await mounted.destroy();
         if (record.cleanup) await record.cleanup;
-        else if (mounted) await mounted.destroy();
         lastResources = resources.close();
         return Object.freeze({ generation, committed: false, status: 'destroyed', resources: lastResources });
       }
 
       record.mounted = mounted;
+      mounted.update(record.request.initialState, record.request.layout);
+      if (!record.current || active !== record || resources.closed) {
+        await mounted.destroy();
+        if (record.cleanup) await record.cleanup;
+        lastResources = resources.close();
+        return Object.freeze({ generation, committed: false, status: 'destroyed', resources: lastResources });
+      }
       status = mounted.status;
       return Object.freeze({
         generation,
@@ -200,9 +209,16 @@ export function createBattleConsoleLifecycle({
       nextState: BattleConsolePresentationState,
       nextLayout: ResponsiveLayoutProjection,
     ) {
-      if (!active?.current || !active.mounted) return;
-      active.mounted.update(nextState, nextLayout);
-      status = active.mounted.status;
+      if (!active?.current) return;
+      active.request = {
+        ...active.request,
+        initialState: nextState,
+        layout: nextLayout,
+      };
+      if (active.mounted) {
+        active.mounted.update(nextState, nextLayout);
+        status = active.mounted.status;
+      }
     },
     async destroy() {
       generationCounter += 1;

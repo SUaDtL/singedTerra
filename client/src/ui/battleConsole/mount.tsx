@@ -79,8 +79,8 @@ function responsiveLayoutsEqual(
 }
 
 /**
- * Commits one generation-scoped Preact root and its optional inert Pixi layer.
- * A stale token can never publish DOM, dispatch an intent, or retain resources.
+ * Publishes the generation's sole semantic owner before starting optional Pixi
+ * decoration. State and layout updates remain live throughout that async work.
  */
 export async function mountBattleConsoleGeneration({
   semanticHost,
@@ -95,11 +95,16 @@ export async function mountBattleConsoleGeneration({
   if (!generationToken.isCurrent() || resources.closed) return null;
 
   const semanticLeases: BattleConsoleResourceLease[] = [];
+  const decorationController = new AbortController();
   let pixi: BattleConsolePixiAdapter | null = null;
   let state = initialState;
   let projectedLayout = layout;
   let status: Extract<BattleConsoleLifecycleStatus, 'ready' | 'fallback'> = 'ready';
+  let texturesReady = false;
+  let decorationPending = true;
+  let destroyed = false;
   let destroyPromise: Promise<BattleConsoleResourceSnapshot> | null = null;
+  let decorationPromise: Promise<void> = Promise.resolve();
   const surface = semanticHost.parentElement?.hasAttribute('data-battle-console-surface')
     ? semanticHost.parentElement
     : null;
@@ -108,12 +113,12 @@ export async function mountBattleConsoleGeneration({
     if (!surface) return;
     surface.dataset['battleConsoleGeneration'] = String(generationToken.generation);
     surface.dataset['battleConsoleReady'] = nextStatus === 'ready' || nextStatus === 'fallback' ? 'true' : 'false';
-    surface.dataset['battleConsoleTexturesReady'] = nextStatus === 'ready' || nextStatus === 'fallback' ? 'true' : 'false';
-    surface.dataset['battleConsolePendingResources'] = nextStatus === 'loading' ? '1' : '0';
+    surface.dataset['battleConsoleTexturesReady'] = texturesReady ? 'true' : 'false';
+    surface.dataset['battleConsolePendingResources'] = decorationPending ? '1' : '0';
   };
 
   const guardedDispatch = (intent: BattleConsoleIntent) => {
-    if (generationToken.isCurrent() && !resources.closed) dispatch(intent);
+    if (generationToken.isCurrent() && !resources.closed && !destroyed) dispatch(intent);
   };
   const renderSemanticRoot = (nextStatus: BattleConsoleLifecycleStatus) => {
     render(
@@ -130,17 +135,24 @@ export async function mountBattleConsoleGeneration({
     );
   };
   const destroyOwnedResources = async (): Promise<BattleConsoleResourceSnapshot> => {
-    publishSurfaceStatus('destroyed');
-    render(null, semanticHost);
-    await pixi?.destroy();
-    pixi = null;
-    pixiHost.replaceChildren();
-    for (const lease of semanticLeases) lease.release();
-    return resources.close();
+    if (!destroyed) {
+      destroyed = true;
+      resources.close();
+      decorationController.abort();
+      decorationPending = false;
+      texturesReady = false;
+      publishSurfaceStatus('destroyed');
+      render(null, semanticHost);
+      await decorationPromise;
+      await pixi?.destroy();
+      pixi = null;
+      pixiHost.replaceChildren();
+      for (const lease of semanticLeases) lease.release();
+    }
+    return resources.snapshot();
   };
 
   try {
-    publishSurfaceStatus('loading');
     semanticLeases.push(
       resources.acquire('preactRoots'),
       resources.acquire('portalOwners'),
@@ -149,46 +161,17 @@ export async function mountBattleConsoleGeneration({
       resources.acquire('intentBridges'),
       resources.acquire('controllerAdapters'),
     );
-    renderSemanticRoot('loading');
-
-    try {
-      pixi = await createBattleConsolePixiAdapter({
-        state,
-        host: pixiHost,
-        layout,
-        resources,
-        isCurrentGeneration: () => generationToken.isCurrent(),
-        onContextLoss: () => {
-          if (!generationToken.isCurrent() || resources.closed) return;
-          pixi = null;
-          pixiHost.replaceChildren();
-          status = 'fallback';
-          renderSemanticRoot(status);
-          publishSurfaceStatus(status);
-        },
-      });
-    } catch (error) {
-      console.error('[battle-console] Pixi chrome entered semantic fallback', error);
-      pixi = null;
-      pixiHost.replaceChildren();
-      status = 'fallback';
-    }
-
-    if (!generationToken.isCurrent() || resources.closed) {
-      await destroyOwnedResources();
-      return null;
-    }
-
     renderSemanticRoot(status);
     publishSurfaceStatus(status);
-    return {
+
+    const mounted: BattleConsoleMountedGeneration = {
       generation: generationToken.generation,
       get status() {
         return status;
       },
       snapshot: () => resources.snapshot(),
       update(nextState, nextLayout) {
-        if (!generationToken.isCurrent() || resources.closed) return;
+        if (!generationToken.isCurrent() || resources.closed || destroyed) return;
         const stateChanged = !battleConsolePresentationStatesEqual(state, nextState);
         const layoutChanged = !responsiveLayoutsEqual(projectedLayout, nextLayout);
         if (!stateChanged && !layoutChanged) return;
@@ -202,6 +185,48 @@ export async function mountBattleConsoleGeneration({
         return destroyPromise;
       },
     };
+
+    decorationPromise = (async () => {
+      try {
+        const candidate = await createBattleConsolePixiAdapter({
+          state,
+          host: pixiHost,
+          layout: projectedLayout,
+          resources,
+          signal: decorationController.signal,
+          isCurrentGeneration: () => generationToken.isCurrent() && !destroyed,
+          onContextLoss: () => {
+            if (!generationToken.isCurrent() || resources.closed || destroyed) return;
+            pixi = null;
+            pixiHost.replaceChildren();
+            texturesReady = false;
+            decorationPending = false;
+            status = 'fallback';
+            renderSemanticRoot(status);
+            publishSurfaceStatus(status);
+          },
+        });
+        if (!candidate || !generationToken.isCurrent() || resources.closed || destroyed) {
+          await candidate?.destroy();
+          return;
+        }
+        candidate.project(projectedLayout, state);
+        pixi = candidate;
+        texturesReady = true;
+      } catch (error) {
+        if (generationToken.isCurrent() && !resources.closed && !destroyed) {
+          console.error('[battle-console] Pixi chrome entered semantic fallback', error);
+          pixiHost.replaceChildren();
+          status = 'fallback';
+          renderSemanticRoot(status);
+        }
+      } finally {
+        decorationPending = false;
+        if (!destroyed) publishSurfaceStatus(status);
+      }
+    })();
+
+    return mounted;
   } catch (error) {
     await destroyOwnedResources();
     throw error;
