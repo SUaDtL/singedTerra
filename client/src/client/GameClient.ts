@@ -10,6 +10,7 @@ import type {
 import type { AiDifficulty } from '@shared/types/GameState';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import type { QuickChatKey } from './quickChat';
+import type { RoomCommandVersion } from '@shared/net/roomCommand';
 
 /**
  * Everything needed to start the SUCCESSOR game after a rematch: the new room's
@@ -25,6 +26,7 @@ export interface RematchInfo {
     maxWind: number;
     gravity: number;
     rulesetVersion?: NetworkRulesetVersion;
+    commandProtocolVersion?: RoomCommandVersion;
     walls?: WallMode;
     battlefieldWorld?: BattlefieldWorldId;
     hazards?: TerrainHazardMode;
@@ -165,6 +167,9 @@ export interface GameClient {
 
   /** Notify that a completed match was linked and account progression may be stale. */
   onAccountProgressChanged?(listener: () => void): () => void;
+
+  /** Retire uncertain network-command continuations after account identity changes. */
+  invalidatePendingCommands?(): void;
 
   /** Send and receive fixed, ephemeral networked quick-chat messages. */
   sendQuickChat?(key: QuickChatKey): boolean;

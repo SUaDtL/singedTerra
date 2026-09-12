@@ -528,6 +528,7 @@ function fakeClient(
     getEffectiveGravity: vi.fn(() => gravity),
     getState: () => initial,
     isFiring: false,
+    invalidatePendingCommands: vi.fn(),
     initialize: async () => undefined,
     onStateChange(next: (state: GameState) => void) {
       if (seams.setupFailureStage === 'subscription') throw seams.setupFailure
@@ -1458,6 +1459,29 @@ describe('production hot-seat progression composition', () => {
     seams.accountAuthenticated = false
     seams.onAccountAuthenticationChange?.(true)
     expect(seams.liveMatchDiagnosticsSettings).toEqual([null, expect.any(Function), null])
+  })
+
+  it('invalidates only pending network commands when the account identity changes', async () => {
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
+    await seams.onLobbyReady({
+      mode: 'network', roomId: 'room-1', roomCode: 'ROOM', playerId: 'seat-a', token: 'seat-token',
+      settings: { seed: 42, maxWind: 10, gravity: 0.15, rulesetVersion: 4, commandProtocolVersion: 2 },
+      players: [
+        { id: 'seat-a', name: 'Alice', color: '#e84d4d' },
+        { id: 'seat-b', name: 'Bob', color: '#4d8ce8' },
+      ],
+      playerNames: ['Alice', 'Bob'],
+    })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    seams.onAccountAuthenticationChange?.(false)
+    expect(client.invalidatePendingCommands).not.toHaveBeenCalled()
+    seams.onAccountAuthenticationChange?.(true)
+    expect(client.invalidatePendingCommands).toHaveBeenCalledOnce()
+    expect(client.stop).not.toHaveBeenCalled()
   })
 
   it('wires a diagnostics-gated live snapshot from the current battle without raw lobby identity', async () => {

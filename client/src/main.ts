@@ -1225,6 +1225,7 @@ function bootstrap(): void {
   });
   const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
     if (identityChanged) {
+      matchSession.client?.invalidatePendingCommands?.();
       fieldOrder = null;
       hud.setFieldOrder(null);
     }

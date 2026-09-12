@@ -42,6 +42,7 @@ function makeClient(fakeSupabase = {} as unknown as SupabaseClient): NetworkClie
       ],
     },
     SEAT_FIXTURE,
+    2,
   );
 }
 
@@ -130,7 +131,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
             id: 'room-next',
             code: 'NEXT42',
             seed: 42,
-            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls, rulesetVersion },
+            options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, walls, rulesetVersion, commandProtocolVersion: 2 },
             players: [
               { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
               { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
@@ -185,13 +186,42 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     expect(listener).not.toHaveBeenCalled();
   });
 
+  it.each([undefined, 1] as const)('refuses a successor with command protocol %s', async (commandProtocolVersion) => {
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: () => Promise.resolve({
+        data: {
+          id: 'room-command-legacy', code: 'OLDCP', seed: 42,
+          options: {
+            maxPlayers: 2, maxWind: 8, gravity: 0.2, rulesetVersion: 4,
+            ...(commandProtocolVersion === undefined ? {} : { commandProtocolVersion }),
+          },
+          players: [
+            { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
+            { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
+          ],
+        },
+        error: null,
+      }),
+    };
+    const client = makeClient({ from: () => query } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+
+    await (client as unknown as { handleRematch(newRoomId: string): Promise<void> })
+      .handleRematch('room-command-legacy');
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it('keeps polling when the successor appears after the old eight-attempt cutoff', async () => {
     let reads = 0;
     const successor = {
       id: 'room-late',
       code: 'LATE42',
       seed: 42,
-      options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, rulesetVersion: 4 },
+      options: { maxPlayers: 2, maxWind: 8, gravity: 0.2, rulesetVersion: 4, commandProtocolVersion: 2 },
       players: [
         { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
         { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
@@ -235,6 +265,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
             maxWind: 6,
             gravity: 0.25,
             rulesetVersion: 4,
+            commandProtocolVersion: 2,
             walls: 'reflective',
             battlefieldWorld: 'obsidian-caldera',
             hazards: 'lava',
@@ -276,6 +307,8 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
       armsLevel: 3,
       teamMode: true,
     });
+    expect(info.options.commandProtocolVersion).toBe(2);
+    expect(config.settings.commandProtocolVersion).toBe(2);
     expect(options.players[1]).toMatchObject({ id: 'player-def', ai: 'medium' });
     const engine = new GameEngine(options);
     expect(engine.getState()).toMatchObject({ round: 1, totalRounds: 5 });

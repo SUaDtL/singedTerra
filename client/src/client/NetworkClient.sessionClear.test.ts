@@ -74,7 +74,13 @@ function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient } 
 const TERMINAL_KILL_SHOT: NetworkAction = { type: 'fire', angle: 31, power: 96, weapon: 'napalm' };
 
 function row(seq: number, action: NetworkAction) {
-  return { new: { id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc', action, created_at: '' } };
+  return { new: {
+    id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc',
+    action: { ...action, commandActor: { role: 'engine-seat' as const, tankId: 'p1' } },
+    created_at: '', command_version: 2, intent_id: `history-${seq}`, expected_revision: seq,
+    submitted_by: 'player-abc', command_ends_turn: true, command_next_index: 1,
+    command_round_over: false,
+  } };
 }
 
 /** The private `engine` field, reached the same way the other NetworkClient
@@ -118,7 +124,7 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
     // emitState() — the TEST SETUP (napalm grant + low HP) is applied to the
     // engine BEFORE that replay runs.
     const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT).new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
 
     // TEST SETUP: grant Napalm to the shooter (P1) and lower the victim's (P2)
     // HP so the replayed burn is a deterministic opponent kill.

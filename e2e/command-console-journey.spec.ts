@@ -16,6 +16,13 @@ interface CanonicalActionRow {
   player_id: string;
   action: Record<string, unknown>;
   created_at: string;
+  command_version: 2;
+  intent_id: string;
+  expected_revision: number;
+  submitted_by: string;
+  command_ends_turn: boolean;
+  command_next_index: number | null;
+  command_round_over: boolean;
 }
 
 async function readHotSeatProbe(page: Page): Promise<HotSeatProbe> {
@@ -126,6 +133,7 @@ async function installOnlineCpuFixture(page: Page): Promise<{
     maxWind: 6,
     gravity: 0.15,
     rulesetVersion: 4,
+    commandProtocolVersion: 2,
     walls: 'open',
     rounds: 1,
     armsLevel: 0,
@@ -156,22 +164,57 @@ async function installOnlineCpuFixture(page: Page): Promise<{
   await page.route('**/functions/v1/submit_action', async (route) => {
     const body = route.request().postDataJSON() as Record<string, unknown>;
     submissions.push(body);
-    const action = body['action'] as Record<string, unknown>;
-    const playerId = typeof body['actingPlayerId'] === 'string'
-      ? body['actingPlayerId']
-      : humanId;
+    expect(body).toMatchObject({
+      roomId,
+      playerId: humanId,
+      rulesetVersion: 4,
+    });
+    expect(body).not.toHaveProperty('action');
+    expect(body).not.toHaveProperty('actingPlayerId');
+    const command = body['command'] as Record<string, unknown>;
+    expect(command).toMatchObject({ version: 2, expectedRevision: rows.length });
+    expect(command['intentId']).toEqual(expect.any(String));
+    expect((command['intentId'] as string).length).toBeGreaterThan(0);
+    const actorPlayerId = command['actorPlayerId'];
+    expect([humanId, cpuId]).toContain(actorPlayerId);
+    const actorTankId = actorPlayerId === humanId ? 'p1' : 'p2';
+    const action = command['action'] as Record<string, unknown>;
+    expect(action).not.toHaveProperty('commandActor');
+    const seq = rows.length;
+    const intentId = command['intentId'] as string;
+    const commandEndsTurn = action['type'] === 'fire' || action['type'] === 'use_shield';
     rows.push({
-      id: `action-${rows.length}`,
+      id: `action-${seq}`,
       room_id: roomId,
-      seq: rows.length,
-      player_id: playerId,
-      action,
+      seq,
+      player_id: actorPlayerId as string,
+      action: {
+        ...action,
+        commandActor: { role: 'engine-seat', tankId: actorTankId },
+      },
       created_at: '2026-08-15T00:00:00.000Z',
+      command_version: 2,
+      intent_id: intentId,
+      expected_revision: seq,
+      submitted_by: humanId,
+      command_ends_turn: commandEndsTurn,
+      command_next_index: typeof command['nextActiveIndex'] === 'number'
+        ? command['nextActiveIndex']
+        : null,
+      command_round_over: command['roundOver'] === true,
     });
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ok: true, seq: rows.length - 1 }),
+      body: JSON.stringify({
+        ok: true,
+        protocolVersion: 2,
+        intentId,
+        seq,
+        revision: seq + 1,
+        actorPlayerId,
+        actorTankId,
+      }),
     });
   });
   await page.route('**/rest/v1/room_actions**', async (route) => {
@@ -273,7 +316,26 @@ test.describe('adaptive command console causal journeys', () => {
 
     await page.getByRole('button', { name: 'Aim barrel left', exact: true }).click();
     await page.getByRole('button', { name: 'Increase power', exact: true }).click();
+    const fuel = page.locator('[data-semantic-key="node:span:100 fuel remaining:19"]');
+    const fuelBeforeMove = Number(await fuel.textContent());
     await page.getByRole('button', { name: 'Move tank right, 8 fuel maximum', exact: true }).click();
+    await expect.poll(async () => Number(await fuel.textContent()))
+      .toBeLessThan(fuelBeforeMove);
+    expect(fixture.rows.map((row) => row.action['type'])).toEqual(['move']);
+    expect(fixture.rows[0]).toMatchObject({
+      seq: 0,
+      player_id: 'player-command-console',
+      command_version: 2,
+      expected_revision: 0,
+      submitted_by: 'player-command-console',
+      command_ends_turn: false,
+      command_next_index: null,
+      command_round_over: false,
+      action: {
+        type: 'move',
+        commandActor: { role: 'engine-seat', tankId: 'p1' },
+      },
+    });
     const fire = page.locator('[data-battle-console-action="fire"]');
     await expect(fire).toHaveCount(1);
     await fire.click();
@@ -281,21 +343,61 @@ test.describe('adaptive command console causal journeys', () => {
     await expect(fire).toBeDisabled();
     await expect.poll(() => fixture.rows.map((row) => row.action['type']))
       .toEqual(['move', 'fire']);
-    await expect.poll(() => fixture.submissions.filter((body) => (
-      body['action'] as Record<string, unknown>
-    )['type'] === 'fire' && body['actingPlayerId'] === undefined).length).toBe(1);
+    await expect.poll(() => fixture.submissions.filter((body) => {
+      const command = body['command'] as Record<string, unknown>;
+      return (command['action'] as Record<string, unknown>)['type'] === 'fire'
+        && command['actorPlayerId'] === 'player-command-console';
+    }).length).toBe(1);
 
-    // Canonical CPU submission below proves watchdog replay recovered the human shot.
+    // Canonical CPU submission below proves receipt-triggered resync recovered the human shot.
 
-    await expect.poll(() => fixture.submissions.filter((body) => (
-      body['action'] as Record<string, unknown>
-    )['type'] === 'fire' && typeof body['actingPlayerId'] === 'string').length, { timeout: 20_000 })
+    await expect.poll(() => fixture.submissions.filter((body) => {
+      const command = body['command'] as Record<string, unknown>;
+      return (command['action'] as Record<string, unknown>)['type'] === 'fire'
+        && command['actorPlayerId'] === 'cpu-command-console';
+    }).length, { timeout: 20_000 })
       .toBe(1);
+    await expect.poll(() => fixture.rows.map((row) => row.action['type']))
+      .toEqual(['move', 'fire', 'fire']);
+    expect(fixture.rows.slice(1)).toMatchObject([
+      {
+        seq: 1,
+        player_id: 'player-command-console',
+        command_version: 2,
+        expected_revision: 1,
+        submitted_by: 'player-command-console',
+        command_ends_turn: true,
+        command_next_index: 1,
+        command_round_over: false,
+        action: { type: 'fire', commandActor: { role: 'engine-seat', tankId: 'p1' } },
+      },
+      {
+        seq: 2,
+        player_id: 'cpu-command-console',
+        command_version: 2,
+        expected_revision: 2,
+        submitted_by: 'player-command-console',
+        command_ends_turn: true,
+        command_next_index: 0,
+        command_round_over: false,
+        action: { type: 'fire', commandActor: { role: 'engine-seat', tankId: 'p2' } },
+      },
+    ]);
+    await expect(page.getByRole('region', { name: 'Active commander' }))
+      .toContainText(/Active turn\s*Ranger/);
+    await expect(fire).toBeEnabled();
+    expect(fixture.submissions.filter((body) => {
+      const command = body['command'] as Record<string, unknown>;
+      return (command['action'] as Record<string, unknown>)['type'] === 'fire'
+        && command['actorPlayerId'] === 'player-command-console';
+    })).toHaveLength(1);
     await page.keyboard.up('f');
-    await expect(fire).toBeDisabled();
-    expect(fixture.submissions.filter((body) => (
-      body['action'] as Record<string, unknown>
-    )['type'] === 'fire' && body['actingPlayerId'] === undefined)).toHaveLength(1);
+    await expect(fire).toBeEnabled();
+    expect(fixture.submissions.filter((body) => {
+      const command = body['command'] as Record<string, unknown>;
+      return (command['action'] as Record<string, unknown>)['type'] === 'fire'
+        && command['actorPlayerId'] === 'player-command-console';
+    })).toHaveLength(1);
   });
 });
 

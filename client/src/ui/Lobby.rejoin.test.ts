@@ -48,7 +48,7 @@ function activeRoom(overrides: Partial<FetchedRoom> = {}): FetchedRoom {
     id: 'room-1',
     code: 'ABCD',
     seed: 1,
-    options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4 },
+    options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4, commandProtocolVersion: 2 },
     players: [{ id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true }],
     status: 'active',
     ...overrides,
@@ -223,7 +223,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'concrete', rounds: 3, rulesetVersion: 4 },
+      options: { maxPlayers: 2, maxWind: 12, gravity: 0.2, walls: 'concrete', rounds: 3, rulesetVersion: 4, commandProtocolVersion: 2 },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
@@ -267,6 +267,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
       walls: 'concrete',
       rounds: 3,
       rulesetVersion: 4,
+      commandProtocolVersion: 2,
     });
   });
 
@@ -275,7 +276,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     const room = activeRoom({
       seed: 7,
-      options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, walls: 'wrap', rulesetVersion: 4 },
+      options: { maxPlayers: 2, maxWind: 10, gravity: 0.15, walls: 'wrap', rulesetVersion: 4, commandProtocolVersion: 2 },
       players: [
         { id: 'p-1', name: 'Alice', color: '#e84d4d', ready: true },
         { id: 'p-2', name: 'Bob', color: '#4d8ce8', ready: true },
@@ -293,7 +294,16 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
 
     // The room's action log already committed player p-1's fire — the "current"
     // state a rejoining client must replay up to.
-    const committedFire = { seq: 0, action: { type: 'fire', angle: 45, power: 50, weapon: 'baby_missile' } };
+    const committedFire = {
+      id: 'row-0', room_id: 'room-1', seq: 0, player_id: 'p-1', created_at: '',
+      action: {
+        type: 'fire', angle: 45, power: 50, weapon: 'baby_missile',
+        commandActor: { role: 'engine-seat', tankId: 'p1' },
+      },
+      command_version: 2, intent_id: 'rejoin-history-0', expected_revision: 0,
+      submitted_by: 'p-1', command_ends_turn: true, command_next_index: 1,
+      command_round_over: false,
+    };
     const { supabase } = makeFakeSupabase([committedFire]);
 
     const nc = new NetworkClient(
@@ -309,6 +319,7 @@ describe('Lobby.handleRejoin (T-10, AC-06)', () => {
         walls: config.settings?.walls,
       },
       config.token,
+      config.settings?.commandProtocolVersion,
     );
     await nc.initialize();
     await new Promise((r) => setTimeout(r, 0));
@@ -391,4 +402,40 @@ describe('Lobby.handleRejoin stale-session handling (T-11, AC-07)', () => {
     );
     await expectGracefulStale();
   });
+
+  it.each([
+    ['missing', undefined],
+    ['v1', 1],
+  ] as const)(
+    'live ruleset-v4 room with %s command protocol rejects the actual rejoin before handoff or persistence',
+    async (_label, commandProtocolVersion) => {
+      const options = { ...activeRoom().options };
+      if (commandProtocolVersion === undefined) {
+        delete options.commandProtocolVersion;
+      } else {
+        options.commandProtocolVersion = commandProtocolVersion;
+      }
+      const room = activeRoom({ options });
+      const seatKey = 'singedterra:seat:p-1';
+      localStorage.setItem(seatKey, 'existing-seat-token');
+      const setItem = vi.spyOn(Storage.prototype, 'setItem');
+      const getItem = vi.spyOn(Storage.prototype, 'getItem');
+      vi.spyOn(internals(lobby).transport, 'fetchRoom').mockResolvedValue(room);
+
+      await expect(internals(lobby).handleRejoin()).resolves.toBeUndefined();
+
+      // Lobby wires LobbyRoomController.onHandoff directly to onReady. Keeping
+      // this callback silent also prevents downstream NetworkClient construction.
+      expect(onReady).not.toHaveBeenCalled();
+      expect(internals(lobby).onlineError).toBe(
+        'This room uses an incompatible command protocol and cannot be resumed here.',
+      );
+      expect(internals(lobby).rejoinCandidate).toBeNull();
+      expect(readSession()).toBeNull();
+      expect(localStorage.getItem(seatKey)).toBe('existing-seat-token');
+      expect(localStorage.length).toBe(1);
+      expect(getItem.mock.calls.filter(([key]) => key === seatKey)).toHaveLength(1);
+      expect(setItem).not.toHaveBeenCalled();
+    },
+  );
 });

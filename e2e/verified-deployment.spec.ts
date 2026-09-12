@@ -127,6 +127,7 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
     maxWind: 6,
     gravity: 0.15,
     rulesetVersion: 4,
+    commandProtocolVersion: 2,
     walls: 'open',
     rounds: 1,
     armsLevel: 0,

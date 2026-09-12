@@ -21,7 +21,7 @@ import { computeAiPlan } from '@shared/engine/AI';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
-import { postOnceWithRetry } from './retry';
+import { postOnceWithRetry, settleWithDeadline } from './retry';
 import { claimCompletedMatch } from './matchClaim';
 import { fastForwardTicks } from './fastForward';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
@@ -29,6 +29,13 @@ import { clearSession } from '../lib/sessionDescriptor';
 import { OrderedActionSession } from './OrderedActionSession';
 import { CURRENT_NETWORK_RULESET_VERSION, normalizeNetworkRulesetVersion } from './networkRuleset';
 import { isQuickChatKey, parseQuickChatPayload, type QuickChatKey } from './quickChat';
+import {
+  CURRENT_ROOM_COMMAND_VERSION,
+  cpuRoomIntentId,
+  type RoomCommandEnvelopeV2,
+  type RoomCommandReceiptV2,
+  type RoomCommandRowV2,
+} from '@shared/net/roomCommand';
 
 // The logged-action contract now lives in shared/ (one source of truth for the
 // log→engine replay, exercised by both this client and the determinism harnesses).
@@ -42,13 +49,22 @@ export type {
 } from '@shared/net/replay';
 
 // Shape of a row returned from room_actions
-interface RoomActionRow {
+interface RoomActionRow extends RoomCommandRowV2<NetworkAction> {
   id:         string;
   room_id:    string;
-  seq:        number;
-  player_id:  string;
-  action:     NetworkAction;
   created_at: string;
+}
+
+interface PendingRoomCommand {
+  generation: number;
+  envelope: RoomCommandEnvelopeV2<NetworkAction>;
+  body: string;
+  actorTankId: string;
+  humanTurnEnding: boolean;
+  deliveryEpoch: number;
+  state: 'delivering' | 'awaiting-echo' | 'recovering' | 'retryable';
+  transportAbort: AbortController | null;
+  onSettle?: (settlement: BotSubmitSettlement) => void;
 }
 
 // Extended player entry that includes the Supabase-assigned id for network mode.
@@ -74,8 +90,39 @@ interface BotActionAttempt {
   turn: number;
   tankId: string;
   action: NetworkAction;
-  settlement: 'pending' | 'conflict';
+  settlement: 'pending' | 'accepted' | 'conflict';
   sawCanonicalProgress: boolean;
+}
+
+const ROOM_COMMAND_CONFLICT_STATUS: Readonly<Record<string, number>> = {
+  revision_conflict: 409,
+  intent_conflict: 409,
+  not_your_turn: 403,
+};
+
+const ROOM_COMMAND_REFUSAL_STATUS: Readonly<Record<string, number>> = {
+  invalid_command: 400,
+  not_room_member: 403,
+  invalid_seat_token: 403,
+  actor_not_in_room: 403,
+  cannot_proxy_human: 403,
+  shop_actor_mismatch: 403,
+  room_not_found: 404,
+  room_not_active: 409,
+  command_protocol_mismatch: 409,
+  command_protocol_unavailable: 409,
+  ruleset_mismatch: 409,
+  ruleset_unavailable: 409,
+};
+
+function isMappedCommandResponse(
+  error: string | undefined,
+  status: number | undefined,
+  statusByError: Readonly<Record<string, number>>,
+): boolean {
+  if (error === undefined) return false;
+  const expectedStatus = statusByError[error];
+  return expectedStatus !== undefined && (status === undefined || status === expectedStatus);
 }
 
 type BotSubmitSettlement = 'accepted' | 'conflict' | 'failed';
@@ -101,7 +148,8 @@ function networkActionsEqual(left: NetworkAction, right: NetworkAction): boolean
         && left.power === right.power
         && left.weapon === right.weapon;
     case 'use_shield':
-      return right.type === 'use_shield' && left.weapon === right.weapon;
+      return right.type === 'use_shield'
+        && (left.weapon ?? 'shield') === (right.weapon ?? 'shield');
     case 'buy':
       return right.type === 'buy'
         && left.weapon === right.weapon
@@ -184,8 +232,8 @@ export class NetworkClient implements GameClient {
   // Sequence ordering buffer for out-of-order Realtime delivery.
   // Supabase Realtime does not guarantee delivery order; events with
   // seq > nextExpectedSeq are held here until the gap fills in.
-  private orderedActions:   OrderedActionSession<NetworkAction>;
-  private get pendingActions(): ReadonlyMap<number, NetworkAction> {
+  private orderedActions:   OrderedActionSession<RoomActionRow>;
+  private get pendingActions(): ReadonlyMap<number, RoomActionRow> {
     return this.orderedActions.pendingActions;
   }
   private get nextExpectedSeq(): number { return this.orderedActions.nextExpectedSeq; }
@@ -208,25 +256,20 @@ export class NetworkClient implements GameClient {
   private _disposed         = false;
   private connectionListeners = new Set<(s: ConnectionState) => void>();
   private fireFailedListeners = new Set<(msg: string) => void>();
-  // Watchdog: if a submitted fire/shield never echoes back, clear the input lock so
-  // the player isn't trapped in "Sending…" forever (lost submit, dropped echo, …).
-  private fireWatchdog:     ReturnType<typeof setTimeout> | null = null;
+  // One watchdog follows the pending command identity, including turn-neutral moves
+  // and buys. Empty recovery is still uncertain, so the envelope is retained for an
+  // explicit same-body retry while only its owned presentation lock is released.
+  private commandWatchdog:  ReturnType<typeof setTimeout> | null = null;
+  private fireLockOwner:    { pending: PendingRoomCommand; deliveryEpoch: number } | null = null;
   private static readonly FIRE_TIMEOUT_MS = 9000;
-  // Hard bound on the fire-recovery log re-fetch. Without it a hung (black-holed,
-  // not erroring) connection leaves resyncLog's await pending forever, so
-  // recoverStuckFire never reaches its failFire() line and the player is trapped in
-  // "Sending…" with no recovery but a reload (reliability-005 / #57). Aborting the
-  // fetch after this deadline surfaces as an error resyncLog already handles.
+  // Both the command delivery (fetch plus response parsing) and recovery query are
+  // raced against hard deadlines. Abort is only a best-effort resource cleanup; the
+  // race guarantees settlement even for a non-cooperating promise.
   private static readonly RESYNC_TIMEOUT_MS = 8000;
-  // Seq-collision retry (P2-10). Two humans firing near-simultaneously collide on
-  // UNIQUE(room_id,seq); the loser gets a 409. Retry with bounded exponential
-  // backoff (40,80,160,240,240ms) so the action lands instead of being dropped
-  // after a single one-shot. UNIQUE remains the corruption guard; this is liveness.
-  private static readonly MAX_SEQ_RETRIES = 5;
-  private static readonly SEQ_BACKOFF_MS = 40;
-  // Handle for the pending seq-conflict retry setTimeout, so stop() can cancel a
-  // scheduled retry before it fires a POST against a torn-down room.
-  private seqRetryTimer:    ReturnType<typeof setTimeout> | null = null;
+  private static readonly COMMAND_DELIVERY_TIMEOUT_MS = 9000;
+  private commandGeneration = 0;
+  private pendingRoomCommand: PendingRoomCommand | null = null;
+  private canonicalCommandFault = false;
 
   // --- Opponent-turn watchdog (P1-6b) --- When a REMOTE human holds the turn and
   // no action arrives, escalate a non-blocking banner: 'waiting' after WAIT_MS,
@@ -293,7 +336,11 @@ export class NetworkClient implements GameClient {
     playerId:  string,
     options:   NetworkGameOptions,
     token?:    string,
+    commandProtocolVersion?: unknown,
   ) {
+    if (commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+      throw new Error('NetworkClient: incompatible command protocol');
+    }
     this.supabase         = supabase;
     this.roomId           = roomId;
     this.playerId         = playerId;
@@ -367,17 +414,23 @@ export class NetworkClient implements GameClient {
     const REPLAY_CHUNK_SIZE = 16;
 
     const rows = (existingActions ?? []) as RoomActionRow[];
+    for (const [index, row] of rows.entries()) {
+      if (row.seq !== index) {
+        throw new Error(`NetworkClient: noncontiguous room action history at seq ${row.seq}`);
+      }
+      this.validateRoomActionRowShape(row);
+    }
     this.orderedActions.beginReplay();
     await replayInChunks(
       rows,
       (row) => {
-        this.applyNetworkAction(row.action);
+        this.applyRoomActionRow(row);
         this.tickToCompletion();
       },
       REPLAY_CHUNK_SIZE,
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
-    this.orderedActions.finishReplay((existingActions ?? []).length);
+    this.orderedActions.finishReplay(rows.length);
     this.clearStaleBotPreparationFailure();
 
     // 2. Subscribe to new room_actions rows via Realtime Postgres Changes.
@@ -396,7 +449,7 @@ export class NetworkClient implements GameClient {
           // Drop already-applied rows before buffering to prevent a slow memory
           // leak where stale keys below nextExpectedSeq accumulate indefinitely
           // (flushPendingActions only ever consumes the exact nextExpectedSeq key).
-          if (!this.orderedActions.buffer(row.seq, row.action as NetworkAction)) return;
+          if (!this.orderedActions.buffer(row.seq, row)) return;
           // Buffer the incoming action keyed by its seq number.
           // Do not apply immediately — Supabase Realtime does not guarantee
           // delivery order, so seq=6 may arrive before seq=5. Buffer and flush
@@ -512,10 +565,9 @@ export class NetworkClient implements GameClient {
    *
    * NOTE: In LIVE play a fire echo is applied in flushPendingActions WITHOUT
    * ticking to completion (tickToCompletion runs only during initialize() replay).
-   * The input lock + fire watchdog are released the moment the echo applies
-   * (setFiring(false) in flushPendingActions) — BEFORE this RAF loop animates the
-   * flight — so a long shot's animation can never trip the watchdog; it only guards
-   * a submit that never commits. This RAF loop renders the flight tick-by-tick and,
+   * The input lock and command watchdog are released only when the matching echo
+   * applies, before this RAF loop animates the flight. A long shot's animation cannot
+   * trip the watchdog. This RAF loop renders the flight tick-by-tick and,
    * when the engine leaves FIRING/RESOLVING, drains the next buffered action.
    */
   setFastForward(on: boolean): void {
@@ -558,15 +610,10 @@ export class NetworkClient implements GameClient {
   stop(): void {
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
+    this.retirePendingCommands();
     this.orderedActions.dispose();
-    if (this.fireWatchdog !== null) {
-      clearTimeout(this.fireWatchdog);
-      this.fireWatchdog = null;
-    }
-    if (this.seqRetryTimer !== null) {
-      clearTimeout(this.seqRetryTimer);
-      this.seqRetryTimer = null;
-    }
+    this.clearCommandWatchdog();
+    this.fireLockOwner = null;
     this.clearTurnWatchTimers();
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
@@ -592,6 +639,13 @@ export class NetworkClient implements GameClient {
     this.pendingBotPreparationNotice = null;
   }
 
+  invalidatePendingCommands(): void {
+    if (this._disposed) return;
+    this.retirePendingCommands();
+    this.setFiring(false);
+    this.emitState();
+  }
+
   /**
    * Submit a player input.
    *
@@ -615,6 +669,15 @@ export class NetworkClient implements GameClient {
     }
 
     const state = this.engine.getState();
+
+    if (
+      this.pendingRoomCommand
+      && this.pendingRoomCommand.envelope.actorPlayerId === this.playerId
+      && (action.type === 'set_angle' || action.type === 'set_power' || action.type === 'select_weapon')
+    ) {
+      this.notifyCommandFailure('Another action is still pending.');
+      return;
+    }
 
     // ROUND_OVER between-rounds shop (V1 match structure, networked). Turn ownership
     // does NOT apply here — every player may shop their own tank, and the round is
@@ -682,7 +745,6 @@ export class NetworkClient implements GameClient {
       const shieldWeapon = action.weapon ?? (shielder.selectedWeapon === 'heavy_shield' ? 'heavy_shield' : 'shield');
       const ammo = shielder.inventory[shieldWeapon];
       if (!ammo.unlimited && ammo.count <= 0) return;
-      this.setFiring(true); // lock input until the Realtime echo applies it
       this.submitAction({ type: 'use_shield', weapon: shieldWeapon });
       return;
     }
@@ -710,7 +772,6 @@ export class NetworkClient implements GameClient {
       weapon: activeTank.selectedWeapon,
     };
 
-    this.setFiring(true);
     this.submitAction(networkAction);
   }
 
@@ -770,50 +831,50 @@ export class NetworkClient implements GameClient {
     for (const l of this.connectionListeners) l(state);
   }
 
-  /**
-   * Set the "firing" input lock. Arming it (true) starts a watchdog: if a submitted
-   * shot has not echoed back within FIRE_TIMEOUT_MS, the watchdog first attempts a
-   * RESYNC (re-fetch the canonical log) rather than failing outright — the submit may
-   * have committed while the Realtime echo was slow or dropped, in which case the
-   * resync applies our shot and self-heals. Only if the shot is STILL unresolved after
-   * the resync (it genuinely never committed) do we release the lock and notify for a
-   * retry — a clean retry that can no longer desync from a half-applied commit. The
-   * echo path (flushPendingActions) calls this with false, which also disarms the watchdog.
-   */
   private setFiring(value: boolean): void {
     this._isFiring = value;
-    if (this.fireWatchdog !== null) {
-      clearTimeout(this.fireWatchdog);
-      this.fireWatchdog = null;
-    }
-    if (value) {
-      this.fireWatchdog = setTimeout(() => {
-        this.fireWatchdog = null;
-        if (this._isFiring) void this.recoverStuckFire();
-      }, NetworkClient.FIRE_TIMEOUT_MS);
-    }
   }
 
-  /**
-   * Watchdog recovery: a fired shot has not echoed within FIRE_TIMEOUT_MS. Re-fetch
-   * the canonical log first — if our action committed (slow / dropped Realtime echo),
-   * resyncLog applies it and flushPendingActions clears the firing lock, so the shot
-   * resolves and we self-heal. If the lock is STILL set afterward, the submit never
-   * landed: release it and notify the player for a clean retry (no half-applied commit
-   * to desync from). resyncLog swallows its own fetch errors, so a dead network simply
-   * leaves the lock set and falls through to the retry notice.
-   */
-  private async recoverStuckFire(): Promise<void> {
-    await this.resyncLog();
-    if (this._isFiring) this.failFire('Shot timed out — try again.');
+  private clearCommandWatchdog(): void {
+    if (this.commandWatchdog === null) return;
+    clearTimeout(this.commandWatchdog);
+    this.commandWatchdog = null;
+  }
+
+  private armCommandWatchdog(pending: PendingRoomCommand, deliveryEpoch: number): void {
+    this.clearCommandWatchdog();
+    this.commandWatchdog = setTimeout(() => {
+      this.commandWatchdog = null;
+      if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
+      void this.recoverRoomCommand(pending, deliveryEpoch, 'Action timed out — retry the same action.');
+    }, NetworkClient.FIRE_TIMEOUT_MS);
+  }
+
+  private lockFiringFor(pending: PendingRoomCommand, deliveryEpoch: number): void {
+    this.fireLockOwner = { pending, deliveryEpoch };
+    this.setFiring(true);
+  }
+
+  private releaseFiringFor(pending: PendingRoomCommand, deliveryEpoch?: number): void {
+    const owner = this.fireLockOwner;
+    if (!owner || owner.pending !== pending) return;
+    if (deliveryEpoch !== undefined && owner.deliveryEpoch !== deliveryEpoch) return;
+    this.fireLockOwner = null;
+    this.setFiring(false);
   }
 
   /** Release a stuck fire lock and notify the UI so the player can re-aim. */
   private failFire(message: string): void {
     if (this._disposed) return; // client torn down — no lock to release, no one to notify
+    this.fireLockOwner = null;
     this.setFiring(false);
     this.emitState(); // re-render so the HUD drops "Sending…" immediately
     for (const l of this.fireFailedListeners) l(message);
+  }
+
+  private notifyCommandFailure(message: string): void {
+    if (this._disposed) return;
+    for (const listener of this.fireFailedListeners) listener(message);
   }
 
   /**
@@ -822,34 +883,35 @@ export class NetworkClient implements GameClient {
    * order — the canonical log is the source of truth, so this is a safe, idempotent
    * catch-up (rows we already have are skipped by the seq gate in flushPendingActions).
    */
-  private async resyncLog(): Promise<void> {
-    // Bound the fetch with an AbortController so a hung connection can't leave this
-    // await pending forever (which would trap the fire watchdog — #57). An abort
-    // surfaces as a thrown error / an { error } result; both fall through to the
-    // early return below, so recoverStuckFire() still reaches its failFire().
+  private async resyncLog(
+    commandGeneration = this.commandGeneration,
+    stillCurrent: () => boolean = () => true,
+  ): Promise<void> {
+    if (commandGeneration !== this.commandGeneration || this._disposed || !stillCurrent()) return;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), NetworkClient.RESYNC_TIMEOUT_MS);
-    let data: unknown, error: { message?: string } | null;
-    try {
-      ({ data, error } = await this.supabase
+    const query = this.supabase
         .from('room_actions')
         .select('*')
         .eq('room_id', this.roomId)
         .gte('seq', this.orderedActions.nextExpectedSeq)
         .order('seq', { ascending: true })
-        .abortSignal(controller.signal));
-    } catch (e) {
-      console.error('NetworkClient.resyncLog: log re-fetch aborted/failed:', (e as Error)?.message ?? e);
+        .abortSignal(controller.signal) as unknown as PromiseLike<{
+          data: unknown;
+          error: { message?: string } | null;
+        }>;
+    const settled = await settleWithDeadline(query, NetworkClient.RESYNC_TIMEOUT_MS, () => controller.abort());
+    if (commandGeneration !== this.commandGeneration || this._disposed || !stillCurrent()) return;
+    if (!settled.ok) {
+      console.error('NetworkClient.resyncLog: log re-fetch deadline/failed:', (settled.error as Error)?.message ?? settled.error);
       return;
-    } finally {
-      clearTimeout(timeout);
     }
+    const { data, error } = settled.value;
     if (error) {
       console.error('NetworkClient.resyncLog: failed to re-fetch log:', error.message);
       return;
     }
     if (!this.orderedActions.acceptResync(
-      (data ?? []) as RoomActionRow[],
+      ((data ?? []) as RoomActionRow[]).map((row) => ({ seq: row.seq, action: row })),
     )) return;
     this.flushPendingActions();
   }
@@ -925,6 +987,7 @@ export class NetworkClient implements GameClient {
       maxWind?: number;
       gravity?: number;
       rulesetVersion?: unknown;
+      commandProtocolVersion?: unknown;
       walls?: WallMode;
       battlefieldWorld?: string;
       hazards?: TerrainHazardMode;
@@ -947,6 +1010,11 @@ export class NetworkClient implements GameClient {
       this._rematchHandled = false;
       return;
     }
+    if (opts.commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+      console.warn('NetworkClient.handleRematch: incompatible successor command protocol', newRoomId);
+      this._rematchHandled = false;
+      return;
+    }
     listener({
       roomId:  data.id as string,
       code:    data.code as string,
@@ -956,6 +1024,7 @@ export class NetworkClient implements GameClient {
         maxWind:    typeof opts.maxWind === 'number' ? opts.maxWind : MAX_WIND,
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
         rulesetVersion: normalizeNetworkRulesetVersion(opts.rulesetVersion),
+        commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
         walls:      normalizeWallMode(opts.walls),
         ...(normalizeBattlefieldWorldId(opts.battlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(opts.battlefieldWorld) }
@@ -972,30 +1041,34 @@ export class NetworkClient implements GameClient {
     });
   }
 
-  /**
-   * POST the fire action to the submit_action Edge Function.
-   * Fire-and-forget; errors are logged but not retried in MVP2 (see Appendix C item 3).
-   */
+  /** Submit exactly one immutable command envelope for the current room revision. */
   private submitAction(
     networkAction: NetworkAction,
-    retryOnConflict = true,
+    _retryOnConflict = true,
     actingPlayerId?: string,
-    attempt = 0,
+    _attempt = 0,
     roundOver = false,
-    // Transport-outcome hook for the bot driver (#119). An accepted response proves
-    // this exact intent committed. A conflict only proves that some action won the seq;
-    // the ordered row must identify whether it matches before this intent is latched.
-    // A failed response did not commit and is safe to re-attempt.
     onSettle?: (settlement: BotSubmitSettlement) => void,
-  ): void {
-    // For TURN-ENDING actions, tell the server which seat is active NEXT (this client's
-    // engine skips eliminated tanks AND re-seats the opener at a round boundary; the
-    // server's modulo cursor can't do either). We also detect whether this action ENDS
-    // a round — if so the server must honor the reported seat unconditionally, because
-    // a round resets to the opener (seat 0), which may be the very seat that just fired
-    // (the modulo "you can't keep your own turn" guard would otherwise reject it).
-    // Turn-neutral buys / move and next_round don't move the cursor, so they
-    // report neither.
+  ): boolean {
+    if (this._disposed || this.canonicalCommandFault) return false;
+    const actorPlayerId = actingPlayerId ?? this.playerId;
+    const actorTankId = this.playerIndexMap.get(actorPlayerId);
+    if (!actorTankId) return false;
+    const existing = this.pendingRoomCommand;
+    if (existing) {
+      if (
+        existing.state === 'retryable'
+        && existing.envelope.expectedRevision === this.nextExpectedSeq
+        && existing.envelope.actorPlayerId === actorPlayerId
+        && networkActionsEqual(existing.envelope.action, networkAction)
+      ) {
+        this.beginRoomCommandDelivery(existing, onSettle);
+        return true;
+      } else if (!actingPlayerId) {
+        this.notifyCommandFailure('Another action is still pending.');
+      }
+      return false;
+    }
     const isTurnEnding = networkAction.type === 'fire' || networkAction.type === 'use_shield';
     let nextActiveIndex: number | undefined;
     let endsRound = roundOver; // ROUND_OVER buy / next_round pass this in directly
@@ -1004,86 +1077,221 @@ export class NetworkClient implements GameClient {
       nextActiveIndex = seat.index;
       endsRound = endsRound || seat.endsRound;
     }
-    fetch(edgeUrl('submit_action'), {
-      method:  'POST',
-      headers: edgeHeaders(),
-      body: JSON.stringify({
-        roomId:   this.roomId,
-        playerId: this.playerId,
-        token:    this.token,
-        rulesetVersion: normalizeNetworkRulesetVersion(this.options.rulesetVersion),
-        ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
-        // roundOver: this action ends a round (the killing blow) or operates within the
-        // between-rounds shop (buy / next_round). Tells the referee to skip the turn gate
-        // (shop actions) or honor the reported opener seat unconditionally (killing blow).
-        ...(endsRound ? { roundOver: true } : {}),
-        // Present only when proxying a CPU seat — the seat the action is FOR.
-        ...(actingPlayerId ? { actingPlayerId } : {}),
-        action:   networkAction,
-      }),
-    })
-      .then(res => res.json())
-      .then((data: { ok?: boolean; error?: string; retry?: boolean; seq?: number }) => {
-        if (this._disposed) return; // client torn down while this request was in flight
-        if (!data.ok) {
-          const isConflict = data.error === 'seq_conflict' || data.retry === true;
-          if (isConflict && retryOnConflict && attempt < NetworkClient.MAX_SEQ_RETRIES) {
-            // Seq collision (humans only — bots pass retryOnConflict=false, since the
-            // winning row is the same bot action). Retry with bounded exponential
-            // backoff + jitter so a near-simultaneous human submit lands instead of
-            // being dropped after one shot (P2-10). Jitter decorrelates the racers.
-            const delay = Math.min(NetworkClient.SEQ_BACKOFF_MS * 2 ** attempt, 240)
-              + Math.floor(Math.random() * 25);
-            this.seqRetryTimer = setTimeout(
-              () => {
-                this.seqRetryTimer = null;
-                if (this._disposed) return; // stop() ran while the retry was scheduled
-                this.submitAction(networkAction, true, actingPlayerId, attempt + 1, roundOver);
-              },
-              delay,
-            );
-          } else if (isConflict && retryOnConflict) {
-            // Exhausted retries (a human action that kept colliding) — release the
-            // input lock so the player can re-fire rather than stay stuck.
-            console.error('NetworkClient: submit_action seq-conflict retries exhausted');
-            if (!actingPlayerId) this.failFire('Shot kept colliding — try again.');
-          } else if (!isConflict && data.error === 'Not your turn') {
-            // The canonical local-vs-referee desync signature: our engine thought it
-            // was our turn but the referee disagreed. Not an error (can be a benign
-            // race), but log it at warn so a real desync is diagnosable (obs-006).
-            console.warn('NetworkClient: submit_action "Not your turn" — possible desync', {
-              roomId: this.roomId,
-              localActivePlayerId: this.engine.getState().activePlayerId,
-            });
-            // For a bot proxy this means the turn already advanced (someone committed):
-            // treat as committed so the driver latches instead of re-attempting.
-            onSettle?.('accepted');
-          } else if (!isConflict) {
-            // A non-conflict rejection (e.g. a 5xx where the RPC errored) — the action
-            // did NOT commit.
-            console.error('NetworkClient: submit_action rejected:', data.error);
-            // A genuine rejection of OUR OWN turn-ending action (not a bot proxy):
-            // release the "Sending…" lock and tell the player, so a failed shot
-            // doesn't trap them (P1-6). Bot proxies don't hold the lock.
-            if (!actingPlayerId) this.failFire('Shot failed — try again.');
-            // Transient for a bot proxy: clear the in-flight mark so the next frame retries.
-            onSettle?.('failed');
-          } else {
-            // A bot lost this seq race. Do not assume the winning intent was identical:
-            // wait for the ordered row to prove a match or release this intent.
-            onSettle?.('conflict');
-          }
-        } else {
-          // Accepted: our submit is the committed row for this phase.
-          onSettle?.('accepted');
-        }
-      })
-      .catch(err => {
-        console.error('NetworkClient: submit_action network error:', err);
-        if (!actingPlayerId) this.failFire('Connection problem — shot not sent. Try again.');
-        // Network error: nothing committed — let the bot driver re-attempt next frame.
-        onSettle?.('failed');
-      });
+    const expectedRevision = this.nextExpectedSeq;
+    const kind = networkAction.type === 'buy' ? 'buy' : 'act';
+    const intentId = actingPlayerId
+      ? cpuRoomIntentId({ roomId: this.roomId, expectedRevision, actorPlayerId, kind })
+      : crypto.randomUUID();
+    const envelope: RoomCommandEnvelopeV2<NetworkAction> = {
+      version: CURRENT_ROOM_COMMAND_VERSION,
+      intentId,
+      expectedRevision,
+      actorPlayerId,
+      action: networkAction,
+      ...(typeof nextActiveIndex === 'number' ? { nextActiveIndex } : {}),
+      ...(endsRound ? { roundOver: true } : {}),
+    };
+    const body = JSON.stringify({
+      roomId: this.roomId,
+      playerId: this.playerId,
+      token: this.token,
+      rulesetVersion: normalizeNetworkRulesetVersion(this.options.rulesetVersion),
+      command: envelope,
+    });
+    const pending: PendingRoomCommand = {
+      generation: this.commandGeneration,
+      envelope,
+      body,
+      actorTankId,
+      humanTurnEnding: !actingPlayerId && isTurnEnding,
+      deliveryEpoch: 0,
+      state: 'retryable',
+      transportAbort: null,
+      ...(onSettle ? { onSettle } : {}),
+    };
+    this.pendingRoomCommand = pending;
+    this.beginRoomCommandDelivery(pending, onSettle);
+    return true;
+  }
+
+  private beginRoomCommandDelivery(
+    pending: PendingRoomCommand,
+    onSettle?: (settlement: BotSubmitSettlement) => void,
+  ): void {
+    this.clearCommandWatchdog();
+    pending.transportAbort?.abort();
+    pending.deliveryEpoch += 1;
+    pending.state = 'delivering';
+    if (onSettle) pending.onSettle = onSettle;
+    const deliveryEpoch = pending.deliveryEpoch;
+    if (pending.humanTurnEnding) this.lockFiringFor(pending, deliveryEpoch);
+    void this.deliverRoomCommand(pending, deliveryEpoch);
+  }
+
+  private async deliverRoomCommand(pending: PendingRoomCommand, deliveryEpoch: number): Promise<void> {
+    const current = (): boolean => this.isCurrentDelivery(pending, deliveryEpoch);
+    const controller = new AbortController();
+    pending.transportAbort = controller;
+    const attempts = postOnceWithRetry(
+      async () => {
+        const response = await fetch(edgeUrl('submit_action'), {
+          method: 'POST', headers: edgeHeaders(), body: pending.body, signal: controller.signal,
+        });
+        const data = await response.json() as unknown;
+        return {
+          status: Number.isInteger(response.status) ? response.status : undefined,
+          data,
+        };
+      },
+      2,
+      undefined,
+      current,
+    );
+    const bounded = await settleWithDeadline(
+      attempts,
+      NetworkClient.COMMAND_DELIVERY_TIMEOUT_MS,
+      () => controller.abort(),
+    );
+    if (!current()) return;
+    pending.transportAbort = null;
+    const result = bounded.ok ? bounded.value : bounded;
+    if (!result.ok) {
+      console.error('NetworkClient: submit_action transport uncertainty:', result.error);
+      await this.recoverRoomCommand(
+        pending,
+        deliveryEpoch,
+        'Connection problem — retry the same action.',
+      );
+      return;
+    }
+    const { data, status } = result.value;
+    if (status !== undefined && status >= 500) {
+      console.error('NetworkClient: submit_action server response is uncertain', { status });
+      await this.recoverRoomCommand(
+        pending,
+        deliveryEpoch,
+        'Server response uncertain — retry the same action.',
+      );
+      return;
+    }
+    if ((status === undefined || (status >= 200 && status < 300)) && this.isReceiptFor(pending, data)) {
+      pending.onSettle?.('accepted');
+      pending.state = 'awaiting-echo';
+      await this.resyncLog(pending.generation, current);
+      if (current()) this.armCommandWatchdog(pending, deliveryEpoch);
+      return;
+    }
+    const error = typeof data === 'object' && data !== null && typeof (data as { error?: unknown }).error === 'string'
+      ? (data as { error: string }).error
+      : undefined;
+    const mappedConflict = isMappedCommandResponse(error, status, ROOM_COMMAND_CONFLICT_STATUS);
+    const legacyNotYourTurn = status === undefined && error === 'Not your turn';
+    if (mappedConflict || legacyNotYourTurn) {
+      if (error === 'not_your_turn' || legacyNotYourTurn) {
+        console.warn('NetworkClient: submit_action "Not your turn" — possible desync', {
+          roomId: this.roomId,
+          localActivePlayerId: this.engine.getState().activePlayerId,
+        });
+      }
+      pending.onSettle?.('conflict');
+      pending.state = 'recovering';
+      await this.resyncLog(pending.generation, current);
+      if (!current()) return;
+      this.releaseFiringFor(pending, deliveryEpoch);
+      this.finishPendingCommand(pending);
+      if (pending.humanTurnEnding) this.emitState();
+      if (pending.envelope.actorPlayerId === this.playerId) {
+        this.notifyCommandFailure('Turn changed — review the updated game and try again.');
+      }
+      return;
+    }
+    const mappedRefusal = isMappedCommandResponse(error, status, ROOM_COMMAND_REFUSAL_STATUS);
+    const legacyRefusal = status === undefined && error !== undefined && error !== '';
+    if (mappedRefusal || legacyRefusal) {
+      console.error('NetworkClient: submit_action rejected:', error);
+      pending.onSettle?.('failed');
+      this.releaseFiringFor(pending, deliveryEpoch);
+      this.finishPendingCommand(pending);
+      if (pending.humanTurnEnding) this.emitState();
+      if (pending.envelope.actorPlayerId === this.playerId) this.notifyCommandFailure('Action failed — try again.');
+      return;
+    }
+    console.error('NetworkClient: submit_action returned an incompatible command receipt');
+    pending.state = 'awaiting-echo';
+    this.notifyCommandFailure('Command receipt mismatch — reload to continue.');
+    this.armCommandWatchdog(pending, deliveryEpoch);
+  }
+
+  private async recoverRoomCommand(
+    pending: PendingRoomCommand,
+    deliveryEpoch: number,
+    message: string,
+  ): Promise<void> {
+    if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
+    pending.state = 'recovering';
+    const current = (): boolean => this.isCurrentDelivery(pending, deliveryEpoch);
+    await this.resyncLog(pending.generation, current);
+    if (!current()) return;
+    if (this.orderedActions.nextExpectedSeq > pending.envelope.expectedRevision) {
+      const onSettle = pending.onSettle;
+      const shouldDriveBot = onSettle !== undefined;
+      this.releaseFiringFor(pending, deliveryEpoch);
+      this.finishPendingCommand(pending);
+      onSettle?.('failed');
+      if (pending.humanTurnEnding || shouldDriveBot) this.emitState();
+      if (pending.envelope.actorPlayerId === this.playerId) {
+        this.notifyCommandFailure('Turn changed — review the updated game and try again.');
+      }
+      return;
+    }
+    pending.state = 'retryable';
+    this.releaseFiringFor(pending, deliveryEpoch);
+    pending.onSettle?.('failed');
+    if (pending.humanTurnEnding) this.emitState();
+    if (pending.envelope.actorPlayerId === this.playerId) this.notifyCommandFailure(message);
+  }
+
+  private isReceiptFor(pending: PendingRoomCommand, value: unknown): value is RoomCommandReceiptV2 {
+    if (typeof value !== 'object' || value === null) return false;
+    const receipt = value as Partial<RoomCommandReceiptV2>;
+    return receipt.ok === true
+      && receipt.protocolVersion === CURRENT_ROOM_COMMAND_VERSION
+      && receipt.intentId === pending.envelope.intentId
+      && receipt.seq === pending.envelope.expectedRevision
+      && receipt.revision === pending.envelope.expectedRevision + 1
+      && receipt.actorPlayerId === pending.envelope.actorPlayerId
+      && receipt.actorTankId === pending.actorTankId;
+  }
+
+  private isCurrentCommand(pending: PendingRoomCommand): boolean {
+    return !this._disposed
+      && pending.generation === this.commandGeneration
+      && this.pendingRoomCommand === pending;
+  }
+
+  private isCurrentDelivery(pending: PendingRoomCommand, deliveryEpoch: number): boolean {
+    return this.isCurrentCommand(pending) && pending.deliveryEpoch === deliveryEpoch;
+  }
+
+  private finishPendingCommand(pending: PendingRoomCommand): void {
+    if (this.pendingRoomCommand !== pending) return;
+    this.clearCommandWatchdog();
+    pending.transportAbort?.abort();
+    pending.transportAbort = null;
+    pending.deliveryEpoch += 1;
+    this.pendingRoomCommand = null;
+  }
+
+  private retirePendingCommands(): void {
+    const pending = this.pendingRoomCommand;
+    this.clearCommandWatchdog();
+    pending?.transportAbort?.abort();
+    if (pending) pending.deliveryEpoch += 1;
+    if (pending) this.releaseFiringFor(pending);
+    this.commandGeneration += 1;
+    this.pendingRoomCommand = null;
+    this.botSubmitPendingKey = null;
+    this.botActionAttempt = null;
   }
 
   /**
@@ -1105,6 +1313,51 @@ export class NetworkClient implements GameClient {
     this.appliedLog.push(action);
     if (preparation) this.reconcileBotPreparation(preparation);
     this.reconcileBotActionAttempt(action, context);
+  }
+
+  private applyRoomActionRow(row: RoomActionRow): (() => string | undefined) | null {
+    this.validateRoomActionRowShape(row);
+    const pending = this.pendingRoomCommand;
+    if (pending && row.seq === pending.envelope.expectedRevision) {
+      const matches = row.intent_id === pending.envelope.intentId
+        && row.player_id === pending.envelope.actorPlayerId
+        && networkActionsEqual(row.action, pending.envelope.action);
+      this.applyNetworkAction(row.action);
+      if (matches) {
+        return () => {
+          this.releaseFiringFor(pending);
+          this.finishPendingCommand(pending);
+          return undefined;
+        };
+      } else if (!pending.onSettle) {
+        return () => {
+          this.releaseFiringFor(pending);
+          this.finishPendingCommand(pending);
+          return pending.humanTurnEnding
+            ? 'Turn changed — review the updated game and try again.'
+            : undefined;
+        };
+      }
+      return null;
+    }
+
+    this.applyNetworkAction(row.action);
+    return null;
+  }
+
+  private validateRoomActionRowShape(row: RoomActionRow): void {
+    const binding = row.action?.commandActor;
+    const mappedTankId = this.playerIndexMap.get(row.player_id);
+    if (
+      row.command_version !== CURRENT_ROOM_COMMAND_VERSION
+      || !row.intent_id
+      || row.expected_revision !== row.seq
+      || !binding
+      || !mappedTankId
+      || binding.tankId !== mappedTankId
+    ) {
+      throw new Error(`NetworkClient: incompatible command row at seq ${row.seq}`);
+    }
   }
 
   /**
@@ -1291,18 +1544,34 @@ export class NetworkClient implements GameClient {
    * forever and the client would freeze on the scoreboard.
    */
   private flushPendingActions(): void {
-    this.orderedActions.drain(
-      () => {
-        const phase = this.engine.getState().phase;
-        return phase === 'PLAYER_TURN' || phase === 'ROUND_OVER';
-      },
-      (action) => {
-        this.setFiring(false);
-        this.applyNetworkAction(action);
-      },
-      () => this.tickToCompletion(),
-      () => this.emitState(),
-    );
+    if (this.canonicalCommandFault) return;
+    let afterCommit: (() => string | undefined) | null = null;
+    const feedback: string[] = [];
+    try {
+      this.orderedActions.drain(
+        () => {
+          const phase = this.engine.getState().phase;
+          return phase === 'PLAYER_TURN' || phase === 'ROUND_OVER';
+        },
+        (row) => { afterCommit = this.applyRoomActionRow(row); },
+        () => this.tickToCompletion(),
+        () => {
+          const effect = afterCommit;
+          afterCommit = null;
+          const message = effect?.();
+          this.emitState();
+          if (message) feedback.push(message);
+        },
+      );
+    } catch (error) {
+      this.canonicalCommandFault = true;
+      console.error('NetworkClient: canonical command rejected before sequence commit', error);
+      for (const listener of this.fireFailedListeners) {
+        listener('Game state mismatch — reload to continue.');
+      }
+      return;
+    }
+    for (const message of feedback) this.notifyCommandFailure(message);
   }
 
   private emitState(): void {
@@ -1466,12 +1735,14 @@ export class NetworkClient implements GameClient {
       sawCanonicalProgress: false,
     };
     this.botActionAttempt = attempt;
-    this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (settlement) => {
+    const admitted = this.submitAction(action, /* retryOnConflict */ false, actingId, 0, false, (settlement) => {
       if (this.botActionAttempt !== attempt) return; // canonical row already resolved/superseded it
       if (this.botSubmitPendingKey === key) this.botSubmitPendingKey = null;
       if (settlement === 'accepted') {
-        this.lastBotKey = key;
-        this.botActionAttempt = null;
+        // A receipt proves the command was appended, but only its ordered row proves
+        // this local cursor applied it. Keep the exact attempt owned through bounded
+        // echo recovery so a missing echo can retry the same immutable envelope.
+        attempt.settlement = 'accepted';
       } else if (settlement === 'failed') {
         this.botActionAttempt = null;
       } else {
@@ -1486,6 +1757,10 @@ export class NetworkClient implements GameClient {
         void this.resyncLog();
       }
     });
+    if (!admitted) {
+      if (this.botSubmitPendingKey === key) this.botSubmitPendingKey = null;
+      if (this.botActionAttempt === attempt) this.botActionAttempt = null;
+    }
   }
 
   private callFinishGame(winnerId: string | null): void {

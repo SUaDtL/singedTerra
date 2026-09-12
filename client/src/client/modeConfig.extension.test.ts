@@ -71,7 +71,7 @@ describe('mode extension example: four-seat lava crosswind', () => {
     const canonical = new GameEngine(expected);
     const hot = new HotSeatClient(new GameEngine(hotOptions));
     // Constructor-only boundary: no transport, subscription, RAF or initialize() runs.
-    const network = new NetworkClient({} as SupabaseClient, 'extension-room', 'extension-seat-a', networkOptions, '');
+    const network = new NetworkClient({} as SupabaseClient, 'extension-room', 'extension-seat-a', networkOptions, '', 2);
     try {
       expectExactState(hot.getState(), canonical.getState());
       expectExactState(network.getState(), canonical.getState());

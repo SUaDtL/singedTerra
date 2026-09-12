@@ -18,6 +18,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NetworkClient } from './NetworkClient';
 import type { NetworkAction } from '@shared/net/replay';
 import type { GameEngine } from '@shared/engine/GameEngine';
+import { cpuRoomIntentId } from '@shared/net/roomCommand';
 
 // p1 is THIS client (a human); p2 is a CPU seat this client drives.
 const OPTIONS = {
@@ -42,14 +43,21 @@ function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient; c
   const state = { idx: 0 };
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'eq', 'gte', 'order', 'abortSignal']) builder[m] = () => builder;
-  builder.then = (resolve: (v: QueryResult) => unknown, reject: (e: unknown) => unknown) =>
-    Promise.resolve(results[state.idx++] ?? { data: [], error: null }).then(resolve, reject);
+  builder.then = (resolve: (v: QueryResult) => unknown, reject: (e: unknown) => unknown) => {
+    const result = results[state.idx++] ?? { data: [], error: null };
+    const normalized = Array.isArray(result.data)
+      ? { ...result, data: result.data.map((entry) => v2Row(entry as Record<string, unknown>)) }
+      : result;
+    return Promise.resolve(normalized).then(resolve, reject);
+  };
 
   const captured: Captured = { insertHandler: null, statusCb: null };
   const makeChannel = () => {
     const ch: Record<string, unknown> = {};
     ch.on = (_e: unknown, _f: unknown, handler: (p: { new: unknown }) => void) => {
-      if (!captured.insertHandler) captured.insertHandler = handler;
+      if (!captured.insertHandler) {
+        captured.insertHandler = (payload) => handler({ new: v2Row(payload.new as Record<string, unknown>) });
+      }
       return ch;
     };
     ch.subscribe = (cb?: (s: string) => void) => {
@@ -68,6 +76,61 @@ function makeFakeSupabase(results: QueryResult[]): { supabase: SupabaseClient; c
 
 const fire = (angle = 45, power = 50): NetworkAction => ({ type: 'fire', angle, power, weapon: 'baby_missile' });
 
+function v2Row(input: Record<string, unknown>): Record<string, unknown> {
+  if (input.command_version === 2) return input;
+  const seq = input.seq as number;
+  const playerId = input.player_id as string;
+  const actorTankId = playerId === 'player-abc' ? 'p1' : 'p2';
+  const action = input.action as NetworkAction;
+  return {
+    ...input,
+    action: { ...action, commandActor: { role: 'engine-seat', tankId: actorTankId } },
+    command_version: 2,
+    intent_id: playerId === 'bot-def'
+      ? cpuRoomIntentId({ roomId: 'room-1', expectedRevision: seq, actorPlayerId: playerId, kind: action.type === 'buy' ? 'buy' : 'act' })
+      : `human-history-${seq}`,
+    expected_revision: seq,
+    submitted_by: 'player-abc',
+    command_ends_turn: action.type === 'fire' || action.type === 'use_shield',
+    command_next_index: action.type === 'fire' || action.type === 'use_shield' ? (seq + 1) % 2 : null,
+    command_round_over: false,
+  };
+}
+
+function installV2Fetch(fetchMock: ReturnType<typeof vi.fn>): void {
+  vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+    const response = await (fetchMock as unknown as (
+      url: string,
+      init?: RequestInit,
+    ) => Promise<{ ok: boolean; json(): Promise<SubmitResult> }>)(url, init);
+    const data = await response.json();
+    const body = JSON.parse(String(init?.body)) as { command?: {
+      intentId: string; expectedRevision: number; actorPlayerId: string;
+    } };
+    if (!body.command) return response;
+    if (data.ok) {
+      return {
+        ...response,
+        json: async () => ({
+          ok: true,
+          protocolVersion: 2,
+          intentId: body.command!.intentId,
+          seq: body.command!.expectedRevision,
+          revision: body.command!.expectedRevision + 1,
+          actorPlayerId: body.command!.actorPlayerId,
+          actorTankId: body.command!.actorPlayerId === 'player-abc' ? 'p1' : 'p2',
+        }),
+      };
+    }
+    return {
+      ...response,
+      json: async () => data.error === 'seq_conflict'
+        ? { ...data, error: 'revision_conflict' }
+        : data,
+    };
+  });
+}
+
 /** A committed fire by p1 (the opener) at seq 0 — after replay the turn is p2's (the bot). */
 function p1FireRow() {
   return { new: { id: 'r0', room_id: 'room-1', seq: 0, player_id: 'player-abc', action: fire(), created_at: '' } };
@@ -77,6 +140,10 @@ function p1FireRow() {
 async function settle(): Promise<void> {
   await new Promise((r) => setTimeout(r, 0));
   await new Promise((r) => setTimeout(r, 0));
+}
+
+async function settleMicrotasks(): Promise<void> {
+  for (let index = 0; index < 12; index += 1) await Promise.resolve();
 }
 
 function deferredSubmit() {
@@ -120,11 +187,11 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
 
   /** Build a client already at the bot's (p2) turn, with the rAF loop started. */
   async function botTurnClient(fetchMock: ReturnType<typeof vi.fn>) {
-    vi.stubGlobal('fetch', fetchMock);
+    installV2Fetch(fetchMock);
     // initialize() replays p1's committed fire and ticks to completion, handing the
     // turn to p2 (the bot). maybeDriveBot is suppressed during replay (isReplaying).
     const { supabase } = makeFakeSupabase([{ data: [p1FireRow().new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     expect(client.getState().activePlayerId).toBe('p2'); // bot holds the turn
     client.start();
@@ -136,7 +203,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     armsLevel: number,
     start = true,
   ): Promise<{ client: NetworkClient; captured: Captured; engine: GameEngine }> {
-    vi.stubGlobal('fetch', fetchMock);
+    installV2Fetch(fetchMock);
     const human = OPTIONS.players[0];
     const bot = OPTIONS.players[1];
     if (!human || !bot) throw new Error('network bot fixture requires two players');
@@ -146,7 +213,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       players: [human, { ...bot, ai: 'hard' as const }],
     };
     const { supabase, captured } = makeFakeSupabase([{ data: [p1FireRow().new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', options);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', options, undefined, 2);
     await client.initialize();
     const engine = (client as unknown as { engine: GameEngine }).engine;
     expect(engine.getState().activePlayerId).toBe('p2');
@@ -158,7 +225,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     fetchMock: ReturnType<typeof vi.fn>,
     fallbackUsable = true,
   ): Promise<{ client: NetworkClient; engine: GameEngine }> {
-    vi.stubGlobal('fetch', fetchMock);
+    installV2Fetch(fetchMock);
     const human = OPTIONS.players[0];
     const bot = OPTIONS.players[1];
     if (!human || !bot) throw new Error('network bot fixture requires two players');
@@ -179,7 +246,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       data: [p1FireRow().new, historicalBuy],
       error: null,
     }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', options);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', options, undefined, 2);
     const engine = (client as unknown as { engine: GameEngine }).engine;
     setExhaustedRichBot(engine);
     const botTank = engine.getState().tanks[1];
@@ -214,8 +281,8 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
 
   function submittedAction(fetchMock: ReturnType<typeof vi.fn>, call: number): NetworkAction {
     const init = fetchMock.mock.calls[call]?.[1] as RequestInit | undefined;
-    const body = JSON.parse(String(init?.body)) as { action: NetworkAction };
-    return body.action;
+    const body = JSON.parse(String(init?.body)) as { command: { action: NetworkAction } };
+    return body.command.action;
   }
 
   function tickToRest(engine: GameEngine): void {
@@ -292,15 +359,18 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
   });
 
   it('re-attempts after a network-level error (fetch rejects) — OB-5', async () => {
-    // The COMMON transient: the POST never reaches the server. Nothing committed, so
-    // the driver must clear the in-flight mark and retry on the next frame.
+    // Transport uncertainty retries the same immutable CPU command before the
+    // driver is allowed to derive any later phase command.
     const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
     const client = await botTurnClient(fetchMock);
 
     await pumpFrame();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    await pumpFrame();
-    expect(fetchMock).toHaveBeenCalledTimes(2); // self-heal on the .catch path
+    await new Promise((resolve) => setTimeout(resolve, 210));
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body)
+      .toBe((fetchMock.mock.calls[0]?.[1] as RequestInit).body);
 
     client.stop();
   });
@@ -533,7 +603,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
 
   it('derives ineffective preparation through the resync action path — AC-068', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 2 }) });
-    vi.stubGlobal('fetch', fetchMock);
+    installV2Fetch(fetchMock);
     const human = OPTIONS.players[0];
     const bot = OPTIONS.players[1];
     if (!human || !bot) throw new Error('network bot fixture requires two players');
@@ -554,7 +624,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       { data: [p1FireRow().new], error: null },
       { data: [buyRow], error: null },
     ]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', options);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', options, undefined, 2);
     await client.initialize();
     const engine = (client as unknown as { engine: GameEngine }).engine;
     setExhaustedRichBot(engine);
@@ -839,7 +909,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     const fetchMock = vi.fn()
       .mockReturnValueOnce(oldResponse.promise)
       .mockReturnValue(neverSettles());
-    vi.stubGlobal('fetch', fetchMock);
+    installV2Fetch(fetchMock);
     const human = OPTIONS.players[0];
     const bot = OPTIONS.players[1];
     if (!human || !bot) throw new Error('network bot fixture requires two players');
@@ -848,7 +918,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       players: [{ ...human, ai: 'easy' as const }, bot],
     };
     const { supabase, captured } = makeFakeSupabase([{ data: [p1FireRow().new], error: null }]);
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', bothBots);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', bothBots, undefined, 2);
     await client.initialize();
     const engine = (client as unknown as { engine: GameEngine }).engine;
     client.start();
@@ -868,5 +938,77 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     await pumpFrame();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     client.stop();
+  });
+
+  it('retires a timed-out CPU envelope whose exact revision was consumed before replanning — AC-068', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    let client: NetworkClient | undefined;
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, seq: 1 }) })
+        .mockReturnValue(neverSettles());
+      const configured = await configuredBotTurnClient(fetchMock, 1);
+      client = configured.client;
+      setExhaustedRichBot(configured.engine);
+
+      rafCb?.(0);
+      await settleMicrotasks();
+      const buy = submittedAction(fetchMock, 0);
+      configured.captured.insertHandler?.({
+        new: { id: 'buy', room_id: 'room-1', seq: 1, player_id: 'bot-def', action: buy, created_at: '' },
+      });
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(submittedAction(fetchMock, 1)).toMatchObject({ type: 'fire', weapon: 'nuke' });
+
+      configured.captured.insertHandler?.({
+        new: { id: 'different-buy', room_id: 'room-1', seq: 2, player_id: 'bot-def', action: buy, created_at: '' },
+      });
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      await vi.advanceTimersByTimeAsync(9_000);
+      await settleMicrotasks();
+      rafCb?.(0);
+      await settleMicrotasks();
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      const body = JSON.parse(String((fetchMock.mock.calls[2]?.[1] as RequestInit).body));
+      expect(body.command.expectedRevision).toBe(3);
+    } finally {
+      client?.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('retries the same accepted CPU envelope after bounded recovery finds no echo — AC-068', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    let client: NetworkClient | undefined;
+    try {
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 1 }) });
+      const configured = await configuredBotTurnClient(fetchMock, 1);
+      client = configured.client;
+      setExhaustedRichBot(configured.engine);
+
+      rafCb?.(0);
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const firstBody = (fetchMock.mock.calls[0]?.[1] as RequestInit).body;
+
+      await vi.advanceTimersByTimeAsync(9_000);
+      await settleMicrotasks();
+      rafCb?.(0);
+      await settleMicrotasks();
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body).toBe(firstBody);
+    } finally {
+      client?.stop();
+      vi.useRealTimers();
+    }
   });
 });

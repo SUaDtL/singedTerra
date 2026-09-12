@@ -1,5 +1,6 @@
 import { projectAuthoritativeNetworkMode, type AdmittedNetworkModeSetup } from './modeConfig'
 import { normalizeNetworkRulesetVersion, CURRENT_NETWORK_RULESET_VERSION } from './networkRuleset'
+import { CURRENT_ROOM_COMMAND_VERSION } from '@shared/net/roomCommand'
 import type {
   CreateRoomParams,
   JoinRoomParams,
@@ -154,10 +155,18 @@ export class LobbyRoomController {
       this.rejectRejoin('This room uses an older game build and cannot be resumed here.')
       return
     }
+    if (liveRoom.options.commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+      this.rejectRejoin('This room uses an incompatible command protocol and cannot be resumed here.')
+      return
+    }
     this.onHandoff(projectAuthoritativeNetworkMode({
       ...liveRoom,
       roomId: liveRoom.id,
-      options: { ...liveRoom.options, rulesetVersion: normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion) },
+      options: {
+        ...liveRoom.options,
+        rulesetVersion: normalizeNetworkRulesetVersion(liveRoom.options.rulesetVersion),
+        commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
+      },
     }, { playerId: descriptor.playerId, token: this.persistence.readSeatToken(descriptor.playerId) ?? '' }))
   }
 
@@ -180,6 +189,11 @@ export class LobbyRoomController {
       if (!data?.roomId || !data.code || !data.playerId || !data.token) {
         return this.fail('Unexpected server response — please try again.')
       }
+      if (data.options?.commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+        await this.releaseStaleAdmission(data)
+        if (!this.isCurrent(generation)) return
+        return this.fail('The server returned an incompatible command protocol.')
+      }
       // Preserve the established fallback timing: server-owned fields win, but
       // presentation fallback fields are read only after the request resolves.
       const currentFallback = fallback()
@@ -189,7 +203,7 @@ export class LobbyRoomController {
           ? player
           : { ...player, id: data.playerId! }),
         seed: currentFallback.seed,
-        options: this.options(data.options ?? currentFallback.options), thisPlayerReady: false,
+        options: this.options(data.options), thisPlayerReady: false,
       })
     } catch (error) {
       if (!this.isCurrent(generation)) return
@@ -198,7 +212,7 @@ export class LobbyRoomController {
     }
   }
 
-  async join(params: JoinRoomParams, code: string, fallbackOptions: RoomOptions): Promise<void> {
+  async join(params: JoinRoomParams, code: string, _fallbackOptions: RoomOptions): Promise<void> {
     const generation = this.beginOperation()
     if (generation === null) return
     try {
@@ -214,11 +228,16 @@ export class LobbyRoomController {
       if (normalizeNetworkRulesetVersion(data.options?.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
         return this.fail('This room uses an older game build and cannot be joined here.')
       }
+      if (data.options?.commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
+        await this.releaseStaleAdmission(data)
+        if (!this.isCurrent(generation)) return
+        return this.fail('This room uses an incompatible command protocol and cannot be joined here.')
+      }
       this.session.stopBrowsePoll()
       this.adopt({
         roomId: data.roomId, roomCode: code, playerId: data.playerId, token: data.token,
         players: data.players ?? [], seed: data.seed ?? 0,
-        options: this.options(data.options ?? fallbackOptions), thisPlayerReady: false,
+        options: this.options(data.options), thisPlayerReady: false,
       })
     } catch (error) {
       if (!this.isCurrent(generation)) return
@@ -312,6 +331,10 @@ export class LobbyRoomController {
   }
 
   private options(options: RoomOptions): RoomOptions {
-    return { ...options, rulesetVersion: normalizeNetworkRulesetVersion(options.rulesetVersion) }
+    return {
+      ...options,
+      rulesetVersion: normalizeNetworkRulesetVersion(options.rulesetVersion),
+      commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
+    }
   }
 }

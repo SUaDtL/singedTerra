@@ -60,7 +60,13 @@ function makeFakeSupabase(
 }
 
 function row(seq: number, action: NetworkAction) {
-  return { id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc', action, created_at: '' };
+  return {
+    id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc',
+    action: { ...action, commandActor: { role: 'engine-seat' as const, tankId: 'p1' } },
+    created_at: '', command_version: 2, intent_id: `history-${seq}`, expected_revision: seq,
+    submitted_by: 'player-abc', command_ends_turn: true, command_next_index: 1,
+    command_round_over: false,
+  };
 }
 
 interface EngineAccess {
@@ -86,7 +92,7 @@ function completeStateSnapshot(client: NetworkClient): unknown {
 
 interface NetworkActionAccess {
   appliedLog: NetworkAction[];
-  pendingActions: Map<number, NetworkAction>;
+  pendingActions: Map<number, unknown>;
   nextExpectedSeq: number;
 }
 
@@ -101,7 +107,7 @@ function actionTrackingSnapshot(client: NetworkClient): unknown {
 
 async function gameOverClient(session: { access_token: string } | null): Promise<NetworkClient> {
   const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT)], error: null }], session);
-  const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, 'seat-token-secret');
+  const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, 'seat-token-secret', 2);
   const state = engineOf(client).getState();
   const shooter = required(state.tanks[0], 'shooter tank');
   const victim = required(state.tanks[1], 'victim tank');

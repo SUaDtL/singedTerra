@@ -22,6 +22,30 @@ export interface RoomCommandEnvelopeV2<TAction = unknown> {
   roundOver?: true;
 }
 
+export interface RoomCommandReceiptV2 {
+  ok: true;
+  protocolVersion: typeof CURRENT_ROOM_COMMAND_VERSION;
+  intentId: string;
+  seq: number;
+  revision: number;
+  actorPlayerId: string;
+  actorTankId: string;
+}
+
+/** Canonical v2 metadata persisted beside every room action. */
+export interface RoomCommandRowV2<TAction = unknown> {
+  seq: number;
+  player_id: string;
+  action: TAction;
+  command_version: typeof CURRENT_ROOM_COMMAND_VERSION;
+  intent_id: string;
+  expected_revision: number;
+  submitted_by: string;
+  command_ends_turn: boolean;
+  command_next_index: number | null;
+  command_round_over: boolean;
+}
+
 /**
  * Every client proxying the same deterministic CPU phase must derive the same
  * identity. The action payload is deliberately absent: reusing the identity

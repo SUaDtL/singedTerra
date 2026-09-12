@@ -24,6 +24,10 @@ import {
   type TerrainHazardMode,
 } from '@shared/types/GameOptions';
 import type { TankLoadout } from '@shared/types/TankLoadout';
+import {
+  CURRENT_ROOM_COMMAND_VERSION,
+  type RoomCommandVersion,
+} from '@shared/net/roomCommand';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
 import { normalizeCreateRoomRequest, type CreateRoomModeInput as CreateRoomParams } from './modeConfig';
 import {
@@ -55,6 +59,7 @@ export type RoomOptions = {
   maxWind: number;
   gravity: number;
   rulesetVersion?: NetworkRulesetVersion;
+  commandProtocolVersion?: RoomCommandVersion;
   walls?: WallMode;
   battlefieldWorld?: BattlefieldWorldId;
   hazards?: TerrainHazardMode;
@@ -180,6 +185,7 @@ export class LobbyTransport {
         color: params.color,
         loadout: params.loadout,
         rulesetVersion,
+        commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
       });
 
     // A post-floor client must never create a GameEngine from a legacy room.

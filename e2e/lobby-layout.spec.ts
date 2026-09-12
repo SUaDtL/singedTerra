@@ -555,6 +555,7 @@ test.describe('Lobby layout guardrails', () => {
         maxPlayers: 4,
         maxWind: 10,
         gravity: 0.15,
+        commandProtocolVersion: 2,
         walls: 'open',
         rounds: 3,
         armsLevel: 2,
