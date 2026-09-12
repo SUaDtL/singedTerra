@@ -9,6 +9,30 @@ Deno.test('handleJoinRoom: missing code returns 400 (no DB)', async () => {
   assertEquals(res.status, 400)
 })
 
+Deno.test('handleJoinRoom rejects command protocol mismatch before roster mutation', async () => {
+  let mutations = 0
+  const rooms = {
+    select: () => rooms,
+    eq: () => rooms,
+    maybeSingle: () => Promise.resolve({
+      data: {
+        id: 'room-v2', seed: 42,
+        options: { maxPlayers: 2, rulesetVersion: 1, commandProtocolVersion: 2 },
+        players: [{ id: 'host', name: 'Host', color: '#e84d4d', ready: false, lastSeen: Date.now() }],
+      },
+      error: null,
+    }),
+    update: () => { mutations++; return rooms },
+  }
+  const serviceClient = { from: () => rooms }
+  const res = await joinRoomHandler({ serviceClient: serviceClient as never })({
+    code: 'ABCD', playerName: 'Bo', color: '#4d8ce8', commandProtocolVersion: 1,
+  })
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), { error: 'command_protocol_mismatch', requiredCommandProtocolVersion: 2 })
+  assertEquals(mutations, 0)
+})
+
 Deno.test('handleJoinRoom: rejects an over-posted tank loadout before DB access', async () => {
   const res = await handleJoinRoom({
     code: 'ABCD',
@@ -76,6 +100,7 @@ Deno.test('handleJoinRoom: appends the exact bounded joiner loadout', async () =
 
   assertEquals(res.status, 200)
   assertEquals(updatedPlayers[1].loadout, loadout)
+  assertEquals((await res.json()).options.commandProtocolVersion, 1)
 })
 
 Deno.test('handleJoinRoom: rejects a ruleset mismatch before mutating the room or seat table', async () => {

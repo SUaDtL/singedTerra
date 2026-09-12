@@ -16,6 +16,7 @@ import {
   verifySeatToken,
   resolveStoredRulesetVersion,
 } from '../_shared/mod.ts'
+import { resolveStoredCommandVersion } from '../_shared/commandProtocol.ts'
 
 /** Shape returned to the client (and broadcast-derived peers re-fetch the same). */
 interface RematchInfo {
@@ -27,6 +28,7 @@ interface RematchInfo {
     maxWind: number
     gravity: number
     rulesetVersion: 1 | 2 | 3 | 4
+    commandProtocolVersion: 1 | 2
     walls: 'open' | 'reflective' | 'wrap' | 'concrete'
     battlefieldWorld?: 'ember-dusk' | 'obsidian-caldera' | 'glassstorm-expanse'
     hazards?: 'none' | 'lava'
@@ -55,12 +57,15 @@ export function normalizeRematchOptions(
 ): RematchInfo['options'] {
   const storedRuleset = resolveStoredRulesetVersion(options)
   if (!storedRuleset.ok) throw new Error('Invalid stored ruleset')
+  const storedCommandProtocol = resolveStoredCommandVersion(options)
+  if (!storedCommandProtocol.ok) throw new Error('Invalid stored command protocol')
   const storedOptions = options as StoredOptions
   return {
     maxPlayers: storedOptions.maxPlayers ?? playerCount,
     maxWind: typeof storedOptions.maxWind === 'number' ? storedOptions.maxWind : DEFAULT_MAX_WIND,
     gravity: typeof storedOptions.gravity === 'number' ? storedOptions.gravity : DEFAULT_GRAVITY,
     rulesetVersion: storedRuleset.version,
+    commandProtocolVersion: storedCommandProtocol.version,
     walls: storedOptions.walls === 'reflective' || storedOptions.walls === 'wrap' || storedOptions.walls === 'concrete'
       ? storedOptions.walls
       : 'open',
@@ -81,8 +86,11 @@ export interface RestartGameDependencies {
 
 /** Preserve every synchronized room option while normalizing the opaque wall value. */
 export function normalizeStoredRematchOptions(options: StoredOptions): StoredOptions {
+  const storedCommandProtocol = resolveStoredCommandVersion(options)
+  if (!storedCommandProtocol.ok) throw new Error('Invalid stored command protocol')
   return {
     ...options,
+    commandProtocolVersion: storedCommandProtocol.version,
     walls: options.walls === 'reflective' || options.walls === 'wrap' || options.walls === 'concrete'
       ? options.walls
       : 'open',
@@ -216,6 +224,10 @@ export async function handleRestartGame(
   const storedRuleset = resolveStoredRulesetVersion(oldRoom.options)
   if (!storedRuleset.ok) {
     return json({ error: 'ruleset_unavailable' }, 409)
+  }
+  const storedCommandProtocol = resolveStoredCommandVersion(oldRoom.options)
+  if (!storedCommandProtocol.ok) {
+    return json({ error: 'command_protocol_unavailable' }, 409)
   }
 
   // The service-only RPC serializes contenders and publishes only a complete

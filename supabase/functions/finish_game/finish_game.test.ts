@@ -43,20 +43,31 @@ Deno.test('sanitizeScoreboard: a non-p tankId -> null', () => {
   assertEquals(sanitizeScoreboard([{ tankId: 'x1', playerName: 'X', roundWins: 0, kills: 0, totalDamage: 0 }], 2), null)
 })
 
-Deno.test('sanitizeScoreboard: negative / non-finite numerics coerce to 0', () => {
-  const out = sanitizeScoreboard(
-    [{ tankId: 'p1', playerName: 'X', roundWins: -5, kills: Number.NaN, totalDamage: -1 }],
-    1,
+Deno.test('sanitizeScoreboard: negative / non-finite numerics reject the report', () => {
+  assertEquals(
+    sanitizeScoreboard(
+      [{ tankId: 'p1', playerName: 'X', roundWins: -5, kills: Number.NaN, totalDamage: -1 }],
+      1,
+    ),
+    null,
   )
-  assertEquals(out, [{ tankId: 'p1', playerName: 'X', roundWins: 0, kills: 0, totalDamage: 0 }])
 })
 
-Deno.test('sanitizeScoreboard: fractional counts truncate; totalDamage stays fractional', () => {
-  const out = sanitizeScoreboard(
-    [{ tankId: 'p1', playerName: 'X', roundWins: 2.9, kills: 1.4, totalDamage: 12.75 }],
-    1,
+Deno.test('sanitizeScoreboard: fractional counters reject while bounded fractional damage remains valid', () => {
+  assertEquals(
+    sanitizeScoreboard(
+      [{ tankId: 'p1', playerName: 'X', roundWins: 2.9, kills: 1.4, totalDamage: 12.75 }],
+      1,
+    ),
+    null,
   )
-  assertEquals(out, [{ tankId: 'p1', playerName: 'X', roundWins: 2, kills: 1, totalDamage: 12.75 }])
+  assertEquals(
+    sanitizeScoreboard(
+      [{ tankId: 'p1', playerName: 'X', roundWins: 1, kills: 1, totalDamage: 12.75 }],
+      1,
+    ),
+    [{ tankId: 'p1', playerName: 'X', roundWins: 1, kills: 1, totalDamage: 12.75 }],
+  )
 })
 
 Deno.test('sanitizeScoreboard: playerName over 40 chars is truncated to 40', () => {
@@ -65,9 +76,11 @@ Deno.test('sanitizeScoreboard: playerName over 40 chars is truncated to 40', () 
   assertEquals(out?.[0].playerName.length, 40)
 })
 
-Deno.test('sanitizeScoreboard: a non-string playerName becomes ""', () => {
-  const out = sanitizeScoreboard([{ tankId: 'p1', playerName: 123, roundWins: 0, kills: 0, totalDamage: 0 }], 1)
-  assertEquals(out?.[0].playerName, '')
+Deno.test('sanitizeScoreboard: a non-string playerName rejects the report', () => {
+  assertEquals(
+    sanitizeScoreboard([{ tankId: 'p1', playerName: 123, roundWins: 0, kills: 0, totalDamage: 0 }], 1),
+    null,
+  )
 })
 
 Deno.test('sanitizeScoreboard: one malformed entry rejects the whole board -> null', () => {
@@ -79,4 +92,27 @@ Deno.test('sanitizeScoreboard: one malformed entry rejects the whole board -> nu
     2,
   )
   assertEquals(out, null)
+})
+
+Deno.test('sanitizeScoreboard: the board is one complete unique p1..pN roster', () => {
+  const p1 = { tankId: 'p1', playerName: 'Ana', roundWins: 1, kills: 1, totalDamage: 100 }
+  const p2 = { tankId: 'p2', playerName: 'Bo', roundWins: 0, kills: 0, totalDamage: 20 }
+  assertEquals(sanitizeScoreboard([p1], 2), null)
+  assertEquals(sanitizeScoreboard([p1, p1], 2), null)
+  assertEquals(sanitizeScoreboard([p2, p1], 2), [p1, p2])
+})
+
+Deno.test('sanitizeScoreboard: current game maxima bound counters and accumulated damage', () => {
+  assertEquals(
+    sanitizeScoreboard([{ tankId: 'p1', playerName: 'X', roundWins: 10, kills: 0, totalDamage: 0 }], 1),
+    null,
+  )
+  assertEquals(
+    sanitizeScoreboard([{ tankId: 'p1', playerName: 'X', roundWins: 0, kills: 37, totalDamage: 0 }], 1),
+    null,
+  )
+  assertEquals(
+    sanitizeScoreboard([{ tankId: 'p1', playerName: 'X', roundWins: 0, kills: 0, totalDamage: 3601 }], 1),
+    null,
+  )
 })
