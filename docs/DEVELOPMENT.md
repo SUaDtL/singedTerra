@@ -38,7 +38,8 @@ Use equivalent file-copy syntax on non-Windows systems.
 | `npm run check:edge` | Run Deno tests for all Edge Functions |
 | `npm run test:e2e` | Build, serve, and test the production UI in Chromium |
 | `npm run build` | Create `client/dist` |
-| `npm run deploy:backend` | Push migrations and deploy Edge Functions |
+| `npm run backend:release:check` | Validate the checked-in backend release proposal without credentials |
+| `npm run deploy:backend` | Credentialed local backend release command: validate, migrate, configure, then deploy the exact function inventory |
 
 ## Test layers
 
@@ -197,6 +198,12 @@ noninteractive project config (`config push --yes`), and the exact function
 inventory. It is a credentialed command; normal development and CI use
 `npm run backend:release:check` instead.
 
+Do not use this local command as a production approval path. The repository
+contains a proposed protected workflow and release manifest, but this recovery
+has no recorded `production-backend` environment, approved settings snapshot,
+or deployed backend capability. The workflow is designed to fail closed until
+those separate owner decisions and settings evidence exist.
+
 Production releases use the manual **Deploy backend (Supabase)** workflow. Its
 two inputs identify the reviewed proposal: the exact current `main` commit and
 the SHA-256 of its manifest. They do not authorize deployment. The
@@ -245,10 +252,11 @@ instead.
 
 Deliver the backend capability separately from client activation. Start that
 PR from current `main`, include the accepted backend compatibility work and this
-release gate, and exclude the client activation. Merge it and allow its ordinary
-Pages run to finish before separately approving the environment settings and an
-exact-SHA backend deployment. Prove the deployed capability before merging the
-client-bearing activation.
+release gate, and exclude the client activation. An owner-approved merge to
+`main` automatically starts the ordinary Pages publication, but that Pages run
+does not deploy the backend. After the separate environment-settings approval
+and exact-SHA backend deployment, prove the deployed capability before approving
+the client-bearing activation merge.
 
 Migrations 021 and 022 are additive compatibility work. Before any versioned
 state or receipt is written, recovery may redeploy the prior handlers while
@@ -261,6 +269,10 @@ delete completed receipts.
 
 Pushes to `main` build and publish the static client through
 `.github/workflows/deploy-pages.yml`.
+
+Because that publication is automatic, merging a client-bearing recovery branch
+is an owner decision. It must not be used to activate a backend capability that
+has not been deployed and evidenced first.
 
 The workflow:
 

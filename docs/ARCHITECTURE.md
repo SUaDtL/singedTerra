@@ -93,20 +93,30 @@ room options + seed + ordered room_actions
 
 `GameState` is not streamed between clients.
 
-Room options also carry an integer `rulesetVersion`. A missing field in a valid
-options object means legacy version `1`; malformed stored options fail closed.
-After the server-first capability rollout, `create_room` stores and echoes an
-explicit supported version `1` or `2`, while omission remains version `1` for
-deployed-client compatibility. `join_room` rejects a client whose requested
-version differs before changing the roster, and `submit_action` rejects a
-verified seat's mismatch before the action-log RPC. New browser rooms use
-version `2`. A browser first joins with version `2`, then retries exactly once as
-version `1` only when the referee returns HTTP 409 with error
-`ruleset_mismatch` and numeric `requiredRulesetVersion: 1`; every other response
-fails closed without a retry. The pre-mutation mismatch check makes the legacy
-retry safe. Lobby state, rematches, engine construction, and action retries use
-the room's authoritative version, so old and new browsers never interpret one
-committed action differently.
+### Ordinary-room compatibility
+
+Ordinary rooms persist two independent compatibility values. They are not a
+verified-replay policy and neither value is a model assignment.
+
+- `rulesetVersion` identifies the deterministic room options and replay
+  semantics. The referee recognizes stored versions `1` through `4`; a missing
+  value is legacy `1`, while malformed stored data fails closed. New browser
+  rooms request and store version `4`.
+- `commandProtocolVersion` identifies command-envelope, identity, revision, and
+  receipt semantics. It recognizes legacy version `1` and current version `2`.
+  A missing value is legacy `1`; new browser rooms request version `2`.
+
+Admission requires exact equality for both values before roster mutation.
+`join_room` returns a typed 409 mismatch that names the required ruleset or
+command protocol, and `submit_action` validates the command version before the
+room-command RPC. Rejoin, rematch, engine construction, and retries retain the
+authoritative stored values. Therefore a client cannot silently replay an
+active room with newer engine or command semantics.
+
+The v2 command envelope carries a stable intent identifier, expected room
+revision, acting player, action, and optional turn-transition metadata. A
+receipt and committed action row repeat that identity and revision. This is
+transport/idempotency metadata, not a new gameplay ruleset.
 
 ## Dependency direction
 
@@ -196,6 +206,24 @@ separate from seat authorization and does not make a casual result verified.
 - Edge Functions hold the service-role key and perform validated writes.
 - Gameplay integrity is designed for casual rooms, not adversarial ranked play.
 - Server secrets must never enter the client bundle, repository, or logs.
+
+Casual results and verified rewards use different evidence paths. A completed
+casual room stores or links only `casual_participant_reported` evidence. Account
+linkage identifies the authenticated participant and never upgrades that result
+to replay-verified evidence or changes verified progression.
+
+Verified Deployment is a separate authenticated, server-replayed mode. Its
+accepted active tuples are `2/2/4` and `3/3/4`
+(`contract/engine/ruleset`). The current start handler selects from those
+capabilities. The older shared constants still name `2/2/4` for legacy callers;
+they are not proof that `3/3/4` is unsupported. Historical completed `1/1/3`
+sessions are immutable receipts: an identical completion retry returns the
+stored result without replay, and no active `1/1/3` session is interpreted by a
+newer engine. V1 drains before V2 admission can begin. V2 and V3 have
+independent admission controls. A compatible unexpired active V2 or V3 session
+resumes when the client advertises that exact tuple, even if new starts are
+disabled. For a new session, the start handler selects the highest enabled tuple
+advertised by the client.
 
 Read [SECURITY.md](../SECURITY.md) for the accepted trust model and private
 reporting path.

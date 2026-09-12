@@ -59,8 +59,9 @@ Both workspace packages are `private: true`.
 | Lint | — | **None.** No ESLint/Prettier/Biome config or script. `tsc --noEmit` (strict) is the static gate. |
 | Deploy client | — | GitHub Pages via `.github/workflows/deploy-pages.yml` on push to `main` (no CLI script) |
 | Secrets scan | `python "<active-codearbiter-plugin-root>/hooks/preview.py" secrets` | codeArbiter's state-free scanner over staged, unstaged, and untracked changed files; the host resolves the active plugin root before invocation. |
-| Deploy backend | `npm run deploy:backend` | `supabase db push --yes && supabase config push && supabase functions deploy --use-api --yes` (lockfile-pinned CLI; config diff requires interactive confirmation) |
-| Deploy all | `npm run deploy` | backend then client |
+| Backend release proposal check | `npm run backend:release:check` | Credential-free validation of the pinned CLI, manifest, migration/config/function inventory, and release-source identity. It does not deploy. |
+| Deploy backend | `npm run deploy:backend` | Validates first, then uses the lockfile-pinned CLI to run `db push --linked --yes`, `config push --yes`, and the manifest's explicit function list. It is credentialed and is not a production-approval path. |
+| Deploy all | `npm run deploy` | Alias for the backend command only. Client publication is the Pages workflow after an approved merge to `main`. |
 
 ## Testing
 
