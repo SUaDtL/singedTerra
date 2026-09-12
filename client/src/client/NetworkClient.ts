@@ -24,6 +24,7 @@ import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFi
 import { postOnceWithRetry, settleWithDeadline } from './retry';
 import { claimCompletedMatch } from './matchClaim';
 import { fastForwardTicks } from './fastForward';
+import { FrameClock } from './frameClock';
 import { callFunction, edgeUrl, edgeHeaders } from '../lib/edgeFunctions';
 import { clearSession } from '../lib/sessionDescriptor';
 import { OrderedActionSession } from './OrderedActionSession';
@@ -238,7 +239,10 @@ export class NetworkClient implements GameClient {
   // didn't have one to pass in (e.g. a reload mid-room).
   private token:            string;
   private listeners:        Set<StateChangeListener>;
+  private readonly frameClock = new FrameClock();
   private rafId:            number | null;
+  private frameRunning = false;
+  private frameGeneration = 0;
   private channel:          RealtimeChannel | null;   // room_actions INSERT subscription
   private roomsChannel:     RealtimeChannel | null;   // rooms UPDATE subscription (lobby)
   private quickChatChannel: RealtimeChannel | null;
@@ -584,8 +588,8 @@ export class NetworkClient implements GameClient {
   }
 
   /**
-   * Begin the rAF loop. engine.tick() is called each frame (~60fps) and
-   * state is emitted to listeners.
+   * Begin the rAF loop. RAF timestamps produce fixed 60 Hz logical beats;
+   * each beat advances complete engine ticks and emits one presentation state.
    *
    * NOTE: In LIVE play a fire echo is applied in flushPendingActions WITHOUT
    * ticking to completion (tickToCompletion runs only during initialize() replay).
@@ -599,39 +603,52 @@ export class NetworkClient implements GameClient {
   }
 
   start(): void {
-    const loop = () => {
-      // Fast-forward (review #7) runs several fixed-step ticks per frame while a shot
-      // is live — SAME tick count + outcome as 1/frame (deterministic), just fewer
-      // frames drawn. The per-tick wasBusy/!nowBusy drain below is UNCHANGED and still
-      // runs at most once per frame (we break on it), so the seq-ordered buffered-action
-      // hand-off at the shot boundary is preserved exactly — fast-forward is pure local
-      // view pacing and never touches the log or the lockstep drain.
-      const maxTicks = fastForwardTicks(this._fastForward, this.engine.getState().phase);
-      for (let i = 0; i < maxTicks; i++) {
-        const preTick = this.engine.getState().phase;
-        const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
-        this.engine.tick();
-        const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
-        // When the engine LEAVES the entire flight-resolution sequence (FIRING then
-        // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
-        // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
-        // the engine re-enters FIRING, so the RAF loop advances the queue between
-        // shots — this prevents a buffered N+1 from being dropped while N is still
-        // in the settle phase (P0-2 + RESOLVING regression).
-        if (wasBusy && !nowBusy) {
-          this.flushPendingActions();
-          break; // one drain per frame; next shot animates fresh next frame
-        }
-        if (!wasBusy) break; // input-accepting phase — tick() is a no-op, don't spin
-      }
-      this.emitState();
-      if (this._disposed) return;
-      this.rafId = requestAnimationFrame(loop);
+    if (this._disposed || this.frameRunning) return;
+    this.frameRunning = true;
+    const generation = ++this.frameGeneration;
+    this.frameClock.reset(performance.now());
+    const isCurrent = (): boolean => (
+      !this._disposed && this.frameRunning && this.frameGeneration === generation
+    );
+    const schedule = (loop: FrameRequestCallback): void => {
+      if (isCurrent()) this.rafId = requestAnimationFrame(loop);
     };
-    this.rafId = requestAnimationFrame(loop);
+    const loop: FrameRequestCallback = (timestamp): void => {
+      if (!isCurrent()) return;
+      this.rafId = null;
+      const logicalBeats = this.frameClock.advance(timestamp);
+      for (let beat = 0; beat < logicalBeats; beat++) {
+        if (!isCurrent()) return;
+        // Fast-forward runs eight fixed ticks per logical beat while a shot is
+        // busy. Ordered-action handoff remains limited to one drain per beat.
+        const maxTicks = fastForwardTicks(this._fastForward, this.engine.getState().phase);
+        for (let i = 0; i < maxTicks; i++) {
+          const preTick = this.engine.getState().phase;
+          const wasBusy = preTick === 'FIRING' || preTick === 'RESOLVING';
+          this.engine.tick();
+          const nowBusy = this.engine.getState().phase === 'FIRING' || this.engine.getState().phase === 'RESOLVING';
+          // When the engine LEAVES the entire flight-resolution sequence (FIRING then
+          // RESOLVING) and reaches an input-accepting phase (PLAYER_TURN/ROUND_OVER/
+          // GAME_OVER), drain the NEXT buffered action. flushPendingActions stops once
+          // the engine re-enters FIRING, so the next logical beat advances that shot.
+          if (wasBusy && !nowBusy) {
+            this.flushPendingActions();
+            break;
+          }
+          if (!wasBusy) break;
+        }
+        if (!isCurrent()) return;
+        this.emitState();
+        if (!isCurrent()) return;
+      }
+      schedule(loop);
+    };
+    schedule(loop);
   }
 
   stop(): void {
+    this.frameRunning = false;
+    this.frameGeneration++;
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
     this.retirePendingCommands();

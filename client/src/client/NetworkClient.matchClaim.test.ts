@@ -125,9 +125,12 @@ async function gameOverClient(session: { access_token: string } | null): Promise
 
 describe('NetworkClient match-completion claim wiring', () => {
   let rafCallback: FrameRequestCallback | null = null;
+  let rafTimestamp = 0;
 
   beforeEach(() => {
     vi.useFakeTimers();
+    rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-test');
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { rafCallback = callback; return 1; });
@@ -168,8 +171,10 @@ describe('NetworkClient match-completion claim wiring', () => {
     const actionTracking = actionTrackingSnapshot(client);
 
     client.start();
-    rafCallback?.(0);
-    rafCallback?.(16);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     expect(calls).toEqual(['finish_game']);
     expect(completeStateSnapshot(client)).toEqual(completedState);
     expect(actionTrackingSnapshot(client)).toEqual(actionTracking);
@@ -221,7 +226,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
-    rafCallback?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     await settle();
 
     expect(calls).toEqual(['finish_game']);
@@ -240,7 +246,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
-    rafCallback?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     await settle();
 
     expect(calls).toEqual(['finish_game', 'claim_match']);
@@ -261,7 +268,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
-    rafCallback?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     await settle();
     client.stop();
     claim.resolve(response(true, 200));

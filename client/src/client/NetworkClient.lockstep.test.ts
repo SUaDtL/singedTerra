@@ -186,6 +186,8 @@ describe('NetworkClient — deterministic lockstep core', () => {
   it('drains the next buffered fire after the live projectile resolves', async () => {
     const { supabase, captured } = makeFakeSupabase([{ data: [], error: null }]);
     const rafQueue: FrameRequestCallback[] = [];
+    let rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     const cancelAnimationFrame = vi.fn();
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       rafQueue.push(cb);
@@ -213,7 +215,8 @@ describe('NetworkClient — deterministic lockstep core', () => {
     let frames = 0;
     while (rafQueue.length > 0 && frames < 2_000) {
       const frame = rafQueue.shift()!;
-      frame(0);
+      rafTimestamp += 1_000 / 60;
+      frame(rafTimestamp);
       frames++;
       if (client.getState().phase === 'PLAYER_TURN' && client.getState().turn >= 2) break;
     }
@@ -235,7 +238,10 @@ describe('NetworkClient — deterministic lockstep core', () => {
     const pendingFrames = rafQueue.splice(0);
     client.stop();
     expect(cancelAnimationFrame).toHaveBeenCalledOnce();
-    pendingFrames.forEach((frame) => frame(0));
+    pendingFrames.forEach((frame) => {
+      rafTimestamp += 1_000 / 60;
+      frame(rafTimestamp);
+    });
     expect({
       phase: client.getState().phase,
       turn: client.getState().turn,

@@ -190,12 +190,15 @@ function neverSettles(): Promise<never> {
 
 describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
   let rafCb: FrameRequestCallback | null = null;
+  let rafTimestamp = 0;
 
   beforeEach(() => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-test');
     // Capture the rAF loop callback so frames can be pumped one at a time.
     rafCb = null;
+    rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     aiProbe.calls = 0;
     aiProbe.afterPlan = null;
     aiProbe.plans.length = 0;
@@ -203,13 +206,15 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     vi.stubGlobal('cancelAnimationFrame', () => {});
   });
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
 
   /** Run one rAF frame (emitState -> maybeDriveBot), then let async fetch handlers settle. */
   async function pumpFrame(): Promise<void> {
-    rafCb?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCb?.(rafTimestamp);
     await settle();
   }
 
@@ -1207,7 +1212,8 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       client = configured.client;
       setExhaustedRichBot(configured.engine);
 
-      rafCb?.(0);
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
       await settleMicrotasks();
       const buy = submittedAction(fetchMock, 0);
       configured.captured.insertHandler?.({
@@ -1225,7 +1231,8 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
 
       await vi.advanceTimersByTimeAsync(9_000);
       await settleMicrotasks();
-      rafCb?.(0);
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
       await settleMicrotasks();
 
       expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -1248,14 +1255,16 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       client = configured.client;
       setExhaustedRichBot(configured.engine);
 
-      rafCb?.(0);
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
       await settleMicrotasks();
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const firstBody = (fetchMock.mock.calls[0]?.[1] as RequestInit).body;
 
       await vi.advanceTimersByTimeAsync(9_000);
       await settleMicrotasks();
-      rafCb?.(0);
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
       await settleMicrotasks();
 
       expect(fetchMock).toHaveBeenCalledTimes(2);

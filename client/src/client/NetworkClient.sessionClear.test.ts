@@ -97,6 +97,7 @@ function engineOf(client: NetworkClient): EngineAccess['engine'] {
 
 describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
   let rafCb: FrameRequestCallback | null = null;
+  let rafTimestamp = 0;
 
   beforeEach(() => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
@@ -107,10 +108,13 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
       /* jsdom localStorage always present, but stay defensive */
     }
     rafCb = null;
+    rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
     vi.stubGlobal('cancelAnimationFrame', () => {});
   });
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -145,7 +149,8 @@ describe('NetworkClient — clearSession() on GAME_OVER (T-07, AC-04)', () => {
     // emitState()'s one-shot GAME_OVER hook fires on the first real frame after
     // start(), same as live bootstrap (initialize() then start()).
     client.start();
-    rafCb?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCb?.(rafTimestamp);
 
     expect(readSession()).toBeNull();
   });
