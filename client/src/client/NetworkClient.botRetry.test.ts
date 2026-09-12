@@ -19,6 +19,31 @@ import { NetworkClient } from './NetworkClient';
 import type { NetworkAction } from '@shared/net/replay';
 import type { GameEngine } from '@shared/engine/GameEngine';
 import { cpuRoomIntentId } from '@shared/net/roomCommand';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+
+const aiProbe = vi.hoisted(() => ({
+  calls: 0,
+  afterPlan: null as (() => void) | null,
+  plans: [] as Array<{
+    weapon: string;
+    buy?: string;
+    buyAccessory?: string;
+  } | null>,
+}));
+
+vi.mock('@shared/engine/AI', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@shared/engine/AI')>();
+  return {
+    ...actual,
+    computeAiPlan: (...args: Parameters<typeof actual.computeAiPlan>) => {
+      aiProbe.calls += 1;
+      const plan = actual.computeAiPlan(...args);
+      aiProbe.plans.push(plan);
+      aiProbe.afterPlan?.();
+      return plan;
+    },
+  };
+});
 
 // p1 is THIS client (a human); p2 is a CPU seat this client drives.
 const OPTIONS = {
@@ -171,6 +196,9 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-test');
     // Capture the rAF loop callback so frames can be pumped one at a time.
     rafCb = null;
+    aiProbe.calls = 0;
+    aiProbe.afterPlan = null;
+    aiProbe.plans.length = 0;
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
     vi.stubGlobal('cancelAnimationFrame', () => {});
   });
@@ -279,6 +307,22 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     target.health = 100;
   }
 
+  function setRiskyLedgeForBot(engine: GameEngine): void {
+    const state = engine.getState();
+    const bot = state.tanks[1];
+    if (!bot) throw new Error('network bot fixture requires a CPU tank');
+    state.terrain.fill(0);
+    const ledgeX = Math.floor(bot.x);
+    for (let x = 0; x < CANVAS_WIDTH; x += 1) {
+      const surface = x < ledgeX ? 220 : 340;
+      for (let y = surface; y < CANVAS_HEIGHT; y += 1) {
+        state.terrain[y * CANVAS_WIDTH + x] = 1;
+      }
+    }
+    bot.y = 220;
+    bot.accessories.parachute = 0;
+  }
+
   function submittedAction(fetchMock: ReturnType<typeof vi.fn>, call: number): NetworkAction {
     const init = fetchMock.mock.calls[call]?.[1] as RequestInit | undefined;
     const body = JSON.parse(String(init?.body)) as { command: { action: NetworkAction } };
@@ -325,20 +369,230 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     await pumpFrame();
     await pumpFrame();
     expect(fetchMock).toHaveBeenCalledTimes(1); // committed on frame 1, latched thereafter
+    expect(aiProbe.calls).toBe(1);
 
     client.stop();
   });
 
-  it('does not spam duplicate submits while one POST is in flight — OB-3', async () => {
+  it('does not repeat real planner work or submissions while one unchanged POST is in flight — OB-3/AC-072', async () => {
     // A fetch that never resolves keeps the phase in flight. The per-frame emitState
     // cadence must not fire a second POST while the first is outstanding.
     const fetchMock = vi.fn().mockReturnValue(new Promise<never>(() => {}));
     const client = await botTurnClient(fetchMock);
 
-    await pumpFrame();
-    await pumpFrame();
+    for (let frame = 0; frame < 60; frame += 1) await pumpFrame();
     expect(fetchMock).toHaveBeenCalledTimes(1); // in-flight guard blocks the second frame
+    expect(aiProbe.calls).toBe(1);
 
+    client.stop();
+  });
+
+  it('retains the full-tier real plan through weapon and accessory preparation in local order — AC-073/075', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 1 }) });
+    const { client, captured, engine } = await configuredBotTurnClient(fetchMock, 4);
+    setExhaustedRichBot(engine, 36_000);
+    setRiskyLedgeForBot(engine);
+    const bot = engine.getState().tanks[1];
+    if (!bot) throw new Error('network bot fixture requires a CPU tank');
+
+    await pumpFrame();
+    const weaponBuy = submittedAction(fetchMock, 0);
+    expect(aiProbe.plans[0]).toMatchObject({
+      weapon: 'deaths_head',
+      buy: 'deaths_head',
+      buyAccessory: 'parachute',
+    });
+    expect(weaponBuy).toEqual({ type: 'buy', weapon: 'deaths_head' });
+    captured.insertHandler?.({
+      new: { id: 'weapon-buy', room_id: 'room-1', seq: 1, player_id: 'bot-def', action: weaponBuy, created_at: '' },
+    });
+    await settle();
+
+    const accessoryBuy = submittedAction(fetchMock, 1);
+    expect(accessoryBuy).toEqual({ type: 'buy', accessory: 'parachute' });
+    captured.insertHandler?.({
+      new: { id: 'accessory-buy', room_id: 'room-1', seq: 2, player_id: 'bot-def', action: accessoryBuy, created_at: '' },
+    });
+    await settle();
+
+    const attack = submittedAction(fetchMock, 2);
+    expect(attack).toMatchObject({ type: 'fire', weapon: 'deaths_head' });
+    captured.insertHandler?.({
+      new: { id: 'attack', room_id: 'room-1', seq: 3, player_id: 'bot-def', action: attack, created_at: '' },
+    });
+    captured.insertHandler?.({
+      new: { id: 'attack-duplicate', room_id: 'room-1', seq: 3, player_id: 'bot-def', action: attack, created_at: '' },
+    });
+    await settle();
+
+    const appliedLog = (client as unknown as { appliedLog: NetworkAction[] }).appliedLog;
+    expect(appliedLog.slice(1)).toEqual([
+      expect.objectContaining(weaponBuy),
+      expect.objectContaining(accessoryBuy),
+      expect.objectContaining(attack),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(aiProbe.calls).toBe(1);
+    expect(bot.credits).toBe(8_000);
+    expect(bot.inventory.deaths_head.count).toBe(0);
+    expect(bot.accessories.parachute).toBe(1);
+    client.stop();
+  });
+
+  it('reconstructs the same remaining full-tier plan from public initialize history as live delivery — AC-073/075', async () => {
+    const liveFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 1 }) });
+    const { client: liveClient, captured, engine: liveEngine } = await configuredBotTurnClient(liveFetch, 4);
+    setExhaustedRichBot(liveEngine, 36_000);
+    setRiskyLedgeForBot(liveEngine);
+
+    await pumpFrame();
+    const weaponBuy = submittedAction(liveFetch, 0);
+    expect(weaponBuy).toEqual({ type: 'buy', weapon: 'deaths_head' });
+    captured.insertHandler?.({
+      new: { id: 'live-weapon-buy', room_id: 'room-1', seq: 1, player_id: 'bot-def', action: weaponBuy, created_at: '' },
+    });
+    await settle();
+    const liveRemainingAction = submittedAction(liveFetch, 1);
+    expect(liveRemainingAction).toEqual({ type: 'buy', accessory: 'parachute' });
+    liveClient.stop();
+
+    const historyFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 2 }) });
+    installV2Fetch(historyFetch);
+    const human = OPTIONS.players[0];
+    const bot = OPTIONS.players[1];
+    if (!human || !bot) throw new Error('network bot fixture requires two players');
+    const options = {
+      ...OPTIONS,
+      armsLevel: 4,
+      players: [human, { ...bot, ai: 'hard' as const }],
+    };
+    const historicalWeaponBuy = {
+      id: 'historical-weapon-buy',
+      room_id: 'room-1',
+      seq: 1,
+      player_id: 'bot-def',
+      action: weaponBuy,
+      created_at: '',
+    };
+    const { supabase } = makeFakeSupabase([{
+      data: [p1FireRow().new, historicalWeaponBuy],
+      error: null,
+    }]);
+    const historyClient = new NetworkClient(supabase, 'room-1', 'player-abc', options, undefined, 2);
+    const historyInternals = historyClient as unknown as {
+      engine: GameEngine;
+      tickToCompletion(): void;
+    };
+    const tickToCompletion = historyInternals.tickToCompletion.bind(historyClient);
+    let fixtureInstalled = false;
+    vi.spyOn(historyInternals, 'tickToCompletion').mockImplementation(() => {
+      tickToCompletion();
+      if (fixtureInstalled || historyInternals.engine.getState().activePlayerId !== 'p2') return;
+      fixtureInstalled = true;
+      setExhaustedRichBot(historyInternals.engine, 36_000);
+      setRiskyLedgeForBot(historyInternals.engine);
+    });
+
+    await historyClient.initialize();
+    expect(fixtureInstalled).toBe(true);
+    const historyBot = historyInternals.engine.getState().tanks[1];
+    if (!historyBot) throw new Error('network bot fixture requires a CPU tank');
+    expect(historyBot.credits).toBe(12_000);
+    expect(historyBot.accessories.parachute).toBe(0);
+    expect(historyFetch).not.toHaveBeenCalled(); // reconstruction never submits during replay
+
+    historyClient.start();
+    await pumpFrame();
+
+    expect(submittedAction(historyFetch, 0)).toEqual(liveRemainingAction);
+    expect(aiProbe.calls).toBe(2); // one original plan per equivalent client state
+    historyClient.stop();
+  });
+
+  it('carries a canonical no-op skip across revisions and completes the remaining real plan — AC-073/074', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 1 }) });
+    const { client, captured, engine } = await configuredBotTurnClient(fetchMock, 1);
+    setExhaustedRichBot(engine);
+    setRiskyLedgeForBot(engine);
+    const bot = engine.getState().tanks[1];
+    if (!bot) throw new Error('network bot fixture requires a CPU tank');
+    const startingTurn = engine.getState().turn;
+
+    await pumpFrame();
+    const ineffectiveWeaponBuy = submittedAction(fetchMock, 0);
+    expect(ineffectiveWeaponBuy).toEqual({ type: 'buy', weapon: 'nuke' });
+    vi.spyOn(engine, 'applyAction').mockImplementationOnce(() => false);
+    captured.insertHandler?.({
+      new: { id: 'weapon-no-op', room_id: 'room-1', seq: 1, player_id: 'bot-def', action: ineffectiveWeaponBuy, created_at: '' },
+    });
+    await settle();
+
+    const accessoryBuy = submittedAction(fetchMock, 1);
+    expect(accessoryBuy).toEqual({ type: 'buy', accessory: 'parachute' });
+    captured.insertHandler?.({
+      new: { id: 'accessory-buy', room_id: 'room-1', seq: 2, player_id: 'bot-def', action: accessoryBuy, created_at: '' },
+    });
+    await settle();
+
+    const fallback = submittedAction(fetchMock, 2);
+    expect(fallback).toMatchObject({ type: 'fire', weapon: 'baby_missile' });
+    expect(fetchMock.mock.calls.map((_call, index) => submittedAction(fetchMock, index)))
+      .toEqual([ineffectiveWeaponBuy, accessoryBuy, fallback]);
+    expect(aiProbe.calls).toBe(1);
+    expect(bot.inventory.nuke.count).toBe(0);
+    expect(bot.accessories.parachute).toBe(1);
+
+    captured.insertHandler?.({
+      new: { id: 'fallback', room_id: 'room-1', seq: 3, player_id: 'bot-def', action: fallback, created_at: '' },
+    });
+    tickToRest(engine);
+    expect(engine.getState().turn).toBe(startingTurn + 1);
+    client.stop();
+  });
+
+  it('skips a canonical accessory no-op across the next revision and attacks once — AC-073/074', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, seq: 1 }) });
+    const { client, captured, engine } = await configuredBotTurnClient(fetchMock, 1);
+    setRiskyLedgeForBot(engine);
+    const bot = engine.getState().tanks[1];
+    if (!bot) throw new Error('network bot fixture requires a CPU tank');
+
+    await pumpFrame();
+    const ineffectiveAccessoryBuy = submittedAction(fetchMock, 0);
+    expect(ineffectiveAccessoryBuy).toEqual({ type: 'buy', accessory: 'parachute' });
+    vi.spyOn(engine, 'applyAction').mockImplementationOnce(() => false);
+    captured.insertHandler?.({
+      new: { id: 'accessory-no-op', room_id: 'room-1', seq: 1, player_id: 'bot-def', action: ineffectiveAccessoryBuy, created_at: '' },
+    });
+    await settle();
+
+    const attack = submittedAction(fetchMock, 1);
+    expect(attack.type === 'fire' || attack.type === 'use_shield').toBe(true);
+    for (let frame = 0; frame < 10; frame += 1) await pumpFrame();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(aiProbe.calls).toBe(1);
+    expect(bot.accessories.parachute).toBe(0);
+    expect(fetchMock.mock.calls.map((_call, index) => submittedAction(fetchMock, index)))
+      .toEqual([ineffectiveAccessoryBuy, attack]);
+    client.stop();
+  });
+
+  it('does not submit a plan whose command generation retired during real planning — AC-074', async () => {
+    const fetchMock = vi.fn().mockReturnValue(neverSettles());
+    const { client } = await configuredBotTurnClient(fetchMock, 1);
+    let retired = false;
+    aiProbe.afterPlan = () => {
+      if (retired) return;
+      retired = true;
+      // Exercise the lifecycle primitive directly so retirement happens after the
+      // real synchronous planner returns but before maybeDriveBot can submit it.
+      (client as unknown as { retirePendingCommands(): void }).retirePendingCommands();
+    };
+
+    await pumpFrame();
+
+    expect(aiProbe.calls).toBe(1);
+    expect(fetchMock).not.toHaveBeenCalled();
     client.stop();
   });
 
@@ -1006,6 +1260,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body).toBe(firstBody);
+      expect(aiProbe.calls).toBe(1);
     } finally {
       client?.stop();
       vi.useRealTimers();

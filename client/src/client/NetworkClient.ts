@@ -17,8 +17,8 @@ import {
 } from '@shared/types/TankLoadout';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
-import { computeAiPlan } from '@shared/engine/AI';
-import type { WeaponType } from '@shared/engine/WeaponSystem';
+import { computeAiPlan, type AiPlan } from '@shared/engine/AI';
+import type { AccessoryType, WeaponType } from '@shared/engine/WeaponSystem';
 import { GRAVITY, MAX_WIND } from '@shared/engine/Physics';
 import { replayNetworkAction, replayInChunks, type NetworkAction, type NetworkFireAction } from '@shared/net/replay';
 import { postOnceWithRetry, settleWithDeadline } from './retry';
@@ -93,6 +93,27 @@ interface BotActionAttempt {
   settlement: 'pending' | 'accepted' | 'conflict';
   sawCanonicalProgress: boolean;
 }
+
+interface BotPlanCache {
+  generation: number;
+  expectedRevision: number;
+  round: number;
+  turn: number;
+  tankId: string;
+  plan: AiPlan | null;
+  weaponPreparationComplete: boolean;
+  accessoryPreparationComplete: boolean;
+}
+
+type BotPreparation = {
+  generation: number;
+  expectedRevision: number;
+  round: number;
+  turn: number;
+} & (
+  | { key: string; tankId: string; kind: 'weapon'; weapon: WeaponType }
+  | { key: string; tankId: string; kind: 'accessory'; accessory: AccessoryType; previousCount: number }
+);
 
 const ROOM_COMMAND_CONFLICT_STATUS: Readonly<Record<string, number>> = {
   revision_conflict: 409,
@@ -316,7 +337,9 @@ export class NetworkClient implements GameClient {
   private lastBotKey:       string | null = null;
   private botSubmitPendingKey: string | null = null;
   private botActionAttempt: BotActionAttempt | null = null;
+  private botPlanCache: BotPlanCache | null = null;
   private botPreparationFailedKey: string | null = null;
+  private botAccessoryPreparationFailedKey: string | null = null;
   private botPreparationFailureMessage: string | null = null;
   private pendingBotPreparationNotice: string | null = null;
 
@@ -431,6 +454,7 @@ export class NetworkClient implements GameClient {
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
     this.orderedActions.finishReplay(rows.length);
+    this.finishBotPlanReplay();
     this.clearStaleBotPreparationFailure();
 
     // 2. Subscribe to new room_actions rows via Realtime Postgres Changes.
@@ -634,7 +658,9 @@ export class NetworkClient implements GameClient {
     this.quickChatListeners.clear();
     this.accountProgressListeners.clear();
     this.botActionAttempt = null;
+    this.botPlanCache = null;
     this.botPreparationFailedKey = null;
+    this.botAccessoryPreparationFailedKey = null;
     this.botPreparationFailureMessage = null;
     this.pendingBotPreparationNotice = null;
   }
@@ -1292,6 +1318,7 @@ export class NetworkClient implements GameClient {
     this.pendingRoomCommand = null;
     this.botSubmitPendingKey = null;
     this.botActionAttempt = null;
+    this.botPlanCache = null;
   }
 
   /**
@@ -1300,7 +1327,7 @@ export class NetworkClient implements GameClient {
    * Preparation recovery is derived here from canonical before/after state so
    * live observers, resyncs, and late-history replays reach the same decision.
    */
-  private applyNetworkAction(action: NetworkAction): void {
+  private applyNetworkAction(action: NetworkAction, expectedRevision = this.nextExpectedSeq): void {
     const before = this.engine.getState();
     const context = {
       phase: before.phase,
@@ -1308,7 +1335,7 @@ export class NetworkClient implements GameClient {
       turn: before.turn,
       tankId: before.activePlayerId,
     };
-    const preparation = this.describeBotPreparation(action, before);
+    const preparation = this.describeBotPreparation(action, before, expectedRevision);
     replayNetworkAction(this.engine, action);
     this.appliedLog.push(action);
     if (preparation) this.reconcileBotPreparation(preparation);
@@ -1322,7 +1349,7 @@ export class NetworkClient implements GameClient {
       const matches = row.intent_id === pending.envelope.intentId
         && row.player_id === pending.envelope.actorPlayerId
         && networkActionsEqual(row.action, pending.envelope.action);
-      this.applyNetworkAction(row.action);
+      this.applyNetworkAction(row.action, row.seq);
       if (matches) {
         return () => {
           this.releaseFiringFor(pending);
@@ -1341,7 +1368,7 @@ export class NetworkClient implements GameClient {
       return null;
     }
 
-    this.applyNetworkAction(row.action);
+    this.applyNetworkAction(row.action, row.seq);
     return null;
   }
 
@@ -1432,24 +1459,43 @@ export class NetworkClient implements GameClient {
   private describeBotPreparation(
     action: NetworkAction,
     state: GameState,
-  ): { outcomeKey: string; tankId: string; weapon: WeaponType } | null {
-    if (state.phase !== 'PLAYER_TURN' || action.type !== 'buy' || !action.weapon) return null;
+    expectedRevision: number,
+  ): BotPreparation | null {
+    if (state.phase !== 'PLAYER_TURN' || action.type !== 'buy') return null;
     const tankId = state.activePlayerId;
     const difficulty = this.botByTank.get(tankId);
     if (!difficulty) return null;
-    const plan = computeAiPlan(
-      state,
-      tankId,
-      difficulty,
-      this.engine.getEffectiveGravity(),
-      this.armsLevel,
-    );
-    if (!plan?.buy || plan.buy !== action.weapon) return null;
-    return {
-      outcomeKey: `${state.round}:${state.turn}:${tankId}:${plan.buy}`,
-      tankId,
-      weapon: plan.buy,
+    const plan = this.getBotPlan(state, tankId, difficulty, expectedRevision);
+    if (!plan) return null;
+    const cache = this.botPlanCache;
+    if (!cache) return null;
+    const context = {
+      generation: cache.generation,
+      expectedRevision: cache.expectedRevision,
+      round: cache.round,
+      turn: cache.turn,
     };
+    if (action.weapon && plan.buy === action.weapon) {
+      return {
+        ...context,
+        key: this.botPreparationKey(state, tankId, 'weapon', action.weapon),
+        tankId,
+        kind: 'weapon',
+        weapon: action.weapon,
+      };
+    }
+    if (action.accessory && plan.buyAccessory === action.accessory) {
+      const previousCount = state.tanks.find((tank) => tank.id === tankId)?.accessories[action.accessory] ?? 0;
+      return {
+        ...context,
+        key: this.botPreparationKey(state, tankId, 'accessory', action.accessory),
+        tankId,
+        kind: 'accessory',
+        accessory: action.accessory,
+        previousCount,
+      };
+    }
+    return null;
   }
 
   /**
@@ -1458,11 +1504,25 @@ export class NetworkClient implements GameClient {
    * not submit the buy itself or is replaying it from history.
    */
   private reconcileBotPreparation(
-    preparation: { outcomeKey: string; tankId: string; weapon: WeaponType },
+    preparation: BotPreparation,
   ): void {
     const state = this.engine.getState();
+    if (!this.advanceBotPlanPreparation(preparation, state)) this.botPlanCache = null;
+    if (preparation.kind === 'accessory') {
+      const currentCount = state.tanks.find((tank) => tank.id === preparation.tankId)
+        ?.accessories[preparation.accessory] ?? 0;
+      if (currentCount > preparation.previousCount) {
+        if (this.botAccessoryPreparationFailedKey === preparation.key) {
+          this.botAccessoryPreparationFailedKey = null;
+        }
+      } else {
+        this.botAccessoryPreparationFailedKey = preparation.key;
+      }
+      return;
+    }
+
     if (hasUsableWeapon(state, preparation.tankId, preparation.weapon)) {
-      if (this.botPreparationFailedKey === preparation.outcomeKey) {
+      if (this.botPreparationFailedKey === preparation.key) {
         this.botPreparationFailedKey = null;
         this.botPreparationFailureMessage = null;
         this.pendingBotPreparationNotice = null;
@@ -1474,16 +1534,62 @@ export class NetworkClient implements GameClient {
       ? 'CPU restock failed — using Baby Missile.'
       : 'CPU has no usable ammunition — reload to continue.';
     if (
-      this.botPreparationFailedKey === preparation.outcomeKey
+      this.botPreparationFailedKey === preparation.key
       && this.botPreparationFailureMessage === message
     ) return;
-    this.botPreparationFailedKey = preparation.outcomeKey;
+    this.botPreparationFailedKey = preparation.key;
     this.botPreparationFailureMessage = message;
     if (this.fireFailedListeners.size === 0) {
       this.pendingBotPreparationNotice = message;
       return;
     }
     for (const listener of this.fireFailedListeners) listener(message);
+  }
+
+  private advanceBotPlanPreparation(preparation: BotPreparation, state: GameState): boolean {
+    const cache = this.botPlanCache;
+    if (
+      !cache
+      || !cache.plan
+      || cache.generation !== preparation.generation
+      || cache.generation !== this.commandGeneration
+      || cache.expectedRevision !== preparation.expectedRevision
+      || (!this.orderedActions.isReplaying && cache.expectedRevision !== this.nextExpectedSeq)
+      || cache.round !== preparation.round
+      || cache.turn !== preparation.turn
+      || cache.tankId !== preparation.tankId
+      || state.phase !== 'PLAYER_TURN'
+      || state.round !== preparation.round
+      || state.turn !== preparation.turn
+      || state.activePlayerId !== preparation.tankId
+    ) return false;
+
+    if (preparation.kind === 'weapon') {
+      if (cache.weaponPreparationComplete || cache.plan.buy !== preparation.weapon) return false;
+      cache.weaponPreparationComplete = true;
+    } else {
+      if (cache.accessoryPreparationComplete || cache.plan.buyAccessory !== preparation.accessory) return false;
+      cache.accessoryPreparationComplete = true;
+    }
+    // OrderedActions commits this exact row's cursor immediately after replay.
+    // Retain the original choices while advancing the single cached plan to that
+    // next canonical revision; unrelated progress cannot satisfy these checks.
+    cache.expectedRevision = preparation.expectedRevision + 1;
+    return true;
+  }
+
+  private finishBotPlanReplay(): void {
+    const cache = this.botPlanCache;
+    if (!cache) return;
+    const state = this.engine.getState();
+    if (
+      cache.generation !== this.commandGeneration
+      || cache.expectedRevision !== this.nextExpectedSeq
+      || cache.round !== state.round
+      || cache.turn !== state.turn
+      || cache.tankId !== state.activePlayerId
+      || state.phase !== 'PLAYER_TURN'
+    ) this.botPlanCache = null;
   }
 
   private reconcileBotActionAttempt(
@@ -1516,13 +1622,19 @@ export class NetworkClient implements GameClient {
   }
 
   private clearStaleBotPreparationFailure(): void {
-    if (!this.botPreparationFailedKey) return;
     const state = this.engine.getState();
     const turnKey = `${state.round}:${state.turn}:${state.activePlayerId}:`;
-    if (this.botPreparationFailedKey.startsWith(turnKey)) return;
-    this.botPreparationFailedKey = null;
-    this.botPreparationFailureMessage = null;
-    this.pendingBotPreparationNotice = null;
+    if (this.botPreparationFailedKey && !this.botPreparationFailedKey.startsWith(turnKey)) {
+      this.botPreparationFailedKey = null;
+      this.botPreparationFailureMessage = null;
+      this.pendingBotPreparationNotice = null;
+    }
+    if (
+      this.botAccessoryPreparationFailedKey
+      && !this.botAccessoryPreparationFailedKey.startsWith(turnKey)
+    ) {
+      this.botAccessoryPreparationFailedKey = null;
+    }
   }
 
   /**
@@ -1675,10 +1787,84 @@ export class NetworkClient implements GameClient {
     const difficulty = this.botByTank.get(tankId);
     if (!difficulty) return;                       // active seat is human
 
+    const actingId = this.supaIdByTank.get(tankId);
+    if (!actingId) return;
+
+    // Command ownership is cheaper and stronger than planning. While R07 owns an
+    // immutable CPU envelope, do not run the planner again. A retryable delivery is
+    // re-driven from that exact envelope so its body/intent/revision stay unchanged.
+    const pending = this.pendingRoomCommand;
+    if (pending) {
+      if (
+        pending.generation === this.commandGeneration
+        && pending.envelope.expectedRevision === this.nextExpectedSeq
+        && pending.envelope.actorPlayerId === actingId
+        && pending.actorTankId === tankId
+        && pending.state === 'retryable'
+        && !this.botActionAttempt
+      ) {
+        this.submitBotAction(state, tankId, actingId, pending.envelope.action, pending.envelope.expectedRevision);
+      }
+      return;
+    }
+    if (this.botActionAttempt || this.botSubmitPendingKey) return;
+
     // Use the engine's EFFECTIVE gravity (sudden death ramps it past the threshold) so the
     // bot aims for the arc the engine will actually fly — not a flat base-gravity arc that
     // lands short once sudden death kicks in. Deterministic: every client's engine is at the
     // same turn, so all compute the identical plan (lockstep preserved).
+    const plan = this.getBotPlan(state, tankId, difficulty);
+    if (!plan) return;                             // no target (shouldn't happen)
+    const cache = this.botPlanCache;
+    if (!cache) return;
+
+    // Match the local driver's explicit order: weapon restock, optional accessory,
+    // then attack. A canonical no-op is skipped for this turn/item even though its
+    // row advances the revision; otherwise each new revision would repeat it forever.
+    const weaponPreparationKey = plan.buy
+      ? this.botPreparationKey(state, tankId, 'weapon', plan.buy)
+      : null;
+    const accessoryPreparationKey = plan.buyAccessory
+      ? this.botPreparationKey(state, tankId, 'accessory', plan.buyAccessory)
+      : null;
+    const recoveringPreparation = weaponPreparationKey !== null
+      && weaponPreparationKey === this.botPreparationFailedKey;
+    const attackWeapon: WeaponType = recoveringPreparation ? 'baby_missile' : plan.weapon;
+    const action: NetworkAction = plan.buy
+      && !cache.weaponPreparationComplete
+      && weaponPreparationKey !== this.botPreparationFailedKey
+      ? { type: 'buy', weapon: plan.buy }
+      : plan.buyAccessory
+        && !cache.accessoryPreparationComplete
+        && accessoryPreparationKey !== this.botAccessoryPreparationFailedKey
+        ? { type: 'buy', accessory: plan.buyAccessory }
+      : attackWeapon === 'shield'
+        ? { type: 'use_shield' }
+        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: attackWeapon };
+    if (recoveringPreparation && action.type !== 'buy' && !hasUsableWeapon(state, tankId, attackWeapon)) return;
+
+    this.submitBotAction(state, tankId, actingId, action, this.nextExpectedSeq);
+  }
+
+  private getBotPlan(
+    state: GameState,
+    tankId: string,
+    difficulty: AiDifficulty,
+    expectedRevision = this.nextExpectedSeq,
+  ): AiPlan | null {
+    const generation = this.commandGeneration;
+    const round = state.round;
+    const turn = state.turn;
+    const cached = this.botPlanCache;
+    if (
+      cached
+      && cached.generation === generation
+      && cached.expectedRevision === expectedRevision
+      && cached.round === round
+      && cached.turn === turn
+      && cached.tankId === tankId
+    ) return cached.plan;
+
     const plan = computeAiPlan(
       state,
       tankId,
@@ -1686,35 +1872,69 @@ export class NetworkClient implements GameClient {
       this.engine.getEffectiveGravity(),
       this.armsLevel,
     );
-    if (!plan) return;                             // no target (shouldn't happen)
+    const current = this.engine.getState();
+    if (
+      this._disposed
+      || generation !== this.commandGeneration
+      || (!this.orderedActions.isReplaying && expectedRevision !== this.nextExpectedSeq)
+      || current.phase !== 'PLAYER_TURN'
+      || current.round !== round
+      || current.turn !== turn
+      || current.activePlayerId !== tankId
+    ) return null;
+    this.botPlanCache = {
+      generation,
+      expectedRevision,
+      round,
+      turn,
+      tankId,
+      plan,
+      weaponPreparationComplete: false,
+      accessoryPreparationComplete: false,
+    };
+    return plan;
+  }
 
-    // Buy-to-restock (P1-7b) is a TWO-PHASE turn: a turn-neutral buy, then the
-    // shot. HTTP acceptance only latches the transport phase; the ordered echo is
-    // what proves the planned ammo became usable. One ineffective echo takes the
-    // deterministic Baby Missile fallback instead of repeating the buy or firing
-    // unavailable ammunition.
-    const preparationOutcomeKey = plan.buy
-      ? `${state.round}:${state.turn}:${tankId}:${plan.buy}`
-      : null;
-    const recoveringPreparation = preparationOutcomeKey !== null
-      && preparationOutcomeKey === this.botPreparationFailedKey;
-    const attackWeapon: WeaponType = recoveringPreparation ? 'baby_missile' : plan.weapon;
-    if (recoveringPreparation && !hasUsableWeapon(state, tankId, attackWeapon)) return;
-    const plannedBuy = recoveringPreparation ? undefined : plan.buy;
-    const phase = plannedBuy ? 'buy' : 'act';
-    const key = `${state.turn}:${tankId}:${phase}`;
-    if (key === this.lastBotKey) return;           // already committed this phase
-    if (key === this.botSubmitPendingKey) return;  // a submit for this phase is in flight
-    if (key === this.botActionAttempt?.phaseKey) return; // conflict awaits its canonical row
+  private botPreparationKey(
+    state: Pick<GameState, 'round' | 'turn'>,
+    tankId: string,
+    kind: 'weapon' | 'accessory',
+    item: WeaponType | AccessoryType,
+  ): string {
+    return `${state.round}:${state.turn}:${tankId}:${kind}:${item}`;
+  }
 
-    const actingId = this.supaIdByTank.get(tankId);
-    if (!actingId) return;
+  private botPhaseKey(
+    state: Pick<GameState, 'round' | 'turn'>,
+    tankId: string,
+    expectedRevision: number,
+    action: NetworkAction,
+  ): string {
+    const phase = action.type === 'buy'
+      ? action.weapon ? `buy:weapon:${action.weapon}` : `buy:accessory:${action.accessory ?? 'unknown'}`
+      : `act:${action.type}`;
+    return `${state.round}:${state.turn}:${tankId}:${expectedRevision}:${phase}`;
+  }
 
-    const action: NetworkAction = plannedBuy
-      ? { type: 'buy', weapon: plannedBuy }
-      : attackWeapon === 'shield'
-        ? { type: 'use_shield' }
-        : { type: 'fire', angle: plan.angle, power: plan.power, weapon: attackWeapon };
+  private submitBotAction(
+    state: GameState,
+    tankId: string,
+    actingId: string,
+    action: NetworkAction,
+    expectedRevision: number,
+  ): void {
+    if (
+      this._disposed
+      || state.phase !== 'PLAYER_TURN'
+      || state.round !== this.engine.getState().round
+      || state.turn !== this.engine.getState().turn
+      || this.engine.getState().activePlayerId !== tankId
+      || expectedRevision !== this.nextExpectedSeq
+    ) return;
+    const key = this.botPhaseKey(state, tankId, expectedRevision, action);
+    if (key === this.lastBotKey) return;
+    if (key === this.botSubmitPendingKey) return;
+    if (key === this.botActionAttempt?.phaseKey) return;
 
     // Mark this phase in flight BEFORE the POST so the per-frame emitState cadence
     // does not fire a second submit while this one is outstanding. The transport
