@@ -12,34 +12,54 @@ Approved scope: active user goal, 2026-09-09; spec: ../specs/evidence-recovery-v
 | R04 | AC-013, AC-014, AC-015, AC-016 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | LOCAL_VERIFIED |
 | R05 | AC-017, AC-018, AC-019 | R04 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
 | R06 | AC-020, AC-021, AC-022, AC-023, AC-024 | R00, R01, R13 | gpt-5.6-sol / xhigh | gpt-6-astra / high | ACCEPTED |
-| R07 | AC-025, AC-026, AC-027, AC-028 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | CHANGES_REQUIRED |
-| R08 | AC-029, AC-030, AC-031, AC-032 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | IN_PROGRESS |
+| R07 | AC-025, AC-026, AC-027, AC-028 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
+| R08 | AC-029, AC-030, AC-031, AC-032 | R06 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R09 | AC-033, AC-034, AC-035, AC-036 | R00, R03 | gpt-5.6-terra / high | gpt-5.6-sol / high | ACCEPTED |
-| R10 | AC-037, AC-038, AC-039, AC-040 | R00, R03 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
+| R10 | AC-037, AC-038, AC-039, AC-040 | R00, R03 | gpt-5.6-sol / high | gpt-6-astra / high | IMPLEMENTING |
 | R12 | AC-041, AC-042, AC-043, AC-044 | R00, R02 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R13 | AC-045, AC-046, AC-047, AC-048 | R00 | gpt-5.6-terra / high | gpt-5.6-sol / high | ACCEPTED |
-| R14 | AC-049, AC-050, AC-051, AC-052 | R01, R13 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
-| R15 | AC-053, AC-054, AC-055, AC-056 | R00 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
+| R14 | AC-049, AC-050, AC-051, AC-052 | R01, R13 | gpt-5.6-sol / high | gpt-6-astra / high | PREPARED |
+| R15 | AC-053, AC-054, AC-055, AC-056 | R00 | gpt-5.6-terra / high | gpt-5.6-sol / high | ACCEPTED |
 | R16 | AC-057, AC-058, AC-059, AC-060 | R00, R02 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
 | R19 | AC-061, AC-062, AC-063, AC-064 | R07, R08, R14 | gpt-5.6-terra / high | gpt-5.6-sol / high | PENDING |
 | R21 | AC-065, AC-066, AC-067, AC-068 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R22 | AC-069, AC-070, AC-071 | R00, R21 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
-| R23 | AC-072, AC-073, AC-074, AC-075 | R21, R22, R07 | gpt-5.6-sol / high | gpt-6-astra / high | PENDING |
+| R23 | AC-072, AC-073, AC-074, AC-075 | R21, R22, R07 | gpt-5.6-sol / high | gpt-6-astra / high | PREPARING |
 | R24 | AC-076, AC-077, AC-078 | R00 | gpt-5.6-terra / high | gpt-6-astra / high | ACCEPTED |
 | R25 | AC-079, AC-080, AC-081, AC-082 | R00 | gpt-5.6-sol / high | gpt-6-astra / high | ACCEPTED |
 | R20 | AC-083, AC-084, AC-085, AC-086 | R00, R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R12, R13, R14, R15, R16, R19, R21, R22, R23, R24, R25 | gpt-6-astra / high | gpt-5.6-sol / high | PENDING |
 
 ## Current ownership, 2026-09-12
 
-Parent owns integration and this ledger. R09's 23 reviewed paths were integrated byte-for-byte at base c7ab491; only factual receipt metadata changes follow acceptance. Fresh corrected reviewer /root/r09_corrected_review, actual Sol/high session 01a08a35-ff22-7f01-85ea-fc0edd01670d, completed all four units, separate triage, and separate aggregate PASS with zero findings or incomplete units. Independent focused tests: 10 files / 41 tests, exit 0; fallback browser: all five profiles, exit 0, external network denied. Parent full product suite: 83 passed / 27 deliberate profile skips, exit 0. Directly inspected wide, standard, and compact captures are local fixture-build evidence, not ordinary first-entry, human acceptance, or production proof.
+Parent owns integration and this ledger. The integration branch is `codex/evidence-recovery-v2`, with source HEAD `4a69cef27218685bd08e0b1dfa9df8c027167c82`. The original checkout remains at `214cf4e` with the same 17 modified and two untracked paths (793cf1). No remote mutation, production action, override, or destructive cleanup occurred.
 
-R09 integration revalidation on September 12: coverage session 37784 terminal 0 (202 files / 1,820 tests; lines 93.74%, 8108/8649; branches 83.51%, 4804/5752), full check session 2080 terminal 0, and full build/typecheck terminal 0 (chunk fbf1e3). Logs: Temp/recovery-v2-r09-resumed-integration-{coverage,check,build}.log. All 60 emitted files matched the independently reviewed author artifact before the fresh build; graph SHA-256 14894E7FFEFB9C131978141155F80F6980B11877DC62D8961F7EFBF7C0B4D6EA contains zero archive modules versus nine in the baseline. Same-method raw bytes fall 15,720,453 to 11,706,048. Governed commit is next; no recovery push or PR yet. R05's separate untracked policy proposal is expected pending work and excluded from R09 staging.
+### Accepted in this continuation
 
-R07 remains frozen in recovery-v2-r07 at 430a715 plus its corrected diff. Its interrupted September 10 reviewer produced no verdict. New independent reviewer /root/r07_resumed_review is verified Astra/high, session 01a09582-e6a6-7123-88d7-22418666db2d (turn_context, chunk e22abc). Full coverage passed 201 files / 1,846 tests, lines 93.26%, branches 82.16%; full check passed. Raw review, separate triage, and separate aggregate completed all four units with BLOCKING_FINDINGS: HIGH obsolete CPU envelope after a different canonical row; HIGH successor CPU emitted before cursor commit; MEDIUM accepted receipt without echo leaves the CPU retry latch stuck. All three require correction. External real-engine probes in Temp/r07-fresh-independent-20260912 produced 55 passes / two failures plus a separate stale-revision failure. Security reviewed 22 synthetic scanner matches without a credential finding. New assigned Sol/high /root/r07_cpu_correction receives read-only causal reassessment first; no acceptance, integration, or source lease yet.
+| Task | Governed commit | Independent review | Local evidence |
+| --- | --- | --- | --- |
+| R15 | `3f72a01` CI; `1814c4e` guest test | Sol/high `01a095b9-5f6c-7d60-95c8-61128eb8eaa6`; three units, separate triage/aggregate PASS, zero findings | 18 release-policy tests; artifact-step assertions; fresh ordinary guest entry, terminal match and Play again; included in final general suite |
+| R08 | `c04436489b29c83d3263fe249c7f10b36ca25716` | Astra/high `01a095e4-cbb6-77d2-95ef-3c504bad438f`; five units, separate triage/aggregate PASS, zero findings | Real PostgreSQL authorization, v1/v2 lock ordering, immutable retry, rollback and legacy compatibility; Edge 393; combined client/check/build gates |
+| R07 | `4a69cef27218685bd08e0b1dfa9df8c027167c82` | Astra/high `01a095ea-3da4-7591-960d-bfcd8d11d8d0`; four units, separate triage/aggregate PASS, zero findings; final browser evidence read | Stable intent and revision, ordered canonical replay, protocol admission, stale generation isolation; reviewer closed AC025–028 after final browser proof |
 
-R08's isolated worktree is based at c7ab491. New /root/r08_resumed_preparation is verified Sol/high, session 01a09583-e3df-75d2-9674-a5347577a2bd (turn_context, chunk e22abc). Read-only preparation completed with no edits. Parent grants exactly 12 paths: finish_game/index.ts, claim_match/index.ts, new migrations/022_atomic_casual_completion.sql, client/src/client/matchClaim.ts, functions/_shared/database.types.ts, corresponding finish_game/finish_game.test.ts and handler.test.ts, claim_match/claim_match.test.ts, client/src/client/matchClaim.test.ts, _shared/database.types.test.ts, scripts/checks/database-postgres.mjs, and its recovery-v2-r08-evidence.md receipt (Supabase paths under supabase/). Atomic completion uses the existing room lock and immutable casual receipt, with explicit score_absent/legacy_unvalidated/dispute handling and no verified-evidence upgrade. Local regression/disposable database implementation is authorized by the user's finite goal; production schema/protocol rollout still requires concrete approval. Parent and R08 are the two writers; R07 correction preparation remains read-only.
+Actual model/effort selections were verified from session metadata (R08: 2b4e34; R07: 230f86). Task receipts preserve author identities, all correction cycles, exact paths, hashes, commands and rollback notes. R08's 12 paths and R07's final correction were copied byte-identically after baseline/hash checks (02e8ff). R08's authorization coverage gap and R07's default-Shield false conflict were corrected before acceptance. No generic MEDIUM deferral waived an acceptance criterion.
 
-Original checkout remains 214cf4e with 17 modified and two untracked paths preserved. Live main remains 3902cad; no recovery remote branch. No localhost listener was present at resumed preflight. R04 remains LOCAL_VERIFIED with hosted proof pending. R05 settings, merge, release, production, cleanup, and override approval boundaries remain unchanged. Older ownership, process, and in-progress snapshots below are historical; this section and the task table govern current status.
+Combined final gates: coverage 42849, full check 38327, configured build, Edge, disposable DB 9368, and full general browser 14256 all exited 0. Client: 203 files / 1,875 tests, 93.97% lines (8323/8857), 84.07% branches (4994/5940). Edge: 393 tests. Browser: 333 passed / 18 deliberate profile skips, 3.2 minutes. The unchanged benchmark maximum was 67.2788 ms against 100 ms. The DB harness observed actual holder/waiter pairs 731/738, 766/773, 836/843 and 871/878 before release. Configured secrets scanning classified synthetic unit/disposable-harness fixtures without suppression. Genuine security/migration markers preceded the authorized commits; all hooks remained enabled.
+
+Logs: `C:/Users/brenn/AppData/Local/Temp/recovery-v2-r07-r08-final-{coverage,check,build,browser}.log` and `recovery-v2-r08-integrated-{edge,database}.log`. Browser artifacts: `recovery-v2-r07-r08-final-browser-artifacts`. These establish local acceptance, not hosted artifact upload, production schema parity or deployment.
+
+### Active and prepared work
+
+- **R10 writer:** Sol/high `01a095e5-5bce-7ed0-9909-d69fbffa9f87` (verified 2b4e34), isolated `recovery-v2-r10` at `0f708d5`. Nine leased paths: battle-console mount, lifecycle, resources, Pixi adapter, four direct test files, and receipt. Tests precede the semantic-readiness, bounded-decoration and honest-resource-lifetime correction. Parent is the other writer until records are committed.
+- **R23 preparation:** Sol/high `01a095f4-9c5c-7782-81c2-82052c18a00d` (verified 1b8d47). Clean `recovery-v2-r23` at accepted `4a69cef`; read-only minimal path/design proposal before an exact lease. R23 is next in the preferred queue after R07. R12/R16 overlap and must wait.
+- **R14 prepared:** Sol/high `01a095f0-6796-7941-a8f0-a290c5c76b30` (verified e46f5c). Clean `recovery-v2-r14` at `c044364` contains accepted R06/R08 backend without R07 activation. Eight proposed paths cover backend workflow, package scripts, development docs, policy/inventory manifest, helper/tests, disposable rehearsal and receipt. No write lease yet. The checked-in manifest has no self-referential candidate SHA; generated receipts bind the actual candidate. Production environment and reviewer policy remain an unapproved concrete proposal.
+
+R14 freshly observed main `3902cad`, successful exact-main push CI run `34329078429`, attempt 1; only `github-pages` environment exists, with no production-backend environment or rulesets. Main still requires core/Edge only, zero reviews, admin enforcement false. Revalidate before any eventual remote action. The separate R05 proposal remains untracked and outside unrelated commits.
+
+### Sole preview and remaining boundary
+
+Integration Vite PID 71808 / exec 45211 serves `http://127.0.0.1:5198/`. It was rebuilt with loopback Supabase configuration and a public synthetic anon key after all old browser jobs ended. Disk and HTTP index SHA256: `14869f2fb381b84584f12513d9f1c64a955a5c5967ee9221636708cee402e4ff`. The 60-file graph digest is `8613c6dc07f01ffb5db4404d3a7426ea113cd8a33a7f7fa6da66a9abfb284383` using sorted `path:SHA256` records joined by newline. Post-suite bytes stayed identical (6525ba). All browser/check handles are terminal; parent alone owns rebuild/restart.
+
+Remaining required work: R04/R05 hosted and settings evidence; R10, R12, R14, R16, R19, R23 and R20. Backend capability must precede any client-bearing merge, because Pages deploys automatically. Merge, release/tag, production deployment/rollback/schema/data, remote settings, overrides and destructive cleanup require concrete explicit approval. No required scope has been deferred, and no optional R11/R17/R18/P task was dispatched.
 
 ## Historical progress snapshots, 2026-09-10
 
