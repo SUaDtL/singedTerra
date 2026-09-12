@@ -2,6 +2,7 @@ import {
   withCors,
   json,
   getServiceClient,
+  StoredAction,
   StoredPlayer,
   ServiceClient,
   nextCursor,
@@ -12,7 +13,8 @@ import {
   rulesetCompatibility,
   safeErrorMessage,
 } from '../_shared/mod.ts'
-import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
+import { endsTurn, validateActionShape, authorizeAction, validateRoomCommandEnvelope } from './validate.ts'
+import { commandVersionCompatibility, resolveStoredCommandVersion } from '../_shared/commandProtocol.ts'
 
 // ---------------------------------------------------------------------------
 // rpcResultToResponse — pure mapper (exported for testing, T-08 AC4)
@@ -39,6 +41,7 @@ export interface RpcResult {
 export interface RpcLogContext {
   roomId?: string
   playerId?: string
+  actorPlayerId?: string
 }
 
 export function rpcResultToResponse(result: RpcResult, context: RpcLogContext = {}): Response {
@@ -62,6 +65,42 @@ export function rpcResultToResponse(result: RpcResult, context: RpcLogContext = 
   // single-element array.  Extract defensively.
   const seq: number = Array.isArray(data) ? data[0] : data
   return json({ seq, ok: true }, 200)
+}
+
+export function commandRpcResultToResponse(result: RpcResult, context: RpcLogContext = {}): Response {
+  const { data, error } = result
+  if (error) {
+    console.error('submit_action: command rpc error', { ...context, error: safeErrorMessage(error) })
+    return json({ ok: false, error: 'Failed to submit command' }, 500)
+  }
+  const outcome = Array.isArray(data) ? data[0] : data
+  if (!outcome || typeof outcome !== 'object') {
+    return json({ ok: false, error: 'Failed to submit command' }, 500)
+  }
+  const payload = outcome as Record<string, unknown>
+  if (payload.ok === true) return json(payload, 200)
+  const code = typeof payload.error === 'string' ? payload.error : 'command_failed'
+  if (code === 'room_not_found') return json(payload, 404)
+  if (code === 'not_your_turn') {
+    // ADR-0008 desync signal. Keep the v2 path observable without logging the
+    // seat credential, request envelope, canonical action, or raw RPC payload.
+    console.warn('submit_action: locked turn-gate rejection (possible desync)', {
+      roomId: context.roomId,
+      actorPlayerId: context.actorPlayerId,
+      refusal: code,
+    })
+  }
+  if (code === 'not_room_member' || code === 'invalid_seat_token' || code === 'actor_not_in_room'
+    || code === 'cannot_proxy_human' || code === 'not_your_turn' || code === 'shop_actor_mismatch') {
+    return json(payload, 403)
+  }
+  if (code === 'invalid_command') return json(payload, 400)
+  if (code === 'intent_conflict' || code === 'revision_conflict' || code === 'room_not_active'
+    || code === 'command_protocol_mismatch' || code === 'command_protocol_unavailable'
+    || code === 'ruleset_mismatch' || code === 'ruleset_unavailable') {
+    return json(payload, 409)
+  }
+  return json({ ok: false, error: 'Failed to submit command' }, 500)
 }
 
 interface NetworkFireAction {
@@ -100,6 +139,31 @@ type NetworkAction =
   | NetworkNextRoundAction
   | NetworkMoveAction
 
+function canonicalAction(
+  action: NonNullable<Parameters<typeof validateActionShape>[0]['action']>,
+  isRoundOver: boolean,
+): NetworkAction {
+  return action.type === 'use_shield'
+    ? { type: 'use_shield', ...(action.weapon === 'heavy_shield' ? { weapon: 'heavy_shield' as const } : {}) }
+    : action.type === 'next_round'
+      ? { type: 'next_round' }
+      : action.type === 'move'
+        ? { type: 'move', delta: action.delta as number }
+        : action.type === 'buy'
+          ? {
+              type: 'buy',
+              ...(typeof action.weapon === 'string' && action.weapon.trim().length > 0 ? { weapon: action.weapon.trim() } : {}),
+              ...(typeof action.accessory === 'string' && ACCESSORY_TYPES.has(action.accessory) ? { accessory: action.accessory } : {}),
+              ...(isRoundOver && typeof action.tankId === 'string' ? { tankId: action.tankId } : {}),
+            }
+          : {
+              type: 'fire',
+              angle: action.angle as number,
+              power: action.power as number,
+              weapon: (action.weapon as string).trim(),
+            }
+}
+
 // Guard Deno.serve so importing this module in tests does not start the HTTP
 // listener.  When Deno executes the file as the program entry point,
 // import.meta.main is true; when it is imported by a test file it is false.
@@ -112,7 +176,7 @@ type NetworkAction =
 // the pre-seam handler. It is NOT a second positional handler param, because withCors
 // invokes the handler as (body, req) and would pass the Request there.
 export async function submitActionCore(body: unknown, injectedClient?: ServiceClient): Promise<Response> {
-  const { roomId, playerId, token, rulesetVersion, actingPlayerId, nextActiveIndex, roundOver, action } = body as {
+  const { roomId, playerId, token, rulesetVersion, actingPlayerId, nextActiveIndex, roundOver, command, action: legacyAction } = body as {
     roomId?: unknown
     playerId?: unknown
     token?: unknown
@@ -135,8 +199,15 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
     // on its behalf (any room member may; idempotency is the seq-unique + cursor
     // gate). Validated below.
     actingPlayerId?: unknown
+    command?: unknown
     action?: { type?: unknown; angle?: unknown; power?: unknown; weapon?: unknown; accessory?: unknown; tankId?: unknown; delta?: unknown }
   }
+
+  const commandResult = command === undefined ? null : validateRoomCommandEnvelope(command)
+  if (commandResult && !commandResult.ok) {
+    return json({ error: commandResult.error }, commandResult.status)
+  }
+  const action = commandResult?.ok ? commandResult.command.action : legacyAction
 
   // Pure shape validation — all 400 paths (no DB required)
   const shapeResult = validateActionShape({ roomId, playerId, action })
@@ -150,6 +221,31 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
   }
 
   const supabase = injectedClient ?? getServiceClient()
+
+  // Protocol v2 delegates every mutable room precondition to one locked database
+  // transaction. In particular, do not pre-reject a finished/advanced room here:
+  // an authenticated identical retry must still reach its immutable receipt.
+  if (commandResult?.ok) {
+    const commandEnvelope = commandResult.command
+    const validatedAction = canonicalAction(commandEnvelope.action, commandEnvelope.roundOver)
+    const rpcResult = await supabase.rpc('submit_room_command_v2', {
+      p_room_id: roomId as string,
+      p_submitter_id: playerId as string,
+      p_token: token as string,
+      p_command_version: commandEnvelope.version,
+      p_intent_id: commandEnvelope.intentId,
+      p_expected_revision: commandEnvelope.expectedRevision,
+      p_actor_id: commandEnvelope.actorPlayerId,
+      p_action: validatedAction as StoredAction,
+      p_next_index: commandEnvelope.nextActiveIndex ?? null,
+      p_round_over: commandEnvelope.roundOver,
+      p_ruleset_version: requestedRuleset.version,
+    })
+    return commandRpcResultToResponse(rpcResult, {
+      roomId: roomId as string,
+      actorPlayerId: commandEnvelope.actorPlayerId,
+    })
+  }
 
   // Fetch room — must be 'active'
   const { data: room, error: fetchError } = await supabase
@@ -196,6 +292,18 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
     }, 409)
   }
 
+  const storedCommandVersion = resolveStoredCommandVersion(room.options)
+  if (!storedCommandVersion.ok) {
+    return json({ error: 'command_protocol_unavailable' }, 409)
+  }
+  const commandCompatibility = commandVersionCompatibility(1, storedCommandVersion.version)
+  if (!commandCompatibility.ok) {
+    return json({
+      error: 'command_protocol_mismatch',
+      requiredCommandProtocolVersion: commandCompatibility.requiredCommandProtocolVersion,
+    }, 409)
+  }
+
   const actingId = typeof actingPlayerId === 'string' && actingPlayerId.trim().length > 0
     ? actingPlayerId
     : playerId
@@ -238,28 +346,7 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
   // opener if it is missing — which would silently desync per-tank shopping).
   // action is guaranteed non-undefined here: validateActionShape already rejected
   // the request if action was absent or the wrong type.
-  const a = action!
-  const validatedAction: NetworkAction =
-    a.type === 'use_shield'
-      ? { type: 'use_shield', ...(a.weapon === 'heavy_shield' ? { weapon: 'heavy_shield' } : {}) }
-      : a.type === 'next_round'
-        ? { type: 'next_round' }
-        : a.type === 'move'
-          ? { type: 'move', delta: a.delta as number }
-        : a.type === 'buy'
-          ? {
-              type: 'buy',
-              // Carry whichever of weapon/accessory the validated buy supplied (exactly one).
-              ...(typeof a.weapon === 'string' && a.weapon.trim().length > 0 ? { weapon: a.weapon.trim() } : {}),
-              ...(typeof a.accessory === 'string' && ACCESSORY_TYPES.has(a.accessory) ? { accessory: a.accessory } : {}),
-              ...(isRoundOver && typeof a.tankId === 'string' ? { tankId: a.tankId } : {}),
-            }
-          : {
-              type: 'fire',
-              angle: a.angle as number,
-              power: a.power as number,
-              weapon: (a.weapon as string).trim(),
-            }
+  const validatedAction = canonicalAction(action!, isRoundOver)
 
   // Atomically allocate seq, insert the action, and (when turn-ending) advance
   // the active-player cursor — all inside a single Postgres transaction via the

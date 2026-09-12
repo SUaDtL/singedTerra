@@ -11,7 +11,7 @@
 // Run: "C:/Users/brenn/.deno/bin/deno.exe" test supabase/functions/submit_action/validate.test.ts
 
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { endsTurn, validateActionShape, authorizeAction } from './validate.ts'
+import { endsTurn, validateActionShape, authorizeAction, validateRoomCommandEnvelope } from './validate.ts'
 import type { StoredPlayer } from '../_shared/mod.ts'
 
 // ---------------------------------------------------------------------------
@@ -25,6 +25,35 @@ function human(id: string, name = 'Player'): StoredPlayer {
 function bot(id: string): StoredPlayer {
   return { id, name: 'CPU', color: '#00ff00', ready: true, ai: 'medium' }
 }
+
+Deno.test('validateRoomCommandEnvelope accepts one bounded v2 command', () => {
+  assertEquals(validateRoomCommandEnvelope({
+    version: 2,
+    intentId: 'human-command-1',
+    expectedRevision: 7,
+    actorPlayerId: 'seat-a',
+    action: { type: 'move', delta: 1 },
+  }), {
+    ok: true,
+    command: {
+      version: 2,
+      intentId: 'human-command-1',
+      expectedRevision: 7,
+      actorPlayerId: 'seat-a',
+      action: { type: 'move', delta: 1 },
+      roundOver: false,
+    },
+  })
+})
+
+Deno.test('validateRoomCommandEnvelope rejects malformed identity, revision and extra fields', () => {
+  for (const command of [
+    { version: 1, intentId: 'x', expectedRevision: 0, actorPlayerId: 'a', action: { type: 'move', delta: 1 } },
+    { version: 2, intentId: '', expectedRevision: 0, actorPlayerId: 'a', action: { type: 'move', delta: 1 } },
+    { version: 2, intentId: 'x', expectedRevision: -1, actorPlayerId: 'a', action: { type: 'move', delta: 1 } },
+    { version: 2, intentId: 'x', expectedRevision: 0, actorPlayerId: 'a', action: { type: 'move', delta: 1 }, token: 'must-not-enter-envelope' },
+  ]) assertEquals(validateRoomCommandEnvelope(command).ok, false)
+})
 
 // ---------------------------------------------------------------------------
 // endsTurn — 4 cases

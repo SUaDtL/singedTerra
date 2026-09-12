@@ -73,6 +73,27 @@ Deno.test('handleCreateRoom: stores the exact bounded creator loadout', async ()
   const players = insertedRoom?.players as Array<{ loadout: unknown }>
   assertEquals(players[0].loadout, loadout)
   assertEquals((insertedRoom?.options as { walls: string }).walls, 'wrap')
+  assertEquals((insertedRoom?.options as { commandProtocolVersion: number }).commandProtocolVersion, 1)
+})
+
+Deno.test('handleCreateRoom stores an explicitly requested command protocol independently', async () => {
+  const capture = captureRoomInsert()
+  const res = await createRoomHandler({ serviceClient: capture.serviceClient as never })({
+    playerName: 'Ana', color: '#e84d4d', rulesetVersion: 4, commandProtocolVersion: 2,
+    options: { maxPlayers: 2 },
+  })
+  assertEquals(res.status, 200)
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).rulesetVersion, 4)
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).commandProtocolVersion, 2)
+})
+
+Deno.test('handleCreateRoom rejects an unknown command protocol before DB access', async () => {
+  const res = await handleCreateRoom({
+    playerName: 'Ana', color: '#e84d4d', commandProtocolVersion: 3,
+    options: { maxPlayers: 2 },
+  })
+  assertEquals(res.status, 400)
+  assertEquals(await res.json(), { error: 'Invalid input: commandProtocolVersion' })
 })
 
 Deno.test('handleCreateRoom: normalizes an invalid wall value to open before insert', async () => {

@@ -86,6 +86,13 @@ Deno.test('buildRematchPlayers preserves the ai flag on bot seats', () => {
   assertEquals(out[1].ai, 'medium') // bot seat: ai carried over
 })
 
+Deno.test('normalizeRematchOptions preserves explicit v2 and treats absence as legacy v1', () => {
+  assertEquals(normalizeRematchOptions({ maxPlayers: 2, rulesetVersion: 4 }, 2).commandProtocolVersion, 1)
+  assertEquals(normalizeRematchOptions({ maxPlayers: 2, rulesetVersion: 4, commandProtocolVersion: 2 }, 2).commandProtocolVersion, 2)
+  assertEquals(normalizeStoredRematchOptions({ maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4 }).commandProtocolVersion, 1)
+  assertEquals(normalizeStoredRematchOptions({ maxPlayers: 2, maxWind: 10, gravity: 0.15, rulesetVersion: 4, commandProtocolVersion: 2 }).commandProtocolVersion, 2)
+})
+
 Deno.test('buildRematchPlayers omits ai entirely for an all-human roster', () => {
   const players: StoredPlayer[] = [
     { id: 'uid-a', name: 'Ana', color: '#f00', ready: false },
@@ -132,6 +139,7 @@ Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid valu
       gravity: 0.2,
       walls: 'wrap' as never,
       rulesetVersion: 2,
+      commandProtocolVersion: 1,
     }, 2),
     {
       maxPlayers: 2,
@@ -139,6 +147,7 @@ Deno.test('normalizeRematchOptions preserves wrap walls and rejects invalid valu
       gravity: 0.2,
       walls: 'wrap' as never,
       rulesetVersion: 2,
+      commandProtocolVersion: 1,
     },
   )
   assertEquals(
@@ -257,6 +266,7 @@ Deno.test('normalizeStoredRematchOptions preserves the room contract but never p
       walls: 'wrap',
       rounds: 3,
       interestRate: 0.1,
+      commandProtocolVersion: 1,
     },
   )
   assertEquals(

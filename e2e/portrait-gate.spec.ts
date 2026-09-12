@@ -1,5 +1,7 @@
 import { test, expect, type Browser } from '@playwright/test';
 
+const TEST_ENTRY = process.env['E2E_LIVE_URL'] ?? '/';
+
 async function initialLayerState(
   browser: Browser,
   viewport: { width: number; height: number },
@@ -8,7 +10,7 @@ async function initialLayerState(
   const context = await browser.newContext({ viewport, hasTouch });
   try {
     const page = await context.newPage();
-    await page.goto('/');
+    await page.goto(TEST_ENTRY);
     return {
       warningDisplay: await page.locator('#portrait-warn').evaluate((element) =>
         getComputedStyle(element).display,
@@ -71,7 +73,7 @@ test.describe('portrait phone gate', () => {
 
     try {
       const page = await context.newPage();
-      await page.goto('/');
+      await page.goto(TEST_ENTRY);
       await expect(page.locator('#st-splash')).toHaveCount(0);
 
       const gate = page.locator('#portrait-warn');
@@ -136,7 +138,7 @@ test.describe('portrait phone gate', () => {
     });
     try {
       const page = await context.newPage();
-      await page.goto('/');
+      await page.goto(TEST_ENTRY);
 
       const gate = page.locator('#portrait-warn');
       const app = page.locator('#app');
@@ -168,7 +170,7 @@ test.describe('portrait phone gate', () => {
     });
     try {
       const page = await context.newPage();
-      await page.goto('/');
+      await page.goto(TEST_ENTRY);
 
       const splash = page.getByRole('button', {
         name: 'singedTerra - press any key or click to start',
@@ -211,7 +213,7 @@ test.describe('portrait phone gate', () => {
     });
     try {
       const page = await context.newPage();
-      await page.goto('/');
+      await page.goto(TEST_ENTRY);
       const motif = page.locator('.portrait-warn__device');
       await expect(motif).toBeVisible();
       await expect(motif).toHaveCSS('animation-name', 'none');

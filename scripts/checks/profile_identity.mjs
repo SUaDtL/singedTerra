@@ -7,6 +7,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
+import { assertPackageReleaseScripts, loadAndValidateManifest } from '../ci/backendRelease.mjs';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const configPath = join(root, 'supabase', 'config.toml');
 const migrationPath = join(root, 'supabase', 'migrations', '012_profiles.sql');
@@ -554,24 +556,30 @@ if ((accountSummaryFunction.match(/\b_body\b/g) ?? []).length !== 1) {
   fail('account_summary must not consume request-body identity, XP, level, or cumulative totals');
 }
 
-const deployBackend = packageJson.scripts?.['deploy:backend'] ?? '';
 if (packageJson.devDependencies?.supabase !== '2.105.0') {
   fail('deploy tooling must pin the reviewed Supabase CLI at exact version 2.105.0');
 }
-function isReviewedDeployCommand(command) {
-  return command === 'supabase db push --yes && supabase config push && supabase functions deploy --use-api --yes';
+let functionNames;
+try {
+  functionNames = loadAndValidateManifest(root).manifest.functions.map(({ name }) => name);
+  assertPackageReleaseScripts(packageJson, functionNames);
+} catch (error) {
+  fail(`deploy tooling must satisfy the complete reviewed backend release contract: ${error.message}`);
 }
-if (!isReviewedDeployCommand(deployBackend)) {
-  fail('deploy:backend must exactly match the reviewed pinned-CLI and interactive-config command');
-}
-const unsafeDeployVariants = [
-  'npx --yes supabase db push --yes && supabase config push',
-  'supabase db push --yes && supabase --yes config push',
-  'supabase db push --yes && supabase config --yes push',
-  'supabase db push --yes && yes | supabase config push',
+const rejectedDeployVariants = [
+  { 'deploy:backend': `${packageJson.scripts['deploy:backend']} || true` },
+  { 'deploy:backend': 'npx --yes supabase db push --yes && supabase config push --yes' },
+  { 'deploy:backend': 'npm run backend:release:check && npm run deploy:backend:migrations' },
+  { 'deploy:backend:config': 'supabase config push' },
+  { 'deploy:backend:functions': 'supabase functions deploy --use-api --yes' },
 ];
-if (unsafeDeployVariants.some(isReviewedDeployCommand)) {
-  fail('deploy command guard accepted an unpinned or auto-confirmed equivalent');
+for (const scripts of rejectedDeployVariants) {
+  try {
+    assertPackageReleaseScripts({ ...packageJson, scripts: { ...packageJson.scripts, ...scripts } }, functionNames);
+    fail('deploy command guard accepted an unsafe, unpinned, masked, or partial command');
+  } catch (error) {
+    if (!/complete release policy/i.test(error.message)) throw error;
+  }
 }
 
 const sqlWithoutComments = stripSqlComments(migration);

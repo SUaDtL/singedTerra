@@ -7,8 +7,11 @@ async function openLocalPreparation(page: Page): Promise<void> {
 }
 
 async function gotoProductionAccountFixture(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    window.localStorage.setItem('sb-' + window.location.hostname.split('.')[0] + '-auth-token', JSON.stringify({
+  const configuredStorageKey = process.env['E2E_AUTH_STORAGE_KEY'] ?? null;
+  await page.addInitScript((candidateStorageKey) => {
+    const storageKey = candidateStorageKey
+      ?? 'sb-' + window.location.hostname.split('.')[0] + '-auth-token';
+    window.localStorage.setItem(storageKey, JSON.stringify({
       access_token: 'e2e-public-session-token',
       refresh_token: 'e2e-public-refresh-token',
       expires_at: 4_102_444_800,
@@ -24,7 +27,7 @@ async function gotoProductionAccountFixture(page: Page): Promise<void> {
         created_at: '2026-08-10T00:00:00.000Z',
       },
     }));
-  });
+  }, configuredStorageKey);
   await page.route('**/rest/v1/profiles**', async (route) => {
     await route.fulfill({
       status: 200,

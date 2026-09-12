@@ -21,10 +21,12 @@ interface RpcCall { fn: string; args: Record<string, unknown> }
 
 /** Fake service client: routes .from('rooms')/.from('room_seats') to canned results
  *  and records every .rpc() call so the seq-allocation arguments can be asserted. */
-function makeFakeClient(opts: FakeOpts): { client: ServiceClient; rpcCalls: RpcCall[] } {
+function makeFakeClient(opts: FakeOpts): { client: ServiceClient; rpcCalls: RpcCall[]; fromCalls: string[] } {
   const rpcCalls: RpcCall[] = []
+  const fromCalls: string[] = []
   const client = {
     from(table: string) {
+      fromCalls.push(table)
       const result: QResult =
         table === 'rooms' ? (opts.room ?? { data: null, error: null })
         : table === 'room_seats' ? (opts.seat ?? { data: null, error: null })
@@ -40,7 +42,7 @@ function makeFakeClient(opts: FakeOpts): { client: ServiceClient; rpcCalls: RpcC
       return Promise.resolve(opts.rpc ?? { data: 1, error: null })
     },
   } as unknown as ServiceClient
-  return { client, rpcCalls }
+  return { client, rpcCalls, fromCalls }
 }
 
 const player = (id: string, extra: Partial<StoredPlayer> = {}): StoredPlayer =>
@@ -383,6 +385,86 @@ Deno.test('submitActionCore: active-seat movement commits exact payload turn-neu
   assertEquals(args.p_ends_turn, false)
   assertEquals(args.p_next_index, 0)
   assertEquals(args.p_next_turn, 4)
+})
+
+Deno.test('submitActionCore: v2 command bypasses legacy room prereads and returns its receipt', async () => {
+  const receipt = {
+    ok: true, protocolVersion: 2, intentId: 'human-intent-1', seq: 3, revision: 4,
+    actorPlayerId: 'human-1', actorTankId: 'p1',
+  }
+  const { client, rpcCalls, fromCalls } = makeFakeClient({ rpc: { data: receipt, error: null } })
+  const res = await submitActionCore({
+    roomId: 'room-1', playerId: 'human-1', token: fixtureCredential, rulesetVersion: 4,
+    command: {
+      version: 2, intentId: 'human-intent-1', expectedRevision: 3, actorPlayerId: 'human-1',
+      action: { type: 'move', delta: 1, credential: fixtureCredential },
+    },
+  }, client)
+  assertEquals(res.status, 200)
+  assertEquals(await res.json(), receipt)
+  assertEquals(fromCalls, [], 'v2 receipt retries must not be pre-rejected by a stale room/status read')
+  assertEquals(rpcCalls.length, 1)
+  assertEquals(rpcCalls[0].fn, 'submit_room_command_v2')
+  assertEquals(rpcCalls[0].args, {
+    p_room_id: 'room-1', p_submitter_id: 'human-1', p_token: fixtureCredential,
+    p_command_version: 2, p_intent_id: 'human-intent-1', p_expected_revision: 3,
+    p_actor_id: 'human-1', p_action: { type: 'move', delta: 1 }, p_next_index: null,
+    p_round_over: false, p_ruleset_version: 4,
+  })
+})
+
+Deno.test('submitActionCore: non-opener next_round remains a transition initiation', async () => {
+  const receipt = {
+    ok: true, protocolVersion: 2, intentId: 'continue-seat-b', seq: 9, revision: 10,
+    actorPlayerId: 'human-b', actorTankId: 'p2',
+  }
+  const { client, rpcCalls } = makeFakeClient({ rpc: { data: receipt, error: null } })
+  const res = await submitActionCore({
+    roomId: 'room-1', playerId: 'human-b', token: fixtureCredential, rulesetVersion: 4,
+    command: {
+      version: 2, intentId: 'continue-seat-b', expectedRevision: 9, actorPlayerId: 'human-b',
+      action: { type: 'next_round' }, roundOver: true,
+    },
+  }, client)
+  assertEquals(res.status, 200)
+  assertEquals(rpcCalls[0].args.p_actor_id, 'human-b')
+  assertEquals(rpcCalls[0].args.p_round_over, true)
+})
+
+Deno.test('submitActionCore: locked v2 turn refusal logs only allowlisted desync context', async () => {
+  const rpcPayload = {
+    ok: false,
+    error: 'not_your_turn',
+    currentRevision: 14,
+    internalDetail: 'must-not-enter-warning',
+  }
+  const { client } = makeFakeClient({ rpc: { data: rpcPayload, error: null } })
+  const warnings: unknown[][] = []
+  const originalWarn = console.warn
+  console.warn = (...args: unknown[]) => { warnings.push(args) }
+  try {
+    const res = await submitActionCore({
+      roomId: 'room-v2', playerId: 'submitter-a', token: fixtureCredential, rulesetVersion: 4,
+      command: {
+        version: 2, intentId: 'private-request-intent', expectedRevision: 13, actorPlayerId: 'actor-b',
+        action: { type: 'move', delta: 1 },
+      },
+    }, client)
+    assertEquals(res.status, 403)
+    assertEquals(await res.json(), rpcPayload)
+  } finally {
+    console.warn = originalWarn
+  }
+
+  assertEquals(warnings, [[
+    'submit_action: locked turn-gate rejection (possible desync)',
+    { roomId: 'room-v2', actorPlayerId: 'actor-b', refusal: 'not_your_turn' },
+  ]])
+  const warningText = JSON.stringify(warnings)
+  assertEquals(warningText.includes(fixtureCredential), false, 'warning must exclude the seat credential')
+  assertEquals(warningText.includes('private-request-intent'), false, 'warning must exclude the request envelope')
+  assertEquals(warningText.includes('must-not-enter-warning'), false, 'warning must exclude the raw RPC payload')
+  assertEquals(warningText.includes('currentRevision'), false, 'warning must exclude non-allowlisted RPC fields')
 })
 
 Deno.test('submitActionCore: movement from an inactive seat is rejected before the RPC', async () => {
