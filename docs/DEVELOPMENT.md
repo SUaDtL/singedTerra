@@ -285,6 +285,47 @@ The workflow:
 
 The live site is [suadtl.github.io/singedTerra](https://suadtl.github.io/singedTerra/).
 
+## Main protection and Pages rollback
+
+`main` is protected with strict, app-bound required checks. The recorded
+post-application state requires these checks from GitHub Actions app `15368`:
+
+- `typecheck · harnesses · build`
+- `edge function tests (deno)`
+- `e2e · rendering guardrails`
+
+Branch protection also applies to administrators. The policy change had recorded
+owner approval and was applied through a narrow required-checks update followed
+by administrator enforcement. The after-state preserves zero required pull
+request approvals, disabled stale-review dismissal, disabled code-owner review,
+disabled last-push approval, disabled force pushes, disabled branch deletion,
+and no repository rulesets.
+
+Pages publication is automatic for qualifying pushes to `main`. A request for
+approval to merge a client-bearing change must disclose that ordinary Pages
+publication will follow. A Supabase backend deployment needs separate, explicit
+approval.
+
+A Pages rollback is a separate, explicitly approved production operation. Use
+only the manual rollback path with `ROLLBACK`, the owner-reviewed current
+`main` SHA, and the exact source SHA and run of a prior successful trusted Pages
+push. For the recorded recovery publication, the accepted artifact is
+`github-pages-34713382261` (artifact `10304581142`) from source
+`10d6fe78409f8110cb25c2a484ae906656837f7d`; its verified payload SHA-256 is
+`574b9623f00e97f8916776e86ff426213b07394835aadcd6b2744107bcba2354`.
+The rollback reuploads that one unexpired artifact unchanged. It must not run a
+client rebuild or substitute a newly built artifact. Record the owner approval,
+selected run, artifact, source SHA, retained protections, and result. If the
+artifact is expired or missing, stop and obtain a separately approved recovery
+plan. Do not weaken protection to compensate.
+
+The separately configured `production-backend` environment has reviewer
+`SUaDtL`, self-review allowed for the current sole-maintainer policy,
+administrator bypass disabled, protected-branch eligibility, and no wait timer.
+Environment credentials must be provisioned before deployment. This environment
+configuration does not approve a deployment. A deployment needs separate,
+explicit approval.
+
 ## Pull-request gate
 
 Before asking for review:
