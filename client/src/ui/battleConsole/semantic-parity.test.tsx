@@ -25,7 +25,7 @@ describe('AC-15 semantic and intent parity', () => {
       stableKey: 'node:output:Power:52',
       sourceRecord: {
         accessibleName: 'Power', checked: null, current: null, disabled: false,
-        expanded: null, focusable: false, haspopup: null, hidden: false, inert: false,
+        expanded: null, focusable: false,
         live: null, modal: false, parentKey: null, pressed: null, role: '', rootKey: 'command-console-host',
         tabIndex: -1, tag: 'OUTPUT', visibleText: '50',
       },

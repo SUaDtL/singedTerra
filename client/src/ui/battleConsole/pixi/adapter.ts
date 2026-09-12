@@ -1,5 +1,4 @@
 import 'pixi.js/unsafe-eval';
-import layersContract from '../../../../../.codearbiter/contracts/battle-console/ownership/layers.json';
 import type { Application, Texture } from 'pixi.js';
 import type { ResponsiveLayoutProjection } from '../projection';
 import type { BattleConsolePresentationState } from '../types';
@@ -51,18 +50,6 @@ function primePixiProbeCaches(pixi: typeof import('pixi.js')): void {
   } finally {
     pixi.DOMAdapter.set(browserAdapter);
   }
-}
-
-export function layerAuthorityDescriptor() {
-  return Object.freeze({
-    gameplayWorld: 'canvas-2d',
-    pixi: 'non-interactive-chrome',
-    semantics: 'preact-dom',
-    input: 'preact-dom',
-    fallbackSemantics: 'same-preact-dom',
-    competingPhysicalOwner: false,
-    recordKeys: Object.freeze(layersContract.records.map((record) => record.key)),
-  });
 }
 
 export interface BattleConsolePixiAdapter {

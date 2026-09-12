@@ -1,6 +1,4 @@
 import { render } from 'preact';
-import retirementContract from '../../../../.codearbiter/contracts/battle-console/ownership/retirement.json';
-import styleScopeContract from '../../../../.codearbiter/contracts/battle-console/topology/style-scope.json';
 import styles from './BattleConsole.module.css';
 import { BattleConsoleRoot, type BattleConsoleClassNames } from './BattleConsoleRoot';
 import { createBattleConsolePixiAdapter, type BattleConsolePixiAdapter } from './pixi/adapter';
@@ -30,17 +28,6 @@ const battleConsoleClassNames: BattleConsoleClassNames = Object.freeze({
   portal: requiredModuleClass('portal'),
   semanticNode: requiredModuleClass('semanticNode'),
   weaponIcon: requiredModuleClass('weaponIcon'),
-});
-
-/**
- * Locked migration closure used by the product verifier. The large contract
- * payload remains tree-shakeable because runtime mounting never reads it.
- */
-export const retirementManifest = Object.freeze({
-  records: retirementContract.records,
-  behaviorSelectorPaths: Object.freeze([]),
-  cssModulePath: styleScopeContract.replacement.cssModulePath,
-  globalSelectors: styleScopeContract.globalHostRules.selectorAllowlist,
 });
 
 export interface BattleConsoleGenerationToken {
@@ -122,7 +109,6 @@ export async function mountBattleConsoleGeneration({
     surface.dataset['battleConsoleGeneration'] = String(generationToken.generation);
     surface.dataset['battleConsoleReady'] = nextStatus === 'ready' || nextStatus === 'fallback' ? 'true' : 'false';
     surface.dataset['battleConsoleTexturesReady'] = nextStatus === 'ready' || nextStatus === 'fallback' ? 'true' : 'false';
-    surface.dataset['battleConsoleRetiredRecords'] = String(retirementContract.records.length);
     surface.dataset['battleConsolePendingResources'] = nextStatus === 'loading' ? '1' : '0';
   };
 

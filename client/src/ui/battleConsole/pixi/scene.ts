@@ -1,12 +1,11 @@
 import type { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import type { BattleConsolePresentationState } from '../types';
-import chromeContract from '../../../../../.codearbiter/contracts/battle-console/topology/chrome-sockets.json';
-import appearanceContract from '../../../../../.codearbiter/contracts/battle-console/state/dynamic-appearance.json';
 import {
   battleConsoleModeAssets,
   battleConsoleModeAssetUrl,
 } from '../modeAssets';
+import { battleConsoleChromeSockets } from '../runtimeData';
 import type { BattleConsoleLayoutMode, ResponsiveLayoutProjection } from '../projection';
 
 export function battleConsoleChromeUrl(baseUrl: string, mode: BattleConsoleLayoutMode = 'wide'): string {
@@ -25,26 +24,19 @@ export const BATTLE_CONSOLE_ASSET_MODES = Object.freeze(['wide', 'standard', 'co
 export interface ChromeSocketRegistration {
   readonly key: string;
   readonly rect: Readonly<{ x: number; y: number; width: number; height: number }>;
-  readonly assembly: string;
   readonly semanticAuthority: false;
   readonly inputAuthority: false;
 }
 
 export const chromeSocketRegistry: readonly ChromeSocketRegistration[] = Object.freeze(
-  chromeContract.sockets.map((socket) => Object.freeze({
+  battleConsoleChromeSockets.map((socket) => Object.freeze({
     key: socket.key,
     rect: Object.freeze({ ...socket.rect }),
-    assembly: socket.assembly,
     semanticAuthority: false as const,
     inputAuthority: false as const,
   })),
 );
 
-export const dynamicAppearanceRegistry = Object.freeze({
-  expectationKeys: Object.freeze(appearanceContract.expectations.map((entry) => entry.key)),
-  reconstructsOwners: false,
-  usesMasksToHideWrongInk: false,
-});
 
 export function stateFreeChromeDescriptor() {
   return Object.freeze({

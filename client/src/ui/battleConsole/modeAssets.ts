@@ -1,5 +1,3 @@
-import assemblies from '../../../../.codearbiter/contracts/battle-console/reference/assemblies.json';
-import chromeSockets from '../../../../.codearbiter/contracts/battle-console/topology/chrome-sockets.json';
 import {
   BATTLE_CONSOLE_LOGICAL_SURFACE,
   projectResponsiveLayout,
@@ -7,6 +5,7 @@ import {
   type BattleConsoleLayoutMode,
   type BattleConsoleRect,
 } from './projection';
+import { battleConsoleChromeSockets, battleConsoleSemanticRegions } from './runtimeData';
 
 const OWNER_BLEED_PX = 3;
 const ATLAS_GAP_PX = 1;
@@ -71,8 +70,8 @@ function pack(
   });
 }
 
-const dynamicRecords = chromeSockets.sockets.map((socket) => ({ key: socket.key, rect: socket.rect }));
-const semanticRecords = assemblies.semanticRegions.map((region) => ({ key: region.id, rect: region.rect }));
+const dynamicRecords = battleConsoleChromeSockets.map((socket) => ({ key: socket.key, rect: socket.rect }));
+const semanticRecords = battleConsoleSemanticRegions.map((region) => ({ key: region.id, rect: region.rect }));
 
 export const battleConsoleModeAssets = Object.freeze(Object.fromEntries(
   (['compact', 'standard', 'wide'] as const).map((mode) => {

@@ -14,9 +14,6 @@ export interface SemanticSourceRecord {
   readonly disabled: boolean;
   readonly expanded: boolean | null;
   readonly focusable: boolean;
-  readonly haspopup: string | null;
-  readonly hidden: boolean;
-  readonly inert: boolean;
   readonly live: string | null;
   readonly modal: boolean;
   readonly parentKey: string | null;

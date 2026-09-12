@@ -1,10 +1,6 @@
-import lifecycleContract from '../../../../.codearbiter/contracts/battle-console/topology/lifecycle-triggers.json';
-import semanticOwners from '../../../../.codearbiter/contracts/battle-console/topology/semantic-owners.json';
 import {
   battleConsoleResourceClasses,
   BattleConsoleResourceLedger,
-  resourcesAreZero,
-  type BattleConsoleResourceClass,
   type BattleConsoleResourceSnapshot,
 } from './resources';
 import type { ResponsiveLayoutProjection } from './projection';
@@ -17,41 +13,6 @@ import type {
   BattleConsoleLifecycleStatus,
   BattleConsolePresentationState,
 } from './types';
-
-interface FailureOutcome {
-  readonly winningGenerationCount: number;
-  readonly staleCompletionMounted: boolean;
-  readonly semanticTopologyPreserved: boolean;
-}
-
-interface DestroyOutcome {
-  readonly resources: BattleConsoleResourceSnapshot;
-  readonly staleCompletionRecreatedResources: boolean;
-}
-
-const knownLifecycleTriggers = new Set(lifecycleContract.triggers.map((trigger) => trigger.key));
-
-export function createBattleConsoleLifecycleHarness() {
-  const stableKeys = semanticOwners.nodes.map((node) => node.stableKey);
-  return Object.freeze({
-    async walk<const States extends readonly [string, ...string[]]>(states: States) {
-      return states.map((state) => Object.freeze({
-        state,
-        stableKeys,
-        rootCount: 1,
-        nodeObjectsStable: true,
-      })) as { [Index in keyof States]: {
-        state: string;
-        stableKeys: string[];
-        rootCount: 1;
-        nodeObjectsStable: true;
-      } };
-    },
-    triggerKeys() {
-      return [...lifecycleContract.indices.triggerKeys];
-    },
-  });
-}
 
 class GenerationGuard {
   #generation = 0;
@@ -70,80 +31,6 @@ class GenerationGuard {
   isCurrent(generation: number): boolean {
     return this.#active === generation;
   }
-}
-
-/** Contract-level lifecycle pressure used before P-06 wires the real Preact mount. */
-export async function simulateLifecycleFailure(triggerKey: string): Promise<FailureOutcome> {
-  if (!knownLifecycleTriggers.has(triggerKey)) {
-    throw new RangeError(`Unknown battle-console lifecycle trigger: ${triggerKey}`);
-  }
-
-  const guard = new GenerationGuard();
-  const first = guard.start();
-  let winningGenerationCount = 1;
-  let staleCompletionMounted = false;
-
-  if (
-    triggerKey === 'overlapping-starts'
-    || triggerKey === 'superseded-generation-start'
-    || triggerKey === 'hotseat-restart'
-    || triggerKey === 'network-restart-request'
-    || triggerKey === 'network-rematch'
-  ) {
-    guard.start();
-    staleCompletionMounted = guard.isCurrent(first);
-  }
-
-  if (
-    triggerKey.includes('leave')
-    || triggerKey.includes('quit')
-    || triggerKey === 'page-teardown'
-    || triggerKey === 'non-battle-route-transition'
-    || triggerKey === 'progression-account-route'
-    || triggerKey === 'destroy-during-lazy-import'
-    || triggerKey === 'repeated-destroy'
-  ) {
-    guard.invalidate();
-    winningGenerationCount = 0;
-    staleCompletionMounted = guard.isCurrent(first);
-  }
-
-  return Object.freeze({
-    winningGenerationCount,
-    staleCompletionMounted,
-    semanticTopologyPreserved: true,
-  });
-}
-
-export async function destroyBattleConsoleGeneration({
-  duringLoad,
-  repeat,
-}: Readonly<{ duringLoad: boolean; repeat: number }>): Promise<DestroyOutcome> {
-  if (!Number.isInteger(repeat) || repeat < 1) {
-    throw new RangeError('repeat must be a positive integer');
-  }
-
-  const ledger = new BattleConsoleResourceLedger();
-  const acquired: BattleConsoleResourceClass[] = duringLoad
-    ? ['pendingImports', 'pendingPromises', 'loadResources']
-    : [...battleConsoleResourceClasses];
-  for (const resourceClass of acquired) ledger.acquire(resourceClass);
-
-  let resources = ledger.close();
-  for (let index = 1; index < repeat; index += 1) resources = ledger.close();
-
-  let staleCompletionRecreatedResources = false;
-  try {
-    ledger.acquire('pixiApplications');
-    staleCompletionRecreatedResources = true;
-  } catch {
-    staleCompletionRecreatedResources = false;
-  }
-
-  if (!resourcesAreZero(resources)) {
-    throw new Error('Battle-console destroy did not release every resource class');
-  }
-  return Object.freeze({ resources, staleCompletionRecreatedResources });
 }
 
 export type BattleConsoleLifecycleEnterRequest = Omit<BattleConsoleMountRequest, 'generationToken'>;
