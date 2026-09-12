@@ -70,6 +70,7 @@ function acceptedRoom(
         maxWind: 10,
         gravity: 0.15,
         rulesetVersion: 4,
+        commandProtocolVersion: 2,
       },
     },
   }
@@ -287,7 +288,7 @@ describe('LobbyRoomController cancellation ownership', () => {
     const live: FetchedRoom = {
       id: 'saved', code: 'SAVE', status: 'active', seed: 17,
       players: [{ id: 'p', name: 'Alice', color: '#e84d4d', ready: true }],
-      options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rulesetVersion: 4 },
+      options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rulesetVersion: 4, commandProtocolVersion: 2 },
     }
     test.persistence.readSession.mockReturnValue(descriptor)
     test.persistence.readSeatToken.mockReturnValue('tok')

@@ -198,11 +198,19 @@ noninteractive project config (`config push --yes`), and the exact function
 inventory. It is a credentialed command; normal development and CI use
 `npm run backend:release:check` instead.
 
-Do not use this local command as a production approval path. The repository
-contains a proposed protected workflow and release manifest, but this recovery
-has no recorded `production-backend` environment, approved settings snapshot,
-or deployed backend capability. The workflow is designed to fail closed until
-those separate owner decisions and settings evidence exist.
+Do not use this local command as a production approval path. The approved
+[backend deployment](https://github.com/SUaDtL/singedTerra/actions/runs/34719526794)
+completed successfully on attempt 1 for `main`
+`10d6fe78409f8110cb25c2a484ae906656837f7d`, with manifest source
+`43bb1cdd4f60ba5c56920631ade075a2d0c0c482bdaae23fda97466677c4f059`.
+It redeployed all 17 manifest functions. Migrations 001 through 022 were
+already applied, so this run applied no new migration. The [software recovery
+record](SOFTWARE_RECOVERY.md#recovery-v2-delivery-evidence-2026-09-12) and
+[parent-owned canonical ledger](../.codearbiter/plans/evidence-recovery-v2.md)
+record the independent review, protected environment, and credential-confinement
+evidence. This deployment record does not approve a future release, client
+activation, or production smoke test. Future production actions still require
+explicit approval; claims require matching evidence.
 
 Production releases use the manual **Deploy backend (Supabase)** workflow. Its
 two inputs identify the reviewed proposal: the exact current `main` commit and
@@ -284,6 +292,47 @@ The workflow:
 6. runs a live Chromium smoke test.
 
 The live site is [suadtl.github.io/singedTerra](https://suadtl.github.io/singedTerra/).
+
+## Main protection and Pages rollback
+
+`main` is protected with strict, app-bound required checks. The recorded
+post-application state requires these checks from GitHub Actions app `15368`:
+
+- `typecheck · harnesses · build`
+- `edge function tests (deno)`
+- `e2e · rendering guardrails`
+
+Branch protection also applies to administrators. The policy change had recorded
+owner approval and was applied through a narrow required-checks update followed
+by administrator enforcement. The after-state preserves zero required pull
+request approvals, disabled stale-review dismissal, disabled code-owner review,
+disabled last-push approval, disabled force pushes, disabled branch deletion,
+and no repository rulesets.
+
+Pages publication is automatic for qualifying pushes to `main`. A request for
+approval to merge a client-bearing change must disclose that ordinary Pages
+publication will follow. A Supabase backend deployment needs separate, explicit
+approval.
+
+A Pages rollback is a separate, explicitly approved production operation. Use
+only the manual rollback path with `ROLLBACK`, the owner-reviewed current
+`main` SHA, and the exact source SHA and run of a prior successful trusted Pages
+push. For the recorded recovery publication, the accepted artifact is
+`github-pages-34713382261` (artifact `10304581142`) from source
+`10d6fe78409f8110cb25c2a484ae906656837f7d`; its verified payload SHA-256 is
+`574b9623f00e97f8916776e86ff426213b07394835aadcd6b2744107bcba2354`.
+The rollback reuploads that one unexpired artifact unchanged. It must not run a
+client rebuild or substitute a newly built artifact. Record the owner approval,
+selected run, artifact, source SHA, retained protections, and result. If the
+artifact is expired or missing, stop and obtain a separately approved recovery
+plan. Do not weaken protection to compensate.
+
+The separately configured `production-backend` environment has reviewer
+`SUaDtL`, self-review allowed for the current sole-maintainer policy,
+administrator bypass disabled, protected-branch eligibility, and no wait timer.
+Environment credentials must be provisioned before deployment. This environment
+configuration does not approve a deployment. A deployment needs separate,
+explicit approval.
 
 ## Pull-request gate
 

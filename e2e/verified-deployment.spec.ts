@@ -127,6 +127,7 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
     maxWind: 6,
     gravity: 0.15,
     rulesetVersion: 4,
+    commandProtocolVersion: 2,
     walls: 'open',
     rounds: 1,
     armsLevel: 0,
@@ -555,8 +556,25 @@ test.describe('verified deployment production-browser journey', () => {
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     const firstReport = page.locator('.st-hud__overlay--victory');
     await expect(firstReport).toBeVisible({ timeout: 10_000 });
+    await expect(firstReport.getByRole('heading', { name: 'Commander wins' })).toBeVisible();
+    await expect(firstReport.locator('.st-hud__victory-field-order'))
+      .toHaveText('Fire for Effect not achieved — CPU was damaged on 0 of 2 required human salvos.');
     await expect(firstReport.locator('.st-hud__victory-progression-receipt')).toBeHidden();
     await expect.poll(() => completionCalls).toBe(1);
+    const terminalProjection = await page.evaluate(() => (
+      window as typeof window & {
+        __SINGED_TERRA_E2E_VERIFIED_TERMINAL__?: unknown;
+      }
+    ).__SINGED_TERRA_E2E_VERIFIED_TERMINAL__);
+    expect(terminalProjection).toEqual({
+      canonical: { phase: 'PLAYER_TURN', winner: null },
+      presented: { phase: 'GAME_OVER', winner: 'p1' },
+      result: {
+        outcome: 'human_win', winnerId: 'p1', reason: 'health',
+        humanSalvos: 6, cpuSalvos: 6, liveTicks: 632, cpuSimulationTicks: 24_155,
+        transcript,
+      },
+    });
     const fire = page.locator('[data-battle-console-action="fire"]');
     await expect(fire).toBeDisabled();
     await expect(page.locator('[data-battle-console-action="fire"]:enabled')).toHaveCount(0);

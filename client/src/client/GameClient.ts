@@ -1,4 +1,4 @@
-import type { GameState } from '@shared/types/GameState';
+import type { BorrowedGameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type {
   BattlefieldWorldId,
@@ -10,6 +10,7 @@ import type {
 import type { AiDifficulty } from '@shared/types/GameState';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import type { QuickChatKey } from './quickChat';
+import type { RoomCommandVersion } from '@shared/net/roomCommand';
 
 /**
  * Everything needed to start the SUCCESSOR game after a rematch: the new room's
@@ -25,6 +26,7 @@ export interface RematchInfo {
     maxWind: number;
     gravity: number;
     rulesetVersion?: NetworkRulesetVersion;
+    commandProtocolVersion?: RoomCommandVersion;
     walls?: WallMode;
     battlefieldWorld?: BattlefieldWorldId;
     hazards?: TerrainHazardMode;
@@ -95,7 +97,7 @@ export interface GameClient {
   sendAction(action: PlayerAction): void;
 
   /** Latest known game state, or null before the first snapshot. */
-  getState(): GameState | null;
+  getState(): BorrowedGameState | null;
 
   /**
    * Immutable-by-contract snapshot of the engine's pristine terrain, captured
@@ -121,7 +123,7 @@ export interface GameClient {
   getEffectiveGravity(): number;
 
   /** Subscribe to state changes. Returns an unsubscribe function. */
-  onStateChange(listener: (state: GameState) => void): () => void;
+  onStateChange(listener: (state: BorrowedGameState) => void): () => void;
 
   /** True when a fire action has been submitted but not yet echoed back (network only). */
   readonly isFiring?: boolean;
@@ -165,6 +167,9 @@ export interface GameClient {
 
   /** Notify that a completed match was linked and account progression may be stale. */
   onAccountProgressChanged?(listener: () => void): () => void;
+
+  /** Retire uncertain network-command continuations after account identity changes. */
+  invalidatePendingCommands?(): void;
 
   /** Send and receive fixed, ephemeral networked quick-chat messages. */
   sendQuickChat?(key: QuickChatKey): boolean;

@@ -1,10 +1,12 @@
 import './style.css';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { computeAiPlan } from '@shared/engine/AI';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { GRAVITY } from '@shared/engine/Physics';
 import { ARENA_FLOOR_Y, CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
-import type { GameState } from '@shared/types/GameState';
+import type { BorrowedGameState, GameState } from '@shared/types/GameState';
 import { VerifiedDuelController, verifiedCpuPolicyForTuple } from '@shared/net/verifiedDuel';
 import type { ConnectionState, GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
@@ -37,9 +39,10 @@ import {
   observeAndForwardFirstSalvoAction,
 } from './ui/firstSalvoController';
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
-import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
+import type { VerifiedDuelReplayResult, VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import { projectLiveMatchSnapshot } from './client/liveMatchDiagnostics';
 import { observeFieldOrder, type FieldOrder } from './client/fieldOrder';
+import { projectMatchPresentationState } from './client/matchPresentation';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
@@ -63,6 +66,13 @@ const E2E_HOT_SEAT_SEED = (
   : 1337;
 const ENABLE_DETERMINISTIC_HOT_SEAT_PROBE = E2E_MODE === 'hotseat'
   || E2E_MODE === 'verified-lifecycle';
+
+/** Match GameEngine's room-option normalization before passing the tier to the AI. */
+function normalizeRoomArmsLevel(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(4, Math.max(0, Math.floor(value)))
+    : 4;
+}
 
 interface TerminalPayoffE2EReceipt {
   readonly terminalExplosionCount?: number;
@@ -109,8 +119,8 @@ function createSwitchableVerifiedClient(
   let activeClient = new HotSeatClient(controller);
   let activeUnsubscribe: (() => void) | null = null;
   let started = false;
-  const listeners = new Set<(state: GameState) => void>();
-  const relay = (state: GameState): void => {
+  const listeners = new Set<(state: BorrowedGameState) => void>();
+  const relay = (state: BorrowedGameState): void => {
     for (const listener of listeners) listener(state);
   };
   const bind = (): void => { activeUnsubscribe = activeClient.onStateChange(relay); };
@@ -149,10 +159,11 @@ function createSwitchableVerifiedClient(
 }
 
 function fieldOrderObservationFor(controller: VerifiedDuelController) {
-  const state = controller.engine.getState();
+  const result = controller.complete ? controller.result() : null;
+  const state = projectMatchPresentationState(controller.engine.getState(), result);
   const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
   if (!activeTank) return null;
-  const outcome = controller.complete ? controller.result().outcome : null;
+  const outcome = result?.outcome ?? null;
   return {
     humanSalvos: controller.transcript.length,
     settledHumanDamage: controller.settledHumanDamage,
@@ -232,7 +243,7 @@ function bootstrap(): void {
   // browser collect those non-DOM presentation resources before the next match.
   const matchSession = new MatchSessionLifecycle<GameClient, InputHandler, Renderer>();
   const gameSession = new GameSessionComposition<
-    GameClient, InputHandler, Renderer, GameState, ClientConstructionSetup
+    GameClient, InputHandler, Renderer, BorrowedGameState, ClientConstructionSetup
   >(matchSession);
   const hud = new HUD(hudRoot, overlayRoot, modalRoot, battleRailRoot);
   if (E2E_MODE === 'hotseat') {
@@ -294,7 +305,7 @@ function bootstrap(): void {
   // Last phase seen by the render loop; a phase change always forces one redraw so the
   // settling frame of a transition (e.g. into a static PLAYER_TURN, ROUND_OVER, or
   // GAME_OVER) is painted even when isAnimating() has already gone false.
-  let lastPhase: GameState['phase'] | null = null;
+  let lastPhase: BorrowedGameState['phase'] | null = null;
 
   // Detonation bloom: a brief warm light-bleed over the play field, paired with
   // the boom + screen-shake. Reduced-motion users get audio but no flash.
@@ -379,6 +390,7 @@ function bootstrap(): void {
 
   // Per-game wiring that gets torn down and rebuilt on restart.
   let lastActiveId: string | null = null;
+  let lastInputAimRound: number | null = null;
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
   let progressionSignInHandled = false;
@@ -399,8 +411,32 @@ function bootstrap(): void {
   // existing victory fixture while leaving every production entry path unchanged.
   let e2eRoundShopPending = E2E_MODE === 'round-shop';
 
+  function presentationStateFor(canonical: BorrowedGameState): BorrowedGameState {
+    const terminal = verifiedController?.complete && !verifiedCasual
+      ? verifiedController.result()
+      : null;
+    return projectMatchPresentationState(canonical, terminal);
+  }
+
+  /**
+   * The two explicit query fixtures intentionally prepare an engine snapshot for
+   * visual browser coverage. Keep their mutable escape local and fail closed if a
+   * production route ever reaches it; ordinary presentation reads stay borrowed.
+   */
+  function mutableE2EFixtureState(
+    state: BorrowedGameState,
+    fixture: 'round-shop' | 'victory',
+  ): GameState {
+    const admitted = fixture === 'round-shop'
+      ? E2E_MODE === 'round-shop'
+      : e2eVictoryPending;
+    if (!admitted) throw new Error('mutable_e2e_fixture_outside_query_gate');
+    return state as GameState;
+  }
+
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
-    const state = matchSession.client?.getState();
+    const canonical = matchSession.client?.getState();
+    const state = canonical ? presentationStateFor(canonical) : null;
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
     if (!state || !activeTank) return null;
     return {
@@ -417,7 +453,8 @@ function bootstrap(): void {
   }
 
   function directAimAllowed(): boolean {
-    const state = matchSession.client?.getState();
+    const canonical = matchSession.client?.getState();
+    const state = canonical ? presentationStateFor(canonical) : null;
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
     return !!state
       && state.phase === 'PLAYER_TURN'
@@ -430,15 +467,34 @@ function bootstrap(): void {
       && verifiedInputAllowed();
   }
 
+  function activeInputPowerCap(powerCap: number | undefined): number {
+    const liveCap = powerCap !== undefined && Number.isFinite(powerCap)
+      ? Math.max(0, powerCap)
+      : DEFAULT_POWER_CAP;
+    const verifiedMaximum = currentConfig?.verifiedDeployment && !verifiedCasual
+      ? currentConfig.verifiedDeployment.descriptor.limits.power.max
+      : null;
+    return verifiedMaximum === null ? liveCap : Math.min(liveCap, verifiedMaximum);
+  }
+
+  function syncActiveInputPowerCap(): void {
+    const state = matchSession.client?.getState();
+    const tank = state?.tanks.find((candidate) => candidate.id === state.activePlayerId);
+    matchSession.input?.setPowerCap(activeInputPowerCap(tank?.powerCap));
+  }
+
   function currentLiveMatchSnapshot() {
     const activeClient = matchSession.client;
-    const state = activeClient?.getState();
+    const canonical = activeClient?.getState();
+    const state = canonical ? presentationStateFor(canonical) : null;
     const config = currentConfig;
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
     if (!activeClient || !state || !config || !activeTank) return undefined;
     const activeSeatOrdinal = state.tanks.findIndex((tank) => tank.id === state.activePlayerId) + 1;
     const execution = config.verifiedDeployment && !verifiedCasual ? 'verified' : 'casual';
-    const input = execution === 'verified' && lobby.verifiedDeployment.status !== 'active'
+    const input = state.phase === 'GAME_OVER'
+      ? 'locked'
+      : execution === 'verified' && lobby.verifiedDeployment.status !== 'active'
       ? 'frozen'
       : shouldAcceptLocalInput({
         activeIsAi: !!activeTank.ai,
@@ -464,11 +520,12 @@ function bootstrap(): void {
 
   function verifiedInputAllowed(): boolean {
     if (!verifiedController || verifiedCasual) return true;
+    if (verifiedController.complete) return false;
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     return deployment.status === 'active' && deployment.deadline.acceptsInput;
   }
 
-  function syncVerifiedHud(): void {
+  function syncVerifiedHud(presentedState?: BorrowedGameState): void {
     const context = currentConfig?.verifiedDeployment;
     if (!context || !verifiedController || verifiedCasual) {
       hud.setVerifiedDeployment(null);
@@ -500,7 +557,8 @@ function bootstrap(): void {
       return;
     }
     if (deployment.status === 'expired') {
-      const state = verifiedController.engine.getState();
+      const state = presentedState
+        ?? presentationStateFor(verifiedController.engine.getState());
       const humanSalvos = verifiedController.transcript.length;
       const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
       const cpuSalvos = Math.max(
@@ -519,7 +577,8 @@ function bootstrap(): void {
       hud.setFieldOrder(null);
       return;
     }
-    const state = verifiedController.engine.getState();
+    const state = presentedState
+      ?? presentationStateFor(verifiedController.engine.getState());
     const humanSalvos = verifiedController.transcript.length;
     const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
     const result = verifiedController.complete ? verifiedController.result() : null;
@@ -577,6 +636,7 @@ function bootstrap(): void {
   async function resetMatchPresentation(): Promise<void> {
     audio.napalmStop();
     lastActiveId = null;
+    lastInputAimRound = null;
     renderDirty = true;
     lastPhase = null;
     activeIsAi = false;
@@ -676,9 +736,10 @@ function bootstrap(): void {
         // arrow keys step from that tank's real angle/power (set_angle/set_power
         // carry ABSOLUTE values). getState() may be null before the first snapshot.
         if (e2eRoundShopPending && initial) {
+          const fixtureState = mutableE2EFixtureState(initial, 'round-shop');
           e2eRoundShopPending = false;
-          const winner = initial.tanks[0]!;
-          const runnerUp = initial.tanks[1]!;
+          const winner = fixtureState.tanks[0]!;
+          const runnerUp = fixtureState.tanks[1]!;
           winner.playerName = 'Player 1';
           winner.roundWins = 1;
           winner.kills = 1;
@@ -688,41 +749,42 @@ function bootstrap(): void {
           runnerUp.kills = 0;
           runnerUp.totalDamage = 54;
           runnerUp.credits = 6_250;
-          initial.phase = 'ROUND_OVER';
-          initial.round = 2;
-          initial.totalRounds = 3;
-          initial.lastRoundWinnerId = winner.id;
+          fixtureState.phase = 'ROUND_OVER';
+          fixtureState.round = 2;
+          fixtureState.totalRounds = 3;
+          fixtureState.lastRoundWinnerId = winner.id;
         }
         if (e2eVictoryPending && initial) {
+          const fixtureState = mutableE2EFixtureState(initial, 'victory');
           e2eVictoryPending = false;
-          initial.phase = 'GAME_OVER';
-          initial.winner = initial.tanks[0]!.id;
+          fixtureState.phase = 'GAME_OVER';
+          fixtureState.winner = fixtureState.tanks[0]!.id;
           if (E2E_VICTORY_LONG_NAME) {
-            initial.tanks[0]!.playerName = 'LongRangeCommander20';
+            fixtureState.tanks[0]!.playerName = 'LongRangeCommander20';
           }
-          initial.tanks[0]!.alive = true;
-          initial.tanks[0]!.health = 72;
-          initial.tanks[0]!.kills = 2;
-          initial.tanks[0]!.totalDamage = 134;
-          initial.tanks[0]!.loadout = {
+          fixtureState.tanks[0]!.alive = true;
+          fixtureState.tanks[0]!.health = 72;
+          fixtureState.tanks[0]!.kills = 2;
+          fixtureState.tanks[0]!.totalDamage = 134;
+          fixtureState.tanks[0]!.loadout = {
             treads: 'ranger',
             hull: 'bulwark',
             turret: 'jackal',
             barrel: 'foundry',
           };
-          initial.tanks[1]!.alive = false;
-          initial.tanks[1]!.health = 0;
-          initial.tanks[1]!.kills = 0;
-          initial.tanks[1]!.totalDamage = 52;
+          fixtureState.tanks[1]!.alive = false;
+          fixtureState.tanks[1]!.health = 0;
+          fixtureState.tanks[1]!.kills = 0;
+          fixtureState.tanks[1]!.totalDamage = 52;
           if (E2E_VICTORY_VERIFIED_FOUR) {
-            initial.totalRounds = 3;
+            fixtureState.totalRounds = 3;
             const fixtureRows = [
               { name: 'Ranger Actualname', wins: 3, kills: 9, damage: 2460 },
               { name: 'CPU 1 Ridgebreaker', wins: 2, kills: 7, damage: 2110 },
               { name: 'CPU 2 Longshot', wins: 1, kills: 5, damage: 1720 },
               { name: 'CPU 3 Undertow', wins: 0, kills: 3, damage: 1080 },
             ];
-            for (const [index, tank] of initial.tanks.entries()) {
+            for (const [index, tank] of fixtureState.tanks.entries()) {
               const row = fixtureRows[index];
               if (!row) continue;
               tank.playerName = row.name;
@@ -740,7 +802,7 @@ function bootstrap(): void {
             });
           }
           if (E2E_MODE === 'victory-payoff') {
-            const defeated = initial.tanks[1]!;
+            const defeated = fixtureState.tanks[1]!;
             const terminalExplosion = {
               id: 1,
               weaponType: 'baby_missile' as const,
@@ -752,8 +814,8 @@ function bootstrap(): void {
               color: '#ffb347',
               durationFrames: 85,
             };
-            initial.lastExplosion = terminalExplosion;
-            initial.explosions = [terminalExplosion];
+            fixtureState.lastExplosion = terminalExplosion;
+            fixtureState.explosions = [terminalExplosion];
           }
         }
         const accountTank = initial?.tanks[0];
@@ -781,6 +843,7 @@ function bootstrap(): void {
           },
         });
         lastActiveId = initial?.activePlayerId ?? null;
+        lastInputAimRound = initial?.round ?? null;
       },
       constructInput: ({ client: newClient, initial }) => {
         const activeTank = initial?.tanks.find((tank) => tank.id === initial.activePlayerId);
@@ -834,6 +897,7 @@ function bootstrap(): void {
         }, {
           initialAngle: activeTank?.angle,
           initialPower: activeTank?.power,
+          powerCap: activeInputPowerCap(activeTank?.powerCap),
           canDirectAim: directAimAllowed,
           canHandleCommand: () => !gameplayInputBlocked(),
         });
@@ -923,20 +987,20 @@ function bootstrap(): void {
           });
         };
 
-        return (state: GameState) => {
-          hotSeatProgression?.observe(state);
-          if (verifiedController?.complete && !verifiedCasual && state.phase !== 'GAME_OVER') {
-            const result = verifiedController.result();
-            state.phase = 'GAME_OVER';
-            state.winner = result.winnerId;
+        return (canonicalState: BorrowedGameState) => {
+          const state = presentationStateFor(canonicalState);
+          if (E2E_MODE === 'verified-lifecycle' && verifiedController?.complete && !verifiedCasual) {
+            exposeVerifiedTerminalProbe(canonicalState, state, verifiedController.result());
           }
-          syncVerifiedHud();
+          hotSeatProgression?.observe(state);
+          syncVerifiedHud(state);
           submitVerifiedCompletion();
           if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) exposeDeterministicHotSeatProbe(state);
           // Aim guide is shown only when the LOCAL human controls the active tank: a
           // human turn in hot-seat, or (networked) the active tank is THIS client's id.
           // Never for a CPU seat or a remote opponent's turn.
           const activeTank = state.tanks.find((t) => t.id === state.activePlayerId);
+          newInput.setPowerCap(activeInputPowerCap(activeTank?.powerCap));
           const aimGuide = resolveAimGuidePresentation({
             mode: config.mode,
             activePlayerOwned: resolveActivePlayerOwnership(
@@ -945,11 +1009,7 @@ function bootstrap(): void {
               state.activePlayerId,
             ),
             activeIsAi: !!activeTank?.ai,
-          }, {
-            baseGravity: config.settings?.gravity ?? GRAVITY,
-            turn: state.turn,
-            suddenDeathTurn: config.settings?.suddenDeathTurn ?? 0,
-          });
+          }, newClient.getEffectiveGravity());
           activeIsLocal = aimGuide.visible;
           newInput.setDirectAimEnabled(directAimAllowed());
           gameRenderer.setAimGuide(aimGuide.visible, aimGuide.gravity);
@@ -1006,14 +1066,15 @@ function bootstrap(): void {
             publishTerminalPayoffE2EReceipt({ impactCompletedAt: performance.now() });
             hud.notifyTerminalImpactComplete();
           }
-          // When the active player changes, re-seed the input handler's aim AND
-          // weapon cursor from the new active tank so each player's arrows start
-          // from their own tank's current angle/power and their Q cycles from
-          // their own selected weapon. Neither setter emits an action.
-          if (state.activePlayerId !== lastActiveId) {
+          // Re-seed when either the active seat or round changes. A new round can
+          // retain the prior opener while the engine resets that tank's aim, so
+          // player ID alone is not enough to identify the mirrored input state.
+          const inputAimRound = state.round ?? null;
+          if (state.activePlayerId !== lastActiveId || inputAimRound !== lastInputAimRound) {
             lastActiveId = state.activePlayerId;
-            // Active tank changed (turn handoff): the emphasis + aim-guide ownership
-            // shift, so force at least one redraw even if the new scene is static.
+            lastInputAimRound = inputAimRound;
+            // Seat or round baseline changed: refresh presentation even if the
+            // new scene is otherwise static.
             markDirty();
             const next = state.tanks.find((t) => t.id === state.activePlayerId);
             if (next) {
@@ -1038,7 +1099,7 @@ function bootstrap(): void {
    * (networked rooms have no AI seats). The (turn, tank) key makes it fire exactly
    * once even though onStateChange runs every frame.
    */
-  function maybeDriveAi(state: GameState): void {
+  function maybeDriveAi(state: BorrowedGameState): void {
     const active = state.tanks.find((t) => t.id === state.activePlayerId);
     const isAi = !!active?.ai && currentConfig?.mode !== 'network';
     activeIsAi = isAi && state.phase === 'PLAYER_TURN';
@@ -1057,19 +1118,51 @@ function bootstrap(): void {
       active.id,
       active.ai!,
       gravity,
-      currentConfig?.settings?.armsLevel ?? 0,
+      normalizeRoomArmsLevel(currentConfig?.settings?.armsLevel),
     );
     if (!plan) return; // no target (game effectively over) — nothing to do
 
     clearAiTimers();
+    const plannedRound = state.round;
+    const plannedTurn = state.turn;
+    const plannedTankId = active.id;
+    let attackWeapon: WeaponType | null = null;
+    const weaponIsUsable = (snapshot: BorrowedGameState, weapon: WeaponType): boolean => {
+      const tank = snapshot.tanks.find((candidate) => candidate.id === plannedTankId);
+      const ammo = tank?.inventory[weapon];
+      return !!ammo && (ammo.unlimited || ammo.count > 0);
+    };
+    const currentBotTurn = (): BorrowedGameState | null => {
+      const canonical = matchSession.client?.getState() ?? null;
+      const current = canonical ? presentationStateFor(canonical) : null;
+      return current?.phase === 'PLAYER_TURN'
+        && current.round === plannedRound
+        && current.turn === plannedTurn
+        && current.activePlayerId === plannedTankId
+        ? current
+        : null;
+    };
     // Swing the barrel to the planned aim first (visible), then fire after a beat.
-    // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first — the
-    // HotSeatClient applies it synchronously, so the select_weapon + fire below use
-    // the just-restocked ammo. (aiActedKey already gates this to once per turn.)
+    // A buy-to-restock plan (P1-7b) commits the turn-neutral purchase first. The
+    // HotSeatClient applies it synchronously, so inspect the resulting inventory
+    // before arming the later fire timer. One ineffective preparation falls back to
+    // the always-legal Baby Missile; corrupt inventory stops visibly and stays bounded.
     matchSession.schedule(() => {
+      if (!currentBotTurn()) return;
       if (plan.buy) matchSession.client?.sendAction({ type: 'buy', weapon: plan.buy });
       if (plan.buyAccessory) matchSession.client?.sendAction({ type: 'buy', accessory: plan.buyAccessory });
-      matchSession.client?.sendAction({ type: 'select_weapon', weapon: plan.weapon });
+      const prepared = currentBotTurn();
+      if (!prepared) return;
+      if (weaponIsUsable(prepared, plan.weapon)) {
+        attackWeapon = plan.weapon;
+      } else if (weaponIsUsable(prepared, 'baby_missile')) {
+        attackWeapon = 'baby_missile';
+        hud.flashMessage('CPU restock failed — using Baby Missile.');
+      } else {
+        hud.flashMessage('CPU has no usable ammunition — reload to continue.');
+        return;
+      }
+      matchSession.client?.sendAction({ type: 'select_weapon', weapon: attackWeapon });
       matchSession.client?.sendAction({ type: 'set_angle', angle: plan.angle });
       matchSession.client?.sendAction({ type: 'set_power', power: plan.power });
       // The bot's barrel swing happens during the static PLAYER_TURN phase, so force
@@ -1077,7 +1170,14 @@ function bootstrap(): void {
       markDirty();
     }, AI_AIM_DELAY);
     matchSession.schedule(() => {
-      matchSession.client?.sendAction(plan.weapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
+      const prepared = currentBotTurn();
+      if (!prepared || !attackWeapon) return;
+      if (!weaponIsUsable(prepared, attackWeapon)) {
+        attackWeapon = null;
+        hud.flashMessage('CPU has no usable ammunition — reload to continue.');
+        return;
+      }
+      matchSession.client?.sendAction(attackWeapon === 'shield' ? { type: 'use_shield' } : { type: 'fire' });
     }, AI_AIM_DELAY + AI_FIRE_DELAY);
   }
 
@@ -1139,6 +1239,10 @@ function bootstrap(): void {
     if ('weapon' in purchase && purchase.weapon) {
       matchSession.client?.sendAction({ type: 'select_weapon', weapon: purchase.weapon });
     }
+    // Hot-seat applies purchases synchronously, so the newly raised Battery cap
+    // is usable before the next render frame. Networked clients refresh again
+    // when the committed action snapshot arrives.
+    syncActiveInputPowerCap();
   });
 
   // Start the next round from the ROUND_OVER between-rounds shop. Like a turn
@@ -1146,6 +1250,7 @@ function bootstrap(): void {
   // client leaves the shop in lockstep.
   hud.onNextRound(() => {
     matchSession.client?.sendAction({ type: 'next_round' });
+    syncActiveInputPowerCap();
   });
 
   const lobby = new Lobby(lobbyRoot, (config: LobbyConfig) => {
@@ -1155,6 +1260,7 @@ function bootstrap(): void {
   });
   const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
     if (identityChanged) {
+      matchSession.client?.invalidatePendingCommands?.();
       fieldOrder = null;
       hud.setFieldOrder(null);
     }
@@ -1404,12 +1510,52 @@ interface SandhogE2EProbe {
   sandhogExplosionCount: number;
 }
 
+interface VerifiedTerminalE2EProbe {
+  readonly canonical: Readonly<{ phase: GameState['phase']; winner: string | null }>;
+  readonly presented: Readonly<{ phase: GameState['phase']; winner: string | null }>;
+  readonly result: Readonly<{
+    outcome: VerifiedDuelReplayResult['outcome'];
+    winnerId: string | null;
+    reason: VerifiedDuelReplayResult['reason'];
+    humanSalvos: number;
+    cpuSalvos: number;
+    liveTicks: number;
+    cpuSimulationTicks: number;
+    transcript: readonly Readonly<VerifiedHumanFire>[];
+  }>;
+}
+
+/** Query-gated copied facts for browser proof; never exposes the borrowed state. */
+function exposeVerifiedTerminalProbe(
+  canonical: BorrowedGameState,
+  presented: BorrowedGameState,
+  result: VerifiedDuelReplayResult,
+): void {
+  const probe = Object.freeze<VerifiedTerminalE2EProbe>({
+    canonical: Object.freeze({ phase: canonical.phase, winner: canonical.winner }),
+    presented: Object.freeze({ phase: presented.phase, winner: presented.winner }),
+    result: Object.freeze({
+      outcome: result.outcome,
+      winnerId: result.winnerId,
+      reason: result.reason,
+      humanSalvos: result.humanSalvos,
+      cpuSalvos: result.cpuSalvos,
+      liveTicks: result.liveTicks,
+      cpuSimulationTicks: result.cpuSimulationTicks,
+      transcript: Object.freeze(result.transcript.map((shot) => Object.freeze({ ...shot }))),
+    }),
+  });
+  (
+    window as typeof window & { __SINGED_TERRA_E2E_VERIFIED_TERMINAL__?: VerifiedTerminalE2EProbe }
+  ).__SINGED_TERRA_E2E_VERIFIED_TERMINAL__ = probe;
+}
+
 /**
  * Narrow, snapshot-only evidence channel for production-bundle browser tests.
  * It exists solely on the deterministic `?e2e=hotseat` entrypoint and copies
  * presentation-relevant facts rather than exposing the mutable GameState.
  */
-function exposeDeterministicHotSeatProbe(state: GameState): void {
+function exposeDeterministicHotSeatProbe(state: BorrowedGameState): void {
   const projectile = state.projectiles.find((candidate) => candidate.weaponType === 'sandhog');
   const burrowTicksRemaining = projectile?.burrowTicksRemaining ?? null;
   let centerSolid: boolean | null = null;

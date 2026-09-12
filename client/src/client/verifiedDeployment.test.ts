@@ -38,6 +38,7 @@ function engine(): GameEngine {
 
 function animationFrames() {
   let nextId = 1
+  let timestamp = 0
   const callbacks = new Map<number, FrameRequestCallback>()
   return {
     request: (callback: FrameRequestCallback): number => {
@@ -50,7 +51,8 @@ function animationFrames() {
       const entry = callbacks.entries().next().value as [number, FrameRequestCallback] | undefined
       if (!entry) throw new Error('missing_verified_duel_animation_frame')
       callbacks.delete(entry[0])
-      entry[1](0)
+      timestamp += 1_000 / 60
+      entry[1](timestamp)
     },
   }
 }
@@ -105,6 +107,7 @@ describe('VerifiedDeploymentRecorder', () => {
     'uses shared policy V$policy through HotSeatClient and matches canonical verifier state at the $outcome outcome',
     ({ policy, length, angle, power }) => {
       const raf = animationFrames()
+      vi.spyOn(performance, 'now').mockReturnValue(0)
       vi.stubGlobal('requestAnimationFrame', raf.request)
       vi.stubGlobal('cancelAnimationFrame', raf.cancel)
       const controller = policy === 2

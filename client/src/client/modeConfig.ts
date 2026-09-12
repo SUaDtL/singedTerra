@@ -12,6 +12,10 @@ import {
   type TerrainHazardMode,
 } from '@shared/types/GameOptions';
 import { normalizeTerrainHazardMode } from '@shared/engine/Terrain';
+import {
+  CURRENT_ROOM_COMMAND_VERSION,
+  type RoomCommandVersion,
+} from '@shared/net/roomCommand';
 
 /**
  * Optional advanced engine settings chosen in the lobby. Each field is omitted
@@ -43,6 +47,8 @@ export interface ModeSettings {
   hazards?: TerrainHazardMode;
   /** Server-authoritative deterministic network room contract. */
   rulesetVersion?: NetworkRulesetVersion;
+  /** Exact network command contract admitted by the room referee. */
+  commandProtocolVersion?: RoomCommandVersion;
 }
 
 // Advanced-settings bounds + engine defaults (shown as placeholders so the user
@@ -204,6 +210,7 @@ export type AdmittedNetworkModeSetup = NetworkModeSetup & {
     maxWind: number;
     gravity: number;
     rulesetVersion: NetworkRulesetVersion;
+    commandProtocolVersion: typeof CURRENT_ROOM_COMMAND_VERSION;
   };
 };
 export type ClientModeSetup = HotSeatModeSetup | NetworkModeSetup;
@@ -227,7 +234,12 @@ export function projectNetworkPlayers(players: AuthoritativeRoomMode['players'])
 }
 
 type AdmittedAuthoritativeRoomMode = AuthoritativeRoomMode & {
-  options: ModeSettings & { maxWind: number; gravity: number; rulesetVersion: NetworkRulesetVersion };
+  options: ModeSettings & {
+    maxWind: number;
+    gravity: number;
+    rulesetVersion: NetworkRulesetVersion;
+    commandProtocolVersion: typeof CURRENT_ROOM_COMMAND_VERSION;
+  };
 };
 
 /** No numeric coercion here: these values have already crossed server admission. */
@@ -273,6 +285,9 @@ export function projectAuthoritativeNetworkMode(
       ...(info.options.rulesetVersion !== undefined
         ? { rulesetVersion: info.options.rulesetVersion }
         : {}),
+      ...(info.options.commandProtocolVersion !== undefined
+        ? { commandProtocolVersion: info.options.commandProtocolVersion }
+        : {}),
     },
   };
 }
@@ -282,6 +297,7 @@ export interface CreateRoomRequest {
   color: string;
   loadout: TankLoadout;
   rulesetVersion: NetworkRulesetVersion;
+  commandProtocolVersion: typeof CURRENT_ROOM_COMMAND_VERSION;
   bots?: CreateRoomModeInput['bots'];
   options: Omit<ModeSettings, 'seed' | 'rulesetVersion'> & {
     maxPlayers: number;
@@ -302,6 +318,7 @@ export function normalizeCreateRoomRequest(params: CreateRoomModeInput): CreateR
     color: params.color,
     loadout: params.loadout,
     rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
+    commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
     ...(params.bots.length > 0 ? { bots: params.bots } : {}),
     options: {
       maxPlayers: params.maxPlayers,

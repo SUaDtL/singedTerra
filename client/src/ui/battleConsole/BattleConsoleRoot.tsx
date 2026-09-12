@@ -1,19 +1,10 @@
-import semanticOwners from '../../../../.codearbiter/contracts/battle-console/topology/semantic-owners.json';
-import projections from '../../../../.codearbiter/contracts/battle-console/topology/projections.json';
-import chromeSockets from '../../../../.codearbiter/contracts/battle-console/topology/chrome-sockets.json';
-import layers from '../../../../.codearbiter/contracts/battle-console/ownership/layers.json';
-import assemblies from '../../../../.codearbiter/contracts/battle-console/reference/assemblies.json';
 import matchFrameUrl from '../../assets/battle-console/battle-match-frame-v2.webp';
 import armoryFrameUrl from '../../assets/battle-console/battle-armory-frame-ultrawide-v3.webp';
 import type { JSX } from 'preact';
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
-import {
-  observeRenderedAppearance,
-  type BattleConsoleAppearanceRecord,
-} from './appearanceRuntime';
 import { CompactConsole } from './components/CompactConsole';
 import { WeaponIcon } from './components/WeaponIcon';
-import { SemanticContractTree, type SemanticNodeDefinition } from './components/SemanticContractTree';
+import { SemanticContractTree } from './components/SemanticContractTree';
 import {
   BattleConsolePortal,
   emptyBattleConsolePortalHosts,
@@ -22,24 +13,7 @@ import {
 import type { BattleConsoleLifecycleStatus, BattleConsolePresentationState, BattleConsoleIntent } from './types';
 import type { BattleConsoleLayoutMode } from './projection';
 import { battleConsoleModeAssets, battleConsoleModeAssetUrl } from './modeAssets';
-
-export const semanticRegistry = Object.freeze(semanticOwners.nodes.map((node) => Object.freeze({
-  stableKey: node.stableKey,
-  owner: 'preact',
-  rawNodeIdentityContract: false,
-})));
-
-export const compactTargetRegistry = Object.freeze(
-  projections.compactTargets.map((target) => Object.freeze({
-    ...target,
-    hitRect: Object.freeze({ ...target.hitRect }),
-    minimumCssSize: Object.freeze({ ...target.minimumCssSize }),
-    sourceRect: Object.freeze({ ...target.sourceRect }),
-    visualRect: Object.freeze({ ...target.visualRect }),
-  })),
-);
-
-const semanticNodes = semanticOwners.nodes as readonly SemanticNodeDefinition[];
+import { battleConsoleSemanticNodes, battleConsoleSemanticRegions } from './runtimeData';
 
 interface RuntimeRect {
   readonly x: number;
@@ -47,21 +21,6 @@ interface RuntimeRect {
   readonly width: number;
   readonly height: number;
 }
-
-interface ProjectionRecord {
-  readonly key: string;
-  readonly sourceRect?: RuntimeRect;
-  readonly wide?: unknown;
-  readonly standard?: unknown;
-  readonly compact?: unknown;
-}
-
-const projectionContract = projections as unknown as {
-  readonly assemblies: readonly ProjectionRecord[];
-  readonly transformedLandmarks: readonly ProjectionRecord[];
-  readonly transformedSockets: readonly ProjectionRecord[];
-};
-const socketSourceRects = new Map(chromeSockets.sockets.map((socket) => [socket.key, socket.rect]));
 
 function markerStyle(rect: RuntimeRect): JSX.CSSProperties {
   return {
@@ -98,7 +57,7 @@ function CanonicalSemanticInk({
   layoutMode: BattleConsoleLayoutMode;
   scale: number;
 }>) {
-  const regions = assemblies.semanticRegions.filter((region) => usesCanonicalSemanticInk(region.id, state));
+  const regions = battleConsoleSemanticRegions.filter((region) => usesCanonicalSemanticInk(region.id, state));
   const atlas = battleConsoleModeAssets[layoutMode].semantic;
   const semanticAtlasUrl = battleConsoleModeAssetUrl(
     import.meta.env.BASE_URL,
@@ -163,106 +122,6 @@ function SemanticAtlasPreloads() {
       <img alt="" data-battle-console-match-frame-preload="" src={matchFrameUrl} />
       <img alt="" data-battle-console-armory-frame-preload="" src={armoryFrameUrl} loading="eager" decoding="sync" />
     </div>
-  );
-}
-
-function RuntimeContractInstrumentation({
-  lifecycleStatus,
-  layoutMode,
-}: Readonly<{
-  lifecycleStatus: BattleConsoleLifecycleStatus;
-  layoutMode: BattleConsoleLayoutMode;
-}>) {
-  const layerOwner = (record: (typeof layers.records)[number]) => (
-    lifecycleStatus === 'fallback' ? record.fallbackOwner : record.readyOwner
-  );
-  return (
-    <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      {projectionContract.assemblies.map((row) => row.sourceRect && (
-        <i key={`assembly:${row.key}`} data-battle-console-assembly-key={row.key} style={markerStyle(row.sourceRect)} />
-      ))}
-      {projectionContract.transformedSockets.map((row) => {
-        const rect = socketSourceRects.get(row.key);
-        return rect && <i key={`socket:${row.key}`} data-battle-console-socket-key={row.key} style={markerStyle(rect)} />;
-      })}
-      {projectionContract.transformedLandmarks.map((row) => (
-        <i
-          key={`landmark:${row.key}`}
-          data-battle-console-landmark-key={row.key}
-          data-battle-console-landmark-observation={JSON.stringify(
-            layoutMode === 'wide' ? { sourceRecordSha256: (row as ProjectionRecord & { sourceRecordSha256?: string }).sourceRecordSha256 ?? row.key } : row[layoutMode],
-          )}
-          style={{ display: 'none' }}
-        />
-      ))}
-      {layers.records.map((record) => (
-        <i
-          key={`layer:${record.key}`}
-          data-battle-console-layer-key={record.key}
-          data-battle-console-layer-owner={layerOwner(record)}
-          style={{ display: 'none' }}
-        />
-      ))}
-      <i
-        data-battle-console-health-pill=""
-        data-battle-console-clearance="recess-pill"
-        style={markerStyle({ x: 224, y: 87, width: 78, height: 28 })}
-      />
-    </div>
-  );
-}
-
-function RuntimeAppearanceProbe({ record }: Readonly<{ record: BattleConsoleAppearanceRecord }>) {
-  const marker = useRef<HTMLElement>(null);
-  const socketRect = record.physicalSocketKeys
-    ?.map((key) => socketSourceRects.get(key))
-    .find((rect): rect is RuntimeRect => rect !== undefined);
-  const rect = socketRect ?? { x: 8, y: 8, width: 16, height: 16 };
-  useLayoutEffect(() => {
-    if (!marker.current) return;
-    marker.current.dataset['battleConsoleAppearanceObservation'] = JSON.stringify(
-      observeRenderedAppearance(marker.current),
-    );
-  }, [record]);
-  return (
-    <i
-      ref={marker}
-      aria-hidden="true"
-      data-battle-console-appearance-key={record.key}
-      data-appearance-font-file={record.fontFile ?? ''}
-      data-appearance-font-weight={record.fontWeight ?? 'none'}
-      data-appearance-baseline={record.baseline}
-      data-appearance-baseline-offset-px={record.baselineOffsetPx}
-      data-appearance-icon-or-glyph={record.iconOrGlyph ?? ''}
-      data-appearance-fill-or-angle={record.fillOrAngle === null ? '' : JSON.stringify(record.fillOrAngle)}
-      data-appearance-alignment={record.alignment}
-      data-appearance-overflow={record.overflow}
-      data-appearance-wrapping={record.wrapping}
-      data-appearance-clearance-px={record.clearancePx}
-      style={{
-        ...markerStyle(rect),
-        '--battle-console-appearance-font-stack': record.fontStack,
-        alignItems: 'center',
-        backgroundColor: record.rgba,
-        color: record.rgba,
-        display: 'flex',
-        fontFamily: record.fontStack,
-        fontSize: `${record.fontSizePx}px`,
-        fontWeight: record.fontWeight ?? 400,
-        justifyContent: record.alignment === 'center' ? 'center' : 'flex-start',
-        letterSpacing: `${record.trackingEm}em`,
-        opacity: record.opacity,
-        outlineColor: record.outlineRgba,
-        outlineStyle: 'solid',
-        outlineWidth: `${record.outlineWidthPx}px`,
-        overflow: 'hidden',
-        textAlign: record.alignment === 'socket-center' ? 'center' : record.alignment,
-        whiteSpace: 'nowrap',
-        zIndex: 3,
-      } as JSX.CSSProperties}
-    >
-      {record.iconOrGlyph ? '◆' : '\u00a0'}
-    </i>
   );
 }
 
@@ -539,7 +398,6 @@ export interface BattleConsoleRootProps {
   readonly classNames?: BattleConsoleClassNames;
   readonly layoutMode?: BattleConsoleLayoutMode;
   readonly scale?: number;
-  readonly appearanceProbe?: BattleConsoleAppearanceRecord | null;
 }
 
 export function BattleConsoleRoot({
@@ -550,7 +408,6 @@ export function BattleConsoleRoot({
   classNames = unstyledClassNames,
   layoutMode = 'wide',
   scale = 1,
-  appearanceProbe = null,
 }: BattleConsoleRootProps) {
   const root = useRef<HTMLDivElement>(null);
   const settingsWasOpen = useRef(state.settings.open);
@@ -558,7 +415,7 @@ export function BattleConsoleRoot({
   const coachWasOpen = useRef(state.coach.briefingOpen && state.coach.step !== null);
   const coachBriefingOpen = state.coach.briefingOpen && state.coach.step !== null;
   const canonicalInkKeys = lifecycleStatus === 'ready'
-    ? assemblies.semanticRegions
+    ? battleConsoleSemanticRegions
       .filter((region) => usesCanonicalSemanticInk(region.id, state))
       .map((region) => region.id)
       .join(' ')
@@ -603,7 +460,7 @@ export function BattleConsoleRoot({
   }, [coachBriefingOpen]);
   const tree = (rootKey: string) => (
     <SemanticContractTree
-      nodes={semanticNodes}
+      nodes={battleConsoleSemanticNodes}
       rootKey={rootKey}
       state={state}
       dispatch={dispatch}
@@ -630,11 +487,9 @@ export function BattleConsoleRoot({
         {tree('armory-inline-host')}
         </>}
       </div>
-      <RuntimeContractInstrumentation lifecycleStatus={lifecycleStatus} layoutMode={layoutMode} />
       {lifecycleStatus === 'ready' && layoutMode !== 'compact' && (
         <CanonicalSemanticInk state={state} layoutMode={layoutMode} scale={scale} />
       )}
-      {appearanceProbe && <RuntimeAppearanceProbe record={appearanceProbe} />}
       {coachBriefingOpen && (
         <BattleConsolePortal host={portalHosts.coach}>
           <CoachPanel state={state} dispatch={dispatch} className={classNames.portal} />

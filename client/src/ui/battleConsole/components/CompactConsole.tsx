@@ -2,6 +2,7 @@ import type { ComponentChildren } from 'preact';
 import type { BattleConsoleIntent, BattleConsolePresentationState } from '../types';
 import styles from './CompactConsole.module.css';
 import { tankLoadoutAccessibleLabel } from '../../tankPartLabels';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 
 const keys = {
   'move-left': 'node:button:Move tank left, 8 fuel maximum:14',
@@ -22,6 +23,7 @@ export function CompactConsole({ state, dispatch }: Readonly<{
   dispatch: (intent: BattleConsoleIntent) => void;
 }>) {
   const locked = !state.weapon.canCycle || state.fireControl.submitting;
+  const powerCap = Math.max(0, state.ballistics.powerCap ?? DEFAULT_POWER_CAP);
   const button = (key: keyof typeof keys, label: string, content: ComponentChildren, intent: BattleConsoleIntent, disabled = false) => (
     <button class={styles.control} type="button" data-semantic-key={keys[key]} data-battle-console-target-key={key}
       data-battle-console-action={key === 'fire' ? 'fire' : undefined}
@@ -51,7 +53,7 @@ export function CompactConsole({ state, dispatch }: Readonly<{
         </div>
       </div>
       <div class={styles.instrument}>
-        <div class={styles.reading}><span>Power</span><output class={styles.value} aria-label="Power" data-semantic-key="node:output:Power:52">{Math.round(state.ballistics.power)}</output></div>
+        <div class={styles.reading}><span>Power</span><output class={styles.value} aria-label={`Power ${Math.round(state.ballistics.power)} of ${Math.round(powerCap)}`} data-semantic-key="node:output:Power:52">{Math.round(state.ballistics.power)}</output></div>
         <div class={styles.pair}>
           {button('power-decrease', 'Decrease power', '−', { type: 'power-step', delta: -1 }, locked)}
           {button('power-increase', 'Increase power', '+', { type: 'power-step', delta: 1 }, locked)}

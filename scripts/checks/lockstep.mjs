@@ -20,6 +20,8 @@
 // Deterministic: no Math.random / Date. Run: npx tsx scripts/checks/lockstep.mjs
 
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
+import { cpuRoomIntentId } from '../../shared/src/net/roomCommand.ts';
+import { replayNetworkAction } from '../../shared/src/net/replay.ts';
 
 const SEED = 0x5eed1234;
 const MAX_TICKS = 100_000;
@@ -32,6 +34,7 @@ const fail = (m) => { failed = true; log(`FAIL: ${m}`); };
 function freshEngine() {
   return new GameEngine({ players: [{ name: 'P1', color: PALETTE[0] }, { name: 'P2', color: PALETTE[1] }], maxPlayers: 2, seed: SEED });
 }
+
 function tickToCompletion(e) { let t = 0; while ((e.getState().phase === 'FIRING' || e.getState().phase === 'RESOLVING') && t < MAX_TICKS) { e.tick(); t++; } }
 
 // A logged fire action (NetworkFireAction shape) — baby_missile is unlimited so
@@ -117,6 +120,69 @@ const REF = reference();
   const buggyState = serialize(e.getState());
   if (buggyState === REF) fail('the buggy one-pass drain did NOT drop the second fire — this regression check has no teeth');
   else log('PASS: the pre-fix one-pass drain provably DROPS the second fire (regression guard is real).');
+}
+
+// --- Check 3: v2 replay binds commands before engine mutation ---
+{
+  const e = freshEngine();
+  const before = serialize(e.getState());
+  let rejected = false;
+  try {
+    replayNetworkAction(e, {
+      ...LOG[0],
+      commandActor: { role: 'engine-seat', tankId: 'p2' },
+    });
+  } catch (error) {
+    rejected = `${error}`.includes('does not hold the active turn');
+  }
+  if (!rejected) fail('actor-mismatched v2 combat command was not rejected');
+  if (serialize(e.getState()) !== before) fail('actor-mismatched v2 command mutated the engine before rejection');
+
+  replayNetworkAction(e, {
+    ...LOG[0],
+    commandActor: { role: 'engine-seat', tankId: 'p1' },
+  });
+  if (e.getState().phase !== 'FIRING') fail('correctly bound v2 combat command did not apply');
+
+  const transitionEngine = freshEngine();
+  // A transition initiator is attribution, not an instruction to act as the
+  // opener. Any known member may request this global transition.
+  const transition = { type: 'next_round', commandActor: { role: 'transition-initiator', tankId: 'p2' } };
+  const transitionBefore = serialize(transitionEngine.getState());
+  replayNetworkAction(transitionEngine, transition);
+  if (serialize(transitionEngine.getState()) !== transitionBefore) fail('out-of-phase transition attribution changed combat state');
+
+  let shopRejected = false;
+  try {
+    replayNetworkAction(transitionEngine, {
+      type: 'buy', weapon: 'nuke', tankId: 'p1',
+      commandActor: { role: 'shop-seat', tankId: 'p2' },
+    });
+  } catch (error) {
+    shopRejected = `${error}`.includes('does not match its tank target');
+  }
+  if (!shopRejected) fail('shop command targeting a different tank was not rejected');
+  if (serialize(transitionEngine.getState()) !== transitionBefore) fail('actor-mismatched shop command mutated before rejection');
+
+  let unknownRoleRejected = false;
+  try {
+    replayNetworkAction(transitionEngine, {
+      type: 'move', delta: 1,
+      commandActor: { role: 'unknown-role', tankId: 'p1' },
+    });
+  } catch (error) {
+    unknownRoleRejected = `${error}`.includes('Unknown command actor role');
+  }
+  if (!unknownRoleRejected) fail('unknown actor role was accepted at replay');
+
+  const sharedCpuIntent = cpuRoomIntentId({ roomId: 'room-1', expectedRevision: 7, actorPlayerId: 'cpu-2', kind: 'fire' });
+  if (sharedCpuIntent !== cpuRoomIntentId({ roomId: 'room-1', expectedRevision: 7, actorPlayerId: 'cpu-2', kind: 'fire' })) {
+    fail('deterministic clients did not derive the same CPU intent identity');
+  }
+  if (sharedCpuIntent === cpuRoomIntentId({ roomId: 'room-1', expectedRevision: 8, actorPlayerId: 'cpu-2', kind: 'fire' })) {
+    fail('CPU intent identity did not change with the expected room revision');
+  }
+  log('PASS: v2 actor bindings reject before mutation and CPU intent identity is shared and stable.');
 }
 
 if (failed) { log('\nLOCKSTEP CHECK: FAILED'); process.exit(1); }

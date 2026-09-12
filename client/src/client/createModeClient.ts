@@ -17,7 +17,14 @@ export async function createModeClient(setup: ClientConstructionSetup): Promise<
     const { NetworkClient } = await import('./NetworkClient');
     const { supabase } = await import('../lib/supabase');
     const gameOptions = buildClientEngineOptions(setup);
-    const client = new NetworkClient(supabase, setup.roomId, setup.playerId, gameOptions, setup.token);
+    const client = new NetworkClient(
+      supabase,
+      setup.roomId,
+      setup.playerId,
+      gameOptions,
+      setup.token,
+      setup.settings?.commandProtocolVersion,
+    );
     try {
       await client.initialize();
     } catch (error) {

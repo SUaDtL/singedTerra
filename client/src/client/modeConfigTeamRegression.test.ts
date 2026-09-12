@@ -14,6 +14,7 @@ const players = [
 const options = {
   maxPlayers: 4, maxWind: 7, gravity: 0.2, rounds: 3, interestRate: 0.25,
   suddenDeathTurn: 12, armsLevel: 2, teamMode: true, rulesetVersion: 4 as const,
+  commandProtocolVersion: 2 as const,
 }
 
 function expectTeams(config: LobbyConfig | LobbyRoomHandoff | undefined): void {

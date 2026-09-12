@@ -5,6 +5,7 @@ import {
   paintTankLoadoutPreview,
 } from '../../../renderer/TankLoadoutPreview';
 import type { BattleConsolePresentationState, BattleConsoleIntent } from '../types';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 
 export interface SemanticSourceRecord {
   readonly accessibleName: string;
@@ -13,9 +14,6 @@ export interface SemanticSourceRecord {
   readonly disabled: boolean;
   readonly expanded: boolean | null;
   readonly focusable: boolean;
-  readonly haspopup: string | null;
-  readonly hidden: boolean;
-  readonly inert: boolean;
   readonly live: string | null;
   readonly modal: boolean;
   readonly parentKey: string | null;
@@ -84,6 +82,10 @@ function dynamicAccessibleName(
 ): string {
   const { sourceRecord: record } = node;
   const name = record.accessibleName.toLowerCase();
+  if (record.tag === 'OUTPUT' && name === 'power') {
+    const powerCap = Math.max(0, state.ballistics.powerCap ?? DEFAULT_POWER_CAP);
+    return `Power ${Math.round(state.ballistics.power)} of ${Math.round(powerCap)}`;
+  }
   if (record.tag === 'OUTPUT' && name === 'wind') return `Wind ${windLabel(state.ballistics.wind)}`;
   if (name === 'baby missile' || name === 'weaponbaby missile∞') return state.weapon.name;
   if (name === 'unlimited ammunition') return state.weapon.ammo === null ? 'Unlimited ammunition' : `${state.weapon.ammo} ammunition`;

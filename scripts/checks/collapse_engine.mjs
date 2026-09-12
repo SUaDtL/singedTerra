@@ -17,10 +17,14 @@
 //   npx tsx scripts/checks/collapse_engine.mjs
 
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
-import { CANVAS_HEIGHT, COLLAPSE_PX_PER_TICK } from '../../shared/src/engine/Terrain.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLAPSE_PX_PER_TICK, settleStep } from '../../shared/src/engine/Terrain.ts';
 
 const PALETTE = ['#e84d4d', '#4d8ce8'];
 const MAX_SETTLE_TICKS = Math.ceil(CANVAS_HEIGHT / COLLAPSE_PX_PER_TICK);
+const PATH_B_TARGET_X = 754;
+const PATH_B_OVERHANG_X_START = 765;
+const PATH_B_OVERHANG_X_END = 770;
+const PATH_B_OVERHANG_TOP = 340;
 
 let failed = false;
 let worstResolvingTicks = 0;
@@ -35,10 +39,49 @@ function freshEngine(seed = 0x5eed1234) {
   });
 }
 
-function grant(e, tankIdx, weapon, count = 9) {
-  const inv = e.getState().tanks[tankIdx].inventory[weapon];
-  inv.count = count;
-  inv.unlimited = false;
+function solidPixels(e) {
+  let count = 0;
+  for (const pixel of e.getState().terrain) if (pixel !== 0) count++;
+  return count;
+}
+
+function surfaceYAt(e, x) {
+  const terrain = e.getState().terrain;
+  for (let y = 0; y < CANVAS_HEIGHT; y++) {
+    if (terrain[y * CANVAS_WIDTH + x] !== 0) return y;
+  }
+  throw new Error(`[game-ending] fixture prerequisite failed: no terrain surface at x=${x}`);
+}
+
+function hasUnsettledDirt(e) {
+  const copy = e.getState().terrain.slice();
+  return settleStep(copy, 0, CANVAS_WIDTH - 1, CANVAS_HEIGHT);
+}
+
+function buildGameEndingFixture() {
+  const e = freshEngine(0x5eed1234);
+  const terrain = e.getState().terrain;
+  const target = e.getState().tanks[1];
+  target.x = PATH_B_TARGET_X;
+  target.y = surfaceYAt(e, PATH_B_TARGET_X);
+  target.health = 1;
+
+  // The wall is initially compact. The real tank-impact blast cuts through its
+  // middle after hitting P2, creating an overhang that Path B must flush.
+  for (let x = PATH_B_OVERHANG_X_START; x <= PATH_B_OVERHANG_X_END; x++) {
+    for (let y = PATH_B_OVERHANG_TOP; y < CANVAS_HEIGHT; y++) {
+      terrain[y * CANVAS_WIDTH + x] = 1;
+    }
+  }
+  if (hasUnsettledDirt(e)) {
+    throw new Error('[game-ending] fixture prerequisite failed: constructed terrain was already unsettled before the shot');
+  }
+
+  e.applyAction({ type: 'select_weapon', weapon: 'missile' });
+  e.applyAction({ type: 'set_angle', angle: 20 });
+  e.applyAction({ type: 'set_power', power: 75 });
+  e.applyAction({ type: 'fire' });
+  return e;
 }
 
 // Helper: terrain snapshot as hex string
@@ -267,72 +310,63 @@ function tankSnap(e) {
 // Test 4: Game-ending shot resolves to GAME_OVER WITHOUT multi-tick RESOLVING
 // (#14 preserved — win banner must not wait for dirt)
 //
-// Use the same aim as gameover.mjs (angle=27, power=68) which is known to land
-// on/near P2 for seed 0x5eed1234. Switch to missile so it detonates on terrain
-// (creating a pendingSettle), but with P2 at 1 HP so any hit is lethal.
+// The fixture puts P2 on the deterministic impact path. Run two identical
+// engines in lockstep so this required terminal path also carries its own
+// determinism proof; Test 3 above retains the nonterminal collapse proof.
 // ==========================================================================
 {
-  // angle=27, power=68 with missile lands on terrain near P2 for this seed.
-  // P2 has 1HP so even a weak blast kills them → board goes to 1 alive.
-  const e = freshEngine(0x5eed1234);
-  e.getState().tanks[1].health = 1;
-
-  e.applyAction({ type: 'select_weapon', weapon: 'missile' });
-  e.applyAction({ type: 'set_angle', angle: 27 });
-  e.applyAction({ type: 'set_power', power: 68 });
-  e.applyAction({ type: 'fire' });
+  const e1 = buildGameEndingFixture();
+  const e2 = buildGameEndingFixture();
+  const solidBefore = solidPixels(e1);
 
   let firingTicks = 0;
-  while (e.getState().phase === 'FIRING' && firingTicks < 100_000) {
-    e.tick();
+  let diverged = false;
+  let sawResolving = false;
+  while (e1.getState().phase === 'FIRING' && firingTicks < 100_000) {
+    e1.tick();
+    e2.tick();
     firingTicks++;
+
+    sawResolving ||= e1.getState().phase === 'RESOLVING';
+    const sameTick =
+      e1.getState().phase === e2.getState().phase &&
+      e1.getState().winner === e2.getState().winner &&
+      terrainHex(e1) === terrainHex(e2) &&
+      tankSnap(e1) === tankSnap(e2);
+    if (!sameTick) {
+      fail(`[game-ending] same-seed engines diverged at FIRING tick ${firingTicks}`);
+      diverged = true;
+      break;
+    }
   }
 
-  const phaseAfterFiring = e.getState().phase;
-  const p2Alive = e.getState().tanks[1].alive;
+  const state = e1.getState();
+  const deformed = solidBefore !== solidPixels(e1);
+  log(`[game-ending] phase=${state.phase} P2alive=${state.tanks[1].alive} terrainDeformed=${deformed} sawResolving=${sawResolving} winner=${state.winner}`);
 
-  log(`[game-ending] phase after FIRING: ${phaseAfterFiring}  P2 alive: ${p2Alive}  P2 health: ${e.getState().tanks[1].health.toFixed(1)}`);
-
-  if (!p2Alive) {
-    // Shot killed P2 — this is a game-ending scenario
-    if (phaseAfterFiring === 'GAME_OVER') {
-      log(`PASS [game-ending]: game-ending shot went FIRING -> GAME_OVER directly (no multi-tick RESOLVING — #14 preserved).`);
-    } else if (phaseAfterFiring === 'RESOLVING') {
-      // Should not be in RESOLVING if it's a game-ending shot — flush must be instant
-      fail(`[game-ending] #14 broken: game-ending shot ended in RESOLVING instead of GAME_OVER directly (animated collapse on game-end)`);
-    } else {
-      fail(`[game-ending] unexpected phase after game-ending shot: ${phaseAfterFiring}`);
-    }
-  } else {
-    // P2 survived — shot missed or didn't do enough damage. Try a direct blast.
-    log(`[game-ending] angle=27,power=68 missed P2; trying direct nuke aim...`);
-    const e2 = freshEngine(0x5eed1234);
-    grant(e2, 0, 'nuke', 1);
-    e2.getState().tanks[1].health = 1;
-
-    e2.applyAction({ type: 'select_weapon', weapon: 'nuke' });
-    e2.applyAction({ type: 'set_angle', angle: 27 });
-    e2.applyAction({ type: 'set_power', power: 68 });
-    e2.applyAction({ type: 'fire' });
-
-    let t2 = 0;
-    while (e2.getState().phase === 'FIRING' && t2 < 100_000) { e2.tick(); t2++; }
-    const phase2 = e2.getState().phase;
-    const p2Alive2 = e2.getState().tanks[1].alive;
-
-    log(`[game-ending] nuke: phase=${phase2}  P2 alive: ${p2Alive2}`);
-
-    if (!p2Alive2) {
-      if (phase2 === 'GAME_OVER') {
-        log(`PASS [game-ending]: game-ending nuke -> GAME_OVER directly (#14 preserved).`);
-      } else if (phase2 === 'RESOLVING') {
-        fail(`[game-ending] #14 broken: game-ending nuke ended in RESOLVING (multi-tick animate on game-end)`);
-      } else {
-        fail(`[game-ending] unexpected phase after game-ending nuke: ${phase2}`);
-      }
-    } else {
-      log(`[game-ending] WARNING: could not produce a game-ending shot with these aims; #14 not directly verified`);
-    }
+  if (firingTicks >= 100_000) {
+    fail('[game-ending] missile never resolved (possible infinite flight)');
+  }
+  if (state.tanks[1].alive) {
+    fail('[game-ending] fixture prerequisite failed: shot did not eliminate P2');
+  }
+  if (!deformed) {
+    fail('[game-ending] fixture prerequisite failed: shot did not deform terrain');
+  }
+  if (state.phase !== 'GAME_OVER') {
+    fail(`[game-ending] expected direct GAME_OVER, got ${state.phase}`);
+  }
+  if (sawResolving) {
+    fail('[game-ending] game-ending shot exposed a delayed RESOLVING phase');
+  }
+  if (state.winner == null) {
+    fail('[game-ending] expected a decided winner at GAME_OVER, got null');
+  }
+  if (hasUnsettledDirt(e1) || hasUnsettledDirt(e2)) {
+    fail('[game-ending] terminal engines retained unsupported dirt after the required instant flush');
+  }
+  if (!diverged && !failed) {
+    log(`PASS [game-ending]: two same-seed lethal deformations stayed byte-identical for ${firingTicks} ticks and went directly to GAME_OVER.`);
   }
 }
 

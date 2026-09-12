@@ -19,6 +19,7 @@ const players: NetworkPlayer[] = [
 const options: RoomOptions = {
   maxPlayers: 2, maxWind: 6, gravity: 0.2, walls: 'concrete', rounds: 3,
   interestRate: 0.25, suddenDeathTurn: 12, armsLevel: 2, rulesetVersion: 4,
+  commandProtocolVersion: 2,
 }
 const waiting: LobbyWaitingState = {
   roomId: '', roomCode: '', playerId: '', token: '', players: [], seed: 0,
@@ -32,6 +33,7 @@ const expectedPlayers = [
 const expectedSettings = {
   seed: 71, maxWind: 6, gravity: 0.2, walls: 'concrete', rounds: 3,
   interestRate: 0.25, suddenDeathTurn: 12, armsLevel: 2, rulesetVersion: 4,
+  commandProtocolVersion: 2,
 }
 const expectedHandoff = {
   mode: 'network', players: expectedPlayers, playerNames: ['Ranger', 'Longshot'],
@@ -84,7 +86,7 @@ describe('mode configuration handoff characterization', () => {
     document.body.replaceChildren()
   })
 
-  it('snapshots the create request at click time but reads a missing-options fallback after the response', async () => {
+  it('snapshots the create request at click time and reads player fallback after a v2 response', async () => {
     const response = deferred<Response>()
     const fetch = vi.fn<typeof globalThis.fetch>(() => response.promise)
     vi.stubGlobal('fetch', fetch)
@@ -98,7 +100,8 @@ describe('mode configuration handoff characterization', () => {
       const pending = internals(lobby).handleCreateRoom()
       await Promise.resolve()
       const body = JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)
-      expect(body).toStrictEqual({ playerName: 'Ranger', color: '#e84d4d', loadout, rulesetVersion: 4, options: {
+      expect(body).toStrictEqual({ playerName: 'Ranger', color: '#e84d4d', loadout, rulesetVersion: 4,
+        commandProtocolVersion: 2, options: {
         visibility: 'public',
         maxPlayers: 2, maxWind: 9, gravity: 0.18, walls: 'wrap', rounds: 5,
         interestRate: 0.2, suddenDeathTurn: 3, armsLevel: 2,
@@ -110,12 +113,11 @@ describe('mode configuration handoff characterization', () => {
         onlineMaxWind: '4', onlineGravity: '0.3', onlineWalls: 'concrete',
         onlineColor: '#4d8ce8',
       })
-      response.resolve(new Response(JSON.stringify({ roomId: 'room-1', code: 'ROOM', playerId: 'seat-1', token: 'test-seat-token' }), { status: 200 }))
+      response.resolve(new Response(JSON.stringify({
+        roomId: 'room-1', code: 'ROOM', playerId: 'seat-1', token: 'test-seat-token', options,
+      }), { status: 200 }))
       await pending
-      expect(internals(lobby).waitingOptions).toStrictEqual({
-        maxPlayers: 2, maxWind: 4, gravity: 0.3, walls: 'concrete', rounds: 5,
-        interestRate: 0.2, suddenDeathTurn: 3, armsLevel: 2, rulesetVersion: 1,
-      })
+      expect(internals(lobby).waitingOptions).toStrictEqual(options)
       expect(internals(lobby).waitingPlayers).toStrictEqual([
         { id: 'seat-1', name: 'Ranger', color: '#4d8ce8', ready: false, loadout },
       ])
@@ -145,7 +147,7 @@ describe('mode configuration handoff characterization', () => {
     })
   })
 
-  it('rejects missing or incompatible response rulesets before join fallback adoption', async () => {
+  it('rejects missing or incompatible response protocols before join fallback adoption', async () => {
     const handoff = vi.fn<(next: LobbyRoomHandoff) => void>()
     const { subject, transport, session, persistence } = controller(handoff)
     const input: JoinRoomParams = { code: 'ROOM', playerName: 'Ranger', color: '#e84d4d', loadout }
@@ -155,12 +157,44 @@ describe('mode configuration handoff characterization', () => {
     transport.joinRoom.mockResolvedValue({ ok: true, status: 200, data: { roomId: 'room-1', playerId: 'seat-1', token: 'test-seat-token', options: { ...options, rulesetVersion: 1 } } })
     await subject.join(input, 'ROOM', options)
     expect(subject.projection.error).toContain('older game build')
+    transport.joinRoom.mockResolvedValue({ ok: true, status: 200, data: {
+      roomId: 'room-1', playerId: 'seat-1', token: 'test-seat-token',
+      options: { ...options, commandProtocolVersion: 1 },
+    } })
+    await subject.join(input, 'ROOM', options)
+    expect(subject.projection.error).toContain('command protocol')
+    const { commandProtocolVersion: _omitted, ...withoutCommandProtocol } = options
+    transport.joinRoom.mockResolvedValue({ ok: true, status: 200, data: {
+      roomId: 'room-1', playerId: 'seat-1', token: 'test-seat-token', options: withoutCommandProtocol,
+    } })
+    await subject.join(input, 'ROOM', options)
+    expect(subject.projection.error).toContain('command protocol')
     expect(handoff).not.toHaveBeenCalled()
     expect(session.replaceWaiting).not.toHaveBeenCalled()
     expect(session.subscribeWaitingRoom).not.toHaveBeenCalled()
     expect(persistence.writeSeatToken).not.toHaveBeenCalled()
     expect(persistence.writeSession).not.toHaveBeenCalled()
     expect(session.waiting).toStrictEqual(waiting)
+  })
+
+  it('refuses a create success without an exact v2 command protocol before persistence', async () => {
+    const { subject, transport, session, persistence } = controller(vi.fn())
+    const fallback = vi.fn(() => ({ seed: 83, players, options }))
+    const { commandProtocolVersion: _omitted, ...withoutCommandProtocol } = options
+    transport.createRoom.mockResolvedValue({ ok: true, status: 200, data: {
+      roomId: 'room-1', code: 'ROOM', playerId: 'seat-1', token: 'test-seat-token',
+      options: withoutCommandProtocol,
+    } })
+
+    await subject.create({
+      playerName: 'Ranger', color: '#e84d4d', loadout, bots: [], maxPlayers: 2, visibility: 'public',
+      maxWind: '', gravity: '', walls: 'open', battlefieldWorld: '', hazards: 'none',
+      rounds: '', interestRate: '', suddenDeath: '', armsLevel: '', teamMode: false,
+    }, fallback)
+
+    expect(subject.projection.error).toContain('command protocol')
+    expect(session.replaceWaiting).not.toHaveBeenCalled()
+    expect(persistence.writeSession).not.toHaveBeenCalled()
   })
 
   it('hands a started waiting room to the ready callback with authoritative optional properties', async () => {

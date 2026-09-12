@@ -4,8 +4,6 @@ import { fireEvent, getByRole, queryAllByRole } from '@testing-library/dom';
 import { render } from 'preact';
 import { describe, expect, it, vi } from 'vitest';
 import { BattleConsoleRoot } from './BattleConsoleRoot';
-import layers from '../../../../.codearbiter/contracts/battle-console/ownership/layers.json';
-import projections from '../../../../.codearbiter/contracts/battle-console/topology/projections.json';
 import type { BattleConsolePresentationState } from './types';
 
 const state: BattleConsolePresentationState = {
@@ -65,11 +63,6 @@ describe('P-05 semantic runtime owner', () => {
     expect(host.querySelector('[data-semantic-key="node:output:Wind:58"]')?.textContent).toBe('← 1.3');
     expect(getByRole(host, 'button', { name: 'Move tank left, 8 fuel maximum' }).textContent).toBe('‹');
     expect(host.querySelector('[data-battle-console-text-key="commander.health"]')?.textContent).toBe('100 HP');
-    expect(host.querySelectorAll('[data-battle-console-target-key]')).toHaveLength(projections.compactTargets.length);
-    expect(host.querySelectorAll('[data-battle-console-assembly-key]')).toHaveLength(projections.assemblies.length);
-    expect(host.querySelectorAll('[data-battle-console-socket-key]')).toHaveLength(projections.transformedSockets.length);
-    expect(host.querySelectorAll('[data-battle-console-landmark-key]')).toHaveLength(projections.transformedLandmarks.length);
-    expect(host.querySelectorAll('[data-battle-console-layer-key]')).toHaveLength(layers.records.length);
     expect(host.querySelector('[data-battle-console-semantic-ink="player-name"]')).toBeNull();
     expect(host.querySelector('[data-battle-console-semantic-ink="angle-value"]')).toBeNull();
     expect(host.querySelector('[data-battle-console-semantic-ink="wind-value"]')).toBeNull();

@@ -71,6 +71,18 @@ describe('AC-08 live inert instruments', () => {
     scene.destroy();
   });
 
+  it('normalizes the power instrument against the active permitted cap', () => {
+    const scene = createScene();
+    const layout = projectResponsiveLayout('wide', 1);
+    scene.project(layout, {
+      ...state,
+      ballistics: { ...state.ballistics, power: 100, powerCap: 200 },
+    });
+    const needle = scene.root.getChildByLabel('live-power-needle', true);
+    expect(needle!.rotation).toBeCloseTo(-Math.PI / 2);
+    scene.destroy();
+  });
+
   it('reverses the wind indicator and extinguishes ready lamps during submission', () => {
     const scene = createScene();
     const layout = projectResponsiveLayout('wide', 1);

@@ -4,6 +4,7 @@ import { WEAPONS, ACCESSORIES } from '@shared/engine/WeaponSystem';
 import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
 import type { ConnectionState, TurnWatch } from '../client/GameClient';
 import { MAX_MOVE_DELTA } from '@shared/engine/Movement';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
 import { STORE_CATALOG } from './storeCatalog';
 import { makeWeaponIcon } from './weaponIcons';
@@ -749,6 +750,7 @@ export class HUD {
       ballistics: {
         angle: tank?.angle ?? 0,
         power: tank?.power ?? 0,
+        powerCap: tank?.powerCap ?? DEFAULT_POWER_CAP,
         wind: state.wind,
       },
       fireControl: {

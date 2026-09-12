@@ -1,11 +1,11 @@
 import type { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
+import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import type { BattleConsolePresentationState } from '../types';
-import chromeContract from '../../../../../.codearbiter/contracts/battle-console/topology/chrome-sockets.json';
-import appearanceContract from '../../../../../.codearbiter/contracts/battle-console/state/dynamic-appearance.json';
 import {
   battleConsoleModeAssets,
   battleConsoleModeAssetUrl,
 } from '../modeAssets';
+import { battleConsoleChromeSockets } from '../runtimeData';
 import type { BattleConsoleLayoutMode, ResponsiveLayoutProjection } from '../projection';
 
 export function battleConsoleChromeUrl(baseUrl: string, mode: BattleConsoleLayoutMode = 'wide'): string {
@@ -24,26 +24,19 @@ export const BATTLE_CONSOLE_ASSET_MODES = Object.freeze(['wide', 'standard', 'co
 export interface ChromeSocketRegistration {
   readonly key: string;
   readonly rect: Readonly<{ x: number; y: number; width: number; height: number }>;
-  readonly assembly: string;
   readonly semanticAuthority: false;
   readonly inputAuthority: false;
 }
 
 export const chromeSocketRegistry: readonly ChromeSocketRegistration[] = Object.freeze(
-  chromeContract.sockets.map((socket) => Object.freeze({
+  battleConsoleChromeSockets.map((socket) => Object.freeze({
     key: socket.key,
     rect: Object.freeze({ ...socket.rect }),
-    assembly: socket.assembly,
     semanticAuthority: false as const,
     inputAuthority: false as const,
   })),
 );
 
-export const dynamicAppearanceRegistry = Object.freeze({
-  expectationKeys: Object.freeze(appearanceContract.expectations.map((entry) => entry.key)),
-  reconstructsOwners: false,
-  usesMasksToHideWrongInk: false,
-});
 
 export function stateFreeChromeDescriptor() {
   return Object.freeze({
@@ -128,7 +121,10 @@ function createLiveInstruments(constructors: BattleConsolePixiConstructors, root
     project(layout: ResponsiveLayoutProjection, state: BattleConsolePresentationState) {
       layer.scale.set(battleConsoleModeAssets[layout.mode].surface.width / BATTLE_CONSOLE_LOGICAL_SIZE.width);
       angleNeedle.rotation = -Math.max(0, Math.min(180, state.ballistics.angle)) * Math.PI / 180;
-      const power = Math.max(0, Math.min(100, state.ballistics.power)) / 100;
+      const powerCap = Math.max(0, state.ballistics.powerCap ?? DEFAULT_POWER_CAP);
+      const power = powerCap === 0
+        ? 0
+        : Math.max(0, Math.min(powerCap, state.ballistics.power)) / powerCap;
       powerNeedle.rotation = Math.PI * (power - 1);
       if (power !== paintedPower) {
         powerArc.clear();

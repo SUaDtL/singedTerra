@@ -35,6 +35,35 @@ function lfBytes(source) {
   return Buffer.from(source.replaceAll('\r\n', '\n'), 'utf8');
 }
 
+function resolveGitTree(repository, source) {
+  const args = source === 'index'
+    ? ['write-tree']
+    : ['rev-parse', `${source}^{tree}`];
+  const tree = execFileSync('git', args, { cwd: repository, encoding: 'utf8' }).trim();
+  assert.match(tree, /^[0-9a-f]{40,64}$/, `Git ${source} source did not resolve to a tree object`);
+  return tree;
+}
+
+function listGitTreeFiles(repository, tree, path) {
+  return execFileSync('git', ['ls-tree', '-r', '-z', '--name-only', tree, '--', path], { cwd: repository })
+    .toString('utf8').split('\0').filter(Boolean);
+}
+
+function readGitTreeFile(repository, tree, path) {
+  return execFileSync('git', ['show', `${tree}:${path}`], { cwd: repository });
+}
+
+function replaceWorkflowFixture(source, beforeLf, afterLf) {
+  const newline = source.includes('\r\n') ? '\r\n' : '\n';
+  const before = beforeLf.replaceAll('\n', newline);
+  const after = afterLf.replaceAll('\n', newline);
+  assert.notEqual(before, after, 'workflow fixture mutation must change its target');
+  assert.ok(source.includes(before), 'workflow fixture mutation target must exist');
+  const candidate = source.replace(before, after);
+  assert.notEqual(candidate, source, 'workflow fixture mutation must not be a no-op');
+  return candidate;
+}
+
 function fixtureTreeDigest(files) {
   const hash = createHash('sha256');
   for (const [relative, source] of Object.entries(files).sort(([left], [right]) => Buffer.compare(Buffer.from(left), Buffer.from(right)))) {
@@ -210,14 +239,16 @@ test('release source digests are LF and CRLF invariant while remaining mutation 
   assert.notEqual(digestFile(manifestPath), lfRelease.manifestSha256);
 });
 
-test('the complete current Git inventory has one source identity across LF and CRLF representations', async (t) => {
+test('the complete staged Git snapshot has one source identity across LF and CRLF representations', async (t) => {
   const fixture = await mkdtemp(join(tmpdir(), 'singedterra-git-source-portability-'));
   t.after(() => rm(fixture, { recursive: true, force: true }));
-  const manifest = JSON.parse(readFileSync(join(root, 'supabase', 'backend-release-manifest.json'), 'utf8'));
+  const sourceTree = resolveGitTree(root, 'index');
+  const manifestBytes = readGitTreeFile(root, sourceTree, 'supabase/backend-release-manifest.json');
+  const manifest = JSON.parse(manifestBytes.toString('utf8'));
   let rawDifferences = 0;
 
   for (const entry of [manifest.config, ...manifest.migrations]) {
-    const gitBytes = execFileSync('git', ['show', `HEAD:${entry.path}`], { cwd: root });
+    const gitBytes = readGitTreeFile(root, sourceTree, entry.path);
     const source = gitBytes.toString('utf8');
     assert.doesNotMatch(source, /\r/, `${entry.path} Git blob is not LF source`);
     const lfPath = join(fixture, 'files', 'lf', ...entry.path.split('/'));
@@ -232,12 +263,11 @@ test('the complete current Git inventory has one source identity across LF and C
 
   const trees = [manifest.functionShared, manifest.verifiedReplayShared, ...manifest.functions];
   for (const [index, entry] of trees.entries()) {
-    const tracked = execFileSync('git', ['ls-files', '--', entry.path], { cwd: root, encoding: 'utf8' })
-      .trim().split('\n').filter(Boolean);
+    const tracked = listGitTreeFiles(root, sourceTree, entry.path);
     const lfTree = join(fixture, 'trees', String(index), 'lf');
     const crlfTree = join(fixture, 'trees', String(index), 'crlf');
     for (const path of tracked) {
-      const gitBytes = execFileSync('git', ['show', `HEAD:${path}`], { cwd: root });
+      const gitBytes = readGitTreeFile(root, sourceTree, path);
       const source = gitBytes.toString('utf8');
       assert.doesNotMatch(source, /\r/, `${path} Git blob is not LF source`);
       const relative = path.slice(entry.path.length + 1);
@@ -252,14 +282,43 @@ test('the complete current Git inventory has one source identity across LF and C
     assert.equal(digestTree(lfTree), digestTree(crlfTree), entry.path);
   }
 
-  const manifestPath = join(root, 'supabase', 'backend-release-manifest.json');
-  const manifestSource = readFileSync(manifestPath, 'utf8').replaceAll('\r\n', '\n');
+  const manifestSource = manifestBytes.toString('utf8').replaceAll('\r\n', '\n');
   const lfManifestPath = join(fixture, 'backend-release-manifest.json');
   const crlfManifestPath = join(fixture, 'backend-release-manifest-crlf.json');
   await writeFile(lfManifestPath, manifestSource, 'utf8');
   await writeFile(crlfManifestPath, manifestSource.replaceAll('\n', '\r\n'), 'utf8');
   assert.equal(digestFile(lfManifestPath), digestFile(crlfManifestPath));
   assert.ok(rawDifferences > 0, 'Actual Git source must exercise at least one raw LF/CRLF difference');
+});
+
+test('Git source portability reads staged additions and deletions from one coherent snapshot', async (t) => {
+  const fixture = await mkdtemp(join(tmpdir(), 'singedterra-git-staged-snapshot-'));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  await mkdir(join(fixture, 'tree'), { recursive: true });
+  await writeFile(join(fixture, 'tree', 'deleted.ts'), 'export const deleted = true;\n', 'utf8');
+  await writeFile(join(fixture, 'tree', 'kept.ts'), 'export const kept = true;\n', 'utf8');
+  execFileSync('git', ['init', '--initial-branch=main'], { cwd: fixture });
+  execFileSync('git', ['config', 'core.autocrlf', 'false'], { cwd: fixture });
+  execFileSync('git', ['config', 'user.email', 'release-test@example.invalid'], { cwd: fixture });
+  execFileSync('git', ['config', 'user.name', 'Release Test'], { cwd: fixture });
+  execFileSync('git', ['add', '--', 'tree'], { cwd: fixture });
+  execFileSync('git', ['commit', '-m', 'fixture'], { cwd: fixture });
+
+  await writeFile(join(fixture, 'tree', 'added.ts'), 'export const added = true;\n', 'utf8');
+  execFileSync('git', ['add', '--', 'tree/added.ts'], { cwd: fixture });
+  execFileSync('git', ['rm', '--', 'tree/deleted.ts'], { cwd: fixture });
+
+  const tracked = execFileSync('git', ['ls-files', '--', 'tree'], { cwd: fixture, encoding: 'utf8' })
+    .trim().split('\n').filter(Boolean);
+  assert.ok(tracked.includes('tree/added.ts'), 'staged addition must be in the source inventory');
+  assert.ok(!tracked.includes('tree/deleted.ts'), 'staged deletion must be absent from the source inventory');
+  const stagedTree = resolveGitTree(fixture, 'index');
+  assert.deepEqual(listGitTreeFiles(fixture, stagedTree, 'tree'), tracked);
+  assert.equal(readGitTreeFile(fixture, stagedTree, 'tree/added.ts').toString('utf8'), 'export const added = true;\n');
+
+  const headTree = resolveGitTree(fixture, 'HEAD');
+  assert.deepEqual(listGitTreeFiles(fixture, headTree, 'tree'), ['tree/deleted.ts', 'tree/kept.ts']);
+  assert.equal(readGitTreeFile(fixture, headTree, 'tree/deleted.ts').toString('utf8'), 'export const deleted = true;\n');
 });
 
 test('the checked-in workflow satisfies every credential and mutation gate', () => {
@@ -406,7 +465,11 @@ const workflowRejections = [
   ['extra credentialed mutation before preflight', workflow.replace('      - name: Read config metadata before mutation', '      - name: Premature migration mutation\n        id: premature_migrations\n        run: npm run deploy:backend:migrations\n        env:\n          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}\n      - name: Read config metadata before mutation'), /closed reviewed execution contract/i],
   ['missing protected environment', workflow.replace('name: production-backend', 'name: production'), /protected environment/i],
   ['missing administrator-bypass evidence', workflow.replaceAll('admins_can_bypass', 'omitted_admin_policy'), /protected environment/i],
-  ['job-scoped production credentials', workflow.replace('    environment:\n      name: production-backend', '    env:\n      PLACEHOLDER: unsafe\n    environment:\n      name: production-backend'), /job scope/i],
+  ['job-scoped production credentials', () => replaceWorkflowFixture(
+    workflow,
+    '    environment:\n      name: production-backend',
+    '    env:\n      PLACEHOLDER: unsafe\n    environment:\n      name: production-backend',
+  ), /job scope/i],
   ['credential reference before protected job', workflow.replace('    outputs:', '    unsafe: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    outputs:'), /before the protected environment/i],
   ['latest CLI selector', workflow.replace('node-version-file: .nvmrc', 'node-version-file: .nvmrc\n          version: latest'), /unpinned or partial/i],
   ['partial migration selector', workflow.replace('      candidate_sha:', '      deploy_migrations:\n      candidate_sha:'), /unpinned or partial/i],
@@ -418,9 +481,25 @@ const workflowRejections = [
 
 for (const [boundary, candidate, expected] of workflowRejections) {
   test(`workflow contract rejects ${boundary}`, () => {
-    assert.throws(() => assertWorkflowContract(candidate), expected);
+    const rejectedSource = typeof candidate === 'function' ? candidate() : candidate;
+    assert.notEqual(rejectedSource, workflow, `${boundary} fixture mutation must not be a no-op`);
+    assert.throws(() => assertWorkflowContract(rejectedSource), expected);
   });
 }
+
+test('job-scoped credential mutation is effective and rejected for LF and CRLF workflow sources', () => {
+  const lfWorkflow = workflow.replaceAll('\r\n', '\n');
+  for (const newline of ['\n', '\r\n']) {
+    const source = lfWorkflow.replaceAll('\n', newline);
+    const candidate = replaceWorkflowFixture(
+      source,
+      '    environment:\n      name: production-backend',
+      '    env:\n      PLACEHOLDER: unsafe\n    environment:\n      name: production-backend',
+    );
+    assert.notEqual(candidate, source);
+    assert.throws(() => assertWorkflowContract(candidate), /job scope/i);
+  }
+});
 
 test('manual dispatch is bound to the main-hosted workflow, exact candidate and reviewed manifest digest', () => {
   const context = {

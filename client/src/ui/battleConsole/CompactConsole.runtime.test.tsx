@@ -53,4 +53,17 @@ describe('AC-01 compact console successor', () => {
     expect(host.querySelector('[data-semantic-key="node:span:100 fuel remaining:19"]')?.textContent).toBe('9');
     for (const name of ['Move tank left, 8 fuel maximum', 'Select next weapon, current Heavy Missile', 'Aim barrel left', 'Increase power', 'Fire Heavy Missile']) expect(getByRole(host, 'button', { name })).toHaveProperty('disabled', true);
   });
+
+  it('reads an upgraded firing solution against its active cap', () => {
+    const host = document.createElement('div');
+    const upgraded = {
+      ...state,
+      ballistics: { ...state.ballistics, power: 150, powerCap: 200 },
+    } satisfies BattleConsolePresentationState;
+    render(<BattleConsoleRoot state={upgraded} lifecycleStatus="ready" layoutMode="compact" dispatch={vi.fn()} />, host);
+
+    const power = host.querySelector<HTMLOutputElement>('[data-semantic-key="node:output:Power:52"]');
+    expect(power?.textContent).toBe('150');
+    expect(power?.getAttribute('aria-label')).toBe('Power 150 of 200');
+  });
 });

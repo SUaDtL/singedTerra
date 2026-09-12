@@ -60,7 +60,13 @@ function makeFakeSupabase(
 }
 
 function row(seq: number, action: NetworkAction) {
-  return { id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc', action, created_at: '' };
+  return {
+    id: `r${seq}`, room_id: 'room-1', seq, player_id: 'player-abc',
+    action: { ...action, commandActor: { role: 'engine-seat' as const, tankId: 'p1' } },
+    created_at: '', command_version: 2, intent_id: `history-${seq}`, expected_revision: seq,
+    submitted_by: 'player-abc', command_ends_turn: true, command_next_index: 1,
+    command_round_over: false,
+  };
 }
 
 interface EngineAccess {
@@ -86,7 +92,7 @@ function completeStateSnapshot(client: NetworkClient): unknown {
 
 interface NetworkActionAccess {
   appliedLog: NetworkAction[];
-  pendingActions: Map<number, NetworkAction>;
+  pendingActions: Map<number, unknown>;
   nextExpectedSeq: number;
 }
 
@@ -101,7 +107,7 @@ function actionTrackingSnapshot(client: NetworkClient): unknown {
 
 async function gameOverClient(session: { access_token: string } | null): Promise<NetworkClient> {
   const { supabase } = makeFakeSupabase([{ data: [row(0, TERMINAL_KILL_SHOT)], error: null }], session);
-  const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, 'seat-token-secret');
+  const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, 'seat-token-secret', 2);
   const state = engineOf(client).getState();
   const shooter = required(state.tanks[0], 'shooter tank');
   const victim = required(state.tanks[1], 'victim tank');
@@ -119,9 +125,12 @@ async function gameOverClient(session: { access_token: string } | null): Promise
 
 describe('NetworkClient match-completion claim wiring', () => {
   let rafCallback: FrameRequestCallback | null = null;
+  let rafTimestamp = 0;
 
   beforeEach(() => {
     vi.useFakeTimers();
+    rafTimestamp = 0;
+    vi.spyOn(performance, 'now').mockReturnValue(0);
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-test');
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { rafCallback = callback; return 1; });
@@ -162,8 +171,10 @@ describe('NetworkClient match-completion claim wiring', () => {
     const actionTracking = actionTrackingSnapshot(client);
 
     client.start();
-    rafCallback?.(0);
-    rafCallback?.(16);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     expect(calls).toEqual(['finish_game']);
     expect(completeStateSnapshot(client)).toEqual(completedState);
     expect(actionTrackingSnapshot(client)).toEqual(actionTracking);
@@ -215,7 +226,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
-    rafCallback?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     await settle();
 
     expect(calls).toEqual(['finish_game']);
@@ -234,7 +246,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
-    rafCallback?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     await settle();
 
     expect(calls).toEqual(['finish_game', 'claim_match']);
@@ -255,7 +268,8 @@ describe('NetworkClient match-completion claim wiring', () => {
     client.onAccountProgressChanged(onProgressChanged);
 
     client.start();
-    rafCallback?.(0);
+    rafTimestamp += 1_000 / 60;
+    rafCallback?.(rafTimestamp);
     await settle();
     client.stop();
     claim.resolve(response(true, 200));

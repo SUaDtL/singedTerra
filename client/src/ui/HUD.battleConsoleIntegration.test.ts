@@ -179,7 +179,7 @@ describe('P-08 live battle-console integration', () => {
       },
       mobility: { fuel: 100, canMoveLeft: true, canMoveRight: true },
       weapon: { type: 'baby_missile', name: 'Baby Missile', ammo: null },
-      ballistics: { angle: 45, power: 50, wind: state.wind },
+      ballistics: { angle: 45, power: 50, powerCap: 100, wind: state.wind },
       fireControl: { status: 'Fire ready', ready: true },
     });
     expect(rail.querySelector('.st-hud__command-console')).toBeNull();
@@ -196,11 +196,13 @@ describe('P-08 live battle-console integration', () => {
 
     state.tanks[0]!.health = 73;
     state.tanks[0]!.fuel = 61;
+    state.tanks[0]!.powerCap = 200;
     hud.update(state, false, true, true, true);
     expect(update).toHaveBeenLastCalledWith(
       expect.objectContaining({
         commander: expect.objectContaining({ health: 73 }),
         mobility: expect.objectContaining({ fuel: 61 }),
+        ballistics: expect.objectContaining({ powerCap: 200 }),
       }),
       expect.any(Object),
     );

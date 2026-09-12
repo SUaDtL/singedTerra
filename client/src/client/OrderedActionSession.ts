@@ -38,9 +38,9 @@ export class OrderedActionSession<Action> {
   ): void {
     while (canApply() && this.pending.has(this.expectedSeq)) {
       const action = this.pending.get(this.expectedSeq)!;
+      apply(action);
       this.pending.delete(this.expectedSeq);
       this.expectedSeq += 1;
-      apply(action);
       if (this.replaying) settleReplay();
       emit();
     }

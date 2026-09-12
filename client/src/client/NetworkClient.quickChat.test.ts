@@ -62,7 +62,7 @@ describe('NetworkClient quick chat broadcast', () => {
   it('receives only known messages and resolves the roster display name', async () => {
     const { supabase, channels } = makeFakeSupabase();
     const received: Array<{ key: string; playerId: string; playerName: string }> = [];
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     client.onQuickChat?.((message) => received.push(message));
     await client.initialize();
 
@@ -79,7 +79,7 @@ describe('NetworkClient quick chat broadcast', () => {
     vi.useFakeTimers();
     vi.setSystemTime(1000);
     const { supabase, channels, removeChannel } = makeFakeSupabase();
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     await client.initialize();
     const chat = channels.find((channel) => channel.name === 'quick_chat:room-1')!;
 
@@ -101,7 +101,7 @@ describe('NetworkClient quick chat broadcast', () => {
   it('ignores a broadcast delivered after teardown', async () => {
     const { supabase, channels } = makeFakeSupabase();
     const received: unknown[] = [];
-    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS);
+    const client = new NetworkClient(supabase, 'room-1', 'player-abc', OPTIONS, undefined, 2);
     client.onQuickChat?.((message) => received.push(message));
     await client.initialize();
     const chat = channels.find((channel) => channel.name === 'quick_chat:room-1')!;

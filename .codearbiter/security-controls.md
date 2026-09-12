@@ -69,9 +69,19 @@ Authorization is enforced in-function (it does NOT run physics):
 1. **Seat credential** — mutations for an existing human seat first verify that the presented token matches that room and public `playerId` in `room_seats` (else 403). Creating or joining a seat is the minting exception.
 2. **Membership** — submitter's `playerId` must be in `room.players` (else 403).
 3. **Turn ownership** — for turn-ending actions, acting seat must equal `room.active_player_index`. A client may proxy a seat only if that seat is a **bot**; it cannot impersonate another human.
-4. **Exactly-once** — `UNIQUE(room_id, seq)`; a duplicate insert returns 409 `seq_conflict`.
+4. **Sequence uniqueness**: `UNIQUE(room_id, seq)` prevents duplicate sequence
+   rows; a conflicting insert returns 409 `seq_conflict`. This does not establish
+   exactly-once logical intent across competing CPU proxies or uncertain
+   retries. R06/R07 own the authorized transaction and retry corrections; their
+   implementation and acceptance remain recorded in the current recovery ledger.
 
-Known trust observation (accepted under the replayed-log design): the next-turn seat (`nextActiveIndex`) is computed client-side and trusted by the referee (bounds-checked only). The canonical state is the replayed action log, so a wrong index self-corrects; do not turn this into an authorization decision.
+Known trust boundary (ADR-0008): the next-turn seat (`nextActiveIndex`) is
+computed client-side and structurally checked by the thin referee. A wrong
+reported successor does not reliably self-correct: it can stall the room or
+admit an out-of-rotation action. ADR-0008 retains this residual semantic-trust
+risk and desync observability; the referee does not independently derive the
+true alive successor or round phase through physics. Sequence/intent controls
+must not be represented as server-authoritative gameplay verification.
 
 ## Secrets
 

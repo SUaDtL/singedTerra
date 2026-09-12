@@ -162,6 +162,25 @@ export function effectiveGravity(baseGravity: number, turn: number, suddenDeathT
   return baseGravity * (1 + past * SUDDEN_DEATH_GRAVITY_RAMP);
 }
 
+/**
+ * Take ownership of the small construction config retained across rounds. The
+ * engine copies and freezes the roster plus nested presentation loadouts once;
+ * live GameState and its terrain buffer follow their separate borrowed-state
+ * contract and are never copied here per frame.
+ */
+function ownConstructionOptions(options?: GameOptions): GameOptions | undefined {
+  if (!options) return undefined;
+  const players = options.players?.map((player) => Object.freeze({
+    ...player,
+    ...(player.loadout ? { loadout: Object.freeze({ ...player.loadout }) } : {}),
+  }));
+  if (players) Object.freeze(players);
+  return Object.freeze({
+    ...options,
+    ...(players ? { players: players as GameOptions['players'] } : {}),
+  });
+}
+
 export class GameEngine {
   private state: GameState;
 
@@ -343,6 +362,7 @@ export class GameEngine {
   }
 
   constructor(options?: GameOptions) {
+    options = ownConstructionOptions(options);
     const seed = options?.seed ?? DEFAULT_SEED;
     const heightLine = generate(seed);
     this.terrain = buildBitmap(heightLine);
@@ -495,7 +515,9 @@ export class GameEngine {
     c.turnAtRoundStart = this.turnAtRoundStart;
     c.armsLevel     = this.armsLevel;
     c.starterWeaponFalloff = this.starterWeaponFalloff;
-    c.options       = this.options; // GameOptions is treated as immutable config
+    // Owned construction options are recursively frozen over their only nested
+    // mutable inputs (roster and loadouts), so sharing them is clone-safe.
+    c.options       = this.options;
     c.teamMode      = this.teamMode;
     // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
     c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
@@ -1633,7 +1655,7 @@ export class GameEngine {
     // Do NOT compact (applyGravity) here — instead merge the deformed column range
     // into pendingSettle so the caller can decide whether to settle instantly
     // (mid-flight) or animate (end-of-turn). Signal the bitmap change so the
-    // renderer rebuilds its offscreen without hashing 400k bytes every frame (P2-8).
+    // renderer rebuilds its offscreen without hashing 720,000 bytes every frame (P2-8).
     const range = preservesTerrain === true ? null : deform(this.terrain, cx, cy, radius, raise);
     if (range !== null) {
       // MERGE into pendingSettle (widen xStart = min, xEnd = max across all blasts

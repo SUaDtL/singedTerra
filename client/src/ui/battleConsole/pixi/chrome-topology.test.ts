@@ -11,7 +11,7 @@ const chrome = readBattleConsoleContract('topology/chrome-sockets.json') as any;
 describe('AC-13 complete chrome registry', () => {
   it('registers each bounded physical socket once without semantic or input authority', () => {
     expect(chromeSocketRegistry).toEqual(chrome.sockets.map((socket: Record<string, unknown>) => ({
-      key: socket.key, rect: socket.rect, assembly: socket.assembly,
+      key: socket.key, rect: socket.rect,
       semanticAuthority: false, inputAuthority: false,
     })));
   });

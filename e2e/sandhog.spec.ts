@@ -21,6 +21,21 @@ interface SandhogProbe {
   sandhogExplosionCount: number;
 }
 
+interface SandhogFrame {
+  readonly probe: SandhogProbe;
+  readonly probeIsImmutable: boolean;
+  readonly pixels: Readonly<{
+    center: readonly number[];
+    adjacent: readonly number[];
+    rgbDistance: number;
+  }> | null;
+}
+
+interface SandhogObservation {
+  readonly done: boolean;
+  readonly frames: readonly SandhogFrame[];
+}
+
 async function readProbe(page: import('@playwright/test').Page): Promise<SandhogProbe | null> {
   return page.evaluate(() => (
     window as unknown as { __SINGED_TERRA_E2E__?: SandhogProbe }
@@ -54,81 +69,149 @@ test.describe('Sandhog causal browser contract', () => {
     const before = await readProbe(page);
     expect(before, 'the deterministic hot-seat entrypoint exposes a narrow read-only probe')
       .not.toBeNull();
-    await fire.click();
+    await page.evaluate(() => {
+      const MAX_RETAINED_FRAMES = 128;
+      let remainingRafFrames = 600;
+      let rafId = 0;
+      const observation: {
+        done: boolean;
+        frames: SandhogFrame[];
+        stop: () => void;
+      } = {
+        done: false,
+        frames: [],
+        stop: () => {
+          observation.done = true;
+          cancelAnimationFrame(rafId);
+        },
+      };
+      (
+        window as unknown as { __SINGED_TERRA_SANDHOG_OBSERVER__?: typeof observation }
+      ).__SINGED_TERRA_SANDHOG_OBSERVER__ = observation;
 
-    await expect.poll(async () => {
-      const probe = await readProbe(page);
-      const remaining = probe?.sandhog?.burrowTicksRemaining;
-      return remaining !== null && remaining !== undefined && remaining <= 14
-        ? probe
-        : null;
-    }, {
-      timeout: 15_000,
-      intervals: [10, 10, 16, 16, 16],
-      message: 'the real shot should enter its underground drill phase',
-    }).not.toBeNull();
+      const sample = (): void => {
+        const probe = (
+          window as unknown as { __SINGED_TERRA_E2E__?: SandhogProbe }
+        ).__SINGED_TERRA_E2E__;
+        if (probe?.sandhog || probe?.sandhogExplosionCount) {
+          let pixels: SandhogFrame['pixels'] = null;
+          const witness = probe.corridorWitness;
+          if (witness) {
+            const ctx = document.querySelector<HTMLCanvasElement>('#game')!.getContext('2d')!;
+            const center = Object.freeze(Array.from(ctx.getImageData(
+              Math.round(witness.x),
+              Math.round(witness.y),
+              1,
+              1,
+            ).data));
+            const adjacent = Object.freeze(Array.from(ctx.getImageData(
+              Math.round(witness.adjacentX),
+              Math.round(witness.adjacentY),
+              1,
+              1,
+            ).data));
+            pixels = Object.freeze({
+              center,
+              adjacent,
+              rgbDistance: Math.hypot(
+                center[0]! - adjacent[0]!,
+                center[1]! - adjacent[1]!,
+                center[2]! - adjacent[2]!,
+              ),
+            });
+          }
+          const copiedProbe = Object.freeze({
+            ...probe,
+            sandhog: probe.sandhog ? Object.freeze({ ...probe.sandhog }) : null,
+            corridorWitness: probe.corridorWitness
+              ? Object.freeze({ ...probe.corridorWitness })
+              : null,
+          });
+          observation.frames.push(Object.freeze({
+            probe: copiedProbe,
+            probeIsImmutable: Object.isFrozen(probe)
+              && (probe.sandhog === null || Object.isFrozen(probe.sandhog))
+              && (probe.corridorWitness === null || Object.isFrozen(probe.corridorWitness)),
+            pixels,
+          }));
+          if (observation.frames.length > MAX_RETAINED_FRAMES) observation.frames.shift();
+        }
+        remainingRafFrames -= 1;
+        if (probe?.sandhogExplosionCount || remainingRafFrames === 0) {
+          observation.stop();
+          return;
+        }
+        rafId = requestAnimationFrame(sample);
+      };
+      rafId = requestAnimationFrame(sample);
+    });
 
-    const deep = (await readProbe(page))!;
-    expect(deep.sandhog).not.toBeNull();
-    expect(deep.sandhog!.centerSolid).toBe(false);
-    expect(deep.terrainVersion).toBeGreaterThan(before!.terrainVersion);
-    const remaining = deep.sandhog!.burrowTicksRemaining!;
+    try {
+      await fire.click();
+      // Deliberately let the short drill window pass without a test-runner read.
+      // The browser-side recorder must retain coherent same-frame evidence.
+      await page.waitForTimeout(3_000);
+      await expect.poll(async () => page.evaluate(() => (
+        window as unknown as {
+          __SINGED_TERRA_SANDHOG_OBSERVER__?: SandhogObservation;
+        }
+      ).__SINGED_TERRA_SANDHOG_OBSERVER__?.done ?? false), {
+        timeout: 15_000,
+        message: 'the real browser shot should reach its Sandhog endpoint blast',
+      }).toBe(true);
 
-    await expect.poll(async () => {
-      const probe = await readProbe(page);
-      if (
-        !probe?.sandhog
-        || probe.sandhog.burrowTicksRemaining === null
-        || !probe.corridorWitness
-      ) return null;
-      return (
-        probe.sandhog.burrowTicksRemaining < remaining
-        && probe.corridorWitness.centerSolid === false
-        && probe.corridorWitness.adjacentSolid === true
-      ) ? probe : null;
-    }, {
-      timeout: 2_000,
-      intervals: [10, 10, 16, 16],
-      message: 'the drill should expose an unobscured cleared center beside solid earth',
-    }).not.toBeNull();
+      const observation = await page.evaluate(() => {
+        const ownedWindow = window as unknown as {
+          __SINGED_TERRA_SANDHOG_OBSERVER__?: SandhogObservation;
+        };
+        const retained = ownedWindow.__SINGED_TERRA_SANDHOG_OBSERVER__!;
+        return { done: retained.done, frames: retained.frames };
+      });
+      expect(observation.frames.length).toBeGreaterThan(0);
+      expect(observation.frames.length).toBeLessThanOrEqual(128);
+      expect(observation.frames.every((frame) => frame.probeIsImmutable)).toBe(true);
 
-    const advancedProbe = (await readProbe(page))!;
-    const advanced = advancedProbe.sandhog!;
-    const witness = advancedProbe.corridorWitness!;
-    expect(Math.hypot(advanced.x - witness.x, advanced.y - witness.y))
-      .toBeGreaterThan(18);
+      const deepIndex = observation.frames.findIndex((frame) => {
+        const remaining = frame.probe.sandhog?.burrowTicksRemaining;
+        return remaining !== null
+          && remaining !== undefined
+          && remaining <= 14
+          && frame.probe.sandhog?.centerSolid === false
+          && frame.probe.terrainVersion > before!.terrainVersion;
+      });
+      expect(deepIndex, 'the real shot should enter its underground drill phase').toBeGreaterThan(-1);
+      const deep = observation.frames[deepIndex]!;
+      const deepRemaining = deep.probe.sandhog!.burrowTicksRemaining!;
 
-    // The probe proves the two authoritative terrain values. The matching
-    // production-Canvas pixels must visibly differ after the drill head has
-    // moved beyond its 13px halo.
-    const corridorPixels = await page.evaluate((sample) => {
-      const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
-      const ctx = canvas.getContext('2d')!;
-      const center = [
-        ...ctx.getImageData(Math.round(sample.x), Math.round(sample.y), 1, 1).data,
-      ];
-      const adjacent = [
-        ...ctx.getImageData(
-          Math.round(sample.adjacentX),
-          Math.round(sample.adjacentY),
-          1,
-          1,
-        ).data,
-      ];
-      return { center, adjacent };
-    }, witness);
-    const rgbDistance = Math.hypot(
-      corridorPixels.center[0]! - corridorPixels.adjacent[0]!,
-      corridorPixels.center[1]! - corridorPixels.adjacent[1]!,
-      corridorPixels.center[2]! - corridorPixels.adjacent[2]!,
-    );
-    expect(rgbDistance, 'the cleared corridor pixel should visibly differ from nearby earth')
-      .toBeGreaterThan(25);
-
-    await expect.poll(async () => (await readProbe(page))?.sandhogExplosionCount ?? 0, {
-      timeout: 5_000,
-      intervals: [10, 16, 16, 25],
-      message: 'the real browser shot should emit its Sandhog endpoint blast',
-    }).toBeGreaterThanOrEqual(1);
+      const advanced = observation.frames.slice(deepIndex + 1).find((frame) => {
+        const sandhog = frame.probe.sandhog;
+        const witness = frame.probe.corridorWitness;
+        return sandhog !== null
+          && sandhog.burrowTicksRemaining !== null
+          && sandhog.burrowTicksRemaining < deepRemaining
+          && witness !== null
+          && witness.centerSolid === false
+          && witness.adjacentSolid === true
+          && Math.hypot(sandhog.x - witness.x, sandhog.y - witness.y) > 18
+          && frame.pixels !== null
+          && frame.pixels.rgbDistance > 25;
+      });
+      expect(
+        advanced,
+        'the drill should expose a visibly distinct cleared center beside solid earth',
+      ).toBeDefined();
+      expect(advanced!.probe.terrainVersion).toBeGreaterThan(before!.terrainVersion);
+      expect(advanced!.pixels!.rgbDistance).toBeGreaterThan(25);
+      expect(observation.frames.some((frame) => frame.probe.sandhogExplosionCount >= 1),
+        'the real browser shot should emit its Sandhog endpoint blast').toBe(true);
+    } finally {
+      await page.evaluate(() => {
+        const ownedWindow = window as unknown as {
+          __SINGED_TERRA_SANDHOG_OBSERVER__?: { stop: () => void };
+        };
+        ownedWindow.__SINGED_TERRA_SANDHOG_OBSERVER__?.stop();
+        delete ownedWindow.__SINGED_TERRA_SANDHOG_OBSERVER__;
+      }).catch(() => undefined);
+    }
   });
 });

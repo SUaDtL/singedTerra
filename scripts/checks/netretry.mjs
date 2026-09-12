@@ -12,12 +12,14 @@
 //   4. ATTEMPTS-CLAMP (attempts=0): clamped to 1 → fn called exactly once.
 //   5. DELAY-ZERO (delayMs=0): retries with no pause (elapsed < 100ms).
 //   6. DELAY-APPLIED (delayMs=25): one inter-attempt pause fires (elapsed >= ~25ms).
+//   7. CANCELLED: invalidated work cannot make a second attempt.
+//   8. DEADLINE: a non-cooperating promise settles without rejecting.
 //
 // Deterministic in outcome: no I/O, no network, no Math.random. Cases 5/6 use
 // wall-clock only for loose delay bounds (setTimeout fires at-or-after its delay).
 // Run: npx tsx scripts/checks/netretry.mjs
 
-import { postOnceWithRetry } from '../../client/src/client/retry.ts';
+import { postOnceWithRetry, settleWithDeadline } from '../../client/src/client/retry.ts';
 
 let failed = false;
 const log = (...a) => console.log(...a);
@@ -176,6 +178,47 @@ const fail = (m) => { failed = true; log('FAIL: ' + m); };
     fail(`[delay-applied] expected an inter-attempt delay >=~25ms, but retry took only ${elapsed}ms`);
   } else {
     log(`PASS: delay-applied — one inter-attempt pause fired (${elapsed}ms >= ~25ms).`);
+  }
+}
+
+// -----------------------------------------------------------------------
+// 7. CANCELLED CONTINUATION
+// -----------------------------------------------------------------------
+{
+  let callCount = 0;
+  let active = true;
+  const mockFn = async () => {
+    callCount++;
+    active = false;
+    throw new Error('uncertain');
+  };
+
+  const result = await postOnceWithRetry(mockFn, 2, 0, () => active);
+  if (callCount !== 1) {
+    fail(`[cancelled] expected one call before invalidation, got ${callCount}`);
+  } else if (result.ok !== false || result.error?.message !== 'retry_cancelled') {
+    fail('[cancelled] expected a resolved retry_cancelled result');
+  } else {
+    log('PASS: cancelled — invalidated continuation made no second attempt.');
+  }
+}
+
+// -----------------------------------------------------------------------
+// 8. NON-COOPERATING DEADLINE
+// -----------------------------------------------------------------------
+{
+  let deadlineCalled = 0;
+  const result = await settleWithDeadline(
+    new Promise(() => {}),
+    10,
+    () => { deadlineCalled++; },
+  );
+  if (result.ok !== false || result.error?.message !== 'operation_deadline_exceeded') {
+    fail('[deadline] expected a resolved operation_deadline_exceeded result');
+  } else if (deadlineCalled !== 1) {
+    fail(`[deadline] expected cancellation callback once, got ${deadlineCalled}`);
+  } else {
+    log('PASS: deadline — a non-cooperating operation settled without rejecting.');
   }
 }
 

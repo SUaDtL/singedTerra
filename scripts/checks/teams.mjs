@@ -2,6 +2,7 @@
 // Guards assignment, team-aware resolution, friendly-fire suppression, and legacy parity.
 
 import { GameEngine } from '../../shared/src/engine/GameEngine.ts';
+import { computeAiPlan } from '../../shared/src/engine/AI.ts';
 
 const SEED = 0x7ea15;
 const MAX_TICKS = 100_000;
@@ -31,6 +32,34 @@ const resolveWithSurvivors = (e, survivorIds) => {
   tickToRest(e);
 };
 const terrainChanged = (before, after) => before.some((value, i) => value !== after[i]);
+
+// Ordinary CPU targeting must ignore a nearer living teammate and plan against
+// the farther enemy. The target remains internal; health-scaled weapon selection
+// makes the production computeAiPlan result observable without exposing it.
+{
+  const e = teamEngine({ rounds: 1 });
+  const st = e.getState();
+  const [cpu, enemy, ally, otherEnemy] = st.tanks;
+  Object.assign(cpu, { x: 100, y: 300 });
+  Object.assign(ally, { x: 130, y: 300, health: 12 });
+  Object.assign(enemy, { x: 700, y: 300, health: 100 });
+  Object.assign(otherEnemy, { x: 780, y: 300, health: 0, alive: false });
+  cpu.inventory.nuke.count = 1;
+  const plan = computeAiPlan(st, cpu.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative');
+  if (plan?.weapon !== 'nuke') {
+    fail(`D04 CPU should target the farther 100hp enemy instead of its nearer 12hp teammate, got ${plan?.weapon}`);
+  } else {
+    pass('D04 ordinary CPU targets the enemy rather than its nearer teammate');
+  }
+
+  enemy.alive = false;
+  enemy.health = 0;
+  if (computeAiPlan(st, cpu.id, 'hard', undefined, Number.POSITIVE_INFINITY, 'conservative') !== null) {
+    fail('a CPU with only a living teammate and no living enemies should return null');
+  } else {
+    pass('ordinary CPU returns null when every enemy is eliminated');
+  }
+}
 
 // Assignment and state surface.
 {

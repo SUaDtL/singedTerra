@@ -94,6 +94,62 @@ if (engine.getState().terrain[idx] === 255) {
 }
 engine.getState().terrain[idx] = originalPixel; // restore (harness hygiene)
 
+// 4) Construction-option ownership — later caller mutation must not change the
+// roster, loadout, or hazards used when either the original or an existing clone
+// starts its next round. This is a one-time small config ownership check; it is
+// deliberately separate from the live 720,000-byte terrain bitmap publication contract.
+const callerOptions = {
+  maxPlayers: 2,
+  seed: SEED,
+  rounds: 3,
+  hazards: 'lava',
+  players: [
+    {
+      name: 'Owned Ranger',
+      color: '#e8554d',
+      loadout: { treads: 'ranger', hull: 'bulwark', turret: 'jackal', barrel: 'foundry' },
+    },
+    { name: 'Owned CPU', color: '#3f78b8', ai: 'hard' },
+  ],
+};
+const expectedOptions = structuredClone(callerOptions);
+const optionOwner = new GameEngine(callerOptions);
+const optionOwnerClone = optionOwner.clone();
+const expectedOwner = new GameEngine(expectedOptions);
+
+callerOptions.hazards = 'none';
+callerOptions.players[0].name = 'MUTATED NAME';
+callerOptions.players[0].loadout.treads = 'foundry';
+
+function enterNextRound(candidate) {
+  const state = candidate.getState();
+  state.tanks[1].alive = false;
+  state.tanks[1].health = 0;
+  if (!candidate.applyAction({ type: 'use_shield', weapon: 'shield' })
+    || candidate.getState().phase !== 'ROUND_OVER'
+    || !candidate.applyAction({ type: 'next_round' })) {
+    throw new Error('clone option-ownership fixture could not enter its next round');
+  }
+}
+
+for (const candidate of [optionOwner, optionOwnerClone, expectedOwner]) enterNextRound(candidate);
+const expectedNextRound = expectedOwner.getState();
+const optionOwnershipFailures = [optionOwner, optionOwnerClone].flatMap((candidate, candidateIndex) => {
+  const next = candidate.getState();
+  const label = candidateIndex === 0 ? 'original' : 'clone';
+  const failures = [];
+  if (next.tanks[0].playerName !== expectedNextRound.tanks[0].playerName) failures.push(`${label} roster`);
+  if (!valEq(next.tanks[0].loadout, expectedNextRound.tanks[0].loadout)) failures.push(`${label} loadout`);
+  if (!valEq(next.terrain, expectedNextRound.terrain)) failures.push(`${label} hazards`);
+  return failures;
+});
+if (optionOwnershipFailures.length) {
+  failed = true;
+  log(`FAIL: caller mutation changed retained construction options: ${optionOwnershipFailures.join(', ')}`);
+} else {
+  log('PASS: original and clone own roster, loadout, and hazard config across the next round.');
+}
+
 if (failed) {
   log('\nCLONE PARITY CHECK: FAILED — GameEngine.clone() drifted from the engine fields. Add the missing field(s) to clone().');
   process.exit(1);
