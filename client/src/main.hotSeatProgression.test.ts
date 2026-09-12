@@ -25,6 +25,7 @@ const seams = vi.hoisted(() => ({
   onTouchPower: null as null | ((delta: number) => void),
   inputAction: null as null | ((action: PlayerAction) => void),
   inputPowerCaps: [] as number[],
+  useActualGameEngine: false,
   useActualInputHandler: false,
   useActualAiPlan: false,
   rendererEvents: null as null | { onExplosion?: (radius: number, impact: unknown) => void },
@@ -52,7 +53,10 @@ const seams = vi.hoisted(() => ({
   quickOperations: [] as Array<Record<string, unknown> | null>,
   verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
-  hudFrames: [] as Array<{ phase: GameState['phase']; activePlayerId: string; isFiring: boolean }>,
+  hudFrames: [] as Array<{
+    phase: GameState['phase']; winner: string | null; activePlayerId: string; isFiring: boolean
+  }>,
+  rendererFrames: [] as Array<{ phase: GameState['phase']; winner: string | null }>,
   forwardedActions: [] as Array<Record<string, unknown>>,
   aiPlan: null as null | { weapon: string; angle: number; power: number; buy?: string },
   flashMessages: [] as string[],
@@ -79,7 +83,16 @@ const seams = vi.hoisted(() => ({
   completeVerified: (): Promise<Record<string, unknown> | null> => Promise.resolve(null),
 }))
 
-vi.mock('@shared/engine/GameEngine', () => ({ GameEngine: class {} }))
+vi.mock('@shared/engine/GameEngine', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@shared/engine/GameEngine')>()
+  return {
+    GameEngine: class {
+      constructor(...args: ConstructorParameters<typeof actual.GameEngine>) {
+        if (seams.useActualGameEngine) return new actual.GameEngine(...args)
+      }
+    },
+  }
+})
 vi.mock('@shared/engine/AI', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@shared/engine/AI')>()
   return {
@@ -165,7 +178,9 @@ vi.mock('./renderer/Renderer', () => ({
     isAnimating() { return seams.rendererAnimating }
     isTerminalImpactAnimating() { return seams.rendererAnimating }
     currentImpactLearningCue() { return seams.rendererImpactCue }
-    render() {}
+    render(state: GameState) {
+      seams.rendererFrames.push({ phase: state.phase, winner: state.winner })
+    }
     reset() { seams.rendererResets += 1 }
     setAimGuide(visible: boolean, gravity?: number) {
       seams.aimGuideUpdates.push({ visible, gravity })
@@ -290,6 +305,7 @@ vi.mock('./ui/HUD', () => ({
       const state = args[0] as GameState
       seams.hudFrames.push({
         phase: state.phase,
+        winner: state.winner,
         activePlayerId: state.activePlayerId,
         isFiring: args[1] === true,
       })
@@ -661,6 +677,7 @@ describe('production hot-seat progression composition', () => {
     seams.onTouchPower = null
     seams.inputAction = null
     seams.inputPowerCaps.length = 0
+    seams.useActualGameEngine = false
     seams.useActualInputHandler = false
     seams.useActualAiPlan = false
     seams.rendererEvents = null
@@ -689,6 +706,7 @@ describe('production hot-seat progression composition', () => {
     seams.verifiedPresentationEvents.length = 0
     seams.hudUpdates.length = 0
     seams.hudFrames.length = 0
+    seams.rendererFrames.length = 0
     seams.forwardedActions.length = 0
     seams.aiPlan = null
     seams.flashMessages.length = 0
@@ -1183,6 +1201,7 @@ describe('production hot-seat progression composition', () => {
     await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
     expect(seams.hudFrames[0]).toEqual({
       phase: first.phase,
+      winner: first.winner,
       activePlayerId: first.activePlayerId,
       isFiring: false,
     })
@@ -1980,6 +1999,103 @@ describe('production hot-seat progression composition', () => {
     expect(seams.terminalImpactNotifies).toBe(1)
   })
 
+  it.each([
+    ['V2', 2, {
+      outcome: 'human_win', winnerId: 'p1', reason: 'health',
+      liveTicks: 632, cpuSimulationTicks: 24_155,
+    }],
+    ['V3', 3, {
+      outcome: 'cpu_win', winnerId: 'p2', reason: 'health',
+      liveTicks: 830, cpuSimulationTicks: 24_639,
+    }],
+  ] as const)(
+    'projects a capped %s real-controller result through main without rewriting canonical state',
+    async (_label, policy, expected) => {
+      window.history.replaceState({}, '', '/?e2e=verified-lifecycle&diagnostics=1')
+      seams.accountAuthenticated = true
+      seams.useActualGameEngine = true
+      const actual = await vi.importActual<typeof import('@shared/net/verifiedDuel')>(
+        '@shared/net/verifiedDuel',
+      )
+      const controller = actual.VerifiedDuelController.createForPolicy(17, policy)
+      const canonical = controller.engine.getState()
+      const client = fakeClient(canonical)
+      seams.verifiedControllers.push(controller as unknown as Record<string, unknown>)
+      seams.clients.push(client)
+      const descriptor = policy === 2
+        ? verifiedDescriptor
+        : { ...verifiedDescriptor, contractVersion: 3, engineVersion: 3 } as VerifiedDeploymentDescriptor
+      seams.verifiedDeployment = {
+        status: 'active', descriptor, transcript: [],
+        deadline: { remainingMs: 600_000, warning: 'none', acceptsInput: true, canComplete: true },
+      }
+
+      await import('./main')
+      if (!seams.onLobbyReady) throw new Error('Expected verified lobby wiring')
+      await seams.onLobbyReady(verifiedConfig([], undefined, descriptor))
+      await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+      if (!seams.inputAction) throw new Error('Expected verified input wiring')
+
+      for (let salvo = 0; salvo < 6; salvo += 1) {
+        seams.inputAction({ type: 'set_angle', angle: 0 })
+        seams.inputAction({ type: 'set_power', power: 5 })
+        seams.inputAction({ type: 'fire' })
+        let ticks = 0
+        while (!controller.complete && controller.engine.getState().phase !== 'PLAYER_TURN') {
+          controller.tick()
+          ticks += 1
+          if (ticks > 100_000) throw new Error('Real verified fixture exceeded its live tick budget')
+        }
+        if (salvo < 5) client.emit(controller.engine.getState())
+      }
+
+      expect(controller.complete).toBe(true)
+      expect(controller.transcript).toEqual(Array.from({ length: 6 }, () => ({ angle: 0, power: 5 })))
+      const result = controller.result()
+      const resultBeforePresentation = JSON.stringify(result)
+      expect(result).toMatchObject(expected)
+      expect(Object.isFrozen(result)).toBe(true)
+      expect(Object.isFrozen(result.transcript)).toBe(true)
+      expect(canonical).toBe(controller.engine.getState())
+      expect(canonical).toMatchObject({ phase: 'PLAYER_TURN', winner: null })
+
+      client.emit(canonical)
+      client.emit(canonical)
+
+      expect(canonical).toMatchObject({ phase: 'PLAYER_TURN', winner: null })
+      expect(JSON.stringify(controller.result())).toBe(resultBeforePresentation)
+      expect(seams.hudFrames.at(-1)).toMatchObject({
+        phase: 'GAME_OVER', winner: expected.winnerId,
+      })
+      expect(seams.rendererFrames.at(-1)).toEqual({
+        phase: 'GAME_OVER', winner: expected.winnerId,
+      })
+      expect(seams.fieldOrderHudStates.at(-1)).toMatchObject({
+        id: 'first-strike', result: { status: 'missed' },
+      })
+      expect(seams.liveMatchDiagnosticsProviders.at(-1)?.()).toMatchObject({
+        execution: 'verified', phase: 'GAME_OVER', input: 'locked',
+      })
+      expect((window as typeof window & {
+        __SINGED_TERRA_E2E_VERIFIED_TERMINAL__?: unknown
+      }).__SINGED_TERRA_E2E_VERIFIED_TERMINAL__).toEqual({
+        canonical: { phase: 'PLAYER_TURN', winner: null },
+        presented: { phase: 'GAME_OVER', winner: expected.winnerId },
+        result: {
+          outcome: result.outcome,
+          winnerId: result.winnerId,
+          reason: result.reason,
+          humanSalvos: result.humanSalvos,
+          cpuSalvos: result.cpuSalvos,
+          liveTicks: result.liveTicks,
+          cpuSimulationTicks: result.cpuSimulationTicks,
+          transcript: result.transcript,
+        },
+      })
+      expect(seams.completedVerified).toBe(1)
+    },
+  )
+
   it.each(['PLAYER_TURN', 'GAME_OVER'] as const)(
     'primes retained terminal history before projecting a cap-complete %s verified recovery',
     async (completedPhase) => {
@@ -2000,6 +2116,7 @@ describe('production hot-seat progression composition', () => {
       const controller = fakeVerifiedController(terminalState)
       controller.tick.mockImplementation(() => {
         terminalState.phase = completedPhase
+        terminalState.winner = completedPhase === 'GAME_OVER' ? 'p1' : null
         controller.complete = true
       })
       const restored = fakeClient(terminalState)
@@ -2025,6 +2142,12 @@ describe('production hot-seat progression composition', () => {
       restored.emit(terminalState)
       restored.emit(terminalState)
       expect(seams.terminalImpactNotifies).toBe(1)
+      expect(terminalState).toMatchObject({
+        phase: completedPhase,
+        winner: completedPhase === 'GAME_OVER' ? 'p1' : null,
+      })
+      expect(seams.hudFrames.at(-1)).toMatchObject({ phase: 'GAME_OVER', winner: 'p1' })
+      expect(seams.rendererFrames.at(-1)).toEqual({ phase: 'GAME_OVER', winner: 'p1' })
     },
   )
 

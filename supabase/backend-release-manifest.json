@@ -11,7 +11,7 @@
   },
   "verifiedReplayShared": {
     "path": "shared/src",
-    "sha256": "38ec4311a88fdbc7cc98133fa18742e6fa27e651237f3fec7fd3c35b329740cd"
+    "sha256": "9f30b4392779c3941a1f0ea1be948eb061174c6ce353c5253ab5b26c742ad507"
   },
   "migrations": [
     { "path": "supabase/migrations/001_init.sql", "sha256": "13f964d515dd6aa2c3345298eeadc6544fd636ee42cb555fd475fa3b136da55b" },

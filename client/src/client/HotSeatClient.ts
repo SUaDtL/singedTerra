@@ -1,5 +1,5 @@
 import type { GameClient } from './GameClient';
-import type { GameState } from '@shared/types/GameState';
+import type { BorrowedGameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import { GameEngine } from '@shared/engine/GameEngine';
 import { fastForwardTicks } from './fastForward';
@@ -19,7 +19,7 @@ import { VerifiedDuelController } from '@shared/net/verifiedDuel';
 export class HotSeatClient implements GameClient {
   private readonly engine: GameEngine;
   private readonly initialTerrain: Uint8Array;
-  private readonly listeners = new Set<(state: GameState) => void>();
+  private readonly listeners = new Set<(state: BorrowedGameState) => void>();
   private readonly verifiedMode?: VerifiedDeploymentRecorder | VerifiedDuelController;
   private readonly frameClock = new FrameClock();
   private rafId: number | null = null;
@@ -111,7 +111,7 @@ export class HotSeatClient implements GameClient {
     this.verifiedMode?.observe(action, before, accepted);
   }
 
-  getState(): GameState | null {
+  getState(): BorrowedGameState | null {
     return this.engine.getState();
   }
 
@@ -123,12 +123,12 @@ export class HotSeatClient implements GameClient {
     return this.engine.getEffectiveGravity();
   }
 
-  onStateChange(listener: (state: GameState) => void): () => void {
+  onStateChange(listener: (state: BorrowedGameState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
 
-  private emit(state: GameState): void {
+  private emit(state: BorrowedGameState): void {
     for (const listener of this.listeners) listener(state);
   }
 }

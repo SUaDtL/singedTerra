@@ -1,7 +1,7 @@
 import { projectNetworkPlayers } from './modeConfig';
 import type { SupabaseClient, RealtimeChannel, RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js';
 import type { GameClient, RematchInfo, ConnectionState, TurnWatch, QuickChatMessage } from './GameClient';
-import type { GameState } from '@shared/types/GameState';
+import type { BorrowedGameState, GameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import {
   normalizeBattlefieldWorldId,
@@ -184,7 +184,7 @@ function networkActionsEqual(left: NetworkAction, right: NetworkAction): boolean
   }
 }
 
-type StateChangeListener = (state: GameState) => void;
+type StateChangeListener = (state: BorrowedGameState) => void;
 
 // localStorage key under which a seat's SECRET token is persisted, keyed by the
 // PUBLIC playerId (not roomId) — playerId is stable across a rematch (the server
@@ -818,7 +818,7 @@ export class NetworkClient implements GameClient {
     this.submitAction(networkAction);
   }
 
-  getState(): GameState {
+  getState(): BorrowedGameState {
     return this.engine.getState();
   }
 

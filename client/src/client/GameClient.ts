@@ -1,4 +1,4 @@
-import type { GameState } from '@shared/types/GameState';
+import type { BorrowedGameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import type {
   BattlefieldWorldId,
@@ -97,7 +97,7 @@ export interface GameClient {
   sendAction(action: PlayerAction): void;
 
   /** Latest known game state, or null before the first snapshot. */
-  getState(): GameState | null;
+  getState(): BorrowedGameState | null;
 
   /**
    * Immutable-by-contract snapshot of the engine's pristine terrain, captured
@@ -123,7 +123,7 @@ export interface GameClient {
   getEffectiveGravity(): number;
 
   /** Subscribe to state changes. Returns an unsubscribe function. */
-  onStateChange(listener: (state: GameState) => void): () => void;
+  onStateChange(listener: (state: BorrowedGameState) => void): () => void;
 
   /** True when a fire action has been submitted but not yet echoed back (network only). */
   readonly isFiring?: boolean;
