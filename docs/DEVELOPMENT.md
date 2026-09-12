@@ -172,11 +172,90 @@ in the Supabase project environment. Never commit the service-role key.
 Backend deployment is explicit:
 
 ```bash
-npm run deploy:backend
+npm run backend:release:check
 ```
 
-This pushes pending migrations and deploys all Edge Functions. Run Edge tests
-before deployment and verify the target Supabase project.
+`supabase/backend-release-manifest.json` is the checked-in policy and complete
+inventory for migrations, project config, shared runtime sources, verified
+replay sources, and all 17 Edge Functions. It intentionally contains no commit
+SHA: embedding its own commit would create a circular digest. A release proposal
+binds the actual commit and manifest digest when the workflow is dispatched.
+
+Manifest source identity is independent of Git checkout line endings. The
+release checker accepts only UTF-8 `.json`, `.toml`, `.sql`, and `.ts` inputs,
+preserves any UTF-8 byte-order mark, rejects NUL bytes and bare carriage returns,
+and converts CRLF pairs to LF before hashing. Tree records frame the normalized
+byte length and normalized bytes, so their length fields are portable too. An
+unsupported source type or representation fails closed and must be reviewed
+before it can enter the release inventory. Use the `manifestSha256` printed by
+`npm run backend:release:check` as the workflow input; a checkout-dependent raw
+file hash from a Windows tool is not the release source identity.
+
+The local `npm run deploy:backend` command validates that manifest, then runs
+all required release phases in compatibility order: all pending migrations,
+noninteractive project config (`config push --yes`), and the exact function
+inventory. It is a credentialed command; normal development and CI use
+`npm run backend:release:check` instead.
+
+Production releases use the manual **Deploy backend (Supabase)** workflow. Its
+two inputs identify the reviewed proposal: the exact current `main` commit and
+the SHA-256 of its manifest. They do not authorize deployment. The
+credential-free gate also requires that exact checkout, the newest successful
+and unsuperseded push-CI attempt for the same SHA, the lock-pinned Supabase CLI,
+the complete inventory and its closed local import graph, the parsed two-job
+execution graph and reviewed workflow-source digest, and the configured
+environment policy. Function deployment uses only each function's default
+hashed `index.ts`; alternate entrypoints, import maps, static files, and unknown
+per-function config fields fail validation. The config inventory parser accepts
+only bare dotted table names and bare assignment keys; function tables must be
+exactly `[functions.name]` with one `verify_jwt` boolean. Quoted or escaped
+names, array tables, nested function tables, dotted assignments, and inline
+function objects fail closed. The protected job revalidates those facts after
+approval before any credentialed operation.
+
+Configure GitHub's `production-backend` environment only through a separately
+approved settings change:
+
+- require reviewer `SUaDtL` (the currently verified GitHub login);
+- explicitly choose the environment's prevent-self-review setting. For the
+  current sole-maintainer setup the proposed value is disabled; enable it when
+  an independent reviewer is available;
+- disallow administrators from bypassing the environment protection rules;
+- restrict deployments to protected branches;
+- store `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` as environment
+  secrets and `SUPABASE_PROJECT_REF` as an environment variable;
+- remove any repository-level values with those production credential names.
+
+Until that environment policy exists, the gate fails closed. Settings approval
+does not approve a deployment. A deployment still needs a separate dispatch of
+an exact SHA and digest, followed by the environment approval.
+
+The production job uses the CLI installed from the lockfile, records read-only
+configuration hashes, migration inventory and function versions, and runs
+`db push --dry-run` before mutation. These preflights use fail-closed Bash
+execution. It then applies migrations, noninteractive config, and the exact
+function list. Its attempt-bound, secret-free receipt records source,
+workflow run and attempt, actor, required CI run and attempt, CLI and input
+digests, compatibility tuples, before/after observations, and every phase
+outcome. The manifest, migration-set, and function-set values are canonical
+source-identity digests. Management snapshots retain SHA-256 hashes of the raw
+API response bytes. Captured CLI observations store sanitized structured values
+when they are JSON; non-JSON observations store their raw byte count and SHA-256
+instead.
+
+Deliver the backend capability separately from client activation. Start that
+PR from current `main`, include the accepted backend compatibility work and this
+release gate, and exclude the client activation. Merge it and allow its ordinary
+Pages run to finish before separately approving the environment settings and an
+exact-SHA backend deployment. Prove the deployed capability before merging the
+client-bearing activation.
+
+Migrations 021 and 022 are additive compatibility work. Before any versioned
+state or receipt is written, recovery may redeploy the prior handlers while
+leaving the schema in place. Once versioned verified state or casual receipts
+exist, preserve the schema and history and fix forward. Do not call a database
+rollback or Git revert a recovery of production state, and never rewrite or
+delete completed receipts.
 
 ## Client deployment
 
