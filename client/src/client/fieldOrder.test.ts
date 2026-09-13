@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createFieldOrderById,
   createFieldOrder,
   observeFieldOrder,
   type FieldOrderObservation,
@@ -15,6 +16,23 @@ const observation = (patch: Partial<FieldOrderObservation> = {}): FieldOrderObse
 })
 
 describe('Field Orders', () => {
+  it('constructs a fresh order from an explicit catalog id and rejects unknown ids', () => {
+    const first = createFieldOrderById('hold-the-field')
+    const second = createFieldOrderById('hold-the-field')
+
+    expect(first).toEqual({
+      id: 'hold-the-field',
+      title: 'Hold the Field',
+      instruction: 'Win the duel.',
+      progress: { awaitingWinner: true },
+      result: null,
+    })
+    expect(second).toEqual(first)
+    expect(second).not.toBe(first)
+    expect(createFieldOrderById('unknown-order')).toBeNull()
+    expect(createFieldOrderById(null)).toBeNull()
+  })
+
   it.each([
     [0, 'first-strike', 'First Strike', 'Damage the CPU within your first three salvos.'],
     [1, 'fire-for-effect', 'Fire for Effect', 'Damage the CPU on two separate human salvos.'],
