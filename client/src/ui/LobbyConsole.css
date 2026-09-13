@@ -646,8 +646,9 @@
   width: fit-content;
   max-width: 100%;
   min-height: var(--st-deployment-choice-target, 44px);
-  margin: 6px 0 2px 6px;
-  padding: 8px 15px;
+  box-sizing: border-box;
+  margin: 0 0 0 6px;
+  padding: 6px 15px;
   border: 2px solid #a9622b;
   background: linear-gradient(180deg, #5b341c, #2c1a11 72%, #17100c);
   color: var(--console-cream);
