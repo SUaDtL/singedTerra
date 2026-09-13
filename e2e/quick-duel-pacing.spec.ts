@@ -12,6 +12,8 @@ for (const [id, title, briefing] of OPERATIONS) {
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
 
+    await page.locator('[data-ui="other-quick-duels"] > summary').click();
+
     const operation = page.locator(`[data-operation-id="${id}"]`);
     await operation.click();
     await expect(operation).toBeFocused();
@@ -54,6 +56,7 @@ test('a selected operation retains its ledger identity through one real salvo', 
   await page.goto('?e2e=quick-duel-seed');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
 
+  await page.locator('[data-ui="other-quick-duels"] > summary').click();
   await page.locator('[data-operation-id="crosswind-range"]').click();
   await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 

@@ -20,5 +20,12 @@ State the limits directly: owner-observed sessions of zero to two players do
 not establish retention, broad demand, player satisfaction, or causal product
 effects. Family/friend feedback is feedback, not broad-market evidence.
 
+Optional `guestEntryToFirstShotMs` values in `p02-manual-v2` are elapsed-time
+observations only. They do not establish newcomer understanding, voluntary
+replay behavior, retention, or a causal effect of First Salvo. The schema does not record the selected launch route,
+so its timing values cannot distinguish First Salvo from other entry paths.
+This offline tooling adds no in-app telemetry. Do not collect or
+retain them until the owner confirms the proposed consent and retention policy.
+
 The report must contain no names, email addresses, account IDs, room codes,
 URLs, tokens, connection details, or raw session records.

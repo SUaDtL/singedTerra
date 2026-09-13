@@ -18,6 +18,7 @@ import {
   quickOperationOptions,
   type PracticeObjectiveDescriptor,
 } from '../client/quickOperations';
+import { isFirstSalvoPreferenceUnseen } from './firstSalvoCoach';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
@@ -166,6 +167,15 @@ function browserQuickDuelSeed(): number {
   const word = new Uint32Array(1);
   globalThis.crypto.getRandomValues(word);
   return word[0]!;
+}
+
+/** Browser privacy/storage failures must not prevent the local guest route. */
+function firstSalvoPreferenceUnseen(): boolean {
+  try {
+    return isFirstSalvoPreferenceUnseen(window.localStorage);
+  } catch {
+    return true;
+  }
 }
 
 // View-only advanced-settings defaults/steps (placeholders + input granularity).
@@ -952,6 +962,7 @@ export class Lobby {
         this.surface = 'preparation';
         this.render();
       },
+      firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
       quickOperations: QUICK_OPERATIONS,
       onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
       onRejoin: () => { void this.handleRejoin(); },

@@ -6,6 +6,7 @@ import {
   firstSalvoPreferenceFor,
   firstSalvoStepFor,
   isFirstSalvoEligible,
+  isFirstSalvoPreferenceUnseen,
   loadFirstSalvoPreference,
   persistFirstSalvoPreference,
   replayFirstSalvoCoach,
@@ -115,6 +116,17 @@ describe('First Salvo coach contract', () => {
 
   it('loads the versioned skipped preference', () => {
     expect(loadFirstSalvoPreference(storageWith('v1:skipped'))).toBe('skipped');
+  });
+
+  it('only treats absent, malformed, or unavailable preference storage as unseen', () => {
+    expect(isFirstSalvoPreferenceUnseen(storageWith(null))).toBe(true);
+    expect(isFirstSalvoPreferenceUnseen(storageWith('bad-value'))).toBe(true);
+    expect(isFirstSalvoPreferenceUnseen({
+      getItem: () => { throw new Error('storage disabled'); },
+      setItem: () => undefined,
+    })).toBe(true);
+    expect(isFirstSalvoPreferenceUnseen(storageWith('v1:completed'))).toBe(false);
+    expect(isFirstSalvoPreferenceUnseen(storageWith('v1:skipped'))).toBe(false);
   });
 
   it('derives the exact preference to persist from a skip or completed action result', () => {
