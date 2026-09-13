@@ -21,9 +21,9 @@ Both workspace packages are `private: true`.
 
 ## Key libraries
 
-- **Vite** `8.2.2` (Rolldown/Oxc-powered client dev server + production build).
+- **Vite** `8.3.0` (Rolldown/Oxc-powered client dev server + production build).
 - **@supabase/supabase-js** `2.116.0` (browser client); Edge Functions use the same exact `2.116.0` through esm.sh.
-- **lucide** `1.43.0` (client-only exact named SVG icon nodes). The package has
+- **lucide** `1.44.0` (client-only exact named SVG icon nodes). The package has
   no runtime transitives; importing its all-icons registry is prohibited.
 - Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,
   projectiles, explosions, and world-space effects).
