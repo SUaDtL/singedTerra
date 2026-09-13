@@ -11,13 +11,20 @@ import {
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
-import { buildLobbyHotSeatView } from './LobbyHotSeatView';
+import { buildLobbyHotSeatView, type LobbyHotSeatSurface } from './LobbyHotSeatView';
 import {
   QUICK_OPERATIONS,
   quickOperationById,
-  quickOperationOptions,
   type PracticeObjectiveDescriptor,
+  type QuickOperation,
 } from '../client/quickOperations';
+import { composeQuickDuelLaunch } from '../client/quickDuelLaunch';
+import {
+  operationForSeedChallenge,
+  readSeedChallengeUrl,
+  type PublicSeedChallenge,
+  type SeedChallengeReadResult,
+} from '../client/seedChallenge';
 import { isFirstSalvoPreferenceUnseen } from './firstSalvoCoach';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
@@ -53,7 +60,12 @@ import {
   type AccountMode,
   type AccountState,
 } from '../client/AccountSession';
-import { createFieldOrder, type FieldOrder } from '../client/fieldOrder';
+import {
+  createFieldOrder,
+  createPracticeFieldOrderById,
+  renderFieldOrder,
+  type FieldOrder,
+} from '../client/fieldOrder';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import {
   type VerifiedDeploymentDescriptor,
@@ -127,6 +139,8 @@ export interface LobbyConfig extends ModeSetup {
     readonly briefing: string;
     readonly practiceObjective?: PracticeObjectiveDescriptor;
   };
+  /** Public local seed identity only; never enters a room or account contract. */
+  publicSeedChallenge?: PublicSeedChallenge;
   /** Auth-owned verified execution context. Server config and recovery transcript stay immutable. */
   verifiedDeployment?: {
     readonly descriptor: VerifiedDeploymentDescriptor;
@@ -267,6 +281,7 @@ export class Lobby {
   private accountAuthenticationChangeCb: ((identityChanged: boolean) => void) | null = null;
   private readonly root: HTMLElement;
   private readonly onReady: (config: LobbyConfig) => void;
+  private readonly seedChallenge: SeedChallengeReadResult;
   /** Owns every listener attached to the current replaceable lobby tree. */
   private renderListeners = new AbortController();
 
@@ -303,8 +318,9 @@ export class Lobby {
   /** Whether the Operations Settings overlay is open (persist across renders). */
   private settingsOpen = false;
 
-  /** Whether Hot Seat's optional preparation controls are expanded. */
-  private hotSeatCustomizationOpen = false;
+  /** Selected Hot Seat surface; form state remains owned here across view replacement. */
+  private hotSeatSurface: LobbyHotSeatSurface = 'local';
+  private focusVerifiedDeploymentRequested = false;
 
   // ---- Tab / online sub-view state ----
   private surface: 'chooser' | 'preparation' = 'chooser';
@@ -380,6 +396,7 @@ export class Lobby {
     );
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
+    this.seedChallenge = readSeedChallengeUrl(window.location.href);
     const diagnosticsParams = new URL(window.location.href).searchParams;
     this.diagnosticsIntentActive = diagnosticsParams.get('diagnostics') === '1';
     this.diagnosticsAutorunRequested = this.diagnosticsIntentActive
@@ -776,16 +793,16 @@ export class Lobby {
    * a unique color. A Start button validates and hands a config to onReady.
    */
   show(options: { readonly focusVerifiedDeployment?: boolean } = {}): void {
+    if (options.focusVerifiedDeployment) {
+      this.hotSeatSurface = 'verified';
+      this.focusVerifiedDeploymentRequested = true;
+    }
     this.roomController.activate();
     this.injectStyle();
     this.startDiagnostics();
     this.render();
     this.root.hidden = false;
-    if (options.focusVerifiedDeployment) {
-      this.root.querySelector<HTMLButtonElement>(
-        '.lobby-verified-deployment__launch:not(:disabled)',
-      )?.focus({ preventScroll: true });
-    }
+    this.focusRequestedVerifiedDeployment();
     void this.accountSession.initialize();
     void this.checkRejoinCandidate();
   }
@@ -959,11 +976,31 @@ export class Lobby {
       controls,
       onTabChange: (tab) => {
         this.activeTab = tab;
+        if (tab === 'hotseat') this.hotSeatSurface = 'local';
         this.surface = 'preparation';
         this.render();
       },
       firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
       quickOperations: QUICK_OPERATIONS,
+      ...(this.seedChallenge.status === 'absent' ? {} : {
+        seedChallenge: this.seedChallenge.status === 'invalid'
+          ? { status: 'invalid' as const }
+          : (() => {
+            const operation = operationForSeedChallenge(this.seedChallenge.challenge);
+            const fieldOrder = operation?.practiceObjective
+              ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
+              : null;
+            return operation && fieldOrder
+              ? {
+                status: 'valid' as const,
+                title: operation.title,
+                objective: renderFieldOrder(fieldOrder).brief,
+                seed: this.seedChallenge.challenge.seed,
+              }
+              : { status: 'invalid' as const };
+          })(),
+        onSeedChallenge: () => { this.startSeedChallenge(); },
+      }),
       onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
       onRejoin: () => { void this.handleRejoin(); },
       onBack: () => {
@@ -983,6 +1020,7 @@ export class Lobby {
     });
 
     this.root.append(card);
+    this.focusRequestedVerifiedDeployment();
     if (this.accountPanelOpen) {
       const accountContent = buildAccountPanelOverlayContent(accountOptions(true));
       if (accountContent) {
@@ -1319,6 +1357,23 @@ export class Lobby {
       };
       target.__singedTerraE2E = Object.freeze({ quickDuelSeed: seed });
     }
+    this.launchQuickDuel(operation, seed, 'local-selection');
+  }
+
+  /** Imported input reaches launch only after strict ST1 resolution. */
+  private startSeedChallenge(): void {
+    if (this.seedChallenge.status !== 'valid') return;
+    const operation = operationForSeedChallenge(this.seedChallenge.challenge);
+    if (!operation) return;
+    this.launchQuickDuel(operation, this.seedChallenge.challenge.seed, 'imported-public-challenge');
+  }
+
+  private launchQuickDuel(
+    operation: QuickOperation,
+    seed: number,
+    origin: PublicSeedChallenge['origin'],
+  ): void {
+    if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) return;
     const human = this.players[0] ?? defaultRow(0);
     const humanPlayer = {
       name: human.name.trim() || 'Player 1',
@@ -1332,28 +1387,7 @@ export class Lobby {
       ai: 'medium' as const,
       loadout: normalizeTankLoadout(seatPresetLoadout(1)),
     };
-    const composedOptions = quickOperationOptions(operation.id, {
-      maxPlayers: 2,
-      players: [humanPlayer, cpuPlayer],
-      seed,
-      rounds: 3,
-    });
-    // Roster ownership remains on LobbyConfig.players. The catalog helper proves
-    // a complete GameEngine projection, then this existing settings channel carries
-    // only the optional engine knobs it has always owned.
-    const { maxPlayers: _maxPlayers, players: _players, ...settings } = composedOptions;
-    this.onReady({
-      mode: 'hotseat',
-      players: [humanPlayer, cpuPlayer],
-      playerNames: [humanPlayer.name, cpuPlayer.name],
-      settings,
-      quickOperation: {
-        id: operation.id,
-        title: operation.title,
-        briefing: operation.briefing,
-        ...(operation.practiceObjective ? { practiceObjective: operation.practiceObjective } : {}),
-      },
-    });
+    this.onReady(composeQuickDuelLaunch({ operation, seed, origin, human: humanPlayer, cpu: cpuPlayer }));
   }
 
   private emitVerifiedDeployment(): boolean {
@@ -1455,20 +1489,26 @@ export class Lobby {
   private renderHotSeatTab(): HTMLElement {
     const verifiedDeployment = this.verifiedHotSeatView();
     return buildLobbyHotSeatView({
+      surface: this.hotSeatSurface,
       minPlayers: MIN_PLAYERS,
       maxPlayers: MAX_PLAYERS,
       playerCount: this.players.length,
       playerRows: this.players.map((_, index) => this.renderRow(index)),
-      advanced: this.renderAdvanced(),
-      customizationOpen: this.hotSeatCustomizationOpen,
+      advanced: this.renderHotSeatBattlefield(),
       validationMessage: this.validationError(),
       verifiedDeployment,
-      ...(verifiedDeployment === null ? {} : {
-        quickOperations: QUICK_OPERATIONS,
-        onQuickOperation: (operationId: string) => { this.startQuickDuel(operationId); },
-      }),
+      quickOperations: QUICK_OPERATIONS,
+      onQuickOperation: (operationId: string) => { this.startQuickDuel(operationId); },
+      onSurfaceChange: (surface, restoreFocus) => {
+        this.hotSeatSurface = surface;
+        this.render();
+        if (restoreFocus) {
+          this.root.querySelector<HTMLButtonElement>(
+            `[role="tab"][data-hotseat-surface="${surface}"]`,
+          )?.focus({ preventScroll: true });
+        }
+      },
       onPlayerCountChange: (count) => { this.setPlayerCount(count); },
-      onCustomizationToggle: (open) => { this.hotSeatCustomizationOpen = open; },
       onStart: () => {
         if (this.validationError() !== null) return;
         const players = this.players.map((player, index) => ({
@@ -2209,6 +2249,7 @@ export class Lobby {
     // share one visible contract.
     name.maxLength = 20;
     name.placeholder = `Player ${index + 1}`;
+    name.setAttribute('aria-label', `Player ${index + 1} name`);
     name.addEventListener('input', () => {
       player.name = name.value;
       const owner = `player-${index + 1}`;
@@ -2219,6 +2260,8 @@ export class Lobby {
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
+    swatches.setAttribute('role', 'group');
+    swatches.setAttribute('aria-label', `Player ${index + 1} color`);
     for (const color of PALETTE) {
       const swatch = document.createElement('button');
       swatch.type = 'button';
@@ -2244,6 +2287,7 @@ export class Lobby {
     const control = document.createElement('select');
     control.className = 'lobby-control';
     control.title = 'Who controls this tank';
+    control.setAttribute('aria-label', `Player ${index + 1} controller`);
     const OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
       { value: 'human', label: '👤 Human' },
       { value: 'easy', label: '🤖 CPU · Easy' },
@@ -2298,6 +2342,44 @@ export class Lobby {
       this.render();
     }, { signal: this.renderListeners.signal });
     return trigger;
+  }
+
+  /** Direct Hot Seat battlefield controls share the exact SettingsState parsed at launch. */
+  private renderHotSeatBattlefield(): HTMLElement {
+    const fields = document.createElement('div');
+    fields.className = 'lobby-hotseat-battlefield';
+    fields.append(
+      this.numberField('Rounds', 'rounds', {
+        min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2,
+        placeholder: String(ROUNDS_DEFAULT), hint: 'best-of-N, odd',
+      }),
+      this.numberField('Wind', 'maxWind', {
+        min: WIND_MIN, max: WIND_MAX, step: 1,
+        placeholder: String(WIND_DEFAULT), hint: `${WIND_MIN}–${WIND_MAX}`,
+      }),
+      this.choiceField('lobby-hotseat-direct-walls', 'Walls', this.settings.walls, (value) => {
+        this.settings.walls = value;
+      }, [
+        { value: '', label: 'Open — shots exit' },
+        { value: 'reflective', label: 'Reflective — bank shots' },
+        { value: 'wrap', label: 'Wrap — paired edges' },
+        { value: 'concrete', label: 'Concrete — impact at edge' },
+      ], 'arena edge behavior'),
+      this.renderAdvanced(),
+    );
+    return fields;
+  }
+
+  private focusRequestedVerifiedDeployment(): void {
+    if (!this.focusVerifiedDeploymentRequested || this.root.hidden) return;
+    const verifiedTab = this.root.querySelector<HTMLButtonElement>(
+      '[role="tab"][data-hotseat-surface="verified"]:not(:disabled)',
+    );
+    if (!verifiedTab) return;
+    (this.root.querySelector<HTMLButtonElement>(
+      '.lobby-verified-deployment__launch:not(:disabled)',
+    ) ?? verifiedTab).focus({ preventScroll: true });
+    this.focusVerifiedDeploymentRequested = false;
   }
 
   private renderAdvancedOverlay(): HTMLElement | null {
@@ -2416,6 +2498,7 @@ export class Lobby {
 
     const input = document.createElement('input');
     input.type = 'number';
+    input.setAttribute('aria-label', label);
     if (opts.min !== undefined) input.min = String(opts.min);
     if (opts.max !== undefined) input.max = String(opts.max);
     if (opts.step !== undefined) input.step = String(opts.step);
@@ -2547,19 +2630,9 @@ export class Lobby {
   private refreshStartState(): void {
     const error = this.root.querySelector<HTMLElement>('.lobby-error');
     const start = this.root.querySelector<HTMLButtonElement>('.lobby-start');
-    const customization = this.root.querySelector<HTMLDetailsElement>(
-      '.lobby-hotseat-customization',
-    );
     const msg = this.validationError();
     if (error) error.textContent = msg ?? '';
     if (start) start.disabled = msg !== null;
-    if (customization) {
-      customization.dataset.invalid = String(msg !== null);
-      if (msg !== null) {
-        customization.open = true;
-        this.hotSeatCustomizationOpen = true;
-      }
-    }
   }
 
   /** Return a validation error message, or null if the config is valid. */

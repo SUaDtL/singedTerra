@@ -117,6 +117,29 @@ afterEach(async () => {
 });
 
 describe('HUD Victory After-Action Report', () => {
+  it('forwards only an explicitly admitted seed challenge share action', () => {
+    const { modal, hud, state } = mount();
+    hud.setPublicSeedChallenge({
+      descriptor: {
+        version: 'ST1', tag: 'LL', operationId: 'last-light-siege', seed: 42,
+        origin: 'local-selection',
+      },
+      url: 'https://play.example/singedTerra/#challenge=ST1-LL-16',
+    });
+    revealTerminalReport(hud, state);
+    expect(modal.querySelector<HTMLButtonElement>('[data-action="copy-seed-challenge"]')?.textContent)
+      .toBe('Copy challenge link');
+
+    state.phase = 'PLAYER_TURN';
+    state.winner = null;
+    hud.update(state);
+    hud.setPublicSeedChallenge(null);
+    state.phase = 'GAME_OVER';
+    state.winner = state.tanks[0]!.id;
+    revealTerminalReport(hud, state);
+    expect(modal.querySelector('[data-action="copy-seed-challenge"]')).toBeNull();
+  });
+
   it('reports only a factual multi-round clinch and offers one same-scenario experiment', () => {
     const { modal, hud, state } = mount();
     state.totalRounds = 3;

@@ -101,12 +101,13 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
   }));
 }
 
-async function openLocalBattery(page: Page, search = './'): Promise<void> {
+async function openLocalBattery(page: Page, search = './', mode = 'Verified Deployment'): Promise<void> {
   await page.goto(search);
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await expect(page.locator('#lobby')).toBeVisible();
   await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
+  if (mode !== 'Local Battle') await page.getByRole('tab', { name: mode, exact: true }).click();
+  await expect(page.getByRole('tab', { name: mode, exact: true })).toHaveAttribute('aria-selected', 'true');
 }
 
 /** Verified mission state lives in the adaptive Match ledger on non-ultrawide layouts. */
@@ -163,20 +164,236 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
 test.describe('verified deployment production-browser journey', () => {
   test.beforeEach(async ({ page }) => installAuthenticatedFixture(page));
 
-  test('composes one contained Commander Operations board before a verified launch', async ({ page }) => {
+  test('matches the Hot Seat mockup with direct crew editing and a persistent launch footer', async ({ page }, testInfo) => {
+    await openLocalBattery(page, './', 'Local Battle');
+    await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-entry.png') });
+    const tabs = page.getByRole('tablist', { name: 'Hot Seat modes', exact: true });
+    await expect(tabs.getByRole('tab')).toHaveText(['Local Battle', 'Practice vs CPU', 'Verified Deployment']);
+    const crew = page.getByRole('tabpanel', { name: 'Local Battle', exact: true });
+    await expect(crew.locator('.lobby-name').first()).toBeVisible();
+    const controlMetrics = await page.locator('.lobby-hotseat-body').evaluate((body) => {
+      const scale = body.closest('.lobby-card')!.getBoundingClientRect().height / 600;
+      return [...body.querySelectorAll<HTMLElement>('.lobby-preparation-section__title, .lobby-name, .lobby-control, .lobby-field > label, .lobby-field > input, .lobby-field > select')].map((node) => ({
+        label: node.getAttribute('aria-label') ?? node.id ?? node.className,
+        kind: node.tagName, font: Number.parseFloat(getComputedStyle(node).fontSize) * scale,
+        width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height,
+      }));
+    });
+    for (const control of controlMetrics) {
+      expect.soft(control.font, `${control.label} text must remain readable`).toBeGreaterThanOrEqual(10.5);
+      if (testInfo.project.name === 'pixel-touch' && ['INPUT', 'SELECT'].includes(control.kind)) {
+        expect.soft(control.height, `${control.label} needs a full touch target`).toBeGreaterThanOrEqual(44);
+        expect.soft(control.width, `${control.label} needs a full touch target`).toBeGreaterThanOrEqual(44);
+      }
+    }
+
+    if (testInfo.project.name === 'desktop-fine') {
+      await expect(page.getByRole('button', { name: 'Advanced settings', exact: true })).toBeInViewport({ ratio: 1 });
+      await expect(crew.locator('.lobby-name').last()).toBeInViewport({ ratio: 1 });
+    }
+    await expect(page.getByRole('region', { name: 'Verified deployment', exact: true })).toBeHidden();
+    await expect(page.getByRole('region', { name: 'Practice operations', exact: true })).toBeHidden();
+    const deploy = page.getByRole('button', { name: 'Deploy local battle', exact: true });
+    await expect(deploy).toBeInViewport({ ratio: 1 });
+    const geometry = await page.locator('.lobby-hotseat-footer').evaluate((footer) => {
+      const body = document.querySelector<HTMLElement>('.lobby-hotseat-scroll')!;
+      const card = footer.closest('.lobby-card')!;
+      return { footer: footer.getBoundingClientRect().toJSON(), body: body.getBoundingClientRect().toJSON(),
+        card: card.getBoundingClientRect().toJSON(), overflow: getComputedStyle(body).overflowY };
+    });
+    expect(geometry.body.bottom).toBeLessThanOrEqual(geometry.footer.top + 1);
+    expect(geometry.body.height, 'Preparation must reserve usable space for its controls').toBeGreaterThanOrEqual(testInfo.project.name === 'pixel-touch' ? 88 : 160);
+    expect(geometry.footer.bottom).toBeLessThanOrEqual(geometry.card.bottom + 1);
+    expect(geometry.overflow).toMatch(/auto|scroll/);
+    await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-local.png') });
+    const local = tabs.getByRole('tab', { name: 'Local Battle', exact: true });
+    await local.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(tabs.getByRole('tab', { name: 'Practice vs CPU', exact: true })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('region', { name: 'Practice operations', exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-practice.png') });
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('region', { name: 'Verified deployment', exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-verified.png') });
+    await local.click();
+    await crew.locator('.lobby-name').first().fill('Local Scout');
+    await tabs.getByRole('tab', { name: 'Practice vs CPU', exact: true }).click();
+    await local.click();
+    await expect(crew.locator('.lobby-name').first()).toHaveValue('Local Scout');
+    await expect(deploy).toBeInViewport({ ratio: 1 });
+    if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await deploy.tap();
+    else { await deploy.focus(); await page.keyboard.press('Enter'); }
+    await enterBattleIfBriefed(page);
+    await expect(page.locator('#lobby')).toBeHidden();
+    await expect(page.locator('[data-console-owner="preact"]')).toContainText('Local Scout');
+    await expect(page.getByRole('button', { name: 'Fire Baby Missile', exact: true })).toBeEnabled();
+  });
+
+  test('keeps authenticated Hot Seat preparation readable and scroll-reachable', async ({ page }, testInfo) => {
     await openLocalBattery(page);
-    const board = page.locator('[data-ui="commander-operations"]');
-    const dossier = page.locator('.lobby-verified-deployment__dossier');
+    await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat.png') });
+    const layout = await page.locator('.lobby-deployment').evaluate((deployment) => {
+      const panel = deployment.querySelector<HTMLElement>('.lobby-hotseat-scroll')!;
+      const card = deployment.closest('.lobby-card')!;
+      const matchup = panel.querySelector<HTMLElement>('.lobby-verified-deployment__matchup')!;
+      const rules = panel.querySelector<HTMLElement>('.lobby-verified-deployment__rules')!;
+      const actions = deployment.querySelector<HTMLElement>('.lobby-verified-deployment__actions')!;
+      const box = (node: Element) => node.getBoundingClientRect().toJSON();
+      return { panel: box(panel), card: box(card), matchup: box(matchup), actions: box(actions), rules: box(rules),
+        matchupFont: Number.parseFloat(getComputedStyle(matchup).fontSize) * card.getBoundingClientRect().height / 600,
+        overflowY: getComputedStyle(panel).overflowY,
+        ruleItems: [...rules.children].map((item) => ({ text: item.textContent,
+          font: Number.parseFloat(getComputedStyle(item).fontSize) * card.getBoundingClientRect().height / 600,
+          width: item.clientWidth, scroll: item.scrollWidth, lines: item.getBoundingClientRect().height
+            / (Number.parseFloat(getComputedStyle(item).lineHeight) * card.getBoundingClientRect().height / 600) })) };
+    });
+    expect.soft(layout.panel.bottom, 'Hot Seat panel must end inside the lobby frame').toBeLessThanOrEqual(layout.card.bottom + 1);
+    expect.soft(layout.overflowY, 'Long setup content must have a usable scroll owner').toMatch(/auto|scroll/);
+    expect.soft(layout.actions.top, 'Persistent launch actions must stay below the scroll viewport').toBeGreaterThanOrEqual(layout.panel.bottom - 1);
+    expect.soft(layout.matchupFont, 'Matchup must remain readable').toBeGreaterThanOrEqual(10.5);
+    expect.soft(layout.matchup.left).toBeGreaterThanOrEqual(layout.panel.left - 1);
+    expect.soft(layout.matchup.right).toBeLessThanOrEqual(layout.panel.right + 1);
+    for (const item of layout.ruleItems) {
+      expect.soft(item.font, `${item.text} must remain readable`).toBeGreaterThanOrEqual(10.5);
+      expect.soft(item.scroll, `${item.text} must not overflow its column`).toBeLessThanOrEqual(item.width + 1);
+      expect.soft(item.lines, `${item.text} must not collapse into a narrow text column`).toBeLessThanOrEqual(3.1);
+    }
+    const launch = page.getByRole('button', { name: 'Start verified deployment', exact: true });
+    for (const state of ['resting', 'hovered', 'focused'] as const) {
+      if (state === 'hovered') await launch.hover();
+      if (state === 'focused') await launch.focus();
+      const contrast = await launch.evaluate((node) => {
+        const style = getComputedStyle(node);
+        const color = (value: string) => value.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+        const luminance = (rgb: number[]) => rgb.map(channel => {
+          const normalized = channel / 255;
+          return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+        }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index]!, 0);
+        const text = luminance(color(style.color));
+        const backgrounds = style.backgroundImage.match(/rgba?\([^)]+\)/g) ?? [style.backgroundColor];
+        return Math.min(...backgrounds.map(value => {
+          const background = luminance(color(value));
+          return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+        }));
+      });
+      expect(contrast, `${state} launch text must contrast with every gradient stop`).toBeGreaterThanOrEqual(4.5);
+    }
+    await launch.focus();
+    await expect(launch).toBeInViewport({ ratio: 1 });
+    await page.getByRole('tab', { name: 'Verified Deployment', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toBeVisible();
+    await expect(page.getByRole('tabpanel', { name: 'Practice vs CPU', exact: true }).locator(':focus')).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat-focused.png') });
+  });
+
+  test('scrolls authenticated Hot Seat customization and starts the edited local crew', async ({ page }, testInfo) => {
+    await openLocalBattery(page, './', 'Local Battle');
+    await page.getByLabel('Players', { exact: true }).selectOption('4');
+    await page.locator('.lobby-name').first().fill('Local Scout');
+    const panel = page.locator('.lobby-hotseat-scroll');
+    const coarse = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+    const touch = coarse ? await page.context().newCDPSession(page) : null;
+    let gestures = 0;
+    const beforeScroll = await panel.evaluate((element) => element.scrollTop);
+    const footerBefore = await page.locator('.lobby-hotseat-footer').boundingBox();
+    async function waitForScrollRest(): Promise<void> {
+      let previous = Number.NaN;
+      let stable = 0;
+      // The native gesture must finish before the next independent action.
+      await expect.poll(async () => {
+        const current = await panel.evaluate(element => element.scrollTop);
+        stable = Math.abs(current - previous) < 0.1 ? stable + 1 : 0;
+        previous = current;
+        return stable;
+      }, { timeout: 5_000, intervals: [50, 50, 100] }).toBeGreaterThanOrEqual(3);
+    }
+    async function reach(selector: string): Promise<void> {
+      const control = page.locator(selector).first();
+      for (let step = 0; step < 20; step += 1) {
+        const box = await control.boundingBox();
+        const lane = await panel.boundingBox();
+        const viewport = page.viewportSize()!;
+        if (box && lane && box.y >= Math.max(0, lane.y) - 1 && box.y + box.height <= Math.min(viewport.height, lane.y + lane.height) + 1) {
+          await waitForScrollRest();
+          const settled = await control.boundingBox();
+          if (settled && settled.y >= Math.max(0, lane.y) - 1 && settled.y + settled.height <= Math.min(viewport.height, lane.y + lane.height) + 1) return;
+          continue;
+        }
+        if (!lane) throw new Error('Hot Seat has no scroll lane');
+        const x = lane.x + lane.width * 0.8;
+        const visibleHeight = Math.min(viewport.height, lane.y + lane.height) - Math.max(0, lane.y);
+        const direction = box && box.y < lane.y ? -1 : 1;
+        const distance = Math.min(120, visibleHeight * 0.5);
+        const y = Math.max(0, lane.y) + visibleHeight * (direction > 0 ? 0.8 : 0.2);
+        if (touch) {
+          gestures += 1;
+          await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
+          for (let frame = 1; frame <= 10; frame += 1) {
+            await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - direction * distance * frame / 10, id: 1 }] });
+            await page.waitForTimeout(20);
+          }
+          // End a deliberate drag with the finger held still, rather than fling.
+          await page.waitForTimeout(150);
+          await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        } else { await page.mouse.move(x, y); await page.mouse.wheel(0, direction * distance); }
+        await page.waitForTimeout(100);
+        await expect(page.locator('.lobby-garage.editing'), 'Scrolling crew must not open tank customization').toHaveCount(0);
+        await expect(page.locator('.lobby-start')).not.toHaveAttribute('inert', '');
+      }
+      await page.screenshot({ path: testInfo.outputPath('authenticated-local-scroll-failure.png') });
+      const diagnostic = await panel.evaluate((element) => ({ box: element.getBoundingClientRect().toJSON(),
+        scrollTop: element.scrollTop, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight,
+        ancestors: [element, element.parentElement!, element.closest('.lobby-card')!, document.querySelector('#app')!, document.body]
+          .map((node) => ({ className: node.className, touchAction: getComputedStyle(node).touchAction })) }));
+      throw new Error(`Cannot scroll to ${selector}: ${JSON.stringify({ diagnostic, target: await control.boundingBox() })}`);
+    }
+    await reach('.lobby-row:last-child .lobby-name');
+    await reach('.lobby-advanced-trigger');
+    if (gestures > 0) expect(await panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(beforeScroll);
+    const footerAfter = await page.locator('.lobby-hotseat-footer').boundingBox();
+    expect(footerAfter!.y).toBeCloseTo(footerBefore!.y, 0);
+    expect(footerAfter!.height).toBeCloseTo(footerBefore!.height, 0);
+    await reach('.lobby-row:last-child .lobby-name');
+    const fourthName = page.locator('.lobby-name').nth(3);
+    if (coarse) {
+      await expect(fourthName).not.toBeFocused();
+      await fourthName.tap();
+      await expect(fourthName).toBeFocused();
+    }
+    await fourthName.fill('Fourth Crew');
+    await waitForScrollRest();
+    await expect(page.locator('.lobby-start')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('.lobby-name').nth(3)).toHaveValue('Fourth Crew');
+    await page.screenshot({ path: testInfo.outputPath('authenticated-local-deploy.png') });
+    if (coarse) await page.locator('.lobby-start').tap(); else {
+      await page.locator('.lobby-start').focus();
+      await page.keyboard.press('Enter');
+    }
+    await enterBattleIfBriefed(page);
+    await page.screenshot({ path: testInfo.outputPath('authenticated-local-after-deploy.png') });
+    await expect(page.locator('#lobby')).toBeHidden();
+    await expect(page.locator('[data-console-owner="preact"]')).toContainText('Local Scout');
+    await expect(page.getByRole('button', { name: 'Fire Baby Missile', exact: true })).toBeEnabled();
+    const ledger = page.getByRole('button', { name: 'Open match ledger', exact: true });
+    if (await ledger.isVisible()) await ledger.click();
+    await expect(page.locator('#hud .st-hud__player-row')).toHaveCount(4);
+    await expect(page.locator('#hud [data-roster-field="name"]').filter({ hasText: 'Fourth Crew' })).toBeVisible();
+    await touch?.detach();
+  });
+
+  test('separates practice and verified preparation into contained tabs', async ({ page }) => {
+    await openLocalBattery(page);
+    const verifiedPanel = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    await expect(verifiedPanel).toBeVisible();
+    await expect(verifiedPanel).toContainText('First Strike');
+    await expect(page.getByRole('region', { name: 'Practice operations', exact: true })).toBeHidden();
+    await page.getByRole('tab', { name: 'Practice vs CPU', exact: true }).click();
+    const board = page.getByRole('tabpanel', { name: 'Practice vs CPU', exact: true });
     await expect(board).toBeVisible();
-    await expect(dossier).toBeVisible();
-    await expect(dossier).toHaveText(/First Strike/);
-    await expect(dossier.evaluate((node) =>
-      node.nextElementSibling?.matches('[data-ui="commander-operations"]') ?? false,
-    )).resolves.toBe(true);
-    await expect(board.getByRole('heading', { name: 'Current field order' })).toBeVisible();
-    await expect(board.getByRole('region', { name: 'Verified deployment' })).toBeVisible();
-    await expect(board.getByRole('region', { name: 'Practice operations' })).toBeVisible();
-    await expect(board.locator('.lobby-verified-deployment__dossier')).toHaveCount(0);
+    await expect(verifiedPanel).toBeHidden();
     const compactSelector = board.getByLabel('Choose practice operation');
     if (await compactSelector.isVisible()) {
       const practiceLaunch = board.getByRole('button', { name: 'Launch practice' });
@@ -197,34 +414,21 @@ test.describe('verified deployment production-browser journey', () => {
       await expect(cards.nth(1)).toBeFocused();
     }
 
-    const metrics = await board.evaluate((node) => {
-      const lanes = [...node.children] as HTMLElement[];
-      const style = getComputedStyle(node);
-      const boardBox = node.getBoundingClientRect();
-      return {
-        display: style.display,
-        columns: style.gridTemplateColumns,
-        boardBox: boardBox.toJSON(),
-        lanes: lanes.map((lane) => lane.getBoundingClientRect().toJSON()),
-      };
-    });
-    expect(metrics.display).toBe('grid');
-    expect(metrics.columns).not.toBe('none');
-    for (const lane of metrics.lanes) {
-      expect(lane.left).toBeGreaterThanOrEqual(metrics.boardBox.left - 1);
-      expect(lane.right).toBeLessThanOrEqual(metrics.boardBox.right + 1);
-      expect(lane.top).toBeGreaterThanOrEqual(metrics.boardBox.top - 1);
-      expect(lane.bottom).toBeLessThanOrEqual(metrics.boardBox.bottom + 1);
-    }
+    const metrics = await board.evaluate((node) => ({ client: node.clientWidth, scroll: node.scrollWidth }));
+    expect(metrics.scroll).toBeLessThanOrEqual(metrics.client + 1);
     await assertLobbyFrame(page);
   });
 
   test('launches the selected local practice operation from Commander Operations', async ({ page }) => {
-    await openLocalBattery(page);
-    const board = page.getByRole('region', { name: 'Commander Operations' });
+    await openLocalBattery(page, './', 'Practice vs CPU');
+    const board = page.getByRole('tabpanel', { name: 'Practice vs CPU', exact: true });
     const compactSelector = board.getByLabel('Choose practice operation');
     if (await compactSelector.isVisible()) {
       await compactSelector.selectOption('crosswind-range');
+      const briefing = board.locator('[data-ui="selected-practice-operation"]');
+      await expect(briefing).toContainText('Crosswind Range');
+      await expect(briefing).toContainText('Wraparound walls turn shifting wind into a ranging test.');
+      await expect(briefing).toBeInViewport({ ratio: 1 });
       await board.getByRole('button', { name: 'Launch practice' }).click();
     } else {
       await board.locator('button[data-operation-id="crosswind-range"]').click();
@@ -248,13 +452,13 @@ test.describe('verified deployment production-browser journey', () => {
     });
 
     await openLocalBattery(page);
-    const verified = page.getByRole('region', { name: 'Verified deployment' });
+    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
     await expect(verified.getByText('Baby Missile only')).toBeVisible();
     await expect(verified.getByText('6 human / 6 CPU salvos maximum')).toBeVisible();
     await expect(verified.getByText('Fixed battlefield rules')).toBeVisible();
     await expect(verified.getByText('30-minute deadline')).toBeVisible();
-    const commanderOperations = page.getByRole('region', { name: 'Commander Operations' });
-    await expect(commanderOperations.getByRole('heading', { name: 'Current field order' })).toBeVisible();
+    const commanderOperations = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    await expect(commanderOperations.getByRole('heading', { name: 'Commander dossier', exact: true })).toBeVisible();
     await expect(commanderOperations.getByText('First Strike · Damage the CPU within your first three salvos.')).toBeVisible();
     const launchComposition = await verified.evaluate((node) => {
       const rules = node.querySelector<HTMLElement>('.lobby-verified-deployment__rules');
@@ -262,11 +466,12 @@ test.describe('verified deployment production-browser journey', () => {
       if (!rules || !actions) throw new Error('Missing verified launch composition');
       return {
         rules: rules.getBoundingClientRect().toJSON(),
+        scroll: node.querySelector('.lobby-hotseat-scroll')!.getBoundingClientRect().toJSON(),
         actions: actions.getBoundingClientRect().toJSON(),
       };
     });
     const launchIsBesideRules = launchComposition.actions.left >= launchComposition.rules.right - 1;
-    const launchIsBelowRules = launchComposition.actions.top >= launchComposition.rules.bottom - 1;
+    const launchIsBelowRules = launchComposition.actions.top >= launchComposition.scroll.bottom - 1;
     expect(launchIsBesideRules || launchIsBelowRules).toBe(true);
     await assertLobbyFrame(page);
 
@@ -322,7 +527,7 @@ test.describe('verified deployment production-browser journey', () => {
     await menu.getByRole('button', { name: 'Return to Lobby' }).click();
     await expect(page.locator('#lobby')).toBeVisible();
 
-    const verified = page.getByRole('region', { name: 'Verified deployment' });
+    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
     await expect(verified.getByRole('button', { name: 'Resume verified deployment' })).toBeVisible();
     await expect(verified.getByText('Recovered 0 of 6 human salvos.')).toBeVisible();
     await verified.getByRole('button', { name: 'Abandon verified deployment' }).click();
@@ -460,7 +665,7 @@ test.describe('verified deployment production-browser journey', () => {
       body: JSON.stringify({ error: 'database exploded with private detail' }),
     }));
     await openLocalBattery(page);
-    const verified = page.getByRole('region', { name: 'Verified deployment' });
+    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
     await verified.getByRole('button', { name: 'Start verified deployment' }).click();
     await expect(verified.getByRole('status')).toHaveText(
       'Verified deployment is unavailable. Try again.',
@@ -590,7 +795,7 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(firstReport.getByRole('button', { name: /fire/i })).toHaveCount(0);
     await firstReport.getByRole('button', { name: 'Main Menu' }).click();
 
-    const verified = page.getByRole('region', { name: 'Verified deployment' });
+    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
     await expect(verified.getByText('Recovered terminal evidence. Resume to retry verification.'))
       .toBeVisible();
     await verified.getByRole('button', { name: 'Resume verified deployment' }).click();
@@ -683,8 +888,8 @@ test.describe('verified deployment production-browser journey', () => {
     });
 
     await openLocalBattery(page, '?e2e=verified-lifecycle');
-    const verified = page.getByRole('region', { name: 'Verified deployment' });
-    await expect(page.getByRole('region', { name: 'Commander Operations' }).getByText(
+    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    await expect(page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true }).getByText(
       /First Strike.*Damage the CPU within your first three salvos\./,
     )).toBeVisible();
 
@@ -702,7 +907,7 @@ test.describe('verified deployment production-browser journey', () => {
     await nextOrder.click();
     await expect(page.locator('#lobby')).toBeVisible();
     await expect(verified.getByRole('button', { name: 'Start verified deployment' })).toBeFocused();
-    await expect(page.getByRole('region', { name: 'Commander Operations' }).getByText(
+    await expect(page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true }).getByText(
       /Fire for Effect.*Damage the CPU on two separate human salvos\./,
     )).toBeVisible();
     // Reusable semantic nodes now remain in hidden, inert parking between games.

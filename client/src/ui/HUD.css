@@ -634,6 +634,45 @@
   line-height: 1.35;
 }
 .st-hud__victory-progression-handoff[hidden] { display: none; }
+.st-hud__victory-seed-challenge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px 10px;
+  width: 100%;
+  min-width: 0;
+}
+.st-hud__victory-seed-challenge > * { grid-column: 1; }
+.st-hud__victory-seed-challenge-copy {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--gold);
+}
+.st-hud__victory-seed-challenge-copy:hover { background: rgba(255, 210, 63, 0.16); }
+.st-hud__victory-seed-challenge [role='status'] {
+  color: var(--text-gold);
+  font-size: 15px;
+}
+.st-hud__victory-seed-challenge input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 210, 63, 0.62);
+  background: rgba(8, 10, 12, 0.94);
+  color: var(--text);
+  font: 15px/1.3 var(--font-mono);
+}
+.st-hud__victory-hero:has(> .st-hud__victory-seed-challenge) .st-hud__victory-tank-frame {
+  flex: 1;
+}
+.st-hud__victory-hero:has(> .st-hud__victory-seed-challenge) .st-hud__victory-tank {
+  height: 100%;
+  object-fit: contain;
+}
 .st-hud__victory-progression-handoff p { margin: 0; }
 .st-hud__victory-progression-sign-in {
   min-width: var(--st-store-buy-target, 44px);
@@ -1043,6 +1082,9 @@
     height: 100%;
     object-fit: contain;
   }
+  .st-hud__victory-hero > .st-hud__victory-seed-challenge [role='status'],
+  .st-hud__victory-hero > .st-hud__victory-seed-challenge input { font-size: 22px; }
+  .st-hud__victory-hero > .st-hud__victory-seed-challenge input { min-height: 91px; }
   .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden])) {
     display: grid;
     grid-template-rows: auto 91px auto auto minmax(0, 1fr) 91px;

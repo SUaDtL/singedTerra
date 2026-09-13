@@ -1,4 +1,5 @@
 import type { TankLoadout } from '@shared/types/TankLoadout';
+import type { PublicSeedChallenge } from '../client/seedChallenge';
 import { makeHudGlyph } from './hudIcons';
 import {
   clearTankLoadoutPreview,
@@ -21,6 +22,10 @@ export interface TerminalMatchProjection {
   readonly fieldOrder: string | null;
   readonly turningPoint: string | null;
   readonly nextExperiment: string | null;
+  readonly seedChallenge: {
+    readonly descriptor: PublicSeedChallenge;
+    readonly url: string;
+  } | null;
   readonly progressionReceipt: {
     readonly summary: string;
     readonly promotion?: {
@@ -63,6 +68,11 @@ export class TerminalMatchView {
   private readonly tank: HTMLCanvasElement;
   private readonly receipt: HTMLElement;
   private readonly handoff: HTMLElement;
+  private readonly seedChallenge: HTMLElement;
+  private readonly seedChallengeCopy: HTMLButtonElement;
+  private readonly seedChallengeStatus: HTMLElement;
+  private readonly seedChallengeFallback: HTMLInputElement;
+  private readonly actions: HTMLElement;
   private readonly signIn: HTMLButtonElement;
   private readonly retry: HTMLButtonElement;
   private readonly primary: HTMLButtonElement;
@@ -83,6 +93,8 @@ export class TerminalMatchView {
   private lastWinnerSignature: string | null = null;
   private lastReceiptSignature: string | null = null;
   private winnerRendered = false;
+  private seedChallengeUrl: string | null = null;
+  private seedChallengeCopyGeneration = 0;
 
   constructor(options: TerminalMatchViewOptions) {
     this.onRestart = options.onRestart;
@@ -166,6 +178,30 @@ export class TerminalMatchView {
       if (this.visible && !this.destroyed) this.onSignIn();
     });
     this.handoff.append(handoffText, this.signIn);
+    this.seedChallenge = document.createElement('section');
+    this.seedChallenge.className = 'st-hud__victory-seed-challenge';
+    this.seedChallenge.dataset.ui = 'seed-challenge-share';
+    this.seedChallengeCopy = document.createElement('button');
+    this.seedChallengeCopy.type = 'button';
+    this.seedChallengeCopy.className = 'st-hud__restart st-hud__victory-seed-challenge-copy';
+    this.seedChallengeCopy.dataset.action = 'copy-seed-challenge';
+    this.seedChallengeCopy.textContent = 'Copy challenge link';
+    this.seedChallengeCopy.addEventListener('click', () => { void this.copyChallengeLink(); });
+    this.seedChallengeStatus = document.createElement('div');
+    this.seedChallengeStatus.dataset.ui = 'seed-challenge-copy-status';
+    this.seedChallengeStatus.setAttribute('role', 'status');
+    this.seedChallengeStatus.setAttribute('aria-live', 'polite');
+    this.seedChallengeStatus.setAttribute('aria-atomic', 'true');
+    this.seedChallengeFallback = document.createElement('input');
+    this.seedChallengeFallback.type = 'text';
+    this.seedChallengeFallback.setAttribute('aria-label', 'Challenge link');
+    this.seedChallengeFallback.readOnly = true;
+    this.seedChallengeFallback.dataset.ui = 'seed-challenge-copy-fallback';
+    this.seedChallenge.append(
+      this.seedChallengeCopy,
+      this.seedChallengeStatus,
+      this.seedChallengeFallback,
+    );
     this.retry = document.createElement('button');
     this.retry.type = 'button';
     this.retry.className = 'st-hud__restart st-hud__victory-verified-retry';
@@ -199,11 +235,11 @@ export class TerminalMatchView {
     this.menu.addEventListener('click', () => {
       if (this.visible && !this.destroyed && !this.menu.disabled) this.onQuit();
     });
-    const buttons = document.createElement('div');
-    buttons.className = 'st-hud__overlay-btns';
-    buttons.append(this.primary, this.menu);
+    this.actions = document.createElement('div');
+    this.actions.className = 'st-hud__overlay-btns';
+    this.actions.append(this.primary, this.menu);
     report.append(
-      this.context, this.receipt, this.handoff, this.title, scoreLabel, this.score, buttons,
+      this.context, this.receipt, this.handoff, this.title, scoreLabel, this.score, this.actions,
     );
     panel.append(eyebrow, hero, report);
     this.root.append(panel);
@@ -254,6 +290,7 @@ export class TerminalMatchView {
     this.lastReceiptSignature = null;
     this.handoff.hidden = true;
     this.signIn.remove();
+    this.clearChallengeLink();
     const previous = this.previousFocus;
     this.previousFocus = null;
     if (restoreFocus && previous?.isConnected && !previous.closest('[inert]')) previous.focus({ preventScroll: true });
@@ -369,6 +406,7 @@ export class TerminalMatchView {
     } else {
       this.signIn.remove();
     }
+    this.renderChallengeLink(projection.seedChallenge);
     this.primaryLabel.textContent = projection.primary.label;
     this.primary.dataset['kind'] = projection.primary.kind;
     this.primary.disabled = projection.primary.disabled;
@@ -388,6 +426,8 @@ export class TerminalMatchView {
     event.preventDefault();
     const focusable = [
       ...(!this.handoff.hidden && this.signIn.isConnected ? [this.signIn] : []),
+      ...(this.seedChallengeCopy.isConnected ? [this.seedChallengeCopy] : []),
+      ...(this.seedChallengeFallback.isConnected ? [this.seedChallengeFallback] : []),
       ...(this.retry.isConnected && !this.retry.disabled ? [this.retry] : []),
       ...(!this.primary.disabled ? [this.primary] : []),
       ...(!this.menu.disabled ? [this.menu] : []),
@@ -398,6 +438,55 @@ export class TerminalMatchView {
       ? (current <= 0 ? focusable.length - 1 : current - 1)
       : (current < 0 || current === focusable.length - 1 ? 0 : current + 1);
     focusable[next]!.focus({ preventScroll: true });
+  }
+
+  private renderChallengeLink(challenge: TerminalMatchProjection['seedChallenge']): void {
+    const retiringFocusedShare = this.seedChallenge.contains(document.activeElement);
+    const nextUrl = challenge?.url ?? null;
+    if (nextUrl !== this.seedChallengeUrl) {
+      this.seedChallengeCopyGeneration += 1;
+      this.seedChallengeStatus.textContent = '';
+      this.seedChallengeFallback.value = '';
+      this.seedChallengeFallback.remove();
+      this.seedChallengeUrl = nextUrl;
+    }
+    if (nextUrl === null) {
+      this.seedChallenge.remove();
+      if (retiringFocusedShare && this.visible) this.primary.focus({ preventScroll: true });
+    } else if (this.seedChallenge.parentElement !== this.hero) this.hero.append(this.seedChallenge);
+  }
+
+  private clearChallengeLink(): void {
+    this.seedChallengeCopyGeneration += 1;
+    this.seedChallengeUrl = null;
+    this.seedChallengeStatus.textContent = '';
+    this.seedChallengeFallback.value = '';
+    this.seedChallengeFallback.remove();
+    this.seedChallenge.remove();
+  }
+
+  private async copyChallengeLink(): Promise<void> {
+    if (!this.visible || this.destroyed || this.seedChallengeUrl === null) return;
+    const url = this.seedChallengeUrl;
+    const generation = ++this.seedChallengeCopyGeneration;
+    try {
+      const writeText = globalThis.navigator?.clipboard?.writeText;
+      if (typeof writeText !== 'function') throw new Error('clipboard_unavailable');
+      await writeText.call(globalThis.navigator.clipboard, url);
+      if (!this.visible || this.destroyed || generation !== this.seedChallengeCopyGeneration
+        || url !== this.seedChallengeUrl) return;
+      this.seedChallengeStatus.textContent = 'Challenge link copied';
+      this.seedChallengeFallback.value = '';
+      this.seedChallengeFallback.remove();
+    } catch {
+      if (!this.visible || this.destroyed || generation !== this.seedChallengeCopyGeneration
+        || url !== this.seedChallengeUrl) return;
+      this.seedChallengeStatus.textContent = 'Copy this challenge link:';
+      this.seedChallengeFallback.value = url;
+      if (!this.seedChallengeFallback.isConnected) this.seedChallenge.append(this.seedChallengeFallback);
+      this.seedChallengeFallback.focus({ preventScroll: true });
+      this.seedChallengeFallback.select();
+    }
   }
 
   private isolate(active: boolean): void {

@@ -3,6 +3,15 @@ import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 
+export type LobbySeedChallengePresentation =
+  | { readonly status: 'invalid' }
+  | {
+    readonly status: 'valid';
+    readonly title: string;
+    readonly objective: string;
+    readonly seed: number;
+  };
+
 const MODE_PANEL_ID = 'lobby-mode-panel';
 
 const MODE_CONTEXT: Record<LobbyPrimaryTab, { title: string; description: string }> = {
@@ -33,6 +42,8 @@ export interface LobbyShellViewOptions {
     readonly briefing: string;
     readonly practiceObjective?: PracticeObjectiveDescriptor;
   }[];
+  seedChallenge?: LobbySeedChallengePresentation;
+  onSeedChallenge?: () => void;
   onQuickDuel: (operationId: string) => void;
   onRejoin: () => void;
   onBack: () => void;
@@ -102,10 +113,47 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       return button;
     };
 
+    const seedChallenge = options.seedChallenge;
+    if (seedChallenge) {
+      const callout = document.createElement('section');
+      callout.className = 'lobby-seed-challenge';
+      callout.dataset.ui = 'seed-challenge';
+      if (seedChallenge.status === 'invalid') {
+        callout.dataset.ui = 'seed-challenge-error';
+        callout.setAttribute('role', 'alert');
+        callout.textContent = 'This seed challenge is invalid or no longer supported.';
+      } else {
+        const kicker = document.createElement('span');
+        kicker.dataset.ui = 'seed-challenge-kicker';
+        kicker.textContent = 'SEED CHALLENGE';
+        const operation = document.createElement('h2');
+        operation.dataset.ui = 'seed-challenge-operation';
+        operation.textContent = seedChallenge.title;
+        const objective = document.createElement('p');
+        objective.dataset.ui = 'seed-challenge-objective';
+        objective.textContent = seedChallenge.objective;
+        const seed = document.createElement('p');
+        seed.dataset.ui = 'seed-challenge-seed';
+        seed.textContent = `Seed · ${seedChallenge.seed}`;
+        const start = choice(
+          'Start challenge vs CPU',
+          options.rejoinAvailable ? 'lobby-btn lobby-deployment-choice--secondary' : 'lobby-btn primary',
+          () => {
+          options.onSeedChallenge?.();
+          },
+        );
+        callout.append(kicker, operation, objective, seed, start);
+      }
+      chooser.append(callout);
+    }
+
     const operations = options.quickOperations ?? [{ id: 'standard', title: 'Standard Duel', briefing: '' }];
     const firstSalvo = operations.find((operation) => operation.id === 'first-salvo');
     const ordinaryOperations = operations.filter((operation) => operation.id !== 'first-salvo');
-    const showFirstSalvo = options.firstSalvoPreferenceUnseen && !options.rejoinAvailable && firstSalvo !== undefined;
+    const showFirstSalvo = options.firstSalvoPreferenceUnseen
+      && !options.rejoinAvailable
+      && seedChallenge?.status !== 'valid'
+      && firstSalvo !== undefined;
     let selectedOperation = ordinaryOperations[0] ?? operations[0]!;
     const operationField = document.createElement('section');
     operationField.className = 'lobby-quick-operation';
@@ -164,7 +212,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     operationField.append(operationKicker, operationTitle, operationCards, operationBriefing, operationObjective);
     const ordinaryQuickDuel = choice(
       'Quick Duel vs CPU',
-      options.rejoinAvailable || showFirstSalvo
+      options.rejoinAvailable || showFirstSalvo || seedChallenge?.status === 'valid'
         ? 'lobby-btn lobby-deployment-choice--secondary'
         : 'lobby-btn primary',
       () => { options.onQuickDuel(selectedOperation.id); },
@@ -219,7 +267,8 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
   if (back) {
     back.type = 'button';
     back.className = 'lobby-btn lobby-deployment__back';
-    back.textContent = 'Back to deployment choices';
+    back.textContent = 'Deployment choices';
+    back.setAttribute('aria-label', 'Deployment choices');
     back.addEventListener('click', () => { options.onBack(); }, { signal: options.listenerSignal });
   }
 

@@ -9,11 +9,13 @@ const ANGLE = '[data-semantic-key="node:output:Angle:43"]';
 const POWER = '[data-semantic-key="node:output:Power:52"]';
 
 async function chooseFoundryPreset(page: Page, player: 1 | 2): Promise<void> {
+  await page.getByRole('button', { name: `Customize Player ${player} tank`, exact: true }).click();
   await page.getByRole('button', { name: `Apply Foundry preset to Player ${player}`, exact: true }).click();
+  await page.getByRole('button', { name: 'Done customizing tank', exact: true }).click();
 }
 
 async function fillSetting(page: Page, label: string, value: string): Promise<void> {
-  const field = page.locator('#lobby .lobby-field').filter({ hasText: label });
+  const field = page.getByRole('dialog', { name: 'Operations Settings', exact: true }).locator('.lobby-field').filter({ hasText: label });
   await field.locator('input').fill(value);
 }
 
@@ -91,10 +93,8 @@ test.describe('ordinary guest journey', () => {
     await expect(splash).toBeHidden({ timeout: 5_000 });
 
     await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
-    const customization = page.locator('.lobby-hotseat-customization');
-    await expect(customization).toBeVisible();
-    if (await customization.getAttribute('open') === null) await customization.locator('summary').click();
-    await expect(customization).toHaveAttribute('open', '');
+    await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.lobby-name').first()).toBeVisible();
     await chooseFoundryPreset(page, 1);
     await chooseFoundryPreset(page, 2);
 

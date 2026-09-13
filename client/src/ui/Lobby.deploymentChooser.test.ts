@@ -69,7 +69,7 @@ describe('Lobby deployment chooser', () => {
     expect(root.querySelector('.lobby-start')).not.toBeNull();
     expect(root.querySelector('.lobby-preview')).not.toBeNull();
 
-    button(root, 'Back to deployment choices').click();
+    button(root, 'Deployment choices').click();
     expect(document.activeElement).toBe(button(root, 'Local Battle'));
     expect(root.querySelector('.lobby-start')).toBeNull();
   });
@@ -113,13 +113,11 @@ describe('Lobby deployment chooser', () => {
     lobby.show();
 
     button(root, 'Local Battle').click();
-    const preparation = root.querySelector<HTMLDetailsElement>('.lobby-hotseat-customization')!;
-    preparation.open = true;
-    preparation.dispatchEvent(new Event('toggle'));
+    expect(root.querySelector('[data-hotseat-surface="local"]')?.getAttribute('aria-selected')).toBe('true');
     const localName = root.querySelector<HTMLInputElement>('.lobby-name')!;
     localName.value = 'Dust Fox';
     localName.dispatchEvent(new Event('input', { bubbles: true }));
-    button(root, 'Back to deployment choices').click();
+    button(root, 'Deployment choices').click();
 
     button(root, 'Play Online').click();
     const onlineName = root.querySelector<HTMLInputElement>('.lobby-name')!;
@@ -127,11 +125,11 @@ describe('Lobby deployment chooser', () => {
     onlineName.dispatchEvent(new Event('input', { bubbles: true }));
     button(root, 'Join with a code').click();
     expect(root.querySelector('.lobby-code-input')).not.toBeNull();
-    button(root, 'Back to deployment choices').click();
+    button(root, 'Deployment choices').click();
 
     button(root, 'Local Battle').click();
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Dust Fox');
-    button(root, 'Back to deployment choices').click();
+    button(root, 'Deployment choices').click();
 
     button(root, 'Play Online').click();
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Signal Fox');
@@ -146,6 +144,6 @@ describe('Lobby deployment chooser', () => {
 
     expect(root.querySelector('.lobby-deployment-chooser')).toBeNull();
     expect(root.querySelector<HTMLInputElement>('.lobby-code-input')?.value).toBe('AB12');
-    expect(button(root, 'Back to deployment choices')).toBeTruthy();
+    expect(button(root, 'Deployment choices')).toBeTruthy();
   });
 });

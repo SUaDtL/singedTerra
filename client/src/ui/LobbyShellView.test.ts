@@ -66,6 +66,36 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
 }
 
 describe('buildLobbyShellView', () => {
+  it('places an admitted seed challenge before Quick Operations and starts only on its own action', () => {
+    const onSeedChallenge = vi.fn();
+    const root = buildLobbyShellView(options({
+      seedChallenge: {
+        status: 'valid', title: 'Last Light Siege',
+        objective: 'Hold the Field · Win the duel.', seed: 42,
+      },
+      onSeedChallenge,
+    }));
+    const chooser = root.querySelector<HTMLElement>('.lobby-deployment-chooser')!;
+    const challenge = root.querySelector<HTMLElement>('[data-ui="seed-challenge"]')!;
+    const operations = root.querySelector<HTMLElement>('[data-ui="quick-operation"]')!;
+
+    expect([...chooser.children].indexOf(challenge)).toBeLessThan([...chooser.children].indexOf(operations));
+    expect([...root.querySelectorAll('button.primary')]).toEqual([button(root, 'Start challenge vs CPU')]);
+    expect(onSeedChallenge).not.toHaveBeenCalled();
+    button(root, 'Start challenge vs CPU').click();
+    expect(onSeedChallenge).toHaveBeenCalledOnce();
+  });
+
+  it('renders an invalid challenge as a generic inert alert', () => {
+    const onSeedChallenge = vi.fn();
+    const root = buildLobbyShellView(options({ seedChallenge: { status: 'invalid' }, onSeedChallenge }));
+    const alert = root.querySelector<HTMLElement>('[data-ui="seed-challenge-error"]')!;
+    expect(alert.getAttribute('role')).toBe('alert');
+    expect(alert.textContent).toBe('This seed challenge is invalid or no longer supported.');
+    expect(root.textContent).not.toContain('Start challenge vs CPU');
+    expect(onSeedChallenge).not.toHaveBeenCalled();
+  });
+
   it('opens with exactly three deployment choices and no preparation content', () => {
     const root = buildLobbyShellView(options());
     const deployment = root.querySelector<HTMLElement>('.lobby-deployment')!;
@@ -189,9 +219,10 @@ describe('buildLobbyShellView', () => {
   it('returns from preparation through one clearly named action', () => {
     const onBack = vi.fn();
     const root = buildLobbyShellView(options({ surface: 'preparation', onBack }));
-    const back = button(root, 'Back to deployment choices');
+    const back = button(root, 'Deployment choices');
 
     expect(back.type).toBe('button');
+    expect(back.getAttribute('aria-label')).toBe('Deployment choices');
     back.click();
     expect(onBack).toHaveBeenCalledOnce();
     expect(onBack).toHaveBeenCalledWith();

@@ -210,6 +210,7 @@ export class HUD {
   private quickOperation: QuickOperationPresentation | null = null;
   /** Local restart retains the current config; terminal copy must not imply a new scenario. */
   private terminalReplayMode: 'same-scenario' | null = null;
+  private publicSeedChallenge: TerminalMatchProjection['seedChallenge'] = null;
   private overlayEl!: HTMLElement;
   private terminalView!: TerminalMatchView;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
@@ -1046,6 +1047,12 @@ export class HUD {
   /** Declares only the existing restart semantics admitted by application composition. */
   setTerminalReplayMode(mode: 'same-scenario' | null): void {
     this.terminalReplayMode = mode;
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
+  }
+
+  /** Admit one already canonical public link into the terminal action surface. */
+  setPublicSeedChallenge(challenge: TerminalMatchProjection['seedChallenge']): void {
+    this.publicSeedChallenge = challenge;
     if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
@@ -2205,6 +2212,7 @@ export class HUD {
       nextExperiment: sameScenarioReplay
         ? 'Experiment · Keep power fixed, change your opening angle, and compare where the first shot lands.'
         : null,
+      seedChallenge: this.publicSeedChallenge,
       progressionReceipt: this.terminalProgressionReceipt,
       progressionHandoff: this.terminalProgressionHandoff,
       primary: {

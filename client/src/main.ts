@@ -13,6 +13,7 @@ import { HotSeatClient } from './client/HotSeatClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { quickOperationById } from './client/quickOperations';
+import { buildSeedChallengeUrl } from './client/seedChallenge';
 import { rematchToConfig } from './client/rematchConfig';
 import { MatchSessionLifecycle } from './client/MatchSessionLifecycle';
 import { writeSession } from './lib/sessionDescriptor';
@@ -708,6 +709,7 @@ function bootstrap(): void {
     hud.setFieldOrder(null);
     hud.setPracticeFieldOrder(null);
     hud.setFirstSalvoStep(null);
+    hud.setPublicSeedChallenge(null);
     await hud.leaveBattleConsole?.();
   }
 
@@ -786,6 +788,14 @@ function bootstrap(): void {
           .setQuickOperation?.(config.quickOperation ?? null);
         hud.setTerminalReplayMode(config.mode === 'hotseat' && !config.verifiedDeployment
           ? 'same-scenario'
+          : null);
+        const publicSeedChallengeUrl = config.mode === 'hotseat'
+          && !config.verifiedDeployment
+          && config.publicSeedChallenge
+          ? buildSeedChallengeUrl(window.location.href, config.publicSeedChallenge)
+          : null;
+        hud.setPublicSeedChallenge(publicSeedChallengeUrl && config.publicSeedChallenge
+          ? { descriptor: config.publicSeedChallenge, url: publicSeedChallengeUrl }
           : null);
         if (!config.verifiedDeployment) {
           fieldOrder = config.quickOperation?.practiceObjective
@@ -884,7 +894,11 @@ function bootstrap(): void {
           }
         }
         const accountTank = initial?.tanks[0];
-        hotSeatProgression = config.verifiedDeployment ? null : createHotSeatProgressionReporter({
+        hotSeatProgression = config.verifiedDeployment
+          || (publicSeedChallengeUrl !== null
+            && config.publicSeedChallenge?.origin === 'imported-public-challenge')
+          ? null
+          : createHotSeatProgressionReporter({
           mode: config.mode,
           // The anonymous fixture deliberately traverses the real null-result path.
           // Ordinary deterministic fixtures remain excluded from progression reporting.
@@ -906,7 +920,7 @@ function bootstrap(): void {
             ) return;
             hud.setAnonymousProgressionHandoff();
           },
-        });
+          });
         lastActiveId = initial?.activePlayerId ?? null;
         lastInputAimRound = initial?.round ?? null;
       },

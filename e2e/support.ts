@@ -71,16 +71,23 @@ export async function gotoLobby(page: Page): Promise<void> {
  * intentionally leaves it closed so first-contact tests observe production.
  */
 export async function openHotSeatCustomization(page: Page): Promise<void> {
-  const customization = page.locator('#lobby .lobby-hotseat-customization');
-  if (!(await customization.isVisible())) {
+  const tabs = page.getByRole('tablist', { name: 'Hot Seat modes', exact: true });
+  if (!(await tabs.isVisible())) {
     const localBattle = page.getByRole('button', { name: 'Local Battle', exact: true });
     if (await localBattle.isVisible()) await localBattle.click();
   }
-  await expect(customization).toBeVisible();
-  if (await customization.getAttribute('open') === null) {
-    await customization.locator('summary').click();
-  }
-  await expect(customization).toHaveAttribute('open', '');
+  await selectHotSeatTab(page, 'Local Battle');
+  await expect(page.locator('#lobby .lobby-name').first()).toBeVisible();
+}
+
+export async function selectHotSeatTab(
+  page: Page,
+  name: 'Local Battle' | 'Practice vs CPU' | 'Verified Deployment',
+): Promise<void> {
+  const tab = page.getByRole('tab', { name, exact: true });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel', { name, exact: true })).toBeVisible();
 }
 
 /**
