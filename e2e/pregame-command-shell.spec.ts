@@ -56,7 +56,7 @@ test.describe('Pre-game command shell', () => {
     await expect(chooser.locator('button.primary')).toHaveCount(1);
     await expect(alternatives).not.toHaveAttribute('open', '');
     await expect(alternatives.locator('summary')).toBeVisible();
-    await expect(operations).toHaveCount(4);
+    await expect(operations).toHaveCount(5);
     await expect(operations.first()).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
     await expect(page.locator('#lobby .lobby-online-primary')).toHaveCount(0);

@@ -29,13 +29,23 @@ function options(overrides: Partial<DesiredShellOptions> = {}): DesiredShellOpti
     quickOperations: [
       { id: 'standard', title: 'Standard Duel', briefing: 'A balanced two-tank exhibition.' },
       { id: 'first-salvo', title: 'First Salvo', briefing: 'One round. Aim, set power, and fire.' },
-      { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.' },
-      { id: 'caldera-run', title: 'Caldera Run', briefing: 'Lava terrain changes every landing.' },
+      {
+        id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'first-strike', seed: 42 },
+      },
+      {
+        id: 'caldera-run', title: 'Caldera Run', briefing: 'Lava terrain changes every landing.',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'set-the-position', seed: 42 },
+      },
       {
         id: 'last-light-siege',
         title: 'Last Light Siege',
         briefing: 'Best of three before sudden death.',
         practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
+      {
+        id: 'lean-arsenal', title: 'Lean Arsenal', briefing: 'Level 0 restocks only. Preserve your opening kit.',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'make-it-count', seed: 42 },
       },
     ],
     onTabChange: vi.fn(),
@@ -92,6 +102,7 @@ describe('buildLobbyShellView', () => {
       'crosswind-range',
       'caldera-run',
       'last-light-siege',
+      'lean-arsenal',
     ]);
     expect(cards[0]?.getAttribute('aria-pressed')).toBe('true');
     expect(root.querySelector('[data-ui="quick-operation-briefing"]')?.textContent)
@@ -103,7 +114,10 @@ describe('buildLobbyShellView', () => {
     expect(cards[0]?.getAttribute('aria-pressed')).toBe('false');
     expect(root.querySelector('[data-ui="quick-operation-briefing"]')?.textContent)
       .toBe('Lava terrain changes every landing.');
-    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.hidden).toBe(true);
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.textContent)
+      .toBe('Set the Position · Change firing position, then damage the CPU with your first salvo.');
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.dataset)
+      .toMatchObject({ contentVersion: '2', fieldOrderId: 'set-the-position' });
     root.querySelector<HTMLButtonElement>('[data-operation-id="last-light-siege"]')!.click();
     expect(root.querySelector('[data-ui="quick-operation-objective"]')?.textContent)
       .toBe('Hold the Field · Win the duel.');

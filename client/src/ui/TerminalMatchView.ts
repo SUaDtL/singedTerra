@@ -19,6 +19,8 @@ export interface TerminalMatchProjection {
   readonly scoreboard: string;
   readonly scoreboardColumns: 3 | 4;
   readonly fieldOrder: string | null;
+  readonly turningPoint: string | null;
+  readonly nextExperiment: string | null;
   readonly progressionReceipt: {
     readonly summary: string;
     readonly promotion?: {
@@ -52,6 +54,11 @@ export class TerminalMatchView {
   private readonly status: HTMLElement;
   private readonly operation: HTMLElement;
   private readonly fieldOrder: HTMLElement;
+  private readonly context: HTMLElement;
+  private readonly hero: HTMLElement;
+  private readonly insights: HTMLElement;
+  private readonly turningPoint: HTMLElement;
+  private readonly nextExperiment: HTMLElement;
   private readonly score: HTMLElement;
   private readonly tank: HTMLCanvasElement;
   private readonly receipt: HTMLElement;
@@ -99,6 +106,7 @@ export class TerminalMatchView {
     eyebrow.textContent = 'After action report';
     const hero = document.createElement('section');
     hero.className = 'st-hud__victory-hero';
+    this.hero = hero;
     const frame = document.createElement('div');
     frame.className = 'st-hud__victory-tank-frame';
     this.tank = document.createElement('canvas');
@@ -117,6 +125,20 @@ export class TerminalMatchView {
     this.fieldOrder = document.createElement('div');
     this.fieldOrder.className = 'st-hud__victory-field-order';
     this.fieldOrder.setAttribute('role', 'status');
+    this.turningPoint = document.createElement('div');
+    this.turningPoint.className = 'st-hud__victory-turning-point';
+    this.turningPoint.dataset['ui'] = 'terminal-turning-point';
+    this.nextExperiment = document.createElement('div');
+    this.nextExperiment.className = 'st-hud__victory-next-experiment';
+    this.nextExperiment.dataset['ui'] = 'terminal-next-experiment';
+    this.insights = document.createElement('div');
+    this.insights.className = 'st-hud__victory-insights';
+    this.insights.append(this.turningPoint, this.nextExperiment);
+    this.context = document.createElement('div');
+    this.context.className = 'st-hud__victory-context';
+    this.context.append(
+      this.status, this.operation, this.fieldOrder, this.insights,
+    );
     this.title = document.createElement('h1');
     this.title.id = 'st-victory-title';
     this.title.className = 'st-hud__overlay-text st-hud__victory-title';
@@ -180,7 +202,9 @@ export class TerminalMatchView {
     const buttons = document.createElement('div');
     buttons.className = 'st-hud__overlay-btns';
     buttons.append(this.primary, this.menu);
-    report.append(this.status, this.operation, this.fieldOrder, this.receipt, this.handoff, this.title, scoreLabel, this.score, buttons);
+    report.append(
+      this.context, this.receipt, this.handoff, this.title, scoreLabel, this.score, buttons,
+    );
     panel.append(eyebrow, hero, report);
     this.root.append(panel);
     this.root.addEventListener('keydown', (event) => this.handleTab(event));
@@ -260,6 +284,15 @@ export class TerminalMatchView {
     }
     this.fieldOrder.textContent = projection.fieldOrder ?? '';
     this.fieldOrder.hidden = projection.fieldOrder === null;
+    this.turningPoint.textContent = projection.turningPoint ?? '';
+    this.turningPoint.hidden = projection.turningPoint === null;
+    this.nextExperiment.textContent = projection.nextExperiment ?? '';
+    this.nextExperiment.hidden = projection.nextExperiment === null;
+    const coarsePointer = this.root.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)').matches ?? false;
+    const hasInsights = !this.turningPoint.hidden || !this.nextExperiment.hidden;
+    if (coarsePointer && hasInsights) {
+      if (this.insights.parentElement !== this.hero) this.hero.prepend(this.insights);
+    } else if (this.insights.parentElement !== this.context) this.context.append(this.insights);
     if (this.lastScoreboard !== projection.scoreboard) {
       this.score.innerHTML = projection.scoreboard;
       this.lastScoreboard = projection.scoreboard;

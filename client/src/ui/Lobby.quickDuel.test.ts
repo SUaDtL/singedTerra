@@ -133,8 +133,9 @@ describe('Lobby Quick Duel', () => {
     expect(emitted.players[0]).not.toHaveProperty('ai');
   });
 
-  it("carries Crosswind's real wrap-wall rule through the existing local launch config", () => {
-    const lobby = new Lobby(root, onReady, undefined, undefined, () => 0xfedcba98);
+  it("carries Crosswind's real wrap-wall rule and its proven seed through the existing local launch config", () => {
+    const generateQuickDuelSeed = vi.fn(() => 0xfedcba98);
+    const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
     lobby.show();
 
     root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')!.click();
@@ -143,13 +144,32 @@ describe('Lobby Quick Duel', () => {
     expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0]).toMatchObject({
       mode: 'hotseat',
-      settings: { seed: 0xfedcba98, rounds: 3, walls: 'wrap' },
+      settings: { seed: 42, rounds: 3, walls: 'wrap' },
       quickOperation: {
         id: 'crosswind-range',
         title: 'Crosswind Range',
         briefing: 'Wraparound walls turn shifting wind into a ranging test.',
       },
     });
+    expect(generateQuickDuelSeed).not.toHaveBeenCalled();
+  });
+
+  it('launches Lean Arsenal with its P04 objective, seed, and existing arms-level option', () => {
+    const generateQuickDuelSeed = vi.fn(() => 0x1234abcd);
+    const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
+    lobby.show();
+
+    root.querySelector<HTMLButtonElement>('[data-operation-id="lean-arsenal"]')!.click();
+    button(root, 'Quick Duel vs CPU').click();
+
+    expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
+      settings: { seed: 42, rounds: 3, armsLevel: 0 },
+      quickOperation: expect.objectContaining({
+        id: 'lean-arsenal',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'make-it-count', seed: 42 },
+      }),
+    }));
+    expect(generateQuickDuelSeed).not.toHaveBeenCalled();
   });
 
   it('carries the Last Light condition, objective ids, content version, rules, and seed in one launch', () => {

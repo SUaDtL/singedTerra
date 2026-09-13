@@ -42,11 +42,19 @@ import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCo
 import type { VerifiedDuelReplayResult, VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import { projectLiveMatchSnapshot } from './client/liveMatchDiagnostics';
 import {
-  createFieldOrderById,
+  createPracticeFieldOrderById,
   observeFieldOrder,
   type FieldOrder,
   type FieldOrderObservation,
 } from './client/fieldOrder';
+import {
+  createPracticeFieldOrderEvidence,
+  observePracticeFieldOrderAction,
+  practiceFieldOrderObservationFromEvidence,
+  settlePracticeFieldOrderEvidence,
+  snapshotPracticeFieldOrder,
+  type PracticeFieldOrderEvidence,
+} from './client/practiceFieldOrder';
 import { projectMatchPresentationState } from './client/matchPresentation';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
@@ -178,7 +186,11 @@ function fieldOrderObservationFor(controller: VerifiedDuelController) {
   };
 }
 
-function practiceFieldOrderObservationFor(state: BorrowedGameState): FieldOrderObservation | null {
+function practiceFieldOrderObservationFor(
+  state: BorrowedGameState,
+  evidence: PracticeFieldOrderEvidence | null,
+): FieldOrderObservation | null {
+  if (evidence !== null) return practiceFieldOrderObservationFromEvidence(evidence, state)
   const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
   if (!activeTank) return null;
   const winner = state.winner === null
@@ -419,6 +431,7 @@ function bootstrap(): void {
   let verifiedCasual = false;
   let verifiedCompletionStarted = false;
   let fieldOrder: FieldOrder | null = null;
+  let practiceFieldOrderEvidence: PracticeFieldOrderEvidence | null = null;
   let liveMatchTransport: 'not-applicable' | ConnectionState = 'not-applicable';
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
@@ -638,7 +651,10 @@ function bootstrap(): void {
       hud.setPracticeFieldOrder(null);
       return;
     }
-    const observation = practiceFieldOrderObservationFor(state);
+    if (practiceFieldOrderEvidence !== null) {
+      practiceFieldOrderEvidence = settlePracticeFieldOrderEvidence(practiceFieldOrderEvidence, state);
+    }
+    const observation = practiceFieldOrderObservationFor(state, practiceFieldOrderEvidence);
     if (!fieldOrder || !observation) {
       hud.setPracticeFieldOrder(null);
       return;
@@ -683,6 +699,7 @@ function bootstrap(): void {
     verifiedCasual = false;
     verifiedCompletionStarted = false;
     fieldOrder = null;
+    practiceFieldOrderEvidence = null;
     terminalImpactObserved = false;
     terminalImpactNotified = false;
     hud.setTurnWatch({ state: 'clear' });
@@ -767,9 +784,15 @@ function bootstrap(): void {
         // to their lifecycle assertion; the real HUD always owns this presentation seam.
         (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
           .setQuickOperation?.(config.quickOperation ?? null);
+        hud.setTerminalReplayMode(config.mode === 'hotseat' && !config.verifiedDeployment
+          ? 'same-scenario'
+          : null);
         if (!config.verifiedDeployment) {
           fieldOrder = config.quickOperation?.practiceObjective
-            ? createFieldOrderById(config.quickOperation.practiceObjective.fieldOrderId)
+            ? createPracticeFieldOrderById(config.quickOperation.practiceObjective.fieldOrderId)
+            : null;
+          practiceFieldOrderEvidence = config.quickOperation?.practiceObjective?.contentVersion === 2 && initial
+            ? createPracticeFieldOrderEvidence(initial)
             : null;
           hud.setPracticeFieldOrder(fieldOrder);
         }
@@ -921,8 +944,21 @@ function bootstrap(): void {
                 else if (forwardedAction.type === 'set_power') e2eForwardedActionCounts.setPower += 1;
                 else if (forwardedAction.type === 'fire') e2eForwardedActionCounts.fire += 1;
               }
+              const practiceBeforeState = practiceFieldOrderEvidence === null ? null : newClient.getState();
+              const practiceBefore = practiceBeforeState === null
+                ? null
+                : snapshotPracticeFieldOrder(practiceBeforeState);
               const transcriptLength = verifiedController?.transcript.length ?? 0;
               newClient.sendAction(forwardedAction);
+              if (practiceFieldOrderEvidence !== null) {
+                const practiceAfterState = newClient.getState();
+                practiceFieldOrderEvidence = observePracticeFieldOrderAction(
+                  practiceFieldOrderEvidence,
+                  forwardedAction,
+                  practiceBefore,
+                  practiceAfterState === null ? null : snapshotPracticeFieldOrder(practiceAfterState),
+                );
+              }
               if (
                 !verifiedCasual
                 && verifiedController

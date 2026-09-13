@@ -89,12 +89,12 @@ test.describe('First Salvo semantic console contract', () => {
   test('a primary battlefield contact aims without firing after entry', async ({ page }, testInfo) => {
     await gotoFirstSalvo(page);
     await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'First salvo briefing' })).toHaveCount(0);
     const canvas = page.locator('#game');
     const bounds = await canvas.boundingBox();
     expect(bounds).not.toBeNull();
     const before = await readAimProbe(page);
-    const x = bounds!.x + bounds!.width * 0.55;
-    const y = bounds!.y + bounds!.height * 0.36;
+    const position = { x: bounds!.width * 0.55, y: bounds!.height * 0.36 };
     if (testInfo.project.name === 'pixel-touch') {
       await canvas.evaluate((element) => {
         element.addEventListener('pointerdown', (event) => {
@@ -104,9 +104,9 @@ test.describe('First Salvo semantic console contract', () => {
       });
       // Resolve the canvas origin at dispatch after its post-briefing layout
       // settles, while still sending a native touch contact.
-      await canvas.tap({ position: { x: bounds!.width * 0.55, y: bounds!.height * 0.36 } });
+      await canvas.tap({ position });
       await expect(canvas).toHaveAttribute('data-last-pointer-type', 'touch');
-    } else await page.mouse.click(x, y);
+    } else await canvas.click({ position });
     await expect.poll(() => readAimProbe(page)).toMatchObject({
       phase: 'PLAYER_TURN', turn: before.turn, activePlayerId: before.activePlayerId, projectileCount: 0,
       forwardedActions: { setAngle: before.forwardedActions.setAngle + 1,

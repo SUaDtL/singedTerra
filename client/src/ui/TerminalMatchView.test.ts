@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TerminalMatchView, type TerminalMatchProjection } from './TerminalMatchView';
 
 function projection(overrides: Partial<TerminalMatchProjection> = {}): TerminalMatchProjection {
@@ -10,6 +10,8 @@ function projection(overrides: Partial<TerminalMatchProjection> = {}): TerminalM
     scoreboard: '<span class="st-hud__score-name">Player 1</span>',
     scoreboardColumns: 4,
     fieldOrder: null,
+    turningPoint: null,
+    nextExperiment: null,
     progressionReceipt: null,
     progressionHandoff: null,
     primary: { label: 'Play again', kind: 'restart', disabled: false },
@@ -20,6 +22,102 @@ function projection(overrides: Partial<TerminalMatchProjection> = {}): TerminalM
 }
 
 describe('TerminalMatchView', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('renders a static explanation without adding a focusable terminal action', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+
+    view.show(projection({
+      turningPoint: 'Turning point · Round 2: Player 1 clinched the match.',
+      nextExperiment: 'Experiment · Keep power fixed, change your opening angle, and compare where the first shot lands.',
+    }));
+
+    expect(host.querySelector<HTMLElement>('[data-ui="terminal-turning-point"]')?.textContent)
+      .toBe('Turning point · Round 2: Player 1 clinched the match.');
+    expect(host.querySelector<HTMLElement>('[data-ui="terminal-next-experiment"]')?.textContent)
+      .toBe('Experiment · Keep power fixed, change your opening angle, and compare where the first shot lands.');
+    const context = host.querySelector<HTMLElement>('.st-hud__victory-context');
+    expect(context).not.toBeNull();
+    expect(context?.querySelector('[data-ui="terminal-turning-point"]')).not.toBeNull();
+    expect(context?.querySelector('[data-ui="terminal-next-experiment"]')).not.toBeNull();
+    expect(host.querySelectorAll('button:not(:disabled)')).toHaveLength(2);
+    view.destroy();
+    host.remove();
+  });
+
+  it('keeps coarse explanatory copy in the hero without reparenting it on stable updates', () => {
+    let coarse = true;
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: coarse })));
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+    const withInsights = projection({
+      turningPoint: 'Turning point · Round 2: Player 1 clinched the match.',
+      nextExperiment: 'Experiment · Keep power fixed, change your opening angle.',
+    });
+
+    view.show(withInsights);
+    const insights = host.querySelector<HTMLElement>('.st-hud__victory-insights')!;
+    const hero = host.querySelector<HTMLElement>('.st-hud__victory-hero')!;
+    const turningPoint = host.querySelector<HTMLElement>('[data-ui="terminal-turning-point"]')!;
+    expect(insights.parentElement).toBe(hero);
+    expect(turningPoint.tabIndex).toBe(-1);
+    expect(turningPoint.hasAttribute('tabindex')).toBe(false);
+    const prepend = vi.spyOn(hero, 'prepend');
+
+    view.update(withInsights);
+    expect(insights.parentElement).toBe(hero);
+    view.update(withInsights);
+    expect(insights.parentElement).toBe(hero);
+
+    expect(prepend).not.toHaveBeenCalled();
+    expect(host.querySelectorAll('button:not(:disabled)')).toHaveLength(2);
+    view.destroy();
+    host.remove();
+    coarse = false;
+  });
+
+  it('returns insights to report context for fine pointers and absent copy', () => {
+    let coarse = false;
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: coarse })));
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+    const withInsights = projection({
+      turningPoint: 'Turning point · Round 2: Player 1 clinched the match.',
+      nextExperiment: 'Experiment · Keep power fixed, change your opening angle.',
+    });
+    view.show(withInsights);
+    const insights = host.querySelector<HTMLElement>('.st-hud__victory-insights')!;
+    const context = host.querySelector<HTMLElement>('.st-hud__victory-context')!;
+    expect(insights.parentElement).toBe(context);
+
+    coarse = true;
+    view.update(withInsights);
+    expect(insights.parentElement).toBe(host.querySelector('.st-hud__victory-hero'));
+
+    coarse = false;
+    view.update(withInsights);
+    expect(insights.parentElement).toBe(context);
+
+    coarse = true;
+    view.update(projection());
+    expect(insights.parentElement).toBe(context);
+    view.destroy();
+    host.remove();
+  });
+
   it('renders the projection and emits live intents', () => {
     const host = document.createElement('div');
     const onRestart = vi.fn();

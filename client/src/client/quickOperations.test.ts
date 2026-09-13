@@ -4,6 +4,7 @@ import type { GameOptions } from '@shared/types/GameOptions'
 import {
   QUICK_OPERATIONS,
   QUICK_OPERATION_CONTENT_VERSION,
+  P04_TACTICAL_CHALLENGE_CONTENT_VERSION,
   quickOperationById,
   quickOperationOptions,
   type QuickOperation,
@@ -57,13 +58,15 @@ describe('Quick Operations catalog', () => {
         id: 'crosswind-range',
         title: 'Crosswind Range',
         briefing: 'Wraparound walls turn shifting wind into a ranging test.',
-        settings: { walls: 'wrap', battlefieldWorld: 'glassstorm-expanse' },
+        settings: { walls: 'wrap', battlefieldWorld: 'glassstorm-expanse', seed: 42 },
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'first-strike', seed: 42 },
       },
       {
         id: 'caldera-run',
         title: 'Caldera Run',
         briefing: 'Lava terrain turns every crater into a positional risk.',
-        settings: { hazards: 'lava', battlefieldWorld: 'obsidian-caldera' },
+        settings: { hazards: 'lava', battlefieldWorld: 'obsidian-caldera', seed: 42 },
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'set-the-position', seed: 42 },
       },
       {
         id: 'last-light-siege',
@@ -71,6 +74,13 @@ describe('Quick Operations catalog', () => {
         briefing: 'A best-of-three duel that tightens into sudden death.',
         settings: { rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk' },
         practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
+      {
+        id: 'lean-arsenal',
+        title: 'Lean Arsenal',
+        briefing: 'Level 0 restocks only. Preserve your opening kit.',
+        settings: { armsLevel: 0, seed: 42 },
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'make-it-count', seed: 42 },
       },
     ] satisfies QuickOperation[])
     expect(Object.isFrozen(QUICK_OPERATIONS)).toBe(true)
@@ -80,9 +90,10 @@ describe('Quick Operations catalog', () => {
       if (operation.practiceObjective) expect(Object.isFrozen(operation.practiceObjective)).toBe(true)
     }
     expect(QUICK_OPERATION_CONTENT_VERSION).toBe(1)
+    expect(P04_TACTICAL_CHALLENGE_CONTENT_VERSION).toBe(2)
   })
 
-  it('binds only Last Light Siege to the versioned Hold the Field practice objective', () => {
+  it('preserves P03 Last Light and gives only P04 descriptors a finite curated seed', () => {
     expect(quickOperationById('last-light-siege')).toMatchObject({
       id: 'last-light-siege',
       practiceObjective: {
@@ -90,9 +101,17 @@ describe('Quick Operations catalog', () => {
         fieldOrderId: 'hold-the-field',
       },
     })
-    for (const id of ['standard', 'crosswind-range', 'caldera-run'] as const) {
+    for (const id of ['standard'] as const) {
       expect(quickOperationById(id)).not.toHaveProperty('practiceObjective')
     }
+    for (const id of ['crosswind-range', 'caldera-run', 'lean-arsenal'] as const) {
+      expect(quickOperationById(id).practiceObjective).toMatchObject({
+        contentVersion: P04_TACTICAL_CHALLENGE_CONTENT_VERSION,
+        seed: 42,
+      })
+      expect(operationOptions(id).seed).toBe(42)
+    }
+    expect(operationOptions('last-light-siege').seed).toBe(QUICK_DUEL_BASE_OPTIONS.seed)
   })
 
   it('fails closed to Standard through catalog lookup and launch composition', () => {
@@ -127,12 +146,15 @@ describe('Quick Operations catalog', () => {
     'crosswind-range',
     'caldera-run',
     'last-light-siege',
+    'lean-arsenal',
   ] as const)('%s composes the selected profile once and keeps clone/replay deterministic', (id) => {
     const options = operationOptions(id)
     expect(options).toMatchObject(quickOperationById(id).settings)
     expect(options).toMatchObject({
       maxPlayers: 2,
-      seed: 0x0bada55,
+      seed: quickOperationById(id).practiceObjective?.contentVersion === P04_TACTICAL_CHALLENGE_CONTENT_VERSION
+        ? 42
+        : 0x0bada55,
       players: QUICK_DUEL_BASE_OPTIONS.players,
     })
     expect(options).not.toBe(QUICK_DUEL_BASE_OPTIONS)

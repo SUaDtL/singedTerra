@@ -117,6 +117,83 @@ afterEach(async () => {
 });
 
 describe('HUD Victory After-Action Report', () => {
+  it('reports only a factual multi-round clinch and offers one same-scenario experiment', () => {
+    const { modal, hud, state } = mount();
+    state.totalRounds = 3;
+    state.round = 2;
+    state.lastRoundWinnerId = state.tanks[0]!.id;
+    state.tanks[0]!.roundWins = 2;
+    hud.setTerminalReplayMode('same-scenario');
+
+    revealTerminalReport(hud, state);
+
+    const report = modal.querySelector<HTMLElement>('.st-hud__overlay--victory')!;
+    expect(report.querySelector<HTMLElement>('[data-ui="terminal-turning-point"]')?.textContent)
+      .toBe('Turning point · Round 2: Alice clinched the match.');
+    expect(report.querySelector<HTMLElement>('[data-ui="terminal-next-experiment"]')?.textContent)
+      .toBe('Experiment · Keep power fixed, change your opening angle, and compare where the first shot lands.');
+    expect(report.querySelector<HTMLButtonElement>('[data-terminal-primary]')?.textContent)
+      .toBe('Replay same scenario');
+  });
+
+  it.each([
+    ['a single-round result', (state: GameState) => {
+      state.totalRounds = 1;
+      state.round = 1;
+      state.lastRoundWinnerId = state.tanks[0]!.id;
+      state.tanks[0]!.roundWins = 1;
+    }],
+    ['a draw/tie', (state: GameState) => {
+      state.totalRounds = 3;
+      state.round = 3;
+      state.winner = null;
+      state.lastRoundWinnerId = null;
+      state.tanks[0]!.roundWins = 1;
+      state.tanks[1]!.roundWins = 1;
+    }],
+    ['a final-round winner that differs from the match winner', (state: GameState) => {
+      state.totalRounds = 3;
+      state.round = 3;
+      state.lastRoundWinnerId = state.tanks[1]!.id;
+      state.tanks[0]!.roundWins = 2;
+      state.tanks[1]!.roundWins = 1;
+    }],
+  ] as const)('does not invent a clinching explanation for %s', (_case, configure) => {
+    const { modal, hud, state } = mount();
+    configure(state);
+    hud.setTerminalReplayMode('same-scenario');
+
+    revealTerminalReport(hud, state);
+
+    expect(modal.querySelector<HTMLElement>('[data-ui="terminal-turning-point"]')?.hidden).toBe(true);
+  });
+
+  it('uses winning-team facts for a team clinch and preserves a Field Order report', () => {
+    const { modal, hud, state } = mount();
+    state.totalRounds = 3;
+    state.round = 2;
+    state.winnerTeam = 1;
+    state.lastRoundWinnerId = state.tanks[0]!.id;
+    state.lastRoundWinnerTeam = 1;
+    state.tanks[0]!.team = 1;
+    state.tanks[1]!.team = 2;
+    state.tanks[0]!.roundWins = 2;
+    hud.setTerminalReplayMode('same-scenario');
+
+    revealTerminalReport(hud, state);
+
+    expect(modal.querySelector<HTMLElement>('[data-ui="terminal-turning-point"]')?.textContent)
+      .toBe('Turning point · Team 1 clinched the match in round 2.');
+
+    hud.setPracticeFieldOrder({
+      id: 'hold-the-field', title: 'Hold the Field', instruction: 'Win the duel.',
+      progress: { awaitingWinner: true }, result: { status: 'achieved' },
+    });
+    expect(modal.querySelector<HTMLElement>('[data-ui="terminal-turning-point"]')?.hidden).toBe(true);
+    expect(modal.querySelector<HTMLElement>('[data-ui="terminal-next-experiment"]')?.hidden).toBe(true);
+    expect(modal.querySelector<HTMLButtonElement>('[data-terminal-primary]')?.textContent).toBe('Play again');
+  });
+
   it('carries the local Quick Operation into After Action and removes it outside that route', () => {
     const { modal, hud, state } = mount();
 

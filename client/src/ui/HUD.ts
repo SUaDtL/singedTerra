@@ -208,6 +208,8 @@ export class HUD {
   /** Local Quick Duel operation briefing; absent on all other routes. */
   private quickOperationEl!: HTMLElement;
   private quickOperation: QuickOperationPresentation | null = null;
+  /** Local restart retains the current config; terminal copy must not imply a new scenario. */
+  private terminalReplayMode: 'same-scenario' | null = null;
   private overlayEl!: HTMLElement;
   private terminalView!: TerminalMatchView;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
@@ -1038,6 +1040,12 @@ export class HUD {
       delete this.quickOperationEl.dataset['contentVersion'];
       delete this.quickOperationEl.dataset['fieldOrderId'];
     }
+    if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
+  }
+
+  /** Declares only the existing restart semantics admitted by application composition. */
+  setTerminalReplayMode(mode: 'same-scenario' | null): void {
+    this.terminalReplayMode = mode;
     if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
@@ -2170,6 +2178,8 @@ export class HUD {
     const winner = state.winner === null ? undefined : state.tanks.find((tank) => tank.id === state.winner);
     const scoreboard = this.scoreboardMarkup(state);
     const retryable = this.verifiedDeploymentState?.status === 'retryable';
+    const sameScenarioReplay = this.terminalReplayMode === 'same-scenario'
+      && this.terminalFieldOrder === null;
     return {
       title: state.winner === null
         ? 'Draw'
@@ -2191,16 +2201,36 @@ export class HUD {
       scoreboard: scoreboard.markup,
       scoreboardColumns: scoreboard.columns,
       fieldOrder: this.terminalFieldOrder,
+      turningPoint: sameScenarioReplay ? this.clinchingRoundExplanation(state, winner) : null,
+      nextExperiment: sameScenarioReplay
+        ? 'Experiment · Keep power fixed, change your opening angle, and compare where the first shot lands.'
+        : null,
       progressionReceipt: this.terminalProgressionReceipt,
       progressionHandoff: this.terminalProgressionHandoff,
       primary: {
-        label: this.verifiedNextOrderArmed ? 'Brief next order' : 'Play again',
+        label: this.verifiedNextOrderArmed ? 'Brief next order' : sameScenarioReplay ? 'Replay same scenario' : 'Play again',
         kind: this.verifiedNextOrderArmed ? 'next-order' : 'restart',
         disabled: false,
       },
       retry: { visible: retryable, disabled: !retryable },
       menu: { label: 'Main Menu', disabled: false },
     };
+  }
+
+  /** Returns a claim only when terminal round facts prove that round clinched the match. */
+  private clinchingRoundExplanation(state: GameState, winner: TankState | undefined): string | null {
+    if (state.totalRounds < 2 || !winner || state.lastRoundWinnerId === null) return null;
+    const clinch = Math.ceil(state.totalRounds / 2);
+    if (state.winnerTeam !== null && state.winnerTeam !== undefined) {
+      const winningTeam = state.winnerTeam;
+      const teamScore = state.tanks
+        .filter((tank) => tank.team === winningTeam)
+        .reduce((best, tank) => Math.max(best, tank.roundWins), 0);
+      if (state.lastRoundWinnerTeam !== winningTeam || teamScore < clinch) return null;
+      return `Turning point · Team ${winningTeam} clinched the match in round ${state.round}.`;
+    }
+    if (state.lastRoundWinnerId !== winner.id || winner.roundWins < clinch) return null;
+    return `Turning point · Round ${state.round}: ${winner.playerName} clinched the match.`;
   }
 
   /** Show/hide the GAME_OVER overlay, sequenced after terminal impact completion. */

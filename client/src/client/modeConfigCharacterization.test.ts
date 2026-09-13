@@ -248,19 +248,21 @@ describe('mode configuration characterization', () => {
     const original = structuredClone(base)
     const cases = [
       ['standard', {}],
-      ['crosswind-range', { walls: 'wrap', battlefieldWorld: 'glassstorm-expanse' }],
-      ['caldera-run', { hazards: 'lava', battlefieldWorld: 'obsidian-caldera' }],
+      ['crosswind-range', { walls: 'wrap', battlefieldWorld: 'glassstorm-expanse', seed: 42 }],
+      ['caldera-run', { hazards: 'lava', battlefieldWorld: 'obsidian-caldera', seed: 42 }],
       ['last-light-siege', { rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk' }],
+      ['lean-arsenal', { armsLevel: 0, seed: 42 }],
       ['unknown', {}],
     ] as const
     for (const [id, overlay] of cases) {
       const actual = quickOperationOptions(id, base)
-      expect(actual).toEqual({ ...original, ...overlay })
+      const expected = { ...original, ...overlay }
+      expect(actual).toEqual(expected)
       expect(actual).not.toBe(base)
       expect(actual.players).toBe(base.players)
-      expect(actual.seed).toBe(73)
+      expect(actual.seed).toBe(expected.seed)
       expect(base).toEqual(original)
-      expectExactState(new GameEngine(actual).getState(), new GameEngine({ ...original, ...overlay }).getState())
+      expectExactState(new GameEngine(actual).getState(), new GameEngine(expected).getState())
     }
   })
 })

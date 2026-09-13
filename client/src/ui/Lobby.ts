@@ -1307,7 +1307,11 @@ export class Lobby {
   // ---- Hot Seat tab ----
 
   private startQuickDuel(operationId: unknown = 'standard'): void {
-    const seed = this.generateQuickDuelSeed();
+    const operation = quickOperationById(operationId);
+    // P04 cards only advertise objectives for their finite solver-proven seed.
+    const seed = operation.practiceObjective?.contentVersion === 2
+      ? operation.practiceObjective.seed
+      : this.generateQuickDuelSeed();
     if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) return;
     if (new URL(window.location.href).searchParams.get('e2e') === 'quick-duel-seed') {
       const target = window as typeof window & {
@@ -1328,7 +1332,6 @@ export class Lobby {
       ai: 'medium' as const,
       loadout: normalizeTankLoadout(seatPresetLoadout(1)),
     };
-    const operation = quickOperationById(operationId);
     const composedOptions = quickOperationOptions(operation.id, {
       maxPlayers: 2,
       players: [humanPlayer, cpuPlayer],
