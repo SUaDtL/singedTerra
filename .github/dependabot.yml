@@ -18,6 +18,10 @@ updates:
         patterns:
           - "vitest"
           - "@vitest/*"
+      # The release CLI also requires manifest and deployment-behavior review.
+      supabase-cli:
+        patterns:
+          - "supabase"
       minor-and-patch:
         update-types:
           - minor

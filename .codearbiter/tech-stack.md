@@ -5,8 +5,8 @@ Derived from manifests, lockfiles, and npm scripts (brownfield extraction 2026-0
 ## Languages & runtimes
 
 - **TypeScript** 7.0.2 is installed as `@typescript/native` and drives `tsc`; the `typescript` package name aliases Microsoft’s `@typescript/typescript6` 6.0.2 compatibility package for structural harnesses until TypeScript 7 ships its replacement API. Configuration is `strict: true`, target/lib **ES2022**, `module: ESNext`, `moduleResolution: Bundler` (`tsconfig.base.json`). Workspace path aliases are project-root-relative; TypeScript 7 removed `baseUrl`.
-- **Node** `24.18.0` LTS (`.nvmrc`; root `engines: >=24.15.0 <25`); `@types/node` `^24.13.3`.
-- **Deno** — runtime for Supabase Edge Functions. Not version-pinned in-repo (no `deno.json`; `deno.lock` is intentionally ignored). Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, exactly pinned to `2.111.0`).
+- **Node** `24.18.0` LTS (`.nvmrc`; root `engines: >=24.15.0 <25`); `@types/node` `24.13.4`.
+- **Deno** — runtime for Supabase Edge Functions. Not version-pinned in-repo (no `deno.json`; `deno.lock` is intentionally ignored). Edge Functions import deps over HTTPS (`https://esm.sh/@supabase/supabase-js@2`, exactly pinned to `2.116.0`).
 - **Postgres 15** (`supabase/config.toml` `major_version = 15`).
 
 ## Repo shape — npm workspaces monorepo
@@ -22,8 +22,8 @@ Both workspace packages are `private: true`.
 ## Key libraries
 
 - **Vite** `8.2.2` (Rolldown/Oxc-powered client dev server + production build).
-- **@supabase/supabase-js** `2.111.0` (browser client); Edge Functions use the same exact `2.111.0` through esm.sh.
-- **lucide** `1.33.0` (client-only exact named SVG icon nodes). The package has
+- **@supabase/supabase-js** `2.116.0` (browser client); Edge Functions use the same exact `2.116.0` through esm.sh.
+- **lucide** `1.43.0` (client-only exact named SVG icon nodes). The package has
   no runtime transitives; importing its all-icons registry is prohibited.
 - Canvas 2D — browser API for the gameplay world (sky, terrain, tanks,
   projectiles, explosions, and world-space effects).
