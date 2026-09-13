@@ -5,3 +5,7 @@
 
 # Preserve the recorded performance artifact digests on every checkout.
 docs/performance/artifacts/*.json text eol=lf
+
+# Deterministic baseline artifacts retain their generator's bytes on checkout.
+docs/balance/*.html text eol=lf
+docs/balance/*.json text eol=lf
