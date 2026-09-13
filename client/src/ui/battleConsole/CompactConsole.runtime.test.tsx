@@ -45,6 +45,27 @@ describe('AC-01 compact console successor', () => {
     expect(host.querySelectorAll('button[aria-label*="Wind"]')).toHaveLength(0);
     expect(host.textContent).not.toMatch(/read only/i);
   });
+
+  it.each([0, 12, 999])('preserves finite ammo count %i with its unit and cycle cue', (ammo) => {
+    const host = document.createElement('div');
+    const dispatch = vi.fn();
+    render(
+      <BattleConsoleRoot
+        state={{ ...state, weapon: { ...state.weapon, ammo } }}
+        lifecycleStatus="ready"
+        layoutMode="compact"
+        dispatch={dispatch}
+      />,
+      host,
+    );
+
+    const weapon = getByRole(host, 'button', { name: 'Select next weapon, current Baby Missile' });
+    expect(weapon.getAttribute('aria-label')).toBe('Select next weapon, current Baby Missile');
+    expect(weapon.querySelector('small')?.textContent).toBe(`${ammo} › ammo`);
+    fireEvent.click(weapon);
+    expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: 'weapon-next' });
+  });
+
   it('reflects blocked controls and changed fuel without stale values', () => {
     const host = document.createElement('div');
     const blocked = { ...state, mobility: { fuel: 9, canMoveLeft: false, canMoveRight: false }, weapon: { ...state.weapon, name: 'Heavy Missile', canCycle: false }, fireControl: { ...state.fireControl, ready: false, status: 'Resolving' } };
