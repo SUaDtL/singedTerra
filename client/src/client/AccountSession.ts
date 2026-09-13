@@ -22,6 +22,12 @@ import {
 } from './verifiedDeployment'
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel'
 import { observeVerifiedCompletionResponseForDiagnostics } from './ProductionDiagnostics'
+import { parseVerifiedCareer } from '@shared/net/verifiedCareer'
+import {
+  parseVerifiedCareerSummaryResponse,
+  type AccountVerifiedCareerSnapshot,
+  type VerifiedCareerState,
+} from './verifiedCareer'
 
 export type AccountMode = 'sign-in' | 'create'
 
@@ -75,6 +81,7 @@ export interface AccountBackend {
   signIn(credentials: Pick<AccountCredentials, 'email' | 'password'>): Promise<AccountUser>
   signOut(): Promise<void>
   loadProfile(userId: string): Promise<AccountProfile>
+  loadVerifiedCareer?(accountId: string): Promise<AccountVerifiedCareerSnapshot>
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<boolean>
   startVerifiedDeployment(): Promise<VerifiedDeploymentStart>
   abandonVerifiedDeployment(sessionId: string): Promise<boolean>
@@ -90,6 +97,7 @@ export interface AccountSessionOptions {
 }
 
 const ACCOUNT_SUMMARY_TIMEOUT_MS = 5_000
+const VERIFIED_CAREER_TIMEOUT_MS = 5_000
 const VERIFIED_DEPLOYMENT_TIMEOUT_MS = 5_000
 
 function withBoundedAccountTimeout<T>(
@@ -119,6 +127,14 @@ function withAccountSummaryTimeout<T>(operation: Promise<T>): Promise<T> {
     operation,
     ACCOUNT_SUMMARY_TIMEOUT_MS,
     'Account summary request timed out.',
+  )
+}
+
+function withVerifiedCareerTimeout<T>(operation: Promise<T>): Promise<T> {
+  return withBoundedAccountTimeout(
+    operation,
+    VERIFIED_CAREER_TIMEOUT_MS,
+    'Verified career request timed out.',
   )
 }
 
@@ -332,6 +348,29 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
       }
       return { id: row.id, displayName: row.display_name, summary }
     },
+
+    async loadVerifiedCareer(accountId) {
+      try {
+        return await withVerifiedCareerTimeout((async () => {
+          const authenticatedAccount = async (): Promise<string> => {
+            const { data, error } = await client.auth.getUser()
+            if (error || !data.user || data.user.id !== accountId) {
+              throw new Error('Verified career is unavailable.')
+            }
+            return data.user.id
+          }
+          await authenticatedAccount()
+          const result = await client.functions.invoke('verified_career_summary', { body: {} })
+          if (result.error) throw new Error('Verified career is unavailable.')
+          const parsed = parseVerifiedCareerSummaryResponse(result.data)
+          if (!parsed) throw new Error('Verified career is unavailable.')
+          const confirmedAccountId = await authenticatedAccount()
+          return Object.freeze({ accountId: confirmedAccountId, career: parsed.career })
+        })())
+      } catch {
+        throw new Error('Verified career is unavailable.')
+      }
+    },
   }
 }
 
@@ -428,6 +467,12 @@ export class AccountSession {
   private refreshGeneration = 0
   private authLoads = 0
   private disposed = false
+  private currentVerifiedCareer: VerifiedCareerState = Object.freeze({
+    status: 'unavailable' as const,
+    accountId: null,
+  })
+  private verifiedCareerRefreshGeneration = 0
+  private readonly verifiedCareerListeners = new Set<(state: VerifiedCareerState) => void>()
   private readonly verifiedCompletionRuns = new Map<string, Promise<VerifiedDeploymentReceipt | null>>()
   private readonly verifiedCompletionReceipts = new Map<
     string,
@@ -444,6 +489,16 @@ export class AccountSession {
 
   get state(): AccountState {
     return this.current
+  }
+
+  get verifiedCareer(): VerifiedCareerState {
+    return this.currentVerifiedCareer
+  }
+
+  subscribeVerifiedCareer(onChange: (state: VerifiedCareerState) => void): () => void {
+    if (this.disposed) return () => undefined
+    this.verifiedCareerListeners.add(onChange)
+    return () => { this.verifiedCareerListeners.delete(onChange) }
   }
 
   initialize(): Promise<void> {
@@ -511,6 +566,7 @@ export class AccountSession {
     try {
       await this.backend.signOut()
       if (this.isCurrent(operation)) {
+        this.invalidateVerifiedCareer(null, true)
         this.update({ status: 'anonymous', busy: false, error: '' })
       }
     } catch (error) {
@@ -547,6 +603,36 @@ export class AccountSession {
     } catch {
       // Refresh is opportunistic. Keep the last trusted profile visible when the
       // optional summary read is unavailable; a later match/auth event can retry.
+    }
+  }
+
+  async refreshVerifiedCareer(): Promise<void> {
+    if (!this.initializePromise) await this.initialize()
+    if (!this.backend || this.disposed || this.current.status !== 'authenticated' || this.current.busy) return
+    const accountId = this.current.profile.id
+    const accountGeneration = this.generation
+    const operation = ++this.verifiedCareerRefreshGeneration
+    const backend = this.backend
+    if (!backend.loadVerifiedCareer) {
+      if (this.isAuthenticatedAccount(accountGeneration, accountId)
+        && operation === this.verifiedCareerRefreshGeneration) {
+        this.publishVerifiedCareer(Object.freeze({ status: 'unavailable' as const, accountId }))
+      }
+      return
+    }
+    this.publishVerifiedCareer(Object.freeze({ status: 'loading' as const, accountId }))
+    try {
+      const snapshot = await backend.loadVerifiedCareer(accountId)
+      const career = parseVerifiedCareer(snapshot.career)
+      if (!career || snapshot.accountId !== accountId
+        || operation !== this.verifiedCareerRefreshGeneration
+        || !this.isAuthenticatedAccount(accountGeneration, accountId)) return
+      this.publishVerifiedCareer(Object.freeze({ status: 'ready' as const, accountId, career }))
+    } catch {
+      if (operation === this.verifiedCareerRefreshGeneration
+        && this.isAuthenticatedAccount(accountGeneration, accountId)) {
+        this.publishVerifiedCareer(Object.freeze({ status: 'unavailable' as const, accountId }))
+      }
     }
   }
 
@@ -694,7 +780,9 @@ export class AccountSession {
     if (this.disposed) return
     this.disposed = true
     this.generation += 1
+    this.invalidateVerifiedCareer(null)
     this.clearVerifiedCompletionState()
+    this.verifiedCareerListeners.clear()
     this.unsubscribe?.()
     this.unsubscribe = null
   }
@@ -702,6 +790,7 @@ export class AccountSession {
   private async applyAuthUser(user: AccountUser | null, operation = ++this.generation): Promise<void> {
     if (!this.isCurrent(operation)) return
     this.clearVerifiedCompletionState()
+    this.invalidateVerifiedCareer(user?.id ?? null, true)
     if (!user) {
       this.update({ status: 'anonymous', busy: false, error: '' })
       return
@@ -711,6 +800,7 @@ export class AccountSession {
       const profile = await this.backend?.loadProfile(user.id)
       if (profile && this.isCurrent(operation)) {
         this.update({ status: 'authenticated', busy: false, error: '', profile })
+        void this.refreshVerifiedCareer()
       }
     } catch (error) {
       if (this.isCurrent(operation)) {
@@ -739,6 +829,22 @@ export class AccountSession {
   private clearVerifiedCompletionState(): void {
     this.verifiedCompletionRuns.clear()
     this.verifiedCompletionReceipts.clear()
+  }
+
+  private invalidateVerifiedCareer(accountId: string | null, publish = false): void {
+    this.verifiedCareerRefreshGeneration += 1
+    this.currentVerifiedCareer = Object.freeze({ status: 'unavailable' as const, accountId })
+    if (publish) this.notifyVerifiedCareer()
+  }
+
+  private publishVerifiedCareer(next: VerifiedCareerState): void {
+    if (this.disposed) return
+    this.currentVerifiedCareer = next
+    this.notifyVerifiedCareer()
+  }
+
+  private notifyVerifiedCareer(): void {
+    for (const listener of this.verifiedCareerListeners) listener(this.currentVerifiedCareer)
   }
 
   private update(next: AccountState): void {

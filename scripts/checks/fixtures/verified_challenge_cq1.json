@@ -1,0 +1,1233 @@
+{
+  "schema": "verified-challenge-cq1-golden-v1",
+  "sourceBase": "f2096b9ee039e8c10282571dd216e49505dcd308",
+  "scope": "T04 direct original GameEngine + V3 policy oracle; T05-T07 total-work counters not yet frozen",
+  "initial": {
+    "phase": "PLAYER_TURN",
+    "wind": -0.06505565368570387,
+    "activePlayerId": "p1",
+    "tanks": [
+      {
+        "id": "p1",
+        "x": 120,
+        "y": 272,
+        "health": 100,
+        "angle": 45,
+        "power": 50,
+        "powerCap": 100,
+        "shieldHp": 0,
+        "alive": true,
+        "inventory": {
+          "baby_missile": {
+            "count": 0,
+            "unlimited": true
+          },
+          "missile": {
+            "count": 4,
+            "unlimited": false
+          },
+          "heavy_missile": {
+            "count": 1,
+            "unlimited": false
+          },
+          "baby_nuke": {
+            "count": 0,
+            "unlimited": false
+          },
+          "nuke": {
+            "count": 0,
+            "unlimited": false
+          },
+          "dirt_bomb": {
+            "count": 1,
+            "unlimited": false
+          },
+          "bouncing_betty": {
+            "count": 2,
+            "unlimited": false
+          },
+          "funky_bomb": {
+            "count": 1,
+            "unlimited": false
+          },
+          "napalm": {
+            "count": 1,
+            "unlimited": false
+          },
+          "cluster_bomb": {
+            "count": 2,
+            "unlimited": false
+          },
+          "mirv": {
+            "count": 0,
+            "unlimited": false
+          },
+          "deaths_head": {
+            "count": 0,
+            "unlimited": false
+          },
+          "riot_bomb": {
+            "count": 1,
+            "unlimited": false
+          },
+          "hot_napalm": {
+            "count": 0,
+            "unlimited": false
+          },
+          "sandhog": {
+            "count": 1,
+            "unlimited": false
+          },
+          "tracer": {
+            "count": 1,
+            "unlimited": false
+          },
+          "shield": {
+            "count": 1,
+            "unlimited": false
+          },
+          "heavy_shield": {
+            "count": 1,
+            "unlimited": false
+          }
+        },
+        "accessories": {
+          "battery": 0,
+          "fuel_tank": 0,
+          "parachute": 0
+        },
+        "loadout": {
+          "treads": "foundry",
+          "hull": "foundry",
+          "turret": "foundry",
+          "barrel": "foundry"
+        }
+      },
+      {
+        "id": "p2",
+        "x": 1080,
+        "y": 321,
+        "health": 100,
+        "angle": 135,
+        "power": 50,
+        "powerCap": 100,
+        "shieldHp": 0,
+        "alive": true,
+        "inventory": {
+          "baby_missile": {
+            "count": 0,
+            "unlimited": true
+          },
+          "missile": {
+            "count": 4,
+            "unlimited": false
+          },
+          "heavy_missile": {
+            "count": 1,
+            "unlimited": false
+          },
+          "baby_nuke": {
+            "count": 0,
+            "unlimited": false
+          },
+          "nuke": {
+            "count": 0,
+            "unlimited": false
+          },
+          "dirt_bomb": {
+            "count": 1,
+            "unlimited": false
+          },
+          "bouncing_betty": {
+            "count": 2,
+            "unlimited": false
+          },
+          "funky_bomb": {
+            "count": 1,
+            "unlimited": false
+          },
+          "napalm": {
+            "count": 1,
+            "unlimited": false
+          },
+          "cluster_bomb": {
+            "count": 2,
+            "unlimited": false
+          },
+          "mirv": {
+            "count": 0,
+            "unlimited": false
+          },
+          "deaths_head": {
+            "count": 0,
+            "unlimited": false
+          },
+          "riot_bomb": {
+            "count": 1,
+            "unlimited": false
+          },
+          "hot_napalm": {
+            "count": 0,
+            "unlimited": false
+          },
+          "sandhog": {
+            "count": 1,
+            "unlimited": false
+          },
+          "tracer": {
+            "count": 1,
+            "unlimited": false
+          },
+          "shield": {
+            "count": 1,
+            "unlimited": false
+          },
+          "heavy_shield": {
+            "count": 1,
+            "unlimited": false
+          }
+        },
+        "accessories": {
+          "battery": 0,
+          "fuel_tank": 0,
+          "parachute": 0
+        },
+        "loadout": {
+          "treads": "foundry",
+          "hull": "foundry",
+          "turret": "foundry",
+          "barrel": "foundry"
+        }
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "first-clear",
+      "transcript": [
+        {
+          "angle": 32,
+          "power": 100
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_cleared",
+        "humanSalvos": 1,
+        "cpuSalvos": 0,
+        "humanHealth": 100,
+        "cpuHealth": 71.69216246578995,
+        "liveTicks": 118,
+        "cpuSimulationTicks": 0,
+        "maximumProbeCount": 0,
+        "transcript": [
+          {
+            "angle": 32,
+            "power": 100
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 118,
+            "humanHealth": 100,
+            "cpuHealth": 71.69216246578995,
+            "damageToCpu": 28.30783753421005,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "third-clear",
+      "transcript": [
+        {
+          "angle": 0,
+          "power": 100
+        },
+        {
+          "angle": 0,
+          "power": 100
+        },
+        {
+          "angle": 32,
+          "power": 100
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 69.07811675298773,
+        "cpuHealth": 89.41563137090185,
+        "liveTicks": 354,
+        "cpuSimulationTicks": 8003,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 0,
+            "power": 100
+          },
+          {
+            "angle": 0,
+            "power": 100
+          },
+          {
+            "angle": 32,
+            "power": 100
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 7,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3726,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 11,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4277,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 117,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 89.41563137090185,
+            "damageToCpu": 10.584368629098151,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "third-miss",
+      "transcript": [
+        {
+          "angle": 0,
+          "power": 100
+        },
+        {
+          "angle": 0,
+          "power": 100
+        },
+        {
+          "angle": 0,
+          "power": 100
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 69.07811675298773,
+        "cpuHealth": 100,
+        "liveTicks": 241,
+        "cpuSimulationTicks": 8003,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 0,
+            "power": 100
+          },
+          {
+            "angle": 0,
+            "power": 100
+          },
+          {
+            "angle": 0,
+            "power": 100
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 7,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3726,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 11,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4277,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 4,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "edge-0-0",
+      "transcript": [
+        {
+          "angle": 0,
+          "power": 0
+        },
+        {
+          "angle": 0,
+          "power": 0
+        },
+        {
+          "angle": 0,
+          "power": 0
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 41.56939135768803,
+        "cpuHealth": 100,
+        "liveTicks": 295,
+        "cpuSimulationTicks": 7993,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 0,
+            "power": 0
+          },
+          {
+            "angle": 0,
+            "power": 0
+          },
+          {
+            "angle": 0,
+            "power": 0
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 16,
+            "humanHealth": 81.70404353398737,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3712,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 81.70404353398737,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 29,
+            "humanHealth": 72.49127460470031,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4281,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 41.56939135768803,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 31,
+            "humanHealth": 41.56939135768803,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "edge-0-100",
+      "transcript": [
+        {
+          "angle": 0,
+          "power": 100
+        },
+        {
+          "angle": 0,
+          "power": 100
+        },
+        {
+          "angle": 0,
+          "power": 100
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 69.07811675298773,
+        "cpuHealth": 100,
+        "liveTicks": 241,
+        "cpuSimulationTicks": 8003,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 0,
+            "power": 100
+          },
+          {
+            "angle": 0,
+            "power": 100
+          },
+          {
+            "angle": 0,
+            "power": 100
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 7,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3726,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 11,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4277,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 4,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "edge-180-0",
+      "transcript": [
+        {
+          "angle": 180,
+          "power": 0
+        },
+        {
+          "angle": 180,
+          "power": 0
+        },
+        {
+          "angle": 180,
+          "power": 0
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 53.10731773668836,
+        "cpuHealth": 100,
+        "liveTicks": 303,
+        "cpuSimulationTicks": 7974,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 180,
+            "power": 0
+          },
+          {
+            "angle": 180,
+            "power": 0
+          },
+          {
+            "angle": 180,
+            "power": 0
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 19,
+            "humanHealth": 84.02920098370063,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3712,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 84.02920098370063,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 31,
+            "humanHealth": 84.02920098370063,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4262,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 53.10731773668836,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 34,
+            "humanHealth": 53.10731773668836,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "edge-180-100",
+      "transcript": [
+        {
+          "angle": 180,
+          "power": 100
+        },
+        {
+          "angle": 180,
+          "power": 100
+        },
+        {
+          "angle": 180,
+          "power": 100
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 69.07811675298773,
+        "cpuHealth": 100,
+        "liveTicks": 332,
+        "cpuSimulationTicks": 8037,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 180,
+            "power": 100
+          },
+          {
+            "angle": 180,
+            "power": 100
+          },
+          {
+            "angle": 180,
+            "power": 100
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 34,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3739,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 39,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4298,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 40,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vertical",
+      "transcript": [
+        {
+          "angle": 90,
+          "power": 100
+        },
+        {
+          "angle": 90,
+          "power": 100
+        },
+        {
+          "angle": 90,
+          "power": 100
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 29.2479792627433,
+        "cpuHealth": 100,
+        "liveTicks": 754,
+        "cpuSimulationTicks": 7974,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 90,
+            "power": 100
+          },
+          {
+            "angle": 90,
+            "power": 100
+          },
+          {
+            "angle": 90,
+            "power": 100
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 177,
+            "humanHealth": 67.3452183738359,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3712,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 67.3452183738359,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 181,
+            "humanHealth": 67.3452183738359,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4262,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 36.81463277168825,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 177,
+            "humanHealth": 29.2479792627433,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    },
+    {
+      "id": "default",
+      "transcript": [
+        {
+          "angle": 45,
+          "power": 50
+        },
+        {
+          "angle": 45,
+          "power": 50
+        },
+        {
+          "angle": 45,
+          "power": 50
+        }
+      ],
+      "result": {
+        "editionId": "cq1",
+        "seed": 42,
+        "terminal": "objective_not_cleared",
+        "humanSalvos": 3,
+        "cpuSalvos": 2,
+        "humanHealth": 69.07811675298773,
+        "cpuHealth": 100,
+        "liveTicks": 435,
+        "cpuSimulationTicks": 7982,
+        "maximumProbeCount": 49,
+        "transcript": [
+          {
+            "angle": 45,
+            "power": 50
+          },
+          {
+            "angle": 45,
+            "power": 50
+          },
+          {
+            "angle": 45,
+            "power": 50
+          }
+        ],
+        "events": [
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 1,
+            "ticks": 71,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 1,
+            "angle": 144,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 3712,
+            "coarseBest": {
+              "angle": 150,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 1,
+            "ticks": 105,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 2,
+            "ticks": 69,
+            "humanHealth": 100,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "cpu_selected",
+            "salvo": 2,
+            "angle": 141,
+            "power": 100,
+            "probeCount": 49,
+            "simulationTicks": 4270,
+            "coarseBest": {
+              "angle": 135,
+              "power": 100
+            }
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "cpu",
+            "salvo": 2,
+            "ticks": 114,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "salvo_settled",
+            "actor": "human",
+            "salvo": 3,
+            "ticks": 76,
+            "humanHealth": 69.07811675298773,
+            "cpuHealth": 100,
+            "damageToCpu": 0,
+            "phase": "PLAYER_TURN"
+          },
+          {
+            "type": "terminal",
+            "terminal": "objective_not_cleared"
+          }
+        ]
+      }
+    }
+  ]
+}

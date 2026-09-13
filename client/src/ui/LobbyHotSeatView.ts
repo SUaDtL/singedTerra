@@ -1,7 +1,10 @@
 import { renderFieldOrder, type FieldOrder } from '../client/fieldOrder';
 import { buildLobbyPreparationSection } from './LobbyPreparationSection';
+import type { VerifiedChallengeSessionState } from '../client/VerifiedChallengeSession';
+import type { VerifiedCareerState } from '../client/verifiedCareer';
 
 export type LobbyHotSeatSurface = 'local' | 'practice' | 'verified';
+export type LobbyVerifiedSurface = 'deployment' | 'challenge';
 
 export interface LobbyHotSeatViewOptions {
   surface?: LobbyHotSeatSurface;
@@ -12,10 +15,13 @@ export interface LobbyHotSeatViewOptions {
   advanced: HTMLElement;
   validationMessage: string | null;
   verifiedDeployment: LobbyHotSeatVerifiedDeploymentOptions | null;
+  verifiedChallenge?: LobbyHotSeatVerifiedChallengeOptions | null;
+  verifiedSurface?: LobbyVerifiedSurface;
   /** Authenticated Local Battle may compose existing local practice operations here. */
   quickOperations?: readonly LobbyQuickOperation[];
   onQuickOperation?: (operationId: string) => void;
   onSurfaceChange?: (surface: LobbyHotSeatSurface, restoreFocus: boolean) => void;
+  onVerifiedSurfaceChange?: (surface: LobbyVerifiedSurface, restoreFocus: boolean) => void;
   onPlayerCountChange: (count: number) => void;
   onStart: () => void;
   listenerSignal?: AbortSignal;
@@ -38,6 +44,201 @@ export interface LobbyHotSeatVerifiedDeploymentOptions {
   onRequestAbandon: () => void;
   onConfirmAbandon: () => void;
   onCancelAbandon: () => void;
+}
+
+export interface LobbyHotSeatVerifiedChallengeOptions {
+  readonly accountId: string;
+  readonly busy: boolean;
+  readonly retryDelaySeconds?: number;
+  readonly state: VerifiedChallengeSessionState;
+  readonly career: VerifiedCareerState;
+  readonly onLaunch: () => void;
+  readonly onRetry: () => void;
+  readonly onAbandon: () => void;
+}
+
+function verifiedCareerCopy(options: LobbyHotSeatVerifiedChallengeOptions): string {
+  const career = options.career;
+  if (career.accountId !== options.accountId) {
+    return 'Verified Career unavailable. No totals are estimated.';
+  }
+  if (career.status === 'loading') return 'Loading Verified Career…';
+  if (career.status === 'unavailable') return 'Verified Career unavailable. No totals are estimated.';
+  const medal = career.career.challenge.medals.some(
+    (entry) => entry.medalId === 'crosswind-qualification',
+  );
+  return `Verified Career · ${career.career.rank.current.code} ${career.career.rank.current.title}`
+    + ` · Level ${career.career.level} · ${career.career.totalXp} XP`
+    + ` · Crosswind Qualification medal ${medal ? 'earned' : 'not yet earned'}`;
+}
+
+function verifiedChallengeCopy(
+  state: VerifiedChallengeSessionState,
+  retryDelaySeconds = 0,
+): string {
+  const cooldown = retryDelaySeconds > 0 ? ` Retry available in ${retryDelaySeconds} seconds.` : '';
+  if (state.status === 'idle') return 'Availability is checked only when you choose to start.';
+  if (state.status === 'starting') return 'Checking verified backend availability…';
+  if (state.status === 'start-unavailable') {
+    if (state.reason === 'disabled') {
+      return 'Trial starts are currently disabled by the verified backend. No reward was granted.';
+    }
+    if (state.reason === 'busy') return `Verification capacity is busy. No reward was granted.${cooldown}`;
+    if (state.reason === 'rate-limited') return `Availability checks are limited.${cooldown || ' Try again shortly.'}`;
+    if (state.reason === 'unauthorized') return 'Sign in again before checking trial availability.';
+    if (state.reason === 'incompatible') return 'This saved trial is incompatible with the current client.';
+    if (state.reason === 'timeout') return 'The availability check timed out. Check again to recover any active trial.';
+    return 'Trial availability could not be confirmed. Check again to recover any active trial.';
+  }
+  if (state.status === 'active') {
+    return `Qualification active · ${state.transcript.length} of 3 human salvos recorded.`;
+  }
+  if (state.status === 'completion-pending') return 'Verification pending. Reward has not been confirmed yet.';
+  if (state.status === 'retryable') {
+    return `Verification needs another server check.${cooldown}`;
+  }
+  if (state.status === 'completed') {
+    if (state.receipt.disposition === 'awarded') {
+      return 'First clear verified: medal earned and +200 XP awarded.';
+    }
+    if (state.receipt.disposition === 'already_owned') {
+      return 'Clear verified: medal already earned and +0 XP awarded.';
+    }
+    return 'Attempt verified without a clear. No reward was granted.';
+  }
+  if (state.status === 'expired') return 'This qualification expired. No reward was granted.';
+  if (state.status === 'abandoned') return 'This qualification was abandoned. No reward was granted.';
+  if (state.status === 'invalid') return 'This saved qualification cannot be resumed.';
+  return 'Verification became unavailable. No reward was granted.';
+}
+
+function buildVerifiedChallenge(
+  options: LobbyHotSeatVerifiedChallengeOptions,
+  listenerSignal?: AbortSignal,
+): HTMLElement {
+  const challenge = document.createElement('section');
+  challenge.className = 'lobby-verified-challenge';
+  challenge.dataset.verifiedChallenge = 'crosswind-qualification';
+  challenge.setAttribute('aria-label', 'Crosswind Qualification verified trial');
+  const heading = document.createElement('div');
+  heading.className = 'lobby-verified-challenge__heading';
+  const title = document.createElement('h3');
+  title.textContent = 'Crosswind Qualification';
+  const badge = document.createElement('span');
+  badge.textContent = 'Verified trial · availability checked on request';
+  heading.append(title, badge);
+  const rules = document.createElement('ul');
+  rules.className = 'lobby-verified-challenge__rules';
+  for (const rule of [
+    'Seed 42',
+    'Wrap walls',
+    'Baby Missile only',
+    '3 human salvos maximum',
+    'First clear: Crosswind Qualification medal + 200 Verified Career XP',
+    'Repeat clears: +0 XP',
+  ]) {
+    const item = document.createElement('li');
+    item.textContent = rule;
+    rules.append(item);
+  }
+  const career = document.createElement('p');
+  career.className = 'lobby-verified-challenge__career';
+  career.setAttribute('role', 'status');
+  career.setAttribute('aria-live', 'polite');
+  career.textContent = verifiedCareerCopy(options);
+  const message = document.createElement('p');
+  message.className = 'lobby-verified-challenge__message';
+  message.setAttribute('role', 'status');
+  message.setAttribute('aria-live', 'polite');
+  message.textContent = verifiedChallengeCopy(options.state, options.retryDelaySeconds);
+  const actions = document.createElement('div');
+  actions.className = 'lobby-verified-challenge__actions';
+  const primary = document.createElement('button');
+  primary.type = 'button';
+  primary.className = 'lobby-btn primary lobby-verified-challenge__launch';
+  primary.disabled = options.busy || options.state.status === 'starting'
+    || options.state.status === 'completion-pending' || (options.retryDelaySeconds ?? 0) > 0;
+  if (options.state.status === 'active') {
+    primary.textContent = 'Enter qualification';
+    primary.addEventListener('click', options.onLaunch, { signal: listenerSignal });
+  } else if (options.state.status === 'retryable') {
+    primary.textContent = options.state.retryIntent === 'complete' ? 'Retry verification' : 'Retry status check';
+    primary.addEventListener('click', options.onRetry, { signal: listenerSignal });
+  } else if (options.state.status === 'start-unavailable') {
+    primary.textContent = 'Check availability again';
+    primary.addEventListener('click', options.onLaunch, { signal: listenerSignal });
+  } else if (options.state.status === 'completed') {
+    primary.textContent = 'Start another qualification';
+    primary.addEventListener('click', options.onLaunch, { signal: listenerSignal });
+  } else if (options.state.status === 'starting') {
+    primary.textContent = 'Checking availability…';
+  } else if (options.state.status === 'completion-pending') {
+    primary.textContent = 'Verification pending';
+  } else {
+    primary.textContent = 'Check availability and start';
+    primary.addEventListener('click', options.onLaunch, { signal: listenerSignal });
+  }
+  actions.append(primary);
+  if (options.state.status === 'active' || options.state.status === 'retryable') {
+    const abandon = document.createElement('button');
+    abandon.type = 'button';
+    abandon.className = 'lobby-btn secondary lobby-verified-challenge__abandon';
+    abandon.textContent = 'Abandon qualification';
+    abandon.disabled = options.busy;
+    abandon.addEventListener('click', options.onAbandon, { signal: listenerSignal });
+    actions.append(abandon);
+  }
+  challenge.append(heading, rules, career, message, actions);
+  return challenge;
+}
+
+/** Refresh only timer-owned presentation; keep controls, focus and listeners mounted. */
+export function updateVerifiedChallengeCountdown(
+  root: HTMLElement,
+  state: VerifiedChallengeSessionState,
+  retryDelaySeconds: number,
+  busy: boolean,
+): void {
+  const message = root.querySelector<HTMLElement>('.lobby-verified-challenge__message');
+  const primary = root.querySelector<HTMLButtonElement>('.lobby-verified-challenge__launch');
+  if (message) message.textContent = verifiedChallengeCopy(state, retryDelaySeconds);
+  if (primary) primary.disabled = busy || state.status === 'starting'
+    || state.status === 'completion-pending' || retryDelaySeconds > 0;
+}
+
+function buildVerifiedSelector(
+  selected: LobbyVerifiedSurface,
+  onChange: ((surface: LobbyVerifiedSurface, restoreFocus: boolean) => void) | undefined,
+  listenerSignal?: AbortSignal,
+): HTMLElement {
+  const selector = document.createElement('div');
+  selector.className = 'lobby-verified-selector';
+  selector.setAttribute('role', 'tablist');
+  selector.setAttribute('aria-label', 'Verified operation');
+  const choices = [
+    { surface: 'deployment' as const, label: 'Deployment orders' },
+    { surface: 'challenge' as const, label: 'Crosswind Qualification' },
+  ];
+  for (const choice of choices) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'lobby-verified-selector__choice';
+    button.id = `lobby-verified-choice-${choice.surface}`;
+    button.dataset.verifiedSurface = choice.surface;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-controls', 'lobby-verified-operation-panel');
+    button.setAttribute('aria-selected', String(choice.surface === selected));
+    button.tabIndex = choice.surface === selected ? 0 : -1;
+    button.textContent = choice.label;
+    button.addEventListener('click', () => onChange?.(choice.surface, true), { signal: listenerSignal });
+    button.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      onChange?.(choice.surface === 'deployment' ? 'challenge' : 'deployment', true);
+    }, { signal: listenerSignal });
+    selector.append(button);
+  }
+  return selector;
 }
 
 function buildCommanderDossier(fieldOrder: FieldOrder | null): HTMLElement | null {
@@ -212,7 +413,7 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   const available: Record<LobbyHotSeatSurface, boolean> = {
     local: true,
     practice: Boolean(options.quickOperations?.length && options.onQuickOperation),
-    verified: options.verifiedDeployment !== null,
+    verified: options.verifiedDeployment !== null || Boolean(options.verifiedChallenge),
   };
   const requestedSurface = options.surface ?? 'local';
   const surface = available[requestedSurface] ? requestedSurface : 'local';
@@ -263,6 +464,24 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   body.setAttribute('aria-label', labels[surface]);
   const scroll = document.createElement('div');
   scroll.className = 'lobby-hotseat-scroll';
+  const hasVerifiedChoices = options.verifiedDeployment !== null && Boolean(options.verifiedChallenge);
+  const requestedVerifiedSurface = options.verifiedSurface ?? 'deployment';
+  const verifiedSurface: LobbyVerifiedSurface = requestedVerifiedSurface === 'challenge'
+    && options.verifiedChallenge
+    ? 'challenge'
+    : options.verifiedDeployment
+      ? 'deployment'
+      : 'challenge';
+  const verifiedSelector = hasVerifiedChoices
+    ? buildVerifiedSelector(verifiedSurface, options.onVerifiedSurfaceChange, options.listenerSignal)
+    : null;
+  const verifiedPanel = document.createElement('section');
+  verifiedPanel.className = 'lobby-verified-operation-panel';
+  if (hasVerifiedChoices) {
+    verifiedPanel.id = 'lobby-verified-operation-panel';
+    verifiedPanel.setAttribute('role', 'tabpanel');
+    verifiedPanel.setAttribute('aria-labelledby', `lobby-verified-choice-${verifiedSurface}`);
+  }
 
   const setup = document.createElement('section');
   setup.className = 'lobby-route-brief__setup';
@@ -331,15 +550,22 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
     scroll.append(practice);
     body.append(scroll);
     if (footer) body.append(footer);
-  } else if (surface === 'verified' && options.verifiedDeployment) {
+  } else if (surface === 'verified' && verifiedSurface === 'deployment' && options.verifiedDeployment) {
+    if (verifiedSelector) scroll.append(verifiedSelector);
     const dossier = buildCommanderDossier(options.verifiedDeployment.fieldOrder);
-    if (dossier) scroll.append(dossier);
+    if (dossier) verifiedPanel.append(dossier);
     const verified = buildVerifiedDeployment(options.verifiedDeployment, false, options.listenerSignal);
     const footer = verified.querySelector<HTMLElement>('.lobby-verified-deployment__actions');
     footer?.classList.add('lobby-hotseat-footer');
-    scroll.append(verified);
+    verifiedPanel.append(verified);
+    scroll.append(verifiedPanel);
     body.append(scroll);
     if (footer) body.append(footer);
+  } else if (surface === 'verified' && options.verifiedChallenge) {
+    if (verifiedSelector) scroll.append(verifiedSelector);
+    verifiedPanel.append(buildVerifiedChallenge(options.verifiedChallenge, options.listenerSignal));
+    scroll.append(verifiedPanel);
+    body.append(scroll);
   }
   wrapper.append(tabs, body);
 

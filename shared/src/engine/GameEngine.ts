@@ -6,6 +6,7 @@ import type {
   TankState,
 } from '../types/GameState.ts';
 import type { PlayerAction } from '../types/PlayerAction.ts';
+import type { VerificationWorkBudget } from './VerificationWorkBudget.ts';
 import {
   normalizeWallMode,
   type GameOptions,
@@ -183,6 +184,11 @@ function ownConstructionOptions(options?: GameOptions): GameOptions | undefined 
 
 export class GameEngine {
   private state: GameState;
+  private workBudget?: VerificationWorkBudget;
+
+  /** Instrumentation is deliberately outside simulation options/state. All
+   * speculative clones consume this same admitted computation's budget. */
+  get verificationWorkBudget(): VerificationWorkBudget | undefined { return this.workBudget; }
 
   /** Live terrain pixel bitmap (authoritative; returned by ref from getState()). */
   private terrain: Uint8Array;
@@ -339,7 +345,7 @@ export class GameEngine {
    * scan. `-1` marks an uncomputed column (a real surface y is always in [0, H]).
    * Determinism: pure derived data — no clock, no random; a clone rebuilds it lazily.
    */
-  private surfaceCache = new Int16Array(CANVAS_WIDTH).fill(-1);
+  private surfaceCache: Int16Array;
   private surfaceCacheVersion = -1;
 
   /**
@@ -350,23 +356,30 @@ export class GameEngine {
    */
   private surfaceAtCached(x: number): number {
     if (this.surfaceCacheVersion !== this.state.terrainVersion) {
+      this.workBudget?.charge('terrainCells', CANVAS_WIDTH);
       this.surfaceCache.fill(-1);
       this.surfaceCacheVersion = this.state.terrainVersion;
     }
     const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
     const cached = this.surfaceCache[xi] ?? -1;
     if (cached !== -1) return cached;
-    const surf = surfaceAt(this.terrain, xi);
+    const surf = surfaceAt(this.terrain, xi, this.workBudget);
     this.surfaceCache[xi] = surf;
     return surf;
   }
 
-  constructor(options?: GameOptions) {
+  constructor(options?: GameOptions, workBudget?: VerificationWorkBudget) {
+    this.workBudget = workBudget;
+    this.workBudget?.charge('engineSteps');
+    this.workBudget?.charge('allocatedBytes', CANVAS_WIDTH * Int16Array.BYTES_PER_ELEMENT);
+    this.workBudget?.charge('terrainCells', CANVAS_WIDTH);
+    this.surfaceCache = new Int16Array(CANVAS_WIDTH).fill(-1);
+    this.workBudget?.charge('engineSteps', options?.players?.length ?? 0);
     options = ownConstructionOptions(options);
     const seed = options?.seed ?? DEFAULT_SEED;
-    const heightLine = generate(seed);
-    this.terrain = buildBitmap(heightLine);
-    applyTerrainHazards(this.terrain, seed, normalizeTerrainHazardMode(options?.hazards));
+    const heightLine = generate(seed, this.workBudget);
+    this.terrain = buildBitmap(heightLine, this.workBudget);
+    applyTerrainHazards(this.terrain, seed, normalizeTerrainHazardMode(options?.hazards), this.workBudget);
     this.windRng = createRng(seed);
     this.windRngSeed = seed;
     this.maxWind = options?.maxWind ?? MAX_WIND;
@@ -392,7 +405,8 @@ export class GameEngine {
     // Tank placement consumes a number[] surface line, so derive it from the
     // same live bitmap used by collision. This keeps spawns on the synthesized
     // arena floor even when the mutable terrain has no solid pixel above it.
-    const terrainArr = Array.from({ length: CANVAS_WIDTH }, (_, x) => surfaceAt(this.terrain, x));
+    this.workBudget?.charge('allocatedBytes', CANVAS_WIDTH * Float64Array.BYTES_PER_ELEMENT);
+    const terrainArr = Array.from({ length: CANVAS_WIDTH }, (_, x) => surfaceAt(this.terrain, x, this.workBudget));
 
     // 2–4 explicit players => generalized placement; otherwise the MVP0 default
     // two-tank layout (byte-identical to before for back-compat).
@@ -496,9 +510,11 @@ export class GameEngine {
    * would, because every field that influences those transitions is copied.
    */
   clone(): GameEngine {
+    this.workBudget?.charge('engineSteps');
     // Build a new instance without running the constructor (which would
     // generate fresh terrain and tanks from the seed — wasteful and wrong).
     const c = Object.create(GameEngine.prototype) as GameEngine;
+    c.workBudget = this.workBudget;
 
     // --- Scalar / primitive fields ---
     c.explosionSeq  = this.explosionSeq;
@@ -521,11 +537,14 @@ export class GameEngine {
     c.teamMode      = this.teamMode;
     // Deep-copy pending settle range (a plain {xStart,xEnd} value object or null).
     c.pendingSettle = this.pendingSettle !== null ? { ...this.pendingSettle } : null;
+    this.workBudget?.charge('engineSteps', this.fallDistances.size);
     c.fallDistances = new Map(this.fallDistances);
 
     // Surface cache: pure derived data — give the clone its own buffer and force a
     // lazy rebuild (version -1 never matches the copied terrainVersion). Not copying
     // entries keeps clone() equivalent: the first query recomputes via surfaceAt().
+    this.workBudget?.charge('allocatedBytes', CANVAS_WIDTH * Int16Array.BYTES_PER_ELEMENT);
+    this.workBudget?.charge('terrainCells', CANVAS_WIDTH);
     c.surfaceCache = new Int16Array(CANVAS_WIDTH).fill(-1);
     c.surfaceCacheVersion = -1;
 
@@ -533,13 +552,19 @@ export class GameEngine {
     c.windRngSeed   = this.windRngSeed;
     c.windRngCalls  = this.windRngCalls;
     const freshRng  = createRng(this.windRngSeed);
-    for (let i = 0; i < this.windRngCalls; i++) freshRng();
+    for (let i = 0; i < this.windRngCalls; i++) {
+      this.workBudget?.charge('engineSteps');
+      freshRng();
+    }
     c.windRng       = freshRng;
 
     // --- Terrain bitmap: independent copy ---
+    this.workBudget?.charge('allocatedBytes', this.terrain.byteLength);
+    this.workBudget?.charge('copiedBytes', this.terrain.byteLength);
     c.terrain = this.terrain.slice();
 
     // --- Napalm fire: Map + Set + def reference (def is immutable) ---
+    this.workBudget?.charge('engineSteps', this.fire.size + this.fireScorched.size);
     c.fire         = new Map(this.fire);
     c.fireScorched = new Set(this.fireScorched);
     c.fireDef      = this.fireDef;   // NapalmDef is a read-only weapon-def constant
@@ -549,8 +574,10 @@ export class GameEngine {
 
     // Deep-copy each TankState including its inventory (Record<WeaponType, AmmoEntry>).
     const cloneTanks = s.tanks.map((t) => {
+      this.workBudget?.charge('engineSteps');
       const inv: Record<string, { count: number; unlimited: boolean }> = {};
       for (const [k, v] of Object.entries(t.inventory)) {
+        this.workBudget?.charge('engineSteps');
         inv[k] = { count: v.count, unlimited: v.unlimited };
       }
       return {
@@ -562,6 +589,7 @@ export class GameEngine {
     });
 
     // Deep-copy each ProjectileState.
+    this.workBudget?.charge('engineSteps', s.projectiles.length + s.explosions.length + s.fire.length + s.wallImpacts.length);
     const cloneProjectiles = s.projectiles.map((p) => ({ ...p }));
 
     // The back-compat projectile alias must point into the CLONE's array, not the original.
@@ -623,6 +651,7 @@ export class GameEngine {
    * `fire`, which rejects a shot when the selected weapon is out of ammo).
    */
   applyAction(action: PlayerAction): boolean {
+    this.workBudget?.charge('engineSteps');
     // ROUND_OVER between-rounds shop (V1 match structure): only buying and starting
     // the next round are honored. buy targets the named tank (all players may shop);
     // next_round flips the already-staged next round into combat.
@@ -813,6 +842,7 @@ export class GameEngine {
    * turn machine. Outside FIRING/RESOLVING this is a no-op.
    */
   tick(): void {
+    this.workBudget?.charge('engineTicks');
     if (this.state.phase === 'RESOLVING') {
       this.tickResolving();
       return;
@@ -881,6 +911,7 @@ export class GameEngine {
     const current = this.state.projectiles;
 
     for (const p of current) {
+      this.workBudget?.charge('engineSteps');
       const sandhog = getWeapon(p.weaponType).behavior?.sandhog;
       if (sandhog !== undefined && p.burrowTicksRemaining !== undefined) {
         const nextX = p.x + p.vx;
@@ -958,7 +989,10 @@ export class GameEngine {
             ? vyBefore < 0 && p.vy >= 0
             : p.age >= (airburst.ageFrames ?? 0);
         if (shouldSplit) {
-          for (const sub of this.splitAirburst(p, airburst)) survivors.push(sub);
+          for (const sub of this.splitAirburst(p, airburst)) {
+            this.workBudget?.charge('engineSteps');
+            survivors.push(sub);
+          }
           continue; // parent shell consumed by the split
         }
       }
@@ -970,6 +1004,7 @@ export class GameEngine {
         this.terrain,
         this.state.tanks,
         this.state.walls,
+        this.workBudget,
       );
 
       if (hit.type === 'none') {
@@ -999,7 +1034,7 @@ export class GameEngine {
             ? CANVAS_WIDTH - WALL_INSET
             : WALL_INSET;
           collisionStartY = hit.y;
-          hit = wrapSideWall(p, hit, this.terrain, this.state.tanks);
+          hit = wrapSideWall(p, hit, this.terrain, this.state.tanks, this.workBudget);
           if (hit.type === 'none') {
             survivors.push(p);
             continue;
@@ -1060,7 +1095,7 @@ export class GameEngine {
           // direction reads the surface the shell actually struck (a per-bounce
           // crater must not perturb the very normal we are bouncing off).
           const bounce = getWeapon(p.weaponType).behavior?.bounce;
-          const n = surfaceNormalAt(this.terrain, p.x);
+          const n = surfaceNormalAt(this.terrain, p.x, this.workBudget);
           const r = reflectVelocity({ vx: p.vx, vy: p.vy }, n, bounce?.restitution);
           p.vx = r.vx;
           p.vy = r.vy;
@@ -1185,6 +1220,7 @@ export class GameEngine {
     const subs: ProjectileState[] = [];
     const step = count > 1 ? (2 * spread) / (count - 1) : 0;
     for (let i = 0; i < count; i++) {
+      this.workBudget?.charge('engineSteps');
       const offset = (i - (count - 1) / 2) * step;
       subs.push({
         x: parent.x,
@@ -1259,6 +1295,7 @@ export class GameEngine {
     if (roundWinner) {
       if (this.teamMode && roundWinnerTeam !== null) {
         for (const tank of this.state.tanks) {
+          this.workBudget?.charge('engineSteps');
           if (tank.team === roundWinnerTeam) tank.roundWins += 1;
         }
       } else {
@@ -1311,6 +1348,7 @@ export class GameEngine {
 
     // Safety valve (#15): tick down each buried tank's trap timer; auto-free at the cap.
     for (const t of tanks) {
+      this.workBudget?.charge('engineSteps');
       if (t.alive && t.buried) {
         t.buriedTurns += 1;
         if (t.buriedTurns >= MAX_BURIED_TURNS) {
@@ -1323,6 +1361,7 @@ export class GameEngine {
     const cur = tanks.findIndex((t) => t.id === this.state.activePlayerId);
     const start = cur < 0 ? 0 : cur;
     for (let step = 1; step <= n; step++) {
+      this.workBudget?.charge('engineSteps');
       const cand = tanks[(start + step) % n];
       if (!cand) continue;
       if (cand.alive && !cand.buried) {
@@ -1335,6 +1374,7 @@ export class GameEngine {
     // tie-break by array order) and hand it the turn so the match can't stall.
     let pick = -1;
     for (let i = 0; i < n; i++) {
+      this.workBudget?.charge('engineSteps');
       const candidate = tanks[i];
       if (!candidate || !candidate.alive) continue;
       const selected = pick < 0 ? undefined : tanks[pick];
@@ -1369,6 +1409,7 @@ export class GameEngine {
     if (!best) return null;
     let tie = false;
     for (let i = 1; i < tanks.length; i++) {
+      this.workBudget?.charge('engineSteps');
       const candidate = tanks[i];
       if (!candidate) continue;
       if (candidate.roundWins > best.roundWins) {
@@ -1386,11 +1427,15 @@ export class GameEngine {
     if (!this.teamMode) return null;
     const scores = new Map<TeamId, number>();
     for (const tank of this.state.tanks) {
+      this.workBudget?.charge('engineSteps');
       if (tank.team === 1 || tank.team === 2) scores.set(tank.team, Math.max(scores.get(tank.team) ?? 0, tank.roundWins));
     }
     const entries = [...scores.entries()];
     if (entries.length === 0) return null;
-    entries.sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+    entries.sort((a, b) => {
+      this.workBudget?.charge('engineSteps');
+      return b[1] - a[1] || a[0] - b[0];
+    });
     if (entries.length > 1 && entries[0]![1] === entries[1]![1]) return null;
     return entries[0]![0];
   }
@@ -1412,15 +1457,16 @@ export class GameEngine {
     const roundSeed = deriveRoundSeed(this.seed, this.state.round);
 
     // Fresh terrain for the new round, from the derived (deterministic) seed.
-    const heightLine = generate(roundSeed);
-    this.terrain = buildBitmap(heightLine);
-    applyTerrainHazards(this.terrain, roundSeed, normalizeTerrainHazardMode(this.options?.hazards));
+    const heightLine = generate(roundSeed, this.workBudget);
+    this.terrain = buildBitmap(heightLine, this.workBudget);
+    applyTerrainHazards(this.terrain, roundSeed, normalizeTerrainHazardMode(this.options?.hazards), this.workBudget);
     this.state.terrain = this.terrain;
     this.state.terrainVersion += 1; // render-only: force a terrain re-render
 
     // Re-place tanks on the new surface via the same path the opening round used, then
     // graft the carried economy/score fields back over the fresh (reset) tanks.
-    const terrainArr = Array.from({ length: CANVAS_WIDTH }, (_, x) => surfaceAt(this.terrain, x));
+    this.workBudget?.charge('allocatedBytes', CANVAS_WIDTH * Float64Array.BYTES_PER_ELEMENT);
+    const terrainArr = Array.from({ length: CANVAS_WIDTH }, (_, x) => surfaceAt(this.terrain, x, this.workBudget));
     const players = this.options?.players;
     const fresh =
       players && players.length >= 2 && players.length <= 4
@@ -1428,6 +1474,7 @@ export class GameEngine {
         : placeTwoTanks(terrainArr, this.options);
     const prior = new Map(this.state.tanks.map((t) => [t.id, t]));
     for (const tank of fresh) {
+      this.workBudget?.charge('engineSteps');
       const old = prior.get(tank.id);
       if (old) {
         // Carry earnings, plus per-round INTEREST on the carried (post-payout) balance.
@@ -1542,6 +1589,7 @@ export class GameEngine {
     // (tank.y - TANK_HEIGHT/2): air for a resting tank, solid only once dirt has risen
     // over the body — so burial is a pure function of current terrain vs tank position.
     for (const tank of this.state.tanks) {
+      this.workBudget?.charge('engineSteps');
       if (!tank.alive) continue;
       const xi = Math.floor(tank.x);
       const surf = this.surfaceAtCached(tank.x);
@@ -1551,10 +1599,10 @@ export class GameEngine {
         tank.y = surf; // crater opened beneath -> tank falls onto new floor
         tank.buried = false; // ...and is dug free if it had been buried
       }
-      if (pixelAt(this.terrain, xi, Math.floor(tank.y)) === LAVA_PIXEL) {
+      if (pixelAt(this.terrain, xi, Math.floor(tank.y), this.workBudget) === LAVA_PIXEL) {
         Tank.applyDamage(tank, 100);
         tank.buried = false;
-      } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2)) > 0) {
+      } else if (pixelAt(this.terrain, xi, Math.floor(tank.y - TANK_HEIGHT / 2), this.workBudget) > 0) {
         if (!tank.buried) tank.buriedTurns = 0; // a FRESH burial starts the trap timer
         tank.buried = true; // dirt over mid-body -> trapped (no damage, no kill)
       } else {
@@ -1566,6 +1614,7 @@ export class GameEngine {
   /** Apply one deterministic fall result after all collapse movement has converged. */
   private applyPendingFallDamage(): void {
     for (const [tankId, distance] of this.fallDistances) {
+      this.workBudget?.charge('engineSteps');
       const tank = this.state.tanks.find((candidate) => candidate.id === tankId);
       if (!tank || !tank.alive) continue;
       const rawDamage = Math.floor(Math.max(0, distance - FALL_SAFE_DISTANCE) * FALL_DAMAGE_PER_PIXEL);
@@ -1596,7 +1645,7 @@ export class GameEngine {
     const { xStart, xEnd } = this.pendingSettle;
     // settleStep with pxPerTick=CANVAS_HEIGHT compacts each column in one pass,
     // identical to the original applyGravity behavior.
-    while (settleStep(this.terrain, xStart, xEnd, CANVAS_HEIGHT)) { /* converge */ }
+    while (settleStep(this.terrain, xStart, xEnd, CANVAS_HEIGHT, this.workBudget)) { /* converge */ }
     this.state.terrainVersion++;
     this.resolveTanksToTerrain();
     this.pendingSettle = null;
@@ -1616,7 +1665,7 @@ export class GameEngine {
   private settleStepAnimated(): boolean {
     if (this.pendingSettle === null) return false;
     const { xStart, xEnd } = this.pendingSettle;
-    const moved = settleStep(this.terrain, xStart, xEnd, COLLAPSE_PX_PER_TICK);
+    const moved = settleStep(this.terrain, xStart, xEnd, COLLAPSE_PX_PER_TICK, this.workBudget);
     this.state.terrainVersion++;
     this.resolveTanksToTerrain();
     if (!moved) {
@@ -1628,7 +1677,7 @@ export class GameEngine {
 
   /** Clear one Sandhog drill disc and defer its column collapse until detonation. */
   private carveSandhogTunnel(cx: number, cy: number, radius: number): void {
-    const range = deform(this.terrain, cx, cy, radius, false);
+    const range = deform(this.terrain, cx, cy, radius, false, this.workBudget);
     if (range === null) return;
 
     if (this.pendingSettle === null) {
@@ -1656,7 +1705,7 @@ export class GameEngine {
     // into pendingSettle so the caller can decide whether to settle instantly
     // (mid-flight) or animate (end-of-turn). Signal the bitmap change so the
     // renderer rebuilds its offscreen without hashing 720,000 bytes every frame (P2-8).
-    const range = preservesTerrain === true ? null : deform(this.terrain, cx, cy, radius, raise);
+    const range = preservesTerrain === true ? null : deform(this.terrain, cx, cy, radius, raise, this.workBudget);
     if (range !== null) {
       // MERGE into pendingSettle (widen xStart = min, xEnd = max across all blasts
       // in this tick — cluster/MIRV/betty chain can fire multiple detonations).
@@ -1678,6 +1727,7 @@ export class GameEngine {
     // computed against the crater shape, not the settled shape.
     const damageRadius = blastReachRadius(radius, style);
     for (const tank of this.state.tanks) {
+      this.workBudget?.charge('engineSteps');
       if (!tank.alive) continue;
       const selectedFalloff =
         this.starterWeaponFalloff === 'decisive' ? falloffExponent : undefined;
@@ -1733,6 +1783,7 @@ export class GameEngine {
     // Seed the initial puddle. ignite() refreshes life on overlap, so re-igniting
     // an already-burning column is harmless.
     for (let dx = -def.splashRadius; dx <= def.splashRadius; dx++) {
+      this.workBudget?.charge('engineSteps');
       this.ignite(center + dx, def.burnTicks);
     }
 
@@ -1790,10 +1841,12 @@ export class GameEngine {
     let minX = Infinity;
     let maxX = -Infinity;
     for (const x of this.fire.keys()) {
+      this.workBudget?.charge('engineSteps');
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
     }
     for (let s = 0; s < def.spreadRate; s++) {
+      this.workBudget?.charge('engineSteps');
       const rx = maxX + 1;
       if (
         rx - this.fireCenter <= def.maxSpread &&
@@ -1819,11 +1872,13 @@ export class GameEngine {
     //    elevated tank does not scorch it). One application per tank per tick.
     const halfW = TANK_WIDTH / 2;
     for (const tank of this.state.tanks) {
+      this.workBudget?.charge('engineSteps');
       if (!tank.alive) continue;
       const lo = Math.ceil(tank.x - halfW);
       const hi = Math.floor(tank.x + halfW);
       let inFire = false;
       for (let x = lo; x <= hi; x++) {
+        this.workBudget?.charge('engineSteps');
         if (!this.fire.has(x)) continue;
         if (Math.abs(this.surfaceAtCached(x) - tank.y) <= TANK_HEIGHT * 2) {
           inFire = true;
@@ -1841,12 +1896,16 @@ export class GameEngine {
     //    the resulting fire contents are identical (same survivors, same removals).
     let expired: number[] | null = null;
     for (const [x, life] of this.fire) {
+      this.workBudget?.charge('engineSteps');
       const next = life - 1;
       if (next <= 0) (expired ??= []).push(x);
       else this.fire.set(x, next);
     }
     if (expired !== null) {
-      for (const x of expired) this.fire.delete(x);
+      for (const x of expired) {
+        this.workBudget?.charge('engineSteps');
+        this.fire.delete(x);
+      }
     }
 
     // Fire fully burnt out — clear the retained def + scorched set so the NEXT
@@ -1887,6 +1946,7 @@ export class GameEngine {
     let previousX = -1;
     if (canReuse) {
       for (const cell of current) {
+        this.workBudget?.charge('engineSteps');
         if (cell == null || !Number.isInteger(cell.x)
           || cell.x <= previousX || !this.fire.has(cell.x)) {
           canReuse = false;
@@ -1896,7 +1956,10 @@ export class GameEngine {
       }
     }
     if (canReuse) {
-      for (const cell of current) cell.life = this.fire.get(cell.x)!;
+      for (const cell of current) {
+        this.workBudget?.charge('engineSteps');
+        cell.life = this.fire.get(cell.x)!;
+      }
       return;
     }
 
@@ -1904,8 +1967,14 @@ export class GameEngine {
     // sort by x. Same resulting array of {x,life} in the same ascending-x order as
     // the prior spread+map+sort — purely fewer per-tick allocations.
     const cells: { x: number; life: number }[] = [];
-    for (const [x, life] of this.fire) cells.push({ x, life });
-    cells.sort((a, b) => a.x - b.x);
+    for (const [x, life] of this.fire) {
+      this.workBudget?.charge('engineSteps');
+      cells.push({ x, life });
+    }
+    cells.sort((a, b) => {
+      this.workBudget?.charge('engineSteps');
+      return a.x - b.x;
+    });
     this.state.fire = cells;
   }
 }

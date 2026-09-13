@@ -4,6 +4,8 @@ import type {
   AccountSummary,
   AccountState,
 } from '../client/AccountSession'
+import type { VerifiedCareerState } from '../client/verifiedCareer'
+import type { VerifiedCareer } from '@shared/net/verifiedCareer'
 import {
   commanderCareerForVerifiedProgression,
   type CommanderCareer,
@@ -42,6 +44,47 @@ export interface AccountPanelViewOptions {
   onSubmit: (mode: AccountMode, credentials: AccountCredentials) => void
   onSignOut: () => void
   listenerSignal?: AbortSignal
+  /** Separate owner-scoped replay + challenge projection. Omission preserves legacy callers. */
+  verifiedCareer?: VerifiedCareerState
+}
+
+function buildVerifiedCareerPanel(
+  state: VerifiedCareerState,
+  authenticatedAccountId: string,
+): HTMLElement {
+  if (state.status !== 'ready' || state.accountId !== authenticatedAccountId) {
+    const unavailable = document.createElement('span')
+    unavailable.className = 'account-panel__summary-unavailable account-panel__verified-career-unavailable'
+    unavailable.textContent = state.status === 'loading' && state.accountId === authenticatedAccountId
+      ? 'Verified Career loading…'
+      : 'Verified Career unavailable'
+    return unavailable
+  }
+
+  const career = state.career
+  const panel = document.createElement('section')
+  panel.className = 'account-panel__career account-panel__verified-career'
+  panel.setAttribute('aria-label', 'Verified Career')
+  const rank = document.createElement('strong')
+  rank.className = 'account-panel__career-current'
+  rank.textContent = `Verified Career · ${career.rank.current.code} / ${career.rank.current.title}`
+  const details = document.createElement('span')
+  details.className = 'account-panel__career-next'
+  const medal = career.challenge.medals[0]
+  details.textContent = `${career.totalXp} verified XP · Replay ${career.replay.xp} XP · Challenges ${career.challenge.xp} XP · ${medal
+    ? 'Crosswind Qualification medal earned'
+    : 'Crosswind Qualification medal not earned'}`
+  panel.append(rankInsignia(career.rank.current, 'account-panel__career-insignia'), rank, details)
+  return panel
+}
+
+function readyVerifiedCareer(
+  state: VerifiedCareerState | undefined,
+  authenticatedAccountId: string,
+): VerifiedCareer | null {
+  return state?.status === 'ready' && state.accountId === authenticatedAccountId
+    ? state.career
+    : null
 }
 
 function actionButton(
@@ -113,8 +156,9 @@ export function buildAccountPanelView(
   if (options.state.status === 'authenticated') {
     root.classList.add('account-panel--authenticated')
     const accountSummary = options.state.profile.summary
-    const displayedProgression = accountSummary?.verifiedProgression
-    const triggerLabel = accountSummary
+    const combinedCareer = readyVerifiedCareer(options.verifiedCareer, options.state.profile.id)
+    const displayedProgression = combinedCareer ?? accountSummary?.verifiedProgression
+    const triggerLabel = displayedProgression
       ? `Commander ${options.state.profile.displayName} - Level ${displayedProgression?.level}`
       : `Commander ${options.state.profile.displayName}`
     const disclosure = actionButton(
@@ -126,11 +170,13 @@ export function buildAccountPanelView(
     disclosure.setAttribute('aria-expanded', String(options.open))
 
     if (!options.open || options.triggerOnly) {
-      if (accountSummary) {
-        const progression = accountSummary.verifiedProgression
+      if (accountSummary || combinedCareer) {
+        const progression = combinedCareer ?? accountSummary!.verifiedProgression
         const remainingXp = progression.nextLevelXp - progression.levelXp
         const nextLevel = progression.level + 1
-        const career = verifiedCareer(accountSummary)
+        const career: CommanderCareer | null = combinedCareer
+          ? { current: combinedCareer.rank.current, next: combinedCareer.rank.next }
+          : verifiedCareer(accountSummary!)
         disclosure.textContent = ''
         disclosure.setAttribute(
           'aria-label',
@@ -194,15 +240,17 @@ export function buildAccountPanelView(
     let summary: HTMLElement
     let xp: HTMLElement | null = null
     let careerPanel: HTMLElement | null = null
-    if (options.state.profile.summary) {
-      const accountSummary = options.state.profile.summary
-      const progression = accountSummary.verifiedProgression
-      const career = verifiedCareer(accountSummary)
+    let verifiedCareerPanel: HTMLElement | null = null
+    if (accountSummary || combinedCareer) {
+      const progression = combinedCareer ?? accountSummary!.verifiedProgression
+      const career: CommanderCareer | null = combinedCareer
+        ? { current: combinedCareer.rank.current, next: combinedCareer.rank.next }
+        : verifiedCareer(accountSummary!)
       summary = document.createElement('dl')
       summary.className = 'account-panel__progress'
       const values = [
-        ['Matches', progression.matchesPlayed],
-        ['Recorded wins', progression.wins],
+        ['Matches', combinedCareer?.replay.verifiedMatches ?? accountSummary!.verifiedProgression.matchesPlayed],
+        ['Recorded wins', combinedCareer?.replay.verifiedWins ?? accountSummary!.verifiedProgression.wins],
         ['Level', progression.level],
       ] as const
       for (const [label, value] of values) {
@@ -259,6 +307,9 @@ export function buildAccountPanelView(
       summary.className = 'account-panel__summary-unavailable'
       summary.textContent = 'Progress summary unavailable'
     }
+    if (options.verifiedCareer !== undefined) {
+      verifiedCareerPanel = buildVerifiedCareerPanel(options.verifiedCareer, options.state.profile.id)
+    }
     const signOut = actionButton('Sign out', options.onSignOut, options.listenerSignal)
     signOut.className = 'account-panel__secondary'
     signOut.disabled = options.state.busy
@@ -266,6 +317,7 @@ export function buildAccountPanelView(
     close.className = 'account-panel__secondary account-panel__close'
     root.append(summary)
     if (careerPanel) root.append(careerPanel)
+    if (verifiedCareerPanel) root.append(verifiedCareerPanel)
     if (xp) root.append(xp)
     root.append(close, signOut)
     return root

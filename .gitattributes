@@ -9,3 +9,8 @@ docs/performance/artifacts/*.json text eol=lf
 # Deterministic baseline artifacts retain their generator's bytes on checkout.
 docs/balance/*.html text eol=lf
 docs/balance/*.json text eol=lf
+
+# Retained verifier hashes bind exact bytes on Windows and Linux checkouts.
+shared/src/verified/retained/** text eol=lf
+# Preserve the retained generator output's byte-bound trailing whitespace.
+shared/src/verified/retained/cq1.mjs whitespace=-blank-at-eol

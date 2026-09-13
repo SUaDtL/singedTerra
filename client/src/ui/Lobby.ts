@@ -12,7 +12,12 @@ import {
   type TankLoadout,
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
-import { buildLobbyHotSeatView, type LobbyHotSeatSurface } from './LobbyHotSeatView';
+import {
+  buildLobbyHotSeatView,
+  updateVerifiedChallengeCountdown,
+  type LobbyHotSeatSurface,
+  type LobbyVerifiedSurface,
+} from './LobbyHotSeatView';
 import {
   QUICK_OPERATIONS,
   quickOperationById,
@@ -69,6 +74,10 @@ import {
 } from '../client/fieldOrder';
 import type { VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import {
+  type VerifiedChallengeDescriptor,
+  type VerifiedChallengeHumanFire,
+} from '@shared/net/verifiedChallenge';
+import {
   type VerifiedDeploymentDescriptor,
   type VerifiedDeploymentReceipt,
   type VerifiedDeploymentStart,
@@ -76,6 +85,14 @@ import {
 import {
   VerifiedDeploymentStorage,
 } from '../client/verifiedDeploymentStorage';
+import {
+  VerifiedChallengeSession,
+  type VerifiedChallengeSessionState,
+} from '../client/VerifiedChallengeSession';
+import { VerifiedChallengeStorage } from '../client/verifiedChallengeStorage';
+import { VerifiedChallengeTransport } from '../client/verifiedChallenge';
+import { createVerifiedChallengeInvoker } from '../client/verifiedChallengeBackend';
+import type { VerifiedCareerState } from '../client/verifiedCareer';
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
   cancelVerifiedCompletionResponseDiagnostic,
@@ -147,6 +164,11 @@ export interface LobbyConfig extends ModeSetup {
     readonly descriptor: VerifiedDeploymentDescriptor;
     readonly transcript: readonly VerifiedHumanFire[];
     readonly fieldOrder: FieldOrder | null;
+  };
+  /** Current retained challenge execution. Main constructs the retained adapter from this data only. */
+  verifiedChallenge?: {
+    readonly descriptor: VerifiedChallengeDescriptor;
+    readonly transcript: readonly VerifiedChallengeHumanFire[];
   };
 }
 
@@ -249,7 +271,9 @@ export interface AccountSessionPort extends VerifiedDeploymentAccountPort {
   signOut(): Promise<void>;
   refresh(): Promise<void>;
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null>;
-
+  readonly verifiedCareer?: VerifiedCareerState;
+  refreshVerifiedCareer?(): Promise<void>;
+  subscribeVerifiedCareer?(onChange: (state: VerifiedCareerState) => void): () => void;
 }
 
 export type { VerifiedDeploymentState as LobbyVerifiedDeploymentState } from '../client/VerifiedDeploymentSession';
@@ -257,6 +281,26 @@ export type { VerifiedDeploymentState as LobbyVerifiedDeploymentState } from '..
 type AccountSessionFactory = (
   onChange: (state: AccountState) => void,
 ) => AccountSessionPort;
+
+export type VerifiedChallengeSessionFactory = (
+  authenticatedAccountId: () => string | null,
+) => VerifiedChallengeSession;
+
+const defaultVerifiedChallengeSessionFactory: VerifiedChallengeSessionFactory = (authenticatedAccountId) => {
+  const transport = new VerifiedChallengeTransport(async (operation, body) => {
+    const { supabase } = await import('../lib/supabase');
+    const invoke = createVerifiedChallengeInvoker(
+      supabase as unknown as Parameters<typeof createVerifiedChallengeInvoker>[0],
+      authenticatedAccountId,
+    );
+    return invoke(operation, body);
+  });
+  return new VerifiedChallengeSession(
+    transport,
+    new VerifiedChallengeStorage(localStorage),
+    authenticatedAccountId,
+  );
+};
 
 export type ProductionDiagnosticsFactory = (
 ) => ProductionDiagnostics | Promise<ProductionDiagnostics>;
@@ -292,6 +336,10 @@ export class Lobby {
   private readonly roomController: LobbyRoomController;
   private readonly accountSession: AccountSessionPort;
   private readonly verifiedSession: VerifiedDeploymentSession;
+  private readonly verifiedChallengeSession: VerifiedChallengeSession;
+  private verifiedChallengeBusy = false;
+  private verifiedChallengeCareerRefreshSessionId: string | null = null;
+  private verifiedChallengeRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private verifiedLaunchBusy = false;
   private verifiedAbandonIntent = false;
   private accountPanelOpen = false;
@@ -321,7 +369,9 @@ export class Lobby {
 
   /** Selected Hot Seat surface; form state remains owned here across view replacement. */
   private hotSeatSurface: LobbyHotSeatSurface = 'local';
+  private verifiedHotSeatSurface: LobbyVerifiedSurface = 'deployment';
   private focusVerifiedDeploymentRequested = false;
+  private focusVerifiedChallengeRequested = false;
 
   // ---- Tab / online sub-view state ----
   private surface: 'chooser' | 'preparation' = 'chooser';
@@ -379,6 +429,7 @@ export class Lobby {
     createAccountSession: AccountSessionFactory = (onChange) => new AccountSession(onChange),
     createDiagnostics: ProductionDiagnosticsFactory = defaultProductionDiagnosticsFactory,
     private readonly generateQuickDuelSeed: () => number = browserQuickDuelSeed,
+    createVerifiedChallengeSession: VerifiedChallengeSessionFactory = defaultVerifiedChallengeSessionFactory,
   ) {
     this.root = root;
     this.onReady = onReady;
@@ -395,6 +446,11 @@ export class Lobby {
     this.verifiedSession = new VerifiedDeploymentSession(
       this.accountSession, (now) => new VerifiedDeploymentStorage(localStorage, now),
     );
+    const authenticatedAccountId = (): string | null => this.accountSession.state.status === 'authenticated'
+      ? this.accountSession.state.profile.id
+      : null;
+    this.verifiedChallengeSession = createVerifiedChallengeSession(authenticatedAccountId);
+    this.accountSession.subscribeVerifiedCareer?.(() => { this.render(); });
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
     this.seedChallenge = readSeedChallengeUrl(window.location.href);
@@ -420,6 +476,9 @@ export class Lobby {
       cancelVerifiedCompletionResponseDiagnostic();
     }
     const identityChanged = this.verifiedSession.syncAccountIdentity(cancelVerifiedCompletionResponseDiagnostic);
+    if (this.verifiedChallengeSession.syncAccount()) {
+      this.verifiedChallengeCareerRefreshSessionId = null;
+    }
     if (identityChanged) this.roomController.accountIdentityChanged();
     const recoveryGeneration = this.verifiedSession.advanceRecoveryGeneration();
     const restoreFocus = this.accountPanelOpen;
@@ -793,10 +852,12 @@ export class Lobby {
    * Render the hot-seat setup overlay: choose 2-4 players, name each, and pick
    * a unique color. A Start button validates and hands a config to onReady.
    */
-  show(options: { readonly focusVerifiedDeployment?: boolean } = {}): void {
-    if (options.focusVerifiedDeployment) {
+  show(options: { readonly focusVerifiedDeployment?: boolean; readonly focusVerifiedChallenge?: boolean } = {}): void {
+    if (options.focusVerifiedDeployment || options.focusVerifiedChallenge) {
       this.hotSeatSurface = 'verified';
+      this.verifiedHotSeatSurface = options.focusVerifiedChallenge ? 'challenge' : 'deployment';
       this.focusVerifiedDeploymentRequested = true;
+      this.focusVerifiedChallengeRequested = options.focusVerifiedChallenge === true;
     }
     this.roomController.activate();
     this.injectStyle();
@@ -825,6 +886,10 @@ export class Lobby {
     this.roomController.retire();
     this.cleanupWaitingChannel();
     this.stopBrowsePoll();
+    if (this.verifiedChallengeRetryTimer !== null) {
+      clearTimeout(this.verifiedChallengeRetryTimer);
+      this.verifiedChallengeRetryTimer = null;
+    }
     this.renderListeners.abort();
     this.root.replaceChildren();
     this.root.hidden = true;
@@ -840,6 +905,57 @@ export class Lobby {
 
   get verifiedDeployment(): LobbyVerifiedDeploymentState {
     return this.verifiedSession.verifiedDeployment;
+  }
+
+  get verifiedChallenge(): VerifiedChallengeSessionState {
+    if (this.verifiedChallengeSession.syncAccount()) {
+      this.verifiedChallengeCareerRefreshSessionId = null;
+    }
+    return this.verifiedChallengeSession.projectDeadline();
+  }
+
+  async launchVerifiedChallenge(): Promise<VerifiedChallengeSessionState> {
+    if (this.verifiedChallengeBusy) return this.verifiedChallenge;
+    this.verifiedChallengeSession.syncAccount();
+    let current = this.verifiedChallengeSession.projectDeadline();
+    if (current.status === 'active') {
+      this.emitVerifiedChallenge();
+      return current;
+    }
+    this.verifiedChallengeBusy = true;
+    this.render();
+    if (current.status === 'idle') current = await this.verifiedChallengeSession.recover();
+    if (current.status === 'idle' || current.status === 'start-unavailable'
+      || current.status === 'expired' || current.status === 'abandoned'
+      || current.status === 'invalid' || current.status === 'verification_unavailable'
+      || current.status === 'completed') {
+      const starting = this.verifiedChallengeSession.start();
+      this.render();
+      current = await starting;
+    }
+    this.verifiedChallengeBusy = false;
+    if (current.status !== 'active' || !this.emitVerifiedChallenge()) this.render();
+    return current;
+  }
+
+  recordVerifiedChallengeFire(value: VerifiedChallengeHumanFire): boolean {
+    return this.verifiedChallengeSession.recordAcceptedFire(value);
+  }
+
+  async completeVerifiedChallenge(): Promise<VerifiedChallengeSessionState> {
+    const state = await this.verifiedChallengeSession.complete();
+    this.refreshVerifiedCareerForReceipt(state);
+    return state;
+  }
+
+  async retryVerifiedChallengeCompletion(): Promise<VerifiedChallengeSessionState> {
+    const state = await this.verifiedChallengeSession.retry();
+    this.refreshVerifiedCareerForReceipt(state);
+    return state;
+  }
+
+  abandonVerifiedChallenge(): Promise<VerifiedChallengeSessionState> {
+    return this.verifiedChallengeSession.abandon();
   }
 
   async startVerifiedDeployment(now = Date.now()): Promise<VerifiedDeploymentStart | null> {
@@ -935,6 +1051,7 @@ export class Lobby {
 
     const accountOptions = (open: boolean, triggerOnly = false) => ({
       state: this.accountSession.state,
+      verifiedCareer: this.accountSession.verifiedCareer,
       open,
       triggerOnly,
       mode: this.accountMode,
@@ -1391,6 +1508,104 @@ export class Lobby {
     this.onReady(composeQuickDuelLaunch({ operation, seed, origin, human: humanPlayer, cpu: cpuPlayer }));
   }
 
+  private emitVerifiedChallenge(): boolean {
+    const current = this.verifiedChallengeSession.state;
+    const account = this.accountSession.state;
+    if (current.status !== 'active' || account.status !== 'authenticated'
+      || current.descriptor.accountId !== account.profile.id) return false;
+    const { descriptor, transcript } = current;
+    const human: LobbyPlayer = {
+      name: account.profile.displayName,
+      color: PALETTE[0].value,
+      loadout: normalizeTankLoadout(seatPresetLoadout(0)),
+    };
+    const cpu: LobbyPlayer = {
+      name: 'CPU 1',
+      color: PALETTE[1].value,
+      ai: 'hard',
+      loadout: normalizeTankLoadout(seatPresetLoadout(1)),
+    };
+    this.onReady({
+      mode: 'hotseat',
+      players: [human, cpu],
+      playerNames: [human.name, cpu.name],
+      settings: {
+        seed: descriptor.seed,
+        maxWind: descriptor.rules.maxWind,
+        gravity: descriptor.rules.gravity,
+        walls: descriptor.rules.walls,
+        hazards: descriptor.rules.hazards,
+        rounds: descriptor.rules.rounds,
+        interestRate: descriptor.rules.interestRate,
+        suddenDeathTurn: descriptor.rules.suddenDeathTurn,
+        armsLevel: descriptor.rules.armsLevel,
+        teamMode: descriptor.rules.teamMode,
+      },
+      verifiedChallenge: { descriptor, transcript },
+    });
+    return true;
+  }
+
+  private refreshVerifiedCareerForReceipt(state: VerifiedChallengeSessionState): void {
+    if (state.status !== 'completed'
+      || state.receipt.sessionId === this.verifiedChallengeCareerRefreshSessionId) return;
+    this.verifiedChallengeCareerRefreshSessionId = state.receipt.sessionId;
+    void this.accountSession.refreshVerifiedCareer?.();
+  }
+
+  private verifiedChallengeHotSeatView() {
+    const account = this.accountSession.state;
+    if (account.status !== 'authenticated') return null;
+    const state = this.verifiedChallenge;
+    const career = this.accountSession.verifiedCareer
+      ?? Object.freeze({ status: 'unavailable' as const, accountId: account.profile.id });
+    const retryDelaySeconds = this.verifiedChallengeSession.retryDelaySeconds;
+    this.scheduleVerifiedChallengeRetryRender(retryDelaySeconds);
+    return {
+      accountId: account.profile.id,
+      busy: account.busy || this.verifiedChallengeBusy,
+      retryDelaySeconds,
+      state,
+      career,
+      onLaunch: () => { void this.launchVerifiedChallenge(); },
+      onRetry: () => {
+        if (this.verifiedChallengeBusy) return;
+        this.verifiedChallengeBusy = true;
+        this.render();
+        void this.retryVerifiedChallengeCompletion().then(() => {
+          this.verifiedChallengeBusy = false;
+          this.render();
+        });
+      },
+      onAbandon: () => {
+        if (this.verifiedChallengeBusy) return;
+        this.verifiedChallengeBusy = true;
+        this.render();
+        void this.abandonVerifiedChallenge().then(() => {
+          this.verifiedChallengeBusy = false;
+          this.render();
+        });
+      },
+    };
+  }
+
+  private scheduleVerifiedChallengeRetryRender(retryDelaySeconds: number): void {
+    if (retryDelaySeconds <= 0) {
+      if (this.verifiedChallengeRetryTimer !== null) clearTimeout(this.verifiedChallengeRetryTimer);
+      this.verifiedChallengeRetryTimer = null;
+      return;
+    }
+    if (this.verifiedChallengeRetryTimer !== null) return;
+    this.verifiedChallengeRetryTimer = setTimeout(() => {
+      this.verifiedChallengeRetryTimer = null;
+      if (this.root.hidden) return;
+      const remaining = this.verifiedChallengeSession.retryDelaySeconds;
+      updateVerifiedChallengeCountdown(this.root, this.verifiedChallengeSession.state,
+        remaining, this.accountSession.state.busy || this.verifiedChallengeBusy);
+      this.scheduleVerifiedChallengeRetryRender(remaining);
+    }, Math.min(1_000, retryDelaySeconds * 1_000));
+  }
+
   private emitVerifiedDeployment(): boolean {
     const current = this.verifiedSession.verifiedDeployment;
     if (current.status !== 'active' && current.status !== 'retryable') return false;
@@ -1489,6 +1704,7 @@ export class Lobby {
 
   private renderHotSeatTab(): HTMLElement {
     const verifiedDeployment = this.verifiedHotSeatView();
+    const verifiedChallenge = this.verifiedChallengeHotSeatView();
     return buildLobbyHotSeatView({
       surface: this.hotSeatSurface,
       minPlayers: MIN_PLAYERS,
@@ -1498,6 +1714,8 @@ export class Lobby {
       advanced: this.renderHotSeatBattlefield(),
       validationMessage: this.validationError(),
       verifiedDeployment,
+      verifiedChallenge,
+      verifiedSurface: this.verifiedHotSeatSurface,
       quickOperations: QUICK_OPERATIONS,
       onQuickOperation: (operationId: string) => { this.startQuickDuel(operationId); },
       onSurfaceChange: (surface, restoreFocus) => {
@@ -1506,6 +1724,15 @@ export class Lobby {
         if (restoreFocus) {
           this.root.querySelector<HTMLButtonElement>(
             `[role="tab"][data-hotseat-surface="${surface}"]`,
+          )?.focus({ preventScroll: true });
+        }
+      },
+      onVerifiedSurfaceChange: (surface, restoreFocus) => {
+        this.verifiedHotSeatSurface = surface;
+        this.render();
+        if (restoreFocus) {
+          this.root.querySelector<HTMLButtonElement>(
+            `[role="tab"][data-verified-surface="${surface}"]`,
           )?.focus({ preventScroll: true });
         }
       },
@@ -2376,6 +2603,16 @@ export class Lobby {
     const verifiedTab = this.root.querySelector<HTMLButtonElement>(
       '[role="tab"][data-hotseat-surface="verified"]:not(:disabled)',
     );
+    if (this.focusVerifiedChallengeRequested) {
+      const target = this.root.querySelector<HTMLButtonElement>('[data-verified-challenge] button:not(:disabled)')
+        ?? verifiedTab
+        ?? this.root.querySelector<HTMLButtonElement>('[role="tab"][data-hotseat-surface="local"]:not(:disabled)');
+      if (!target) return;
+      target.focus();
+      this.focusVerifiedChallengeRequested = false;
+      this.focusVerifiedDeploymentRequested = false;
+      return;
+    }
     if (!verifiedTab) return;
     (this.root.querySelector<HTMLButtonElement>(
       '.lobby-verified-deployment__launch:not(:disabled)',

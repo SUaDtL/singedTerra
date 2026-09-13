@@ -14,7 +14,7 @@ Originally extracted from code 2026-06-20; account transition accepted 2026-08-0
 - **Hot-seat progression trust ceiling** - local outcomes are explicitly client-attested and forgeable by a modified browser. The server authenticates the account, validates the bounded shape, and makes a match UUID idempotent; it does not independently simulate local play. XP and levels remain casual history and MUST NOT attach gameplay advantages, scarce rewards, entitlements, ranks, or anti-cheat claims.
 - **Versioned progression is server-derived** - `account_summary` version 1 computes XP only after its Auth-scoped persisted-result reads validate: 100 XP per completed match plus 100 XP per recorded win; level 1 begins at 0 cumulative XP and each 500 XP advances one level. The handler returns `progressionVersion`, `totalXp`, `level`, `levelXp`, and `nextLevelXp` alongside the derived counts. Network result bodies MUST NOT supply or influence match outcomes. ADR-0012 permits only one client-attested hot-seat match outcome shaped as `{matchId, won}` under the casual-history ceiling; even there request bodies MUST NOT supply XP, level, cumulative totals, rewards, or entitlements, and the server remains the sole progression-arithmetic authority.
 - **Casual-result trust ceiling remains** â€” progression reflects accepted persisted lockstep results, but `finish_game` does not independently simulate or competitively verify every outcome. XP and levels are casual account history only: this slice MUST NOT attach gameplay advantages, scarce rewards, entitlements, ranks, or anti-cheat claims to them.
-- **Hosted replay probe is non-awarding** - `verified_replay_probe` accepts no request body, validates exactly one account Bearer through Supabase Auth, and runs only two immutable server-owned workloads through the bounded shared replay adapter. It returns versioned derived outcomes only and MUST NOT read or write player, match, verification, progression, rank, reward, or entitlement state. The only database mutation on its request path is the existing operational per-IP limiter counter. A successful probe is runtime feasibility evidence, never rank evidence.
+- **Hosted replay probe is non-awarding** - `verified_replay_probe` accepts no request body, validates exactly one account Bearer through Supabase Auth, and runs only its server-owned bounded workloads. It MUST NOT read or write player, match, verification-receipt, progression, rank, reward, or entitlement state. Operational mutations are per-IP/account limiter counters and shared account computation-lease acquisition/release, including that lease admission's same-account lazy expiry/exhaustion reconciliation of existing challenge sessions. This exception permits status reconciliation only: no session allocation, transcript changes, attempt changes, receipts or awards. Those lease records are operational coordination, never award evidence. The default legacy mode uses the shared replay adapter; the exact cq1 query selects one of 21 fixed retained fixtures, with no client-supplied shots or configuration. Its declared retained identity is static-registry provenance, not measured hosted source bytes. Existing V2/V3 transitive source imports are not immutable retained artifacts. A successful probe is runtime feasibility evidence, never rank evidence.
 - `profiles` contains only the Supabase user id, display name, and timestamps. It MUST NOT contain email, password material, access/refresh tokens, seat tokens, or client-reported progression. RLS default-denies anonymous access and limits authenticated reads to `id = auth.uid()`; profile insertion is server-trigger-owned in the identity-foundation slice.
 
 ## Authenticated production diagnostics console
@@ -22,7 +22,7 @@ Originally extracted from code 2026-06-20; account transition accepted 2026-08-0
 - The **authenticated production diagnostics console** is a maintainer/test interface, activated only by the exact `diagnostics=1` query parameter and absent from normal player navigation. Its fixed compile-time allowlist currently contains only `verified-replay-runtime` mapped to `verified_replay_probe`; it has no body, headers, arbitrary endpoint, method, or request-composition inputs and MUST NOT evolve into a generic request runner.
 - The console lazily reuses the existing Supabase singleton and browser-managed session. It MUST NOT inspect Auth storage, call `auth.getSession`, extract tokens, accept credentials, or construct an `Authorization` header. URL activation and client account state are usability gates only; the Edge Function remains authoritative for authorization.
 - Diagnostics state, DOM, logs, URL values, and clipboard receipts use a schema-v1 sanitized projection. They exclude identity, tokens, raw responses, raw errors, request or response headers, and timing data. Only the already-sanitized receipt may be copied.
-- The console is non-awarding and non-mutating except for the pre-existing operational limiter counter on the probe request path. It makes no rank, reward, progression, entitlement, or gameplay claim.
+- The console is non-awarding. Its default probe request uses operational limiter counters and the shared account computation lease, including the bounded same-account status reconciliation above; it does not expose cq1 query selection. It makes no rank, reward, progression, entitlement, or gameplay claim.
 - Adding a check requires governance, a compile-time descriptor, exact response validation, bounded timeout and lifecycle handling, tests, and adversarial review. An authenticated production PASS is operational runtime evidence only, not proof of unrelated account, gameplay, persistence, progression, or reward behavior.
 
 ## Database access — the real control (RLS)
@@ -61,6 +61,68 @@ This is the load-bearing control: even with JWT off and CORS open, no client can
 - Start accepts either an absent body for legacy V2-only capability or exact optional JSON `{capabilities: [{contractVersion, engineVersion, rulesetVersion}]}` within 256 UTF-8 bytes. Capabilities must be a non-empty, unique subset of the canonical `(2,2,4)` and `(3,3,4)` tuples; mixed-field, duplicate, unknown, widened, or unadvertised selected tuples fail closed. The service selects the highest enabled advertised contract while resuming only an existing exact advertised tuple. Abandon accepts exactly `{ sessionId }` within 128 UTF-8 bytes. Completion accepts exactly `{ sessionId, transcript }` within 1,024 UTF-8 bytes. The streamed body is authoritative: reads have a 2-second deadline and separately bounded 250 ms cancellation attempt, while `Content-Length` is only an early rejection. Oversized, stalled, invalid-Unicode, malformed, extra-key, ownership, expiry, version, and policy failures return generic responses without raw errors, identifiers, credentials, or partial awards.
 - Verified eligibility lasts 30 minutes from the authoritative server start. The HUD warns at five minutes and one minute. Expiry freezes verified input and requires an explicit choice to continue casually or return to the Battery; expired evidence cannot earn verified progression.
 - Contract version 1 starts disabled in migration 016. V2 and V3 retain independent admission controls and exact replay implementations; migration 020 introduces V3 disabled, and V3 remains disabled while its backward-compatible Edge functions and dual-capability client are deployed and proven. A disabled V3 never reinterprets an active V3 session as V2, and disabling V3 may allow a new V2 start only when V2 admission remains enabled. Operators use the version-specific SQL functions `set_verified_deployment_starts` and `verified_deployment_drain_status` to control admission and inspect `disabled_at`, `last_started_at`, `safe_after`, and unexpired sessions. The historical V1/V2 drain script remains limited to its fixed legacy contract. V2 never dynamically selects V1 replay code; active V1 rows are refused before replay/award while completed historical rows remain immutable receipts. Existing abandonment remains available during a drain.
+
+## Verified Challenge contract (P10 / ADR-0019; rollout remains disabled)
+
+- Auth supplies the account; the server's allowlisted catalog supplies the entire
+  immutable descriptor. Only Crosswind Qualification cq1, seed 42, exact fixed rules
+  and limits, objective 1, CPU `cq1-hard-v3`, reward 1 and descriptor 1 are admitted.
+  ST1/practice receipts cannot be promoted. Explicit Start is required. Capability
+  parsing must fail closed on unknown versions/fields and incompatible active
+  sessions; disabling starts still permits compatible admitted-session resume.
+- Start accepts only `{trialId,supportedDescriptorVersions:[1]}` within 256 UTF-8
+  bytes; complete only `{sessionId,transcript}` within 2,048 bytes. The transcript is
+  one to three exact integer angle/power pairs. Reject malformed UTF-8, unknown
+  fields, fractional/nonfinite/out-of-range values, incomplete replay and trailing
+  shots. Canonical transcripts are compared by ordered value, not a security hash.
+  Never trust client CPU actions, seed, health, outcome, medal or XP.
+- Independently execute the statically selected retained closure. Only positive
+  CPU health loss after a fully settled human salvo clears the objective. It takes
+  precedence over simultaneous death; otherwise terminal engine state then third
+  miss fails. CPU self-kill or CPU-caused draw fails. Technical/infrastructure
+  failure is not an objective miss and cannot award.
+- Dedicated sessions, append-only receipts and append-only awards have owner-only
+  reads and service-only mutations with explicit grants/RLS. Descriptor fields
+  cannot change. Account/session transaction locking atomically inserts receipt,
+  unique `(accountId,entitlementId)` first-clear medal/+200 XP and historical career
+  snapshots. `awarded`, `already_owned` and `not_awarded` remain distinct. Matching
+  receipt lookup precedes replay and survives expiry; conflicting evidence fails.
+  Abandon/expiry cannot overwrite a completed receipt. No client direct writes.
+- Verified Career projection 1 sums verified replay XP and unique challenge awards
+  using the frozen existing level/rank curve. It excludes casual/broad XP, preserves
+  old API shapes and receipts and cannot invent match/win counts. Existing replay
+  completion and challenge finalization share account transaction serialization so
+  before/after snapshots are consistent under races. Missing projection is shown
+  as unavailable, not guessed.
+- One account-wide database lease covers challenge completion, deployment
+  completion and replay probe. An increasing fence and opaque worker binding guard
+  every finalization/release against stale workers. Receipt fast paths need no
+  computation. Busy consumes zero attempts. Challenge admission persistently binds
+  its first canonical transcript and increments at most three compute attempts;
+  crash/timeout consumes its attempt, while exhausted infrastructure retries close
+  as `verification_unavailable`. Lazy reads/start/acquire reconcile expired workers.
+- The write fence lasts 10 seconds. Native synchronous results taking 1000ms or
+  longer cannot finalize. An uncertain unreturned invocation blocks new account
+  computation for 410 seconds; exact release after synchronous return or throw
+  can clear that cooldown. These controls do not forcibly terminate replay or
+  prove strict CPU exclusion. A Promise.race cannot stop synchronous CPU work.
+  Work limits check before dominant operations, including cloned probes and
+  wrap/terrain operations. Exhaustion is terminal `work_limit`, never awardable.
+- Challenge IP (30/minute) and account (10/minute) rate limits, lease and database
+  admission fail closed before expensive work; generic errors do not echo malformed
+  input, tokens or internal errors. This explicit exception does not silently change
+  ordinary gameplay's existing availability-first coarse limiter policy.
+- Retain old RPC signatures during additive migration, but do not enable challenge
+  starts until every deployed costly route participates in the lease. New client
+  capability and catalog start disabled pending separately approved backend rollout,
+  exact-artifact hosted deadline refusal, cooldown/fencing, capacity and real
+  transactional race evidence.
+  Rollback disables starts and drains, preserving descriptors, verifiers and awards.
+  Local tests/merge do not establish hosted proof or authorize backend rollout.
+- ADR-0017 SHA-256 remains build/source provenance only. It is not a credential,
+  signature, entitlement identity or replay correctness proof. No new cryptographic
+  dependency is introduced. Replay establishes action/outcome consistency, not
+  human effort, unique-person identity or resistance to known-solution farming.
 
 ## Edge Function referee gating (`submit_action`)
 

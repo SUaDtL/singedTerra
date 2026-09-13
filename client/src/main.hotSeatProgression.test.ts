@@ -21,6 +21,7 @@ const seams = vi.hoisted(() => ({
   onVerifiedRetry: null as null | (() => void),
   onVerifiedContinueCasual: null as null | (() => void),
   onVerifiedReturnToBattery: null as null | (() => void),
+  onVerifiedChallengeReturn: null as null | (() => void),
   onVerifiedNextOrder: null as null | (() => void),
   onBuy: null as null | ((purchase: Record<string, unknown>, tankId?: string) => void),
   onNextRound: null as null | (() => void),
@@ -45,6 +46,11 @@ const seams = vi.hoisted(() => ({
   recorded: [] as Array<{ matchId: string; won: boolean }>,
   recordedVerifiedFires: [] as Array<{ angle: number; power: number }>,
   completedVerified: 0,
+  completedChallenges: 0,
+  challengeOptions: [] as Array<Record<string, unknown>>,
+  challengeState: { status: 'idle' } as Record<string, unknown>,
+  challengeHud: [] as unknown[],
+  coachEligibility: [] as unknown[],
   retriedVerified: 0,
   continuedVerified: 0,
   returnedVerified: 0,
@@ -139,6 +145,12 @@ vi.mock('./client/HotSeatClient', () => ({
     return client
   },
 }))
+vi.mock('./client/VerifiedChallengeClient', () => ({
+  VerifiedChallengeClient: function (options: Record<string, unknown>) {
+    seams.challengeOptions.push(options)
+    return seams.clients.shift()
+  },
+}))
 vi.mock('./client/NetworkClient', () => ({
   NetworkClient: function NetworkClient() {
     return seams.clients.shift()
@@ -163,7 +175,7 @@ vi.mock('./ui/firstSalvoController', () => ({
     replay() {}
     skip() {}
     startNewGame() {}
-    stepFor() { return null }
+    stepFor(eligibility: unknown) { seams.coachEligibility.push(eligibility); return null }
   },
   canCommitFirstSalvoAction: () => true,
   isFirstSalvoForced: () => false,
@@ -288,6 +300,9 @@ vi.mock('./ui/HUD', () => ({
       seams.verifiedHudStates.push(state)
       if (state && 'humanSalvos' in state) seams.verifiedPresentationEvents.push('budget')
     }
+    setVerifiedChallenge(state: unknown) { seams.challengeHud.push(state) }
+    onVerifiedChallengeRetry() {}
+    onVerifiedChallengeReturn(callback: () => void) { seams.onVerifiedChallengeReturn = callback }
     setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
     setFieldOrder(state: Record<string, unknown> | null) {
       seams.fieldOrderHudStates.push(state)
@@ -341,6 +356,13 @@ vi.mock('./ui/Lobby', () => ({
       seams.onAccountAuthenticationChange = callback
     }
     get verifiedDeployment() { return seams.verifiedDeployment }
+    get verifiedChallenge() { return seams.challengeState }
+    recordVerifiedChallengeFire() { return true }
+    completeVerifiedChallenge() {
+      seams.completedChallenges++
+      seams.challengeState = { status: 'completion-pending' }
+      return Promise.resolve(seams.challengeState)
+    }
     refreshVerifiedDeploymentDeadline() { return seams.verifiedDeployment }
     recordVerifiedDeploymentFire(fire: { angle: number; power: number }) {
       seams.recordedVerifiedFires.push(fire)
@@ -710,6 +732,11 @@ describe('production hot-seat progression composition', () => {
     seams.recorded.length = 0
     seams.recordedVerifiedFires.length = 0
     seams.completedVerified = 0
+    seams.completedChallenges = 0
+    seams.challengeOptions.length = 0
+    seams.challengeHud.length = 0
+    seams.coachEligibility.length = 0
+    seams.challengeState = { status: 'idle' }
     seams.retriedVerified = 0
     seams.continuedVerified = 0
     seams.returnedVerified = 0
@@ -751,6 +778,73 @@ describe('production hot-seat progression composition', () => {
     clearSession()
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('uses retained challenge execution and completes its objective once before ordinary game over', async () => {
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null as null | Record<string, unknown> })
+    seams.clients.push(client)
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [{ angle: 32, power: 100 }] } })
+    expect(seams.completedChallenges).toBe(0)
+    client.terminalResult = { terminal: 'objective_cleared', humanSalvos: 1 }
+    client.emit(state); client.emit(state)
+    await Promise.resolve()
+    expect(seams.challengeOptions).toHaveLength(1)
+    expect(seams.hotSeatConstructorArgs).toHaveLength(0)
+    expect(seams.completedChallenges).toBe(1)
+    expect(seams.completedVerified).toBe(0)
+    expect(seams.recorded).toHaveLength(0)
+    expect(seams.terminalReplayModes.at(-1)).toBeNull()
+    expect(seams.publicSeedChallenges.at(-1)).toBeNull()
+    expect(seams.challengeHud.at(-1)).toMatchObject({ result: { terminal: 'objective_cleared' } })
+    expect(state.phase).toBe('PLAYER_TURN')
+  })
+
+  it.each(['restart', 'account-change', 'return'] as const)('returns a challenge to preparation on %s without reusing admission', async (event) => {
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null })
+    seams.clients.push(client)
+    const descriptor = { expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [] }
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [] } })
+    client.emit(state)
+    expect(seams.coachEligibility).toHaveLength(0)
+    const priorShows = seams.lobbyShows
+    if (event === 'restart') seams.onRestart!()
+    else if (event === 'return') seams.onVerifiedChallengeReturn!()
+    else seams.onAccountAuthenticationChange!(true)
+    await vi.waitFor(() => expect(seams.lobbyShows).toBe(priorShows + 1))
+    expect(client.stop).toHaveBeenCalledOnce()
+    expect(seams.challengeOptions).toHaveLength(1)
+    expect(seams.completedChallenges).toBe(0)
+    expect(seams.recorded).toHaveLength(0)
+    expect(seams.lobbyShowOptions.at(-1)).toEqual({ focusVerifiedChallenge: true })
+  })
+
+  it('freezes challenge input when its admission expires while the battlefield stays open', async () => {
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null })
+    seams.clients.push(client)
+    const descriptor = { expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [] }
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [] } })
+    client.emit(state)
+    seams.inputAction!({ type: 'set_angle', angle: 32 })
+    expect(seams.forwardedActions).toContainEqual({ type: 'set_angle', angle: 32 })
+    seams.forwardedActions.length = 0
+    descriptor.expiresAt = '2000-01-01T00:00:00Z'
+    seams.inputAction!({ type: 'fire' })
+    expect(seams.forwardedActions).toHaveLength(0)
+    expect(seams.completedChallenges).toBe(0)
   })
 
   it('fires the planned weapon only after local preparation creates usable ammo — AC-068', async () => {

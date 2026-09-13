@@ -17,6 +17,7 @@
  */
 
 import { clamp } from './math.ts';
+import type { VerificationWorkBudget } from './VerificationWorkBudget.ts';
 
 export const CANVAS_WIDTH = 1200;
 export const CANVAS_HEIGHT = 600;
@@ -83,7 +84,7 @@ function hashSeed(seed: number): number {
  * @returns Height map of length CANVAS_WIDTH, each value the surface y for that
  *          column, within roughly [MIN_SURFACE_Y, MAX_SURFACE_Y].
  */
-export function generate(seed: number): Uint16Array {
+export function generate(seed: number, work?: VerificationWorkBudget): Uint16Array {
   // Hash the caller seed into a well-mixed uint32 so distinct seeds (including
   // floats and out-of-range values) map to distinct terrain.
   const rand = mulberry32(hashSeed(seed));
@@ -92,9 +93,10 @@ export function generate(seed: number): Uint16Array {
   // Work on a power-of-two-plus-one grid so midpoint displacement subdivides
   // cleanly, then sample the first CANVAS_WIDTH columns out of it.
   let size = 1;
-  while (size + 1 < n) size *= 2;
+  while (size + 1 < n) { work?.charge('terrainSteps'); size *= 2; }
   const gridLen = size + 1; // (2^k) + 1 points
 
+  work?.charge('allocatedBytes', gridLen * Float64Array.BYTES_PER_ELEMENT);
   const heights = new Float64Array(gridLen);
 
   const span = MAX_SURFACE_Y - MIN_SURFACE_Y;
@@ -110,8 +112,10 @@ export function generate(seed: number): Uint16Array {
   const roughness = 0.5;
 
   for (let step = size; step > 1; step = Math.floor(step / 2)) {
+    work?.charge('terrainSteps');
     const half = Math.floor(step / 2);
     for (let i = half; i < gridLen; i += step) {
+      work?.charge('terrainCells');
       const left = heights[i - half];
       const right = heights[i + half];
       if (left === undefined || right === undefined) {
@@ -124,8 +128,10 @@ export function generate(seed: number): Uint16Array {
   }
 
   // Sample / clamp into the output column array.
+  work?.charge('allocatedBytes', n * Uint16Array.BYTES_PER_ELEMENT);
   const terrain = new Uint16Array(n);
   for (let x = 0; x < n; x++) {
+    work?.charge('terrainCells');
     // Map column x in [0, n) onto the grid [0, gridLen-1]. gridLen is always
     // (2^k)+1 >= 2 for CANVAS_WIDTH=800, so n-1 is never 0 here.
     const gx = Math.round((x * (gridLen - 1)) / (n - 1));
@@ -164,12 +170,14 @@ export function applyTerrainHazards(
   bitmap: Uint8Array,
   seed: number,
   mode: TerrainHazardMode,
+  work?: VerificationWorkBudget,
 ): number {
   if (mode !== 'lava') return 0;
   const rand = mulberry32(hashSeed(seed + 0x6c617661));
   const poolCount = 2 + Math.floor(rand() * 3);
   let written = 0;
   for (let pool = 0; pool < poolCount; pool++) {
+    work?.charge('terrainSteps');
     // Keep every pool inside the central 520..680 band. This is clear of the
     // two-seat spawn points (180/1020) and the inner four-seat points
     // (340/760), including the tank footprint and placement interpolation.
@@ -177,9 +185,11 @@ export function applyTerrainHazards(
     const halfWidth = 18 + Math.floor(rand() * 18);
     const depth = 6 + Math.floor(rand() * 7);
     for (let x = center - halfWidth; x <= center + halfWidth; x++) {
+      work?.charge('terrainSteps');
       if (x < 0 || x >= CANVAS_WIDTH) continue;
       let surface = -1;
       for (let y = 0; y < ARENA_FLOOR_Y; y++) {
+        work?.charge('terrainCells');
         if (bitmap[y * CANVAS_WIDTH + x] === SOLID_PIXEL) {
           surface = y;
           break;
@@ -188,6 +198,7 @@ export function applyTerrainHazards(
       if (surface < 0) continue;
       const end = Math.min(ARENA_FLOOR_Y, surface + depth);
       for (let y = surface; y < end; y++) {
+        work?.charge('terrainCells');
         const index = y * CANVAS_WIDTH + x;
         if (bitmap[index] === SOLID_PIXEL) {
           bitmap[index] = LAVA_PIXEL;
@@ -209,12 +220,16 @@ export function applyTerrainHazards(
  * runtime representation deformed by explosions; the height line is kept only
  * for generation and tank placement.
  */
-export function buildBitmap(heightLine: Uint16Array): Uint8Array {
+export function buildBitmap(heightLine: Uint16Array, work?: VerificationWorkBudget): Uint8Array {
+  work?.charge('allocatedBytes', BITMAP_LEN);
   const bitmap = new Uint8Array(BITMAP_LEN);
   for (let x = 0; x < CANVAS_WIDTH; x++) {
+    work?.charge('terrainSteps');
     // Missing columns are air down to the floor, matching the old NaN loop
     // behavior while keeping the bitmap value contract explicit.
     const s = clamp(heightLine[x] ?? ARENA_FLOOR_Y, 0, ARENA_FLOOR_Y);
+    // This whole fixed-length column is visited, so admit it before the loop.
+    work?.charge('terrainCells', CANVAS_HEIGHT - s);
     for (let y = s; y < CANVAS_HEIGHT; y++) {
       bitmap[y * CANVAS_WIDTH + x] = SOLID_PIXEL;
     }
@@ -223,8 +238,8 @@ export function buildBitmap(heightLine: Uint16Array): Uint8Array {
 }
 
 /** Generate a terrain bitmap directly from a seed (generate -> buildBitmap). */
-export function generateBitmap(seed: number): Uint8Array {
-  return buildBitmap(generate(seed));
+export function generateBitmap(seed: number, work?: VerificationWorkBudget): Uint8Array {
+  return buildBitmap(generate(seed, work), work);
 }
 
 /**
@@ -232,7 +247,8 @@ export function generateBitmap(seed: number): Uint8Array {
  * out-of-canvas. No bottom-floor synthesis here — out-of-bounds reads return
  * air; the bottom-floor collision rule lives in Physics.collide, not here.
  */
-export function pixelAt(bitmap: Uint8Array, x: number, y: number): number {
+export function pixelAt(bitmap: Uint8Array, x: number, y: number, work?: VerificationWorkBudget): number {
+  work?.charge('terrainCells');
   if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return 0;
   return bitmap[y * CANVAS_WIDTH + x] ?? 0;
 }
@@ -244,9 +260,11 @@ export function pixelAt(bitmap: Uint8Array, x: number, y: number): number {
  * Replaces the old height-line
  * surfaceAt — now derived from the live bitmap so it tracks deformation.
  */
-export function surfaceAt(bitmap: Uint8Array, x: number): number {
+export function surfaceAt(bitmap: Uint8Array, x: number, work?: VerificationWorkBudget): number {
+  work?.charge('terrainSteps');
   const xi = clamp(Math.floor(x), 0, CANVAS_WIDTH - 1);
   for (let y = 0; y < ARENA_FLOOR_Y; y++) {
+    work?.charge('terrainCells');
     if ((bitmap[y * CANVAS_WIDTH + xi] ?? AIR_PIXEL) > AIR_PIXEL) return y;
   }
   return ARENA_FLOOR_Y;
@@ -271,6 +289,7 @@ export function deform(
   cy: number,
   r: number,
   raise = false,
+  work?: VerificationWorkBudget,
 ): { xStart: number; xEnd: number; yStart: number; yEnd: number } | null {
   if (r <= 0) return null;
 
@@ -288,9 +307,11 @@ export function deform(
   const pyEnd = Math.min(Math.floor(cy + r), ARENA_FLOOR_Y - 1);
 
   for (let px = pxStart; px <= pxEnd; px++) {
+    work?.charge('terrainSteps');
     if (px < 0 || px >= CANVAS_WIDTH) continue;
     const dx = px - cx;
     for (let py = pyStart; py <= pyEnd; py++) {
+      work?.charge('terrainCells');
       if (py < 0 || py >= CANVAS_HEIGHT) continue;
       const dy = py - cy;
       if (dx * dx + dy * dy > r2) continue;
@@ -344,20 +365,26 @@ export function settleStep(
   xStart: number,
   xEnd: number,
   pxPerTick: number,
+  work?: VerificationWorkBudget,
 ): boolean {
   const lo = Math.max(0, xStart);
   const hi = Math.min(CANVAS_WIDTH - 1, xEnd);
   let anyMoved = false;
 
   for (let x = lo; x <= hi; x++) {
+    work?.charge('terrainSteps');
     // Run up to pxPerTick one-pixel sub-steps for this column.
     for (let s = 0; s < pxPerTick; s++) {
+      work?.charge('terrainSteps');
       let movedThisSubstep = false;
       // Scan bottom-up in the mutable band only: the protected floor at
       // ARENA_FLOOR_Y and every covered pixel below it stay untouched.
       // falls one pixel. Bottom-up scan ensures a floating run shifts down as
       // a whole unit in a single pass (each grain clears the row below it for
       // the grain above).
+      // Every row is visited; one precharge preserves exact completed work and
+      // keeps optional metering out of the ordinary game's innermost loop.
+      work?.charge('terrainCells', ARENA_FLOOR_Y - 1);
       for (let y = ARENA_FLOOR_Y - 2; y >= 0; y--) {
         const pixel = bitmap[y * CANVAS_WIDTH + x] ?? AIR_PIXEL;
         if (pixel > AIR_PIXEL && (bitmap[(y + 1) * CANVAS_WIDTH + x] ?? AIR_PIXEL) === AIR_PIXEL) {
@@ -388,10 +415,11 @@ export function applyGravity(
   bitmap: Uint8Array,
   xStart: number,
   xEnd: number,
+  work?: VerificationWorkBudget,
 ): void {
   // Drive settleStep to convergence with an unbounded step size to match the
   // original single-pass instant compaction. Using CANVAS_HEIGHT as the step
   // guarantees each column compacts in exactly one settleStep iteration,
   // preserving the byte-identical result callers depend on.
-  while (settleStep(bitmap, xStart, xEnd, CANVAS_HEIGHT)) { /* settle */ }
+  while (settleStep(bitmap, xStart, xEnd, CANVAS_HEIGHT, work)) { work?.charge('terrainSteps'); }
 }

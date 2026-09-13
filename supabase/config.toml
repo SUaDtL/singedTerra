@@ -110,3 +110,21 @@ verify_jwt = false
 
 [functions.complete_verified_deployment]
 verify_jwt = false
+
+# These routes authenticate Bearer tokens in createChallengeRequestHandler.
+# Config inventory does not enable cq1 admission or authorize backend rollout.
+
+[functions.start_verified_challenge]
+verify_jwt = false
+
+[functions.complete_verified_challenge]
+verify_jwt = false
+
+[functions.get_verified_challenge]
+verify_jwt = false
+
+[functions.abandon_verified_challenge]
+verify_jwt = false
+
+[functions.verified_career_summary]
+verify_jwt = false

@@ -1,4 +1,5 @@
 import type { GameEngine } from '../engine/GameEngine.ts'
+import type { VerificationWorkBudget } from '../engine/VerificationWorkBudget.ts'
 import { MAX_FLIGHT_TICKS } from '../engine/Physics.ts'
 import type { GameState, TankState } from '../types/GameState.ts'
 import type { VerifiedCpuFire, VerifiedHumanFire } from './verifiedDuel.ts'
@@ -13,6 +14,12 @@ interface ProbeResult {
 
 export const VERIFIED_DUEL_CPU_MAX_PROBES = 60
 
+/** cq1 names the reviewed V3 policy independently of deployment tuples. */
+export function selectVerifiedChallengeCpuFire(engine: GameEngine, policyId: unknown = 'cq1-hard-v3'): VerifiedCpuFire {
+  if (policyId !== 'cq1-hard-v3') throw new Error('unsupported_verified_challenge_cpu_policy')
+  return selectVerifiedCpuFireV3(engine)
+}
+
 function settled(state: GameState): boolean {
   return state.phase !== 'FIRING' && state.phase !== 'RESOLVING'
 }
@@ -22,6 +29,7 @@ function targetFor(state: GameState, shooter: TankState): TankState | undefined 
 }
 
 function simulateProbe(engine: GameEngine, shot: VerifiedHumanFire): ProbeResult | null {
+  engine.verificationWorkBudget?.charge('cpuProbes')
   const clone = engine.clone()
   const before = clone.getState()
   const shooter = before.tanks.find((tank) => tank.id === before.activePlayerId)
@@ -71,9 +79,10 @@ function isBetter(candidate: ProbeResult, best: ProbeResult | null): boolean {
   return candidate.closestDistance < best.closestDistance
 }
 
-function uniqueShots(shots: readonly VerifiedHumanFire[]): VerifiedHumanFire[] {
+function uniqueShots(shots: readonly VerifiedHumanFire[], work?: VerificationWorkBudget): VerifiedHumanFire[] {
   const seen = new Set<string>()
   return shots.filter((shot) => {
+    work?.charge('cpuCandidates')
     const key = `${shot.angle}:${shot.power}`
     if (seen.has(key)) return false
     seen.add(key)
@@ -92,29 +101,40 @@ export function selectVerifiedCpuFireV3(engine: GameEngine): VerifiedCpuFire {
   const angles = target.x < cpu.x
     ? [90, 105, 120, 135, 150, 165, 175]
     : [5, 20, 35, 50, 65, 80, 90]
-  const coarse = angles.flatMap((angle) => [20, 40, 60, 80, 100].map((power) => ({ angle, power })))
+  const coarse = angles.flatMap((angle) => [20, 40, 60, 80, 100].map((power) => {
+    engine.verificationWorkBudget?.charge('cpuCandidates')
+    return { angle, power }
+  }))
   let simulationTicks = 0
   let best = coarse[0] ?? { angle: 90, power: 20 }
   let bestResult: ProbeResult | null = null
   for (const shot of coarse) {
+    engine.verificationWorkBudget?.charge('cpuCandidates')
     const result = simulateProbe(engine, shot)
     simulationTicks += result?.ticks ?? 0
     if (result && isBetter(result, bestResult)) { best = shot; bestResult = result }
   }
   const coarseBest = Object.freeze({ ...best })
   const refinement = [-6, -3, 0, 3, 6].flatMap((angleOffset) =>
-    [-8, -4, 0, 4, 8].map((powerOffset) => ({
-      angle: Math.max(0, Math.min(180, best.angle + angleOffset)),
-      power: Math.max(0, Math.min(100, best.power + powerOffset)),
-    })))
-  const probes = uniqueShots([...coarse, ...refinement]).slice(0, VERIFIED_DUEL_CPU_MAX_PROBES)
+    [-8, -4, 0, 4, 8].map((powerOffset) => {
+      engine.verificationWorkBudget?.charge('cpuCandidates')
+      return {
+        angle: Math.max(0, Math.min(180, best.angle + angleOffset)),
+        power: Math.max(0, Math.min(100, best.power + powerOffset)),
+      }
+    }))
+  const probes = uniqueShots([...coarse, ...refinement], engine.verificationWorkBudget).slice(0, VERIFIED_DUEL_CPU_MAX_PROBES)
   for (const shot of probes.slice(coarse.length)) {
+    engine.verificationWorkBudget?.charge('cpuCandidates')
     const result = simulateProbe(engine, shot)
     simulationTicks += result?.ticks ?? 0
     if (result && isBetter(result, bestResult)) { best = shot; bestResult = result }
   }
   return Object.freeze({
     ...best, weapon: 'baby_missile', probeCount: probes.length, simulationTicks,
-    probes: Object.freeze(probes.map((probe) => Object.freeze({ ...probe }))), coarseBest,
+    probes: Object.freeze(probes.map((probe) => {
+      engine.verificationWorkBudget?.charge('cpuCandidates')
+      return Object.freeze({ ...probe })
+    })), coarseBest,
   })
 }

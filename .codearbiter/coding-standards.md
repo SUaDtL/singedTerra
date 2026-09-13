@@ -13,7 +13,7 @@ shared/ depends on nothing.
 ```
 
 - **`shared/` MUST NOT import from `client/`.** Verified: no such imports exist.
-- **Ordinary `supabase/functions/` referees MUST NOT import `shared/` or `client/`.** They remain thin Deno referees. The sole exception is the bounded verification-only path accepted by ADR-0013: it may reach the real deterministic engine only through `_shared/verifiedMatchReplay.ts`; it MUST NOT duplicate physics, enter the live turn path, or become a general game server. Consequence: ordinary referee contracts such as `submit_action` remain locally declared rather than importing gameplay code.
+- **Ordinary `supabase/functions/` referees MUST NOT import engine code or `client/`.** They remain thin Deno referees. ADR-0013's bounded verification-only path reaches the real deterministic engine through `_shared/verifiedMatchReplay.ts`. P10's retained challenge path, reconciled by ADR-0019, executes only the statically selected generated `shared/src/verified/retained/cq1.mjs` closure in its verification worker. Neither path may duplicate authored physics, enter the live turn path, or become a general game server. The separately reviewed pure `shared/src/net/verifiedCareer.ts` projection is a non-simulation dependency for account APIs; it grants no engine-import exception to ordinary referees. Ordinary gameplay contracts such as `submit_action` remain locally declared.
 - `client/` imports `shared/` one-way via the `@shared/*` path alias (`../shared/src/*`).
 
 ## Determinism (HARD — the central constraint)
@@ -42,6 +42,35 @@ the `GameClient` interface (`client/src/client/GameClient.ts`):
 New renderer/input code talks to `GameClient`, never to a concrete client or the engine directly.
 Completed transcripts may additionally run through the bounded verification-only Edge adapter
 defined by ADR-0013. That third execution context is outside `GameClient` and live gameplay.
+
+### Retained challenge contract (P10 / ADR-0019)
+
+- One authored physics source may generate immutable retained editions. The browser
+  and verification worker use the same self-contained artifact; no runtime import
+  may escape to current engine/constants/CPU/objective/configuration, UI, network,
+  clocks or unseeded randomness. Unknown or missing artifacts fail closed. Existing
+  deployment V2/V3 paths are not claimed to be immutable by this addition.
+- Generate cq1 only from reviewed complete source closure using existing tooling.
+  Preserve input inventory, normalized provenance hashes, generator version, bytes
+  and license attribution. Normal build/check verifies without regeneration. A
+  changed simulation needs a new artifact and edition, retaining the entitlement.
+- Opt-in verification budgets check before each unit of dominant work and share
+  counters through clones. Unbudgeted engine/CPU behavior must retain legacy and
+  ST1 parity. Candidate bounds and observed maxima never substitute for the final
+  exact configured caps. Artifact freezing follows the T-07 work-accounting gate.
+- Descriptor, objective, artifact, CPU, reward, career projection and response
+  versions are separate domains; never infer them from deployment V2/V3, ST1,
+  room protocol, client build or each other. Exact parsers refuse unknown fields,
+  tuples, seeds, rules and limits. User-controlled data is not reward authority.
+- Challenge objective evaluation occurs only after all salvo effects settle.
+  Snapshot the living CPU before accepted human fire; positive health loss wins
+  before simultaneous terminal death, then engine terminal failure, then third
+  unsuccessful human shot failure. CPU shots cannot clear it; do not run a CPU
+  after objective terminal. Replay refuses incomplete or trailing transcripts.
+- New challenge immutable golden fixture files are an explicit exception to the
+  inline-only harness convention below: pin transcript, CPU actions, settled health,
+  objective events and (after instrumentation) work counters. Never regenerate
+  expected values during tests or weaken legacy fixtures to fit a new result.
 
 ## Module organization
 

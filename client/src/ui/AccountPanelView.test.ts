@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { AccountState, AccountSummary } from '../client/AccountSession'
+import { projectVerifiedCareer } from '@shared/net/verifiedCareer'
 import {
   buildAccountPanelOverlayContent,
   buildAccountPanelView,
@@ -65,6 +66,12 @@ const divergentSummary: AccountSummary = {
     nextLevelXp: 500,
   },
 }
+
+const combinedCareer = projectVerifiedCareer({ verifiedMatches: 0, verifiedWins: 0, replayXp: 0,
+  challengeXp: 200, totalXp: 200, medals: [{ entitlementId: 'crosswind-qualification',
+    medalId: 'crosswind-qualification', xp: 200, rewardVersion: 1,
+    sessionId: '22222222-2222-4222-8222-222222222222',
+    awardedAt: '2026-09-13T12:01:00.000000Z' }] })!
 
 function options(overrides: Partial<AccountPanelViewOptions> = {}): AccountPanelViewOptions {
   return {
@@ -468,6 +475,47 @@ describe('buildAccountPanelView', () => {
     expect(root.querySelector('form')).toBeNull()
     button(root, 'Sign out').click()
     expect(onSignOut).toHaveBeenCalledOnce()
+  })
+
+  it('adds an account-bound Verified Career rank, total, and challenge medal', () => {
+    const state: AccountState = {
+      status: 'authenticated', busy: false, error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary: validSummary },
+    }
+    const verifiedCareer = { status: 'ready' as const, accountId: 'user-1', career: combinedCareer }
+    const root = buildAccountPanelOverlayContent(options({ state, open: true, verifiedCareer }))
+    const collapsed = buildAccountPanelView(options({ state, verifiedCareer }))
+    if (!root || !collapsed) throw new Error('Expected authenticated account panel')
+
+    const career = root.querySelector<HTMLElement>('.account-panel__verified-career')
+    expect(career?.getAttribute('aria-label')).toBe('Verified Career')
+    expect(career?.textContent).toContain('Verified Career · R-01 / Cadet')
+    expect(career?.textContent).toContain('200 verified XP')
+    expect(career?.textContent).toContain('Crosswind Qualification medal earned')
+    const trigger = collapsed.querySelector<HTMLElement>('.account-panel__account-trigger')
+    expect(trigger?.getAttribute('aria-label'))
+      .toContain('Commander Ranger, R-01 Cadet, Level 1, 300 XP to Level 2')
+    expect(trigger?.textContent).toContain('Level 1')
+    expect(trigger?.textContent).not.toContain('Level 3')
+  })
+
+  it.each([
+    { status: 'unavailable' as const, accountId: 'user-1' },
+    { status: 'loading' as const, accountId: 'user-1' },
+    { status: 'ready' as const, accountId: 'other-user', career: combinedCareer },
+  ])('does not guess combined career facts for unavailable or mismatched state', (verifiedCareer) => {
+    const state: AccountState = {
+      status: 'authenticated', busy: false, error: '',
+      profile: { id: 'user-1', displayName: 'Ranger', summary: validSummary },
+    }
+    const root = buildAccountPanelOverlayContent(options({ state, open: true, verifiedCareer }))
+    if (!root) throw new Error('Expected authenticated account panel')
+
+    expect(root.querySelector('.account-panel__verified-career-unavailable')?.textContent)
+      .toBe(verifiedCareer.status === 'loading' && verifiedCareer.accountId === 'user-1'
+        ? 'Verified Career loading…' : 'Verified Career unavailable')
+    expect(root.textContent).not.toContain('Crosswind Qualification medal earned')
+    expect(root.textContent).not.toContain('200 verified XP')
   })
 
   it('keeps sign-out available when an authenticated profile cannot be loaded', () => {
