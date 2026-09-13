@@ -274,6 +274,8 @@ export async function handleRestartGame(
     p_players: newPlayers,
   })
   if (rematchError || typeof successorId !== 'string' || !UUID_REGEX.test(successorId)) {
+    if (rematchError?.code === '55000') return json({ error: 'Players have left. Start a new room.' }, 409)
+    if (rematchError?.code === '42501') return json({ error: 'Invalid or missing seat token' }, 403)
     console.error('restart_game: transaction failed', { roomId, playerId, code: 'rematch_failed' })
     return json({ error: 'Failed to create rematch room' }, 500)
   }

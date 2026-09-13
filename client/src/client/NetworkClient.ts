@@ -279,6 +279,11 @@ export class NetworkClient implements GameClient {
   // in-flight fetch can't POST to / notify listeners of a torn-down client
   // (reliability-003).
   private _disposed         = false;
+  private presenceTimer: ReturnType<typeof setInterval> | null = null;
+  private presenceAbort: AbortController | null = null;
+  private presenceGeneration = 0;
+  private quitRequested = false;
+  private static readonly PRESENCE_INTERVAL_MS = 30_000;
   private connectionListeners = new Set<(s: ConnectionState) => void>();
   private fireFailedListeners = new Set<(msg: string) => void>();
   // One watchdog follows the pending command identity, including turn-neutral moves
@@ -538,10 +543,20 @@ export class NetworkClient implements GameClient {
           table:  'rooms',
           filter: `id=eq.${this.roomId}`,
         },
-        (payload: RealtimePostgresUpdatePayload<{ rematch_room_id?: string | null }>) => {
+        (payload: RealtimePostgresUpdatePayload<{
+          rematch_room_id?: string | null;
+          status?: string;
+          abandoned_at?: string | null;
+        }>) => {
+          if (this._disposed) return;
+          if (payload.new?.status === 'finished' && payload.new.abandoned_at) {
+            this.endRoomPresence('room_abandoned');
+            return;
+          }
           const next = (payload.new?.rematch_room_id ?? null) as string | null;
           if (next && !this._rematchHandled) {
             this._rematchHandled = true;
+            this.stopPresence();
             void this.handleRematch(next);
           }
         }
@@ -605,6 +620,7 @@ export class NetworkClient implements GameClient {
   start(): void {
     if (this._disposed || this.frameRunning) return;
     this.frameRunning = true;
+    this.startPresence();
     const generation = ++this.frameGeneration;
     this.frameClock.reset(performance.now());
     const isCurrent = (): boolean => (
@@ -651,6 +667,7 @@ export class NetworkClient implements GameClient {
     this.frameGeneration++;
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
+    this.stopPresence();
     this.retirePendingCommands();
     this.orderedActions.dispose();
     this.clearCommandWatchdog();
@@ -680,6 +697,73 @@ export class NetworkClient implements GameClient {
     this.botAccessoryPreparationFailedKey = null;
     this.botPreparationFailureMessage = null;
     this.pendingBotPreparationNotice = null;
+  }
+
+  /** Explicit player departure only. Resource teardown and reload never call this. */
+  async leaveRoom(): Promise<void> {
+    if (this.quitRequested || this._disposed) return;
+    this.quitRequested = true;
+    this.stop();
+    clearSession();
+    if (!this.token) return;
+    try {
+      await callFunction('leave_room', { roomId: this.roomId, playerId: this.playerId, token: this.token });
+    } catch {
+      // A disconnected quit remains absent; the server-owned presence lease expires.
+    }
+  }
+
+  private startPresence(): void {
+    if (
+      !this.token || this._disposed || this._rematchHandled || this.presenceTimer !== null
+      || this.engine.getState().phase === 'GAME_OVER'
+    ) return;
+    const generation = ++this.presenceGeneration;
+    const pulse = (): void => {
+      if (this._disposed || generation !== this.presenceGeneration) return;
+      // Retire an unresponsive prior delivery before starting this interval's pulse.
+      this.presenceAbort?.abort();
+      const controller = new AbortController();
+      this.presenceAbort = controller;
+      void callFunction<{ error?: unknown }>('heartbeat', {
+        roomId: this.roomId, playerId: this.playerId, token: this.token,
+      }, { signal: controller.signal }).then((result) => {
+        if (
+          this._disposed || generation !== this.presenceGeneration
+          || this.presenceAbort !== controller || controller.signal.aborted
+        ) return;
+        const error = result.data?.error;
+        if (!result.ok && result.status === 409 && (error === 'room_abandoned' || error === 'seat_left')) {
+          this.endRoomPresence(error);
+        }
+      }).catch(() => {
+        // Presence retries on its own cadence; it never owns gameplay or connection UI.
+      }).finally(() => {
+        if (generation === this.presenceGeneration && this.presenceAbort === controller) {
+          this.presenceAbort = null;
+        }
+      });
+    };
+    this.presenceTimer = setInterval(pulse, NetworkClient.PRESENCE_INTERVAL_MS);
+    pulse();
+  }
+
+  private stopPresence(): void {
+    this.presenceGeneration++;
+    if (this.presenceTimer !== null) clearInterval(this.presenceTimer);
+    this.presenceTimer = null;
+    this.presenceAbort?.abort();
+    this.presenceAbort = null;
+  }
+
+  private endRoomPresence(reason: 'room_abandoned' | 'seat_left'): void {
+    if (this._disposed) return;
+    clearSession();
+    this.stop();
+    const message = reason === 'room_abandoned'
+      ? 'This game ended after everyone left. Return to the lobby to start a new game.'
+      : 'You have left this game. Return to the lobby to start a new game.';
+    for (const listener of this.fireFailedListeners) listener(message);
   }
 
   invalidatePendingCommands(): void {
@@ -1031,6 +1115,7 @@ export class NetworkClient implements GameClient {
       gravity?: number;
       rulesetVersion?: unknown;
       commandProtocolVersion?: unknown;
+      roomLifecycleVersion?: unknown;
       walls?: WallMode;
       battlefieldWorld?: string;
       hazards?: TerrainHazardMode;
@@ -1068,6 +1153,7 @@ export class NetworkClient implements GameClient {
         gravity:    typeof opts.gravity === 'number' ? opts.gravity : GRAVITY,
         rulesetVersion: normalizeNetworkRulesetVersion(opts.rulesetVersion),
         commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
+        ...(opts.roomLifecycleVersion === 1 ? { roomLifecycleVersion: 1 as const } : {}),
         walls:      normalizeWallMode(opts.walls),
         ...(normalizeBattlefieldWorldId(opts.battlefieldWorld) !== undefined
           ? { battlefieldWorld: normalizeBattlefieldWorldId(opts.battlefieldWorld) }
@@ -1709,6 +1795,7 @@ export class NetworkClient implements GameClient {
     this.clearStaleBotPreparationFailure();
     if (state.phase === 'GAME_OVER' && !this._gameOverReported) {
       this._gameOverReported = true;
+      this.stopPresence();
       clearSession(); // match ended — the rejoin session descriptor is no longer valid (AC-04)
       this.callFinishGame(state.winner);
     }

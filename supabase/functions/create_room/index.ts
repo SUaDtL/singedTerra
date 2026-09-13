@@ -32,12 +32,13 @@ async function handleCreateRoomWithDependencies(
   body: unknown,
   dependencies: CreateRoomDependencies,
 ): Promise<Response> {
-  const { playerName, color, loadout, rulesetVersion, commandProtocolVersion, options, bots } = body as {
+  const { playerName, color, loadout, rulesetVersion, commandProtocolVersion, roomLifecycleVersion, options, bots } = body as {
     playerName?: unknown
     color?: unknown
     loadout?: unknown
     rulesetVersion?: unknown
     commandProtocolVersion?: unknown
+    roomLifecycleVersion?: unknown
     options?: {
       maxPlayers?: unknown; maxWind?: unknown; gravity?: unknown; visibility?: unknown; rounds?: unknown; walls?: unknown; battlefieldWorld?: unknown
       // SE-parity economy (optional, additive). Coerced by coerceEconomyOptions.
@@ -201,13 +202,18 @@ async function handleCreateRoomWithDependencies(
     rounds = clamped % 2 === 0 ? clamped + 1 : clamped
   }
 
-  // Build stored options
+  if (roomLifecycleVersion !== undefined && roomLifecycleVersion !== 1) {
+    return json({ error: 'Invalid input: roomLifecycleVersion' }, 400)
+  }
+
+  // Explicit capability: older clients never acquire an active-room timeout.
   const storedOptions = {
     maxPlayers,
     maxWind: coerceMaxWind(options.maxWind, DEFAULT_MAX_WIND),
     gravity: coerceGravity(options.gravity, DEFAULT_GRAVITY),
     rulesetVersion: requestedRuleset.version,
     commandProtocolVersion: requestedCommandProtocol.version,
+    ...(roomLifecycleVersion === 1 ? { roomLifecycleVersion: 1 as const } : {}),
     walls: coerceWallMode(options.walls),
     visibility,
     ...(coerceBattlefieldWorld(options.battlefieldWorld) !== undefined

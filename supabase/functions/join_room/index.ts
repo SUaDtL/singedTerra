@@ -52,13 +52,14 @@ async function handleJoinRoomWithDependencies(
   body: unknown,
   dependencies: JoinRoomDependencies,
 ): Promise<Response> {
-  const { code, playerName, color, loadout, rulesetVersion, commandProtocolVersion } = body as {
+  const { code, playerName, color, loadout, rulesetVersion, commandProtocolVersion, roomLifecycleVersion } = body as {
     code?: unknown
     playerName?: unknown
     color?: unknown
     loadout?: unknown
     rulesetVersion?: unknown
     commandProtocolVersion?: unknown
+    roomLifecycleVersion?: unknown
   }
 
   // Validate code
@@ -118,6 +119,10 @@ async function handleJoinRoomWithDependencies(
   const roomOptions = room.options as StoredOptions
   const storedPlayers = (room.players ?? []) as StoredPlayer[]
 
+  if (roomOptions?.roomLifecycleVersion === 1 && roomLifecycleVersion !== 1) {
+    return json({ error: 'room_lifecycle_mismatch', requiredRoomLifecycleVersion: 1 }, 409)
+  }
+
   // Reject compatibility before lazy-GC or any roster/seat mutation.
   const storedRuleset = resolveStoredRulesetVersion(roomOptions)
   if (!storedRuleset.ok) {
@@ -152,20 +157,8 @@ async function handleJoinRoomWithDependencies(
 
   if (fresh.length === 0) {
     // Dead room — delete and report as not found
-    await supabase.from('rooms').delete().eq('id', room.id)
+    await supabase.rpc('apply_room_reap', { p_dead: [room.id], p_trims: [] })
     return json({ error: 'Room not found or already started' }, 404)
-  }
-
-  if (fresh.length !== storedPlayers.length) {
-    // Some ghosts reaped — persist so they no longer block capacity/color/name
-    const { error: reapError } = await supabase
-      .from('rooms')
-      .update({ players: fresh })
-      .eq('id', room.id)
-    if (reapError) {
-      console.error('join_room: reap update error', { roomId: room.id, error: safeErrorMessage(reapError) })
-      return json({ error: 'Failed to join room' }, 500)
-    }
   }
 
   const existingPlayers = fresh
@@ -190,27 +183,18 @@ async function handleJoinRoomWithDependencies(
 
   const updatedPlayers = [...existingPlayers, newPlayer]
 
-  // Update room with new player
-  const { error: updateError } = await supabase
-    .from('rooms')
-    .update({ players: updatedPlayers })
-    .eq('id', room.id)
-
-  if (updateError) {
-    console.error('join_room: update error', { roomId: room.id, playerId, error: safeErrorMessage(updateError) })
-    return json({ error: 'Failed to join room' }, 500)
-  }
-
-  // Mint the joining player's seat token and persist it.
+  // Compare the observed roster under the database room lock, then publish the
+  // roster and private credential together. A concurrent start/join wins cleanly.
   const token = mintSeatToken()
-  const { error: seatError } = await supabase
-    .from('room_seats')
-    .insert({ room_id: room.id, seat_id: playerId, token })
-
-  if (seatError) {
-    console.error('join_room: seat insert error', { roomId: room.id, playerId, error: safeErrorMessage(seatError) })
+  const { data: admitted, error: admissionError } = await supabase.rpc('admit_room_seat', {
+    p_room_id: room.id, p_expected_players: storedPlayers, p_players: updatedPlayers,
+    p_player_id: playerId, p_token: token,
+  })
+  if (admissionError || !admitted) {
+    console.error('join_room: admission transaction failed')
     return json({ error: 'Failed to join room' }, 500)
   }
+  if (!admitted.ok) return json({ error: 'Room changed; please try joining again' }, 409)
 
   return json({
     roomId: room.id,

@@ -52,6 +52,7 @@ describe('LobbyTransport network ruleset rollout', () => {
       ...joinParams,
       rulesetVersion: 4,
       commandProtocolVersion: 2,
+      roomLifecycleVersion: 1,
     });
   });
 
@@ -110,6 +111,7 @@ describe('LobbyTransport network ruleset rollout', () => {
       ...joinParams,
       rulesetVersion: 4,
       commandProtocolVersion: 2,
+      roomLifecycleVersion: 1,
     });
   });
 

@@ -1,4 +1,5 @@
-import { withCors, json, getServiceClient, safeErrorMessage, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
+import { withCors, json, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
+import { roomLifecycleResponse } from '../_shared/roomLifecycle.ts'
 
 export interface LeaveResult {
   remaining: StoredPlayer[]
@@ -30,63 +31,7 @@ export async function handleLeaveRoom(body: unknown): Promise<Response> {
     return json({ error: 'Invalid input: playerId' }, 400)
   }
 
-  const supabase = getServiceClient()
-
-  // Fetch room — must be in 'waiting' status
-  const { data: room, error: fetchError } = await supabase
-    .from('rooms')
-    .select('*')
-    .eq('id', roomId)
-    .eq('status', 'waiting')
-    .maybeSingle()
-
-  if (fetchError) {
-    console.error('leave_room: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
-    return json({ error: 'Failed to fetch room' }, 500)
-  }
-
-  if (!room) {
-    return json({ error: 'Room not found or already started' }, 404)
-  }
-
-  const existingPlayers = (room.players ?? []) as StoredPlayer[]
-
-  if (!(await verifySeatToken(supabase, roomId, playerId as string, token))) {
-    return json({ error: 'Invalid or missing seat token' }, 403)
-  }
-
-  const { remaining, roomDeleted } = applyLeave(existingPlayers, playerId)
-
-  // If no players left, delete the room
-  if (roomDeleted) {
-    const { error: deleteError } = await supabase
-      .from('rooms')
-      .delete()
-      .eq('id', roomId)
-
-    if (deleteError) {
-      console.error('leave_room: delete error', { roomId, playerId, error: safeErrorMessage(deleteError) })
-      return json({ error: 'Failed to delete room' }, 500)
-    }
-
-    return json({ ok: true, roomDeleted: true, players: [] }, 200)
-  }
-
-  const { error: updateError } = await supabase
-    .from('rooms')
-    .update({ players: remaining })
-    .eq('id', roomId)
-
-  if (updateError) {
-    console.error('leave_room: update error', { roomId, playerId, error: safeErrorMessage(updateError) })
-    return json({ error: 'Failed to update room' }, 500)
-  }
-
-  // Best-effort: drop the seat's token row now that the seat is vacated. If the
-  // whole room was deleted above, the ON DELETE CASCADE already handled this.
-  await supabase.from('room_seats').delete().eq('room_id', roomId).eq('seat_id', playerId)
-
-  return json({ ok: true, roomDeleted: false, players: remaining }, 200)
+  return roomLifecycleResponse(roomId, playerId, token, 'leave')
 }
 
 if (import.meta.main) {

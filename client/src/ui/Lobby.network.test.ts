@@ -319,6 +319,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         loadout: MIXED_LOADOUT,
         rulesetVersion: 4,
         commandProtocolVersion: 2,
+        roomLifecycleVersion: 1,
         options: { maxPlayers: 2, visibility: 'public', walls: 'open' },
       });
       // No conditional keys leaked into the body.
@@ -357,6 +358,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         loadout: DEFAULT_TANK_LOADOUT,
         rulesetVersion: 4,
         commandProtocolVersion: 2,
+        roomLifecycleVersion: 1,
         // 1 CPU seat gets the first palette color NOT used by the creator (Blue).
         bots: [{
           name: 'CPU 1',
@@ -696,6 +698,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         loadout: MIXED_LOADOUT,
         rulesetVersion: 4,
         commandProtocolVersion: 2,
+        roomLifecycleVersion: 1,
       });
     });
 

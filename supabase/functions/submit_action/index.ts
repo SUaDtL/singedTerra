@@ -48,6 +48,7 @@ export function rpcResultToResponse(result: RpcResult, context: RpcLogContext = 
   const { data, error } = result
 
   if (error) {
+    if (error.code === '42501') return json({ ok: false, error: 'invalid_seat_token' }, 403)
     if (error.code === '23505') {
       // Info-level signal (obs-003): seq-conflicts are expected + self-healing (the
       // client retries), but with ZERO log a conflict flood (a misbehaving/looping
@@ -70,6 +71,7 @@ export function rpcResultToResponse(result: RpcResult, context: RpcLogContext = 
 export function commandRpcResultToResponse(result: RpcResult, context: RpcLogContext = {}): Response {
   const { data, error } = result
   if (error) {
+    if (error.code === '42501') return json({ ok: false, error: 'invalid_seat_token' }, 403)
     console.error('submit_action: command rpc error', { ...context, error: safeErrorMessage(error) })
     return json({ ok: false, error: 'Failed to submit command' }, 500)
   }
@@ -370,8 +372,10 @@ export async function submitActionCore(body: unknown, injectedClient?: ServiceCl
       })
     : { index: room.active_player_index ?? 0, turn: room.turn ?? 0 }
 
-  const rpcResult = await supabase.rpc('submit_room_action', {
+  const rpcResult = await supabase.rpc('submit_room_action_for_seat', {
     p_room_id: roomId as string,
+    p_submitter_id: playerId as string,
+    p_token: token as string,
     p_player_id: actingId as string,
     p_action: validatedAction,
     p_ends_turn: isTurnEnding,

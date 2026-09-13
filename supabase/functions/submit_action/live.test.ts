@@ -62,6 +62,28 @@ const fire = { type: 'fire', angle: 45, power: 50, weapon: 'baby_missile' }
 const fixtureCredential = ['sec', 'ret'].join('')
 const invalidFixtureCredential = ['wr', 'ong'].join('')
 
+Deno.test('RL-04: legacy CPU proxy carries the authenticated human into the locked action transaction', async () => {
+  const { client, rpcCalls } = makeFakeClient({
+    room: activeRoom([player('human'), player('cpu', { ai: 'easy' })], 1),
+    seat: seatToken(fixtureCredential),
+  })
+  const response = await submitActionCore({
+    roomId: 'room-1', playerId: 'human', token: fixtureCredential, actingPlayerId: 'cpu', action: fire,
+  }, client)
+  assertEquals(response.status, 200)
+  assertEquals(rpcCalls[0].args.p_submitter_id, 'human')
+  assertEquals(rpcCalls[0].args.p_token, fixtureCredential)
+})
+
+Deno.test('RL-04: a locked legacy departure refusal is a permission failure', async () => {
+  const { client } = makeFakeClient({
+    room: activeRoom([player('human'), player('cpu', { ai: 'easy' })]),
+    seat: seatToken(fixtureCredential), rpc: { data: null, error: { code: '42501', message: 'seat_left' } },
+  })
+  const response = await submitActionCore({ roomId: 'room-1', playerId: 'human', token: fixtureCredential, action: fire }, client)
+  assertEquals(response.status, 403)
+})
+
 // ---------------------------------------------------------------------------
 // Room-lookup + membership + token gates
 // ---------------------------------------------------------------------------
@@ -177,7 +199,7 @@ Deno.test('submitActionCore: active seat firing commits and returns 200 { seq, o
   // Seq-allocation wiring: one RPC, turn-ending, cursor advanced to the reported seat.
   assertEquals(rpcCalls.length, 1)
   const { fn, args } = rpcCalls[0]
-  assertEquals(fn, 'submit_room_action')
+  assertEquals(fn, 'submit_room_action_for_seat')
   assertEquals(args.p_player_id, 'human-1')
   assertEquals(args.p_ends_turn, true)
   assertEquals(args.p_next_index, 1)   // nextCursor honored the reported next seat

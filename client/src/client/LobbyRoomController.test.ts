@@ -33,6 +33,20 @@ function setup() {
 }
 
 describe('LobbyRoomController', () => {
+  it('clears an abandoned resume candidate and explains that the player should start a new game — RL-07', async () => {
+    const test = setup()
+    test.persistence.readSession.mockReturnValue({ roomId: 'ended-room', roomCode: 'ROOM', playerId: 'p1' } as never)
+    test.transport.fetchRoom.mockResolvedValue({
+      id: 'ended-room', code: 'ROOM', status: 'finished', abandoned_at: '2026-09-12T16:00:00Z',
+      players: [{ id: 'p1' }], options: { rulesetVersion: 4, commandProtocolVersion: 2, roomLifecycleVersion: 1 },
+    })
+    await test.controller.checkRejoinCandidate()
+    expect(test.controller.projection.rejoinCandidate).toBeNull()
+    expect(test.persistence.clearSession).toHaveBeenCalledOnce()
+    expect(test.controller.projection.error).toBe('That game ended after everyone left. Start a new game.')
+    expect(test.changed).toHaveBeenCalledOnce()
+  })
+
   it('reads create fallback presentation and seed after an authoritative v2 response resolves', async () => {
     const test = setup()
     let resolve!: (value: unknown) => void

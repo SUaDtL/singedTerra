@@ -164,7 +164,7 @@ test('the checked-in backend manifest exactly describes the current release inpu
   assert.equal(result.manifest.schemaVersion, 1);
   assert.equal(result.manifest.supabaseCliVersion, '2.105.0');
   assert.equal(result.manifest.functions.length, 17);
-  assert.equal(result.manifest.migrations.at(-1).path, 'supabase/migrations/022_atomic_casual_completion.sql');
+  assert.equal(result.manifest.migrations.at(-1).path, 'supabase/migrations/023_room_lifecycle.sql');
   assert.equal(Object.hasOwn(result.manifest, 'sourceSha'), false);
   assert.match(result.manifestSha256, /^[0-9a-f]{64}$/);
 });

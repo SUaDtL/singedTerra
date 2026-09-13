@@ -1,4 +1,5 @@
-import { withCors, json, getServiceClient, safeErrorMessage, UUID_REGEX, StoredPlayer, verifySeatToken } from '../_shared/mod.ts'
+import { withCors, json, UUID_REGEX, StoredPlayer } from '../_shared/mod.ts'
+import { roomLifecycleResponse } from '../_shared/roomLifecycle.ts'
 
 /** Pure heartbeat: bump lastSeen for `playerId` only. Returns the new roster, or
  *  null when the player is not in the room. Extracted for testing (#61). */
@@ -28,47 +29,7 @@ export async function handleHeartbeat(body: unknown): Promise<Response> {
     return json({ error: 'Invalid input: playerId' }, 400)
   }
 
-  const supabase = getServiceClient()
-
-  // Fetch room — must be in 'waiting' status
-  const { data: room, error: fetchError } = await supabase
-    .from('rooms')
-    .select('*')
-    .eq('id', roomId)
-    .eq('status', 'waiting')
-    .maybeSingle()
-
-  if (fetchError) {
-    console.error('heartbeat: fetch error', { roomId, playerId, error: safeErrorMessage(fetchError) })
-    return json({ error: 'Failed to fetch room' }, 500)
-  }
-
-  if (!room) {
-    return json({ error: 'Room not found or already started' }, 404)
-  }
-
-  if (!(await verifySeatToken(supabase, roomId as string, playerId as string, token))) {
-    return json({ error: 'Invalid or missing seat token' }, 403)
-  }
-
-  const existingPlayers = (room.players ?? []) as StoredPlayer[]
-
-  const updatedPlayers = applyHeartbeat(existingPlayers, playerId, Date.now())
-  if (!updatedPlayers) {
-    return json({ error: 'Player not in room' }, 400)
-  }
-
-  const { error: updateError } = await supabase
-    .from('rooms')
-    .update({ players: updatedPlayers })
-    .eq('id', roomId)
-
-  if (updateError) {
-    console.error('heartbeat: update error', { roomId, playerId, error: safeErrorMessage(updateError) })
-    return json({ error: 'Failed to update heartbeat' }, 500)
-  }
-
-  return json({ ok: true }, 200)
+  return roomLifecycleResponse(roomId, playerId, token, 'heartbeat')
 }
 
 if (import.meta.main) {

@@ -7,60 +7,238 @@
   },
   "functionShared": {
     "path": "supabase/functions/_shared",
-    "sha256": "c2f403a8f8e4b615f91906e64a9286f869ff1857f6f1347040b428042de882a7"
+    "sha256": "1b9b47c376861d548a6136447b4ccef8f5133fa795f2a34ec82cfb7fdd4a32e7"
   },
   "verifiedReplayShared": {
     "path": "shared/src",
     "sha256": "9f30b4392779c3941a1f0ea1be948eb061174c6ce353c5253ab5b26c742ad507"
   },
   "migrations": [
-    { "path": "supabase/migrations/001_init.sql", "sha256": "13f964d515dd6aa2c3345298eeadc6544fd636ee42cb555fd475fa3b136da55b" },
-    { "path": "supabase/migrations/002_rematch.sql", "sha256": "ce1ce99a9dbca27de8f250902d390b07f634e5b7d5bd3e9485b4e4488c6f552e" },
-    { "path": "supabase/migrations/003_match_scores.sql", "sha256": "50cb8e8264529c3121f66d33a42cb563083b1214dfbff34c7332db439de573ad" },
-    { "path": "supabase/migrations/004_atomic_submit_action.sql", "sha256": "fc13c96a869d39e17bad8c10f28dced6e5c56204f5dbb620d1a67053f5a926b6" },
-    { "path": "supabase/migrations/005_rate_limits.sql", "sha256": "8b691ee48127546996fb02f761a7ac69551633a7c08207c41a27de41c4aa45e3" },
-    { "path": "supabase/migrations/006_drop_redundant_room_actions_index.sql", "sha256": "0d6e9292b6783007ad36b9cb457ef21acbb0e75215953f772529f42aa50e3051" },
-    { "path": "supabase/migrations/007_apply_room_reap.sql", "sha256": "856b3a1aa7c17a0ee77c5025bf261a6386777cc3539ac31b5d456041844f2aa0" },
-    { "path": "supabase/migrations/008_rate_limits_global_cleanup.sql", "sha256": "c7bfb067f467ef2251ad0f638eb54ad2dfec9e24f42d24c3a3c3c7fcb01f490b" },
-    { "path": "supabase/migrations/009_reap_status_guard.sql", "sha256": "89117cd8226deb7d53d32c6744e6d6fff34d4811084999f8a0e42b52598974b5" },
-    { "path": "supabase/migrations/010_room_seats.sql", "sha256": "0e9c4fb96b84b21499c4c2f5473302c24c213e611df0cd4f5edadf68806a0000" },
-    { "path": "supabase/migrations/011_data_classification_comments.sql", "sha256": "18532a7622ba6d5c4c0a9bd568317a72bf87ff80ecd74a429179f0960d4d398a" },
-    { "path": "supabase/migrations/012_profiles.sql", "sha256": "fe714f86c31dcc01a41227d1b273965b20bf50cbe8ccdd76fadeec2f572e6b43" },
-    { "path": "supabase/migrations/013_authenticated_gameplay_reads.sql", "sha256": "bea4e72ebf44d9ba3c636a92025e5cd9ac34716d8bc9aff6bb506c4a5d8a6ecb" },
-    { "path": "supabase/migrations/014_match_participants.sql", "sha256": "dfc7861ef18737405b4926de05fc176ced19873fbc6a091f686eb42deeadf96f" },
-    { "path": "supabase/migrations/015_hotseat_match_results.sql", "sha256": "0aa7d21dbb9cf3f69ba08fcf01aa32d3a9f50bb8e982bd28d6327f969e83ff7e" },
-    { "path": "supabase/migrations/016_verified_deployments.sql", "sha256": "cfbc668e4a988701ed25b263241de2c3fbf1ec3cf73ae521b0b3e5e8be12a70f" },
-    { "path": "supabase/migrations/017_verified_deployment_v2.sql", "sha256": "57380a368bad1f13e1d73add9ed502a6c404cc6e4cbd76b674dd28a95ed06e45" },
-    { "path": "supabase/migrations/018_atomic_rematch.sql", "sha256": "869ad839b5cd37cb7609afee3188969a091fb076c18f121fcee889ceef92bd19" },
-    { "path": "supabase/migrations/019_verified_deployment_start_qualification.sql", "sha256": "88c786a03b08b352e89d4263743ca54586259fe0cf261c8110a1d9d8e6a4c363" },
-    { "path": "supabase/migrations/020_verified_deployment_v3.sql", "sha256": "97313e2ebd6f7a7c7e571a957497d4cbc62f9ff836d251f78ccd7ac91a73e275" },
-    { "path": "supabase/migrations/021_atomic_room_commands.sql", "sha256": "494eac5572f82d1cca2c25a3956ae7a956247c886d25e1d6922ebeb3191fc246" },
-    { "path": "supabase/migrations/022_atomic_casual_completion.sql", "sha256": "335f98222e4e1075fb058afdb436a0c3b8b8c72d399f2257405d31ee25e6a13b" }
+    {
+      "path": "supabase/migrations/001_init.sql",
+      "sha256": "13f964d515dd6aa2c3345298eeadc6544fd636ee42cb555fd475fa3b136da55b"
+    },
+    {
+      "path": "supabase/migrations/002_rematch.sql",
+      "sha256": "ce1ce99a9dbca27de8f250902d390b07f634e5b7d5bd3e9485b4e4488c6f552e"
+    },
+    {
+      "path": "supabase/migrations/003_match_scores.sql",
+      "sha256": "50cb8e8264529c3121f66d33a42cb563083b1214dfbff34c7332db439de573ad"
+    },
+    {
+      "path": "supabase/migrations/004_atomic_submit_action.sql",
+      "sha256": "fc13c96a869d39e17bad8c10f28dced6e5c56204f5dbb620d1a67053f5a926b6"
+    },
+    {
+      "path": "supabase/migrations/005_rate_limits.sql",
+      "sha256": "8b691ee48127546996fb02f761a7ac69551633a7c08207c41a27de41c4aa45e3"
+    },
+    {
+      "path": "supabase/migrations/006_drop_redundant_room_actions_index.sql",
+      "sha256": "0d6e9292b6783007ad36b9cb457ef21acbb0e75215953f772529f42aa50e3051"
+    },
+    {
+      "path": "supabase/migrations/007_apply_room_reap.sql",
+      "sha256": "856b3a1aa7c17a0ee77c5025bf261a6386777cc3539ac31b5d456041844f2aa0"
+    },
+    {
+      "path": "supabase/migrations/008_rate_limits_global_cleanup.sql",
+      "sha256": "c7bfb067f467ef2251ad0f638eb54ad2dfec9e24f42d24c3a3c3c7fcb01f490b"
+    },
+    {
+      "path": "supabase/migrations/009_reap_status_guard.sql",
+      "sha256": "89117cd8226deb7d53d32c6744e6d6fff34d4811084999f8a0e42b52598974b5"
+    },
+    {
+      "path": "supabase/migrations/010_room_seats.sql",
+      "sha256": "0e9c4fb96b84b21499c4c2f5473302c24c213e611df0cd4f5edadf68806a0000"
+    },
+    {
+      "path": "supabase/migrations/011_data_classification_comments.sql",
+      "sha256": "18532a7622ba6d5c4c0a9bd568317a72bf87ff80ecd74a429179f0960d4d398a"
+    },
+    {
+      "path": "supabase/migrations/012_profiles.sql",
+      "sha256": "fe714f86c31dcc01a41227d1b273965b20bf50cbe8ccdd76fadeec2f572e6b43"
+    },
+    {
+      "path": "supabase/migrations/013_authenticated_gameplay_reads.sql",
+      "sha256": "bea4e72ebf44d9ba3c636a92025e5cd9ac34716d8bc9aff6bb506c4a5d8a6ecb"
+    },
+    {
+      "path": "supabase/migrations/014_match_participants.sql",
+      "sha256": "dfc7861ef18737405b4926de05fc176ced19873fbc6a091f686eb42deeadf96f"
+    },
+    {
+      "path": "supabase/migrations/015_hotseat_match_results.sql",
+      "sha256": "0aa7d21dbb9cf3f69ba08fcf01aa32d3a9f50bb8e982bd28d6327f969e83ff7e"
+    },
+    {
+      "path": "supabase/migrations/016_verified_deployments.sql",
+      "sha256": "cfbc668e4a988701ed25b263241de2c3fbf1ec3cf73ae521b0b3e5e8be12a70f"
+    },
+    {
+      "path": "supabase/migrations/017_verified_deployment_v2.sql",
+      "sha256": "57380a368bad1f13e1d73add9ed502a6c404cc6e4cbd76b674dd28a95ed06e45"
+    },
+    {
+      "path": "supabase/migrations/018_atomic_rematch.sql",
+      "sha256": "869ad839b5cd37cb7609afee3188969a091fb076c18f121fcee889ceef92bd19"
+    },
+    {
+      "path": "supabase/migrations/019_verified_deployment_start_qualification.sql",
+      "sha256": "88c786a03b08b352e89d4263743ca54586259fe0cf261c8110a1d9d8e6a4c363"
+    },
+    {
+      "path": "supabase/migrations/020_verified_deployment_v3.sql",
+      "sha256": "97313e2ebd6f7a7c7e571a957497d4cbc62f9ff836d251f78ccd7ac91a73e275"
+    },
+    {
+      "path": "supabase/migrations/021_atomic_room_commands.sql",
+      "sha256": "494eac5572f82d1cca2c25a3956ae7a956247c886d25e1d6922ebeb3191fc246"
+    },
+    {
+      "path": "supabase/migrations/022_atomic_casual_completion.sql",
+      "sha256": "335f98222e4e1075fb058afdb436a0c3b8b8c72d399f2257405d31ee25e6a13b"
+    },
+    {
+      "path": "supabase/migrations/023_room_lifecycle.sql",
+      "sha256": "a7df24042ed8a6278a85fdc5e89e87facf834ed6e3fb199fdbbfd9667bfce575"
+    }
   ],
   "functions": [
-    { "name": "abandon_verified_deployment", "path": "supabase/functions/abandon_verified_deployment", "verifyJwt": false, "sha256": "265102ad744125703a1a4eaa8c0ee8820ebeac07bbc05d4ce34ca7b56c7a45b6" },
-    { "name": "account_summary", "path": "supabase/functions/account_summary", "verifyJwt": false, "sha256": "3762c76e3c489ec205e5530ceb4d01d9c1efddb528d05eed97cc51a9217d61b3" },
-    { "name": "claim_match", "path": "supabase/functions/claim_match", "verifyJwt": false, "sha256": "106cf1c2e6774ff5d173c7197b2fc20b986448411983dfeca9029e41410777c2" },
-    { "name": "complete_verified_deployment", "path": "supabase/functions/complete_verified_deployment", "verifyJwt": false, "sha256": "8d89b8ada6010e33178df4a421640db5b5af15ab6c56ba5b18afb74f64310570" },
-    { "name": "create_room", "path": "supabase/functions/create_room", "verifyJwt": false, "sha256": "98214cadfbd24cb2e9d9c5a2d7f2ee35844c916572be502b74adffcca7dd9bae" },
-    { "name": "finish_game", "path": "supabase/functions/finish_game", "verifyJwt": false, "sha256": "b5595208129da753db46364f41fec7576a04b46dc374e0bc2e25a224203f610f" },
-    { "name": "heartbeat", "path": "supabase/functions/heartbeat", "verifyJwt": false, "sha256": "21afd4bdee945d2b03864dc2cc7fe91725169899e654800527db412691a0ed08" },
-    { "name": "join_room", "path": "supabase/functions/join_room", "verifyJwt": false, "sha256": "cfd213a2cec605eb0430f91133ef9410335e2f1c34ea40f3193bf474add5830b" },
-    { "name": "leave_room", "path": "supabase/functions/leave_room", "verifyJwt": false, "sha256": "4d00981393835645d37f1fa986a5af1d23a4c24b31199a219eaf59780041c191" },
-    { "name": "list_rooms", "path": "supabase/functions/list_rooms", "verifyJwt": false, "sha256": "8d78c7e197fdabec3544ebd8b0003238fc1247521878ad1ab93bd959b0d3efd9" },
-    { "name": "ready_up", "path": "supabase/functions/ready_up", "verifyJwt": false, "sha256": "476f10d542530609629108aa41e128789e9de0bd334e3447ac49dd9498bc8a50" },
-    { "name": "record_hotseat_match", "path": "supabase/functions/record_hotseat_match", "verifyJwt": false, "sha256": "53a90da287af2da0d81bb08a9b53a511e54f36405707b681a432dc0da44192b5" },
-    { "name": "restart_game", "path": "supabase/functions/restart_game", "verifyJwt": false, "sha256": "e675a4e3633863d0d186db7a672ea4daad03da7b5b0fe677753fa3b78eca7dc8" },
-    { "name": "start_verified_deployment", "path": "supabase/functions/start_verified_deployment", "verifyJwt": false, "sha256": "d254f475937f56322bda04a8beefae0f8974c22d5a93f92f483bcc69bfe5279c" },
-    { "name": "submit_action", "path": "supabase/functions/submit_action", "verifyJwt": false, "sha256": "ced02e1d3c4f61c3f5828878fe7cf09ef7237e32010485bb3129e9a61f275aba" },
-    { "name": "update_player", "path": "supabase/functions/update_player", "verifyJwt": false, "sha256": "762ab826457c3b1969df904717b516c7ced23d7af75cf42024b51bfef7ab774d" },
-    { "name": "verified_replay_probe", "path": "supabase/functions/verified_replay_probe", "verifyJwt": false, "sha256": "0e4b4ef7aa92c309736283c714c2149119f728ab2419b9181fc9efc3dd533a70" }
+    {
+      "name": "abandon_verified_deployment",
+      "path": "supabase/functions/abandon_verified_deployment",
+      "verifyJwt": false,
+      "sha256": "265102ad744125703a1a4eaa8c0ee8820ebeac07bbc05d4ce34ca7b56c7a45b6"
+    },
+    {
+      "name": "account_summary",
+      "path": "supabase/functions/account_summary",
+      "verifyJwt": false,
+      "sha256": "3762c76e3c489ec205e5530ceb4d01d9c1efddb528d05eed97cc51a9217d61b3"
+    },
+    {
+      "name": "claim_match",
+      "path": "supabase/functions/claim_match",
+      "verifyJwt": false,
+      "sha256": "106cf1c2e6774ff5d173c7197b2fc20b986448411983dfeca9029e41410777c2"
+    },
+    {
+      "name": "complete_verified_deployment",
+      "path": "supabase/functions/complete_verified_deployment",
+      "verifyJwt": false,
+      "sha256": "8d89b8ada6010e33178df4a421640db5b5af15ab6c56ba5b18afb74f64310570"
+    },
+    {
+      "name": "create_room",
+      "path": "supabase/functions/create_room",
+      "verifyJwt": false,
+      "sha256": "2e53a7ebe68ceebdb1f612e954ed64a6c29c177eb44d24025d2254228270b9d6"
+    },
+    {
+      "name": "finish_game",
+      "path": "supabase/functions/finish_game",
+      "verifyJwt": false,
+      "sha256": "b5595208129da753db46364f41fec7576a04b46dc374e0bc2e25a224203f610f"
+    },
+    {
+      "name": "heartbeat",
+      "path": "supabase/functions/heartbeat",
+      "verifyJwt": false,
+      "sha256": "84e45488feaef318f0003ba97d4479dcf3bb902d7979325c77db6532b9378890"
+    },
+    {
+      "name": "join_room",
+      "path": "supabase/functions/join_room",
+      "verifyJwt": false,
+      "sha256": "f76d7bb40cdcca7d63acd9bb8881d13b0947b62445b41e5e97c793e3fca37f91"
+    },
+    {
+      "name": "leave_room",
+      "path": "supabase/functions/leave_room",
+      "verifyJwt": false,
+      "sha256": "4ab0f0b82356253c3c3e52b343a2b1f620a4588ebf6744e0a93fd00df3849d5c"
+    },
+    {
+      "name": "list_rooms",
+      "path": "supabase/functions/list_rooms",
+      "verifyJwt": false,
+      "sha256": "8d78c7e197fdabec3544ebd8b0003238fc1247521878ad1ab93bd959b0d3efd9"
+    },
+    {
+      "name": "ready_up",
+      "path": "supabase/functions/ready_up",
+      "verifyJwt": false,
+      "sha256": "a8d1823f6ef385cb59b4e71c5606a5fcb07b0e875d2399ca48cce83e2b77c1f5"
+    },
+    {
+      "name": "record_hotseat_match",
+      "path": "supabase/functions/record_hotseat_match",
+      "verifyJwt": false,
+      "sha256": "53a90da287af2da0d81bb08a9b53a511e54f36405707b681a432dc0da44192b5"
+    },
+    {
+      "name": "restart_game",
+      "path": "supabase/functions/restart_game",
+      "verifyJwt": false,
+      "sha256": "b7d7aa53aec0ce2a235c8a931a2287ae599ea1263dc21fdae586bf0f2f536772"
+    },
+    {
+      "name": "start_verified_deployment",
+      "path": "supabase/functions/start_verified_deployment",
+      "verifyJwt": false,
+      "sha256": "d254f475937f56322bda04a8beefae0f8974c22d5a93f92f483bcc69bfe5279c"
+    },
+    {
+      "name": "submit_action",
+      "path": "supabase/functions/submit_action",
+      "verifyJwt": false,
+      "sha256": "ff6c97d76b89564afe3fec29ccc4f1b01d2a81cea1046c5a894c65b696c7083c"
+    },
+    {
+      "name": "update_player",
+      "path": "supabase/functions/update_player",
+      "verifyJwt": false,
+      "sha256": "762ab826457c3b1969df904717b516c7ced23d7af75cf42024b51bfef7ab774d"
+    },
+    {
+      "name": "verified_replay_probe",
+      "path": "supabase/functions/verified_replay_probe",
+      "verifyJwt": false,
+      "sha256": "0e4b4ef7aa92c309736283c714c2149119f728ab2419b9181fc9efc3dd533a70"
+    }
   ],
   "compatibility": {
-    "commandProtocolVersions": [1, 2],
-    "casualCompletionVersions": ["legacy_unvalidated", 1],
-    "historicalVerifiedTuples": [[1, 1, 3]],
-    "verifiedTuples": [[2, 2, 4], [3, 3, 4]],
+    "commandProtocolVersions": [
+      1,
+      2
+    ],
+    "casualCompletionVersions": [
+      "legacy_unvalidated",
+      1
+    ],
+    "historicalVerifiedTuples": [
+      [
+        1,
+        1,
+        3
+      ]
+    ],
+    "verifiedTuples": [
+      [
+        2,
+        2,
+        4
+      ],
+      [
+        3,
+        3,
+        4
+      ]
+    ],
     "recoveryClass": "fix-forward-after-versioned-state"
   }
 }

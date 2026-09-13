@@ -41,6 +41,7 @@ type ExpectedStoredOptions = {
   gravity: number;
   rulesetVersion?: 1 | 2 | 3 | 4;
   commandProtocolVersion?: 1 | 2;
+  roomLifecycleVersion?: 1;
   walls?: "open" | "reflective" | "wrap" | "concrete";
   battlefieldWorld?: "ember-dusk" | "obsidian-caldera" | "glassstorm-expanse";
   hazards?: "none" | "lava";
@@ -241,6 +242,9 @@ type _RpcKeysAreExact = AssertExact<
   | "submit_room_action"
   | "submit_room_command_v2"
   | "finish_casual_match_v1"
+  | "room_lifecycle"
+  | "admit_room_seat"
+  | "submit_room_action_for_seat"
   | "start_verified_deployment"
   | "start_verified_deployment_for_contracts"
   | "abandon_verified_deployment"
@@ -681,6 +685,16 @@ type _RoomSeatsRelationshipMustMatchEveryLiteral = AssertTrue<
 >;
 
 type _AllExactContracts = AssertAll<{
+  submitRoomActionForSeatArgs: AssertExact<Functions['submit_room_action_for_seat']['Args'], {
+    p_room_id: string; p_submitter_id: string; p_token: string; p_player_id: string;
+    p_action: ExpectedStoredAction; p_ends_turn: boolean; p_next_index: number; p_next_turn: number;
+  }>;
+  roomLifecycleArgs: AssertExact<Functions['room_lifecycle']['Args'], {
+    p_room_id: string; p_player_id: string; p_token: string; p_operation: 'heartbeat' | 'leave' | 'ready';
+  }>;
+  admitRoomSeatArgs: AssertExact<Functions['admit_room_seat']['Args'], {
+    p_room_id: string; p_expected_players: ExpectedStoredPlayer[]; p_players: ExpectedStoredPlayer[]; p_player_id: string; p_token: string;
+  }>;
   tableKeys: _TableKeysAreExact;
   rpcKeys: _RpcKeysAreExact;
   createRoomRematchArgs: _CreateRoomRematchArgsAreExact;

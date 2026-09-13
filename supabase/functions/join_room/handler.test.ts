@@ -4,6 +4,29 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { handleJoinRoom, joinRoomHandler } from './index.ts'
 
+Deno.test('RL-08: legacy join cannot enter a room that requires active presence', async () => {
+  const host = { id: 'host', name: 'Ana', color: '#e84d4d', ready: false, lastSeen: Date.now() }
+  let mutations = 0
+  const rooms = {
+    select: () => rooms,
+    eq: () => rooms,
+    maybeSingle: () => Promise.resolve({ data: {
+      id: 'room-1', seed: 42,
+      options: { maxPlayers: 2, roomLifecycleVersion: 1 }, players: [host],
+    }, error: null }),
+    update: () => { mutations++; return rooms },
+  }
+  const serviceClient = { from: (name: string) => name === 'rooms' ? rooms : {
+    insert: () => { mutations++; return Promise.resolve({ error: null }) },
+  } }
+  const res = await joinRoomHandler({ serviceClient: serviceClient as never })({
+    code: 'ABCD', playerName: 'Bo', color: '#4d8ce8',
+  })
+  assertEquals(res.status, 409)
+  assertEquals(await res.json(), { error: 'room_lifecycle_mismatch', requiredRoomLifecycleVersion: 1 })
+  assertEquals(mutations, 0)
+})
+
 Deno.test('handleJoinRoom: missing code returns 400 (no DB)', async () => {
   const res = await handleJoinRoom({})
   assertEquals(res.status, 400)
@@ -87,6 +110,10 @@ Deno.test('handleJoinRoom: appends the exact bounded joiner loadout', async () =
   }
   const serviceClient = {
     from: (table: string) => table === 'rooms' ? rooms : roomSeats,
+    rpc: (_name: string, args: { p_players: Array<{ loadout?: unknown }> }) => {
+      updatedPlayers = args.p_players
+      return Promise.resolve({ data: { ok: true }, error: null })
+    },
   }
 
   const res = await joinRoomHandler({
