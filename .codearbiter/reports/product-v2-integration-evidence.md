@@ -36,3 +36,14 @@ directory. Rejected-run evidence is retained separately. Individual feature
 reports preserve the solver, causal failures, coverage, and visual boundaries.
 The Linux hosted check remains required before merge; local Windows evidence
 does not clear that platform boundary.
+
+After the accepted P09 diagnostic was added, its pure analyzer and strict
+harness types passed, and its real default-mode command remained skipped
+without the manual measurement opt-in. Its tracked raw R17 artifacts and all
+production code stayed unchanged; its separate report limits the no-change
+decision to the measured desktop candidate.
+
+The integration then adopted main2d366c7's reviewed Vitest/coverage5 pair and
+explicit lifecycle call ledger. The full combined coverage run passed all
+1,971 tests at 94.24% lines and 84.34% branches. Dependency groups and imported
+tooling files match main; no production behavior changed during that refresh.
