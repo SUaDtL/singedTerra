@@ -215,7 +215,7 @@ function deferred<T>() {
 }
 
 describe('Lobby account composition', () => {
-  it('supplies Commander Operations only for an authenticated Local Battle route', () => {
+  it('keeps practice available while verified deployment requires authentication', () => {
     const root = document.createElement('div')
     const onReady = vi.fn()
     let account!: FakeAccountSession
@@ -228,12 +228,13 @@ describe('Lobby account composition', () => {
     expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
     button(root, 'Local Battle').click()
 
-    const board = root.querySelector<HTMLElement>('[data-ui="commander-operations"]')
-    expect(board?.querySelector('[data-operation-lane="verified"]')).not.toBeNull()
+    expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
+    button(root, 'Practice vs CPU').click()
+    expect(root.querySelector('[data-operation-lane="practice"]')).not.toBeNull()
 
     account.emit({ status: 'anonymous', busy: false, error: '' })
     expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
-    expect(root.querySelector('[data-operation-lane="practice"]')).toBeNull()
+    expect(root.querySelector('[data-operation-lane="practice"]')).not.toBeNull()
 
     account.emit(verifiedAccountState(0))
     const restoredPractice = root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')
@@ -1062,6 +1063,7 @@ describe('Lobby account composition', () => {
 
     lobby.show()
     button(root, 'Local Battle').click()
+    button(root, 'Verified Deployment').click()
     button(root, 'Start verified deployment').click()
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce())
     expect(onReady.mock.calls[0]?.[0].verifiedDeployment).toMatchObject({
@@ -1079,8 +1081,16 @@ describe('Lobby account composition', () => {
     expect(lobby.returnVerifiedDeploymentToBattery()).toBe(true)
     expect(localStorage.getItem('singedterra:verified-deployment')).toBeNull()
 
+    let hiddenWhenVerifiedReceivedFocus: boolean | undefined
+    root.addEventListener('focusin', (event) => {
+      if ((event.target as HTMLElement).textContent === 'Start verified deployment') {
+        hiddenWhenVerifiedReceivedFocus = root.hidden === true
+      }
+    })
+    root.hidden = true
     lobby.show({ focusVerifiedDeployment: true })
     const nextStart = button(root, 'Start verified deployment')
+    expect(hiddenWhenVerifiedReceivedFocus).toBe(false)
     expect(document.activeElement).toBe(nextStart)
     expect(nextStart.disabled).toBe(false)
     nextStart.click()
@@ -1100,6 +1110,21 @@ describe('Lobby account composition', () => {
         humanSalvos: 6, cpuSalvos: 6,
         angle: { min: 0, max: 180 }, power: { min: 0, max: 100 },
       })
+  })
+
+  it('keeps direct and advanced battlefield labels unique while sharing settings state', () => {
+    const root = document.createElement('div')
+    const lobby = new Lobby(root, vi.fn())
+    lobby.show()
+    button(root, 'Local Battle').click()
+    button(root, 'Advanced settings').click()
+
+    const ids = [...root.querySelectorAll<HTMLElement>('[id]')].map((node) => node.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(root.querySelector('label[for="lobby-hotseat-direct-walls"]')?.textContent).toBe('Walls')
+    expect(root.querySelector('#lobby-hotseat-direct-walls')).toBeInstanceOf(HTMLSelectElement)
+    expect(root.querySelector('label[for="lobby-hotseat-walls"]')?.textContent).toBe('Side walls')
+    expect(root.querySelector('#lobby-hotseat-walls')).toBeInstanceOf(HTMLSelectElement)
   })
 
   it('retains terminal evidence and retries completion only before expiry', async () => {
@@ -1518,8 +1543,7 @@ describe('Lobby account composition', () => {
 
     expect(button(root, 'Deploy local battle').disabled).toBe(false)
     expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
-    expect([...root.querySelectorAll('button')].some((candidate) =>
-      candidate.textContent?.toLowerCase().includes('verified deployment'))).toBe(false)
+    expect(button(root, 'Verified Deployment').disabled).toBe(true)
   })
 
   it('launches authenticated verified play from the server descriptor without identity re-entry or local-setting leakage', async () => {
@@ -1539,6 +1563,7 @@ describe('Lobby account composition', () => {
     })
     lobby.show()
     button(root, 'Local Battle').click()
+    button(root, 'Verified Deployment').click()
 
     const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment')!
     expect(verified.querySelector('input')).toBeNull()
@@ -1587,10 +1612,11 @@ describe('Lobby account composition', () => {
     expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
     lobby.show()
     button(root, 'Local Battle').click()
+    button(root, 'Verified Deployment').click()
 
     expect(root.querySelector('.lobby-verified-deployment')?.textContent)
       .toContain('Recovered 1 of 6 human salvos.')
-    expect(root.querySelector('[data-operation-lane="career"]')?.textContent)
+    expect(root.querySelector('.lobby-verified-deployment__dossier')?.textContent)
       .toContain('Fire for Effect · Damage the CPU on two separate human salvos.')
     button(root, 'Resume verified deployment').click()
     expect(onReady.mock.calls[0]?.[0].verifiedDeployment?.transcript)
@@ -1607,7 +1633,7 @@ describe('Lobby account composition', () => {
     button(root, 'Confirm abandon').click()
     await vi.waitFor(() => {
       expect(account.abandonVerifiedDeployment).toHaveBeenCalledOnce()
-      expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+      expect(root.textContent)
         .toContain('Start verified deployment')
     })
   })
@@ -1624,9 +1650,9 @@ describe('Lobby account composition', () => {
     })
     lobby.show()
     button(root, 'Local Battle').click()
+    button(root, 'Verified Deployment').click()
 
     expect(button(root, 'Verified deployment busy').disabled).toBe(true)
-    expect(button(root, 'Deploy local battle').disabled).toBe(false)
     expect(account.startVerifiedDeployment).not.toHaveBeenCalled()
 
     account.emit(authenticatedState())
@@ -1635,7 +1661,7 @@ describe('Lobby account composition', () => {
     )
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     button(root, 'Start verified deployment').click()
-    await vi.waitFor(() => expect(root.querySelector('.lobby-verified-deployment')?.textContent)
+    await vi.waitFor(() => expect(root.textContent)
       .toContain('Verified deployment is unavailable. Try again.'))
     expect(root.textContent).not.toContain('private-token')
     expect(consoleError).not.toHaveBeenCalled()

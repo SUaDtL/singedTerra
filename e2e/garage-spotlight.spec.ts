@@ -80,6 +80,7 @@ async function expectControlInViewport(
   page: Page,
   control: Locator,
 ): Promise<LayoutBox> {
+  await control.scrollIntoViewIfNeeded();
   const box = await visibleLayoutBox(control);
   await expectInViewport(page, box);
   return box;
@@ -115,9 +116,8 @@ async function expectGarageLayout(page: Page): Promise<void> {
   }
 
   const convoy = await visibleLayoutBox(page.locator('.lobby-preview__convoy'));
-  const controls = await visibleLayoutBox(page.locator('.lobby-controls'));
+  await expect(page.locator('.lobby-controls')).toBeHidden();
   expectContained(convoy, bay);
-  expectContained(controls, bay);
 
   const partBoxes: LayoutBox[] = [];
   const parts = page.locator('.lobby-preview__part');
@@ -126,7 +126,6 @@ async function expectGarageLayout(page: Page): Promise<void> {
     const box = await visibleLayoutBox(parts.nth(index));
     expectContained(box, bay);
     expectSeparated(box, convoy);
-    expectSeparated(box, controls);
     for (const earlier of partBoxes) expectSeparated(box, earlier);
     partBoxes.push(box);
   }
@@ -140,6 +139,7 @@ async function expectGarageLayout(page: Page): Promise<void> {
   const garages = page.locator('.lobby-garage:visible');
   await expect(garages).toHaveCount(2);
   for (let index = 0; index < await garages.count(); index++) {
+    await garages.nth(index).scrollIntoViewIfNeeded();
     const garage = await visibleLayoutBox(garages.nth(index));
     await expectInViewport(page, garage);
     expectSeparated(bay, garage);
@@ -157,8 +157,7 @@ async function openLobby(page: Page): Promise<void> {
 }
 
 async function openPlayerGarage(page: Page, player: 1 | 2): Promise<void> {
-  const app = page.locator('#app');
-  if (await app.evaluate((element) => element.classList.contains('is-compact'))) {
+  if (await page.getByRole('button', { name: `Customize Player ${player} tank` }).isVisible()) {
     await page.getByRole('button', {
       name: `Customize Player ${player} tank`,
     }).click();

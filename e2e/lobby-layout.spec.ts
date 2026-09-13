@@ -96,7 +96,10 @@ async function assertMissionPreparation(
       const style = getComputedStyle(element);
       const body = element.querySelector<HTMLElement>('.lobby-preparation-section__body');
       if (requireBody && !body) throw new Error('Expected a preparation-section body');
-      const bodyRect = body?.getBoundingClientRect();
+      const bodyRange = document.createRange();
+      if (body) bodyRange.selectNodeContents(body);
+      const bodyRect = body && getComputedStyle(body).display === 'contents'
+        ? bodyRange.getBoundingClientRect() : body?.getBoundingClientRect();
       return {
         label: element.querySelector('.lobby-preparation-section__title')?.textContent,
         left: rect.left,
@@ -269,12 +272,12 @@ test.describe('Lobby layout guardrails', () => {
     await assertMissionPreparation(
       page,
       '#lobby .lobby-hotseat',
-      ['Crew manifest', 'Battlefield protocol'],
+      ['Crew', 'Battlefield'],
       '#lobby .lobby-start',
     );
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
     await choosePlayOnline(page);
     await assertMissionPreparation(
       page,
@@ -427,7 +430,7 @@ test.describe('Lobby layout guardrails', () => {
     const chooser = page.getByRole('navigation', { name: 'Choose deployment', exact: true });
     const localBattle = chooser.getByRole('button', { name: 'Local Battle', exact: true });
     const playOnline = chooser.getByRole('button', { name: 'Play Online', exact: true });
-    const panel = page.locator('#lobby [role="tabpanel"]');
+    const panel = page.locator('#lobby .lobby-mode-panel');
 
     await expect(chooser).toBeVisible();
     await expect(localBattle).toBeVisible();
@@ -440,7 +443,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(panel).toHaveAttribute('aria-label', 'Hot Seat preparation');
     await expect(page.locator('.lobby-row')).toHaveCount(2);
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
     await expect(localBattle).toBeFocused();
     await playOnline.click();
     await expect(page.locator('.lobby-mode-context')).toContainText(
@@ -449,7 +452,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(panel).toHaveAttribute('aria-label', 'Play Online preparation');
     await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
     await expect(playOnline).toBeFocused();
   });
 

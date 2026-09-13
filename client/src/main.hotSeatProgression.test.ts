@@ -54,6 +54,7 @@ const seams = vi.hoisted(() => ({
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
   quickOperations: [] as Array<Record<string, unknown> | null>,
   terminalReplayModes: [] as Array<'same-scenario' | null>,
+  publicSeedChallenges: [] as Array<{ descriptor: Record<string, unknown>; url: string } | null>,
   verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
   hudFrames: [] as Array<{
@@ -304,6 +305,9 @@ vi.mock('./ui/HUD', () => ({
     setArmsLevel() {}
     setQuickOperation(operation: Record<string, unknown> | null) { seams.quickOperations.push(operation) }
     setTerminalReplayMode(mode: 'same-scenario' | null) { seams.terminalReplayModes.push(mode) }
+    setPublicSeedChallenge(challenge: { descriptor: Record<string, unknown>; url: string } | null) {
+      seams.publicSeedChallenges.push(challenge)
+    }
     setConnection() {}
     setFirstSalvoStep() {}
     setQuickChatEnabled() {}
@@ -714,6 +718,7 @@ describe('production hot-seat progression composition', () => {
     seams.verifiedProgressionReceipts.length = 0
     seams.verifiedHudStates.length = 0
     seams.quickOperations.length = 0
+    seams.publicSeedChallenges.length = 0
     seams.verifiedPresentationEvents.length = 0
     seams.hudUpdates.length = 0
     seams.hudFrames.length = 0
@@ -1488,6 +1493,78 @@ describe('production hot-seat progression composition', () => {
     expect(seams.quickOperations).toEqual([config.quickOperation, config.quickOperation])
   })
 
+  it('retains an imported challenge across restart without casual recording or anonymous conversion', async () => {
+    const first = fakeClient(liveVerifiedState())
+    const second = fakeClient(liveVerifiedState())
+    seams.clients.push(first, second)
+    seams.accountAnonymous = true
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onRestart) throw new Error('Expected seed challenge lifecycle wiring')
+    const config = {
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 42, rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk' },
+      quickOperation: {
+        id: 'last-light-siege', title: 'Last Light Siege',
+        briefing: 'A best-of-three duel that tightens into sudden death.',
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
+      publicSeedChallenge: {
+        version: 'ST1', tag: 'LL', operationId: 'last-light-siege', seed: 42,
+        origin: 'imported-public-challenge',
+      },
+    }
+
+    await seams.onLobbyReady(config)
+    first.emit(gameState({ winner: 'p1' }))
+    await Promise.resolve()
+    seams.onRestart()
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    second.emit(gameState({ winner: 'p1' }))
+    await Promise.resolve()
+
+    expect(seams.gameEngineArgs.map(([options]) => options)).toEqual([config, config])
+    expect(seams.recorded).toEqual([])
+    expect(seams.anonymousHandoffs).toBe(0)
+    const shares = seams.publicSeedChallenges.filter((value) => value !== null)
+    expect(shares.map(({ url }) => url)).toEqual([
+      'http://localhost:3000/#challenge=ST1-LL-16',
+      'http://localhost:3000/#challenge=ST1-LL-16',
+    ])
+    expect(shares.map(({ descriptor }) => descriptor.origin))
+      .toEqual(['imported-public-challenge', 'imported-public-challenge'])
+  })
+
+  it('keeps locally selected supported practice progression while exposing its canonical share link', async () => {
+    const client = fakeClient(liveVerifiedState())
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected local seed challenge wiring')
+    await seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 42, walls: 'wrap', battlefieldWorld: 'glassstorm-expanse', rounds: 3 },
+      quickOperation: {
+        id: 'crosswind-range', title: 'Crosswind Range',
+        briefing: 'Wraparound walls turn shifting wind into a ranging test.',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'first-strike', seed: 42 },
+      },
+      publicSeedChallenge: {
+        version: 'ST1', tag: 'CW', operationId: 'crosswind-range', seed: 42,
+        origin: 'local-selection',
+      },
+    })
+    client.emit(gameState({ winner: 'p1' }))
+    await vi.waitFor(() => expect(seams.recorded).toHaveLength(1))
+
+    const shares = seams.publicSeedChallenges.filter((value) => value !== null)
+    expect(shares.map(({ url }) => url)).toEqual([
+      'http://localhost:3000/#challenge=ST1-CW-16',
+    ])
+    expect(shares[0]?.descriptor.origin).toBe('local-selection')
+    expect(seams.anonymousHandoffs).toBe(0)
+  })
+
   it('restarts an ordinary local match with the exact same config and admits same-scenario copy', async () => {
     const first = fakeClient(liveVerifiedState())
     const second = fakeClient(liveVerifiedState())
@@ -1514,12 +1591,19 @@ describe('production hot-seat progression composition', () => {
     await import('./main')
     if (!seams.onLobbyReady || !seams.onRestart) throw new Error('Expected lobby and restart wiring')
 
-    await seams.onLobbyReady({ mode: 'network', roomId: 'p11-room', playerId: 'p1', players: [] })
+    await seams.onLobbyReady({
+      mode: 'network', roomId: 'p11-room', playerId: 'p1', players: [],
+      publicSeedChallenge: {
+        version: 'ST1', tag: 'LL', operationId: 'last-light-siege', seed: 42,
+        origin: 'imported-public-challenge',
+      },
+    })
     await vi.waitFor(() => expect(network.start).toHaveBeenCalledOnce())
     seams.onRestart()
 
     expect(network.requestRematch).toHaveBeenCalledOnce()
     expect(seams.terminalReplayModes.at(-1)).toBeNull()
+    expect(seams.publicSeedChallenges.filter(Boolean)).toEqual([])
   })
 
   it('forwards one real Fire and presents its submit, flight, resolution, and CPU handoff frames', async () => {

@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getByRole } from '@testing-library/dom';
 import { TerminalMatchView, type TerminalMatchProjection } from './TerminalMatchView';
+
+const seedChallenge = (url: string): NonNullable<TerminalMatchProjection['seedChallenge']> => ({
+  descriptor: {
+    version: 'ST1', tag: 'LL', operationId: 'last-light-siege', seed: 42,
+    origin: 'local-selection',
+  },
+  url,
+});
 
 function projection(overrides: Partial<TerminalMatchProjection> = {}): TerminalMatchProjection {
   return {
@@ -12,6 +21,7 @@ function projection(overrides: Partial<TerminalMatchProjection> = {}): TerminalM
     fieldOrder: null,
     turningPoint: null,
     nextExperiment: null,
+    seedChallenge: null,
     progressionReceipt: null,
     progressionHandoff: null,
     primary: { label: 'Play again', kind: 'restart', disabled: false },
@@ -23,6 +33,138 @@ function projection(overrides: Partial<TerminalMatchProjection> = {}): TerminalM
 
 describe('TerminalMatchView', () => {
   afterEach(() => vi.unstubAllGlobals());
+
+  it('copies an eligible canonical challenge link and includes the action in the focus loop', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+    const url = 'https://play.example/singedTerra/#challenge=ST1-LL-16';
+    view.show(projection({ seedChallenge: seedChallenge(url) }));
+    const copy = host.querySelector<HTMLButtonElement>('[data-action="copy-seed-challenge"]')!;
+    copy.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(writeText).toHaveBeenCalledWith(url);
+    expect(host.querySelector('[data-ui="seed-challenge-copy-status"]')?.textContent)
+      .toBe('Challenge link copied');
+    expect(host.querySelector<HTMLInputElement>('[data-ui="seed-challenge-copy-fallback"]'))
+      .toBeNull();
+    const primary = host.querySelector<HTMLButtonElement>('[data-terminal-primary]')!;
+    primary.focus();
+    host.querySelector<HTMLElement>('[role="dialog"]')!.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Tab', shiftKey: true, bubbles: true, cancelable: true,
+    }));
+    expect(document.activeElement).toBe(copy);
+    view.destroy();
+    host.remove();
+  });
+
+  it.each([
+    ['missing Clipboard', undefined],
+    ['denied Clipboard', { writeText: vi.fn().mockRejectedValue(new DOMException('private', 'NotAllowedError')) }],
+  ])('reveals and selects only the canonical full URL for %s', async (_label, clipboard) => {
+    vi.stubGlobal('navigator', { clipboard });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+    const url = 'https://play.example/singedTerra/#challenge=ST1-CW-16';
+    view.show(projection({ seedChallenge: seedChallenge(url) }));
+    host.querySelector<HTMLButtonElement>('[data-action="copy-seed-challenge"]')!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const fallback = host.querySelector<HTMLInputElement>('[data-ui="seed-challenge-copy-fallback"]')!;
+    expect(host.querySelector('[data-ui="seed-challenge-copy-status"]')?.textContent)
+      .toBe('Copy this challenge link:');
+    expect(fallback.value).toBe(url);
+    expect(fallback.selectionStart).toBe(0);
+    expect(fallback.selectionEnd).toBe(url.length);
+    expect(document.activeElement).toBe(fallback);
+    expect(getByRole(host, 'textbox', { name: 'Challenge link' })).toBe(fallback);
+    expect(host.textContent).not.toContain('private');
+    view.destroy();
+    host.remove();
+  });
+
+  it('clears the share action, status, fallback, and stale clipboard completion on retirement', async () => {
+    let resolveCopy!: () => void;
+    const pending = new Promise<void>((resolve) => { resolveCopy = resolve; });
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(() => pending) } });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+    view.show(projection({ seedChallenge: seedChallenge('https://play.example/#challenge=ST1-LA-16') }));
+    const copy = host.querySelector<HTMLButtonElement>('[data-action="copy-seed-challenge"]')!;
+    copy.click();
+    copy.focus();
+    view.update(projection({ seedChallenge: null }));
+    resolveCopy();
+    await pending;
+    await Promise.resolve();
+
+    expect(host.querySelector('[data-action="copy-seed-challenge"]')).toBeNull();
+    expect(host.querySelector('[data-ui="seed-challenge-copy-status"]')).toBeNull();
+    expect(host.querySelector('[data-ui="seed-challenge-copy-fallback"]')).toBeNull();
+    expect(document.activeElement).toBe(host.querySelector('[data-terminal-primary]'));
+    view.destroy();
+    host.remove();
+  });
+
+  it('keeps one stable share surface in the hero without moving terminal actions', async () => {
+    vi.stubGlobal('navigator', { clipboard: undefined });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const view = new TerminalMatchView({
+      host, onRestart: vi.fn(), onVerifiedNextOrder: vi.fn(), onQuit: vi.fn(),
+      onRetry: vi.fn(), onSignIn: vi.fn(), focusFallback: () => null,
+    });
+    const challenge = seedChallenge('https://play.example/#challenge=ST1-LL-16');
+    const terminal = projection({ seedChallenge: challenge });
+
+    view.show(terminal);
+    const hero = host.querySelector<HTMLElement>('.st-hud__victory-hero')!;
+    const report = host.querySelector<HTMLElement>('.st-hud__victory-report')!;
+    const share = host.querySelector<HTMLElement>('[data-ui="seed-challenge-share"]')!;
+    const actions = host.querySelector<HTMLElement>('.st-hud__overlay-btns')!;
+    expect(share.parentElement).toBe(hero);
+    expect(actions.parentElement).toBe(report);
+
+    host.querySelector<HTMLButtonElement>('[data-action="copy-seed-challenge"]')!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    const fallback = host.querySelector<HTMLInputElement>('[data-ui="seed-challenge-copy-fallback"]')!;
+    expect(document.activeElement).toBe(fallback);
+    const append = vi.spyOn(hero, 'append');
+    view.update(terminal);
+    expect(append).not.toHaveBeenCalled();
+    expect(share.parentElement).toBe(hero);
+    expect(document.activeElement).toBe(fallback);
+    expect([fallback.selectionStart, fallback.selectionEnd]).toEqual([0, challenge.url.length]);
+
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
+    view.update(terminal);
+    expect(append).not.toHaveBeenCalled();
+    expect(share.parentElement).toBe(hero);
+    expect(actions.parentElement).toBe(report);
+    expect(document.activeElement).toBe(fallback);
+    view.update(projection({ seedChallenge: null }));
+    expect(share.isConnected).toBe(false);
+    expect(document.activeElement).toBe(host.querySelector('[data-terminal-primary]'));
+    view.destroy();
+    host.remove();
+  });
 
   it('renders a static explanation without adding a focusable terminal action', () => {
     const host = document.createElement('div');

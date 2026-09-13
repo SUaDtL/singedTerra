@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "challengeVersion": "ST1",
+  "hashNormalization": "utf8-lf",
+  "disposition": "initial-st1-contract-reviewed",
+  "recursiveDirectories": [
+    "shared/src/engine",
+    "shared/src/types"
+  ],
+  "explicitFiles": [
+    "client/src/client/createModeClient.ts",
+    "client/src/client/fastForward.ts",
+    "client/src/client/fieldOrder.ts",
+    "client/src/client/frameClock.ts",
+    "client/src/client/gameEngineOptions.ts",
+    "client/src/client/HotSeatClient.ts",
+    "client/src/client/modeConfig.ts",
+    "client/src/client/practiceFieldOrder.ts",
+    "client/src/client/quickDuelLaunch.ts",
+    "client/src/client/quickOperations.ts",
+    "client/src/client/seedChallenge.ts",
+    "client/src/main.ts",
+    "client/src/ui/Lobby.ts",
+    "package.json",
+    "scripts/checks/seed_challenge_compatibility.mjs"
+  ],
+  "sources": [
+    {
+      "path": "client/src/client/HotSeatClient.ts",
+      "sha256": "62a68ad8e5c9b756fa5696cd6db8f16748abcd2239bac65c167bc476c0b43002"
+    },
+    {
+      "path": "client/src/client/createModeClient.ts",
+      "sha256": "2fa298d6a093df8190c5606c9b159ffc02779dd1106fb813bf8d6f2aa06d050b"
+    },
+    {
+      "path": "client/src/client/fastForward.ts",
+      "sha256": "a8be057e9f57bbf8ee0041c53f46b06cc10571713e3df555e5aeedeaa6b01b1a"
+    },
+    {
+      "path": "client/src/client/fieldOrder.ts",
+      "sha256": "f2fd817610ec778a2a5ec0e8c877a0325f8cc6a3dff9379b2f5ef7eda66dd974"
+    },
+    {
+      "path": "client/src/client/frameClock.ts",
+      "sha256": "110b6c5b07aeee8d81195cffe79d8d1288e2184f3809c5bf6b3560b876cca0a7"
+    },
+    {
+      "path": "client/src/client/gameEngineOptions.ts",
+      "sha256": "ff48820beff23a62b85998fd6e43f12685d696f68098c4cff5a3efaf3660595a"
+    },
+    {
+      "path": "client/src/client/modeConfig.ts",
+      "sha256": "f007e69871f67b4fcae09a894605defc332928d74b70a65ba9b28d35db274559"
+    },
+    {
+      "path": "client/src/client/practiceFieldOrder.ts",
+      "sha256": "6e3153e52e83d42d8a91e389c2289769c30b1f6561be1c0981adc22fc8507031"
+    },
+    {
+      "path": "client/src/client/quickDuelLaunch.ts",
+      "sha256": "715d5db78d8baaf9c962aa64a4c926b51f8cd8cb0f92ec197352cc7114134538"
+    },
+    {
+      "path": "client/src/client/quickOperations.ts",
+      "sha256": "da5012ba905472de9b85337ec4e62de714e5d7ba35e4183b41bf1f2460e42925"
+    },
+    {
+      "path": "client/src/client/seedChallenge.ts",
+      "sha256": "bcba0ffd99edd25b660a15d1b8087ee152d91869a14237dbab827d3da7b89f3c"
+    },
+    {
+      "path": "client/src/main.ts",
+      "sha256": "c3d561122ddc123be6b59e80864e10014ccae792181ddb685fade34dcd0f810b"
+    },
+    {
+      "path": "client/src/ui/Lobby.ts",
+      "sha256": "c9940829b8e78a51a638e4fb7f9e920cd2ad53afffa13e011e4deb6398e356bd"
+    },
+    {
+      "path": "package.json",
+      "sha256": "965d5d6a4d2d3f38967a91e240c5825a00979c826777db0c86dab90f6842e763"
+    },
+    {
+      "path": "scripts/checks/seed_challenge_compatibility.mjs",
+      "sha256": "4c57f5c0a5bb4d41bc1590f39fe7fdec24c5bc3023ac55b96677edb7527c1830"
+    },
+    {
+      "path": "shared/src/engine/AI.ts",
+      "sha256": "50198def7341c7ce59992d380791f8fe942c75f225811ec5a394101dbfb85090"
+    },
+    {
+      "path": "shared/src/engine/AiShotSearch.ts",
+      "sha256": "3aee0891095bd4eb75b6b98110d18782ec67cf408c3e0267aa9e94b32804369b"
+    },
+    {
+      "path": "shared/src/engine/BlastGeometry.ts",
+      "sha256": "7f96b79e89353c5cce51a605b592c6e4135be070aa2707d95e12782818c4b637"
+    },
+    {
+      "path": "shared/src/engine/GameEngine.ts",
+      "sha256": "9f3c881b6885dc45003ae2e4da0b12442bb5f328aae016469d357282b85e5158"
+    },
+    {
+      "path": "shared/src/engine/Movement.ts",
+      "sha256": "4593000aaea37a36da48fb1b7b966d58b25aae39a7ed4fa2569f9622714ecee2"
+    },
+    {
+      "path": "shared/src/engine/Physics.ts",
+      "sha256": "abd86188338b9abeb234af6514893d2f2083b20dbe014595c4ff8338aec76c29"
+    },
+    {
+      "path": "shared/src/engine/Random.ts",
+      "sha256": "f6ad59ebeca3e661f84d60e9323317085be5c40364cc5fdc1b2997c20d358a96"
+    },
+    {
+      "path": "shared/src/engine/Tank.ts",
+      "sha256": "efc9def9bd11e65cc9f434f1ead6ea208d1e3f229613f14e3214437039cf71c0"
+    },
+    {
+      "path": "shared/src/engine/Terrain.ts",
+      "sha256": "9ab675551240915fc97324251e884e27dad610a1d4cc0581f9b1ff65ae8a0cf8"
+    },
+    {
+      "path": "shared/src/engine/WeaponSystem.ts",
+      "sha256": "a888cc4eab7b4bcfec7b38cf3ef989f80d975a5eb3146aa56f198eff0e11f001"
+    },
+    {
+      "path": "shared/src/engine/math.ts",
+      "sha256": "7cb53de63ad456994bde744ee12e5735f85214c80f0d2dccd71b336c3a56cb1c"
+    },
+    {
+      "path": "shared/src/types/GameOptions.ts",
+      "sha256": "dbcfc9421ba80d26e6e26ad5dfd4918bc2094ff34bacb324de2eb5b163a7e708"
+    },
+    {
+      "path": "shared/src/types/GameState.ts",
+      "sha256": "29bedf036c617501911eb123ae3830c13a37d15e78a1b5fb422a450c572546ac"
+    },
+    {
+      "path": "shared/src/types/PlayerAction.ts",
+      "sha256": "bedc6b8c705737e5c2c414afe7e6f7d10bb2a1d914b8b99cba4fb52ff401b217"
+    },
+    {
+      "path": "shared/src/types/TankLoadout.ts",
+      "sha256": "03c1974353a229cb271cd21aa4748432237a10ef0921719a9a7737a1bdfe900a"
+    }
+  ]
+}

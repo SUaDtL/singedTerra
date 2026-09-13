@@ -365,7 +365,7 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
     expect(internals(lobby).onlineSubView).toBe('browse');
     expect(listRooms).toHaveBeenCalledOnce();
 
-    clickButton(root, 'Back to deployment choices');
+    clickButton(root, 'Deployment choices');
     expect.soft(internals(lobby).surface).toBe('chooser');
     expect.soft(internals(lobby).onlineSubView).toBe('create');
     await vi.advanceTimersByTimeAsync(3_000);
@@ -398,6 +398,6 @@ describe('Lobby waiting-room session lifecycle (characterization)', () => {
       .map((candidate) => candidate.textContent);
 
     expect(actions).toContain('Leave');
-    expect(actions).not.toContain('Back to deployment choices');
+    expect(actions).not.toContain('Deployment choices');
   });
 });

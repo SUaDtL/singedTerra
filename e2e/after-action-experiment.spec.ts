@@ -21,7 +21,7 @@ async function chooseFoundryPreset(page: Page, player: 1 | 2): Promise<void> {
 }
 
 async function fillSetting(page: Page, label: string, value: string): Promise<void> {
-  const field = page.locator('#lobby .lobby-field').filter({ hasText: label });
+  const field = page.getByRole('dialog', { name: 'Operations Settings', exact: true }).locator('.lobby-field').filter({ hasText: label });
   await field.locator('input').fill(value);
 }
 
@@ -96,10 +96,8 @@ test.describe('P11 after-action same-scenario experiment', () => {
       await expect(splash).toBeHidden({ timeout: 5_000 });
 
       await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
-      const customization = page.locator('.lobby-hotseat-customization');
-      await expect(customization).toBeVisible();
-      if (await customization.getAttribute('open') === null) await customization.locator('summary').click();
-      await expect(customization).toHaveAttribute('open', '');
+      await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
+      await expect(page.locator('.lobby-name').first()).toBeVisible();
       await chooseFoundryPreset(page, 1);
       await chooseFoundryPreset(page, 2);
 

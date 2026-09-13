@@ -159,7 +159,7 @@ async function startGarageMatch(page: Page, kit: Kit): Promise<void> {
   await openHotSeatCustomization(page);
   await expect(page.locator('.lobby-garage')).toHaveCount(2);
 
-  if (await page.locator('#app').evaluate((element) => element.classList.contains('is-compact'))) {
+  if (await page.getByRole('button', { name: 'Customize Player 1 tank' }).isVisible()) {
     await page.getByRole('button', { name: 'Customize Player 1 tank' }).click();
     await expect(page.getByRole('dialog', { name: 'Vehicle Bay: Player 1' })).toBeVisible();
   }

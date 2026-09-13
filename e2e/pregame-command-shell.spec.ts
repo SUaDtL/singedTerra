@@ -162,12 +162,13 @@ test.describe('Pre-game command shell', () => {
     await openLocal(page);
 
     await expect(page.getByRole('heading', { name: 'Hot Seat', exact: true })).toBeVisible();
-    await expect(page.locator('#lobby .lobby-hotseat-ready')).toContainText('2-player local battle');
+    await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#lobby .lobby-name')).toHaveCount(2);
     await expect(page.locator('#lobby .lobby-start')).toBeVisible();
     await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Local Battle', exact: true })).toBeFocused();
     await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
     await assertLobbyFrame(page);
@@ -175,13 +176,11 @@ test.describe('Pre-game command shell', () => {
 
   test('keeps valid Local defaults and validation inside preparation', async ({ page }) => {
     await openLocal(page);
-    const customization = page.locator('#lobby .lobby-hotseat-customization');
     const start = page.locator('#lobby .lobby-start');
 
-    await expect(customization).not.toHaveAttribute('open', '');
     await expect(start).toBeEnabled();
-    await customization.getByText('Customize crew and battlefield', { exact: true }).click();
     const playerName = page.getByRole('textbox', { name: 'Player 1' });
+    await expect(playerName).toBeVisible();
     await playerName.fill('');
     await expect(start).toBeDisabled();
     await expect(page.locator('#lobby .lobby-error')).toBeVisible();
@@ -201,7 +200,7 @@ test.describe('Pre-game command shell', () => {
 
     await page.locator('[data-online-route="join-code"]').click();
     await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Play Online', exact: true })).toBeFocused();
     await openOnline(page);
     await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
@@ -234,7 +233,7 @@ test.describe('Pre-game command shell', () => {
       );
       expect(metrics.previewVisible).toBe(true);
       await assertLobbyFrame(page);
-      await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
+      await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
     }
   });
 });

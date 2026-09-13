@@ -63,15 +63,12 @@ async function assertVehicleBayGeometry(page: Page): Promise<void> {
     .toBeLessThanOrEqual(done!.top + 1);
 }
 
-async function openCompactGarage(page: Page, ownerLabel: string): Promise<void> {
-  if (await page.locator('#app').evaluate((app) => app.classList.contains('is-compact'))) {
-    await page.getByRole('button', {
-      name: `Customize ${ownerLabel} tank`,
-    }).click();
-  }
+async function openTankCustomization(page: Page, ownerLabel: string): Promise<void> {
+  const open = page.getByRole('button', { name: `Customize ${ownerLabel} tank` });
+  if (await open.isVisible()) await open.click();
 }
 
-async function closeCompactGarage(page: Page): Promise<void> {
+async function closeTankCustomization(page: Page): Promise<void> {
   const done = page.getByRole('button', { name: 'Done customizing tank' });
   if (await done.isVisible()) await done.click();
 }
@@ -243,7 +240,7 @@ test.describe('tank Garage', () => {
     page,
   }) => {
     await openGarage(page);
-    await openCompactGarage(page, 'Player 1');
+    await openTankCustomization(page, 'Player 1');
     const kits = ['Foundry', 'Ranger', 'Bulwark', 'Jackal'] as const;
     for (let turretIndex = 0; turretIndex < kits.length; turretIndex++) {
       for (let barrelIndex = 0; barrelIndex < kits.length; barrelIndex++) {
@@ -296,7 +293,7 @@ test.describe('tank Garage', () => {
   test('fits the stage and previews distinct authored kits', async ({ page }, testInfo) => {
     await openGarage(page);
 
-    await openCompactGarage(page, 'Player 1');
+    await openTankCustomization(page, 'Player 1');
     const fittedPresetLabels = [
       ['Foundry', ['Tracks', 'Armor Hull', 'Cupola', 'Cannon']],
       ['Ranger', ['Spider Legs', 'Scout Hull', 'Sensor Pod', 'Railgun']],
@@ -334,7 +331,7 @@ test.describe('tank Garage', () => {
       expect(silhouette.middle).toBeGreaterThan(40);
       expect(silhouette.bottom).toBeGreaterThan(40);
     }
-    await closeCompactGarage(page);
+    await closeTankCustomization(page);
 
     const fit = await page.locator('.lobby-card').evaluate((card) => ({
       clientHeight: card.clientHeight,
@@ -348,7 +345,7 @@ test.describe('tank Garage', () => {
     if (testInfo.project.name === 'pixel-touch') {
       await expectTouchSized(page.locator('.lobby-swatch:visible'));
       await expectTouchSized(page.locator('.lobby-garage__open:visible'));
-      await openCompactGarage(page, 'Player 1');
+      await openTankCustomization(page, 'Player 1');
       const firstPreset = page.getByRole('button', {
         name: 'Apply Foundry preset to Player 1',
       });
@@ -384,15 +381,15 @@ test.describe('tank Garage', () => {
     }
 
     if (testInfo.project.name === 'small-window') {
-      await openCompactGarage(page, 'Player 1');
+      await openTankCustomization(page, 'Player 1');
       await expect(page.getByRole('dialog', {
         name: 'Vehicle Bay: Player 1',
       })).toBeVisible();
       await assertVehicleBayGeometry(page);
-      await closeCompactGarage(page);
+      await closeTankCustomization(page);
     }
 
-    await page.locator('.lobby-field select:not([id])').selectOption('4');
+    await page.getByLabel('Players', { exact: true }).selectOption('4');
     await expect(page.locator('.lobby-garage')).toHaveCount(4);
     const fourPlayerFit = await page.locator('.lobby-card').evaluate((card) => ({
       clientHeight: card.clientHeight,
@@ -406,8 +403,8 @@ test.describe('tank Garage', () => {
       await expectTouchSized(page.locator('.lobby-garage__open:visible'));
     }
 
-    await page.locator('.lobby-field select:not([id])').selectOption('2');
-    await page.getByRole('button', { name: 'Back to deployment choices' }).click();
+    await page.getByLabel('Players', { exact: true }).selectOption('2');
+    await page.getByRole('button', { name: 'Deployment choices' }).click();
     await page.getByRole('button', { name: 'Play Online', exact: true }).click();
     await expect(page.locator('.lobby-garage')).toHaveCount(1);
     const onlineFit = await page.locator('.lobby-card').evaluate((card) => ({
@@ -417,19 +414,19 @@ test.describe('tank Garage', () => {
     expect(onlineFit.scrollHeight).toBeLessThanOrEqual(
       onlineFit.clientHeight + 1,
     );
-    await page.getByRole('button', { name: 'Back to deployment choices' }).click();
+    await page.getByRole('button', { name: 'Deployment choices' }).click();
     await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
 
-    await openCompactGarage(page, 'Player 1');
+    await openTankCustomization(page, 'Player 1');
     await page.getByRole('button', {
       name: 'Apply Ranger preset to Player 1',
     }).click();
-    await closeCompactGarage(page);
-    await openCompactGarage(page, 'Player 2');
+    await closeTankCustomization(page);
+    await openTankCustomization(page, 'Player 2');
     await page.getByRole('button', {
       name: 'Apply Bulwark preset to Player 2',
     }).click();
-    await closeCompactGarage(page);
+    await closeTankCustomization(page);
 
     await expect(page.locator(
       'button[aria-label="Apply Ranger preset to Player 1"]',
@@ -468,7 +465,7 @@ test.describe('tank Garage', () => {
   }, testInfo) => {
     test.skip(testInfo.project.name === 'desktop-fine', 'The focused editor overlay is compact-only.');
     await openGarage(page);
-    await openCompactGarage(page, 'Player 1');
+    await openTankCustomization(page, 'Player 1');
 
     await expect(page.locator('#lobby .lobby-garage.editing')).toBeVisible();
     await expect(page.locator('#lobby .lobby-preview')).toBeHidden();
@@ -484,7 +481,7 @@ test.describe('tank Garage', () => {
     await openGarage(page);
     await installTankPartDrawProbe(page);
 
-    await openCompactGarage(page, 'Player 1');
+    await openTankCustomization(page, 'Player 1');
     await page.getByRole('button', {
       name: 'Apply Jackal preset to Player 1',
     }).click();
@@ -510,7 +507,7 @@ test.describe('tank Garage', () => {
         __tankPartDraws?: Array<{ target: string; hash: number }>;
       }).__tankPartDraws = [];
     });
-    await closeCompactGarage(page);
+    await closeTankCustomization(page);
     await page.getByRole('button', { name: 'Deploy local battle' }).click();
 
     await expect(page.locator('#game')).toBeVisible();

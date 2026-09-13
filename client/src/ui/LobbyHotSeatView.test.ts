@@ -14,11 +14,9 @@ function options(overrides: Partial<LobbyHotSeatViewOptions> = {}): LobbyHotSeat
     playerCount: 2,
     playerRows: [section('player-1'), section('player-2')],
     advanced: section('advanced'),
-    customizationOpen: false,
     validationMessage: null,
     verifiedDeployment: null,
     onPlayerCountChange: vi.fn(),
-    onCustomizationToggle: vi.fn(),
     onStart: vi.fn(),
     ...overrides,
   };
@@ -31,6 +29,39 @@ function startButton(root: HTMLElement): HTMLButtonElement {
 }
 
 describe('buildLobbyHotSeatView', () => {
+  it('opens Local Battle with crew controls and its deployment footer visible', () => {
+    const root = buildLobbyHotSeatView(options());
+    const tabs = [...root.querySelectorAll<HTMLElement>('[role="tab"]')];
+    const body = root.querySelector<HTMLElement>('.lobby-hotseat-body');
+
+    expect(root.querySelector('[role="tablist"]')?.getAttribute('aria-label')).toBe('Hot Seat modes');
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      'Local Battle', 'Practice vs CPU', 'Verified Deployment',
+    ]);
+    expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(body?.getAttribute('aria-label')).toBe('Local Battle');
+    expect(body?.querySelector('.lobby-rows')).not.toBeNull();
+    expect(body?.querySelector('.lobby-hotseat-footer')?.contains(startButton(root))).toBe(true);
+    expect(root.querySelector('.lobby-hotseat-customization')).toBeNull();
+  });
+
+  it('routes arrow-key tab selection without mounting inactive surfaces', () => {
+    const onSurfaceChange = vi.fn();
+    const root = buildLobbyHotSeatView({
+      ...options(),
+      surface: 'local',
+      onSurfaceChange,
+      quickOperations: [{ id: 'standard', title: 'Standard Duel', briefing: 'Balanced duel.' }],
+      onQuickOperation: vi.fn(),
+    } as LobbyHotSeatViewOptions);
+    const local = root.querySelector<HTMLButtonElement>('[role="tab"][data-hotseat-surface="local"]')!;
+
+    local.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(onSurfaceChange).toHaveBeenCalledWith('practice', true);
+    expect(root.querySelector('[data-operation-lane="practice"]')).toBeNull();
+    expect(root.querySelector('.lobby-verified-deployment')).toBeNull();
+  });
+
   it('composes authenticated career choices into one Commander Operations board', () => {
     const onQuickOperation = vi.fn();
     const root = buildLobbyHotSeatView(options({
@@ -39,6 +70,7 @@ describe('buildLobbyHotSeatView', () => {
         { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.' },
       ],
       onQuickOperation,
+      surface: 'verified',
       verifiedDeployment: {
         action: 'start',
         commanderName: 'Ranger',
@@ -59,64 +91,54 @@ describe('buildLobbyHotSeatView', () => {
       },
     }));
 
-    const board = root.querySelector<HTMLElement>('[data-ui="commander-operations"]');
+    const panel = root.querySelector<HTMLElement>('[role="tabpanel"]');
     const dossier = root.querySelector<HTMLElement>('.lobby-verified-deployment__dossier');
-    expect(board?.getAttribute('aria-label')).toBe('Commander Operations');
+    const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment');
+    expect(panel?.getAttribute('aria-label')).toBe('Verified Deployment');
     expect(dossier?.getAttribute('aria-label')).toBe('Commander dossier');
-    expect(dossier?.nextElementSibling).toBe(board);
-    expect([...board?.children ?? []].map((child) => child.getAttribute('data-operation-lane')))
-      .toEqual(['career', 'verified', 'practice']);
-    expect(board?.textContent).toContain('First Strike');
-    expect(board?.textContent).toContain('Practice operation');
-    expect(board?.querySelectorAll('.lobby-verified-deployment__launch')).toHaveLength(1);
-    expect(board?.querySelector('[data-operation-lane="verified"] [data-operation-id]')).toBeNull();
-    expect(board?.querySelectorAll('[data-operation-id]')).toHaveLength(2);
-    const compactSelector = board?.querySelector<HTMLSelectElement>('[data-ui="practice-operation-selector"]');
-    expect([...compactSelector?.options ?? []].map((option) => option.value))
-      .toEqual(['standard', 'crosswind-range']);
-    const compactLaunch = board?.querySelector<HTMLButtonElement>('[data-ui="launch-practice-operation"]');
-    expect(compactLaunch?.textContent)
-      .toBe('Launch practice');
-    compactSelector!.value = 'crosswind-range';
-    compactSelector!.dispatchEvent(new Event('change'));
-    compactLaunch!.click();
-    expect(onQuickOperation).toHaveBeenCalledWith('crosswind-range');
-    expect(board?.textContent).not.toMatch(/bonus|reward|unlock|medal|streak/i);
+    expect(verified?.textContent).toContain('Commander Ranger');
+    expect(root.querySelector('[data-operation-lane="practice"]')).toBeNull();
+    expect(root.querySelector('.lobby-rows')).toBeNull();
+    expect(root.querySelector('.lobby-hotseat-footer .lobby-verified-deployment__launch'))
+      .not.toBeNull();
+    expect(root.textContent).not.toMatch(/bonus|reward|unlock|medal|streak/i);
   });
 
-  it('presents valid defaults as ready and progressively discloses customization', () => {
-    const onCustomizationToggle = vi.fn();
-    const root = buildLobbyHotSeatView(options({ onCustomizationToggle }));
-    const ready = root.querySelector<HTMLElement>('.lobby-hotseat-ready');
-    const customization = root.querySelector<HTMLDetailsElement>(
-      '.lobby-hotseat-customization',
-    );
+  it('mounts only Practice vs CPU and launches the selected existing operation', () => {
+    const onQuickOperation = vi.fn();
+    const root = buildLobbyHotSeatView(options({
+      surface: 'practice',
+      quickOperations: [
+        { id: 'standard', title: 'Standard Duel', briefing: 'Balanced duel.' },
+        { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Ranging test.' },
+      ],
+      onQuickOperation,
+    }));
+    const selector = root.querySelector<HTMLSelectElement>('[data-ui="practice-operation-selector"]')!;
+    const selection = root.querySelector<HTMLElement>('[data-ui="selected-practice-operation"]')!;
+    expect(selection.textContent).toContain('Standard Duel');
+    expect(selection.textContent).toContain('Balanced duel.');
+    selector.value = 'crosswind-range';
+    selector.dispatchEvent(new Event('change'));
+    expect(selection.textContent).toContain('Crosswind Range');
+    expect(selection.textContent).toContain('Ranging test.');
+    root.querySelector<HTMLButtonElement>('[data-ui="launch-practice-operation"]')!.click();
+
+    expect(root.querySelector('[role="tabpanel"]')?.getAttribute('aria-label')).toBe('Practice vs CPU');
+    expect(root.querySelector('.lobby-rows')).toBeNull();
+    expect(root.querySelector('.lobby-verified-deployment')).toBeNull();
+    expect(onQuickOperation).toHaveBeenCalledWith('crosswind-range');
+  });
+
+  it('presents valid defaults as directly editable local preparation', () => {
+    const root = buildLobbyHotSeatView(options());
     const setup = root.querySelector<HTMLElement>('.lobby-route-brief__setup');
     const start = startButton(root);
 
-    expect(ready?.querySelector('h3')?.textContent).toBe('Battery ready');
-    expect(ready?.textContent).toContain('2-player local battle');
-    expect(ready?.textContent).toContain('Current crew and battlefield setup is ready');
-    expect(customization).toBeInstanceOf(HTMLDetailsElement);
-    expect(customization?.open).toBe(false);
-    expect(customization?.querySelector('summary')?.textContent)
-      .toBe('Customize crew and battlefield');
-    expect(customization?.contains(setup ?? null)).toBe(true);
-    expect(customization?.contains(start)).toBe(false);
-
-    customization!.open = true;
-    customization!.dispatchEvent(new Event('toggle'));
-    expect(onCustomizationToggle).toHaveBeenCalledWith(true);
-
-    customization!.dataset.invalid = 'true';
-    customization!.open = false;
-    customization!.dispatchEvent(new Event('toggle'));
-    expect(customization?.open).toBe(true);
-
-    customization!.dataset.invalid = 'false';
-    customization!.open = false;
-    customization!.dispatchEvent(new Event('toggle'));
-    expect(onCustomizationToggle).toHaveBeenLastCalledWith(false);
+    expect(setup).not.toBeNull();
+    expect(root.querySelector('.lobby-hotseat-customization')).toBeNull();
+    expect(root.querySelector('.lobby-hotseat-scroll')?.contains(setup)).toBe(true);
+    expect(root.querySelector('.lobby-hotseat-footer')?.contains(start)).toBe(true);
   });
 
   it('renders the player range, selected count, shared-node order, and crowded layout', () => {
@@ -125,9 +147,6 @@ describe('buildLobbyHotSeatView', () => {
     const root = buildLobbyHotSeatView(options({ playerCount: 3, playerRows, advanced }));
 
     expect(root.className).toBe('lobby-route-brief lobby-hotseat crowded');
-    expect(root.querySelector('.lobby-route-brief__title')?.textContent).toBe('Local battery');
-    expect(root.querySelector('.lobby-route-brief__purpose')?.textContent)
-      .toBe('Configure the crew sharing this battlefield.');
     expect(root.querySelector('.lobby-route-brief__setup')?.getAttribute('aria-label'))
       .toBe('Local battery setup');
     const select = root.querySelector('select');
@@ -141,11 +160,11 @@ describe('buildLobbyHotSeatView', () => {
     const crew = root.querySelector<HTMLElement>('[aria-labelledby="crew-manifest-heading"]');
     const protocol = root.querySelector<HTMLElement>('[aria-labelledby="battlefield-protocol-heading"]');
     expect(crew?.querySelector('.lobby-preparation-section__title')?.textContent)
-      .toBe('Crew manifest');
+      .toBe('Crew');
     expect(crew?.querySelector('select')).toBe(select);
     expect(crew?.querySelector('.lobby-rows')).toBe(rows);
     expect(protocol?.querySelector('.lobby-preparation-section__title')?.textContent)
-      .toBe('Battlefield protocol');
+      .toBe('Battlefield');
     expect(protocol?.querySelector('[data-section="advanced"]')).toBe(advanced);
   });
 
@@ -179,27 +198,17 @@ describe('buildLobbyHotSeatView', () => {
     expect(root.querySelector('.lobby-rows')?.classList.contains('crowded')).toBe(false);
     expect(root.querySelector('.lobby-error')?.textContent)
       .toBe('Each player must pick a unique color.');
-    const customization = root.querySelector<HTMLDetailsElement>('.lobby-hotseat-customization');
-    expect(customization?.open).toBe(true);
-    customization!.open = false;
-    customization!.dispatchEvent(new Event('toggle'));
-    expect(customization?.open).toBe(true);
+    expect(root.querySelector('.lobby-hotseat-customization')).toBeNull();
     const start = startButton(root);
     expect(start.disabled).toBe(true);
     start.click();
     expect(onStart).not.toHaveBeenCalled();
   });
 
-  it('restores an explicitly opened customization view after a route rerender', () => {
-    const root = buildLobbyHotSeatView(options({ customizationOpen: true }));
-
-    expect(root.querySelector<HTMLDetailsElement>('.lobby-hotseat-customization')?.open)
-      .toBe(true);
-  });
-
   it('keeps casual deployment primary while disclosing one authenticated verified start', () => {
     const onLaunch = vi.fn();
     const root = buildLobbyHotSeatView(options({
+      surface: 'verified',
       verifiedDeployment: {
         action: 'start',
         commanderName: 'Ranger',
@@ -219,7 +228,6 @@ describe('buildLobbyHotSeatView', () => {
     }));
     const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment');
 
-    expect(startButton(root).textContent).toBe('Deploy local battle');
     expect(verified?.getAttribute('aria-label')).toBe('Verified deployment');
     expect(verified?.querySelector('h3')?.textContent).toBe('Verified deployment');
     expect(verified?.textContent).toContain('Commander Ranger versus deterministic CPU');
@@ -228,10 +236,10 @@ describe('buildLobbyHotSeatView', () => {
     expect(verified?.textContent).toContain('Fixed battlefield rules');
     expect(verified?.textContent).toContain('Verified XP stakes');
     expect(verified?.textContent).toContain('30-minute deadline');
-    expect(verified?.textContent).toContain('Commander dossier');
-    expect(verified?.textContent).toContain('First Strike · Damage the CPU within your first three salvos.');
+    expect(root.textContent).toContain('Commander dossier');
+    expect(root.textContent).toContain('First Strike · Damage the CPU within your first three salvos.');
     expect(verified?.querySelector('input')).toBeNull();
-    const launch = [...verified!.querySelectorAll('button')]
+    const launch = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === 'Start verified deployment');
     expect(launch).toBeInstanceOf(HTMLButtonElement);
     launch!.click();
@@ -244,6 +252,7 @@ describe('buildLobbyHotSeatView', () => {
     const onConfirmAbandon = vi.fn();
     const onCancelAbandon = vi.fn();
     const root = buildLobbyHotSeatView(options({
+      surface: 'verified',
       verifiedDeployment: {
         action: 'resume',
         commanderName: 'Ranger',
@@ -262,7 +271,7 @@ describe('buildLobbyHotSeatView', () => {
     expect(root.contains(verified)).toBe(true);
     expect(verified.textContent).toContain('Recovered 2 of 6 human salvos.');
     expect(verified.querySelector('input')).toBeNull();
-    expect([...verified.querySelectorAll('button')].map((candidate) => candidate.textContent))
+    expect([...root.querySelectorAll('.lobby-hotseat-footer button')].map((candidate) => candidate.textContent))
       .toEqual([
         'Resume verified deployment',
         'Abandon verified deployment',
@@ -270,16 +279,16 @@ describe('buildLobbyHotSeatView', () => {
         'Keep deployment',
       ]);
 
-    [...verified.querySelectorAll('button')]
+    [...root.querySelectorAll<HTMLButtonElement>('.lobby-hotseat-footer button')]
       .find((candidate) => candidate.textContent === 'Resume verified deployment')!
       .click();
-    [...verified.querySelectorAll('button')]
+    [...root.querySelectorAll<HTMLButtonElement>('.lobby-hotseat-footer button')]
       .find((candidate) => candidate.textContent === 'Abandon verified deployment')!
       .click();
-    [...verified.querySelectorAll('button')]
+    [...root.querySelectorAll<HTMLButtonElement>('.lobby-hotseat-footer button')]
       .find((candidate) => candidate.textContent === 'Confirm abandon')!
       .click();
-    [...verified.querySelectorAll('button')]
+    [...root.querySelectorAll<HTMLButtonElement>('.lobby-hotseat-footer button')]
       .find((candidate) => candidate.textContent === 'Keep deployment')!
       .click();
     expect(onLaunch).toHaveBeenCalledOnce();

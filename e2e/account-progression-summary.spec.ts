@@ -243,7 +243,8 @@ test.describe('Account progression summary compact readability', () => {
     const record = panel.locator('.account-panel__record');
     await expect(record).toBeVisible();
     await expect(record).toHaveAttribute('aria-label', 'Commander dossier');
-    await expect(record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true })).toBeVisible();
+    await expect(record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true, includeHidden: true })).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account');
     await expect(record.locator('progress')).toHaveAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX Level 3 XP progress');
     const commander = trigger.locator('.account-panel__commander-name');
     const insignia = trigger.locator('.account-panel__commander-insignia');
@@ -260,7 +261,7 @@ test.describe('Account progression summary compact readability', () => {
     await expect(nextRank).toHaveText('NEXT RANK / ARTILLERIST / LEVEL 5');
     expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
     expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
-    for (const text of [commander, insignia, rank, level, milestone, nextRank]) {
+    for (const text of [commander, level]) {
       const textBox = await renderedTextBox(text);
       const ownerBox = await trigger.boundingBox();
       expect(ownerBox, 'dossier disclosure should render').not.toBeNull();
@@ -270,15 +271,12 @@ test.describe('Account progression summary compact readability', () => {
       expect(textBox.y + textBox.height).toBeLessThanOrEqual(ownerBox!.y + ownerBox!.height + 1);
       expect(textBox.height, 'career copy must remain physically legible').toBeGreaterThanOrEqual(8);
     }
-    const headingBox = await record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true }).boundingBox();
     const triggerBox = await trigger.boundingBox();
-    const meterBox = await record.locator('progress').boundingBox();
-    expect(headingBox, 'Player Record heading should render').not.toBeNull();
-    expect(triggerBox, 'Player Record disclosure should render').not.toBeNull();
-    expect(meterBox, 'Player Record meter should render').not.toBeNull();
-    expect(headingBox!.height, 'Player Record heading should remain legible after stage zoom').toBeGreaterThanOrEqual(8);
-    expect(triggerBox!.height, 'Player Record disclosure should meet the rendered touch floor').toBeGreaterThanOrEqual(24);
-    expect(meterBox!.height, 'Player Record meter should remain visible after stage zoom').toBeGreaterThanOrEqual(4);
+    expect(triggerBox, 'Account disclosure should render').not.toBeNull();
+    expect(triggerBox!.height, 'Account disclosure should meet the rendered touch floor').toBeGreaterThanOrEqual(24);
+    for (const detail of [insignia, rank, milestone, nextRank, record.locator('progress')]) {
+      await expect(detail).toBeHidden();
+    }
     await expect(summary).toBeHidden();
     await expect(xp).toBeHidden();
     const panelBox = await panel.boundingBox();

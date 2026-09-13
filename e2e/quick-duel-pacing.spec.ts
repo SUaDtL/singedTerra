@@ -26,8 +26,8 @@ for (const [id, title, briefing] of OPERATIONS) {
       await expect(objective).toHaveText('Hold the Field · Win the duel.');
       await expect(objective).toHaveAttribute('data-content-version', '1');
       await expect(objective).toHaveAttribute('data-field-order-id', 'hold-the-field');
-      await expect(objective).toBeInViewport();
       await page.screenshot({ path: testInfo.outputPath('last-light-lobby.png') });
+      await expect(objective).toBeInViewport();
     } else if (id !== 'standard') {
       const expected = {
         'crosswind-range': ['First Strike · Damage the CPU within your first three salvos.', 'first-strike'],
