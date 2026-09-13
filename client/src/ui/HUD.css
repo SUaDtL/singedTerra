@@ -546,6 +546,28 @@
   letter-spacing: 0.04em;
 }
 .st-hud__victory-field-order[hidden] { display: none; }
+.st-hud__victory-turning-point,
+.st-hud__victory-next-experiment {
+  margin-top: 8px;
+  font: 700 10px/1.4 var(--font-mono);
+  letter-spacing: 0.03em;
+}
+.st-hud__victory-turning-point { color: #ffe0a0; }
+.st-hud__victory-next-experiment { color: #c5f0c4; }
+.st-hud__victory-turning-point[hidden],
+.st-hud__victory-next-experiment[hidden] { display: none; }
+.st-hud__victory-context {
+  display: grid;
+  gap: 4px;
+}
+.st-hud__victory-context > .st-hud__victory-operation,
+.st-hud__victory-context > .st-hud__victory-field-order,
+.st-hud__victory-insights > .st-hud__victory-turning-point,
+.st-hud__victory-insights > .st-hud__victory-next-experiment { margin-top: 0; }
+.st-hud__victory-insights {
+  display: grid;
+  gap: 4px;
+}
 .st-hud__victory-progression-receipt {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -652,6 +674,12 @@
   gap: 0;
   font-size: 13px;
 }
+.st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+  .st-hud__victory-progression-handoff { margin-top: 8px; }
+.st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+  .st-hud__victory-title { margin: 4px 0 6px; }
+.st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
+  .st-hud__score { margin: 4px 0 8px; }
 .st-hud__overlay-panel--victory .st-hud__score > * {
   padding: 7px 9px;
   border-bottom: 1px solid rgba(255, 232, 179, 0.08);
@@ -968,6 +996,8 @@
   .st-hud__victory-eyebrow,
   .st-hud__victory-status,
   .st-hud__victory-score-label,
+  .st-hud__victory-turning-point,
+  .st-hud__victory-next-experiment,
   .st-hud__overlay-panel--victory .st-hud__score,
   .st-hud__overlay-panel--victory .st-hud__score > *,
   .st-hud__overlay-panel--victory .st-hud__restart {
@@ -987,6 +1017,27 @@
   .st-hud__overlay-panel--victory .st-hud__score,
   .st-hud__overlay-panel--victory .st-hud__score > * { font-size: 22px; }
   .st-hud__overlay-panel--victory .st-hud__restart { min-height: 91px; font-size: 22px; }
+  .st-hud__victory-context { gap: 0; }
+  .st-hud__victory-insights {
+    gap: 4px;
+    align-self: stretch;
+    padding: 4px 0;
+  }
+  .st-hud__victory-insights > .st-hud__victory-turning-point,
+  .st-hud__victory-insights > .st-hud__victory-next-experiment {
+    font-size: calc(var(--st-store-buy-target) * 0.25);
+    line-height: 1.2;
+  }
+  .st-hud__victory-hero:has(.st-hud__victory-insights) {
+    min-height: 0;
+  }
+  .st-hud__victory-hero:has(.st-hud__victory-insights) .st-hud__victory-tank-frame {
+    flex: 1;
+  }
+  .st-hud__victory-hero:has(.st-hud__victory-insights) .st-hud__victory-tank {
+    height: 100%;
+    object-fit: contain;
+  }
   .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden])) {
     display: grid;
     grid-template-rows: auto 91px auto auto minmax(0, 1fr) 91px;

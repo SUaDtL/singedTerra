@@ -63,7 +63,7 @@ test.describe('Victory After-Action Report', () => {
     const panel = report.locator('.st-hud__overlay-panel--victory');
     const prompt = report.getByText('Sign in to record future matches.');
     const signIn = report.getByRole('button', { name: 'Sign in' });
-    const playAgain = report.getByRole('button', { name: 'Play again' });
+    const playAgain = report.getByRole('button', { name: 'Replay same scenario' });
     const mainMenu = report.getByRole('button', { name: 'Main Menu' });
 
     await expect(prompt).toBeVisible();
@@ -177,7 +177,7 @@ test.describe('Victory After-Action Report', () => {
     const panel = report.locator('.st-hud__overlay-panel--victory');
     const tank = report.locator('.st-hud__victory-tank');
     const anonymousHandoff = report.locator('.st-hud__victory-progression-handoff');
-    const playAgain = report.getByRole('button', { name: 'Play again' });
+    const playAgain = report.getByRole('button', { name: 'Replay same scenario' });
     const mainMenu = report.getByRole('button', { name: 'Main Menu' });
 
     await expect(report).toHaveAttribute('role', 'dialog');
@@ -221,6 +221,8 @@ test.describe('Victory After-Action Report', () => {
       const readableSelectors = [
         '.st-hud__victory-eyebrow',
         '.st-hud__victory-status',
+        '.st-hud__victory-turning-point',
+        '.st-hud__victory-next-experiment',
         '.st-hud__victory-title',
         '.st-hud__victory-score-label',
         '.st-hud__score > *',

@@ -53,6 +53,7 @@ const seams = vi.hoisted(() => ({
   verifiedProgressionReceipts: [] as Array<Record<string, unknown>>,
   verifiedHudStates: [] as Array<Record<string, unknown> | null>,
   quickOperations: [] as Array<Record<string, unknown> | null>,
+  terminalReplayModes: [] as Array<'same-scenario' | null>,
   verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
   hudFrames: [] as Array<{
@@ -302,6 +303,7 @@ vi.mock('./ui/HUD', () => ({
     setAnonymousProgressionHandoff() { seams.anonymousHandoffs += 1 }
     setArmsLevel() {}
     setQuickOperation(operation: Record<string, unknown> | null) { seams.quickOperations.push(operation) }
+    setTerminalReplayMode(mode: 'same-scenario' | null) { seams.terminalReplayModes.push(mode) }
     setConnection() {}
     setFirstSalvoStep() {}
     setQuickChatEnabled() {}
@@ -1390,6 +1392,40 @@ describe('production hot-seat progression composition', () => {
     expect(restarted).not.toBe(completed)
     expect(seams.gameEngineArgs.map(([options]) => options)).toEqual([config, config])
     expect(seams.quickOperations).toEqual([config.quickOperation, config.quickOperation])
+  })
+
+  it('restarts an ordinary local match with the exact same config and admits same-scenario copy', async () => {
+    const first = fakeClient(liveVerifiedState())
+    const second = fakeClient(liveVerifiedState())
+    seams.clients.push(first, second)
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onRestart) throw new Error('Expected lobby and restart wiring')
+    const config = {
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 0x1234abcd, rounds: 3 },
+    }
+
+    await seams.onLobbyReady(config)
+    seams.onRestart()
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+
+    expect(seams.gameEngineArgs.map(([options]) => options)).toEqual([config, config])
+    expect(seams.terminalReplayModes.slice(-2)).toEqual(['same-scenario', 'same-scenario'])
+  })
+
+  it('keeps network restart as the existing rematch request without same-scenario copy', async () => {
+    const network = { ...fakeClient(liveVerifiedState()), requestRematch: vi.fn() }
+    seams.clients.push(network)
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onRestart) throw new Error('Expected lobby and restart wiring')
+
+    await seams.onLobbyReady({ mode: 'network', roomId: 'p11-room', playerId: 'p1', players: [] })
+    await vi.waitFor(() => expect(network.start).toHaveBeenCalledOnce())
+    seams.onRestart()
+
+    expect(network.requestRematch).toHaveBeenCalledOnce()
+    expect(seams.terminalReplayModes.at(-1)).toBeNull()
   })
 
   it('forwards one real Fire and presents its submit, flight, resolution, and CPU handoff frames', async () => {
