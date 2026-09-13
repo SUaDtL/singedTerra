@@ -30,7 +30,12 @@ function options(overrides: Partial<DesiredShellOptions> = {}): DesiredShellOpti
       { id: 'standard', title: 'Standard Duel', briefing: 'A balanced two-tank exhibition.' },
       { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.' },
       { id: 'caldera-run', title: 'Caldera Run', briefing: 'Lava terrain changes every landing.' },
-      { id: 'last-light-siege', title: 'Last Light Siege', briefing: 'Best of three before sudden death.' },
+      {
+        id: 'last-light-siege',
+        title: 'Last Light Siege',
+        briefing: 'Best of three before sudden death.',
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
     ],
     onTabChange: vi.fn(),
     onQuickDuel: vi.fn(),
@@ -96,8 +101,14 @@ describe('buildLobbyShellView', () => {
     expect(cards[0]?.getAttribute('aria-pressed')).toBe('false');
     expect(root.querySelector('[data-ui="quick-operation-briefing"]')?.textContent)
       .toBe('Lava terrain changes every landing.');
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.hidden).toBe(true);
+    root.querySelector<HTMLButtonElement>('[data-operation-id="last-light-siege"]')!.click();
+    expect(root.querySelector('[data-ui="quick-operation-objective"]')?.textContent)
+      .toBe('Hold the Field · Win the duel.');
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.dataset)
+      .toMatchObject({ contentVersion: '1', fieldOrderId: 'hold-the-field' });
     button(root, 'Quick Duel vs CPU').click();
-    expect(onQuickDuel).toHaveBeenCalledWith('caldera-run');
+    expect(onQuickDuel).toHaveBeenCalledWith('last-light-siege');
   });
 
   it('routes each deployment choice exactly once', () => {

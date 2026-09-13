@@ -41,7 +41,12 @@ import {
 import type { FirstSalvoEligibility, FirstSalvoStorage } from './ui/firstSalvoCoach';
 import type { VerifiedDuelReplayResult, VerifiedHumanFire } from '@shared/net/verifiedDuel';
 import { projectLiveMatchSnapshot } from './client/liveMatchDiagnostics';
-import { observeFieldOrder, type FieldOrder } from './client/fieldOrder';
+import {
+  createFieldOrderById,
+  observeFieldOrder,
+  type FieldOrder,
+  type FieldOrderObservation,
+} from './client/fieldOrder';
 import { projectMatchPresentationState } from './client/matchPresentation';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
@@ -170,6 +175,21 @@ function fieldOrderObservationFor(controller: VerifiedDuelController) {
     phase: state.phase,
     activeSeat: activeTank.ai ? 'cpu' as const : 'human' as const,
     winner: outcome === 'human_win' ? 'human' as const : outcome === 'cpu_win' ? 'cpu' as const : null,
+  };
+}
+
+function practiceFieldOrderObservationFor(state: BorrowedGameState): FieldOrderObservation | null {
+  const activeTank = state.tanks.find((tank) => tank.id === state.activePlayerId);
+  if (!activeTank) return null;
+  const winner = state.winner === null
+    ? null
+    : state.tanks.find((tank) => tank.id === state.winner);
+  return {
+    humanSalvos: 0,
+    settledHumanDamage: [],
+    phase: state.phase,
+    activeSeat: activeTank.ai ? 'cpu' : 'human',
+    winner: winner ? (winner.ai ? 'cpu' : 'human') : null,
   };
 }
 
@@ -529,7 +549,6 @@ function bootstrap(): void {
     const context = currentConfig?.verifiedDeployment;
     if (!context || !verifiedController || verifiedCasual) {
       hud.setVerifiedDeployment(null);
-      hud.setFieldOrder(null);
       return;
     }
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
@@ -612,6 +631,22 @@ function bootstrap(): void {
     hud.setFieldOrder(fieldOrder);
   }
 
+  function syncPracticeFieldOrder(state: BorrowedGameState): void {
+    const descriptor = currentConfig?.quickOperation?.practiceObjective;
+    if (currentConfig?.verifiedDeployment) return;
+    if (!descriptor) {
+      hud.setPracticeFieldOrder(null);
+      return;
+    }
+    const observation = practiceFieldOrderObservationFor(state);
+    if (!fieldOrder || !observation) {
+      hud.setPracticeFieldOrder(null);
+      return;
+    }
+    fieldOrder = observeFieldOrder(fieldOrder, observation);
+    hud.setPracticeFieldOrder(fieldOrder);
+  }
+
   // --- Computer-opponent (AI) driver state ---
   // Whether the active tank is CPU-controlled (gates out human input for that turn).
   let activeIsAi = false;
@@ -654,6 +689,7 @@ function bootstrap(): void {
     hud.hideEndScreens();
     hud.setVerifiedDeployment(null);
     hud.setFieldOrder(null);
+    hud.setPracticeFieldOrder(null);
     hud.setFirstSalvoStep(null);
     await hud.leaveBattleConsole?.();
   }
@@ -731,6 +767,12 @@ function bootstrap(): void {
         // to their lifecycle assertion; the real HUD always owns this presentation seam.
         (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
           .setQuickOperation?.(config.quickOperation ?? null);
+        if (!config.verifiedDeployment) {
+          fieldOrder = config.quickOperation?.practiceObjective
+            ? createFieldOrderById(config.quickOperation.practiceObjective.fieldOrderId)
+            : null;
+          hud.setPracticeFieldOrder(fieldOrder);
+        }
 
         // Seed the input handler's locally-tracked aim from the active tank so the
         // arrow keys step from that tank's real angle/power (set_angle/set_power
@@ -993,6 +1035,7 @@ function bootstrap(): void {
             exposeVerifiedTerminalProbe(canonicalState, state, verifiedController.result());
           }
           hotSeatProgression?.observe(state);
+          syncPracticeFieldOrder(state);
           syncVerifiedHud(state);
           submitVerifiedCompletion();
           if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) exposeDeterministicHotSeatProbe(state);
@@ -1261,8 +1304,10 @@ function bootstrap(): void {
   const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
     if (identityChanged) {
       matchSession.client?.invalidatePendingCommands?.();
-      fieldOrder = null;
-      hud.setFieldOrder(null);
+      if (currentConfig?.verifiedDeployment) {
+        fieldOrder = null;
+        hud.setFieldOrder(null);
+      }
     }
     if (LIVE_MATCH_DIAGNOSTICS_ENABLED) {
       hud.setLiveMatchDiagnostics(
@@ -1386,6 +1431,8 @@ function bootstrap(): void {
     if (E2E_MODE === 'victory-anonymous') lobby.show();
     const e2ePlayerNames = E2E_VICTORY_VERIFIED_FOUR
       ? ['Ranger Actualname', 'CPU 1 Ridgebreaker', 'CPU 2 Longshot', 'CPU 3 Undertow']
+      : E2E_QUICK_OPERATION
+        ? ['Player 1', 'CPU 1']
       : E2E_BATTLE_CONSOLE_REFERENCE
       ? ['Player 1', 'Player 2']
       : ['P1', 'P2'];
@@ -1395,14 +1442,19 @@ function bootstrap(): void {
       players: e2ePlayerNames.map((name, index) => ({
         name,
         color: e2eColors[index]!,
-        ...(E2E_VICTORY_VERIFIED_FOUR && index > 0 ? { ai: 'hard' as const } : {}),
+        ...(index > 0 && (E2E_VICTORY_VERIFIED_FOUR || E2E_QUICK_OPERATION)
+          ? { ai: E2E_VICTORY_VERIFIED_FOUR ? 'hard' as const : 'medium' as const }
+          : {}),
       })),
       playerNames: e2ePlayerNames,
-      settings: { seed: E2E_HOT_SEAT_SEED },
+      settings: { seed: E2E_HOT_SEAT_SEED, ...(E2E_QUICK_OPERATION?.settings ?? {}) },
       quickOperation: E2E_QUICK_OPERATION === null ? undefined : {
         id: E2E_QUICK_OPERATION.id,
         title: E2E_QUICK_OPERATION.title,
         briefing: E2E_QUICK_OPERATION.briefing,
+        ...(E2E_QUICK_OPERATION.practiceObjective
+          ? { practiceObjective: E2E_QUICK_OPERATION.practiceObjective }
+          : {}),
       },
     });
   } else {

@@ -3,6 +3,7 @@ import { GameEngine } from '@shared/engine/GameEngine'
 import type { GameOptions } from '@shared/types/GameOptions'
 import {
   QUICK_OPERATIONS,
+  QUICK_OPERATION_CONTENT_VERSION,
   quickOperationById,
   quickOperationOptions,
   type QuickOperation,
@@ -63,12 +64,28 @@ describe('Quick Operations catalog', () => {
         title: 'Last Light Siege',
         briefing: 'A best-of-three duel that tightens into sudden death.',
         settings: { rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk' },
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
       },
     ] satisfies QuickOperation[])
     expect(Object.isFrozen(QUICK_OPERATIONS)).toBe(true)
     for (const operation of QUICK_OPERATIONS) {
       expect(Object.isFrozen(operation)).toBe(true)
       expect(Object.isFrozen(operation.settings)).toBe(true)
+      if (operation.practiceObjective) expect(Object.isFrozen(operation.practiceObjective)).toBe(true)
+    }
+    expect(QUICK_OPERATION_CONTENT_VERSION).toBe(1)
+  })
+
+  it('binds only Last Light Siege to the versioned Hold the Field practice objective', () => {
+    expect(quickOperationById('last-light-siege')).toMatchObject({
+      id: 'last-light-siege',
+      practiceObjective: {
+        contentVersion: QUICK_OPERATION_CONTENT_VERSION,
+        fieldOrderId: 'hold-the-field',
+      },
+    })
+    for (const id of ['standard', 'crosswind-range', 'caldera-run'] as const) {
+      expect(quickOperationById(id)).not.toHaveProperty('practiceObjective')
     }
   })
 

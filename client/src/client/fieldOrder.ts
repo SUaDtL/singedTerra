@@ -106,6 +106,12 @@ export function createFieldOrder(summary: unknown): FieldOrder | null {
   return freshFieldOrder(FIELD_ORDER_CATALOG[matchesPlayed % FIELD_ORDER_CATALOG.length]!)
 }
 
+/** Constructs one fresh public order by its catalog id for curated practice content. */
+export function createFieldOrderById(value: unknown): FieldOrder | null {
+  const definition = FIELD_ORDER_CATALOG.find((candidate) => candidate.id === value)
+  return definition ? freshFieldOrder(definition) : null
+}
+
 function observeFirstStrike(order: FieldOrder, observation: FieldOrderObservation): FieldOrder {
   const achievedOnSalvo = observation.settledHumanDamage
     .slice(0, FIRST_STRIKE_SALVO_LIMIT)

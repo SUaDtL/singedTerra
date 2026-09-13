@@ -14,8 +14,10 @@ const seams = vi.hoisted(() => ({
   verifiedControllerPolicies: [] as number[],
   verifiedControllerTuples: [] as Array<{ contractVersion: number; engineVersion: number; rulesetVersion: number }>,
   hotSeatConstructorArgs: [] as unknown[],
+  gameEngineArgs: [] as unknown[][],
   onLobbyReady: null as null | ((config: Record<string, unknown>) => Promise<void>),
   onQuit: null as null | (() => void),
+  onRestart: null as null | (() => void),
   onVerifiedRetry: null as null | (() => void),
   onVerifiedContinueCasual: null as null | (() => void),
   onVerifiedReturnToBattery: null as null | (() => void),
@@ -64,6 +66,7 @@ const seams = vi.hoisted(() => ({
   hudImpactCues: [] as unknown[],
   rendererImpactCue: null as unknown,
   fieldOrderHudStates: [] as Array<Record<string, unknown> | null>,
+  practiceFieldOrderHudStates: [] as Array<Record<string, unknown> | null>,
   liveMatchDiagnosticsProviders: [] as Array<() => unknown>,
   liveMatchDiagnosticsSettings: [] as Array<(() => unknown) | null>,
   anonymousHandoffs: 0,
@@ -88,6 +91,7 @@ vi.mock('@shared/engine/GameEngine', async (importOriginal) => {
   return {
     GameEngine: class {
       constructor(...args: ConstructorParameters<typeof actual.GameEngine>) {
+        seams.gameEngineArgs.push(args)
         if (seams.useActualGameEngine) return new actual.GameEngine(...args)
       }
     },
@@ -263,7 +267,7 @@ vi.mock('./ui/HUD', () => ({
     onPrimaryAction() {}
     onQuickChat() {}
     onQuit(callback: () => void) { seams.onQuit = callback }
-    onRestart() {}
+    onRestart(callback: () => void) { seams.onRestart = callback }
     onVerifiedRetry(callback: () => void) { seams.onVerifiedRetry = callback }
     onVerifiedContinueCasual(callback: () => void) { seams.onVerifiedContinueCasual = callback }
     onVerifiedReturnToBattery(callback: () => void) { seams.onVerifiedReturnToBattery = callback }
@@ -286,6 +290,9 @@ vi.mock('./ui/HUD', () => ({
     setFieldOrder(state: Record<string, unknown> | null) {
       seams.fieldOrderHudStates.push(state)
       if (state) seams.verifiedPresentationEvents.push('order')
+    }
+    setPracticeFieldOrder(state: Record<string, unknown> | null) {
+      seams.practiceFieldOrderHudStates.push(state)
     }
     setLiveMatchDiagnostics(provider: (() => unknown) | null) {
       seams.liveMatchDiagnosticsSettings.push(provider)
@@ -666,8 +673,10 @@ describe('production hot-seat progression composition', () => {
     seams.verifiedControllerPolicies.length = 0
     seams.verifiedControllerTuples.length = 0
     seams.hotSeatConstructorArgs.length = 0
+    seams.gameEngineArgs.length = 0
     seams.onLobbyReady = null
     seams.onQuit = null
+    seams.onRestart = null
     seams.onVerifiedRetry = null
     seams.onVerifiedContinueCasual = null
     seams.onVerifiedReturnToBattery = null
@@ -714,6 +723,7 @@ describe('production hot-seat progression composition', () => {
     seams.hudImpactCues.length = 0
     seams.rendererImpactCue = null
     seams.fieldOrderHudStates.length = 0
+    seams.practiceFieldOrderHudStates.length = 0
     seams.liveMatchDiagnosticsProviders.length = 0
     seams.liveMatchDiagnosticsSettings.length = 0
     seams.anonymousHandoffs = 0
@@ -1305,6 +1315,81 @@ describe('production hot-seat progression composition', () => {
       },
       null,
     ]))
+  })
+
+  it.each([
+    ['human win', 'p1', 'achieved'],
+    ['CPU win', 'p2', 'missed'],
+    ['draw', null, 'missed'],
+  ] as const)('reduces the Last Light practice objective from the actual %s terminal state once', async (
+    _label,
+    winner,
+    expectedStatus,
+  ) => {
+    const opening = liveVerifiedState()
+    const client = fakeClient(opening)
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+
+    await seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 0x1234abcd, rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk' },
+      quickOperation: {
+        id: 'last-light-siege',
+        title: 'Last Light Siege',
+        briefing: 'A best-of-three duel that tightens into sudden death.',
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
+    })
+    const terminal = gameState({ winner })
+    terminal.winner = winner
+    terminal.tanks[1]!.ai = 'medium'
+    client.emit(terminal)
+    const resolved = seams.practiceFieldOrderHudStates.at(-1)
+    client.emit(terminal)
+
+    expect(resolved).toMatchObject({
+      id: 'hold-the-field',
+      result: { status: expectedStatus },
+    })
+    expect(seams.practiceFieldOrderHudStates.at(-1)).toBe(resolved)
+    expect(seams.fieldOrderHudStates.filter(Boolean)).toHaveLength(0)
+    expect(seams.verifiedHudStates.filter(Boolean)).toHaveLength(0)
+  })
+
+  it('restarts Last Light with the same config and seed but a fresh unresolved objective', async () => {
+    const first = fakeClient(liveVerifiedState())
+    const second = fakeClient(liveVerifiedState())
+    seams.clients.push(first, second)
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onRestart) throw new Error('Expected lobby and restart wiring')
+    const config = {
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 0x1234abcd, rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk' },
+      quickOperation: {
+        id: 'last-light-siege',
+        title: 'Last Light Siege',
+        briefing: 'A best-of-three duel that tightens into sudden death.',
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
+    }
+
+    await seams.onLobbyReady(config)
+    first.emit(gameState({ winner: 'p1' }))
+    const completed = seams.practiceFieldOrderHudStates.at(-1)
+    seams.onRestart()
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    second.emit(liveVerifiedState())
+    const restarted = seams.practiceFieldOrderHudStates.at(-1)
+
+    expect(completed).toMatchObject({ result: { status: 'achieved' } })
+    expect(restarted).toMatchObject({ id: 'hold-the-field', result: null })
+    expect(restarted).not.toBe(completed)
+    expect(seams.gameEngineArgs.map(([options]) => options)).toEqual([config, config])
+    expect(seams.quickOperations).toEqual([config.quickOperation, config.quickOperation])
   })
 
   it('forwards one real Fire and presents its submit, flight, resolution, and CPU handoff frames', async () => {

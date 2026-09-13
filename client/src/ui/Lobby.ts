@@ -12,7 +12,12 @@ import {
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { buildLobbyHotSeatView } from './LobbyHotSeatView';
-import { QUICK_OPERATIONS, quickOperationById, quickOperationOptions } from '../client/quickOperations';
+import {
+  QUICK_OPERATIONS,
+  quickOperationById,
+  quickOperationOptions,
+  type PracticeObjectiveDescriptor,
+} from '../client/quickOperations';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
@@ -115,7 +120,12 @@ export type LobbyPlayer = ModePlayer;
 /** Configuration produced by the lobby once the player(s) are ready. */
 export interface LobbyConfig extends ModeSetup {
   /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
-  quickOperation?: { readonly id: string; readonly title: string; readonly briefing: string };
+  quickOperation?: {
+    readonly id: string;
+    readonly title: string;
+    readonly briefing: string;
+    readonly practiceObjective?: PracticeObjectiveDescriptor;
+  };
   /** Auth-owned verified execution context. Server config and recovery transcript stay immutable. */
   verifiedDeployment?: {
     readonly descriptor: VerifiedDeploymentDescriptor;
@@ -1327,6 +1337,7 @@ export class Lobby {
         id: operation.id,
         title: operation.title,
         briefing: operation.briefing,
+        ...(operation.practiceObjective ? { practiceObjective: operation.practiceObjective } : {}),
       },
     });
   }
