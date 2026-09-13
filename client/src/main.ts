@@ -1501,7 +1501,7 @@ function bootstrap(): void {
   // client. Only this explicit player intent retires the network seat immediately.
   hud.onQuit(() => {
     void matchSession.client?.leaveRoom?.();
-    void teardown().then(() => lobby.show());
+    void teardown().then(() => lobby.show({ focusLobby: true }));
   });
 
   hud.onProgressionSignIn(() => {
