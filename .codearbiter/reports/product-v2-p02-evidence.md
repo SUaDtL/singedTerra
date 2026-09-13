@@ -44,3 +44,45 @@ A broader storage-getter test exposed an existing constructor dependency that fa
 No actual participant records or timing observations were collected. The owner consent/retention policy remains pending. Optional v2 timing lacks the selected launch route and cannot attribute elapsed time to First Salvo. Reachability, one-round composition and schema correctness do not establish faster time-to-value, newcomer understanding, voluntary replay, retention or demand. The original P02 product experiment remains incomplete until adequate human evidence exists.
 
 P13's historical source-closure baseline remains bound to its original catalog revision. These catalog additions do not silently regenerate or reinterpret that earlier balance evidence.
+
+## Hosted CI correction and current-main integration
+
+The first PR488 run `34736108746` passed type checks, engine harnesses, build,
+and Edge tests but failed nine browser cases. They were three stale test
+assumptions across three profiles: two pregame tests still assumed Quick Duel
+was primary, and the anonymous seed-receipt test clicked it inside the new
+closed disclosure. The tests now verify the exact fresh First Salvo surface,
+preserve all target and hierarchy checks, and open the public disclosure for
+ordinary Quick Duel. Authenticated cases retain their existing skipped-coach
+preference. Worker Terra/high and separate reviewer Sol/high passed this scope.
+
+Main `756487f07dd2e86d782998bd5e2bf9227dd2f266` contained byte-identical P03
+source to `05b2bf1`. Integration retained P02's three overlapping Lobby files
+and removed an automatically duplicated P03 descriptor declaration. The result
+has exactly the original `36003c0` runtime tree; only browser tests and this
+receipt change. The two-file pre-integration stash
+`b23e410a163c5a761a0020315915516914ae34f9` remains preserved.
+
+The corrected focused specs passed 62 cases with one intentional profile skip.
+An initial full local run passed 337 cases and exposed two additional issues:
+the candidate command omitted its required compiled-backend-origin setting,
+and a touch-target assertion sampled the victory panel during its 360ms arrival
+scale animation. The former was a command setup error. The latter now waits
+for that panel's actual animation before measuring the settled control; both
+44px assertions remain unchanged. Separate Sol/high review confirmed this
+timing diagnosis. The stable target is proven, not its transient entrance size.
+
+Final command: `playwright test --workers=2 --retries=0 --grep-invert '@live'`,
+with `E2E_LIVE_URL=http://127.0.0.1:5198/singedTerra/`,
+`E2E_DENY_EXTERNAL_NETWORK=1`, and
+`E2E_EXPECTED_BACKEND_ORIGIN=http://127.0.0.1:5198`, matching the synthetic build.
+Result: **339 passed, 18 intentional skips, zero failures**, 3.3 minutes.
+Production build/type checks and the changed-file secret scan also passed.
+The original 1,946 client-test proof remains applicable to the identical runtime.
+
+This run used the sole preview PID19040/session88918. All 60 served files
+matched the rebuilt artifact, inventory SHA-256
+`8603255a1ec7017fbd41e41209a4d68edb2952dd1cf2fdb03de9be36a26cc579`.
+The earlier PID80072 observation above is historical. Raw correction logs and
+the failed first run remain under the host temporary directory with prefix
+`product-v2-p02-ci-fix-`; no failed run was relabeled as passing.

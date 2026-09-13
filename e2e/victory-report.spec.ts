@@ -75,6 +75,10 @@ test.describe('Victory After-Action Report', () => {
     await expect(playAgain).toBeVisible();
     await expect(mainMenu).toBeVisible();
     if (testInfo.project.name === 'pixel-touch') {
+      // Measure the stable control after its ancestor's arrival transform ends.
+      await panel.evaluate(async (element) => {
+        await Promise.all(element.getAnimations().map((animation) => animation.finished));
+      });
       const signInBox = await signIn.boundingBox();
       expect(signInBox).not.toBeNull();
       expect(signInBox!.width, 'anonymous handoff keeps a physical touch target').toBeGreaterThanOrEqual(44);
