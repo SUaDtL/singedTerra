@@ -161,6 +161,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [ ] Keep the local guest lobby available when the browser localStorage property getter throws; preserve fail-closed verified deployment persistence and add constructor-level regression proof.  (from product-v2-p02-review)
 - [x] Run a deliberate visual-direction pass against strong game-UI references and purpose-built assets where valuable, including image generation where appropriate, so the console feels finished rather than merely rearranged.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
 - [x] Repair the Armory purchase flow so buying never opens the legacy store behind the Armory; use one owned gameplay modal/layer with coherent focus, stacking, and return behavior.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
 - [x] Recompose the Match rail so the active yellow selector never shifts player text and the lower-right area has an intentional plan: useful match information when warranted or a smaller shrink-wrapped surface.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)

@@ -1,3 +1,6 @@
+import { createFieldOrderById, renderFieldOrder } from '../client/fieldOrder';
+import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
+
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 
 const MODE_PANEL_ID = 'lobby-mode-panel';
@@ -22,8 +25,14 @@ export interface LobbyShellViewOptions {
   vehiclePreview?: HTMLElement;
   content?: HTMLElement;
   controls?: HTMLElement;
+  firstSalvoPreferenceUnseen: boolean;
   onTabChange: (tab: LobbyPrimaryTab) => void;
-  quickOperations?: readonly { readonly id: string; readonly title: string; readonly briefing: string }[];
+  quickOperations?: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly briefing: string;
+    readonly practiceObjective?: PracticeObjectiveDescriptor;
+  }[];
   onQuickDuel: (operationId: string) => void;
   onRejoin: () => void;
   onBack: () => void;
@@ -94,7 +103,10 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     };
 
     const operations = options.quickOperations ?? [{ id: 'standard', title: 'Standard Duel', briefing: '' }];
-    let selectedOperation = operations[0]!;
+    const firstSalvo = operations.find((operation) => operation.id === 'first-salvo');
+    const ordinaryOperations = operations.filter((operation) => operation.id !== 'first-salvo');
+    const showFirstSalvo = options.firstSalvoPreferenceUnseen && !options.rejoinAvailable && firstSalvo !== undefined;
+    let selectedOperation = ordinaryOperations[0] ?? operations[0]!;
     const operationField = document.createElement('section');
     operationField.className = 'lobby-quick-operation';
     operationField.dataset.ui = 'quick-operation';
@@ -109,15 +121,29 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     const operationBriefing = document.createElement('p');
     operationBriefing.className = 'lobby-quick-operation__briefing';
     operationBriefing.dataset.ui = 'quick-operation-briefing';
+    const operationObjective = document.createElement('p');
+    operationObjective.className = 'lobby-quick-operation__briefing';
+    operationObjective.dataset.ui = 'quick-operation-objective';
     const cardButtons: HTMLButtonElement[] = [];
     const selectOperation = (operation: typeof selectedOperation): void => {
       selectedOperation = operation;
       operationBriefing.textContent = operation.briefing;
+      const objective = operation.practiceObjective;
+      const fieldOrder = objective ? createFieldOrderById(objective.fieldOrderId) : null;
+      operationObjective.hidden = fieldOrder === null;
+      operationObjective.textContent = fieldOrder === null ? '' : renderFieldOrder(fieldOrder).brief;
+      if (objective && fieldOrder) {
+        operationObjective.dataset['contentVersion'] = String(objective.contentVersion);
+        operationObjective.dataset['fieldOrderId'] = objective.fieldOrderId;
+      } else {
+        delete operationObjective.dataset['contentVersion'];
+        delete operationObjective.dataset['fieldOrderId'];
+      }
       for (const card of cardButtons) {
         card.setAttribute('aria-pressed', String(card.dataset['operationId'] === operation.id));
       }
     };
-    for (const operation of operations) {
+    for (const operation of ordinaryOperations) {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'lobby-quick-operation__card';
@@ -135,27 +161,50 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       operationCards.append(card);
     }
     selectOperation(selectedOperation);
-    operationField.append(operationKicker, operationTitle, operationCards, operationBriefing);
-    chooser.append(
-      operationField,
-      choice(
-        'Quick Duel vs CPU',
-        options.rejoinAvailable
-          ? 'lobby-btn lobby-deployment-choice--secondary'
-          : 'lobby-btn primary',
-        () => { options.onQuickDuel(selectedOperation.id); },
-      ),
-      choice(
+    operationField.append(operationKicker, operationTitle, operationCards, operationBriefing, operationObjective);
+    const ordinaryQuickDuel = choice(
+      'Quick Duel vs CPU',
+      options.rejoinAvailable || showFirstSalvo
+        ? 'lobby-btn lobby-deployment-choice--secondary'
+        : 'lobby-btn primary',
+      () => { options.onQuickDuel(selectedOperation.id); },
+    );
+    const localBattle = choice(
         'Local Battle',
         'lobby-btn lobby-deployment-choice--secondary',
         () => { options.onTabChange('hotseat'); },
-      ),
-      choice(
+      );
+    const playOnline = choice(
         'Play Online',
         'lobby-btn lobby-deployment-choice--secondary',
         () => { options.onTabChange('online'); },
-      ),
-    );
+      );
+    if (showFirstSalvo) {
+      const introduction = document.createElement('section');
+      introduction.className = 'lobby-first-salvo';
+      introduction.setAttribute('aria-label', 'First Salvo');
+      const introductionTitle = document.createElement('h2');
+      introductionTitle.textContent = firstSalvo.title;
+      const introductionBriefing = document.createElement('p');
+      introductionBriefing.textContent = 'One round against CPU. Aim, set power, and fire.';
+      introduction.append(introductionTitle, introductionBriefing);
+
+      const alternatives = document.createElement('details');
+      alternatives.dataset.ui = 'other-quick-duels';
+      const summary = document.createElement('summary');
+      summary.textContent = 'Choose another Quick Duel';
+      alternatives.append(summary, operationField, ordinaryQuickDuel);
+
+      chooser.append(
+        introduction,
+        choice('Start First Salvo', 'lobby-btn primary', () => { options.onQuickDuel(firstSalvo.id); }),
+        alternatives,
+        localBattle,
+        playOnline,
+      );
+    } else {
+      chooser.append(operationField, ordinaryQuickDuel, localBattle, playOnline);
+    }
     deployment.append(masthead, chooser);
     card.append(deployment);
     return card;

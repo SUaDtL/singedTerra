@@ -33,7 +33,11 @@ const runtime = vi.hoisted(() => {
       contextListeners: number;
       destroyArgs: unknown[];
     }>,
+    // This suite follows one process-owned cache across tests; Vitest clears
+    // per-test mock history, so retain the lifetime request contract explicitly.
+    assetLoadCalls: [] as string[][],
     assetLoad: vi.fn((urls: string[]) => {
+      runtime.assetLoadCalls.push([...urls]);
       if (runtime.rejectNextAssetLoad) {
         runtime.rejectNextAssetLoad = false;
         return Promise.reject(new Error('texture load failed'));
@@ -344,7 +348,8 @@ describe('R10 supported Pixi lifecycle', () => {
     );
     try {
       await vi.advanceTimersByTimeAsync(6);
-      expect(runtime.assetLoad).toHaveBeenCalledTimes(2);
+      expect(runtime.assetLoadCalls).toEqual([urls, urls]);
+      expect(runtime.assetLoad).toHaveBeenCalledOnce();
       await vi.advanceTimersByTimeAsync(3);
       expect(outcome).toBe('pending');
       await vi.advanceTimersByTimeAsync(1);
@@ -387,8 +392,8 @@ describe('R10 supported Pixi lifecycle', () => {
       expect(resourcesAreZero(resources.snapshot())).toBe(true);
     }
 
-    expect(runtime.assetLoad).toHaveBeenCalledTimes(2);
-    expect(runtime.assetLoad).toHaveBeenLastCalledWith(urls);
+    expect(runtime.assetLoadCalls).toEqual([urls, urls]);
+    expect(runtime.assetLoad).not.toHaveBeenCalled();
     expect(runtime.thenRegistrations).toBe(1);
     expect(runtime.applications.every((app) => app.destroyed && app.contextListeners === 0)).toBe(true);
     expect(abandonedHosts.every((host) => host.childElementCount === 0)).toBe(true);
