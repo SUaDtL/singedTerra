@@ -82,6 +82,35 @@
   }
   .weapon .control, .fire .control { height: 160px; font-size: 34px; overflow-wrap: anywhere; }
   .weapon small, .fire small, .fire strong, .wind output { font-size: 34px; }
+  .weapon .control[data-battle-console-target-key='weapon-next'] > span {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    line-height: 1;
+    text-align: center;
+  }
+  .weapon .control[data-battle-console-target-key='weapon-next'] {
+    gap: 0;
+    padding-inline: 0;
+  }
+  .weapon .control[data-battle-console-target-key='weapon-next'] > small {
+    width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+    line-height: 1;
+    letter-spacing: -.08em;
+    text-align: center;
+  }
+  .chassis .control[data-battle-console-target-key='armory'],
+  .chassis .control[data-battle-console-target-key='settings'] {
+    padding-inline: 0;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    letter-spacing: -.06em;
+  }
   .fire button:first-child { padding: 3px; gap: 0; }
   .fire strong { font-size: 32px; line-height: 1; }
   .fire small { font-size: 29px; line-height: 1; white-space: normal; }
