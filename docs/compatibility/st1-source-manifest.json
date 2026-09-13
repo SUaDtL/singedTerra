@@ -59,7 +59,7 @@
     },
     {
       "path": "client/src/client/quickDuelLaunch.ts",
-      "sha256": "715d5db78d8baaf9c962aa64a4c926b51f8cd8cb0f92ec197352cc7114134538"
+      "sha256": "e4982eb0b488a5d773b27f104eecc65e44a7c257972c432652bed23a6a778522"
     },
     {
       "path": "client/src/client/quickOperations.ts",
@@ -75,7 +75,7 @@
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "c9940829b8e78a51a638e4fb7f9e920cd2ad53afffa13e011e4deb6398e356bd"
+      "sha256": "b9cd55d9a516b6ac13416a4a6f6d18059cac5faf05e5979ae68489db60cf4915"
     },
     {
       "path": "package.json",

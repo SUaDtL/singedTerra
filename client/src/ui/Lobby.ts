@@ -1,5 +1,6 @@
 import { normalizeCreateRoomFallback, projectAuthoritativeNetworkMode, WIND_DEFAULT, GRAVITY_DEFAULT, type ModeSetup, type ModePlayer } from '../client/modeConfig';
 import lobbyCss from './Lobby.css?raw';
+import lobbyConsoleCss from './LobbyConsole.css?raw';
 import { VerifiedDeploymentSession, type VerifiedDeploymentState as LobbyVerifiedDeploymentState, type VerifiedDeploymentAccountPort } from '../client/VerifiedDeploymentSession';
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
@@ -899,7 +900,7 @@ export class Lobby {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent = lobbyCss;
+    style.textContent = `${lobbyCss}\n${lobbyConsoleCss}`;
     document.head.append(style);
   }
 

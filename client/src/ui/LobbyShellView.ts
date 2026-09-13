@@ -1,5 +1,7 @@
 import { createPracticeFieldOrderById, renderFieldOrder } from '../client/fieldOrder';
 import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
+import type { GameOptions } from '@shared/types/GameOptions';
+import { QUICK_DUEL_DEFAULT_ROUNDS } from '../client/quickDuelLaunch';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 
@@ -40,6 +42,8 @@ export interface LobbyShellViewOptions {
     readonly id: string;
     readonly title: string;
     readonly briefing: string;
+    readonly settings?: Readonly<Pick<GameOptions,
+      'walls' | 'battlefieldWorld' | 'hazards' | 'rounds' | 'suddenDeathTurn' | 'armsLevel' | 'seed'>>;
     readonly practiceObjective?: PracticeObjectiveDescriptor;
   }[];
   seedChallenge?: LobbySeedChallengePresentation;
@@ -54,6 +58,48 @@ export function buildLobbyOnlineView(content: HTMLElement): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.append(content);
   return wrapper;
+}
+
+const BATTLEFIELD_PRESENTATION = {
+  'ember-dusk': {
+    label: 'Ember Dusk',
+    asset: 'art/battlefield-theater-ember-dusk-v3.webp',
+  },
+  'glassstorm-expanse': {
+    label: 'Glassstorm Expanse',
+    asset: 'art/battlefield-theater-glassstorm-expanse-v3.webp',
+  },
+  'obsidian-caldera': {
+    label: 'Obsidian Caldera',
+    asset: 'art/battlefield-theater-obsidian-caldera-v3.webp',
+  },
+} as const;
+
+type PresentedBattlefield = keyof typeof BATTLEFIELD_PRESENTATION;
+
+function presentedBattlefield(value: unknown): PresentedBattlefield {
+  return value === 'glassstorm-expanse' || value === 'obsidian-caldera'
+    ? value
+    : 'ember-dusk';
+}
+
+function operationFacts(operation: NonNullable<LobbyShellViewOptions['quickOperations']>[number]):
+readonly [string, string][] {
+  const settings = operation.settings ?? {};
+  const world = BATTLEFIELD_PRESENTATION[presentedBattlefield(settings.battlefieldWorld)];
+  const facts: [string, string][] = [
+    ['Battlefield', settings.battlefieldWorld === undefined ? 'Automatic' : world.label],
+    ['Rounds', `${settings.rounds ?? QUICK_DUEL_DEFAULT_ROUNDS} rounds`],
+    ['Opponent', 'vs CPU'],
+  ];
+  if (settings.walls === 'wrap') facts.push(['Walls', 'Wrap walls']);
+  if (settings.hazards === 'lava') facts.push(['Hazard', 'Lava hazard']);
+  if (settings.suddenDeathTurn !== undefined) {
+    facts.push(['Pressure', `Sudden death · Turn ${settings.suddenDeathTurn}`]);
+  }
+  if (settings.armsLevel !== undefined) facts.push(['Arsenal', `Arms level ${settings.armsLevel}`]);
+  if (settings.seed !== undefined) facts.push(['Seed', `Seed ${settings.seed}`]);
+  return facts;
 }
 
 export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement {
@@ -109,7 +155,19 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       button.type = 'button';
       button.className = className;
       button.textContent = label;
+      button.setAttribute('aria-label', label);
       button.addEventListener('click', onClick, { signal: options.listenerSignal });
+      return button;
+    };
+
+    const addRailGlyph = (
+      button: HTMLButtonElement,
+      glyph: 'quick' | 'local' | 'online',
+    ): HTMLButtonElement => {
+      const decoration = document.createElement('span');
+      decoration.className = `lobby-deployment-rail__glyph lobby-deployment-rail__glyph--${glyph}`;
+      decoration.setAttribute('aria-hidden', 'true');
+      button.prepend(decoration);
       return button;
     };
 
@@ -172,10 +230,50 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     const operationObjective = document.createElement('p');
     operationObjective.className = 'lobby-quick-operation__briefing';
     operationObjective.dataset.ui = 'quick-operation-objective';
+
+    const operationPreview = document.createElement('section');
+    operationPreview.className = 'lobby-operation-preview';
+    operationPreview.dataset.ui = 'battlefield-preview';
+    const previewHeader = document.createElement('span');
+    previewHeader.className = 'lobby-operation-preview__header';
+    previewHeader.textContent = 'BATTLEFIELD PREVIEW';
+    const previewViewport = document.createElement('div');
+    previewViewport.className = 'lobby-operation-preview__viewport';
+    const previewImage = document.createElement('img');
+    previewImage.className = 'lobby-operation-preview__image';
+    previewImage.alt = '';
+    const illustrationNote = document.createElement('span');
+    illustrationNote.className = 'lobby-operation-preview__illustration-note';
+    illustrationNote.dataset.ui = 'battlefield-illustration-note';
+    illustrationNote.textContent = 'Illustrative backdrop';
+    previewViewport.append(previewImage, illustrationNote);
+    const previewReadout = document.createElement('div');
+    previewReadout.className = 'lobby-operation-preview__readout';
+    previewReadout.setAttribute('aria-live', 'polite');
+    previewReadout.tabIndex = 0;
+    previewReadout.setAttribute('role', 'region');
+    previewReadout.setAttribute('aria-label', 'Selected operation details');
+    const previewTitle = document.createElement('h2');
+    previewTitle.className = 'lobby-operation-preview__title';
+    previewTitle.dataset.ui = 'battlefield-preview-title';
+    operationBriefing.classList.add('lobby-operation-preview__briefing');
+    const previewFacts = document.createElement('dl');
+    previewFacts.className = 'lobby-operation-preview__facts';
+    previewFacts.dataset.ui = 'battlefield-preview-facts';
+    previewReadout.append(previewTitle, operationBriefing, operationObjective, previewFacts);
+    operationPreview.append(previewHeader, previewViewport, previewReadout);
+
     const cardButtons: HTMLButtonElement[] = [];
     const selectOperation = (operation: typeof selectedOperation): void => {
       selectedOperation = operation;
       operationBriefing.textContent = operation.briefing;
+      previewTitle.textContent = operation.title;
+      const worldId = presentedBattlefield(operation.settings?.battlefieldWorld);
+      const world = BATTLEFIELD_PRESENTATION[worldId];
+      operationPreview.dataset['battlefieldWorld'] = operation.settings?.battlefieldWorld ?? 'automatic';
+      illustrationNote.hidden = operation.settings?.battlefieldWorld !== undefined;
+      operationPreview.setAttribute('aria-label', `Battlefield preview: ${operation.title}`);
+      previewImage.src = `${import.meta.env.BASE_URL}${world.asset}`;
       const objective = operation.practiceObjective;
       const fieldOrder = objective ? createPracticeFieldOrderById(objective.fieldOrderId) : null;
       operationObjective.hidden = fieldOrder === null;
@@ -187,6 +285,15 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
         delete operationObjective.dataset['contentVersion'];
         delete operationObjective.dataset['fieldOrderId'];
       }
+      previewFacts.replaceChildren(...operationFacts(operation).map(([term, value]) => {
+        const group = document.createElement('div');
+        const label = document.createElement('dt');
+        label.textContent = term;
+        const reading = document.createElement('dd');
+        reading.textContent = value;
+        group.append(label, reading);
+        return group;
+      }));
       for (const card of cardButtons) {
         card.setAttribute('aria-pressed', String(card.dataset['operationId'] === operation.id));
       }
@@ -196,6 +303,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       card.type = 'button';
       card.className = 'lobby-quick-operation__card';
       card.dataset['operationId'] = operation.id;
+      card.dataset['battlefieldWorld'] = presentedBattlefield(operation.settings?.battlefieldWorld);
       card.setAttribute('aria-pressed', 'false');
       const cardTitle = document.createElement('span');
       cardTitle.className = 'lobby-quick-operation__card-title';
@@ -209,7 +317,10 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       operationCards.append(card);
     }
     selectOperation(selectedOperation);
-    operationField.append(operationKicker, operationTitle, operationCards, operationBriefing, operationObjective);
+    operationField.append(operationKicker, operationTitle, operationCards);
+    const deploymentConsole = document.createElement('div');
+    deploymentConsole.className = 'lobby-deployment-console';
+    deploymentConsole.append(operationField, operationPreview);
     const ordinaryQuickDuel = choice(
       'Quick Duel vs CPU',
       options.rejoinAvailable || showFirstSalvo || seedChallenge?.status === 'valid'
@@ -227,6 +338,16 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
         'lobby-btn lobby-deployment-choice--secondary',
         () => { options.onTabChange('online'); },
       );
+    addRailGlyph(ordinaryQuickDuel, 'quick');
+    addRailGlyph(localBattle, 'local');
+    addRailGlyph(playOnline, 'online');
+    const deploymentRail = document.createElement('div');
+    deploymentRail.className = 'lobby-deployment-rail';
+    const readiness = document.createElement('div');
+    readiness.className = 'lobby-deployment-rail__status';
+    readiness.setAttribute('role', 'status');
+    readiness.innerHTML = '<strong>READY</strong><span>TO DEPLOY</span>';
+    deploymentRail.append(ordinaryQuickDuel, localBattle, playOnline, readiness);
     if (showFirstSalvo) {
       const introduction = document.createElement('section');
       introduction.className = 'lobby-first-salvo';
@@ -241,17 +362,26 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       alternatives.dataset.ui = 'other-quick-duels';
       const summary = document.createElement('summary');
       summary.textContent = 'Choose another Quick Duel';
-      alternatives.append(summary, operationField, ordinaryQuickDuel);
+      alternatives.append(summary, deploymentConsole, ordinaryQuickDuel);
+
+      const firstSalvoRail = deploymentRail.cloneNode(false) as HTMLDivElement;
+      firstSalvoRail.append(
+        addRailGlyph(
+          choice('Start First Salvo', 'lobby-btn primary', () => { options.onQuickDuel(firstSalvo.id); }),
+          'quick',
+        ),
+        localBattle,
+        playOnline,
+        readiness,
+      );
 
       chooser.append(
         introduction,
-        choice('Start First Salvo', 'lobby-btn primary', () => { options.onQuickDuel(firstSalvo.id); }),
         alternatives,
-        localBattle,
-        playOnline,
+        firstSalvoRail,
       );
     } else {
-      chooser.append(operationField, ordinaryQuickDuel, localBattle, playOnline);
+      chooser.append(deploymentConsole, deploymentRail);
     }
     deployment.append(masthead, chooser);
     card.append(deployment);
