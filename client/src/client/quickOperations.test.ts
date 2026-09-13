@@ -48,6 +48,12 @@ describe('Quick Operations catalog', () => {
     expect(QUICK_OPERATIONS).toEqual([
       { id: 'standard', title: 'Standard Duel', briefing: 'A balanced three-round duel.', settings: {} },
       {
+        id: 'first-salvo',
+        title: 'First Salvo',
+        briefing: 'A one-round duel that starts with the essentials.',
+        settings: { rounds: 1 },
+      },
+      {
         id: 'crosswind-range',
         title: 'Crosswind Range',
         briefing: 'Wraparound walls turn shifting wind into a ranging test.',
@@ -106,7 +112,18 @@ describe('Quick Operations catalog', () => {
     expect(operationOptions('crosswind-range').walls).toBe('wrap')
   })
 
+  it('keeps the explicit First Salvo projection separate from Standard Duel', () => {
+    const threeRoundBase = { ...QUICK_DUEL_BASE_OPTIONS, rounds: 3 }
+    const firstSalvo = quickOperationOptions('first-salvo', threeRoundBase)
+    const standard = quickOperationOptions('standard', threeRoundBase)
+
+    expect(firstSalvo).toEqual({ ...threeRoundBase, rounds: 1 })
+    expect(standard).toEqual(threeRoundBase)
+    expect(firstSalvo).not.toBe(threeRoundBase)
+  })
+
   it.each([
+    'first-salvo',
     'crosswind-range',
     'caldera-run',
     'last-light-siege',

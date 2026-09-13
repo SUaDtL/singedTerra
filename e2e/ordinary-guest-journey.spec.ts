@@ -51,6 +51,30 @@ async function fireAndWaitForSettlement(page: Page, finalShot = false): Promise<
 }
 
 test.describe('ordinary guest journey', () => {
+  test('starts First Salvo from the untouched guest entry and reaches one real shot', async ({ page }, testInfo) => {
+    test.setTimeout(45_000);
+
+    await page.goto('./');
+    const splash = page.locator('#st-splash');
+    await expect(splash).toBeVisible();
+    await splash.click();
+    await expect(splash).toBeHidden({ timeout: 5_000 });
+
+    await page.screenshot({ path: testInfo.outputPath('first-salvo-entry.png') });
+    await page.getByRole('button', { name: 'Start First Salvo', exact: true }).click();
+    const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });
+    await expect(briefing).toBeVisible();
+    await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
+    await expect(page.locator('.st-hud__round')).toHaveText('Single round');
+    await expect(page.locator('#hud [data-ui="quick-operation"]'))
+      .toHaveText('First Salvo · A one-round duel that starts with the essentials.');
+    await page.screenshot({ path: testInfo.outputPath('first-salvo-battle.png') });
+
+    await page.getByRole('button', { name: 'Fire Baby Missile', exact: true }).click();
+    await expect(page.locator('[data-battle-console-surface]'))
+      .toHaveAttribute('data-battle-console-phase', /firing|resolving/);
+  });
+
   test('reaches a terminal local match and retry through public controls', async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== 'desktop-fine',

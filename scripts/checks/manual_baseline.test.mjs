@@ -28,6 +28,11 @@ const record = (overrides = {}) => ({
   ...overrides,
 })
 
+const v2Record = (overrides = {}) => ({
+  ...record({ schemaVersion: 'p02-manual-v2' }),
+  ...overrides,
+})
+
 test('P01-AC1 validates the strict schema and rejects unsafe content and causal contradictions', () => {
   assert.deepEqual(validateManualRecord(record()), record())
   assert.throws(() => validateManualRecord(record({ extra: 'freeform notes are forbidden' })), /unknown key/i)
@@ -49,8 +54,54 @@ test('P01-AC1 rejects IDs below the generated session-0001 range', () => {
   assert.throws(() => validateManualRecord(record({ sessionId: 'session-0000' })), /sessionId/i)
 })
 
+test('P02-AC5 preserves strict v1 records and accepts only valid optional v2 elapsed timing', () => {
+  assert.deepEqual(validateManualRecord(record()), record())
+  assert.throws(
+    () => validateManualRecord(record({ guestEntryToFirstShotMs: 1 })),
+    /unknown key/i,
+  )
+  assert.deepEqual(validateManualRecord(v2Record()), v2Record())
+  assert.deepEqual(
+    validateManualRecord(v2Record({ guestEntryToFirstShotMs: 12_345 })),
+    v2Record({ guestEntryToFirstShotMs: 12_345 }),
+  )
+  assert.throws(() => validateManualRecord(v2Record({ guestEntryToFirstShotMs: -1 })), /guestEntryToFirstShotMs/i)
+  assert.throws(
+    () => validateManualRecord(v2Record({ guestEntryToFirstShotMs: Number.MAX_SAFE_INTEGER + 1 })),
+    /guestEntryToFirstShotMs/i,
+  )
+  assert.throws(
+    () => validateManualRecord(v2Record({
+      guestEntry: 'no',
+      firstShot: 'no',
+      completedMatch: 'no',
+      voluntaryReplay: 'not_observed',
+      status: 'ended_early',
+      guestEntryToFirstShotMs: 1,
+    })),
+    /guestEntryToFirstShotMs/i,
+  )
+})
+
 test('P01-AC1 rejects unsafe participant counts', () => {
   assert.throws(() => validateManualRecord(record({ socialContext: 'friends', participants: Number.MAX_SAFE_INTEGER + 1 })), /participants/i)
+})
+
+test('P02-AC5 preserves every funnel and segment denominator across v1, untimed v2, and timed v2', () => {
+  const rows = [
+    record(),
+    record({ sessionId: 'session-0002', initiatingPlayerHistory: 'returning', socialContext: 'friends', participants: 2, voluntaryReplay: 'yes' }),
+    record({ sessionId: 'session-0003', initiatingPlayerHistory: 'unknown', firstShot: 'not_observed', completedMatch: 'not_observed', voluntaryReplay: 'not_observed', status: 'unknown' }),
+    record({ sessionId: 'session-0004', guestEntry: 'no', firstShot: 'not_observed', completedMatch: 'not_observed', voluntaryReplay: 'not_observed', status: 'ended_early' }),
+  ]
+  const untimed = rows.map(row => ({ ...row, schemaVersion: 'p02-manual-v2' }))
+  const timed = untimed.map(row => row.firstShot === 'yes'
+    ? { ...row, guestEntryToFirstShotMs: row.sessionId === 'session-0001' ? 0 : 12_345 }
+    : row)
+  const expected = aggregateManualBaseline(rows)
+  assert.deepEqual(aggregateManualBaseline(untimed), expected)
+  assert.deepEqual(aggregateManualBaseline(timed), expected)
+  assert.deepEqual(aggregateManualBaseline([rows[0], timed[1], untimed[2], rows[3]]), expected)
 })
 
 test('P01-AC2 keeps downstream stages known-ineligible after a prior known no', () => {
@@ -101,6 +152,21 @@ test('P01-AC4 reports an empty dataset as raw zeroes rather than invented observ
     assert.deepEqual(stage, { eligible: 0, knownYes: 0, knownNo: 0, unknownOutcome: 0, unknownEligibility: 0 })
     assert.equal(Number.isNaN(stage.eligible), false)
   }
+})
+
+test('P02-AC6 documents optional manual timing without creating telemetry or human claims', async () => {
+  const root = fileURLToPath(new URL('../../', import.meta.url))
+  const observation = await readFile(join(root, 'docs/product-evidence/p01-manual-observation-template.md'), 'utf8')
+  const report = await readFile(join(root, 'docs/product-evidence/p01-manual-report-template.md'), 'utf8')
+  assert.match(observation, /p02-manual-v2/)
+  assert.match(observation, /guestEntryToFirstShotMs/)
+  assert.match(observation, /Do not begin real\s+collection until the owner confirms/i)
+  assert.match(observation, /not collected by the game/i)
+  const timingSection = report.slice(report.indexOf('Optional `guestEntryToFirstShotMs`'))
+  assert.match(timingSection, /do not establish newcomer understanding, voluntary\s+replay behavior, retention/i)
+  assert.match(timingSection, /no in-app telemetry/i)
+  assert.match(timingSection, /Do not collect or\s+retain them until the owner confirms/i)
+  assert.match(timingSection, /does not record the selected launch route/i)
 })
 
 async function filesUnder(directory) {
