@@ -140,6 +140,8 @@ vi.mock('pixi.js', async () => {
   };
 });
 
+vi.mock('pixi.js/unsafe-eval', () => ({}));
+
 const urls = [
   '/art/battle-console-integrated/static-chrome.png',
   '/art/battle-console-integrated/canonical-pixi-layer.png',
@@ -194,6 +196,7 @@ describe('R10 supported Pixi lifecycle', () => {
       expect(runtime.applications).toHaveLength(0);
     } finally {
       runtime.resolveModule();
+      await vi.dynamicImportSettled();
       await flushMicrotasks(40);
     }
     expect(runtime.applications).toHaveLength(0);
@@ -243,6 +246,7 @@ describe('R10 supported Pixi lifecycle', () => {
           () => { outcome = 'fulfilled'; },
           (error: unknown) => { outcome = error instanceof Error ? error.name : 'rejected'; },
         );
+        if (generation === 0) await vi.dynamicImportSettled();
         await flushMicrotasks();
         controller.abort();
         await flushMicrotasks();
@@ -319,8 +323,8 @@ describe('R10 supported Pixi lifecycle', () => {
 
   it('installs Pixi static CSP synchronizers before renderer initialization', () => {
     const source = readFileSync(resolve(import.meta.dirname, 'adapter.ts'), 'utf8');
-    const cspImport = source.indexOf("import 'pixi.js/unsafe-eval'");
-    const pixiImport = source.indexOf("import('pixi.js')");
+    const cspImport = source.indexOf("await import('pixi.js/unsafe-eval')");
+    const pixiImport = source.indexOf("pixi = await import('pixi.js')");
 
     expect(cspImport).toBeGreaterThanOrEqual(0);
     expect(pixiImport).toBeGreaterThanOrEqual(0);

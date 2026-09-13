@@ -9,6 +9,7 @@ import type {
   BattleConsoleMountedGeneration,
   BattleConsoleMountRequest,
 } from './mount';
+import { mountBattleConsoleGeneration } from './mount';
 import type {
   BattleConsoleLifecycleStatus,
   BattleConsolePresentationState,
@@ -76,7 +77,9 @@ const zeroResourceSnapshot = Object.freeze(Object.fromEntries(
 
 /** Production lifecycle trigger API; P-08 connects real battle enter/leave routes to it. */
 export function createBattleConsoleLifecycle({
-  loadMount = () => import('./mount'),
+  // The semantic command owner ships with the entry document so an open page
+  // survives a later static deployment replacing deferred presentation chunks.
+  loadMount = async () => ({ mountBattleConsoleGeneration }),
 }: BattleConsoleLifecycleDependencies = {}): BattleConsoleLifecycleController {
   let generationCounter = 0;
   let active: ActiveGeneration | null = null;
