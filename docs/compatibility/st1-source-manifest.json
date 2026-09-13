@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "p10-meter-client-and-unmetered-terrain-batching-parity-reviewed",
+  "disposition": "lobby-return-focus-presentation-only-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -71,11 +71,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "5afcaf2c3a794275b5a1e5a5d1112b63d5f9cf9b256ab77798527919fc43161c"
+      "sha256": "272080b5d84da2725bdc4a877d7b1549a90b89b9bef16178ebed897ac5020e0f"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "fae21cffa7558fb1a945de61fa5e2e71a41667948f27ced0a63c02c9f97ed03e"
+      "sha256": "9deff8172a15f9e3a3fc91a4a776d9e3be11a5fc3a3b88150dd22d4df8fd5e77"
     },
     {
       "path": "package.json",

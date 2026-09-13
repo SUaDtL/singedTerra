@@ -258,6 +258,24 @@ interface PreviewVehicle {
   loadout: TankLoadout;
 }
 
+interface LobbyFocusSnapshot {
+  readonly key: string;
+  readonly occurrence: number;
+  readonly inOverlay: boolean;
+  readonly selectionStart: number | null;
+  readonly selectionEnd: number | null;
+  readonly selectionDirection: 'forward' | 'backward' | 'none' | null;
+}
+
+const LOBBY_FOCUS_ATTRIBUTES = [
+  'data-hotseat-surface',
+  'data-verified-surface',
+  'data-operation-id',
+  'data-online-route',
+  'name',
+  'aria-label',
+] as const;
+
 /** Active tab on the lobby. */
 type LobbyTab = 'hotseat' | 'online';
 
@@ -482,17 +500,14 @@ export class Lobby {
     if (identityChanged) this.roomController.accountIdentityChanged();
     const recoveryGeneration = this.verifiedSession.advanceRecoveryGeneration();
     const restoreFocus = this.accountPanelOpen;
-    const restoreLocalBattleFocus = document.activeElement instanceof HTMLButtonElement
-      && this.root.contains(document.activeElement)
-      && document.activeElement.textContent === 'Local Battle';
     this.verifiedSession.freezeVerifiedDeploymentForAccountChange();
     this.syncOnlineNameFromAccount();
     this.syncDiagnosticsReadiness();
     this.maybeAutorunDiagnostics();
     this.render();
     this.accountAuthenticationChangeCb?.(identityChanged);
-    if (restoreFocus) this.focusAccountOverlay();
-    else if (restoreLocalBattleFocus) this.diagnosticsReturnFocus()?.focus();
+    const overlay = this.root.querySelector<HTMLElement>('.lobby-overlay');
+    if (restoreFocus && !overlay?.contains(document.activeElement)) this.focusAccountOverlay();
     void this.verifiedSession.revalidateFrozenVerifiedDeployment(recoveryGeneration);
   }
 
@@ -739,6 +754,110 @@ export class Lobby {
       ?? this.root.querySelector<HTMLButtonElement>('button');
   }
 
+  private lobbyReturnFocusTarget(): HTMLElement | null {
+    if (this.accountPanelOpen || this.settingsOpen || this.diagnosticsIntentActive) return null;
+    if (this.surface === 'preparation' && this.activeTab === 'hotseat') {
+      return this.root.querySelector<HTMLElement>(
+        `[role="tab"][data-hotseat-surface="${this.hotSeatSurface}"]:not(:disabled)`,
+      ) ?? this.root.querySelector<HTMLElement>(
+        '[role="tab"][data-hotseat-surface="local"]:not(:disabled)',
+      ) ?? this.root.querySelector<HTMLElement>('.lobby-mode-panel .primary:not(:disabled)');
+    }
+    if (this.surface === 'preparation') {
+      return this.root.querySelector<HTMLElement>('.lobby-mode-panel .primary:not(:disabled)')
+        ?? this.root.querySelector<HTMLElement>(
+          '.lobby-mode-panel input:not(:disabled), .lobby-mode-panel select:not(:disabled)',
+        )
+        ?? this.root.querySelector<HTMLElement>('.lobby-deployment__back');
+    }
+    return this.root.querySelector<HTMLElement>('.lobby-deployment-chooser .primary:not(:disabled)')
+      ?? [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
+        .find((button) => button.textContent === 'Local Battle')
+      ?? this.root.querySelector<HTMLElement>('.lobby-deployment-chooser button:not(:disabled)');
+  }
+
+  private focusLobbyReturnTarget(): void {
+    this.lobbyReturnFocusTarget()?.focus({ preventScroll: true });
+  }
+
+  private lobbyFocusableControls(): HTMLElement[] {
+    return [...this.root.querySelectorAll<HTMLElement>(
+      'button, input, select, textarea, summary, a[href], [tabindex]',
+    )].filter((control) => !control.closest('[inert]')
+      && !(control instanceof HTMLButtonElement && control.disabled)
+      && !(control instanceof HTMLInputElement && control.disabled)
+      && !(control instanceof HTMLSelectElement && control.disabled)
+      && !(control instanceof HTMLTextAreaElement && control.disabled));
+  }
+
+  private lobbyFocusKey(control: HTMLElement): string | null {
+    const tag = control.tagName.toLowerCase();
+    if (control.id) return `${tag}|id|${control.id}`;
+    for (const attribute of LOBBY_FOCUS_ATTRIBUTES) {
+      const value = control.getAttribute(attribute);
+      if (value) return `${tag}|${attribute}|${value}`;
+    }
+    if (control instanceof HTMLButtonElement || tag === 'summary') {
+      const text = control.textContent?.trim();
+      if (text) return `${tag}|text|${text}`;
+    }
+    return null;
+  }
+
+  private captureLobbyFocus(): LobbyFocusSnapshot | null {
+    const active = document.activeElement;
+    if (this.root.hidden || !(active instanceof HTMLElement) || !this.root.contains(active)) return null;
+    if ((this.accountPanelOpen || this.settingsOpen) && !active.closest('.lobby-overlay')) return null;
+    const key = this.lobbyFocusKey(active);
+    if (!key) return null;
+    const matching = this.lobbyFocusableControls().filter((control) => this.lobbyFocusKey(control) === key);
+    const occurrence = matching.indexOf(active);
+    if (occurrence < 0) return null;
+    let selectionStart: number | null = null;
+    let selectionEnd: number | null = null;
+    let selectionDirection: LobbyFocusSnapshot['selectionDirection'] = null;
+    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+      try {
+        selectionStart = active.selectionStart;
+        selectionEnd = active.selectionEnd;
+        selectionDirection = active.selectionDirection;
+      } catch {
+        // Input types without a text selection still retain focus.
+      }
+    }
+    return {
+      key,
+      occurrence,
+      inOverlay: active.closest('.lobby-overlay') !== null,
+      selectionStart,
+      selectionEnd,
+      selectionDirection,
+    };
+  }
+
+  private restoreLobbyFocus(snapshot: LobbyFocusSnapshot | null): void {
+    if (!snapshot) return;
+    const matching = this.lobbyFocusableControls().filter((control) => (
+      this.lobbyFocusKey(control) === snapshot.key
+      && (control.closest('.lobby-overlay') !== null) === snapshot.inOverlay
+    ));
+    const target = matching[snapshot.occurrence];
+    if (!target) return;
+    target.focus({ preventScroll: true });
+    if ((target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+      && snapshot.selectionStart !== null && snapshot.selectionEnd !== null) {
+      try {
+        target.setSelectionRange(
+          snapshot.selectionStart,
+          snapshot.selectionEnd,
+          snapshot.selectionDirection ?? undefined,
+        );
+      } catch {
+        // Input types without a text selection still retain focus.
+      }
+    }
+  }
+
   private focusAccountOverlay(): void {
     const overlay = this.root.querySelector<HTMLElement>('.lobby-overlay');
     (overlay?.querySelector<HTMLElement>('.account-panel__form input')
@@ -852,7 +971,11 @@ export class Lobby {
    * Render the hot-seat setup overlay: choose 2-4 players, name each, and pick
    * a unique color. A Start button validates and hands a config to onReady.
    */
-  show(options: { readonly focusVerifiedDeployment?: boolean; readonly focusVerifiedChallenge?: boolean } = {}): void {
+  show(options: {
+    readonly focusLobby?: boolean;
+    readonly focusVerifiedDeployment?: boolean;
+    readonly focusVerifiedChallenge?: boolean;
+  } = {}): void {
     if (options.focusVerifiedDeployment || options.focusVerifiedChallenge) {
       this.hotSeatSurface = 'verified';
       this.verifiedHotSeatSurface = options.focusVerifiedChallenge ? 'challenge' : 'deployment';
@@ -865,6 +988,7 @@ export class Lobby {
     this.render();
     this.root.hidden = false;
     this.focusRequestedVerifiedDeployment();
+    if (options.focusLobby) this.focusLobbyReturnTarget();
     void this.accountSession.initialize();
     void this.checkRejoinCandidate();
   }
@@ -1022,6 +1146,8 @@ export class Lobby {
 
   /** Re-render the lobby card from current working state. */
   private render(): void {
+    const explicitVerifiedFocusRequested = this.focusVerifiedDeploymentRequested;
+    const focusSnapshot = this.captureLobbyFocus();
     this.renderListeners.abort();
     this.renderListeners = new AbortController();
     this.root.replaceChildren();
@@ -1206,6 +1332,7 @@ export class Lobby {
         if (!activeGarage.contains(control)) control.setAttribute('inert', '');
       });
     }
+    if (!explicitVerifiedFocusRequested) this.restoreLobbyFocus(focusSnapshot);
   }
 
   /**
