@@ -190,6 +190,24 @@ describe('buildLobbyShellView', () => {
     expect(previewFacts.textContent).toContain('Lava hazard');
   });
 
+  it.each([
+    ['standard', 'ember-dusk', [['Battlefield', 'Automatic'], ['Rounds', '3 rounds'], ['Opponent', 'vs CPU']]],
+    ['crosswind-range', 'glassstorm-expanse', [['Battlefield', 'Glassstorm Expanse'], ['Rounds', '3 rounds'], ['Opponent', 'vs CPU'], ['Walls', 'Wrap walls'], ['Seed', 'Seed 42']]],
+    ['caldera-run', 'obsidian-caldera', [['Battlefield', 'Obsidian Caldera'], ['Rounds', '3 rounds'], ['Opponent', 'vs CPU'], ['Hazard', 'Lava hazard'], ['Seed', 'Seed 42']]],
+    ['last-light-siege', 'ember-dusk', [['Battlefield', 'Ember Dusk'], ['Rounds', '3 rounds'], ['Opponent', 'vs CPU'], ['Pressure', 'Sudden death · Turn 12']]],
+    ['lean-arsenal', 'ember-dusk', [['Battlefield', 'Automatic'], ['Rounds', '3 rounds'], ['Opponent', 'vs CPU'], ['Arsenal', 'Arms level 0'], ['Seed', 'Seed 42']]],
+  ] as const)('shows the matching illustration and complete facts for %s', (id, artwork, facts) => {
+    const root = buildLobbyShellView(options());
+    root.querySelector<HTMLButtonElement>(`[data-operation-id="${id}"]`)!.click();
+    const preview = root.querySelector<HTMLElement>('[data-ui="battlefield-preview"]')!;
+    expect(preview.querySelector('img')!.getAttribute('src'))
+      .toBe(`${import.meta.env.BASE_URL}art/battlefield-theater-${artwork}-v3.webp`);
+    const readout = preview.querySelector('[data-ui="battlefield-preview-facts"]')!;
+    expect([...readout.children].map((group) => [
+      group.querySelector('dt')!.textContent, group.querySelector('dd')!.textContent,
+    ])).toEqual(facts);
+  });
+
   it('routes each deployment choice exactly once', () => {
     const onQuickDuel = vi.fn();
     const onTabChange = vi.fn();
