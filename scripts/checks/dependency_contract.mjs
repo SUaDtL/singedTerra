@@ -72,7 +72,7 @@ assert(
   'package engines enforce the Node 24.15 compatibility floor',
 )
 assert(
-  rootPackage.devDependencies?.['@types/node'] === '24.13.3',
+  rootPackage.devDependencies?.['@types/node'] === '24.13.4',
   '@types/node stays on the Node 24 line',
 )
 assert(
