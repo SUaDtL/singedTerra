@@ -1,0 +1,104 @@
+{
+  "schema": "singedterra-asset-dependency-inventory/v1",
+  "source": {
+    "head": "e49b424c67b2f1a09bd5593156f15117915e93df",
+    "worktree": "codex/product-improvements-v2",
+    "clean_at_inventory": false,
+    "generated_at": "2026-09-12",
+    "commercial_clearance_claimed": false
+  },
+  "counts": {
+    "runtime_visual_assets": 27,
+    "public_runtime_files": 26,
+    "public_raster_or_vector_assets": 24,
+    "bundled_source_assets": 3,
+    "document_only_images": 4,
+    "provenance_documented_or_manifested": 15,
+    "provenance_fully_traced_derivatives": 9,
+    "provenance_attribution_only_derivative_trace_unresolved": 6,
+    "provenance_unresolved": 12,
+    "runtime_font_files": 0,
+    "runtime_audio_files": 0
+  },
+  "runtime_visual_assets": [
+    {"path":"client/public/art/battle-console-integrated/canonical-pixi-layer-compact.png","bytes":41785,"sha256":"5C427C7DC7203ED2137BB25C7ECCC715BC134BE3716CEAC84750BCB762A38D8E","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/canonical-pixi-layer-standard.png","bytes":58519,"sha256":"A610E4C66FBAC8908D300C4D0AF2EB9D4CA12E6440A99EF1E8FF0DA44E328D31","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/canonical-pixi-layer.png","bytes":559644,"sha256":"9A6E70A620001DED40950E87E41FFE791EFF0A3377F2E9AC872F70133B68C530","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/canonical-semantic-atlas-compact.png","bytes":50051,"sha256":"FB9D5A7DA739C9946458058F12B1B50378D25A69A9EA26EAD2B208CDF5CE4CFE","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/canonical-semantic-atlas-standard.png","bytes":70021,"sha256":"9602A0328C046CFE49D13494900C26E32A96F4C661E2267D7123BB5A7033C3CA","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/canonical-semantic-atlas.png","bytes":622268,"sha256":"7D7CA5B3834A94CCDCA702396AAD843B3B0393C28E2DA258B70ABD48A342734F","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/static-chrome-compact.png","bytes":248892,"sha256":"7F0957BB9C65BBFFF06077595BC8B7D5FBE0028AA019CAF10B9018580EAF8ED7","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/static-chrome-standard.png","bytes":370428,"sha256":"662518DA477A72B5B844121A82DA3FE7058AB8E0373A3D621E69E549972BD355","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battle-console-integrated/static-chrome.png","bytes":487420,"sha256":"742993C6596D8A814AB7B7EDA189796201E10B441B8703921550855124862E31","status":"documented_generated_derivative","evidence":"client/public/art/battle-console-integrated/manifest.json; scripts/assets/battle-console-assets.json; scripts/assets/build-battle-console.mjs"},
+    {"path":"client/public/art/battlefield-backdrop.webp","bytes":58882,"sha256":"7E27270DCE6D36B3F0730FC715E54E7732858A9E7C3836BBF4D2B15CF097CA75","status":"documented_attribution_unresolved_derivative_trace","attribution":"project-generated (docs/ART_PROVENANCE.md)","source_master_sha256":null,"transformation_recipe":null,"evidence":"docs/ART_PROVENANCE.md:6-22; source-master hash and recipe not found"},
+    {"path":"client/public/art/battlefield-glassstorm-expanse.webp","bytes":73334,"sha256":"6F58E88EF661671E47140EF14102B874CAD42B81FED30A1A8CBC6309590BF7C1","status":"documented_attribution_unresolved_derivative_trace","attribution":"project-generated (docs/ART_PROVENANCE.md)","source_master_sha256":null,"transformation_recipe":null,"evidence":"docs/ART_PROVENANCE.md:6-22; source-master hash and recipe not found"},
+    {"path":"client/public/art/battlefield-obsidian-caldera.webp","bytes":50878,"sha256":"78CD3ECFC0ECF3B593853BCC2A2B69D20577BFF875F6B6195DA94DBB557395CB","status":"documented_attribution_unresolved_derivative_trace","attribution":"project-generated (docs/ART_PROVENANCE.md)","source_master_sha256":null,"transformation_recipe":null,"evidence":"docs/ART_PROVENANCE.md:6-22; source-master hash and recipe not found"},
+    {"path":"client/public/art/battlefield-theater-ember-dusk-v3.webp","bytes":877034,"sha256":"1542947690166503C8A4C44B9D9DF7CC61268D7F9B2357F2D725EC28DF67DBF3","status":"unresolved_provenance","evidence":"runtime reference client/src/main.ts:721; no record in docs/ART_PROVENANCE.md"},
+    {"path":"client/public/art/battlefield-theater-glassstorm-expanse-v3.webp","bytes":973606,"sha256":"2D0B468534281BE68FEA341AA9B626D036E492BEE7560BDC60181F6F7C9BF3DD","status":"unresolved_provenance","evidence":"runtime reference client/src/main.ts:721; no record in docs/ART_PROVENANCE.md"},
+    {"path":"client/public/art/battlefield-theater-obsidian-caldera-v3.webp","bytes":796610,"sha256":"90B2B8D830B79D2C105E2EDF094B7E6A4D082CB44DBF79210244BE8CFB22F405","status":"unresolved_provenance","evidence":"runtime reference client/src/main.ts:721; no record in docs/ART_PROVENANCE.md"},
+    {"path":"client/public/art/battlefield-theater-ultrawide-v2.webp","bytes":83152,"sha256":"95AA376FB69231ACBE505F6E424134157BA851ED1A650ECAD1BF448D9EF8850E","status":"unresolved_provenance","evidence":"runtime reference client/src/main.ts:1429; no record in docs/ART_PROVENANCE.md"},
+    {"path":"client/public/art/explosion-sheet.webp","bytes":176750,"sha256":"4D938BDF4C704BD48210506AB0144990378D99A96CE6BC7D8EA88F77D07338C9","status":"unresolved_provenance","evidence":"runtime reference client/src/renderer/ExplosionArt.ts:1; spec describes generated source but no consolidated asset record"},
+    {"path":"client/public/art/tank-chassis.webp","bytes":9432,"sha256":"F8FFA3568FD6FD00FA7ADBE7E198BAEA887E27633E1C5D54662855AF49F775A2","status":"unresolved_provenance","evidence":"runtime reference client/src/renderer/TankChassisArt.ts:1; no record in docs/ART_PROVENANCE.md"},
+    {"path":"client/public/art/tank-parts.webp","bytes":150928,"sha256":"02B18AB7D6E28B1C8AA6DF1525C6EA31373B83586001F31E765A72827CD274DB","status":"unresolved_provenance","evidence":"runtime reference client/src/renderer/tankPartCatalog.ts:18; no record in docs/ART_PROVENANCE.md"},
+    {"path":"client/public/art/terrain-material-glassstorm-expanse.webp","bytes":18152,"sha256":"FAC75ED74AC461A0C894075645FA28A3B5EA5545601CA1598840A3D7D09D60F9","status":"documented_attribution_unresolved_derivative_trace","attribution":"project-generated (docs/ART_PROVENANCE.md)","source_master_sha256":null,"transformation_recipe":null,"evidence":"docs/ART_PROVENANCE.md:24-44; source-master hash and recipe not found"},
+    {"path":"client/public/art/terrain-material-obsidian-caldera.webp","bytes":15642,"sha256":"F5BD75B5329191D7EDDC13F621E02253C9FCBA25710A35A5AB0CBCB5F5AD813F","status":"documented_attribution_unresolved_derivative_trace","attribution":"project-generated (docs/ART_PROVENANCE.md)","source_master_sha256":null,"transformation_recipe":null,"evidence":"docs/ART_PROVENANCE.md:24-44; source-master hash and recipe not found"},
+    {"path":"client/public/art/terrain-material.webp","bytes":17572,"sha256":"5E37B1E98EAE990B37BED6CB7F854FEEB616A0C0DCDDCC9888A65BBC74C3ABF0","status":"documented_attribution_unresolved_derivative_trace","attribution":"project-generated (docs/ART_PROVENANCE.md)","source_master_sha256":null,"transformation_recipe":null,"evidence":"docs/ART_PROVENANCE.md:24-44; source-master hash and recipe not found"},
+    {"path":"client/public/banner.svg","bytes":9161,"sha256":"87B4A06AC84F645132A6A8C8D50850947813D8CEE4C6610CD9A2A7A20BD92493","status":"unresolved_provenance","evidence":"runtime file; no asset provenance record found"},
+    {"path":"client/public/splash-hero.png","bytes":1924902,"sha256":"CE72F58222F23FB5147CFF4F8A703F2E4546FAB77FB36ECD00E0EE3CE6B27B1E","status":"unresolved_provenance","evidence":"runtime reference client/index.html:37 and client/src/ui/Splash.ts:229; no asset provenance record found"},
+    {"path":"client/src/assets/battle-console/battle-armory-frame-ultrawide-v3.webp","bytes":80704,"sha256":"26F25D8B87072574EBF75CB4824F7FCBF3DAE00EA59CA6BFB0EFF2A4E1F23E7C","status":"unresolved_provenance","evidence":"bundled import client/src/ui/battleConsole/BattleConsoleRoot.tsx:2; no asset provenance record found"},
+    {"path":"client/src/assets/battle-console/battle-match-frame-v2.webp","bytes":390534,"sha256":"8CBD4829CA91549ED13A729669819AA2F7FAEAA71D9E7C865AA1A8188A18E73B","status":"unresolved_provenance","evidence":"bundled import client/src/ui/battleConsole/BattleConsoleRoot.tsx:1 and client/src/style.css:550; no asset provenance record found"},
+    {"path":"client/src/assets/battle-console/battle-settings-frame-v2.webp","bytes":1392298,"sha256":"A9B4B32B16FFF3F87D5A6882D0BFB8AB9FF5DA29158341EE53ADEF105467635E","status":"unresolved_provenance","evidence":"bundled import client/src/ui/battleConsole/BattleConsoleRoot.tsx:3; no asset provenance record found"}
+  ],
+  "public_nonvisual_files": [
+    {"path":"client/public/.nojekyll","bytes":0,"sha256":"E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855","role":"host_control_file"},
+    {"path":"client/public/art/battle-console-integrated/manifest.json","bytes":24300,"sha256":"D9E2481A41292A5C71DCF63A4A74CB283AFBF2ED6ACD9F6673822E699F056E8C","role":"generated_asset_provenance_manifest"}
+  ],
+  "document_only_images": [
+    {"path":"docs/assets/gameplay-command-rail.jpg","bytes":138142,"sha256":"BF50E3171224EA7B89C68FB97A6C3C34B809E359B119A4A43444462AB71AE089","status":"unresolved_documentation_asset_provenance"},
+    {"path":"docs/assets/garage-lobby.jpg","bytes":92285,"sha256":"3A088E1B9564C0A6922ED3E5C15CEC88A222B4F316747D52541AD8955033E7AE","status":"unresolved_documentation_asset_provenance"},
+    {"path":"docs/assets/mobile-command-deck.jpg","bytes":210620,"sha256":"20AB1321A1867A13B079D562B2F44C6B460644EF27B7E58312FD45107ACD37B9","status":"unresolved_documentation_asset_provenance"},
+    {"path":"docs/assets/splash-hero.png","bytes":1924902,"sha256":"CE72F58222F23FB5147CFF4F8A703F2E4546FAB77FB36ECD00E0EE3CE6B27B1E","status":"unresolved_documentation_asset_provenance"}
+  ],
+  "audio_and_fonts": {
+    "audio": "No runtime audio files. AudioEngine synthesizes SFX with Web Audio API, client/src/audio/AudioEngine.ts:60-65.",
+    "fonts": "No runtime font files. CSS uses named system fallback stacks. No system font is redistributed."
+  },
+  "dependencies": [
+    {"workspace":"root","kind":"devDependency","name":"@axe-core/playwright","requested":"4.13.0","version":"4.13.0","declared_license":"MPL-2.0","provenance":"package-lock.json registry resolution","notice_status":"listed_exact"},
+    {"workspace":"root","kind":"devDependency","name":"@playwright/test","requested":"1.63.0","version":"1.63.0","declared_license":"Apache-2.0","provenance":"package-lock.json registry resolution","notice_status":"listed_version_delta"},
+    {"workspace":"root","kind":"devDependency","name":"@types/node","requested":"24.13.3","version":"24.13.3","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"root","kind":"devDependency","name":"@typescript/native","requested":"npm:typescript@7.0.2","version":"7.0.2","declared_license":"Apache-2.0","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"root","kind":"devDependency","name":"concurrently","requested":"10.0.5","version":"10.0.5","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"root","kind":"devDependency","name":"pixelmatch","requested":"7.2.0","version":"7.2.0","declared_license":"ISC","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"root","kind":"devDependency","name":"sharp","requested":"0.35.4","version":"0.35.4","declared_license":"Apache-2.0","provenance":"package-lock.json registry resolution; development-only asset compiler","notice_status":"listed_version_delta"},
+    {"workspace":"root","kind":"devDependency","name":"supabase","requested":"2.105.0","version":"2.105.0","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"root","kind":"devDependency","name":"tsx","requested":"4.23.13","version":"4.23.13","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"root","kind":"devDependency","name":"typescript","requested":"npm:@typescript/typescript6@6.0.2","version":"6.0.2","declared_license":"Apache-2.0","provenance":"package-lock.json registry resolution via @typescript/typescript6","notice_status":"absent"},
+    {"workspace":"client","kind":"dependency","name":"@singedterra/shared","requested":"*","version":"0.0.0","declared_license":"MIT","provenance":"package-lock.json workspace link","notice_status":"repository_license"},
+    {"workspace":"client","kind":"dependency","name":"@supabase/supabase-js","requested":"2.115.0","version":"2.115.0","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"client","kind":"dependency","name":"lucide","requested":"1.41.0","version":"1.41.0","declared_license":"ISC","provenance":"package-lock.json registry resolution","notice_status":"listed_version_delta"},
+    {"workspace":"client","kind":"dependency","name":"pixi.js","requested":"8.20.1","version":"8.20.1","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"listed_version_delta"},
+    {"workspace":"client","kind":"dependency","name":"preact","requested":"10.29.8","version":"10.29.8","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"client","kind":"devDependency","name":"@testing-library/dom","requested":"10.4.1","version":"10.4.1","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"client","kind":"devDependency","name":"@vitest/coverage-v8","requested":"4.1.11","version":"4.1.11","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"client","kind":"devDependency","name":"jsdom","requested":"30.0.1","version":"30.0.1","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"client","kind":"devDependency","name":"vite","requested":"8.2.2","version":"8.2.2","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"},
+    {"workspace":"client","kind":"devDependency","name":"vitest","requested":"4.1.11","version":"4.1.11","declared_license":"MIT","provenance":"package-lock.json registry resolution","notice_status":"absent"}
+  ],
+  "notice_deltas": [
+    {"notice":"THIRD_PARTY_NOTICES.md:5","notice_version":"PixiJS 8.20.0","lockfile_version":"8.20.1"},
+    {"notice":"THIRD_PARTY_NOTICES.md:32","notice_version":"Sharp 0.35.3","lockfile_version":"0.35.4"},
+    {"notice":"THIRD_PARTY_NOTICES.md:49","notice_version":"Lucide 1.27.0","lockfile_version":"1.41.0"},
+    {"notice":"THIRD_PARTY_NOTICES.md:1557","notice_version":"Lucide 1.33.0 in embedded closure","lockfile_version":"1.41.0"}
+  ],
+  "verification": {
+    "commands": [
+      {"command":"git rev-parse HEAD","exit_code":0,"result":"e49b424c67b2f1a09bd5593156f15117915e93df"},
+      {"command":"git status --porcelain=v1","exit_code":0,"result":"Unrelated P13 work plus the two inventory artifacts are untracked; preserved."},
+      {"command":"npm ls --all --depth=0 (earlier pre-junction observation)","exit_code":1,"result":"Dependencies were absent at that observation; graph not verified."},
+      {"command":"npm ls --all --depth=0 (current junctioned checkout)","exit_code":1,"result":"Cross-worktree dependency junction reports extraneous and unmet workspace entries; installed graph not validated."}
+    ],
+    "not_run": ["npm install", "npm audit", "npm run build", "npm run check", "asset generation", "browser or production checks"],
+    "limitations": ["Declared licenses and registry resolutions are inventory data, not legal clearance.","No dependency removal was proposed or performed.","Six project-attributed world and terrain derivatives lack source-master hashes and transformation recipes; that trace is explicitly unresolved.","Commercial release escalation for unresolved rights and notice deltas remains separate from inventory completion."]
+  }
+}

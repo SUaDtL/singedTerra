@@ -28,15 +28,22 @@ function options(overrides: Partial<DesiredShellOptions> = {}): DesiredShellOpti
     controls: section('controls'),
     quickOperations: [
       { id: 'standard', title: 'Standard Duel', briefing: 'A balanced two-tank exhibition.' },
+      { id: 'first-salvo', title: 'First Salvo', briefing: 'One round. Aim, set power, and fire.' },
       { id: 'crosswind-range', title: 'Crosswind Range', briefing: 'Wraparound walls turn shifting wind into a ranging test.' },
       { id: 'caldera-run', title: 'Caldera Run', briefing: 'Lava terrain changes every landing.' },
-      { id: 'last-light-siege', title: 'Last Light Siege', briefing: 'Best of three before sudden death.' },
+      {
+        id: 'last-light-siege',
+        title: 'Last Light Siege',
+        briefing: 'Best of three before sudden death.',
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
     ],
     onTabChange: vi.fn(),
     onQuickDuel: vi.fn(),
     onRejoin: vi.fn(),
     onBack: vi.fn(),
     showBack: true,
+    firstSalvoPreferenceUnseen: false,
     ...overrides,
   };
 }
@@ -96,8 +103,14 @@ describe('buildLobbyShellView', () => {
     expect(cards[0]?.getAttribute('aria-pressed')).toBe('false');
     expect(root.querySelector('[data-ui="quick-operation-briefing"]')?.textContent)
       .toBe('Lava terrain changes every landing.');
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.hidden).toBe(true);
+    root.querySelector<HTMLButtonElement>('[data-operation-id="last-light-siege"]')!.click();
+    expect(root.querySelector('[data-ui="quick-operation-objective"]')?.textContent)
+      .toBe('Hold the Field · Win the duel.');
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation-objective"]')?.dataset)
+      .toMatchObject({ contentVersion: '1', fieldOrderId: 'hold-the-field' });
     button(root, 'Quick Duel vs CPU').click();
-    expect(onQuickDuel).toHaveBeenCalledWith('caldera-run');
+    expect(onQuickDuel).toHaveBeenCalledWith('last-light-siege');
   });
 
   it('routes each deployment choice exactly once', () => {
@@ -112,6 +125,25 @@ describe('buildLobbyShellView', () => {
     expect(onQuickDuel).toHaveBeenCalledOnce();
     expect(onQuickDuel).toHaveBeenCalledWith('standard');
     expect(onTabChange.mock.calls).toEqual([['hotseat'], ['online']]);
+  });
+
+  it('offers one explicit First Salvo start before disclosing ordinary Quick Duels', () => {
+    const onQuickDuel = vi.fn();
+    const root = buildLobbyShellView(options({ firstSalvoPreferenceUnseen: true, onQuickDuel }));
+    const primaryActions = [...root.querySelectorAll<HTMLButtonElement>('button.primary')];
+
+    expect(primaryActions).toEqual([button(root, 'Start First Salvo')]);
+    expect(root.querySelector<HTMLDetailsElement>('details[data-ui="other-quick-duels"]')?.open).toBe(false);
+    expect(button(root, 'Local Battle').classList.contains('lobby-deployment-choice--secondary')).toBe(true);
+    expect(button(root, 'Play Online').classList.contains('lobby-deployment-choice--secondary')).toBe(true);
+
+    button(root, 'Start First Salvo').click();
+    expect(onQuickDuel).toHaveBeenCalledWith('first-salvo');
+
+    const disclosure = root.querySelector<HTMLDetailsElement>('details[data-ui="other-quick-duels"]')!;
+    disclosure.open = true;
+    button(root, 'Quick Duel vs CPU').click();
+    expect(onQuickDuel).toHaveBeenLastCalledWith('standard');
   });
 
   it.each([
@@ -183,13 +215,14 @@ describe('buildLobbyShellView', () => {
   });
 
   it('makes Rejoin the sole primary action when a game can be resumed', () => {
-    const root = buildLobbyShellView(options({ rejoinAvailable: true }));
+    const root = buildLobbyShellView(options({ rejoinAvailable: true, firstSalvoPreferenceUnseen: true }));
     const quickDuel = button(root, 'Quick Duel vs CPU');
     const rejoin = button(root, 'Rejoin your game');
     const primaryActions = [...root.querySelectorAll<HTMLButtonElement>('button.primary')];
 
     expect(primaryActions).toEqual([rejoin]);
     expect(quickDuel.classList.contains('primary')).toBe(false);
+    expect(root.querySelector('button')?.textContent).not.toBe('Start First Salvo');
   });
 
   it('omits optional account and rejoin surfaces without changing the chooser', () => {

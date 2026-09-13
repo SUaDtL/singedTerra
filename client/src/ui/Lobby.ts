@@ -12,7 +12,13 @@ import {
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import { buildLobbyHotSeatView } from './LobbyHotSeatView';
-import { QUICK_OPERATIONS, quickOperationById, quickOperationOptions } from '../client/quickOperations';
+import {
+  QUICK_OPERATIONS,
+  quickOperationById,
+  quickOperationOptions,
+  type PracticeObjectiveDescriptor,
+} from '../client/quickOperations';
+import { isFirstSalvoPreferenceUnseen } from './firstSalvoCoach';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
@@ -115,7 +121,12 @@ export type LobbyPlayer = ModePlayer;
 /** Configuration produced by the lobby once the player(s) are ready. */
 export interface LobbyConfig extends ModeSetup {
   /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
-  quickOperation?: { readonly id: string; readonly title: string; readonly briefing: string };
+  quickOperation?: {
+    readonly id: string;
+    readonly title: string;
+    readonly briefing: string;
+    readonly practiceObjective?: PracticeObjectiveDescriptor;
+  };
   /** Auth-owned verified execution context. Server config and recovery transcript stay immutable. */
   verifiedDeployment?: {
     readonly descriptor: VerifiedDeploymentDescriptor;
@@ -156,6 +167,15 @@ function browserQuickDuelSeed(): number {
   const word = new Uint32Array(1);
   globalThis.crypto.getRandomValues(word);
   return word[0]!;
+}
+
+/** Browser privacy/storage failures must not prevent the local guest route. */
+function firstSalvoPreferenceUnseen(): boolean {
+  try {
+    return isFirstSalvoPreferenceUnseen(window.localStorage);
+  } catch {
+    return true;
+  }
 }
 
 // View-only advanced-settings defaults/steps (placeholders + input granularity).
@@ -942,6 +962,7 @@ export class Lobby {
         this.surface = 'preparation';
         this.render();
       },
+      firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
       quickOperations: QUICK_OPERATIONS,
       onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
       onRejoin: () => { void this.handleRejoin(); },
@@ -1327,6 +1348,7 @@ export class Lobby {
         id: operation.id,
         title: operation.title,
         briefing: operation.briefing,
+        ...(operation.practiceObjective ? { practiceObjective: operation.practiceObjective } : {}),
       },
     });
   }

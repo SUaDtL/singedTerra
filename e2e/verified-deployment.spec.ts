@@ -761,6 +761,7 @@ test('Quick Duel publishes a bounded query-gated seed receipt on every redeploym
   const readSeed = async (): Promise<number> => {
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
+    await page.locator('[data-ui="other-quick-duels"] > summary').click();
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
     await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     return page.evaluate(() => {

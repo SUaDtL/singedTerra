@@ -39,17 +39,23 @@ test.describe('Pre-game command shell', () => {
     await gotoLobby(page);
   });
 
-  test('opens on one focused three-choice deployment front door', async ({ page }) => {
+  test('opens on a focused First Salvo deployment front door', async ({ page }) => {
     const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
-    const choices = chooser.locator('button:not([data-operation-id])');
+    const visibleChoices = chooser.locator('button:not([data-operation-id]):visible');
+    const firstSalvo = chooser.getByRole('button', { name: 'Start First Salvo', exact: true });
+    const alternatives = chooser.locator('[data-ui="other-quick-duels"]');
     const operations = chooser.locator('[data-operation-id]');
 
-    await expect(choices).toHaveCount(3);
-    await expect(choices).toHaveText([
-      'Quick Duel vs CPU',
+    await expect(visibleChoices).toHaveCount(3);
+    await expect(visibleChoices).toHaveText([
+      'Start First Salvo',
       'Local Battle',
       'Play Online',
     ]);
+    await expect(firstSalvo).toHaveClass(/primary/);
+    await expect(chooser.locator('button.primary')).toHaveCount(1);
+    await expect(alternatives).not.toHaveAttribute('open', '');
+    await expect(alternatives.locator('summary')).toBeVisible();
     await expect(operations).toHaveCount(4);
     await expect(operations.first()).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
@@ -58,27 +64,33 @@ test.describe('Pre-game command shell', () => {
     await assertLobbyFrame(page);
   });
 
-  test('makes Quick Duel the one dominant, touch-sized deployment choice', async ({ page }) => {
+  test('makes First Salvo the one dominant, touch-sized deployment choice', async ({ page }) => {
     const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
+    const firstSalvo = chooser.getByRole('button', { name: 'Start First Salvo', exact: true });
+    const alternatives = chooser.locator('[data-ui="other-quick-duels"]');
     const quick = chooser.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
     const local = chooser.getByRole('button', { name: 'Local Battle', exact: true });
     const online = chooser.getByRole('button', { name: 'Play Online', exact: true });
     const operations = chooser.locator('[data-operation-id]');
 
+    await expect(alternatives).not.toHaveAttribute('open', '');
+    await alternatives.locator('summary').click();
+    await expect(alternatives).toHaveAttribute('open', '');
+
     const metrics = await chooser.evaluate((element) => {
       const app = document.getElementById('app');
-      const quick = element.querySelector<HTMLElement>('.primary');
+      const firstSalvo = element.querySelector<HTMLElement>('.primary');
       const secondary = [...element.querySelectorAll<HTMLElement>('button:not(.primary):not([data-operation-id])')];
-      if (!app || !quick || secondary.length !== 2) throw new Error('Expected deployment choices');
+      if (!app || !firstSalvo || secondary.length !== 3) throw new Error('Expected deployment choices');
       const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
       return {
         publishedTarget: Number.parseFloat(
           getComputedStyle(app).getPropertyValue('--st-deployment-choice-target'),
         ),
         expectedTarget: Math.ceil(44 / zoom),
-        quickHeight: quick.getBoundingClientRect().height,
-        quickFont: Number.parseFloat(getComputedStyle(quick).fontSize) * zoom,
-        quickBackground: getComputedStyle(quick).background,
+        firstSalvoHeight: firstSalvo.getBoundingClientRect().height,
+        firstSalvoFont: Number.parseFloat(getComputedStyle(firstSalvo).fontSize) * zoom,
+        firstSalvoBackground: getComputedStyle(firstSalvo).background,
         secondaryHeights: secondary.map((choice) => choice.getBoundingClientRect().height),
         secondaryBackgrounds: secondary.map((choice) => getComputedStyle(choice).backgroundColor),
         primaryCount: element.querySelectorAll('.primary').length,
@@ -87,13 +99,13 @@ test.describe('Pre-game command shell', () => {
 
     expect(metrics.primaryCount).toBe(1);
     for (const height of metrics.secondaryHeights) expect(height).toBeGreaterThanOrEqual(44);
-    expect(metrics.quickHeight).toBeGreaterThanOrEqual(52);
-    expect(metrics.quickFont).toBeGreaterThanOrEqual(14);
-    expect(metrics.quickHeight).toBeGreaterThan(Math.max(...metrics.secondaryHeights));
+    expect(metrics.firstSalvoHeight).toBeGreaterThanOrEqual(52);
+    expect(metrics.firstSalvoFont).toBeGreaterThanOrEqual(14);
+    expect(metrics.firstSalvoHeight).toBeGreaterThan(Math.max(...metrics.secondaryHeights));
     expect(metrics.secondaryBackgrounds).not.toContain('rgb(255, 210, 63)');
     expect(new Set(metrics.secondaryBackgrounds).size).toBe(1);
-    expect(metrics.quickBackground).not.toContain(metrics.secondaryBackgrounds[0]!);
-    for (const choice of [quick, local, online]) {
+    expect(metrics.firstSalvoBackground).not.toContain(metrics.secondaryBackgrounds[0]!);
+    for (const choice of [firstSalvo, quick, local, online]) {
       const box = await choice.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.height).toBeGreaterThanOrEqual(44);

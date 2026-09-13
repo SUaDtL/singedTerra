@@ -24,6 +24,7 @@ import {
 } from '../client/commanderCareer';
 import type { LiveMatchSnapshot } from '../client/liveMatchDiagnostics';
 import { renderFieldOrder, type FieldOrder } from '../client/fieldOrder';
+import type { QuickOperation } from '../client/quickOperations';
 import {
   battleCommandStateFor,
   type BattleCommandImpactLearningCue,
@@ -59,6 +60,9 @@ import { TerminalMatchView, type TerminalMatchProjection } from './TerminalMatch
 function publicBattleConsoleHostMode(mode: BattleConsoleLayoutMode): BattleConsoleHostMode {
   return mode === 'compact' ? 'compact-touch' : mode;
 }
+
+type QuickOperationPresentation = Pick<QuickOperation, 'title' | 'briefing'> &
+  Partial<Pick<QuickOperation, 'id' | 'practiceObjective'>>;
 
 /**
  * What a store Buy click requests: exactly one of a weapon bundle or an accessory, mirroring the
@@ -203,7 +207,7 @@ export class HUD {
   private matchModeEl!: HTMLElement;
   /** Local Quick Duel operation briefing; absent on all other routes. */
   private quickOperationEl!: HTMLElement;
-  private quickOperation: { readonly title: string; readonly briefing: string } | null = null;
+  private quickOperation: QuickOperationPresentation | null = null;
   private overlayEl!: HTMLElement;
   private terminalView!: TerminalMatchView;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
@@ -1017,11 +1021,23 @@ export class HUD {
   }
 
   /** Displays local-only Quick Duel context without influencing match authority. */
-  setQuickOperation(operation: { readonly title: string; readonly briefing: string } | null): void {
+  setQuickOperation(
+    operation: QuickOperationPresentation | null,
+  ): void {
     if (!this.built) this.build();
     this.quickOperation = operation;
     this.quickOperationEl.hidden = operation === null;
     this.quickOperationEl.textContent = operation === null ? '' : `${operation.title} · ${operation.briefing}`;
+    const objective = operation?.practiceObjective;
+    if (operation?.id && objective) {
+      this.quickOperationEl.dataset['operationId'] = operation.id;
+      this.quickOperationEl.dataset['contentVersion'] = String(objective.contentVersion);
+      this.quickOperationEl.dataset['fieldOrderId'] = objective.fieldOrderId;
+    } else {
+      delete this.quickOperationEl.dataset['operationId'];
+      delete this.quickOperationEl.dataset['contentVersion'];
+      delete this.quickOperationEl.dataset['fieldOrderId'];
+    }
     if (this.overlayShown && this.terminalState) this.terminalView.update(this.terminalProjection(this.terminalState));
   }
 
@@ -1930,15 +1946,28 @@ export class HUD {
     this.refreshBattleConsole();
   }
 
-  /** Present one public client-only Field Order only while verified play owns it. */
+  /** Present one public client-only Field Order while verified play owns it. */
   setFieldOrder(order: FieldOrder | null): void {
+    this.presentFieldOrder(order, 'verified');
+  }
+
+  /** Present one public client-only Field Order for a curated local practice match. */
+  setPracticeFieldOrder(order: FieldOrder | null): void {
+    this.presentFieldOrder(order, 'practice');
+  }
+
+  private presentFieldOrder(order: FieldOrder | null, owner: 'verified' | 'practice'): void {
     if (!this.built) this.build();
     if (order !== null) {
-      if (this.fieldOrderEl.parentElement !== this.verifiedStatusEl) {
-        this.verifiedStatusEl.append(this.fieldOrderEl);
-      }
-      if (this.verifiedStatusEl.parentElement !== this.matchCardEl) {
-        this.matchCardEl.insertBefore(this.verifiedStatusEl, this.roundEl);
+      if (owner === 'verified') {
+        if (this.fieldOrderEl.parentElement !== this.verifiedStatusEl) {
+          this.verifiedStatusEl.append(this.fieldOrderEl);
+        }
+        if (this.verifiedStatusEl.parentElement !== this.matchCardEl) {
+          this.matchCardEl.insertBefore(this.verifiedStatusEl, this.roundEl);
+        }
+      } else if (this.fieldOrderEl.parentElement !== this.matchCardEl) {
+        this.matchCardEl.insertBefore(this.fieldOrderEl, this.roundEl);
       }
     }
     this.fieldOrderEl.hidden = order === null;
@@ -2151,6 +2180,13 @@ export class HUD {
       quickOperation: this.quickOperation === null
         ? null
         : `Operation · ${this.quickOperation.title} — ${this.quickOperation.briefing}`,
+      quickOperationIdentity: this.quickOperation?.practiceObjective && this.quickOperation.id
+        ? {
+          operationId: this.quickOperation.id,
+          contentVersion: this.quickOperation.practiceObjective.contentVersion,
+          fieldOrderId: this.quickOperation.practiceObjective.fieldOrderId,
+        }
+        : null,
       winner: winner ? { color: winner.color, loadout: winner.loadout } : null,
       scoreboard: scoreboard.markup,
       scoreboardColumns: scoreboard.columns,
