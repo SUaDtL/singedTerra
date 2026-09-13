@@ -73,3 +73,11 @@ device usability require the separate consented study and device passes.
 No reward-policy approval is inferred. Current checks precede final integration
 with the corrected First Salvo browser oracles and later campaign branches.
 Publication and final integration evidence will be recorded separately.
+
+The clean merge of corrected P02 `990efa9` leaves all P04 production bytes
+unchanged. The inherited entry test now expects five secondary operation cards,
+including Lean Arsenal; First Salvo retains its primary entry. Independent
+Sol/high integration review passed. The full pre-game browser suite passed
+20 cases with one existing profile skip against the same bound P04 artifact.
+The P02 anonymous seed-receipt opener and settled victory-animation measurement
+were retained. Main's squash `c25baa4` is tree-identical to `990efa9`.
