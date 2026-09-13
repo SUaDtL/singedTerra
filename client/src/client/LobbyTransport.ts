@@ -29,7 +29,7 @@ import {
   type RoomCommandVersion,
 } from '@shared/net/roomCommand';
 import { callFunction, type EdgeResult } from '../lib/edgeFunctions';
-import { normalizeCreateRoomRequest, type CreateRoomModeInput as CreateRoomParams } from './modeConfig';
+import { CURRENT_ROOM_LIFECYCLE_VERSION, normalizeCreateRoomRequest, type CreateRoomModeInput as CreateRoomParams } from './modeConfig';
 import {
   CURRENT_NETWORK_RULESET_VERSION,
 } from './networkRuleset';
@@ -60,6 +60,7 @@ export type RoomOptions = {
   gravity: number;
   rulesetVersion?: NetworkRulesetVersion;
   commandProtocolVersion?: RoomCommandVersion;
+  roomLifecycleVersion?: typeof CURRENT_ROOM_LIFECYCLE_VERSION;
   walls?: WallMode;
   battlefieldWorld?: BattlefieldWorldId;
   hazards?: TerrainHazardMode;
@@ -141,6 +142,7 @@ export interface FetchedRoom {
   options: RoomOptions;
   players: NetworkPlayer[];
   status: string;
+  abandoned_at?: string | null;
 }
 
 // ---- Request params (raw form inputs; the transport builds the bodies) ----
@@ -186,6 +188,7 @@ export class LobbyTransport {
         loadout: params.loadout,
         rulesetVersion,
         commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
+        roomLifecycleVersion: CURRENT_ROOM_LIFECYCLE_VERSION,
       });
 
     // A post-floor client must never create a GameEngine from a legacy room.
@@ -251,11 +254,20 @@ export class LobbyTransport {
     // e2e HUD guardrails) whenever no Supabase config is present. Mirrors the
     // `await import('../lib/supabase')` seam already used in main.ts and LobbySession.
     const { supabase } = await import('../lib/supabase');
-    const res = await supabase
+    const lifecycleResult = await supabase
       .from('rooms')
-      .select('id, code, seed, options, players, status')
+      .select('id, code, seed, options, players, status, abandoned_at')
       .eq('id', roomId)
       .maybeSingle();
+    // Pages can publish before the lifecycle migration reaches the backend.
+    // Only this missing column permits one read of the legacy public shape.
+    const res = lifecycleResult.error?.code === '42703'
+      && /\babandoned_at\b/.test(lifecycleResult.error.message)
+      ? await supabase.from('rooms')
+        .select('id, code, seed, options, players, status')
+        .eq('id', roomId)
+        .maybeSingle()
+      : lifecycleResult;
 
     if (res.error) {
       console.warn('LobbyTransport.fetchRoom: select failed', res.error);
@@ -271,6 +283,7 @@ export class LobbyTransport {
       options: row.options as RoomOptions,
       players: (row.players ?? []) as NetworkPlayer[],
       status: row.status as string,
+      ...(typeof row.abandoned_at === 'string' ? { abandoned_at: row.abandoned_at } : {}),
     };
   }
 }

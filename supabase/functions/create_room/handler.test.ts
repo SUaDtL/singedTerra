@@ -29,6 +29,17 @@ function captureRoomInsert() {
   }
 }
 
+Deno.test('RL-08: create records explicit active-presence capability independently of engine version', async () => {
+  const capture = captureRoomInsert()
+  const res = await createRoomHandler({ serviceClient: capture.serviceClient as never })({
+    playerName: 'Ana', color: '#e84d4d', roomLifecycleVersion: 1,
+    options: { maxPlayers: 2 },
+  })
+  assertEquals(res.status, 200)
+  assertEquals((capture.insertedRoom()?.options as Record<string, unknown>).roomLifecycleVersion, 1)
+  assertEquals((await res.json()).options.roomLifecycleVersion, 1)
+})
+
 Deno.test('handleCreateRoom: missing playerName returns 400 (no DB)', async () => {
   const res = await handleCreateRoom({})
   assertEquals(res.status, 400)

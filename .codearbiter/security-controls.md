@@ -31,7 +31,7 @@ The public game tables (`rooms`, `room_actions`, `match_scores`) have **RLS enab
 
 - **`anon` role: public SELECT (`USING (true)`), zero writes** (`INSERT/UPDATE/DELETE` all `false`). The shipped anon/publishable key can only read.
 - **`authenticated` role: the same public SELECT visibility, zero direct writes.** Migration 013 adds explicit SELECT grants and read-only policies, and explicitly revokes INSERT/UPDATE/DELETE so restoring an account session cannot break room/replay/Realtime reads or bypass the Edge Function referees.
-- **All mutations go through the Edge Functions**, which use a `service_role` client (`getServiceClient()`, `_shared/mod.ts`) that bypasses RLS. The service key remains Deno-runtime-only and must never enter client code, logs, or the bundle.
+- **Player mutations go through the Edge Functions**, which use a `service_role` client (`getServiceClient()`, `_shared/mod.ts`) that bypasses RLS. The service key remains Deno-runtime-only and must never enter client code, logs, or the bundle. The separately approved room-cleanup scheduler may run only the fixed `SELECT public.expire_abandoned_rooms();` command directly in Postgres. Its restricted function locks rooms, requires explicit lifecycle capability, preserves canonical history, and creates no awards; browsers receive neither execution nor scheduling authority.
 
 The credential and limiter tables are deliberately stricter:
 

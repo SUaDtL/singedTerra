@@ -17,6 +17,8 @@ import {
   type RoomCommandVersion,
 } from '@shared/net/roomCommand';
 
+export const CURRENT_ROOM_LIFECYCLE_VERSION = 1;
+
 /**
  * Optional advanced engine settings chosen in the lobby. Each field is omitted
  * (undefined) when the user leaves it at default/blank, so the engine's own
@@ -49,6 +51,8 @@ export interface ModeSettings {
   rulesetVersion?: NetworkRulesetVersion;
   /** Exact network command contract admitted by the room referee. */
   commandProtocolVersion?: RoomCommandVersion;
+  /** Server-admitted presence lease capability; absent for legacy rooms. */
+  roomLifecycleVersion?: typeof CURRENT_ROOM_LIFECYCLE_VERSION;
 }
 
 // Advanced-settings bounds + engine defaults (shown as placeholders so the user
@@ -288,6 +292,9 @@ export function projectAuthoritativeNetworkMode(
       ...(info.options.commandProtocolVersion !== undefined
         ? { commandProtocolVersion: info.options.commandProtocolVersion }
         : {}),
+      ...(info.options.roomLifecycleVersion === CURRENT_ROOM_LIFECYCLE_VERSION
+        ? { roomLifecycleVersion: CURRENT_ROOM_LIFECYCLE_VERSION }
+        : {}),
     },
   };
 }
@@ -298,6 +305,7 @@ export interface CreateRoomRequest {
   loadout: TankLoadout;
   rulesetVersion: NetworkRulesetVersion;
   commandProtocolVersion: typeof CURRENT_ROOM_COMMAND_VERSION;
+  roomLifecycleVersion: typeof CURRENT_ROOM_LIFECYCLE_VERSION;
   bots?: CreateRoomModeInput['bots'];
   options: Omit<ModeSettings, 'seed' | 'rulesetVersion'> & {
     maxPlayers: number;
@@ -319,6 +327,7 @@ export function normalizeCreateRoomRequest(params: CreateRoomModeInput): CreateR
     loadout: params.loadout,
     rulesetVersion: CURRENT_NETWORK_RULESET_VERSION,
     commandProtocolVersion: CURRENT_ROOM_COMMAND_VERSION,
+    roomLifecycleVersion: CURRENT_ROOM_LIFECYCLE_VERSION,
     ...(params.bots.length > 0 ? { bots: params.bots } : {}),
     options: {
       maxPlayers: params.maxPlayers,

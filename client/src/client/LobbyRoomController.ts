@@ -130,6 +130,10 @@ export class LobbyRoomController {
     }
     const room = await this.transport.fetchRoom(descriptor.roomId)
     if (!this.isCurrent(generation)) return
+    if (room?.status === 'finished' && room.abandoned_at) {
+      this.rejectRejoin('That game ended after everyone left. Start a new game.')
+      return
+    }
     if (isLiveSession(descriptor, room)) {
       this.rejoinCandidate = { descriptor, room: room! }
       this.onChanged()
@@ -147,7 +151,9 @@ export class LobbyRoomController {
     const room = await this.transport.fetchRoom(descriptor.roomId)
     if (!this.isCurrent(generation)) return
     if (!isLiveSession(descriptor, room)) {
-      this.rejectRejoin('That game is no longer available.')
+      this.rejectRejoin(room?.status === 'finished' && room.abandoned_at
+        ? 'That game ended after everyone left. Start a new game.'
+        : 'That game is no longer available.')
       return
     }
     const liveRoom = room!

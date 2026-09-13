@@ -1330,8 +1330,9 @@ function bootstrap(): void {
   // Quit the current game back to the lobby (in-game Menu / game-over Main Menu).
   // Tears down the engine/client/input and re-shows the full-field lobby overlay
   // (which covers the now-frozen canvas). For networked games this stops the
-  // client; the room is reaped server-side by the heartbeat/lazy-GC.
+  // client. Only this explicit player intent retires the network seat immediately.
   hud.onQuit(() => {
+    void matchSession.client?.leaveRoom?.();
     void teardown().then(() => lobby.show());
   });
 

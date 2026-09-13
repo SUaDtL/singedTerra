@@ -173,11 +173,12 @@
 .st-hud__quick-chat {
   position: absolute;
   top: 10px;
-  right: 12px;
+  /* Match owns the opposite corner, so both controls remain reachable. */
+  left: 12px;
   z-index: 42;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 5px;
   font: 600 12px/1.2 system-ui, sans-serif;
 }
@@ -225,7 +226,8 @@
 .st-hud__conn--hidden { display: none; }
 .st-hud__toast {
   position: absolute;
-  top: 44px;
+  /* Notices are children of the command rail, not the full battlefield. */
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
@@ -237,7 +239,11 @@
   border: 1px solid rgba(255, 120, 120, 0.7);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
   pointer-events: none;
-  white-space: nowrap;
+  box-sizing: border-box;
+  max-width: calc(100% - 24px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 .st-hud__toast--hidden { display: none; }
 /* Opponent-turn watchdog banner (P1-6b): top-center, below the conn/toast slot. */
@@ -1302,7 +1308,6 @@
   #hud .st-ui-glyph { width: 31px; height: 31px; }
   #hud .st-ui-glyph > .st-ui-icon { width: 25px; height: 25px; }
   .st-hud__conn { top: 176px; }
-  .st-hud__toast { top: 214px; }
   .st-hud__turnwatch { top: 252px; }
   /* The fixed stage scales to ~0.488 on Pixel 5 landscape. Match the drawer
      toggle's authored 91px floor so weapon choices remain >=44 rendered px. */

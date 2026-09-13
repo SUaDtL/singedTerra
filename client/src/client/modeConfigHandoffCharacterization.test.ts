@@ -101,7 +101,7 @@ describe('mode configuration handoff characterization', () => {
       await Promise.resolve()
       const body = JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)
       expect(body).toStrictEqual({ playerName: 'Ranger', color: '#e84d4d', loadout, rulesetVersion: 4,
-        commandProtocolVersion: 2, options: {
+        commandProtocolVersion: 2, roomLifecycleVersion: 1, options: {
         visibility: 'public',
         maxPlayers: 2, maxWind: 9, gravity: 0.18, walls: 'wrap', rounds: 5,
         interestRate: 0.2, suddenDeathTurn: 3, armsLevel: 2,

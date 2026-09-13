@@ -52,6 +52,31 @@ Deno.test('rematch publishes an existing successor with its seat credentials', a
 
 const NOW = 1_700_000_000_000
 
+for (const [code, status, message] of [
+  ['55000', 409, 'Players have left. Start a new room.'],
+  ['42501', 403, 'Invalid or missing seat token'],
+] as const) {
+  Deno.test(`RL-04: rematch maps a locked ${code} refusal without database details`, async () => {
+    const query = {
+      eq: () => query, neq: () => query,
+      maybeSingle: () => Promise.resolve({ data: {
+        options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rulesetVersion: 4 },
+        players: [{ id: 'uid-a', name: 'Ana', color: '#f00', ready: true }],
+      }, error: null }),
+    }
+    const supabase = {
+      from: () => ({ select: (columns: string) => columns === '*' ? query : {
+        eq: () => ({ neq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
+      } }),
+      rpc: () => Promise.resolve({ data: null, error: { code, message: 'private database detail' } }),
+    }
+    const response = await handleRestartGame({ roomId: '00000000-0000-4000-8000-000000000001', playerId: 'uid-a' },
+      undefined, { supabase: supabase as never, verifySeat: () => Promise.resolve(true) })
+    assertEquals(response.status, status)
+    assertEquals(await response.json(), { error: message })
+  })
+}
+
 for (const authenticated of [false, true]) {
   Deno.test(`rematch ${authenticated ? 'contains a transaction failure' : 'refuses an invalid seat before the transaction'}`, async () => {
     let rpcCalls = 0

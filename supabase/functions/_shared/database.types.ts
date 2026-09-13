@@ -16,6 +16,7 @@ export interface StoredOptions {
   gravity: number;
   rulesetVersion?: 1 | 2 | 3 | 4;
   commandProtocolVersion?: 1 | 2;
+  roomLifecycleVersion?: 1;
   walls?: "open" | "reflective" | "wrap" | "concrete";
   battlefieldWorld?: "ember-dusk" | "obsidian-caldera" | "glassstorm-expanse";
   hazards?: "none" | "lava";
@@ -333,6 +334,21 @@ export type Database = {
     };
     Views: {};
     Functions: {
+      submit_room_action_for_seat: {
+        Args: {
+          p_room_id: string; p_submitter_id: string; p_token: string; p_player_id: string;
+          p_action: StoredAction; p_ends_turn: boolean; p_next_index: number; p_next_turn: number;
+        };
+        Returns: number;
+      };
+      admit_room_seat: {
+        Args: { p_room_id: string; p_expected_players: StoredPlayer[]; p_players: StoredPlayer[]; p_player_id: string; p_token: string };
+        Returns: Record<string, unknown>;
+      };
+      room_lifecycle: {
+        Args: { p_room_id: string; p_player_id: string; p_token: string; p_operation: 'heartbeat' | 'leave' | 'ready' };
+        Returns: Record<string, unknown>;
+      };
       create_room_rematch: {
         Args: {
           p_room_id: string; p_player_id: string; p_new_room_id: string;

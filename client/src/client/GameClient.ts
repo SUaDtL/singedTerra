@@ -27,6 +27,7 @@ export interface RematchInfo {
     gravity: number;
     rulesetVersion?: NetworkRulesetVersion;
     commandProtocolVersion?: RoomCommandVersion;
+    roomLifecycleVersion?: 1;
     walls?: WallMode;
     battlefieldWorld?: BattlefieldWorldId;
     hazards?: TerrainHazardMode;
@@ -83,6 +84,9 @@ export interface GameClient {
 
   /** Tear down the client (stop the loop or close the socket). */
   stop(): void;
+
+  /** Explicit player Quit; ordinary teardown/reload/rematch must only call stop. */
+  leaveRoom?(): Promise<void>;
 
   /**
    * Toggle local fast-forward of the projectile/explosion animation (review #7).

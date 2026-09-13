@@ -1064,6 +1064,23 @@ describe('production hot-seat progression composition', () => {
     expect(seams.lobbyHides).toBe(2)
   })
 
+  it('signals an explicit network Quit once, while replacement teardown does not leave — RL-02/07', async () => {
+    const first = { ...fakeClient(liveVerifiedState()), leaveRoom: vi.fn(async () => undefined) }
+    const second = { ...fakeClient(liveVerifiedState()), leaveRoom: vi.fn(async () => undefined) }
+    seams.clients.push(first, second)
+    await import('./main')
+    seams.onLobbyReady?.({ mode: 'network', roomId: 'first', playerId: 'p1', players: [] })
+    await vi.waitFor(() => expect(first.start).toHaveBeenCalledOnce())
+    seams.onLobbyReady?.({ mode: 'network', roomId: 'second', playerId: 'p2', players: [] })
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    expect(first.stop).toHaveBeenCalledOnce()
+    expect(first.leaveRoom).not.toHaveBeenCalled()
+    seams.onQuit?.()
+    await vi.waitFor(() => expect(second.stop).toHaveBeenCalledOnce())
+    expect(second.leaveRoom).toHaveBeenCalledOnce()
+    expect(second.leaveRoom.mock.invocationCallOrder[0]).toBeLessThan(second.stop.mock.invocationCallOrder[0]!)
+  })
+
   it('writes only the public successor descriptor when a finished network match rematches', async () => {
     const finished = fakeClient(gameState())
     const successor = fakeClient(liveVerifiedState())
