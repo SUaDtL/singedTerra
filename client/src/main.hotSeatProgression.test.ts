@@ -1313,6 +1313,20 @@ describe('production hot-seat progression composition', () => {
     expect(seams.rendererConstructed).toBe(2)
   })
 
+  it('requests visible lobby focus after an ordinary match quit', async () => {
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onQuit) throw new Error('Expected lobby wiring')
+    const client = fakeClient(gameState())
+    seams.clients.push(client)
+    seams.onLobbyReady({ mode: 'hotseat', players: [] })
+    await vi.waitFor(() => expect(client.start).toHaveBeenCalledOnce())
+
+    seams.onQuit()
+
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    await vi.waitFor(() => expect(seams.lobbyShowOptions.at(-1)).toEqual({ focusLobby: true }))
+  })
+
   it('owns the state subscription before start can synchronously emit its first snapshot', async () => {
     const first = gameState({ winner: 'p2' })
     const client = fakeClient(first)

@@ -159,6 +159,21 @@ describe('Lobby Crosswind Qualification', () => {
     lobby.show({ focusVerifiedChallenge: true })
     expect(document.activeElement).toBe(button(root, 'Check availability and start'))
   })
+
+  it('gives an explicit verified return target precedence over the focused preparation tab', () => {
+    const { root, lobby } = fixture()
+
+    button(root, 'Local Battle').click()
+    button(root, 'Local Battle').focus()
+    lobby.show({ focusVerifiedChallenge: true })
+    expect(document.activeElement).toBe(button(root, 'Check availability and start'))
+
+    button(root, 'Practice vs CPU').click()
+    button(root, 'Practice vs CPU').focus()
+    lobby.show({ focusVerifiedDeployment: true })
+    expect(document.activeElement).toBe(button(root, 'Start verified deployment'))
+  })
+
   it('keeps all three Hot Seat tabs and presents a separate exact trial without guessing career totals', () => {
     const { root, transport } = fixture()
 
