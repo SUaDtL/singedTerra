@@ -2,3 +2,7 @@
 
 # Asset recipes pin exact contract bytes across Windows and Linux.
 .codearbiter/contracts/battle-console/** -text
+
+# Deterministic baseline artifacts retain their generator's bytes on checkout.
+docs/balance/*.html text eol=lf
+docs/balance/*.json text eol=lf
