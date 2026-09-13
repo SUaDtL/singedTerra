@@ -2012,6 +2012,11 @@
         letter-spacing: 0.9px;
         text-transform: uppercase;
       }
+      #lobby .lobby-first-salvo,
+      #lobby [data-ui="other-quick-duels"] {
+        grid-column: 1 / -1;
+        min-width: 0;
+      }
       #lobby .lobby-quick-operation {
         grid-column: 1 / -1;
         display: grid;

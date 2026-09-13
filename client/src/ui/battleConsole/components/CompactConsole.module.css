@@ -90,6 +90,7 @@
     overflow-wrap: normal;
     word-break: normal;
     line-height: 1;
+    letter-spacing: -.04em;
     text-align: center;
   }
   .weapon .control[data-battle-console-target-key='weapon-next'] {
@@ -101,8 +102,13 @@
     overflow-wrap: normal;
     word-break: normal;
     line-height: 1;
-    letter-spacing: -.08em;
+    letter-spacing: normal;
+    word-spacing: normal;
     text-align: center;
+  }
+  .weapon .control[data-battle-console-target-key='weapon-next'] > small > span {
+    display: block;
+    white-space: nowrap;
   }
   .chassis .control[data-battle-console-target-key='armory'],
   .chassis .control[data-battle-console-target-key='settings'] {

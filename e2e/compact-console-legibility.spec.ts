@@ -91,8 +91,14 @@ test('P06 compact short-height labels remain complete inside their control wells
         bottom: buttonRect.bottom - (px(style.borderBottomWidth) + px(style.paddingBottom)) * scaleY,
       };
       const range = document.createRange();
-      range.selectNodeContents(textTarget);
-      const lines = [...range.getClientRects()].filter((rect) => rect.width > 0.5 && rect.height > 0.5);
+      // Measure glyph fragments, not the block boxes of metadata wrappers.
+      const walker = document.createTreeWalker(textTarget, NodeFilter.SHOW_TEXT);
+      const lines: DOMRect[] = [];
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (!node.textContent?.trim()) continue;
+        range.selectNodeContents(node);
+        lines.push(...[...range.getClientRects()].filter((rect) => rect.width > 0.5 && rect.height > 0.5));
+      }
       const lineBands = lines.reduce<number[]>((bands, rect) => {
         if (!bands.some((y) => Math.abs(y - rect.y) <= 1)) bands.push(rect.y);
         return bands;

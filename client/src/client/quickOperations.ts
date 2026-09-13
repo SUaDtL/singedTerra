@@ -1,6 +1,6 @@
 import type { GameOptions } from '@shared/types/GameOptions'
 
-export type QuickOperationId = 'standard' | 'crosswind-range' | 'caldera-run' | 'last-light-siege'
+export type QuickOperationId = 'standard' | 'first-salvo' | 'crosswind-range' | 'caldera-run' | 'last-light-siege'
 
 export const QUICK_OPERATION_CONTENT_VERSION = 1 as const
 
@@ -36,6 +36,9 @@ function operation(
 
 export const QUICK_OPERATIONS: readonly QuickOperation[] = Object.freeze([
   operation('standard', 'Standard Duel', 'A balanced three-round duel.', {}),
+  operation('first-salvo', 'First Salvo', 'A one-round duel that starts with the essentials.', {
+    rounds: 1,
+  }),
   operation('crosswind-range', 'Crosswind Range', 'Wraparound walls turn shifting wind into a ranging test.', {
     walls: 'wrap', battlefieldWorld: 'glassstorm-expanse',
   }),

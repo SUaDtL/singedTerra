@@ -42,7 +42,7 @@ export function CompactConsole({ state, dispatch }: Readonly<{
         </div>
       </div>
       <div class={styles.weapon}>
-        {button('weapon-next', `Select next weapon, current ${state.weapon.name}`, <><span title={state.weapon.name}>{state.weapon.name}</span><small>{state.weapon.ammo === null ? '∞' : state.weapon.ammo} ammo · ›</small></>, { type: 'weapon-next' }, !state.weapon.canCycle)}
+        {button('weapon-next', `Select next weapon, current ${state.weapon.name}`, <><span title={state.weapon.name}>{state.weapon.name}</span><small><span>{state.weapon.ammo === null ? '∞' : state.weapon.ammo} ›</span>{' '}<span>ammo</span></small></>, { type: 'weapon-next' }, !state.weapon.canCycle)}
         {button('armory', state.armory.open ? 'Close Armory' : 'Open Armory', 'Armory', { type: state.armory.open ? 'armory-close' : 'armory-open' })}
       </div>
       <div class={styles.instrument}>
