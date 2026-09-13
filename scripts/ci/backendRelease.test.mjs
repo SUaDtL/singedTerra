@@ -83,9 +83,14 @@ async function writeReleaseFixture(directory, newline) {
     config: '[functions.release_probe]\nverify_jwt = true\n',
     migration: 'select 1;\n',
     functionShared: { 'mod.ts': 'export const shared = 1;\n' },
-    verifiedReplayShared: { 'value.ts': 'export const replay = 2;\n' },
+    verifiedReplayShared: {
+      'value.ts': 'export const replay = 2;\n',
+      'verified/retained/cq1.mjs': 'export const editionId = "cq1";\n',
+      'verified/retained/cq1.d.mts': 'export declare const editionId: "cq1";\n',
+      'verified/retained/cq1.manifest.json': '{"editionId":"cq1"}\n',
+    },
     releaseFunction: {
-      'index.ts': "import { shared } from '../_shared/mod.ts'\nimport { replay } from '../../../shared/src/value.ts'\nexport { replay, shared }\n",
+      'index.ts': "import { shared } from '../_shared/mod.ts'\nimport { replay } from '../../../shared/src/value.ts'\nimport { editionId } from '../../../shared/src/verified/retained/cq1.mjs'\nexport { replay, shared, editionId }\n",
     },
   };
   const withNewline = (source) => source.replaceAll('\n', newline);
@@ -121,6 +126,8 @@ async function writeReleaseFixture(directory, newline) {
       casualCompletionVersions: ['legacy_unvalidated', 1],
       historicalVerifiedTuples: [[1, 1, 3]],
       verifiedTuples: [[2, 2, 4], [3, 3, 4]],
+      verifiedChallengeEditions: ['cq1'],
+      verifiedChallengeResponseVersions: [1],
       recoveryClass: 'fix-forward-after-versioned-state',
     },
   };
@@ -163,10 +170,48 @@ test('the checked-in backend manifest exactly describes the current release inpu
   const result = loadAndValidateManifest(root);
   assert.equal(result.manifest.schemaVersion, 1);
   assert.equal(result.manifest.supabaseCliVersion, '2.105.0');
-  assert.equal(result.manifest.functions.length, 17);
-  assert.equal(result.manifest.migrations.at(-1).path, 'supabase/migrations/023_room_lifecycle.sql');
+  assert.equal(result.manifest.functions.length, 22);
+  assert.equal(result.manifest.migrations.at(-1).path, 'supabase/migrations/024_verified_challenge_rewards.sql');
+  for (const name of ['start_verified_challenge', 'complete_verified_challenge', 'get_verified_challenge', 'abandon_verified_challenge', 'verified_career_summary']) {
+    assert.equal(result.manifest.functions.find((entry) => entry.name === name)?.verifyJwt, false);
+  }
   assert.equal(Object.hasOwn(result.manifest, 'sourceSha'), false);
   assert.match(result.manifestSha256, /^[0-9a-f]{64}$/);
+});
+
+test('retained runtime, declaration and provenance are hashed release inputs; missing or altered bytes fail closed', async (t) => {
+  const fixture = await mkdtemp(join(tmpdir(), 'singedterra-retained-release-'));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const { manifest } = await writeReleaseFixture(fixture, '\n');
+  loadAndValidateManifest(fixture);
+  const closure = assertImportClosure(fixture, manifest).files;
+  assert.ok(closure.some((path) => path.endsWith('cq1.mjs')));
+  assert.ok(!closure.some((path) => path.endsWith('cq1.d.mts')), 'type facade is provenance, not a runtime import');
+  for (const name of ['cq1.mjs', 'cq1.d.mts', 'cq1.manifest.json']) {
+    const path = join(fixture, 'shared/src/verified/retained', name);
+    const original = readFileSync(path);
+    await writeFile(path, Buffer.concat([original, Buffer.from('\n')]));
+    assert.throws(() => loadAndValidateManifest(fixture), /verified replay shared tree digest/i);
+    await rm(path);
+    assert.throws(() => loadAndValidateManifest(fixture), /verified replay shared tree digest/i);
+    await writeFile(path, original);
+  }
+  const entry = join(fixture, 'shared/src/verified/retained/cq1.mjs');
+  await writeFile(entry, 'import "../../../../../../outside.mjs";\n');
+  assert.throws(() => assertImportClosure(fixture, manifest), /resolve to exactly one file|escapes the hashed inventory/i);
+});
+
+test('challenge compatibility inventory rejects missing, added or changed editions and response versions', async (t) => {
+  const fixture = await mkdtemp(join(tmpdir(), 'singedterra-challenge-compatibility-'));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const { manifest } = await writeReleaseFixture(fixture, '\n');
+  const path = join(fixture, 'supabase/backend-release-manifest.json');
+  for (const editions of [[], ['cq2'], ['cq1', 'cq2']]) {
+    await writeFile(path, JSON.stringify({ ...manifest, compatibility: { ...manifest.compatibility, verifiedChallengeEditions: editions } }));
+    assert.throws(() => loadAndValidateManifest(fixture), /compatibility policy/i);
+  }
+  await writeFile(path, JSON.stringify({ ...manifest, compatibility: { ...manifest.compatibility, verifiedChallengeResponseVersions: [2] } }));
+  assert.throws(() => loadAndValidateManifest(fixture), /compatibility policy/i);
 });
 
 test('release source digests are LF and CRLF invariant while remaining mutation sensitive and fail closed', async (t) => {

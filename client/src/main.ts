@@ -10,6 +10,7 @@ import type { BorrowedGameState, GameState } from '@shared/types/GameState';
 import { VerifiedDuelController, verifiedCpuPolicyForTuple } from '@shared/net/verifiedDuel';
 import type { ConnectionState, GameClient } from './client/GameClient';
 import { HotSeatClient } from './client/HotSeatClient';
+import { VerifiedChallengeClient } from './client/VerifiedChallengeClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
 import { buildClientEngineOptions } from './client/gameEngineOptions';
 import { quickOperationById } from './client/quickOperations';
@@ -428,6 +429,8 @@ function bootstrap(): void {
   let currentConfig: LobbyConfig | null = null;
   let progressionSignInHandled = false;
   let verifiedController: VerifiedDuelController | null = null;
+  let challengeClient: VerifiedChallengeClient | null = null;
+  let challengeCompletionStarted = false;
   let verifiedClient: SwitchableVerifiedClient | null = null;
   let verifiedCasual = false;
   let verifiedCompletionStarted = false;
@@ -469,6 +472,7 @@ function bootstrap(): void {
   }
 
   function firstSalvoEligibility(): FirstSalvoEligibility | null {
+    if (currentConfig?.verifiedChallenge) return null;
     const canonical = matchSession.client?.getState();
     const state = canonical ? presentationStateFor(canonical) : null;
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
@@ -505,7 +509,9 @@ function bootstrap(): void {
     const liveCap = powerCap !== undefined && Number.isFinite(powerCap)
       ? Math.max(0, powerCap)
       : DEFAULT_POWER_CAP;
-    const verifiedMaximum = currentConfig?.verifiedDeployment && !verifiedCasual
+    const verifiedMaximum = currentConfig?.verifiedChallenge
+      ? currentConfig.verifiedChallenge.descriptor.limits.power.max
+      : currentConfig?.verifiedDeployment && !verifiedCasual
       ? currentConfig.verifiedDeployment.descriptor.limits.power.max
       : null;
     return verifiedMaximum === null ? liveCap : Math.min(liveCap, verifiedMaximum);
@@ -525,10 +531,10 @@ function bootstrap(): void {
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
     if (!activeClient || !state || !config || !activeTank) return undefined;
     const activeSeatOrdinal = state.tanks.findIndex((tank) => tank.id === state.activePlayerId) + 1;
-    const execution = config.verifiedDeployment && !verifiedCasual ? 'verified' : 'casual';
+    const execution = config.verifiedChallenge || (config.verifiedDeployment && !verifiedCasual) ? 'verified' : 'casual';
     const input = state.phase === 'GAME_OVER'
       ? 'locked'
-      : execution === 'verified' && lobby.verifiedDeployment.status !== 'active'
+      : execution === 'verified' && !verifiedInputAllowed()
       ? 'frozen'
       : shouldAcceptLocalInput({
         activeIsAi: !!activeTank.ai,
@@ -553,6 +559,11 @@ function bootstrap(): void {
   }
 
   function verifiedInputAllowed(): boolean {
+    if (challengeClient) {
+      const session = lobby.verifiedChallenge;
+      return !challengeClient.terminalResult && session.status === 'active'
+        && Date.parse(session.descriptor.expiresAt) > Date.now();
+    }
     if (!verifiedController || verifiedCasual) return true;
     if (verifiedController.complete) return false;
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
@@ -647,7 +658,7 @@ function bootstrap(): void {
 
   function syncPracticeFieldOrder(state: BorrowedGameState): void {
     const descriptor = currentConfig?.quickOperation?.practiceObjective;
-    if (currentConfig?.verifiedDeployment) return;
+    if (currentConfig?.verifiedDeployment || currentConfig?.verifiedChallenge) return;
     if (!descriptor) {
       hud.setPracticeFieldOrder(null);
       return;
@@ -696,6 +707,8 @@ function bootstrap(): void {
     liveMatchTransport = 'not-applicable';
     aiActedKey = null;
     verifiedController = null;
+    challengeClient = null;
+    challengeCompletionStarted = false;
     verifiedClient = null;
     verifiedCasual = false;
     verifiedCompletionStarted = false;
@@ -706,6 +719,7 @@ function bootstrap(): void {
     hud.setTurnWatch({ state: 'clear' });
     hud.hideEndScreens();
     hud.setVerifiedDeployment(null);
+    hud.setVerifiedChallenge?.(null);
     hud.setFieldOrder(null);
     hud.setPracticeFieldOrder(null);
     hud.setFirstSalvoStep(null);
@@ -732,6 +746,25 @@ function bootstrap(): void {
         return clientModeSetupFor(config);
       },
       acquireClient: async (setup) => {
+        if (config.verifiedChallenge) {
+          if (config.mode !== 'hotseat' || config.verifiedDeployment || config.publicSeedChallenge) {
+            lobby.show(); return { status: 'unavailable' };
+          }
+          try {
+            challengeClient = new VerifiedChallengeClient({
+              ...config.verifiedChallenge,
+              recordAcceptedFire: (fire) => lobby.recordVerifiedChallengeFire(fire),
+              onTerminal: () => {}, // State subscription performs generation-bound submission.
+              onUnavailable: () => {
+                hud.flashMessage('Challenge recovery could not be saved. Return to preparation.');
+              },
+            });
+            return { status: 'acquired', client: challengeClient, verifiedComplete: challengeClient.terminalResult !== null };
+          } catch {
+            challengeClient = null;
+            lobby.show(); return { status: 'unavailable' };
+          }
+        }
         if (!config.verifiedDeployment) {
           return { status: 'acquired', client: await createModeClient(setup), verifiedComplete: false };
         }
@@ -786,18 +819,19 @@ function bootstrap(): void {
         // to their lifecycle assertion; the real HUD always owns this presentation seam.
         (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
           .setQuickOperation?.(config.quickOperation ?? null);
-        hud.setTerminalReplayMode(config.mode === 'hotseat' && !config.verifiedDeployment
+        hud.setTerminalReplayMode(config.mode === 'hotseat' && !config.verifiedDeployment && !config.verifiedChallenge
           ? 'same-scenario'
           : null);
         const publicSeedChallengeUrl = config.mode === 'hotseat'
           && !config.verifiedDeployment
+          && !config.verifiedChallenge
           && config.publicSeedChallenge
           ? buildSeedChallengeUrl(window.location.href, config.publicSeedChallenge)
           : null;
         hud.setPublicSeedChallenge(publicSeedChallengeUrl && config.publicSeedChallenge
           ? { descriptor: config.publicSeedChallenge, url: publicSeedChallengeUrl }
           : null);
-        if (!config.verifiedDeployment) {
+        if (!config.verifiedDeployment && !config.verifiedChallenge) {
           fieldOrder = config.quickOperation?.practiceObjective
             ? createPracticeFieldOrderById(config.quickOperation.practiceObjective.fieldOrderId)
             : null;
@@ -894,7 +928,7 @@ function bootstrap(): void {
           }
         }
         const accountTank = initial?.tanks[0];
-        hotSeatProgression = config.verifiedDeployment
+        hotSeatProgression = config.verifiedDeployment || config.verifiedChallenge
           || (publicSeedChallengeUrl !== null
             && config.publicSeedChallenge?.origin === 'imported-public-challenge')
           ? null
@@ -963,7 +997,12 @@ function bootstrap(): void {
                 ? null
                 : snapshotPracticeFieldOrder(practiceBeforeState);
               const transcriptLength = verifiedController?.transcript.length ?? 0;
-              newClient.sendAction(forwardedAction);
+              try { newClient.sendAction(forwardedAction); }
+              catch (error) {
+                if (!config.verifiedChallenge) throw error;
+                void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
+                return;
+              }
               if (practiceFieldOrderEvidence !== null) {
                 const practiceAfterState = newClient.getState();
                 practiceFieldOrderEvidence = observePracticeFieldOrderAction(
@@ -1054,6 +1093,18 @@ function bootstrap(): void {
         input: newInput,
         terminalHistoryPrimed,
       }) => {
+        const syncChallenge = (): void => {
+          if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
+          hud.setVerifiedChallenge({ session: lobby.verifiedChallenge, result: challengeClient.terminalResult });
+        };
+        const submitChallenge = (): void => {
+          if (challengeClient !== newClient || !challengeClient.terminalResult || challengeCompletionStarted) return;
+          if (lobby.verifiedChallenge.status !== 'active') return;
+          challengeCompletionStarted = true;
+          const request = lobby.completeVerifiedChallenge();
+          syncChallenge();
+          void request.then(syncChallenge, syncChallenge);
+        };
         const submitVerifiedCompletion = (): void => {
           if (!verifiedController?.complete || verifiedCasual || verifiedCompletionStarted) return;
           const deployment = lobby.refreshVerifiedDeploymentDeadline();
@@ -1087,6 +1138,8 @@ function bootstrap(): void {
           hotSeatProgression?.observe(state);
           syncPracticeFieldOrder(state);
           syncVerifiedHud(state);
+          syncChallenge();
+          submitChallenge();
           submitVerifiedCompletion();
           if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) exposeDeterministicHotSeatProbe(state);
           // Aim guide is shown only when the LOCAL human controls the active tank: a
@@ -1193,6 +1246,7 @@ function bootstrap(): void {
    * once even though onStateChange runs every frame.
    */
   function maybeDriveAi(state: BorrowedGameState): void {
+    if (challengeClient) return;
     const active = state.tanks.find((t) => t.id === state.activePlayerId);
     const isAi = !!active?.ai && currentConfig?.mode !== 'network';
     activeIsAi = isAi && state.phase === 'PLAYER_TURN';
@@ -1280,7 +1334,9 @@ function bootstrap(): void {
   // successor room; both clients then migrate via onRematch (above).
   hud.onRestart(() => {
     if (!currentConfig) return;
-    if (currentConfig.mode === 'network') {
+    if (currentConfig.verifiedChallenge) {
+      void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
+    } else if (currentConfig.mode === 'network') {
       void matchSession.client?.requestRematch?.();
     } else {
       void startGame(currentConfig);
@@ -1354,6 +1410,10 @@ function bootstrap(): void {
   const syncAccountOwnedPresentation = (identityChanged: boolean): void => {
     if (identityChanged) {
       matchSession.client?.invalidatePendingCommands?.();
+      if (currentConfig?.verifiedChallenge) {
+        void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
+        return;
+      }
       if (currentConfig?.verifiedDeployment) {
         fieldOrder = null;
         hud.setFieldOrder(null);
@@ -1367,6 +1427,19 @@ function bootstrap(): void {
   };
   lobby.onAccountAuthenticationChange(syncAccountOwnedPresentation);
   syncAccountOwnedPresentation(false);
+
+  hud.onVerifiedChallengeRetry?.(() => {
+    const client = challengeClient;
+    const generation = matchSession.currentGeneration;
+    if (!client || lobby.verifiedChallenge.status !== 'retryable') return;
+    const request = lobby.retryVerifiedChallengeCompletion();
+    const update = (): void => {
+      if (client === challengeClient && matchSession.isCurrent(generation, client))
+        hud.setVerifiedChallenge({ session: lobby.verifiedChallenge, result: client.terminalResult });
+    };
+    update(); void request.then(update, update);
+  });
+  hud.onVerifiedChallengeReturn?.(() => { void teardown().then(() => lobby.show({ focusVerifiedChallenge: true })); });
 
   hud.onVerifiedRetry(() => {
     if (!verifiedController || verifiedCasual || !currentConfig?.verifiedDeployment) return;

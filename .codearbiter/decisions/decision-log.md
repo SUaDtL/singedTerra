@@ -574,3 +574,52 @@ Maintainable removes selector and raw-node coupling behind typed state and inten
 ADR-0018 governs the in-scope battle-console semantic owner, typed presentation/intent boundary, Preact root and portals, lifecycle and focus behavior, component-scoped styles, Pixi/DOM projection, dependency/toolchain changes, and full-console acceptance. The approved spec and plan remain the implementation authority; the ADR artifact remains proposed until its exact bytes receive the separate direct maintainer approval required by G1-01.
 
 ---
+## DECISION-0022 - ADR-0019 - Crosswind Qualification first-clear reward scope
+
+**Date:** 2026-09-13
+**Status:** accepted
+**Supersedes:** none
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (selected medal plus 200 first-clear verified-career XP in the reviewed P10 scope question)
+**Decision category:** product / verified progression
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** Reviewed P10 separates rewarded Crosswind Qualification from practice.
+- **Scaffold position:** Existing replay-only progression has no challenge entitlement ledger.
+- **Status type:** open-decision-closure
+
+### Decision
+Deliver the medal plus 200 first-clear verified-career XP scope. Preserve practice-only public operations and legacy receipts. Backend rollout requires its exact separate approval.
+
+### SMARTS rationale
+Reliability and security require server-derived results and exactly-once entitlement storage. Maintainability and testability favor a separate versioned projection and retained deterministic contract.
+
+### Implementation implication
+ADR-0019 records the reviewed implementation design as proposed. This entry records the owner's product choice and does not fabricate acceptance of the ADR's exact bytes. Continue the reviewed P10 plan under standing campaign authority, preserving hosted enablement gates.
+
+---
+
+## DECISION-0023 - P10 native execution - Keep Supabase with explicit acceptance limits
+
+**Date:** 2026-09-13
+**Status:** accepted
+**Supersedes:** none
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (selected "Keep Supabase with these limits (recommended)")
+**Decision category:** verification execution architecture
+**Artifact-section-hash:** n/a
+
+### Variance summary
+- **Artifact position:** The reviewed execution proposal offered native Supabase limits or a separately hosted supervised worker.
+- **Scaffold position:** Supabase cannot forcibly terminate this native replay at exactly one second.
+- **Status type:** open-decision-closure
+
+### Decision
+Keep verification on Supabase with strict elapsed less than1000ms result acceptance, a10second write fence, and410second persistent account cooldown after uncertain execution. Exact cleanup after an ended synchronous call may release the cooldown. Do not claim forced termination or strict CPU exclusion. Backend deployment and enablement remain separate approvals.
+
+### SMARTS rationale
+Maintainability and availability favor the existing hosted platform without a new service. Reliability and security retain strict reward validation, persistent attempts and database fencing; operational cooldown does not substitute for proof of CPU termination.
+
+### Implementation implication
+Update the still-uncommitted proposed ADR0019 and P10 spec/plan to the actual selected execution contract. Keep starts disabled until reviewed hosted evidence and explicit rollout/enablement approval. This decision does not mark ADR lifecycle acceptance or campaign completion.
+
+---

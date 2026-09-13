@@ -251,6 +251,16 @@ type _RpcKeysAreExact = AssertExact<
   | "complete_verified_deployment"
   | "verified_progression_summary"
   | "verified_deployment_completion_context"
+  | "get_verified_challenge"
+  | "abandon_verified_challenge"
+  | "verified_career_ledger_snapshot"
+  | "acquire_verification_compute_lease"
+  | "verification_compute_lease_is_current"
+  | "release_verification_compute_lease"
+  | "complete_verified_deployment_fenced"
+  | "start_verified_challenge"
+  | "finalize_verified_challenge"
+  | "reject_verified_challenge"
 >;
 type _ViewKeysAreExact = AssertExact<keyof PublicSchema["Views"], never>;
 type _EnumKeysAreExact = AssertExact<keyof PublicSchema["Enums"], never>;
@@ -685,6 +695,31 @@ type _RoomSeatsRelationshipMustMatchEveryLiteral = AssertTrue<
 >;
 
 type _AllExactContracts = AssertAll<{
+  startChallengeArgs: AssertExact<Functions['start_verified_challenge']['Args'], {
+    p_account_id: string; p_trial_id: string; p_supported_descriptor_versions: number[];
+  }>;
+  getChallengeArgs: AssertExact<Functions['get_verified_challenge']['Args'], { p_account_id: string; p_session_id: string }>;
+  abandonChallengeArgs: AssertExact<Functions['abandon_verified_challenge']['Args'], { p_account_id: string; p_session_id: string }>;
+  careerArgs: AssertExact<Functions['verified_career_ledger_snapshot']['Args'], { p_account_id: string }>;
+  acquireLeaseArgs: AssertExact<Functions['acquire_verification_compute_lease']['Args'], {
+    p_account_id: string; p_endpoint: string; p_session_id: string | null; p_descriptor_binding: string; p_transcript: unknown;
+  }>;
+  currentLeaseArgs: AssertExact<Functions['verification_compute_lease_is_current']['Args'], {
+    p_account_id: string; p_endpoint: string; p_session_id: string | null; p_descriptor_binding: string; p_worker_id: string; p_fence: number;
+  }>;
+  releaseLeaseArgs: AssertExact<Functions['release_verification_compute_lease']['Args'], {
+    p_account_id: string; p_worker_id: string; p_fence: number;
+  }>;
+  finalizeChallengeArgs: AssertExact<Functions['finalize_verified_challenge']['Args'], {
+    p_account_id: string; p_session_id: string; p_edition_id: string; p_transcript: Array<{ angle: number; power: number }>;
+    p_outcome: string; p_worker_id: string; p_fence: number;
+  }>;
+  rejectChallengeArgs: AssertExact<Functions['reject_verified_challenge']['Args'], {
+    p_account_id: string; p_session_id: string; p_worker_id: string; p_fence: number;
+  }>;
+  currentLeaseReturns: AssertExact<Functions['verification_compute_lease_is_current']['Returns'], boolean>;
+  releaseLeaseReturns: AssertExact<Functions['release_verification_compute_lease']['Returns'], boolean>;
+  fencedLegacyReturns: AssertExact<Functions['complete_verified_deployment_fenced']['Returns'], Functions['complete_verified_deployment']['Returns']>;
   submitRoomActionForSeatArgs: AssertExact<Functions['submit_room_action_for_seat']['Args'], {
     p_room_id: string; p_submitter_id: string; p_token: string; p_player_id: string;
     p_action: ExpectedStoredAction; p_ends_turn: boolean; p_next_index: number; p_next_turn: number;

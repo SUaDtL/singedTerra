@@ -334,6 +334,49 @@ export type Database = {
     };
     Views: {};
     Functions: {
+      get_verified_challenge: {
+        Args: { p_account_id: string; p_session_id: string };
+        Returns: Record<string, unknown>;
+      };
+      abandon_verified_challenge: {
+        Args: { p_account_id: string; p_session_id: string };
+        Returns: Record<string, unknown>;
+      };
+      verified_career_ledger_snapshot: {
+        Args: { p_account_id: string };
+        Returns: Record<string, unknown>;
+      };
+      acquire_verification_compute_lease: {
+        Args: { p_account_id: string; p_endpoint: string; p_session_id: string | null; p_descriptor_binding: string; p_transcript: unknown };
+        Returns: Record<string, unknown>;
+      };
+      verification_compute_lease_is_current: {
+        Args: { p_account_id: string; p_endpoint: string; p_session_id: string | null; p_descriptor_binding: string; p_worker_id: string; p_fence: number };
+        Returns: boolean;
+      };
+      release_verification_compute_lease: {
+        Args: { p_account_id: string; p_worker_id: string; p_fence: number };
+        Returns: boolean;
+      };
+      complete_verified_deployment_fenced: {
+        Args: Database['public']['Functions']['complete_verified_deployment']['Args'] & {
+          p_descriptor_binding: string; p_worker_id: string; p_fence: number;
+        };
+        Returns: Database['public']['Functions']['complete_verified_deployment']['Returns'];
+      };
+      start_verified_challenge: {
+        Args: { p_account_id: string; p_trial_id: string; p_supported_descriptor_versions: number[] };
+        Returns: Record<string, unknown>;
+      };
+      finalize_verified_challenge: {
+        Args: { p_account_id: string; p_session_id: string; p_edition_id: string;
+          p_transcript: Array<{ angle: number; power: number }>; p_outcome: string; p_worker_id: string; p_fence: number };
+        Returns: Record<string, unknown>;
+      };
+      reject_verified_challenge: {
+        Args: { p_account_id: string; p_session_id: string; p_worker_id: string; p_fence: number };
+        Returns: Record<string, unknown>;
+      };
       submit_room_action_for_seat: {
         Args: {
           p_room_id: string; p_submitter_id: string; p_token: string; p_player_id: string;

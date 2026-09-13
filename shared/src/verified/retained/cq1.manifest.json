@@ -1,0 +1,153 @@
+{
+  "schema": "singedterra-retained-challenge/v1",
+  "editionId": "cq1",
+  "artifactApiVersion": 1,
+  "artifact": {
+    "path": "shared/src/verified/retained/cq1.mjs",
+    "sha256": "c9e3c55636a6cc2407cbc338e674ebfa0a3dd1285f3a95f72dd354fd3c348c81",
+    "bytes": 126328
+  },
+  "declaration": {
+    "path": "shared/src/verified/retained/cq1.d.mts",
+    "sha256": "3ff7d8de6c3670a276405b2785cf3a0b33b96a3b01bbec2b4c286f13a64c9150"
+  },
+  "sourceNormalization": "UTF-8 with CRLF/CR normalized to LF; no other normalization",
+  "sourceInputs": [
+    {
+      "path": "shared/src/engine/BlastGeometry.ts",
+      "sha256": "7f96b79e89353c5cce51a605b592c6e4135be070aa2707d95e12782818c4b637"
+    },
+    {
+      "path": "shared/src/engine/GameEngine.ts",
+      "sha256": "40057a4f4f41ec5d4c97f01d931f07ee90b34d54ff90bbe362f21656be05f6e8"
+    },
+    {
+      "path": "shared/src/engine/Movement.ts",
+      "sha256": "4593000aaea37a36da48fb1b7b966d58b25aae39a7ed4fa2569f9622714ecee2"
+    },
+    {
+      "path": "shared/src/engine/Physics.ts",
+      "sha256": "8ae81c7ab687ac7ef5d0159e9074345ed93b0768704573239aed6a3a4069570e"
+    },
+    {
+      "path": "shared/src/engine/Random.ts",
+      "sha256": "f6ad59ebeca3e661f84d60e9323317085be5c40364cc5fdc1b2997c20d358a96"
+    },
+    {
+      "path": "shared/src/engine/Tank.ts",
+      "sha256": "efc9def9bd11e65cc9f434f1ead6ea208d1e3f229613f14e3214437039cf71c0"
+    },
+    {
+      "path": "shared/src/engine/Terrain.ts",
+      "sha256": "b7d91ebcc956c2337ab06f84138c8237740ca0be854c44ffa48b7270a73666d9"
+    },
+    {
+      "path": "shared/src/engine/VerificationWorkBudget.ts",
+      "sha256": "49be83d161a8f8dc6809081270815a81cde090d85669b56321b2f8f08b21a878"
+    },
+    {
+      "path": "shared/src/engine/WeaponSystem.ts",
+      "sha256": "a888cc4eab7b4bcfec7b38cf3ef989f80d975a5eb3146aa56f198eff0e11f001"
+    },
+    {
+      "path": "shared/src/engine/math.ts",
+      "sha256": "7cb53de63ad456994bde744ee12e5735f85214c80f0d2dccd71b336c3a56cb1c"
+    },
+    {
+      "path": "shared/src/net/verifiedCareer.ts",
+      "sha256": "38c89d4f2508977d140f582d22d5b96f0184da20a8f111e9614bc160a88f1966"
+    },
+    {
+      "path": "shared/src/net/verifiedChallenge.ts",
+      "sha256": "473695ffa07a476fc1b27ff9564ed2d1eefa3807846a118d0ff600fea385c76a"
+    },
+    {
+      "path": "shared/src/net/verifiedChallengeController.ts",
+      "sha256": "8e7a2c53206de770155a33fb1a1555beacf19093e4744bfecd0fd068fd0bf452"
+    },
+    {
+      "path": "shared/src/net/verifiedChallengeWorkLimits.ts",
+      "sha256": "5fc822135cad02dcde7fe73ac839d2673eca7c8b0714dc83ba0055124d57c455"
+    },
+    {
+      "path": "shared/src/net/verifiedCpuPolicyV3.ts",
+      "sha256": "01a8c5c628197db6794166ec6e869b5171e33cc2ffbd9f93e144b9b9053660ed"
+    },
+    {
+      "path": "shared/src/types/GameOptions.ts",
+      "sha256": "dbcfc9421ba80d26e6e26ad5dfd4918bc2094ff34bacb324de2eb5b163a7e708"
+    },
+    {
+      "path": "shared/src/types/TankLoadout.ts",
+      "sha256": "03c1974353a229cb271cd21aa4748432237a10ef0921719a9a7737a1bdfe900a"
+    }
+  ],
+  "renderedModules": [
+    "shared/src/engine/BlastGeometry.ts",
+    "shared/src/engine/GameEngine.ts",
+    "shared/src/engine/Movement.ts",
+    "shared/src/engine/Physics.ts",
+    "shared/src/engine/Random.ts",
+    "shared/src/engine/Tank.ts",
+    "shared/src/engine/Terrain.ts",
+    "shared/src/engine/VerificationWorkBudget.ts",
+    "shared/src/engine/WeaponSystem.ts",
+    "shared/src/engine/math.ts",
+    "shared/src/net/verifiedCareer.ts",
+    "shared/src/net/verifiedChallenge.ts",
+    "shared/src/net/verifiedChallengeController.ts",
+    "shared/src/net/verifiedChallengeWorkLimits.ts",
+    "shared/src/net/verifiedCpuPolicyV3.ts",
+    "shared/src/types/GameOptions.ts",
+    "shared/src/types/TankLoadout.ts"
+  ],
+  "generatorInputs": [
+    {
+      "path": "scripts/assets/build-verified-challenge.mjs",
+      "sha256": "0a7f482dfadce92f2b309f615930310350f61467c4a2b662d69c1e2e4b5c093e"
+    },
+    {
+      "path": "scripts/assets/verified-challenge.vite.config.mjs",
+      "sha256": "830857b9461c8deed7b1dc3b8f60e1348167034c2d5bd0e0f60d5af75cb65fbe"
+    }
+  ],
+  "configurationInputs": [
+    {
+      "path": "package-lock.json",
+      "sha256": "3a160fa4ff2320545da804d5f2652a625d17149e611138153e33e2b51d283e7e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "965d5d6a4d2d3f38967a91e240c5825a00979c826777db0c86dab90f6842e763"
+    },
+    {
+      "path": "client/package.json",
+      "sha256": "ad17b34c103250fa5277b48c07fe4cad70a20efb5e63b4d1e9d01a909fbe4946"
+    },
+    {
+      "path": "tsconfig.base.json",
+      "sha256": "4b0310a8c938a52f18c6b1b76ee77d9befa94b6b80985a04aa1ef8c3c5ad54bb"
+    },
+    {
+      "path": "shared/tsconfig.json",
+      "sha256": "fced92e98c997519c06713ff7eef4f58f0f5b5d05306b1f9c90484d22196b231"
+    }
+  ],
+  "entrySha256": "28100ab9eb23cf5564c968087b29f85fe2f6d8775bc1022e2473abffbb9e8a54",
+  "exports": [
+    "artifactApiVersion",
+    "catalog",
+    "createController",
+    "editionId",
+    "replayWithWork",
+    "workLimits"
+  ],
+  "tools": {
+    "node": "v24.18.0",
+    "vite": "8.2.2",
+    "rolldown": "1.2.5",
+    "typescript": "6.0.3"
+  },
+  "license": "MIT; singedTerra contributors; generated from one authored engine, no third-party runtime modules",
+  "integrity": "f80bd24b9ed17cd6e1519a662a50dd21262167dbd3044163f758f529e608c6ab"
+}

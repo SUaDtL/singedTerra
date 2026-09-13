@@ -6,7 +6,6 @@ import {
   VERIFIED_CONTRACT_VERSION,
   VERIFIED_ENGINE_VERSION,
   VERIFIED_RULESET_VERSION,
-  type VerifiedDeploymentCompletionRequest,
   type VerifiedDeploymentResultReceipt,
   type VerifiedHumanFire,
 } from '../_shared/verifiedDeployment.ts'
@@ -14,6 +13,7 @@ import {
   replayVerifiedDuelForPolicy,
   verifiedCpuPolicyForTuple,
 } from '../../../shared/src/net/verifiedDuel.ts'
+import { runNativeVerification } from '../_shared/verificationWorker.ts'
 
 type StoredConfig = { seed: 17 | 42 | 73 | 109; options: Record<string, unknown> }
 
@@ -26,6 +26,7 @@ export interface CompleteVerifiedDeploymentDependencies {
   supabase?: CompletionServiceClient
   replay?: typeof replayVerifiedDuelForPolicy
   now?: () => Date
+  nativeNow?: () => number
   logger?: (message: string, context: Record<string, unknown>) => void
 }
 
@@ -181,41 +182,77 @@ export async function handleCompleteVerifiedDeployment(
       || context.prior_total_xp !== null || context.current_verified_matches !== null || context.current_verified_wins !== null
       || context.current_total_xp !== null || context.result_created_at !== null) return unavailable(409)
 
-    let replayed
-    try {
-      const policyVersion = verifiedCpuPolicyForTuple({
+    const verified = await runNativeVerification({ accountId: userId, endpoint: 'complete_verified_deployment',
+      sessionId: request.sessionId, descriptorBinding: context.contract_version === 3 ? 'deployment-v3' : 'deployment-v2',
+      transcript: request.transcript }, {
+      rpc: async (name, args) => await supabase.rpc(name as keyof VerifiedFunctions, args as never),
+      wallNow: dependencies.now ? () => dependencies.now!().getTime() : undefined,
+      now: dependencies.nativeNow,
+      setup: () => verifiedCpuPolicyForTuple({
         contractVersion: context.contract_version,
         engineVersion: context.engine_version,
         rulesetVersion: context.ruleset_version,
-      })
-      replayed = replay(context.config.seed, request.transcript, policyVersion)
-    } catch {
-      logger('complete_verified_deployment: replay refused', { stage: 'replay', code: 'replay_failed' })
-      return unavailable(409)
-    }
-    const replayTranscript = parseVerifiedDeploymentCompletion({ sessionId: request.sessionId, transcript: replayed.transcript })
-    if (!replayTranscript || !sameTranscript(replayTranscript.transcript, request.transcript)) return unavailable(409)
-    const result: VerifiedDeploymentResultReceipt = replayed.outcome === 'human_win'
-      ? { sessionId: request.sessionId, won: true, outcome: 'win', verifiedXp: 200 }
-      : replayed.outcome === 'cpu_win'
-      ? { sessionId: request.sessionId, won: false, outcome: 'loss', verifiedXp: 100 }
-      : replayed.outcome === 'draw'
-      ? { sessionId: request.sessionId, won: false, outcome: 'draw', verifiedXp: 100 }
-      : (() => { throw new Error('invalid_replay_outcome') })()
-    const completion = await supabase.rpc('complete_verified_deployment', {
-      p_user_id: userId, p_session_id: request.sessionId,
-      p_transcript: request.transcript.map(({ angle, power }) => ({ angle, power })),
-      p_won: result.won, p_outcome: result.outcome, p_verified_xp: result.verifiedXp,
+      }),
+      replay: (policy) => replay(context.config.seed, request.transcript, policy as 2 | 3),
+      // Retain legacy replay refusal as 409; infrastructure deadlines stay 503.
+      isInvalidReplayError: () => true,
+      validate: (value) => {
+        const replayed = value as ReturnType<typeof replay>
+        const replayTranscript = parseVerifiedDeploymentCompletion({ sessionId: request.sessionId, transcript: replayed?.transcript })
+        if (!replayTranscript || !sameTranscript(replayTranscript.transcript, request.transcript)) return null
+        const result: VerifiedDeploymentResultReceipt = replayed.outcome === 'human_win'
+          ? { sessionId: request.sessionId, won: true, outcome: 'win', verifiedXp: 200 }
+          : replayed.outcome === 'cpu_win'
+          ? { sessionId: request.sessionId, won: false, outcome: 'loss', verifiedXp: 100 }
+          : replayed.outcome === 'draw'
+          ? { sessionId: request.sessionId, won: false, outcome: 'draw', verifiedXp: 100 }
+          : (() => { throw new Error('invalid_replay_outcome') })()
+        // Prepare all replay-derived evidence inside the measured validation.
+        return { result, args: {
+          p_user_id: userId, p_session_id: request.sessionId,
+          p_transcript: request.transcript.map(({ angle, power }) => ({ angle, power })),
+          p_won: result.won, p_outcome: result.outcome, p_verified_xp: result.verifiedXp,
+        } }
+      },
+      finalize: async (value, lease) => {
+        const { result, args } = value as { result: VerifiedDeploymentResultReceipt;
+          args: VerifiedFunctions['complete_verified_deployment']['Args'] }
+        try {
+          // Direct dispatch: no asynchronous preparation after the deadline gate.
+          const completion = await supabase.rpc('complete_verified_deployment_fenced', {
+            ...args, p_descriptor_binding: lease.descriptorBinding, p_worker_id: lease.workerId, p_fence: lease.fence,
+          })
+          const storedResult = Array.isArray(completion.data) && completion.data.length === 1
+            ? receiptFromRow(completion.data[0], userId, request.sessionId, request.transcript,
+              context.contract_version === 3 ? 'verified_replay_v3' : 'verified_replay_v2')
+            : null
+          if (completion.error || !storedResult || storedResult.result.won !== result.won
+            || storedResult.result.outcome !== result.outcome || storedResult.result.verifiedXp !== result.verifiedXp) return { ok: false }
+          return { ok: true, value: storedResult }
+        } catch { return { ok: false } }
+      },
     })
-    const storedResult = Array.isArray(completion.data) && completion.data.length === 1
-      ? receiptFromRow(
-        completion.data[0], userId, request.sessionId, request.transcript,
-        context.contract_version === 3 ? 'verified_replay_v3' : 'verified_replay_v2',
-      )
-      : null
-    if (completion.error || !storedResult || storedResult.result.won !== result.won
-      || storedResult.result.outcome !== result.outcome || storedResult.result.verifiedXp !== result.verifiedXp) return unavailable(409)
-    return json(storedResult)
+    if (verified.kind === 'completed') return json(verified.value)
+    if (verified.kind === 'rejected' && verified.code === 'verified_deployment_not_completable') {
+      // A competing completion may commit between context read and admission.
+      // Re-read only the same owner's session and require identical evidence.
+      const retry = await supabase.rpc('verified_deployment_completion_context', {
+        p_user_id: userId, p_session_id: request.sessionId,
+      })
+      const row = Array.isArray(retry.data) && retry.data.length === 1 ? retry.data[0] : null
+      const receipt = !retry.error && validContext(row, userId, request.sessionId)
+        ? completedReceipt(row, userId, request.sessionId, request.transcript) : null
+      return receipt ? json(receipt) : unavailable(409)
+    }
+    if (verified.kind === 'busy') {
+      const response = unavailable(503); response.headers.set('Retry-After', String(verified.retryAfter)); return response
+    }
+    if (verified.kind === 'rejected' || verified.kind === 'replay_invalid') return unavailable(409)
+    if (verified.kind === 'unavailable') {
+      if (verified.reason === 'finalization_unavailable') return unavailable(409)
+      if (verified.reason === 'execution_unavailable') return unavailable(500)
+    }
+    return unavailable(503)
   } catch {
     logger('complete_verified_deployment: unavailable', { stage: 'storage', code: 'request_failed' })
     return unavailable(500)

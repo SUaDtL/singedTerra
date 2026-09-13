@@ -951,8 +951,10 @@ if (requiredCasualHistoryControls.some((control) => !securityControls.includes(c
 const requiredReplayProbeControls = [
   'Hosted replay probe is non-awarding',
   'accepts no request body',
-  'MUST NOT read or write player, match, verification, progression, rank, reward, or entitlement state',
-  'only database mutation on its request path is the existing operational per-IP limiter counter',
+  'MUST NOT read or write player, match, verification-receipt, progression, rank, reward, or entitlement state',
+  'same-account lazy expiry/exhaustion reconciliation of existing challenge sessions',
+  'no session allocation, transcript changes, attempt changes, receipts or awards',
+  'one of 21 fixed retained fixtures, with no client-supplied shots or configuration',
 ];
 if (requiredReplayProbeControls.some((control) => !securityControls.includes(control))) {
   fail('security controls must retain the authenticated, no-body, non-awarding replay-probe boundary');

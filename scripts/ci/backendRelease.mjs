@@ -17,7 +17,9 @@ const MAX_MANIFEST_BYTES = 1024 * 1024;
 const MAX_API_BYTES = 2 * 1024 * 1024;
 const API_VERSION = '2022-11-28';
 const WORKFLOW_CONTRACT_SHA256 = '1dbce530a25be805670c241cb7e12ca3d3041b9bfab0b2dcdf925f2b66d993c5';
-const RELEASE_SOURCE_EXTENSIONS = new Set(['.json', '.sql', '.toml', '.ts']);
+// Retained cq1 ships executable ESM plus its type-only facade and provenance
+// inside the existing shared/src tree. These are hashed source, not credentials.
+const RELEASE_SOURCE_EXTENSIONS = new Set(['.json', '.sql', '.toml', '.ts', '.mts', '.mjs']);
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -149,7 +151,8 @@ function pinnedExternalImport(specifier) {
 }
 
 function moduleSpecifiers(path) {
-  const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const kind = extname(path) === '.mjs' ? ts.ScriptKind.JS : ts.ScriptKind.TS;
+  const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true, kind);
   if (source.parseDiagnostics.length > 0) fail(`Cannot parse release import graph: ${path}`);
   if (source.referencedFiles.length || source.typeReferenceDirectives.length || source.libReferenceDirectives.length) {
     fail(`Unsupported triple-slash import mechanism: ${path}`);
@@ -387,12 +390,14 @@ export function loadAndValidateManifest(repositoryRoot = root) {
 
   exactKeys(manifest.compatibility, [
     'casualCompletionVersions', 'commandProtocolVersions', 'historicalVerifiedTuples',
-    'recoveryClass', 'verifiedTuples',
+    'recoveryClass', 'verifiedTuples', 'verifiedChallengeEditions', 'verifiedChallengeResponseVersions',
   ], 'compatibility policy');
   if (JSON.stringify(manifest.compatibility.commandProtocolVersions) !== '[1,2]'
     || JSON.stringify(manifest.compatibility.casualCompletionVersions) !== '["legacy_unvalidated",1]'
     || JSON.stringify(manifest.compatibility.historicalVerifiedTuples) !== '[[1,1,3]]'
     || JSON.stringify(manifest.compatibility.verifiedTuples) !== '[[2,2,4],[3,3,4]]'
+    || JSON.stringify(manifest.compatibility.verifiedChallengeEditions) !== '["cq1"]'
+    || JSON.stringify(manifest.compatibility.verifiedChallengeResponseVersions) !== '[1]'
     || manifest.compatibility.recoveryClass !== 'fix-forward-after-versioned-state') {
     fail('Backend compatibility policy does not match the retained contracts.');
   }

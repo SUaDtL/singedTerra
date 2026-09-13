@@ -55,6 +55,12 @@ import {
   type RoundOverViewProjection,
 } from './RoundOverView';
 import { TerminalMatchView, type TerminalMatchProjection } from './TerminalMatchView';
+import {
+  VerifiedChallengeView,
+  type HUDVerifiedChallengePresentation,
+} from './VerifiedChallengeView';
+
+export type { HUDVerifiedChallengePresentation } from './VerifiedChallengeView';
 
 
 function publicBattleConsoleHostMode(mode: BattleConsoleLayoutMode): BattleConsoleHostMode {
@@ -169,6 +175,9 @@ export class HUD {
   private verifiedContinueCasualCb: (() => void) | null = null;
   private verifiedReturnToBatteryCb: (() => void) | null = null;
   private verifiedNextOrderCb: (() => void) | null = null;
+  private verifiedChallengeRetryCb: (() => void) | null = null;
+  private verifiedChallengeReturnCb: (() => void) | null = null;
+  private verifiedChallengeState: HUDVerifiedChallengePresentation | null = null;
   private verifiedNextOrderArmed = false;
   /** Last server-backed report state, used only by the display projection. */
   private verifiedDeploymentState: HUDVerifiedDeploymentState | null = null;
@@ -213,6 +222,7 @@ export class HUD {
   private publicSeedChallenge: TerminalMatchProjection['seedChallenge'] = null;
   private overlayEl!: HTMLElement;
   private terminalView!: TerminalMatchView;
+  private verifiedChallengeView!: VerifiedChallengeView;
   /** In-game PAUSE overlay (opened by the side-panel Menu button). Non-destructive:
    *  the client/engine keeps running underneath, so Resume returns to the live game. */
   private pauseEl!: HTMLElement;
@@ -352,6 +362,8 @@ export class HUD {
   onVerifiedContinueCasual(cb: () => void): void { this.verifiedContinueCasualCb = cb; }
   onVerifiedReturnToBattery(cb: () => void): void { this.verifiedReturnToBatteryCb = cb; }
   onVerifiedNextOrder(cb: () => void): void { this.verifiedNextOrderCb = cb; }
+  onVerifiedChallengeRetry(cb: () => void): void { this.verifiedChallengeRetryCb = cb; }
+  onVerifiedChallengeReturn(cb: () => void): void { this.verifiedChallengeReturnCb = cb; }
 
   /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
   setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
@@ -443,7 +455,10 @@ export class HUD {
   destroy(): Promise<void> {
     if (this.destroyPromise) return this.destroyPromise;
     this.destroyed = true;
-    if (this.built) this.terminalView.destroy();
+    if (this.built) {
+      this.terminalView.destroy();
+      this.verifiedChallengeView.destroy();
+    }
     this.battleConsoleActive = false;
     this.battleConsoleEntering = null;
     window.removeEventListener('resize', this.handleBattleConsoleEnvironmentChange);
@@ -546,8 +561,16 @@ export class HUD {
       presentedTurnKey !== this.lastPresentedTurnKey;
     this.syncRound(state);
     this.syncPlayers(state, isHandoff);
-    this.syncRoundOver(state);
-    this.syncOverlay(state);
+    if (this.verifiedChallengeState === null) {
+      this.syncRoundOver(state);
+      this.syncOverlay(state);
+    } else {
+      if (this.roundOverShown) {
+        this.roundOverView.hide(false);
+        this.roundOverShown = false;
+      }
+      if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport(false);
+    }
     this.refreshBattleConsole();
     if (presentedTurnKey !== null) this.lastPresentedTurnKey = presentedTurnKey;
   }
@@ -972,6 +995,14 @@ export class HUD {
       this.connBannerEl,
     );
     this.root.append(this.matchCardEl);
+    this.verifiedChallengeView = new VerifiedChallengeView({
+      host: this.modalRoot,
+      statusHost: this.matchCardEl,
+      onRetry: () => this.verifiedChallengeRetryCb?.(),
+      onReturn: () => this.verifiedChallengeReturnCb?.(),
+      focusFallback: () => this.matchDrawerBtnEl,
+    });
+    this.matchCardEl.insertBefore(this.verifiedChallengeView.statusRoot, this.roundEl);
     this.ensureBattleConsoleHosts();
     // Quick Chat stays outside the match ledger. Transient send/turn notices
     // stay with the protected command rail; combat input never gets a second
@@ -993,6 +1024,7 @@ export class HUD {
       this.battleConsoleCoachHost!,
     );
     this.built = true;
+    this.verifiedChallengeView.update(this.verifiedChallengeState);
     this.syncQuickChatAvailability();
     this.syncLiveMatchDiagnostics();
     window.addEventListener('resize', this.handleBattleConsoleEnvironmentChange);
@@ -1959,6 +1991,21 @@ export class HUD {
     this.setDeploymentExpiryIsolation(true);
     if (openingExpiryDecision) this.verifiedContinueBtnEl.focus({ preventScroll: true });
     this.refreshBattleConsole();
+  }
+
+  /** Present retained challenge truth without entering ordinary match-result or progression paths. */
+  setVerifiedChallenge(state: HUDVerifiedChallengePresentation | null): void {
+    this.verifiedChallengeState = state;
+    if (state !== null) this.setFirstSalvoStep(null);
+    if (!this.built) this.build();
+    if (state !== null) {
+      if (this.roundOverShown) {
+        this.roundOverView.hide(false);
+        this.roundOverShown = false;
+      }
+      if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport(false);
+    }
+    this.verifiedChallengeView.update(state);
   }
 
   /** Present one public client-only Field Order while verified play owns it. */

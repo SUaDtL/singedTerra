@@ -28,6 +28,18 @@ function startButton(root: HTMLElement): HTMLButtonElement {
   return button;
 }
 
+function verifiedChallengeOptions() {
+  return {
+    accountId: '11111111-1111-4111-8111-111111111111',
+    busy: false,
+    state: { status: 'idle' as const },
+    career: { status: 'unavailable' as const, accountId: '11111111-1111-4111-8111-111111111111' },
+    onLaunch: vi.fn(),
+    onRetry: vi.fn(),
+    onAbandon: vi.fn(),
+  };
+}
+
 describe('buildLobbyHotSeatView', () => {
   it('opens Local Battle with crew controls and its deployment footer visible', () => {
     const root = buildLobbyHotSeatView(options());
@@ -244,6 +256,62 @@ describe('buildLobbyHotSeatView', () => {
     expect(launch).toBeInstanceOf(HTMLButtonElement);
     launch!.click();
     expect(onLaunch).toHaveBeenCalledOnce();
+  });
+
+  it('selects one verified operation without allocating or showing a competing action', () => {
+    const onVerifiedSurfaceChange = vi.fn();
+    const challenge = verifiedChallengeOptions();
+    const deployment = {
+      action: 'start' as const,
+      commanderName: 'Ranger',
+      busy: false,
+      message: null,
+      abandonIntent: false,
+      fieldOrder: null,
+      onLaunch: vi.fn(),
+      onRequestAbandon: vi.fn(),
+      onConfirmAbandon: vi.fn(),
+      onCancelAbandon: vi.fn(),
+    };
+    const deploymentRoot = buildLobbyHotSeatView(options({
+      surface: 'verified',
+      verifiedDeployment: deployment,
+      verifiedChallenge: challenge,
+      onVerifiedSurfaceChange,
+    }));
+    const selector = deploymentRoot.querySelector<HTMLElement>('[role="tablist"][aria-label="Verified operation"]')!;
+    expect([...selector.querySelectorAll('[role="tab"]')].map((tab) => ({
+      label: tab.textContent,
+      selected: tab.getAttribute('aria-selected'),
+    }))).toEqual([
+      { label: 'Deployment orders', selected: 'true' },
+      { label: 'Crosswind Qualification', selected: 'false' },
+    ]);
+    expect(deploymentRoot.querySelector('.lobby-verified-deployment')).not.toBeNull();
+    expect(deploymentRoot.querySelector('.lobby-verified-challenge')).toBeNull();
+    const challengeChoice = selector.querySelector<HTMLButtonElement>('[data-verified-surface="challenge"]')!;
+    challengeChoice.click();
+    expect(onVerifiedSurfaceChange).toHaveBeenCalledWith('challenge', true);
+    challengeChoice.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(onVerifiedSurfaceChange).toHaveBeenLastCalledWith('deployment', true);
+    expect(deployment.onLaunch).not.toHaveBeenCalled();
+    expect(challenge.onLaunch).not.toHaveBeenCalled();
+
+    const challengeRoot = buildLobbyHotSeatView(options({
+      surface: 'verified',
+      verifiedSurface: 'challenge',
+      verifiedDeployment: deployment,
+      verifiedChallenge: challenge,
+      onVerifiedSurfaceChange,
+    }));
+    expect(challengeRoot.querySelector('[data-verified-surface="challenge"]')?.getAttribute('aria-selected'))
+      .toBe('true');
+    expect(challengeRoot.querySelector('.lobby-verified-operation-panel')?.getAttribute('aria-labelledby'))
+      .toBe('lobby-verified-choice-challenge');
+    expect(challengeRoot.querySelector('.lobby-verified-challenge')).not.toBeNull();
+    expect(challengeRoot.querySelector('.lobby-verified-deployment')).toBeNull();
+    expect(challengeRoot.querySelector('.lobby-hotseat-footer')).toBeNull();
+    expect(challengeRoot.textContent).not.toContain('Start verified deployment');
   });
 
   it('renders a contained resume and requires a separate abandon confirmation', () => {

@@ -14,6 +14,17 @@ const sessionId = '22222222-2222-4222-8222-222222222222'
 const transcript = [{ angle: 90, power: 100 }]
 const cappedTranscript = replayFixture.transcript
 const pinnedReplays = replayFixture.policies
+const workerId = '44444444-4444-4444-8444-444444444444'
+const leaseNames = ['acquire_verification_compute_lease', 'verification_compute_lease_is_current']
+const completionNames = ['verified_deployment_completion_context', ...leaseNames, 'complete_verified_deployment_fenced', 'release_verification_compute_lease']
+function leaseReply(name: string, args: unknown) {
+  const row = args as Record<string, unknown>
+  if (name === 'acquire_verification_compute_lease') return { data: { ok: true, workerId, fence: 7,
+    endpoint: row.p_endpoint, sessionId: row.p_session_id, descriptorBinding: row.p_descriptor_binding,
+    expiresAt: '2026-08-11T12:00:10.000Z', uncertainUntil: '2026-08-11T12:06:50.000Z' }, error: null }
+  if (name === 'verification_compute_lease_is_current' || name === 'release_verification_compute_lease') return { data: true, error: null }
+  return null
+}
 
 const config = {
   seed: 17,
@@ -83,8 +94,10 @@ function dependencies(options: {
     rpc: async (name: string, args: unknown) => {
       calls.push({ name, args })
       if (options.errorAt === name) return { data: null, error: { message: `${name}:${userId}` } }
+      const leased = leaseReply(name, args)
+      if (leased) return leased
       if (name === 'verified_deployment_completion_context') return { data: options.contextRows ?? [context(options.context)], error: null }
-      if (name === 'complete_verified_deployment') return {
+      if (name === 'complete_verified_deployment_fenced') return {
         data: options.completeRows ?? (options.complete === null ? null : [{
           session_id: sessionId,
           user_id: userId,
@@ -108,6 +121,70 @@ function dependencies(options: {
   }
   return { supabase, calls }
 }
+
+Deno.test('legacy completion refuses shared account cooldown before any replay', async () => {
+  const fixture = dependencies()
+  let replayed = 0
+  const rpc = async (name: string, args: unknown) => name === 'acquire_verification_compute_lease'
+    ? { data: { ok: false, error: 'verification_busy', retryAfter: 410 }, error: null }
+    : fixture.supabase.rpc(name, args)
+  const response = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
+    supabase: { rpc } as never, now: () => new Date('2026-08-11T12:00:00.000Z'),
+    replay: () => { replayed++; return replayResult() as never }, logger: () => undefined,
+  })
+  assertEquals(replayed, 0)
+  assertEquals(response.status, 503)
+  assertEquals(response.headers.get('Retry-After'), '410')
+  assertEquals(await response.json(), { error: 'verified_deployment_unavailable' })
+})
+
+Deno.test('legacy completion rejects late or lost-fence work and keeps committed success after cleanup failure', async () => {
+  for (const mode of ['late', 'lost', 'cleanup', 'finalize_throw', 'invalid_result'] as const) {
+    const fixture = dependencies()
+    let replayed = 0
+    let clock = 0
+    const rpc = async (name: string, args: unknown) => {
+      if (name === 'verification_compute_lease_is_current' && mode === 'lost') return { data: false, error: null }
+      if (name === 'release_verification_compute_lease' && mode === 'cleanup') throw Error('private cleanup')
+      if (name === 'complete_verified_deployment_fenced' && mode === 'finalize_throw') throw Error('private storage')
+      return fixture.supabase.rpc(name, args)
+    }
+    const response = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
+      supabase: { rpc } as never, now: () => new Date('2026-08-11T12:00:00.000Z'), nativeNow: () => clock,
+      replay: () => { replayed++; if (mode === 'late') clock = 1000; return replayResult(mode === 'invalid_result' ? { outcome: 'forged' } : {}) as never },
+      logger: () => undefined,
+    })
+    assertEquals(response.status, mode === 'cleanup' ? 200 : mode === 'finalize_throw' ? 409 : mode === 'invalid_result' ? 500 : 503)
+    assertEquals(replayed, mode === 'lost' ? 0 : 1)
+    if (mode === 'late' || mode === 'lost') assertEquals(fixture.calls.some(({ name }) => name === 'complete_verified_deployment_fenced'), false)
+    if (mode === 'cleanup') assertEquals((await response.json()).result, { sessionId, won: true, outcome: 'win', verifiedXp: 200 })
+  }
+})
+
+Deno.test('completion racing admission returns only an exact owner-bound stored receipt without replay', async () => {
+  for (const mismatch of [false, true]) {
+    const fixture = dependencies()
+    let reads = 0
+    let replayed = 0
+    const rpc = async (name: string, args: unknown) => {
+      if (name === 'acquire_verification_compute_lease') return { data: { ok: false, error: 'verified_deployment_not_completable' }, error: null }
+      if (name === 'verified_deployment_completion_context' && ++reads === 2) return { data: [context({
+        status: 'completed', transcript: mismatch ? [{ angle: 0, power: 0 }] : transcript,
+        won: true, outcome: 'win', verified_xp: 200, prior_verified_matches: 3, prior_verified_wins: 1, prior_total_xp: 400,
+        current_verified_matches: 4, current_verified_wins: 2, current_total_xp: 600, result_created_at: '2026-08-11T12:00:00.000Z',
+      })], error: null }
+      return fixture.supabase.rpc(name, args)
+    }
+    const response = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
+      supabase: { rpc } as never, now: () => new Date('2026-08-11T12:00:00.000Z'),
+      replay: () => { replayed++; return replayResult() as never }, logger: () => undefined,
+    })
+    assertEquals(response.status, mismatch ? 409 : 200)
+    assertEquals([reads, replayed], [2, 0])
+    if (!mismatch) assertEquals((await response.json()).progression, { evidence: 'verified_replay_v2',
+      prior: { matchesPlayed: 3, wins: 1, totalXp: 400 }, current: { matchesPlayed: 4, wins: 2, totalXp: 600 } })
+  }
+})
 
 Deno.test('completion rejects non-exact bodies, UUIDs, and forbidden client authority before storage or replay', async () => {
   for (const body of [
@@ -201,7 +278,10 @@ Deno.test('completion independently replays server seed, maps the deterministic 
   assertEquals(replayCalls, [[17, transcript, 2]])
   assertEquals(test.calls, [
     { name: 'verified_deployment_completion_context', args: { p_user_id: userId, p_session_id: sessionId } },
-    { name: 'complete_verified_deployment', args: { p_user_id: userId, p_session_id: sessionId, p_transcript: transcript, p_won: true, p_outcome: 'win', p_verified_xp: 200 } },
+    { name: 'acquire_verification_compute_lease', args: { p_account_id: userId, p_endpoint: 'complete_verified_deployment', p_session_id: sessionId, p_descriptor_binding: 'deployment-v2', p_transcript: transcript } },
+    { name: 'verification_compute_lease_is_current', args: { p_account_id: userId, p_endpoint: 'complete_verified_deployment', p_session_id: sessionId, p_descriptor_binding: 'deployment-v2', p_worker_id: workerId, p_fence: 7 } },
+    { name: 'complete_verified_deployment_fenced', args: { p_user_id: userId, p_session_id: sessionId, p_transcript: transcript, p_won: true, p_outcome: 'win', p_verified_xp: 200, p_descriptor_binding: 'deployment-v2', p_worker_id: workerId, p_fence: 7 } },
+    { name: 'release_verification_compute_lease', args: { p_account_id: userId, p_worker_id: workerId, p_fence: 7 } },
   ])
   assertEquals(await response.json(), {
     result: { sessionId, won: true, outcome: 'win', verifiedXp: 200 },
@@ -233,9 +313,9 @@ Deno.test('V3 completion dispatches the persisted tuple and returns a canonical 
   })
   assertEquals(response.status, 200)
   assertEquals(replayCalls, [[17, v3Transcript, 3]])
-  assertEquals(test.calls[1], {
-    name: 'complete_verified_deployment',
-    args: { p_user_id: userId, p_session_id: sessionId, p_transcript: v3Transcript, p_won: false, p_outcome: 'loss', p_verified_xp: 100 },
+  assertEquals(test.calls[3], {
+    name: 'complete_verified_deployment_fenced',
+    args: { p_user_id: userId, p_session_id: sessionId, p_transcript: v3Transcript, p_won: false, p_outcome: 'loss', p_verified_xp: 100, p_descriptor_binding: 'deployment-v3', p_worker_id: workerId, p_fence: 7 },
   })
   assertEquals(await response.json(), {
     result: { sessionId, won: false, outcome: 'loss', verifiedXp: 100 },
@@ -384,7 +464,7 @@ Deno.test('completion rejects widened, conflicting, or non-singleton atomic resu
       logger: () => undefined,
     })
     assertEquals(response.status, 409)
-    assertEquals(test.calls.map((call) => call.name), ['verified_deployment_completion_context', 'complete_verified_deployment'])
+    assertEquals(test.calls.map((call) => call.name), completionNames)
   }
 })
 
@@ -406,7 +486,7 @@ Deno.test('completion rejects malformed immutable progression projections from a
     })
     assertEquals(response.status, 409)
     assertEquals(await response.json(), { error: 'verified_deployment_unavailable' })
-    assertEquals(test.calls.map((call) => call.name), ['verified_deployment_completion_context', 'complete_verified_deployment'])
+    assertEquals(test.calls.map((call) => call.name), completionNames)
   }
 })
 
@@ -457,9 +537,9 @@ Deno.test('completion fails generically without mutation after replay failure an
     logger: () => undefined,
   })
   assertEquals(replayResponse.status, 409)
-  assertEquals(replayFailure.calls.map((call) => call.name), ['verified_deployment_completion_context'])
+  assertEquals(replayFailure.calls.map((call) => call.name), ['verified_deployment_completion_context', ...leaseNames, 'release_verification_compute_lease'])
 
-  const storageFailure = dependencies({ errorAt: 'complete_verified_deployment' })
+  const storageFailure = dependencies({ errorAt: 'complete_verified_deployment_fenced' })
   const storageResponse = await handleCompleteVerifiedDeployment({ sessionId, transcript }, new Request('https://x.test'), userId, {
     supabase: storageFailure.supabase as never,
     replay: () => replayResult() as never,
@@ -468,7 +548,7 @@ Deno.test('completion fails generically without mutation after replay failure an
   })
   assertEquals(storageResponse.status, 409)
   assertEquals(await storageResponse.json(), { error: 'verified_deployment_unavailable' })
-  assertEquals(storageFailure.calls.map((call) => call.name), ['verified_deployment_completion_context', 'complete_verified_deployment'])
+  assertEquals(storageFailure.calls.map((call) => call.name), completionNames)
 })
 
 Deno.test('completion responses and logs remain identifier-free across storage and replay failures', async () => {
@@ -498,6 +578,8 @@ Deno.test('starts-disabled drain refuses new starts while existing resume, aband
   const supabase = {
     from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { display_name: 'Ash Walker' }, error: null }) }) }) }),
     rpc: async (name: string, args: Record<string, unknown>) => {
+      const leased = leaseReply(name, args)
+      if (leased) return leased
       if (name === 'start_verified_deployment_for_contracts') {
         const existing = [...active][0]
         return existing && args.p_user_id === userId
@@ -510,7 +592,7 @@ Deno.test('starts-disabled drain refuses new starts while existing resume, aband
         return { data: [{ id, user_id: userId, status: 'abandoned' }], error: null }
       }
       if (name === 'verified_deployment_completion_context') return { data: [context({ session_id: args.p_session_id })], error: null }
-      if (name === 'complete_verified_deployment') {
+      if (name === 'complete_verified_deployment_fenced') {
         const id = args.p_session_id as string
         results.set(id, {
           session_id: id, user_id: userId, transcript: args.p_transcript, won: args.p_won,

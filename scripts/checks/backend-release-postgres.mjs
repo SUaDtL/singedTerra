@@ -16,7 +16,10 @@ const migration = (version, slug) => sql(readFileSync(resolve(root, `supabase/mi
 
 for (const [handler, rpc] of [
   ['abandon_verified_deployment', 'abandon_verified_deployment'],
-  ['complete_verified_deployment', 'complete_verified_deployment'],
+  // Migration 024 routes current writes through the fence. This older upgrade
+  // rehearsal retains the historical RPC below; the P10 PostgreSQL harness
+  // separately exercises its current fenced wrapper and mixed-account races.
+  ['complete_verified_deployment', 'complete_verified_deployment_fenced'],
   ['finish_game', 'finish_casual_match_v1'],
 ]) {
   assert.match(readFileSync(resolve(root, `supabase/functions/${handler}/index.ts`), 'utf8'),

@@ -3,6 +3,7 @@ import type { WallMode } from '../types/GameOptions.ts';
 import { AIR_PIXEL, LAVA_PIXEL, CANVAS_WIDTH, CANVAS_HEIGHT, ARENA_FLOOR_Y, pixelAt, surfaceAt } from './Terrain.ts';
 import { TANK_WIDTH, TANK_HEIGHT } from './Tank.ts';
 import { clamp } from './math.ts';
+import type { VerificationWorkBudget } from './VerificationWorkBudget.ts';
 
 /**
  * Deterministic projectile physics (SPEC §4.2). Fixed 16ms timestep so hot-seat
@@ -140,7 +141,9 @@ export function sweepCollide(
   terrain: Uint8Array,
   tanks: readonly TankState[],
   walls: WallMode = 'open',
+  work?: VerificationWorkBudget,
 ): CollisionResult {
+  work?.charge('sweepSegments');
   const endX = p.x;
   const endY = p.y;
   const dx = endX - prevX;
@@ -162,10 +165,11 @@ export function sweepCollide(
   };
 
   for (let i = 1; i <= steps; i++) {
+    work?.charge('sweepSamples');
     const t = i / steps;
     probe.x = prevX + dx * t;
     probe.y = prevY + dy * t;
-    const hit = collide(probe, terrain, tanks, walls);
+    const hit = collide(probe, terrain, tanks, walls, work);
     if (hit.type !== 'none') {
       if (hit.type === 'wall' && walls === 'wrap') {
         // The first out-of-bounds supersample can be up to SWEEP_STEP beyond
@@ -247,7 +251,9 @@ export function collide(
   terrain: Uint8Array,
   tanks: readonly TankState[],
   walls: WallMode = 'open',
+  work?: VerificationWorkBudget,
 ): CollisionResult {
+  work?.charge('collisionChecks');
   // Out of bounds (horizontal). A miss — handled before terrain/tank so an
   // off-screen projectile never indexes terrain out of range.
   if (p.x < 0 || p.x >= CANVAS_WIDTH) {
@@ -267,6 +273,7 @@ export function collide(
   // Tank hit (AABB). Only living tanks block.
   const halfW = TANK_WIDTH / 2;
   for (const tank of tanks) {
+    work?.charge('engineSteps');
     if (tank.alive === false) continue;
     const left = tank.x - halfW;
     const right = tank.x + halfW;
@@ -282,7 +289,7 @@ export function collide(
   // OOB-x check above guarantees x in [0, CANVAS_WIDTH) here.)
   const xi = Math.floor(p.x);
   if (p.y >= ARENA_FLOOR_Y) return { type: 'ground', x: p.x, y: p.y, material: 'ground' };
-  const pixel = pixelAt(terrain, xi, Math.floor(p.y));
+  const pixel = pixelAt(terrain, xi, Math.floor(p.y), work);
   if (pixel > AIR_PIXEL) {
     return {
       type: 'ground',
@@ -319,6 +326,7 @@ export function wrapSideWall(
   hit: Extract<CollisionResult, { type: 'wall' }>,
   terrain: Uint8Array,
   tanks: readonly TankState[],
+  work?: VerificationWorkBudget,
 ): CollisionResult {
   const entryX = hit.side === 'left'
     ? CANVAS_WIDTH - WALL_INSET
@@ -327,11 +335,11 @@ export function wrapSideWall(
   const endY = hit.y + (hit.remainingY ?? 0);
   p.x = entryX;
   p.y = hit.y;
-  const entryHit = collide(p, terrain, tanks, 'open');
+  const entryHit = collide(p, terrain, tanks, 'open', work);
   if (entryHit.type !== 'none') return entryHit;
   p.x = endX;
   p.y = endY;
-  return sweepCollide(p, entryX, hit.y, terrain, tanks, 'open');
+  return sweepCollide(p, entryX, hit.y, terrain, tanks, 'open', work);
 }
 
 /** Bounce tuning (named constants, not magic numbers). */
@@ -357,9 +365,9 @@ const NORMAL_SAMPLE_DX = 2;              // sample x-2 .. x+2
  * 0/799 is safe. An all-air column yields surfaceAt == CANVAS_HEIGHT on both
  * sides => slope 0 => n=(0,-1), the safe default.
  */
-export function surfaceNormalAt(terrain: Uint8Array, x: number): Velocity {
-  const left = surfaceAt(terrain, x - NORMAL_SAMPLE_DX); // returns y
-  const right = surfaceAt(terrain, x + NORMAL_SAMPLE_DX);
+export function surfaceNormalAt(terrain: Uint8Array, x: number, work?: VerificationWorkBudget): Velocity {
+  const left = surfaceAt(terrain, x - NORMAL_SAMPLE_DX, work); // returns y
+  const right = surfaceAt(terrain, x + NORMAL_SAMPLE_DX, work);
   const slope = (right - left) / (2 * NORMAL_SAMPLE_DX);
   // outward normal (slope, -1), normalized; mag >= 1 always so no /0.
   const nx = slope;

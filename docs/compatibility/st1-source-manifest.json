@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "initial-st1-contract-reviewed",
+  "disposition": "p10-meter-and-client-integration-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -71,15 +71,15 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "c3d561122ddc123be6b59e80864e10014ccae792181ddb685fade34dcd0f810b"
+      "sha256": "5afcaf2c3a794275b5a1e5a5d1112b63d5f9cf9b256ab77798527919fc43161c"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "b9cd55d9a516b6ac13416a4a6f6d18059cac5faf05e5979ae68489db60cf4915"
+      "sha256": "fae21cffa7558fb1a945de61fa5e2e71a41667948f27ced0a63c02c9f97ed03e"
     },
     {
       "path": "package.json",
-      "sha256": "965d5d6a4d2d3f38967a91e240c5825a00979c826777db0c86dab90f6842e763"
+      "sha256": "2cbe4a929394778284fe99fedc0564d3d606bf7ba592566f1f6ed96a175996b3"
     },
     {
       "path": "scripts/checks/seed_challenge_compatibility.mjs",
@@ -99,7 +99,7 @@
     },
     {
       "path": "shared/src/engine/GameEngine.ts",
-      "sha256": "9f3c881b6885dc45003ae2e4da0b12442bb5f328aae016469d357282b85e5158"
+      "sha256": "40057a4f4f41ec5d4c97f01d931f07ee90b34d54ff90bbe362f21656be05f6e8"
     },
     {
       "path": "shared/src/engine/Movement.ts",
@@ -107,7 +107,7 @@
     },
     {
       "path": "shared/src/engine/Physics.ts",
-      "sha256": "abd86188338b9abeb234af6514893d2f2083b20dbe014595c4ff8338aec76c29"
+      "sha256": "8ae81c7ab687ac7ef5d0159e9074345ed93b0768704573239aed6a3a4069570e"
     },
     {
       "path": "shared/src/engine/Random.ts",
@@ -119,7 +119,11 @@
     },
     {
       "path": "shared/src/engine/Terrain.ts",
-      "sha256": "9ab675551240915fc97324251e884e27dad610a1d4cc0581f9b1ff65ae8a0cf8"
+      "sha256": "b7d91ebcc956c2337ab06f84138c8237740ca0be854c44ffa48b7270a73666d9"
+    },
+    {
+      "path": "shared/src/engine/VerificationWorkBudget.ts",
+      "sha256": "49be83d161a8f8dc6809081270815a81cde090d85669b56321b2f8f08b21a878"
     },
     {
       "path": "shared/src/engine/WeaponSystem.ts",

@@ -12,6 +12,7 @@ import type {
   VerifiedDeploymentStart,
 } from './verifiedDeployment'
 import { createProductionDiagnostics } from './ProductionDiagnostics'
+import { projectVerifiedCareer, type VerifiedCareer } from '@shared/net/verifiedCareer'
 
 type AssertTrue<T extends true> = T
 type IsRequiredKey<T, K extends keyof T> = {} extends Pick<T, K> ? false : true
@@ -59,6 +60,33 @@ function backend(overrides: Partial<AccountBackend> = {}): AccountBackend {
 }
 
 const verifiedSessionId = '00000000-0000-4000-8000-000000000061'
+const verifiedAccountId = '00000000-0000-4000-8000-000000000071'
+
+function currentVerifiedCareer(
+  verifiedMatches = 0,
+  verifiedWins = 0,
+  challengeAwarded = false,
+): VerifiedCareer {
+  const replayXp = 100 * (verifiedMatches + verifiedWins)
+  const challengeXp = challengeAwarded ? 200 : 0
+  return projectVerifiedCareer({
+    verifiedMatches,
+    verifiedWins,
+    replayXp,
+    challengeXp,
+    totalXp: replayXp + challengeXp,
+    medals: challengeAwarded
+      ? [{
+          entitlementId: 'crosswind-qualification',
+          medalId: 'crosswind-qualification',
+          xp: 200,
+          rewardVersion: 1,
+          awardedAt: '2026-09-13T12:30:00.000Z',
+          sessionId: verifiedSessionId,
+        }]
+      : [],
+  })!
+}
 
 const verifiedDescriptor: VerifiedDeploymentDescriptor = {
   sessionId: verifiedSessionId,
@@ -1931,5 +1959,132 @@ describe('AccountSession verified deployment lifecycle', () => {
     expect(JSON.stringify(states)).not.toContain('private-token')
     expect(JSON.stringify(states)).not.toContain('not-a-real-secret')
     expect(log).not.toHaveBeenCalled()
+  })
+})
+
+describe('verified career account integration', () => {
+  it('invokes the exact empty career request and binds it to Auth before and after the response', async () => {
+    const career = currentVerifiedCareer(3, 2, true)
+    const getUser = vi.fn(async () => ({ data: { user: { id: verifiedAccountId } }, error: null }))
+    const invoke = vi.fn(async () => ({ data: { responseVersion: 1, career }, error: null }))
+    const gateway = createSupabaseAccountBackend({
+      auth: { getUser },
+      functions: { invoke },
+    } as never)
+
+    await expect(gateway.loadVerifiedCareer?.(verifiedAccountId)).resolves.toEqual({
+      accountId: verifiedAccountId,
+      career,
+    })
+    expect(getUser).toHaveBeenCalledTimes(2)
+    expect(invoke).toHaveBeenCalledWith('verified_career_summary', { body: {} })
+    expect(getUser.mock.invocationCallOrder[0]).toBeLessThan(invoke.mock.invocationCallOrder[0]!)
+    expect(invoke.mock.invocationCallOrder[0]).toBeLessThan(getUser.mock.invocationCallOrder[1]!)
+  })
+
+  it('refuses a career response when Auth changes account during the request', async () => {
+    const getUser = vi.fn()
+      .mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
+      .mockResolvedValueOnce({ data: { user: { id: 'user-2' } }, error: null })
+    const gateway = createSupabaseAccountBackend({
+      auth: { getUser },
+      functions: {
+        invoke: vi.fn(async () => ({
+          data: { responseVersion: 1, career: currentVerifiedCareer() },
+          error: null,
+        })),
+      },
+    } as never)
+
+    await expect(gateway.loadVerifiedCareer?.('user-1')).rejects.toThrow('Verified career is unavailable.')
+  })
+
+  it('uses an explicit unavailable state when a legacy backend has no career capability', async () => {
+    const source = backend({ restoreUser: vi.fn(async () => ({ id: 'user-1' })) })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+
+    await session.initialize()
+
+    expect(session.verifiedCareer).toEqual({ status: 'unavailable', accountId: 'user-1' })
+  })
+
+  it('lets the newest same-account refresh win and never loops from state notifications', async () => {
+    const first = currentVerifiedCareer(1, 0)
+    const stale = deferred<{ accountId: string; career: VerifiedCareer }>()
+    const current = deferred<{ accountId: string; career: VerifiedCareer }>()
+    const loadVerifiedCareer = vi.fn()
+      .mockResolvedValueOnce({ accountId: 'user-1', career: first })
+      .mockImplementationOnce(() => stale.promise)
+      .mockImplementationOnce(() => current.promise)
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      loadVerifiedCareer,
+    })
+    const accountNotifications: AccountState[] = []
+    const session = new AccountSession((state) => accountNotifications.push(state), {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    const careerNotifications: unknown[] = []
+    session.subscribeVerifiedCareer((state) => careerNotifications.push(state))
+    await session.initialize()
+    await vi.waitFor(() => expect(session.verifiedCareer.status).toBe('ready'))
+    const historical = session.verifiedCareer.status === 'ready' ? session.verifiedCareer.career : null
+    const accountNotificationCount = accountNotifications.length
+
+    const olderRefresh = session.refreshVerifiedCareer()
+    const newerRefresh = session.refreshVerifiedCareer()
+    current.resolve({ accountId: 'user-1', career: currentVerifiedCareer(5, 4, true) })
+    await newerRefresh
+    stale.resolve({ accountId: 'user-1', career: currentVerifiedCareer(2, 1) })
+    await olderRefresh
+
+    expect(session.verifiedCareer).toMatchObject({
+      status: 'ready',
+      accountId: 'user-1',
+      career: { totalXp: 1_100, replay: { verifiedMatches: 5, verifiedWins: 4 }, challenge: { xp: 200 } },
+    })
+    expect(historical).toEqual(first)
+    expect(historical && Object.isFrozen(historical)).toBe(true)
+    expect(loadVerifiedCareer).toHaveBeenCalledTimes(3)
+    expect(careerNotifications).toHaveLength(6)
+    expect(accountNotifications).toHaveLength(accountNotificationCount)
+  })
+
+  it('discards a late cross-account career response and keeps the new owner projection', async () => {
+    let onUser: ((user: { id: string } | null) => void) | undefined
+    const oldAccount = deferred<{ accountId: string; career: VerifiedCareer }>()
+    const newAccount = deferred<{ accountId: string; career: VerifiedCareer }>()
+    const loadVerifiedCareer = vi.fn((accountId: string) => accountId === 'user-1'
+      ? oldAccount.promise
+      : newAccount.promise)
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      subscribe: vi.fn((callback) => { onUser = callback; return vi.fn() }),
+      loadProfile: vi.fn(async (userId) => ({ id: userId, displayName: userId, summary: null })),
+      loadVerifiedCareer,
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+    expect(session.verifiedCareer).toEqual({ status: 'loading', accountId: 'user-1' })
+
+    onUser?.({ id: 'user-2' })
+    await vi.waitFor(() => expect(session.verifiedCareer).toEqual({ status: 'loading', accountId: 'user-2' }))
+    newAccount.resolve({ accountId: 'user-2', career: currentVerifiedCareer(2, 1, true) })
+    await vi.waitFor(() => expect(session.verifiedCareer).toMatchObject({
+      status: 'ready', accountId: 'user-2', career: { totalXp: 500 },
+    }))
+    oldAccount.resolve({ accountId: 'user-1', career: currentVerifiedCareer(30, 30, true) })
+    await Promise.resolve()
+
+    expect(session.verifiedCareer).toMatchObject({
+      status: 'ready', accountId: 'user-2', career: { totalXp: 500 },
+    })
   })
 })
