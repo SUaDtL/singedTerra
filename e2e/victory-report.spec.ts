@@ -312,6 +312,71 @@ test.describe('Victory After-Action Report', () => {
     await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
   });
 
+  test('keeps terminal actions fitted under Linux fallback font metrics', async ({ page }, testInfo) => {
+    await gotoVictory(page);
+
+    const panel = page.locator('.st-hud__overlay-panel--victory');
+    const actions = panel.locator('.st-hud__overlay-btns');
+    const buttons = actions.locator('button');
+    await panel.evaluate(async (element) => {
+      await Promise.all(element.getAnimations().map((animation) => animation.finished));
+    });
+
+    for (const fontFamily of ['Arial, sans-serif', 'sans-serif', 'Verdana, sans-serif']) {
+      await buttons.evaluateAll((elements, family) => {
+        for (const element of elements) element.style.fontFamily = family;
+      }, fontFamily);
+
+      const geometry = await panel.evaluate((element) => {
+        const panelBox = element.getBoundingClientRect();
+        const actionRow = element.querySelector<HTMLElement>('.st-hud__overlay-btns');
+        if (!actionRow) throw new Error('Missing terminal action row');
+        const actionBox = actionRow.getBoundingClientRect();
+        const stageScale = document.getElementById('stage')!.getBoundingClientRect().height / 600;
+        return {
+          panel: panelBox.toJSON(),
+          coarsePointer: matchMedia('(pointer: coarse)').matches,
+          actions: {
+            box: actionBox.toJSON(),
+            clientWidth: actionRow.clientWidth,
+            scrollWidth: actionRow.scrollWidth,
+          },
+          buttons: [...actionRow.querySelectorAll<HTMLButtonElement>('button')].map((button) => ({
+            text: button.textContent?.trim() ?? '',
+            box: button.getBoundingClientRect().toJSON(),
+            physicalFontSize: Number.parseFloat(getComputedStyle(button).fontSize) * stageScale,
+            authoredMinimumPhysicalHeight: Number.parseFloat(getComputedStyle(button).minHeight) * stageScale,
+            clientWidth: button.clientWidth,
+            scrollWidth: button.scrollWidth,
+          })),
+        };
+      });
+
+      expect(geometry.actions.scrollWidth, `${fontFamily} action row does not overflow`)
+        .toBeLessThanOrEqual(geometry.actions.clientWidth + 1);
+      for (const button of geometry.buttons) {
+        expect(button.box.left, `${fontFamily} ${button.text} starts inside the action row`)
+          .toBeGreaterThanOrEqual(geometry.actions.box.left - 1);
+        expect(button.box.right, `${fontFamily} ${button.text} ends inside the action row`)
+          .toBeLessThanOrEqual(geometry.actions.box.right + 1);
+        expect(button.box.right, `${fontFamily} ${button.text} stays inside the authored panel`)
+          .toBeLessThanOrEqual(geometry.panel.right + 1);
+        expect(button.box.top, `${fontFamily} ${button.text} starts inside the action row`)
+          .toBeGreaterThanOrEqual(geometry.actions.box.top - 1);
+        expect(button.box.bottom, `${fontFamily} ${button.text} ends inside the action row`)
+          .toBeLessThanOrEqual(geometry.actions.box.bottom + 1);
+        const minimumPhysicalHeight = geometry.coarsePointer ? 44 : button.authoredMinimumPhysicalHeight;
+        expect(button.box.height, `${fontFamily} ${button.text} preserves its authored target height`)
+          .toBeGreaterThanOrEqual(minimumPhysicalHeight);
+        expect(button.physicalFontSize, `${fontFamily} ${button.text} remains physically readable`)
+          .toBeGreaterThanOrEqual(10.5);
+        expect(button.scrollWidth, `${fontFamily} ${button.text} does not clip`)
+          .toBeLessThanOrEqual(button.clientWidth + 1);
+      }
+      await panel.screenshot({ path: testInfo.outputPath(`victory-fallback-${fontFamily.split(',')[0]}.png`) });
+    }
+  });
+
   test('keeps the anonymous terminal report and actions inside the compact panel', async ({ page }) => {
     await page.setViewportSize({ width: 844, height: 390 });
     await gotoVictory(page, 'victory-anonymous');

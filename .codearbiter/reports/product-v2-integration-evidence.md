@@ -47,3 +47,27 @@ The integration then adopted main2d366c7's reviewed Vitest/coverage5 pair and
 explicit lifecycle call ledger. The full combined coverage run passed all
 1,971 tests at 94.24% lines and 84.34% branches. Dependency groups and imported
 tooling files match main; no production behavior changed during that refresh.
+
+## Linux terminal-action correction
+
+Hosted run34742177100 failed twice at Main Menu right667.328125 versus panel
+right664.6875. Arial fallback reproduces the intrinsic flex minimum clamp locally:
+action-row scroll655 versus client573. The new unchanged overflow assertion went
+RED. A min-width-only probe was rejected because the primary text clipped.
+The accepted correction adds scoped min-width0, primary flex-grow1.2 and wrapping
+only on the primary label. Trebuchet, Arial, generic sans-serif and Verdana probes
+retain complete text and44.4375px coarse targets.
+
+The production build/typecheck passed. All60 served files match disk, inventory
+5aa51585ce1fbd68f40765ca8738d00707ea9d4f71348186c0cc2e521e294a14.
+Full browser run:355 passed,24 existing skips,2 failures. One was the parent omitting
+the required expected-backend-origin environment variable. The other was a new
+test incorrectly treating a font-dependent row height as the authored fine-pointer
+minimum. The final test awaits arrival animation, uses the actual CSS minimum for
+fine pointer, and retains an independent44px coarse minimum and10.5px font floor.
+Corrected focused rerun covering both failures and the original authored report
+across all three profiles:7 passed,2 existing profile skips. No production source
+changed between those runs. Exact raw logs remain in Temp/product-v2-490-*.
+
+This is combined full-suite and corrected focused evidence, not a claim that the
+first full run was all green. Fresh hosted CI remains required before merge.

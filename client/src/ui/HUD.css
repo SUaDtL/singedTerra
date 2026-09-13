@@ -706,6 +706,7 @@
   justify-content: center;
   gap: 10px;
   flex: 1;
+  min-width: 0;
   min-height: 44px;
   border-radius: 5px;
   box-shadow:
@@ -728,7 +729,11 @@
   width: 19px;
   height: 19px;
 }
+.st-hud__overlay-panel--victory .st-hud__victory-primary { flex-grow: 1.2; }
 .st-hud__victory-action-label { white-space: nowrap; }
+.st-hud__overlay-panel--victory .st-hud__victory-primary > .st-hud__victory-action-label {
+  white-space: normal;
+}
 .st-hud__victory-primary {
   border: 1px solid color-mix(in srgb, var(--st-victory-color, #ffd23f) 74%, #fff 12%);
   background: linear-gradient(180deg,
