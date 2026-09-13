@@ -48,8 +48,9 @@ async function installCanvasProbe(page: Page): Promise<void> {
         accentOps: Array<{ kind: string; style: string }>;
       };
     };
-    const probe = view.__singedTerraMobilityProbe = { tankDraws: [], accentOps: [] };
-    const accentSet = new Set(accents);
+    const probe: NonNullable<typeof view.__singedTerraMobilityProbe> = { tankDraws: [], accentOps: [] };
+    view.__singedTerraMobilityProbe = probe;
+    const accentSet = new Set<string>(accents);
     const context = CanvasRenderingContext2D.prototype;
     const originalDrawImage = context.drawImage;
     context.drawImage = (function (
@@ -102,7 +103,8 @@ async function clearProbe(page: Page): Promise<void> {
 
 async function probeState(page: Page, kit: Kit): Promise<ProbeState> {
   const treads = TANK_PART_SETS[kit.id].parts.treads;
-  return page.locator('#game').evaluate((canvas, treads) => {
+  return page.locator('#game').evaluate((element, treads) => {
+    const canvas = element as HTMLCanvasElement;
     const probe = (window as typeof window & { __singedTerraMobilityProbe?: {
       tankDraws: Array<{ x: number; y: number; width: number; height: number }>;
       accentOps: Array<{ kind: string; style: string }>;
@@ -119,7 +121,8 @@ async function probeState(page: Page, kit: Kit): Promise<ProbeState> {
 }
 
 async function canvasHash(page: Page): Promise<string> {
-  return page.locator('#game').evaluate((canvas) => {
+  return page.locator('#game').evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) throw new Error('Game canvas has no readable 2D context');
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -192,7 +195,8 @@ function undercarriageMask(kit: Kit, draw: TankDraw): Mask {
 }
 
 async function saveMaskFrame(page: Page, name: string, mask: Mask): Promise<void> {
-  await page.locator('#game').evaluate((canvas, { name, mask, storeName }) => {
+  await page.locator('#game').evaluate((element, { name, mask, storeName }) => {
+    const canvas = element as HTMLCanvasElement;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) throw new Error('Game canvas has no readable 2D context');
     const store = (window as typeof window & { [key: string]: Record<string, Uint8ClampedArray> | undefined })[storeName]
@@ -281,21 +285,59 @@ async function assertFitted(page: Page): Promise<void> {
 async function exerciseMove(page: Page, kit: Kit): Promise<{ mask: Mask; baseline: TankDraw; moved: TankDraw; evidence: PixelDifference; probe: ProbeState }> {
   const baseline = await waitForStableCanvas(page, kit);
   await clearProbe(page);
+  // Observe frames inside the browser before the native click. Driver/CI latency
+  // must not decide whether a short-lived production effect was ever visible.
+  await page.evaluate(({ baseline, treads, storeName }) => {
+    const view = window as typeof window & {
+      __singedTerraMobilityProbe?: { tankDraws: Array<TankDraw & { width: number; height: number }> };
+      __singedTerraMovementCapture?: { frames: number; current: TankDraw | null; mask: Mask | null };
+      [key: string]: unknown;
+    };
+    const capture = view.__singedTerraMovementCapture = { frames: 0, current: null, mask: null } as {
+      frames: number; current: TankDraw | null; mask: Mask | null;
+    };
+    const store: Record<string, Uint8ClampedArray> = {};
+    view[storeName] = store;
+    const deadline = performance.now() + 5_000;
+    const observe = () => {
+      const canvas = document.querySelector<HTMLCanvasElement>('#game');
+      const draw = view.__singedTerraMobilityProbe?.tankDraws
+        .filter((entry) => entry.width === treads.width && entry.height === treads.height
+          && entry.x >= 0 && entry.x < (canvas?.width ?? 0) / 2).at(-1);
+      if (canvas && draw?.x === baseline.x + 8) {
+        capture.current ??= { x: draw.x, y: draw.y };
+        capture.mask ??= {
+          x: Math.floor(draw.x - treads.offsetX - 48),
+          y: Math.max(0, Math.floor(draw.y - treads.offsetY - 36)),
+          width: 72, height: 56,
+        };
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) throw new Error('Game canvas has no readable 2D context');
+        const mask = capture.mask;
+        store[`live-${capture.frames++}`] = ctx.getImageData(mask.x, mask.y, mask.width, mask.height).data;
+      }
+      if (capture.frames < 8 && performance.now() < deadline) requestAnimationFrame(observe);
+    };
+    requestAnimationFrame(observe);
+  }, { baseline, treads: TANK_PART_SETS[kit.id].parts.treads, storeName: FRAME_STORE });
   const fuel = page.locator('[data-semantic-key="node:span:100 fuel remaining:19"]');
   const move = page.getByRole('button', { name: 'Move tank right, 8 fuel maximum', exact: true });
   await move.click();
+  // Reproduce a slow CI transport: the transient must be observed even when
+  // the test driver cannot read back until after it has expired.
+  await page.waitForTimeout(800);
   await expect(fuel).toHaveText('92');
   await expect.poll(async () => {
     const draws = (await probeState(page, kit)).tankDraws;
     return draws.at(-1)?.x ?? null;
   }, { timeout: 3_000, intervals: [20, 40, 80] }).toBe(baseline.x + 8);
-  // expect.poll returns void; read the actual same-frame coordinate after its exact assertion.
-  const current = (await probeState(page, kit)).tankDraws.at(-1)!;
-  const mask = undercarriageMask(kit, current);
-  for (let frame = 0; frame < 8; frame++) {
-    await requestFrame(page);
-    await saveMaskFrame(page, `live-${frame}`, mask);
-  }
+  const capture = () => page.evaluate(() => (window as typeof window & {
+    __singedTerraMovementCapture?: { frames: number; current: TankDraw | null; mask: Mask | null };
+  }).__singedTerraMovementCapture);
+  await expect.poll(async () => (await capture())?.frames, { timeout: 3_000 }).toBe(8);
+  const recorded = (await capture())!;
+  const current = recorded.current!;
+  const mask = recorded.mask!;
   await expect.poll(async () => (await probeState(page, kit)).accentOps.length, {
     timeout: 2_000, intervals: [20, 40, 80],
   }).toBeGreaterThan(0);
