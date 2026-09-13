@@ -123,9 +123,13 @@ test.describe('ordinary guest journey', () => {
     const terminal = page.locator('.st-hud__overlay--victory');
     await expect(terminal).toBeVisible({ timeout: 30_000 });
     await expect(terminal.getByRole('heading', { name: 'Player 2 wins', exact: true })).toBeVisible();
+    await expect(terminal.locator('[data-ui="terminal-turning-point"]')).toBeHidden();
+    await expect(terminal.locator('[data-ui="terminal-next-experiment"]')).toHaveText(
+      'Experiment · Keep power fixed, change your opening angle, and compare where the first shot lands.',
+    );
     await terminal.screenshot({ path: testInfo.outputPath('ordinary-guest-terminal.png') });
 
-    await terminal.getByRole('button', { name: 'Play again', exact: true }).click();
+    await terminal.getByRole('button', { name: 'Replay same scenario', exact: true }).click();
     await expect(terminal).toBeHidden();
     const surface = page.locator('[data-battle-console-surface]');
     await expect(surface).toHaveAttribute('data-active-commander', 'p1');

@@ -784,6 +784,9 @@ function bootstrap(): void {
         // to their lifecycle assertion; the real HUD always owns this presentation seam.
         (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
           .setQuickOperation?.(config.quickOperation ?? null);
+        hud.setTerminalReplayMode(config.mode === 'hotseat' && !config.verifiedDeployment
+          ? 'same-scenario'
+          : null);
         if (!config.verifiedDeployment) {
           fieldOrder = config.quickOperation?.practiceObjective
             ? createPracticeFieldOrderById(config.quickOperation.practiceObjective.fieldOrderId)
