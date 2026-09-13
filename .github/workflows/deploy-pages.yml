@@ -125,7 +125,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - name: Download the selected prior tested candidate
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           artifact-ids: ${{ needs.gate.outputs.rollback_artifact_id }}
           path: rollback-artifact
@@ -180,7 +180,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Download the exact uploaded candidate by artifact ID
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           artifact-ids: ${{ needs.build.outputs.artifact_id }}
           path: candidate-artifact
