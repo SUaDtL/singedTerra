@@ -15,6 +15,9 @@ export interface QuickDuelLaunchPlayer {
   readonly loadout: TankLoadout
 }
 
+/** Shared base for the chooser readout and the launch composer. */
+export const QUICK_DUEL_DEFAULT_ROUNDS = 3 as const
+
 export interface QuickDuelLaunch {
   readonly mode: 'hotseat'
   readonly players: QuickDuelLaunchPlayer[]
@@ -40,7 +43,7 @@ export function composeQuickDuelLaunch(options: {
     maxPlayers: 2,
     players: [options.human, options.cpu],
     seed: options.seed,
-    rounds: 3,
+    rounds: QUICK_DUEL_DEFAULT_ROUNDS,
   })
   const { maxPlayers: _maxPlayers, players: _players, ...settings } = composed
   const publicSeedChallenge = resolvePublicSeedChallenge(
