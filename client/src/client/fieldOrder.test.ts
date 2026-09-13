@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createFieldOrderById,
   createFieldOrder,
+  createPracticeFieldOrderById,
   observeFieldOrder,
   type FieldOrderObservation,
 } from './fieldOrder'
@@ -16,6 +17,23 @@ const observation = (patch: Partial<FieldOrderObservation> = {}): FieldOrderObse
 })
 
 describe('Field Orders', () => {
+  it('keeps every verified account-count rotation result while resolving P04 ids from practice-only definitions', () => {
+    expect([0, 1, 2, 3, 4, 5].map((matchesPlayed) => createFieldOrder({ matchesPlayed })?.id))
+      .toEqual(['first-strike', 'fire-for-effect', 'hold-the-field', 'first-strike', 'fire-for-effect', 'hold-the-field'])
+    expect(createPracticeFieldOrderById('set-the-position')).toMatchObject({
+      id: 'set-the-position',
+      title: 'Set the Position',
+      instruction: 'Change firing position, then damage the CPU with your first salvo.',
+      result: null,
+    })
+    expect(createPracticeFieldOrderById('make-it-count')).toMatchObject({
+      id: 'make-it-count',
+      title: 'Make It Count',
+      instruction: 'Win the best-of-three duel with Level 0 restocks only.',
+      result: null,
+    })
+    expect(createFieldOrderById('set-the-position')).toBeNull()
+  })
   it('constructs a fresh order from an explicit catalog id and rejects unknown ids', () => {
     const first = createFieldOrderById('hold-the-field')
     const second = createFieldOrderById('hold-the-field')
@@ -107,6 +125,52 @@ describe('Field Orders', () => {
   ] as const)('misses First Strike on %s', (_label, firstStrikeObservation) => {
     expect(observeFieldOrder(createFieldOrder({ matchesPlayed: 0 })!, firstStrikeObservation))
       .toMatchObject({ result: { status: 'missed' } })
+  })
+
+  it('requires both a 16-pixel net opening move and damage on the first settled salvo', () => {
+    const achieved = observeFieldOrder(createPracticeFieldOrderById('set-the-position')!, observation({
+      humanSalvos: 1,
+      settledHumanDamage: [12],
+      openingPositionDelta: 16,
+      activeSeat: 'cpu',
+    }))
+    const shortMove = observeFieldOrder(createPracticeFieldOrderById('set-the-position')!, observation({
+      humanSalvos: 1,
+      settledHumanDamage: [12],
+      openingPositionDelta: 15,
+      activeSeat: 'cpu',
+    }))
+    const cleanShot = observeFieldOrder(createPracticeFieldOrderById('set-the-position')!, observation({
+      humanSalvos: 1,
+      settledHumanDamage: [0],
+      openingPositionDelta: 16,
+      activeSeat: 'cpu',
+    }))
+
+    expect(achieved).toMatchObject({
+      progress: { firingPositionChanged: true },
+      result: { status: 'achieved' },
+    })
+    expect(shortMove).toMatchObject({
+      progress: { firingPositionChanged: false },
+      result: { status: 'missed' },
+    })
+    expect(cleanShot).toMatchObject({
+      progress: { firingPositionChanged: true },
+      result: { status: 'missed' },
+    })
+  })
+
+  it.each([
+    ['human', 'achieved'],
+    ['cpu', 'missed'],
+    [null, 'missed'],
+  ] as const)('resolves Make It Count from the actual terminal winner fact: %s', (winner, status) => {
+    const active = observeFieldOrder(createPracticeFieldOrderById('make-it-count')!, observation({ winner }))
+    expect(active).toMatchObject({ progress: { awaitingWinner: true }, result: null })
+
+    expect(observeFieldOrder(active, observation({ phase: 'GAME_OVER', winner })))
+      .toMatchObject({ result: { status } })
   })
 
   it('counts equal damage values on separate settled human salvos for Fire for Effect', () => {

@@ -1,0 +1,3512 @@
+{
+  "schemaVersion": 1,
+  "task": "P04 tactical challenge feasibility",
+  "source": {
+    "baseRevision": "36003c0f64e52f4d14500c5f997345fb4b309345",
+    "identity": "Base revision plus the following exact UTF-8/LF source fingerprints; base alone does not contain this uncommitted candidate.",
+    "normalization": "Decode UTF-8; replace CRLF with LF; hash UTF-8 bytes with unkeyed SHA-256.",
+    "files": [
+      {
+        "path": "client/src/client/fieldOrder.ts",
+        "sha256": "f2fd817610ec778a2a5ec0e8c877a0325f8cc6a3dff9379b2f5ef7eda66dd974"
+      },
+      {
+        "path": "client/src/client/practiceFieldOrder.ts",
+        "sha256": "6e3153e52e83d42d8a91e389c2289769c30b1f6561be1c0981adc22fc8507031"
+      },
+      {
+        "path": "client/src/client/quickOperations.ts",
+        "sha256": "da5012ba905472de9b85337ec4e62de714e5d7ba35e4183b41bf1f2460e42925"
+      },
+      {
+        "path": "client/tsconfig.json",
+        "sha256": "bf45608c61f7f31b4f71ee71bbabf74b34be2c5ffd89c0afc617328773a83cc5"
+      },
+      {
+        "path": "scripts/feasibility/p04TacticalChallengeFeasibility.ts",
+        "sha256": "db8f40abe2ca3ff8289794587a41b276639320f3e94db0c14a1d9342be73b76c"
+      },
+      {
+        "path": "shared/src/engine/AI.ts",
+        "sha256": "50198def7341c7ce59992d380791f8fe942c75f225811ec5a394101dbfb85090"
+      },
+      {
+        "path": "shared/src/engine/AiShotSearch.ts",
+        "sha256": "3aee0891095bd4eb75b6b98110d18782ec67cf408c3e0267aa9e94b32804369b"
+      },
+      {
+        "path": "shared/src/engine/BlastGeometry.ts",
+        "sha256": "7f96b79e89353c5cce51a605b592c6e4135be070aa2707d95e12782818c4b637"
+      },
+      {
+        "path": "shared/src/engine/GameEngine.ts",
+        "sha256": "9f3c881b6885dc45003ae2e4da0b12442bb5f328aae016469d357282b85e5158"
+      },
+      {
+        "path": "shared/src/engine/Movement.ts",
+        "sha256": "4593000aaea37a36da48fb1b7b966d58b25aae39a7ed4fa2569f9622714ecee2"
+      },
+      {
+        "path": "shared/src/engine/Physics.ts",
+        "sha256": "abd86188338b9abeb234af6514893d2f2083b20dbe014595c4ff8338aec76c29"
+      },
+      {
+        "path": "shared/src/engine/Random.ts",
+        "sha256": "f6ad59ebeca3e661f84d60e9323317085be5c40364cc5fdc1b2997c20d358a96"
+      },
+      {
+        "path": "shared/src/engine/Tank.ts",
+        "sha256": "efc9def9bd11e65cc9f434f1ead6ea208d1e3f229613f14e3214437039cf71c0"
+      },
+      {
+        "path": "shared/src/engine/Terrain.ts",
+        "sha256": "9ab675551240915fc97324251e884e27dad610a1d4cc0581f9b1ff65ae8a0cf8"
+      },
+      {
+        "path": "shared/src/engine/WeaponSystem.ts",
+        "sha256": "a888cc4eab7b4bcfec7b38cf3ef989f80d975a5eb3146aa56f198eff0e11f001"
+      },
+      {
+        "path": "shared/src/engine/math.ts",
+        "sha256": "7cb53de63ad456994bde744ee12e5735f85214c80f0d2dccd71b336c3a56cb1c"
+      },
+      {
+        "path": "shared/src/net/replay.ts",
+        "sha256": "91081f60447c19bfc12dc5bbc37df1ab483450205caeeb37718d3324a4696671"
+      },
+      {
+        "path": "shared/src/net/roomCommand.ts",
+        "sha256": "2aa272e014b79877b2d9eef02825ef2a9cf74da48140238a1cab0e8e323b6b27"
+      },
+      {
+        "path": "shared/src/net/seqGuard.ts",
+        "sha256": "8db4edded373e7e37b31e3d675f5f526d18f57ec2f0ace0775cd2e527523cfe6"
+      },
+      {
+        "path": "shared/src/net/verifiedCpuPolicyV3.ts",
+        "sha256": "32789212ccc6a15ba4cd6dfde4f7cce25f263d1af02fe80a6194c2db47a589eb"
+      },
+      {
+        "path": "shared/src/net/verifiedDuel.ts",
+        "sha256": "b5851c4f1f062004ddea18bf1defe86e0cf2419fe4fbeb363cf19fdd0fd835f1"
+      },
+      {
+        "path": "shared/src/types/GameOptions.ts",
+        "sha256": "dbcfc9421ba80d26e6e26ad5dfd4918bc2094ff34bacb324de2eb5b163a7e708"
+      },
+      {
+        "path": "shared/src/types/GameState.ts",
+        "sha256": "29bedf036c617501911eb123ae3830c13a37d15e78a1b5fb422a450c572546ac"
+      },
+      {
+        "path": "shared/src/types/PlayerAction.ts",
+        "sha256": "bedc6b8c705737e5c2c414afe7e6f7d10bb2a1d914b8b99cba4fb52ff401b217"
+      },
+      {
+        "path": "shared/src/types/TankLoadout.ts",
+        "sha256": "03c1974353a229cb271cd21aa4748432237a10ef0921719a9a7737a1bdfe900a"
+      },
+      {
+        "path": "tsconfig.base.json",
+        "sha256": "4b0310a8c938a52f18c6b1b76ee77d9befa94b6b80985a04aa1ef8c3c5ad54bb"
+      }
+    ]
+  },
+  "supportedSeeds": [
+    42
+  ],
+  "constraints": [
+    "ordinary GameEngine PlayerActions only",
+    "exact resolved P04 Quick Operation options and descriptor seed only",
+    "success damage is the settled human.totalDamage delta (effective opponent damage)",
+    "no state mutation or test-only loadout",
+    "Quick Duel two-seat Medium CPU roster",
+    "bounded angle/power grids and a 64-turn match cap"
+  ],
+  "receipts": [
+    {
+      "seed": 42,
+      "kind": "direct",
+      "achieved": true,
+      "detail": "direct Baby Missile: angle 30, power 100, credited damage 19.139999717887008, wall contacts 0",
+      "actions": [
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 113,
+      "terminalPhase": "PLAYER_TURN",
+      "winner": null,
+      "runtimeVerification": {
+        "operation": "crosswind-range",
+        "objective": "first-strike",
+        "expected": "achieved",
+        "actual": {
+          "status": "achieved",
+          "achievedOnSalvo": 1
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 113,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": {
+              "status": "achieved",
+              "achievedOnSalvo": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "wrap",
+      "achieved": true,
+      "detail": "wrap Baby Missile: angle 105, power 75, credited damage 23.90112720354371, wall contacts 1",
+      "actions": [
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 105
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 75
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 142,
+      "terminalPhase": "PLAYER_TURN",
+      "winner": null,
+      "runtimeVerification": {
+        "operation": "crosswind-range",
+        "objective": "first-strike",
+        "expected": "achieved",
+        "actual": {
+          "status": "achieved",
+          "achievedOnSalvo": 1
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 142,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              23.90112720354371
+            ],
+            "result": {
+              "status": "achieved",
+              "achievedOnSalvo": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "advance",
+      "achieved": true,
+      "detail": "advance travel 16; Baby Missile angle 30, power 100, credited damage 27.784310632080334",
+      "actions": [
+        {
+          "action": {
+            "type": "move",
+            "delta": 8
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "move",
+            "delta": 8
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 107,
+      "terminalPhase": "PLAYER_TURN",
+      "winner": null,
+      "runtimeVerification": {
+        "operation": "caldera-run",
+        "objective": "set-the-position",
+        "expected": "achieved",
+        "actual": {
+          "status": "achieved"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 4,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 5,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 107,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              27.784310632080334
+            ],
+            "result": {
+              "status": "achieved"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "retreat",
+      "achieved": true,
+      "detail": "retreat travel 16; Baby Missile angle 30, power 100, credited damage 5.406774469952879",
+      "actions": [
+        {
+          "action": {
+            "type": "move",
+            "delta": -8
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "move",
+            "delta": -8
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 114,
+      "terminalPhase": "PLAYER_TURN",
+      "winner": null,
+      "runtimeVerification": {
+        "operation": "caldera-run",
+        "objective": "set-the-position",
+        "expected": "achieved",
+        "actual": {
+          "status": "achieved"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 4,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 5,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 114,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              5.406774469952879
+            ],
+            "result": {
+              "status": "achieved"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "early-kit",
+      "achieved": true,
+      "detail": "early-kit; 5 completed action turns; armsLevel 0; winner p1",
+      "actions": [
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "heavy_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "next_round"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 37.91525414562784
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 99.43768306970597
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "napalm"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 149.1319615110755
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 42.4488429853227
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 99.42197302989662
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 149.3838618911803
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 98.34259711951017
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 42.4947572296951
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 98.30422887951136
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 938,
+      "terminalPhase": "GAME_OVER",
+      "winner": "p1",
+      "runtimeVerification": {
+        "operation": "lean-arsenal",
+        "objective": "make-it-count",
+        "expected": "achieved",
+        "actual": {
+          "status": "achieved"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "ROUND_OVER",
+            "settlementTicks": 116,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              71.62599974609832
+            ],
+            "result": null
+          },
+          {
+            "index": 4,
+            "actor": "p1",
+            "phaseBefore": "ROUND_OVER",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              71.62599974609832
+            ],
+            "result": null
+          },
+          {
+            "index": 5,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              71.62599974609832
+            ],
+            "result": null
+          },
+          {
+            "index": 6,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              71.62599974609832
+            ],
+            "result": null
+          },
+          {
+            "index": 7,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              71.62599974609832
+            ],
+            "result": null
+          },
+          {
+            "index": 8,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 114,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 9,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 10,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 11,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 12,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 202,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 13,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 14,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 15,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035
+            ],
+            "result": null
+          },
+          {
+            "index": 16,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 137,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 17,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 18,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 19,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 20,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 241,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 21,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 22,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 23,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299
+            ],
+            "result": null
+          },
+          {
+            "index": 24,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "GAME_OVER",
+            "settlementTicks": 128,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              71.62599974609832,
+              48.469700366454035,
+              47.94401696974299,
+              3.58628266380299
+            ],
+            "result": {
+              "status": "achieved"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "conserved-kit",
+      "achieved": true,
+      "detail": "conserved-kit; 11 completed action turns; armsLevel 0; winner p1",
+      "actions": [
+        {
+          "action": {
+            "type": "buy",
+            "weapon": "missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "napalm"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 142.5724418349564
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "heavy_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 28.56338630616665
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 138.97885999456048
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 98.26714305579662
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30.873439106391743
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 138.47057216465473
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 29.157089960062876
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "next_round"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 37.76068660686724
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 99.28503584451974
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "cluster_bomb"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 146.77931973412632
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 98.18752192147076
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 44.97959703602828
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "cluster_bomb"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 151.20865041837095
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 42.41418669116683
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 99.2512006483972
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 1575,
+      "terminalPhase": "GAME_OVER",
+      "winner": "p1",
+      "runtimeVerification": {
+        "operation": "lean-arsenal",
+        "objective": "make-it-count",
+        "expected": "achieved",
+        "actual": {
+          "status": "achieved"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 4,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 113,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 5,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 6,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 7,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 8,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 202,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 9,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 10,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 11,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": null
+          },
+          {
+            "index": 12,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 113,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 13,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 14,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 15,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 16,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 150,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 17,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 18,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 19,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894
+            ],
+            "result": null
+          },
+          {
+            "index": 20,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 125,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 21,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 22,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 23,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 24,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 158,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 25,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 26,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 27,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942
+            ],
+            "result": null
+          },
+          {
+            "index": 28,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "ROUND_OVER",
+            "settlementTicks": 112,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796
+            ],
+            "result": null
+          },
+          {
+            "index": 29,
+            "actor": "p1",
+            "phaseBefore": "ROUND_OVER",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796
+            ],
+            "result": null
+          },
+          {
+            "index": 30,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796
+            ],
+            "result": null
+          },
+          {
+            "index": 31,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796
+            ],
+            "result": null
+          },
+          {
+            "index": 32,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796
+            ],
+            "result": null
+          },
+          {
+            "index": 33,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 114,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 34,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 35,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 36,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 37,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 112,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 38,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 39,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 40,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864
+            ],
+            "result": null
+          },
+          {
+            "index": 41,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 143,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 42,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 43,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 44,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 45,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 105,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 46,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 47,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 48,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 6,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547
+            ],
+            "result": null
+          },
+          {
+            "index": 49,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "GAME_OVER",
+            "settlementTicks": 128,
+            "humanSalvos": 7,
+            "settledHumanDamage": [
+              19.139999717887008,
+              29.236917017573894,
+              44.28169952691942,
+              7.3413837376196796,
+              49.191575295433864,
+              49.30955514319547,
+              1.4988695613706682
+            ],
+            "result": {
+              "status": "achieved"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "ranging-miss",
+      "achieved": false,
+      "actions": [
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "napalm"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 144.5724418349564
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "next_round"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 266,
+      "detail": "ranging-miss; 3 legal human salvos; no imposed tank state",
+      "terminalPhase": "PLAYER_TURN",
+      "winner": null,
+      "runtimeVerification": {
+        "operation": "crosswind-range",
+        "objective": "first-strike",
+        "expected": "missed",
+        "actual": {
+          "status": "missed"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 22,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 4,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 5,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 6,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 7,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 201,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 8,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 9,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 10,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 11,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "ROUND_OVER",
+            "settlementTicks": 21,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 12,
+            "actor": "p1",
+            "phaseBefore": "ROUND_OVER",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 13,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 14,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 15,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 16,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 22,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": {
+              "status": "missed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "unchanged-position",
+      "achieved": false,
+      "actions": [
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 30
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 113,
+      "detail": "unchanged-position; 1 legal human salvos; no imposed tank state",
+      "terminalPhase": "PLAYER_TURN",
+      "winner": null,
+      "runtimeVerification": {
+        "operation": "caldera-run",
+        "objective": "set-the-position",
+        "expected": "missed",
+        "actual": {
+          "status": "missed"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 113,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              19.139999717887008
+            ],
+            "result": {
+              "status": "missed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seed": 42,
+      "kind": "lean-defeat",
+      "achieved": false,
+      "actions": [
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "napalm"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 144.5724418349564
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "next_round"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 149.4894389204681
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 98.58952983282506
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "bouncing_betty"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 151.14947589561342
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 98.01030497066677
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "baby_missile"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 90
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 0
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "select_weapon",
+            "weapon": "cluster_bomb"
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_angle",
+            "angle": 147.7473935842514
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "set_power",
+            "power": 100
+          },
+          "accepted": true
+        },
+        {
+          "action": {
+            "type": "fire"
+          },
+          "accepted": true
+        }
+      ],
+      "settlementTicks": 902,
+      "detail": "lean-defeat; 5 legal human salvos; no imposed tank state",
+      "terminalPhase": "GAME_OVER",
+      "winner": "p2",
+      "runtimeVerification": {
+        "operation": "lean-arsenal",
+        "objective": "make-it-count",
+        "expected": "missed",
+        "actual": {
+          "status": "missed"
+        },
+        "trace": [
+          {
+            "index": 0,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 1,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 2,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 0,
+            "settledHumanDamage": [],
+            "result": null
+          },
+          {
+            "index": 3,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 22,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 4,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 5,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 6,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 7,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 201,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 8,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 9,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 10,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 1,
+            "settledHumanDamage": [
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 11,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "ROUND_OVER",
+            "settlementTicks": 21,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 12,
+            "actor": "p1",
+            "phaseBefore": "ROUND_OVER",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 13,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 14,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 15,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 2,
+            "settledHumanDamage": [
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 16,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 22,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 17,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 18,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 19,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 20,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 241,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 21,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 22,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 23,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 3,
+            "settledHumanDamage": [
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 24,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 22,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 25,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 26,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 27,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 28,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 241,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 29,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 30,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 31,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 4,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 32,
+            "actor": "p1",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 23,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 33,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 34,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 35,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "PLAYER_TURN",
+            "phaseAfterSettlement": "PLAYER_TURN",
+            "settlementTicks": 0,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": null
+          },
+          {
+            "index": 36,
+            "actor": "p2",
+            "phaseBefore": "PLAYER_TURN",
+            "phaseAfterAction": "FIRING",
+            "phaseAfterSettlement": "GAME_OVER",
+            "settlementTicks": 109,
+            "humanSalvos": 5,
+            "settledHumanDamage": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "result": {
+              "status": "missed"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "allExpectedOutcomesVerified": true
+}

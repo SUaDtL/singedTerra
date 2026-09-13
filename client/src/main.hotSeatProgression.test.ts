@@ -1359,6 +1359,100 @@ describe('production hot-seat progression composition', () => {
     expect(seams.verifiedHudStates.filter(Boolean)).toHaveLength(0)
   })
 
+  it('credits a P04 opening shot only after accepted fire settles to human totalDamage', async () => {
+    const opening = liveVerifiedState()
+    opening.tanks[0]!.totalDamage = 0
+    const openingX = opening.tanks[0]!.x
+    const client = fakeClient(opening, undefined, (action) => {
+      if (action.type !== 'fire') return
+      opening.tanks[0]!.x = openingX + 16
+      opening.phase = 'FIRING'
+    })
+    seams.clients.push(client)
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected P04 practice lobby wiring')
+
+    await seams.onLobbyReady({
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 42, walls: 'wrap' },
+      quickOperation: {
+        id: 'crosswind-corridor',
+        title: 'Crosswind Corridor',
+        briefing: 'Wraparound walls turn the wind into a ranging lesson.',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'first-strike', seed: 42 },
+      },
+    })
+    client.emit(opening)
+    if (!seams.inputAction) throw new Error('Expected P04 practice input wiring')
+    seams.inputAction({ type: 'fire' })
+
+    expect(seams.practiceFieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'first-strike',
+      result: null,
+    })
+
+    opening.phase = 'PLAYER_TURN'
+    opening.activePlayerId = opening.tanks[1]!.id
+    opening.tanks[0]!.totalDamage += 13
+    client.emit(opening)
+
+    expect(seams.practiceFieldOrderHudStates.at(-1)).toMatchObject({
+      id: 'first-strike',
+      result: { status: 'achieved', achievedOnSalvo: 1 },
+    })
+  })
+
+  it('restarts a P04 challenge on the same seed with fresh local evidence', async () => {
+    const firstOpening = liveVerifiedState()
+    firstOpening.tanks[0]!.totalDamage = 0
+    const first = fakeClient(firstOpening, undefined, (action) => {
+      if (action.type === 'fire') firstOpening.phase = 'FIRING'
+    })
+    const secondOpening = liveVerifiedState()
+    secondOpening.tanks[0]!.totalDamage = 0
+    const second = fakeClient(secondOpening)
+    seams.clients.push(first, second)
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onRestart) throw new Error('Expected P04 lobby and restart wiring')
+    const config = {
+      mode: 'hotseat',
+      players: [],
+      settings: { seed: 42, walls: 'wrap' },
+      quickOperation: {
+        id: 'crosswind-range',
+        title: 'Crosswind Range',
+        briefing: 'Wraparound walls turn shifting wind into a ranging test.',
+        practiceObjective: { contentVersion: 2, fieldOrderId: 'first-strike', seed: 42 },
+      },
+    }
+
+    await seams.onLobbyReady(config)
+    first.emit(firstOpening)
+    if (!seams.inputAction) throw new Error('Expected P04 input wiring')
+    seams.inputAction({ type: 'fire' })
+    firstOpening.phase = 'PLAYER_TURN'
+    firstOpening.activePlayerId = firstOpening.tanks[1]!.id
+    firstOpening.tanks[0]!.totalDamage = 11
+    first.emit(firstOpening)
+    const completed = seams.practiceFieldOrderHudStates.at(-1)
+
+    seams.onRestart()
+    await vi.waitFor(() => expect(second.start).toHaveBeenCalledOnce())
+    second.emit(secondOpening)
+    const restarted = seams.practiceFieldOrderHudStates.at(-1)
+
+    expect(completed).toMatchObject({ result: { status: 'achieved', achievedOnSalvo: 1 } })
+    expect(restarted).toMatchObject({
+      id: 'first-strike',
+      progress: { salvosRemaining: 3 },
+      result: null,
+    })
+    expect(restarted).not.toBe(completed)
+    expect(seams.gameEngineArgs.map(([options]) => options)).toEqual([config, config])
+    expect(seams.quickOperations).toEqual([config.quickOperation, config.quickOperation])
+  })
+
   it('restarts Last Light with the same config and seed but a fresh unresolved objective', async () => {
     const first = fakeClient(liveVerifiedState())
     const second = fakeClient(liveVerifiedState())

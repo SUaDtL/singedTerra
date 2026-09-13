@@ -5,6 +5,7 @@ const OPERATIONS = [
   ['crosswind-range', 'Crosswind Range', 'Wraparound walls turn shifting wind into a ranging test.'],
   ['caldera-run', 'Caldera Run', 'Lava terrain turns every crater into a positional risk.'],
   ['last-light-siege', 'Last Light Siege', 'A best-of-three duel that tightens into sudden death.'],
+  ['lean-arsenal', 'Lean Arsenal', 'Level 0 restocks only. Preserve your opening kit.'],
 ] as const;
 
 for (const [id, title, briefing] of OPERATIONS) {
@@ -27,6 +28,16 @@ for (const [id, title, briefing] of OPERATIONS) {
       await expect(objective).toHaveAttribute('data-field-order-id', 'hold-the-field');
       await expect(objective).toBeInViewport();
       await page.screenshot({ path: testInfo.outputPath('last-light-lobby.png') });
+    } else if (id !== 'standard') {
+      const expected = {
+        'crosswind-range': ['First Strike · Damage the CPU within your first three salvos.', 'first-strike'],
+        'caldera-run': ['Set the Position · Change firing position, then damage the CPU with your first salvo.', 'set-the-position'],
+        'lean-arsenal': ['Make It Count · Win the best-of-three duel with Level 0 restocks only.', 'make-it-count'],
+      }[id];
+      await expect(objective).toBeVisible();
+      await expect(objective).toHaveText(expected[0]);
+      await expect(objective).toHaveAttribute('data-content-version', '2');
+      await expect(objective).toHaveAttribute('data-field-order-id', expected[1]);
     } else {
       await expect(objective).toBeHidden();
     }

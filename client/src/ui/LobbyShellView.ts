@@ -1,4 +1,4 @@
-import { createFieldOrderById, renderFieldOrder } from '../client/fieldOrder';
+import { createPracticeFieldOrderById, renderFieldOrder } from '../client/fieldOrder';
 import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
@@ -129,7 +129,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       selectedOperation = operation;
       operationBriefing.textContent = operation.briefing;
       const objective = operation.practiceObjective;
-      const fieldOrder = objective ? createFieldOrderById(objective.fieldOrderId) : null;
+      const fieldOrder = objective ? createPracticeFieldOrderById(objective.fieldOrderId) : null;
       operationObjective.hidden = fieldOrder === null;
       operationObjective.textContent = fieldOrder === null ? '' : renderFieldOrder(fieldOrder).brief;
       if (objective && fieldOrder) {
