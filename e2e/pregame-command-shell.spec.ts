@@ -168,7 +168,7 @@ test.describe('Pre-game command shell', () => {
     await expect(page.locator('#lobby .lobby-preview')).toBeVisible();
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Local Battle', exact: true })).toBeFocused();
     await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
     await assertLobbyFrame(page);
@@ -200,7 +200,7 @@ test.describe('Pre-game command shell', () => {
 
     await page.locator('[data-online-route="join-code"]').click();
     await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
-    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Play Online', exact: true })).toBeFocused();
     await openOnline(page);
     await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
@@ -233,7 +233,7 @@ test.describe('Pre-game command shell', () => {
       );
       expect(metrics.previewVisible).toBe(true);
       await assertLobbyFrame(page);
-      await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
+      await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     }
   });
 });

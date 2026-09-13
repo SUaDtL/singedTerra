@@ -155,7 +155,7 @@ describe('Lobby return focus', () => {
     lobby.show({ focusLobby: true })
     expect(document.activeElement).toBe(button(root, 'Practice vs CPU'))
 
-    button(root, 'Deployment choices').click()
+    button(root, 'Back to deployment choices').click()
     button(root, 'Play Online').click()
     lobby.hide()
     background.focus()
