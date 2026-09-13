@@ -228,8 +228,9 @@ export function buildBitmap(heightLine: Uint16Array, work?: VerificationWorkBudg
     // Missing columns are air down to the floor, matching the old NaN loop
     // behavior while keeping the bitmap value contract explicit.
     const s = clamp(heightLine[x] ?? ARENA_FLOOR_Y, 0, ARENA_FLOOR_Y);
+    // This whole fixed-length column is visited, so admit it before the loop.
+    work?.charge('terrainCells', CANVAS_HEIGHT - s);
     for (let y = s; y < CANVAS_HEIGHT; y++) {
-      work?.charge('terrainCells');
       bitmap[y * CANVAS_WIDTH + x] = SOLID_PIXEL;
     }
   }
@@ -381,8 +382,10 @@ export function settleStep(
       // falls one pixel. Bottom-up scan ensures a floating run shifts down as
       // a whole unit in a single pass (each grain clears the row below it for
       // the grain above).
+      // Every row is visited; one precharge preserves exact completed work and
+      // keeps optional metering out of the ordinary game's innermost loop.
+      work?.charge('terrainCells', ARENA_FLOOR_Y - 1);
       for (let y = ARENA_FLOOR_Y - 2; y >= 0; y--) {
-        work?.charge('terrainCells');
         const pixel = bitmap[y * CANVAS_WIDTH + x] ?? AIR_PIXEL;
         if (pixel > AIR_PIXEL && (bitmap[(y + 1) * CANVAS_WIDTH + x] ?? AIR_PIXEL) === AIR_PIXEL) {
           bitmap[(y + 1) * CANVAS_WIDTH + x] = pixel;

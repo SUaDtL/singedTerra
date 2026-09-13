@@ -31,7 +31,7 @@ session deadline because the server may already have committed a receipt.
 - Migration 024 raw SHA-256:
   `dbce599cdab94e581bac55ea8e904835167a963ba8b957f2fde40851ad123f70`.
 - Backend manifest: 22 functions, 24 migrations; validated SHA-256
-  `1e746779d082db1686b8c63780b443a8390633a600f01a14a02723ec0596d9b5`.
+  `fcf39c775aaccad92347db32aa6b1582faecc0d115b511769c679bd84288d8d0`.
 - Native result acceptance is strictly below 1000 ms. The write fence is 10 s;
   an uncertain invocation retains a 410 s account cooldown. Exact cleanup after
   synchronous execution ends can release that cooldown. No forced CPU termination
@@ -96,6 +96,25 @@ with prefix `product-v2-p10-`, including `edge-probe-final.log`,
 `browser-final2/` plus its log. They contain no production credentials.
 
 ## Independent review
+
+PR497's initial Linux CI exposed a real legacy replay slowdown: four of twelve
+warmed samples exceeded the unchanged 100 ms limit (maximum111.5366 ms).
+Comparative local runs and a CPU profile traced avoidable per-pixel optional
+metering in fixed-length terrain loops. The correction charges each complete
+column before its loop, keeping the same loop and exact successful work totals.
+It leaves the frozen cq1 artifact untouched. The base local twelve-sample run
+measured57.0078–73.7151 ms, the initial candidate61.7543–85.1831 ms, and the
+corrected candidate57.6894–72.6303 ms. Every sample is retained in
+`product-v2-p10-perf-compare/`; no ceiling or sample selection changed.
+Post-correction full engine checks, production build, terrain/clone/meter/workload
+checks and all476Edge tests pass.
+Hosted CI still has to validate the corrected candidate.
+
+Additional pre-rollout rehearsal used an isolated existing Supabase PostgreSQL
+17.6 image, matching production's major version. The unchanged SQL and all six
+concurrent races passed. The image build143 differs from production155; this is
+local compatibility evidence, not hosted proof. The temporary script, exact input
+hashes and log remain in `product-v2-p10-pg17-acbc7dc859c14f0f8fc2bdffb0ffc9f4`.
 
 Astra reviewed integration, retained-output validation, probe, UI behavior and
 rollout boundaries. Sol reviewed migration/auth/security, the fixed probe,
