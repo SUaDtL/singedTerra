@@ -110,4 +110,60 @@ describe('HUD Field Order', () => {
     expect(root.textContent).toContain('Hold the Field')
     expect(root.textContent).not.toMatch(/private-session|private-account|bonus XP/)
   })
+
+  it('presents a practice objective independently of verified deployment state', () => {
+    const { root, hud } = mount()
+    const order = {
+      id: 'hold-the-field', title: 'Hold the Field', instruction: 'Win the duel.',
+      progress: { awaitingWinner: true }, result: null,
+    } as const
+
+    hud.setVerifiedDeployment(null)
+    hud.setQuickOperation({
+      id: 'last-light-siege',
+      title: 'Last Light Siege',
+      briefing: 'A best-of-three duel that tightens into sudden death.',
+      practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+    })
+    hud.setPracticeFieldOrder(order)
+
+    const cue = root.querySelector<HTMLElement>('[data-ui="field-order"]')!
+    expect(root.querySelector<HTMLElement>('[data-ui="quick-operation"]')?.dataset).toMatchObject({
+      operationId: 'last-light-siege',
+      fieldOrderId: 'hold-the-field',
+      contentVersion: '1',
+    })
+    expect(cue.textContent).toBe('Hold the Field · Win the duel. · Awaiting duel outcome')
+    expect(root.textContent).not.toContain('Verified deployment')
+  })
+
+  it('carries practice identity and shared result copy into an idempotent terminal report', () => {
+    const { modal, hud, state } = mount()
+    state.phase = 'GAME_OVER'
+    state.winner = state.tanks[0]!.id
+    const achieved = {
+      id: 'hold-the-field', title: 'Hold the Field', instruction: 'Win the duel.',
+      progress: { awaitingWinner: true }, result: { status: 'achieved' },
+    } as const
+    hud.setQuickOperation({
+      id: 'last-light-siege',
+      title: 'Last Light Siege',
+      briefing: 'A best-of-three duel that tightens into sudden death.',
+      practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+    })
+    hud.setPracticeFieldOrder(achieved)
+
+    revealReport(hud, state)
+    hud.setPracticeFieldOrder(achieved)
+
+    const operation = modal.querySelector<HTMLElement>('[data-ui="quick-operation-report"]')!
+    const order = modal.querySelector<HTMLElement>('.st-hud__victory-field-order')!
+    expect(operation.dataset).toMatchObject({
+      operationId: 'last-light-siege',
+      fieldOrderId: 'hold-the-field',
+      contentVersion: '1',
+    })
+    expect(order.textContent).toBe('Hold the Field achieved — duel won.')
+    expect(modal.querySelectorAll('.st-hud__victory-field-order')).toHaveLength(1)
+  })
 })

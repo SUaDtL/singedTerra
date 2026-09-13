@@ -1,3 +1,6 @@
+import { createFieldOrderById, renderFieldOrder } from '../client/fieldOrder';
+import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
+
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 
 const MODE_PANEL_ID = 'lobby-mode-panel';
@@ -23,7 +26,12 @@ export interface LobbyShellViewOptions {
   content?: HTMLElement;
   controls?: HTMLElement;
   onTabChange: (tab: LobbyPrimaryTab) => void;
-  quickOperations?: readonly { readonly id: string; readonly title: string; readonly briefing: string }[];
+  quickOperations?: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly briefing: string;
+    readonly practiceObjective?: PracticeObjectiveDescriptor;
+  }[];
   onQuickDuel: (operationId: string) => void;
   onRejoin: () => void;
   onBack: () => void;
@@ -109,10 +117,24 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     const operationBriefing = document.createElement('p');
     operationBriefing.className = 'lobby-quick-operation__briefing';
     operationBriefing.dataset.ui = 'quick-operation-briefing';
+    const operationObjective = document.createElement('p');
+    operationObjective.className = 'lobby-quick-operation__briefing';
+    operationObjective.dataset.ui = 'quick-operation-objective';
     const cardButtons: HTMLButtonElement[] = [];
     const selectOperation = (operation: typeof selectedOperation): void => {
       selectedOperation = operation;
       operationBriefing.textContent = operation.briefing;
+      const objective = operation.practiceObjective;
+      const fieldOrder = objective ? createFieldOrderById(objective.fieldOrderId) : null;
+      operationObjective.hidden = fieldOrder === null;
+      operationObjective.textContent = fieldOrder === null ? '' : renderFieldOrder(fieldOrder).brief;
+      if (objective && fieldOrder) {
+        operationObjective.dataset['contentVersion'] = String(objective.contentVersion);
+        operationObjective.dataset['fieldOrderId'] = objective.fieldOrderId;
+      } else {
+        delete operationObjective.dataset['contentVersion'];
+        delete operationObjective.dataset['fieldOrderId'];
+      }
       for (const card of cardButtons) {
         card.setAttribute('aria-pressed', String(card.dataset['operationId'] === operation.id));
       }
@@ -135,7 +157,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       operationCards.append(card);
     }
     selectOperation(selectedOperation);
-    operationField.append(operationKicker, operationTitle, operationCards, operationBriefing);
+    operationField.append(operationKicker, operationTitle, operationCards, operationBriefing, operationObjective);
     chooser.append(
       operationField,
       choice(

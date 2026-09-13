@@ -149,6 +149,31 @@ describe('Lobby Quick Duel', () => {
     });
   });
 
+  it('carries the Last Light condition, objective ids, content version, rules, and seed in one launch', () => {
+    const lobby = new Lobby(root, onReady, undefined, undefined, () => 0x1234abcd);
+    lobby.show();
+
+    root.querySelector<HTMLButtonElement>('[data-operation-id="last-light-siege"]')!.click();
+    button(root, 'Quick Duel vs CPU').click();
+
+    expect(onReady).toHaveBeenCalledOnce();
+    expect(onReady.mock.calls[0]![0]).toMatchObject({
+      mode: 'hotseat',
+      settings: {
+        seed: 0x1234abcd,
+        rounds: 3,
+        suddenDeathTurn: 12,
+        battlefieldWorld: 'ember-dusk',
+      },
+      quickOperation: {
+        id: 'last-light-siege',
+        title: 'Last Light Siege',
+        briefing: 'A best-of-three duel that tightens into sudden death.',
+        practiceObjective: { contentVersion: 1, fieldOrderId: 'hold-the-field' },
+      },
+    });
+  });
+
   it('requests exactly one fresh unsigned seed for each redeployment in one Lobby', () => {
     const supplied = [0, 0xffff_ffff];
     const generateQuickDuelSeed = vi.fn(() => supplied.shift()!);
