@@ -1,6 +1,13 @@
 import type { GameOptions } from '@shared/types/GameOptions'
 
-export type QuickOperationId = 'standard' | 'crosswind-range' | 'caldera-run' | 'last-light-siege'
+export type QuickOperationId = 'standard' | 'first-salvo' | 'crosswind-range' | 'caldera-run' | 'last-light-siege'
+
+export const QUICK_OPERATION_CONTENT_VERSION = 1 as const
+
+export interface PracticeObjectiveDescriptor {
+  readonly contentVersion: typeof QUICK_OPERATION_CONTENT_VERSION
+  readonly fieldOrderId: 'hold-the-field'
+}
 
 export interface QuickOperation {
   readonly id: QuickOperationId
@@ -8,6 +15,7 @@ export interface QuickOperation {
   readonly briefing: string
   readonly settings: Readonly<Pick<GameOptions,
     'walls' | 'battlefieldWorld' | 'hazards' | 'rounds' | 'suddenDeathTurn'>>
+  readonly practiceObjective?: PracticeObjectiveDescriptor
 }
 
 function operation(
@@ -15,12 +23,22 @@ function operation(
   title: string,
   briefing: string,
   settings: QuickOperation['settings'],
+  practiceObjective?: PracticeObjectiveDescriptor,
 ): QuickOperation {
-  return Object.freeze({ id, title, briefing, settings: Object.freeze({ ...settings }) })
+  return Object.freeze({
+    id,
+    title,
+    briefing,
+    settings: Object.freeze({ ...settings }),
+    ...(practiceObjective ? { practiceObjective: Object.freeze({ ...practiceObjective }) } : {}),
+  })
 }
 
 export const QUICK_OPERATIONS: readonly QuickOperation[] = Object.freeze([
   operation('standard', 'Standard Duel', 'A balanced three-round duel.', {}),
+  operation('first-salvo', 'First Salvo', 'A one-round duel that starts with the essentials.', {
+    rounds: 1,
+  }),
   operation('crosswind-range', 'Crosswind Range', 'Wraparound walls turn shifting wind into a ranging test.', {
     walls: 'wrap', battlefieldWorld: 'glassstorm-expanse',
   }),
@@ -29,7 +47,7 @@ export const QUICK_OPERATIONS: readonly QuickOperation[] = Object.freeze([
   }),
   operation('last-light-siege', 'Last Light Siege', 'A best-of-three duel that tightens into sudden death.', {
     rounds: 3, suddenDeathTurn: 12, battlefieldWorld: 'ember-dusk',
-  }),
+  }, { contentVersion: QUICK_OPERATION_CONTENT_VERSION, fieldOrderId: 'hold-the-field' }),
 ])
 
 export function quickOperationById(value: unknown): QuickOperation {

@@ -1,4 +1,7 @@
-const schemaVersion = 'p01-manual-v1'
+const schemaVersions = {
+  'p01-manual-v1': { optionalKeys: [] },
+  'p02-manual-v2': { optionalKeys: ['guestEntryToFirstShotMs'] },
+}
 const outcomes = new Set(['yes', 'no', 'not_observed'])
 const histories = new Set(['new', 'returning', 'unknown'])
 const contexts = new Set(['solo', 'friends'])
@@ -23,11 +26,11 @@ function fail(message) {
   throw new TypeError(`P01 manual baseline: ${message}`)
 }
 
-function exactKeys(value) {
+function exactKeys(value, schema) {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) fail('record must be an object')
   const actual = Object.keys(value).sort()
-  const expected = [...keys].sort()
-  if (actual.length !== expected.length || actual.some((key, index) => key !== expected[index])) fail('unknown key or missing required key')
+  const allowed = new Set([...keys, ...schema.optionalKeys])
+  if (actual.some(key => !allowed.has(key)) || keys.some(key => !Object.hasOwn(value, key))) fail('unknown key or missing required key')
 }
 
 function exactDate(value) {
@@ -53,8 +56,10 @@ function validateProgression(record) {
 }
 
 export function validateManualRecord(record) {
-  exactKeys(record)
-  if (record.schemaVersion !== schemaVersion) fail('schemaVersion is invalid')
+  if (record === null || typeof record !== 'object' || Array.isArray(record)) fail('record must be an object')
+  const schema = schemaVersions[record.schemaVersion]
+  if (!schema) fail('schemaVersion is invalid')
+  exactKeys(record, schema)
   if (typeof record.sessionId !== 'string' || !/^session-(?!0000)\d{4}$/.test(record.sessionId)) fail('sessionId must be an opaque session-0001 style value')
   if (!exactDate(record.observedOn)) fail('observedOn must be a real calendar date')
   if (record.consent !== true) fail('consent must be true before a record is accepted')
@@ -65,6 +70,14 @@ export function validateManualRecord(record) {
   for (const stage of stages) requireValue(stage, record[stage], outcomes)
   requireValue('status', record.status, statuses)
   validateProgression(record)
+  if (Object.hasOwn(record, 'guestEntryToFirstShotMs')) {
+    if (record.guestEntry !== 'yes' || record.firstShot !== 'yes') {
+      fail('guestEntryToFirstShotMs requires observed guest entry and first shot')
+    }
+    if (!Number.isSafeInteger(record.guestEntryToFirstShotMs) || record.guestEntryToFirstShotMs < 0) {
+      fail('guestEntryToFirstShotMs must be a non-negative safe integer')
+    }
+  }
   return { ...record }
 }
 

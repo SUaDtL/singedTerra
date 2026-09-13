@@ -9,6 +9,11 @@ export interface TerminalMatchProjection {
   readonly title: string;
   readonly status: string;
   readonly quickOperation: string | null;
+  readonly quickOperationIdentity?: {
+    readonly operationId: string;
+    readonly contentVersion: number;
+    readonly fieldOrderId: string;
+  } | null;
   readonly winner: { readonly color: string; readonly loadout: TankLoadout | null } | null;
   /** Escaped scoreboard markup produced by HUD's existing scoreboard builder. */
   readonly scoreboard: string;
@@ -243,6 +248,16 @@ export class TerminalMatchView {
     this.status.textContent = projection.status;
     this.operation.textContent = projection.quickOperation === null ? '' : projection.quickOperation;
     this.operation.hidden = projection.quickOperation === null;
+    const identity = projection.quickOperationIdentity ?? null;
+    if (identity) {
+      this.operation.dataset['operationId'] = identity.operationId;
+      this.operation.dataset['contentVersion'] = String(identity.contentVersion);
+      this.operation.dataset['fieldOrderId'] = identity.fieldOrderId;
+    } else {
+      delete this.operation.dataset['operationId'];
+      delete this.operation.dataset['contentVersion'];
+      delete this.operation.dataset['fieldOrderId'];
+    }
     this.fieldOrder.textContent = projection.fieldOrder ?? '';
     this.fieldOrder.hidden = projection.fieldOrder === null;
     if (this.lastScoreboard !== projection.scoreboard) {

@@ -8,15 +8,28 @@ const OPERATIONS = [
 ] as const;
 
 for (const [id, title, briefing] of OPERATIONS) {
-  test(`Quick Operation ${title} launches with its identity retained in the match ledger`, async ({ page }) => {
+  test(`Quick Operation ${title} launches with its identity retained in the match ledger`, async ({ page }, testInfo) => {
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
+
+    await page.locator('[data-ui="other-quick-duels"] > summary').click();
 
     const operation = page.locator(`[data-operation-id="${id}"]`);
     await operation.click();
     await expect(operation).toBeFocused();
     await expect(operation).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('[data-ui="quick-operation-briefing"]')).toHaveText(briefing);
+    const objective = page.locator('[data-ui="quick-operation-objective"]');
+    if (id === 'last-light-siege') {
+      await expect(objective).toBeVisible();
+      await expect(objective).toHaveText('Hold the Field · Win the duel.');
+      await expect(objective).toHaveAttribute('data-content-version', '1');
+      await expect(objective).toHaveAttribute('data-field-order-id', 'hold-the-field');
+      await expect(objective).toBeInViewport();
+      await page.screenshot({ path: testInfo.outputPath('last-light-lobby.png') });
+    } else {
+      await expect(objective).toBeHidden();
+    }
     await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 
     await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
@@ -24,6 +37,15 @@ for (const [id, title, briefing] of OPERATIONS) {
     if (await entry.isVisible()) await entry.click();
     await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
     await expect(page.locator('#hud [data-ui="quick-operation"]')).toHaveText(`${title} · ${briefing}`);
+    if (id === 'last-light-siege') {
+      const liveObjective = page.locator('#hud [data-ui="field-order"]');
+      await expect(liveObjective)
+        .toHaveText('Hold the Field · Win the duel. · Awaiting duel outcome');
+      await expect(page.locator('#hud [data-ui="quick-operation"]'))
+        .toHaveAttribute('data-content-version', '1');
+      await expect(liveObjective).toBeInViewport();
+      await page.screenshot({ path: testInfo.outputPath('last-light-live.png') });
+    }
     const round = page.locator('.st-hud__round');
     await expect(round).toBeVisible();
     await expect(round).toHaveText('Round 1 of 3');
@@ -34,6 +56,7 @@ test('a selected operation retains its ledger identity through one real salvo', 
   await page.goto('?e2e=quick-duel-seed');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
 
+  await page.locator('[data-ui="other-quick-duels"] > summary').click();
   await page.locator('[data-operation-id="crosswind-range"]').click();
   await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
 
@@ -50,13 +73,33 @@ test('a selected operation retains its ledger identity through one real salvo', 
     .toHaveText('Crosswind Range · Wraparound walls turn shifting wind into a ranging test.');
 });
 
-test('selected Quick Operation remains legible in the real After Action report', async ({ page }) => {
+test('terminal fixture presents the selected practice result and restarts its real Last Light config', async ({ page }, testInfo) => {
   await page.goto('?e2e=victory&quick-operation=last-light-siege');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
 
   await expect(page.locator('.st-hud__overlay--victory')).toBeVisible();
   await expect(page.locator('[data-ui="quick-operation-report"]'))
     .toHaveText('Operation · Last Light Siege — A best-of-three duel that tightens into sudden death.');
+  await expect(page.locator('[data-ui="quick-operation-report"]'))
+    .toHaveAttribute('data-operation-id', 'last-light-siege');
+  await expect(page.locator('[data-ui="quick-operation-report"]'))
+    .toHaveAttribute('data-content-version', '1');
+  await expect(page.locator('.st-hud__victory-field-order'))
+    .toHaveText('Hold the Field achieved — duel won.');
   await expect(page.locator('#hud [data-ui="quick-operation"]'))
     .toHaveText('Last Light Siege · A best-of-three duel that tightens into sudden death.');
+  await page.screenshot({ path: testInfo.outputPath('last-light-terminal.png') });
+
+  await page.getByRole('button', { name: 'Play again', exact: true }).click();
+  await expect(page.locator('[data-console-owner="preact"]')).toBeVisible();
+  const entry = page.getByRole('button', { name: 'Enter battle', exact: true });
+  if (await entry.isVisible()) await entry.click();
+  await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
+  await expect(page.locator('#hud [data-ui="field-order"]'))
+    .toHaveText('Hold the Field · Win the duel. · Awaiting duel outcome');
+  await expect(page.locator('#hud [data-ui="quick-operation"]'))
+    .toHaveAttribute('data-operation-id', 'last-light-siege');
+  await expect(page.locator('.st-hud__round')).toHaveText('Round 1 of 3');
+  await expect(page.getByRole('listitem', { name: /CPU 1/ })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('last-light-restart.png') });
 });

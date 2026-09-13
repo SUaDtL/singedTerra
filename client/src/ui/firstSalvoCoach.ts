@@ -105,6 +105,11 @@ export function loadFirstSalvoPreference(storage: FirstSalvoStorage): FirstSalvo
   return null;
 }
 
+/** An unreadable or malformed preference is deliberately treated as an unseen local coach. */
+export function isFirstSalvoPreferenceUnseen(storage: FirstSalvoStorage): boolean {
+  return loadFirstSalvoPreference(storage) === null;
+}
+
 /** Best-effort local persistence; failure leaves the current match untouched. */
 export function persistFirstSalvoPreference(
   storage: FirstSalvoStorage,

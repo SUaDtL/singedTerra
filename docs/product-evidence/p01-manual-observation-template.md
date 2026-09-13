@@ -37,6 +37,12 @@ opaque ID (`session-0001`, then `session-0002`).
 Do not append a duplicate. To correct a record, explicitly replace the one row
 with the same ID after validation; never merge two rows or sum their outcomes.
 
+`p01-manual-v1` remains accepted exactly as shown. A `p02-manual-v2` record may
+add the optional `guestEntryToFirstShotMs` field: a non-negative whole number of
+milliseconds from ordinary guest entry to the first observed shot. Include it
+only when both `guestEntry` and `firstShot` are `yes`; omit it when timing is not
+observed. This is an owner stopwatch observation, not collected by the game.
+
 Do not record names, email addresses, account IDs, player IDs, room codes,
 URLs, tokens, cookies, IP addresses, device identifiers, browser/connection
 details, chat, transcripts, or free-form notes. These are prohibited rather
