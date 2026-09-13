@@ -1,6 +1,6 @@
 # Security Policy
 
-singedTerra is a personal, hobby project — a browser artillery game — but security reports are very
+singedTerra is a personal browser artillery project. Security reports are
 welcome and taken seriously.
 
 ## Reporting a vulnerability
@@ -16,17 +16,25 @@ genuine issues will be prioritized.
 
 ## The security model (so you know what's in scope)
 
-singedTerra is intentionally designed around a **casual, no-account** model. Understanding it tells you
-what is a real issue versus an accepted design tradeoff:
+Casual play remains available without an account. Optional Supabase accounts
+support commander records and eligible verified sessions. These paths have
+different trust boundaries:
 
-- **No end-user authentication; ephemeral identity.** A player is a server-minted random UUID — there
-  are no passwords, no PII, and no long-lived accounts by design.
+- **Casual room identity is ephemeral.** A seat uses a server-minted player ID
+  and credential scoped to its room. No account is required for Hot Seat,
+  practice, or casual online play.
+- **Accounts are optional and long-lived.** Supabase Auth handles email and
+  password credentials. The client binds account summaries, verified sessions,
+  and career responses to the authenticated account before applying them.
 - **Trust-client gameplay.** Networked play is deterministic lockstep: clients replay an action log
   through identical engines. A client can submit actions for its own turn (and for CPU seats in its
   room); the Edge Function referee validates turn ownership and allocates sequence numbers but does not
   re-simulate physics. Gameplay-integrity abuse within a single casual room is a known tradeoff, not a
   vulnerability.
-- **The Supabase anon key is public by design** — it ships in the client bundle, as Supabase intends.
+- **Verified evidence is separate.** Eligible verified sessions use fixed
+  server descriptors and bounded server replay before an immutable receipt can
+  affect Verified Career. A linked casual result does not become verified.
+- **The Supabase anon key is public by design.** It ships in the client bundle, as Supabase intends.
   Security rests on **Row-Level Security**: all anonymous writes are denied; every mutation goes
   through a service-role Edge Function. The **service-role key never reaches the client** and is read
   only from the server environment.
@@ -39,6 +47,8 @@ what is a real issue versus an accepted design tradeoff:
   player name or room field).
 - A way for one player to corrupt or hijack another room/player beyond the accepted single-room
   trust-client model.
+- Account takeover, cross-account response binding, replay receipt mutation,
+  duplicate verified rewards, or bypass of verified admission and work limits.
 - Denial-of-service or cost-amplification against the Edge Functions / database.
 
 ## Supported versions

@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/assets/splash-hero.png" width="1200" alt="Two detailed tanks trade fire across a scorched desert at dusk." />
+  <img src="docs/assets/current-battle-hud.jpg" width="1200" alt="A desktop singedTerra match on the blue Glassstorm Expanse battlefield with the ornate bronze battle console and tactical controls." />
 </p>
 
 <h1 align="center">singedTerra</h1>
 
 <p align="center">
-  <strong>A modern browser artillery game with old-school consequences.</strong><br />
+  <strong>A browser artillery game with old-school consequences.</strong><br />
   Read the wind. Shape the ground. Spend carefully. Make the shot count.
 </p>
 
@@ -26,86 +26,104 @@
 </p>
 
 singedTerra is a from-scratch tribute to Wendell Hicken's *Scorched Earth*
-(1991). It keeps the core artillery loop intact: choose an angle, judge the
-wind, commit to a power setting, and watch the terrain remember what happened.
+(1991). Angle, power, wind, terrain, ammunition, fuel, and credits all matter.
+The game supports 2–4 players in one browser, deterministic CPU opponents, and
+Supabase-backed online rooms.
 
-The game is playable in one browser as a 2–4 player hot-seat match or online
-through public and private Supabase rooms. Computer seats use the same
-deterministic physics as human players.
+## Choose a deployment
 
-<p align="center">
-  <img src="docs/assets/gameplay-command-rail.jpg" width="1200" alt="A live singedTerra match with the command deck, ballistic computer, destructible terrain, and an enlarged active custom-tank portrait in the tactical rail." />
-</p>
-
-## The battlefield changes every turn
-
-- **Terrain is physical.** Explosions carve real holes from a per-pixel bitmap.
-  Unsupported ground collapses, tanks settle into craters, and dirt weapons
-  build new cover.
-- **Wind matters.** Every round is seeded, every turn gets a deterministic wind
-  vector, and every client resolves the same flight.
-- **The arsenal changes the problem.** Sixteen weapons cover direct fire,
-  airbursts, bouncing explosives, napalm, terrain construction, tunneling, and
-  defense.
-- **Movement costs fuel.** Repositioning can rescue a firing lane or strand a
-  tank before the decisive turn.
-- **Money carries weight.** Damage earns credits. Ammo, shields, batteries, and
-  fuel compete for the same budget across multi-round matches.
-- **The presentation is part of the game.** Authored tanks, a dusk battlefield,
-  ballistic instruments, impact lighting, screen shake, and synthesized audio
-  turn deterministic state into a readable combat scene.
-
-## Build a tank before you fire one
-
-Every seat has a Garage. Start from Foundry, Ranger, Bulwark, or Jackal, then
-mix mobility, hull, turret, and barrel parts into a custom silhouette. The
-selected loadout appears in the roster preview and carries into the match.
+The lobby opens on a deployment console. Start the guided First Salvo duel,
+choose a Quick Duel operation, prepare a custom Local Battle, or enter Play
+Online. The preparation screen keeps the battlefield preview, setup controls,
+and commander record in one fitted console.
 
 <p align="center">
-  <img src="docs/assets/garage-lobby.jpg" width="1200" alt="The hot-seat lobby with two customizable tanks, Garage controls, and a live roster preview." />
+  <img src="docs/assets/current-deployment-console.jpg" width="1200" alt="The current bronze deployment console for a returning player, with Quick Duel, Local Battle, and Play Online choices." />
 </p>
 
-## Controls
+Hot Seat preparation has three distinct routes:
+
+- **Local Battle** configures 2–4 human or CPU seats and the complete match rules.
+- **Practice vs CPU** launches a selected operation with a field order and fixed settings.
+- **Verified Deployment** contains authenticated verified play and the separate Crosswind Qualification trial entry.
+
+<p align="center">
+  <img src="docs/assets/current-practice-preparation.jpg" width="1200" alt="Standard Duel practice preparation with the bronze Back control, operation choices, and a Vehicle Bay tank preview." />
+</p>
+
+Crosswind Qualification is present in the client, but its production backend
+release, hosted proof, and admission enablement are still pending. The live
+client may report the trial as unavailable. It does not create a local award or
+estimate Verified Career totals when the server cannot verify them.
+
+## Build your tank
+
+Each seat has a Garage. Choose Foundry, Ranger, Bulwark, or Jackal, then mix
+mobility, hull, turret, and barrel parts. The Vehicle Bay shows the selected
+tank at inspection scale while the roster keeps every seat visible.
+
+<p align="center">
+  <img src="docs/assets/current-tank-garage.jpg" width="1200" alt="Local Battle preparation after selecting the Jackal preset, with the customized Vehicle Bay preview and player roster." />
+</p>
+
+## Fight on terrain that remembers
+
+- Explosions carve real holes from a per-pixel terrain bitmap.
+- Unsupported columns collapse, tanks settle into craters, and dirt weapons build cover.
+- Open, reflective, wrap, and concrete walls change how shots leave or re-enter the arena.
+- Ember Dusk, Obsidian Caldera, and Glassstorm Expanse pair authored art with deterministic terrain.
+- Eighteen weapons cover direct fire, airbursts, tunneling, fire, terrain control, shields, and ranging.
+- Damage earns credits for ammunition, batteries, fuel, parachutes, and shields across multi-round matches.
+
+## Read the battle console
+
+The battlefield remains the focus. The bronze console shows the active
+commander, health, weapon, ammunition, elevation, power, wind, fuel, credits,
+and fire state. Armory and Settings open as focused dialogs. The Match ledger
+keeps the roster and Command Menu available without covering the shot.
+
+Compact layouts use the same controls in a tighter console with physical
+44×44 targets for aim, power, movement, weapon selection, and Fire.
+
+<p align="center">
+  <img src="docs/assets/current-compact-hud.jpg" width="1200" alt="The compact browser layout with the simplified battle rail and touch-sized combat controls in Pixel 5 landscape emulation." />
+</p>
+
+### Keyboard controls
 
 | Input | Action |
 |---|---|
 | `←` / `→` | Aim the barrel left or right |
-| `↑` / `↓` | Raise or lower power |
+| `↑` / `↓` | Increase or decrease power |
 | `A` / `D` | Move left or right and spend fuel |
-| `Q` | Cycle the selected weapon |
+| `Q` | Select the next weapon |
 | `Space` / `Enter` | Fire or activate the selected shield |
 | `G` | Toggle trajectory guidance |
-| `M` | Mute or restore synthesized audio |
+| `M` | Toggle synthesized audio |
 | Hold `F` | Fast-forward the current shot locally |
 
-Touch layouts replace the keyboard deck with a grouped Command Deck: Aim, Power, and Drive groups
-handle combat controls, while Weapon and Menu are utilities.
-Fire, Store, fuel, and Arsenal remain in the tactical rail.
+Fine-pointer players can also drag outward from the active tank to set angle
+and power. Releasing the pointer does not fire.
 
-![Mobile Command Deck showing the grouped Aim, Power, and Drive controls beside the tactical rail](docs/assets/mobile-command-deck.jpg)
+[Playing singedTerra](docs/PLAYING.md) covers the complete turn loop, setup
+routes, weapon families, economy, online rooms, and responsive controls.
 
-On desktop, dragging outward from the active tank sets angle and power without
-firing.
-See [How to play](docs/PLAYING.md) for the full turn loop, online rooms, economy,
-and weapon families.
+## One engine in two live modes
 
-## One engine, two ways to play
+Hot-seat and online matches use the same deterministic engine.
 
-Hot-seat and online matches do not use different physics.
+- **Hot seat:** `HotSeatClient` runs the engine directly in the browser.
+- **Online:** each browser runs its own engine. Supabase validates commands,
+  assigns sequence numbers, stores the ordered log, and broadcasts committed
+  rows through Realtime.
 
-- **Hot-seat:** `HotSeatClient` runs the shared engine directly in the browser.
-- **Online:** every browser runs its own copy of the same engine. Supabase
-  validates room actions, assigns sequence numbers, stores the ordered log, and
-  broadcasts committed rows through Realtime.
+The canonical online match is a seed, room options, and an ordered action log.
+Game state is rebuilt locally instead of streaming from a ticking server.
 
-The canonical online match is a seed plus an ordered action log. Game state is
-reconstructed locally, not streamed from a ticking server. This makes fixed
-timesteps, seeded randomness, and replay parity non-negotiable.
+[Architecture](docs/ARCHITECTURE.md) explains the runtime flow, deterministic
+rules, trust boundaries, and the separate verified replay path.
 
-[Read the architecture guide](docs/ARCHITECTURE.md) for the runtime flow,
-terrain model, trust boundary, and determinism rules.
-
-## Run it locally
+## Run locally
 
 Requirements: Node 24.15 or newer within the Node 24 LTS line, and npm.
 
@@ -116,64 +134,58 @@ npm install
 npm run dev
 ```
 
-Vite serves the client at `http://localhost:5173`. Hot-seat play needs no
-backend configuration.
+Vite serves the client at `http://localhost:5173`. Hot-seat and practice play
+need no backend configuration.
 
-For online play, copy `client/.env.example` to `client/.env` and provide:
+For online rooms, copy `client/.env.example` to `client/.env` and set:
 
 ```dotenv
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-The anon key is expected to ship in the public client. Row-Level Security and
-Edge Function validation protect server-side data.
+The anon key is public client configuration. Row-Level Security and Edge
+Function validation protect server-side data.
 
 ## Verify a change
 
 ```bash
-npm run check          # typecheck plus deterministic engine harnesses
+npm run check          # types plus deterministic engine and contract checks
 npm run test:client    # Vitest client and DOM tests
 npm run check:edge     # Deno tests for Supabase Edge Functions
-npm run test:e2e       # production Chromium layout and gameplay checks
+npm run check:database # PostgreSQL integration harnesses
+npm run test:e2e       # production Chromium gameplay and layout checks
 npm run build          # production client bundle
 ```
 
-CI runs the same core gates on every pull request. Changes under
-`shared/src/engine/` must preserve deterministic replay.
+Use [Development and operations](docs/DEVELOPMENT.md) for setup, test layers,
+backend release checks, and deployment boundaries.
 
 ## Documentation
 
 | Need | Start here |
 |---|---|
-| Learn the turn loop and controls | [Playing singedTerra](docs/PLAYING.md) |
-| Understand the system | [Architecture](docs/ARCHITECTURE.md) |
+| Learn setup, controls, and the turn loop | [Playing singedTerra](docs/PLAYING.md) |
+| Understand the runtime and trust boundaries | [Architecture](docs/ARCHITECTURE.md) |
 | Set up, test, or deploy | [Development and operations](docs/DEVELOPMENT.md) |
 | Work on the interface or art | [UI system](docs/UI_SYSTEM.md) |
-| Read the current product contract | [Specification](docs/SPEC.md) |
-| Find every maintained and historical document | [Documentation index](docs/README.md) |
+| Read the maintained product contract | [Specification](docs/SPEC.md) |
+| Find current and historical documents | [Documentation index](docs/README.md) |
 
 ## Repository map
 
 ```text
-client/                 Vite app, Canvas renderers, HTML HUD, input, lobby
+client/                 Vite app, Canvas renderer, lobby, battle console, input
 shared/                 deterministic engine, replay logic, and shared types
-supabase/               Postgres migrations and stateless Edge Function referees
+supabase/               PostgreSQL migrations and stateless Edge Functions
 scripts/checks/          deterministic engine and contract harnesses
-e2e/                    production-browser gameplay and layout guardrails
+e2e/                    production-browser gameplay and layout checks
 docs/                   player, architecture, development, and project records
 ```
-
-## Contributing and security
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing the engine or network
 contract. Report security issues privately through
 [GitHub's vulnerability reporting flow](SECURITY.md).
 
-## Homage
-
-singedTerra is a personal project built with deep affection for *Scorched
-Earth* and the artillery games it inspired. It is not affiliated with or
-endorsed by the original authors.
-
-Released under the [MIT License](LICENSE).
+singedTerra is not affiliated with or endorsed by the original *Scorched Earth*
+authors. Released under the [MIT License](LICENSE).

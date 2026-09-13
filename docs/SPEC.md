@@ -28,7 +28,9 @@ pointer, or touch input to enter the lobby.
 
 ### Lobby
 
-Players choose Hot Seat or Play Online.
+Players enter through a deployment chooser. It exposes First Salvo, Quick Duel
+vs CPU, Local Battle, and Play Online without allocating a room or verified
+session on page load.
 
 Hot-seat setup includes:
 
@@ -36,7 +38,17 @@ Hot-seat setup includes:
 - name and color;
 - Human or CPU control;
 - per-seat tank Garage;
-- advanced match settings.
+- advanced match settings;
+- separate Local Battle, Practice vs CPU, and Verified Deployment tabs.
+
+Practice selects from immutable Quick Duel operation descriptors. The operation
+projects declared settings and an optional field order into an ordinary local
+CPU match.
+
+Verified Deployment requires an authenticated account and an eligible server
+session. Crosswind Qualification is a separate server-admitted trial inside
+that tab. Its client entry checks availability only after an explicit player
+action.
 
 Online setup includes:
 
@@ -121,7 +133,8 @@ The next round seed is derived from the match seed and round index.
 
 ### Physics
 
-Physics advances at a fixed 16 ms timestep. Gravity, wind, collision, wall
+Physics advances in fixed engine ticks, normally paced at 60 Hz in browser
+play. Wall-clock delta time never enters physics. Gravity, wind, collision, wall
 behavior, submunitions, tunneling, and area effects must produce the same result
 for the same ordered inputs.
 
@@ -144,7 +157,9 @@ The engine supports:
 
 Blast damage falls with distance from the configured blast reach. Shields
 absorb a finite pool of damage. Tanks at zero health are eliminated. The round
-resolves when one living tank remains or no living tanks remain.
+resolves when one living tank remains or no living tanks remain in free-for-all
+play. Optional four-seat Team mode uses two teams, prevents friendly-fire
+damage, and resolves when one living team or no living teams remain.
 
 ### Movement
 
@@ -167,8 +182,8 @@ Implemented weapons:
 - Dirt Bomb, Bouncing Betty, Funky Bomb;
 - Napalm, Hot Napalm;
 - Cluster Bomb, MIRV, Death's Head, Riot Bomb;
-- Sandhog;
-- Shield.
+- Sandhog, Tracer;
+- Shield, Heavy Shield.
 
 Weapon definitions own blast, damage, visual style, price, bundle, arms level,
 and optional deterministic behavior. Blast damage defaults to linear radial
@@ -210,11 +225,15 @@ Terrain rendering uses `terrainVersion` as its dirty signal.
 
 ### HTML interface
 
-HTML and CSS own lobby, HUD, command surfaces, tactical rail, Store, Arsenal,
-pause, round, and game-over surfaces.
+HTML and CSS own the lobby and player controls. The battle console renders one
+typed Preact semantic tree for live instruments and commands. Optional Pixi
+decoration remains non-interactive beneath that tree. Canvas owns the
+battlefield, terrain, tanks, projectiles, and effects.
 
-The page remains fitted and scroll-free. Fine and coarse pointers may use
-different control arrangements while sharing the same action semantics.
+Wide, standard, and compact projections share action semantics and stable
+control identity. Armory, Settings, First Salvo help, round, and terminal
+surfaces keep focus and modal ownership explicit. The page remains fitted and
+scroll-free at supported landscape viewports.
 
 ### Audio
 
@@ -248,17 +267,14 @@ Supabase Edge Functions:
 
 They do not run projectile physics.
 
-Every online room has an integer deterministic `rulesetVersion` inside its
-stored options. A missing field in a valid options object is legacy version `1`;
-malformed stored options fail closed. The referee accepts explicit version `1`
-or `2` room creation while an omitted version remains legacy `1`. Create returns
-the server-resolved options, join rejects a version mismatch before any room
-mutation, and action submission rejects a mismatch after seat-token validation
-but before authorization or insertion. The public client creates and first
-attempts to join with version `2`. To drain already-open version-1 lobbies
-safely, it retries a join once as version `1` only when the referee returns the
-exact HTTP 409 mismatch contract requiring version `1`; all established-session
-actions continue to send the room's authoritative version.
+Every online room stores deterministic `rulesetVersion` and
+`commandProtocolVersion` values. Current clients create ruleset 4, command
+protocol 2 rooms. The backend recognizes stored rulesets 1 through 4 and
+command protocols 1 and 2 for compatibility. Missing values resolve to legacy
+version 1; malformed values fail closed. Create returns the server-resolved
+options. Join rejects a mismatch before roster mutation, and action submission
+rejects a mismatch before command insertion. Rejoin and rematch retain the
+authoritative stored pair.
 
 ### Replay
 
@@ -274,13 +290,23 @@ broadcasts room and action changes.
 
 ## Security
 
-- No end-user account is required.
-- Player identity is ephemeral and room-scoped.
+- No end-user account is required for hot-seat, practice, or casual online play.
+- Casual player identity is ephemeral and room-scoped.
+- Optional accounts own career presentation and verified-session eligibility.
 - The public anon key may appear in the client bundle.
 - Anonymous direct writes are denied through Row-Level Security.
 - Mutations flow through Edge Functions using server-held credentials.
 - Service-role credentials never enter client code, repository content, or
   logs.
+
+Casual participation and verified replay are distinct evidence classes. Linking
+an account to a casual room does not promote that result to verified evidence.
+Verified rewards come only from immutable server receipts after bounded replay.
+
+The Crosswind Qualification source is prepared with admission disabled. Its
+backend release, hosted proof, and public enablement remain separate operations.
+The client must show an honest unavailable state and must not estimate verified
+totals or mint local rewards.
 
 The accepted casual-room trust model is documented in
 [SECURITY.md](../SECURITY.md).
@@ -312,6 +338,6 @@ CI must be green on the exact pull-request head.
 - a long-running Node game server;
 - server-streamed projectile state;
 - server-authoritative physics;
-- end-user passwords or ranked identity;
+- mandatory accounts for casual play;
 - a game framework;
 - nondeterministic visual state feeding back into gameplay.

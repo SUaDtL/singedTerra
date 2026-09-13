@@ -13,6 +13,7 @@ Requirements:
 - npm
 - Deno 2 for Edge Function tests
 - Chromium through Playwright for production-browser tests
+- A running Docker engine for the PostgreSQL integration harnesses
 
 ```bash
 npm install
@@ -31,13 +32,14 @@ Inside `shared/src/engine/`:
 
 - do not read wall-clock time;
 - do not use `Math.random()` for gameplay;
-- keep the fixed timestep intact;
+- keep the fixed-tick simulation contract intact;
 - preserve numeric operation order unless the behavior change is deliberate;
 - keep tunable values in named constants;
 - add or extend a deterministic harness for changed behavior.
 
-`shared/` must not import from `client/`. Supabase Edge Functions are stateless
-referees and do not run projectile physics.
+`shared/` must not import from `client/`. Ordinary room Edge Functions are
+stateless referees and do not run projectile physics. Verified completion and
+probe functions may run the separately bounded shared replay verifier.
 
 ## Choose the right evidence
 
@@ -46,6 +48,7 @@ referees and do not run projectile physics.
 | Engine, physics, terrain, weapons, rounds | `npm run check` plus a focused harness |
 | Client state or DOM behavior | focused Vitest plus `npm run test:client` |
 | Edge Function contract | focused Deno test plus `npm run check:edge` |
+| Migration or RPC contract | focused real PostgreSQL harness plus `npm run check:database` |
 | Layout, touch, Canvas, authored art | focused Playwright profile plus `npm run test:e2e` |
 | Production bundle | `npm run build` |
 | Documentation | rendered Markdown review, link check, secret scan, and diff review |

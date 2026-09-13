@@ -1,160 +1,117 @@
 # UI system
 
-singedTerra combines an authored Canvas battlefield with an HTML control
-surface. Both layers must feel like one retro-futurist artillery instrument.
+singedTerra combines an authored Canvas battlefield with a semantic HTML
+control surface. Both layers use the same scorched-metal visual language: dark
+instrument panels, bronze frames, warm status light, and direct military copy.
 
-## Design read
+## Current composition
 
-The interface is a dense field console beside a large, expressive battlefield.
-It is technical, tactile, and readable. It should never look like a generic
-dashboard placed over unrelated game art.
+The interface has three connected stages.
 
-Current design dials:
+1. **Deployment console:** an introductory First Salvo route for a new browser, or the returning-player Quick Duel route, alongside Local Battle and Play Online.
+2. **Preparation console:** route context, setup controls, Vehicle Bay preview, and commander record.
+3. **Battle stage:** Canvas world, responsive battle console, Match ledger, and focused dialogs.
 
-- **Structure 6/10:** one strong stage, one tactical rail, and clear internal
-  regions.
-- **Density 8/10:** cockpit-like information without page or panel scrolling.
-- **Register 8/10:** direct, dramatic, and game-specific.
-- **Motion 4/10:** event feedback only. No decorative idle loops.
-
-The authored world palettes, detailed tanks, tactile terrain, gold instruments,
-and ember actions form one locked visual family.
-
-## Composition
-
-```text
-┌──────────────────────── fitted game stage ────────────────────────┐
-│ command deck or touch dock │ Canvas battlefield │ tactical rail  │
-└───────────────────────────────────────────────────────────────────┘
-```
-
-- The Canvas remains 1200×600 logical pixels and preserves its aspect ratio.
-- The tactical rail owns player state, ballistic instruments, turn context,
-  fuel, economy, Fire, and the Arsenal drawer.
-- Fine pointers receive the keyboard Command Deck over the sky.
-- Coarse pointers receive named touch controls over the sky.
-- Store, Command Menu, round, and game-over surfaces live above the fitted stage.
-- The document and HUD remain scroll-free at supported viewports.
-- Portrait phones receive a rotate-device gate instead of a crushed game.
+Current reference captures are indexed in [the documentation README](README.md#current-screenshots).
+The historical images under `docs/design/` record earlier design targets, not
+the current rendered contract.
 
 ## Visual hierarchy
 
-The battlefield is the hero. UI chrome supports it.
+The battlefield is the hero. Console chrome supports the current decision.
 
-1. Active turn and Fire are the strongest interactive signals.
-2. Ballistic elevation, power, and wind are the primary instruments.
-3. Weapon, ammo, fuel, credits, and player health provide tactical context.
-4. Menu, Arsenal disclosure, and passive labels stay quiet until needed.
+1. Active commander and Fire state carry the strongest emphasis.
+2. Elevation, power, and wind are the main instruments.
+3. Weapon, ammunition, fuel, credits, and health supply tactical context.
+4. Menu, Settings, and Armory remain quiet until opened.
 
-Gold marks current state, focus, and precision. Ember marks commitment and
-destructive action. Cyan carries information. Team colors identify players and
-must not be reused as generic status colors.
+Gold marks selection and precision. Ember marks commitment and destructive
+action. Cyan carries information. Team colors identify players and do not act
+as generic status colors.
 
-## Semantic tokens
+## Lobby and preparation
 
-Shared UI tokens live in `client/src/style.css`.
+The deployment chooser gives a new browser one prominent First Salvo action,
+with alternative Quick Duel operations in a bounded disclosure. After that
+introduction has been seen, operation selection appears directly beside the
+Quick Duel action. Local Battle and Play Online remain distinct entries in
+both layouts.
 
-### Surface and line
+Preparation keeps a stable hierarchy:
 
-- `--ui-rail`
-- `--ui-surface`
-- `--ui-surface-raised`
-- `--ui-surface-active`
-- `--ui-line`
-- `--ui-line-strong`
+- **Back to deployment choices** is a bronze button with the shared left-arrow icon and a physical 44px target.
+- The mission brief names the selected route.
+- Setup content owns scrolling when the fitted stage is short.
+- The battlefield preview and commander record remain visible without covering form controls.
 
-### Copy and action
+Hot Seat uses Local Battle, Practice vs CPU, and Verified Deployment tabs. Only
+the selected tab mounts its body. Garage editing makes unrelated controls inert
+until the player finishes or closes the Vehicle Bay.
 
-- `--ui-copy`
-- `--ui-muted`
-- `--ui-action`
-- `--ui-action-hot`
-- `--ui-focus`
+## Battle console
 
-### Rhythm and shape
+`client/src/ui/battleConsole/` renders one typed Preact tree for current state
+and player intent. Optional Pixi decoration sits beneath it and cannot own
+gameplay input. Canvas remains responsible for terrain, tanks, projectiles,
+effects, and the authored battlefield.
 
-- `--ui-space-1` through `--ui-space-4`
-- `--ui-radius-sm`
-- `--ui-radius-md`
-- `--ui-radius-lg`
+The console projects to three layout modes:
 
-### Type
+- **Wide:** full ornate frame with separate live instruments and command areas.
+- **Standard:** the same semantic controls in a tighter desktop arrangement.
+- **Compact:** a simplified HTML console with touch-sized aim, power, movement, weapon, and Fire controls.
 
-- `--ui-type-micro`
-- `--ui-type-label`
-- `--ui-type-body`
-- `--ui-type-title`
-
-Use semantic roles instead of visually similar raw values. A new token needs a
-new semantic role, not a one-off preference.
-
-## Component vocabulary
-
-- `.st-ui-shell`: a complete application or combat shell.
-- `.st-ui-section`: a top-level region separated by rhythm and lines.
-- `.st-ui-action`: an explicit player action.
-- `.st-ui-action--quiet`: a lower-priority action.
-- `.st-ui-icon-action`: an icon-sized control with an accessible name.
-- `.st-ui-glyph`: an authored combat or command glyph.
-- `.st-weapon-icon`: a weapon-family silhouette.
-
-Top-level regions use separators and shared surfaces. Avoid a pile of
-independent cards with unrelated borders, shadows, and corner radii.
-
-## Ballistic computer
-
-The ballistic computer is the focal instrument and may use deeper bezels than
-the rest of the rail.
-
-- Elevation and power use matched analog geometry.
-- Wind spans the width beneath them.
-- Direction reflects the shared angle convention: `0° = right`, `90° = up`,
-  `180° = left`.
-- Values remain readable during compact scaling.
-- Needles and markers update directly from state without decorative easing.
+Responsive changes preserve semantic control identity and keyboard focus. The
+compact capture uses browser device emulation; physical-device validation is a
+separate evidence boundary.
 
 ## Command surfaces
 
-Keyboard and touch present aligned vocabulary:
+The battle console and retained match surfaces share these actions:
 
-- Aim
-- Power
-- Move / Drive (movement)
-- Weapon
-- Fire
+- Aim left and right.
+- Increase and decrease power.
+- Move left and right while fuel permits.
+- Select or cycle a weapon.
+- Fire the selected weapon or activate a shield.
+- Open Armory, Settings, Match ledger, or Command Menu.
 
-Visible direction controls must match the physical result. Touch targets remain
-at least 44×44 rendered pixels. Disabled state comes from the same local turn,
-phase, life, burial, firing, and fuel rules as keyboard input.
+Armory and Settings are focused dialogs. Covered game controls become inert.
+Closing a dialog returns focus to its invoking control when that control still
+exists. Command Menu owns Resume, First Salvo help when eligible, and Return to
+Lobby. It does not pause deterministic simulation or online updates.
 
-Arsenal is a transient in-rail drawer. It starts closed unless the player saved
-it open. Opening it must not create an inner scrollbar or cover active controls
-without making them inert.
+## Shared tokens
 
-Command Menu owns secondary match navigation only. It opens from either Menu
-entry point, puts Resume first, conditionally offers First Salvo help, and
-separates Return to Lobby as a leave-match action. It closes Store before it is
-shown, restores focus to its invoking Menu control when dismissed, and never
-pauses the lockstep update loop. Store exposes a header handoff because its
-modal layer deliberately blocks the underlying Menu controls. While open it
-reversibly isolates background app and sibling-modal surfaces from interaction
-and the accessibility tree.
+Core tokens live in `client/src/style.css`.
 
-## Asset policy
+| Group | Tokens |
+|---|---|
+| Surfaces | `--ui-rail`, `--ui-surface`, `--ui-surface-raised`, `--ui-surface-active` |
+| Lines | `--ui-line`, `--ui-line-strong` |
+| Copy | `--ui-copy`, `--ui-muted` |
+| Action | `--ui-action`, `--ui-action-hot`, `--ui-focus` |
+| Rhythm | `--ui-space-1` through `--ui-space-4` |
+| Shape | `--ui-radius-sm`, `--ui-radius-md`, `--ui-radius-lg` |
+| Type | `--ui-type-micro`, `--ui-type-label`, `--ui-type-body`, `--ui-type-title` |
 
-The project has three visual asset classes.
+Use a semantic role before adding a one-off visual value. Lobby-specific bronze
+console values live in `LobbyConsole.css`; the battle console's generated and
+module-scoped styles remain inside its own directory.
 
-### Authored raster art
+## Icons and assets
 
-The splash hero, battlefield backdrop, terrain material, tank chassis, and
-modular tank parts establish the game's fidelity. New major artwork should
-match their dusk lighting, hard silhouettes, warm highlights, and readable
-gameplay scale.
+`client/src/ui/hudIcons.ts` owns a bounded set of command icons.
+`client/src/ui/weaponIcons.ts` owns the exhaustive weapon-to-glyph map. Import
+exact named Lucide icons through those seams. Never import the complete icon
+registry.
 
-Current sources:
+Decorative SVG nodes use `aria-hidden="true"` and `focusable="false"`. Visible
+text or an explicit accessible label carries the action name.
+
+Authored raster assets establish the world:
 
 ```text
-docs/assets/splash-hero.png
 client/public/art/battlefield-backdrop.webp
 client/public/art/battlefield-obsidian-caldera.webp
 client/public/art/battlefield-glassstorm-expanse.webp
@@ -165,65 +122,27 @@ client/public/art/tank-chassis.webp
 client/public/art/tank-parts.webp
 ```
 
-The deterministic `BattlefieldWorld` profile owns panorama, terrain material, and
-a bounded atmospheric signature. Keep these paired: Ember uses warm scorched
-strata and rising ember motes, Obsidian uses dark volcanic glass and falling ash,
-and Glassstorm uses a pale cool crystal crust and diagonal cyan streaks. Material
-loading may add grain but must never be required for a complete, readable palette-only
-terrain fallback.
-
-### Game-specific graphics
-
-Gauges, projectile signatures, explosions, aim guidance, and tank composition
-remain bespoke. Weapon marks use a deliberately bounded Lucide vocabulary with
-game-specific family, tier, color, and state treatment. Do not replace either
-class with an uncurated generic icon set.
-
-### Interface icons
-
-`client/src/ui/hudIcons.ts` owns command and interface icons.
-`client/src/ui/weaponIcons.ts` owns the exhaustive weapon-to-glyph map. These
-are the only combat-shell Lucide seams. Import exact named icons and never
-import the complete icon registry.
-
-Interface icons reinforce visible text. Decorative SVG nodes use
-`aria-hidden="true"` and `focusable="false"`.
-
-## Motion and effects
-
-Motion communicates events:
-
-- turn handoff;
-- projectile launch and flight;
-- impact, blast reach, and screen kick;
-- terrain collapse;
-- damage, death, and round transition;
-- connection or action status.
-
-Respect `prefers-reduced-motion`. Reduced motion may remove camera shake,
-flashes, and transitional emphasis without hiding state.
+Each `BattlefieldWorld` keeps panorama, terrain material, and atmosphere paired.
+Material loading can add texture, but a readable palette-only fallback remains
+required.
 
 ## Accessibility
 
-- Every button has an accessible name.
-- Icon-only controls keep a visible tooltip or adjacent label when space
-  permits.
+- Every control has a stable accessible name.
+- Keyboard focus remains visible and returns after transient surfaces close.
 - Native `disabled` and `aria-disabled` states agree.
-- Keyboard focus uses `--ui-focus`.
-- Team color is never the only carrier of information.
-- Touch hit areas are measured after the fitted stage scale is applied.
-- Modals and drawers make covered command surfaces inert.
+- Team color is never the only carrier of player identity.
+- Touch targets are measured after fitted-stage scaling.
+- Dialogs and editors make covered controls inert.
+- Native selects retain platform keyboard behavior and readable dark options.
+- Reduced motion removes transient effects without hiding state.
 
 ## Review checklist
 
-Before shipping player-facing UI:
-
-1. Use existing tokens and component roles.
-2. Check desktop-fine, coarse-pointer landscape, and small-window profiles.
-3. Measure rendered target size, text containment, and page overflow in real
-   Chromium.
-4. Test collapsed, expanded, modal, disabled, and restoration states.
-5. Confirm direction controls against the actual game result.
-6. Inspect at gameplay scale, not only in a large design preview.
-7. Preserve a clear battlefield silhouette and a single visual family.
-8. Run the production build and report asset or dependency cost.
+1. Check chooser, preparation, match, dialogs, and return paths.
+2. Exercise wide, standard, and compact Chromium profiles.
+3. Measure physical target size, overlap, clipping, and document overflow.
+4. Test keyboard traversal, focus restoration, and modal isolation.
+5. Confirm visible directions against the actual gameplay result.
+6. Inspect screenshots at gameplay scale.
+7. Run focused DOM tests, the production build, and affected browser checks.

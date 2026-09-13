@@ -1,77 +1,145 @@
 # Playing singedTerra
 
-## Battlefield worlds
+singedTerra is a turn-based artillery game. On each turn, one tank can aim,
+change power, choose a weapon, move, buy supplies, and commit one shot. Wind,
+terrain, ammunition, fuel, and credits all shape the next turn.
 
-Every new match opens on one of three authored scorched worlds: Ember Dusk,
-Obsidian Caldera, or Glassstorm Expanse. The initial terrain chooses the complete
-visual world deterministically, so players in the same network room see the same
-panorama, ground, and sky signature: warm rising embers over scorched Ember,
-slow falling ash over volcanic Obsidian, or fast diagonal cyan crystal streaks
-over Glassstorm's pale crust. It is presentation only—wind, terrain shape,
-weapons, damage, and every other rule are unchanged—and crater deformation never
-switches the world mid-match. With reduced motion enabled, the sky signatures stay
-static rather than animating their brief arrival flourish.
+## Choose a route
 
-singedTerra is a turn-based artillery game. Each turn gives one tank control of
-the battlefield. Read the wind, choose a weapon, set angle and power, then
-commit to the shot.
+The deployment console is the front door for every match.
 
-## Start a match
+- **Start First Salvo** launches a one-round CPU duel with the opening controls explained in play when that introduction has not been completed in this browser.
+- **Quick Duel vs CPU** launches the selected operation. For a new browser,
+  **Choose another Quick Duel** reveals alternatives; returning players see
+  the operation selection directly.
+- **Local Battle** opens custom Hot Seat preparation.
+- **Play Online** opens room creation, code entry, and public-room browsing.
 
-### Hot seat
+After First Salvo has been seen on the current browser, the chooser keeps the
+ordinary Quick Duel route in the main deployment rail instead.
 
-Hot seat runs entirely in one browser and needs no backend.
+## Hot Seat preparation
+
+Hot Seat works entirely in one browser. No account or backend is required.
+
+The preparation screen has three tabs.
+
+### Local Battle
 
 1. Choose 2–4 seats.
-2. Name each player and choose a color.
-3. Set seats to Human or CPU.
-4. Pick a Garage kit or mix individual tank parts.
-5. Open Advanced settings if you want to change wind, gravity, side walls,
-   rounds, interest, sudden death, arms level, or the terrain seed.
-6. Start the game.
+2. Name each player and select a color.
+3. Set each seat to Human or CPU.
+4. Choose a Garage preset or edit individual tank parts.
+5. Set rounds, wind, wall behavior, and any advanced rules.
+6. Select **Deploy local battle**.
 
-Fresh hot-seat seats begin with different example buildsâ€”Foundry, Ranger,
-Bulwark, then Jackalâ€”so opponents have distinct silhouettes immediately.
-These are starting choices only: every preset and individual component remains
-free to change before launch.
+Advanced rules include gravity, battlefield world, terrain hazards, seed,
+per-round interest, sudden-death timing, and store arms level. Blank fields use
+the engine defaults.
 
-Side walls default to **Open**. **Reflective** rails bounce a shot back into
-the arena; **Wrap** portals carry it across to the opposite edge without
-changing its speed or direction.
+With four seats, **Team mode** runs a 2v2 match. Teammates cannot damage each
+other, and a round ends when only one team has living tanks or both teams have
+been eliminated.
 
-### Online
+Fresh seats start with Foundry, Ranger, Bulwark, then Jackal builds. They are
+examples, not locked classes. Every part can be changed before launch.
 
-Online play uses Supabase rooms. Create a public room for the room browser or a
-private room for code-only access. Other players can browse, join by code, and
-ready up before the host starts the match.
+### Practice vs CPU
 
-Online clients run the same deterministic engine locally. If a connection
-drops, the client can rebuild the match from the room seed and ordered action
-log.
+Practice launches one of the existing Quick Duel operations. Each card states
+its battlefield, round count, opponent, wall or hazard rule, arsenal limit,
+and seed when fixed. Operations with a field order track that objective during
+the match without changing the underlying combat rules.
 
-## Garage spotlight
+Current operations include Standard Duel, First Salvo, Crosswind Range,
+Caldera Run, Last Light Siege, and Lean Arsenal.
 
-The Vehicle Bay spotlights the tank you are currently customizing while the
-smaller tanks keep the full roster in view. Choose a complete Garage preset or
-cycle Mobility, Hull, Turret, and Barrel independently; the large assembled
-tank and its part labels update immediately. Selecting a player's color or
-editing their name also moves the spotlight to that player.
+### Verified Deployment
 
-## Read the battlefield
+Verified Deployment requires a signed-in account. The server allocates an
+eligible session and verifies the completed transcript before it returns a
+receipt. Local play never invents a verified result.
 
-The right tactical rail answers the questions that matter before a shot:
+Crosswind Qualification is a separate trial entry inside this tab. Its fixed
+rules are seed 42, wrap walls, Baby Missile only, and at most three human
+salvos. The defined first-clear reward is a Crosswind Qualification medal and
+200 Verified Career XP; repeat clears grant 0 XP.
 
-- **Whose turn is it?** The active player and team color lead the turn panel.
-- **What am I firing?** The selected weapon and ammo state sit beside the
-  active player.
-- **Where is the barrel pointed?** Elevation uses `0° = right`, `90° = up`, and
-  `180° = left`.
-- **How hard is the shot?** Power runs from 0 to the tank's current cap.
-- **What is the wind doing?** The wind vector shows direction and magnitude.
-- **Can I move?** The fuel gauge and movement controls show the current reserve.
+The Crosswind Qualification backend release, hosted capacity proof, and public
+admission enablement are still pending. The client checks availability only
+after an explicit click. Until the server enables the trial, that check may
+return an unavailable response and no session or award is created.
 
-The launch guide follows the real barrel geometry and fades after the opening
-portion of the predicted trajectory. It is a ranging aid, not a target marker.
+## Online rooms
+
+Online play uses Supabase rooms. Create a public room for the browser or a
+private room for code-only entry. Other players can browse or join by code,
+then ready up before the host starts.
+
+Each browser runs the same deterministic engine from the room seed and ordered
+action log. Supabase validates commands and assigns their order. If a
+connection drops, a returning player can rebuild the match from committed
+actions when the room and stored seat are still compatible.
+
+Accounts are optional for casual rooms. A linked account can record casual
+participation, but that evidence is separate from verified replay rewards.
+
+## Garage and Vehicle Bay
+
+Each tank has four visual slots:
+
+- mobility;
+- hull;
+- turret;
+- barrel.
+
+Foundry, Ranger, Bulwark, and Jackal are complete presets. Open a player's
+Garage to choose a preset or mix parts, then finish editing to return to the
+Vehicle Bay. The selected tank appears there at inspection scale while the
+roster keeps every seat in view. Name, color, and loadout changes are reflected
+when the preparation view returns.
+
+Tank parts are visual identity. They do not change health, power, fuel, or
+weapon behavior.
+
+## Battlefield worlds and walls
+
+Every match uses Ember Dusk, Obsidian Caldera, or Glassstorm Expanse. The match
+seed selects or retains the world consistently for every client. Atmosphere
+and materials change presentation; the declared terrain hazard and match rules
+still decide gameplay.
+
+Side-wall modes change projectile behavior:
+
+- **Open:** shots can leave the arena.
+- **Reflective:** side rails bounce shots back into play.
+- **Wrap:** a shot crossing one side enters from the other with its velocity intact.
+- **Concrete:** the side boundary acts as an impact surface.
+
+Reduced-motion preferences suppress transient atmosphere and movement effects
+while keeping state visible.
+
+## Read the battle console
+
+The bronze console keeps the live decision in one place:
+
+- the active commander, health, and team color;
+- selected weapon and ammunition;
+- elevation, power, and wind;
+- fuel and movement controls;
+- credits and Armory access;
+- Fire readiness and resolving state.
+
+Elevation follows the engine convention: `0° = right`, `90° = up`, and
+`180° = left`. Power is limited by the active tank's current capacity.
+
+The trajectory guide follows the real barrel geometry for an opening portion
+of the predicted flight. It is a ranging aid. It does not mark a guaranteed
+impact point.
+
+The Match ledger keeps the roster visible and opens the Command Menu. Armory,
+Settings, and First Salvo help use focused dialogs and return focus to the
+control that opened them.
 
 ## Controls
 
@@ -81,130 +149,102 @@ portion of the predicted trajectory. It is a ranging aid, not a target marker.
 |---|---|
 | `←` / `→` | Aim left or right |
 | `↑` / `↓` | Increase or decrease power |
-| `A` / `D` | Move left or right |
-| `Q` | Cycle weapons |
-| `Space` / `Enter` | Fire or activate a Shield |
+| `A` / `D` | Move left or right and spend fuel |
+| `Q` | Select the next weapon |
+| `Space` / `Enter` | Fire or activate the selected shield |
 | `G` | Toggle the trajectory guide |
 | `M` | Toggle audio |
 | Hold `F` | Fast-forward the current shot locally |
 
-Input is accepted only for the local human who owns the active turn. Aim,
-power, movement, weapon selection, and fire are disabled while a shot resolves.
+Gameplay input is accepted only for the local human who owns the active turn.
+Aim, power, movement, weapon selection, and Fire are disabled while the shot
+resolves or another surface owns input.
 
 ### Pointer
 
-On desktop, press on the battlefield and drag outward from the active tank.
-Drag direction sets the barrel angle and drag distance sets power. Releasing
-does not fire, so the shot still requires `Space`, `Enter`, or the Fire control.
+With a fine pointer, press on the battlefield and drag outward from the active
+tank. Direction sets barrel angle and distance sets power. Releasing does not
+fire, so the shot still requires the Fire control, `Space`, or `Enter`.
 
-### Touch
+### Compact and touch layouts
 
-Tap or drag directly on the battlefield for coarse angle and power changes.
-The contact points from the active tank: direction sets elevation and distance
-sets power. It never fires. Use the Command Deck Aim and Power controls for fine
-adjustment, then commit the shot with Fire.
+The compact battle console presents touch-sized controls for aim, power,
+movement, weapon selection, and Fire. The controls have stable accessible
+names and use the same turn, fuel, ammunition, and resolving gates as keyboard
+input.
 
-Landscape touch layouts place a grouped Command Deck over the battlefield: Aim, Power, and Drive groups
-handle combat controls, while Weapon and Menu are
-utilities. Fire, Store, fuel, and Arsenal remain in the tactical rail. Each
-control has a stable accessible name. Combat controls use the same gates as
-keyboard input; Menu opens the non-pausing Command Menu.
+Touching or dragging on the battlefield also adjusts angle and power. It does
+not fire. Portrait phones show a rotate-device gate because the battlefield is
+designed for a fitted landscape stage.
 
-The Command Menu is the match-navigation home: Resume returns to the live
-match, First Salvo help appears only when it can restart the coach, and Return
-to Lobby is separated below the ordinary actions. Opening it closes Store, so
-there is never more than one optional match panel competing for input. It does
-not stop simulation or network updates. Store has its own Menu handoff in the
-header because the Store overlay deliberately blocks the rail and touch controls.
-While Command Menu is open, the rest of the match is unavailable to keyboard and
-assistive-technology focus until Resume returns control.
+## First Salvo help
 
-Portrait phones show a mobile launch bay because the game is designed around a
-wide battlefield and a single fitted page. Its action attempts fullscreen and
-landscape mode when the browser supports them; rotating the device manually
-always remains the reliable path into the same Touch Command Deck.
+The first eligible local turn can open a short field briefing, followed by
+Aim, Power and Wind, then Fire guidance on the real controls. The coach advances
+only after the matching action. **Skip** stores the choice in the current
+browser. Command Menu can replay First Salvo help during an eligible match.
 
-## First Salvo
+## Weapons
 
-On your first eligible local turn, a compact non-modal coach walks through
-three real controls: Aim, Power while reading the Wind Vector, then Fire. It
-advances only when you use those controls. Choose Skip to hide it on this
-browser; that choice persists. In Command Menu, Replay First Salvo restarts the coach
-for the current match without changing the match or the saved choice.
-
-## Weapon families
-
-The Arsenal exposes eighteen deterministic weapons. The exact prices, blast
-values, ammo, and behavior definitions live in
+The Armory exposes 18 deterministic weapons. Exact price, bundle, ammo, blast,
+and behavior definitions live in
 [`shared/src/engine/WeaponSystem.ts`](../shared/src/engine/WeaponSystem.ts).
 
-### Direct fire
+### Direct fire and ranging
 
 Baby Missile, Missile, and Heavy Missile form the basic damage ladder. Baby
-Nuke and Nuke trade cost and scarcity for much larger blast reach.
-
-Tracer is a cheap, cyan, zero-damage ranging shot. It follows the real wind and
-collision path, leaves terrain and tanks untouched, marks its impact, consumes
-one round, and ends the turn. Use it when the launch guide is not enough to
-read a difficult arc.
+Nuke and Nuke trade cost and scarcity for much larger reach. Tracer is a cheap,
+zero-damage ranging shot that follows real wind and collision, marks its
+impact, consumes one round, and ends the turn.
 
 ### Airburst and spread
 
 Cluster Bomb, MIRV, Death's Head, and Funky Bomb split or distribute damage
-across a wider area. Their timing and submunition paths are generated from
-deterministic inputs.
+over a wider area. Their timing and submunition paths come from deterministic
+inputs.
 
-### Terrain and area denial
+### Terrain and area control
 
-Dirt Bomb builds cover. Riot Bomb excavates a wide, damage-free crater to open
-a lane or free a buried tank. Napalm and Hot Napalm leave spreading fire.
-Sandhog enters the ground and bores a visible tunnel before its final
-detonation. Bouncing Betty walks explosions across the terrain through repeated
-hops.
+Dirt Bomb builds cover. Riot Bomb excavates a wide damage-free crater. Napalm
+and Hot Napalm leave spreading fire. Sandhog tunnels through ground before its
+final detonation. Bouncing Betty walks explosions across the terrain through
+repeated hops.
 
 ### Defense
 
 Shield and Heavy Shield raise finite damage-absorbing fields and end the turn.
-Heavy Shield costs more and carries a larger pool; both use the same
-weapon-selection and action-log path as projectile weapons.
+They use the same selection and action-log path as projectile weapons.
 
-Terrain collapse can also hurt a tank after a long drop. The first 32 pixels are
-safe; each additional pixel deals deterministic fall damage. A purchased
+Terrain collapse can hurt a tank after a long drop. The first 32 pixels are
+safe. Each additional pixel deals deterministic fall damage. A purchased
 Parachute reduces one dangerous fall to 25% damage, then is consumed.
 
-## Movement, money, and rounds
+## Movement, credits, and rounds
 
-Movement is turn-neutral but spends fuel based on distance actually traveled.
-Terrain, tank collision, cliffs, bounds, and the remaining reserve can shorten
-a requested move.
+Movement does not end the turn, but it spends fuel for distance actually
+traveled. Terrain, tank collision, cliffs, arena bounds, burial, and remaining
+fuel can shorten or reject movement.
 
-Each Garage mobility kit leaves its own brief visual signature beneath the tank
-when it moves: Foundry stamps tracks, Ranger places leg strides, Bulwark leaves
-a hover wake, and Jackal throws wheel marks. These are presentation-only; fuel
-and final position still follow the normal movement rules. With reduced motion
-enabled, the transient signatures are suppressed.
+Damage dealt to opponents earns credits. The Armory sells finite ammunition,
+Batteries, Fuel Tanks, and Parachutes. Purchases do not end the turn.
 
-Damage dealt to opponents earns credits. The Store sells finite ammunition and
-accessories such as Batteries, Fuel Tanks, and Parachutes. Purchases do not end
-the turn.
-
-In multi-round matches, credits, inventory, and scoreboard totals carry
-forward. Health, shield, fuel, positions, terrain, and the per-round wind
-sequence reset. A between-round shop opens before the next battlefield begins.
+In multi-round matches, credits, inventory, round wins, kills, damage totals,
+and tank cosmetics carry forward. Health, shields, fuel, positions, terrain,
+and the per-round wind sequence reset. A between-round shop opens before the
+next battlefield begins.
 
 ## After the last shot
 
-The After-Action Report stages the winner's customized tank beside the final
-standings. A mutual knockout is reported as a draw without inventing a winner.
-Play again follows the existing hot-seat restart or network rematch flow; Main
-Menu exits to the lobby.
+The After-Action Report shows the winner's customized tank and final standings.
+A mutual knockout is a draw. Replay and rematch actions preserve the current
+mode's rules, while **Main Menu** returns to the selected lobby route with
+keyboard focus restored to a visible control.
 
-## Practical first shots
+## A useful first shot
 
 1. Check whether the target is left or right of your barrel.
-2. Read the wind before changing power.
-3. Use the opening guide to learn the current angle and power relationship.
-4. Start with a cheap direct-fire weapon.
-5. Change one variable after a miss. Large angle and power changes together
-   make the result harder to read.
-6. Move only when a new firing lane is worth the fuel.
+2. Read the wind.
+3. Use the guide to learn the current angle and power relationship.
+4. Start with Baby Missile or Tracer.
+5. After a miss, change one variable at a time.
+6. Move only when the new firing lane is worth the fuel.

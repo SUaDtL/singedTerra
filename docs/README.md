@@ -1,57 +1,66 @@
 # singedTerra documentation
 
-This directory separates current product documentation from historical project
-records. Start with the guide that matches the work in front of you.
+Start with the guide that matches what you want to do. The first group
+describes the current game and repository. Dated reports, rollout records, and
+archived plans preserve the state that existed when they were written.
 
-## Play
+## Play and explore
 
-- [Playing singedTerra](PLAYING.md): match setup, controls, touch input,
-  weapons, economy, rounds, and online rooms.
-- [Project README](../README.md): the visual product overview, live game link,
-  quickstart, and repository map.
+- [Project overview](../README.md): current screenshots, play modes, controls, local setup, and repository map.
+- [Playing singedTerra](PLAYING.md): deployment routes, Garage, battle console, weapons, economy, rounds, and online rooms.
 
-## Build
+## Build and operate
 
-- [Architecture](ARCHITECTURE.md): runtime modes, deterministic lockstep,
-  terrain, action flow, and trust boundaries.
-- [Development and operations](DEVELOPMENT.md): local setup, commands, test
-  layers, Supabase configuration, and deployment.
-- [UI system](UI_SYSTEM.md): visual direction, tokens, responsive composition,
-  asset policy, accessibility, and browser QA.
-- [Contributing](../CONTRIBUTING.md): branch, review, and determinism rules.
+- [Architecture](ARCHITECTURE.md): deterministic engine, browser composition, online command log, and verified replay boundary.
+- [Development and operations](DEVELOPMENT.md): requirements, local setup, test layers, Supabase configuration, and release boundaries.
+- [UI system](UI_SYSTEM.md): bronze console direction, responsive modes, semantic controls, assets, accessibility, and browser review.
+- [Contributing](../CONTRIBUTING.md): branch, review, determinism, and security expectations.
 
-## Define
+## Product contract
 
-- [Product and system specification](SPEC.md): the maintained contract for
-  gameplay, networking, rendering, and operations.
-- [Delivery status](TASKS.md): what is shipped, what is active, and where new
-  work is tracked.
+- [Product and system specification](SPEC.md): maintained gameplay, network, rendering, security, and operational contract.
+- [Delivery history](TASKS.md): completed work and retained task records.
 
-## Project records
+## Current screenshots
 
-These files preserve decisions and findings from a point in time. They are not
-the current product contract.
+The screenshots below were captured from the real production build on
+2026-09-13. The compact view uses Pixel 5 landscape browser emulation; it is
+evidence of the responsive browser layout, not a physical-device test.
 
-- [Review backlog](REVIEW_BACKLOG.md) and
-  [verified findings](REVIEW_FINDINGS.md): the June 2026 adversarial review and
-  its follow-up status.
-- [`archive/`](archive/): completed sprint plans retained for provenance.
+| View | Asset |
+|---|---|
+| Desktop battlefield and battle console | [`current-battle-hud.jpg`](assets/current-battle-hud.jpg) |
+| Deployment chooser | [`current-deployment-console.jpg`](assets/current-deployment-console.jpg) |
+| Practice preparation | [`current-practice-preparation.jpg`](assets/current-practice-preparation.jpg) |
+| Local Battle Garage result | [`current-tank-garage.jpg`](assets/current-tank-garage.jpg) |
+| Compact battlefield and controls | [`current-compact-hud.jpg`](assets/current-compact-hud.jpg) |
+
+## Specialized operational guides
+
+- [Crosswind Qualification backend rollout](deployment/verified-challenge-cq1.md): disabled-first release, hosted evidence, and admission controls.
+- [cq1 work limits](compatibility/cq1-work-limits.md): retained corpus, work accounting, and configured verifier caps.
+- [Verified V2 cutover](VERIFIED_V2_CUTOVER.md): historical compatibility and recovery procedure for the earlier verified protocol.
+- [Room lifecycle rollout](ROOM_LIFECYCLE_ROLLOUT.md): historical room cleanup release and rollback record.
+
+Crosswind Qualification remains unavailable for public admission until its
+separate backend release, hosted proof, and enablement steps are approved and
+completed. Client code and local verification do not establish a live reward.
+
+## Historical records
+
+- [`archive/`](archive/): completed sprint plans.
 - [`reports/`](reports/): dated review and implementation packets.
-- [`reference/`](reference/): source material used for catalog and balance
-  research.
+- [Review backlog](REVIEW_BACKLOG.md) and [review findings](REVIEW_FINDINGS.md): the June 2026 review and its follow-up status.
+- [Software recovery record](SOFTWARE_RECOVERY.md): evidence and delivery notes for the recovery program.
 
-Governance state, approved sprint specifications, and the live task ledger are
-stored under [`.codearbiter/`](../.codearbiter/). GitHub Issues is the public
-work queue.
+Historical documents can name old layouts, versions, or pending work. Use the
+maintained guides above for current behavior, then consult source and executable
+tests when exact implementation details matter.
 
 ## Source of truth
 
-When documentation disagrees with code, resolve the drift in this order:
-
-1. `shared/src/engine/` and `shared/src/types/` for deterministic gameplay.
-2. `client/src/client/NetworkClient.ts` plus `supabase/functions/` for the
-   network action contract.
-3. `client/src/ui/`, `client/src/renderer/`, and `client/src/style.css` for the
-   current player experience.
-4. This documentation set.
-5. Dated reports and archived sprint plans.
+1. `shared/src/engine/` and `shared/src/types/` define deterministic gameplay.
+2. `client/src/client/NetworkClient.ts`, shared replay code, and `supabase/functions/` define online commands.
+3. `client/src/ui/`, `client/src/renderer/`, and `client/src/style.css` define the current player experience.
+4. The maintained guides in this directory explain those contracts.
+5. Dated reports and archived plans retain historical context.
