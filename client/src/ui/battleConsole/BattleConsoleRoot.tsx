@@ -219,6 +219,7 @@ function ArmoryPanel({
   useLayoutEffect(() => {
     closeButton.current?.focus({ preventScroll: true });
     const closeOnEscape = (event: KeyboardEvent) => {
+      if (panel.current?.closest('[inert], [aria-hidden="true"]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         dispatch({ type: 'armory-close' });
@@ -331,6 +332,7 @@ function SettingsPanel({
   useLayoutEffect(() => {
     panel.current?.querySelector<HTMLElement>('[role="switch"]')?.focus({ preventScroll: true });
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (panel.current?.closest('[inert], [aria-hidden="true"]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         dispatch({ type: 'settings-close' });

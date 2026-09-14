@@ -285,6 +285,22 @@ export class HUD {
   private turnWatchEl!: HTMLElement;
   private turnWatch: TurnWatch = { state: 'clear' };
   private pageRecoveryState: 'pending' | 'failed' | null = null;
+  private pageRecoveryPreviousFocus: HTMLElement | null = null;
+  private pageRecoverySuspendedSurfaces: Array<{
+    readonly host: HTMLElement;
+    readonly inert: boolean;
+    readonly ariaHidden: string | null;
+  }> = [];
+  private pageRecoveryInteractionRoot: HTMLElement | null = null;
+  private readonly retainPageRecoveryPointerFocus = (event: PointerEvent): void => {
+    if (this.pageRecoveryState === null || this.turnWatchEl.contains(event.target as Node | null)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const recoveryAction = this.turnWatchEl.querySelector<HTMLButtonElement>(
+      '.st-hud__turnwatch-leave',
+    );
+    (recoveryAction ?? this.turnWatchEl).focus({ preventScroll: true });
+  };
   private quickChatRootEl!: HTMLElement;
   private quickChatPanelEl!: HTMLElement;
   private quickChatToggleEl!: HTMLButtonElement;
@@ -477,6 +493,10 @@ export class HUD {
     this.battleConsoleEntering = null;
     window.removeEventListener('resize', this.handleBattleConsoleEnvironmentChange);
     window.removeEventListener('orientationchange', this.handleBattleConsoleEnvironmentChange);
+    this.pageRecoveryInteractionRoot?.removeEventListener(
+      'pointerdown', this.retainPageRecoveryPointerFocus, true,
+    );
+    this.pageRecoveryInteractionRoot = null;
     this.destroyPromise = this.battleConsoleLifecycle.destroy().then(() => {
       this.releaseBattleConsoleHosts();
     });
@@ -550,7 +570,6 @@ export class HUD {
   ): void {
     if (this.destroyed) return;
     if (!this.built) this.build();
-
     this.battleConsoleLastFrame = {
       state,
       isFiring,
@@ -1056,6 +1075,10 @@ export class HUD {
       this.battleConsoleArmoryHost!,
       this.battleConsoleCoachHost!,
     );
+    this.pageRecoveryInteractionRoot = this.modalRoot.parentElement as HTMLElement | null;
+    this.pageRecoveryInteractionRoot?.addEventListener(
+      'pointerdown', this.retainPageRecoveryPointerFocus, true,
+    );
     this.built = true;
     this.verifiedChallengeView.update(this.verifiedChallengeState);
     this.syncQuickChatAvailability();
@@ -1510,6 +1533,14 @@ export class HUD {
     this.toastEl.className = 'st-hud__toast st-hud__toast--hidden';
     this.turnWatchEl = document.createElement('div');
     this.turnWatchEl.className = 'st-hud__turnwatch st-hud__turnwatch--hidden';
+    this.turnWatchEl.addEventListener('keydown', (event) => {
+      if (this.pageRecoveryState === null || event.key !== 'Tab') return;
+      event.preventDefault();
+      const recoveryAction = this.turnWatchEl.querySelector<HTMLButtonElement>(
+        '.st-hud__turnwatch-leave',
+      );
+      (recoveryAction ?? this.turnWatchEl).focus({ preventScroll: true });
+    });
 
     this.quickChatRootEl = document.createElement('div');
     this.quickChatRootEl.className = 'st-hud__quick-chat st-hud__quick-chat--hidden';
@@ -1654,16 +1685,89 @@ export class HUD {
    * lobby-return callback as the Command Menu without replacing either owner.
    */
   setPageRecovery(state: 'pending' | 'failed' | null): void {
+    const previousState = this.pageRecoveryState;
     this.pageRecoveryState = state;
     if (state === null) {
+      this.turnWatchEl?.removeAttribute('role');
+      this.turnWatchEl?.removeAttribute('aria-live');
+      this.turnWatchEl?.removeAttribute('aria-atomic');
+      this.turnWatchEl?.removeAttribute('aria-modal');
+      this.turnWatchEl?.removeAttribute('aria-label');
+      this.turnWatchEl?.removeAttribute('tabindex');
       this.turnWatchEl?.classList.remove('st-hud__turnwatch--page-recovery');
       if (this.built && this.turnWatchEl.parentElement !== this.railRoot) {
         this.railRoot.append(this.turnWatchEl);
       }
+      const suspendedSurfaces = this.pageRecoverySuspendedSurfaces;
+      for (const prior of suspendedSurfaces) {
+        prior.host.inert = prior.inert;
+        if (prior.ariaHidden === null) prior.host.removeAttribute('aria-hidden');
+        else prior.host.setAttribute('aria-hidden', prior.ariaHidden);
+      }
+      this.pageRecoverySuspendedSurfaces = [];
+      const previousFocus = this.pageRecoveryPreviousFocus;
+      this.pageRecoveryPreviousFocus = null;
       this.setTurnWatch(this.turnWatch);
+      if (previousState === 'pending') {
+        const isVisibleFocusTarget = (element: HTMLElement | null): element is HTMLElement => {
+          if (!element?.isConnected
+            || element.tabIndex < 0
+            || element.matches(':disabled')
+            || element.closest('[inert], [hidden], [aria-hidden="true"]')) return false;
+          for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
+            const style = getComputedStyle(ancestor);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+          }
+          return true;
+        };
+        const restoredDialogControl = suspendedSurfaces
+          .flatMap(({ host }) => {
+            const dialog = host.matches('[role="dialog"]')
+              ? host
+              : host.querySelector<HTMLElement>('[role="dialog"]');
+            return dialog ? [...dialog.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]',
+            )] : [];
+          })
+          .find(isVisibleFocusTarget);
+        const liveHudFallback = [
+          this.matchDrawerBtnEl,
+          this.root.querySelector<HTMLButtonElement>('.st-hud__menu'),
+        ].find(isVisibleFocusTarget);
+        const focusTarget = isVisibleFocusTarget(previousFocus)
+          ? previousFocus
+          : (restoredDialogControl ?? liveHudFallback);
+        focusTarget?.focus({ preventScroll: true });
+      }
       return;
     }
     if (!this.built) this.build();
+    if (previousState === null) {
+      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      this.pageRecoveryPreviousFocus = active;
+      // Recovery remains the sole modal-root child outside the isolated HUD
+      // surfaces. Move it before snapshotting because its ordinary owner is the
+      // command rail, which is suspended with the rest of the live controls.
+      if (this.turnWatchEl.parentElement !== this.modalRoot) this.modalRoot.append(this.turnWatchEl);
+      for (const host of new Set([
+        this.root,
+        this.railRoot,
+        this.overlayRoot,
+        ...[...this.modalRoot.children]
+          .filter((child): child is HTMLElement => (
+            child instanceof HTMLElement && child !== this.turnWatchEl
+          )),
+      ])) {
+        if (!host) continue;
+        this.pageRecoverySuspendedSurfaces.push({
+          host,
+          inert: host.inert,
+          ariaHidden: host.getAttribute('aria-hidden'),
+        });
+        host.inert = true;
+        host.setAttribute('aria-hidden', 'true');
+      }
+    }
     // Page recovery must remain above an already-open Armory/Settings owner.
     // Reparent the existing notice into the modal layer; clearing recovery
     // returns the same node to its ordinary command-rail owner.
@@ -1676,15 +1780,29 @@ export class HUD {
       ? 'Restoring game controls…'
       : 'Game recovery failed. Return to the lobby or reload.';
     if (state === 'pending') {
+      this.turnWatchEl.setAttribute('role', 'status');
+      this.turnWatchEl.setAttribute('aria-live', 'assertive');
+      this.turnWatchEl.setAttribute('aria-atomic', 'true');
+      this.turnWatchEl.removeAttribute('aria-modal');
+      this.turnWatchEl.setAttribute('aria-label', 'Restoring game controls');
+      this.turnWatchEl.tabIndex = -1;
       this.turnWatchEl.replaceChildren(message);
+      this.turnWatchEl.focus({ preventScroll: true });
       return;
     }
+    this.turnWatchEl.setAttribute('role', 'alertdialog');
+    this.turnWatchEl.setAttribute('aria-live', 'assertive');
+    this.turnWatchEl.setAttribute('aria-atomic', 'true');
+    this.turnWatchEl.setAttribute('aria-modal', 'true');
+    this.turnWatchEl.setAttribute('aria-label', 'Game recovery failed');
+    this.turnWatchEl.tabIndex = -1;
     const leave = document.createElement('button');
     leave.type = 'button';
     leave.className = 'st-hud__turnwatch-leave';
     leave.textContent = 'Return to lobby';
     leave.addEventListener('click', () => this.quitCb?.());
     this.turnWatchEl.replaceChildren(message, leave);
+    leave.focus({ preventScroll: true });
   }
 
   /** True while the in-game PAUSE overlay is open. Read by main.ts to drop local

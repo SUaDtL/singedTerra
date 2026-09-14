@@ -1607,6 +1607,9 @@ function bootstrap(): void {
   hud.onPrimaryAction(()   => { if (localInputAllowed()) matchSession.input?.triggerFire(); });
 
   const projectPageRecovery = (state: 'pending' | 'failed'): void => {
+    // Transfer modal/focus ownership before the disabled recovery projection can
+    // invalidate the command that currently owns keyboard focus.
+    hud.setPageRecovery?.(state);
     const canonical = matchSession.client?.getState();
     if (canonical) {
       hud.update(
@@ -1617,7 +1620,6 @@ function bootstrap(): void {
         false,
       );
     }
-    hud.setPageRecovery?.(state);
   };
 
   window.addEventListener('pagehide', (event) => {
@@ -1660,10 +1662,12 @@ function bootstrap(): void {
         matchSession.renderer?.primeHistoricalImpactEvents(canonical);
       }
       if (!matchSession.completePageRestore(owner)) return;
-      hud.setPageRecovery?.(null);
       renderDirty = true;
       matchSession.input?.setDirectAimEnabled(directAimAllowed());
       refreshRetainedPresentation?.();
+      // Re-enable the canonical presentation while recovery still owns focus;
+      // clearing it can then restore the exact retained control synchronously.
+      hud.setPageRecovery?.(null);
     };
     void recover().catch(() => {
       if (matchSession.isPageRestoreCurrent(owner)) {

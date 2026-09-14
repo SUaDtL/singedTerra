@@ -76,7 +76,7 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "ff70b46344b9415aa49aa11fbefc2fabadacadbf14ba3561e8a001ca44d6718e"
+      "sha256": "ccc66edaa644b897778b9044b9e4025edfc5e03eea8fbba1ff5f8c55bccd5f03"
     },
     {
       "path": "client/src/ui/Lobby.ts",

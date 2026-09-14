@@ -75,6 +75,7 @@ const seams = vi.hoisted(() => ({
   verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
   pageRecoveryStates: [] as Array<'pending' | 'failed' | null>,
+  pageRecoveryProjectionOrder: [] as string[],
   hudFrames: [] as Array<{
     phase: GameState['phase']; winner: string | null; activePlayerId: string; isFiring: boolean
   }>,
@@ -346,13 +347,17 @@ vi.mock('./ui/HUD', () => ({
       seams.publicSeedChallenges.push(challenge)
     }
     setConnection() {}
-    setPageRecovery(state: 'pending' | 'failed' | null) { seams.pageRecoveryStates.push(state) }
+    setPageRecovery(state: 'pending' | 'failed' | null) {
+      seams.pageRecoveryStates.push(state)
+      seams.pageRecoveryProjectionOrder.push(`recovery:${String(state)}`)
+    }
     setFirstSalvoStep() {}
     setQuickChatEnabled() {}
     setTurnWatch() {}
     showQuickChat() {}
     update(...args: unknown[]) {
       seams.hudUpdates.push(args)
+      seams.pageRecoveryProjectionOrder.push(`update:${args[2] === false ? 'blocked' : 'enabled'}`)
       const state = args[0] as GameState
       seams.hudFrames.push({
         phase: state.phase,
@@ -789,6 +794,7 @@ describe('production hot-seat progression composition', () => {
     seams.verifiedPresentationEvents.length = 0
     seams.hudUpdates.length = 0
     seams.pageRecoveryStates.length = 0
+    seams.pageRecoveryProjectionOrder.length = 0
     seams.hudFrames.length = 0
     seams.rendererFrames.length = 0
     seams.forwardedActions.length = 0
@@ -843,7 +849,12 @@ describe('production hot-seat progression composition', () => {
     seams.inputAction({ type: 'fire' })
     expect(seams.forwardedActions).toHaveLength(1)
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF' }))
+    seams.pageRecoveryProjectionOrder.length = 0
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    expect(seams.pageRecoveryProjectionOrder.slice(0, 2)).toEqual([
+      'recovery:pending',
+      'update:blocked',
+    ])
     seams.inputAction({ type: 'fire' })
     seams.onBuy?.({ weapon: 'missile' })
     seams.onNextRound?.()
@@ -879,6 +890,10 @@ describe('production hot-seat progression composition', () => {
     ])
     expect(client.setFastForward).toHaveBeenLastCalledWith(true)
     expect(seams.pageRecoveryStates.at(-1)).toBeNull()
+    expect(seams.pageRecoveryProjectionOrder.slice(-2)).toEqual([
+      'update:enabled',
+      'recovery:null',
+    ])
 
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
     window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
