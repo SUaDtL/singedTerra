@@ -421,6 +421,56 @@ describe('P-08 live battle-console integration', () => {
     );
   });
 
+  it('keeps an arms-level-0 opening Heavy Missile equippable while its restock stays locked', async () => {
+    const root = document.createElement('div');
+    const overlay = document.createElement('div');
+    const modal = document.createElement('div');
+    const rail = document.createElement('div');
+    document.body.append(root, overlay, modal, rail);
+    const fake = makeLifecycle();
+    const hud = new HUD(root, overlay, modal, rail, { battleConsoleLifecycle: fake.lifecycle });
+    const engine = new GameEngine({
+      players: [
+        { name: 'Alice', color: '#e84d4d' },
+        { name: 'Bob', color: '#4d8ce8' },
+      ],
+      maxPlayers: 2,
+      seed: 1,
+      armsLevel: 0,
+    });
+    const state = engine.getState();
+    hud.setArmsLevel(0);
+    const selectWeapon = vi.fn();
+    hud.onWeaponSelect(selectWeapon);
+
+    try {
+      expect(state.tanks[0]!.inventory.heavy_missile.count).toBeGreaterThan(0);
+      state.tanks[0]!.inventory.nuke.count = 1;
+      hud.update(state, false, true, true, true);
+      await vi.waitFor(() => expect(fake.enter).toHaveBeenCalledTimes(1));
+
+      for (const weapon of ['heavy_missile', 'nuke'] as const) {
+        const item = fake.request()!.initialState.armory.items.find((candidate) => candidate.key === `weapon:${weapon}`)!;
+        expect(item).toMatchObject({ owned: state.tanks[0]!.inventory[weapon].count, canBuy: false, canEquip: true });
+        expect(item.description).toContain('Restocks unlock at Arms level 1');
+        fake.request()!.dispatch({ type: 'armory-equip', weapon });
+      }
+      const unownedAboveTier = fake.request()!.initialState.armory.items
+        .find((candidate) => candidate.key === 'weapon:mirv')!;
+      expect(unownedAboveTier).toMatchObject({ owned: 0, canBuy: false, canEquip: false });
+      expect(unownedAboveTier.description).toContain('Restocks unlock at Arms level 3');
+      const unlockedMissile = fake.request()!.initialState.armory.items
+        .find((candidate) => candidate.key === 'weapon:missile')!;
+      expect(unlockedMissile.description).not.toContain('Restocks unlock');
+      expect(selectWeapon).toHaveBeenNthCalledWith(1, 'heavy_missile');
+      expect(selectWeapon).toHaveBeenNthCalledWith(2, 'nuke');
+      expect(engine.applyAction({ type: 'select_weapon', weapon: 'heavy_missile' })).toBe(true);
+      expect(state.tanks[0]!.selectedWeapon).toBe('heavy_missile');
+    } finally {
+      await hud.destroy();
+    }
+  });
+
   it('AC-08 revokes Armory actions with live input permission and restores them on the next actionable frame', async () => {
     const { hud, state, enter, update, request } = mount();
     try {
