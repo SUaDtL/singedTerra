@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "lobby-return-focus-presentation-only-parity-reviewed",
+  "disposition": "mode-input-capability-wiring-ordinary-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -14,6 +14,7 @@
     "client/src/client/frameClock.ts",
     "client/src/client/gameEngineOptions.ts",
     "client/src/client/HotSeatClient.ts",
+    "client/src/client/inputCapabilities.ts",
     "client/src/client/modeConfig.ts",
     "client/src/client/practiceFieldOrder.ts",
     "client/src/client/quickDuelLaunch.ts",
@@ -50,6 +51,10 @@
       "sha256": "ff48820beff23a62b85998fd6e43f12685d696f68098c4cff5a3efaf3660595a"
     },
     {
+      "path": "client/src/client/inputCapabilities.ts",
+      "sha256": "efa0f85e036fc2fcbb8a8230e5e3e0aa0528ddac94f483123bdeb2922878fb9a"
+    },
+    {
       "path": "client/src/client/modeConfig.ts",
       "sha256": "f007e69871f67b4fcae09a894605defc332928d74b70a65ba9b28d35db274559"
     },
@@ -71,7 +76,7 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "272080b5d84da2725bdc4a877d7b1549a90b89b9bef16178ebed897ac5020e0f"
+      "sha256": "d126af1637a28dc25e233954572b644e9d3b0fd009929feae0c399de0ab4c181"
     },
     {
       "path": "client/src/ui/Lobby.ts",

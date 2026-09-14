@@ -62,6 +62,8 @@ export interface BattleConsolePresentationState {
     readonly canCycle: boolean;
   };
   readonly armory: {
+    /** False when the active mode does not admit Armory commands. */
+    readonly available?: boolean;
     /** Missing only in historical snapshots; the live HUD supplies the active tank balance. */
     readonly credits?: number | null;
     readonly open: boolean;
@@ -71,6 +73,8 @@ export interface BattleConsolePresentationState {
   readonly ballistics: {
     readonly angle: number;
     readonly power: number;
+    /** Whether the active commander may adjust angle and power. */
+    readonly canAdjust?: boolean;
     /** Missing only in historical contract fixtures; live HUD state always supplies it. */
     readonly powerCap?: number;
     readonly wind: number;

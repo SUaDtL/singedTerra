@@ -9,6 +9,7 @@ import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
 import type { BorrowedGameState, GameState } from '@shared/types/GameState';
 import { VerifiedDuelController, verifiedCpuPolicyForTuple } from '@shared/net/verifiedDuel';
 import type { ConnectionState, GameClient } from './client/GameClient';
+import { inputCapabilitiesFor } from './client/inputCapabilities';
 import { HotSeatClient } from './client/HotSeatClient';
 import { VerifiedChallengeClient } from './client/VerifiedChallengeClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
@@ -815,6 +816,7 @@ function bootstrap(): void {
         // Tell the store which weapons/accessories are buyable in this room (UI gate only; the engine
         // enforces it independently). Default 4 => everything buyable, matching the engine default.
         hud.setArmsLevel(config.settings?.armsLevel ?? 4);
+        hud.setInputCapabilities?.(inputCapabilitiesFor(newClient));
         // Older focused test doubles intentionally model only the HUD methods relevant
         // to their lifecycle assertion; the real HUD always owns this presentation seam.
         (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
@@ -960,6 +962,7 @@ function bootstrap(): void {
       },
       constructInput: ({ client: newClient, initial }) => {
         const activeTank = initial?.tanks.find((tank) => tank.id === initial.activePlayerId);
+        const inputCapabilities = inputCapabilitiesFor(newClient);
         // Human input is dropped while a CPU tank holds the turn (its keys would
         // drive the bot) OR while the in-game Pause overlay is open — a reflex
         // arrow/space must not change aim or fire a shot while paused (#52). The
@@ -1026,6 +1029,7 @@ function bootstrap(): void {
           );
           syncFirstSalvo();
         }, {
+          capabilities: inputCapabilities,
           initialAngle: activeTank?.angle,
           initialPower: activeTank?.power,
           powerCap: activeInputPowerCap(activeTank?.powerCap),
@@ -1369,6 +1373,7 @@ function bootstrap(): void {
     // allowed while that dialog owns focus, unlike background keyboard/touch
     // gameplay input, but still obeys turn ownership and verified-play gates.
     if (!localTurnAllowsActions()) return;
+    if (!inputCapabilitiesFor(matchSession.client).weaponSelection) return;
     markDirty(); // weapon pick can change aim-guide/HUD context — repaint next frame
     matchSession.client?.sendAction({ type: 'select_weapon', weapon });
     matchSession.input?.setWeapon(weapon);
@@ -1378,6 +1383,7 @@ function bootstrap(): void {
   // turn-neutral action: hot-seat applies it locally; network commits it to the
   // log (and the engine re-gates affordability + whose turn it is).
   hud.onBuy((purchase, tankId) => {
+    if (!inputCapabilitiesFor(matchSession.client).buying) return;
     markDirty(); // a buy changes ammo/credits surfaced in the scene — repaint next frame
     // `purchase` carries exactly one of weapon/accessory; forward it verbatim (the engine + referee
     // re-validate the "exactly one" invariant, affordability, the arms gate, and whose turn it is).

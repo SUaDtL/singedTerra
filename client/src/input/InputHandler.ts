@@ -5,9 +5,15 @@ import { clamp } from '@shared/engine/math';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
 import { MAX_MOVE_DELTA, isValidMoveDelta } from '@shared/engine/Movement';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
+import {
+  FULL_GAME_INPUT_CAPABILITIES,
+} from '../client/inputCapabilities';
+import type { GameInputCapabilities } from '../client/GameClient';
 
 /** Optional seed for the handler's tracked aim state. */
 export interface InputHandlerOptions {
+  /** Commands and bounds admitted by the active game mode. Defaults to ordinary play. */
+  capabilities?: GameInputCapabilities;
   /** Initial angle (degrees) the active tank starts at. Default 45. */
   initialAngle?: number;
   /** Initial power the active tank starts at. Default 50. */
@@ -29,10 +35,6 @@ export interface InputHandlerOptions {
  * power 0–the active tank cap). The engine re-clamps authoritatively; we clamp our locally-tracked
  * value so held-key repeat does not drift past the bounds and emit redundant actions.
  */
-const ANGLE_MIN = 0;
-const ANGLE_MAX = 180;
-const POWER_MIN = 0;
-
 /**
  * The implemented weapon roster, in stable WeaponSystem key order. Q cycles
  * forward through ONLY these (SPEC §4.5: MVP1 ships Baby Missile + Missile); the
@@ -79,6 +81,7 @@ export class InputHandler {
   private readonly powerStep: number;
   private readonly canDirectAim: () => boolean;
   private readonly canHandleCommand: () => boolean;
+  private readonly capabilities: GameInputCapabilities;
 
   /** Locally-tracked absolute aim state (the engine re-clamps on apply). */
   private angle: number;
@@ -110,9 +113,18 @@ export class InputHandler {
   ) {
     this.target = target;
     this.emit = emit;
-    this.angle = clamp(options.initialAngle ?? DEFAULT_ANGLE, ANGLE_MIN, ANGLE_MAX);
+    this.capabilities = options.capabilities ?? FULL_GAME_INPUT_CAPABILITIES;
+    this.angle = clamp(
+      options.initialAngle ?? DEFAULT_ANGLE,
+      this.capabilities.angle.min,
+      this.capabilities.angle.max,
+    );
     this.powerCap = this.normalizedPowerCap(options.powerCap);
-    this.power = clamp(options.initialPower ?? DEFAULT_POWER, POWER_MIN, this.powerCap);
+    this.power = clamp(
+      options.initialPower ?? DEFAULT_POWER,
+      this.capabilities.power.min,
+      this.powerCap,
+    );
     this.angleStep = options.angleStep ?? DEFAULT_ANGLE_STEP;
     this.powerStep = options.powerStep ?? DEFAULT_POWER_STEP;
     this.canDirectAim = options.canDirectAim ?? (() => true);
@@ -125,14 +137,14 @@ export class InputHandler {
    * emit — purely re-seeds the handler's mirror.
    */
   setAim(angle: number, power: number): void {
-    this.angle = clamp(angle, ANGLE_MIN, ANGLE_MAX);
-    this.power = clamp(power, POWER_MIN, this.powerCap);
+    this.angle = clamp(angle, this.capabilities.angle.min, this.capabilities.angle.max);
+    this.power = clamp(power, this.capabilities.power.min, this.powerCap);
   }
 
   /** Refresh the active tank's cap without emitting. Legal selected power is preserved. */
   setPowerCap(powerCap: number): void {
     this.powerCap = this.normalizedPowerCap(powerCap);
-    this.power = clamp(this.power, POWER_MIN, this.powerCap);
+    this.power = clamp(this.power, this.capabilities.power.min, this.powerCap);
   }
 
   /** Feed the active tank's LOGICAL (canvas-space) barrel-origin position so direct
@@ -185,22 +197,20 @@ export class InputHandler {
 
   /** Emit one bounded, discrete tank movement commitment. */
   stepMove(delta: number): void {
-    if (this.canHandleCommand() && isValidMoveDelta(delta)) this.emit({ type: 'move', delta });
+    if (this.canHandleCommand() && this.capabilities.movement && isValidMoveDelta(delta)) {
+      this.emit({ type: 'move', delta });
+    }
   }
 
   /** Advance weapon selection forward one slot (wrapping). */
   nextWeapon(): void {
-    if (this.canHandleCommand()) this.cycleWeapon();
+    if (this.canHandleCommand() && this.capabilities.weaponCycling) this.cycleWeapon();
   }
 
   /** Emit a fire or use_shield action for the currently selected weapon. */
   triggerFire(): void {
     if (!this.canHandleCommand()) return;
-    this.emit(
-      isShieldWeapon(IMPLEMENTED_WEAPONS[this.weaponIndex]!)
-        ? { type: 'use_shield' }
-        : { type: 'fire' },
-    );
+    this.emitPrimaryAction();
   }
 
   /** Attach DOM event listeners. Idempotent. */
@@ -252,11 +262,7 @@ export class InputHandler {
     if (!this.canHandleCommand()) return;
     if (isSpaceKey) {
       event.preventDefault();
-      this.emit(
-        isShieldWeapon(IMPLEMENTED_WEAPONS[this.weaponIndex]!)
-          ? { type: 'use_shield' }
-          : { type: 'fire' },
-      );
+      this.emitPrimaryAction();
       return;
     }
     switch (event.key) {
@@ -281,27 +287,21 @@ export class InputHandler {
       case 'a':
       case 'A':
         event.preventDefault();
-        if (!event.repeat) this.stepMove(-MAX_MOVE_DELTA);
+        if (!event.repeat && this.capabilities.movement) this.stepMove(-MAX_MOVE_DELTA);
         break;
       case 'd':
       case 'D':
         event.preventDefault();
-        if (!event.repeat) this.stepMove(MAX_MOVE_DELTA);
+        if (!event.repeat && this.capabilities.movement) this.stepMove(MAX_MOVE_DELTA);
         break;
       case 'Enter':
         event.preventDefault();
-        // The shield is a defensive "weapon": firing it RAISES the field and ends
-        // the turn (use_shield) rather than launching a projectile.
-        this.emit(
-          isShieldWeapon(IMPLEMENTED_WEAPONS[this.weaponIndex]!)
-            ? { type: 'use_shield' }
-            : { type: 'fire' },
-        );
+        this.emitPrimaryAction();
         break;
       case 'q':
       case 'Q':
         event.preventDefault();
-        this.cycleWeapon();
+        if (this.capabilities.weaponCycling) this.cycleWeapon();
         break;
       default:
         break;
@@ -309,14 +309,18 @@ export class InputHandler {
   };
 
   private adjustAngle(delta: number): void {
-    const next = clamp(this.angle + delta, ANGLE_MIN, ANGLE_MAX);
+    const next = clamp(
+      this.angle + delta,
+      this.capabilities.angle.min,
+      this.capabilities.angle.max,
+    );
     if (next === this.angle) return; // already at bound — skip redundant emit
     this.angle = next;
     this.emit({ type: 'set_angle', angle: this.angle });
   }
 
   private adjustPower(delta: number): void {
-    const next = clamp(this.power + delta, POWER_MIN, this.powerCap);
+    const next = clamp(this.power + delta, this.capabilities.power.min, this.powerCap);
     if (next === this.power) return; // already at bound — skip redundant emit
     this.power = next;
     this.emit({ type: 'set_power', power: this.power });
@@ -328,6 +332,7 @@ export class InputHandler {
    * deterministically through IMPLEMENTED_WEAPONS regardless of engine echo.
    */
   private cycleWeapon(): void {
+    if (!this.capabilities.weaponCycling) return;
     if (IMPLEMENTED_WEAPONS.length === 0) return; // defensive — roster is never empty
     this.weaponIndex = (this.weaponIndex + 1) % IMPLEMENTED_WEAPONS.length;
     const weapon = IMPLEMENTED_WEAPONS[this.weaponIndex];
@@ -432,7 +437,11 @@ export class InputHandler {
 
   /** Set angle to an ABSOLUTE value (clamped), emitting only on a real change. */
   private setAngleAbsolute(angle: number): void {
-    const next = clamp(Math.round(angle), ANGLE_MIN, ANGLE_MAX);
+    const next = clamp(
+      Math.round(angle),
+      this.capabilities.angle.min,
+      this.capabilities.angle.max,
+    );
     if (next === this.angle) return;
     this.angle = next;
     this.emit({ type: 'set_angle', angle: this.angle });
@@ -440,14 +449,31 @@ export class InputHandler {
 
   /** Set power to an ABSOLUTE value (clamped), emitting only on a real change. */
   private setPowerAbsolute(power: number): void {
-    const next = clamp(Math.round(power), POWER_MIN, this.powerCap);
+    const next = clamp(Math.round(power), this.capabilities.power.min, this.powerCap);
     if (next === this.power) return;
     this.power = next;
     this.emit({ type: 'set_power', power: this.power });
   }
 
   private normalizedPowerCap(powerCap: number | undefined): number {
-    if (powerCap === undefined || !Number.isFinite(powerCap)) return DEFAULT_POWER_CAP;
-    return Math.max(POWER_MIN, powerCap);
+    const requested = powerCap === undefined || !Number.isFinite(powerCap)
+      ? DEFAULT_POWER_CAP
+      : powerCap;
+    return Math.min(
+      this.capabilities.power.max,
+      Math.max(this.capabilities.power.min, requested),
+    );
+  }
+
+  private emitPrimaryAction(): void {
+    if (this.capabilities.primaryAction === 'fire') {
+      this.emit({ type: 'fire' });
+      return;
+    }
+    this.emit(
+      isShieldWeapon(IMPLEMENTED_WEAPONS[this.weaponIndex]!)
+        ? { type: 'use_shield' }
+        : { type: 'fire' },
+    );
   }
 }

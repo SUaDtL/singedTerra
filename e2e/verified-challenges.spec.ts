@@ -100,6 +100,36 @@ async function setQualifyingSolutionAndFire(page: Page): Promise<void> {
   await expect(fire).toBeDisabled();
 }
 
+test('[mocked network fixture] CQ1 exposes only accepted battle commands and still fires after rejected-cycle keys', async ({ page }, testInfo) => {
+  test.setTimeout(45_000);
+  const fixture = await installVerifiedNetworkFixture(page);
+  await launchQualification(page, testInfo);
+
+  for (const targetKey of ['move-left', 'move-right', 'weapon-next', 'armory']) {
+    await expect.soft(page.locator(`[data-battle-console-target-key="${targetKey}"]`).first()).toBeDisabled();
+  }
+  for (const targetKey of ['angle-decrease', 'angle-increase', 'power-decrease', 'power-increase']) {
+    await expect.soft(page.locator(`[data-battle-console-target-key="${targetKey}"]`).first()).toBeEnabled();
+  }
+
+  // The former input cursor reached Shield after sixteen Q presses even though
+  // CQ1 rejected every select_weapon action. Those rejected keys must not change
+  // the action emitted by the primary Fire control.
+  for (let press = 0; press < 16; press += 1) await page.keyboard.press('q');
+  await setQualifyingSolutionAndFire(page);
+
+  await expect.poll(() => fixture.requests.complete.length, { timeout: 30_000 }).toBe(1);
+  expect(fixture.requests.complete).toEqual([{
+    sessionId: VERIFIED_SESSION_ID,
+    transcript: [QUALIFYING_FIRE],
+  }]);
+
+  const report = page.locator('[data-ui="verified-challenge-report"]');
+  await expect(report.getByRole('heading', { name: 'Crosswind Qualification verified', exact: true })).toBeVisible();
+  await report.getByRole('button', { name: 'Return to preparation', exact: true }).click();
+  await expect(page.locator('#lobby')).toBeVisible();
+});
+
 for (const scenario of [
   { disposition: 'awarded', reward: '+200 verified career XP', medal: 'Crosswind Qualification medal' },
   { disposition: 'already_owned', reward: '+0 XP', medal: 'Medal already owned' },

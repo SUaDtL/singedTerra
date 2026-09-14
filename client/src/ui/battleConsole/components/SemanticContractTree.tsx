@@ -90,7 +90,9 @@ function dynamicAccessibleName(
   if (name === 'baby missile' || name === 'weaponbaby missile∞') return state.weapon.name;
   if (name === 'unlimited ammunition') return state.weapon.ammo === null ? 'Unlimited ammunition' : `${state.weapon.ammo} ammunition`;
   if (node.stableKey === ARMORY_TRIGGER_KEY) {
-    return state.armory.open ? 'Close Armory' : 'Open Armory';
+    return state.armory.available === false
+      ? 'Armory unavailable in this mode'
+      : state.armory.open ? 'Close Armory' : 'Open Armory';
   }
   if (record.role === 'status' && name.includes("'s turn.")) {
     return `${state.commander.name}'s turn. ${presentedCommanderHealth(state)} health. Weapon ${state.weapon.name}. ${state.mobility.fuel ?? 0} fuel remaining.`;
@@ -147,13 +149,17 @@ function intentFor(
   return null;
 }
 
-function runtimeDisabled(record: SemanticSourceRecord, state: BattleConsolePresentationState): boolean {
+function runtimeDisabled(node: SemanticNodeDefinition, state: BattleConsolePresentationState): boolean {
+  const { sourceRecord: record } = node;
   const name = record.accessibleName.toLowerCase();
+  if (node.stableKey === ARMORY_TRIGGER_KEY) {
+    return state.armory.available === false;
+  }
   if (name.startsWith('move tank left')) return !state.mobility.canMoveLeft;
   if (name.startsWith('move tank right')) return !state.mobility.canMoveRight;
   if (name.startsWith('select next weapon')) return !state.weapon.canCycle;
   if (['aim barrel left', 'aim barrel right', 'decrease power', 'increase power'].includes(name)) {
-    return !state.weapon.canCycle || state.fireControl.submitting;
+    return !(state.ballistics.canAdjust ?? state.weapon.canCycle) || state.fireControl.submitting;
   }
   if (name.startsWith('fire ')) return !state.fireControl.ready || state.fireControl.submitting;
   if (name.startsWith('buy ') || name.startsWith('equip ')) return state.armory.submitting;
@@ -284,7 +290,7 @@ export function SemanticContractTree({
         : record.checked ?? undefined,
       role: record.role || undefined,
       tabIndex: isArmoryTrigger ? 0 : record.focusable ? record.tabIndex : undefined,
-      disabled: record.tag === 'BUTTON' ? runtimeDisabled(record, state) : undefined,
+      disabled: record.tag === 'BUTTON' ? runtimeDisabled(node, state) : undefined,
       hidden: isArmoryTrigger && state.armory.open ? true : undefined,
       onClick: intent
         ? () => dispatch(intent)
