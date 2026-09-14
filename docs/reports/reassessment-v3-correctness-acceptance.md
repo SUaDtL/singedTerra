@@ -22,3 +22,12 @@ Exact PR #506 CI run `34870930574` passed 462 general browser cases (45 profile 
 Candidate local validation: 2,207 client tests, 94.10% line/83.61% branch coverage including runtime TSX, 29 targeted browser cases plus 83 product cases, typecheck, build, engine and ST1 checks. Independent authentication, source, coverage and final focus/lifecycle review passed. The final correction aggregate is 47006de6c810bd8d6c65a588862f22bf4859a25cfa4c71ebdfa2f529e5572b06.
 
 Production backend operations remain separately scoped. This correction introduces no backend deployment, reward-policy change, native platform, new audio service, telemetry collection or broad rendering rewrite. Rollback uses the existing compatible artifact procedure; no applied SQL rollback is implied.
+
+The expanded browser suites exposed a delivery wait-budget mismatch: Pages stopped
+polling after about 20 minutes while exact main CI needed about 23. The first
+attempt published nothing; an unchanged-source rerun cleared the gate after CI
+passed. The bounded correction allows 180 polls, nominally 30 minutes, inside a
+35-minute gate job. It preserves exact-source/run/attempt requirements, terminal
+failure handling, current-main freshness, artifact integrity and deployment
+locking. Existing release-candidate, workflow and Pages structural checks passed.
+This operational repair does not change the reassessment acceptance criteria.

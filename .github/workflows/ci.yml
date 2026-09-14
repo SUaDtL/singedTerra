@@ -16,16 +16,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: typecheck · harnesses · build
+  scope:
+    name: classify changes and verify CI policy
     runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+      base_sha: ${{ steps.changes.outputs.base_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
-          cache: npm
-      - name: Verify immutable migration history against the event commits
+      - name: Verify event commits, migration history and change scope
+        id: changes
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -39,9 +44,12 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             base="$PR_BASE_SHA"
             head="$PR_HEAD_SHA"
-          else
+          elif [ "$EVENT_NAME" = "push" ]; then
             base="$PUSH_BASE_SHA"
             head="$PUSH_HEAD_SHA"
+          else
+            echo "Unsupported CI event" >&2
+            exit 1
           fi
           if [ -z "$base" ] || [ -z "$head" ] || [[ "$base" =~ ^0+$ ]] || [[ "$head" =~ ^0+$ ]]; then
             echo "Missing immutable base/head evidence for migration history" >&2
@@ -52,11 +60,35 @@ jobs:
           git cat-file -e "$head^{commit}"
           git update-ref refs/remotes/origin/main "$base"
           node scripts/checks/migration_classification.mjs --check history --base "$base" --head "$head"
+          CI_BASE_SHA="$base" CI_HEAD_SHA="$head" node scripts/ci/changeScope.mjs
+          echo "base_sha=$base" >> "$GITHUB_OUTPUT"
       - name: Migration-history disposable Git regressions
         run: node --test scripts/checks/migration_classification.test.mjs
       - name: Release-candidate policy and digest regressions
         run: node --test scripts/ci/releaseCandidate.test.mjs scripts/ci/releaseWorkflow.test.mjs
+      - name: Documentation evidence-template contracts
+        run: node --test scripts/checks/manual_baseline.test.mjs
+      - name: Scope and required-result regressions
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs
+
+  check-work:
+    name: engine, database, client and build
+    needs: scope
+    if: needs.scope.outputs.docs_only == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
       - run: npm ci
+      - name: Restore the exact migration baseline for engine checks
+        env:
+          CI_BASE_SHA: ${{ needs.scope.outputs.base_sha }}
+        run: git fetch --no-tags --depth=1 origin "+$CI_BASE_SHA:refs/remotes/origin/main"
       - name: Audit runtime and build dependencies
         run: npm run audit:deps
       - run: npm run check         # typecheck (shared + client) + the deterministic harnesses
@@ -65,11 +97,15 @@ jobs:
       - run: npm run test:client   # vitest (jsdom) — client DOM + fetch unit tests
       - run: npm run build
 
-  edge:
-    name: edge function tests (deno)
+  edge-work:
+    name: Edge runtime tests
+    needs: scope
+    if: needs.scope.outputs.docs_only == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Deno type-checks the referee code, and the supabase-js import resolves
       # @types/node from node_modules — so npm ci must run before deno test.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -85,14 +121,22 @@ jobs:
       - name: Run Edge tests with bounded retry
         run: bash scripts/ci/run-edge-tests.sh
 
-  e2e:
+  browser:
     # Real-browser rendering guardrails (Playwright). The jsdom unit tests can't
     # observe COMPUTED LAYOUT, so a HUD flex-crush shipped despite green unit tests;
     # this job builds the PRODUCTION bundle and asserts real geometry in Chromium.
-    name: e2e · rendering guardrails
+    name: browser (${{ matrix.lane }})
+    needs: scope
+    if: needs.scope.outputs.docs_only == 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [core-1, core-2, product]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
@@ -116,15 +160,69 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
-      - run: npm run test:e2e   # builds client/dist, serves it via vite preview, asserts real HUD geometry
+      - name: General browser shard 1
+        if: matrix.lane == 'core-1'
+        run: npm run test:e2e -- --shard=1/2 --workers=2
+      - name: General browser shard 2
+        if: matrix.lane == 'core-2'
+        run: npm run test:e2e -- --shard=2/2 --workers=2
       - name: Battle console responsive and interaction checks
+        if: matrix.lane == 'product'
         run: npx playwright test -c playwright.product-completion.config.ts
       - name: Upload Playwright failure artifacts
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-failure-artifacts-${{ github.run_attempt }}
+          name: playwright-${{ matrix.lane }}-${{ github.run_attempt }}
           path: |
             test-results/**
             playwright-report/**
           if-no-files-found: warn
+
+  check:
+    name: typecheck · harnesses · build
+    if: always()
+    needs: [scope, check-work]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate required result
+        run: node scripts/ci/requiredResult.mjs
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
+          WORK_RESULT: ${{ needs.check-work.result }}
+
+  edge:
+    name: edge function tests (deno)
+    if: always()
+    needs: [scope, edge-work]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate required result
+        run: node scripts/ci/requiredResult.mjs
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
+          WORK_RESULT: ${{ needs.edge-work.result }}
+
+  e2e:
+    name: e2e · rendering guardrails
+    if: always()
+    needs: [scope, browser]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate required result
+        run: node scripts/ci/requiredResult.mjs
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
+          WORK_RESULT: ${{ needs.browser.result }}

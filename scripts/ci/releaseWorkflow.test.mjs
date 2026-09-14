@@ -61,7 +61,7 @@ test('policy rejects missing gates, untrusted triggers, and alternate artifacts'
     pages.replace('workflow_dispatch:', 'pull_request_target:\n  workflow_dispatch:'),
     pages.replaceAll('github-pages-${{ github.run_id }}', 'github-pages-pr'),
     pages.replace('artifact-ids: ${{ needs.build.outputs.artifact_id }}', 'name: github-pages'),
-    pages.replace('npm run test:e2e -- --grep-invert @live --workers=2', 'echo skipped-general-suite'),
+    pages.replaceAll('npm run test:e2e -- --grep-invert @live --workers=2', 'echo skipped-general-suite'),
     pages.replace('npx playwright test -c playwright.product-completion.config.ts', 'echo skipped-product-suite'),
     pages.replace('node scripts/ci/releaseCandidate.mjs revalidate-ci', 'echo skipped-final-ci-check'),
     pages.replaceAll('CANDIDATE_METADATA_SHA256: ${{ needs.build.outputs.candidate_metadata_sha256 }}', 'CANDIDATE_METADATA_SHA256: omitted'),
