@@ -15,6 +15,7 @@ archived plans preserve the state that existed when they were written.
 - [Development and operations](DEVELOPMENT.md): requirements, local setup, test layers, Supabase configuration, and release boundaries.
 - [UI system](UI_SYSTEM.md): bronze console direction, responsive modes, semantic controls, assets, accessibility, and browser review.
 - [Contributing](../CONTRIBUTING.md): branch, review, determinism, and security expectations.
+- [V3 desktop diagnostic](performance/v3-desktop-diagnostic.md): measured first play and repeated-match ownership, with explicit device and measurement limits.
 
 ## Product contract
 
@@ -45,6 +46,10 @@ evidence of the responsive browser layout, not a physical-device test.
 Crosswind Qualification remains unavailable for public admission until its
 separate backend release, hosted proof, and enablement steps are approved and
 completed. Client code and local verification do not establish a live reward.
+
+## Current reassessment
+
+- [V3 correctness acceptance](reports/reassessment-v3-correctness-acceptance.md): reviewed fixes, exact delivery evidence, and remaining physical checks. This does not close the separate product experiments.
 
 ## Historical records
 

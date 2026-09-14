@@ -780,7 +780,7 @@
     {
       "id": "T08",
       "title": "Qualify persisted-page restore and correct only observed lifecycle gaps",
-      "status": "in_progress",
+      "status": "verified",
       "phase": "qualification",
       "kind": "qualification",
       "owner": "assigned_agent",
@@ -988,7 +988,7 @@
     {
       "id": "T12",
       "title": "Accept the bounded correction release without restarting recovery",
-      "status": "planned",
+      "status": "in_progress",
       "phase": "verification",
       "kind": "implementation",
       "owner": "assigned_agent",
@@ -1039,7 +1039,7 @@
     {
       "id": "T13",
       "title": "Replace only the desktop English-label action interpreter",
-      "status": "in_progress",
+      "status": "verified",
       "phase": "targeted_refactor",
       "kind": "implementation",
       "owner": "assigned_agent",
