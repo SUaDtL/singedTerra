@@ -70,6 +70,10 @@ const E2E_QUICK_OPERATION = E2E_MODE === 'victory' && E2E_PARAMS.has('quick-oper
   ? quickOperationById(E2E_PARAMS.get('quick-operation'))
   : null;
 const LIVE_MATCH_DIAGNOSTICS_ENABLED = E2E_PARAMS.get('diagnostics') === '1';
+// Renderer owns an 80-frame transient-effects window and a two-frame heavy-impact
+// hold. Let its truthful completion signal release the CQ1 report first, but never
+// leave a receipt hidden forever if that signal is unexpectedly stuck.
+const MAX_CHALLENGE_PAYOFF_DRAIN_FRAMES = 82;
 const e2eSeedParam = E2E_PARAMS.get('seed');
 const e2eSeedCandidate = e2eSeedParam !== null && e2eSeedParam.trim() !== ''
   ? Number(e2eSeedParam)
@@ -1097,9 +1101,39 @@ function bootstrap(): void {
         input: newInput,
         terminalHistoryPrimed,
       }) => {
+        let challengeReportDeferred = false;
+        let challengePayoffCompleted = terminalHistoryPrimed;
+        let challengePayoffFrame: number | null = null;
+        let challengePayoffFrames = 0;
         const syncChallenge = (): void => {
           if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
-          hud.setVerifiedChallenge({ session: lobby.verifiedChallenge, result: challengeClient.terminalResult });
+          hud.setVerifiedChallenge(
+            { session: lobby.verifiedChallenge, result: challengeClient.terminalResult },
+            { reportReady: !challengeReportDeferred },
+          );
+        };
+        const releaseChallengeReport = (): void => {
+          if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
+          challengeReportDeferred = false;
+          challengePayoffCompleted = true;
+          syncChallenge();
+        };
+        const drainChallengePayoff = (state: GameState): void => {
+          if (challengePayoffFrame !== null) return;
+          challengePayoffFrame = requestAnimationFrame(() => {
+            challengePayoffFrame = null;
+            if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
+            gameRenderer.render(state);
+            challengePayoffFrames++;
+            if (
+              gameRenderer.isTerminalImpactAnimating(state)
+              && challengePayoffFrames < MAX_CHALLENGE_PAYOFF_DRAIN_FRAMES
+            ) {
+              drainChallengePayoff(state);
+              return;
+            }
+            releaseChallengeReport();
+          });
         };
         const submitChallenge = (): void => {
           if (challengeClient !== newClient || !challengeClient.terminalResult || challengeCompletionStarted) return;
@@ -1136,6 +1170,9 @@ function bootstrap(): void {
 
         return (canonicalState: BorrowedGameState) => {
           const state = presentationStateFor(canonicalState);
+          if (challengeClient === newClient && challengeClient.terminalResult && !challengePayoffCompleted) {
+            challengeReportDeferred = true;
+          }
           if (E2E_MODE === 'verified-lifecycle' && verifiedController?.complete && !verifiedCasual) {
             exposeVerifiedTerminalProbe(canonicalState, state, verifiedController.result());
           }
@@ -1190,6 +1227,7 @@ function bootstrap(): void {
             gameRenderer.render(state);
             renderDirty = false;
           }
+          if (challengeReportDeferred) drainChallengePayoff(state);
           const verifiedControlsAllowed = verifiedInputAllowed();
           hud.setImpactLearningCue(gameRenderer.currentImpactLearningCue());
           hud.update(

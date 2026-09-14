@@ -2025,7 +2025,10 @@ export class HUD {
   }
 
   /** Present retained challenge truth without entering ordinary match-result or progression paths. */
-  setVerifiedChallenge(state: HUDVerifiedChallengePresentation | null): void {
+  setVerifiedChallenge(
+    state: HUDVerifiedChallengePresentation | null,
+    options: Readonly<{ reportReady?: boolean }> = {},
+  ): void {
     this.verifiedChallengeState = state;
     if (state !== null) this.setFirstSalvoStep(null);
     if (!this.built) this.build();
@@ -2036,7 +2039,7 @@ export class HUD {
       }
       if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport(false);
     }
-    this.verifiedChallengeView.update(state);
+    this.verifiedChallengeView.update(state, options.reportReady ?? true);
   }
 
   /** Present one public client-only Field Order while verified play owns it. */
