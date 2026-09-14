@@ -28,6 +28,25 @@ function mountHud() {
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('HUD verified challenge presentation', () => {
+  it('keeps a live terminal challenge report hidden while preserving truthful status until the payoff gate opens', async () => {
+    const { hud, root, modal } = mountHud()
+    const presentation = {
+      session: { status: 'completion-pending' as const, descriptor, transcript: [shot], computeAttempts: 1 },
+      result,
+    }
+
+    hud.setVerifiedChallenge(presentation, { reportReady: false })
+    const challenge = modal.querySelector<HTMLElement>('[data-ui="verified-challenge-report"]')!
+    expect(challenge.hidden).toBe(true)
+    expect(root.querySelector<HTMLElement>('[data-ui="verified-challenge-status"]')?.textContent)
+      .toContain('Verification pending')
+
+    hud.setVerifiedChallenge(presentation, { reportReady: true })
+    expect(challenge.hidden).toBe(false)
+    expect(challenge.textContent).toContain('Objective cleared locally')
+    await hud.destroy()
+  })
+
   it('keeps active status in the match ledger and uses the dedicated early-result dialog', async () => {
     const { hud, root, modal } = mountHud()
     const onReturn = vi.fn()

@@ -395,6 +395,7 @@ export class Lobby {
   private surface: 'chooser' | 'preparation' = 'chooser';
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
+  private networkRecoveryRetry: (() => void) | null = null;
 
   // Create form state
   private onlineName = '';
@@ -993,6 +994,17 @@ export class Lobby {
     void this.checkRejoinCandidate();
   }
 
+  /** Restore the online preparation surface after match acquisition times out. */
+  showNetworkRecovery(message: string, retry: () => void): void {
+    this.surface = 'preparation';
+    this.activeTab = 'online';
+    this.onlineSubView = 'create';
+    this.onlineBusy = false;
+    this.onlineError = message;
+    this.networkRecoveryRetry = retry;
+    this.show();
+  }
+
   /**
    * T-09 (AC-05) — on lobby entry, validate any stored session descriptor
    * against a live `rooms` read: only a descriptor whose room is `active` with
@@ -1007,6 +1019,7 @@ export class Lobby {
 
   /** Hide the lobby overlay (e.g. once the game starts). */
   hide(): void {
+    this.networkRecoveryRetry = null;
     this.roomController.retire();
     this.cleanupWaitingChannel();
     this.stopBrowsePoll();
@@ -1172,6 +1185,12 @@ export class Lobby {
               ? this.renderBrowse()
               : this.renderWaitingRoom();
         content = buildLobbyOnlineView(onlineContent);
+        if (this.networkRecoveryRetry) {
+          const recovery = document.createElement('div');
+          recovery.className = 'lobby-online-recovery';
+          recovery.append(this.renderOnlineStatus(true));
+          content.prepend(recovery);
+        }
       }
     }
 
@@ -1213,7 +1232,7 @@ export class Lobby {
       activeTab: this.activeTab,
       surface: this.surface,
       showBack: !(this.activeTab === 'online' && this.onlineSubView === 'waiting'),
-      rejoinAvailable: this.rejoinCandidate !== null,
+      rejoinAvailable: this.rejoinCandidate !== null && this.networkRecoveryRetry === null,
       account: accountPanel,
       vehiclePreview,
       content,
@@ -2498,10 +2517,28 @@ export class Lobby {
 
   // ---- Shared online helpers ----
 
-  private renderOnlineStatus(): HTMLElement {
+  private renderOnlineStatus(includeRecovery = false): HTMLElement {
     const el = document.createElement('div');
     el.className = 'online-status' + (this.onlineError ? ' error' : '');
-    el.textContent = this.onlineError || '';
+    if (this.networkRecoveryRetry && !includeRecovery) return el;
+    if (this.onlineError) {
+      el.setAttribute('role', 'alert');
+      const message = document.createElement('span');
+      message.textContent = this.onlineError;
+      el.append(message);
+    }
+    if (includeRecovery && this.networkRecoveryRetry) {
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'lobby-btn primary';
+      retry.textContent = 'Retry game recovery';
+      retry.addEventListener('click', () => {
+        const action = this.networkRecoveryRetry;
+        this.networkRecoveryRetry = null;
+        action?.();
+      }, { signal: this.renderListeners.signal });
+      el.append(retry);
+    }
     return el;
   }
 

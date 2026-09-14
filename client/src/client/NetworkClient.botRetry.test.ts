@@ -235,6 +235,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     fetchMock: ReturnType<typeof vi.fn>,
     armsLevel: number,
     start = true,
+    recoveryResults: QueryResult[] = [],
   ): Promise<{ client: NetworkClient; captured: Captured; engine: GameEngine }> {
     installV2Fetch(fetchMock);
     const human = OPTIONS.players[0];
@@ -245,7 +246,10 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       armsLevel,
       players: [human, { ...bot, ai: 'hard' as const }],
     };
-    const { supabase, captured } = makeFakeSupabase([{ data: [p1FireRow().new], error: null }]);
+    const { supabase, captured } = makeFakeSupabase([
+      { data: [p1FireRow().new], error: null },
+      ...recoveryResults,
+    ]);
     const client = new NetworkClient(supabase, 'room-1', 'player-abc', options, undefined, 2);
     await client.initialize();
     const engine = (client as unknown as { engine: GameEngine }).engine;
@@ -343,7 +347,7 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     expect(ticks).toBeLessThan(100_000);
   }
 
-  it('re-attempts a bot submit after a transient failure (does not wedge) — OB-1', async () => {
+  it('re-attempts the same bot submit after a bounded transient delay (does not wedge) — OB-1/T04', async () => {
     // Every submit_action POST fails with a non-conflict 500 (the RPC errored, so the
     // action did NOT commit). A correct driver must retry on a later frame.
     const fetchMock = vi.fn().mockResolvedValue({
@@ -356,12 +360,133 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1); // first attempt fired
 
     await pumpFrame();
-    // BUG (#119): lastBotKey was latched before the POST and never cleared on failure,
-    // so this second frame is suppressed and the room wedges forever -> still 1 call.
-    // FIX: the failed submit self-heals, so the bot action is re-attempted here.
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no per-frame retry spin
+    await new Promise((resolve) => setTimeout(resolve, 210));
+    await settle();
+    // The failed submit self-heals after a bounded delay with the same immutable intent.
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body)
+      .toBe((fetchMock.mock.calls[0]?.[1] as RequestInit).body);
 
     client.stop();
+  });
+
+  it('backs off a 429 CPU response and retries the same purchase intent — T04', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({ ok: false, error: 'rate_limited' }),
+      })
+      .mockReturnValue(neverSettles());
+    const { client, engine } = await configuredBotTurnClient(fetchMock, 1);
+    setExhaustedRichBot(engine);
+
+    await pumpFrame();
+    const firstBody = (fetchMock.mock.calls[0]?.[1] as RequestInit).body;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(submittedAction(fetchMock, 0)).toEqual({ type: 'buy', weapon: 'nuke' });
+
+    await new Promise((resolve) => setTimeout(resolve, 210));
+    await settle();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body).toBe(firstBody);
+    expect(aiProbe.calls).toBe(1);
+    client.stop();
+  });
+
+  it('cancels a delayed CPU transport retry during teardown — T04', async () => {
+    let client: NetworkClient | undefined;
+    try {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: async () => ({ ok: false, error: 'rate_limited' }),
+      });
+      const configured = await configuredBotTurnClient(fetchMock, 1);
+      client = configured.client;
+      setExhaustedRichBot(configured.engine);
+
+      await pumpFrame();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      client.stop();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      client?.stop();
+    }
+  });
+
+  it('retires a backed-off CPU envelope when a different canonical row advances its revision — T04', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    let client: NetworkClient | undefined;
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 429,
+          json: async () => ({ ok: false, error: 'rate_limited' }),
+        })
+        .mockReturnValue(neverSettles());
+      const configured = await configuredBotTurnClient(fetchMock, 1);
+      client = configured.client;
+      setExhaustedRichBot(configured.engine);
+
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
+      const internals = client as unknown as {
+        commandWatchdog: ReturnType<typeof setTimeout> | null;
+        nextExpectedSeq: number;
+        pendingRoomCommand: { state: string } | null;
+      };
+      for (let step = 0; step < 40 && internals.commandWatchdog === null; step += 1) {
+        await Promise.resolve();
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(internals.pendingRoomCommand?.state).toBe('recovering');
+      expect(internals.commandWatchdog).not.toBeNull();
+      const firstBody = JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body)) as {
+        command: { expectedRevision: number };
+      };
+      expect(firstBody.command.expectedRevision).toBe(1);
+
+      configured.captured.insertHandler?.({
+        new: {
+          id: 'competing-move',
+          room_id: 'room-1',
+          seq: 1,
+          player_id: 'bot-def',
+          action: { type: 'move', delta: 1 } satisfies NetworkAction,
+          created_at: '',
+        },
+      });
+      await settleMicrotasks();
+      expect(internals.nextExpectedSeq).toBe(2);
+
+      await vi.advanceTimersByTimeAsync(200);
+      await settleMicrotasks();
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const secondBody = JSON.parse(String((fetchMock.mock.calls[1]?.[1] as RequestInit).body)) as {
+        command: { expectedRevision: number };
+      };
+      expect(secondBody.command.expectedRevision).toBe(2);
+
+      for (let callback = 0; callback < 5; callback += 1) {
+        rafTimestamp += 1_000 / 60;
+        rafCb?.(rafTimestamp);
+        await settleMicrotasks();
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      client?.stop();
+      vi.useRealTimers();
+    }
   });
 
   it('latches a committed bot submit — no duplicate POST across frames — OB-2', async () => {
@@ -389,6 +514,90 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1); // in-flight guard blocks the second frame
     expect(aiProbe.calls).toBe(1);
 
+    client.stop();
+  });
+
+  it.each([
+    ['invalid seat credentials', 403, 'invalid_seat_token'],
+    ['unsupported command protocol', 409, 'command_protocol_mismatch'],
+  ] as const)(
+    'stops one CPU purchase after a terminal %s refusal and offers recovery — T04',
+    async (_label, status, error) => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status,
+        json: async () => ({ ok: false, error }),
+      });
+      const { client, engine } = await configuredBotTurnClient(fetchMock, 1);
+      setExhaustedRichBot(engine);
+      const notice = vi.fn();
+      client.onFireFailed(notice);
+
+      for (let callback = 0; callback < 5; callback += 1) await pumpFrame();
+
+      expect(submittedAction(fetchMock, 0)).toEqual({ type: 'buy', weapon: 'nuke' });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(aiProbe.calls).toBe(1);
+      expect(notice).toHaveBeenCalledOnce();
+      expect(notice).toHaveBeenCalledWith('CPU command was refused — return to the lobby and rejoin to recover.');
+      client.stop();
+    },
+  );
+
+  it('recovers a conflicted CPU purchase when the first canonical read fails — T04', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({ ok: false, error: 'revision_conflict' }),
+      })
+      .mockReturnValue(neverSettles());
+    const recoveryBuy = {
+      id: 'recovered-buy',
+      room_id: 'room-1',
+      seq: 1,
+      player_id: 'bot-def',
+      action: { type: 'buy', weapon: 'nuke' } satisfies NetworkAction,
+      created_at: '',
+    };
+    const { client, engine } = await configuredBotTurnClient(fetchMock, 1, true, [
+      { data: null, error: { message: 'injected first-read failure' } },
+      { data: [recoveryBuy], error: null },
+    ]);
+    setExhaustedRichBot(engine);
+    const notice = vi.fn();
+    client.onFireFailed(notice);
+
+    await pumpFrame();
+    await settle();
+
+    const bot = engine.getState().tanks[1];
+    expect(bot?.inventory.nuke.count).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(submittedAction(fetchMock, 1)).toMatchObject({ type: 'fire', weapon: 'nuke' });
+    expect(notice).not.toHaveBeenCalled();
+    client.stop();
+  });
+
+  it('stops a CPU conflict after bounded reads make no progress and offers recovery — T04', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({ ok: false, error: 'revision_conflict' }),
+    });
+    const { client, engine } = await configuredBotTurnClient(fetchMock, 1, true, [
+      { data: [], error: null },
+      { data: [], error: null },
+    ]);
+    setExhaustedRichBot(engine);
+    const notice = vi.fn();
+    client.onFireFailed(notice);
+
+    for (let callback = 0; callback < 5; callback += 1) await pumpFrame();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(notice).toHaveBeenCalledOnce();
+    expect(notice).toHaveBeenCalledWith('CPU command conflict could not be recovered — reload to continue.');
     client.stop();
   });
 

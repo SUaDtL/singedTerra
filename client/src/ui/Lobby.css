@@ -784,6 +784,19 @@
       #lobby .online-badge.waiting { background: rgba(255, 210, 63, 0.16); color: var(--gold); }
       #lobby .online-status { color: var(--text-dim); font-size: 13px; min-height: 18px; margin-bottom: 10px; }
       #lobby .online-status.error { color: var(--tank-red); }
+      #lobby .lobby-online-recovery {
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border: 1px solid rgba(232, 85, 77, 0.58);
+        background: rgba(42, 12, 12, 0.92);
+      }
+      #lobby .lobby-online-recovery .online-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0;
+      }
       #lobby .lobby-code-input {
         background: rgba(12, 7, 22, 0.8); color: var(--gold);
         border: 1px solid rgba(255, 210, 63, 0.25);

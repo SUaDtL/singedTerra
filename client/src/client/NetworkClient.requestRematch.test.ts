@@ -46,6 +46,37 @@ function makeClient(fakeSupabase = {} as unknown as SupabaseClient): NetworkClie
   );
 }
 
+const SUCCESSOR_ROOM = {
+  id: 'room-next',
+  code: 'NEXT42',
+  seed: 42,
+  options: {
+    maxPlayers: 2,
+    maxWind: 8,
+    gravity: 0.2,
+    rulesetVersion: 4,
+    commandProtocolVersion: 2,
+  },
+  players: [
+    { id: 'player-abc', name: 'Alice', color: '#e84d4d' },
+    { id: 'player-def', name: 'Bob', color: '#4d8ce8' },
+  ],
+};
+
+function makeSuccessorQuery(resolveRoom: () => Promise<{ data: typeof SUCCESSOR_ROOM; error: null }>) {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    abortSignal: vi.fn((_signal: AbortSignal) => query),
+    maybeSingle: vi.fn(resolveRoom),
+  };
+  return query;
+}
+
+async function flushMicrotasks(): Promise<void> {
+  for (let index = 0; index < 12; index += 1) await Promise.resolve();
+}
+
 describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing)', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
@@ -121,11 +152,252 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     await expect(client.requestRematch()).resolves.toEqual({ ok: false, error: 'Network error' });
   });
 
+  it('bounds a black-holed restart request and ignores its late successor identity', async () => {
+    vi.useFakeTimers();
+    let resolveRestart!: (response: { ok: boolean; status: number; json: () => Promise<unknown> }) => void;
+    const restart = new Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>((resolve) => {
+      resolveRestart = resolve;
+    });
+    const from = vi.fn();
+    const client = makeClient({ from } as unknown as SupabaseClient);
+    const notice = vi.fn();
+    client.onFireFailed(notice);
+    vi.stubGlobal('fetch', vi.fn(() => restart));
+    try {
+      const result = client.requestRematch();
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      await expect(result).resolves.toEqual({
+        ok: false,
+        error: 'Rematch recovery timed out. Try Restart again or return to the lobby.',
+      });
+      expect(notice).toHaveBeenCalledWith(
+        'Rematch recovery timed out. Try Restart again or return to the lobby.',
+      );
+
+      resolveRestart({
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, roomId: 'room-next' }),
+      });
+      await flushMicrotasks();
+      expect(from).not.toHaveBeenCalled();
+    } finally {
+      client.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('retires a timed-out successor read and retries the same authoritative identity', async () => {
+    vi.useFakeTimers();
+    let resolveFirstLookup!: (value: { data: typeof SUCCESSOR_ROOM; error: null }) => void;
+    const firstLookup = new Promise<{ data: typeof SUCCESSOR_ROOM; error: null }>((resolve) => {
+      resolveFirstLookup = resolve;
+    });
+    let reads = 0;
+    const signals: AbortSignal[] = [];
+    const query = {
+      select: vi.fn(() => query),
+      eq: vi.fn(() => query),
+      abortSignal: vi.fn((signal: AbortSignal) => { signals.push(signal); return query; }),
+      maybeSingle: vi.fn(() => {
+        reads += 1;
+        if (reads === 1) return firstLookup;
+        if (reads === 2) return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: SUCCESSOR_ROOM, error: null });
+      }),
+    };
+    const client = makeClient({ from: vi.fn(() => query) } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, roomId: 'room-next' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const first = client.requestRematch();
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(5_000);
+      await expect(first).resolves.toMatchObject({ ok: false });
+      expect(signals[0]?.aborted).toBe(true);
+
+      resolveFirstLookup({ data: SUCCESSOR_ROOM, error: null });
+      await flushMicrotasks();
+      expect(listener).not.toHaveBeenCalled();
+
+      const retry = client.requestRematch();
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(150);
+      await expect(retry).resolves.toEqual({ ok: true });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(query.eq).toHaveBeenCalledWith('id', 'room-next');
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener.mock.calls[0]![0].roomId).toBe('room-next');
+    } finally {
+      client.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('hands off exactly once from a successful allocation when the rooms UPDATE is missed', async () => {
+    const query = makeSuccessorQuery(async () => ({ data: SUCCESSOR_ROOM, error: null }));
+    const client = makeClient({ from: vi.fn(() => query) } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, roomId: 'room-next' }),
+    }));
+
+    await expect(client.requestRematch()).resolves.toEqual({ ok: true });
+
+    expect(query.eq).toHaveBeenCalledWith('id', 'room-next');
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0]![0]).toMatchObject({ roomId: 'room-next', code: 'NEXT42' });
+  });
+
+  it.each(['http-first', 'update-first'] as const)(
+    'converges reordered and duplicate HTTP/UPDATE handoffs (%s)',
+    async (order) => {
+      const query = makeSuccessorQuery(async () => ({ data: SUCCESSOR_ROOM, error: null }));
+      const client = makeClient({ from: vi.fn(() => query) } as unknown as SupabaseClient);
+      const listener = vi.fn();
+      client.onRematch(listener);
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ok: true, roomId: 'room-next' }),
+      }));
+      const handleUpdate = () => (client as unknown as {
+        handleRematch(newRoomId: string): Promise<void>;
+      }).handleRematch('room-next');
+
+      if (order === 'http-first') {
+        await client.requestRematch();
+        await Promise.all([handleUpdate(), handleUpdate()]);
+      } else {
+        await Promise.all([handleUpdate(), handleUpdate()]);
+        await client.requestRematch();
+      }
+
+      expect(query.maybeSingle).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('joins an overlapping UPDATE lookup before the HTTP request reports completion', async () => {
+    let resolveLookup!: (value: { data: typeof SUCCESSOR_ROOM; error: null }) => void;
+    const lookup = new Promise<{ data: typeof SUCCESSOR_ROOM; error: null }>((resolve) => {
+      resolveLookup = resolve;
+    });
+    const query = makeSuccessorQuery(() => lookup);
+    const client = makeClient({ from: vi.fn(() => query) } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, roomId: 'room-next' }),
+    }));
+    const fromUpdate = (client as unknown as {
+      handleRematch(newRoomId: string): Promise<void>;
+    }).handleRematch('room-next');
+
+    const fromHttp = client.requestRematch();
+    const earlySettlement = await Promise.race([
+      fromHttp.then(() => 'settled' as const),
+      new Promise<'pending'>((resolve) => setTimeout(() => resolve('pending'), 0)),
+    ]);
+
+    expect(earlySettlement).toBe('pending');
+    expect(query.maybeSingle).toHaveBeenCalledTimes(1);
+    resolveLookup({ data: SUCCESSOR_ROOM, error: null });
+    await Promise.all([fromUpdate, fromHttp]);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the HTTP transition budget when it joins a later UPDATE-owned lookup', async () => {
+    vi.useFakeTimers();
+    let resolveRestart!: (response: { ok: boolean; status: number; json: () => Promise<unknown> }) => void;
+    const restart = new Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>((resolve) => {
+      resolveRestart = resolve;
+    });
+    let resolveLookup!: (value: { data: typeof SUCCESSOR_ROOM; error: null }) => void;
+    const lookup = new Promise<{ data: typeof SUCCESSOR_ROOM; error: null }>((resolve) => {
+      resolveLookup = resolve;
+    });
+    const query = makeSuccessorQuery(() => lookup);
+    const client = makeClient({ from: vi.fn(() => query) } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+    vi.stubGlobal('fetch', vi.fn(() => restart));
+    try {
+      const fromHttp = client.requestRematch();
+      await vi.advanceTimersByTimeAsync(4_500);
+      const fromUpdate = (client as unknown as {
+        handleRematch(newRoomId: string): Promise<boolean>;
+      }).handleRematch('room-next');
+      resolveRestart({
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, roomId: 'room-next' }),
+      });
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(500);
+
+      const boundedOutcome = await Promise.race([
+        fromHttp,
+        Promise.resolve('still-pending' as const),
+      ]);
+      expect(boundedOutcome).toEqual({
+        ok: false,
+        error: 'Rematch recovery timed out. Try Restart again or return to the lobby.',
+      });
+      expect(query.abortSignal.mock.calls[0]?.[0]?.aborted).toBe(false);
+
+      resolveLookup({ data: SUCCESSOR_ROOM, error: null });
+      await expect(fromUpdate).resolves.toBe(true);
+      expect(listener).toHaveBeenCalledOnce();
+    } finally {
+      resolveLookup({ data: SUCCESSOR_ROOM, error: null });
+      await flushMicrotasks();
+      client.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('cancels an in-flight successor lookup and suppresses its completion after stop', async () => {
+    let resolveLookup!: (value: { data: typeof SUCCESSOR_ROOM; error: null }) => void;
+    const lookup = new Promise<{ data: typeof SUCCESSOR_ROOM; error: null }>((resolve) => {
+      resolveLookup = resolve;
+    });
+    const query = makeSuccessorQuery(() => lookup);
+    const client = makeClient({
+      from: vi.fn(() => query),
+      removeChannel: vi.fn(),
+    } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+
+    const pending = (client as unknown as {
+      handleRematch(newRoomId: string): Promise<void>;
+    }).handleRematch('room-next');
+    client.stop();
+
+    const signal = query.abortSignal.mock.calls[0]?.[0] as AbortSignal | undefined;
+    expect(signal?.aborted).toBe(true);
+    resolveLookup({ data: SUCCESSOR_ROOM, error: null });
+    await pending;
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it('normalizes walls only for a protected-floor successor', async () => {
     async function resolveSuccessor(walls: unknown, rulesetVersion: 1 | 4) {
       const query = {
         select: () => query,
         eq: () => query,
+        abortSignal: () => query,
         maybeSingle: () => Promise.resolve({
           data: {
             id: 'room-next',
@@ -165,6 +437,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     const query = {
       select: () => query,
       eq: () => query,
+      abortSignal: () => query,
       maybeSingle: () => Promise.resolve({
         data: {
           id: 'room-legacy', code: 'OLD42', seed: 42,
@@ -190,6 +463,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     const query = {
       select: () => query,
       eq: () => query,
+      abortSignal: () => query,
       maybeSingle: () => Promise.resolve({
         data: {
           id: 'room-command-legacy', code: 'OLDCP', seed: 42,
@@ -230,6 +504,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     const query = {
       select: () => query,
       eq: () => query,
+      abortSignal: () => query,
       maybeSingle: () => {
         reads += 1;
         return Promise.resolve({
@@ -255,6 +530,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     const query = {
       select: () => query,
       eq: () => query,
+      abortSignal: () => query,
       maybeSingle: () => Promise.resolve({
         data: {
           id: 'room-rich',
@@ -266,6 +542,7 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
             gravity: 0.25,
             rulesetVersion: 4,
             commandProtocolVersion: 2,
+            roomLifecycleVersion: 1,
             walls: 'reflective',
             battlefieldWorld: 'obsidian-caldera',
             hazards: 'lava',
@@ -277,7 +554,10 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
           },
           players: [
             { id: 'player-abc', name: 'Alice', color: '#e84d4d', team: 1 },
-            { id: 'player-def', name: 'CPU Bob', color: '#4d8ce8', ai: 'medium', team: 1 },
+            {
+              id: 'player-def', name: 'CPU Bob', color: '#4d8ce8', ai: 'medium', team: 1,
+              loadout: { treads: 'ranger', hull: 'bulwark', turret: 'jackal', barrel: 'ranger' },
+            },
             { id: 'player-ghi', name: 'Carol', color: '#a855f7', team: 2 },
             { id: 'player-jkl', name: 'Dan', color: '#f59e0b', team: 2 },
           ],
@@ -308,8 +588,14 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
       teamMode: true,
     });
     expect(info.options.commandProtocolVersion).toBe(2);
+    expect(info.options.roomLifecycleVersion).toBe(1);
     expect(config.settings.commandProtocolVersion).toBe(2);
-    expect(options.players[1]).toMatchObject({ id: 'player-def', ai: 'medium' });
+    expect(config.settings.roomLifecycleVersion).toBe(1);
+    expect(options.players[1]).toMatchObject({
+      id: 'player-def',
+      ai: 'medium',
+      loadout: { treads: 'ranger', hull: 'bulwark', turret: 'jackal', barrel: 'ranger' },
+    });
     const engine = new GameEngine(options);
     expect(engine.getState()).toMatchObject({ round: 1, totalRounds: 5 });
     expect(engine.getState().tanks).toHaveLength(4);

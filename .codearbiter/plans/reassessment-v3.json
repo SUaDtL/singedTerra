@@ -1,0 +1,3077 @@
+{
+  "schema_version": "3.0.0",
+  "plan_id": "singedterra-reassessment-16624ca-v3",
+  "audit": {
+    "repository": "SUaDtL/singedTerra",
+    "branch": "main",
+    "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+    "previous_audit_sha": "3902cad662aea03cec913d984d17aa9573b89bd0",
+    "review_version": "3.0.0",
+    "date_label": "2026-09-13 review; release evidence crossed 00:00 UTC on September 14",
+    "deployed_url": "https://suadtl.github.io/singedTerra/",
+    "deployment_run_id": 34789791356,
+    "ci_run_id": 34789791353,
+    "artifact_id": 10328545904,
+    "archive_sha256": "d4fa8a02f244eae5280908739e060b4e2800ba25eb5a02db80c2c6897de9f82c",
+    "payload_sha256": "30cc6cf3de4b3118426de74f10daeb87a0e5288ca6b417f40a90367d802d3d37",
+    "release_evidence": "GitHub reports exact candidate tests, publication, public provenance verification and post-deploy live smoke successful. Candidate archive and payload digests independently recomputed in the audit container.",
+    "local_runtime": "Node 22.16.0 for isolated compiled probes; not the repository supported source-test environment",
+    "scope": "Fresh original-source inspection of implicated implementations and counterpart tests, exact deployed-candidate analysis, 11 isolated current-artifact probes, all 37 prior findings and 43 prior task records dispositioned.",
+    "limitations": [
+      "Browser navigation to live and localhost was blocked by administrator policy. No firsthand live gameplay, browser layout, audio audition or physical-device claim is made.",
+      "No full local Git checkout, supported-Node-24 source build, complete original test-suite rerun or local PostgreSQL/Deno execution was completed. Source was read through the connected GitHub tools.",
+      "Some files were read completely; some as complete implicated methods. The ledger records this. This is not a claim to have read every file in the repository.",
+      "The full new reward SQL/worker implementation and hosted database/function/configuration state were not comprehensively independently attested. Inspecting completion and client contracts is not a security certification of the whole reward subsystem.",
+      "Reproduction scripts use exact current compiled code with disclosed fixtures. They demonstrate pinned behavior, not an implemented fix, nor replacement acceptance tests for future code.",
+      "No measured player-retention or acquisition dataset was available; product proposals are hypotheses and study designs."
+    ]
+  },
+  "product_contract": {
+    "nonnegotiable": "Turn-based artillery",
+    "default_channel": "Free browser game",
+    "owner": "B",
+    "resourcing": "Solo implementation; no outside staff or paid service assumed",
+    "decision_rule": "Ship justified corrections and observe play; do not make cleanup or verified-reward infrastructure a prerequisite for every ordinary content experiment."
+  },
+  "orchestration": {
+    "parent_model": "astra",
+    "parent_reasoning_effort": "high",
+    "runtime_model_bindings": {
+      "luna": "gpt-5.6-luna",
+      "terra": "gpt-5.6-terra",
+      "sol": "gpt-5.6-sol",
+      "astra": "gpt-6-astra"
+    },
+    "model_binding_required_before_execution": true,
+    "model_assignment_notice": "Logical requested model names. Resolve real selectable IDs and supported efforts in T00; these assignments are planning heuristics, not measured comparative benchmarks.",
+    "max_parallel_writers": 2,
+    "collision_rule": "Tasks with intersecting scope paths or exclusive_locks must not write concurrently. Serialize the NetworkClient lane. Main/HUD/input work shares one integrator. Independent worktrees; parent merges after evidence review.",
+    "worker_rules": [
+      "Read complete current implicated definitions and relevant tests before editing.",
+      "One bounded behavior change per task; no blanket migration, package replacement or formatting sweep.",
+      "Write an original-source failing regression, implement, and prove the new postcondition.",
+      "Never weaken security controls, branch checks, test prerequisites or compatibility rules to satisfy a plan.",
+      "Use current repository commands and supported runtimes. Audit reproductions remain historical evidence.",
+      "No production writes, release dispatch, database changes, public issue creation or external service purchase without separate authorization.",
+      "Human studies and visual/audio judgments require actual human/runtime evidence.",
+      "Record actual model/effort, source head, changed paths, tests, residual risk and review result for every task."
+    ]
+  },
+  "recovery_gate": {
+    "task_id": "T12",
+    "qualification_task_ids": [
+      "T08",
+      "T09"
+    ],
+    "required_task_ids": [
+      "T00",
+      "T01",
+      "T02",
+      "T03",
+      "T04",
+      "T05",
+      "T06",
+      "T07",
+      "T10",
+      "T11"
+    ],
+    "policy": "Finite correction gate. Qualification risks T08/T09 must be explicitly dispositioned before release; a nonreproduced risk may close with evidence, not with a forced refactor. Blocked qualification requires recorded residual risk and explicit owner acceptance; it cannot be labeled passed. Product evidence can start once the relevant user-facing fixes are integrated; it does not wait for T13.",
+    "non_goals": [
+      "Whole-engine extraction",
+      "Global modal rewrite",
+      "New game engine",
+      "Mandatory worker/WASM/GPU migration",
+      "Native port",
+      "Public matchmaking",
+      "Analytics platform",
+      "Rewrite of applied migrations or retained CQ1 editions"
+    ]
+  },
+  "findings": [
+    {
+      "id": "N01",
+      "title": "A successful rematch can still fail to take the player into its successor",
+      "priority": "P1",
+      "classification": "reproduced",
+      "evidence": "requestRematch returns success but discards the response roomId. Migration is driven by a rooms UPDATE notification. The server returns an existing successor without creating another UPDATE. In P01, two successful retry responses produced zero handoffs when no Realtime notification was delivered.",
+      "why_it_matters": "A player can press the correct recovery control, receive success, and stay on the finished game. Retrying does not necessarily repair a missed notification. The server-side allocation can be correct while the player journey is broken.",
+      "solo_remedy": "Pass the returned successor ID into one generation-safe handoff function shared with Realtime. Fetch the authoritative successor row through the existing reader before constructing the new client. Do not construct from the abbreviated restart response: its room/player projection does not contain the full configuration used by handleRematch. Keep one callback, one client generation and one saved descriptor.",
+      "mature_team_approach": "Separate durable command acknowledgment from best-effort notification delivery. A durable acknowledgment supplies an identity that a convergent state reader can resolve. Exercise response/event reorderings, duplicates and lost notifications as transport faults.",
+      "verification": "Original-source regression: suppress UPDATE, return a real successor identifier, and assert exactly one handoff. Deliver UPDATE before and after HTTP completion, retry an existing successor, then leave during lookup. Compare the complete authoritative roster, teams, AI metadata, rounds, economy, hazard and ruleset settings.",
+      "keep": "Existing restart RPC, private seat token, authoritative room fetch, rematchToConfig and MatchSessionLifecycle.",
+      "limitations": "Isolated client reproduction; no production rematch or server mutation was performed. A normal delivered Realtime event can complete the existing path.",
+      "source_ids": [
+        "S01",
+        "S03",
+        "S04"
+      ],
+      "probe_ids": [
+        "P01"
+      ],
+      "task_ids": [
+        "T01"
+      ]
+    },
+    {
+      "id": "N02",
+      "title": "History recovery consumes one response page, not a complete ordered history",
+      "priority": "P1",
+      "classification": "reproduced",
+      "evidence": "initialize/resyncLog do not page the room-action query. The repository API configuration caps a response at 1000 rows. P03 used the same capped-query behavior with a three-row fixture limit: a seven-row log yielded one query, three applied rows, and four unread rows.",
+      "why_it_matters": "Long matches or recovery after a prolonged interruption can leave a client behind while a read operation itself succeeds. The new revision protocol prevents several bad writes, but it does not make a partial history complete. Raising the server row limit merely moves the threshold.",
+      "solo_remedy": "Read ordered pages to a captured target revision, using the existing OrderedActionSession. Prefer a sequence cursor over shifting offsets. Bound total work, yield during replay, detect missing sequences, and expose recovering versus caught-up. Do not enable command submission until canonical recovery reaches its target. Retain rows arriving via Realtime during catch-up.",
+      "mature_team_approach": "Use a resumable log reader with explicit watermarks, backpressure, bounded snapshots or checkpoints when warranted, and liveness metrics. The read protocol should prove completion, not infer it from a successful first response.",
+      "verification": "Test histories of 0, pageSize-1, pageSize, pageSize+1 and several pages; missing/duplicate rows; concurrent appends; read failure on page two; cancellation after page one. Compare all state and terrain with complete ordered replay. Never mark a gap recovered.",
+      "keep": "OrderedActionSession, sequence ordering and the revision-checked command transaction. No new realtime backend or mandatory snapshot format.",
+      "limitations": "The hosted API cap was not independently queried. The source contains max_rows=1000; the probe deliberately used three as a scaled fixture. No real long production room was observed.",
+      "source_ids": [
+        "S01",
+        "S08"
+      ],
+      "probe_ids": [
+        "P03"
+      ],
+      "task_ids": [
+        "T02"
+      ]
+    },
+    {
+      "id": "N03",
+      "title": "CPU settlement states lose the distinction between refusal, conflict and transient failure",
+      "priority": "P1",
+      "classification": "reproduced",
+      "evidence": "On a permanent 403 invalid_seat_token, the real network submission path clears its attempt and is eligible again on the next logical callback. P04 observed five submissions over five callbacks. On a revision conflict with failed catch-up and no incoming row, P05 retained settlement=conflict across 61 callbacks with no local command watchdog.",
+      "why_it_matters": "One branch can repeatedly send work that cannot succeed; the other can wait indefinitely while transport appears connected. These are recovery-state bugs, not a recurrence of the old expensive planner or missing accessory implementation.",
+      "solo_remedy": "Introduce explicit settlement outcomes in the existing command driver: accepted-awaiting-row, retryable-transport, revision-conflict-recovering, terminal-authorization/protocol refusal, and disposed. Terminal refusal stops automatic submission and offers a clear recovery action. Conflict drives bounded canonical recovery and re-evaluates only after observed progress. Reuse a logical intent through ambiguity rather than minting replacements blindly.",
+      "mature_team_approach": "Treat command delivery as a finite state machine with a monotonic generation/revision basis, bounded retries, acknowledgments and observable terminal failure. Test event sequences, not only isolated HTTP status mapping.",
+      "verification": "403/invalid seat and unsupported protocol cause no repeated posts. 429 and transport faults respect bounded delay. A conflict followed by a lost row and failed first read recovers or becomes actionable without relying on a socket reconnect. Accepted-but-unseen commands retain identity. Teardown cancels all retries.",
+      "keep": "Correct getBotPlan cache, weapon/accessory preparation sequence, deterministic CPU intent identity and atomic SQL fencing.",
+      "limitations": "Planner and next-seat computation were injected fixed ports in P04/P05. Their call counts are not a measurement of real planning cost. A later reconnect can recover the existing conflict path; the gap is autonomous recovery while the link remains connected.",
+      "source_ids": [
+        "S01",
+        "S05",
+        "S09"
+      ],
+      "probe_ids": [
+        "P04",
+        "P05"
+      ],
+      "task_ids": [
+        "T04"
+      ]
+    },
+    {
+      "id": "N04",
+      "title": "A finite poll count does not bound a read that never settles",
+      "priority": "P1",
+      "classification": "reproduced",
+      "evidence": "handleRematch has a 20-attempt polling limit but the individual successor read has no deadline. Initialization and rematch request/recovery also contain unbounded waits outside the existing command/resync deadline helpers. P02 stopped at the first never-settling query, not the twentieth attempt.",
+      "why_it_matters": "A stalled dependency can hold the match transition indefinitely. Counting attempts limits completed failures, not a hanging Promise. This undermines the visible retry path precisely when users need it.",
+      "solo_remedy": "Apply the existing deadline/cancellation pattern to admission and successor reads, with one overall transition budget and smaller per-read limits. Propagate cancellation/generation checks into completion. Show retry/return controls when the bounded budget expires. Preserve the same successor identity on retry.",
+      "mature_team_approach": "Make async resource acquisition have an explicit deadline, cancellation owner and terminal outcome. Fault-inject black-holed reads separately from rejected reads; observe both latency and leak behavior.",
+      "verification": "A never-settling query, a response arriving after timeout, repeated retry, and leave-during-lookup must all produce a bounded outcome without creating stale clients or duplicate handoffs. Use fake timers for tests rather than waiting out production timeouts.",
+      "keep": "Existing settleWithDeadline and abort semantics; do not add another retry library or replace the transport.",
+      "limitations": "The 30ms probe window is only evidence that the first await remained pending. It is not a recommended user timeout or a measured production outage.",
+      "source_ids": [
+        "S01",
+        "S03"
+      ],
+      "probe_ids": [
+        "P02"
+      ],
+      "task_ids": [
+        "T03"
+      ]
+    },
+    {
+      "id": "N05",
+      "title": "The verified challenge rejects commands that the shared controls still advertise",
+      "priority": "P1",
+      "classification": "reproduced",
+      "evidence": "VerifiedChallengeClient accepts only set_angle, set_power and fire. The shared HUD projection still exposes ordinary movement, weapon cycling and armory actions. InputHandler advances its own weapon cursor even when a challenge selection is ignored. P09 cycled to Shield: Fire emitted use_shield, the retained controller stayed on Baby Missile in PLAYER_TURN, and no fire was recorded.",
+      "why_it_matters": "The page can appear responsive while doing nothing, and an unrelated weapon action can make the primary fire command stop working. Correct authority enforcement is present; the missing piece is an honest input/presentation capability boundary.",
+      "solo_remedy": "Project a small typed set of mode capabilities into HUD and InputHandler: legal aim/power bounds, committed attack kind, movement, cycling and buying. Hide or clearly disable inapplicable controls with a mode-specific explanation. Derive the primary attack from authoritative mode/tank state, not an independently advanced unsupported cursor. Keep the controller as the final enforcement boundary.",
+      "mature_team_approach": "Model capabilities explicitly at the UI/application boundary and test view/intent/domain parity for every mode. Reuse the same semantic controls where they are legal; do not force every mode to support the whole ordinary-game command vocabulary.",
+      "verification": "In CQ1, pointer and keyboard aim and fire still work after every visible/keyboard command. Q, movement and buy/equip cannot advance hidden local input state. Ordinary hot-seat and online modes retain stock, movement and shields. Test denied commands, menu return, resume and fixed power=100 challenge limits.",
+      "keep": "Retained CQ1 controller and reward verification, GameSessionComposition, shared semantic controls, and strict replay contract. No generalized plugin/mode framework is needed.",
+      "limitations": "Real challenge controller/client and InputHandler were executed together; current main/HUD forwarding was read separately. No complete browser-page journey was navigated here. This is not a server authorization bypass.",
+      "source_ids": [
+        "S02",
+        "S12",
+        "S14",
+        "S16",
+        "S17"
+      ],
+      "probe_ids": [
+        "P09"
+      ],
+      "task_ids": [
+        "T05"
+      ]
+    },
+    {
+      "id": "N06",
+      "title": "Armory confuses a purchase tier with permission to equip owned ammunition",
+      "priority": "P1",
+      "classification": "reproduced",
+      "evidence": "battleConsoleArmoryItems requires arms-level unlock for canEquip as well as canBuy. A real arms-level-0 engine starts with one Heavy Missile, whose purchase tier is 1. P07 found canEquip=false in the actual HUD method while the same engine accepted selection and firing. Keyboard cycling can reach the item independently.",
+      "why_it_matters": "The new Lean Arsenal promise is to preserve an opening kit while restricting restocks. The UI withholds part of that kit and disagrees with another input path. This changes perceived tactical variety and can make a challenge appear unfair or confusing.",
+      "solo_remedy": "Keep the arms-level condition for buying. Allow equipping an owned, implemented and currently permitted weapon regardless of its purchase tier. Apply mode capability restrictions separately. Explain locked restocks without labeling existing stock unusable.",
+      "mature_team_approach": "Separate acquisition eligibility, possession, equip eligibility and use eligibility as different policies. Reuse policy projections across input paths so catalog labels cannot redefine engine rules.",
+      "verification": "At arms levels 0\u20134, verify owned above-tier ammo is equippable, unowned stock is not, purchases stay tier-limited, and shields route correctly. Compare Armory, Q and direct command behavior in ordinary modes. CQ1 still rejects non-Baby weapons through its mode capabilities.",
+      "keep": "Existing economy and inventory; no weapon rebalance, starting-loadout change or new content system.",
+      "limitations": "Actual compiled HUD projection and engine were executed without a browser DOM. Full original applyAction/applyBuy and HUD projection methods were read.",
+      "source_ids": [
+        "S16",
+        "S17",
+        "S18",
+        "S32"
+      ],
+      "probe_ids": [
+        "P07"
+      ],
+      "task_ids": [
+        "T06"
+      ]
+    },
+    {
+      "id": "N07",
+      "title": "A drag below the tank on its left flips aim to the right",
+      "priority": "P2",
+      "classification": "reproduced",
+      "evidence": "applyPointerAim clamps every negative atan2 result to zero. Below-left and below-right vectors are both negative, so both become rightward zero degrees. P08 used a pivot at (600,250) and pointer at (500,300): the emitted angle was 0.",
+      "why_it_matters": "Touch and mouse aiming should remain directionally understandable at a boundary. An unintended 180-degree reversal is a feel/correctness defect, particularly during an imprecise finger drag.",
+      "solo_remedy": "Define the allowed upper-hemisphere projection explicitly. Clamp below-left to the left horizontal boundary and below-right to the right boundary, with a documented tie at the pivot. Preserve existing coordinate normalization, power cap, pointer capture and input gates.",
+      "mature_team_approach": "Express coordinate conversions as small tested geometry functions, including quadrant boundaries, mirrored positions, CSS scaling and degenerate rectangles. Keep direction semantics independent of input device.",
+      "verification": "Test all four quadrants, exactly horizontal/vertical, pivot, CSS-scaled canvas, zero-size rectangle and high-cap tanks. Confirm the barrel visually follows the emitted direction on a real touch device before changing sensitivity.",
+      "keep": "The actual InputHandler and its recently repaired focus return. No engine or gesture library replacement.",
+      "limitations": "The actual pointer math was executed with an injected DOM rectangle. This was not physical-device interaction or a complete drag event sequence.",
+      "source_ids": [
+        "S17"
+      ],
+      "probe_ids": [
+        "P08"
+      ],
+      "task_ids": [
+        "T07"
+      ]
+    },
+    {
+      "id": "N08",
+      "title": "Persisted-page restoration has no matching lifecycle path",
+      "priority": "P2",
+      "classification": "source_risk",
+      "evidence": "main installs a once-only pagehide handler that permanently destroys HUD. HUD latches destroyed=true and subsequent update calls return early. The complete entrypoint contains no pageshow restoration, and a repository search returned no pageshow matches.",
+      "why_it_matters": "A page retained in the back/forward cache can return without a new bootstrap. The retained application may still hold a permanently destroyed presentation owner. Mobile and history navigation need explicit restore behavior, not the assumption that pagehide always means final disposal.",
+      "solo_remedy": "First reproduce with real history navigation and inspect event.persisted. Separate suspend/restore from final teardown using the current lifecycle owners. On restore, refresh clock baselines, credentials/session eligibility and subscriptions without double-binding. Do not bypass BFCache or automatically forfeit a network seat on transient page hiding.",
+      "mature_team_approach": "Maintain a documented page lifecycle state machine and browser-engine matrix, with suspension, resume and final disposal tested independently. Retained server receipts and expiring sessions remain authoritative after restoration.",
+      "verification": "Navigate away and back with persisted=true in supported browser engines; test hot-seat, online and CQ1, expired credentials, expired challenge, audio resume and repeated cycles. A rejected hypothesis closes with traces and no speculative rewrite.",
+      "keep": "Current generation-based session ownership and per-mode expiry rules.",
+      "limitations": "Source-derived risk, not a reproduced BFCache failure here. Browser navigation was blocked. MDN documents the relevant event semantics; runtime qualification precedes remediation.",
+      "source_ids": [
+        "S02",
+        "S16"
+      ],
+      "probe_ids": [],
+      "task_ids": [
+        "T08"
+      ]
+    },
+    {
+      "id": "N09",
+      "title": "CQ1 opens its report before the ordinary impact-completion handoff",
+      "priority": "P2",
+      "classification": "source_risk",
+      "evidence": "The main state listener synchronizes challenge result presentation before rendering the corresponding state. setVerifiedChallenge immediately updates its dedicated view. That view opens on a local result or completion-pending status, unlike the ordinary terminal path that waits for renderer impact completion.",
+      "why_it_matters": "A correct one-shot clear can be covered by a verification report before the player reads the hit. The new outcome copy emphasizes local/server receipt distinctions; those distinctions should not consume the payoff of the tactical action.",
+      "solo_remedy": "Capture an actual early-clear sequence first. Keep server completion independent, but delay only the dominant report presentation until the existing impact signal (or a bounded fallback) says the result is readable. Show a small nonblocking verification state meanwhile. Restore completed attempts without replaying historical explosions.",
+      "mature_team_approach": "Keep domain completion, reward settlement and presentation choreography as separate state transitions. Define timeline acceptance for both natural termination and nonlethal objective completion, including reduced motion and reload.",
+      "verification": "Record frames from the first damaging shot through local outcome and receipt. Assert no blocking report before the last meaningful impact cue, no unbounded wait, no duplicate reward request, and immediate silent presentation when restoring an already completed receipt.",
+      "keep": "Dedicated truthful challenge receipt view and the existing ordinary impact-completion mechanism. Do not change retained verifier semantics for cosmetic timing.",
+      "limitations": "Ordering is confirmed in source; actual perceptual occlusion and appropriate timing were not observed in a browser. Treat as a bounded visual investigation, not a claimed measured feel regression.",
+      "source_ids": [
+        "S02",
+        "S16",
+        "S19",
+        "S20"
+      ],
+      "probe_ids": [],
+      "task_ids": [
+        "T09"
+      ]
+    },
+    {
+      "id": "N10",
+      "title": "Desktop control behavior still depends on captured English labels",
+      "priority": "P2",
+      "classification": "confirmed_source",
+      "evidence": "SemanticContractTree still interprets accessible-name text to choose actions and render dynamic states. The payload reduction removed archival bulk, but did not remove this coupling. A wording/localization change can remain a behavior change.",
+      "why_it_matters": "This is a demonstrated reason for a narrow refactor: it couples player copy, accessibility names and command identity. File length is not the reason. The current compact explicit-control pattern provides a reference for the replacement.",
+      "solo_remedy": "Replace the wide/standard snapshot interpreter with explicit typed semantic controls using the current presentation state and intent adapter. Preserve layout, focus identities, disabled behavior and the separate Pixi decoration. Retire the interpreter only after behavior parity and deliberate label-change tests pass.",
+      "mature_team_approach": "Use typed action identifiers and presentation projections, keeping accessibility names descriptive rather than executable. Maintain an independent control/intent contract and visual regression coverage across breakpoints.",
+      "verification": "Change a visible/accessible label without changing its action; mutate an action ID and require tests to fail. Exercise keyboard, pointer, disabled states, focus across breakpoints, inventory and CQ1 restrictions. Compare artifact size and preserve semantic-first readiness.",
+      "keep": "Preact, current intent adapter, compact controls, current CSS/Pixi appearance, and existing resource ledger.",
+      "limitations": "Source coupling is confirmed. No production localization defect was observed. This refactor is not a prerequisite for shipping the smaller correctness fixes.",
+      "source_ids": [
+        "S21",
+        "S22",
+        "S16",
+        "S37"
+      ],
+      "probe_ids": [],
+      "task_ids": [
+        "T13"
+      ]
+    },
+    {
+      "id": "N11",
+      "title": "The repaired terminal-collapse proof still has sibling skip-to-green paths",
+      "priority": "P2",
+      "classification": "confirmed_source",
+      "evidence": "Path B now fails missing prerequisites and observes real pending flushes. Paths A and D still log SKIPPED when their required scenario is not reached, without setting failed. The final summary exits zero if nothing else failed.",
+      "why_it_matters": "The original terminal regression is genuinely repaired, but a future change can make either sibling fixture stop exercising its claimed contract while the harness remains green. This is a remaining proof obligation, not evidence that current physics is wrong.",
+      "solo_remedy": "Make required A/D fixture prerequisites fail with targeted diagnostics. If a subcase is genuinely unreachable, label it out of scope instead of counting it as passed. Add negative controls showing each exercised behavior and missing-fixture condition fails independently.",
+      "mature_team_approach": "Distinguish required regression tests from exploratory searches. Required tests must prove setup and outcome; exploratory coverage should report a denominator and uncovered scenarios without masquerading as a gate.",
+      "verification": "Run the normal fixture and three negative cases for each path: no scenario reached, intended behavior disabled, and unrelated behavior changed. Preserve repaired Path B controls and do not broaden assertions beyond the reachable weapon set.",
+      "keep": "Current real physics harness and the new Path B instrumentation. No replacement test framework is needed.",
+      "limitations": "Original A/B/D/summary source was read. These new negative controls were not run against the original source suite in this environment.",
+      "source_ids": [
+        "S30"
+      ],
+      "probe_ids": [],
+      "task_ids": [
+        "T10"
+      ]
+    },
+    {
+      "id": "N12",
+      "title": "The largest measured distribution cost is now artwork, not the removed contract archive",
+      "priority": "P2",
+      "classification": "measured_opportunity",
+      "evidence": "The exact candidate contains 26 image files totaling 9,599,438 bytes of 11,933,441 payload bytes. The console chunk is now 235,015 bytes versus the old 4,208,428. The optional decoration adapter still requests all responsive texture modes through one process-owned cache, and the semantic root preloads the three semantic atlases plus match and armory frames.",
+      "why_it_matters": "The main payload problem changed. Further splitting of the already-shrunk console cannot substitute for knowing which images load before first input, how large they decode, and whether repeated matches retain them. But total artifact bytes are not the same as first-session transfer.",
+      "solo_remedy": "Measure cold/warm first-input timing, request waterfalls and decoded allocations on the actual target devices. Then trial one highest-cost asset change, such as right-sizing the splash/settings frame or fetching the active chrome mode first. Preserve fast semantic readiness and compare actual readability, not only file size.",
+      "mature_team_approach": "Use scene-level asset budgets, staged loading, stable cache identities, texture lifetimes and device-specific profiling. Consider GPU changes only after a profile shows the Canvas world is the bottleneck.",
+      "verification": "Before/after fixed-device traces with identical network conditions, first useful controls, first shot, mode switch and ten match cycles. Record bytes requested rather than summing all disk assets. Verify fallback art and no layout regression. No optimization is accepted on invented FPS estimates.",
+      "keep": "Three authored world backgrounds, modular tank art, semantic-first HUD and the current browser distribution. No mandatory engine/native migration.",
+      "limitations": "Disk/raw/gzip sizes and image dimensions are measured. Network transfer, decode timing, GPU memory and on-device frame performance were not measured. The contact sheet shows source assets, not gameplay screenshots.",
+      "source_ids": [
+        "S23",
+        "S24",
+        "S37"
+      ],
+      "probe_ids": [],
+      "task_ids": [
+        "T14"
+      ]
+    },
+    {
+      "id": "N13",
+      "title": "The product now has a learning loop; its replay value still needs human evidence",
+      "priority": "P2",
+      "classification": "product_hypothesis",
+      "evidence": "The current registry has six operations including First Salvo and explicit practice objectives; the chooser gives First Salvo a privileged first-session path. ST1 seed sharing exists. CQ1 is a retained, three-human-salvo, fixed-seed qualification with a one-time medal/200-XP reward. No new behavioral player data was provided for this review.",
+      "why_it_matters": "It would be wrong to prescribe these features as missing. The next uncertainty is whether players understand a useful decision, notice the result, and choose another tactical problem. More receipt infrastructure, more cards or public matchmaking do not answer that by themselves.",
+      "solo_remedy": "Observe a small willing sample using the unmodified first-entry flow. Ask them to choose and explain their next action without coaching. Compare first meaningful hit, voluntary replay and ability to explain an objective. Use the existing manual observation/report templates, then change one observed friction point or author one distinct next challenge.",
+      "mature_team_approach": "Separate acquisition, activation, within-session replay and return behavior. Combine qualitative observation with minimal consent-aware events when needed; choose a content hypothesis before building a generalized progression or analytics system.",
+      "verification": "Report participant counts and exact observations, not a fabricated retention percentage or an industry benchmark. Keep visitors who abandon in the denominator. Confirm any proposed next challenge creates a different tactical choice rather than a reskin or compulsory grind.",
+      "keep": "Free guest browser entry, First Salvo, Quick Operations, Field Orders, honest verified rewards and credential-free seed sharing.",
+      "limitations": "This is a product recommendation, not a causal diagnosis of why friends stopped playing. Authenticated CQ1 and physical-device experience were not personally played in this pass.",
+      "source_ids": [
+        "S12",
+        "S14",
+        "S19",
+        "S32",
+        "S33",
+        "S34"
+      ],
+      "probe_ids": [],
+      "task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T00",
+      "title": "Record the real execution baseline and model bindings",
+      "status": "verified",
+      "phase": "baseline",
+      "kind": "discovery",
+      "owner": "assigned_agent",
+      "assigned_model": "astra",
+      "reasoning_effort": "high",
+      "reviewer_model": "sol",
+      "depends_on": [],
+      "finding_ids": [],
+      "scope_paths": [
+        "package.json",
+        ".github/workflows/ci.yml",
+        ".github/workflows/deploy-pages.yml"
+      ],
+      "exclusive_locks": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/deploy-pages.yml",
+        "package.json"
+      ],
+      "steps": [
+        "Read current main and compare implicated symbols with the pinned audit SHA. Record local worktree cleanliness without removing work.",
+        "Resolve .nvmrc, actual scripts and available Codex model/effort settings. Bind logical Astra/Sol/Terra/Luna aliases to actual runtime IDs; run one harmless child and record its actual model/effort.",
+        "Inspect current release metadata and backend release receipt where authorized; identify source versus deployed revision.",
+        "Run the existing supported-runtime tests and untouched guest-entry browser flow. Record failures before editing. Do not trigger live room/reward writes or deployments without explicit scope approval."
+      ],
+      "acceptance_criteria": [
+        "Baseline has exact source, release candidate and environment identities.",
+        "Every subsequent task knows whether the code remains affected.",
+        "Model aliases are resolved to actual available IDs, without silently guessing or upgrading models.",
+        "Browser/network restrictions and existing red tests are recorded, not replaced with assumed success."
+      ],
+      "verification": [
+        "git status --short",
+        "git rev-parse HEAD",
+        "node --version",
+        "npm --version",
+        "node -p \"JSON.stringify(require('./package.json').scripts,null,2)\"",
+        "Use the repository\u2019s current test commands under its declared runtime."
+      ],
+      "rollback": "Read-only. Remove only audit-generated local logs if no longer needed; leave user worktrees, branches and production unchanged.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "bounded investigation",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T01",
+      "title": "Converge rematch HTTP and Realtime handoffs",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T00"
+      ],
+      "finding_ids": [
+        "N01"
+      ],
+      "scope_paths": [
+        "client/src/client/NetworkClient.ts",
+        "client/src/client/NetworkClient.requestRematch.test.ts"
+      ],
+      "exclusive_locks": [
+        "network"
+      ],
+      "steps": [
+        "Add failing missed-UPDATE, duplicate-order and existing-successor retry cases.",
+        "Consume the returned successor ID through the existing authoritative fetch/handoff path.",
+        "Fence completion to the live generation and preserve the full fetched mode/roster configuration."
+      ],
+      "acceptance_criteria": [
+        "A successful allocation with no UPDATE yields exactly one handoff.",
+        "Duplicate/reordered HTTP and UPDATE paths cannot construct two clients.",
+        "All authoritative successor fields survive and leaving suppresses stale completion."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Run original rematch and mode-configuration characterization tests."
+      ],
+      "rollback": "Revert the client/test commit only; no server or schema changes. Keep a saved read-only failing trace.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "small",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T02",
+      "title": "Make ordered catch-up complete across capped pages",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T00"
+      ],
+      "finding_ids": [
+        "N02"
+      ],
+      "scope_paths": [
+        "client/src/client/NetworkClient.ts",
+        "client/src/client/OrderedActionSession.ts"
+      ],
+      "exclusive_locks": [
+        "client/src/client/OrderedActionSession.ts",
+        "network"
+      ],
+      "steps": [
+        "Add page-boundary/gap/append/cancel tests with a capped read fixture and real ordered action owner.",
+        "Implement one sequence-cursor reader with a captured recovery target and bounded page/replay work.",
+        "Expose caught-up only after the contiguous target is reached; preserve arriving Realtime rows."
+      ],
+      "acceptance_criteria": [
+        "pageSize+1 and multi-page logs reproduce the complete canonical state and terrain.",
+        "A failed page or permanent gap never becomes ready.",
+        "Cancellation creates no stale rows/clients; repeated catch-up is idempotent."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Compare replay against a complete reference log using the real engine, not a sequence-only recorder."
+      ],
+      "rollback": "Revert the reader change. Keep server row cap and data untouched. Do not mask a failed implementation by increasing max_rows.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "medium",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T03",
+      "title": "Bound admission and successor waits by time and generation",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T01",
+        "T02"
+      ],
+      "finding_ids": [
+        "N04"
+      ],
+      "scope_paths": [
+        "client/src/client/NetworkClient.ts",
+        "client/src/client/NetworkClient.requestRematch.test.ts"
+      ],
+      "exclusive_locks": [
+        "network"
+      ],
+      "steps": [
+        "Enumerate initialization and successor awaits outside existing deadlines.",
+        "Reuse existing deadline/abort helpers with a transition-level budget.",
+        "Return actionable retry state and discard late completions after timeout/leave."
+      ],
+      "acceptance_criteria": [
+        "Never-settling requests reach a bounded UI outcome.",
+        "Late success cannot resurrect a retired transition.",
+        "Retry preserves successor identity and normal transient polling still succeeds."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Use fake timers plus an actual browser black-hole route test in the permitted environment."
+      ],
+      "rollback": "Revert bounded transition commit; do not remove the older command/resync timeouts.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "small",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T04",
+      "title": "Make CPU delivery outcomes explicit and convergent",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T02",
+        "T03"
+      ],
+      "finding_ids": [
+        "N03"
+      ],
+      "scope_paths": [
+        "client/src/client/NetworkClient.ts"
+      ],
+      "exclusive_locks": [
+        "network"
+      ],
+      "steps": [
+        "Add permanent-refusal, transient fault, accepted-but-unseen and conflict/read-failure sequences.",
+        "Refine the existing attempt settlement state; terminal refusal must not requeue on every callback.",
+        "Drive bounded canonical recovery on conflicts and decide only after progress or an actionable terminal outcome. Preserve logical intent identity during ambiguity."
+      ],
+      "acceptance_criteria": [
+        "Five callbacks after a terminal refusal do not produce five posts.",
+        "Conflict plus missing notification and failed first read recovers or offers explicit recovery without requiring reconnect.",
+        "Plan cache and full preparation behavior remain intact.",
+        "No new intent replaces an ambiguous accepted command; teardown cancels watchdogs and retries."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Run room-command idempotency and CPU preparation tests; include two-client fixture orderings."
+      ],
+      "rollback": "Revert the state-transition change, retaining SQL fencing and existing receipts. No production commands are used for testing.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "medium",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T05",
+      "title": "Give each mode honest input and presentation capabilities",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T00"
+      ],
+      "finding_ids": [
+        "N05"
+      ],
+      "scope_paths": [
+        "client/src/main.ts",
+        "client/src/client/GameClient.ts",
+        "client/src/client/VerifiedChallengeClient.ts",
+        "client/src/ui/HUD.ts",
+        "client/src/input/InputHandler.ts"
+      ],
+      "exclusive_locks": [
+        "client/src/client/GameClient.ts",
+        "client/src/client/VerifiedChallengeClient.ts",
+        "entrypoint",
+        "hud",
+        "input"
+      ],
+      "steps": [
+        "Add a CQ1 integration test using the real challenge client, real input handler and actual HUD projection.",
+        "Introduce the minimum typed capability projection needed by existing controls; default ordinary behavior remains unchanged.",
+        "Keep unsupported commands from advancing local input state. Derive primary Fire from the active mode\u2019s actual action rather than a rejected weapon cursor."
+      ],
+      "acceptance_criteria": [
+        "CQ1 accepts legal aim/power/fire and never exposes working-looking movement/equipment that it ignores.",
+        "Every Q/equip/movement attempt leaves subsequent Fire usable.",
+        "Ordinary modes retain their existing controls and inventory behavior.",
+        "No retained CQ1 artifact, transcript or reward rule changes."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Real-browser keyboard/pointer/CQ1 resume tests plus ordinary hot-seat and online regression paths."
+      ],
+      "rollback": "Revert capability projection/UI commit. Retained verifier and server data remain unchanged.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "medium",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T06",
+      "title": "Separate owned-weapon equip policy from restock policy",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "terra",
+      "reasoning_effort": "medium",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T05"
+      ],
+      "finding_ids": [
+        "N06"
+      ],
+      "scope_paths": [
+        "client/src/ui/HUD.ts"
+      ],
+      "exclusive_locks": [
+        "hud"
+      ],
+      "steps": [
+        "Use a real arms-level-0 initial inventory in the regression.",
+        "Remove purchase-tier gating from equip eligibility while preserving ownership, phase and mode capability rules.",
+        "Differentiate unavailable restock from unavailable use in copy."
+      ],
+      "acceptance_criteria": [
+        "Owned Heavy Missile and other stocked above-tier weapons equip in ordinary level-0 play.",
+        "Purchases remain tier-limited; unowned ammo remains unusable.",
+        "CQ1 does not acquire ordinary equip capability."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Test Armory/Q parity and selected-mode restrictions."
+      ],
+      "rollback": "Revert the narrow projection/copy change; no economy or default loadout edits.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "small",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T07",
+      "title": "Correct lower-half pointer direction without changing sensitivity",
+      "status": "in_progress",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "terra",
+      "reasoning_effort": "medium",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T05"
+      ],
+      "finding_ids": [
+        "N07"
+      ],
+      "scope_paths": [
+        "client/src/input/InputHandler.ts"
+      ],
+      "exclusive_locks": [
+        "input"
+      ],
+      "steps": [
+        "Add quadrant and exact-boundary fixtures for the current absolute pointer conversion.",
+        "Project below-left to the left horizontal bound and below-right to the right bound using a documented pivot tie.",
+        "Preserve CSS-space mapping, variable cap, gesture ownership and focus behavior."
+      ],
+      "acceptance_criteria": [
+        "Below-left no longer emits rightward zero degrees.",
+        "All quadrants and supported canvas scales preserve expected direction.",
+        "No extra fire or duplicate pointer capture is introduced."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Physical mouse/touch barrel-direction verification; this cannot be replaced by a screenshot of a test fixture."
+      ],
+      "rollback": "Revert the geometry-only correction; preserve recently repaired focus and cap behavior.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "small",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T08",
+      "title": "Qualify persisted-page restore and correct only observed lifecycle gaps",
+      "status": "in_progress",
+      "phase": "qualification",
+      "kind": "qualification",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T00"
+      ],
+      "finding_ids": [
+        "N08"
+      ],
+      "scope_paths": [
+        "client/src/main.ts",
+        "client/src/ui/HUD.ts",
+        "client/src/client/MatchSessionLifecycle.ts"
+      ],
+      "exclusive_locks": [
+        "client/src/client/MatchSessionLifecycle.ts",
+        "entrypoint",
+        "hud"
+      ],
+      "steps": [
+        "Record pagehide/pageshow persisted flags during real Back/Forward and mobile restoration.",
+        "If reproduced, distinguish suspend/restore from final disposal through existing owners.",
+        "Refresh clock and session/credential eligibility on restore without duplicating subscriptions or automatically forfeiting a seat."
+      ],
+      "acceptance_criteria": [
+        "Persisted restore either resumes a valid presentation or enters an explicit safe recovery state.",
+        "Repeated cycles have one active owner/subscription set.",
+        "Expired CQ1 and invalid network credentials cannot resume authority.",
+        "A nonreproduced case closes as qualified with trace evidence and no forced refactor."
+      ],
+      "verification": [
+        "Real Chromium and WebKit history navigation with persisted flags; include Firefox only if claimed supported.",
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests."
+      ],
+      "rollback": "Revert lifecycle change; do not disable browser security or BFCache to manufacture success.",
+      "requires_human": false,
+      "recovery_gate_required": false,
+      "estimated_scope": "bounded investigation",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T09",
+      "title": "Preserve CQ1 impact payoff independently of verification",
+      "status": "in_progress",
+      "phase": "qualification",
+      "kind": "qualification",
+      "owner": "assigned_agent",
+      "assigned_model": "terra",
+      "reasoning_effort": "high",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T05"
+      ],
+      "finding_ids": [
+        "N09"
+      ],
+      "scope_paths": [
+        "client/src/main.ts",
+        "client/src/ui/VerifiedChallengeView.ts",
+        "client/src/ui/HUD.ts"
+      ],
+      "exclusive_locks": [
+        "client/src/ui/VerifiedChallengeView.ts",
+        "entrypoint",
+        "hud"
+      ],
+      "steps": [
+        "Capture an early nonlethal objective clear through impact, local result, pending state and final receipt.",
+        "If a blocking report preempts the impact, use the existing presentation completion signal and bounded fallback.",
+        "Keep server verification independent and restore past outcomes silently."
+      ],
+      "acceptance_criteria": [
+        "A first clear remains visually understandable before its report dominates.",
+        "Verification starts/finishes without waiting on art.",
+        "Restored completed attempts do not replay old effects or award twice.",
+        "No arbitrary unmeasured animation delay is mandated."
+      ],
+      "verification": [
+        "Frame-sequence recording on desktop and a physical phone, including reduced motion and deliberately slow verification.",
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests."
+      ],
+      "rollback": "Revert presentation timing only; no changes to receipts, transcript or retained engine.",
+      "requires_human": false,
+      "recovery_gate_required": false,
+      "estimated_scope": "bounded investigation",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T10",
+      "title": "Require collapse sibling fixtures to prove their prerequisites",
+      "status": "verified",
+      "phase": "correctness",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "terra",
+      "reasoning_effort": "medium",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T00"
+      ],
+      "finding_ids": [
+        "N11"
+      ],
+      "scope_paths": [
+        "scripts/checks/collapse_flush.mjs"
+      ],
+      "exclusive_locks": [
+        "proof"
+      ],
+      "steps": [
+        "Keep Path B\u2019s repaired proof unchanged.",
+        "Make required Path A/D missing scenarios fail rather than skip to a passing summary.",
+        "Add deliberate missing-fixture and wrong-behavior controls with distinct diagnostics; label truly unreachable subcases as exclusions."
+      ],
+      "acceptance_criteria": [
+        "A/D missing prerequisites yield nonzero status.",
+        "Deliberately broken reachable behavior is caught independently.",
+        "The legitimate fixture and existing B controls still pass."
+      ],
+      "verification": [
+        "npx tsx scripts/checks/collapse_flush.mjs",
+        "Run the repository\u2019s new negative-control entrypoints and npm run check under the supported runtime."
+      ],
+      "rollback": "Revert test-only changes, retaining B proof. Never alter physics simply to preserve a brittle fixture.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "small",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T11",
+      "title": "Prove the repaired journeys in real browser scenarios",
+      "status": "in_progress",
+      "phase": "verification",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T10"
+      ],
+      "finding_ids": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07"
+      ],
+      "scope_paths": [
+        "e2e",
+        "playwright.config.ts"
+      ],
+      "exclusive_locks": [
+        "e2e",
+        "playwright.config.ts"
+      ],
+      "steps": [
+        "Extend existing browser suites instead of building a parallel harness.",
+        "Cover untouched guest entry, ordinary local play, isolated network recovery and admitted challenge controls.",
+        "Add engine-specific coverage only for browsers that will actually be supported; label emulated devices honestly.",
+        "Retain focused fault traces and candidate identity as release evidence."
+      ],
+      "acceptance_criteria": [
+        "Each corrected finding has an original-source regression and a relevant real-journey check.",
+        "Tests drive real controls, not self-authored appearance markers.",
+        "Candidate tests remain isolated from production writes and bound to exact bytes.",
+        "Unsupported browser or device claims are removed or qualified."
+      ],
+      "verification": [
+        "npm run test:e2e",
+        "Use the existing product-completion config from CI; do not infer that exclusions mean it is not run.",
+        "Run complete required CI on the combined exact candidate."
+      ],
+      "rollback": "Revert only faulty tests/config; do not remove required checks or loosen assertions merely to get green.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "medium",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T12",
+      "title": "Accept the bounded correction release without restarting recovery",
+      "status": "planned",
+      "phase": "verification",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "astra",
+      "reasoning_effort": "high",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T11"
+      ],
+      "finding_ids": [],
+      "scope_paths": [
+        "docs",
+        "package.json",
+        ".github/workflows/ci.yml"
+      ],
+      "exclusive_locks": [
+        ".github/workflows/ci.yml",
+        "docs",
+        "package.json"
+      ],
+      "steps": [
+        "Reconcile each required acceptance criterion against independent evidence.",
+        "Disposition qualification tasks T08 and T09: verified correction, evidence-backed not-applicable closure, or an explicit owner-accepted residual risk. A blocked browser test is not a passing qualification; it must be recorded in the release proposal.",
+        "Update current ownership/trust/operational notes only where implementation changed; explicitly mark superseded tasks and statements.",
+        "Preserve applied migrations, retained verifier editions and existing release architecture.",
+        "Approve a release proposal only; deployment remains separately authorized through the existing pipeline."
+      ],
+      "acceptance_criteria": [
+        "All gate-required tasks have evidence, or a documented not-applicable closure based on current source.",
+        "No new P1 finding in this report remains silently ignored.",
+        "No mandatory whole-engine, all-modal or native rewrite has been smuggled into the program.",
+        "Remaining qualification and product work is named separately rather than keeping recovery open indefinitely."
+      ],
+      "verification": [
+        "Schema/DAG validation for task state",
+        "Independent diff and test-evidence review",
+        "Compare published provenance after a separately approved deployment."
+      ],
+      "rollback": "Documentation can be reverted. Use existing compatible artifact rollback procedure if a separately authorized release fails; do not roll back applied SQL blindly.",
+      "requires_human": false,
+      "recovery_gate_required": true,
+      "estimated_scope": "small",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T13",
+      "title": "Replace only the desktop English-label action interpreter",
+      "status": "in_progress",
+      "phase": "targeted_refactor",
+      "kind": "implementation",
+      "owner": "assigned_agent",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T05",
+        "T06"
+      ],
+      "finding_ids": [
+        "N10"
+      ],
+      "scope_paths": [
+        "client/src/ui/battleConsole/components/SemanticContractTree.tsx",
+        "client/src/ui/battleConsole/BattleConsoleRoot.tsx",
+        "client/src/ui/battleConsole/types.ts"
+      ],
+      "exclusive_locks": [
+        "console"
+      ],
+      "steps": [
+        "Inventory every live wide/standard control and its current typed intent/state projection.",
+        "Implement explicit typed controls without changing layout/visual ownership.",
+        "Prove parity and label independence, then delete the now-unused interpreter and only its unused runtime records."
+      ],
+      "acceptance_criteria": [
+        "Labels can change without altering command identity.",
+        "Disabled, focus, keyboard and mode-capability behavior matches the intended contract.",
+        "Semantic-first mounting, breakpoints and Pixi fallback remain intact.",
+        "No broad HUD/engine/session rewrite or new dependency is introduced."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Existing product-completion browser suite and artifact size comparison.",
+        "A wrong action identifier must fail a test independent of the implementation mapping."
+      ],
+      "rollback": "Keep the change in reversible commits; revert before removing the old path if parity is not established. Avoid long-lived dual owners.",
+      "requires_human": false,
+      "recovery_gate_required": false,
+      "estimated_scope": "medium",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Measure first-play assets and ship at most one justified optimization",
+      "status": "in_progress",
+      "phase": "product_evidence",
+      "kind": "experiment",
+      "owner": "B",
+      "assigned_model": "terra",
+      "reasoning_effort": "high",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T00"
+      ],
+      "finding_ids": [
+        "N12"
+      ],
+      "scope_paths": [
+        "client/src/ui/battleConsole/pixi/adapter.ts",
+        "client/public/art",
+        "docs/performance"
+      ],
+      "exclusive_locks": [
+        "client/public/art",
+        "console",
+        "product"
+      ],
+      "steps": [
+        "Gather actual cold/warm waterfall, first useful input, first-shot and repeated-match traces on nominated devices.",
+        "Distinguish disk bytes, transfer bytes, decoded dimensions, retained resources and frame time.",
+        "Choose one observed dominant cost and make one reversible asset/load change, or close with no change if it is not material."
+      ],
+      "acceptance_criteria": [
+        "Before/after traces use the same scenario and conditions.",
+        "Improvement is measured and readability/fallback does not regress.",
+        "Semantic controls remain usable independently of decoration.",
+        "No WebGL/worker/native migration is selected only from artifact size."
+      ],
+      "verification": [
+        "Device/browser traces and screenshot comparison at gameplay scale",
+        "Existing asset build tests and browser guards"
+      ],
+      "rollback": "Restore the previous asset/load configuration. Keep source masters and license records; do not delete originals to reduce the distribution.",
+      "requires_human": true,
+      "recovery_gate_required": false,
+      "estimated_scope": "bounded experiment",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T15",
+      "title": "Observe the current learning and replay loop with actual players",
+      "status": "planned",
+      "phase": "product_evidence",
+      "kind": "human_study",
+      "owner": "B",
+      "assigned_model": "terra",
+      "reasoning_effort": "medium",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T05",
+        "T06",
+        "T07"
+      ],
+      "finding_ids": [
+        "N13"
+      ],
+      "scope_paths": [
+        "docs/product-evidence"
+      ],
+      "exclusive_locks": [
+        "product"
+      ],
+      "steps": [
+        "Use the existing manual observation/report templates; recruit a small willing sample that can give more than courtesy approval.",
+        "Start from untouched entry, do not coach, and observe first valid shot, first understandable result and voluntary next choice.",
+        "Record denominator, abandonments, device, mode and exact confusion; keep personal data out of public artifacts.",
+        "Choose one subsequent hypothesis; do not manufacture a retention percentage from a few sessions."
+      ],
+      "acceptance_criteria": [
+        "Human observations exist, including failures and abandonment.",
+        "A chosen next change is linked to an observation or explicitly labeled exploratory.",
+        "No agent marks this complete using simulated users or code inspection alone."
+      ],
+      "verification": [
+        "Review completed observation sheets with B; model assists synthesis only."
+      ],
+      "rollback": "Read-only playtest analysis; remove/redact participant data on request. No telemetry service is deployed by this task.",
+      "requires_human": true,
+      "recovery_gate_required": false,
+      "estimated_scope": "bounded study",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T16",
+      "title": "Build one distinct next tactical problem, only after its hypothesis is selected",
+      "status": "planned",
+      "phase": "product_experiment",
+      "kind": "experiment",
+      "owner": "B",
+      "assigned_model": "sol",
+      "reasoning_effort": "high",
+      "reviewer_model": "astra",
+      "depends_on": [
+        "T15"
+      ],
+      "finding_ids": [
+        "N13"
+      ],
+      "scope_paths": [
+        "client/src/client/quickOperations.ts",
+        "client/src/client/fieldOrder.ts",
+        "client/src/ui/LobbyShellView.ts"
+      ],
+      "exclusive_locks": [
+        "client/src/client/fieldOrder.ts",
+        "client/src/client/quickOperations.ts",
+        "client/src/ui/LobbyShellView.ts"
+      ],
+      "steps": [
+        "Select one observed next-choice problem: wind reading, terrain manipulation, economy, or a clearer retry route.",
+        "Extend existing operations/objectives and public-sharing rules rather than inventing a new mission framework.",
+        "Keep free practice separate from reward-bearing retained editions. Version public challenge semantics deliberately."
+      ],
+      "acceptance_criteria": [
+        "The task states how the new problem changes a decision, not just a background.",
+        "Existing shared links either retain their meaning or fail with an explicit compatibility message.",
+        "Old retained CQ1 behavior and receipts are untouched.",
+        "A small follow-up observation compares comprehension and voluntary replay."
+      ],
+      "verification": [
+        "Run the focused original-source regressions introduced for this task, then npm run typecheck and npm run test:client. Run the current required CI commands from package.json for the final combined change; do not substitute this audit\u2019s compiled reproduction scripts for regression tests.",
+        "Existing operation/Field Order/seed-sharing regressions and human observation."
+      ],
+      "rollback": "Remove the new ordinary operation behind its feature switch or revert its isolated registry change; preserve published challenge compatibility.",
+      "requires_human": true,
+      "recovery_gate_required": false,
+      "estimated_scope": "one vertical slice",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T17",
+      "title": "Audition sound and payoff changes instead of assuming a new audio engine is needed",
+      "status": "planned",
+      "phase": "product_experiment",
+      "kind": "experiment",
+      "owner": "B",
+      "assigned_model": "terra",
+      "reasoning_effort": "medium",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T15"
+      ],
+      "finding_ids": [
+        "N13"
+      ],
+      "scope_paths": [
+        "client/src/audio",
+        "client/src/feel"
+      ],
+      "exclusive_locks": [
+        "client/src/audio",
+        "client/src/feel"
+      ],
+      "steps": [
+        "Listen on headphones and a phone to the actual current match.",
+        "Only if observation shows weak feedback, audition a tiny hybrid sample/synth set or volume treatment against the current version.",
+        "Document asset license/source and preserve gesture unlock, mute and reduced-motion/accessibility behavior."
+      ],
+      "acceptance_criteria": [
+        "The recommendation is based on listening and player interpretation.",
+        "No mandatory audio library or large music pack is added without a demonstrated need.",
+        "A/B comparison preserves match outcomes and existing controls."
+      ],
+      "verification": [
+        "Audio audition and recorded feedback",
+        "Focused audio-event tests and asset budget measurement"
+      ],
+      "rollback": "Restore the previous sound profile/assets. Keep source licensing evidence.",
+      "requires_human": true,
+      "recovery_gate_required": false,
+      "estimated_scope": "bounded experiment",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    },
+    {
+      "id": "T18",
+      "title": "Choose distribution from evidence, not repository weight",
+      "status": "planned",
+      "phase": "product_decision",
+      "kind": "decision",
+      "owner": "B",
+      "assigned_model": "astra",
+      "reasoning_effort": "high",
+      "reviewer_model": "sol",
+      "depends_on": [
+        "T14",
+        "T15"
+      ],
+      "finding_ids": [
+        "N12",
+        "N13"
+      ],
+      "scope_paths": [
+        "docs"
+      ],
+      "exclusive_locks": [
+        "docs"
+      ],
+      "steps": [
+        "Compare continuing browser-only, installable web and a native wrapper against observed needs.",
+        "Name actual requirements such as offline play, store discovery, controller support or paid content.",
+        "Only propose a native/engine spike if the measured browser constraint or business case warrants it."
+      ],
+      "acceptance_criteria": [
+        "Decision records evidence, ongoing solo-maintainer burden, reversible path and no-change option.",
+        "No platform switch is justified solely by raw bundle/repository size.",
+        "Commercial proposals identify value, support, asset rights and reward trust before implementation."
+      ],
+      "verification": [
+        "B reviews the decision; no automatic store submission or paid service setup."
+      ],
+      "rollback": "Decision-only. The default remains the existing free browser channel.",
+      "requires_human": true,
+      "recovery_gate_required": false,
+      "estimated_scope": "bounded decision",
+      "stop_conditions": [
+        "Stop and report evidence if current code has already fixed this exact finding; do not recreate it.",
+        "Stop for scope review before changing deterministic rules, retained verifier artifacts, applied migrations, security controls or production configuration."
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "path": "client/src/client/NetworkClient.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/NetworkClient.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "initialize",
+        "resyncLog",
+        "requestRematch",
+        "handleRematch",
+        "maybeDriveBot",
+        "getBotPlan",
+        "submitBotAction",
+        "deliverRoomCommand",
+        "start",
+        "stop"
+      ],
+      "conversation_evidence": [
+        "turn85",
+        "turn87",
+        "turn88",
+        "turn89",
+        "turn90",
+        "turn91",
+        "turn92"
+      ],
+      "limits": "External IO was stubbed in local probes; actual Supabase service and live peers not exercised."
+    },
+    {
+      "id": "S02",
+      "path": "client/src/main.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/main.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "bootstrap",
+        "startGame",
+        "createStateListener",
+        "syncChallenge",
+        "weapon and purchase callbacks",
+        "pagehide"
+      ],
+      "conversation_evidence": [
+        "turn78",
+        "turn101",
+        "turn102",
+        "turn128",
+        "turn129",
+        "turn130",
+        "turn131"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S03",
+      "path": "client/src/client/NetworkClient.requestRematch.test.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/NetworkClient.requestRematch.test.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "success responses",
+        "late successor polling",
+        "full authoritative room configuration"
+      ],
+      "conversation_evidence": [
+        "turn121",
+        "turn122"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S04",
+      "path": "supabase/functions/restart_game/index.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/supabase/functions/restart_game/index.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "handleRestartGame",
+        "existing successor return",
+        "successor projection"
+      ],
+      "conversation_evidence": [
+        "turn119"
+      ],
+      "limits": "Current production Edge definitions not independently fetched from Supabase."
+    },
+    {
+      "id": "S05",
+      "path": "supabase/migrations/021_atomic_room_commands.sql",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/supabase/migrations/021_atomic_room_commands.sql",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "submit_room_command",
+        "private seat validation",
+        "expected revision and intent receipt"
+      ],
+      "conversation_evidence": [
+        "turn125"
+      ],
+      "limits": "Read the transaction and grants; did not execute against PostgreSQL here."
+    },
+    {
+      "id": "S06",
+      "path": "supabase/migrations/022_atomic_casual_completion.sql",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/supabase/migrations/022_atomic_casual_completion.sql",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "completion transaction",
+        "scoreboard normalization",
+        "immutable receipts"
+      ],
+      "conversation_evidence": [
+        "turn112",
+        "turn113"
+      ],
+      "limits": "Source-level closure, not an independent deployed-database attestation."
+    },
+    {
+      "id": "S07",
+      "path": "supabase/migrations/023_room_lifecycle.sql",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/supabase/migrations/023_room_lifecycle.sql",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "heartbeat lease",
+        "explicit leave",
+        "abandonment",
+        "bounded cleanup",
+        "command and rematch wrappers"
+      ],
+      "conversation_evidence": [
+        "turn126",
+        "turn127"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S08",
+      "path": "supabase/config.toml",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/supabase/config.toml",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "API max_rows",
+        "function authentication configuration"
+      ],
+      "conversation_evidence": [
+        "turn108"
+      ],
+      "limits": "max_rows=1000 is the repository setting; hosted setting was not separately read."
+    },
+    {
+      "id": "S09",
+      "path": "shared/src/engine/AI.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/shared/src/engine/AI.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "nearestEnemy",
+        "chooseBuy",
+        "computeAiPlan",
+        "accessory preparation"
+      ],
+      "conversation_evidence": [
+        "turn75",
+        "turn76"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S10",
+      "path": "client/src/client/frameClock.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/frameClock.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "FrameClock"
+      ],
+      "conversation_evidence": [
+        "turn84"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S11",
+      "path": "client/src/client/HotSeatClient.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/HotSeatClient.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "start",
+        "stop",
+        "sendAction",
+        "clock integration"
+      ],
+      "conversation_evidence": [
+        "turn83"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S12",
+      "path": "client/src/client/VerifiedChallengeClient.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/VerifiedChallengeClient.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "constructor",
+        "sendAction",
+        "restore",
+        "recordAcceptedFire",
+        "terminalResult"
+      ],
+      "conversation_evidence": [
+        "turn100"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S13",
+      "path": "client/src/client/VerifiedChallengeSession.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/VerifiedChallengeSession.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "start",
+        "resume",
+        "complete",
+        "retry",
+        "abandon",
+        "account/generation binding"
+      ],
+      "conversation_evidence": [
+        "turn132",
+        "turn134"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S14",
+      "path": "shared/src/net/verifiedChallenge.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/shared/src/net/verifiedChallenge.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "descriptor and completion parsing",
+        "CQ1 contract"
+      ],
+      "conversation_evidence": [
+        "turn114"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S15",
+      "path": "supabase/functions/complete_verified_challenge/index.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/supabase/functions/complete_verified_challenge/index.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "outcomeOf",
+        "consistentEvents",
+        "handleCompleteVerifiedChallenge"
+      ],
+      "conversation_evidence": [
+        "turn139"
+      ],
+      "limits": "This is not a full audit of migration 024, all worker-leasing SQL, or live reward provisioning."
+    },
+    {
+      "id": "S16",
+      "path": "client/src/ui/HUD.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/HUD.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "targeted_complete_methods",
+      "inspected_symbols": [
+        "update",
+        "battleConsoleArmoryItems",
+        "projectLiveBattleConsole (projection region)",
+        "setVerifiedChallenge",
+        "destroy",
+        "leaveBattleConsole",
+        "setArmsLevel",
+        "terminal report isolation"
+      ],
+      "conversation_evidence": [
+        "turn146",
+        "turn147",
+        "turn153",
+        "turn154",
+        "turn155"
+      ],
+      "limits": "Original source ranges 1\u2013approximately 330, 370\u2013800, 1700\u20131900 and 1960\u20132190 inspected. Not the entire HUD file. No recommendation to split the whole HUD."
+    },
+    {
+      "id": "S17",
+      "path": "client/src/input/InputHandler.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/input/InputHandler.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "cycleWeapon",
+        "triggerFire",
+        "stepPower",
+        "applyPointerAim",
+        "focus and pointer ownership"
+      ],
+      "conversation_evidence": [
+        "turn148",
+        "turn150"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S18",
+      "path": "shared/src/engine/GameEngine.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/shared/src/engine/GameEngine.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "targeted_complete_methods",
+      "inspected_symbols": [
+        "currentGravity",
+        "getState",
+        "clone",
+        "applyAction",
+        "applyBuy",
+        "tick",
+        "tickResolving"
+      ],
+      "conversation_evidence": [
+        "turn157",
+        "turn158"
+      ],
+      "limits": "Original source 450\u2013950 inspected, plus complete current compiled engine dependency closure executed. Not every original engine method/comment was re-read; no wholesale engine refactor is authorized."
+    },
+    {
+      "id": "S19",
+      "path": "client/src/ui/VerifiedChallengeView.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/VerifiedChallengeView.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "projectVerifiedChallengeView",
+        "update",
+        "show",
+        "hide",
+        "retry countdown",
+        "isolation"
+      ],
+      "conversation_evidence": [
+        "turn156",
+        "turn161"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S20",
+      "path": "client/src/ui/HUD.verifiedChallenge.test.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/HUD.verifiedChallenge.test.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "challenge status",
+        "dedicated terminal report",
+        "ordinary result suppression"
+      ],
+      "conversation_evidence": [
+        "turn135"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S21",
+      "path": "client/src/ui/battleConsole/components/SemanticContractTree.tsx",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/battleConsole/components/SemanticContractTree.tsx",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "intentFor",
+        "dynamic control interpretation",
+        "accessible-name driven behavior"
+      ],
+      "conversation_evidence": [
+        "turn106",
+        "turn107"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S22",
+      "path": "client/src/ui/battleConsole/mount.tsx",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/battleConsole/mount.tsx",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "mountBattleConsoleGeneration",
+        "independent semantic owner",
+        "optional decoration",
+        "destroy"
+      ],
+      "conversation_evidence": [
+        "turn142"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S23",
+      "path": "client/src/ui/battleConsole/pixi/adapter.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/battleConsole/pixi/adapter.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "application admission",
+        "removable waiters",
+        "shared texture load",
+        "8-second decoration deadline",
+        "destroy"
+      ],
+      "conversation_evidence": [
+        "turn143",
+        "turn144"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S24",
+      "path": "client/vite.config.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/vite.config.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "runtime archive import guard",
+        "bundle graph evidence",
+        "coverage configuration"
+      ],
+      "conversation_evidence": [
+        "turn98"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S25",
+      "path": "scripts/ci/releaseCandidate.mjs",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/scripts/ci/releaseCandidate.mjs",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "digestPayload",
+        "assertCandidate",
+        "selectRequiredCiRun",
+        "revalidateRequiredCiRun",
+        "authorizeRollback"
+      ],
+      "conversation_evidence": [
+        "turn140",
+        "turn141"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S26",
+      "path": ".github/workflows/ci.yml",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/.github/workflows/ci.yml",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "core tests",
+        "Edge tests",
+        "browser suites",
+        "migration history integration"
+      ],
+      "conversation_evidence": [
+        "turn69"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S27",
+      "path": ".github/workflows/deploy-pages.yml",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/.github/workflows/deploy-pages.yml",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "workflow_and_executed_jobs",
+      "inspected_symbols": [
+        "exact-source gate",
+        "transported candidate tests",
+        "publication",
+        "provenance",
+        "post-deploy smoke"
+      ],
+      "conversation_evidence": [
+        "turn70",
+        "turn123",
+        "turn160"
+      ],
+      "limits": "Workflow source plus complete executed job graph. Publication verified through GitHub evidence, not an independent navigation of the live site."
+    },
+    {
+      "id": "S28",
+      "path": ".github/workflows/deploy-backend.yml",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/.github/workflows/deploy-backend.yml",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "credential-free gate",
+        "manifest and CLI pin",
+        "protected environment",
+        "dry run",
+        "configuration deployment",
+        "receipt"
+      ],
+      "conversation_evidence": [
+        "turn149"
+      ],
+      "limits": "Repository helper backendRelease.mjs and actual environment configuration not comprehensively re-audited."
+    },
+    {
+      "id": "S29",
+      "path": "scripts/checks/migration_classification.mjs",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/scripts/checks/migration_classification.mjs",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "checkMigrationHistory",
+        "explicit base/head",
+        "base-tree inventory",
+        "fail-closed git errors"
+      ],
+      "conversation_evidence": [
+        "turn163"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S30",
+      "path": "scripts/checks/collapse_flush.mjs",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/scripts/checks/collapse_flush.mjs",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "targeted_complete_paths",
+      "inspected_symbols": [
+        "Path A",
+        "Path B",
+        "Path D",
+        "summary exit"
+      ],
+      "conversation_evidence": [
+        "turn164",
+        "turn165"
+      ],
+      "limits": "Original source 90\u2013end inspected. Path B is repaired; A/D still allow missing-scenario skips. No original source suite rerun here."
+    },
+    {
+      "id": "S31",
+      "path": "playwright.config.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/playwright.config.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "external candidate mode",
+        "egress isolation",
+        "three Chromium-based projects"
+      ],
+      "conversation_evidence": [
+        "turn166"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S32",
+      "path": "client/src/client/quickOperations.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/quickOperations.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "six-operation registry",
+        "explicit practice objectives",
+        "versioned practice seeds"
+      ],
+      "conversation_evidence": [
+        "turn136"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S33",
+      "path": "client/src/ui/LobbyShellView.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/LobbyShellView.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "first-session routing",
+        "operation selection",
+        "guest/online choices"
+      ],
+      "conversation_evidence": [
+        "turn137",
+        "turn138"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S34",
+      "path": "client/src/client/seedChallenge.ts",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/client/seedChallenge.ts",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "ST1 parser",
+        "profile compatibility",
+        "credential-free URL builder"
+      ],
+      "conversation_evidence": [
+        "turn145"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S35",
+      "path": "docs/ARCHITECTURE.md",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/docs/ARCHITECTURE.md",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "current execution/trust/ownership description"
+      ],
+      "conversation_evidence": [
+        "turn74"
+      ],
+      "limits": "Documentation treated as a claim to reconcile, not implementation authority."
+    },
+    {
+      "id": "S36",
+      "path": "package.json",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/package.json",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "scripts",
+        "workspace dependencies",
+        "supported runtime"
+      ],
+      "conversation_evidence": [
+        "turn65"
+      ],
+      "limits": ""
+    },
+    {
+      "id": "S37",
+      "path": "client/src/ui/battleConsole/BattleConsoleRoot.tsx",
+      "url": "https://github.com/SUaDtL/singedTerra/blob/16624ca24712d5cd4cfa54e71d587070a6b27cd5/client/src/ui/battleConsole/BattleConsoleRoot.tsx",
+      "source_sha": "16624ca24712d5cd4cfa54e71d587070a6b27cd5",
+      "reading_depth": "complete_original_source",
+      "inspected_symbols": [
+        "BattleConsoleRoot",
+        "SemanticAtlasPreloads",
+        "CanonicalSemanticInk",
+        "ArmoryPanel",
+        "SettingsPanel",
+        "CoachPanel",
+        "breakpoint/focus restoration"
+      ],
+      "conversation_evidence": [
+        "turn168",
+        "turn169"
+      ],
+      "limits": "Confirms the live wide/standard interpreter path, explicit compact component, and all-mode semantic atlas preloads. Does not authorize a blanket modal or HUD rewrite."
+    }
+  ],
+  "external_references": [
+    {
+      "id": "X01",
+      "title": "Supabase JavaScript range",
+      "url": "https://supabase.com/docs/reference/javascript/using-modifiers-range",
+      "use": "Stable ordering and explicit result pagination."
+    },
+    {
+      "id": "X02",
+      "title": "MDN pagehide",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event",
+      "use": "Persisted pages can return without a new application bootstrap."
+    },
+    {
+      "id": "X03",
+      "title": "MDN pageshow",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/pageshow_event",
+      "use": "Back/forward-cache and mobile restoration event semantics."
+    },
+    {
+      "id": "X04",
+      "title": "Playwright emulation",
+      "url": "https://playwright.dev/docs/emulation",
+      "use": "Device emulation changes browser context properties; it is not physical-device validation."
+    },
+    {
+      "id": "X05",
+      "title": "PixiJS performance tips",
+      "url": "https://pixijs.com/8.x/guides/concepts/performance-tips",
+      "use": "Measure draw/texture cost; prefer appropriate asset and rendering budgets to a speculative engine rewrite."
+    },
+    {
+      "id": "X06",
+      "title": "Codex subagents",
+      "url": "https://learn.chatgpt.com/docs/agent-configuration/subagents",
+      "use": "Per-agent model/reasoning configuration exists; local availability and actual selected runtime still require preflight."
+    }
+  ],
+  "previous_findings": [
+    {
+      "previous_id": "F01",
+      "previous_title": "A build can be published before the full CI result exists",
+      "status": "addressed",
+      "assessment": "Exact-source CI, transported candidate tests, publication revalidation and current successful Pages evidence replace the former build-only promotion. Browser checks are now required. Do not rebuild this pipeline again.",
+      "source_ids": [
+        "S25",
+        "S26",
+        "S27"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F02",
+      "previous_title": "Unique sequence allocation is not command idempotency or atomic authorization",
+      "status": "addressed_in_source",
+      "assessment": "Migration 021 moves credential, revision and intent decisions into the locked transaction. Client intent identity exists. Remaining delivery/recovery failures are N01\u2013N04, not the original allocation race.",
+      "source_ids": [
+        "S01",
+        "S05"
+      ],
+      "current_finding_ids": [
+        "N01",
+        "N02",
+        "N03",
+        "N04"
+      ]
+    },
+    {
+      "previous_id": "F03",
+      "previous_title": "Casual-room clients still decide facts the referee uses to admit commands",
+      "status": "accepted_scope_limit",
+      "assessment": "Casual command admission is still not authoritative physics or proof of human play. Keep the casual/verified distinction; no ranked or valuable prize claim follows from lockstep.",
+      "source_ids": [
+        "S05",
+        "S06",
+        "S14"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F04",
+      "previous_title": "Room completion and scoreboard publication can disagree",
+      "status": "addressed_in_source",
+      "assessment": "Migration 022 unifies room completion, score normalization and immutable result receipt. The previous split-write plan is obsolete. Hosted definitions still need operational attestation.",
+      "source_ids": [
+        "S06"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F05",
+      "previous_title": "The appearance probe can prove its own marker instead of the real control",
+      "status": "addressed_runtime",
+      "assessment": "Current mount no longer imports or publishes the appearance-probe/retirement machinery. Preserve actual browser controls/tests rather than replacing every existing test. This is not a certification of every historical test.",
+      "source_ids": [
+        "S22",
+        "S24"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F06",
+      "previous_title": "Governance contracts are part of a 4.21 MB production JavaScript chunk",
+      "status": "addressed_measured",
+      "assessment": "The exact current console chunk is 235,015 bytes, down from 4,208,428. Runtime archive import protection exists. Remaining English-name interpretation is a different issue.",
+      "source_ids": [
+        "S21",
+        "S24"
+      ],
+      "current_finding_ids": [
+        "N10",
+        "N12"
+      ]
+    },
+    {
+      "previous_id": "F07",
+      "previous_title": "Decorative chrome readiness is coupled to loading every responsive asset mode",
+      "status": "partly_addressed",
+      "assessment": "Semantic controls no longer wait for every decorative texture. Optional all-mode texture loading remains behind a bounded cached adapter; optimize only from device/waterfall measurements.",
+      "source_ids": [
+        "S22",
+        "S23"
+      ],
+      "current_finding_ids": [
+        "N12"
+      ]
+    },
+    {
+      "previous_id": "F08",
+      "previous_title": "Production code spoofs Pixi hardware probes to satisfy lifecycle constraints",
+      "status": "addressed",
+      "assessment": "The complete current Pixi adapter no longer spoofs capability probes. It uses bounded shared admission, standard initialization and removable waiters.",
+      "source_ids": [
+        "S23"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F09",
+      "previous_title": "Deterministic ticks are paced by display refresh rate",
+      "status": "core_addressed",
+      "assessment": "Current FrameClock yields 60 logical beats at 30/60/120/144Hz in P06; both clients use clock/generation guards. End-to-end visual/audio pacing still requires device traces.",
+      "source_ids": [
+        "S01",
+        "S10",
+        "S11"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F10",
+      "previous_title": "A required collapse scenario can skip and leave the harness green",
+      "status": "partly_addressed",
+      "assessment": "The original Path B gap is repaired with setup and flush observations. Sibling A/D skip-to-green conditions remain; do not reimplement Path B.",
+      "source_ids": [
+        "S30"
+      ],
+      "current_finding_ids": [
+        "N11"
+      ]
+    },
+    {
+      "previous_id": "F11",
+      "previous_title": "The migration guard can silently lose its history comparison",
+      "status": "addressed_in_source",
+      "assessment": "Explicit resolvable base/head refs, base-tree migration inventory and fatal Git errors replace silent HEAD^ fallback.",
+      "source_ids": [
+        "S29",
+        "S26"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F12",
+      "previous_title": "Specialist tests already run; target the remaining browser/normal-entry gaps",
+      "status": "partly_addressed",
+      "assessment": "Exact transported candidate browser suites and required browser protection are real improvements. Current default projects remain Chromium-based; physical-device and unsupported-engine claims require separate proof.",
+      "source_ids": [
+        "S26",
+        "S27",
+        "S31"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F13",
+      "previous_title": "The engine exposes mutable internal state as a snapshot",
+      "status": "specific_write_addressed",
+      "assessment": "The earlier main-owned verified-terminal mutation was replaced by a presentation projection. GameEngine still returns a mutable borrowed state. Do not deep-copy terrain per frame or impose a repository-wide readonly rewrite without a new demonstrated write.",
+      "source_ids": [
+        "S02",
+        "S18"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F14",
+      "previous_title": "No generic engine or coordinator extraction is justified by this pass",
+      "status": "withdrawn_still",
+      "assessment": "A mandatory whole-engine/coordinator extraction remains unjustified. Existing methods and resource owners should remain unless a concrete change demonstrates a missing boundary.",
+      "source_ids": [
+        "S01",
+        "S02",
+        "S18"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F15",
+      "previous_title": "Historical guidance contradicts the implementation and can misdirect agents",
+      "status": "narrow_documentation_debt",
+      "assessment": "Do not treat old review plans as active law. Even current applyBuy comments still say bots do not buy accessories, while the planner/driver do. Fix contradictory current guidance alongside the affected implementation; do not undertake an archive purification project.",
+      "source_ids": [
+        "S09",
+        "S18",
+        "S35"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F16",
+      "previous_title": "Backend deployment is manual, but not yet a reproducible release transaction",
+      "status": "substantially_addressed_in_source",
+      "assessment": "Backend workflow now binds main, manifest, CLI and CI, uses a protected environment, dry-run/readback and a receipt. The actual environment/hosted functions were not independently attested. Do not replace it on the old premise.",
+      "source_ids": [
+        "S28"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F17",
+      "previous_title": "Art already exists; distribution and decoded-memory budgets need equal attention",
+      "status": "retained_measurement_goal",
+      "assessment": "Authored assets exist and dominate measured disk bytes. Profile actual loading and allocation before selecting optimizations.",
+      "source_ids": [
+        "S23",
+        "S24"
+      ],
+      "current_finding_ids": [
+        "N12"
+      ]
+    },
+    {
+      "previous_id": "F18",
+      "previous_title": "Replay chunking bounds actions, not the work inside one action",
+      "status": "narrowed",
+      "assessment": "Bounded verification work is now present in the engine/challenge completion path. Casual replay still needs complete paged history and bounded work; address that reader first, not an unconditional worker/WASM rewrite.",
+      "source_ids": [
+        "S01",
+        "S15",
+        "S18"
+      ],
+      "current_finding_ids": [
+        "N02"
+      ]
+    },
+    {
+      "previous_id": "F19",
+      "previous_title": "Replay verification proves an allowed result, not a human or varied challenge",
+      "status": "product_expanded_not_proven",
+      "assessment": "CQ1 now supplies an explicit fixed qualification and reward contract. It is not a proof of human play or an unlimited variety loop. Preserve the artifact, then test replay value.",
+      "source_ids": [
+        "S12",
+        "S14",
+        "S15"
+      ],
+      "current_finding_ids": [
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F20",
+      "previous_title": "Keep dirty rendering; fix demonstrated repeated network CPU planning",
+      "status": "addressed_specific_bug",
+      "assessment": "Keep dirty rendering. The network planner cache and preparation handling exist. New settlement retry defects must not be confused with the earlier every-frame planning defect.",
+      "source_ids": [
+        "S01",
+        "S02",
+        "S09"
+      ],
+      "current_finding_ids": [
+        "N03"
+      ]
+    },
+    {
+      "previous_id": "F21",
+      "previous_title": "A synth-only rule is an implementation constraint, not a product requirement",
+      "status": "audition_required",
+      "assessment": "No new listening session was possible. A hybrid-audio audition remains a conditional product experiment, not a confirmed current audio defect or a required dependency migration.",
+      "source_ids": [
+        "S02"
+      ],
+      "current_finding_ids": [
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F22",
+      "previous_title": "Modal behavior is being hand-implemented in multiple UI owners",
+      "status": "deferred_still",
+      "assessment": "Retain independent dialog policy. The new CQ1 view has its own retry and return behavior. There is no mandate to consolidate all modals merely because mechanisms resemble each other.",
+      "source_ids": [
+        "S19",
+        "S16"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F23",
+      "previous_title": "Landscape-only mobile support is a product and accessibility decision",
+      "status": "validate_product_choice",
+      "assessment": "The current test setup still describes landscape phone play. Real orientation, restore, touch and safe-area testing precede a native decision.",
+      "source_ids": [
+        "S31",
+        "S17"
+      ],
+      "current_finding_ids": [
+        "N08"
+      ]
+    },
+    {
+      "previous_id": "F24",
+      "previous_title": "There is no evidence yet for a retention diagnosis",
+      "status": "still_unmeasured",
+      "assessment": "No new player observations or retention dataset was supplied. The inspected product-evidence directory exposed templates, not an observed cohort. This does not assert that no private evidence exists elsewhere.",
+      "source_ids": [
+        "S32",
+        "S33"
+      ],
+      "current_finding_ids": [
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F25",
+      "previous_title": "Reuse existing Field Orders instead of inventing another objective subsystem",
+      "status": "implemented_direction",
+      "assessment": "Explicit practice objectives now use the existing operation path. Do not invent another objective framework; validate current tasks before expanding.",
+      "source_ids": [
+        "S32"
+      ],
+      "current_finding_ids": [
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F26",
+      "previous_title": "The quick path still asks for choices before the player understands them",
+      "status": "substantially_addressed",
+      "assessment": "First Salvo now has a privileged first-session path and other choices can be secondary. Reassess actual first-use comprehension rather than repeating the old missing-onboarding prescription.",
+      "source_ids": [
+        "S33"
+      ],
+      "current_finding_ids": [
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F27",
+      "previous_title": "An after-action report is present; a strong next reason to play is still a hypothesis",
+      "status": "partly_addressed",
+      "assessment": "Practice identity and public seed sharing improve the post-match proposition. CQ1 report choreography and human next-choice behavior still warrant observation.",
+      "source_ids": [
+        "S19",
+        "S32",
+        "S34"
+      ],
+      "current_finding_ids": [
+        "N09",
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F28",
+      "previous_title": "No simultaneous audience should be required for the first good session",
+      "status": "implemented_direction",
+      "assessment": "Bots, curated solo practice and credential-free asynchronous seed challenges reduce the need for a simultaneous population. Public matchmaking is not the next required build.",
+      "source_ids": [
+        "S09",
+        "S32",
+        "S34"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F29",
+      "previous_title": "Balance and feel need a measurement loop separate from correctness tests",
+      "status": "retain_separate_validation",
+      "assessment": "Correctness and fixed-seed replay are not balance or fun measurements. Use a scenario/observation notebook; do not rebalance retained challenge editions in place.",
+      "source_ids": [
+        "S09",
+        "S14",
+        "S32"
+      ],
+      "current_finding_ids": [
+        "N13"
+      ]
+    },
+    {
+      "previous_id": "F30",
+      "previous_title": "The asset direction is stronger than a wholesale visual restart would imply",
+      "status": "retain_art_direction",
+      "assessment": "The actual three-world backgrounds, modular tank sheet and chrome were inspected as source assets. A coherent direction exists; improve gameplay-scale hierarchy instead of restarting the skin.",
+      "source_ids": [
+        "S23",
+        "S24"
+      ],
+      "current_finding_ids": [
+        "N12"
+      ]
+    },
+    {
+      "previous_id": "F31",
+      "previous_title": "Hard CPU can choose an arms-level-forbidden restock and fail to advance",
+      "status": "addressed_and_probed",
+      "assessment": "The current CPU planner respects arms-level purchase eligibility. P11 reproduced a legal Baby Missile fallback with exhausted finite ammo and 15,000 credits at arms level 0.",
+      "source_ids": [
+        "S09"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F32",
+      "previous_title": "Ordinary CPU target selection can aim at its own team",
+      "status": "addressed_in_source",
+      "assessment": "nearestEnemy now excludes same-team targets when team metadata is present. Preserve free-for-all behavior; do not repeat the earlier fix task.",
+      "source_ids": [
+        "S09"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F33",
+      "previous_title": "Network CPU execution repeats planning and drops accessory intents",
+      "status": "addressed_specific_bug",
+      "assessment": "Current network execution caches the plan and handles weapon/accessory preparation. Remaining refusal/conflict settlement needs N03, not another cache rewrite.",
+      "source_ids": [
+        "S01",
+        "S09"
+      ],
+      "current_finding_ids": [
+        "N03"
+      ]
+    },
+    {
+      "previous_id": "F34",
+      "previous_title": "Aim guide applies sudden-death gravity using global rather than round-local turns",
+      "status": "addressed_in_source",
+      "assessment": "main now supplies the client effective-gravity read instead of recomputing sudden death from global turns.",
+      "source_ids": [
+        "S02",
+        "S18"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F35",
+      "previous_title": "Battery upgrades are accepted by the engine but unreachable through human power controls",
+      "status": "addressed_and_probed",
+      "assessment": "Power cap is supplied to InputHandler and HUD. P10 bought a Battery, observed cap=200, and reached power=150 through the actual input method.",
+      "source_ids": [
+        "S02",
+        "S16",
+        "S17",
+        "S18"
+      ],
+      "current_finding_ids": []
+    },
+    {
+      "previous_id": "F36",
+      "previous_title": "Wide controls interpret historical accessible-name text as action identifiers",
+      "status": "still_present",
+      "assessment": "Desktop snapshot interpretation still dispatches by English label. This supports the narrow typed-control refactor, not a whole-HUD rewrite.",
+      "source_ids": [
+        "S21"
+      ],
+      "current_finding_ids": [
+        "N10"
+      ]
+    },
+    {
+      "previous_id": "F37",
+      "previous_title": "Hot-seat stop can be undone by the running emission callback",
+      "status": "addressed_in_source",
+      "assessment": "Current local/network loops use running/generation checks after callbacks before rearming. Preserve these guards in all new mode work.",
+      "source_ids": [
+        "S01",
+        "S11",
+        "S12"
+      ],
+      "current_finding_ids": []
+    }
+  ],
+  "previous_tasks": [
+    {
+      "previous_task_id": "R00",
+      "previous_title": "Pin the working baseline and resolve Codex capabilities",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F15"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R01",
+      "previous_title": "Replace contradictory instructions with one current ownership and decision contract",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F14",
+        "F15"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R02",
+      "previous_title": "Make collapse regression scenarios fail when their prerequisites are absent",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F10"
+      ],
+      "current_task_ids": [
+        "T10"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R03",
+      "previous_title": "Retain real-control tests and retire the circular appearance oracle",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F05"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R04",
+      "previous_title": "Build one tested release candidate and gate Pages promotion on it",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F01",
+        "F12"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R05",
+      "previous_title": "Align branch protection and rollback policy with the release graph",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F01"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R06",
+      "previous_title": "Introduce an atomic, revision-checked room-command transaction",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F02",
+        "F03"
+      ],
+      "current_task_ids": [
+        "T01",
+        "T02",
+        "T03",
+        "T04"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R07",
+      "previous_title": "Carry stable command identity and revision through client retries",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F02",
+        "F03"
+      ],
+      "current_task_ids": [
+        "T01",
+        "T02",
+        "T03",
+        "T04"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R08",
+      "previous_title": "Make casual completion atomic and explicitly unverified",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F03",
+        "F04"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R09",
+      "previous_title": "Remove raw governance and appearance-test archives from the production graph",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F05",
+        "F06"
+      ],
+      "current_task_ids": [
+        "T13",
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R10",
+      "previous_title": "Restore supported graphics capability handling and independent semantic readiness",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F07",
+        "F08"
+      ],
+      "current_task_ids": [
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R11",
+      "previous_title": "Load only the needed asset mode and set enforceable image budgets",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F07",
+        "F17"
+      ],
+      "current_task_ids": [
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R12",
+      "previous_title": "Decouple simulation and effect pacing from refresh rate; make RAF stop final",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F09",
+        "F37"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R13",
+      "previous_title": "Make migration history checks use real base/head evidence",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F11"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R14",
+      "previous_title": "Make backend releases pinned, compatible and recoverable",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F16"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R15",
+      "previous_title": "Extend existing browser suites with untouched entry and declared-engine coverage",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F12",
+        "F23",
+        "F26"
+      ],
+      "current_task_ids": [
+        "T08",
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R16",
+      "previous_title": "Separate verified terminal presentation from canonical engine mutation",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F13"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R17",
+      "previous_title": "Establish performance and load baselines on actual scenarios",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F06",
+        "F17",
+        "F18",
+        "F20"
+      ],
+      "current_task_ids": [
+        "T02",
+        "T04",
+        "T13",
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R18",
+      "previous_title": "Replace wide snapshot-interpreted controls with explicit typed controls",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F14",
+        "F36"
+      ],
+      "current_task_ids": [
+        "T13"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R19",
+      "previous_title": "Reconcile runtime versions, trust tiers and current operations documentation",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F03",
+        "F15",
+        "F16",
+        "F19"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R20",
+      "previous_title": "Accept evidence-backed correction scope without expanding into a rewrite",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F01",
+        "F05",
+        "F09",
+        "F14",
+        "F15"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P01",
+      "previous_title": "Instrument a minimal product funnel without adding an analytics empire",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F24"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P02",
+      "previous_title": "Test a faster first meaningful shot using the existing guest flow and coach",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F24",
+        "F26"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P03",
+      "previous_title": "Extend existing Quick Operations and Field Orders for selected practice",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F25",
+        "F27",
+        "F28"
+      ],
+      "current_task_ids": [
+        "T09",
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P04",
+      "previous_title": "Author three tactical challenges with distinguishable decisions",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F25",
+        "F29"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P05",
+      "previous_title": "Conditional dialog-mechanism consolidation only after a demonstrated need",
+      "status": "deferred",
+      "previous_finding_ids": [
+        "F22",
+        "F23"
+      ],
+      "current_task_ids": [],
+      "note": "Still deferred. Consolidate dialog mechanisms only for a demonstrated repeated need."
+    },
+    {
+      "previous_task_id": "P06",
+      "previous_title": "Create a battle-first visual pass on one screen, not a new game skin",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F17",
+        "F30"
+      ],
+      "current_task_ids": [
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P07",
+      "previous_title": "Audition a small hybrid audio improvement and volume control",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F21"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P08",
+      "previous_title": "Withdrawn: mandatory engine-capability extraction",
+      "status": "withdrawn",
+      "previous_finding_ids": [
+        "F14"
+      ],
+      "current_task_ids": [],
+      "note": "Still withdrawn. No replacement mandatory engine extraction."
+    },
+    {
+      "previous_task_id": "P09",
+      "previous_title": "Optimize only the measured dominant long-task path",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F18",
+        "F20"
+      ],
+      "current_task_ids": [
+        "T02",
+        "T04"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P10",
+      "previous_title": "Define the public challenge and reward authority contract before expanding verified play",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F03",
+        "F19"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P11",
+      "previous_title": "Make the existing after-action report explain a turning point and a next challenge",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F27"
+      ],
+      "current_task_ids": [
+        "T09",
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P12",
+      "previous_title": "Prototype credential-free seed or replay sharing that does not need simultaneous players",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F28"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P13",
+      "previous_title": "Create a balance and pacing notebook from deterministic matches",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F29"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P14",
+      "previous_title": "Observe a baseline newcomer session, then repeat after selected changes",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F24",
+        "F27",
+        "F29"
+      ],
+      "current_task_ids": [
+        "T09",
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P15",
+      "previous_title": "Validate a mobile battle layout on physical devices before native packaging",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F23",
+        "F30"
+      ],
+      "current_task_ids": [
+        "T08",
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P16",
+      "previous_title": "Make a browser, installable-web or native business decision from evidence",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F24",
+        "F28",
+        "F30"
+      ],
+      "current_task_ids": [
+        "T14",
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "P17",
+      "previous_title": "Complete asset and dependency provenance before a commercial channel",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F17",
+        "F30"
+      ],
+      "current_task_ids": [
+        "T14"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R21",
+      "previous_title": "Keep CPU restock plans legal under the current room arms level",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F29",
+        "F31"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R22",
+      "previous_title": "Make ordinary CPU target selection team-aware without changing FFA",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F29",
+        "F32"
+      ],
+      "current_task_ids": [
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R23",
+      "previous_title": "Cache and execute the complete ordinary network CPU preparation plan",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F20",
+        "F33"
+      ],
+      "current_task_ids": [
+        "T04"
+      ],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R24",
+      "previous_title": "Use the client\u2019s actual effective gravity for the trajectory guide",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F34"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    },
+    {
+      "previous_task_id": "R25",
+      "previous_title": "Carry the active power limit through existing human controls and gauges",
+      "status": "superseded_by_current_disposition",
+      "previous_finding_ids": [
+        "F35"
+      ],
+      "current_task_ids": [],
+      "note": "Do not execute the old task automatically. Apply the linked finding dispositions; source-level closure is not a blanket live-environment attestation."
+    }
+  ]
+}

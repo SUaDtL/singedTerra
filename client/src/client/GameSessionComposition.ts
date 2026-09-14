@@ -32,6 +32,10 @@ export interface GameSessionCompositionPorts<
   afterRetire(): void;
   prepareAcquisition(): Setup;
   acquireClient(setup: Setup): Promise<SessionClientAcquisition<Client>>;
+  onAcquisitionFailure?(error: unknown, context: {
+    readonly generation: number;
+    readonly setup: Setup;
+  }): void;
   constructRenderer(): Renderer;
   configureRendererEvents(renderer: Renderer): void;
   primeTerminalHistory(renderer: Renderer, state: State): void;
@@ -66,7 +70,15 @@ export class GameSessionComposition<
     if (!this.lifecycle.isCurrent(generation)) return null;
     const setup = ports.prepareAcquisition();
     if (!this.lifecycle.isCurrent(generation)) return null;
-    const acquisition = await ports.acquireClient(setup);
+    let acquisition: SessionClientAcquisition<Client>;
+    try {
+      acquisition = await ports.acquireClient(setup);
+    } catch (error) {
+      if (!ports.onAcquisitionFailure) throw error;
+      if (!this.lifecycle.isCurrent(generation)) return null;
+      ports.onAcquisitionFailure(error, { generation, setup });
+      return null;
+    }
     if (acquisition.status === 'unavailable') return null;
     const { client } = acquisition;
     if (!this.lifecycle.ownClient(generation, client)) return null;

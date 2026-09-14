@@ -114,6 +114,45 @@ test.describe('First Salvo semantic console contract', () => {
     });
   });
 
+  test('below-tank contacts clamp to the correct horizontal quadrant without firing', async ({
+    page,
+  }, testInfo) => {
+    await gotoFirstSalvo(page);
+    await page.getByRole('button', { name: 'Enter battle', exact: true }).click();
+    const canvas = page.locator('#game');
+    const bounds = await canvas.boundingBox();
+    expect(bounds).not.toBeNull();
+    const before = await readAimProbe(page);
+    const contact = async (position: { x: number; y: number }) => {
+      if (testInfo.project.name === 'pixel-touch') await canvas.tap({ position });
+      else await canvas.click({ position });
+    };
+
+    const exposedLowerPoint = (fraction: number) => canvas.evaluate((element, xFraction) => {
+      const box = element.getBoundingClientRect();
+      const x = box.width * xFraction;
+      for (let y = box.height - 3; y > box.height / 2; y -= 3) {
+        if (document.elementFromPoint(box.left + x, box.top + y) === element) return { x, y };
+      }
+      throw new Error('No exposed lower battlefield point');
+    }, fraction);
+
+    await contact(await exposedLowerPoint(0.02));
+    await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toHaveText('180°');
+
+    await contact(await exposedLowerPoint(0.98));
+    await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toHaveText('0°');
+    const after = await readAimProbe(page);
+    expect(after).toMatchObject({
+      phase: 'PLAYER_TURN',
+      turn: before.turn,
+      activePlayerId: before.activePlayerId,
+      projectileCount: 0,
+    });
+    expect(after.forwardedActions.setAngle).toBeGreaterThanOrEqual(before.forwardedActions.setAngle + 2);
+    expect(after.forwardedActions.fire).toBe(before.forwardedActions.fire);
+  });
+
   test('tracks a native touch drag with canvas-scoped gesture ownership', async ({
     page,
   }, testInfo) => {

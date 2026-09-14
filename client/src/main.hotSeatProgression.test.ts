@@ -14,6 +14,7 @@ const seams = vi.hoisted(() => ({
   verifiedControllerPolicies: [] as number[],
   verifiedControllerTuples: [] as Array<{ contractVersion: number; engineVersion: number; rulesetVersion: number }>,
   hotSeatConstructorArgs: [] as unknown[],
+  networkConstructorArgs: [] as unknown[][],
   gameEngineArgs: [] as unknown[][],
   onLobbyReady: null as null | ((config: Record<string, unknown>) => Promise<void>),
   onQuit: null as null | (() => void),
@@ -50,6 +51,7 @@ const seams = vi.hoisted(() => ({
   challengeOptions: [] as Array<Record<string, unknown>>,
   challengeState: { status: 'idle' } as Record<string, unknown>,
   challengeHud: [] as unknown[],
+  challengeReportReadiness: [] as boolean[],
   coachEligibility: [] as unknown[],
   retriedVerified: 0,
   continuedVerified: 0,
@@ -83,6 +85,7 @@ const seams = vi.hoisted(() => ({
   lobbyHides: 0,
   leaveBattleConsole: (): void | Promise<void> => undefined,
   lobbyShowOptions: [] as unknown[],
+  lobbyRecovery: null as null | { message: string; retry: () => void },
   accountAnonymous: false,
   accountAuthenticated: false,
   onAccountAuthenticationChange: null as null | ((identityChanged: boolean) => void),
@@ -152,7 +155,8 @@ vi.mock('./client/VerifiedChallengeClient', () => ({
   },
 }))
 vi.mock('./client/NetworkClient', () => ({
-  NetworkClient: function NetworkClient() {
+  NetworkClient: function NetworkClient(...args: unknown[]) {
+    seams.networkConstructorArgs.push(args)
     return seams.clients.shift()
   },
 }))
@@ -300,7 +304,10 @@ vi.mock('./ui/HUD', () => ({
       seams.verifiedHudStates.push(state)
       if (state && 'humanSalvos' in state) seams.verifiedPresentationEvents.push('budget')
     }
-    setVerifiedChallenge(state: unknown) { seams.challengeHud.push(state) }
+    setVerifiedChallenge(state: unknown, options?: { reportReady?: boolean }) {
+      seams.challengeHud.push(state)
+      seams.challengeReportReadiness.push(options?.reportReady ?? true)
+    }
     onVerifiedChallengeRetry() {}
     onVerifiedChallengeReturn(callback: () => void) { seams.onVerifiedChallengeReturn = callback }
     setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
@@ -349,6 +356,10 @@ vi.mock('./ui/Lobby', () => ({
     show(options?: unknown) {
       seams.lobbyShows += 1
       seams.lobbyShowOptions.push(options)
+    }
+    showNetworkRecovery(message: string, retry: () => void) {
+      seams.lobbyShows += 1
+      seams.lobbyRecovery = { message, retry }
     }
     isAccountAnonymous() { return seams.accountAnonymous }
     isAccountAuthenticated() { return seams.accountAuthenticated }
@@ -691,7 +702,7 @@ function tickEngineToRest(engine: { getState(): GameState; tick(): void }): void
 }
 
 describe('production hot-seat progression composition', () => {
-  afterEach(() => { vi.useRealTimers() })
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
   beforeEach(() => {
     vi.resetModules()
@@ -701,6 +712,7 @@ describe('production hot-seat progression composition', () => {
     seams.verifiedControllerPolicies.length = 0
     seams.verifiedControllerTuples.length = 0
     seams.hotSeatConstructorArgs.length = 0
+    seams.networkConstructorArgs.length = 0
     seams.gameEngineArgs.length = 0
     seams.onLobbyReady = null
     seams.onQuit = null
@@ -737,6 +749,7 @@ describe('production hot-seat progression composition', () => {
     seams.challengeHud.length = 0
     seams.coachEligibility.length = 0
     seams.challengeState = { status: 'idle' }
+    seams.challengeReportReadiness.length = 0
     seams.retriedVerified = 0
     seams.continuedVerified = 0
     seams.returnedVerified = 0
@@ -766,6 +779,7 @@ describe('production hot-seat progression composition', () => {
     seams.lobbyHides = 0
     seams.leaveBattleConsole = () => undefined
     seams.lobbyShowOptions.length = 0
+    seams.lobbyRecovery = null
     seams.accountAnonymous = false
     seams.accountAuthenticated = false
     seams.onAccountAuthenticationChange = null
@@ -803,6 +817,154 @@ describe('production hot-seat progression composition', () => {
     expect(seams.publicSeedChallenges.at(-1)).toBeNull()
     expect(seams.challengeHud.at(-1)).toMatchObject({ result: { terminal: 'objective_cleared' } })
     expect(state.phase).toBe('PLAYER_TURN')
+  })
+
+  it('submits a live CQ1 result immediately but waits for renderer payoff completion before opening its report', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback)
+      return frames.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null as null | Record<string, unknown> })
+    seams.clients.push(client)
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    seams.rendererAnimating = true
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [{ angle: 32, power: 100 }] } })
+
+    client.terminalResult = { terminal: 'objective_cleared', humanSalvos: 1 }
+    client.emit(state)
+    await Promise.resolve()
+    expect(seams.completedChallenges).toBe(1)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(false)
+    expect(seams.hudUpdates.at(-1)?.[2]).toBe(false)
+    expect(frames).toHaveLength(1)
+
+    seams.rendererAnimating = false
+    frames.shift()?.(0)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(true)
+  })
+
+  it('releases a CQ1 report after the finite renderer-payoff safety ceiling', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback)
+      return frames.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null as null | Record<string, unknown> })
+    seams.clients.push(client)
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    seams.rendererAnimating = true
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [{ angle: 32, power: 100 }] } })
+
+    client.terminalResult = { terminal: 'objective_cleared', humanSalvos: 1 }
+    client.emit(state)
+    await Promise.resolve()
+    expect(seams.challengeReportReadiness.at(-1)).toBe(false)
+
+    for (let frame = 0; frame < 82; frame += 1) {
+      const callback = frames.shift()
+      expect(callback).toBeDefined()
+      callback?.(frame)
+    }
+    expect(frames).toHaveLength(0)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(true)
+  })
+
+  it('uses exactly one presentation frame as the no-impact fallback for a live CQ1 result', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback)
+      return frames.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null as null | Record<string, unknown> })
+    seams.clients.push(client)
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [{ angle: 32, power: 100 }] } })
+
+    client.terminalResult = { terminal: 'objective_cleared', humanSalvos: 1 }
+    client.emit(state)
+    await Promise.resolve()
+    expect(seams.completedChallenges).toBe(1)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(false)
+    expect(frames).toHaveLength(1)
+
+    frames.shift()?.(0)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(true)
+    expect(frames).toHaveLength(0)
+  })
+
+  it('drops a queued CQ1 payoff frame after its match generation retires', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback)
+      return frames.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null as null | Record<string, unknown> })
+    seams.clients.push(client)
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    seams.rendererAnimating = true
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [{ angle: 32, power: 100 }] } })
+
+    client.terminalResult = { terminal: 'objective_cleared', humanSalvos: 1 }
+    client.emit(state)
+    await Promise.resolve()
+    expect(frames).toHaveLength(1)
+    const renderedBeforeRetirement = seams.rendererFrames.length
+
+    seams.onQuit!()
+    await vi.waitFor(() => expect(client.stop).toHaveBeenCalledOnce())
+    const readinessUpdatesAfterRetirement = seams.challengeReportReadiness.length
+    frames.shift()?.(0)
+    expect(seams.rendererFrames).toHaveLength(renderedBeforeRetirement)
+    expect(seams.challengeReportReadiness).toHaveLength(readinessUpdatesAfterRetirement)
+  })
+
+  it('presents a restored CQ1 receipt without replaying its payoff or issuing a new completion request', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback)
+      return frames.length
+    })
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), {
+      terminalResult: { terminal: 'objective_cleared', humanSalvos: 1 },
+    })
+    seams.clients.push(client)
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'completed', descriptor, receipt: { disposition: 'awarded' } }
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [{ name: 'Ranger' }, { name: 'CPU', ai: 'hard' }],
+      settings: { seed: 42 }, verifiedChallenge: { descriptor, transcript: [{ angle: 32, power: 100 }] } })
+
+    expect(seams.rendererPrimedStates).toEqual([state])
+    expect(seams.completedChallenges).toBe(0)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(true)
+    expect(frames).toHaveLength(0)
   })
 
   it.each(['restart', 'account-change', 'return'] as const)('returns a challenge to preparation on %s without reusing admission', async (event) => {
@@ -1142,6 +1304,37 @@ describe('production hot-seat progression composition', () => {
     expect(seams.lobbyHides).toBe(lobbyHides)
     newer.emit(gameState())
     expect(seams.hudUpdates.length).toBeGreaterThan(hudUpdates)
+  })
+
+  it('shows an actionable Lobby retry for the current network initialization failure', async () => {
+    const timedOut = fakeClient(gameState())
+    const retryClient = fakeClient(gameState())
+    const timeout = new Error('Game recovery timed out. Return to Online and try joining again.')
+    timedOut.initialize = vi.fn(async () => { throw timeout })
+    seams.clients.push(timedOut, retryClient)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    const config = {
+      mode: 'network', roomId: 'successor-room', roomCode: 'NEXT', playerId: 'player-1',
+      players: [{ id: 'player-1', name: 'Ranger', color: '#e8554d' }], playerNames: ['Ranger'],
+    }
+    writeSession({ roomId: config.roomId, roomCode: config.roomCode, playerId: config.playerId })
+    await seams.onLobbyReady(config)
+
+    expect(seams.lobbyRecovery?.message).toBe(timeout.message)
+    expect(timedOut.stop).toHaveBeenCalledOnce()
+    expect(retryClient.start).not.toHaveBeenCalled()
+
+    seams.lobbyRecovery?.retry()
+    await vi.waitFor(() => expect(retryClient.start).toHaveBeenCalledOnce())
+    expect(seams.networkConstructorArgs.at(-1)?.slice(1, 3)).toEqual([
+      config.roomId,
+      config.playerId,
+    ])
+    expect(readSession()).toEqual({
+      roomId: 'successor-room', roomCode: 'NEXT', playerId: 'player-1',
+    })
   })
 
   it('retires a late asynchronous network start after a newer start owns the match', async () => {
@@ -1906,11 +2099,12 @@ describe('production hot-seat progression composition', () => {
 
   it('invalidates only pending network commands when the account identity changes', async () => {
     const client = fakeClient(gameState())
+    const seatToken = crypto.randomUUID()
     seams.clients.push(client)
     await import('./main')
     if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
     await seams.onLobbyReady({
-      mode: 'network', roomId: 'room-1', roomCode: 'ROOM', playerId: 'seat-a', token: 'seat-token',
+      mode: 'network', roomId: 'room-1', roomCode: 'ROOM', playerId: 'seat-a', token: seatToken,
       settings: { seed: 42, maxWind: 10, gravity: 0.15, rulesetVersion: 4, commandProtocolVersion: 2 },
       players: [
         { id: 'seat-a', name: 'Alice', color: '#e84d4d' },

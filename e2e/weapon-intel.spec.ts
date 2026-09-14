@@ -4,6 +4,41 @@ import { gotoRunningGame } from './support';
 // The replacement Armory keeps descriptions with their inventory cards; the
 // retired hover dossier is no longer a second presentation of the same weapon.
 test.describe('weapon intel battlefield composition', () => {
+  test('Lean Arsenal equips its stocked above-tier Heavy Missile without unlocking restocks', async ({ page }) => {
+    await page.goto('?e2e=quick-duel-seed');
+    await page.evaluate(() => document.getElementById('st-splash')?.remove());
+    await page.locator('[data-ui="other-quick-duels"] > summary').click();
+    await page.locator('[data-operation-id="lean-arsenal"]').click();
+    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });
+    if (await briefing.isVisible()) {
+      await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
+    }
+
+    await page.getByRole('button', { name: 'Open Armory', exact: true }).click();
+    const armory = page.getByRole('dialog', { name: 'Armory', exact: true });
+    const cards = armory.locator('[data-battle-console-armory-item]');
+    const heavy = cards.filter({ has: page.getByRole('heading', { name: 'Heavy Missile', exact: true }) });
+    const nuke = cards.filter({ has: page.getByRole('heading', { name: 'Nuke', exact: true }) });
+
+    await expect(heavy.locator('[data-battle-console-owned]')).toHaveText('1 ammo');
+    await expect(heavy.locator('p')).toContainText('Restocks unlock at Arms level');
+    await expect(heavy.getByRole('button', { name: /^Buy/ })).toBeDisabled();
+    await expect(heavy.getByRole('button', { name: 'Equip', exact: true })).toBeEnabled();
+    await expect(nuke.locator('[data-battle-console-owned]')).toHaveText('0 ammo');
+    await expect(nuke.getByRole('button', { name: /^Buy/ })).toBeDisabled();
+    await expect(nuke.getByRole('button', { name: 'Equip', exact: true })).toBeDisabled();
+
+    await heavy.getByRole('button', { name: 'Equip', exact: true }).click();
+    await expect(heavy.getByRole('button', { name: 'Equipped', exact: true })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    const fire = page.getByRole('button', { name: 'Fire Heavy Missile', exact: true });
+    await expect(fire).toBeEnabled();
+    await fire.click();
+    await expect(page.locator('[data-battle-console-surface]'))
+      .toHaveAttribute('data-battle-console-phase', /firing|resolving/);
+  });
+
   test('buys a finite weapon inside the sole Armory dialog', async ({ page }) => {
     await gotoRunningGame(page);
     await page.getByRole('button', { name: 'Open Armory' }).click();
