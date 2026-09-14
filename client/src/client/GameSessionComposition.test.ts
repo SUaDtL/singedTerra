@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MatchSessionLifecycle } from './MatchSessionLifecycle';
-import { GameSessionComposition, type GameSessionCompositionPorts } from './GameSessionComposition';
+import {
+  GameSessionComposition,
+  type GameSessionCompositionPorts,
+  type SessionClientAcquisition,
+} from './GameSessionComposition';
 import type { ClientModeSetup } from './modeConfig';
 
 const setup: ClientModeSetup = {
@@ -69,6 +73,42 @@ describe('GameSessionComposition', () => {
     f.ports.acquireClient = vi.fn(async () => ({ status: 'unavailable' as const }));
 
     await expect(compositionFor(f).start(f.ports)).resolves.toBeNull();
+    expect(f.ports.constructRenderer).not.toHaveBeenCalled();
+  });
+
+  it('reports a current acquisition failure without constructing resources', async () => {
+    const f = fixture(null);
+    const error = new Error('initialization timed out');
+    const onAcquisitionFailure = vi.fn();
+    f.ports.acquireClient = vi.fn(async () => { throw error; });
+    f.ports.onAcquisitionFailure = onAcquisitionFailure;
+
+    await expect(compositionFor(f).start(f.ports)).resolves.toBeNull();
+    expect(onAcquisitionFailure).toHaveBeenCalledWith(error, {
+      generation: 1,
+      setup,
+    });
+    expect(f.ports.constructRenderer).not.toHaveBeenCalled();
+  });
+
+  it('does not report an acquisition failure after a newer generation supersedes it', async () => {
+    const f = fixture(null);
+    const composition = compositionFor(f);
+    const error = new Error('stale initialization timed out');
+    const onAcquisitionFailure = vi.fn();
+    let rejectAcquisition!: (reason: unknown) => void;
+    f.ports.acquireClient = vi.fn(() => new Promise<SessionClientAcquisition<typeof f.client>>(
+      (_, reject) => { rejectAcquisition = reject; },
+    ));
+    f.ports.onAcquisitionFailure = onAcquisitionFailure;
+
+    const stale = composition.start(f.ports);
+    await vi.waitFor(() => expect(f.ports.acquireClient).toHaveBeenCalledOnce());
+    await composition.retire(() => undefined);
+    rejectAcquisition(error);
+
+    await expect(stale).resolves.toBeNull();
+    expect(onAcquisitionFailure).not.toHaveBeenCalled();
     expect(f.ports.constructRenderer).not.toHaveBeenCalled();
   });
 

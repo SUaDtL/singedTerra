@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
 const roomId = 'a0000000-0000-4000-8000-000000000001';
-const credential = 'synthetic-browser-seat-credential';
+const credential = randomUUID();
 const room = {
   id: roomId, code: 'ROOM', seed: 42, status: 'active', abandoned_at: null,
   options: { maxPlayers: 2, maxWind: 6, gravity: 0.15, rounds: 1, rulesetVersion: 4,
@@ -12,18 +13,39 @@ const room = {
   ],
 };
 
-async function resumeFixture(page: Page) {
+async function resumeFixture(page: Page, options: { blackHoleHistory?: boolean } = {}) {
   await page.addInitScript(({ id, token }) => {
     localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
     localStorage.setItem('singedterra:session', JSON.stringify({ roomId: id, roomCode: 'ROOM', playerId: 'browser-human' }));
     localStorage.setItem('singedterra:seat:browser-human', token);
   }, { id: roomId, token: credential });
   await page.route('**/rest/v1/rooms**', route => route.fulfill({ json: [room] }));
-  await page.route('**/rest/v1/room_actions**', route => route.fulfill({ json: [], headers: { 'Content-Range': '0-0/0' } }));
+  await page.route('**/rest/v1/room_actions**', options.blackHoleHistory
+    ? async () => { await new Promise(() => undefined); }
+    : route => route.fulfill({ json: [], headers: { 'Content-Range': '0-0/0' } }));
   await page.goto('./');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await page.getByRole('button', { name: /Rejoin your game/ }).click();
 }
+
+test('black-holed history recovery returns to a visible retry in the online Lobby', async ({ page }, testInfo) => {
+  await resumeFixture(page, { blackHoleHistory: true });
+
+  const alert = page.getByRole('alert').filter({
+    hasText: 'Game recovery timed out. Return to Online and try joining again.',
+  });
+  await expect(alert).toBeVisible({ timeout: 12_000 });
+  await expect(page.getByRole('button', { name: 'Retry game recovery', exact: true })).toBeVisible();
+  const box = await alert.boundingBox();
+  expect(box).not.toBeNull();
+  const viewport = page.viewportSize()!;
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+  expect(await page.evaluate(() => localStorage.getItem('singedterra:session'))).toContain(roomId);
+  await page.screenshot({ path: testInfo.outputPath('history-timeout-recovery.png') });
+});
 
 test('resumed online game sends authenticated presence and explicit Quit from the rendered menu', async ({ page }, testInfo) => {
   const heartbeats: unknown[] = [];

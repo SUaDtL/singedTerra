@@ -785,6 +785,12 @@ function bootstrap(): void {
           return { status: 'unavailable' };
         }
       },
+      onAcquisitionFailure: (error) => {
+        const message = error instanceof Error
+          ? error.message
+          : 'Game recovery failed. Return to Online and try joining again.';
+        lobby.showNetworkRecovery(message, () => { void startGame(config); });
+      },
       constructRenderer: () => new Renderer(canvas),
       configureRendererEvents,
       primeTerminalHistory: (renderer, state) => renderer.primeHistoricalImpactEvents(state),

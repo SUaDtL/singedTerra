@@ -41,10 +41,12 @@ interface CappedReadControl {
   ascendingReads: number;
   queryCount: number;
   failQuery: number | null;
+  pauseQuery: number | readonly number[] | null;
   failAscendingRead: number | null;
   pauseAscendingRead: number | null;
   paused: Promise<void>;
   releasePaused(): void;
+  signals: AbortSignal[];
 }
 
 interface CapturedRealtime {
@@ -122,8 +124,10 @@ function makeCappedSupabase(initialRows: RoomActionRow[]): {
     ascendingReads: 0,
     queryCount: 0,
     failQuery: null,
+    pauseQuery: null,
     failAscendingRead: null,
     pauseAscendingRead: null,
+    signals: [],
     paused: new Promise<void>((resolve) => { markPaused = resolve; }),
     releasePaused: () => releasePaused(),
   };
@@ -154,6 +158,7 @@ function makeCappedSupabase(initialRows: RoomActionRow[]): {
       };
       builder.abortSignal = (nextSignal: AbortSignal) => {
         signal = nextSignal;
+        control.signals.push(nextSignal);
         return builder;
       };
       builder.then = (
@@ -163,7 +168,11 @@ function makeCappedSupabase(initialRows: RoomActionRow[]): {
         const queryNumber = ++control.queryCount;
         const readNumber = ascending ? ++control.ascendingReads : null;
         const run = async (): Promise<QueryResult> => {
-          if (readNumber !== null && readNumber === control.pauseAscendingRead) {
+          if (
+            queryNumber === control.pauseQuery
+            || (Array.isArray(control.pauseQuery) && control.pauseQuery.includes(queryNumber))
+            || (readNumber !== null && readNumber === control.pauseAscendingRead)
+          ) {
             markPaused();
             await pause;
             resetPause();
@@ -275,6 +284,63 @@ describe('NetworkClient paged ordered history recovery', () => {
 
     expectCanonicalState(client.getState(), referenceState([]));
     expect(realtime.channelCount).toBe(0);
+  });
+
+  it('bounds initialization and ignores a history response released after its deadline', async () => {
+    vi.useFakeTimers();
+    const { supabase, control, realtime } = makeCappedSupabase([]);
+    control.pauseQuery = 1;
+    const client = new NetworkClient(supabase, 'room-123', 'player-abc', OPTIONS, undefined, 2);
+    try {
+      const failure = client.initialize().catch((error: unknown) => error);
+      await control.paused;
+
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(failure).resolves.toMatchObject({
+        name: 'NetworkTransitionError',
+        code: 'initialization_timeout',
+        message: 'Game recovery timed out. Return to Online and try joining again.',
+      });
+      expect(realtime.channelCount).toBe(0);
+
+      control.rows = history(PAGE_SIZE + 1);
+      control.releasePaused();
+      await Promise.resolve();
+      await Promise.resolve();
+      expectCanonicalState(client.getState(), referenceState([]));
+      expect(realtime.channelCount).toBe(0);
+    } finally {
+      client.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not let an older ignored-abort deadline disable a newer ready initialization', async () => {
+    vi.useFakeTimers();
+    const { supabase, control } = makeCappedSupabase([]);
+    control.pauseQuery = 1;
+    const client = new NetworkClient(supabase, 'room-123', 'player-abc', OPTIONS, undefined, 2);
+    try {
+      const older = client.initialize().catch((error: unknown) => error);
+      await control.paused;
+      await vi.advanceTimersByTimeAsync(9_000);
+
+      await expect(client.initialize()).resolves.toBeUndefined();
+      expect(control.queryCount).toBe(2);
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      await expect(older).resolves.toBeInstanceOf(Error);
+      const submitted = (client as unknown as {
+        submitAction(action: NetworkAction): boolean;
+      }).submitAction({ type: 'move', delta: 1 });
+      expect(submitted).toBe(true);
+      control.releasePaused();
+      await Promise.resolve();
+    } finally {
+      client.stop();
+      vi.useRealTimers();
+    }
   });
 
   it('retains a concurrent Realtime append and keeps repeated catch-up idempotent', async () => {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "lobby-return-focus-presentation-only-parity-reviewed",
+  "disposition": "network-acquisition-recovery-presentation-only-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -71,11 +71,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "272080b5d84da2725bdc4a877d7b1549a90b89b9bef16178ebed897ac5020e0f"
+      "sha256": "dacfec06232478324e0178254c9add241b3d61bbaa5960352115c6c5c6a7a55d"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "9deff8172a15f9e3a3fc91a4a776d9e3be11a5fc3a3b88150dd22d4df8fd5e77"
+      "sha256": "03768fb76c5f9bf05111ba45c055e74553e385088a08529aa6a5c69db490ea36"
     },
     {
       "path": "package.json",

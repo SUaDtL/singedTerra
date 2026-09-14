@@ -66,6 +66,16 @@ interface HistoryQueryResult {
   error: { message?: string } | null;
 }
 
+export class NetworkTransitionError extends Error {
+  readonly code: 'initialization_timeout';
+
+  constructor(code: 'initialization_timeout', message: string) {
+    super(message);
+    this.name = 'NetworkTransitionError';
+    this.code = code;
+  }
+}
+
 interface PendingRoomCommand {
   generation: number;
   envelope: RoomCommandEnvelopeV2<NetworkAction>;
@@ -273,6 +283,7 @@ export class NetworkClient implements GameClient {
   }
   private get nextExpectedSeq(): number { return this.orderedActions.nextExpectedSeq; }
   private historyReadControllers = new Set<AbortController>();
+  private initializationGeneration = 0;
   private activeHistoryRecoveries = 0;
   private recoveryTargetRevision = 0;
   private canonicalHistoryReady = true;
@@ -345,10 +356,17 @@ export class NetworkClient implements GameClient {
     roomId: string;
     generation: number;
     controller: AbortController;
-    promise: Promise<void>;
+    promise: Promise<boolean>;
   } | null = null;
+  private rematchRequestControllers = new Set<AbortController>();
   private static readonly REMATCH_POLL_ATTEMPTS = 20;
   private static readonly REMATCH_POLL_INTERVAL_MS = 150;
+  private static readonly INITIALIZATION_TIMEOUT_MS = 10_000;
+  private static readonly REMATCH_TRANSITION_TIMEOUT_MS = 5_000;
+  private static readonly INITIALIZATION_TIMEOUT_MESSAGE =
+    'Game recovery timed out. Return to Online and try joining again.';
+  private static readonly REMATCH_TIMEOUT_MESSAGE =
+    'Rematch recovery timed out. Try Restart again or return to the lobby.';
 
   // --- CPU-seat driving (client-driven, idempotent) ---
   // engine tank id ('p1'..) → CPU difficulty, for bot seats only.
@@ -455,10 +473,39 @@ export class NetworkClient implements GameClient {
    * the engine is in PLAYER_TURN (or GAME_OVER). start() may then be called.
    */
   async initialize(): Promise<void> {
+    const generation = ++this.initializationGeneration;
+    for (const controller of this.historyReadControllers) controller.abort();
+    const isCurrent = (): boolean => !this._disposed && generation === this.initializationGeneration;
     this.canonicalHistoryReady = false;
+    const transition = this.initializeTransition(isCurrent);
+    const settled = await settleWithDeadline(
+      transition,
+      NetworkClient.INITIALIZATION_TIMEOUT_MS,
+      () => {
+        if (generation === this.initializationGeneration) {
+          this.initializationGeneration += 1;
+          for (const controller of this.historyReadControllers) controller.abort();
+        }
+      },
+    );
+    if (settled.ok) return;
+    if (generation === this.initializationGeneration) {
+      this.initializationGeneration += 1;
+      this.canonicalHistoryReady = false;
+    }
+    if ((settled.error as Error)?.message === 'operation_deadline_exceeded') {
+      throw new NetworkTransitionError(
+        'initialization_timeout',
+        NetworkClient.INITIALIZATION_TIMEOUT_MESSAGE,
+      );
+    }
+    throw settled.error;
+  }
+
+  private async initializeTransition(isCurrent: () => boolean): Promise<void> {
     // 1. Capture and replay the complete existing action log. The API caps each
     // response, so one successful response is not proof that history is complete.
-    const history = await this.readOrderedActionHistory(0);
+    const history = await this.readOrderedActionHistory(0, undefined, isCurrent);
     if (!history) return;
     const { rows, targetRevision } = history;
     for (const [index, row] of rows.entries()) {
@@ -471,14 +518,14 @@ export class NetworkClient implements GameClient {
     await replayInChunks(
       rows,
       (row) => {
-        if (this._disposed) return;
+        if (!isCurrent()) return;
         this.applyRoomActionRow(row);
         this.tickToCompletion();
       },
       NetworkClient.HISTORY_REPLAY_CHUNK_SIZE,
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
-    if (this._disposed) return;
+    if (!isCurrent()) return;
     this.orderedActions.finishReplay(targetRevision);
     this.recoveryTargetRevision = targetRevision;
     this.canonicalHistoryReady = true;
@@ -486,6 +533,7 @@ export class NetworkClient implements GameClient {
     this.clearStaleBotPreparationFailure();
 
     // 2. Subscribe to new room_actions rows via Realtime Postgres Changes.
+    if (!isCurrent()) return;
     this.channel = this.supabase
       .channel(`room_actions:${this.roomId}`)
       .on(
@@ -697,12 +745,15 @@ export class NetworkClient implements GameClient {
   stop(): void {
     this.frameRunning = false;
     this.frameGeneration++;
+    this.initializationGeneration += 1;
     this.connectionRecoveryGeneration += 1;
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
     this.canonicalHistoryReady = false;
     for (const controller of this.historyReadControllers) controller.abort();
     this.historyReadControllers.clear();
+    for (const controller of this.rematchRequestControllers) controller.abort();
+    this.rematchRequestControllers.clear();
     this.rematchGeneration += 1;
     this.rematchLookup?.controller.abort();
     this.rematchLookup = null;
@@ -1232,22 +1283,40 @@ export class NetworkClient implements GameClient {
    * cannot strand the requester or produce two handoffs.
    */
   async requestRematch(): Promise<{ ok: boolean; error?: string }> {
+    const deadlineAt = Date.now() + NetworkClient.REMATCH_TRANSITION_TIMEOUT_MS;
+    const controller = new AbortController();
+    this.rematchRequestControllers.add(controller);
     try {
-      const { ok, data } = await callFunction<{ ok?: boolean; error?: string; roomId?: unknown }>('restart_game', {
-        roomId: this.roomId,
-        playerId: this.playerId,
-        token: this.token,
-      });
+      const settled = await settleWithDeadline(
+        callFunction<{ ok?: boolean; error?: string; roomId?: unknown }>('restart_game', {
+          roomId: this.roomId,
+          playerId: this.playerId,
+          token: this.token,
+        }, { signal: controller.signal }),
+        Math.max(0, deadlineAt - Date.now()),
+        () => controller.abort(),
+      );
+      if (!settled.ok) {
+        if ((settled.error as Error)?.message === 'operation_deadline_exceeded') {
+          this.notifyCommandFailure(NetworkClient.REMATCH_TIMEOUT_MESSAGE);
+          return { ok: false, error: NetworkClient.REMATCH_TIMEOUT_MESSAGE };
+        }
+        throw settled.error;
+      }
+      const { ok, data } = settled.value;
       if (!ok || !data?.ok) {
         return { ok: false, error: data?.error ?? 'Failed to start rematch' };
       }
       if (typeof data.roomId === 'string' && data.roomId.length > 0) {
-        await this.handleRematch(data.roomId);
+        const handedOff = await this.handleRematch(data.roomId, deadlineAt);
+        if (!handedOff) return { ok: false, error: NetworkClient.REMATCH_TIMEOUT_MESSAGE };
       }
       return { ok: true };
     } catch (err) {
       console.error('NetworkClient: restart_game error:', err);
       return { ok: false, error: 'Network error' };
+    } finally {
+      this.rematchRequestControllers.delete(controller);
     }
   }
 
@@ -1264,22 +1333,44 @@ export class NetworkClient implements GameClient {
    * to its read path. The single UPDATE never repeats, so we cannot rely on a
    * "later broadcast" — instead we poll a few times for the row to appear.
    */
-  private handleRematch(newRoomId: string): Promise<void> {
-    if (this._disposed) return Promise.resolve();
+  private handleRematch(
+    newRoomId: string,
+    deadlineAt = Date.now() + NetworkClient.REMATCH_TRANSITION_TIMEOUT_MS,
+  ): Promise<boolean> {
+    if (this._disposed) return Promise.resolve(false);
     if (this.rematchLookup) {
-      return this.rematchLookup.roomId === newRoomId
-        ? this.rematchLookup.promise
-        : Promise.resolve();
+      if (this.rematchLookup.roomId !== newRoomId) return Promise.resolve(false);
+      return settleWithDeadline(
+        this.rematchLookup.promise,
+        Math.max(0, deadlineAt - Date.now()),
+      ).then((settled) => settled.ok ? settled.value : false);
     }
-    if (this._rematchHandled) return Promise.resolve();
+    if (this._rematchHandled) return Promise.resolve(true);
     this.stopPresence();
     const listener = this.rematchListener;
-    if (!listener) return Promise.resolve();
+    if (!listener) return Promise.resolve(false);
 
     this._rematchHandled = true;
     const generation = ++this.rematchGeneration;
     const controller = new AbortController();
-    const promise = this.resolveRematch(newRoomId, listener, generation, controller)
+    let deadlineExpired = false;
+    const promise = settleWithDeadline(
+      this.resolveRematch(newRoomId, listener, generation, controller),
+      Math.max(0, deadlineAt - Date.now()),
+      () => {
+        deadlineExpired = true;
+        if (generation === this.rematchGeneration) this.rematchGeneration += 1;
+        controller.abort();
+      },
+    )
+      .then((settled) => {
+        if (settled.ok) return settled.value;
+        if (deadlineExpired && !this._disposed) {
+          this._rematchHandled = false;
+          this.notifyCommandFailure(NetworkClient.REMATCH_TIMEOUT_MESSAGE);
+        }
+        return false;
+      })
       .finally(() => {
         if (this.rematchLookup?.generation === generation) this.rematchLookup = null;
       });
@@ -1292,7 +1383,7 @@ export class NetworkClient implements GameClient {
     listener: (info: RematchInfo) => void,
     generation: number,
     controller: AbortController,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const isCurrent = (): boolean => !this._disposed && generation === this.rematchGeneration;
 
     // Bounded poll: the successor row is written within one edge-function
@@ -1300,7 +1391,7 @@ export class NetworkClient implements GameClient {
     // without hanging the UI if something truly failed.
     let data: Record<string, unknown> | null = null;
     for (let attempt = 0; attempt < NetworkClient.REMATCH_POLL_ATTEMPTS; attempt++) {
-      if (!isCurrent()) return;
+      if (!isCurrent()) return false;
       let res: { data: unknown; error: unknown };
       try {
         res = await this.supabase
@@ -1310,10 +1401,10 @@ export class NetworkClient implements GameClient {
           .abortSignal(controller.signal)
           .maybeSingle();
       } catch (error) {
-        if (!isCurrent()) return;
+        if (!isCurrent()) return false;
         res = { data: null, error };
       }
-      if (!isCurrent()) return;
+      if (!isCurrent()) return false;
       if (res.data) { data = res.data as Record<string, unknown>; break; }
       if (res.error) {
         console.warn(`NetworkClient.handleRematch: fetch attempt ${attempt + 1} failed`, res.error);
@@ -1321,11 +1412,12 @@ export class NetworkClient implements GameClient {
       await new Promise(resolve => setTimeout(resolve, NetworkClient.REMATCH_POLL_INTERVAL_MS));
     }
 
-    if (!isCurrent()) return;
+    if (!isCurrent()) return false;
     if (!data) {
       console.error('NetworkClient.handleRematch: successor room never resolved', newRoomId);
       this._rematchHandled = false; // let a manual re-click re-drive the migration
-      return;
+      this.notifyCommandFailure(NetworkClient.REMATCH_TIMEOUT_MESSAGE);
+      return false;
     }
 
     const opts = (data.options ?? {}) as {
@@ -1355,14 +1447,14 @@ export class NetworkClient implements GameClient {
     if (normalizeNetworkRulesetVersion(opts.rulesetVersion) !== CURRENT_NETWORK_RULESET_VERSION) {
       console.warn('NetworkClient.handleRematch: incompatible successor ruleset', newRoomId);
       this._rematchHandled = false;
-      return;
+      return false;
     }
     if (opts.commandProtocolVersion !== CURRENT_ROOM_COMMAND_VERSION) {
       console.warn('NetworkClient.handleRematch: incompatible successor command protocol', newRoomId);
       this._rematchHandled = false;
-      return;
+      return false;
     }
-    if (!isCurrent()) return;
+    if (!isCurrent()) return false;
     listener({
       roomId:  data.id as string,
       code:    data.code as string,
@@ -1388,6 +1480,7 @@ export class NetworkClient implements GameClient {
       },
       players: projectNetworkPlayers(players),
     });
+    return true;
   }
 
   /** Submit exactly one immutable command envelope for the current room revision. */

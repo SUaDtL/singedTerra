@@ -200,6 +200,29 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
   // ========================================================================
   // 1. create_room  (handleCreateRoom)
   // ========================================================================
+  it('shows acquisition recovery guidance in the Lobby and retries from its action', () => {
+    const retry = vi.fn();
+    internals(lobby).rejoinCandidate = {
+      descriptor: { roomId: 'room-recovery', roomCode: 'NEXT', playerId: 'player-recovery' },
+      room: { status: 'active', players: [{ id: 'player-recovery' }] },
+    };
+
+    lobby.showNetworkRecovery(
+      'Game recovery timed out. Return to Online and try joining again.',
+      retry,
+    );
+
+    expect(root.hidden).toBe(false);
+    const alert = root.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain(
+      'Game recovery timed out. Return to Online and try joining again.',
+    );
+    expect(alert?.parentElement?.classList.contains('lobby-online-recovery')).toBe(true);
+    expect([...root.querySelectorAll('button')].some((button) => button.textContent === 'Rejoin your game')).toBe(false);
+    clickLobbyButton(root, 'Retry game recovery');
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
   describe('create_room', () => {
     it('sends the authenticated profile name without requiring name input', async () => {
       const fetchMock = stubFetch({ ok: false, json: () => ({ error: 'stop-here' }) });
