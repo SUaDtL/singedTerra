@@ -69,7 +69,7 @@ describe('Lobby deployment chooser', () => {
     expect(root.querySelector('.lobby-start')).not.toBeNull();
     expect(root.querySelector('.lobby-preview')).not.toBeNull();
 
-    button(root, 'Deployment choices').click();
+    button(root, 'Back to deployment choices').click();
     expect(document.activeElement).toBe(button(root, 'Local Battle'));
     expect(root.querySelector('.lobby-start')).toBeNull();
   });
@@ -117,7 +117,7 @@ describe('Lobby deployment chooser', () => {
     const localName = root.querySelector<HTMLInputElement>('.lobby-name')!;
     localName.value = 'Dust Fox';
     localName.dispatchEvent(new Event('input', { bubbles: true }));
-    button(root, 'Deployment choices').click();
+    button(root, 'Back to deployment choices').click();
 
     button(root, 'Play Online').click();
     const onlineName = root.querySelector<HTMLInputElement>('.lobby-name')!;
@@ -125,11 +125,11 @@ describe('Lobby deployment chooser', () => {
     onlineName.dispatchEvent(new Event('input', { bubbles: true }));
     button(root, 'Join with a code').click();
     expect(root.querySelector('.lobby-code-input')).not.toBeNull();
-    button(root, 'Deployment choices').click();
+    button(root, 'Back to deployment choices').click();
 
     button(root, 'Local Battle').click();
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Dust Fox');
-    button(root, 'Deployment choices').click();
+    button(root, 'Back to deployment choices').click();
 
     button(root, 'Play Online').click();
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Signal Fox');
@@ -144,6 +144,6 @@ describe('Lobby deployment chooser', () => {
 
     expect(root.querySelector('.lobby-deployment-chooser')).toBeNull();
     expect(root.querySelector<HTMLInputElement>('.lobby-code-input')?.value).toBe('AB12');
-    expect(button(root, 'Deployment choices')).toBeTruthy();
+    expect(button(root, 'Back to deployment choices')).toBeTruthy();
   });
 });

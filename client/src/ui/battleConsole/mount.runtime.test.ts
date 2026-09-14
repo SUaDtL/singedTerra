@@ -104,6 +104,8 @@ vi.mock('pixi.js', () => ({
   },
 }));
 
+vi.mock('pixi.js/unsafe-eval', () => ({}));
+
 const baseState: BattleConsolePresentationState = {
   commander: { id: 'p1', name: 'Player 1', portrait: null, health: 100 },
   mobility: { fuel: 100, canMoveLeft: true, canMoveRight: true },
@@ -150,6 +152,7 @@ describe('R10 independent semantic readiness', () => {
       layout: projectResponsiveLayout('wide', 1),
       generationToken: { generation: 0, resources, isCurrent: () => true },
     });
+    await vi.dynamicImportSettled();
     for (let index = 0; index < 20 && pixiRuntime.applications.length === applicationStart; index++) {
       await Promise.resolve();
     }
@@ -186,6 +189,7 @@ describe('R10 independent semantic readiness', () => {
       layout: projectResponsiveLayout('wide', 1),
       generationToken: { generation: 1, resources: firstResources, isCurrent: () => true },
     });
+    await vi.dynamicImportSettled();
     await waitFor(() => expect(first?.status).toBe('fallback'));
     expect(firstHosts.semanticHost.firstElementChild?.getAttribute('data-battle-console-state')).toBe('fallback');
     expect(pixiRuntime.load).not.toHaveBeenCalled();

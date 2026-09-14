@@ -21,6 +21,23 @@
   --console-panel: rgba(7, 9, 10, 0.96);
   --console-panel-soft: rgba(15, 15, 14, 0.92);
   --console-line: rgba(205, 133, 60, 0.48);
+  color-scheme: dark;
+  scrollbar-color: var(--console-bronze-hi) #101414;
+}
+
+/* Native popups need solid paint; the closed control's gradient does not
+ * carry into the platform option list. Preserve native keyboard selection. */
+#lobby select option,
+#lobby select optgroup {
+  background-color: #101414;
+  color: var(--console-cream);
+}
+
+@media (forced-colors: active) {
+  #lobby {
+    color-scheme: light dark;
+    scrollbar-color: auto;
+  }
 }
 
 #lobby .lobby-card {
@@ -620,12 +637,47 @@
 }
 
 /* Preparation routes retain their proven scroll body/footer topology. */
-#lobby .lobby-deployment__back {
-  margin: 3px 0 0;
-  padding: 7px 12px;
-  border: 1px solid var(--console-line);
-  background: var(--console-panel);
-  color: var(--console-cream-dim);
+#lobby .lobby-deployment__back,
+#lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: max(9px, calc(9px / var(--battle-ui-scale, 1)));
+  width: fit-content;
+  max-width: 100%;
+  min-height: var(--st-deployment-choice-target, 44px);
+  box-sizing: border-box;
+  margin: 0 0 0 6px;
+  padding: 6px 15px;
+  border: 2px solid #a9622b;
+  background: linear-gradient(180deg, #5b341c, #2c1a11 72%, #17100c);
+  color: var(--console-cream);
+  box-shadow: inset 0 1px 0 rgba(255, 218, 151, 0.18), 0 0 0 1px #1b0e08;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#lobby .lobby-deployment__back:hover:not(:disabled),
+#lobby .lobby-deployment__back:focus-visible,
+#lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__back:focus-visible {
+  border-color: #df9448;
+  background: linear-gradient(180deg, #754321, #3b2113 72%, #1d120d);
+  color: #fff0c6;
+}
+
+#lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__back::before {
+  content: none;
+  margin: 0;
+}
+
+#lobby .lobby-deployment__back > .st-ui-icon {
+  flex: 0 0 auto;
+}
+
+#app.is-compact #lobby .lobby-deployment__back,
+#app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__back {
+  width: fit-content;
+  min-height: var(--st-deployment-choice-target, 44px);
 }
 
 #lobby .lobby-deployment__mission-brief {

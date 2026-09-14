@@ -284,10 +284,11 @@ describe('buildLobbyShellView', () => {
   it('returns from preparation through one clearly named action', () => {
     const onBack = vi.fn();
     const root = buildLobbyShellView(options({ surface: 'preparation', onBack }));
-    const back = button(root, 'Deployment choices');
+    const back = button(root, 'Back to deployment choices');
 
     expect(back.type).toBe('button');
-    expect(back.getAttribute('aria-label')).toBe('Deployment choices');
+    expect(back.getAttribute('aria-label')).toBe('Back to deployment choices');
+    expect(back.querySelector('[data-icon="left"]')?.getAttribute('aria-hidden')).toBe('true');
     back.click();
     expect(onBack).toHaveBeenCalledOnce();
     expect(onBack).toHaveBeenCalledWith();

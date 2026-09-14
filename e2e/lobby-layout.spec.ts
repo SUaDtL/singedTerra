@@ -277,7 +277,7 @@ test.describe('Lobby layout guardrails', () => {
     );
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await choosePlayOnline(page);
     await assertMissionPreparation(
       page,
@@ -443,7 +443,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(panel).toHaveAttribute('aria-label', 'Hot Seat preparation');
     await expect(page.locator('.lobby-row')).toHaveCount(2);
 
-    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await expect(localBattle).toBeFocused();
     await playOnline.click();
     await expect(page.locator('.lobby-mode-context')).toContainText(
@@ -452,7 +452,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(panel).toHaveAttribute('aria-label', 'Play Online preparation');
     await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Deployment choices', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await expect(playOnline).toBeFocused();
   });
 

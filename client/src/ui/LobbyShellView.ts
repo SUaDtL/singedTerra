@@ -2,6 +2,7 @@ import { createPracticeFieldOrderById, renderFieldOrder } from '../client/fieldO
 import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
 import type { GameOptions } from '@shared/types/GameOptions';
 import { QUICK_DUEL_DEFAULT_ROUNDS } from '../client/quickDuelLaunch';
+import { makeHudIcon } from './hudIcons';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 
@@ -397,8 +398,8 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
   if (back) {
     back.type = 'button';
     back.className = 'lobby-btn lobby-deployment__back';
-    back.textContent = 'Deployment choices';
-    back.setAttribute('aria-label', 'Deployment choices');
+    back.append(makeHudIcon('left', 18), 'Back to deployment choices');
+    back.setAttribute('aria-label', 'Back to deployment choices');
     back.addEventListener('click', () => { options.onBack(); }, { signal: options.listenerSignal });
   }
 

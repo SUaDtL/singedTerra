@@ -1,4 +1,3 @@
-import 'pixi.js/unsafe-eval';
 import type { Application, Texture } from 'pixi.js';
 import type { ResponsiveLayoutProjection } from '../projection';
 import type { BattleConsolePresentationState } from '../types';
@@ -91,6 +90,8 @@ function getSharedApplicationAdmission(): SharedPixiApplicationAdmission {
   void (async () => {
     let pixi: PixiModule | null = null;
     try {
+      // @ts-expect-error Pixi publishes this side-effect export without a declaration file.
+      await import('pixi.js/unsafe-eval');
       pixi = await import('pixi.js');
       if (record.waiters.size === 0) {
         record.status = 'settled';
