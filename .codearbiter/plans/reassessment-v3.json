@@ -925,7 +925,7 @@
     {
       "id": "T11",
       "title": "Prove the repaired journeys in real browser scenarios",
-      "status": "in_progress",
+      "status": "verified",
       "phase": "verification",
       "kind": "implementation",
       "owner": "assigned_agent",
@@ -1139,7 +1139,7 @@
     {
       "id": "T15",
       "title": "Observe the current learning and replay loop with actual players",
-      "status": "planned",
+      "status": "in_progress",
       "phase": "product_evidence",
       "kind": "human_study",
       "owner": "B",
