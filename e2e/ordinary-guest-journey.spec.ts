@@ -77,6 +77,76 @@ test.describe('ordinary guest journey', () => {
       .toHaveAttribute('data-battle-console-phase', /firing|resolving/);
   });
 
+  test('keeps every initial terminal action visible after a natural First Salvo match', async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
+
+    await page.goto('./');
+    const splash = page.locator('#st-splash');
+    await expect(splash).toBeVisible();
+    await splash.click();
+    await expect(splash).toBeHidden({ timeout: 5_000 });
+    await page.getByRole('button', { name: 'Start First Salvo', exact: true }).click();
+    const briefing = page.getByRole('dialog', { name: 'First salvo briefing', exact: true });
+    await expect(briefing).toBeVisible();
+    await briefing.getByRole('button', { name: 'Enter battle', exact: true }).click();
+
+    const angle = page.locator(ANGLE);
+    const power = page.locator(POWER);
+    const aimRight = page.getByRole('button', { name: 'Aim barrel right', exact: true });
+    const powerDown = page.getByRole('button', { name: 'Decrease power', exact: true });
+    for (let click = 0; click < 45; click += 1) await aimRight.click();
+    await expect(angle).toHaveText('90°');
+    for (let click = 0; click < 50; click += 1) await powerDown.click();
+    await expect(power).toHaveText('1');
+
+    const surface = page.locator('[data-battle-console-surface]');
+    const fire = page.getByRole('button', { name: 'Fire Baby Missile', exact: true });
+    const terminal = page.locator('.st-hud__overlay--victory');
+    for (let humanSalvo = 0; humanSalvo < 2; humanSalvo += 1) {
+      await expect(fire).toBeEnabled({ timeout: 30_000 });
+      await fire.click();
+      if (humanSalvo === 1) break;
+      await expect.poll(async () => {
+        if (await terminal.isVisible()) return 'terminal';
+        const active = await surface.getAttribute('data-active-commander');
+        return active === 'p1' && await fire.isEnabled() ? 'human-turn' : 'settling';
+      }, { timeout: 30_000 }).not.toBe('settling');
+    }
+
+    await expect(terminal).toBeVisible({ timeout: 30_000 });
+    await expect(terminal.locator('[data-ui="quick-operation-report"]'))
+      .toHaveText('Operation · First Salvo — A one-round duel that starts with the essentials.');
+    await expect(terminal.locator('[data-ui="terminal-next-experiment"]')).toBeVisible();
+    await expect(terminal.locator('.st-hud__victory-progression-handoff')).toBeVisible();
+    const panel = terminal.locator('.st-hud__overlay-panel--victory');
+    await panel.evaluate(async (element) => {
+      await Promise.all(element.getAnimations().map((animation) => animation.finished));
+    });
+    await panel.screenshot({
+      path: testInfo.outputPath(`natural-first-salvo-terminal-${testInfo.project.name}.png`),
+    });
+
+    const initial = await panel.evaluate((element) => {
+      const panelBox = element.getBoundingClientRect();
+      const bounds = (selector: string) => {
+        const target = element.querySelector<HTMLElement>(selector);
+        if (!target) throw new Error(`Missing ${selector}`);
+        return target.getBoundingClientRect().toJSON();
+      };
+      return {
+        panel: panelBox.toJSON(),
+        primary: bounds('[data-terminal-primary]'),
+        menu: bounds('[data-terminal-menu]'),
+      };
+    });
+    for (const [name, bounds] of Object.entries({ primary: initial.primary, menu: initial.menu })) {
+      expect(bounds.top, `${name} starts inside the untouched terminal panel`)
+        .toBeGreaterThanOrEqual(initial.panel.top - 1);
+      expect(bounds.bottom, `${name} is completely visible in the untouched terminal panel`)
+        .toBeLessThanOrEqual(initial.panel.bottom + 1);
+    }
+  });
+
   test('reaches a terminal local match and retry through public controls', async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== 'desktop-fine',

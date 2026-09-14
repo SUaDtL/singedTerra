@@ -719,6 +719,11 @@
   .st-hud__victory-title { margin: 4px 0 6px; }
 .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden]))
   .st-hud__score { margin: 4px 0 8px; }
+@media (pointer: fine) and (min-width: 1001px) and (min-height: 601px) {
+  .st-hud__victory-report:has(.st-hud__victory-progression-handoff:not([hidden])):has(.st-hud__victory-operation:not([hidden])) {
+    padding-block: 0;
+  }
+}
 .st-hud__overlay-panel--victory .st-hud__score > * {
   padding: 7px 9px;
   border-bottom: 1px solid rgba(255, 232, 179, 0.08);
