@@ -193,6 +193,12 @@ export interface GameClient {
   /** Retire uncertain network-command continuations after account identity changes. */
   invalidatePendingCommands?(): void;
 
+  /** Synchronously revoke page-owned authority before a document enters BFCache. */
+  suspendForPageCache?(): void;
+
+  /** Revalidate retained transport authority and catch up canonical history after BFCache. */
+  recoverAfterPageRestore?(): Promise<boolean>;
+
   /** Send and receive fixed, ephemeral networked quick-chat messages. */
   sendQuickChat?(key: QuickChatKey): boolean;
   onQuickChat?(listener: (message: QuickChatMessage) => void): () => void;

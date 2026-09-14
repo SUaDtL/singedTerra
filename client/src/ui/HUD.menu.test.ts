@@ -125,6 +125,48 @@ describe('HUD Command Menu', () => {
     expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
   });
 
+  it('keeps page recovery visible and disables retained commands with Armory open', async () => {
+    const { root, modal, hud } = mount();
+    const quit = vi.fn();
+    hud.onQuit(quit);
+    await vi.waitFor(() => {
+      expect(root.querySelector<HTMLButtonElement>('[aria-label="Open Armory"]')).not.toBeNull();
+    });
+    root.querySelector<HTMLButtonElement>('[aria-label="Open Armory"]')!.click();
+    await vi.waitFor(() => {
+      expect(modal.querySelector<HTMLElement>('[role="dialog"][aria-label="Armory"]')).not.toBeNull();
+    });
+
+    const frame = new GameEngine({
+      players: [
+        { name: 'Alice', color: '#e84d4d' },
+        { name: 'Bob', color: '#4d8ce8' },
+      ],
+      maxPlayers: 2,
+      seed: 1,
+    }).getState();
+    frame.tanks[0]!.credits = 20_000;
+    hud.update(frame, false, false, true, false);
+    hud.setPageRecovery('pending');
+
+    const recovery = modal.querySelector<HTMLElement>('.st-hud__turnwatch--page-recovery')!;
+    expect(recovery.textContent).toContain('Restoring game controls…');
+    expect(recovery.parentElement).toBe(modal);
+    expect(modal.querySelector('[role="dialog"][aria-label="Armory"]')).not.toBeNull();
+    expect([...modal.querySelectorAll<HTMLButtonElement>(
+      '[role="dialog"][aria-label="Armory"] button[data-battle-console-action]',
+    )].every((button) => button.disabled)).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('[data-battle-console-action="fire"]')?.disabled ?? true).toBe(true);
+
+    hud.setPageRecovery('failed');
+    expect(recovery.textContent).toContain('Game recovery failed. Return to the lobby or reload.');
+    recovery.querySelector<HTMLButtonElement>('.st-hud__turnwatch-leave')!.click();
+    expect(quit).toHaveBeenCalledOnce();
+    hud.setPageRecovery(null);
+    expect(root.contains(recovery)).toBe(true);
+    expect(recovery.classList.contains('st-hud__turnwatch--page-recovery')).toBe(false);
+  });
+
   it('returns focus to the Menu control that opened Command Menu', () => {
     const { root, modal } = mount();
     const menuButton = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;

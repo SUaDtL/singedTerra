@@ -14,6 +14,7 @@
  * row before deciding whether this client's exact intent committed.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NetworkClient } from './NetworkClient';
 import type { NetworkAction } from '@shared/net/replay';
@@ -1479,6 +1480,179 @@ describe('NetworkClient — client-driven bot submit self-heal (#119)', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body).toBe(firstBody);
       expect(aiProbe.calls).toBe(1);
+    } finally {
+      client?.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('gates CPU planning through one persisted-page catch-up and credential validation', async () => {
+    const fetchMock = vi.fn(async (_url: string) => ({ ok: true, json: async () => ({ ok: true }) }));
+    const remoteMove = {
+      id: 'remote-move-during-page-cache',
+      room_id: 'room-1',
+      seq: 1,
+      player_id: 'bot-def',
+      action: { type: 'move', delta: 1 } satisfies NetworkAction,
+      created_at: '',
+    };
+    const configured = await configuredBotTurnClient(
+      fetchMock,
+      1,
+      true,
+      [{ data: [remoteMove], error: null }],
+    );
+    const { client, captured } = configured;
+    (client as unknown as { token: string }).token = randomUUID();
+    client.suspendForPageCache();
+    aiProbe.calls = 0;
+
+    captured.statusCb?.('CLOSED');
+    await pumpFrame();
+    expect(aiProbe.calls).toBe(0);
+    const first = client.recoverAfterPageRestore();
+    const joined = client.recoverAfterPageRestore();
+    expect(joined).toBe(first);
+    let recoverySettled = false;
+    void first.then(() => { recoverySettled = true; });
+    await settleMicrotasks();
+    expect(recoverySettled).toBe(false);
+    captured.statusCb?.('SUBSCRIBED');
+    captured.statusCb?.('SUBSCRIBED');
+    await expect(first).resolves.toBe(true);
+    expect((client as unknown as { nextExpectedSeq: number }).nextExpectedSeq).toBe(2);
+
+    await pumpFrame();
+    expect(aiProbe.calls).toBe(1);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('/heartbeat'))).toHaveLength(1);
+    client.stop();
+  });
+
+  it('does not retry an in-flight CPU transport until restored eligibility reuses its exact envelope', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    let client: NetworkClient | undefined;
+    try {
+      const firstSubmit = deferredSubmit();
+      const fetchMock = vi.fn()
+        .mockReturnValueOnce(firstSubmit.promise)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) })
+        .mockReturnValue(neverSettles());
+      const configured = await configuredBotTurnClient(
+        fetchMock,
+        1,
+        true,
+        [{ data: [], error: null }],
+      );
+      client = configured.client;
+      (client as unknown as { token: string }).token = randomUUID();
+      setExhaustedRichBot(configured.engine);
+
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
+      await settleMicrotasks();
+      const originalBody = (fetchMock.mock.calls[0]?.[1] as RequestInit).body;
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      client.suspendForPageCache();
+      firstSubmit.settle({ ok: false, error: 'Failed to submit action' });
+      await vi.advanceTimersByTimeAsync(20_000);
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      configured.captured.statusCb?.('SUBSCRIBED');
+      await expect(client.recoverAfterPageRestore()).resolves.toBe(true);
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect((fetchMock.mock.calls[2]?.[1] as RequestInit).body).toBe(originalBody);
+    } finally {
+      client?.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('disarms an accepted CPU watchdog while hidden and retries only after validated restore', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { rafCb = cb; return 1; });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    let client: NetworkClient | undefined;
+    try {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, seq: 1 }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) })
+        .mockReturnValue(neverSettles());
+      const configured = await configuredBotTurnClient(
+        fetchMock,
+        1,
+        true,
+        [{ data: [], error: null }, { data: [], error: null }],
+      );
+      client = configured.client;
+      (client as unknown as { token: string }).token = randomUUID();
+      setExhaustedRichBot(configured.engine);
+
+      rafTimestamp += 1_000 / 60;
+      rafCb?.(rafTimestamp);
+      await settleMicrotasks();
+      const originalBody = (fetchMock.mock.calls[0]?.[1] as RequestInit).body;
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      client.suspendForPageCache();
+
+      await vi.advanceTimersByTimeAsync(20_000);
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      configured.captured.statusCb?.('SUBSCRIBED');
+      await expect(client.recoverAfterPageRestore()).resolves.toBe(true);
+      await settleMicrotasks();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect((fetchMock.mock.calls[2]?.[1] as RequestInit).body).toBe(originalBody);
+    } finally {
+      client?.stop();
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps page authority frozen and reports once when the seat credential is invalid', async () => {
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: false,
+      status: 403,
+      json: async () => String(url).includes('/heartbeat')
+        ? ({ error: 'invalid_seat_token' })
+        : ({ error: 'unexpected_submit' }),
+    }));
+    const configured = await configuredBotTurnClient(fetchMock, 1, true);
+    const { client, captured } = configured;
+    const failures: string[] = [];
+    client.onFireFailed((message) => failures.push(message));
+    (client as unknown as { token: string }).token = randomUUID();
+    client.suspendForPageCache();
+    aiProbe.calls = 0;
+
+    captured.statusCb?.('SUBSCRIBED');
+    await expect(client.recoverAfterPageRestore()).resolves.toBe(false);
+    await pumpFrame();
+
+    expect(aiProbe.calls).toBe(0);
+    expect(failures).toEqual(['Your seat is no longer valid. Return to Online and join the room again.']);
+    client.stop();
+  });
+
+  it('settles persisted-page recovery when an abort-ignoring credential request never returns', async () => {
+    vi.useFakeTimers();
+    let client: NetworkClient | undefined;
+    try {
+      const fetchMock = vi.fn(() => neverSettles());
+      const configured = await configuredBotTurnClient(fetchMock, 1, false);
+      client = configured.client;
+      (client as unknown as { token: string }).token = randomUUID();
+      client.suspendForPageCache();
+
+      const recovery = client.recoverAfterPageRestore();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(recovery).resolves.toBe(false);
     } finally {
       client?.stop();
       vi.useRealTimers();

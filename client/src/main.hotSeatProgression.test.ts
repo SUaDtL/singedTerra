@@ -7,6 +7,12 @@ import type { VerifiedDeploymentDescriptor } from './client/verifiedDeployment'
 import type { RematchInfo } from './client/GameClient'
 import { clearSession, readSession, writeSession } from './lib/sessionDescriptor'
 
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((done) => { resolve = done })
+  return { promise, resolve }
+}
+
 const seams = vi.hoisted(() => ({
   clients: [] as Array<Record<string, unknown>>,
   verifiedControllers: [] as Array<Record<string, unknown>>,
@@ -20,6 +26,7 @@ const seams = vi.hoisted(() => ({
   onQuit: null as null | (() => void),
   onRestart: null as null | (() => void),
   onVerifiedRetry: null as null | (() => void),
+  onVerifiedChallengeRetry: null as null | (() => void),
   onVerifiedContinueCasual: null as null | (() => void),
   onVerifiedReturnToBattery: null as null | (() => void),
   onVerifiedChallengeReturn: null as null | (() => void),
@@ -28,6 +35,7 @@ const seams = vi.hoisted(() => ({
   onNextRound: null as null | (() => void),
   onTouchPower: null as null | ((delta: number) => void),
   inputAction: null as null | ((action: PlayerAction) => void),
+  rawInputStepAngle: null as null | ((delta: number) => void),
   inputPowerCaps: [] as number[],
   useActualGameEngine: false,
   useActualInputHandler: false,
@@ -54,6 +62,7 @@ const seams = vi.hoisted(() => ({
   challengeReportReadiness: [] as boolean[],
   coachEligibility: [] as unknown[],
   retriedVerified: 0,
+  retriedChallenges: 0,
   continuedVerified: 0,
   returnedVerified: 0,
   verifiedDeployment: { status: 'idle' } as Record<string, unknown>,
@@ -65,6 +74,7 @@ const seams = vi.hoisted(() => ({
   publicSeedChallenges: [] as Array<{ descriptor: Record<string, unknown>; url: string } | null>,
   verifiedPresentationEvents: [] as Array<'budget' | 'order'>,
   hudUpdates: [] as unknown[][],
+  pageRecoveryStates: [] as Array<'pending' | 'failed' | null>,
   hudFrames: [] as Array<{
     phase: GameState['phase']; winner: string | null; activePlayerId: string; isFiring: boolean
   }>,
@@ -86,6 +96,9 @@ const seams = vi.hoisted(() => ({
   leaveBattleConsole: (): void | Promise<void> => undefined,
   lobbyShowOptions: [] as unknown[],
   lobbyRecovery: null as null | { message: string; retry: () => void },
+  hudDestroys: 0,
+  accountRevalidations: 0,
+  revalidateAccountIdentity: (): Promise<boolean> => Promise.resolve(true),
   accountAnonymous: false,
   accountAuthenticated: false,
   onAccountAuthenticationChange: null as null | ((identityChanged: boolean) => void),
@@ -248,6 +261,7 @@ vi.mock('./input/InputHandler', async (importOriginal) => {
       this.delegate = seams.useActualInputHandler
         ? new actual.InputHandler(canvas, onAction, options)
         : null
+      seams.rawInputStepAngle = (delta) => this.delegate?.stepAngle(delta)
     }
     attach() {
       if (seams.setupFailureStage === 'input-attach') throw seams.setupFailure
@@ -262,7 +276,7 @@ vi.mock('./input/InputHandler', async (importOriginal) => {
       this.delegate?.setPowerCap(powerCap)
     }
     setWeapon() {}
-    stepAngle() {}
+    stepAngle(delta: number) { this.delegate?.stepAngle(delta) }
     stepMove() {}
     stepPower(delta: number) { this.delegate?.stepPower(delta) }
     triggerFire() {}
@@ -270,6 +284,7 @@ vi.mock('./input/InputHandler', async (importOriginal) => {
 })
 vi.mock('./ui/HUD', () => ({
   HUD: class {
+    destroy() { seams.hudDestroys += 1; return Promise.resolve() }
     flashMessage(message: string) { seams.flashMessages.push(message) }
     hideEndScreens() {}
     isPaused() { return false }
@@ -308,7 +323,7 @@ vi.mock('./ui/HUD', () => ({
       seams.challengeHud.push(state)
       seams.challengeReportReadiness.push(options?.reportReady ?? true)
     }
-    onVerifiedChallengeRetry() {}
+    onVerifiedChallengeRetry(callback: () => void) { seams.onVerifiedChallengeRetry = callback }
     onVerifiedChallengeReturn(callback: () => void) { seams.onVerifiedChallengeReturn = callback }
     setImpactLearningCue(cue: unknown) { seams.hudImpactCues.push(cue) }
     setFieldOrder(state: Record<string, unknown> | null) {
@@ -331,6 +346,7 @@ vi.mock('./ui/HUD', () => ({
       seams.publicSeedChallenges.push(challenge)
     }
     setConnection() {}
+    setPageRecovery(state: 'pending' | 'failed' | null) { seams.pageRecoveryStates.push(state) }
     setFirstSalvoStep() {}
     setQuickChatEnabled() {}
     setTurnWatch() {}
@@ -387,6 +403,10 @@ vi.mock('./ui/Lobby', () => ({
       seams.retriedVerified += 1
       return Promise.resolve(null)
     }
+    retryVerifiedChallengeCompletion() {
+      seams.retriedChallenges += 1
+      return Promise.resolve(seams.challengeState)
+    }
     continueVerifiedDeploymentCasually() {
       seams.continuedVerified += 1
       seams.verifiedDeployment = { status: 'casual' }
@@ -401,6 +421,10 @@ vi.mock('./ui/Lobby', () => ({
     }
     showAccountSignIn() { seams.accountSignInShows += 1 }
     refreshAccount() { return Promise.resolve() }
+    revalidateAccountIdentity() {
+      seams.accountRevalidations += 1
+      return seams.revalidateAccountIdentity()
+    }
     recordHotSeatMatch(result: { matchId: string; won: boolean }) {
       seams.recorded.push(result)
       return seams.record(result)
@@ -718,6 +742,7 @@ describe('production hot-seat progression composition', () => {
     seams.onQuit = null
     seams.onRestart = null
     seams.onVerifiedRetry = null
+    seams.onVerifiedChallengeRetry = null
     seams.onVerifiedContinueCasual = null
     seams.onVerifiedReturnToBattery = null
     seams.onVerifiedNextOrder = null
@@ -725,6 +750,7 @@ describe('production hot-seat progression composition', () => {
     seams.onNextRound = null
     seams.onTouchPower = null
     seams.inputAction = null
+    seams.rawInputStepAngle = null
     seams.inputPowerCaps.length = 0
     seams.useActualGameEngine = false
     seams.useActualInputHandler = false
@@ -751,6 +777,7 @@ describe('production hot-seat progression composition', () => {
     seams.challengeState = { status: 'idle' }
     seams.challengeReportReadiness.length = 0
     seams.retriedVerified = 0
+    seams.retriedChallenges = 0
     seams.continuedVerified = 0
     seams.returnedVerified = 0
     seams.verifiedDeployment = { status: 'idle' }
@@ -761,6 +788,7 @@ describe('production hot-seat progression composition', () => {
     seams.publicSeedChallenges.length = 0
     seams.verifiedPresentationEvents.length = 0
     seams.hudUpdates.length = 0
+    seams.pageRecoveryStates.length = 0
     seams.hudFrames.length = 0
     seams.rendererFrames.length = 0
     seams.forwardedActions.length = 0
@@ -780,6 +808,9 @@ describe('production hot-seat progression composition', () => {
     seams.leaveBattleConsole = () => undefined
     seams.lobbyShowOptions.length = 0
     seams.lobbyRecovery = null
+    seams.hudDestroys = 0
+    seams.accountRevalidations = 0
+    seams.revalidateAccountIdentity = () => Promise.resolve(true)
     seams.accountAnonymous = false
     seams.accountAuthenticated = false
     seams.onAccountAuthenticationChange = null
@@ -792,6 +823,198 @@ describe('production hot-seat progression composition', () => {
     clearSession()
     window.history.replaceState({}, '', '/')
     mountDom()
+  })
+
+  it('retains one match owner across persisted-page cycles and blocks input until recovery settles', async () => {
+    const state = liveVerifiedState()
+    let finishRestore!: (ready: boolean) => void
+    const restore = new Promise<boolean>((resolve) => { finishRestore = resolve })
+    const client = Object.assign(fakeClient(state), {
+      suspendForPageCache: vi.fn(),
+      recoverAfterPageRestore: vi.fn(() => restore),
+      setFastForward: vi.fn(),
+    })
+    seams.clients.push(client)
+    seams.useActualInputHandler = true
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [] })
+    if (!seams.inputAction) throw new Error('Expected input wiring')
+
+    seams.inputAction({ type: 'fire' })
+    expect(seams.forwardedActions).toHaveLength(1)
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF' }))
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    seams.inputAction({ type: 'fire' })
+    seams.onBuy?.({ weapon: 'missile' })
+    seams.onNextRound?.()
+    seams.rawInputStepAngle?.(1)
+    seams.rawInputStepAngle?.(1)
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF' }))
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    seams.inputAction({ type: 'fire' })
+
+    expect(client.suspendForPageCache).toHaveBeenCalledOnce()
+    expect(client.recoverAfterPageRestore).toHaveBeenCalledOnce()
+    expect(seams.forwardedActions).toHaveLength(1)
+    expect(client.stop).not.toHaveBeenCalled()
+    expect(seams.inputDetaches).toBe(0)
+    expect(seams.unsubscribes).toBe(0)
+    expect(seams.rendererResets).toBe(0)
+    expect(seams.hudDestroys).toBe(0)
+    expect(client.setFastForward).toHaveBeenCalledTimes(2)
+    expect(client.setFastForward).toHaveBeenNthCalledWith(1, true)
+    expect(client.setFastForward).toHaveBeenNthCalledWith(2, false)
+    expect(seams.hudUpdates.at(-1)?.[2]).toBe(false)
+    expect(seams.pageRecoveryStates.at(-1)).toBe('pending')
+
+    finishRestore(true)
+    await restore
+    await Promise.resolve()
+    seams.inputAction({ type: 'fire' })
+    seams.rawInputStepAngle?.(1)
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF' }))
+    expect(seams.forwardedActions).toHaveLength(3)
+    expect(seams.forwardedActions.filter((action) => action.type === 'set_angle')).toEqual([
+      { type: 'set_angle', angle: 46 },
+    ])
+    expect(client.setFastForward).toHaveBeenLastCalledWith(true)
+    expect(seams.pageRecoveryStates.at(-1)).toBeNull()
+
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    await Promise.resolve()
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }))
+    expect(seams.hudDestroys).toBe(1)
+  })
+
+  it('blocks verified deployment completion retry while account recovery is pending or failed', async () => {
+    const account = deferred<boolean>()
+    const state = liveVerifiedState()
+    const controller = fakeVerifiedController(state)
+    const client = fakeClient(state)
+    seams.verifiedControllers.push(controller)
+    seams.clients.push(client)
+    seams.verifiedDeployment = {
+      status: 'retryable', descriptor: verifiedDescriptor, transcript: [{ angle: 45, power: 50 }],
+      deadline: { remainingMs: 60_000, warning: 'one-minute', acceptsInput: false, canComplete: true },
+    }
+    seams.revalidateAccountIdentity = () => {
+      seams.accountRevalidations += 1
+      return account.promise
+    }
+    await import('./main')
+    await seams.onLobbyReady!(verifiedConfig([{ angle: 45, power: 50 }]))
+    if (!seams.onVerifiedRetry) throw new Error('Expected verified retry wiring')
+
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    seams.onVerifiedRetry()
+    expect(seams.retriedVerified).toBe(0)
+
+    account.resolve(false)
+    await account.promise
+    await Promise.resolve()
+    seams.onVerifiedRetry()
+    expect(seams.retriedVerified).toBe(0)
+    expect(seams.pageRecoveryStates.at(-1)).toBe('failed')
+  })
+
+  it('allows one same-account challenge completion retry only after account recovery succeeds', async () => {
+    const account = deferred<boolean>()
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null })
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'retryable', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    seams.clients.push(client)
+    seams.revalidateAccountIdentity = () => {
+      seams.accountRevalidations += 1
+      return account.promise
+    }
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [], verifiedChallenge: { descriptor, transcript: [] } })
+    if (!seams.onVerifiedChallengeRetry) throw new Error('Expected challenge retry wiring')
+
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    seams.onVerifiedChallengeRetry()
+    expect(seams.retriedChallenges).toBe(0)
+
+    account.resolve(true)
+    await account.promise
+    await Promise.resolve()
+    await Promise.resolve()
+    seams.onVerifiedChallengeRetry()
+    expect(seams.retriedChallenges).toBe(1)
+  })
+
+  it('keeps a verified page frozen when authoritative account revalidation fails', async () => {
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null })
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [] }
+    seams.revalidateAccountIdentity = () => Promise.resolve(false)
+    seams.clients.push(client)
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [], verifiedChallenge: { descriptor, transcript: [] } })
+    if (!seams.inputAction) throw new Error('Expected input wiring')
+
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    await Promise.resolve()
+    await Promise.resolve()
+    seams.inputAction({ type: 'fire' })
+
+    expect(seams.accountRevalidations).toBeGreaterThan(0)
+    expect(seams.forwardedActions).toEqual([])
+    expect(seams.completedChallenges).toBe(0)
+    expect(seams.hudDestroys).toBe(0)
+
+    seams.onQuit?.()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(seams.pageRecoveryStates.at(-1)).toBeNull()
+  })
+
+  it('pauses CQ1 payoff frames during restore and resumes one same-account pending report', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback)
+      return frames.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+    const state = liveVerifiedState()
+    const client = Object.assign(fakeClient(state), { terminalResult: null as null | Record<string, unknown> })
+    const descriptor = { accountId: '11111111-1111-4111-8111-111111111111',
+      sessionId: '22222222-2222-4222-8222-222222222222', expiresAt: '2099-01-01T00:00:00Z', limits: { power: { max: 100 } } }
+    seams.challengeState = { status: 'active', descriptor, transcript: [{ angle: 32, power: 100 }] }
+    seams.rendererAnimating = true
+    seams.clients.push(client)
+    await import('./main')
+    await seams.onLobbyReady!({ mode: 'hotseat', players: [], verifiedChallenge: { descriptor, transcript: [] } })
+
+    client.terminalResult = { terminal: 'objective_cleared', humanSalvos: 1 }
+    client.emit(state)
+    await Promise.resolve()
+    expect(seams.completedChallenges).toBe(1)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(false)
+    const rendersBeforeHide = seams.rendererFrames.length
+
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
+    seams.rendererAnimating = false
+    frames.shift()?.(0)
+    expect(seams.rendererFrames).toHaveLength(rendersBeforeHide)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(false)
+
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    await Promise.resolve()
+    await Promise.resolve()
+    frames.shift()?.(16)
+
+    expect(seams.accountRevalidations).toBeGreaterThan(0)
+    expect(seams.completedChallenges).toBe(1)
+    expect(seams.challengeReportReadiness.at(-1)).toBe(true)
   })
 
   it('uses retained challenge execution and completes its objective once before ordinary game over', async () => {

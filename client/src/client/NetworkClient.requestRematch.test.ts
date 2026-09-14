@@ -392,6 +392,29 @@ describe('NetworkClient.requestRematch (fetch mocking + import.meta.env stubbing
     expect(listener).not.toHaveBeenCalled();
   });
 
+  it('defers an in-flight successor handoff while page authority is suspended', async () => {
+    const query = makeSuccessorQuery(async () => ({ data: SUCCESSOR_ROOM, error: null }));
+    const client = makeClient({ from: vi.fn(() => query) } as unknown as SupabaseClient);
+    const listener = vi.fn();
+    client.onRematch(listener);
+    client.suspendForPageCache();
+
+    await expect((client as unknown as {
+      handleRematch(newRoomId: string): Promise<boolean>;
+    }).handleRematch('room-next')).resolves.toBe(true);
+    expect(listener).not.toHaveBeenCalled();
+
+    const internals = client as unknown as {
+      pageAuthorityReady: boolean;
+      resumeDeferredRematch(): boolean;
+    };
+    internals.pageAuthorityReady = true;
+    expect(internals.resumeDeferredRematch()).toBe(true);
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener.mock.calls[0]![0]).toMatchObject({ roomId: 'room-next', code: 'NEXT42' });
+    client.stop();
+  });
+
   it('normalizes walls only for a protected-floor successor', async () => {
     async function resolveSuccessor(walls: unknown, rulesetVersion: 1 | 4) {
       const query = {

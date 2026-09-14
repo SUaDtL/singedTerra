@@ -158,7 +158,7 @@ function createSwitchableVerifiedClient(
       activeUnsubscribe = null;
       activeClient.stop();
     },
-    setFastForward: (on) => activeClient.setFastForward(on),
+    setFastForward: (on) => activeClient.setFastForward?.(on),
     sendAction: (action) => activeClient.sendAction(action),
     getState: () => activeClient.getState(),
     getInitialTerrain: () => activeClient.getInitialTerrain(),
@@ -417,7 +417,7 @@ function bootstrap(): void {
       toggleSound();
     } else if (e.code === 'KeyG' && !e.repeat) {
       toggleAimGuide();
-    } else if (e.code === 'KeyF' && !gameplayInputBlocked()) {
+    } else if (e.code === 'KeyF' && matchSession.pageAuthorityReady && !gameplayInputBlocked()) {
       // Hold F to fast-forward the shot animation (review #7). Local view pacing only;
       // never a logged action. Repeats while held (idempotent); released on keyup.
       matchSession.client?.setFastForward?.(true);
@@ -441,6 +441,7 @@ function bootstrap(): void {
   let verifiedCompletionStarted = false;
   let fieldOrder: FieldOrder | null = null;
   let practiceFieldOrderEvidence: PracticeFieldOrderEvidence | null = null;
+  let refreshRetainedPresentation: (() => void) | null = null;
   let liveMatchTransport: 'not-applicable' | ConnectionState = 'not-applicable';
   // One-shot, local-only fixture for the production-bundle victory-report guardrail.
   // A Play again action consumes the fixture and restarts into an ordinary match.
@@ -499,7 +500,8 @@ function bootstrap(): void {
     const canonical = matchSession.client?.getState();
     const state = canonical ? presentationStateFor(canonical) : null;
     const activeTank = state?.tanks.find((tank) => tank.id === state.activePlayerId);
-    return !!state
+    return matchSession.pageAuthorityReady
+      && !!state
       && state.phase === 'PLAYER_TURN'
       && shouldAcceptLocalInput({
         activeIsAi: !!activeTank?.ai,
@@ -719,8 +721,10 @@ function bootstrap(): void {
     verifiedCompletionStarted = false;
     fieldOrder = null;
     practiceFieldOrderEvidence = null;
+    refreshRetainedPresentation = null;
     terminalImpactObserved = false;
     terminalImpactNotified = false;
+    hud.setPageRecovery?.(null);
     hud.setTurnWatch({ state: 'clear' });
     hud.hideEndScreens();
     hud.setVerifiedDeployment(null);
@@ -979,7 +983,8 @@ function bootstrap(): void {
         // rAF loop keeps running underneath either way (networked lockstep stays
         // in sync); only this LOCAL emit is suppressed.
         return new InputHandler(canvas, (action) => {
-          if (gameplayInputBlocked()
+          if (!matchSession.pageAuthorityReady
+            || gameplayInputBlocked()
             || !shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
             || !verifiedInputAllowed()) return;
           // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
@@ -1044,7 +1049,7 @@ function bootstrap(): void {
           initialPower: activeTank?.power,
           powerCap: activeInputPowerCap(activeTank?.powerCap),
           canDirectAim: directAimAllowed,
-          canHandleCommand: () => !gameplayInputBlocked(),
+          canHandleCommand: () => matchSession.pageAuthorityReady && !gameplayInputBlocked(),
         });
       },
       attachInput: (input) => input.attach(),
@@ -1084,6 +1089,7 @@ function bootstrap(): void {
         // from a prior network game can't linger into a hot-seat game (whose client has
         // no onConnectionChange); the network client immediately re-primes its state.
         liveMatchTransport = config.mode === 'network' ? 'connecting' : 'not-applicable';
+        hud.setPageRecovery?.(null);
         hud.setConnection('connected');
         newClient.onConnectionChange?.((connState) => {
           liveMatchTransport = connState;
@@ -1096,7 +1102,9 @@ function bootstrap(): void {
           && typeof newClient.onQuickChat === 'function';
         hud.setQuickChatEnabled(quickChatAvailable);
         if (quickChatAvailable) {
-          hud.onQuickChat((key) => { newClient.sendQuickChat?.(key); });
+          hud.onQuickChat((key) => {
+            if (matchSession.pageAuthorityReady) newClient.sendQuickChat?.(key);
+          });
           newClient.onQuickChat?.((message) => hud.showQuickChat(message));
         }
       },
@@ -1128,7 +1136,11 @@ function bootstrap(): void {
           if (challengePayoffFrame !== null) return;
           challengePayoffFrame = requestAnimationFrame(() => {
             challengePayoffFrame = null;
-            if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
+            if (
+              !matchSession.pageAuthorityReady
+              || challengeClient !== newClient
+              || !matchSession.isCurrent(currentGameGeneration, newClient)
+            ) return;
             gameRenderer.render(state);
             challengePayoffFrames++;
             if (
@@ -1174,7 +1186,8 @@ function bootstrap(): void {
           });
         };
 
-        return (canonicalState: BorrowedGameState) => {
+        const present = (canonicalState: BorrowedGameState): void => {
+          if (!matchSession.pageAuthorityReady) return;
           const state = presentationStateFor(canonicalState);
           if (challengeClient === newClient && challengeClient.terminalResult && !challengePayoffCompleted) {
             challengeReportDeferred = true;
@@ -1280,6 +1293,12 @@ function bootstrap(): void {
           // Computer-opponent driver: if a CPU tank holds the turn, plan + play it.
           maybeDriveAi(state);
         };
+        refreshRetainedPresentation = (): void => {
+          if (!matchSession.isCurrent(currentGameGeneration, newClient)) return;
+          const current = newClient.getState();
+          if (current) present(current);
+        };
+        return present;
       },
       subscribe: (client, listener) => client.onStateChange(listener),
       start: (client) => client.start(),
@@ -1294,7 +1313,7 @@ function bootstrap(): void {
    * once even though onStateChange runs every frame.
    */
   function maybeDriveAi(state: BorrowedGameState): void {
-    if (challengeClient) return;
+    if (!matchSession.pageAuthorityReady || challengeClient) return;
     const active = state.tanks.find((t) => t.id === state.activePlayerId);
     const isAi = !!active?.ai && currentConfig?.mode !== 'network';
     activeIsAi = isAi && state.phase === 'PLAYER_TURN';
@@ -1381,7 +1400,7 @@ function bootstrap(): void {
   // action log replays the finished game — so it asks the server for a fresh
   // successor room; both clients then migrate via onRematch (above).
   hud.onRestart(() => {
-    if (!currentConfig) return;
+    if (!matchSession.pageAuthorityReady || !currentConfig) return;
     if (currentConfig.verifiedChallenge) {
       void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
     } else if (currentConfig.mode === 'network') {
@@ -1395,7 +1414,7 @@ function bootstrap(): void {
     activeIsAi,
     activeIsLocal,
     paused: hud.isPaused(),
-  }) && verifiedInputAllowed();
+  }) && matchSession.pageAuthorityReady && verifiedInputAllowed();
   const localInputAllowed = (): boolean =>
     localTurnAllowsActions() && !gameplayInputBlocked();
 
@@ -1427,6 +1446,7 @@ function bootstrap(): void {
   // turn-neutral action: hot-seat applies it locally; network commits it to the
   // log (and the engine re-gates affordability + whose turn it is).
   hud.onBuy((purchase, tankId) => {
+    if (!matchSession.pageAuthorityReady) return;
     if (!inputCapabilitiesFor(matchSession.client).buying) return;
     markDirty(); // a buy changes ammo/credits surfaced in the scene — repaint next frame
     // `purchase` carries exactly one of weapon/accessory; forward it verbatim (the engine + referee
@@ -1448,6 +1468,7 @@ function bootstrap(): void {
   // action: hot-seat applies it locally; networked commits it to the log so every
   // client leaves the shop in lockstep.
   hud.onNextRound(() => {
+    if (!matchSession.pageAuthorityReady) return;
     matchSession.client?.sendAction({ type: 'next_round' });
     syncActiveInputPowerCap();
   });
@@ -1481,7 +1502,7 @@ function bootstrap(): void {
   hud.onVerifiedChallengeRetry?.(() => {
     const client = challengeClient;
     const generation = matchSession.currentGeneration;
-    if (!client || lobby.verifiedChallenge.status !== 'retryable') return;
+    if (!matchSession.pageAuthorityReady || !client || lobby.verifiedChallenge.status !== 'retryable') return;
     const request = lobby.retryVerifiedChallengeCompletion();
     const update = (): void => {
       if (client === challengeClient && matchSession.isCurrent(generation, client))
@@ -1492,7 +1513,10 @@ function bootstrap(): void {
   hud.onVerifiedChallengeReturn?.(() => { void teardown().then(() => lobby.show({ focusVerifiedChallenge: true })); });
 
   hud.onVerifiedRetry(() => {
-    if (!verifiedController || verifiedCasual || !currentConfig?.verifiedDeployment) return;
+    if (!matchSession.pageAuthorityReady
+      || !verifiedController
+      || verifiedCasual
+      || !currentConfig?.verifiedDeployment) return;
     const deployment = lobby.refreshVerifiedDeploymentDeadline();
     if (deployment.status !== 'retryable' || !deployment.deadline.canComplete) return;
     const retryGeneration = matchSession.currentGeneration;
@@ -1582,9 +1606,71 @@ function bootstrap(): void {
   hud.onMove((delta)        => { if (localInputAllowed()) matchSession.input?.stepMove(delta); });
   hud.onPrimaryAction(()   => { if (localInputAllowed()) matchSession.input?.triggerFire(); });
 
-  window.addEventListener('pagehide', () => {
+  const projectPageRecovery = (state: 'pending' | 'failed'): void => {
+    const canonical = matchSession.client?.getState();
+    if (canonical) {
+      hud.update(
+        presentationStateFor(canonical),
+        matchSession.client?.isFiring ?? false,
+        false,
+        activeIsLocal,
+        false,
+      );
+    }
+    hud.setPageRecovery?.(state);
+  };
+
+  window.addEventListener('pagehide', (event) => {
+    if (event.persisted) {
+      matchSession.suspendForPageCache();
+      matchSession.client?.suspendForPageCache?.();
+      matchSession.client?.setFastForward?.(false);
+      matchSession.input?.setDirectAimEnabled(false);
+      aiActedKey = null;
+      audio.napalmStop();
+      projectPageRecovery('pending');
+      return;
+    }
     void hud.destroy();
-  }, { once: true });
+  });
+
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    const owner = matchSession.beginPageRestore();
+    if (!owner) return;
+    const recover = async (): Promise<void> => {
+      const accountReady = currentConfig?.verifiedChallenge || currentConfig?.verifiedDeployment
+        ? await lobby.revalidateAccountIdentity()
+        : true;
+      if (!accountReady || !matchSession.isPageRestoreCurrent(owner)) {
+        if (matchSession.isPageRestoreCurrent(owner)) {
+          projectPageRecovery('failed');
+        }
+        return;
+      }
+      const clientReady = await (owner.client?.recoverAfterPageRestore?.() ?? Promise.resolve(true));
+      if (!clientReady || !matchSession.isCurrent(owner.matchGeneration, owner.client)) {
+        if (matchSession.isPageRestoreCurrent(owner)) projectPageRecovery('failed');
+        return;
+      }
+      if (currentConfig?.verifiedChallenge) void lobby.verifiedChallenge;
+      else if (currentConfig?.verifiedDeployment) lobby.refreshVerifiedDeploymentDeadline();
+      const canonical = owner.client?.getState();
+      if (currentConfig?.mode === 'network' && canonical) {
+        matchSession.renderer?.primeHistoricalImpactEvents(canonical);
+      }
+      if (!matchSession.completePageRestore(owner)) return;
+      hud.setPageRecovery?.(null);
+      renderDirty = true;
+      matchSession.input?.setDirectAimEnabled(directAimAllowed());
+      refreshRetainedPresentation?.();
+    };
+    void recover().catch(() => {
+      if (matchSession.isPageRestoreCurrent(owner)) {
+        projectPageRecovery('failed');
+      }
+    });
+  });
 
   // Deterministic E2E entrypoint (rendering-guardrail suite). When the page is
   // loaded with `?e2e=hotseat`, skip the splash/lobby and immediately start a

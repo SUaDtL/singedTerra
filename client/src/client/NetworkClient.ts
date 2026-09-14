@@ -309,6 +309,13 @@ export class NetworkClient implements GameClient {
   private _everSubscribed   = false;            // distinguishes first subscribe from a reconnect
   private _closing          = false;            // set in stop() so teardown isn't reported as a drop
   private connectionRecoveryGeneration = 0;
+  private pageRecoveryGeneration = 0;
+  private pageAuthorityReady = true;
+  private pageRecovery: Promise<boolean> | null = null;
+  private realtimeLive = false;
+  private realtimeLiveWaiters = new Set<() => void>();
+  private invalidRestoreNoticeSent = false;
+  private static readonly PAGE_RESTORE_TIMEOUT_MS = 10_000;
   // Set true at the top of stop() and never cleared. Backstop for async work that
   // outlives teardown — the seq-conflict retry timeout, the handleRematch poll
   // loop, and any post-teardown failFire()/emitState() call — so a stale timer or
@@ -366,6 +373,8 @@ export class NetworkClient implements GameClient {
     controller: AbortController;
     promise: Promise<boolean>;
   } | null = null;
+  private deferredRematchRoomId: string | null = null;
+  private deferredRematchInfo: RematchInfo | null = null;
   private rematchRequestControllers = new Set<AbortController>();
   private static readonly REMATCH_POLL_ATTEMPTS = 20;
   private static readonly REMATCH_POLL_INTERVAL_MS = 150;
@@ -584,8 +593,14 @@ export class NetworkClient implements GameClient {
         // on recovery). Ignore CLOSED during our own teardown (stop()).
         if (status === 'SUBSCRIBED') {
           const firstSubscribe = !this._everSubscribed;
-          const recovered = this._everSubscribed && this._connection !== 'connected';
+          const recovered = !firstSubscribe && this._connection !== 'connected';
           this._everSubscribed = true;
+          this.realtimeLive = true;
+          for (const notify of this.realtimeLiveWaiters) notify();
+          if (!this.pageAuthorityReady) {
+            this.setConnection('reconnecting');
+            return;
+          }
           // Re-fetch (from nextExpectedSeq) any actions we could not have received
           // live, and flush them in order. This idempotent catch-up covers two gaps:
           //   - recovered: turns committed during a socket outage (re-subscribe).
@@ -615,6 +630,7 @@ export class NetworkClient implements GameClient {
           !this._closing &&
           (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')
         ) {
+          this.realtimeLive = false;
           this.connectionRecoveryGeneration += 1;
           this.canonicalHistoryReady = false;
           this.setConnection('reconnecting');
@@ -646,7 +662,13 @@ export class NetworkClient implements GameClient {
             return;
           }
           const next = (payload.new?.rematch_room_id ?? null) as string | null;
-          if (next) void this.handleRematch(next);
+          if (next) {
+            if (!this.pageAuthorityReady) {
+              this.deferredRematchRoomId ??= next;
+              return;
+            }
+            void this.handleRematch(next);
+          }
         }
       )
       .subscribe();
@@ -675,7 +697,10 @@ export class NetworkClient implements GameClient {
   sendQuickChat(key: QuickChatKey): boolean {
     const channel = this.quickChatChannel;
     const now = Date.now();
-    if (!channel || !isQuickChatKey(key) || now - this.lastQuickChatAt < NetworkClient.QUICK_CHAT_COOLDOWN_MS) return false;
+    if (!this.pageAuthorityReady
+      || !channel
+      || !isQuickChatKey(key)
+      || now - this.lastQuickChatAt < NetworkClient.QUICK_CHAT_COOLDOWN_MS) return false;
     this.lastQuickChatAt = now;
     void channel.send({
       type: 'broadcast',
@@ -755,6 +780,12 @@ export class NetworkClient implements GameClient {
     this.frameGeneration++;
     this.initializationGeneration += 1;
     this.connectionRecoveryGeneration += 1;
+    this.pageRecoveryGeneration += 1;
+    this.pageAuthorityReady = false;
+    this.pageRecovery = null;
+    this.realtimeLive = false;
+    for (const notify of this.realtimeLiveWaiters) notify();
+    this.realtimeLiveWaiters.clear();
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
     this.canonicalHistoryReady = false;
@@ -765,6 +796,8 @@ export class NetworkClient implements GameClient {
     this.rematchGeneration += 1;
     this.rematchLookup?.controller.abort();
     this.rematchLookup = null;
+    this.deferredRematchRoomId = null;
+    this.deferredRematchInfo = null;
     this.stopPresence();
     this.retirePendingCommands();
     this.orderedActions.dispose();
@@ -811,7 +844,7 @@ export class NetworkClient implements GameClient {
     }
   }
 
-  private startPresence(): void {
+  private startPresence(pulseImmediately = true): void {
     if (
       !this.token || this._disposed || this._rematchHandled || this.presenceTimer !== null
       || this.engine.getState().phase === 'GAME_OVER'
@@ -843,7 +876,7 @@ export class NetworkClient implements GameClient {
       });
     };
     this.presenceTimer = setInterval(pulse, NetworkClient.PRESENCE_INTERVAL_MS);
-    pulse();
+    if (pulseImmediately) pulse();
   }
 
   private stopPresence(): void {
@@ -871,6 +904,152 @@ export class NetworkClient implements GameClient {
     this.emitState();
   }
 
+  suspendForPageCache(): void {
+    if (this._disposed) return;
+    this.pageRecoveryGeneration += 1;
+    this.pageAuthorityReady = false;
+    this.pageRecovery = null;
+    for (const notify of this.realtimeLiveWaiters) notify();
+    this.realtimeLiveWaiters.clear();
+    this.canonicalHistoryReady = false;
+    this.connectionRecoveryGeneration += 1;
+    this.stopPresence();
+    this.suspendPendingCommandDelivery();
+    this.setConnection('reconnecting');
+  }
+
+  recoverAfterPageRestore(): Promise<boolean> {
+    if (this._disposed) return Promise.resolve(false);
+    if (this.pageAuthorityReady) return Promise.resolve(true);
+    if (this.pageRecovery) return this.pageRecovery;
+    const generation = this.pageRecoveryGeneration;
+    const commandGeneration = this.commandGeneration;
+    const controller = new AbortController();
+    const isCurrent = (): boolean => (
+      !this._disposed
+      && generation === this.pageRecoveryGeneration
+      && !this.pageAuthorityReady
+    );
+    const transition = (async (): Promise<boolean> => {
+      if (!this.token || !isCurrent()) return false;
+      const credential = await callFunction<{ error?: unknown }>('heartbeat', {
+        roomId: this.roomId,
+        playerId: this.playerId,
+        token: this.token,
+      }, { signal: controller.signal });
+      if (!isCurrent()) return false;
+      if (!credential.ok) {
+        if (
+          credential.status === 403
+          && (credential.data?.error === 'invalid_seat_token'
+            || credential.data?.error === 'not_room_member')
+        ) this.rejectRestoredSeat();
+        return false;
+      }
+      while (isCurrent()) {
+        const live = await this.waitForRealtimeLive(isCurrent, controller.signal);
+        if (!live || !isCurrent()) return false;
+        const caughtUp = await this.resyncLog(commandGeneration, isCurrent);
+        if (!caughtUp || !isCurrent()) return false;
+        // A close during the REST read creates another possible delivery gap.
+        // Wait for the next live subscription and repeat the bounded catch-up
+        // rather than reopening authority from a snapshot taken while offline.
+        if (this.isRealtimeChannelLive()) break;
+      }
+      if (!isCurrent() || !this.isRealtimeChannelLive()) return false;
+      this.pageAuthorityReady = true;
+      this.canonicalHistoryReady = true;
+      this.setConnection('connected');
+      if (this.resumeDeferredRematch()) return true;
+      this.startPresence(false);
+      this.maybeDriveBot(this.engine.getState());
+      return true;
+    })();
+    const recovery = settleWithDeadline(
+      transition,
+      NetworkClient.PAGE_RESTORE_TIMEOUT_MS,
+      () => controller.abort(),
+    ).then((settled) => {
+      if (!settled.ok && generation === this.pageRecoveryGeneration) {
+        this.pageRecoveryGeneration += 1;
+      }
+      return settled.ok ? settled.value : false;
+    }).finally(() => {
+      if (this.pageRecovery === recovery) this.pageRecovery = null;
+    });
+    this.pageRecovery = recovery;
+    return recovery;
+  }
+
+  private rejectRestoredSeat(): void {
+    this.retirePendingCommands();
+    this.setFiring(false);
+    clearSession();
+    if (this.invalidRestoreNoticeSent) return;
+    this.invalidRestoreNoticeSent = true;
+    this.notifyCommandFailure('Your seat is no longer valid. Return to Online and join the room again.');
+  }
+
+  private resumeDeferredRematch(): boolean {
+    const listener = this.rematchListener;
+    const info = this.deferredRematchInfo;
+    if (info && listener) {
+      this.deferredRematchInfo = null;
+      this.deferredRematchRoomId = null;
+      listener(info);
+      return true;
+    }
+    const roomId = this.deferredRematchRoomId;
+    if (!roomId) return false;
+    this.deferredRematchRoomId = null;
+    void this.handleRematch(roomId);
+    return true;
+  }
+
+  private waitForRealtimeLive(
+    isCurrent: () => boolean,
+    signal: AbortSignal,
+  ): Promise<boolean> {
+    if (signal.aborted || !isCurrent()) return Promise.resolve(false);
+    if (this.isRealtimeChannelLive() && isCurrent()) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (ready: boolean): void => {
+        if (settled) return;
+        settled = true;
+        this.realtimeLiveWaiters.delete(check);
+        signal.removeEventListener('abort', aborted);
+        resolve(ready);
+      };
+      const check = (): void => {
+        if (!isCurrent()) finish(false);
+        else if (this.isRealtimeChannelLive()) finish(true);
+      };
+      const aborted = (): void => finish(false);
+      this.realtimeLiveWaiters.add(check);
+      signal.addEventListener('abort', aborted, { once: true });
+      if (signal.aborted) aborted();
+      else check();
+    });
+  }
+
+  private isRealtimeChannelLive(): boolean {
+    const state = (this.channel as unknown as { state?: string } | null)?.state;
+    return this.realtimeLive && (state === undefined || state === 'joined');
+  }
+
+  private suspendPendingCommandDelivery(): void {
+    const pending = this.pendingRoomCommand;
+    this.clearCommandWatchdog();
+    if (!pending) return;
+    pending.transportAbort?.abort();
+    pending.transportAbort = null;
+    pending.deliveryEpoch += 1;
+    pending.state = 'retryable';
+    this.releaseFiringFor(pending);
+    pending.onSettle?.('retryable');
+  }
+
   /**
    * Submit a player input.
    *
@@ -885,6 +1064,7 @@ export class NetworkClient implements GameClient {
    * echo arrives and flushPendingActions() emits the new state.
    */
   sendAction(action: PlayerAction): void {
+    if (!this.pageAuthorityReady) return;
     const engineTankId = this.playerIndexMap.get(this.playerId);
     if (!engineTankId) {
       // Log only a short prefix — playerId is a public seat identifier, not the
@@ -1482,7 +1662,7 @@ export class NetworkClient implements GameClient {
       return false;
     }
     if (!isCurrent()) return false;
-    listener({
+    const info: RematchInfo = {
       roomId:  data.id as string,
       code:    data.code as string,
       seed:    Number(data.seed),
@@ -1506,7 +1686,13 @@ export class NetworkClient implements GameClient {
         ...(opts.teamMode === true ? { teamMode: true } : {}),
       },
       players: projectNetworkPlayers(players),
-    });
+    };
+    if (!this.pageAuthorityReady) {
+      this.deferredRematchInfo = info;
+      this.deferredRematchRoomId = null;
+      return true;
+    }
+    listener(info);
     return true;
   }
 
@@ -1521,6 +1707,7 @@ export class NetworkClient implements GameClient {
   ): boolean {
     if (
       this._disposed
+      || !this.pageAuthorityReady
       || this.canonicalCommandFault
       || !this.canonicalHistoryReady
       || this.activeHistoryRecoveries > 0
@@ -1593,6 +1780,10 @@ export class NetworkClient implements GameClient {
     pending: PendingRoomCommand,
     onSettle?: (settlement: BotSubmitSettlement) => void,
   ): void {
+    if (!this.pageAuthorityReady) {
+      pending.state = 'retryable';
+      return;
+    }
     this.clearCommandWatchdog();
     pending.transportAbort?.abort();
     pending.deliveryEpoch += 1;
@@ -1776,7 +1967,9 @@ export class NetworkClient implements GameClient {
   }
 
   private isCurrentDelivery(pending: PendingRoomCommand, deliveryEpoch: number): boolean {
-    return this.isCurrentCommand(pending) && pending.deliveryEpoch === deliveryEpoch;
+    return this.pageAuthorityReady
+      && this.isCurrentCommand(pending)
+      && pending.deliveryEpoch === deliveryEpoch;
   }
 
   private finishPendingCommand(pending: PendingRoomCommand): void {
@@ -2264,6 +2457,7 @@ export class NetworkClient implements GameClient {
    * winning row is the same action, by determinism).
    */
   private maybeDriveBot(state: GameState): void {
+    if (!this.pageAuthorityReady || !this.canonicalHistoryReady) return;
     if (this.orderedActions.isReplaying) return;  // history replay drives itself
     if (state.phase !== 'PLAYER_TURN') return;
     if (this.botByTank.size === 0) return;        // no CPU seats in this room

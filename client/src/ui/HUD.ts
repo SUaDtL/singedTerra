@@ -283,6 +283,8 @@ export class HUD {
   // Opponent-turn watchdog banner (P1-6b): "Waiting for {name}…", escalating to a
   // disconnect notice with a leave-to-lobby button.
   private turnWatchEl!: HTMLElement;
+  private turnWatch: TurnWatch = { state: 'clear' };
+  private pageRecoveryState: 'pending' | 'failed' | null = null;
   private quickChatRootEl!: HTMLElement;
   private quickChatPanelEl!: HTMLElement;
   private quickChatToggleEl!: HTMLButtonElement;
@@ -1619,6 +1621,8 @@ export class HUD {
    * in-game Menu). Rebuilt on each transition — these fire rarely, never per frame.
    */
   setTurnWatch(watch: TurnWatch): void {
+    this.turnWatch = watch;
+    if (this.pageRecoveryState !== null) return;
     if (!this.built) this.build();
     if (watch.state === 'clear') {
       this.turnWatchEl.classList.add('st-hud__turnwatch--hidden');
@@ -1642,6 +1646,45 @@ export class HUD {
       leave.addEventListener('click', () => this.quitCb?.());
       this.turnWatchEl.append(msg, leave);
     }
+  }
+
+  /**
+   * Keep retained-page recovery visible even when another HUD modal owns input.
+   * The notice reuses the persistent liveness surface; failure exposes the same
+   * lobby-return callback as the Command Menu without replacing either owner.
+   */
+  setPageRecovery(state: 'pending' | 'failed' | null): void {
+    this.pageRecoveryState = state;
+    if (state === null) {
+      this.turnWatchEl?.classList.remove('st-hud__turnwatch--page-recovery');
+      if (this.built && this.turnWatchEl.parentElement !== this.railRoot) {
+        this.railRoot.append(this.turnWatchEl);
+      }
+      this.setTurnWatch(this.turnWatch);
+      return;
+    }
+    if (!this.built) this.build();
+    // Page recovery must remain above an already-open Armory/Settings owner.
+    // Reparent the existing notice into the modal layer; clearing recovery
+    // returns the same node to its ordinary command-rail owner.
+    if (this.turnWatchEl.parentElement !== this.modalRoot) this.modalRoot.append(this.turnWatchEl);
+    this.turnWatchEl.classList.add('st-hud__turnwatch--page-recovery');
+    this.turnWatchEl.classList.remove('st-hud__turnwatch--hidden');
+    this.turnWatchEl.classList.toggle('st-hud__turnwatch--stalled', state === 'failed');
+    const message = document.createElement('span');
+    message.textContent = state === 'pending'
+      ? 'Restoring game controls…'
+      : 'Game recovery failed. Return to the lobby or reload.';
+    if (state === 'pending') {
+      this.turnWatchEl.replaceChildren(message);
+      return;
+    }
+    const leave = document.createElement('button');
+    leave.type = 'button';
+    leave.className = 'st-hud__turnwatch-leave';
+    leave.textContent = 'Return to lobby';
+    leave.addEventListener('click', () => this.quitCb?.());
+    this.turnWatchEl.replaceChildren(message, leave);
   }
 
   /** True while the in-game PAUSE overlay is open. Read by main.ts to drop local
