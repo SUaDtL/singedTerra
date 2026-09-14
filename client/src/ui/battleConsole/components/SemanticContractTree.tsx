@@ -4,7 +4,12 @@ import {
   clearTankLoadoutPreview,
   paintTankLoadoutPreview,
 } from '../../../renderer/TankLoadoutPreview';
-import type { BattleConsolePresentationState, BattleConsoleIntent } from '../types';
+import type {
+  BattleConsoleIntent,
+  BattleConsolePresentationState,
+  BattleConsoleSemanticActionId,
+  BattleConsoleSemanticControlBinding,
+} from '../types';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 
 export interface SemanticSourceRecord {
@@ -110,60 +115,24 @@ function dynamicAccessibleName(
   return record.accessibleName;
 }
 
-function intentFor(
-  node: SemanticNodeDefinition,
+function intentForAction(
+  actionId: BattleConsoleSemanticActionId,
   state: BattleConsolePresentationState,
-): BattleConsoleIntent | null {
-  const { sourceRecord: record } = node;
-  if (record.tag !== 'BUTTON') return null;
-  if (node.stableKey === ARMORY_TRIGGER_KEY) {
-    return { type: state.armory.open ? 'armory-close' : 'armory-open' };
+): BattleConsoleIntent {
+  switch (actionId) {
+    case 'move-left': return { type: 'move', delta: -1 };
+    case 'move-right': return { type: 'move', delta: 1 };
+    case 'weapon-next': return { type: 'weapon-next' };
+    case 'armory-toggle': return { type: state.armory.open ? 'armory-close' : 'armory-open' };
+    case 'angle-decrease': return { type: 'angle-step', delta: -1 };
+    case 'angle-increase': return { type: 'angle-step', delta: 1 };
+    case 'power-decrease': return { type: 'power-step', delta: -1 };
+    case 'power-increase': return { type: 'power-step', delta: 1 };
+    case 'settings-open': {
+      return { type: 'settings-open', origin: 'command-console-host::settings-trigger' };
+    }
+    case 'fire': return { type: 'fire' };
   }
-  const name = record.accessibleName.toLowerCase();
-  if (name.startsWith('move tank left')) return { type: 'move', delta: -1 };
-  if (name.startsWith('move tank right')) return { type: 'move', delta: 1 };
-  if (name.startsWith('select next weapon')) return { type: 'weapon-next' };
-  if (name === 'close armory') return { type: 'armory-close' };
-  if (name === 'aim barrel left') return { type: 'angle-step', delta: -1 };
-  if (name === 'aim barrel right') return { type: 'angle-step', delta: 1 };
-  if (name === 'decrease power') return { type: 'power-step', delta: -1 };
-  if (name === 'increase power') return { type: 'power-step', delta: 1 };
-  if (name === 'battle settings') return { type: 'settings-open', origin: 'command-console-host::settings-trigger' };
-  if (name === 'close settings') return { type: 'settings-close' };
-  if (name === 'trajectory guide') return { type: 'settings-toggle-guide' };
-  if (name === 'sound') return { type: 'settings-toggle-sound' };
-  if (name === 'skip') return { type: 'coach-skip' };
-  if (name === 'enter battle') return { type: 'coach-enter' };
-  if (name.startsWith('fire ')) return { type: 'fire' };
-
-  const equip = /^equip (.+)$/i.exec(record.accessibleName);
-  if (equip) {
-    const item = state.armory.items.find((candidate) => candidate.name === equip[1]);
-    if (item?.purchase.weapon) return { type: 'armory-equip', weapon: item.purchase.weapon };
-  }
-  const buy = /^buy (.+?) for /i.exec(record.accessibleName);
-  if (buy && state.commander.id) {
-    const item = state.armory.items.find((candidate) => candidate.name === buy[1]);
-    if (item) return { type: 'armory-buy', purchase: item.purchase, tankId: state.commander.id };
-  }
-  return null;
-}
-
-function runtimeDisabled(node: SemanticNodeDefinition, state: BattleConsolePresentationState): boolean {
-  const { sourceRecord: record } = node;
-  const name = record.accessibleName.toLowerCase();
-  if (node.stableKey === ARMORY_TRIGGER_KEY) {
-    return state.armory.available === false;
-  }
-  if (name.startsWith('move tank left')) return !state.mobility.canMoveLeft;
-  if (name.startsWith('move tank right')) return !state.mobility.canMoveRight;
-  if (name.startsWith('select next weapon')) return !state.weapon.canCycle;
-  if (['aim barrel left', 'aim barrel right', 'decrease power', 'increase power'].includes(name)) {
-    return !(state.ballistics.canAdjust ?? state.weapon.canCycle) || state.fireControl.submitting;
-  }
-  if (name.startsWith('fire ')) return !state.fireControl.ready || state.fireControl.submitting;
-  if (name.startsWith('buy ') || name.startsWith('equip ')) return state.armory.submitting;
-  return record.disabled;
 }
 
 const compactTargetByStableKey = new Map<string, string>([
@@ -227,12 +196,14 @@ export function SemanticContractTree({
   rootKey,
   state,
   dispatch,
+  controls = [],
   semanticClassName,
 }: Readonly<{
   nodes: readonly SemanticNodeDefinition[];
   rootKey: string;
   state: BattleConsolePresentationState;
   dispatch: (intent: BattleConsoleIntent) => void;
+  controls?: readonly BattleConsoleSemanticControlBinding[];
   semanticClassName?: string;
 }>) {
   const scopedNodes = nodes.filter((node) => node.sourceRecord.rootKey === rootKey);
@@ -246,11 +217,13 @@ export function SemanticContractTree({
   const roots = scopedNodes.filter((node) => (
     node.sourceRecord.parentKey === null || !rootStableKeys.has(node.sourceRecord.parentKey)
   ));
+  const controlsByKey = new Map(controls.map((control) => [control.stableKey, control]));
 
   const renderNode = (node: SemanticNodeDefinition): JSX.Element => {
     const record = node.sourceRecord;
     const children = byParent.get(node.stableKey) ?? [];
-    const intent = intentFor(node, state);
+    const control = controlsByKey.get(node.stableKey);
+    const intent = control ? intentForAction(control.actionId, state) : null;
     const isArmoryTrigger = node.stableKey === ARMORY_TRIGGER_KEY;
     const isSettingsBackdrop = node.stableKey === 'settings-dialog::backdrop';
     const isCommanderPortrait = record.tag === 'CANVAS' && record.role === 'img';
@@ -290,7 +263,7 @@ export function SemanticContractTree({
         : record.checked ?? undefined,
       role: record.role || undefined,
       tabIndex: isArmoryTrigger ? 0 : record.focusable ? record.tabIndex : undefined,
-      disabled: record.tag === 'BUTTON' ? runtimeDisabled(node, state) : undefined,
+      disabled: record.tag === 'BUTTON' ? control?.disabled ?? record.disabled : undefined,
       hidden: isArmoryTrigger && state.armory.open ? true : undefined,
       onClick: intent
         ? () => dispatch(intent)
