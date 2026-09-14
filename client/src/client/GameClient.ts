@@ -56,6 +56,21 @@ export interface RematchInfo {
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting';
 
 /**
+ * Commands a game mode can honestly accept from the shared input and HUD layers.
+ * The ordinary game exposes the full set; constrained clients can narrow it
+ * without weakening their own final action validation.
+ */
+export interface GameInputCapabilities {
+  readonly angle: { readonly min: number; readonly max: number };
+  readonly power: { readonly min: number; readonly max: number };
+  readonly primaryAction: 'selected_weapon' | 'fire';
+  readonly movement: boolean;
+  readonly weaponCycling: boolean;
+  readonly weaponSelection: boolean;
+  readonly buying: boolean;
+}
+
+/**
  * Per-turn liveness of a REMOTE opponent's turn (network only, P1-6b). 'clear'
  * whenever it's my turn, a bot's turn, or an opponent who just acted; 'waiting'
  * once a remote human has held the turn past the idle threshold; 'stalled' after a
@@ -79,6 +94,9 @@ export interface QuickChatMessage {
  * never knowing whether physics runs locally (HotSeat) or on a server (Network).
  */
 export interface GameClient {
+  /** Optional mode-specific narrowing; omission preserves ordinary controls. */
+  readonly inputCapabilities?: GameInputCapabilities;
+
   /** Start the client (begin local loop or open the socket connection). */
   start(): void;
 

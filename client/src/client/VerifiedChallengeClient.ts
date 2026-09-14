@@ -7,7 +7,7 @@ import {
   type VerifiedChallengeHumanFire,
 } from '@shared/net/verifiedChallenge'
 import { getVerifiedChallengeArtifact } from '@shared/verified/challengeArtifacts'
-import type { GameClient } from './GameClient'
+import type { GameClient, GameInputCapabilities } from './GameClient'
 import { fastForwardTicks } from './fastForward'
 import { FrameClock } from './frameClock'
 
@@ -33,6 +33,7 @@ export interface VerifiedChallengeClientOptions {
  * presentation pacing and the ordinary GameClient surface.
  */
 export class VerifiedChallengeClient implements GameClient {
+  readonly inputCapabilities: GameInputCapabilities
   private readonly descriptor: VerifiedChallengeDescriptor
   private readonly controller: VerifiedChallengeController
   private readonly initialTerrain: Uint8Array
@@ -54,6 +55,15 @@ export class VerifiedChallengeClient implements GameClient {
       throw new Error('verified_challenge_descriptor_mismatch')
     }
     this.descriptor = descriptor
+    this.inputCapabilities = Object.freeze({
+      angle: Object.freeze({ ...descriptor.limits.angle }),
+      power: Object.freeze({ ...descriptor.limits.power }),
+      primaryAction: 'fire',
+      movement: false,
+      weaponCycling: false,
+      weaponSelection: false,
+      buying: false,
+    })
     const artifact = getVerifiedChallengeArtifact('cq1')
     if (artifact.editionId !== descriptor.editionId
       || JSON.stringify(artifact.catalog) !== JSON.stringify(this.catalogFromDescriptor(descriptor))) {

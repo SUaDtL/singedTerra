@@ -2,11 +2,13 @@ import type { BattleConsoleIntent, BattleConsolePresentationState } from './type
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 
 const fieldKeys = [
+  'armory.available',
   'armory.credits',
   'armory.items',
   'armory.open',
   'armory.submitting',
   'ballistics.angle',
+  'ballistics.canAdjust',
   'ballistics.power',
   'ballistics.powerCap',
   'ballistics.wind',
@@ -151,10 +153,12 @@ export function battleConsolePresentationStatesEqual(
     && left.weapon.ammo === right.weapon.ammo
     && left.weapon.canCycle === right.weapon.canCycle
     && left.armory.open === right.armory.open
+    && (left.armory.available ?? true) === (right.armory.available ?? true)
     && left.armory.credits === right.armory.credits
     && left.armory.submitting === right.armory.submitting
     && sameArmoryItems(left.armory.items, right.armory.items)
     && left.ballistics.angle === right.ballistics.angle
+    && (left.ballistics.canAdjust ?? left.weapon.canCycle) === (right.ballistics.canAdjust ?? right.weapon.canCycle)
     && left.ballistics.power === right.ballistics.power
     && (left.ballistics.powerCap ?? DEFAULT_POWER_CAP) === (right.ballistics.powerCap ?? DEFAULT_POWER_CAP)
     && left.ballistics.wind === right.ballistics.wind

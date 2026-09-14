@@ -2,7 +2,12 @@ import hudCss from './HUD.css?raw';
 import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS, ACCESSORIES } from '@shared/engine/WeaponSystem';
 import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
-import type { ConnectionState, TurnWatch } from '../client/GameClient';
+import {
+  type ConnectionState,
+  type GameInputCapabilities,
+  type TurnWatch,
+} from '../client/GameClient';
+import { FULL_GAME_INPUT_CAPABILITIES } from '../client/inputCapabilities';
 import { MAX_MOVE_DELTA } from '@shared/engine/Movement';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
@@ -293,6 +298,7 @@ export class HUD {
 
   // Active-player name row (replaces old aimTextEl player portion):
   private readonly battleConsoleLifecycle: BattleConsoleLifecycleController;
+  private inputCapabilities: GameInputCapabilities = FULL_GAME_INPUT_CAPABILITIES;
   private battleConsoleSurfaceHost: HTMLElement | null = null;
   private battleConsoleSemanticHost: HTMLElement | null = null;
   private battleConsolePixiHost: HTMLElement | null = null;
@@ -433,6 +439,12 @@ export class HUD {
    */
   setArmsLevel(level: number): void {
     this.armsLevel = level;
+  }
+
+  /** Project the active mode's accepted commands into the shared control surface. */
+  setInputCapabilities(capabilities: GameInputCapabilities): void {
+    this.inputCapabilities = capabilities;
+    if (this.built) this.refreshBattleConsole();
   }
 
   // Shared fine/coarse command registrations.
@@ -684,7 +696,8 @@ export class HUD {
 
   private battleConsoleArmoryItems(
     tank: TankState | null,
-    canAct: boolean,
+    canBuy: boolean,
+    canEquip: boolean,
   ): BattleConsolePresentationState['armory']['items'] {
     const credits = tank?.credits ?? 0;
     return STORE_CATALOG.flatMap((section) => section.entries.map((entry) => {
@@ -703,8 +716,8 @@ export class HUD {
           owned: inventory?.unlimited ? 1 : inventory?.count ?? 0,
           ammo,
           equipped: tank?.selectedWeapon === entry.type,
-          canBuy: canAct && unlocked && credits >= definition.price,
-          canEquip: canAct
+          canBuy: canBuy && unlocked && credits >= definition.price,
+          canEquip: canEquip
             && unlocked
             && tank?.selectedWeapon !== entry.type
             && (inventory?.unlimited === true || (inventory?.count ?? 0) > 0),
@@ -723,7 +736,7 @@ export class HUD {
         owned: tank?.accessories[entry.type] ?? 0,
         ammo: null,
         equipped: false,
-        canBuy: canAct && unlocked && credits >= definition.price,
+        canBuy: canBuy && unlocked && credits >= definition.price,
         canEquip: false,
       };
     }));
@@ -749,6 +762,7 @@ export class HUD {
     const selectedWeapon = tank?.selectedWeapon ?? 'baby_missile';
     const selectedDefinition = WEAPONS[selectedWeapon];
     const selectedInventory = tank?.inventory[selectedWeapon];
+    const armoryAvailable = this.inputCapabilities.buying || this.inputCapabilities.weaponSelection;
     const focusOwner = document.activeElement instanceof HTMLElement
       ? document.activeElement.closest<HTMLElement>('[data-semantic-key]')?.dataset['semanticKey'] ?? null
       : null;
@@ -762,24 +776,30 @@ export class HUD {
       },
       mobility: {
         fuel: tank ? Math.max(0, Math.floor(tank.fuel)) : null,
-        canMoveLeft: canAct && !tank!.buried && tank!.fuel > 0,
-        canMoveRight: canAct && !tank!.buried && tank!.fuel > 0,
+        canMoveLeft: canAct && this.inputCapabilities.movement && !tank!.buried && tank!.fuel > 0,
+        canMoveRight: canAct && this.inputCapabilities.movement && !tank!.buried && tank!.fuel > 0,
       },
       weapon: {
         type: selectedWeapon,
         name: selectedDefinition.name,
         ammo: selectedInventory?.unlimited ? null : selectedInventory?.count ?? 0,
-        canCycle: canAct,
+        canCycle: canAct && this.inputCapabilities.weaponCycling,
       },
       armory: {
+        available: armoryAvailable,
         credits: tank?.credits ?? null,
         open: this.battleConsoleArmoryOpen,
         submitting: isFiring,
-        items: this.battleConsoleArmoryItems(tank, canAct),
+        items: this.battleConsoleArmoryItems(
+          tank,
+          canAct && this.inputCapabilities.buying,
+          canAct && this.inputCapabilities.weaponSelection,
+        ),
       },
       ballistics: {
         angle: tank?.angle ?? 0,
         power: tank?.power ?? 0,
+        canAdjust: canAct,
         powerCap: tank?.powerCap ?? DEFAULT_POWER_CAP,
         wind: state.wind,
       },
@@ -804,10 +824,17 @@ export class HUD {
   }
 
   private readonly battleConsoleControllerPort: BattleConsoleControllerPort = {
-    move: (delta) => this.moveCb?.(delta * MAX_MOVE_DELTA),
-    selectNextWeapon: () => this.touchWeaponCb?.(),
-    selectWeapon: (weapon) => this.weaponSelectCb?.(weapon),
+    move: (delta) => {
+      if (this.inputCapabilities.movement) this.moveCb?.(delta * MAX_MOVE_DELTA);
+    },
+    selectNextWeapon: () => {
+      if (this.inputCapabilities.weaponCycling) this.touchWeaponCb?.();
+    },
+    selectWeapon: (weapon) => {
+      if (this.inputCapabilities.weaponSelection) this.weaponSelectCb?.(weapon);
+    },
     openArmory: () => {
+      if (!this.inputCapabilities.buying && !this.inputCapabilities.weaponSelection) return;
       this.battleConsoleSettingsOpen = false;
       this.battleConsoleArmoryOpen = true;
       this.refreshBattleConsole();
@@ -816,8 +843,12 @@ export class HUD {
       this.battleConsoleArmoryOpen = false;
       this.refreshBattleConsole();
     },
-    buy: (purchase, tankId) => this.buyCb?.(purchase, tankId),
-    equip: (weapon) => this.weaponSelectCb?.(weapon),
+    buy: (purchase, tankId) => {
+      if (this.inputCapabilities.buying) this.buyCb?.(purchase, tankId);
+    },
+    equip: (weapon) => {
+      if (this.inputCapabilities.weaponSelection) this.weaponSelectCb?.(weapon);
+    },
     stepAngle: (delta) => this.touchAngleCb?.(delta),
     stepPower: (delta) => this.touchPowerCb?.(delta),
     openSettings: (origin) => {

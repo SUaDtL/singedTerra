@@ -22,7 +22,7 @@ export function CompactConsole({ state, dispatch }: Readonly<{
   state: BattleConsolePresentationState;
   dispatch: (intent: BattleConsoleIntent) => void;
 }>) {
-  const locked = !state.weapon.canCycle || state.fireControl.submitting;
+  const locked = !(state.ballistics.canAdjust ?? state.weapon.canCycle) || state.fireControl.submitting;
   const powerCap = Math.max(0, state.ballistics.powerCap ?? DEFAULT_POWER_CAP);
   const button = (key: keyof typeof keys, label: string, content: ComponentChildren, intent: BattleConsoleIntent, disabled = false) => (
     <button class={styles.control} type="button" data-semantic-key={keys[key]} data-battle-console-target-key={key}
@@ -43,7 +43,15 @@ export function CompactConsole({ state, dispatch }: Readonly<{
       </div>
       <div class={styles.weapon}>
         {button('weapon-next', `Select next weapon, current ${state.weapon.name}`, <><span title={state.weapon.name}>{state.weapon.name}</span><small><span>{state.weapon.ammo === null ? '∞' : state.weapon.ammo} ›</span>{' '}<span>ammo</span></small></>, { type: 'weapon-next' }, !state.weapon.canCycle)}
-        {button('armory', state.armory.open ? 'Close Armory' : 'Open Armory', 'Armory', { type: state.armory.open ? 'armory-close' : 'armory-open' })}
+        {button(
+          'armory',
+          state.armory.available === false
+            ? 'Armory unavailable in this mode'
+            : state.armory.open ? 'Close Armory' : 'Open Armory',
+          'Armory',
+          { type: state.armory.open ? 'armory-close' : 'armory-open' },
+          state.armory.available === false,
+        )}
       </div>
       <div class={styles.instrument}>
         <div class={styles.reading}><span>Angle</span><output class={styles.value} aria-label="Angle" data-semantic-key="node:output:Angle:43">{Math.round(state.ballistics.angle)}°</output></div>
