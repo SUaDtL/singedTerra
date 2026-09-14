@@ -336,14 +336,17 @@ async function currentMainSha(repo, token) {
 }
 
 async function awaitRequiredCi(repo, sha, token) {
-  for (let attempt = 1; attempt <= 120; attempt += 1) {
+  // Both required browser suites take about 23 minutes; allow 30 minutes of polling.
+  // The workflow bounds setup and API overhead with a 35-minute job timeout.
+  const pollAttempts = 180;
+  for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
     const query = new URLSearchParams({ event: 'push', head_sha: sha, per_page: '20' });
     const body = await githubJson(`/repos/${repo}/actions/workflows/ci.yml/runs?${query}`, token);
     try {
       return selectRequiredCiRun(Array.isArray(body?.workflow_runs) ? body.workflow_runs : [], sha);
     } catch (error) {
       if (error instanceof Error && /concluded/.test(error.message)) throw error;
-      if (attempt === 120) throw error;
+      if (attempt === pollAttempts) throw error;
       await new Promise((resolveDelay) => setTimeout(resolveDelay, 10_000));
     }
   }
