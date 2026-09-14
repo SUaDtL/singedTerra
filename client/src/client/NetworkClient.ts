@@ -111,7 +111,14 @@ interface BotActionAttempt {
   turn: number;
   tankId: string;
   action: NetworkAction;
-  settlement: 'pending' | 'accepted' | 'conflict';
+  settlement:
+    | 'delivering'
+    | 'accepted-awaiting-row'
+    | 'retryable-transport'
+    | 'revision-conflict-recovering'
+    | 'revision-conflict-unresolved'
+    | 'terminal-refusal'
+    | 'disposed';
   sawCanonicalProgress: boolean;
 }
 
@@ -167,7 +174,7 @@ function isMappedCommandResponse(
   return expectedStatus !== undefined && (status === undefined || status === expectedStatus);
 }
 
-type BotSubmitSettlement = 'accepted' | 'conflict' | 'failed';
+type BotSubmitSettlement = 'accepted' | 'conflict' | 'conflict-unresolved' | 'retryable' | 'terminal';
 
 /** Match GameEngine's room-option normalization before passing the tier to the AI. */
 function normalizeRoomArmsLevel(value: number | undefined): number {
@@ -326,6 +333,7 @@ export class NetworkClient implements GameClient {
   // race guarantees settlement even for a non-cooperating promise.
   private static readonly RESYNC_TIMEOUT_MS = 8000;
   private static readonly COMMAND_DELIVERY_TIMEOUT_MS = 9000;
+  private static readonly COMMAND_RETRY_DELAY_MS = 200;
   private commandGeneration = 0;
   private pendingRoomCommand: PendingRoomCommand | null = null;
   private canonicalCommandFault = false;
@@ -1063,7 +1071,7 @@ export class NetworkClient implements GameClient {
     this.commandWatchdog = setTimeout(() => {
       this.commandWatchdog = null;
       if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
-      void this.recoverRoomCommand(pending, deliveryEpoch, 'Action timed out — retry the same action.');
+      void this.recoverRoomCommand(pending, deliveryEpoch, 'Action timed out — retry the same action.', false);
     }, NetworkClient.FIRE_TIMEOUT_MS);
   }
 
@@ -1140,6 +1148,25 @@ export class NetworkClient implements GameClient {
       }
     }
     return rows.slice().sort((left, right) => left.seq - right.seq);
+  }
+
+  private scheduleRoomCommandRetry(pending: PendingRoomCommand, deliveryEpoch: number): void {
+    this.clearCommandWatchdog();
+    this.commandWatchdog = setTimeout(() => {
+      this.commandWatchdog = null;
+      if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
+      if (this.orderedActions.nextExpectedSeq > pending.envelope.expectedRevision) {
+        const onSettle = pending.onSettle;
+        this.releaseFiringFor(pending, deliveryEpoch);
+        this.finishPendingCommand(pending);
+        onSettle?.('retryable');
+        if (onSettle) this.emitState();
+        return;
+      }
+      pending.state = 'retryable';
+      pending.onSettle?.('retryable');
+      if (pending.onSettle) this.emitState();
+    }, NetworkClient.COMMAND_RETRY_DELAY_MS);
   }
 
   /** Prove that rows cover every sequence in [startSeq, targetRevision). */
@@ -1613,12 +1640,14 @@ export class NetworkClient implements GameClient {
       return;
     }
     const { data, status } = result.value;
-    if (status !== undefined && status >= 500) {
+    if (status !== undefined && (status === 429 || status >= 500)) {
       console.error('NetworkClient: submit_action server response is uncertain', { status });
       await this.recoverRoomCommand(
         pending,
         deliveryEpoch,
-        'Server response uncertain — retry the same action.',
+        status === 429
+          ? 'Server busy — retry the same action.'
+          : 'Server response uncertain — retry the same action.',
       );
       return;
     }
@@ -1632,6 +1661,14 @@ export class NetworkClient implements GameClient {
     const error = typeof data === 'object' && data !== null && typeof (data as { error?: unknown }).error === 'string'
       ? (data as { error: string }).error
       : undefined;
+    if (status === undefined && error === 'Failed to submit action') {
+      await this.recoverRoomCommand(
+        pending,
+        deliveryEpoch,
+        'Server response uncertain — retry the same action.',
+      );
+      return;
+    }
     const mappedConflict = isMappedCommandResponse(error, status, ROOM_COMMAND_CONFLICT_STATUS);
     const legacyNotYourTurn = status === undefined && error === 'Not your turn';
     if (mappedConflict || legacyNotYourTurn) {
@@ -1643,11 +1680,23 @@ export class NetworkClient implements GameClient {
       }
       pending.onSettle?.('conflict');
       pending.state = 'recovering';
-      await this.resyncLog(pending.generation, current);
+      const recoveryReadLimit = pending.onSettle ? 2 : 1;
+      for (let read = 0; read < recoveryReadLimit && current(); read += 1) {
+        await this.resyncLog(pending.generation, current);
+        if (!current()) return;
+        if (this.orderedActions.nextExpectedSeq > pending.envelope.expectedRevision) break;
+      }
       if (!current()) return;
+      const canonicalProgress = this.orderedActions.nextExpectedSeq > pending.envelope.expectedRevision;
       this.releaseFiringFor(pending, deliveryEpoch);
       this.finishPendingCommand(pending);
-      if (pending.humanTurnEnding) this.emitState();
+      if (!canonicalProgress) {
+        pending.onSettle?.('conflict-unresolved');
+        if (pending.onSettle) {
+          this.notifyCommandFailure('CPU command conflict could not be recovered — reload to continue.');
+        }
+      }
+      if (pending.humanTurnEnding || (canonicalProgress && pending.onSettle)) this.emitState();
       if (pending.envelope.actorPlayerId === this.playerId) {
         this.notifyCommandFailure('Turn changed — review the updated game and try again.');
       }
@@ -1657,11 +1706,14 @@ export class NetworkClient implements GameClient {
     const legacyRefusal = status === undefined && error !== undefined && error !== '';
     if (mappedRefusal || legacyRefusal) {
       console.error('NetworkClient: submit_action rejected:', error);
-      pending.onSettle?.('failed');
+      pending.onSettle?.('terminal');
       this.releaseFiringFor(pending, deliveryEpoch);
       this.finishPendingCommand(pending);
       if (pending.humanTurnEnding) this.emitState();
       if (pending.envelope.actorPlayerId === this.playerId) this.notifyCommandFailure('Action failed — try again.');
+      else if (pending.onSettle) {
+        this.notifyCommandFailure('CPU command was refused — return to the lobby and rejoin to recover.');
+      }
       return;
     }
     console.error('NetworkClient: submit_action returned an incompatible command receipt');
@@ -1674,6 +1726,7 @@ export class NetworkClient implements GameClient {
     pending: PendingRoomCommand,
     deliveryEpoch: number,
     message: string,
+    delayRetry = true,
   ): Promise<void> {
     if (!this.isCurrentDelivery(pending, deliveryEpoch)) return;
     pending.state = 'recovering';
@@ -1685,18 +1738,23 @@ export class NetworkClient implements GameClient {
       const shouldDriveBot = onSettle !== undefined;
       this.releaseFiringFor(pending, deliveryEpoch);
       this.finishPendingCommand(pending);
-      onSettle?.('failed');
+      onSettle?.('retryable');
       if (pending.humanTurnEnding || shouldDriveBot) this.emitState();
       if (pending.envelope.actorPlayerId === this.playerId) {
         this.notifyCommandFailure('Turn changed — review the updated game and try again.');
       }
       return;
     }
-    pending.state = 'retryable';
     this.releaseFiringFor(pending, deliveryEpoch);
-    pending.onSettle?.('failed');
     if (pending.humanTurnEnding) this.emitState();
     if (pending.envelope.actorPlayerId === this.playerId) this.notifyCommandFailure(message);
+    if (delayRetry && pending.onSettle) {
+      this.scheduleRoomCommandRetry(pending, deliveryEpoch);
+    } else {
+      pending.state = 'retryable';
+      pending.onSettle?.('retryable');
+      if (pending.onSettle) this.emitState();
+    }
   }
 
   private isReceiptFor(pending: PendingRoomCommand, value: unknown): value is RoomCommandReceiptV2 {
@@ -1738,6 +1796,7 @@ export class NetworkClient implements GameClient {
     if (pending) this.releaseFiringFor(pending);
     this.commandGeneration += 1;
     this.pendingRoomCommand = null;
+    if (this.botActionAttempt) this.botActionAttempt.settlement = 'disposed';
     this.botSubmitPendingKey = null;
     this.botActionAttempt = null;
     this.botPlanCache = null;
@@ -2038,7 +2097,10 @@ export class NetworkClient implements GameClient {
     // the same phase again before its HTTP result arrives. If conflict arrived
     // first, this retained row is the winner that releases one deterministic replan.
     attempt.sawCanonicalProgress = true;
-    if (attempt.settlement !== 'conflict') return;
+    if (
+      attempt.settlement !== 'revision-conflict-recovering'
+      && attempt.settlement !== 'revision-conflict-unresolved'
+    ) return;
     if (this.botSubmitPendingKey === attempt.phaseKey) this.botSubmitPendingKey = null;
     this.botActionAttempt = null;
   }
@@ -2374,7 +2436,7 @@ export class NetworkClient implements GameClient {
       turn: state.turn,
       tankId,
       action,
-      settlement: 'pending',
+      settlement: 'delivering',
       sawCanonicalProgress: false,
     };
     this.botActionAttempt = attempt;
@@ -2385,10 +2447,11 @@ export class NetworkClient implements GameClient {
         // A receipt proves the command was appended, but only its ordered row proves
         // this local cursor applied it. Keep the exact attempt owned through bounded
         // echo recovery so a missing echo can retry the same immutable envelope.
-        attempt.settlement = 'accepted';
-      } else if (settlement === 'failed') {
+        attempt.settlement = 'accepted-awaiting-row';
+      } else if (settlement === 'retryable') {
+        attempt.settlement = 'retryable-transport';
         this.botActionAttempt = null;
-      } else {
+      } else if (settlement === 'conflict') {
         // A seq conflict says only that some row won. Canonical progress already
         // observed releases one replan; otherwise retain this intent until live
         // delivery or the existing bounded resync reveals the winning row.
@@ -2396,8 +2459,11 @@ export class NetworkClient implements GameClient {
           this.botActionAttempt = null;
           return;
         }
-        attempt.settlement = 'conflict';
-        void this.resyncLog();
+        attempt.settlement = 'revision-conflict-recovering';
+      } else if (settlement === 'conflict-unresolved') {
+        attempt.settlement = 'revision-conflict-unresolved';
+      } else {
+        attempt.settlement = 'terminal-refusal';
       }
     });
     if (!admitted) {
