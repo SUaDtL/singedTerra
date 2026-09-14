@@ -125,6 +125,207 @@ describe('HUD Command Menu', () => {
     expect(modal.querySelector('[aria-label="Store"]')).toBeNull();
   });
 
+  it('keeps page recovery visible and disables retained commands with Armory open', async () => {
+    const { root, overlay, modal, hud } = mount();
+    const quit = vi.fn();
+    hud.onQuit(quit);
+    await vi.waitFor(() => {
+      expect(root.querySelector<HTMLButtonElement>('[aria-label="Open Armory"]')).not.toBeNull();
+    });
+    root.querySelector<HTMLButtonElement>('[aria-label="Open Armory"]')!.click();
+    await vi.waitFor(() => {
+      expect(modal.querySelector<HTMLElement>('[role="dialog"][aria-label="Armory"]')).not.toBeNull();
+    });
+
+    const frame = new GameEngine({
+      players: [
+        { name: 'Alice', color: '#e84d4d' },
+        { name: 'Bob', color: '#4d8ce8' },
+      ],
+      maxPlayers: 2,
+      seed: 1,
+    }).getState();
+    frame.tanks[0]!.credits = 20_000;
+    hud.update(frame, false, true, true, true);
+    const armory = modal.querySelector<HTMLElement>('[role="dialog"][aria-label="Armory"]')!;
+    const armoryHost = modal.querySelector<HTMLElement>('[data-battle-console-portal-host="armory"]')!;
+    const buy = [...armory.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.startsWith('Buy ') && !button.disabled)!;
+    const modalOwnership = [...modal.children]
+      .filter((child): child is HTMLElement => child instanceof HTMLElement)
+      .map((host) => ({ host, inert: host.inert, ariaHidden: host.getAttribute('aria-hidden') }));
+    hud.setQuickChatEnabled(true);
+    const quickChat = overlay.querySelector<HTMLButtonElement>('.st-hud__quick-chat-toggle')!;
+    buy.focus();
+    hud.setPageRecovery('pending');
+    hud.update(frame, false, false, true, false);
+
+    const recovery = modal.querySelector<HTMLElement>('.st-hud__turnwatch--page-recovery')!;
+    expect(recovery.textContent).toContain('Restoring game controls…');
+    expect(recovery.parentElement).toBe(modal);
+    expect(modal.querySelector('[role="dialog"][aria-label="Armory"]')).not.toBeNull();
+    expect([...modal.querySelectorAll<HTMLButtonElement>(
+      '[role="dialog"][aria-label="Armory"] button[data-battle-console-action]',
+    )].every((button) => button.disabled)).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('[data-battle-console-action="fire"]')?.disabled ?? true).toBe(true);
+    expect(recovery.getAttribute('role')).toBe('status');
+    expect(recovery.getAttribute('aria-live')).toBe('assertive');
+    expect(recovery.tabIndex).toBe(-1);
+    expect(document.activeElement).toBe(recovery);
+    recovery.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(recovery);
+    recovery.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(recovery);
+    expect(root.inert).toBe(true);
+    expect(overlay.inert).toBe(true);
+    quickChat.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(recovery);
+    expect(quickChat.getAttribute('aria-expanded')).toBe('false');
+    expect(armoryHost.inert).toBe(true);
+    expect(armoryHost.getAttribute('aria-hidden')).toBe('true');
+    expect(modal.querySelector<HTMLElement>('[data-battle-console-portal-host="settings"]')!.inert)
+      .toBe(true);
+    expect(modal.querySelector<HTMLElement>('[data-battle-console-portal-host="coach"]')!.inert)
+      .toBe(true);
+    expect(modalOwnership.every(({ host }) => host.inert && host.getAttribute('aria-hidden') === 'true'))
+      .toBe(true);
+    expect(buy.disabled).toBe(true);
+
+    hud.update(frame, false, true, true, true);
+    expect(buy.disabled).toBe(false);
+    hud.setPageRecovery(null);
+    expect(root.inert).not.toBe(true);
+    expect(overlay.inert).not.toBe(true);
+    expect(armoryHost.inert).not.toBe(true);
+    expect(armoryHost.hasAttribute('aria-hidden')).toBe(false);
+    for (const prior of modalOwnership) {
+      expect(prior.host.inert).toBe(prior.inert);
+      expect(prior.host.getAttribute('aria-hidden')).toBe(prior.ariaHidden);
+    }
+    expect(document.activeElement).toBe(buy);
+
+    const closeArmory = armory.querySelector<HTMLButtonElement>('[aria-label="Close Armory"]')!;
+    buy.focus();
+    hud.setPageRecovery('pending');
+    buy.disabled = true;
+    hud.setPageRecovery(null);
+    expect(document.activeElement).toBe(closeArmory);
+
+    hud.setPageRecovery('pending');
+    hud.setPageRecovery('failed');
+    expect(recovery.textContent).toContain('Game recovery failed. Return to the lobby or reload.');
+    expect(recovery.getAttribute('role')).toBe('alertdialog');
+    expect(recovery.getAttribute('aria-modal')).toBe('true');
+    const leave = recovery.querySelector<HTMLButtonElement>('.st-hud__turnwatch-leave')!;
+    expect(document.activeElement).toBe(leave);
+    leave.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(leave);
+    leave.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(leave);
+    leave.click();
+    expect(quit).toHaveBeenCalledOnce();
+    hud.setPageRecovery(null);
+    expect(root.contains(recovery)).toBe(true);
+    expect(recovery.classList.contains('st-hud__turnwatch--page-recovery')).toBe(false);
+  });
+
+  it('restores the exact Settings focus and host semantics after successful recovery', async () => {
+    const { root, modal, hud } = mount();
+    await vi.waitFor(() => expect(root.querySelector(
+      '[data-semantic-key="command-console-host::settings-trigger"]',
+    )).not.toBeNull());
+    root.querySelector<HTMLButtonElement>(
+      '[data-semantic-key="command-console-host::settings-trigger"]',
+    )!.click();
+    await vi.waitFor(() => expect(modal.querySelector(
+      '[role="dialog"][aria-label="Battle Settings"]',
+    )).not.toBeNull());
+    const host = modal.querySelector<HTMLElement>('[data-battle-console-portal-host="settings"]')!;
+    const sound = modal.querySelector<HTMLButtonElement>('[role="switch"][aria-label="Sound"]')!;
+    sound.focus();
+
+    hud.setPageRecovery('pending');
+    expect(host.inert).toBe(true);
+    expect(host.getAttribute('aria-hidden')).toBe('true');
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(modal.querySelector('[role="dialog"][aria-label="Battle Settings"]')).not.toBeNull();
+
+    hud.setPageRecovery(null);
+    expect(host.inert).not.toBe(true);
+    expect(host.hasAttribute('aria-hidden')).toBe(false);
+    expect(document.activeElement).toBe(sound);
+  });
+
+  it('restores an ordinary retained command or falls back to the live Menu control', async () => {
+    const { root, overlay, hud } = mount();
+    await vi.waitFor(() => expect(root.querySelector(
+      '[data-battle-console-action="fire"]',
+    )).not.toBeNull());
+    const fire = root.querySelector<HTMLButtonElement>('[data-battle-console-action="fire"]')!;
+    const menu = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;
+    const match = overlay.querySelector<HTMLButtonElement>('[data-ui="match-drawer-toggle"]')!;
+    fire.focus();
+
+    hud.setPageRecovery('pending');
+    hud.setPageRecovery(null);
+    expect(document.activeElement).toBe(fire);
+
+    fire.focus();
+    hud.setPageRecovery('pending');
+    match.style.display = 'none';
+    fire.disabled = true;
+    hud.setPageRecovery(null);
+    expect(document.activeElement).toBe(menu);
+
+    fire.disabled = false;
+    fire.focus();
+    hud.setPageRecovery('pending');
+    menu.style.display = 'none';
+    match.style.display = 'block';
+    fire.disabled = true;
+    hud.setPageRecovery(null);
+    expect(document.activeElement).toBe(match);
+  });
+
+  it('temporarily yields Command Menu accessibility ownership to recovery', () => {
+    const { root, modal, hud } = mount();
+    root.querySelector<HTMLButtonElement>('.st-hud__menu')!.click();
+    const commandMenu = modal.querySelector<HTMLElement>('[data-ui="command-menu"]')!;
+    const resume = commandMenu.querySelector<HTMLButtonElement>('button')!;
+    expect(document.activeElement).toBe(resume);
+
+    hud.setPageRecovery('pending');
+    expect(commandMenu.inert).toBe(true);
+    expect(commandMenu.getAttribute('aria-hidden')).toBe('true');
+    expect(document.activeElement).toBe(modal.querySelector('.st-hud__turnwatch--page-recovery'));
+
+    hud.setPageRecovery(null);
+    expect(commandMenu.inert).not.toBe(true);
+    expect(commandMenu.getAttribute('aria-hidden')).toBe('false');
+    expect(document.activeElement).toBe(resume);
+  });
+
+  it('temporarily yields First Salvo briefing accessibility ownership to recovery', async () => {
+    const { modal, hud } = mount();
+    hud.setFirstSalvoStep('aim');
+    await vi.waitFor(() => expect(modal.querySelector(
+      '[role="dialog"][aria-label="First salvo briefing"]',
+    )).not.toBeNull());
+    const coachHost = modal.querySelector<HTMLElement>('[data-battle-console-portal-host="coach"]')!;
+    const enter = [...coachHost.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Enter battle')!;
+    enter.focus();
+
+    hud.setPageRecovery('pending');
+    expect(coachHost.inert).toBe(true);
+    expect(coachHost.getAttribute('aria-hidden')).toBe('true');
+
+    hud.setPageRecovery(null);
+    expect(coachHost.inert).not.toBe(true);
+    expect(coachHost.hasAttribute('aria-hidden')).toBe(false);
+    expect(document.activeElement).toBe(enter);
+  });
+
   it('returns focus to the Menu control that opened Command Menu', () => {
     const { root, modal } = mount();
     const menuButton = root.querySelector<HTMLButtonElement>('.st-hud__menu')!;

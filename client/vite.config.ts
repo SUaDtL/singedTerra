@@ -147,7 +147,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary'],
-      include: ['src/**/*.ts'],
+      include: ['src/**/*.{ts,tsx}'],
       // The coverage DENOMINATOR is testable logic only. The excludes below are code a
       // unit test cannot assert on without turning into draw-call theater (asserting on a
       // mocked CanvasRenderingContext2D / AudioContext) or that carries no logic at all:

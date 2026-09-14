@@ -272,6 +272,25 @@
   background: rgba(90, 20, 28, 0.92);
   border-color: rgba(255, 120, 120, 0.7);
 }
+.st-hud__turnwatch--page-recovery {
+  z-index: 90;
+  box-sizing: border-box;
+  max-width: calc(100% - 24px);
+  justify-content: center;
+  flex-wrap: wrap;
+  pointer-events: auto;
+  font-size: max(13px, calc(14px / var(--battle-ui-scale, 1)));
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.st-hud__turnwatch--page-recovery .st-hud__turnwatch-leave {
+  min-width: max(44px, calc(44px / var(--battle-ui-scale, 1)));
+  min-height: max(44px, calc(44px / var(--battle-ui-scale, 1)));
+  padding-inline: max(10px, calc(14px / var(--battle-ui-scale, 1)));
+  font-size: max(12px, calc(14px / var(--battle-ui-scale, 1)));
+}
 .st-hud__turnwatch--hidden { display: none; }
 .st-hud__turnwatch-leave {
   pointer-events: auto;

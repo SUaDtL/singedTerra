@@ -76,6 +76,8 @@ interface AccountUser {
 
 export interface AccountBackend {
   restoreUser(): Promise<AccountUser | null>
+  /** Fetch the current Auth user from the server instead of trusting cached session state. */
+  revalidateUser?(): Promise<AccountUser | null>
   subscribe(onUser: (user: AccountUser | null) => void): () => void
   signUp(credentials: Required<AccountCredentials>): Promise<AccountUser>
   signIn(credentials: Pick<AccountCredentials, 'email' | 'password'>): Promise<AccountUser>
@@ -349,6 +351,12 @@ export function createSupabaseAccountBackend(client: SupabaseClient): AccountBac
       return { id: row.id, displayName: row.display_name, summary }
     },
 
+    async revalidateUser() {
+      const { data, error } = await client.auth.getUser()
+      throwSupabaseError(error)
+      return accountUser(data.user ?? null)
+    },
+
     async loadVerifiedCareer(accountId) {
       try {
         return await withVerifiedCareerTimeout((async () => {
@@ -603,6 +611,31 @@ export class AccountSession {
     } catch {
       // Refresh is opportunistic. Keep the last trusted profile visible when the
       // optional summary read is unavailable; a later match/auth event can retry.
+    }
+  }
+
+  /** Revalidate a verified session's account against the authoritative Auth endpoint. */
+  async revalidateIdentity(expectedAccountId: string): Promise<boolean> {
+    await this.initialize()
+    if (!this.backend?.revalidateUser || this.disposed) return false
+    const operation = this.generation
+    try {
+      const user = await withBoundedAccountTimeout(
+        this.backend.revalidateUser(),
+        ACCOUNT_SUMMARY_TIMEOUT_MS,
+        'Account identity request timed out.',
+      )
+      if (!this.isCurrent(operation)) return false
+      if (user?.id === expectedAccountId
+        && this.current.status === 'authenticated'
+        && this.current.profile.id === expectedAccountId) return true
+      // Revoke the old account boundary synchronously, then let the existing auth
+      // reconciliation finish independently. A profile read for a newly observed
+      // identity must not prevent page restoration from failing closed promptly.
+      void this.applyAuthUser(user)
+      return false
+    } catch {
+      return false
     }
   }
 

@@ -141,6 +141,52 @@ describe('P-05 semantic runtime owner', () => {
     expect((getByRole(host, 'button', { name: 'Fire Baby Missile' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it.each([
+    { panel: 'Armory', portal: 'armory', firstControl: 'Close Armory', closeIntent: 'armory-close' },
+    { panel: 'Battle Settings', portal: 'settings', firstControl: 'Trajectory guide', closeIntent: 'settings-close' },
+  ] as const)('suspends the $panel keyboard trap while its retained portal is inert', async ({
+    panel, portal, firstControl, closeIntent,
+  }) => {
+    const host = document.createElement('div');
+    const portalHost = document.createElement('div');
+    document.body.append(host, portalHost);
+    const dispatch = vi.fn();
+    const openState = {
+      ...state,
+      armory: { ...state.armory, open: portal === 'armory' },
+      settings: { ...state.settings, open: portal === 'settings' },
+    };
+    render(
+      <BattleConsoleRoot
+        state={openState}
+        lifecycleStatus="ready"
+        dispatch={dispatch}
+        portalHosts={{
+          settings: portal === 'settings' ? portalHost : null,
+          armory: portal === 'armory' ? portalHost : null,
+          coach: null,
+        }}
+      />,
+      host,
+    );
+    const dialog = getByRole(portalHost, 'dialog', { name: panel });
+    const first = getByRole(dialog, panel === 'Battle Settings' ? 'switch' : 'button', {
+      name: firstControl,
+    });
+    await vi.waitFor(() => expect(first).toBe(document.activeElement));
+
+    portalHost.inert = true;
+    portalHost.setAttribute('aria-hidden', 'true');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(dispatch).not.toHaveBeenCalledWith({ type: closeIntent });
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(first).toBe(document.activeElement);
+
+    render(null, host);
+    host.remove();
+    portalHost.remove();
+  });
+
   it('rounds fractional Commander health consistently for visible and accessible output', () => {
     const host = document.createElement('div');
     render(

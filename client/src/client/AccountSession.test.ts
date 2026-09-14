@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { randomUUID } from 'node:crypto'
 import {
   AccountSession,
   createSupabaseAccountBackend,
   type AccountBackend,
+  type AccountProfile,
   type AccountSummary,
   type AccountState,
 } from './AccountSession'
@@ -61,6 +63,10 @@ function backend(overrides: Partial<AccountBackend> = {}): AccountBackend {
 
 const verifiedSessionId = '00000000-0000-4000-8000-000000000061'
 const verifiedAccountId = '00000000-0000-4000-8000-000000000071'
+
+function runtimeCredential(): string {
+  return randomUUID()
+}
 
 function currentVerifiedCareer(
   verifiedMatches = 0,
@@ -154,6 +160,14 @@ function exactSummary(
 }
 
 describe('createSupabaseAccountBackend', () => {
+  it('revalidates identity with the authoritative user endpoint instead of cached session data', async () => {
+    const getUser = vi.fn(async () => ({ data: { user: { id: 'user-7' } }, error: null }))
+    const gateway = createSupabaseAccountBackend({ auth: { getUser } } as never)
+
+    await expect(gateway.revalidateUser?.()).resolves.toEqual({ id: 'user-7' })
+    expect(getUser).toHaveBeenCalledOnce()
+  })
+
   it('invokes the bounded hot-seat result function with only match id and outcome', async () => {
     const invoke = vi.fn(async () => ({ data: { ok: true, recorded: true }, error: null }))
     const gateway = createSupabaseAccountBackend({
@@ -190,6 +204,7 @@ describe('createSupabaseAccountBackend', () => {
   })
 
   it('forwards exact signup fields and maps the owner profile without retaining credentials', async () => {
+    const password = runtimeCredential()
     const signUp = vi.fn(async () => ({
       data: { user: { id: 'user-7' }, session: { user: { id: 'user-7' } } },
       error: null,
@@ -218,13 +233,13 @@ describe('createSupabaseAccountBackend', () => {
     const user = await gateway.signUp({
       displayName: ' Ash Walker ',
       email: 'ash@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
     const profile = await gateway.loadProfile(user.id)
 
     expect(signUp).toHaveBeenCalledWith({
       email: 'ash@example.test',
-      password: 'not-a-real-secret',
+      password,
       options: { data: { display_name: 'Ash Walker' } },
     })
     expect(client.from).toHaveBeenCalledWith('profiles')
@@ -610,6 +625,7 @@ describe('createSupabaseAccountBackend', () => {
   })
 
   it('maps password sign-in and sign-out through the Supabase auth adapter', async () => {
+    const password = runtimeCredential()
     const signInWithPassword = vi.fn(async () => ({
       data: { user: { id: 'signed-in-user' } },
       error: null,
@@ -629,18 +645,19 @@ describe('createSupabaseAccountBackend', () => {
 
     await expect(gateway.signIn({
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })).resolves.toEqual({ id: 'signed-in-user' })
     await expect(gateway.signOut()).resolves.toBeUndefined()
 
     expect(signInWithPassword).toHaveBeenCalledWith({
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
     expect(signOut).toHaveBeenCalledOnce()
   })
 
   it('rejects incomplete auth responses and malformed profile rows', async () => {
+    const password = runtimeCredential()
     const client = {
       auth: {
         getSession: vi.fn(async () => ({ data: { session: null }, error: { message: 'restore failed' } })),
@@ -663,11 +680,11 @@ describe('createSupabaseAccountBackend', () => {
     await expect(gateway.signUp({
       displayName: 'Ranger',
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })).rejects.toThrow('automatic sign-in')
     await expect(gateway.signIn({
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })).rejects.toThrow('did not return an account')
     await expect(gateway.signOut()).rejects.toThrow('sign-out failed')
     await expect(gateway.loadProfile('user-1')).rejects.toThrow('profile is unavailable')
@@ -1086,7 +1103,7 @@ describe('AccountSession', () => {
     await session.submit('create', {
       displayName: ' ',
       email: 'not-email',
-      password: 'short',
+      password: runtimeCredential().slice(0, 7),
     })
 
     expect(source.signUp).not.toHaveBeenCalled()
@@ -1096,17 +1113,17 @@ describe('AccountSession', () => {
   it.each([
     {
       label: 'an overlong display name',
-      credentials: { displayName: 'x'.repeat(25), email: 'ranger@example.test', password: 'valid-password' },
+      credentials: { displayName: 'x'.repeat(25), email: 'ranger@example.test', password: runtimeCredential() },
       error: 'Enter a display name between 1 and 24 characters.',
     },
     {
       label: 'a malformed email',
-      credentials: { displayName: 'Ranger', email: 'not-email', password: 'valid-password' },
+      credentials: { displayName: 'Ranger', email: 'not-email', password: runtimeCredential() },
       error: 'Enter a valid email address.',
     },
     {
       label: 'a short password',
-      credentials: { displayName: 'Ranger', email: 'ranger@example.test', password: 'short' },
+      credentials: { displayName: 'Ranger', email: 'ranger@example.test', password: runtimeCredential().slice(0, 7) },
       error: 'Password must be at least 8 characters.',
     },
   ])('rejects $label independently before account creation', async ({ credentials, error }) => {
@@ -1134,13 +1151,14 @@ describe('AccountSession', () => {
     await session.submit('create', {
       displayName,
       email: 'ranger@example.test',
-      password: 'valid-password',
+      password: runtimeCredential(),
     })
 
     expect(source.signUp).toHaveBeenCalledOnce()
   })
 
   it('creates an authenticated profile and never retains the password in state', async () => {
+    const password = runtimeCredential()
     const source = backend()
     const session = new AccountSession((state) => states.push(state), {
       isConfigured: () => true,
@@ -1151,19 +1169,20 @@ describe('AccountSession', () => {
     await session.submit('create', {
       displayName: ' Ranger ',
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
 
     expect(source.signUp).toHaveBeenCalledWith({
       displayName: 'Ranger',
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
     expect(session.state.status).toBe('authenticated')
-    expect(JSON.stringify(states)).not.toContain('not-a-real-secret')
+    expect(JSON.stringify(states)).not.toContain(password)
   })
 
   it('signs in, signs out, and returns to anonymous state', async () => {
+    const password = runtimeCredential()
     const source = backend()
     const session = new AccountSession((state) => states.push(state), {
       isConfigured: () => true,
@@ -1173,19 +1192,21 @@ describe('AccountSession', () => {
 
     await session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
     await session.signOut()
 
     expect(source.signIn).toHaveBeenCalledWith({
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
     expect(source.signOut).toHaveBeenCalledOnce()
     expect(session.state).toEqual({ status: 'anonymous', busy: false, error: '' })
   })
 
   it('rejects duplicate in-flight submissions and exposes only a bounded error', async () => {
+    const firstPassword = runtimeCredential()
+    const secondPassword = runtimeCredential()
     const pending = deferred<{ id: string }>()
     const source = backend({ signIn: vi.fn(() => pending.promise) })
     const session = new AccountSession((state) => states.push(state), {
@@ -1196,22 +1217,23 @@ describe('AccountSession', () => {
 
     const first = session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password: firstPassword,
     })
     await session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'second-secret',
+      password: secondPassword,
     })
     pending.resolve({ id: 'user-1' })
     await first
 
     expect(source.signIn).toHaveBeenCalledOnce()
-    expect(JSON.stringify(states)).not.toContain('second-secret')
+    expect(JSON.stringify(states)).not.toContain(secondPassword)
   })
 
   it('maps backend failures to an error without leaking submitted credentials', async () => {
+    const password = runtimeCredential()
     const source = backend({
-      signIn: vi.fn(async () => { throw new Error('backend echoed not-a-real-secret') }),
+      signIn: vi.fn(async () => { throw new Error(`backend echoed ${password}`) }),
     })
     const session = new AccountSession((state) => states.push(state), {
       isConfigured: () => true,
@@ -1221,11 +1243,11 @@ describe('AccountSession', () => {
 
     await session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password,
     })
 
     expect(session.state.error).toBe('Account request failed. Try again.')
-    expect(JSON.stringify(session.state)).not.toContain('not-a-real-secret')
+    expect(JSON.stringify(session.state)).not.toContain(password)
   })
 
   it('keeps an authenticated user able to sign out when profile loading fails', async () => {
@@ -1346,7 +1368,7 @@ describe('AccountSession', () => {
     await session.initialize()
     await session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password: runtimeCredential(),
     })
     loadProfile.mockResolvedValueOnce({
       id: 'user-1',
@@ -1382,7 +1404,7 @@ describe('AccountSession', () => {
     await session.initialize()
     await session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password: runtimeCredential(),
     })
     const refreshed = deferred<{ id: string; displayName: string; summary: null }>()
     loadProfile.mockImplementationOnce(() => refreshed.promise)
@@ -1412,7 +1434,7 @@ describe('AccountSession', () => {
     await session.initialize()
     await session.submit('sign-in', {
       email: 'ranger@example.test',
-      password: 'not-a-real-secret',
+      password: runtimeCredential(),
     })
 
     const signOut = session.signOut()
@@ -1573,7 +1595,7 @@ describe('verified deployment Supabase adapter', () => {
   })
 
   it.each([
-    ['start', 'startVerifiedDeployment', { ...rawStart, accessToken: 'private-token' }],
+    ['start', 'startVerifiedDeployment', { ...rawStart, accessToken: runtimeCredential() }],
     ['abandon', 'abandonVerifiedDeployment', { ok: true, sessionId: verifiedSessionId, status: 'abandoned', userId: 'private-user' }],
     ['complete', 'completeVerifiedDeployment', { ...verifiedServerReceipt, casualTotalXp: 200 }],
   ] as const)('refuses a widened %s response', async (_label, method, data) => {
@@ -1959,6 +1981,63 @@ describe('AccountSession verified deployment lifecycle', () => {
     expect(JSON.stringify(states)).not.toContain('private-token')
     expect(JSON.stringify(states)).not.toContain('not-a-real-secret')
     expect(log).not.toHaveBeenCalled()
+  })
+})
+
+describe('AccountSession persisted-page identity recovery', () => {
+  it('keeps verified authority only when the authoritative identity still matches', async () => {
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      revalidateUser: vi.fn(async () => ({ id: 'user-1' })),
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    await expect(session.revalidateIdentity('user-1')).resolves.toBe(true)
+    expect(source.revalidateUser).toHaveBeenCalledOnce()
+  })
+
+  it.each([null, { id: 'user-2' }])(
+    'revokes verified authority when the current identity is %j',
+    async (currentUser) => {
+      const source = backend({
+        restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+        revalidateUser: vi.fn(async () => currentUser),
+        loadProfile: vi.fn(async (userId) => ({ id: userId, displayName: 'Ranger', summary: null })),
+      })
+      const session = new AccountSession(() => undefined, {
+        isConfigured: () => true,
+        loadBackend: async () => source,
+      })
+      await session.initialize()
+
+      await expect(session.revalidateIdentity('user-1')).resolves.toBe(false)
+      expect(session.state.status !== 'authenticated' || session.state.profile.id !== 'user-1').toBe(true)
+    },
+  )
+
+  it('fails a mismatched identity promptly while existing reconciliation owns a hung profile read', async () => {
+    const profile = deferred<AccountProfile>()
+    const loadProfile = vi.fn<AccountBackend['loadProfile']>()
+      .mockResolvedValueOnce({ id: 'user-1', displayName: 'Ranger', summary: null })
+      .mockImplementationOnce(() => profile.promise)
+    const source = backend({
+      restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+      revalidateUser: vi.fn(async () => ({ id: 'user-2' })),
+      loadProfile,
+    })
+    const session = new AccountSession(() => undefined, {
+      isConfigured: () => true,
+      loadBackend: async () => source,
+    })
+    await session.initialize()
+
+    await expect(session.revalidateIdentity('user-1')).resolves.toBe(false)
+    expect(loadProfile).toHaveBeenLastCalledWith('user-2')
+    profile.resolve({ id: 'user-2', displayName: 'Other', summary: null })
   })
 })
 

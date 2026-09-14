@@ -10,7 +10,12 @@ import {
   emptyBattleConsolePortalHosts,
   type BattleConsolePortalHosts,
 } from './portals';
-import type { BattleConsoleLifecycleStatus, BattleConsolePresentationState, BattleConsoleIntent } from './types';
+import type {
+  BattleConsoleIntent,
+  BattleConsoleLifecycleStatus,
+  BattleConsolePresentationState,
+  BattleConsoleSemanticControlBinding,
+} from './types';
 import type { BattleConsoleLayoutMode } from './projection';
 import { battleConsoleModeAssets, battleConsoleModeAssetUrl } from './modeAssets';
 import { battleConsoleSemanticNodes, battleConsoleSemanticRegions } from './runtimeData';
@@ -141,6 +146,65 @@ const unstyledClassNames: BattleConsoleClassNames = Object.freeze({
   weaponIcon: 'battle-console-root__weapon-icon',
 });
 
+function wideSemanticControls(
+  state: BattleConsolePresentationState,
+): readonly BattleConsoleSemanticControlBinding[] {
+  const adjustmentLocked = !(state.ballistics.canAdjust ?? state.weapon.canCycle)
+    || state.fireControl.submitting;
+  return [
+    {
+      stableKey: 'node:button:Move tank left, 8 fuel maximum:14',
+      actionId: 'move-left',
+      disabled: !state.mobility.canMoveLeft,
+    },
+    {
+      stableKey: 'node:button:Move tank right, 8 fuel maximum:20',
+      actionId: 'move-right',
+      disabled: !state.mobility.canMoveRight,
+    },
+    {
+      stableKey: 'node:button:Select next weapon, current Baby Missile:32',
+      actionId: 'weapon-next',
+      disabled: !state.weapon.canCycle,
+    },
+    {
+      stableKey: 'armory-inline-host::weapon-trigger',
+      actionId: 'armory-toggle',
+      disabled: state.armory.available === false,
+    },
+    {
+      stableKey: 'command-console-host::aim-left-control',
+      actionId: 'angle-decrease',
+      disabled: adjustmentLocked,
+    },
+    {
+      stableKey: 'node:button:Aim barrel right:44',
+      actionId: 'angle-increase',
+      disabled: adjustmentLocked,
+    },
+    {
+      stableKey: 'node:button:Decrease power:49',
+      actionId: 'power-decrease',
+      disabled: adjustmentLocked,
+    },
+    {
+      stableKey: 'node:button:Increase power:53',
+      actionId: 'power-increase',
+      disabled: adjustmentLocked,
+    },
+    {
+      stableKey: 'command-console-host::settings-trigger',
+      actionId: 'settings-open',
+      disabled: false,
+    },
+    {
+      stableKey: 'command-console-host::fire',
+      actionId: 'fire',
+      disabled: !state.fireControl.ready || state.fireControl.submitting,
+    },
+  ];
+}
+
 function ArmoryPanel({
   state,
   dispatch,
@@ -155,6 +219,7 @@ function ArmoryPanel({
   useLayoutEffect(() => {
     closeButton.current?.focus({ preventScroll: true });
     const closeOnEscape = (event: KeyboardEvent) => {
+      if (panel.current?.closest('[inert], [aria-hidden="true"]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         dispatch({ type: 'armory-close' });
@@ -267,6 +332,7 @@ function SettingsPanel({
   useLayoutEffect(() => {
     panel.current?.querySelector<HTMLElement>('[role="switch"]')?.focus({ preventScroll: true });
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (panel.current?.closest('[inert], [aria-hidden="true"]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         dispatch({ type: 'settings-close' });
@@ -414,6 +480,7 @@ export function BattleConsoleRoot({
   const armoryWasOpen = useRef(state.armory.open);
   const coachWasOpen = useRef(state.coach.briefingOpen && state.coach.step !== null);
   const coachBriefingOpen = state.coach.briefingOpen && state.coach.step !== null;
+  const semanticControls = wideSemanticControls(state);
   const canonicalInkKeys = lifecycleStatus === 'ready'
     ? battleConsoleSemanticRegions
       .filter((region) => usesCanonicalSemanticInk(region.id, state))
@@ -464,6 +531,7 @@ export function BattleConsoleRoot({
       rootKey={rootKey}
       state={state}
       dispatch={dispatch}
+      controls={semanticControls}
       semanticClassName={classNames.semanticNode}
     />
   );

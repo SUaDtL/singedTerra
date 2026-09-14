@@ -117,4 +117,56 @@ describe('MatchSessionLifecycle', () => {
     expect(events).toEqual(['subscription', 'input', 'client', 'renderer']);
     vi.useRealTimers();
   });
+
+  it('suspends page authority without retiring the owned match and restores that same owner', () => {
+    const events: string[] = [];
+    const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
+    const client = { stop: () => events.push('client') };
+    const input = { detach: () => events.push('input') };
+    const renderer = { reset: () => events.push('renderer') };
+    lifecycle.ownClient(lifecycle.currentGeneration, client);
+    lifecycle.ownInput(input);
+    lifecycle.ownSubscription(() => events.push('subscription'));
+    lifecycle.ownRenderer(renderer);
+
+    lifecycle.suspendForPageCache();
+    const restore = lifecycle.beginPageRestore();
+
+    expect(lifecycle.pageAuthorityReady).toBe(false);
+    expect(lifecycle.client).toBe(client);
+    expect(lifecycle.input).toBe(input);
+    expect(lifecycle.renderer).toBe(renderer);
+    expect(events).toEqual([]);
+    expect(restore).not.toBeNull();
+    expect(lifecycle.completePageRestore(restore!)).toBe(true);
+    expect(lifecycle.pageAuthorityReady).toBe(true);
+    expect(events).toEqual([]);
+  });
+
+  it('cannot reopen page authority from a stale restore after the match is retired', async () => {
+    const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
+    lifecycle.ownClient(lifecycle.currentGeneration, { stop: vi.fn() });
+    lifecycle.suspendForPageCache();
+    const stale = lifecycle.beginPageRestore();
+
+    await lifecycle.retire(() => undefined);
+
+    expect(stale).not.toBeNull();
+    expect(lifecycle.completePageRestore(stale!)).toBe(false);
+    expect(lifecycle.pageAuthorityReady).toBe(false);
+  });
+
+  it('requires each persisted-page cycle to finish its own restore generation', () => {
+    const lifecycle = new MatchSessionLifecycle<Client, Input, Renderer>();
+    lifecycle.ownClient(lifecycle.currentGeneration, { stop: vi.fn() });
+    lifecycle.suspendForPageCache();
+    const first = lifecycle.beginPageRestore()!;
+    lifecycle.suspendForPageCache();
+    const second = lifecycle.beginPageRestore()!;
+
+    expect(lifecycle.completePageRestore(first)).toBe(false);
+    expect(lifecycle.pageAuthorityReady).toBe(false);
+    expect(lifecycle.completePageRestore(second)).toBe(true);
+    expect(lifecycle.pageAuthorityReady).toBe(true);
+  });
 });

@@ -288,6 +288,7 @@ export interface AccountSessionPort extends VerifiedDeploymentAccountPort {
   submit(mode: AccountMode, credentials: AccountCredentials): Promise<void>;
   signOut(): Promise<void>;
   refresh(): Promise<void>;
+  revalidateIdentity?(expectedAccountId: string): Promise<boolean>;
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null>;
   readonly verifiedCareer?: VerifiedCareerState;
   refreshVerifiedCareer?(): Promise<void>;
@@ -1034,6 +1035,14 @@ export class Lobby {
 
   refreshAccount(): Promise<void> {
     return this.accountSession.refresh();
+  }
+
+  revalidateAccountIdentity(): Promise<boolean> {
+    const account = this.accountSession.state;
+    if (account.status !== 'authenticated' || !this.accountSession.revalidateIdentity) {
+      return Promise.resolve(false);
+    }
+    return this.accountSession.revalidateIdentity(account.profile.id);
   }
 
   recordHotSeatMatch(result: HotSeatMatchResult): Promise<HotSeatProgressionReceipt | null> {

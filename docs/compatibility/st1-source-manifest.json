@@ -76,11 +76,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "da6530a812156d6b3c296abede37c2900aa54931c07cd1a3bcad3ce553031062"
+      "sha256": "ccc66edaa644b897778b9044b9e4025edfc5e03eea8fbba1ff5f8c55bccd5f03"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "03768fb76c5f9bf05111ba45c055e74553e385088a08529aa6a5c69db490ea36"
+      "sha256": "f9cb56a1108ffb53a1dfe2d6d94304fccd4cae8a75e32b858c4e4897d35d1ebf"
     },
     {
       "path": "package.json",
