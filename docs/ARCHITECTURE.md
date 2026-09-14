@@ -160,6 +160,24 @@ Session owners keep resource lifetimes explicit:
 | `LobbySession` | Waiting-room state and subscription handles |
 | `HUD` and `battleConsole/` | Project engine state, render controls, and emit player intent |
 
+### Browser suspension and recovery
+
+A persisted `pagehide` suspends the current match instead of disposing its HUD,
+renderer, input and client-state subscription. Delivery, retries and player commands remain
+paused while the existing owners resume. Final match exit still retires those
+resources and invalidates stale asynchronous work.
+
+On persisted return, account-bound verified challenge and deployment matches
+recheck account eligibility. An online match independently validates its room
+seat credential, rejoins the live channel and reads the contiguous canonical
+action history before enabling commands. A bounded recovery
+notice owns focus and input above existing dialogs; failure exposes Return to
+Lobby. Restoration does not grant a new seat, replay a completed reward, or allow
+an old request to restore authority after a newer match has started.
+
+Battle-console commands carry typed action identities. Labels and accessible
+names describe those commands without selecting which action executes.
+
 ## Accounts and evidence
 
 Casual room seats use room-scoped credentials. A player account is optional and
