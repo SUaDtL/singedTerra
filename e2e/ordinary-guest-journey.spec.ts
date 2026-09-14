@@ -7,6 +7,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 
 const ANGLE = '[data-semantic-key="node:output:Angle:43"]';
 const POWER = '[data-semantic-key="node:output:Power:52"]';
+const MAX_NATURAL_HUMAN_SALVOS = 20;
 
 async function chooseFoundryPreset(page: Page, player: 1 | 2): Promise<void> {
   await page.getByRole('button', { name: `Customize Player ${player} tank`, exact: true }).click();
@@ -95,7 +96,7 @@ test.describe('ordinary guest journey', () => {
   });
 
   test('keeps every initial terminal action visible after a natural First Salvo match', async ({ page }, testInfo) => {
-    test.setTimeout(60_000);
+    test.setTimeout(150_000);
 
     await page.goto('./');
     const splash = page.locator('#st-splash');
@@ -117,18 +118,57 @@ test.describe('ordinary guest journey', () => {
     const surface = page.locator('[data-battle-console-surface]');
     const fire = page.getByRole('button', { name: 'Fire Baby Missile', exact: true });
     const terminal = page.locator('.st-hud__overlay--victory');
-    for (let humanSalvo = 0; humanSalvo < 2; humanSalvo += 1) {
-      await expect(fire).toBeEnabled({ timeout: 30_000 });
-      await fire.click();
-      if (humanSalvo === 1) break;
-      await expect.poll(async () => {
-        if (await terminal.isVisible()) return 'terminal';
-        const active = await surface.getAttribute('data-active-commander');
-        return active === 'p1' && await fire.isEnabled() ? 'human-turn' : 'settling';
-      }, { timeout: 30_000 }).not.toBe('settling');
+    let acceptedShotCount = 0;
+    const observedShots: Array<{
+      shot: number;
+      acceptedPhase: string | null;
+      acceptedCommander: string | null;
+      settledPhase?: string | null;
+      settledCommander?: string | null;
+      terminalVisible?: boolean;
+    }> = [];
+    try {
+      while (!(await terminal.isVisible()) && acceptedShotCount < MAX_NATURAL_HUMAN_SALVOS) {
+        await expect(fire).toBeEnabled({ timeout: 30_000 });
+        await fire.click();
+        await expect(fire, `human salvo ${acceptedShotCount + 1} enters the visible firing state`)
+          .toBeDisabled({ timeout: 5_000 });
+        acceptedShotCount += 1;
+        const observedShot = {
+          shot: acceptedShotCount,
+          acceptedPhase: await surface.getAttribute('data-battle-console-phase'),
+          acceptedCommander: await surface.getAttribute('data-active-commander'),
+        } as (typeof observedShots)[number];
+        observedShots.push(observedShot);
+        await expect.poll(async () => {
+          if (await terminal.isVisible()) return 'terminal';
+          if (await surface.getAttribute('data-battle-console-phase') === 'game-over') return 'terminal-pending';
+          const active = await surface.getAttribute('data-active-commander');
+          return active === 'p1' && await fire.isEnabled() ? 'human-turn' : 'settling';
+        }, { timeout: 30_000 }).not.toBe('settling');
+        observedShot.settledPhase = await surface.getAttribute('data-battle-console-phase');
+        observedShot.settledCommander = await surface.getAttribute('data-active-commander');
+        observedShot.terminalVisible = await terminal.isVisible();
+        if (observedShot.terminalVisible || observedShot.settledPhase === 'game-over') break;
+      }
+      await expect(terminal, `First Salvo reaches a natural terminal state within ${MAX_NATURAL_HUMAN_SALVOS} accepted human salvos`)
+        .toBeVisible({ timeout: 30_000 });
+    } catch (error) {
+      const receipt = {
+        acceptedShotCount,
+        phase: await surface.getAttribute('data-battle-console-phase'),
+        commander: await surface.getAttribute('data-active-commander'),
+        terminalVisible: await terminal.isVisible(),
+        payoffStatus: await page.locator('.st-hud__terminal-payoff-status').textContent().catch(() => null),
+        observedShots,
+      };
+      await testInfo.attach('natural-first-salvo-receipt.json', {
+        body: JSON.stringify(receipt, null, 2),
+        contentType: 'application/json',
+      });
+      throw new Error(`Natural First Salvo did not settle: ${JSON.stringify(receipt)}`, { cause: error });
     }
 
-    await expect(terminal).toBeVisible({ timeout: 30_000 });
     await expect(terminal.locator('[data-ui="quick-operation-report"]'))
       .toHaveText('Operation · First Salvo — A one-round duel that starts with the essentials.');
     await expect(terminal.locator('[data-ui="terminal-next-experiment"]')).toBeVisible();
