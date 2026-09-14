@@ -1,5 +1,7 @@
 # Evidence-backed recovery v2 execution ledger
 
+**Superseded for ongoing work:** use the [reassessment v3 execution ledger](reassessment-v3.md) and [task plan](reassessment-v3.json). The owner requested v3 to replace unfinished v2 recommendations; preserve delivered work. Everything below is a historical snapshot, including its former current-status statements.
+
 Updated 2026-09-12. Goal: ACTIVE; R20 remains incomplete. Parent and integration owner: gpt-6-astra/high. This is the single current execution ledger. Dated task receipts preserve their original observations; their older pending statements do not supersede the current decisions below.
 
 The [approved spec](../specs/evidence-recovery-v2.md) maps AC-001 through AC-086 to the immutable ZIP plan. All prior execution details, actual dispatch/session identifiers, command outputs, corrections and decisions are preserved byte-for-byte in the [execution history](../reports/recovery-v2-execution-history-2026-09-12.md). History is evidence, not an instruction to repeat an operation.
