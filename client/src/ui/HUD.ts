@@ -706,10 +706,11 @@ export class HUD {
         const inventory = tank?.inventory[entry.type];
         const ammo = inventory?.unlimited ? null : inventory?.count ?? 0;
         const unlocked = definition.armsLevel <= this.armsLevel;
+        const restockAvailability = unlocked ? '' : ` Restocks unlock at Arms level ${definition.armsLevel}.`;
         return {
           key: `weapon:${entry.type}`,
           name: definition.name,
-          description: entry.summary,
+          description: `${entry.summary}${restockAvailability}`,
           purchase: { weapon: entry.type },
           price: definition.price,
           bundleSize: definition.bundleSize,
@@ -718,7 +719,6 @@ export class HUD {
           equipped: tank?.selectedWeapon === entry.type,
           canBuy: canBuy && unlocked && credits >= definition.price,
           canEquip: canEquip
-            && unlocked
             && tank?.selectedWeapon !== entry.type
             && (inventory?.unlimited === true || (inventory?.count ?? 0) > 0),
         };
