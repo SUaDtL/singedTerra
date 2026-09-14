@@ -5,8 +5,23 @@ import test from 'node:test';
 function assertReleaseWorkflow(ci, pages, generalConfig, productConfig, lobbySpec) {
   assert.match(ci, /Migration-history disposable Git regressions[\s\S]*node --test scripts\/checks\/migration_classification\.test\.mjs/);
   assert.match(ci, /Release-candidate policy and digest regressions[\s\S]*node --test scripts\/ci\/releaseCandidate\.test\.mjs scripts\/ci\/releaseWorkflow\.test\.mjs/);
-  assert.doesNotMatch(pages, /pull_request_target|workflow_run/);
-  assert.match(pages, /push:\n\s+branches: \[main\]/);
+  assert.doesNotMatch(pages, /pull_request_target|\n  push:/);
+  assert.match(pages, /workflow_run:\n    workflows: \[CI\]\n    types: \[completed\]\n    branches: \[main\]/);
+  const gate = pages.slice(pages.indexOf('\n  gate:'), pages.indexOf('\n  build:'));
+  assert.match(gate, /github\.event\.workflow_run\.event == 'push'/);
+  assert.match(gate, /github\.event\.action == 'completed'/);
+  assert.match(gate, /github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(gate, /github\.event\.workflow_run\.head_branch == 'main'/);
+  assert.match(gate, /github\.event\.workflow_run\.head_repository\.full_name == github\.repository/);
+  assert.match(gate, /github\.event\.workflow_run\.repository\.full_name == github\.repository/);
+  assert.match(gate, /ref: \$\{\{ github\.event_name == 'workflow_dispatch' && 'refs\/heads\/main' \|\| github\.sha \}\}/);
+  assert.doesNotMatch(pages, /ref:.*workflow_run|run-id:.*workflow_run|artifact-ids:.*workflow_run/);
+  assert.match(gate, /timeout-minutes: 5/);
+  for (const id of ['build', 'candidate-test', 'freshness', 'publish', 'live-smoke']) {
+    const block = pages.match(new RegExp(`\\n  ${id}:\\n([\\s\\S]*?)(?=\\n  [a-z-]+:|$)`))?.[1];
+    assert.ok(block, `Missing job ${id}`);
+    assert.match(block, /ref: \$\{\{ needs\.gate\.outputs\.expected_main_sha \}\}/);
+  }
   assert.match(pages, /workflow_dispatch:[\s\S]*rollback_run_id:[\s\S]*rollback_source_sha:[\s\S]*expected_current_main_sha:[\s\S]*confirmation:/);
   assert.equal(pages.match(/npm run build/g)?.length, 1);
   assert.match(pages, /releaseCandidate\.mjs gate/);
@@ -30,7 +45,7 @@ function assertReleaseWorkflow(ci, pages, generalConfig, productConfig, lobbySpe
   assert.match(pages, /candidate_metadata_sha256: \$\{\{ steps\.built\.outputs\.candidate_metadata_sha256 \|\| steps\.rollback-meta\.outputs\.candidate_metadata_sha256 \}\}/);
   assert.match(pages, /CANDIDATE_METADATA_SHA256: \$\{\{ needs\.build\.outputs\.candidate_metadata_sha256 \}\}/);
   assert.match(pages, /E2E_EXPECTED_BACKEND_ORIGIN="\$\(node -e/);
-  assert.match(publish, /releaseCandidate\.mjs revalidate-ci/);
+  assert.match(publish, /if: github\.event_name == 'workflow_run'\n        run: node scripts\/ci\/releaseCandidate\.mjs revalidate-ci/);
   assert.match(publish, /REQUIRED_CI_RUN_ATTEMPT: \$\{\{ needs\.gate\.outputs\.required_ci_run_attempt \}\}/);
   assert.match(
     publish,
@@ -59,6 +74,16 @@ test('policy rejects missing gates, untrusted triggers, and alternate artifacts'
   const mutations = [
     pages.replace('needs: [gate, build, candidate-test, freshness]', 'needs: [build]'),
     pages.replace('workflow_dispatch:', 'pull_request_target:\n  workflow_dispatch:'),
+    pages.replace('types: [completed]', 'types: [requested]'),
+    pages.replaceAll('ref: ${{ needs.gate.outputs.expected_main_sha }}', 'ref: refs/heads/main'),
+    pages.replace('workflows: [CI]', 'workflows: [CodeQL]'),
+    pages.replace("github.event.workflow_run.event == 'push'", 'true'),
+    pages.replace("github.event.workflow_run.head_branch == 'main'", 'true'),
+    pages.replace("github.event.workflow_run.conclusion == 'success'", 'true'),
+    pages.replace('github.event.workflow_run.head_repository.full_name == github.repository', 'true'),
+    pages.replace('github.event.workflow_run.repository.full_name == github.repository', 'true'),
+    pages.replace("ref: ${{ github.event_name == 'workflow_dispatch' && 'refs/heads/main' || github.sha }}", 'ref: ${{ github.event.workflow_run.head_sha }}'),
+    pages.replace('artifact-ids: ${{ needs.build.outputs.artifact_id }}', 'artifact-ids: ${{ github.event.workflow_run.id }}'),
     pages.replaceAll('github-pages-${{ github.run_id }}', 'github-pages-pr'),
     pages.replace('artifact-ids: ${{ needs.build.outputs.artifact_id }}', 'name: github-pages'),
     pages.replaceAll('npm run test:e2e -- --grep-invert @live --workers=2', 'echo skipped-general-suite'),
@@ -79,4 +104,14 @@ test('policy rejects a candidate config that silently rebuilds', () => {
 test('policy rejects removal of the candidate-only external network deny boundary', () => {
   const mutated = generalConfig.replace("server: 'http://127.0.0.1:9'", "server: 'http://example.invalid:9'");
   assert.throws(() => assertReleaseWorkflow(ci, pages, mutated, productConfig, lobbySpec));
+});
+
+// Pages must not allocate an idle runner while the independent CI workflow runs.
+test('ordinary Pages entry waits for completed CI without a push-triggered polling job', () => {
+  assert.match(pages, /workflow_run:\n\s+workflows: \[CI\]\n\s+types: \[completed\]\n\s+branches: \[main\]/);
+  assert.doesNotMatch(pages, /\n  push:/);
+  assert.match(pages, /github\.event\.workflow_run\.event == 'push'/);
+  assert.match(pages, /github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(pages, /github\.event\.workflow_run\.head_repository\.full_name == github\.repository/);
+  assert.match(pages, /timeout-minutes: 5/);
 });

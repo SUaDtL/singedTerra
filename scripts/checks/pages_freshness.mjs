@@ -117,9 +117,9 @@ if (!process.argv.includes('--policy-only')) {
   const publish = workflow.slice(publishStart, smokeStart);
   const smoke = workflow.slice(smokeStart);
   const header = workflow.slice(0, gateStart);
-  assert.match(header, /on:\n  push:\n    branches: \[main\]\n  workflow_dispatch:\n    inputs:/);
+  assert.match(header, /on:\n  workflow_run:\n    workflows: \[CI\]\n    types: \[completed\]\n    branches: \[main\]\n  workflow_dispatch:\n    inputs:/);
   assert.match(header, /rollback_run_id:[\s\S]*rollback_source_sha:[\s\S]*expected_current_main_sha:[\s\S]*confirmation:/);
-  assert.doesNotMatch(header, /pull_request_target|workflow_run/);
+  assert.doesNotMatch(header, /pull_request_target|\n  push:/);
   assert.match(header, /permissions:\n  contents: read\n/);
   assert.doesNotMatch(header, /pages: write|id-token: write/);
   assert.equal(workflow.match(/pages: read/g)?.length, 1);
@@ -206,7 +206,8 @@ if (!process.argv.includes('--policy-only')) {
   assert.match(publish, /pagesFreshness\.mjs verify "\$CANDIDATE_SOURCE_SHA" "\$CANDIDATE_RUN_ID"/);
   assert.match(publish, /releaseCandidate\.mjs verify-meta/);
   assert.match(publish, /CANDIDATE_METADATA_SHA256: \$\{\{ needs\.build\.outputs\.candidate_metadata_sha256 \}\}/);
-  assert.match(smoke, /needs: publish/);
+  assert.match(smoke, /needs: \[gate, publish\]/);
+  assert.match(smoke, /ref: \$\{\{ needs\.gate\.outputs\.expected_main_sha \}\}/);
   assert.doesNotMatch(gate, /continue-on-error/);
   assert.doesNotMatch(build, /continue-on-error/);
   assert.doesNotMatch(candidateTest, /continue-on-error/);

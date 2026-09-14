@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 import {
@@ -72,6 +81,373 @@ function runCandidateMode(mode, root, env) {
     env: { ...process.env, ...env },
   });
 }
+
+function writeMockFetch(root, responses) {
+  const fixturePath = join(root, 'mock-fetch.mjs');
+  writeFileSync(fixturePath, [
+    "import { appendFileSync } from 'node:fs';",
+    '',
+    'const responses = new Map(JSON.parse(process.env.MOCK_GITHUB_RESPONSES));',
+    'globalThis.fetch = async (url) => {',
+    '  const key = String(url);',
+    "  appendFileSync(process.env.MOCK_GITHUB_REQUEST_LOG, key + '\\n', 'utf8');",
+    '  const response = responses.get(key);',
+    "  if (!response) throw new Error('Unexpected GitHub API request: ' + key);",
+    '  return new Response(JSON.stringify(response.body), {',
+    '    status: response.status ?? 200,',
+    "    headers: { 'content-type': 'application/json' },",
+    '  });',
+    '};',
+    '',
+  ].join('\n'), 'utf8');
+  return fixturePath;
+}
+
+function workflowRunFixture(overrides = {}) {
+  return {
+    id: 34885736323,
+    run_attempt: 1,
+    workflow_id: 299824706,
+    name: 'CI',
+    path: '.github/workflows/ci.yml',
+    event: 'push',
+    status: 'completed',
+    conclusion: 'success',
+    head_branch: 'main',
+    head_sha: SHA_A,
+    repository: { full_name: 'owner/repo' },
+    head_repository: { full_name: 'owner/repo' },
+    ...overrides,
+  };
+}
+
+function completedWorkflowEvent(run = workflowRunFixture(), overrides = {}) {
+  return {
+    action: 'completed',
+    repository: { full_name: 'owner/repo' },
+    workflow_run: run,
+    ...overrides,
+  };
+}
+
+function workflowRunResponses(run, {
+  currentRun = run,
+  workflow = {
+    id: 299824706,
+    name: 'CI',
+    path: '.github/workflows/ci.yml',
+    state: 'active',
+  },
+  runs = [run],
+  mainSha = SHA_A,
+} = {}) {
+  return [
+    ['https://api.github.com/repos/owner/repo/actions/runs/' + run.id, { body: currentRun }],
+    ['https://api.github.com/repos/owner/repo/actions/workflows/ci.yml', { body: workflow }],
+    ['https://api.github.com/repos/owner/repo/actions/workflows/299824706/runs?event=push&branch=main&head_sha=' + SHA_A + '&per_page=100', {
+      body: { workflow_runs: runs },
+    }],
+    ['https://api.github.com/repos/owner/repo/git/ref/heads/main', {
+      body: { object: { sha: mainSha } },
+    }],
+  ];
+}
+
+function runWorkflowRunGate(event, responses, overrides = {}, mode = 'gate') {
+  const root = mkdtempSync(join(tmpdir(), 'singedterra-workflow-run-gate-'));
+  const eventPath = join(root, 'event.json');
+  const outputPath = join(root, 'output.txt');
+  const requestLog = join(root, 'requests.txt');
+  writeFileSync(eventPath, JSON.stringify(event) + '\n');
+  writeFileSync(requestLog, '');
+  const mockFetch = writeMockFetch(root, responses);
+  const result = spawnSync(process.execPath, [
+    '--import', pathToFileURL(mockFetch).href,
+    'scripts/ci/releaseCandidate.mjs',
+    mode,
+  ], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      GITHUB_EVENT_NAME: 'workflow_run',
+      GITHUB_EVENT_PATH: eventPath,
+      GITHUB_OUTPUT: outputPath,
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_REF: 'refs/heads/main',
+      GITHUB_SHA: SHA_A,
+      GITHUB_RUN_ID: '555',
+      GITHUB_TOKEN: randomUUID(),
+      MOCK_GITHUB_RESPONSES: JSON.stringify(responses),
+      MOCK_GITHUB_REQUEST_LOG: requestLog,
+      ...overrides,
+    },
+  });
+  return {
+    result,
+    output: existsSync(outputPath) ? readFileSync(outputPath, 'utf8') : '',
+    requests: readFileSync(requestLog, 'utf8').trim().split('\n').filter(Boolean),
+    cleanup() {
+      rmSync(root, { recursive: true, force: true });
+    },
+  };
+}
+
+test('gate accepts only a refetched, current, exact completed CI workflow_run event', () => {
+  const run = workflowRunFixture();
+  const responses = [
+    ['https://api.github.com/repos/owner/repo/actions/runs/' + run.id, { body: run }],
+    ['https://api.github.com/repos/owner/repo/actions/workflows/ci.yml', {
+      body: {
+        id: 299824706,
+        name: 'CI',
+        path: '.github/workflows/ci.yml',
+        state: 'active',
+      },
+    }],
+    ['https://api.github.com/repos/owner/repo/actions/workflows/299824706/runs?event=push&branch=main&head_sha=' + SHA_A + '&per_page=100', {
+      body: { workflow_runs: [run] },
+    }],
+    ['https://api.github.com/repos/owner/repo/git/ref/heads/main', {
+      body: { object: { sha: SHA_A } },
+    }],
+  ];
+  const invocation = runWorkflowRunGate({
+    action: 'completed',
+    repository: { full_name: 'owner/repo' },
+    workflow_run: run,
+  }, responses);
+  try {
+    assert.equal(invocation.result.status, 0, invocation.result.stderr);
+    assert.deepEqual(invocation.requests, responses.map(([url]) => url));
+    assert.match(invocation.output, /source_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/);
+    assert.match(invocation.output, /required_ci_run_id=34885736323/);
+    assert.match(invocation.output, /required_ci_run_attempt=1/);
+  } finally {
+    invocation.cleanup();
+  }
+});
+
+test('workflow_run gate rejects malformed or untrusted event payloads before any API call', () => {
+  const runMutations = [
+    { id: '0' },
+    { run_attempt: '0' },
+    { workflow_id: '0' },
+    { path: '.github/workflows/other.yml' },
+    { head_branch: 'feature' },
+    { head_sha: SHA_B },
+    { status: 'in_progress' },
+    { conclusion: 'failure' },
+    { repository: { full_name: 'fork/repo' } },
+    { head_repository: { full_name: 'fork/repo' } },
+    { event: 'workflow_dispatch' },
+  ];
+  const cases = [
+    {},
+    completedWorkflowEvent(workflowRunFixture(), { action: 'requested' }),
+    completedWorkflowEvent(workflowRunFixture(), { repository: { full_name: 'fork/repo' } }),
+    ...runMutations.map((mutation) => completedWorkflowEvent(workflowRunFixture(mutation))),
+  ];
+  for (const event of cases) {
+    const invocation = runWorkflowRunGate(event, []);
+    try {
+      assert.notEqual(invocation.result.status, 0, 'gate accepted an untrusted workflow event');
+      assert.deepEqual(invocation.requests, [], 'untrusted event made a GitHub API request');
+    } finally {
+      invocation.cleanup();
+    }
+  }
+  const wrongSnapshot = runWorkflowRunGate(completedWorkflowEvent(), [], { GITHUB_SHA: SHA_B });
+  try {
+    assert.notEqual(wrongSnapshot.result.status, 0);
+    assert.deepEqual(wrongSnapshot.requests, []);
+  } finally {
+    wrongSnapshot.cleanup();
+  }
+});
+
+test('workflow_run gate rejects refetched identity, newest-run, and current-main drift', () => {
+  const run = workflowRunFixture();
+  const event = completedWorkflowEvent(run);
+  const apiRunMutations = [
+    { id: 34885736324 },
+    { run_attempt: 2 },
+    { workflow_id: 7 },
+    { path: '.github/workflows/other.yml' },
+    { head_branch: 'feature' },
+    { head_sha: SHA_B },
+    { repository: { full_name: 'fork/repo' } },
+    { head_repository: { full_name: 'fork/repo' } },
+    { status: 'in_progress' },
+    { conclusion: 'failure' },
+  ];
+  for (const mutation of apiRunMutations) {
+    const invocation = runWorkflowRunGate(event, workflowRunResponses(run, {
+      currentRun: workflowRunFixture(mutation),
+    }));
+    try {
+      assert.notEqual(invocation.result.status, 0, 'gate accepted a mutated refetched CI run');
+      assert.equal(invocation.output, '');
+      assert.equal(invocation.requests.length, 2, 'refetched-run failure retried or continued');
+    } finally {
+      invocation.cleanup();
+    }
+  }
+  for (const mutation of [
+    { name: 'Other' },
+    { path: '.github/workflows/other.yml' },
+    { state: 'disabled_manually' },
+  ]) {
+    const invocation = runWorkflowRunGate(event, workflowRunResponses(run, {
+      workflow: {
+        id: 299824706,
+        name: 'CI',
+        path: '.github/workflows/ci.yml',
+        state: 'active',
+        ...mutation,
+      },
+    }));
+    try {
+      assert.notEqual(invocation.result.status, 0, 'gate accepted a changed configured workflow');
+      assert.equal(invocation.output, '');
+      assert.equal(invocation.requests.length, 2);
+    } finally {
+      invocation.cleanup();
+    }
+  }
+  const newerBadRuns = [
+    workflowRunFixture({ id: 34885736324, repository: { full_name: 'fork/repo' } }),
+    workflowRunFixture({ id: 34885736324, workflow_id: 7 }),
+  ];
+  for (const newer of newerBadRuns) {
+    const invocation = runWorkflowRunGate(event, workflowRunResponses(run, {
+      runs: [run, newer],
+    }));
+    try {
+      assert.notEqual(invocation.result.status, 0, 'gate accepted a newer malformed exact-source run');
+      assert.equal(invocation.output, '');
+      assert.equal(invocation.requests.length, 3);
+    } finally {
+      invocation.cleanup();
+    }
+  }
+  for (const { responses, requests } of [
+    {
+      responses: [['https://api.github.com/repos/owner/repo/actions/runs/' + run.id, { status: 500, body: {} }]],
+      requests: 1,
+    },
+    {
+      responses: workflowRunResponses(run, { runs: null }).slice(0, 3),
+      requests: 3,
+    },
+  ]) {
+    const invocation = runWorkflowRunGate(event, responses);
+    try {
+      assert.notEqual(invocation.result.status, 0, 'gate accepted failed or incomplete API evidence');
+      assert.equal(invocation.output, '');
+      assert.equal(invocation.requests.length, requests, 'gate retried a failed API request');
+    } finally {
+      invocation.cleanup();
+    }
+  }
+  const currentMainChanged = runWorkflowRunGate(event, workflowRunResponses(run, { mainSha: SHA_B }));
+  try {
+    assert.notEqual(currentMainChanged.result.status, 0);
+    assert.equal(currentMainChanged.output, '');
+    assert.equal(currentMainChanged.requests.length, 4);
+  } finally {
+    currentMainChanged.cleanup();
+  }
+});
+
+test('final CI revalidation is restricted to and rechecks the triggering workflow_run', () => {
+  const run = workflowRunFixture();
+  const event = completedWorkflowEvent(run);
+  const responses = workflowRunResponses(run).slice(0, 3);
+  const invocation = runWorkflowRunGate(event, responses, {
+    CANDIDATE_SOURCE_SHA: SHA_A,
+    REQUIRED_CI_RUN_ID: String(run.id),
+    REQUIRED_CI_RUN_ATTEMPT: String(run.run_attempt),
+  }, 'revalidate-ci');
+  try {
+    assert.equal(invocation.result.status, 0, invocation.result.stderr);
+    assert.deepEqual(invocation.requests, responses.map(([url]) => url));
+  } finally {
+    invocation.cleanup();
+  }
+  const baseEnv = {
+    CANDIDATE_SOURCE_SHA: SHA_A,
+    REQUIRED_CI_RUN_ID: String(run.id),
+    REQUIRED_CI_RUN_ATTEMPT: String(run.run_attempt),
+  };
+  for (const overrides of [
+    { REQUIRED_CI_RUN_ID: '34885736324' },
+    { REQUIRED_CI_RUN_ATTEMPT: '2' },
+  ]) {
+    const changed = runWorkflowRunGate(event, responses, { ...baseEnv, ...overrides }, 'revalidate-ci');
+    try {
+      assert.notEqual(changed.result.status, 0, 'revalidation accepted changed recorded CI identity');
+      assert.equal(changed.output, '');
+      assert.equal(changed.requests.length, 3);
+    } finally {
+      changed.cleanup();
+    }
+  }
+  const changedAttempt = runWorkflowRunGate(event, workflowRunResponses(run, {
+    currentRun: workflowRunFixture({ run_attempt: 2 }),
+  }).slice(0, 3), baseEnv, 'revalidate-ci');
+  try {
+    assert.notEqual(changedAttempt.result.status, 0);
+    assert.equal(changedAttempt.output, '');
+    assert.equal(changedAttempt.requests.length, 2);
+  } finally {
+    changedAttempt.cleanup();
+  }
+  for (const conclusion of ['failure', null]) {
+    const newest = workflowRunFixture({
+      id: 34885736324,
+      status: conclusion === null ? 'in_progress' : 'completed',
+      conclusion,
+    });
+    const changedNewest = runWorkflowRunGate(event, workflowRunResponses(run, {
+      runs: [run, newest],
+    }).slice(0, 3), baseEnv, 'revalidate-ci');
+    try {
+      assert.notEqual(changedNewest.result.status, 0);
+      assert.equal(changedNewest.output, '');
+      assert.equal(changedNewest.requests.length, 3);
+    } finally {
+      changedNewest.cleanup();
+    }
+  }
+  const wrongEnvironmentSource = runWorkflowRunGate(event, responses, {
+    ...baseEnv,
+    GITHUB_SHA: SHA_B,
+  }, 'revalidate-ci');
+  try {
+    assert.notEqual(
+      wrongEnvironmentSource.result.status,
+      0,
+      'revalidation accepted an event source that differed from GITHUB_SHA',
+    );
+    assert.equal(wrongEnvironmentSource.output, '');
+    assert.deepEqual(wrongEnvironmentSource.requests, []);
+  } finally {
+    wrongEnvironmentSource.cleanup();
+  }
+  const pushInvocation = runWorkflowRunGate(event, [], {
+    GITHUB_EVENT_NAME: 'push',
+    CANDIDATE_SOURCE_SHA: SHA_A,
+    REQUIRED_CI_RUN_ID: String(run.id),
+    REQUIRED_CI_RUN_ATTEMPT: String(run.run_attempt),
+  }, 'revalidate-ci');
+  try {
+    assert.notEqual(pushInvocation.result.status, 0);
+    assert.deepEqual(pushInvocation.requests, []);
+  } finally {
+    pushInvocation.cleanup();
+  }
+});
 
 test('payload digest is deterministic and excludes only its self-referential provenance record', () => {
   const root = fixture();
@@ -421,11 +797,19 @@ test('rollback accepts only an exact successful trusted Pages run and live artif
     status: 'completed',
     conclusion: 'success',
     run_attempt: 1,
+    repository: { full_name: 'owner/repo' },
+    head_repository: { full_name: 'owner/repo' },
   };
   const artifact = { id: 404, name: 'github-pages-303', expired: false };
   assert.deepEqual(authorizeRollback(run, [artifact], {
     sourceSha: SHA_A,
     runId: '303',
+    repository: 'owner/repo',
+  }), artifact);
+  assert.deepEqual(authorizeRollback({ ...run, event: 'workflow_run' }, [artifact], {
+    sourceSha: SHA_A,
+    runId: '303',
+    repository: 'owner/repo',
   }), artifact);
   for (const [changedRun, changedArtifacts] of [
     [{ ...run, event: 'pull_request' }, [artifact]],
@@ -433,6 +817,8 @@ test('rollback accepts only an exact successful trusted Pages run and live artif
     [{ ...run, head_sha: SHA_B }, [artifact]],
     [{ ...run, path: '.github/workflows/ci.yml' }, [artifact]],
     [{ ...run, conclusion: 'failure' }, [artifact]],
+    [{ ...run, repository: { full_name: 'fork/repo' } }, [artifact]],
+    [{ ...run, head_repository: { full_name: 'fork/repo' } }, [artifact]],
     [run, [{ ...artifact, expired: true }]],
     [run, [{ ...artifact, name: 'github-pages' }]],
     [run, []],
@@ -440,6 +826,7 @@ test('rollback accepts only an exact successful trusted Pages run and live artif
     assert.throws(() => authorizeRollback(changedRun, changedArtifacts, {
       sourceSha: SHA_A,
       runId: '303',
+      repository: 'owner/repo',
     }));
   }
 });

@@ -16,6 +16,9 @@ const RUN_ID = /^[1-9][0-9]*$/;
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const MAX_META_BYTES = 4096;
 const MAX_API_BYTES = 2 * 1024 * 1024;
+const CI_WORKFLOW_PATH = '.github/workflows/ci.yml';
+const CI_WORKFLOW_NAME = 'CI';
+const PAGES_WORKFLOW_PATH = '.github/workflows/deploy-pages.yml';
 export const DIGEST_SCOPE = 'regular-files-v1:exclude=/release-candidate.json';
 const EXCLUDED_ROOT_FILES = new Set(['release-candidate.json']);
 
@@ -241,6 +244,90 @@ function isExactRun(run, { path, event, branch, sha }) {
     && String(run.head_sha) === sha;
 }
 
+function hasSameRepository(run, repo) {
+  return run?.repository?.full_name === repo
+    && run?.head_repository?.full_name === repo;
+}
+
+function isTrustedCiRun(run, { repo, sourceSha, workflowId }) {
+  return RUN_ID.test(String(run?.id ?? ''))
+    && RUN_ID.test(String(run?.run_attempt ?? ''))
+    && String(run?.workflow_id) === String(workflowId)
+    && hasSameRepository(run, repo)
+    && isExactRun(run, {
+      path: CI_WORKFLOW_PATH,
+      event: 'push',
+      branch: 'main',
+      sha: sourceSha,
+    });
+}
+
+function assertTrustedCiRun(run, expected, label) {
+  if (!isTrustedCiRun(run, expected)) {
+    fail(label + ' is not an exact trusted configured CI run.');
+  }
+  if (run.status !== 'completed' || run.conclusion !== 'success') {
+    fail(label + ' is not successful.');
+  }
+}
+
+function readWorkflowRunEvent() {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (typeof eventPath !== 'string' || eventPath.length === 0) {
+    fail('Missing GITHUB_EVENT_PATH.');
+  }
+  let raw;
+  try {
+    raw = readFileSync(eventPath, 'utf8');
+  } catch {
+    fail('GitHub event payload is unreadable.');
+  }
+  if (Buffer.byteLength(raw, 'utf8') > MAX_API_BYTES) fail('GitHub event payload exceeded the safety limit.');
+  let event;
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    fail('GitHub event payload is invalid JSON.');
+  }
+  if (!event || Array.isArray(event) || typeof event !== 'object') {
+    fail('GitHub event payload is invalid.');
+  }
+  return event;
+}
+
+function workflowRunBinding(event, repo, sourceSha) {
+  if (event.action !== 'completed' || event?.repository?.full_name !== repo) {
+    fail('GitHub event is not a completed same-repository workflow run.');
+  }
+  const run = event.workflow_run;
+  assertRunId(run?.id, 'workflow event');
+  assertRunAttempt(run?.run_attempt, 'workflow event');
+  assertRunId(run?.workflow_id, 'workflow event');
+  if (!hasSameRepository(run, repo)
+    || String(run.head_sha) !== sourceSha
+    || String(run.head_branch) !== 'main'
+    || String(run.event) !== 'push'
+    || String(run.status) !== 'completed'
+    || String(run.conclusion) !== 'success'
+    || String(run.path) !== CI_WORKFLOW_PATH) {
+    fail('GitHub event does not bind a successful main CI push run to this source.');
+  }
+  return {
+    id: String(run.id),
+    attempt: String(run.run_attempt),
+    workflowId: String(run.workflow_id),
+  };
+}
+
+function assertConfiguredWorkflow(workflow, binding) {
+  if (String(workflow?.id) !== binding.workflowId
+    || workflow?.name !== CI_WORKFLOW_NAME
+    || workflow?.path !== CI_WORKFLOW_PATH
+    || workflow?.state !== 'active') {
+    fail('Configured CI workflow identity changed.');
+  }
+}
+
 export function selectRequiredCiRun(runs, sourceSha) {
   assertSha(sourceSha, 'required CI source');
   const exact = runs.filter((run) => isExactRun(run, {
@@ -295,13 +382,16 @@ export function revalidateRequiredCiRun(runs, expected, currentRun) {
 export function authorizeRollback(run, artifacts, expected) {
   assertSha(expected.sourceSha, 'rollback source');
   assertRunId(expected.runId, 'rollback Pages');
+  if (!REPOSITORY.test(expected.repository ?? '')) fail('Invalid rollback repository.');
   if (String(run?.id) !== String(expected.runId) || !isExactRun(run, {
-    path: '.github/workflows/deploy-pages.yml',
-    event: 'push',
+    path: PAGES_WORKFLOW_PATH,
+    event: run?.event,
     branch: 'main',
     sha: expected.sourceSha,
-  }) || run.status !== 'completed' || run.conclusion !== 'success') {
-    fail('Rollback source is not an exact successful trusted Pages push run.');
+  }) || !['push', 'workflow_run'].includes(run?.event)
+    || !hasSameRepository(run, expected.repository)
+    || run.status !== 'completed' || run.conclusion !== 'success') {
+    fail('Rollback source is not an exact successful same-repository Pages release run.');
   }
   const name = `github-pages-${expected.runId}`;
   const matches = artifacts.filter((artifact) => artifact.name === name && artifact.expired === false);
@@ -335,22 +425,36 @@ async function currentMainSha(repo, token) {
   return ref.object.sha;
 }
 
-async function awaitRequiredCi(repo, sha, token) {
-  // Both required browser suites take about 23 minutes; allow 30 minutes of polling.
-  // The workflow bounds setup and API overhead with a 35-minute job timeout.
-  const pollAttempts = 180;
-  for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
-    const query = new URLSearchParams({ event: 'push', head_sha: sha, per_page: '20' });
-    const body = await githubJson(`/repos/${repo}/actions/workflows/ci.yml/runs?${query}`, token);
-    try {
-      return selectRequiredCiRun(Array.isArray(body?.workflow_runs) ? body.workflow_runs : [], sha);
-    } catch (error) {
-      if (error instanceof Error && /concluded/.test(error.message)) throw error;
-      if (attempt === pollAttempts) throw error;
-      await new Promise((resolveDelay) => setTimeout(resolveDelay, 10_000));
-    }
+async function verifiedWorkflowRun(repo, token, sourceSha) {
+  const event = readWorkflowRunEvent();
+  const binding = workflowRunBinding(event, repo, sourceSha);
+  const currentRun = await githubJson(`/repos/${repo}/actions/runs/${binding.id}`, token);
+  const workflow = await githubJson(`/repos/${repo}/actions/workflows/ci.yml`, token);
+  assertConfiguredWorkflow(workflow, binding);
+  const expected = { repo, sourceSha, workflowId: binding.workflowId };
+  assertTrustedCiRun(currentRun, expected, 'Refetched configured CI run');
+  if (String(currentRun.id) !== binding.id || String(currentRun.run_attempt) !== binding.attempt) {
+    fail('Refetched configured CI run identity or attempt changed.');
   }
-  fail('Required exact-SHA CI run did not complete.');
+  const query = new URLSearchParams({
+    event: 'push',
+    branch: 'main',
+    head_sha: sourceSha,
+    per_page: '100',
+  });
+  const body = await githubJson(
+    `/repos/${repo}/actions/workflows/${binding.workflowId}/runs?${query}`,
+    token,
+  );
+  const newest = selectRequiredCiRun(
+    Array.isArray(body?.workflow_runs) ? body.workflow_runs : [],
+    sourceSha,
+  );
+  assertTrustedCiRun(newest, expected, 'Newest configured CI run');
+  if (String(newest.id) !== binding.id || String(newest.run_attempt) !== binding.attempt) {
+    fail('Configured CI run was superseded or rerun after the event.');
+  }
+  return { binding, currentRun, newest };
 }
 
 function requireEnvironment(names) {
@@ -378,16 +482,16 @@ async function gate() {
   const token = process.env.GITHUB_TOKEN;
   if (!REPOSITORY.test(repo ?? '')) fail('Invalid GitHub repository.');
   if (process.env.GITHUB_REF !== 'refs/heads/main') fail('Release workflows must run from main.');
-  if (event === 'push') {
+  if (event === 'workflow_run') {
     const sourceSha = process.env.GITHUB_SHA;
     assertSha(sourceSha, 'release source');
+    const ci = await verifiedWorkflowRun(repo, token, sourceSha);
     if (await currentMainSha(repo, token) !== sourceSha) fail('Release source is no longer current main.');
-    const ci = await awaitRequiredCi(repo, sourceSha, token);
     writeOutputs({
       source_sha: sourceSha,
       candidate_run_id: process.env.GITHUB_RUN_ID,
-      required_ci_run_id: ci.id,
-      required_ci_run_attempt: ci.run_attempt,
+      required_ci_run_id: ci.binding.id,
+      required_ci_run_attempt: ci.binding.attempt,
       expected_main_sha: sourceSha,
       rollback_artifact_id: '',
     });
@@ -407,7 +511,11 @@ async function gate() {
     githubJson(`/repos/${repo}/actions/runs/${runId}`, token),
     githubJson(`/repos/${repo}/actions/runs/${runId}/artifacts?per_page=100`, token),
   ]);
-  const artifact = authorizeRollback(run, artifactBody?.artifacts ?? [], { sourceSha, runId });
+  const artifact = authorizeRollback(run, artifactBody?.artifacts ?? [], {
+    sourceSha,
+    runId,
+    repository: repo,
+  });
   writeOutputs({
     source_sha: sourceSha,
     candidate_run_id: runId,
@@ -422,28 +530,24 @@ async function revalidateCi() {
   const repo = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN;
   if (!REPOSITORY.test(repo ?? '')) fail('Invalid GitHub repository.');
-  if (process.env.GITHUB_EVENT_NAME !== 'push' || process.env.GITHUB_REF !== 'refs/heads/main') {
-    fail('Required CI revalidation is only valid for a main push release.');
+  if (process.env.GITHUB_EVENT_NAME !== 'workflow_run' || process.env.GITHUB_REF !== 'refs/heads/main') {
+    fail('Required CI revalidation is only valid for a trusted completed CI workflow run.');
   }
   const expected = requireEnvironment([
     'CANDIDATE_SOURCE_SHA',
     'REQUIRED_CI_RUN_ID',
     'REQUIRED_CI_RUN_ATTEMPT',
   ]);
-  const query = new URLSearchParams({ event: 'push', head_sha: expected.CANDIDATE_SOURCE_SHA, per_page: '20' });
-  const [currentRun, body] = await Promise.all([
-    githubJson(`/repos/${repo}/actions/runs/${expected.REQUIRED_CI_RUN_ID}`, token),
-    githubJson(`/repos/${repo}/actions/workflows/ci.yml/runs?${query}`, token),
-  ]);
-  revalidateRequiredCiRun(
-    Array.isArray(body?.workflow_runs) ? body.workflow_runs : [],
-    {
-      sourceSha: expected.CANDIDATE_SOURCE_SHA,
-      runId: expected.REQUIRED_CI_RUN_ID,
-      runAttempt: expected.REQUIRED_CI_RUN_ATTEMPT,
-    },
-    currentRun,
-  );
+  const workflowSourceSha = process.env.GITHUB_SHA;
+  assertSha(workflowSourceSha, 'workflow revalidation source');
+  if (workflowSourceSha !== expected.CANDIDATE_SOURCE_SHA) {
+    fail('Workflow revalidation source does not match the candidate source.');
+  }
+  const ci = await verifiedWorkflowRun(repo, token, expected.CANDIDATE_SOURCE_SHA);
+  if (ci.binding.id !== expected.REQUIRED_CI_RUN_ID
+    || ci.binding.attempt !== expected.REQUIRED_CI_RUN_ATTEMPT) {
+    fail('Bound required CI run identity or attempt changed.');
+  }
 }
 
 async function readStdin() {
