@@ -38,7 +38,7 @@ const assert = (condition, message) => {
 }
 
 const checkJobPattern =
-  /^  check:\s*$([\s\S]*?)(?=^  [a-zA-Z0-9_-]+:\s*$|(?![\s\S]))/m
+  /^  check-work:\s*$([\s\S]*?)(?=^  [a-zA-Z0-9_-]+:\s*$|(?![\s\S]))/m
 const checkJobMatch = ciWorkflow.match(checkJobPattern)
 const checkJobSteps = (checkJobMatch?.[1] ?? '')
   .split(/(?=^      - )/m)
@@ -85,7 +85,7 @@ assert(
   'root exposes the complete high-severity dependency audit',
 )
 assert(
-  'jobs:\n  check:\n    runs-on: ubuntu-latest\n'.match(checkJobPattern)?.[1]
+  'jobs:\n  check-work:\n    runs-on: ubuntu-latest\n'.match(checkJobPattern)?.[1]
     .includes('runs-on: ubuntu-latest') === true,
   'workflow parser accepts the primary job at end of file',
 )
@@ -98,8 +98,9 @@ assert(
   'primary CI audits dependencies after its clean install',
 )
 assert(
-  !/^    (?:if|continue-on-error):/m.test(checkJobMatch?.[1] ?? ''),
-  'primary CI job is unconditional and blocking',
+  /^    if: needs\.scope\.outputs\.docs_only == 'false'$/m.test(checkJobMatch?.[1] ?? '')
+    && !/^    continue-on-error:/m.test(checkJobMatch?.[1] ?? ''),
+  'dependency audit runs for every change outside the inert documentation allowlist',
 )
 assert(
   !/^        (?:if|continue-on-error):/m.test(installStep),
