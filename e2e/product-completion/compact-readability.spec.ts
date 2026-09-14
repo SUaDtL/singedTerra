@@ -10,8 +10,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('[data-battle-console-surface]')).toHaveAttribute('data-battle-console-ready', 'true');
 });
 
-test('AC-01/07 compact Match copy stays physically readable', async ({ page }, testInfo) => {
-  test.skip(!['compact', 'narrow'].includes(testInfo.project.name), 'Reduced stage Match');
+test('AC-01/07 compact Match copy stays physically readable', { tag: '@reduced-stage' }, async ({ page }) => {
   const card = page.locator('#hud .st-hud__match-card');
   if (!await card.isVisible()) await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
   await expect(card).toBeVisible();
@@ -22,8 +21,7 @@ test('AC-01/07 compact Match copy stays physically readable', async ({ page }, t
   for (const entry of sizes) expect(entry.size, entry.name).toBeGreaterThanOrEqual(13.99);
 });
 
-test('AC-01 narrow and compact console labels stay physically readable', async ({ page }, testInfo) => {
-  test.skip(!['compact', 'narrow'].includes(testInfo.project.name), 'Reduced stage profiles');
+test('AC-01 narrow and compact console labels stay physically readable', { tag: '@reduced-stage' }, async ({ page }) => {
   const chassis = page.locator('[data-battle-console-compact-chassis]');
   await expect(chassis).toBeVisible();
   const sizes = await chassis.evaluate(element => {

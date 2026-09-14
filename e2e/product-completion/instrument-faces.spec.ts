@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('AC-02 instrument readings occupy the actual glass recess without text patches', async ({ page }, testInfo) => {
-  test.skip(!['ultrawide', 'wide', 'standard'].includes(testInfo.project.name), 'Illustrated dial profiles');
+test('AC-02 instrument readings occupy the actual glass recess without text patches', { tag: '@illustrated' }, async ({ page }, testInfo) => {
   await page.addInitScript(() => localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped'));
   await page.goto('?e2e=hotseat');
   await page.locator('#st-splash').click();

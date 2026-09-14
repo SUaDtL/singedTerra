@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Match drawer controls sit inside the nameplate without painted button boxes', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'ultrawide', 'Persistent dock has no close control');
+test('Match drawer controls sit inside the nameplate without painted button boxes', { tag: '@drawer' }, async ({ page }, testInfo) => {
   await page.addInitScript(() => localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped'));
   await page.goto('?e2e=hotseat');
   await page.locator('#st-splash').click();
