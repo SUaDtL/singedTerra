@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Deliberately explicit: this test must represent an untouched guest, while the
 // configured fixture continues to inherit the project's base URL, device, and
@@ -17,6 +17,23 @@ async function chooseFoundryPreset(page: Page, player: 1 | 2): Promise<void> {
 async function fillSetting(page: Page, label: string, value: string): Promise<void> {
   const field = page.getByRole('dialog', { name: 'Operations Settings', exact: true }).locator('.lobby-field').filter({ hasText: label });
   await field.locator('input').fill(value);
+}
+
+async function stepVisibleValue(
+  control: Locator,
+  output: Locator,
+  target: string,
+  limit: number,
+): Promise<void> {
+  let current = (await output.innerText()).trim();
+  for (let step = 0; current !== target && step < limit; step += 1) {
+    await control.click();
+    await expect.poll(async () => (await output.innerText()).trim(), {
+      message: `${await control.getAttribute('aria-label')} changes the visible value`,
+    }).not.toBe(current);
+    current = (await output.innerText()).trim();
+  }
+  await expect(output).toHaveText(target);
 }
 
 async function setInitialSolution(
@@ -94,10 +111,8 @@ test.describe('ordinary guest journey', () => {
     const power = page.locator(POWER);
     const aimRight = page.getByRole('button', { name: 'Aim barrel right', exact: true });
     const powerDown = page.getByRole('button', { name: 'Decrease power', exact: true });
-    for (let click = 0; click < 45; click += 1) await aimRight.click();
-    await expect(angle).toHaveText('90°');
-    for (let click = 0; click < 50; click += 1) await powerDown.click();
-    await expect(power).toHaveText('1');
+    await stepVisibleValue(aimRight, angle, '90°', 45);
+    await stepVisibleValue(powerDown, power, '1', 50);
 
     const surface = page.locator('[data-battle-console-surface]');
     const fire = page.getByRole('button', { name: 'Fire Baby Missile', exact: true });
