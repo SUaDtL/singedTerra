@@ -322,6 +322,13 @@ export class NetworkClient implements GameClient {
   // on the rooms UPDATE stream and migrate. _rematchHandled makes that one-shot.
   private rematchListener:  ((info: RematchInfo) => void) | null = null;
   private _rematchHandled   = false;
+  private rematchGeneration = 0;
+  private rematchLookup: {
+    roomId: string;
+    generation: number;
+    controller: AbortController;
+    promise: Promise<void>;
+  } | null = null;
   private static readonly REMATCH_POLL_ATTEMPTS = 20;
   private static readonly REMATCH_POLL_INTERVAL_MS = 150;
 
@@ -554,11 +561,7 @@ export class NetworkClient implements GameClient {
             return;
           }
           const next = (payload.new?.rematch_room_id ?? null) as string | null;
-          if (next && !this._rematchHandled) {
-            this._rematchHandled = true;
-            this.stopPresence();
-            void this.handleRematch(next);
-          }
+          if (next) void this.handleRematch(next);
         }
       )
       .subscribe();
@@ -667,6 +670,9 @@ export class NetworkClient implements GameClient {
     this.frameGeneration++;
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
+    this.rematchGeneration += 1;
+    this.rematchLookup?.controller.abort();
+    this.rematchLookup = null;
     this.stopPresence();
     this.retirePendingCommands();
     this.orderedActions.dispose();
@@ -1046,18 +1052,22 @@ export class NetworkClient implements GameClient {
   /**
    * Ask the server to start a rematch. POSTs restart_game, which atomically
    * allocates ONE successor room for the pair (idempotent under double-clicks /
-   * races). This does NOT migrate directly — both players migrate via the rooms
-   * UPDATE broadcast → onRematch, so there is a single symmetric code path.
+   * races). The durable response and the rooms UPDATE both feed the same
+   * authoritative successor lookup, so a missed or duplicated notification
+   * cannot strand the requester or produce two handoffs.
    */
   async requestRematch(): Promise<{ ok: boolean; error?: string }> {
     try {
-      const { ok, data } = await callFunction<{ ok?: boolean; error?: string }>('restart_game', {
+      const { ok, data } = await callFunction<{ ok?: boolean; error?: string; roomId?: unknown }>('restart_game', {
         roomId: this.roomId,
         playerId: this.playerId,
         token: this.token,
       });
       if (!ok || !data?.ok) {
         return { ok: false, error: data?.error ?? 'Failed to start rematch' };
+      }
+      if (typeof data.roomId === 'string' && data.roomId.length > 0) {
+        await this.handleRematch(data.roomId);
       }
       return { ok: true };
     } catch (err) {
@@ -1079,22 +1089,56 @@ export class NetworkClient implements GameClient {
    * to its read path. The single UPDATE never repeats, so we cannot rely on a
    * "later broadcast" — instead we poll a few times for the row to appear.
    */
-  private async handleRematch(newRoomId: string): Promise<void> {
+  private handleRematch(newRoomId: string): Promise<void> {
+    if (this._disposed) return Promise.resolve();
+    if (this.rematchLookup) {
+      return this.rematchLookup.roomId === newRoomId
+        ? this.rematchLookup.promise
+        : Promise.resolve();
+    }
+    if (this._rematchHandled) return Promise.resolve();
+    this.stopPresence();
     const listener = this.rematchListener;
-    if (!listener) return;
+    if (!listener) return Promise.resolve();
+
+    this._rematchHandled = true;
+    const generation = ++this.rematchGeneration;
+    const controller = new AbortController();
+    const promise = this.resolveRematch(newRoomId, listener, generation, controller)
+      .finally(() => {
+        if (this.rematchLookup?.generation === generation) this.rematchLookup = null;
+      });
+    this.rematchLookup = { roomId: newRoomId, generation, controller, promise };
+    return promise;
+  }
+
+  private async resolveRematch(
+    newRoomId: string,
+    listener: (info: RematchInfo) => void,
+    generation: number,
+    controller: AbortController,
+  ): Promise<void> {
+    const isCurrent = (): boolean => !this._disposed && generation === this.rematchGeneration;
 
     // Bounded poll: the successor row is written within one edge-function
     // invocation of the pointer claim, so short retries cover replication lag
     // without hanging the UI if something truly failed.
     let data: Record<string, unknown> | null = null;
     for (let attempt = 0; attempt < NetworkClient.REMATCH_POLL_ATTEMPTS; attempt++) {
-      if (this._disposed) return; // client torn down mid-poll — don't fetch or notify
-      const res = await this.supabase
-        .from('rooms')
-        .select('id, code, seed, options, players')
-        .eq('id', newRoomId)
-        .maybeSingle();
-      if (this._disposed) return; // torn down while the fetch was in flight
+      if (!isCurrent()) return;
+      let res: { data: unknown; error: unknown };
+      try {
+        res = await this.supabase
+          .from('rooms')
+          .select('id, code, seed, options, players')
+          .eq('id', newRoomId)
+          .abortSignal(controller.signal)
+          .maybeSingle();
+      } catch (error) {
+        if (!isCurrent()) return;
+        res = { data: null, error };
+      }
+      if (!isCurrent()) return;
       if (res.data) { data = res.data as Record<string, unknown>; break; }
       if (res.error) {
         console.warn(`NetworkClient.handleRematch: fetch attempt ${attempt + 1} failed`, res.error);
@@ -1102,7 +1146,7 @@ export class NetworkClient implements GameClient {
       await new Promise(resolve => setTimeout(resolve, NetworkClient.REMATCH_POLL_INTERVAL_MS));
     }
 
-    if (this._disposed) return; // torn down during the final wait
+    if (!isCurrent()) return;
     if (!data) {
       console.error('NetworkClient.handleRematch: successor room never resolved', newRoomId);
       this._rematchHandled = false; // let a manual re-click re-drive the migration
@@ -1143,6 +1187,7 @@ export class NetworkClient implements GameClient {
       this._rematchHandled = false;
       return;
     }
+    if (!isCurrent()) return;
     listener({
       roomId:  data.id as string,
       code:    data.code as string,
