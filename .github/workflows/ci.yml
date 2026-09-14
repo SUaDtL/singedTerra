@@ -69,7 +69,7 @@ jobs:
       - name: Documentation evidence-template contracts
         run: node --test scripts/checks/manual_baseline.test.mjs
       - name: Scope and required-result regressions
-        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs
+        run: node --test scripts/ci/changeScope.test.mjs scripts/ci/requiredResult.test.mjs scripts/ci/ciWorkflow.test.mjs scripts/ci/codeqlWorkflow.test.mjs
 
   check-work:
     name: engine, database, client and build

@@ -12,9 +12,69 @@ on:
     - cron: '0 6 * * 1'   # Mondays 06:00 UTC
 
 jobs:
+  scope:
+    name: classify CodeQL change scope
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: Classify the exact event change scope
+        id: classify
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # GitHub supplies the verified synthetic merge SHA for pull requests.
+          PR_HEAD_SHA: ${{ github.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          fail_scope() {
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "## CodeQL change scope" >> "$GITHUB_STEP_SUMMARY"
+            echo "- decision: full checks required because classification failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "$1" >&2
+            exit 1
+          }
+          case "$EVENT_NAME" in
+            pull_request)
+              base="$PR_BASE_SHA"
+              head="$PR_HEAD_SHA"
+              ;;
+            push)
+              base="$PUSH_BASE_SHA"
+              head="$PUSH_HEAD_SHA"
+              ;;
+            schedule)
+              echo "docs_only=false" >> "$GITHUB_OUTPUT"
+              echo "change_scope=full" >> "$GITHUB_OUTPUT"
+              echo "## CodeQL change scope" >> "$GITHUB_STEP_SUMMARY"
+              echo "- decision: scheduled analysis is always full scope" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+            *) fail_scope "Unsupported CodeQL event: $EVENT_NAME" ;;
+          esac
+          if [ -z "$base" ] || [ -z "$head" ] || [[ "$base" =~ ^0+$ ]] || [[ "$head" =~ ^0+$ ]]; then
+            fail_scope "Missing immutable base/head evidence for CodeQL scope"
+          fi
+          if ! git fetch --no-tags --depth=1 origin "+$base:refs/remotes/origin/codeql-scope-base" "+$head:refs/remotes/origin/codeql-scope-head"; then
+            fail_scope "Unable to fetch immutable base/head evidence for CodeQL scope"
+          fi
+          CI_BASE_SHA="$base" CI_HEAD_SHA="$head" node scripts/ci/changeScope.mjs
+
   analyze:
     name: analyze (javascript-typescript)
-    if: github.event.repository.visibility == 'public'
+    needs: scope
+    if: needs.scope.result == 'success' && needs.scope.outputs.docs_only == 'false' && github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     permissions:
       security-events: write

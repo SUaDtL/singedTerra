@@ -25,10 +25,30 @@ export default defineConfig({
     timeout: 180_000,
   } : undefined,
   projects: [
-    { name: 'ultrawide', use: { viewport: { width: 3436, height: 1215 } } },
-    { name: 'wide', use: { viewport: { width: 2048, height: 864 } } },
-    { name: 'standard', use: { viewport: { width: 1440, height: 900 } } },
-    { name: 'narrow', use: { viewport: { width: 1024, height: 768 } } },
-    { name: 'compact', use: { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true } },
+    {
+      name: 'ultrawide',
+      grepInvert: /@(reduced-stage|compact-only|standard-only|drawer)/,
+      use: { viewport: { width: 3436, height: 1215 } },
+    },
+    {
+      name: 'wide',
+      grepInvert: /@(reduced-stage|compact-only|standard-only)/,
+      use: { viewport: { width: 2048, height: 864 } },
+    },
+    {
+      name: 'standard',
+      grepInvert: /@(reduced-stage|compact-only)/,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: 'narrow',
+      grepInvert: /@(illustrated|compact-only|standard-only)/,
+      use: { viewport: { width: 1024, height: 768 } },
+    },
+    {
+      name: 'compact',
+      grepInvert: /@(noncompact|illustrated|standard-only)/,
+      use: { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true },
+    },
   ],
 });

@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('AC04 Armory heading sits at the center of its brass nameplate', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'compact', 'Compact header has a separately fitted layout');
+test('AC04 Armory heading sits at the center of its brass nameplate', { tag: '@noncompact' }, async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped'));
   await page.goto('?e2e=hotseat');
   await page.locator('#st-splash').click();

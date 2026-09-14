@@ -32,8 +32,8 @@ Classifier failure, cancellation, missing results, and unexpected skips fail.
 | Product browsers | Existing five responsive profiles and interaction cases | Independent job, existing one-worker setting |
 
 The browser matrix does not cancel sibling lanes on failure. Failure artifacts
-include the lane and run attempt. No test assertions, viewport profiles, retries,
-or performance ceilings were removed or relaxed.
+include the lane and run attempt. Every previously executing assertion and distinct viewport scenario remains.
+Retries and performance ceilings are unchanged.
 
 Pages builds one candidate with the deployment base path and public configuration.
 Three parallel browser lanes each download that same artifact by ID, verify its
@@ -41,9 +41,10 @@ metadata and payload digest, exercise it with external network access denied,
 and verify its bytes again. Publication requires the entire matrix plus current
 main freshness, the bound successful CI attempt, and the deployment lock.
 
+CodeQL uses the same strict documentation classifier on PR and main events; its
+weekly security scan always runs in full. Classification errors fail the workflow.
 Pages still runs full candidate coverage for documentation-only main commits.
-CodeQL still runs on its existing PR, main, and weekly schedule. These are
-explicit remaining opportunities, not claimed savings. Skipping candidate tests
+That release cost remains an explicit opportunity, not a claimed saving. Skipping candidate tests
 requires comparing against a trusted previously tested runtime, including when
 intermediate commits were never published. Triggering Pages after CI completes
 also needs to preserve the existing event and rollback trust boundaries.
@@ -68,17 +69,31 @@ mean additional setup work, so lower wall time is not the same as fewer runner
 minutes. Actual shard timing and stability must be read from the first hosted
 run; equal test counts do not guarantee equal durations.
 
-Inventory discovery confirmed 507 general cases: 254 in the first shard and
-253 in the second, with no overlap or omissions. The product inventory retains
-110 combinations (83 executing cases and 27 profile-specific skips).
+The first hosted parallel run, `34879942448` for PR #508 at `211efb8`, passed
+in 10m58s from creation to completion, about 52% below the 22m53s PR baseline.
+The active job path was 10m52s. General shards passed 237 and 225 cases, retaining
+all 462 executed cases and 45 profile skips; product passed 83 with 27 skips.
+The slower general lane took 10m25s including setup, the other 7m17s, and product
+5m54s. These are one run's observations, not a guaranteed duration.
 
-The test audit also found follow-ups that require their own coverage comparison:
-portrait tests repeat explicit internal viewport contexts under three outer
-projects; 17 product skips happen after browser setup; the manual performance
-spec schedules three guaranteed skips; and the removed `battle-console-integrated`
-directory still has an ignore entry. Some product geometry checks overlap stronger
-console checks. These cases remain intact in this delivery; neither overlap nor
-an expensive test is sufficient reason to remove an assertion.
+Initial partition discovery confirmed all 507 general cases (254 + 253), without
+overlap or omissions. The subsequent selection cleanup retains 491 (246 + 245):
+the eight portrait tests create their own viewport contexts, so their identical
+repeats under the two other outer projects were removed. All eight distinct
+portrait scenarios still execute.
+
+Product selection now chooses the 83 previously executing project/file/title
+combinations before opening a page, instead of scheduling 110 and skipping 27.
+Counts are ultrawide 15, wide 16, standard 17, narrow 17, compact 18. Exact
+identity comparison found no missing or new executing combinations. The 17
+late skips previously spent 41.59 seconds booting pages in the measured product
+run. Per-project tag filters eliminate that work in source CI and Pages.
+
+The obsolete ignore for the removed `battle-console-integrated` directory was
+also removed. Remaining audit findings: the manual performance spec schedules
+three guaranteed skips, and some product geometry checks overlap stronger console
+checks. Those cases remain intact; neither overlap nor an expensive test is
+sufficient reason to remove an assertion.
 
 The Pages polling allowance was also corrected from about 20 minutes to about
 30 minutes, with a 35-minute job timeout. The previous allowance expired before

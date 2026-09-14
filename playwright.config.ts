@@ -26,10 +26,11 @@ const trimmedBase = requestedBase.replace(/^\/+|\/+$/g, '');
 const localBasePath = trimmedBase === '' ? '/' : `/${trimmedBase}/`;
 const localOrigin = `http://localhost:${PORT}`;
 const localBaseURL = `${localOrigin}${localBasePath}`;
+const GENERAL_TEST_IGNORE = ['**/product-completion/**'];
 
 export default defineConfig({
   testDir: 'e2e',
-  testIgnore: ['**/product-completion/**', '**/battle-console-integrated/**'],
+  testIgnore: GENERAL_TEST_IGNORE,
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
@@ -82,6 +83,9 @@ export default defineConfig({
     // (the touch strip pushes #hud content past the panel height).
     {
       name: 'pixel-touch',
+      // portrait-gate owns explicit browser contexts and viewport inputs, so
+      // running it again under this outer project repeats identical coverage.
+      testIgnore: [...GENERAL_TEST_IGNORE, '**/portrait-gate.spec.ts'],
       use: {
         ...devices['Pixel 5 landscape'],
       },
@@ -90,6 +94,7 @@ export default defineConfig({
     // The drawer starts closed and must stay in-bounds when opened.
     {
       name: 'small-window',
+      testIgnore: [...GENERAL_TEST_IGNORE, '**/portrait-gate.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 900, height: 520 },

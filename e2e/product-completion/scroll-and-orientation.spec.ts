@@ -31,8 +31,7 @@ test('AC-04 inventory scrolls by wheel and touch through its final action', asyn
   await expect(last.getByRole('button', { name: /^Buy/ })).toBeInViewport();
 });
 
-test('AC-01 portrait phone presents the fitted landscape launch gate', async ({ browser }, testInfo) => {
-  test.skip(testInfo.project.name !== 'compact', 'One portrait phone proof');
+test('AC-01 portrait phone presents the fitted landscape launch gate', { tag: '@compact-only' }, async ({ browser }, testInfo) => {
   const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   try {
     const page = await context.newPage();

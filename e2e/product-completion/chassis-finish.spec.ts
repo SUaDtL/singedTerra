@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('AC-02 commander stays inside its inset and readings do not paint patches', async ({ page }, testInfo) => {
-  test.skip(!['ultrawide', 'wide', 'standard'].includes(testInfo.project.name), 'Illustrated console');
+test('AC-02 commander stays inside its inset and readings do not paint patches', { tag: '@illustrated' }, async ({ page }, testInfo) => {
   await page.addInitScript(() => localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped'));
   await page.goto('?e2e=hotseat');
   await page.locator('#st-splash').click();

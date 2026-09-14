@@ -98,8 +98,7 @@ test('AC-04 Armory reaches final item and keeps actions in the frame', async ({ 
   }
 });
 
-test('AC-01 compact gameplay controls have physical touch targets', async ({ page }, testInfo) => {
-  test.skip(!['compact', 'narrow'].includes(testInfo.project.name), 'Reduced stage profiles');
+test('AC-01 compact gameplay controls have physical touch targets', { tag: '@reduced-stage' }, async ({ page }) => {
   for (const key of ['move-left', 'move-right', 'weapon-next', 'armory', 'angle-decrease', 'angle-increase', 'power-decrease', 'power-increase', 'settings', 'fire']) {
     const button = page.locator(`[data-battle-console-target-key="${key}"]`);
     const box = (await button.boundingBox())!;
@@ -159,8 +158,7 @@ test('AC-03/05/08 movement, settings, fire and turn progression remain coherent'
   await page.screenshot({ path: `test-results/product-completion/${testInfo.project.name}-next-turn.png` });
 });
 
-test('AC-010/011/012 compact font oracle rejects an actual unreadable control', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'compact', 'Compact physical-font control');
+test('AC-010/011/012 compact font oracle rejects an actual unreadable control', { tag: '@compact-only' }, async ({ page }) => {
   await expectNoSyntheticAppearanceHook(page);
   const fuel = page.locator('[data-battle-console-compact-chassis] [data-semantic-key="node:span:100 fuel remaining:19"]');
   const expectReadableFuel = async () => {
@@ -181,8 +179,7 @@ test('AC-010/011/012 compact font oracle rejects an actual unreadable control', 
   await expectReadableFuel();
 });
 
-test('AC-010/011/012 real containment, disabled and focus oracles reject broken controls', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'standard', 'One representative full-console profile');
+test('AC-010/011/012 real containment, disabled and focus oracles reject broken controls', { tag: '@standard-only' }, async ({ page }) => {
   await expectNoSyntheticAppearanceHook(page);
 
   const settingsTrigger = page.getByRole('button', { name: 'Battle settings', exact: true });
