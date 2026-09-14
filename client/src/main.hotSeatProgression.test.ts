@@ -14,6 +14,7 @@ const seams = vi.hoisted(() => ({
   verifiedControllerPolicies: [] as number[],
   verifiedControllerTuples: [] as Array<{ contractVersion: number; engineVersion: number; rulesetVersion: number }>,
   hotSeatConstructorArgs: [] as unknown[],
+  networkConstructorArgs: [] as unknown[][],
   gameEngineArgs: [] as unknown[][],
   onLobbyReady: null as null | ((config: Record<string, unknown>) => Promise<void>),
   onQuit: null as null | (() => void),
@@ -83,6 +84,7 @@ const seams = vi.hoisted(() => ({
   lobbyHides: 0,
   leaveBattleConsole: (): void | Promise<void> => undefined,
   lobbyShowOptions: [] as unknown[],
+  lobbyRecovery: null as null | { message: string; retry: () => void },
   accountAnonymous: false,
   accountAuthenticated: false,
   onAccountAuthenticationChange: null as null | ((identityChanged: boolean) => void),
@@ -152,7 +154,8 @@ vi.mock('./client/VerifiedChallengeClient', () => ({
   },
 }))
 vi.mock('./client/NetworkClient', () => ({
-  NetworkClient: function NetworkClient() {
+  NetworkClient: function NetworkClient(...args: unknown[]) {
+    seams.networkConstructorArgs.push(args)
     return seams.clients.shift()
   },
 }))
@@ -349,6 +352,10 @@ vi.mock('./ui/Lobby', () => ({
     show(options?: unknown) {
       seams.lobbyShows += 1
       seams.lobbyShowOptions.push(options)
+    }
+    showNetworkRecovery(message: string, retry: () => void) {
+      seams.lobbyShows += 1
+      seams.lobbyRecovery = { message, retry }
     }
     isAccountAnonymous() { return seams.accountAnonymous }
     isAccountAuthenticated() { return seams.accountAuthenticated }
@@ -701,6 +708,7 @@ describe('production hot-seat progression composition', () => {
     seams.verifiedControllerPolicies.length = 0
     seams.verifiedControllerTuples.length = 0
     seams.hotSeatConstructorArgs.length = 0
+    seams.networkConstructorArgs.length = 0
     seams.gameEngineArgs.length = 0
     seams.onLobbyReady = null
     seams.onQuit = null
@@ -766,6 +774,7 @@ describe('production hot-seat progression composition', () => {
     seams.lobbyHides = 0
     seams.leaveBattleConsole = () => undefined
     seams.lobbyShowOptions.length = 0
+    seams.lobbyRecovery = null
     seams.accountAnonymous = false
     seams.accountAuthenticated = false
     seams.onAccountAuthenticationChange = null
@@ -1142,6 +1151,37 @@ describe('production hot-seat progression composition', () => {
     expect(seams.lobbyHides).toBe(lobbyHides)
     newer.emit(gameState())
     expect(seams.hudUpdates.length).toBeGreaterThan(hudUpdates)
+  })
+
+  it('shows an actionable Lobby retry for the current network initialization failure', async () => {
+    const timedOut = fakeClient(gameState())
+    const retryClient = fakeClient(gameState())
+    const timeout = new Error('Game recovery timed out. Return to Online and try joining again.')
+    timedOut.initialize = vi.fn(async () => { throw timeout })
+    seams.clients.push(timedOut, retryClient)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Expected lobby wiring')
+    const config = {
+      mode: 'network', roomId: 'successor-room', roomCode: 'NEXT', playerId: 'player-1',
+      players: [{ id: 'player-1', name: 'Ranger', color: '#e8554d' }], playerNames: ['Ranger'],
+    }
+    writeSession({ roomId: config.roomId, roomCode: config.roomCode, playerId: config.playerId })
+    await seams.onLobbyReady(config)
+
+    expect(seams.lobbyRecovery?.message).toBe(timeout.message)
+    expect(timedOut.stop).toHaveBeenCalledOnce()
+    expect(retryClient.start).not.toHaveBeenCalled()
+
+    seams.lobbyRecovery?.retry()
+    await vi.waitFor(() => expect(retryClient.start).toHaveBeenCalledOnce())
+    expect(seams.networkConstructorArgs.at(-1)?.slice(1, 3)).toEqual([
+      config.roomId,
+      config.playerId,
+    ])
+    expect(readSession()).toEqual({
+      roomId: 'successor-room', roomCode: 'NEXT', playerId: 'player-1',
+    })
   })
 
   it('retires a late asynchronous network start after a newer start owns the match', async () => {
@@ -1910,7 +1950,7 @@ describe('production hot-seat progression composition', () => {
     await import('./main')
     if (!seams.onLobbyReady) throw new Error('Lobby start callback was not registered')
     await seams.onLobbyReady({
-      mode: 'network', roomId: 'room-1', roomCode: 'ROOM', playerId: 'seat-a', token: 'seat-token',
+      mode: 'network', roomId: 'room-1', roomCode: 'ROOM', playerId: 'seat-a', token: crypto.randomUUID(),
       settings: { seed: 42, maxWind: 10, gravity: 0.15, rulesetVersion: 4, commandProtocolVersion: 2 },
       players: [
         { id: 'seat-a', name: 'Alice', color: '#e84d4d' },

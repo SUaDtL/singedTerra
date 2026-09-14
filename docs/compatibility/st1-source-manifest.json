@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "mode-input-capability-wiring-ordinary-parity-reviewed",
+  "disposition": "mode-input-and-network-recovery-ordinary-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -76,11 +76,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "d126af1637a28dc25e233954572b644e9d3b0fd009929feae0c399de0ab4c181"
+      "sha256": "ed99b59171473020ecf201d2242b280bcbd8d8d5fab516a6eb98124eef4e9075"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "9deff8172a15f9e3a3fc91a4a776d9e3be11a5fc3a3b88150dd22d4df8fd5e77"
+      "sha256": "03768fb76c5f9bf05111ba45c055e74553e385088a08529aa6a5c69db490ea36"
     },
     {
       "path": "package.json",
