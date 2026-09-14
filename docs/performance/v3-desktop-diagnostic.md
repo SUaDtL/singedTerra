@@ -3,6 +3,9 @@
 Observed 2026-09-14. No production optimization was selected from this bounded
 desktop evidence. Physical-device and human first-play observations remain open.
 
+The later [matched cold and cache-retaining desktop observation](v3-matched-desktop.md)
+holds the public entry route and battlefield seed constant across three pairs.
+
 ## Candidate binding
 
 The final desktop diagnostic ran against
