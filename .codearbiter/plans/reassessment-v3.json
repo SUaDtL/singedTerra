@@ -589,7 +589,7 @@
     {
       "id": "T04",
       "title": "Make CPU delivery outcomes explicit and convergent",
-      "status": "in_progress",
+      "status": "verified",
       "phase": "correctness",
       "kind": "implementation",
       "owner": "assigned_agent",
@@ -925,7 +925,7 @@
     {
       "id": "T11",
       "title": "Prove the repaired journeys in real browser scenarios",
-      "status": "planned",
+      "status": "in_progress",
       "phase": "verification",
       "kind": "implementation",
       "owner": "assigned_agent",
@@ -1039,7 +1039,7 @@
     {
       "id": "T13",
       "title": "Replace only the desktop English-label action interpreter",
-      "status": "planned",
+      "status": "in_progress",
       "phase": "targeted_refactor",
       "kind": "implementation",
       "owner": "assigned_agent",
@@ -1089,7 +1089,7 @@
     {
       "id": "T14",
       "title": "Measure first-play assets and ship at most one justified optimization",
-      "status": "planned",
+      "status": "in_progress",
       "phase": "product_evidence",
       "kind": "experiment",
       "owner": "B",
