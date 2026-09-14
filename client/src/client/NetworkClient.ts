@@ -56,6 +56,16 @@ interface RoomActionRow extends RoomCommandRowV2<NetworkAction> {
   created_at: string;
 }
 
+interface HistoryReadResult {
+  rows: RoomActionRow[];
+  targetRevision: number;
+}
+
+interface HistoryQueryResult {
+  data: unknown;
+  error: { message?: string } | null;
+}
+
 interface PendingRoomCommand {
   generation: number;
   envelope: RoomCommandEnvelopeV2<NetworkAction>;
@@ -262,6 +272,13 @@ export class NetworkClient implements GameClient {
     return this.orderedActions.pendingActions;
   }
   private get nextExpectedSeq(): number { return this.orderedActions.nextExpectedSeq; }
+  private historyReadControllers = new Set<AbortController>();
+  private activeHistoryRecoveries = 0;
+  private recoveryTargetRevision = 0;
+  private canonicalHistoryReady = true;
+  private static readonly HISTORY_REPLAY_CHUNK_SIZE = 16;
+  private static readonly HISTORY_MAX_ROWS = 10_000;
+  private static readonly HISTORY_MAX_PAGE_READS = 64;
   private _isFiring         = false;
   private _gameOverReported = false;
   private _fastForward      = false;   // local view pacing (review #7); never affects the log
@@ -273,6 +290,7 @@ export class NetworkClient implements GameClient {
   private _connection:      ConnectionState = 'connecting';
   private _everSubscribed   = false;            // distinguishes first subscribe from a reconnect
   private _closing          = false;            // set in stop() so teardown isn't reported as a drop
+  private connectionRecoveryGeneration = 0;
   // Set true at the top of stop() and never cleared. Backstop for async work that
   // outlives teardown — the seq-conflict retry timeout, the handleRematch poll
   // loop, and any post-teardown failFire()/emitState() call — so a stale timer or
@@ -437,22 +455,12 @@ export class NetworkClient implements GameClient {
    * the engine is in PLAYER_TURN (or GAME_OVER). start() may then be called.
    */
   async initialize(): Promise<void> {
-    // 1. Replay existing action log in seq order.
-    const { data: existingActions, error } = await this.supabase
-      .from('room_actions')
-      .select('*')
-      .eq('room_id', this.roomId)
-      .order('seq', { ascending: true });
-
-    if (error) {
-      throw new Error(`NetworkClient: failed to fetch action log: ${error.message}`);
-    }
-
-    // Number of rows to replay per event-loop turn. Keeps the tab responsive for
-    // late joiners replaying a long action log. Named constant — playtest-tunable.
-    const REPLAY_CHUNK_SIZE = 16;
-
-    const rows = (existingActions ?? []) as RoomActionRow[];
+    this.canonicalHistoryReady = false;
+    // 1. Capture and replay the complete existing action log. The API caps each
+    // response, so one successful response is not proof that history is complete.
+    const history = await this.readOrderedActionHistory(0);
+    if (!history) return;
+    const { rows, targetRevision } = history;
     for (const [index, row] of rows.entries()) {
       if (row.seq !== index) {
         throw new Error(`NetworkClient: noncontiguous room action history at seq ${row.seq}`);
@@ -463,13 +471,17 @@ export class NetworkClient implements GameClient {
     await replayInChunks(
       rows,
       (row) => {
+        if (this._disposed) return;
         this.applyRoomActionRow(row);
         this.tickToCompletion();
       },
-      REPLAY_CHUNK_SIZE,
+      NetworkClient.HISTORY_REPLAY_CHUNK_SIZE,
       () => new Promise<void>((r) => setTimeout(r, 0)),
     );
-    this.orderedActions.finishReplay(rows.length);
+    if (this._disposed) return;
+    this.orderedActions.finishReplay(targetRevision);
+    this.recoveryTargetRevision = targetRevision;
+    this.canonicalHistoryReady = true;
     this.finishBotPlanReplay();
     this.clearStaleBotPreparationFailure();
 
@@ -517,7 +529,6 @@ export class NetworkClient implements GameClient {
         if (status === 'SUBSCRIBED') {
           const firstSubscribe = !this._everSubscribed;
           const recovered = this._everSubscribed && this._connection !== 'connected';
-          this.setConnection('connected');
           this._everSubscribed = true;
           // Re-fetch (from nextExpectedSeq) any actions we could not have received
           // live, and flush them in order. This idempotent catch-up covers two gaps:
@@ -527,11 +538,29 @@ export class NetworkClient implements GameClient {
           //     The fetch snapshot missed it and the INSERT fired before the channel
           //     was live, so without this re-fetch that seq is never delivered — and
           //     flushPendingActions wedges on the hole forever.
-          if (firstSubscribe || recovered) void this.resyncLog();
+          if (firstSubscribe || recovered) {
+            this.canonicalHistoryReady = false;
+            const recoveryGeneration = ++this.connectionRecoveryGeneration;
+            void this.resyncLog().then((caughtUp) => {
+              if (
+                caughtUp
+                && !this._disposed
+                && recoveryGeneration === this.connectionRecoveryGeneration
+              ) {
+                this.canonicalHistoryReady = true;
+                this.setConnection('connected');
+                this.maybeDriveBot(this.engine.getState());
+              }
+            });
+          } else {
+            this.setConnection('connected');
+          }
         } else if (
           !this._closing &&
           (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')
         ) {
+          this.connectionRecoveryGeneration += 1;
+          this.canonicalHistoryReady = false;
           this.setConnection('reconnecting');
         }
       });
@@ -668,8 +697,12 @@ export class NetworkClient implements GameClient {
   stop(): void {
     this.frameRunning = false;
     this.frameGeneration++;
+    this.connectionRecoveryGeneration += 1;
     this._closing = true; // so removeChannel()'s CLOSED isn't reported as a drop
     this._disposed = true; // backstop for async work already in flight (see field doc)
+    this.canonicalHistoryReady = false;
+    for (const controller of this.historyReadControllers) controller.abort();
+    this.historyReadControllers.clear();
     this.rematchGeneration += 1;
     this.rematchLookup?.controller.abort();
     this.rematchLookup = null;
@@ -1010,43 +1043,185 @@ export class NetworkClient implements GameClient {
     for (const listener of this.fireFailedListeners) listener(message);
   }
 
+  /** Read one query response, with the optional recovery-only deadline. */
+  private async readHistoryPage(
+    startSeq: number,
+    ascending: boolean,
+    controller: AbortController,
+    deadlineMs?: number,
+  ): Promise<RoomActionRow[]> {
+    let builder = this.supabase
+      .from('room_actions')
+      .select('*')
+      .eq('room_id', this.roomId) as unknown as Record<string, unknown>;
+    // Supabase's production builder always provides these methods. The guards keep
+    // constructor-focused unit fakes, whose empty histories predate pagination,
+    // compatible without changing the production query shape.
+    if (typeof builder.gte === 'function') {
+      builder = builder.gte('seq', startSeq) as Record<string, unknown>;
+    }
+    if (typeof builder.order === 'function') {
+      builder = builder.order('seq', { ascending }) as Record<string, unknown>;
+    }
+    if (typeof builder.abortSignal === 'function') {
+      builder = builder.abortSignal(controller.signal) as Record<string, unknown>;
+    }
+    const query = builder as unknown as PromiseLike<HistoryQueryResult>;
+    let result: HistoryQueryResult;
+    if (deadlineMs === undefined) {
+      result = await query;
+    } else {
+      const settled = await settleWithDeadline(query, deadlineMs, () => controller.abort());
+      if (!settled.ok) throw settled.error;
+      result = settled.value;
+    }
+    if (result.error) {
+      throw new Error(`NetworkClient: failed to fetch action log: ${result.error.message ?? 'unknown error'}`);
+    }
+    if (result.data === null || result.data === undefined) return [];
+    if (!Array.isArray(result.data)) {
+      throw new Error('NetworkClient: invalid room action history response');
+    }
+    const rows = result.data as RoomActionRow[];
+    for (const row of rows) {
+      if (!Number.isInteger(row?.seq) || row.seq < startSeq) {
+        throw new Error(`NetworkClient: noncontiguous room action history at seq ${String(row?.seq)}`);
+      }
+    }
+    return rows.slice().sort((left, right) => left.seq - right.seq);
+  }
+
+  /** Prove that rows cover every sequence in [startSeq, targetRevision). */
+  private assertContiguousHistory(
+    rows: RoomActionRow[],
+    startSeq: number,
+    targetRevision: number,
+  ): void {
+    if (rows.length !== targetRevision - startSeq) {
+      throw new Error(`NetworkClient: noncontiguous room action history at seq ${startSeq + rows.length}`);
+    }
+    for (let index = 0; index < rows.length; index += 1) {
+      const expectedSeq = startSeq + index;
+      if (rows[index]?.seq !== expectedSeq) {
+        throw new Error(`NetworkClient: noncontiguous room action history at seq ${expectedSeq}`);
+      }
+    }
+  }
+
+  /**
+   * Capture the newest server-capped page first so its last sequence is a stable
+   * recovery target, then walk forward by sequence cursor until that target is
+   * complete. Rows committed after the capture remain Realtime-owned.
+   */
+  private async readOrderedActionHistory(
+    startSeq: number,
+    deadlineMs?: number,
+    stillCurrent: () => boolean = () => true,
+  ): Promise<HistoryReadResult | null> {
+    const controller = new AbortController();
+    const isCurrent = (): boolean => !this._disposed && stillCurrent();
+    this.historyReadControllers.add(controller);
+    try {
+      let pageReads = 1;
+      const capturedTail = await this.readHistoryPage(startSeq, false, controller, deadlineMs);
+      if (!isCurrent()) return null;
+      if (capturedTail.length === 0) return { rows: [], targetRevision: startSeq };
+
+      const tailStart = capturedTail[0]!.seq;
+      const targetRevision = capturedTail[capturedTail.length - 1]!.seq + 1;
+      if (targetRevision - startSeq > NetworkClient.HISTORY_MAX_ROWS) {
+        throw new Error('NetworkClient: room action history exceeds bounded recovery work');
+      }
+      this.assertContiguousHistory(capturedTail, tailStart, targetRevision);
+      if (tailStart === startSeq) return { rows: capturedTail, targetRevision };
+
+      const rows: RoomActionRow[] = [];
+      let cursor = startSeq;
+      while (cursor < tailStart) {
+        if (pageReads >= NetworkClient.HISTORY_MAX_PAGE_READS) {
+          throw new Error('NetworkClient: room action history exceeds bounded page reads');
+        }
+        pageReads += 1;
+        const page = (await this.readHistoryPage(cursor, true, controller, deadlineMs))
+          .filter((row) => row.seq < tailStart);
+        if (!isCurrent()) return null;
+        if (page.length === 0) {
+          throw new Error(`NetworkClient: noncontiguous room action history at seq ${cursor}`);
+        }
+        for (const row of page) {
+          if (row.seq !== cursor) {
+            throw new Error(`NetworkClient: noncontiguous room action history at seq ${cursor}`);
+          }
+          rows.push(row);
+          cursor += 1;
+          if (rows.length + capturedTail.length > NetworkClient.HISTORY_MAX_ROWS) {
+            throw new Error('NetworkClient: room action history exceeds bounded recovery work');
+          }
+        }
+      }
+      rows.push(...capturedTail);
+      this.assertContiguousHistory(rows, startSeq, targetRevision);
+      return { rows, targetRevision };
+    } catch (error) {
+      if (!isCurrent()) return null;
+      throw error;
+    } finally {
+      this.historyReadControllers.delete(controller);
+    }
+  }
+
   /**
    * Re-fetch the action log from nextExpectedSeq onward and flush it. Called after
    * a Realtime RE-subscribe so any turns committed during an outage are applied in
-   * order — the canonical log is the source of truth, so this is a safe, idempotent
-   * catch-up (rows we already have are skipped by the seq gate in flushPendingActions).
+   * order. Readiness is exposed only after every row through the captured target
+   * is either fetched or already present in the live buffer.
    */
   private async resyncLog(
     commandGeneration = this.commandGeneration,
     stillCurrent: () => boolean = () => true,
-  ): Promise<void> {
-    if (commandGeneration !== this.commandGeneration || this._disposed || !stillCurrent()) return;
-    const controller = new AbortController();
-    const query = this.supabase
-        .from('room_actions')
-        .select('*')
-        .eq('room_id', this.roomId)
-        .gte('seq', this.orderedActions.nextExpectedSeq)
-        .order('seq', { ascending: true })
-        .abortSignal(controller.signal) as unknown as PromiseLike<{
-          data: unknown;
-          error: { message?: string } | null;
-        }>;
-    const settled = await settleWithDeadline(query, NetworkClient.RESYNC_TIMEOUT_MS, () => controller.abort());
-    if (commandGeneration !== this.commandGeneration || this._disposed || !stillCurrent()) return;
-    if (!settled.ok) {
-      console.error('NetworkClient.resyncLog: log re-fetch deadline/failed:', (settled.error as Error)?.message ?? settled.error);
-      return;
+  ): Promise<boolean> {
+    const isCurrent = (): boolean => (
+      commandGeneration === this.commandGeneration && !this._disposed && stillCurrent()
+    );
+    if (!isCurrent()) return false;
+    this.activeHistoryRecoveries += 1;
+    let recoveryActive = true;
+    try {
+      const startSeq = this.orderedActions.nextExpectedSeq;
+      const history = await this.readOrderedActionHistory(
+        startSeq,
+        NetworkClient.RESYNC_TIMEOUT_MS,
+        isCurrent,
+      );
+      if (!history || !isCurrent()) return false;
+      this.recoveryTargetRevision = Math.max(this.recoveryTargetRevision, history.targetRevision);
+      if (!this.orderedActions.acceptRecovery(
+        history.rows.map((row) => ({ seq: row.seq, action: row })),
+        history.targetRevision,
+      )) {
+        console.error('NetworkClient.resyncLog: fetched history did not cover the captured target');
+        return false;
+      }
+      this.activeHistoryRecoveries = Math.max(0, this.activeHistoryRecoveries - 1);
+      recoveryActive = false;
+      this.flushPendingActions();
+      // A live echo may have advanced the engine while this read was in flight.
+      // Re-run the deterministic CPU driver once recovery no longer blocks submits.
+      this.maybeDriveBot(this.engine.getState());
+      return true;
+    } catch (error) {
+      if (isCurrent()) {
+        console.error(
+          'NetworkClient.resyncLog: log re-fetch deadline/failed:',
+          (error as Error)?.message ?? error,
+        );
+      }
+      return false;
+    } finally {
+      if (recoveryActive) {
+        this.activeHistoryRecoveries = Math.max(0, this.activeHistoryRecoveries - 1);
+      }
     }
-    const { data, error } = settled.value;
-    if (error) {
-      console.error('NetworkClient.resyncLog: failed to re-fetch log:', error.message);
-      return;
-    }
-    if (!this.orderedActions.acceptResync(
-      ((data ?? []) as RoomActionRow[]).map((row) => ({ seq: row.seq, action: row })),
-    )) return;
-    this.flushPendingActions();
   }
 
   /**
@@ -1224,7 +1399,13 @@ export class NetworkClient implements GameClient {
     roundOver = false,
     onSettle?: (settlement: BotSubmitSettlement) => void,
   ): boolean {
-    if (this._disposed || this.canonicalCommandFault) return false;
+    if (
+      this._disposed
+      || this.canonicalCommandFault
+      || !this.canonicalHistoryReady
+      || this.activeHistoryRecoveries > 0
+      || this.nextExpectedSeq < this.recoveryTargetRevision
+    ) return false;
     const actorPlayerId = actingPlayerId ?? this.playerId;
     const actorTankId = this.playerIndexMap.get(actorPlayerId);
     if (!actorTankId) return false;
