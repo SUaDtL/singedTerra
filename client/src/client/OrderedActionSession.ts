@@ -52,6 +52,30 @@ export class OrderedActionSession<Action> {
     return true;
   }
 
+  /** Admit a captured recovery only when its rows plus live pending rows cover the target. */
+  acceptRecovery(rows: OrderedActionRow<Action>[], targetExclusive: number): boolean {
+    if (
+      this.disposed
+      || !Number.isInteger(targetExclusive)
+    ) return false;
+    // Realtime may drain through (or beyond) the captured HTTP target while the
+    // request is in flight. That target is already satisfied; ignore its stale
+    // rows rather than rewinding or admitting them again.
+    if (targetExclusive <= this.expectedSeq) return true;
+    const incoming = new Map<number, Action>();
+    for (const row of rows) {
+      if (!Number.isInteger(row.seq) || incoming.has(row.seq)) return false;
+      if (row.seq >= this.expectedSeq && row.seq < targetExclusive) {
+        incoming.set(row.seq, row.action);
+      }
+    }
+    for (let seq = this.expectedSeq; seq < targetExclusive; seq += 1) {
+      if (!this.pending.has(seq) && !incoming.has(seq)) return false;
+    }
+    for (const [seq, action] of incoming) this.buffer(seq, action);
+    return true;
+  }
+
   dispose(): void {
     this.disposed = true;
     this.pending.clear();
