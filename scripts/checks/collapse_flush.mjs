@@ -37,6 +37,10 @@ const PATH_B_OVERHANG_TOP = 340;
 const pathBNonlethalControl = process.argv.includes('--path-b-nonlethal');
 const pathBDelayedTerminalControl = process.argv.includes('--path-b-delayed-terminal');
 const pathBOmitFlushControl = process.argv.includes('--path-b-omit-flush');
+const pathAMissingFixtureControl = process.argv.includes('--path-a-missing-fixture');
+const pathAOmitFlushControl = process.argv.includes('--path-a-omit-flush');
+const pathDMissingFixtureControl = process.argv.includes('--path-d-missing-fixture');
+const pathDResolvingControl = process.argv.includes('--path-d-force-resolving');
 
 let failed = false;
 const log = (...a) => console.log(...a);
@@ -111,6 +115,25 @@ function observeTerminalFlush(e) {
   return observation;
 }
 
+function installPathAOmitFlushMutation(e) {
+  const flushImmediately = e.flushSettleInstant.bind(e);
+  e.flushSettleInstant = () => {
+    if (e.pendingSettle !== null) return;
+    flushImmediately();
+  };
+}
+
+function installPathDResolvingMutation(e) {
+  const tickNormally = e.tick.bind(e);
+  e.tick = () => {
+    tickNormally();
+    const state = e.getState();
+    if (state.phase === 'FIRING' && state.projectiles.length === 0 && state.fire.length > 0) {
+      state.phase = 'RESOLVING';
+    }
+  };
+}
+
 // Count solid pixels in the live terrain — a deform (crater) changes this, so it
 // detects "a detonation happened this tick".
 function solidPixels(e) {
@@ -142,10 +165,13 @@ function hasUnsettledDirt(e) {
   // seed 0x1a3 + this lob lands the cluster carpet across multiple ticks, giving
   // ticks with a fresh detonation AND surviving in-flight bomblets (verified).
   const e = freshEngine(0x1a3);
-  e.applyAction({ type: 'select_weapon', weapon: 'cluster_bomb' });
-  e.applyAction({ type: 'set_angle', angle: 45 });
-  e.applyAction({ type: 'set_power', power: 60 });
-  e.applyAction({ type: 'fire' });
+  if (pathAOmitFlushControl) installPathAOmitFlushMutation(e);
+  if (!pathAMissingFixtureControl) {
+    e.applyAction({ type: 'select_weapon', weapon: 'cluster_bomb' });
+    e.applyAction({ type: 'set_angle', angle: 45 });
+    e.applyAction({ type: 'set_power', power: 60 });
+    e.applyAction({ type: 'fire' });
+  }
 
   let ticks = 0;
   let pathATicks = 0;       // ticks where a deform happened AND we stayed in FIRING (survivors remained)
@@ -171,8 +197,7 @@ function hasUnsettledDirt(e) {
   if (ticks >= MAX_TICKS) {
     fail('[path-A] cluster never resolved (possible infinite flight)');
   } else if (pathATicks === 0) {
-    // Could not reach the path with this seed/aim — honest skip, don't over-claim.
-    log('[path-A] SKIPPED (could not construct): no tick had a detonation while bomblets remained in flight');
+    fail('[path-A] fixture prerequisite failed: no tick had a detonation while bomblets remained in flight');
   } else if (unsettledOnPathA > 0) {
     fail(`[path-A] ${unsettledOnPathA}/${pathATicks} mid-flight detonation ticks left terrain UNSETTLED — a settle was deferred while projectiles were in flight (branch A must flushSettleInstant)`);
   } else {
@@ -299,12 +324,16 @@ function hasUnsettledDirt(e) {
 {
   // seed 0x1a3 + this napalm lob lands on terrain and burns ~98 ticks (verified).
   const e = freshEngine(0x1a3);
-  e.applyAction({ type: 'select_weapon', weapon: 'napalm' });
-  e.applyAction({ type: 'set_angle', angle: 45 });
-  e.applyAction({ type: 'set_power', power: 60 });
-  e.applyAction({ type: 'fire' });
+  if (pathDResolvingControl) installPathDResolvingMutation(e);
+  if (!pathDMissingFixtureControl) {
+    e.applyAction({ type: 'select_weapon', weapon: 'napalm' });
+    e.applyAction({ type: 'set_angle', angle: 45 });
+    e.applyAction({ type: 'set_power', power: 60 });
+    e.applyAction({ type: 'fire' });
+  }
 
   let ticks = 0;
+  let burningAfterShell = 0; // reachable fixture prerequisite, independent of the asserted phase
   let firingWhileBurning = 0;   // ticks: phase===FIRING, no projectiles, fire alight (branch D)
   let unsettledWhileBurning = 0;// of those, ticks with floating dirt (would be a BUG — flush should settle it)
   let sawResolvingWhileBurning = false;
@@ -314,23 +343,29 @@ function hasUnsettledDirt(e) {
     const st = e.getState();
     const burning = st.fire.length > 0;
     if (burning && st.phase === 'RESOLVING') sawResolvingWhileBurning = true;
-    if (st.phase === 'FIRING' && st.projectiles.length === 0 && burning) {
-      firingWhileBurning++;
-      if (hasUnsettledDirt(e)) unsettledWhileBurning++;
+    if (st.projectiles.length === 0 && burning) {
+      burningAfterShell++;
+      if (st.phase === 'FIRING') {
+        firingWhileBurning++;
+        if (hasUnsettledDirt(e)) unsettledWhileBurning++;
+      }
     }
     ticks++;
   }
 
-  log(`[path-D] firingWhileBurning=${firingWhileBurning} unsettledWhileBurning=${unsettledWhileBurning} sawResolvingWhileBurning=${sawResolvingWhileBurning} finalPhase=${e.getState().phase}`);
+  log(`[path-D] burningAfterShell=${burningAfterShell} firingWhileBurning=${firingWhileBurning} unsettledWhileBurning=${unsettledWhileBurning} sawResolvingWhileBurning=${sawResolvingWhileBurning} finalPhase=${e.getState().phase}`);
+  log('EXCLUDED [path-D]: a non-null pendingSettle while fire burns is unreachable with the shipped weapon set because no weapon both craters and ignites.');
 
   if (ticks >= MAX_TICKS) {
     fail('[path-D] napalm never resolved (possible infinite burn)');
-  } else if (firingWhileBurning === 0) {
-    // The napalm never lingered with no projectiles — can't exercise branch D. Honest skip.
-    log('[path-D] SKIPPED (could not construct): napalm did not burn with the shell already consumed');
+  } else if (burningAfterShell === 0) {
+    fail('[path-D] fixture prerequisite failed: napalm did not burn with the shell already consumed');
   } else {
     if (sawResolvingWhileBurning) {
       fail('[path-D] engine entered an animated RESOLVING settle while fire was still burning (branch D must flush instantly and stay in FIRING)');
+    }
+    if (firingWhileBurning !== burningAfterShell) {
+      fail(`[path-D] ${burningAfterShell - firingWhileBurning}/${burningAfterShell} post-shell burning ticks did not remain in FIRING`);
     }
     if (unsettledWhileBurning > 0) {
       fail(`[path-D] ${unsettledWhileBurning}/${firingWhileBurning} burning ticks left terrain UNSETTLED (the per-tick flush must keep the collapse compacted under the fire)`);
