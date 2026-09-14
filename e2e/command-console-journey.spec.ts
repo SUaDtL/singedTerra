@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { gotoRunningGame } from './support';
+import { installConnectedRealtimeFixture } from './realtime-fixture';
 
 interface HotSeatProbe {
   phase: string;
@@ -117,9 +118,16 @@ async function readRosterCoordinates(page: Page): Promise<Array<Record<string, n
   }));
 }
 
-async function installOnlineCpuFixture(page: Page): Promise<{
+type OnlineCpuScenario = 'accepted' | 'terminal-refusal' | 'transient-with-competing-row';
+
+async function installOnlineCpuFixture(
+  page: Page,
+  scenario: OnlineCpuScenario = 'accepted',
+): Promise<{
   rows: CanonicalActionRow[];
   submissions: Array<Record<string, unknown>>;
+  journeyEvents: string[];
+  expectRealtimeReady: () => Promise<void>;
 }> {
   const roomId = 'room-command-console';
   const humanId = 'player-command-console';
@@ -140,6 +148,9 @@ async function installOnlineCpuFixture(page: Page): Promise<{
   };
   const rows: CanonicalActionRow[] = [];
   const submissions: Array<Record<string, unknown>> = [];
+  const journeyEvents: string[] = [];
+  let competingRow: CanonicalActionRow | null = null;
+  const realtime = await installConnectedRealtimeFixture(page);
 
   await page.route('**/functions/v1/create_room', async (route) => route.fulfill({
     status: 200,
@@ -180,6 +191,54 @@ async function installOnlineCpuFixture(page: Page): Promise<{
     const actorTankId = actorPlayerId === humanId ? 'p1' : 'p2';
     const action = command['action'] as Record<string, unknown>;
     expect(action).not.toHaveProperty('commandActor');
+
+    const cpuAttempts = submissions.filter((submission) => (
+      submission['command'] as Record<string, unknown>
+    )['actorPlayerId'] === cpuId).length;
+    if (actorPlayerId === cpuId && scenario === 'terminal-refusal') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: false, error: 'invalid_command' }),
+      });
+      return;
+    }
+    if (
+      actorPlayerId === cpuId
+      && scenario === 'transient-with-competing-row'
+      && cpuAttempts === 1
+    ) {
+      const seq = rows.length;
+      competingRow = {
+        id: `action-${seq}`,
+        room_id: roomId,
+        seq,
+        player_id: cpuId,
+        action: {
+          type: 'move',
+          delta: 1,
+          commandActor: { role: 'engine-seat', tankId: 'p2' },
+        },
+        created_at: '2026-08-15T00:00:00.000Z',
+        command_version: 2,
+        intent_id: `competing-${seq}`,
+        expected_revision: seq,
+        submitted_by: humanId,
+        command_ends_turn: false,
+        command_next_index: null,
+        command_round_over: false,
+      };
+      journeyEvents.push('first-cpu-post');
+      await route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: false, error: 'rate_limited' }),
+      });
+      return;
+    }
+    if (actorPlayerId === cpuId && scenario === 'transient-with-competing-row') {
+      journeyEvents.push('second-cpu-post');
+    }
     const seq = rows.length;
     const intentId = command['intentId'] as string;
     const commandEndsTurn = action['type'] === 'fire' || action['type'] === 'use_shield';
@@ -227,9 +286,60 @@ async function installOnlineCpuFixture(page: Page): Promise<{
       headers: { 'Content-Range': `0-${Math.max(0, rows.length - 1)}/${rows.length}` },
       body: JSON.stringify(rows.filter((row) => row.seq >= minimumSeq)),
     });
+    const cpuAttempts = submissions.filter((submission) => (
+      submission['command'] as Record<string, unknown>
+    )['actorPlayerId'] === cpuId).length;
+    if (
+      scenario === 'transient-with-competing-row'
+      && cpuAttempts === 1
+      && minimumSeq === 1
+      && rows.length === 1
+      && !journeyEvents.includes('empty-recovery-read')
+    ) {
+      journeyEvents.push('empty-recovery-read');
+      if (competingRow === null) throw new Error('Missing competing canonical row');
+      rows.push(competingRow);
+      journeyEvents.push('competing-realtime-insert');
+      realtime.emitPostgresChange('room_actions', 'INSERT', competingRow);
+      competingRow = null;
+    }
   });
 
-  return { rows, submissions };
+  return {
+    rows,
+    submissions,
+    journeyEvents,
+    expectRealtimeReady: () => realtime.expectJoinedTopics([
+      'room_actions:room-command-console',
+      'rooms:game:room-command-console',
+    ]),
+  };
+}
+
+async function enterOnlineCpuBattle(page: Page, fixture: {
+  expectRealtimeReady: () => Promise<void>;
+}): Promise<void> {
+  await page.goto('?tutorial=first-salvo');
+  await page.evaluate(() => document.getElementById('st-splash')?.remove());
+  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+  await page.locator('#lobby .lobby-name').fill('Ranger');
+  await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
+    .locator('select').first().selectOption('1');
+  await page.getByRole('button', { name: 'Create operation', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Ready Up', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
+  await fixture.expectRealtimeReady();
+  await expect(page.locator('[data-battle-console-target-key="weapon-next"]'))
+    .toHaveAccessibleName('Select next weapon, current Baby Missile');
+  await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toBeVisible();
+  await acknowledgeBriefing(page);
+}
+
+async function submitHumanFire(page: Page): Promise<void> {
+  const fire = page.locator('[data-battle-console-action="fire"]');
+  await expect(fire).toBeEnabled();
+  await fire.click();
+  await expect(fire).toBeDisabled();
 }
 
 test.describe('adaptive command console causal journeys', () => {
@@ -300,18 +410,7 @@ test.describe('adaptive command console causal journeys', () => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'one causal network journey; viewport contracts run separately');
     test.setTimeout(45_000);
     const fixture = await installOnlineCpuFixture(page);
-    await page.goto('?tutorial=first-salvo');
-    await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await page.getByRole('button', { name: 'Play Online', exact: true }).click();
-    await page.locator('#lobby .lobby-name').fill('Ranger');
-    await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
-      .locator('select').first().selectOption('1');
-    await page.getByRole('button', { name: 'Create operation', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Ready Up', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Ready Up', exact: true }).click();
-    await expect(page.locator('[data-battle-console-target-key="weapon-next"]')).toHaveAccessibleName('Select next weapon, current Baby Missile');
-    await expect(page.locator('[data-semantic-key="node:output:Angle:43"]')).toBeVisible();
-    await acknowledgeBriefing(page);
+    await enterOnlineCpuBattle(page, fixture);
     await chooseMissileAndRestoreArsenalFocus(page, false);
 
     await page.getByRole('button', { name: 'Aim barrel left', exact: true }).click();
@@ -398,6 +497,66 @@ test.describe('adaptive command console causal journeys', () => {
       return (command['action'] as Record<string, unknown>)['type'] === 'fire'
         && command['actorPlayerId'] === 'player-command-console';
     })).toHaveLength(1);
+  });
+
+  test('online CPU terminal refusal is visible and never retries the rejected intent', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'one causal network journey; viewport contracts run separately');
+    test.setTimeout(45_000);
+    const fixture = await installOnlineCpuFixture(page, 'terminal-refusal');
+    await enterOnlineCpuBattle(page, fixture);
+    await submitHumanFire(page);
+
+    await expect.poll(() => fixture.submissions.filter((body) => (
+      body['command'] as Record<string, unknown>
+    )['actorPlayerId'] === 'cpu-command-console').length, { timeout: 20_000 }).toBe(1);
+    await expect(page.locator('.st-hud__toast'))
+      .toContainText('CPU command was refused — return to the lobby and rejoin to recover.');
+    await page.waitForTimeout(350);
+    expect(fixture.submissions.filter((body) => (
+      body['command'] as Record<string, unknown>
+    )['actorPlayerId'] === 'cpu-command-console')).toHaveLength(1);
+    expect(fixture.rows.map((row) => row.action['type'])).toEqual(['fire']);
+  });
+
+  test('online CPU replans once when canonical progress arrives during transient backoff', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'one causal network journey; viewport contracts run separately');
+    test.setTimeout(45_000);
+    const fixture = await installOnlineCpuFixture(page, 'transient-with-competing-row');
+    await enterOnlineCpuBattle(page, fixture);
+    await submitHumanFire(page);
+
+    await expect.poll(() => fixture.journeyEvents.slice(0, 3)).toEqual([
+      'first-cpu-post',
+      'empty-recovery-read',
+      'competing-realtime-insert',
+    ]);
+    await expect.poll(() => fixture.submissions.filter((body) => (
+      body['command'] as Record<string, unknown>
+    )['actorPlayerId'] === 'cpu-command-console').length, { timeout: 20_000 }).toBe(2);
+    const cpuAttempts = fixture.submissions.filter((body) => (
+      body['command'] as Record<string, unknown>
+    )['actorPlayerId'] === 'cpu-command-console');
+    const first = cpuAttempts[0]!['command'] as Record<string, unknown>;
+    const second = cpuAttempts[1]!['command'] as Record<string, unknown>;
+    expect(first['expectedRevision']).toBe(1);
+    expect(second['expectedRevision']).toBe(2);
+    expect(second['intentId']).not.toBe(first['intentId']);
+    await expect.poll(() => fixture.rows.map((row) => row.action['type']), { timeout: 20_000 })
+      .toEqual(['fire', 'move', 'fire']);
+    await page.waitForTimeout(350);
+    expect(fixture.submissions.filter((body) => (
+      body['command'] as Record<string, unknown>
+    )['actorPlayerId'] === 'cpu-command-console')).toHaveLength(2);
+    expect(fixture.journeyEvents).toEqual([
+      'first-cpu-post',
+      'empty-recovery-read',
+      'competing-realtime-insert',
+      'second-cpu-post',
+    ]);
   });
 });
 
