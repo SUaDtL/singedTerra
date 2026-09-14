@@ -134,6 +134,16 @@ HTML. The current battle console uses one Preact tree for live readings and
 commands, plus optional Pixi decoration beneath that tree. Typed presentation
 state and typed intents keep UI ownership separate from the engine.
 
+The semantic components, Preact runtime, and scoped CSS load with the startup
+dependency graph so an open page retains its commands when a later static-host
+deployment removes deferred chunks. The startup HUD owns an idle lifecycle
+coordinator; battle entry creates its generation ledger and mounts the semantic
+root, effects, intent bridge, and controller adapter. Before first entry there
+are no mounted console resources. Pixi, its CSP-support module,
+and compositor textures remain optional and deferred; their failure leaves the
+semantic controls operable. The loading variance and required fresh evidence
+are recorded in the [console entry recovery report](reports/recovered-console-entry-2026-09-13.md).
+
 Responsive projection selects wide, standard, or compact console geometry.
 Canvas still owns the battlefield in every mode. HTML remains the focus,
 keyboard, pointer, and assistive-technology surface.

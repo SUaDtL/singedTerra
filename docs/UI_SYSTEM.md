@@ -55,6 +55,19 @@ and player intent. Optional Pixi decoration sits beneath it and cannot own
 gameplay input. Canvas remains responsible for terrain, tanks, projectiles,
 effects, and the authored battlefield.
 
+Semantic component code, Preact, and scoped CSS are available at startup; the
+battle lifecycle alone mounts the controls and their effects. This keeps command
+availability independent of deferred decoration chunks that a later deployment
+may remove. The HUD's idle lifecycle coordinator already exists at startup;
+the zero-resource boundary concerns mounted console roots/effects and the
+generation-owned ledger resources, including intent bridges and controller
+adapters. Pixi, its CSP-support module, and compositor textures stay lazy.
+Optional decoration failure preserves the same semantic owner and typed intent
+path. The recovery report records measured startup cost and the remaining lazy
+boundary; earlier zero-Preact evidence does not cover this recovery change.
+The [console entry recovery report](reports/recovered-console-entry-2026-09-13.md)
+records the implementation variance and its evidence limits.
+
 The console projects to three layout modes:
 
 - **Wide:** full ornate frame with separate live instruments and command areas.

@@ -8,6 +8,43 @@ review_revision: 15
 
 # Battle console integrated visual system
 
+## Implementation addendum — 2026-09-13: recovered console entry
+
+The [console entry recovery report](../../docs/reports/recovered-console-entry-2026-09-13.md)
+records a narrow implementation variance under the maintainer's standing
+instruction to finish useful unfinished work and merge it. It does not record a
+new user-selected architecture decision, ADR acceptance, or supersession. The
+original specification text, including AC-37 below, and ADR-0018 remain intact
+as historical requirements; their zero-Preact startup claim no longer describes
+this recovery implementation and earlier evidence cannot establish that claim
+for the changed candidate.
+
+For this implementation, Preact, semantic component code, and scoped CSS are
+available through the startup dependency graph. The startup HUD already owns
+an idle lifecycle coordinator with no active generation. Before first battle
+entry there are zero mounted semantic roots/effects and no acquired generation
+resources: `preactRoots`, `portalOwners`, `semanticKeySets`, `intentBridges`,
+`controllerAdapters`, and the other classes in `battleConsoleResourceClasses`
+remain zero. This does not assert the absence of the idle coordinator or its
+ordinary JavaScript allocations. There are also zero requests or evaluation for
+optional Pixi and its CSP-support module, and zero compositor texture requests.
+Battle entry mounts the sole semantic owner without depending
+on a deferred semantic chunk. The optional compositor retains its existing
+process-owned loading, removable waiters, deadline, abort, stale-result, and
+destruction rules. CSP and the separate Supabase loading boundary are unchanged.
+
+Fresh evidence must distinguish startup and battle-entry request/evaluation
+closures, measure the added startup JavaScript/CSS cost, and join both closures
+to the actual served bundle graph. It must exercise operable commands when
+deferred presentation chunks fail, preserve lifecycle/resource checks, and
+check repeat entry without duplicate successful module or texture requests.
+The historical exactly-one deferred semantic entry request assertion does not
+apply to this split. Game-only comparisons must account for the same startup
+semantic code baseline while retaining zero mounted console resources; they
+cannot claim zero Preact evaluation. Frozen artifacts, receipts, and results
+remain unchanged. This addendum supplies no performance numbers or new passing
+evidence and does not relax the existing budgets or declare verification complete.
+
 **Governs:** the battle-console visual and semantic surfaces under `client/src/ui/`, their scoped styles and browser tests, deterministic console assets under `client/public/art/battle-console-integrated/`, their build/contract tooling under `scripts/assets/` and `.codearbiter/contracts/battle-console/`, and the accepted superseding decision `.codearbiter/decisions/0018-preact-battle-console-semantic-ownership.md`.
 
 ## Status and gate
