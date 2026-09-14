@@ -11,6 +11,9 @@ A browser-based, turn-based artillery game — a homage to *Scorched Earth* (199
 the name (*singed earth*). Two tanks (or up to four players) lob projectiles across a
 destructible terrain, adjusting angle/power against wind and gravity.
 
+**Workspace hygiene:** Reuse suitable worktrees. Before closing delivery, remove task-owned temporary files and obsolete worktrees after useful changes are merged or recoverably preserved.
+Protect user work, active runtimes, and required evidence; report discovered clutter or cleanup that could not safely be completed.
+
 ## Purpose
 
 Recreate the feel of classic artillery dueling in the browser, with both **hot-seat**
