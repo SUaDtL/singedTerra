@@ -211,7 +211,7 @@ export class VerifiedChallengeView {
     options.host.append(this.root)
   }
 
-  update(value: HUDVerifiedChallengePresentation | null): void {
+  update(value: HUDVerifiedChallengePresentation | null, reportReady = true): void {
     if (value === null) {
       this.statusRoot.hidden = true
       this.statusRoot.querySelector<HTMLElement>('[data-challenge-status-copy]')!.textContent = ''
@@ -222,7 +222,7 @@ export class VerifiedChallengeView {
     const statusCopy = this.statusRoot.querySelector<HTMLElement>('[data-challenge-status-copy]')!
     statusCopy.textContent = projection.status.replace(/^Crosswind Qualification · ?/, '')
     this.statusRoot.hidden = projection.status === ''
-    if (!projection.open) {
+    if (!projection.open || !reportReady) {
       this.hide()
       return
     }

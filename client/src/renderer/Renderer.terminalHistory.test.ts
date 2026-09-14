@@ -108,6 +108,17 @@ describe('Renderer recovered terminal impact history', () => {
     expect(renderer.isTerminalImpactAnimating(state)).toBe(true)
   })
 
+  it('keeps the live impact edge singular while terminal payoff frames reuse its snapshot', () => {
+    const state = recoverableVerifiedTerminalState()
+    const { renderer, onExplosion } = rendererSeam()
+
+    renderer.consumeExplosion(state)
+    renderer.consumeExplosion(state)
+
+    expect(onExplosion).toHaveBeenCalledOnce()
+    expect(renderer.effects.spawnExplosion).toHaveBeenCalledOnce()
+  })
+
   it('primes terminal history without effects or state mutation', () => {
     const state = recoverableVerifiedTerminalState()
     const before = structuredClone(state)
