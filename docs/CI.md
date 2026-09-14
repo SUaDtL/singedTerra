@@ -35,6 +35,14 @@ The browser matrix does not cancel sibling lanes on failure. Failure artifacts
 include the lane and run attempt. Every previously executing assertion and distinct viewport scenario remains.
 Retries and performance ceilings are unchanged.
 
+Pages starts when `CI` completes on main, rather than holding a runner while CI
+runs. A read-only gate accepts only a successful same-repository main push and
+refetches its exact run, attempt and workflow identity. The CI source must equal
+both the trusted workflow snapshot and current main; a PR, fork, stale run or
+replaced attempt cannot authorize a release. GitHub's `workflow_run` context uses
+the default-branch snapshot, so the upstream SHA is validated explicitly.
+No upstream CI artifact or upstream branch checkout is consumed.
+
 Pages builds one candidate with the deployment base path and public configuration.
 Three parallel browser lanes each download that same artifact by ID, verify its
 metadata and payload digest, exercise it with external network access denied,
@@ -46,8 +54,11 @@ weekly security scan always runs in full. Classification errors fail the workflo
 Pages still runs full candidate coverage for documentation-only main commits.
 That release cost remains an explicit opportunity, not a claimed saving. Skipping candidate tests
 requires comparing against a trusted previously tested runtime, including when
-intermediate commits were never published. Triggering Pages after CI completes
-also needs to preserve the existing event and rollback trust boundaries.
+intermediate commits were never published. Manual dispatch remains rollback-only. It accepts an exact successful historical
+Pages push run or a new successful Pages workflow-run release, plus the reviewed
+current main and the one unexpired candidate artifact. A rollback dispatch is not
+itself a reusable release source. The original payload is verified and reuploaded
+without rebuilding.
 
 ## Measured baseline and first delivery
 
@@ -95,7 +106,15 @@ three guaranteed skips, and some product geometry checks overlap stronger consol
 checks. Those cases remain intact; neither overlap nor an expensive test is
 sufficient reason to remove an assertion.
 
-The Pages polling allowance was also corrected from about 20 minutes to about
-30 minutes, with a 35-minute job timeout. The previous allowance expired before
-the observed 23-minute required CI completed. It still refuses failed CI and
-revalidates the exact run attempt before publication.
+The earlier Pages polling allowance was corrected from about 20 to 30 minutes
+after it expired before a 23-minute CI run finished. The completed-CI trigger
+supersedes that poll loop: its five-minute gate performs bounded API reads only.
+Final CI run/attempt revalidation, current-main checks and publication locking
+remain mandatory. This saves the idle gate's runner time; it does not remove CI
+or candidate-browser work, and total push-to-publication time still includes both.
+
+The privileged trigger follows GitHub's [workflow-run security guidance](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run).
+Regression cases reject untrusted event/run identities, changed attempts, stale
+source and unsafe artifact/checkout substitutions. Hosted timing and first-trigger
+verification belong to the delivery record; local fixtures do not prove GitHub
+has executed the new trigger.

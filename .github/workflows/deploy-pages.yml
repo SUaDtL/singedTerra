@@ -1,20 +1,22 @@
 name: Deploy client to GitHub Pages
 
-# A push to main first proves the exact source SHA passed the complete CI
-# workflow, then builds the Pages-configured client once. The uploaded artifact
+# Successful main-push CI completion starts this workflow without an idle
+# polling runner. The gate revalidates that exact CI run, then builds the Pages-configured client once. The uploaded artifact
 # is downloaded, digest-verified, and exercised by both browser suites before
 # the same uniquely named artifact is promoted.
 #
 # Manual execution is rollback-only. It requires an explicit prior successful
-# push-run/source pair plus the current-main SHA the owner reviewed. The prior
+# release-run/source pair plus the current-main SHA the owner reviewed. The prior
 # tested payload is verified and re-uploaded unchanged; no source rebuild occurs.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
       rollback_run_id:
-        description: Successful trusted Pages push run containing the prior tested candidate
+        description: Successful trusted Pages release run containing the prior tested candidate
         required: true
         type: string
       rollback_source_sha:
@@ -38,7 +40,16 @@ jobs:
   gate:
     name: exact source and required CI gate
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.action == 'completed' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.repository.full_name == github.repository)
+    timeout-minutes: 5
     permissions:
       actions: read
       contents: read
@@ -87,15 +98,15 @@ jobs:
           ref: ${{ needs.gate.outputs.expected_main_sha }}
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run'
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run'
       - name: Build once with the deployment base and public configuration
         id: built
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run'
         run: |
           npm run build
           cp client/dist/index.html client/dist/404.html
@@ -110,7 +121,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - name: Verify current candidate metadata and bytes
         id: current-meta
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run'
         run: node scripts/ci/releaseCandidate.mjs verify client/dist
         env:
           CANDIDATE_SOURCE_SHA: ${{ needs.gate.outputs.source_sha }}
@@ -325,7 +336,7 @@ jobs:
           current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
           node scripts/ci/pagesFreshness.mjs check "${{ needs.gate.outputs.expected_main_sha }}" "$current_sha"
       - name: Revalidate the bound required CI attempt immediately before promotion
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run'
         run: node scripts/ci/releaseCandidate.mjs revalidate-ci
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -366,13 +377,14 @@ jobs:
 
   live-smoke:
     name: post-deploy live smoke
-    needs: publish
+    needs: [gate, publish]
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.gate.outputs.expected_main_sha }}
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
