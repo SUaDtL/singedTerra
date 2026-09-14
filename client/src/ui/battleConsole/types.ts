@@ -7,6 +7,26 @@ export type BattleConsoleHostMode = 'wide' | 'standard' | 'compact-touch';
 /** Stable semantic-owner identity used for focus transfer and restoration. */
 export type SemanticKey = string;
 
+/** Stable command identity for one wide/standard semantic control. */
+export type BattleConsoleSemanticActionId =
+  | 'move-left'
+  | 'move-right'
+  | 'weapon-next'
+  | 'armory-toggle'
+  | 'angle-decrease'
+  | 'angle-increase'
+  | 'power-decrease'
+  | 'power-increase'
+  | 'settings-open'
+  | 'fire';
+
+/** Typed behavior projected onto one retained semantic topology node. */
+export interface BattleConsoleSemanticControlBinding {
+  readonly stableKey: SemanticKey;
+  readonly actionId: BattleConsoleSemanticActionId;
+  readonly disabled: boolean;
+}
+
 /** A store request contains exactly one domain purchase kind. */
 export type StorePurchase =
   | { readonly weapon: WeaponType; readonly accessory?: never }
