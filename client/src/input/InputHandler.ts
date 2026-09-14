@@ -419,7 +419,9 @@ export class InputHandler {
    * getBoundingClientRect() returns the DISPLAYED (CSS-zoomed) size, so dividing by
    * it maps to [0,1] across the canvas regardless of the #app zoom — then scale up
    * to logical px. Angle = direction from the tank (0=right, 90=up; screen y is
-   * down, hence -dy); power = drag distance / FULL_POWER_DRAG_PX.
+   * down, hence -dy); power = drag distance / FULL_POWER_DRAG_PX. The supported
+   * upper-hemisphere arc projects a below-left drag to 180 and a below-right drag
+   * to 0. The exact pivot and straight-down tie choose the right boundary (0).
    */
   private applyPointerAim(event: Pick<PointerEvent, 'clientX' | 'clientY'>): void {
     const rect = this.target.getBoundingClientRect();
@@ -428,8 +430,9 @@ export class InputHandler {
     const my = ((event.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
     const dx = mx - this.activeTankX;
     const dy = my - this.activeTankY;
-    let deg = (Math.atan2(-dy, dx) * 180) / Math.PI; // upper hemisphere => 0..180
-    if (deg < 0) deg = 0; // clamp a below-horizontal drag up to flat
+    const deg = dy > 0
+      ? (dx < 0 ? 180 : 0)
+      : Math.abs((Math.atan2(-dy, dx) * 180) / Math.PI);
     const power = (Math.hypot(dx, dy) / FULL_POWER_DRAG_PX) * this.powerCap;
     this.setAngleAbsolute(deg);
     this.setPowerAbsolute(power);

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WEAPONS, type WeaponType } from '@shared/engine/WeaponSystem';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { PlayerAction } from '@shared/types/PlayerAction';
 import { InputHandler, type InputHandlerOptions } from './InputHandler';
 
@@ -517,6 +518,57 @@ describe('InputHandler public contract', () => {
       { type: 'set_angle', angle: 90 },
       { type: 'set_power', power: 100 },
     ]);
+  });
+
+  it('projects every pointer quadrant and boundary onto the allowed upper-hemisphere aim arc', () => {
+    setBounds();
+    handler.setActiveTankScreenPos(600, 300);
+    handler.attach();
+    const clientPoint = (x: number, y: number) => ({
+      clientX: 10 + (x / CANVAS_WIDTH) * 400,
+      clientY: 20 + (y / CANVAS_HEIGHT) * 300,
+    });
+    const cases = [
+      [700, 200, 45],   // upper right
+      [500, 200, 135],  // upper left
+      [700, 400, 0],    // below right clamps right
+      [500, 400, 180],  // below left clamps left
+      [700, 300, 0],    // horizontal right
+      [500, 300, 180],  // horizontal left
+      [600, 200, 90],   // vertical up
+      [600, 400, 0],    // vertical down uses the right-boundary tie
+      [600, 300, 0],    // the exact pivot uses the same right-boundary tie
+    ] as const;
+    let pointerId = 1;
+
+    for (const [x, y, angle] of cases) {
+      handler.setAim(17, 50);
+      emit.mockClear();
+      dispatchPointer('pointerdown', { ...clientPoint(x, y), pointerId });
+      expect(emitted()).toContainEqual({ type: 'set_angle', angle });
+      expect(emitted().some((action) => action.type === 'fire')).toBe(false);
+      dispatchPointer('pointerup', { pointerId });
+      pointerId += 1;
+    }
+  });
+
+  it('keeps the lower-left boundary and variable power cap correct at a CSS-scaled canvas size', () => {
+    createHandler({ powerCap: 200 });
+    setBounds(200, 150);
+    handler.setActiveTankScreenPos(600, 300);
+    handler.attach();
+
+    dispatchPointer('pointerdown', {
+      clientX: 10 + (500 / CANVAS_WIDTH) * 200,
+      clientY: 20 + (400 / CANVAS_HEIGHT) * 150,
+    });
+
+    expect(emitted()).toEqual([
+      { type: 'set_angle', angle: 180 },
+      { type: 'set_power', power: 101 },
+    ]);
+    expect(target.setPointerCapture).toHaveBeenCalledOnce();
+    expect(emitted().some((action) => action.type === 'fire')).toBe(false);
   });
 
   it.each(['touch', 'pen'])('maps one primary %s contact through the same projection without firing', (pointerType) => {
