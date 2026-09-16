@@ -161,6 +161,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]
 ## In-flight
+- [ ] ci.efficiency.0001 - Measure removal of duplicated typecheck and prebuild work in CI check-work while preserving full browser shards, release provenance, and required results; deliver only if a material benefit is demonstrated.  (from post-campaign-ci-review-2026-09-16)
+  - Boundaries: ci, release-provenance
+- [ ] campaign.distribution.0001 - Use the T14 desktop report and T15 player or device evidence to choose the next distribution and retention action; keep the current Pages deployment unless evidence changes that decision.  (from reassessment-v3:T18)
+  - Boundaries: distribution, product-evidence
+- [ ] campaign.nextslice.0001 - After observation, choose one next tactical problem and one audio or payoff experiment, then validate a bounded player-facing slice with explicit acceptance evidence.  (from reassessment-v3:T16-T17)
+  - Boundaries: product, gameplay, audio
+- [ ] campaign.observation.0001 - Run the deferred human and physical-device observation of the current learning and replay loop, recording player choices, input, audio, and comprehension evidence without inferring completion from automation.  (from reassessment-v3:T15)
+  - Boundaries: human, physical-device, product-evidence
 - [ ] Keep the local guest lobby available when the browser localStorage property getter throws; preserve fail-closed verified deployment persistence and add constructor-level regression proof.  (from product-v2-p02-review)
 - [x] Run a deliberate visual-direction pass against strong game-UI references and purpose-built assets where valuable, including image generation where appropriate, so the console feels finished rather than merely rearranged.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
 - [x] Repair the Armory purchase flow so buying never opens the legacy store behind the Armory; use one owned gameplay modal/layer with coherent focus, stacking, and return behavior.  (from user screenshot codex-clipboard-228b3cbf-656f-48cc-b994-e84aa3980a01.png)  (done 2026-09-07)
