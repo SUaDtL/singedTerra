@@ -1,6 +1,10 @@
 import type { AccessoryType, WeaponType } from '@shared/engine/WeaponSystem';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import type { FirstSalvoStep } from '../firstSalvoCoach';
+import type { CampaignResult } from '@shared/campaign/outcomes';
+import type { CampaignObjectState } from '@shared/campaign/objects';
+import type { CampaignWeaponId } from '@shared/campaign/combatProfiles';
+import type { CampaignLoadoutDecision } from '../../campaign/loadout';
 
 export type BattleConsoleHostMode = 'wide' | 'standard' | 'compact-touch';
 
@@ -47,6 +51,33 @@ export interface ArmoryItemPresentation {
   readonly canEquip: boolean;
 }
 
+/** Detached campaign facts; geometry and interactions remain Canvas/domain owned. */
+export interface CampaignBattleConsolePresentation {
+  readonly commitmentCount: number;
+  readonly supplies: number;
+  readonly retryable: boolean;
+  readonly objects: readonly Pick<
+    CampaignObjectState,
+    'id' | 'kind' | 'health' | 'maxHealth' | 'alive'
+  >[];
+  readonly result: CampaignResult | null;
+  readonly checkpoint?: null | {
+    readonly encounterId: string;
+    readonly story: { readonly id: string; readonly title: string; readonly body: string } | null;
+    readonly selectedRouteId: string | null;
+    readonly routeRequired: boolean;
+    readonly decisionPending: boolean;
+    readonly decisionApplied: boolean;
+    readonly finalEncounter: boolean;
+    readonly hull: number;
+    readonly ammunition: readonly {
+      readonly weaponId: CampaignWeaponId;
+      readonly quantity: number | null;
+      readonly maximum: number | null;
+    }[];
+  };
+}
+
 export type BattleConsoleLifecycleStatus =
   | 'unmounted'
   | 'loading'
@@ -61,6 +92,8 @@ export type BattleConsoleLifecycleStatus =
  * gameplay clients, engine instances, or mutable gameplay objects.
  */
 export interface BattleConsolePresentationState {
+  /** Explicitly null in live ordinary play; optional only for retained historical fixtures. */
+  readonly campaign?: CampaignBattleConsolePresentation | null;
   readonly commander: {
     readonly id: string | null;
     readonly name: string;
@@ -130,4 +163,8 @@ export type BattleConsoleIntent =
   | { readonly type: 'settings-open'; readonly origin: SemanticKey }
   | { readonly type: 'settings-close' | 'settings-toggle-sound' | 'settings-toggle-guide' }
   | { readonly type: 'fire' }
+  | { readonly type: 'campaign-retry' }
+  | { readonly type: 'campaign-route-select'; readonly routeId: string }
+  | { readonly type: 'campaign-checkpoint-choice'; readonly choice: CampaignLoadoutDecision }
+  | { readonly type: 'campaign-continue' }
   | { readonly type: 'coach-skip' | 'coach-enter' };

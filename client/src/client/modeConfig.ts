@@ -16,6 +16,18 @@ import {
   CURRENT_ROOM_COMMAND_VERSION,
   type RoomCommandVersion,
 } from '@shared/net/roomCommand';
+import {
+  parseCampaignEncounterDefinition,
+  type CampaignEncounterDefinition,
+} from '@shared/campaign/definitions';
+import {
+  resolveCampaignCombatProfile,
+  type ResolvedCampaignCombatProfile,
+} from '@shared/campaign/combatProfiles';
+import {
+  parseCampaignHumanLoadout,
+  type CampaignHumanLoadout,
+} from '@shared/campaign/initialization';
 
 export const CURRENT_ROOM_LIFECYCLE_VERSION = 1;
 
@@ -182,6 +194,10 @@ export function parseOnlineEconomy(
 /** Non-UI compatibility shape; callers can narrow to the strict mode variants. */
 export interface ModeSetup {
   mode: 'hotseat' | 'network';
+  /** Opt-in local campaign execution; transport remains hot-seat. */
+  experience?: 'campaign';
+  /** Strict authored inputs for the dedicated campaign client. */
+  campaign?: CampaignDescriptor;
   players: ModePlayer[];
   playerNames: string[];
   roomId?: string;
@@ -199,6 +215,15 @@ export interface ModePlayer {
   loadout?: TankLoadout;
 }
 export type HotSeatModeSetup = ModeSetup & { mode: 'hotseat' };
+export interface CampaignDescriptor {
+  readonly encounter: CampaignEncounterDefinition;
+  readonly combatProfile: ResolvedCampaignCombatProfile;
+  readonly humanLoadout?: CampaignHumanLoadout;
+}
+export type CampaignModeSetup = HotSeatModeSetup & {
+  readonly experience: 'campaign';
+  readonly campaign: CampaignDescriptor;
+};
 export type NetworkModeSetup = ModeSetup & {
   mode: 'network';
   players: Array<ModePlayer & { id: string }>;
@@ -218,6 +243,84 @@ export type AdmittedNetworkModeSetup = NetworkModeSetup & {
   };
 };
 export type ClientModeSetup = HotSeatModeSetup | NetworkModeSetup;
+
+const CAMPAIGN_EXCLUSIVE_KEYS = Object.freeze([
+  'roomId',
+  'roomCode',
+  'playerId',
+  'token',
+  'verifiedDeployment',
+  'verifiedChallenge',
+  'publicSeedChallenge',
+] as const);
+
+function plainRecord(value: unknown): value is Record<PropertyKey, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+/** Detect partial campaign data too, so it cannot fall through to ordinary hot-seat. */
+export function hasCampaignLaunchData(value: unknown): boolean {
+  return plainRecord(value)
+    && (Object.hasOwn(value, 'experience') || Object.hasOwn(value, 'campaign'));
+}
+
+/** Validate the complete campaign acquisition boundary before constructing any client resource. */
+export function requireCampaignModeSetup(value: unknown): CampaignModeSetup {
+  if (!plainRecord(value) || value.mode !== 'hotseat' || value.experience !== 'campaign') {
+    throw new Error('invalid campaign launch mode');
+  }
+  for (const key of CAMPAIGN_EXCLUSIVE_KEYS) {
+    if (Object.hasOwn(value, key)) throw new Error(`campaign launch cannot include ${key}`);
+  }
+
+  const descriptor = value.campaign;
+  if (!plainRecord(descriptor)
+    || (Reflect.ownKeys(descriptor).length !== 2 && Reflect.ownKeys(descriptor).length !== 3)
+    || !Object.hasOwn(descriptor, 'encounter')
+    || !Object.hasOwn(descriptor, 'combatProfile')
+    || (Reflect.ownKeys(descriptor).length === 3 && !Object.hasOwn(descriptor, 'humanLoadout'))) {
+    throw new Error('invalid campaign descriptor');
+  }
+  const encounter = parseCampaignEncounterDefinition(descriptor.encounter);
+  if (!encounter) throw new Error('invalid campaign encounter descriptor');
+
+  const profile = descriptor.combatProfile;
+  if (!plainRecord(profile)) throw new Error('invalid campaign combat profile descriptor');
+  let resolved: ResolvedCampaignCombatProfile;
+  try {
+    resolved = resolveCampaignCombatProfile({
+      profileId: profile.profileId,
+      profileVersion: profile.profileVersion,
+    });
+  } catch {
+    throw new Error('invalid campaign combat profile descriptor');
+  }
+  if (profile.kind !== resolved.kind
+    || profile.contentDigest !== resolved.contentDigest
+    || !Array.isArray(profile.choices)
+    || profile.choices.length !== resolved.choices.length
+    || profile.choices.some((choice, index) => choice !== resolved.choices[index])
+    || encounter.combatProfileId !== resolved.profileId
+    || encounter.combatProfileVersion !== resolved.profileVersion) {
+    throw new Error('campaign descriptor profile mismatch');
+  }
+  const humanLoadout = Object.hasOwn(descriptor, 'humanLoadout')
+    ? parseCampaignHumanLoadout(descriptor.humanLoadout, resolved)
+    : null;
+  if (Object.hasOwn(descriptor, 'humanLoadout') && !humanLoadout) {
+    throw new Error('invalid campaign human loadout descriptor');
+  }
+  return {
+    ...value,
+    campaign: Object.freeze({
+      encounter,
+      combatProfile: resolved,
+      ...(humanLoadout ? { humanLoadout } : {}),
+    }),
+  } as unknown as CampaignModeSetup;
+}
 
 export interface AuthoritativeRoomMode {
   roomId: string;

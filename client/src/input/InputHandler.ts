@@ -1,5 +1,4 @@
 import type { PlayerAction } from '@shared/types/PlayerAction';
-import { WEAPONS } from '@shared/engine/WeaponSystem';
 import type { WeaponType } from '@shared/engine/WeaponSystem';
 import { clamp } from '@shared/engine/math';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/engine/Terrain';
@@ -7,6 +6,8 @@ import { MAX_MOVE_DELTA, isValidMoveDelta } from '@shared/engine/Movement';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import {
   FULL_GAME_INPUT_CAPABILITIES,
+  inputAllowsWeapon,
+  inputWeaponRosterFor,
 } from '../client/inputCapabilities';
 import type { GameInputCapabilities } from '../client/GameClient';
 
@@ -35,15 +36,6 @@ export interface InputHandlerOptions {
  * power 0–the active tank cap). The engine re-clamps authoritatively; we clamp our locally-tracked
  * value so held-key repeat does not drift past the bounds and emit redundant actions.
  */
-/**
- * The implemented weapon roster, in stable WeaponSystem key order. Q cycles
- * forward through ONLY these (SPEC §4.5: MVP1 ships Baby Missile + Missile); the
- * stubbed weapons are skipped. The first entry (baby_missile) is the engine's
- * default selected weapon, so our locally-tracked index starts there.
- */
-const IMPLEMENTED_WEAPONS: WeaponType[] = (Object.keys(WEAPONS) as WeaponType[])
-  .filter((type) => WEAPONS[type].implemented);
-
 function isShieldWeapon(type: WeaponType): boolean {
   return type === 'shield' || type === 'heavy_shield';
 }
@@ -75,7 +67,7 @@ const FULL_POWER_DRAG_PX = 280;
  */
 export class InputHandler {
   private readonly target: HTMLElement;
-  private readonly emit: (action: PlayerAction) => void;
+  private readonly emit: (action: PlayerAction) => boolean | void;
 
   private readonly angleStep: number;
   private readonly powerStep: number;
@@ -89,7 +81,7 @@ export class InputHandler {
   private powerCap: number;
 
   /**
-   * Index into IMPLEMENTED_WEAPONS for the locally-tracked selected weapon. Starts
+   * Index into the active capability roster for the locally-tracked selected weapon. Starts
    * at 0 (baby_missile, the engine default) so Q advances deterministically.
    */
   private weaponIndex = 0;
@@ -108,7 +100,7 @@ export class InputHandler {
 
   constructor(
     target: HTMLElement,
-    emit: (action: PlayerAction) => void,
+    emit: (action: PlayerAction) => boolean | void,
     options: InputHandlerOptions = {},
   ) {
     this.target = target;
@@ -172,11 +164,12 @@ export class InputHandler {
    * selected weapon (e.g. on turn change, so the next Q advances from THIS
    * player's weapon rather than whoever cycled last — the cursor is otherwise
    * shared by the single handler across all hot-seat players). Does not emit —
-   * purely re-seeds the mirror. A weapon outside the implemented roster (should
-   * not happen for a live tank) leaves the cursor unchanged.
+   * purely re-seeds the mirror. A weapon outside the active mode roster leaves
+   * the cursor unchanged.
    */
   setWeapon(weapon: WeaponType): void {
-    const idx = IMPLEMENTED_WEAPONS.indexOf(weapon);
+    if (!inputAllowsWeapon(this.capabilities, weapon)) return;
+    const idx = inputWeaponRosterFor(this.capabilities).indexOf(weapon);
     if (idx >= 0) this.weaponIndex = idx;
   }
 
@@ -327,17 +320,17 @@ export class InputHandler {
   }
 
   /**
-   * Advance to the next implemented weapon (wrapping) and emit its ABSOLUTE type
-   * via select_weapon. We track the index locally so successive presses step
-   * deterministically through IMPLEMENTED_WEAPONS regardless of engine echo.
+   * Advance to the next admitted weapon (wrapping) and emit its ABSOLUTE type via
+   * select_weapon. A definitive rejection leaves the local cursor unchanged.
    */
   private cycleWeapon(): void {
     if (!this.capabilities.weaponCycling) return;
-    if (IMPLEMENTED_WEAPONS.length === 0) return; // defensive — roster is never empty
-    this.weaponIndex = (this.weaponIndex + 1) % IMPLEMENTED_WEAPONS.length;
-    const weapon = IMPLEMENTED_WEAPONS[this.weaponIndex];
+    const roster = inputWeaponRosterFor(this.capabilities);
+    if (roster.length === 0) return;
+    const nextIndex = (this.weaponIndex + 1) % roster.length;
+    const weapon = roster[nextIndex];
     if (weapon === undefined) return;
-    this.emit({ type: 'select_weapon', weapon });
+    if (this.emit({ type: 'select_weapon', weapon }) !== false) this.weaponIndex = nextIndex;
   }
 
   // ----- Direct pointer aim (mouse, pen, and touch) -------------------------
@@ -473,8 +466,11 @@ export class InputHandler {
       this.emit({ type: 'fire' });
       return;
     }
+    const roster = inputWeaponRosterFor(this.capabilities);
+    const selectedWeapon = roster[this.weaponIndex];
+    if (selectedWeapon === undefined) return;
     this.emit(
-      isShieldWeapon(IMPLEMENTED_WEAPONS[this.weaponIndex]!)
+      isShieldWeapon(selectedWeapon)
         ? { type: 'use_shield' }
         : { type: 'fire' },
     );

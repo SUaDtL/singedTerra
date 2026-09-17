@@ -1,6 +1,7 @@
 import type { ExplosionImpactType } from '@shared/types/GameState';
 import type { WallMode } from '@shared/types/GameOptions';
 import { getImpactAudioProfile } from '../feel/impactMaterial';
+import type { CampaignAudioCue } from './CampaignAudio';
 
 export interface WallReflectAudioProfile {
   readonly startFrequency: number;
@@ -382,6 +383,54 @@ export class AudioEngine {
   /** A slightly brighter click for cycling the selected weapon. */
   weaponCycle(): void {
     this.blip(720, 0.05, 0.07, 'square');
+  }
+
+  /** Distinct, bounded campaign notifications. These never gate simulation. */
+  campaignCue(cue: CampaignAudioCue): void {
+    if (this.muted) return;
+    const ctx = this.ensure();
+    if (!ctx || !this.master) return;
+    const t = ctx.currentTime;
+    const tone = (
+      start: number,
+      end: number,
+      offset: number,
+      duration: number,
+      gain: number,
+      type: OscillatorType,
+    ): void => {
+      if (!this.master) return;
+      const oscillator = ctx.createOscillator();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(start, t + offset);
+      oscillator.frequency.exponentialRampToValueAtTime(end, t + offset + duration);
+      const envelope = ctx.createGain();
+      envelope.gain.setValueAtTime(0.0001, t + offset);
+      envelope.gain.exponentialRampToValueAtTime(gain, t + offset + 0.006);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, t + offset + duration);
+      oscillator.connect(envelope).connect(this.master);
+      oscillator.start(t + offset);
+      oscillator.stop(t + offset + duration + 0.02);
+    };
+
+    switch (cue) {
+      case 'warning-announced':
+        tone(880, 740, 0, 0.1, 0.1, 'square');
+        tone(880, 740, 0.16, 0.1, 0.1, 'square');
+        break;
+      case 'relay-disabled':
+        tone(520, 150, 0, 0.28, 0.13, 'sawtooth');
+        this.noiseHit(t, 0.12, 0.06, 'bandpass', 1300, 3);
+        break;
+      case 'volatile-chain':
+        tone(180, 72, 0, 0.24, 0.16, 'triangle');
+        this.noiseHit(t, 0.3, 0.2, 'lowpass', 950, 0.8);
+        break;
+      case 'mission-concluded':
+        tone(330, 440, 0, 0.26, 0.1, 'sine');
+        tone(440, 660, 0.15, 0.32, 0.1, 'sine');
+        break;
+    }
   }
 
   /**

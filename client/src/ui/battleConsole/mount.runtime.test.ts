@@ -138,6 +138,61 @@ async function flushMicrotasks(count = 20): Promise<void> {
 }
 
 describe('R10 independent semantic readiness', () => {
+  it('rerenders campaign-only commitment, object, result, and presence changes', async () => {
+    pixiRuntime.denyWebGl = true;
+    const target = hosts();
+    const resources = new BattleConsoleResourceLedger();
+    const initialState: BattleConsolePresentationState = {
+      ...baseState,
+      campaign: {
+        commitmentCount: 4,
+        supplies: 2,
+        retryable: false,
+        objects: [
+          { id: 'refinery', kind: 'protected', health: 61, maxHealth: 100, alive: true },
+        ],
+        result: null,
+      },
+    };
+    const mounted = await mountBattleConsoleGeneration({
+      ...target,
+      initialState,
+      dispatch: () => {},
+      layout: projectResponsiveLayout('wide', 1),
+      generationToken: { generation: 10, resources, isCurrent: () => true },
+    });
+    expect(target.semanticHost.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
+      .toBe('Refinery · protected · 61 / 100');
+
+    mounted?.update({
+      ...initialState,
+      campaign: {
+        commitmentCount: 5,
+        supplies: 6,
+        retryable: false,
+        objects: [
+          { id: 'refinery', kind: 'protected', health: 24, maxHealth: 100, alive: true },
+        ],
+        result: { outcome: 'success', reason: 'objective', commitmentId: 5 },
+      },
+    }, projectResponsiveLayout('wide', 1));
+    expect(target.semanticHost.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
+      .toBe('Refinery · protected · 24 / 100');
+    expect(getByRole(target.semanticHost, 'status', { name: 'Campaign objective success' }).textContent)
+      .toBe('Objective success · objective · 5 commitments');
+
+    mounted?.update({ ...baseState, campaign: null }, projectResponsiveLayout('wide', 1));
+    expect(queryAllByRole(target.semanticHost, 'region', { name: 'Campaign objective' }))
+      .toHaveLength(0);
+
+    mounted?.update(initialState, projectResponsiveLayout('wide', 1));
+    expect(queryAllByRole(target.semanticHost, 'region', { name: 'Campaign objective' }))
+      .toHaveLength(1);
+    await vi.dynamicImportSettled();
+    await waitFor(() => expect(mounted?.status).toBe('fallback'));
+    await mounted?.destroy();
+  });
+
   it('settles semantic destroy while renderer initialization is held and destroys the unclaimed late app', async () => {
     const gate = deferred();
     const target = hosts();

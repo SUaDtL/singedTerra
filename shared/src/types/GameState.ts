@@ -1,4 +1,5 @@
 import type { AccessoryType, WeaponType } from '../engine/WeaponSystem.ts';
+import type { CampaignProjection } from '../campaign/outcomes.ts';
 import type { TeamId, WallMode } from './GameOptions.ts';
 import type { TankLoadout } from './TankLoadout.ts';
 
@@ -117,6 +118,8 @@ export interface GameState {
   winner: string | null;
   /** Winning team at GAME_OVER; null while the match is live or drawn. */
   winnerTeam?: TeamId | null;
+  /** Opt-in campaign settlement projection. Absent from every ordinary engine state. */
+  campaign?: CampaignProjection;
 }
 
 /**
@@ -148,7 +151,7 @@ export interface WallImpactEvent {
 /** Visual style of an explosion — drives the client's burst rendering. */
 export type ExplosionStyle = 'blast' | 'cluster';
 /** Authoritative surface struck by the projectile that produced an explosion. */
-export type ExplosionImpactType = 'ground' | 'tank';
+export type ExplosionImpactType = 'ground' | 'tank' | 'object';
 
 /**
  * Authoritative explosion record surfaced in {@link GameState.lastExplosion}

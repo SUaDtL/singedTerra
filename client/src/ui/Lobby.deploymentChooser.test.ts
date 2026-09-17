@@ -30,8 +30,9 @@ describe('Lobby deployment chooser', () => {
 
     lobby.show();
 
-    expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(4);
+    expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(5);
     expect(button(root, 'Start First Salvo')).toBeInstanceOf(HTMLButtonElement);
+    expect(button(root, 'Start Ash Road')).toBeInstanceOf(HTMLButtonElement);
     expect(root.querySelector('.lobby-start')).toBeNull();
     expect(root.querySelector('.lobby-name')).toBeNull();
     expect(root.querySelector('.lobby-preview')).toBeNull();

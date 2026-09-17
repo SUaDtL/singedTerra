@@ -1,9 +1,18 @@
-import type { BattleConsoleIntent, BattleConsolePresentationState } from './types';
+import type {
+  BattleConsoleIntent,
+  BattleConsolePresentationState,
+  CampaignBattleConsolePresentation,
+} from './types';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 
 const fieldKeys = [
   'armory.available',
   'armory.credits',
+  'campaign.commitmentCount',
+  'campaign.objects',
+  'campaign.result',
+  'campaign.retryable',
+  'campaign.supplies',
   'armory.items',
   'armory.open',
   'armory.submitting',
@@ -44,6 +53,7 @@ const intentDiscriminants = [
   'armory-open',
   'coach-enter',
   'coach-skip',
+  'campaign-retry',
   'fire',
   'move',
   'power-step',
@@ -76,7 +86,40 @@ export const presentationStateContract = Object.freeze({
 export function projectBattleConsoleState(
   state: BattleConsolePresentationState,
 ): BattleConsolePresentationState {
+  const campaign = state.campaign;
   return {
+    ...(campaign === undefined
+      ? {}
+      : {
+        campaign: campaign === null
+          ? null
+          : {
+            commitmentCount: campaign.commitmentCount,
+            supplies: campaign.supplies,
+            retryable: campaign.retryable,
+            objects: campaign.objects.map((object) => ({
+              id: object.id,
+              kind: object.kind,
+              health: object.health,
+              maxHealth: object.maxHealth,
+              alive: object.alive,
+            })),
+            result: campaign.result === null ? null : { ...campaign.result },
+            ...(campaign.checkpoint === undefined
+              ? {}
+              : {
+                checkpoint: campaign.checkpoint === null
+                  ? null
+                  : {
+                    ...campaign.checkpoint,
+                    story: campaign.checkpoint.story === null
+                      ? null
+                      : { ...campaign.checkpoint.story },
+                    ammunition: campaign.checkpoint.ammunition.map((entry) => ({ ...entry })),
+                  },
+              }),
+          },
+      }),
     commander: { ...state.commander },
     mobility: { ...state.mobility },
     weapon: { ...state.weapon },
@@ -93,6 +136,56 @@ export function projectBattleConsoleState(
     coach: { ...state.coach },
     focusOwner: state.focusOwner,
   };
+}
+
+function sameCampaignResult(
+  left: CampaignBattleConsolePresentation['result'],
+  right: CampaignBattleConsolePresentation['result'],
+): boolean {
+  if (left === right) return true;
+  if (!left || !right
+    || left.outcome !== right.outcome
+    || left.reason !== right.reason
+    || left.commitmentId !== right.commitmentId) return false;
+  if (left.outcome === 'technical-failure' || right.outcome === 'technical-failure') {
+    return left.outcome === 'technical-failure'
+      && right.outcome === 'technical-failure'
+      && left.code === right.code
+      && left.reward === right.reward;
+  }
+  return true;
+}
+
+function sameCampaignObjects(
+  left: CampaignBattleConsolePresentation['objects'],
+  right: CampaignBattleConsolePresentation['objects'],
+): boolean {
+  return left.length === right.length && left.every((object, index) => {
+    const candidate = right[index];
+    return candidate !== undefined
+      && object.id === candidate.id
+      && object.kind === candidate.kind
+      && object.health === candidate.health
+      && object.maxHealth === candidate.maxHealth
+      && object.alive === candidate.alive;
+  });
+}
+
+function sameCampaign(
+  left: BattleConsolePresentationState['campaign'],
+  right: BattleConsolePresentationState['campaign'],
+): boolean {
+  const leftFacts = left ?? null;
+  const rightFacts = right ?? null;
+  if (leftFacts === rightFacts) return true;
+  return leftFacts !== null
+    && rightFacts !== null
+    && leftFacts.commitmentCount === rightFacts.commitmentCount
+    && leftFacts.supplies === rightFacts.supplies
+    && leftFacts.retryable === rightFacts.retryable
+    && sameCampaignObjects(leftFacts.objects, rightFacts.objects)
+    && sameCampaignResult(leftFacts.result, rightFacts.result)
+    && JSON.stringify(leftFacts.checkpoint ?? null) === JSON.stringify(rightFacts.checkpoint ?? null);
 }
 
 function samePurchase(
@@ -172,6 +265,7 @@ export function battleConsolePresentationStatesEqual(
     && left.settings.returnFocusKey === right.settings.returnFocusKey
     && left.coach.step === right.coach.step
     && left.coach.briefingOpen === right.coach.briefingOpen
+    && sameCampaign(left.campaign, right.campaign)
     && left.focusOwner === right.focusOwner
   );
 }

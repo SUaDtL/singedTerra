@@ -3,8 +3,10 @@ import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
 import type { GameOptions } from '@shared/types/GameOptions';
 import { QUICK_DUEL_DEFAULT_ROUNDS } from '../client/quickDuelLaunch';
 import { makeHudIcon } from './hudIcons';
+import { ashRoadAsset } from '../assets/campaign/manifest';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
+export type CampaignKitId = 'precision' | 'assault' | 'breach';
 
 export type LobbySeedChallengePresentation =
   | { readonly status: 'invalid' }
@@ -49,6 +51,9 @@ export interface LobbyShellViewOptions {
   }[];
   seedChallenge?: LobbySeedChallengePresentation;
   onSeedChallenge?: () => void;
+  onCampaign?: (kitId: CampaignKitId) => void;
+  campaignResumeAvailable?: boolean;
+  onCampaignResume?: () => void;
   onQuickDuel: (operationId: string) => void;
   onRejoin: () => void;
   onBack: () => void;
@@ -329,6 +334,54 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
         : 'lobby-btn primary',
       () => { options.onQuickDuel(selectedOperation.id); },
     );
+    let selectedCampaignKit: CampaignKitId = 'precision';
+    const campaignKit = document.createElement('label');
+    campaignKit.className = 'lobby-campaign-kit';
+    const campaignPanorama = document.createElement('img');
+    campaignPanorama.src = `${import.meta.env.BASE_URL}${ashRoadAsset('panorama').path}`;
+    campaignPanorama.alt = '';
+    campaignPanorama.setAttribute('aria-hidden', 'true');
+    campaignPanorama.style.cssText = 'display:block;width:100%;max-height:96px;object-fit:cover;margin-bottom:8px;border-radius:4px';
+    campaignPanorama.addEventListener('error', () => { campaignPanorama.hidden = true; }, {
+      signal: options.listenerSignal,
+    });
+    campaignKit.append(campaignPanorama, document.createTextNode('Ash Road loadout '));
+    const campaignKitSelect = document.createElement('select');
+    campaignKitSelect.setAttribute('aria-label', 'Ash Road loadout');
+    for (const [value, label] of [
+      ['precision', 'Precision · Missile + Napalm'],
+      ['assault', 'Assault · Missile + Cluster Bomb'],
+      ['breach', 'Breach · Missile + Sandhog'],
+    ] as const) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      campaignKitSelect.append(option);
+    }
+    campaignKitSelect.addEventListener('change', () => {
+      selectedCampaignKit = campaignKitSelect.value === 'assault'
+        ? 'assault'
+        : campaignKitSelect.value === 'breach'
+          ? 'breach'
+          : 'precision';
+    }, { signal: options.listenerSignal });
+    campaignKit.append(campaignKitSelect);
+    const ashRoad = (): HTMLButtonElement => addRailGlyph(
+      choice(
+        'Start Ash Road',
+        'lobby-btn lobby-deployment-choice--secondary',
+        () => { options.onCampaign?.(selectedCampaignKit); },
+      ),
+      'quick',
+    );
+    const resumeAshRoad = (): HTMLButtonElement => addRailGlyph(
+      choice(
+        'Resume Ash Road',
+        'lobby-btn primary',
+        () => { options.onCampaignResume?.(); },
+      ),
+      'quick',
+    );
     const localBattle = choice(
         'Local Battle',
         'lobby-btn lobby-deployment-choice--secondary',
@@ -348,7 +401,14 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     readiness.className = 'lobby-deployment-rail__status';
     readiness.setAttribute('role', 'status');
     readiness.innerHTML = '<strong>READY</strong><span>TO DEPLOY</span>';
-    deploymentRail.append(ordinaryQuickDuel, localBattle, playOnline, readiness);
+    deploymentRail.append(
+      ordinaryQuickDuel,
+      ...(options.campaignResumeAvailable ? [resumeAshRoad()] : []),
+      ...(options.onCampaign ? [ashRoad()] : []),
+      localBattle,
+      playOnline,
+      readiness,
+    );
     if (showFirstSalvo) {
       const introduction = document.createElement('section');
       introduction.className = 'lobby-first-salvo';
@@ -371,6 +431,8 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
           choice('Start First Salvo', 'lobby-btn primary', () => { options.onQuickDuel(firstSalvo.id); }),
           'quick',
         ),
+        ...(options.campaignResumeAvailable ? [resumeAshRoad()] : []),
+        ...(options.onCampaign ? [ashRoad()] : []),
         localBattle,
         playOnline,
         readiness,
@@ -379,10 +441,12 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       chooser.append(
         introduction,
         alternatives,
+        campaignKit,
         firstSalvoRail,
       );
     } else {
-      chooser.append(deploymentConsole, deploymentRail);
+      if (options.onCampaign) chooser.append(deploymentConsole, campaignKit, deploymentRail);
+      else chooser.append(deploymentConsole, deploymentRail);
     }
     deployment.append(masthead, chooser);
     card.append(deployment);

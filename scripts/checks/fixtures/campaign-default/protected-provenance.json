@@ -1,0 +1,12 @@
+{
+  "historicalVerifiedTuples": [[1, 1, 3]],
+  "verifiedTuples": [[2, 2, 4], [3, 3, 4]],
+  "verifiedChallengeEditions": ["cq1"],
+  "cq1": {
+    "editionId": "cq1",
+    "artifactApiVersion": 1,
+    "bytes": 126328,
+    "sha256": "c9e3c55636a6cc2407cbc338e674ebfa0a3dd1285f3a95f72dd354fd3c348c81",
+    "integrity": "f80bd24b9ed17cd6e1519a662a50dd21262167dbd3044163f758f529e608c6ab"
+  }
+}

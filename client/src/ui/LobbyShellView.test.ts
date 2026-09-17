@@ -70,6 +70,21 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
 }
 
 describe('buildLobbyShellView', () => {
+  it('offers a distinct device-local Ash Road resume action when a compatible save exists', () => {
+    const onCampaign = vi.fn()
+    const onCampaignResume = vi.fn()
+    const root = buildLobbyShellView(options({
+      onCampaign,
+      campaignResumeAvailable: true,
+      onCampaignResume,
+    }))
+
+    button(root, 'Resume Ash Road').click()
+    expect(onCampaignResume).toHaveBeenCalledOnce()
+    expect(onCampaign).not.toHaveBeenCalled()
+    expect(button(root, 'Start Ash Road')).toBeTruthy()
+  })
+
   it('places an admitted seed challenge before Quick Operations and starts only on its own action', () => {
     const onSeedChallenge = vi.fn();
     const root = buildLobbyShellView(options({
@@ -220,6 +235,27 @@ describe('buildLobbyShellView', () => {
     expect(onQuickDuel).toHaveBeenCalledOnce();
     expect(onQuickDuel).toHaveBeenCalledWith('standard');
     expect(onTabChange.mock.calls).toEqual([['hotseat'], ['online']]);
+  });
+
+  it('offers Ash Road as an explicit public guest deployment', () => {
+    const onCampaign = vi.fn();
+    const shellOptions = {
+      ...options(),
+      onCampaign,
+    };
+    const root = buildLobbyShellView(shellOptions);
+
+    const kit = root.querySelector<HTMLSelectElement>('[aria-label="Ash Road loadout"]')!;
+    expect([...kit.options].map(({ value }) => value)).toEqual([
+      'precision', 'assault', 'breach',
+    ]);
+    kit.value = 'breach';
+    kit.dispatchEvent(new Event('change'));
+
+    button(root, 'Start Ash Road').click();
+
+    expect(onCampaign).toHaveBeenCalledOnce();
+    expect(onCampaign).toHaveBeenCalledWith('breach');
   });
 
   it('keeps decorative rail glyphs out of established deployment action names', () => {

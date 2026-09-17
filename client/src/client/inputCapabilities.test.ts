@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WEAPONS, type WeaponType } from '@shared/engine/WeaponSystem';
 import type { GameClient, GameInputCapabilities } from './GameClient';
 import {
   FULL_GAME_INPUT_CAPABILITIES,
@@ -7,11 +8,14 @@ import {
 
 describe('inputCapabilitiesFor', () => {
   it('preserves every ordinary control when a client omits a mode projection', () => {
+    const implementedWeapons = (Object.keys(WEAPONS) as WeaponType[])
+      .filter((weapon) => WEAPONS[weapon].implemented);
     expect(inputCapabilitiesFor(null)).toBe(FULL_GAME_INPUT_CAPABILITIES);
     expect(inputCapabilitiesFor({} as GameClient)).toEqual({
       angle: { min: 0, max: 180 },
       power: { min: 0, max: Number.POSITIVE_INFINITY },
       primaryAction: 'selected_weapon',
+      weaponRoster: implementedWeapons,
       movement: true,
       weaponCycling: true,
       weaponSelection: true,

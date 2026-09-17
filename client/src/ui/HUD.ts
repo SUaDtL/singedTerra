@@ -7,7 +7,10 @@ import {
   type GameInputCapabilities,
   type TurnWatch,
 } from '../client/GameClient';
-import { FULL_GAME_INPUT_CAPABILITIES } from '../client/inputCapabilities';
+import {
+  FULL_GAME_INPUT_CAPABILITIES,
+  inputAllowsWeapon,
+} from '../client/inputCapabilities';
 import { MAX_MOVE_DELTA } from '@shared/engine/Movement';
 import { DEFAULT_POWER_CAP } from '@shared/engine/Tank';
 import { makeHudGlyph, makeHudIcon } from './hudIcons';
@@ -52,8 +55,10 @@ import {
 import type {
   BattleConsoleHostMode,
   BattleConsoleIntent,
+  CampaignBattleConsolePresentation,
   BattleConsolePresentationState,
 } from './battleConsole/types';
+import type { CampaignLoadoutDecision } from '../campaign/loadout';
 import {
   RoundOverView,
   type RoundOverPurchase,
@@ -174,6 +179,14 @@ export class HUD {
   /** Local-only coach callbacks. Task 3 observes actions and owns progression/persistence. */
   private firstSalvoSkipCb: (() => void) | null = null;
   private firstSalvoReplayCb: (() => void) | null = null;
+  private campaignRetryCb: (() => void) | null = null;
+  private campaignRouteChoiceCb: ((routeId: string) => void) | null = null;
+  private campaignCheckpointChoiceCb: ((choice: CampaignLoadoutDecision) => void) | null = null;
+  private campaignContinueCb: (() => void) | null = null;
+  private campaignRunPresentation: Readonly<Pick<
+    CampaignBattleConsolePresentation,
+    'supplies' | 'retryable' | 'checkpoint'
+  >> | null = null;
   private firstSalvoStep: FirstSalvoStep | null = null;
   private progressionSignInCb: (() => void) | null = null;
   private verifiedRetryCb: (() => void) | null = null;
@@ -388,6 +401,24 @@ export class HUD {
   onVerifiedNextOrder(cb: () => void): void { this.verifiedNextOrderCb = cb; }
   onVerifiedChallengeRetry(cb: () => void): void { this.verifiedChallengeRetryCb = cb; }
   onVerifiedChallengeReturn(cb: () => void): void { this.verifiedChallengeReturnCb = cb; }
+  onCampaignRetry(cb: () => void): void { this.campaignRetryCb = cb; }
+  onCampaignRouteChoice(cb: (routeId: string) => void): void { this.campaignRouteChoiceCb = cb; }
+  onCampaignCheckpointChoice(cb: (choice: CampaignLoadoutDecision) => void): void {
+    this.campaignCheckpointChoiceCb = cb;
+  }
+  onCampaignContinue(cb: () => void): void { this.campaignContinueCb = cb; }
+
+  setCampaignRunPresentation(
+    presentation: Readonly<Pick<
+      CampaignBattleConsolePresentation,
+      'supplies' | 'retryable' | 'checkpoint'
+    >> | null,
+  ): void {
+    this.campaignRunPresentation = presentation === null
+      ? null
+      : Object.freeze({ ...presentation });
+    if (this.built) this.refreshBattleConsole();
+  }
 
   /** Accepts only a cue already admitted by the renderer's local-shot validity rules. */
   setImpactLearningCue(cue: BattleCommandImpactLearningCue | null): void {
@@ -594,7 +625,10 @@ export class HUD {
       presentedTurnKey !== this.lastPresentedTurnKey;
     this.syncRound(state);
     this.syncPlayers(state, isHandoff);
-    if (this.verifiedChallengeState === null) {
+    if (state.campaign) {
+      this.syncRoundOver(state);
+      if (this.overlayShown || this.terminalState !== null) this.hideVictoryReport(false);
+    } else if (this.verifiedChallengeState === null) {
       this.syncRoundOver(state);
       this.syncOverlay(state);
     } else {
@@ -721,7 +755,10 @@ export class HUD {
     canEquip: boolean,
   ): BattleConsolePresentationState['armory']['items'] {
     const credits = tank?.credits ?? 0;
-    return STORE_CATALOG.flatMap((section) => section.entries.map((entry) => {
+    return STORE_CATALOG.flatMap((section) => section.entries
+      .filter((entry) => entry.kind !== 'weapon'
+        || inputAllowsWeapon(this.inputCapabilities, entry.type))
+      .map((entry) => {
       if (entry.kind === 'weapon') {
         const definition = WEAPONS[entry.type];
         const inventory = tank?.inventory[entry.type];
@@ -788,7 +825,7 @@ export class HUD {
       ? document.activeElement.closest<HTMLElement>('[data-semantic-key]')?.dataset['semanticKey'] ?? null
       : null;
 
-    return projectBattleConsoleState({
+    const presentation = projectBattleConsoleState({
       commander: {
         id: tank?.id ?? null,
         name: tank?.playerName ?? 'Awaiting commander',
@@ -842,6 +879,25 @@ export class HUD {
       },
       focusOwner,
     });
+    const campaign = state.campaign
+      ? {
+        commitmentCount: state.campaign.commitmentCount,
+        supplies: this.campaignRunPresentation?.supplies ?? 0,
+        retryable: this.campaignRunPresentation?.retryable ?? false,
+        objects: (state.campaign.objects ?? []).map((object) => ({
+          id: object.id,
+          kind: object.kind,
+          health: object.health,
+          maxHealth: object.maxHealth,
+          alive: object.alive,
+        })),
+        result: state.campaign.result ? { ...state.campaign.result } : null,
+        ...(this.campaignRunPresentation?.checkpoint
+          ? { checkpoint: this.campaignRunPresentation.checkpoint }
+          : {}),
+      }
+      : null;
+    return { ...presentation, campaign };
   }
 
   private readonly battleConsoleControllerPort: BattleConsoleControllerPort = {
@@ -852,7 +908,8 @@ export class HUD {
       if (this.inputCapabilities.weaponCycling) this.touchWeaponCb?.();
     },
     selectWeapon: (weapon) => {
-      if (this.inputCapabilities.weaponSelection) this.weaponSelectCb?.(weapon);
+      if (this.inputCapabilities.weaponSelection
+        && inputAllowsWeapon(this.inputCapabilities, weapon)) this.weaponSelectCb?.(weapon);
     },
     openArmory: () => {
       if (!this.inputCapabilities.buying && !this.inputCapabilities.weaponSelection) return;
@@ -868,7 +925,8 @@ export class HUD {
       if (this.inputCapabilities.buying) this.buyCb?.(purchase, tankId);
     },
     equip: (weapon) => {
-      if (this.inputCapabilities.weaponSelection) this.weaponSelectCb?.(weapon);
+      if (this.inputCapabilities.weaponSelection
+        && inputAllowsWeapon(this.inputCapabilities, weapon)) this.weaponSelectCb?.(weapon);
     },
     stepAngle: (delta) => this.touchAngleCb?.(delta),
     stepPower: (delta) => this.touchPowerCb?.(delta),
@@ -891,6 +949,10 @@ export class HUD {
       this.refreshBattleConsole();
     },
     fire: () => this.primaryActionCb?.(),
+    retryCampaign: () => this.campaignRetryCb?.(),
+    selectCampaignRoute: (routeId) => this.campaignRouteChoiceCb?.(routeId),
+    chooseCampaignCheckpoint: (choice) => this.campaignCheckpointChoiceCb?.(choice),
+    continueCampaign: () => this.campaignContinueCb?.(),
     skipCoach: () => {
       this.setFirstSalvoStep(null);
       this.firstSalvoSkipCb?.();

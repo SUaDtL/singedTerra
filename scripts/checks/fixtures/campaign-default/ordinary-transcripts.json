@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "shielded-lava-duel",
+      "options": {
+        "maxPlayers": 2,
+        "seed": 1592594996,
+        "hazards": "lava",
+        "players": [
+          { "name": "Ranger", "color": "#e84d4d" },
+          { "name": "Marauder", "color": "#4d8ce8" }
+        ]
+      },
+      "prefix": [
+        { "kind": "set-tank", "tankId": "p1", "values": { "x": 300 } },
+        { "kind": "action", "action": { "type": "use_shield" } },
+        { "kind": "action", "action": { "type": "fire", "angle": 140, "power": 96, "weapon": "missile" } }
+      ],
+      "future": [
+        { "kind": "action", "action": { "type": "fire", "angle": 45, "power": 35, "weapon": "baby_missile" } }
+      ],
+      "expected": {
+        "id": "shielded-lava-duel",
+        "prefixTicks": 106,
+        "futureTicks": 65,
+        "prefix": {
+          "sha256": "0457012089edd57ca2a93d93ffb7626d6f27b0e57c9731d9f240f0e6f0961191",
+          "probe": {
+            "keys": ["activePlayerId", "explosions", "fire", "lastExplosion", "lastRoundWinnerId", "lastRoundWinnerTeam", "phase", "projectile", "projectiles", "round", "tanks", "terrain", "terrainVersion", "totalRounds", "turn", "wallImpacts", "walls", "wind", "winner", "winnerTeam"],
+            "phase": "PLAYER_TURN",
+            "turn": 2,
+            "activePlayerId": "p1",
+            "round": 1,
+            "totalRounds": 1,
+            "health": [100, 100],
+            "shieldHp": [72.23090515522148, 0],
+            "teams": [null, null],
+            "roundWins": [0, 0],
+            "credits": [8000, 8500],
+            "terrainSha256": "a700de91474b219008103b4c791e0a484e7a5c7e33eb5c143c87d3de8dc3ae1c",
+            "terrainMaterialCounts": { "0": 399099, "1": 319211, "2": 1690 }
+          }
+        },
+        "future": {
+          "sha256": "08a643a8b741e20bca27f04df5aa9f78c8b153a8e83f9735a99a1f19b814cf8e",
+          "probe": {
+            "keys": ["activePlayerId", "explosions", "fire", "lastExplosion", "lastRoundWinnerId", "lastRoundWinnerTeam", "phase", "projectile", "projectiles", "round", "tanks", "terrain", "terrainVersion", "totalRounds", "turn", "wallImpacts", "walls", "wind", "winner", "winnerTeam"],
+            "phase": "PLAYER_TURN",
+            "turn": 3,
+            "activePlayerId": "p2",
+            "round": 1,
+            "totalRounds": 1,
+            "health": [100, 100],
+            "shieldHp": [72.23090515522148, 0],
+            "teams": [null, null],
+            "roundWins": [0, 0],
+            "credits": [8500, 8500],
+            "terrainSha256": "811d674e5699c783fec8daf2e3f7e37434809691b0464e073f1b2a10a5926f46",
+            "terrainMaterialCounts": { "0": 399595, "1": 318723, "2": 1682 }
+          }
+        }
+      }
+    },
+    {
+      "id": "team-best-of-three-carry",
+      "options": {
+        "maxPlayers": 4,
+        "seed": 518677,
+        "rounds": 3,
+        "teamMode": true,
+        "hazards": "lava",
+        "walls": "wrap",
+        "players": [
+          { "name": "Ash One", "color": "#e84d4d" },
+          { "name": "Cinder Two", "color": "#4d8ce8" },
+          { "name": "Ash Three", "color": "#4de87a" },
+          { "name": "Cinder Four", "color": "#e8c84d" }
+        ]
+      },
+      "prefix": [
+        { "kind": "set-tank", "tankId": "p1", "values": { "credits": 4242 } },
+        { "kind": "set-tank", "tankId": "p2", "values": { "alive": false, "health": 0 } },
+        { "kind": "set-tank", "tankId": "p4", "values": { "alive": false, "health": 0 } },
+        { "kind": "action", "action": { "type": "fire", "angle": 45, "power": 90, "weapon": "baby_missile" } }
+      ],
+      "future": [
+        { "kind": "action", "action": { "type": "buy", "weapon": "nuke", "tankId": "p1" } },
+        { "kind": "action", "action": { "type": "next_round" } },
+        { "kind": "action", "action": { "type": "use_shield" } }
+      ],
+      "expected": {
+        "id": "team-best-of-three-carry",
+        "prefixTicks": 126,
+        "futureTicks": 0,
+        "prefix": {
+          "sha256": "0b8caec4538052fe5e3cad6fc4836de3c0175cb380063bda17b920ea01ba0245",
+          "probe": {
+            "keys": ["activePlayerId", "explosions", "fire", "lastExplosion", "lastRoundWinnerId", "lastRoundWinnerTeam", "phase", "projectile", "projectiles", "round", "tanks", "terrain", "terrainVersion", "totalRounds", "turn", "wallImpacts", "walls", "wind", "winner", "winnerTeam"],
+            "phase": "ROUND_OVER",
+            "turn": 1,
+            "activePlayerId": "p1",
+            "round": 2,
+            "totalRounds": 3,
+            "health": [100, 100, 100, 100],
+            "shieldHp": [0, 0, 0, 0],
+            "teams": [1, 2, 1, 2],
+            "roundWins": [1, 0, 1, 0],
+            "credits": [4742, 8000, 8000, 8000],
+            "terrainSha256": "46a347e8cd09d9883bd9d0852a50182cdc8460061c84e99ca8819ab167d386bf",
+            "terrainMaterialCounts": { "0": 355092, "1": 362853, "2": 2055 }
+          }
+        },
+        "future": {
+          "sha256": "f1d50de6598cb664b47f8ba38fab8ba340f8dc5a68abe06aa97a05de7c6e8d10",
+          "probe": {
+            "keys": ["activePlayerId", "explosions", "fire", "lastExplosion", "lastRoundWinnerId", "lastRoundWinnerTeam", "phase", "projectile", "projectiles", "round", "tanks", "terrain", "terrainVersion", "totalRounds", "turn", "wallImpacts", "walls", "wind", "winner", "winnerTeam"],
+            "phase": "PLAYER_TURN",
+            "turn": 2,
+            "activePlayerId": "p2",
+            "round": 2,
+            "totalRounds": 3,
+            "health": [100, 100, 100, 100],
+            "shieldHp": [120, 0, 0, 0],
+            "teams": [1, 2, 1, 2],
+            "roundWins": [1, 0, 1, 0],
+            "credits": [4742, 8000, 8000, 8000],
+            "terrainSha256": "46a347e8cd09d9883bd9d0852a50182cdc8460061c84e99ca8819ab167d386bf",
+            "terrainMaterialCounts": { "0": 355092, "1": 362853, "2": 2055 }
+          }
+        }
+      }
+    }
+  ]
+}

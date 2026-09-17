@@ -1,11 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WEAPONS, type WeaponType } from '@shared/engine/WeaponSystem';
+import {
+  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
+  resolveCampaignCombatProfile,
+} from '@shared/campaign/combatProfiles';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@shared/engine/Terrain';
 import type { PlayerAction } from '@shared/types/PlayerAction';
+import type { GameInputCapabilities } from '../client/GameClient';
+import { FULL_GAME_INPUT_CAPABILITIES } from '../client/inputCapabilities';
 import { InputHandler, type InputHandlerOptions } from './InputHandler';
 
 const implementedWeapons = (Object.keys(WEAPONS) as WeaponType[])
   .filter((weapon) => WEAPONS[weapon].implemented);
+const campaignWeapons = resolveCampaignCombatProfile(
+  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
+).choices;
+
+const campaignCapabilities = {
+  ...FULL_GAME_INPUT_CAPABILITIES,
+  buying: false,
+  weaponRoster: campaignWeapons,
+} satisfies GameInputCapabilities;
 
 describe('InputHandler public contract', () => {
   let target: HTMLElement;
@@ -285,6 +300,47 @@ describe('InputHandler public contract', () => {
     handler.setWeapon('missile');
     handler.nextWeapon();
     expect(emitted()).toEqual([{ type: 'select_weapon', weapon: implementedWeapons[2] }]);
+  });
+
+  it('keeps the ordinary default roster identical to the implemented global catalog', () => {
+    expect(FULL_GAME_INPUT_CAPABILITIES.weaponRoster).toEqual(implementedWeapons);
+  });
+
+  it('cycles only the resolved campaign roster in profile order', () => {
+    createHandler({ capabilities: campaignCapabilities });
+
+    for (let index = 0; index < campaignWeapons.length; index += 1) handler.nextWeapon();
+
+    expect(emitted()).toEqual([
+      { type: 'select_weapon', weapon: 'missile' },
+      { type: 'select_weapon', weapon: 'cluster_bomb' },
+      { type: 'select_weapon', weapon: 'sandhog' },
+      { type: 'select_weapon', weapon: 'napalm' },
+      { type: 'select_weapon', weapon: 'shield' },
+      { type: 'select_weapon', weapon: 'baby_missile' },
+    ]);
+  });
+
+  it('keeps the primary action and local cursor when a campaign selection is rejected', () => {
+    const attempts: PlayerAction[] = [];
+    handler = new InputHandler(target, (action) => {
+      attempts.push(action);
+      return action.type === 'select_weapon' ? false : undefined;
+    }, { capabilities: campaignCapabilities });
+    handler.setWeapon('shield');
+
+    handler.setWeapon('nuke');
+    handler.triggerFire();
+    handler.nextWeapon();
+    handler.triggerFire();
+    handler.nextWeapon();
+
+    expect(attempts).toEqual([
+      { type: 'use_shield' },
+      { type: 'select_weapon', weapon: 'baby_missile' },
+      { type: 'use_shield' },
+      { type: 'select_weapon', weapon: 'baby_missile' },
+    ]);
   });
 
   it('triggerFire dispatches fire for projectiles and use_shield for shields', () => {
