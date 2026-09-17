@@ -1,6 +1,6 @@
 # Ash Road Chapter One sprint specification
 
-**Status:** Proposed for the combined `$ca-sprint` approval gate
+**Status:** Approved and implemented under the combined `$ca-sprint` gate
 **Source direction:** `singedterra-ash-road-sprint.zip`, interpreted as guidance rather than executable authority
 **Implementation checkout:** `C:\Users\brenn\projects\singedTerra` on `codex/ash-road-chapter-one-current`, based on `origin/main` at `ea574def3e8810c3eb9cf5c9ebe6905dd5ab9f23`
 **Governs:** `shared/src/campaign/**`, `shared/src/engine/**`, `shared/src/types/GameState.ts`, `client/src/campaign/**`, `client/src/client/**`, `client/src/input/**`, `client/src/renderer/**`, `client/src/ui/HUD.ts`, `client/src/ui/battleConsole/**`, `client/src/audio/**`, `client/public/art/campaign/**`, `scripts/checks/campaign_*`, `e2e/campaign-*.spec.ts`, `supabase/backend-release-manifest.json`
@@ -35,7 +35,7 @@ This shape is preferred over a parallel engine or scripted DOM victory layer bec
 
 ### Out of scope
 
-- Multiplayer campaign, procedural generation, campaign editor, navigation AI, cloud saves, account rewards, verified rewards, rank/XP integration, new currency service, server-authoritative live play, new backend functions or migrations, production deployment, release, merge, or repository-settings changes.
+- Multiplayer campaign, procedural generation, campaign editor, navigation AI, cloud saves, account rewards, verified rewards, rank/XP integration, new currency service, server-authoritative live play, new backend functions or migrations, production deployment, release, or repository-settings changes. Merge is separately authorized only after complete implementation and green hosted CI.
 - A global UI redesign or replacement of the current Preact/Pixi/Canvas ownership boundaries.
 - New weapon families, bridge/cave structural simulation, permadeath, monetization, paid services, or fabricated human/device evidence.
 

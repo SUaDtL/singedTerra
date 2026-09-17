@@ -6,14 +6,14 @@ Status: ACCEPTED after correcting the sole ASTRA review findings. This is machin
 
 - `npm run typecheck` — PASS for shared and client.
 - `npm run check` — PASS, including the complete deterministic engine suite, retained verified-challenge artifact and workload checks, backend release manifest validation, ST1 compatibility, and CPU policy corpora.
-- `npm -w @singedterra/client run test -- --maxWorkers=1` — PASS: 248 files, 2,316 tests.
+- `npm run test:client` — PASS: 249 files, 2,322 tests.
 - `npm run check:edge` — PASS: 476 tests.
-- `npm run build` — PASS: Vite production build, 2,789 modules transformed.
+- `npm run build` — PASS: Vite production build, 2,790 modules transformed.
 - `npm -w @singedterra/client exec vitest run src/assets/campaign/manifest.test.ts` — PASS: the six campaign assets remain hash-bound to their manifest and provenance record.
 - All 18 `scripts/checks/campaign_*.mjs` harnesses — PASS through the source TypeScript runner, including both branches and a zero-start-supplies guaranteed-kit journey to the natural finale.
 - `npx playwright test e2e/campaign-accessibility.spec.ts e2e/campaign-episode.spec.ts e2e/campaign-fuel-stop.spec.ts --workers=1` — PASS: 17 applicable cases and 4 intentional project-specific skips across desktop, Pixel touch, and small-window projects in 10.6 minutes.
 
-The pre-review client run was launched concurrently with other CPU-heavy full gates and one CampaignClient timer case exceeded its bound. Its focused file immediately passed, and serial full client runs passed before and after the review corrections; the latest result is 2,314 tests. The serial result is the acceptance evidence; the resource-contention timeout is not concealed or represented as a product failure.
+An earlier pre-review client run was launched concurrently with other CPU-heavy full gates and one CampaignClient timer case exceeded its bound. Its focused file immediately passed; the final current-head client run is green at 2,322 tests. The current result is the acceptance evidence; the historical resource-contention timeout is not concealed or represented as a product failure.
 
 ## Corrective coverage closed before acceptance
 
@@ -28,11 +28,11 @@ The pre-review client run was launched concurrently with other CPU-heavy full ga
 
 - Backend `shared/src` digest: `96116f758eb485b730a7556e576955c24b55a69d72cf5361a5897b362b1d06d6`; backend release suite PASS 46/46 and manifest validation PASS.
 - ST1 compatibility: PASS for all 32 bound sources; membership and enforcement are unchanged.
-- Current build-input SHA-256: `d13f73573f9255281855eed39e2cc67249e059e0e49d215f7b56a8edb2baaeb7`.
-- Current production artifact SHA-256: `219b924273b2ec24394ec80b24c544a9890ccff1c7430676e3f1c8eedbc2c9fa`.
-- Source/revision/build/artifact binding: `49bffbfaaaf97d254d8ea02651ccb0fb33bb2cb1772a00ae47cbc508695ec122`.
-- Production bundle: 12,259,336 bytes, +292,591 bytes over the exact `origin/main` baseline.
-- Named-desktop campaign AI: p95 12.00 ms against the provisional 50 ms target; source construction to first controllable state p95 2.31 ms.
+- Current build-input SHA-256: `c0cfc5dfb0eb00ff5bc999162af3b83144a4dbf24486e15f630ab7c09ba7f753`.
+- Current production artifact SHA-256: `853fc11c7b5b0d30390762a796194364bdb60a2edc2cbc4d6e60364a98353953`.
+- Source/revision/build/artifact binding: `0179abb38962cf72794b06cc5821578729cb4a26f913042343008867f5536d95`.
+- Production bundle: 12,264,723 bytes, +297,978 bytes over the exact `origin/main` baseline.
+- Named-desktop campaign AI: p95 11.79 ms against the provisional 50 ms target; source construction to first controllable state p95 2.18 ms.
 
 ## Explicitly pending outside machine acceptance
 
