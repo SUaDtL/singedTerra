@@ -65,10 +65,14 @@ async function fireEquipped(
   await page.getByRole('button', { name: `Fire ${weapon}`, exact: true }).click();
 }
 
-async function waitForHumanTurn(page: Page): Promise<void> {
+async function waitForHumanTurnOwnership(page: Page): Promise<void> {
   await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1', {
     timeout: 30_000,
   });
+}
+
+async function waitForHumanTurn(page: Page): Promise<void> {
+  await waitForHumanTurnOwnership(page);
   await expect(page.getByRole('button', { name: /^Fire /u })).toBeEnabled({ timeout: 30_000 });
 }
 
@@ -111,7 +115,10 @@ for (const route of [
     if (route.id === 'high') {
       await equip(page, 'Shield');
       await page.getByRole('button', { name: 'Fire Shield', exact: true }).click();
-      await waitForHumanTurn(page);
+      // Shield is a turn-ending commitment. When Ranger regains control the spent
+      // one-round Shield remains selected, so ownership returns before Fire can be
+      // ready; switch to the unlimited Baby Missile from that honest out-of-ammo state.
+      await waitForHumanTurnOwnership(page);
       await page.getByRole('button', {
         name: 'Select next weapon, current Shield', exact: true,
       }).click();
