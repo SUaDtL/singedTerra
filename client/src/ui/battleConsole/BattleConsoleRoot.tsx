@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import { CompactConsole } from './components/CompactConsole';
 import { WeaponIcon } from './components/WeaponIcon';
 import { SemanticContractTree } from './components/SemanticContractTree';
+import { CampaignPanel } from './components/CampaignPanel';
 import {
   BattleConsolePortal,
   emptyBattleConsolePortalHosts,
@@ -554,6 +555,8 @@ export function BattleConsoleRoot({
         {tree('command-console-host')}
         {tree('armory-inline-host')}
         </>}
+        {tree('campaign-objective-host')}
+        {state.campaign ? <CampaignPanel campaign={state.campaign} dispatch={dispatch} /> : null}
       </div>
       {lifecycleStatus === 'ready' && layoutMode !== 'compact' && (
         <CanonicalSemanticInk state={state} layoutMode={layoutMode} scale={scale} />

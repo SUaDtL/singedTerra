@@ -46,7 +46,6 @@ function presentedCommanderHealth(state: BattleConsolePresentationState): number
 
 const ARMORY_TRIGGER_KEY = 'armory-inline-host::weapon-trigger';
 const ARMORY_TRIGGER_LABEL_KEY = 'node:span:Close Armory:36';
-
 function dynamicText(
   node: SemanticNodeDefinition,
   state: BattleConsolePresentationState,

@@ -181,6 +181,32 @@
   background: transparent;
 }
 
+#lobby .lobby-deployment-chooser:has(> .lobby-campaign-kit) {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+
+#lobby .lobby-campaign-kit {
+  min-width: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 4px 8px;
+  border: 1px solid rgba(139, 81, 36, 0.62);
+  background: linear-gradient(180deg, rgba(42, 32, 24, 0.96), rgba(10, 11, 12, 0.98));
+  box-sizing: border-box;
+  color: var(--console-cream-dim);
+  font: 800 max(10px, var(--st-command-readability-size, 11px))/1 var(--font-mono);
+  letter-spacing: 0.8px;
+}
+
+#lobby .lobby-campaign-kit select {
+  min-width: min(260px, 55vw);
+  min-height: var(--st-deployment-choice-target, 44px);
+  border-color: rgba(194, 123, 56, 0.65);
+}
+
 #lobby .lobby-card > .lobby-deployment:has(> .lobby-deployment-chooser)
   > .lobby-deployment-chooser {
   grid-area: auto;
@@ -336,9 +362,9 @@
 #lobby .lobby-operation-preview {
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(0, auto);
+  grid-template-rows: auto minmax(0, 1.25fr) minmax(92px, 0.75fr);
   padding: 13px 12px 11px;
-  overflow: hidden;
+  overflow: clip;
 }
 
 #lobby .lobby-operation-preview__viewport {
@@ -390,6 +416,8 @@
 #lobby .lobby-operation-preview__readout {
   min-width: 0;
   min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
   position: relative;
   z-index: 1;
@@ -452,7 +480,7 @@
   min-height: 66px;
   display: grid;
   align-items: center;
-  grid-template-columns: minmax(180px, 0.85fr) minmax(200px, 1fr) minmax(120px, 0.55fr) minmax(235px, 1.05fr);
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
   gap: 10px;
   padding: 9px;
   border: 1px solid #120a06;
@@ -495,10 +523,6 @@
 #lobby .lobby-deployment-rail__glyph--local::before { content: '◆'; }
 #lobby .lobby-deployment-rail__glyph--online::before { content: '◉'; }
 
-#lobby .lobby-deployment-rail > .lobby-btn:nth-of-type(1) { order: 4; }
-#lobby .lobby-deployment-rail > .lobby-btn:nth-of-type(2) { order: 1; }
-#lobby .lobby-deployment-rail > .lobby-btn:nth-of-type(3) { order: 2; }
-
 #lobby .lobby-deployment-rail > .lobby-btn.primary {
   min-height: max(62px, calc(var(--st-deployment-choice-target, 44px) * 1.18));
   grid-column: auto;
@@ -522,7 +546,6 @@
 }
 
 #lobby .lobby-deployment-rail__status {
-  order: 3;
   display: grid;
   place-content: center;
   justify-items: center;
@@ -611,6 +634,10 @@
 
 #lobby .lobby-deployment-chooser:has(> .lobby-first-salvo) {
   grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+#lobby .lobby-deployment-chooser:has(> .lobby-first-salvo):has(> .lobby-campaign-kit) {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
 }
 
 #lobby .lobby-deployment-chooser:has(> .lobby-seed-challenge) {
@@ -951,7 +978,7 @@
 
   #lobby .lobby-deployment-rail {
     min-height: 58px;
-    grid-template-columns: minmax(140px, 0.8fr) minmax(160px, 1fr) minmax(100px, 0.55fr) minmax(190px, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
     gap: 6px;
     padding: 6px;
   }
@@ -1008,8 +1035,8 @@
   justify-self: stretch;
   margin-inline: 0;
   grid-template-columns: minmax(0, 1fr);
-  padding: 9px 8px 7px;
-  gap: 5px;
+  padding: 7px 8px 5px;
+  gap: 3px;
 }
 
 #app.is-compact #lobby .lobby-card > .lobby-deployment:has(> .lobby-deployment-chooser) {
@@ -1051,7 +1078,7 @@
 
 #app.is-compact #lobby .lobby-deployment-rail {
   min-height: 52px;
-  grid-template-columns: minmax(118px, 0.8fr) minmax(132px, 0.9fr) minmax(84px, 0.5fr) minmax(165px, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
 }
@@ -1071,7 +1098,18 @@
 #app.is-compact #lobby .lobby-deployment-rail__status strong {
   font-size: max(12px, calc(12px / var(--battle-ui-scale, 1)));
 }
-#app.is-compact #lobby .lobby-deployment-rail__status span { display: none; }
+#app.is-compact #lobby .lobby-deployment-rail__status { display: none; }
+
+#app.is-compact #lobby .lobby-campaign-kit {
+  min-height: 32px;
+  justify-content: space-between;
+  gap: 6px;
+  padding-block: 2px;
+}
+
+#app.is-compact #lobby .lobby-campaign-kit select {
+  min-width: min(225px, 58vw);
+}
 
 #app.is-compact #lobby .lobby-mode-panel { padding: 5px 6px; }
 #app.is-compact #lobby .lobby-deployment__mission-brief { padding: 4px 6px; }

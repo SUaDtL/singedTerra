@@ -14,6 +14,111 @@
   padding: 0;
   list-style: none;
 }
+
+/* Campaign mode reuses the existing Match instrument as a Mission instrument.
+   It never occupies the battlefield or the recoil-safe command deck. */
+.st-hud__mission {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 7px;
+  padding: 4px 3px 9px;
+  border-bottom: 1px solid rgba(198, 137, 51, .42);
+  color: #f3dfae;
+}
+.st-hud__mission[hidden] { display: none; }
+.st-hud__mission-chapter {
+  color: #a58c68;
+  font: 700 9px/1.1 var(--font-mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.st-hud__mission-encounter {
+  color: #f0c96d;
+  font: 800 14px/1.1 var(--font-display);
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+.st-hud__mission-objective {
+  color: #fff0c5;
+  font: 750 13px/1.2 var(--font-display);
+  letter-spacing: .25px;
+}
+.st-hud__mission-progress {
+  color: #c8b995;
+  font: 650 10px/1.25 var(--font-mono);
+}
+.st-hud__mission-warning {
+  margin-top: 2px;
+  padding: 5px 7px;
+  border: 1px solid rgba(239, 177, 60, .58);
+  background: linear-gradient(90deg, rgba(116, 65, 18, .58), rgba(30, 22, 17, .28));
+  color: #ffcf64;
+  font: 800 11px/1 var(--font-display);
+  letter-spacing: .75px;
+  text-transform: uppercase;
+}
+.st-hud__mission-warning[hidden] { display: none; }
+.st-hud__mission-warning[data-tone='due'] {
+  border-color: rgba(255, 100, 72, .72);
+  color: #ff9a72;
+}
+.st-hud__mission-objects {
+  display: grid;
+  gap: 3px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.st-hud__mission-object {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 5px;
+  color: #eadcb9;
+  font: 650 10px/1.15 var(--font-mono);
+}
+.st-hud__mission-object-role {
+  color: #9f9074;
+  font-size: 8px;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+.st-hud__mission-object-health {
+  color: #f0c96d;
+  font-variant-numeric: tabular-nums;
+}
+.st-hud__mission-object-meter {
+  grid-column: 1 / -1;
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(5, 5, 7, .75);
+}
+.st-hud__mission-object-fill {
+  display: block;
+  height: 100%;
+  background: #72c885;
+}
+.st-hud__mission-object[data-role='threat'] .st-hud__mission-object-fill { background: #d18a4e; }
+.st-hud__mission-object[data-alive='false'] { opacity: .54; }
+.st-hud__mission-outcome {
+  color: #f0c96d;
+  font: 800 11px/1.2 var(--font-display);
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+.st-hud__mission-outcome[hidden] { display: none; }
+.st-hud__mission-retry {
+  min-height: 36px;
+  border: 1px solid rgba(205, 155, 72, .72);
+  color: #f0c96d;
+  background: linear-gradient(180deg, rgba(70, 57, 43, .94), rgba(18, 16, 18, .99));
+  font: 750 11px/1 var(--font-display);
+  letter-spacing: .6px;
+  cursor: pointer;
+}
+.st-hud__mission-retry[hidden] { display: none; }
+.st-hud__mission-retry:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
 .st-hud__player-row {
   position: relative;
   display: grid;

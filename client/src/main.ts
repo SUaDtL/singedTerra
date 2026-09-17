@@ -9,7 +9,7 @@ import { maximumTankRecoilDownPx } from './renderer/tankRecoil';
 import type { BorrowedGameState, GameState } from '@shared/types/GameState';
 import { VerifiedDuelController, verifiedCpuPolicyForTuple } from '@shared/net/verifiedDuel';
 import type { ConnectionState, GameClient } from './client/GameClient';
-import { inputCapabilitiesFor } from './client/inputCapabilities';
+import { inputAllowsWeapon, inputCapabilitiesFor } from './client/inputCapabilities';
 import { HotSeatClient } from './client/HotSeatClient';
 import { VerifiedChallengeClient } from './client/VerifiedChallengeClient';
 import { createHotSeatProgressionReporter } from './client/hotSeatProgression';
@@ -21,6 +21,8 @@ import { MatchSessionLifecycle } from './client/MatchSessionLifecycle';
 import { writeSession } from './lib/sessionDescriptor';
 import { GameSessionComposition } from './client/GameSessionComposition';
 import { createModeClient, type ClientConstructionSetup } from './client/createModeClient';
+import { CampaignClient } from './campaign/CampaignClient';
+import { hasCampaignLaunchData, requireCampaignModeSetup } from './client/modeConfig';
 import { InputHandler } from './input/InputHandler';
 import {
   resolveActivePlayerOwnership,
@@ -31,6 +33,15 @@ import { selectClientBattlefieldWorld } from './renderer/selectClientBattlefield
 import { resolveAimGuidePresentation } from './renderer/aimGuidePresentation';
 import { releaseTankLoadoutPreviewResources } from './renderer/TankLoadoutPreview';
 import { AudioEngine } from './audio/AudioEngine';
+import { CampaignAudio } from './audio/CampaignAudio';
+import {
+  CampaignSaveSession,
+  campaignStorageBindingFromRunState,
+  parseCampaignReplayPayload,
+  replayCampaignPayload,
+  type CampaignReplayPayload,
+} from './campaign/replay';
+import { createIndexedDbCampaignStorage } from './campaign/storage';
 import { HUD } from './ui/HUD';
 import { Lobby, type LobbyConfig } from './ui/Lobby';
 import { mountOrientationGate } from './ui/OrientationGate';
@@ -59,6 +70,20 @@ import {
   type PracticeFieldOrderEvidence,
 } from './client/practiceFieldOrder';
 import { projectMatchPresentationState } from './client/matchPresentation';
+import { campaignDescriptorFromCheckpoint } from './campaign/checkpoint';
+import {
+  advanceCampaignEncounter,
+  applyCampaignCheckpointDecision,
+  applyCampaignEmergencyPatch,
+  applyCampaignResult,
+  chooseCampaignRoute,
+  parseCampaignRunState,
+  retryCampaignRun,
+  type CampaignResultReceipt,
+  type CampaignRunState,
+} from './campaign/runReducer';
+import { campaignStoryBeatFor } from './campaign/story';
+import { getCampaignWeapon, resolveCampaignCombatProfile } from '@shared/campaign/combatProfiles';
 
 const E2E_PARAMS = new URLSearchParams(window.location.search);
 const E2E_MODE = E2E_PARAMS.get('e2e');
@@ -98,6 +123,33 @@ interface TerminalPayoffE2EReceipt {
   readonly terminalExplosionCount?: number;
   readonly terminalExplosionObservedAt?: number;
   readonly impactCompletedAt?: number;
+}
+
+interface CampaignReceiptClient extends GameClient {
+  createResultReceipt(runState: CampaignRunState): CampaignResultReceipt;
+}
+
+interface CampaignReplayClient extends CampaignReceiptClient {
+  createReplayPayload(runState: CampaignRunState): Promise<CampaignReplayPayload>;
+  getCommittedReplayJournal(): readonly unknown[];
+}
+
+function isCampaignReceiptClient(client: GameClient): client is CampaignReceiptClient {
+  return typeof (client as Partial<CampaignReceiptClient>).createResultReceipt === 'function';
+}
+
+function isCampaignReplayClient(client: GameClient): client is CampaignReplayClient {
+  const candidate = client as Partial<CampaignReplayClient>;
+  return isCampaignReceiptClient(client)
+    && typeof candidate.createReplayPayload === 'function'
+    && typeof candidate.getCommittedReplayJournal === 'function';
+}
+
+function withoutCampaignReplayPayload(config: LobbyConfig): LobbyConfig {
+  const next = { ...config };
+  delete next.campaignReplayPayload;
+  delete next.campaignReplayRevision;
+  return next;
 }
 
 function publishTerminalPayoffE2EReceipt(
@@ -309,6 +361,9 @@ function bootstrap(): void {
   // renderer's event sink so detonations/launches sound off the same authoritative
   // state the renderer draws, never touching the deterministic engine.
   const audio = new AudioEngine();
+  const campaignAudio = new CampaignAudio({
+    playCampaignCue: (cue) => audio.campaignCue(cue),
+  });
   audio.unlockOnGesture();
   const syncBattleSettings = (): void => {
     hud.setBattleSettingsState?.({
@@ -432,6 +487,47 @@ function bootstrap(): void {
   let lastInputAimRound: number | null = null;
   // The players the current game was built from (for restart with same roster).
   let currentConfig: LobbyConfig | null = null;
+  let campaignRunState: CampaignRunState | null = null;
+  let persistCampaignRunState: (() => void) | null = null;
+  let drainCampaignSaveChain: (() => Promise<void>) | null = null;
+  let ownsCampaignTransition: (() => boolean) | null = null;
+  const syncCampaignRunPresentation = (): void => {
+    if (campaignRunState === null) {
+      hud.setCampaignRunPresentation?.(null);
+      return;
+    }
+    const state = campaignRunState;
+    const active = state.appliedResults.find(({ result }) => result.attempt === state.attempt);
+    const successful = active?.result.outcome === 'success';
+    const profile = resolveCampaignCombatProfile({
+      profileId: state.checkpoint.profile.profileId,
+      profileVersion: state.checkpoint.profile.profileVersion,
+    });
+    hud.setCampaignRunPresentation?.({
+      supplies: state.supplies,
+      retryable: active !== undefined && !successful,
+      ...(successful ? { checkpoint: {
+        encounterId: state.checkpoint.encounter.encounterId,
+        story: campaignStoryBeatFor(state.checkpoint.encounter.encounterId),
+        selectedRouteId: state.selectedRouteId,
+        routeRequired: state.checkpoint.encounter.encounterId === 'fuel-stop'
+          && state.selectedRouteId === null,
+        decisionPending: state.pendingCheckpointDecision?.resultAttempt === state.attempt,
+        decisionApplied: state.checkpointDecisions.some(
+          ({ resultAttempt }) => resultAttempt === state.attempt,
+        ),
+        finalEncounter: state.checkpoint.run.currentEncounterIndex
+          === state.checkpoint.run.encounterIds.length - 1,
+        hull: state.loadout.hull,
+        emergencyPatchAvailable: state.loadout.hull < 60
+          && !state.emergencyPatchAttempts.includes(state.attempt),
+        ammunition: state.loadout.carried.ammunition.map((entry) => ({
+          ...entry,
+          maximum: getCampaignWeapon(profile, entry.weaponId).startingAmmunition,
+        })),
+      } } : {}),
+    });
+  };
   let progressionSignInHandled = false;
   let verifiedController: VerifiedDuelController | null = null;
   let challengeClient: VerifiedChallengeClient | null = null;
@@ -705,6 +801,7 @@ function bootstrap(): void {
   /** Tear down the current game's client/input/subscription (idempotent). */
   async function resetMatchPresentation(): Promise<void> {
     audio.napalmStop();
+    campaignAudio.invalidate();
     lastActiveId = null;
     lastInputAimRound = null;
     renderDirty = true;
@@ -721,6 +818,10 @@ function bootstrap(): void {
     verifiedCompletionStarted = false;
     fieldOrder = null;
     practiceFieldOrderEvidence = null;
+    campaignRunState = null;
+    persistCampaignRunState = null;
+    drainCampaignSaveChain = null;
+    ownsCampaignTransition = null;
     refreshRetainedPresentation = null;
     terminalImpactObserved = false;
     terminalImpactNotified = false;
@@ -733,6 +834,7 @@ function bootstrap(): void {
     hud.setPracticeFieldOrder(null);
     hud.setFirstSalvoStep(null);
     hud.setPublicSeedChallenge(null);
+    hud.setCampaignRunPresentation?.(null);
     await hud.leaveBattleConsole?.();
   }
 
@@ -744,7 +846,13 @@ function bootstrap(): void {
 
   /** Build a fresh engine/client/input from the given config and start it. */
   async function startGame(config: LobbyConfig): Promise<void> {
+    // Validate campaign launch data before retiring or acquiring any session resource.
+    const constructionSetup = clientModeSetupFor(config);
     let hotSeatProgression: ReturnType<typeof createHotSeatProgressionReporter> | null = null;
+    let campaignSaveSession: CampaignSaveSession | null = null;
+    let campaignSaveKey: string | null = null;
+    let campaignSaveChain = Promise.resolve();
+    let campaignSaveHealthy = true;
     await gameSession.start({
       retirePresentation: resetMatchPresentation,
       afterRetire: releaseTankLoadoutPreviewResources,
@@ -752,7 +860,10 @@ function bootstrap(): void {
         progressionSignInHandled = false;
         lobby.hide();
         currentConfig = config;
-        return clientModeSetupFor(config);
+        campaignRunState = config.experience === 'campaign'
+          ? config.campaignRunState ?? null
+          : null;
+        return constructionSetup;
       },
       acquireClient: async (setup) => {
         if (config.verifiedChallenge) {
@@ -775,6 +886,46 @@ function bootstrap(): void {
           }
         }
         if (!config.verifiedDeployment) {
+          if (hasCampaignLaunchData(setup) && config.campaignRunState) {
+            const campaignSetup = requireCampaignModeSetup(setup);
+            const parsedRunState = parseCampaignRunState(config.campaignRunState);
+            if (!parsedRunState) throw new Error('invalid campaign run state');
+            let loadedCampaignRecord: Awaited<ReturnType<CampaignSaveSession['reload']>> = null;
+            try {
+              campaignSaveSession = new CampaignSaveSession(
+                createIndexedDbCampaignStorage(),
+                'ash-road-local',
+                campaignStorageBindingFromRunState(parsedRunState),
+              );
+              loadedCampaignRecord = await campaignSaveSession.reload();
+            } catch {
+              // An incompatible retained record stays untouched. Campaign play
+              // remains available, but this session deliberately stays unsaved.
+              campaignSaveSession = null;
+            }
+            if (config.campaignReplayPayload) {
+              if (!campaignSaveSession || !loadedCampaignRecord
+                || config.campaignReplayRevision !== loadedCampaignRecord.revision) {
+                campaignSaveSession = null;
+                throw new Error('Campaign progress changed in another session. Return to the lobby and resume the latest save.');
+              }
+              const loadedPayload = parseCampaignReplayPayload(loadedCampaignRecord.payload);
+              if (!loadedPayload
+                || JSON.stringify(loadedPayload) !== JSON.stringify(config.campaignReplayPayload)) {
+                campaignSaveSession = null;
+                throw new Error('Campaign progress changed in another session. Return to the lobby and resume the latest save.');
+              }
+              const restored = await replayCampaignPayload(loadedPayload);
+              return {
+                status: 'acquired',
+                client: new CampaignClient(campaignSetup.campaign, {
+                  engine: restored.engine,
+                  acceptedCommands: restored.payload.acceptedCommands,
+                }),
+                verifiedComplete: false,
+              };
+            }
+          }
           return { status: 'acquired', client: await createModeClient(setup), verifiedComplete: false };
         }
         try {
@@ -809,6 +960,12 @@ function bootstrap(): void {
         renderer: gameRenderer,
         initial,
       }) => {
+        campaignAudio.beginSession(currentGameGeneration, initial?.campaign, {
+          // A newly acquired campaign engine is a new presentation of the
+          // encounter. Page-cache restore does not reacquire and therefore
+          // cannot replay this cue.
+          announceInitialWarning: config.experience === 'campaign',
+        });
         const selectedBattlefield = selectClientBattlefieldWorld(
           newClient,
           gameRenderer,
@@ -831,6 +988,7 @@ function bootstrap(): void {
         // enforces it independently). Default 4 => everything buyable, matching the engine default.
         hud.setArmsLevel(config.settings?.armsLevel ?? 4);
         hud.setInputCapabilities?.(inputCapabilitiesFor(newClient));
+        syncCampaignRunPresentation();
         // Older focused test doubles intentionally model only the HUD methods relevant
         // to their lifecycle assertion; the real HUD always owns this presentation seam.
         (hud as HUD & { setQuickOperation?: (operation: LobbyConfig['quickOperation'] | null) => void })
@@ -944,7 +1102,8 @@ function bootstrap(): void {
           }
         }
         const accountTank = initial?.tanks[0];
-        hotSeatProgression = config.verifiedDeployment || config.verifiedChallenge
+        hotSeatProgression = config.experience === 'campaign'
+          || config.verifiedDeployment || config.verifiedChallenge
           || (publicSeedChallengeUrl !== null
             && config.publicSeedChallenge?.origin === 'imported-public-challenge')
           ? null
@@ -986,7 +1145,8 @@ function bootstrap(): void {
           if (!matchSession.pageAuthorityReady
             || gameplayInputBlocked()
             || !shouldAcceptLocalInput({ activeIsAi, activeIsLocal, paused: hud.isPaused() })
-            || !verifiedInputAllowed()) return;
+            || !verifiedInputAllowed()) return false;
+          let accepted = action.type !== 'select_weapon';
           // Any input mutates aim/weapon/turn state, so force a redraw next frame so the
           // aim guide / HUD update instantly even when the idle-skip gate would skip.
           markDirty();
@@ -1021,6 +1181,11 @@ function bootstrap(): void {
                 void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
                 return;
               }
+              if (forwardedAction.type === 'select_weapon') {
+                const state = newClient.getState();
+                const tank = state?.tanks.find((candidate) => candidate.id === state.activePlayerId);
+                accepted = tank?.selectedWeapon === forwardedAction.weapon;
+              }
               if (practiceFieldOrderEvidence !== null) {
                 const practiceAfterState = newClient.getState();
                 practiceFieldOrderEvidence = observePracticeFieldOrderAction(
@@ -1043,6 +1208,7 @@ function bootstrap(): void {
             },
           );
           syncFirstSalvo();
+          return accepted;
         }, {
           capabilities: inputCapabilities,
           initialAngle: activeTank?.angle,
@@ -1115,10 +1281,53 @@ function bootstrap(): void {
         input: newInput,
         terminalHistoryPrimed,
       }) => {
+        let campaignReceiptApplied = false;
         let challengeReportDeferred = false;
         let challengePayoffCompleted = terminalHistoryPrimed;
         let challengePayoffFrame: number | null = null;
         let challengePayoffFrames = 0;
+        const queueCampaignSave = (state: BorrowedGameState): void => {
+          if (!campaignSaveSession || !campaignRunState || !isCampaignReplayClient(newClient)) return;
+          const key = [
+            campaignRunState.checkpoint.encounter.encounterId,
+            campaignRunState.attempt,
+            state.campaign?.commitmentCount ?? 0,
+            newClient.getCommittedReplayJournal().length,
+            campaignRunState.appliedResults.length,
+            campaignRunState.checkpointDecisions.length,
+            campaignRunState.selectedRouteId ?? '-',
+            campaignRunState.supplies,
+            campaignRunState.pendingCheckpointDecision?.resultAttempt ?? '-',
+            campaignRunState.emergencyPatchAttempts.length,
+          ].join(':');
+          if (key === campaignSaveKey) return;
+          campaignSaveKey = key;
+          const retainedRunState = campaignRunState;
+          const retainedSession = campaignSaveSession;
+          campaignSaveChain = campaignSaveChain.then(async () => {
+            const payload = await newClient.createReplayPayload(retainedRunState);
+            const result = await retainedSession.save(payload);
+            campaignSaveHealthy = result.status === 'saved';
+            if (result.status !== 'saved'
+              && matchSession.isCurrent(currentGameGeneration, newClient)) {
+              hud.flashMessage(result.status === 'read-only'
+                ? 'Campaign save changed in another session. Progress is read-only; return to preparation to resume the latest save.'
+                : 'Campaign progress could not be saved. Retry or continue is paused until saving recovers.');
+            }
+          }).catch(() => {
+            // Storage failure is non-mechanical. The in-memory run remains playable.
+          });
+        };
+        persistCampaignRunState = () => {
+          if (!matchSession.isCurrent(currentGameGeneration, newClient)) return;
+          const state = newClient.getState();
+          if (state) queueCampaignSave(state);
+        };
+        drainCampaignSaveChain = () => campaignSaveChain;
+        ownsCampaignTransition = () => matchSession.pageAuthorityReady
+          && matchSession.isCurrent(currentGameGeneration, newClient)
+          && campaignSaveHealthy
+          && campaignSaveSession?.isReadOnly !== true;
         const syncChallenge = (): void => {
           if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
           hud.setVerifiedChallenge(
@@ -1189,6 +1398,7 @@ function bootstrap(): void {
         const present = (canonicalState: BorrowedGameState): void => {
           if (!matchSession.pageAuthorityReady) return;
           const state = presentationStateFor(canonicalState);
+          campaignAudio.observe(currentGameGeneration, state.campaign);
           if (challengeClient === newClient && challengeClient.terminalResult && !challengePayoffCompleted) {
             challengeReportDeferred = true;
           }
@@ -1201,6 +1411,24 @@ function bootstrap(): void {
           syncChallenge();
           submitChallenge();
           submitVerifiedCompletion();
+          if (
+            !campaignReceiptApplied
+            && state.phase === 'GAME_OVER'
+            && state.campaign?.result
+            && campaignRunState !== null
+          ) {
+            if (!isCampaignReceiptClient(newClient)) {
+              throw new Error('Campaign session cannot produce an authoritative result receipt');
+            }
+            const receipt = newClient.createResultReceipt(campaignRunState);
+            campaignRunState = applyCampaignResult(campaignRunState, receipt);
+            campaignReceiptApplied = true;
+            if (currentConfig?.experience === 'campaign') {
+              currentConfig = { ...currentConfig, campaignRunState };
+            }
+            syncCampaignRunPresentation();
+          }
+          queueCampaignSave(state);
           if (ENABLE_DETERMINISTIC_HOT_SEAT_PROBE) exposeDeterministicHotSeatProbe(state);
           // Aim guide is shown only when the LOCAL human controls the active tank: a
           // human turn in hot-seat, or (networked) the active tank is THIS client's id.
@@ -1305,6 +1533,16 @@ function bootstrap(): void {
     });
   }
 
+  async function startCampaignTransition(config: LobbyConfig): Promise<void> {
+    // A new same-slot session must load after the outgoing serialized save has
+    // committed; otherwise both sessions can own the same CAS revision.
+    const drain = drainCampaignSaveChain;
+    const stillOwned = ownsCampaignTransition;
+    if (drain) await drain();
+    if (!stillOwned?.()) return;
+    await startGame(config);
+  }
+
   /**
    * Drive the active tank when it is CPU-controlled: gate out human input, and —
    * once per turn — plan a shot and play it as ordinary actions on a short timer
@@ -1317,6 +1555,7 @@ function bootstrap(): void {
     const active = state.tanks.find((t) => t.id === state.activePlayerId);
     const isAi = !!active?.ai && currentConfig?.mode !== 'network';
     activeIsAi = isAi && state.phase === 'PLAYER_TURN';
+    if (matchSession.client?.ownsCpuExecution) return;
     if (!isAi || state.phase !== 'PLAYER_TURN' || !active) return;
 
     const key = `${state.turn}:${active.id}`;
@@ -1401,6 +1640,7 @@ function bootstrap(): void {
   // successor room; both clients then migrate via onRematch (above).
   hud.onRestart(() => {
     if (!matchSession.pageAuthorityReady || !currentConfig) return;
+    if (currentConfig.experience === 'campaign' && currentConfig.campaignRunState) return;
     if (currentConfig.verifiedChallenge) {
       void teardown().then(() => lobby.show({ focusVerifiedChallenge: true }));
     } else if (currentConfig.mode === 'network') {
@@ -1436,10 +1676,88 @@ function bootstrap(): void {
     // allowed while that dialog owns focus, unlike background keyboard/touch
     // gameplay input, but still obeys turn ownership and verified-play gates.
     if (!localTurnAllowsActions()) return;
-    if (!inputCapabilitiesFor(matchSession.client).weaponSelection) return;
+    const capabilities = inputCapabilitiesFor(matchSession.client);
+    if (!capabilities.weaponSelection || !inputAllowsWeapon(capabilities, weapon)) return;
     markDirty(); // weapon pick can change aim-guide/HUD context — repaint next frame
     matchSession.client?.sendAction({ type: 'select_weapon', weapon });
-    matchSession.input?.setWeapon(weapon);
+    const state = matchSession.client?.getState();
+    const active = state?.tanks.find((tank) => tank.id === state.activePlayerId);
+    if (active?.selectedWeapon === weapon) matchSession.input?.setWeapon(weapon);
+  });
+
+  hud.onCampaignRetry?.(() => {
+    if (
+      !matchSession.pageAuthorityReady
+      || currentConfig?.experience !== 'campaign'
+      || campaignRunState === null
+    ) return;
+    const activeResult = campaignRunState.appliedResults.find(
+      ({ result }) => result.attempt === campaignRunState?.attempt,
+    );
+    if (!activeResult || activeResult.result.outcome === 'success') return;
+    const nextRunState = retryCampaignRun(campaignRunState, {
+      kind: 'campaign-retry',
+      retryVersion: 1,
+      fromAttempt: campaignRunState.attempt,
+    });
+    const nextConfig: LobbyConfig = {
+      ...withoutCampaignReplayPayload(currentConfig),
+      campaign: campaignDescriptorFromCheckpoint(
+        nextRunState.checkpoint,
+        nextRunState.attemptCheckpoint.loadout,
+      ),
+      campaignRunState: nextRunState,
+    };
+    void startCampaignTransition(nextConfig);
+  });
+
+  hud.onCampaignRouteChoice?.((routeId) => {
+    if (currentConfig?.experience !== 'campaign' || campaignRunState === null) return;
+    campaignRunState = chooseCampaignRoute(campaignRunState, {
+      kind: 'campaign-route-choice', routeChoiceVersion: 1, routeId,
+    });
+    currentConfig = { ...currentConfig, campaignRunState };
+    syncCampaignRunPresentation();
+    persistCampaignRunState?.();
+  });
+
+  hud.onCampaignCheckpointChoice?.((choice) => {
+    if (currentConfig?.experience !== 'campaign' || campaignRunState === null) return;
+    campaignRunState = applyCampaignCheckpointDecision(campaignRunState, {
+      kind: 'campaign-checkpoint-decision', checkpointDecisionVersion: 1,
+      resultAttempt: campaignRunState.attempt, choice,
+    });
+    currentConfig = { ...currentConfig, campaignRunState };
+    syncCampaignRunPresentation();
+    persistCampaignRunState?.();
+  });
+
+  hud.onCampaignEmergencyPatch?.(() => {
+    if (currentConfig?.experience !== 'campaign' || campaignRunState === null) return;
+    campaignRunState = applyCampaignEmergencyPatch(campaignRunState, {
+      kind: 'campaign-emergency-patch', emergencyPatchVersion: 1,
+      resultAttempt: campaignRunState.attempt,
+    });
+    currentConfig = { ...currentConfig, campaignRunState };
+    syncCampaignRunPresentation();
+    persistCampaignRunState?.();
+  });
+
+  hud.onCampaignContinue?.(() => {
+    if (currentConfig?.experience !== 'campaign' || campaignRunState === null) return;
+    const nextRunState = advanceCampaignEncounter(campaignRunState, {
+      kind: 'campaign-advance', advanceVersion: 1,
+      fromEncounterId: campaignRunState.checkpoint.encounter.encounterId,
+    });
+    const nextConfig: LobbyConfig = {
+      ...withoutCampaignReplayPayload(currentConfig),
+      campaign: campaignDescriptorFromCheckpoint(
+        nextRunState.checkpoint,
+        nextRunState.attemptCheckpoint.loadout,
+      ),
+      campaignRunState: nextRunState,
+    };
+    void startCampaignTransition(nextConfig);
   });
 
   // Register the store Buy callback ONCE on the persistent HUD. A buy is a
@@ -1588,6 +1906,7 @@ function bootstrap(): void {
   });
 
   hud.onPauseChange((paused) => {
+    matchSession.client?.setPaused?.(paused);
     if (paused) matchSession.input?.setDirectAimEnabled(false);
     else matchSession.input?.setDirectAimEnabled(directAimAllowed());
   });
@@ -1945,6 +2264,25 @@ export async function createClient(config: LobbyConfig): Promise<GameClient> {
 }
 
 function clientModeSetupFor(config: LobbyConfig): ClientConstructionSetup {
+  if (hasCampaignLaunchData(config)) {
+    const setup = requireCampaignModeSetup(config);
+    if (config.campaignRunState === undefined) return setup;
+    const runState = parseCampaignRunState(config.campaignRunState);
+    if (!runState) throw new Error('invalid campaign run state');
+    const boundDescriptor = campaignDescriptorFromCheckpoint(
+      runState.checkpoint,
+      runState.attemptCheckpoint.loadout,
+    );
+    if (setup.campaign.encounter.encounterId !== boundDescriptor.encounter.encounterId
+      || setup.campaign.encounter.contentDigest !== boundDescriptor.encounter.contentDigest
+      || setup.campaign.combatProfile.contentDigest !== boundDescriptor.combatProfile.contentDigest) {
+      throw new Error('campaign run state and launch descriptor disagree');
+    }
+    return {
+      ...setup,
+      campaign: boundDescriptor,
+    };
+  }
   if (config.mode === 'hotseat') return { ...config, mode: 'hotseat' };
   if (!config.roomId) throw new Error('createClient: missing roomId for network mode');
   if (!config.playerId) throw new Error('createClient: missing playerId for network mode');

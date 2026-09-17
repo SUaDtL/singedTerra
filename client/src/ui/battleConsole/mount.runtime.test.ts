@@ -138,6 +138,57 @@ async function flushMicrotasks(count = 20): Promise<void> {
 }
 
 describe('R10 independent semantic readiness', () => {
+  it('keeps mission telemetry outside the command-console generation across campaign changes', async () => {
+    pixiRuntime.denyWebGl = true;
+    const target = hosts();
+    const resources = new BattleConsoleResourceLedger();
+    const initialState: BattleConsolePresentationState = {
+      ...baseState,
+      campaign: {
+        commitmentCount: 4,
+        supplies: 2,
+        retryable: false,
+        objects: [
+          { id: 'refinery', kind: 'protected', health: 61, maxHealth: 100, alive: true },
+        ],
+        result: null,
+      },
+    };
+    const mounted = await mountBattleConsoleGeneration({
+      ...target,
+      initialState,
+      dispatch: () => {},
+      layout: projectResponsiveLayout('wide', 1),
+      generationToken: { generation: 10, resources, isCurrent: () => true },
+    });
+    expect(target.semanticHost.querySelector('[data-campaign-objective]')).toBeNull();
+
+    mounted?.update({
+      ...initialState,
+      campaign: {
+        commitmentCount: 5,
+        supplies: 6,
+        retryable: false,
+        objects: [
+          { id: 'refinery', kind: 'protected', health: 24, maxHealth: 100, alive: true },
+        ],
+        result: { outcome: 'success', reason: 'objective', commitmentId: 5 },
+      },
+    }, projectResponsiveLayout('wide', 1));
+    expect(target.semanticHost.querySelector('[data-campaign-objective]')).toBeNull();
+
+    mounted?.update({ ...baseState, campaign: null }, projectResponsiveLayout('wide', 1));
+    expect(queryAllByRole(target.semanticHost, 'region', { name: 'Campaign objective' }))
+      .toHaveLength(0);
+
+    mounted?.update(initialState, projectResponsiveLayout('wide', 1));
+    expect(queryAllByRole(target.semanticHost, 'region', { name: 'Campaign objective' }))
+      .toHaveLength(0);
+    await vi.dynamicImportSettled();
+    await waitFor(() => expect(mounted?.status).toBe('fallback'));
+    await mounted?.destroy();
+  });
+
   it('settles semantic destroy while renderer initialization is held and destroys the unclaimed late app', async () => {
     const gate = deferred();
     const target = hosts();

@@ -47,3 +47,41 @@ C:/Users/brenn/.codex/generated_images/019f80b3-f72e-75c1-bbe6-edd1d70e47a7/exec
 Only luminance modulation enters the renderer; the world profile supplies the
 ground palette. This keeps material grain subtle, makes palette-only fallback
 complete, and leaves terrain geometry and deterministic state untouched.
+
+## Ash Road campaign family
+
+These six assets were generated specifically for this project with OpenAI's
+built-in image-generation tool on 2026-09-17. They use no third-party source
+image, logo, typeface, or purchased material. The project may use the generated
+outputs under the applicable OpenAI output terms. Canonical collision, health,
+warning, and objective state remain code-owned; pending or failed image loads
+retain the documented code-native fallback.
+
+| Project asset | Generation record | Production treatment | SHA-256 |
+| --- | --- | --- | --- |
+| `client/public/art/campaign/ash-road-drum.webp` | `exec-3bb7913d-0bc5-4aca-89cd-1ecbb0d68fb6.png` | Contain-fit 256x256 transparent WebP, quality 82, alpha quality 90 | `cd3e66c5ba52db916892ff1d0977a2b33689a9464639550baea4e17fdd26343b` |
+| `client/public/art/campaign/ash-road-refinery.webp` | `exec-37f418b2-6bfa-4f37-96f6-ce0399d026c7.png` | Contain-fit 320x256 transparent WebP, quality 82, alpha quality 90; generated horizontal padding normalized to transparent | `083548150298bd2b179b839652d312416b673f2935095cb2c3a7cf9285db82a6` |
+| `client/public/art/campaign/ash-road-relay.webp` | `exec-69301c18-dfc6-40a4-9b59-cd7ea6b156d1.png` | Contain-fit 256x256 transparent WebP, quality 82, alpha quality 90 | `073088ce09ca09825b09538a44cc9c88092b65815986f7e2978776fcd477c023` |
+| `client/public/art/campaign/ash-road-cache.webp` | `exec-7d7c1a4e-b0ad-43f1-8d39-b586bc4d0efe.png` | Contain-fit 320x256 transparent WebP, quality 82, alpha quality 90; generated horizontal padding normalized to transparent | `d0bdca639101f90ac3bd15abee521a0f20b4a4d9618998172979575a33481cd7` |
+| `client/public/art/campaign/ash-road-siege.webp` | `exec-184ad511-4f64-4b50-96c8-7dcad20baef7.png` | Contain-fit 384x256 transparent WebP, quality 82, alpha quality 90; generated horizontal padding normalized to transparent | `a18a791d439aa7a7ffd7a4517923682e54cfa10d11e158445c55cbbdff770dcb` |
+| `client/public/art/campaign/ash-road-panorama.webp` | `exec-1c4a2d35-bc1e-42fa-b717-51d7dcf0b061.png` | Contain-fit 1440x480 opaque WebP, quality 82 | `28c61911c9d978dc3ea33c0abd10bcc6c8c4f32330a18711816bd1ec78389d4c` |
+
+The object prompts requested isolated, orthographic, transparent, weathered
+industrial subjects with rust-orange, soot-black, and muted-brass materials;
+small-size silhouette readability; and no text, logos, watermarks, ground plane,
+or extra objects. The siege prompt requested a left-facing, normal-hull tracked
+gun with no crew or muzzle flash. The panorama prompt requested a 3:1 ash-desert
+road, distant refinery/relay silhouettes, no characters or vehicles, and no fake
+collidable foreground terrain. Source PNGs are retained in:
+
+```text
+C:/Users/brenn/.codex/generated_images/01a0ac50-5203-7750-87c2-35aa09c5722a/
+```
+
+Required damaged/failed/disabled states are composed from the shipped base art
+plus deterministic Canvas health bars, crack marks, and a high-contrast failure
+cross. Relay disabled is therefore structurally marked rather than represented
+only by dimming. Siege warning state remains the canonical target region and
+semantic text over the real 100-hull tank; the decorative image never changes
+its collision or hull. The panorama and siege preview hide on load failure while
+the existing battlefield and factual checkpoint UI remain complete.

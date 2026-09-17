@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "challengeVersion": "ST1",
   "hashNormalization": "utf8-lf",
-  "disposition": "mode-input-and-network-recovery-ordinary-parity-reviewed",
+  "disposition": "ash-road-campaign-isolation-and-ordinary-parity-reviewed",
   "recursiveDirectories": [
     "shared/src/engine",
     "shared/src/types"
@@ -32,7 +32,7 @@
     },
     {
       "path": "client/src/client/createModeClient.ts",
-      "sha256": "2fa298d6a093df8190c5606c9b159ffc02779dd1106fb813bf8d6f2aa06d050b"
+      "sha256": "629b5253f2cc9be7bca592abe881740d1269be7ac7516c4acb9bbbc9b4cdf1b0"
     },
     {
       "path": "client/src/client/fastForward.ts",
@@ -52,11 +52,11 @@
     },
     {
       "path": "client/src/client/inputCapabilities.ts",
-      "sha256": "efa0f85e036fc2fcbb8a8230e5e3e0aa0528ddac94f483123bdeb2922878fb9a"
+      "sha256": "4329931bafc755515d3a64ce55259771f8350f4b12dc1b45956a048632d7b4ed"
     },
     {
       "path": "client/src/client/modeConfig.ts",
-      "sha256": "f007e69871f67b4fcae09a894605defc332928d74b70a65ba9b28d35db274559"
+      "sha256": "b688a0615e41c7ab046a2e144f0ae59e03961cbd580dbd9246f6eaf346a49326"
     },
     {
       "path": "client/src/client/practiceFieldOrder.ts",
@@ -76,11 +76,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "ccc66edaa644b897778b9044b9e4025edfc5e03eea8fbba1ff5f8c55bccd5f03"
+      "sha256": "20bf087233a95d090eb30c6bfe874cf8d04ae9be2f01c4c0f1043320b594beb2"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "f9cb56a1108ffb53a1dfe2d6d94304fccd4cae8a75e32b858c4e4897d35d1ebf"
+      "sha256": "36aa9555527a3c9409467d35f40006824c9691782f3199c612a43a0653a22612"
     },
     {
       "path": "package.json",
@@ -104,15 +104,15 @@
     },
     {
       "path": "shared/src/engine/GameEngine.ts",
-      "sha256": "40057a4f4f41ec5d4c97f01d931f07ee90b34d54ff90bbe362f21656be05f6e8"
+      "sha256": "02e0e9d0aa7e76eee7f46d52299f59698b1714b2349f7b68ca61a78b67234a5f"
     },
     {
       "path": "shared/src/engine/Movement.ts",
-      "sha256": "4593000aaea37a36da48fb1b7b966d58b25aae39a7ed4fa2569f9622714ecee2"
+      "sha256": "8946ed1d9ee7fd4016f974b79d1b385dfb8cb22fbffcdbd6ac55abf8517b4121"
     },
     {
       "path": "shared/src/engine/Physics.ts",
-      "sha256": "8ae81c7ab687ac7ef5d0159e9074345ed93b0768704573239aed6a3a4069570e"
+      "sha256": "f4282d3aa6141c9a98ce199f1beae63846e165ed4330501aca874a4ac4b1baff"
     },
     {
       "path": "shared/src/engine/Random.ts",
@@ -144,7 +144,7 @@
     },
     {
       "path": "shared/src/types/GameState.ts",
-      "sha256": "29bedf036c617501911eb123ae3830c13a37d15e78a1b5fb422a450c572546ac"
+      "sha256": "35dbc6029d39b95138769ad939a0375b47ffba086bc0d5ab50487940e00c98bf"
     },
     {
       "path": "shared/src/types/PlayerAction.ts",

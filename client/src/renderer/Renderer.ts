@@ -58,6 +58,9 @@ import { BattlefieldBackdrop, type BattlefieldWorld } from './BattlefieldBackdro
 import { ExplosionArt } from './ExplosionArt';
 import { ImpactMonitorPainter } from './ImpactMonitorPainter';
 import { WorldAtmosphereLayer } from './worldAtmosphere';
+import { EncounterObjectRenderer } from './EncounterObjectRenderer';
+import { EncounterZoneRenderer } from './EncounterZoneRenderer';
+import { EncounterWarningRenderer } from './EncounterWarningRenderer';
 import {
   getImpactMonitorGeometry,
   selectImpactMonitorFocus,
@@ -258,6 +261,11 @@ function lighten([r, g, b]: [number, number, number], t: number): [number, numbe
 export class Renderer {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly terrain = new TerrainRenderer();
+  /** Campaign-only non-seat world entities; ordinary frames never enter this pass. */
+  private readonly encounterObjects: EncounterObjectRenderer;
+  private readonly encounterZones = new EncounterZoneRenderer();
+  private readonly encounterWarning = new EncounterWarningRenderer();
+  private encounterObjectVisualInvalidated = false;
   private tankArtInvalidated = false;
   private readonly tanks = new TankRenderer(undefined, undefined, () => {
     this.tankArtInvalidated = true;
@@ -379,6 +387,11 @@ export class Renderer {
       typeof window !== 'undefined' && typeof window.matchMedia === 'function'
         ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
         : false;
+    this.encounterObjects = new EncounterObjectRenderer({
+      deferAssetLoad: true,
+      reducedMotion: this.reduceMotion,
+      onVisualReady: () => { this.encounterObjectVisualInvalidated = true; },
+    });
     this.worldAtmosphere = new WorldAtmosphereLayer(this.reduceMotion);
     this.projectile = new ProjectileRenderer(this.reduceMotion);
     this.effects = new EffectsRenderer(this.reduceMotion);
@@ -453,6 +466,8 @@ export class Renderer {
     this.effects.clear();
     this.mobilityEffects.clear();
     this.projectile.clear();
+    this.encounterObjects?.reset?.();
+    this.encounterObjectVisualInvalidated = false;
     this.battlefieldBackdrop?.reset?.();
     this.worldAtmosphere?.reset?.();
     this.terrain?.reset?.(); // retire selected material and force a fresh terrain cache
@@ -581,6 +596,30 @@ export class Renderer {
     // offscreen only when the bitmap actually changes — so no per-frame
     // markDirty() is needed here.
     this.terrain.draw(ctx, state.terrain, state.terrainVersion);
+
+    const encounterZones = state.campaign?.zones;
+    if (encounterZones && encounterZones.length > 0) {
+      this.encounterZones.draw(ctx, encounterZones, state.terrain);
+    }
+
+    const encounterWarning = state.campaign?.warning;
+    if (encounterWarning) {
+      this.encounterWarning.draw(ctx, encounterWarning, state.terrain);
+    }
+
+    // Canonical campaign objects live in the battlefield world pass. Their
+    // engine-owned AABBs remain the source of both Canvas drawing and hit facts;
+    // ordinary games omit campaign state and retain the exact old draw path.
+    const encounterObjects = state.campaign?.objects;
+    if (encounterObjects && encounterObjects.length > 0) {
+      this.encounterObjects.draw(ctx, encounterObjects, {
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1,
+        zoom: 1,
+      });
+      this.encounterObjectVisualInvalidated = false;
+    }
 
     // 2.5 Terrain-projected shell shadows. These present-position depth cues sit
     // above the destructible terrain but below visible tanks and payload glyphs.
@@ -745,6 +784,11 @@ export class Renderer {
     // The terrain material follows the same first-applied-frame contract. Once
     // ready, TerrainRenderer rebuilds its version cache exactly once.
     if (this.terrain?.isMaterialSettled === false) return true;
+    const encounterObjects = state.campaign?.objects;
+    if (encounterObjects?.some((object) => object.alive)) {
+      if (!this.encounterObjects.isSettled || this.encounterObjectVisualInvalidated) return true;
+      if (this.encounterObjects.hasDecorativeMotion(encounterObjects)) return true;
+    }
     // Living tanks follow the same first-painted-frame contract. Wreck-only
     // scenes never spin solely for an asset that has no eligible consumer.
     if (

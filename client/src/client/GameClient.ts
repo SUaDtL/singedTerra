@@ -1,5 +1,6 @@
 import type { BorrowedGameState } from '@shared/types/GameState';
 import type { PlayerAction } from '@shared/types/PlayerAction';
+import type { WeaponType } from '@shared/engine/WeaponSystem';
 import type {
   BattlefieldWorldId,
   NetworkRulesetVersion,
@@ -64,6 +65,8 @@ export interface GameInputCapabilities {
   readonly angle: { readonly min: number; readonly max: number };
   readonly power: { readonly min: number; readonly max: number };
   readonly primaryAction: 'selected_weapon' | 'fire';
+  /** Optional mode-owned roster; omission retains the implemented ordinary catalog. */
+  readonly weaponRoster?: readonly WeaponType[];
   readonly movement: boolean;
   readonly weaponCycling: boolean;
   readonly weaponSelection: boolean;
@@ -97,6 +100,9 @@ export interface GameClient {
   /** Optional mode-specific narrowing; omission preserves ordinary controls. */
   readonly inputCapabilities?: GameInputCapabilities;
 
+  /** True when the client, rather than main's ordinary driver, schedules CPU turns. */
+  readonly ownsCpuExecution?: boolean;
+
   /** Start the client (begin local loop or open the socket connection). */
   start(): void;
 
@@ -114,6 +120,9 @@ export interface GameClient {
    * FIRING/RESOLVING. Optional so a client may omit it.
    */
   setFastForward?(on: boolean): void;
+
+  /** Pause client-owned local simulation work without disposing the session. */
+  setPaused?(paused: boolean): void;
 
   /** Submit a player input. Validated/applied locally or sent to the server. */
   sendAction(action: PlayerAction): void;

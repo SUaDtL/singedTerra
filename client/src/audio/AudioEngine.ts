@@ -1,6 +1,57 @@
 import type { ExplosionImpactType } from '@shared/types/GameState';
 import type { WallMode } from '@shared/types/GameOptions';
 import { getImpactAudioProfile } from '../feel/impactMaterial';
+import type { CampaignAudioCue } from './CampaignAudio';
+
+type CampaignToneProfile = Readonly<{
+  start: number;
+  end: number;
+  offset: number;
+  duration: number;
+  gain: number;
+  type: OscillatorType;
+}>;
+
+type CampaignNoiseProfile = Readonly<{
+  offset: number;
+  duration: number;
+  gain: number;
+  filter: BiquadFilterType;
+  frequency: number;
+  q: number;
+}>;
+
+export const CAMPAIGN_CUE_PROFILES: Readonly<Record<CampaignAudioCue, Readonly<{
+  tones: readonly CampaignToneProfile[];
+  noise: CampaignNoiseProfile | null;
+}>>> = Object.freeze({
+  'warning-announced': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 880, end: 740, offset: 0, duration: 0.1, gain: 0.1, type: 'square' }),
+      Object.freeze({ start: 880, end: 740, offset: 0.16, duration: 0.1, gain: 0.1, type: 'square' }),
+    ]),
+    noise: null,
+  }),
+  'relay-disabled': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 520, end: 150, offset: 0, duration: 0.28, gain: 0.13, type: 'sawtooth' }),
+    ]),
+    noise: Object.freeze({ offset: 0, duration: 0.12, gain: 0.06, filter: 'bandpass', frequency: 1300, q: 3 }),
+  }),
+  'volatile-chain': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 180, end: 72, offset: 0, duration: 0.24, gain: 0.16, type: 'triangle' }),
+    ]),
+    noise: Object.freeze({ offset: 0, duration: 0.3, gain: 0.2, filter: 'lowpass', frequency: 950, q: 0.8 }),
+  }),
+  'mission-concluded': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 330, end: 440, offset: 0, duration: 0.26, gain: 0.1, type: 'sine' }),
+      Object.freeze({ start: 440, end: 660, offset: 0.15, duration: 0.32, gain: 0.1, type: 'sine' }),
+    ]),
+    noise: null,
+  }),
+});
 
 export interface WallReflectAudioProfile {
   readonly startFrequency: number;
@@ -382,6 +433,50 @@ export class AudioEngine {
   /** A slightly brighter click for cycling the selected weapon. */
   weaponCycle(): void {
     this.blip(720, 0.05, 0.07, 'square');
+  }
+
+  /** Distinct, bounded campaign notifications. These never gate simulation. */
+  campaignCue(cue: CampaignAudioCue): void {
+    if (this.muted) return;
+    const ctx = this.ensure();
+    if (!ctx || !this.master) return;
+    const t = ctx.currentTime;
+    const tone = (
+      start: number,
+      end: number,
+      offset: number,
+      duration: number,
+      gain: number,
+      type: OscillatorType,
+    ): void => {
+      if (!this.master) return;
+      const oscillator = ctx.createOscillator();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(start, t + offset);
+      oscillator.frequency.exponentialRampToValueAtTime(end, t + offset + duration);
+      const envelope = ctx.createGain();
+      envelope.gain.setValueAtTime(0.0001, t + offset);
+      envelope.gain.exponentialRampToValueAtTime(gain, t + offset + 0.006);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, t + offset + duration);
+      oscillator.connect(envelope).connect(this.master);
+      oscillator.start(t + offset);
+      oscillator.stop(t + offset + duration + 0.02);
+    };
+
+    const profile = CAMPAIGN_CUE_PROFILES[cue];
+    for (const entry of profile.tones) {
+      tone(entry.start, entry.end, entry.offset, entry.duration, entry.gain, entry.type);
+    }
+    if (profile.noise) {
+      this.noiseHit(
+        t + profile.noise.offset,
+        profile.noise.duration,
+        profile.noise.gain,
+        profile.noise.filter,
+        profile.noise.frequency,
+        profile.noise.q,
+      );
+    }
   }
 
   /**

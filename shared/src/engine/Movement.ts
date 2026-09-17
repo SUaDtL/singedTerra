@@ -1,6 +1,10 @@
 import type { TankState } from '../types/GameState.ts';
 import { CANVAS_WIDTH, surfaceAt } from './Terrain.ts';
-import { TANK_WIDTH } from './Tank.ts';
+import { TANK_HEIGHT, TANK_WIDTH } from './Tank.ts';
+import {
+  isLiveCampaignObject,
+  type CampaignObjectState,
+} from '../campaign/objects.ts';
 
 /** Largest signed horizontal distance accepted by one committed move action. */
 export const MAX_MOVE_DELTA = 8;
@@ -27,6 +31,7 @@ export function resolveTankMove(
   tanks: readonly TankState[],
   terrain: Uint8Array,
   delta: number,
+  objects?: readonly CampaignObjectState[],
 ): number {
   if (
     !isValidMoveDelta(delta) ||
@@ -56,6 +61,17 @@ export function resolveTankMove(
       !other.buried &&
       Math.abs(other.x - candidateX) < TANK_WIDTH);
     if (blocked) break;
+
+    const candidateLeft = candidateX - TANK_WIDTH / 2;
+    const candidateRight = candidateX + TANK_WIDTH / 2;
+    const candidateTop = candidateY - TANK_HEIGHT;
+    const objectBlocked = (objects ?? []).some((object) => {
+      if (!isLiveCampaignObject(object)) return false;
+      const { left, right, top, bottom } = object.collisionBounds;
+      return candidateLeft < right && candidateRight > left
+        && candidateTop < bottom && candidateY > top;
+    });
+    if (objectBlocked) break;
 
     tank.x = candidateX;
     tank.y = candidateY;

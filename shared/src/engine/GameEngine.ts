@@ -76,6 +76,56 @@ import {
 import { createRng } from './Random.ts';
 import { blastReachRadius } from './BlastGeometry.ts';
 import { resolveTankMove } from './Movement.ts';
+import {
+  classifyCampaignCommitment,
+  createCampaignCommitment,
+  type CampaignCommitment,
+} from '../campaign/commitments.ts';
+import {
+  appendCampaignDamageComponent,
+  createCampaignDamageSummary,
+  createCampaignSettledOutcome,
+  decideCampaignOutcome,
+  type CampaignDamageSummary,
+  type CampaignResult,
+  type CampaignSettledOutcome,
+} from '../campaign/outcomes.ts';
+import {
+  applyCampaignObjectBlast,
+  isLiveCampaignObject,
+  type CampaignObjectState,
+} from '../campaign/objects.ts';
+import {
+  getCampaignWeapon,
+  type CampaignWeaponDamageDefinition,
+  type ResolvedCampaignCombatProfile,
+} from '../campaign/combatProfiles.ts';
+import {
+  activateCampaignSupplyDrum,
+  cloneCampaignEffectState,
+  createCampaignEffectState,
+  drainCampaignEffects as takeCampaignEffects,
+  failCampaignEffects,
+  type CampaignEffect,
+  type CampaignEffectFailureCode,
+  type CampaignEffectState,
+} from '../campaign/effects.ts';
+import { settleCampaignObjectSupport } from '../campaign/support.ts';
+import {
+  appendCampaignZone,
+  applyCampaignZoneDamage,
+  createCampaignIncendiaryZone,
+  resolveCampaignZoneExposure,
+  type CampaignIncendiaryZone,
+} from '../campaign/zones.ts';
+import {
+  CAMPAIGN_STRIKE_PROFILE,
+  createCampaignAnnouncedStrike,
+  markCampaignWarningFired,
+  resolveCampaignStrikeDamage,
+  resolveCampaignWarningBoundary,
+  type CampaignAnnouncedStrike,
+} from '../campaign/warnings.ts';
 
 function playersAreFour(players: GameOptions['players']): boolean {
   return Array.isArray(players) && players.length === 4;
@@ -182,9 +232,102 @@ function ownConstructionOptions(options?: GameOptions): GameOptions | undefined 
   });
 }
 
+/**
+ * Fully materialized opening state for the opt-in campaign construction path.
+ * The public campaign factory validates authored data before it reaches this
+ * seam; GameEngine still takes ownership of every mutable value here.
+ */
+export interface CampaignEngineConstruction {
+  readonly kind: 'campaign-engine-construction';
+  readonly seed: number;
+  readonly terrain: Uint8Array;
+  readonly tanks: readonly TankState[];
+  readonly objects: readonly CampaignObjectState[];
+  readonly combatProfile: ResolvedCampaignCombatProfile;
+  readonly campaign: Readonly<{
+    encounterId: string;
+    humanId: string;
+    defenderIds: readonly string[];
+    objective: Readonly<{
+      kind: 'eliminate' | 'survive-or-eliminate';
+      protectedObjectIds: readonly string[];
+      humanCommitments?: number;
+    }>;
+    warning?: Readonly<{
+      kind: 'announced-strike'; sourceObjectId: string; sourceSpawnId: string
+    }> | null;
+    zonePolicy: Readonly<{
+      kind: 'incendiary'; radius: number; damage: number; maxLive: number
+    }> | null;
+  }>;
+}
+
+function ownCampaignConstruction(
+  construction: CampaignEngineConstruction,
+): CampaignEngineConstruction {
+  const objective = Object.freeze({
+    ...construction.campaign.objective,
+    protectedObjectIds: Object.freeze([
+      ...construction.campaign.objective.protectedObjectIds,
+    ]),
+  });
+  return {
+    kind: 'campaign-engine-construction',
+    seed: construction.seed,
+    terrain: construction.terrain.slice(),
+    tanks: construction.tanks.map((tank) => ({
+      ...tank,
+      inventory: Object.fromEntries(
+        Object.entries(tank.inventory).map(([id, ammo]) => [id, { ...ammo }]),
+      ) as TankState['inventory'],
+      accessories: { ...tank.accessories },
+      loadout: { ...tank.loadout },
+    })),
+    objects: construction.objects.map((object) => ({
+      ...object,
+      collisionBounds: { ...object.collisionBounds },
+      supportSamples: object.supportSamples.map((sample) => ({ ...sample })) as [
+        CampaignObjectState['supportSamples'][number],
+        CampaignObjectState['supportSamples'][number],
+        CampaignObjectState['supportSamples'][number],
+      ],
+    })),
+    combatProfile: construction.combatProfile,
+    campaign: Object.freeze({
+      encounterId: construction.campaign.encounterId,
+      humanId: construction.campaign.humanId,
+      defenderIds: Object.freeze([...construction.campaign.defenderIds]),
+      objective,
+      warning: construction.campaign.warning == null
+        ? null
+        : Object.freeze({ ...construction.campaign.warning }),
+      zonePolicy: construction.campaign.zonePolicy === null
+        ? null
+        : Object.freeze({ ...construction.campaign.zonePolicy }),
+    }),
+  };
+}
+
+interface CampaignRuntime {
+  readonly definition: CampaignEngineConstruction['campaign'];
+  readonly combatProfile: ResolvedCampaignCombatProfile;
+  objects: CampaignObjectState[];
+  commitmentCount: number;
+  humanCommitmentCount: number;
+  activeCommitment: CampaignCommitment | null;
+  activeDamage: CampaignDamageSummary | null;
+  settledOutcome: CampaignSettledOutcome | null;
+  result: CampaignResult | null;
+  effects?: CampaignEffectState;
+  zones: CampaignIncendiaryZone[];
+  warning: CampaignAnnouncedStrike | null;
+}
+
 export class GameEngine {
   private state: GameState;
   private workBudget?: VerificationWorkBudget;
+  /** Private campaign authority; absent on every ordinary engine. */
+  private campaign?: CampaignRuntime;
 
   /** Instrumentation is deliberately outside simulation options/state. All
    * speculative clones consume this same admitted computation's budget. */
@@ -210,6 +353,8 @@ export class GameEngine {
   /** The burning napalm's def + impact column, retained while `fire` is non-empty
    *  so processFire() knows the spread bounds/rate. Null when nothing is alight. */
   private fireDef: NapalmDef | null = null;
+  /** Weapon identity retained with the active fire for causal campaign damage. */
+  private fireWeaponType: WeaponType | null = null;
   private fireCenter = 0;
 
   /**
@@ -368,7 +513,22 @@ export class GameEngine {
     return surf;
   }
 
-  constructor(options?: GameOptions, workBudget?: VerificationWorkBudget) {
+  /** Campaign-only owned construction seam. Ordinary callers keep using `new GameEngine(options, budget)`. */
+  static fromCampaignConstruction(construction: CampaignEngineConstruction): GameEngine {
+    return new GameEngine(undefined, undefined, construction);
+  }
+
+  constructor(options?: GameOptions, workBudget?: VerificationWorkBudget);
+  constructor(
+    options?: GameOptions,
+    workBudget?: VerificationWorkBudget,
+    campaignConstruction?: CampaignEngineConstruction,
+  );
+  constructor(
+    options?: GameOptions,
+    workBudget?: VerificationWorkBudget,
+    campaignConstruction?: CampaignEngineConstruction,
+  ) {
     this.workBudget = workBudget;
     this.workBudget?.charge('engineSteps');
     this.workBudget?.charge('allocatedBytes', CANVAS_WIDTH * Int16Array.BYTES_PER_ELEMENT);
@@ -376,10 +536,35 @@ export class GameEngine {
     this.surfaceCache = new Int16Array(CANVAS_WIDTH).fill(-1);
     this.workBudget?.charge('engineSteps', options?.players?.length ?? 0);
     options = ownConstructionOptions(options);
-    const seed = options?.seed ?? DEFAULT_SEED;
-    const heightLine = generate(seed, this.workBudget);
-    this.terrain = buildBitmap(heightLine, this.workBudget);
-    applyTerrainHazards(this.terrain, seed, normalizeTerrainHazardMode(options?.hazards), this.workBudget);
+    const campaign = campaignConstruction
+      ? ownCampaignConstruction(campaignConstruction)
+      : undefined;
+    if (campaign) {
+      this.campaign = {
+        definition: campaign.campaign,
+        combatProfile: campaign.combatProfile,
+        objects: [...campaign.objects],
+        commitmentCount: 0,
+        humanCommitmentCount: 0,
+        activeCommitment: null,
+        activeDamage: null,
+        settledOutcome: null,
+        result: null,
+        zones: [],
+        warning: null,
+        ...(campaign.objects.length > 0 || campaign.campaign.zonePolicy !== null
+          ? { effects: createCampaignEffectState() }
+          : {}),
+      };
+    }
+    const seed = campaign?.seed ?? options?.seed ?? DEFAULT_SEED;
+    if (campaign) {
+      this.terrain = campaign.terrain;
+    } else {
+      const heightLine = generate(seed, this.workBudget);
+      this.terrain = buildBitmap(heightLine, this.workBudget);
+      applyTerrainHazards(this.terrain, seed, normalizeTerrainHazardMode(options?.hazards), this.workBudget);
+    }
     this.windRng = createRng(seed);
     this.windRngSeed = seed;
     this.maxWind = options?.maxWind ?? MAX_WIND;
@@ -412,10 +597,25 @@ export class GameEngine {
     // two-tank layout (byte-identical to before for back-compat).
     const players = options?.players;
     this.teamMode = options?.teamMode === true && playersAreFour(players);
-    const tanks =
-      players && players.length >= 2 && players.length <= 4
+    const tanks = campaign
+      ? [...campaign.tanks]
+      : players && players.length >= 2 && players.length <= 4
         ? placeTanks(terrainArr, players, options)
         : placeTwoTanks(terrainArr, options);
+
+    if (this.campaign && campaign?.campaign.warning) {
+      const human = tanks.find(({ id }) => id === campaign.campaign.humanId);
+      if (!human) throw new Error('campaign warning requires human spawn');
+      this.campaign.warning = createCampaignAnnouncedStrike({
+        id: 'warning-1',
+        sourceObjectId: campaign.campaign.warning.sourceObjectId,
+        sourceSpawnId: campaign.campaign.warning.sourceSpawnId,
+        announcedAtHumanCommitment: 0,
+        dueAfterHumanCommitment: 1,
+        targetX: human.x,
+        ...CAMPAIGN_STRIKE_PROFILE,
+      });
+    }
 
     this.state = {
       phase: 'PLAYER_TURN',
@@ -441,6 +641,19 @@ export class GameEngine {
       fire: [],
       winner: null,
       winnerTeam: null,
+      ...(this.campaign ? {
+        campaign: {
+          encounterId: this.campaign.definition.encounterId,
+          objective: this.campaign.definition.objective,
+          commitmentCount: 0,
+          activeCommitment: null,
+          settledOutcome: null,
+          result: null,
+          ...(this.campaign.objects.length > 0 ? { objects: this.campaign.objects } : {}),
+          ...(this.campaign.effects ? { effects: this.campaign.effects } : {}),
+          ...(this.campaign.warning ? { warning: this.campaign.warning } : {}),
+        },
+      } : {}),
     };
   }
 
@@ -515,11 +728,29 @@ export class GameEngine {
     // generate fresh terrain and tanks from the seed — wasteful and wrong).
     const c = Object.create(GameEngine.prototype) as GameEngine;
     c.workBudget = this.workBudget;
+    c.campaign = this.campaign ? {
+      ...this.campaign,
+      objects: this.campaign.objects.map((object) => ({
+        ...object,
+        collisionBounds: { ...object.collisionBounds },
+        supportSamples: object.supportSamples.map((sample) => ({ ...sample })) as [
+          CampaignObjectState['supportSamples'][number],
+          CampaignObjectState['supportSamples'][number],
+          CampaignObjectState['supportSamples'][number],
+        ],
+      })),
+      ...(this.campaign.effects
+        ? { effects: cloneCampaignEffectState(this.campaign.effects) }
+        : {}),
+      zones: this.campaign.zones.map((zone) => Object.freeze({ ...zone })),
+      warning: this.campaign.warning ? Object.freeze({ ...this.campaign.warning }) : null,
+    } : undefined;
 
     // --- Scalar / primitive fields ---
     c.explosionSeq  = this.explosionSeq;
     c.wallImpactSeq = this.wallImpactSeq;
     c.fireCenter    = this.fireCenter;
+    c.fireWeaponType = this.fireWeaponType;
     c.shooterId     = this.shooterId;
     c.shotDamage    = this.shotDamage;
     c.maxWind       = this.maxWind;
@@ -623,6 +854,19 @@ export class GameEngine {
       fire:              cloneFire,
       winner:            s.winner,
       winnerTeam:        s.winnerTeam,
+      ...(s.campaign ? {
+        campaign: {
+          ...s.campaign,
+          ...(c.campaign && c.campaign.objects.length > 0
+            ? { objects: c.campaign.objects }
+            : {}),
+          ...(c.campaign?.effects ? { effects: c.campaign.effects } : {}),
+          ...(c.campaign?.warning ? { warning: c.campaign.warning } : {}),
+          ...(c.campaign && c.campaign.zones.length > 0
+            ? { zones: c.campaign.zones }
+            : {}),
+        },
+      } : {}),
     };
 
     return c;
@@ -652,6 +896,7 @@ export class GameEngine {
    */
   applyAction(action: PlayerAction): boolean {
     this.workBudget?.charge('engineSteps');
+    if (this.campaign?.result) return false;
     // ROUND_OVER between-rounds shop (V1 match structure): only buying and starting
     // the next round are honored. buy targets the named tank (all players may shop);
     // next_round flips the already-staged next round into combat.
@@ -684,7 +929,13 @@ export class GameEngine {
       case 'move':
         // Committed but turn-neutral. The movement primitive independently
         // gates liveness, burial, payload bounds, terrain, tanks, and fuel.
-        return resolveTankMove(tank, this.state.tanks, this.terrain, action.delta) !== 0;
+        return resolveTankMove(
+          tank,
+          this.state.tanks,
+          this.terrain,
+          action.delta,
+          this.campaign?.objects,
+        ) !== 0;
       case 'select_weapon':
         tank.selectedWeapon = action.weapon;
         return true;
@@ -699,7 +950,9 @@ export class GameEngine {
         // another weapon. The inventory entry is guaranteed present (inventory is
         // exhaustive over WeaponType).
         const ammo = tank.inventory[tank.selectedWeapon];
-        if (!ammo.unlimited && ammo.count <= 0) return false;
+        if (!ammo || (!ammo.unlimited && ammo.count <= 0)) return false;
+
+        this.openCampaignCommitment(action, tank.id);
 
         // Store-economy bookkeeping: this tank owns the shot, and its dealt
         // damage tally starts fresh (credited to the shooter in resolve()).
@@ -753,9 +1006,16 @@ export class GameEngine {
         const ammo = tank.inventory[shieldWeapon];
         if (!ammo.unlimited && ammo.count <= 0) return false;
 
-        const capacity = getWeapon(shieldWeapon).behavior?.shield?.capacity ?? 0;
+        this.openCampaignCommitment(action, tank.id);
+
+        const capacity = this.campaign
+          ? getCampaignWeapon(this.campaign.combatProfile, shieldWeapon)
+            .definition.behavior?.shield?.capacity ?? 0
+          : getWeapon(shieldWeapon).behavior?.shield?.capacity ?? 0;
         tank.shieldHp = capacity;
         if (!ammo.unlimited) ammo.count--;
+
+        if (this.settleCampaignCommitment()) return true;
 
         // No projectile, no FIRING phase — the shield resolves instantly. Shielding
         // can't kill, so normally we just advance the turn (next living player, fresh
@@ -782,6 +1042,7 @@ export class GameEngine {
    * staggered duplicate bot buys in networked lockstep to exactly-once.
    */
   private applyBuy(action: { weapon?: WeaponType; accessory?: AccessoryType }, target: TankState): boolean {
+    if (this.campaign?.combatProfile.economy.battleShopping === false) return false;
     // Enforce "exactly one of weapon/accessory" in the ENGINE too (the referee enforces it on
     // the wire). Without this, a both-fields buy resolves the accessory first and silently
     // drops the paid-for weapon — and hot-seat has no referee to catch it. Same rejection in
@@ -860,6 +1121,7 @@ export class GameEngine {
     }
 
     const survivors = this.advanceProjectiles();
+    if (this.campaign?.result) return;
     this.state.projectiles = survivors;
     this.syncProjectileAlias();
 
@@ -885,7 +1147,12 @@ export class GameEngine {
     if (this.pendingSettle !== null) {
       const stillSettling = this.settleStepAnimated();
       if (!stillSettling) {
-        // Settle converged this tick — advance the turn machine.
+        // Original-foot support is evaluated only after the terrain converges.
+        // Any resulting volatile work must drain before the turn machine.
+        this.settleCampaignObjectSupports(1);
+        this.drainCampaignEffectsFully();
+        if (this.campaign?.result) return;
+        // Settle and every causal campaign effect converged this tick.
         this.resolve();
       }
       // else: stay in RESOLVING for the next tick.
@@ -893,6 +1160,9 @@ export class GameEngine {
     // If pendingSettle is null but phase is somehow still RESOLVING (defensive),
     // call resolve() to avoid getting stuck.
     else {
+      this.settleCampaignObjectSupports(1);
+      this.drainCampaignEffectsFully();
+      if (this.campaign?.result) return;
       this.resolve();
     }
   }
@@ -1005,6 +1275,7 @@ export class GameEngine {
         this.state.tanks,
         this.state.walls,
         this.workBudget,
+        this.campaign?.objects,
       );
 
       if (hit.type === 'none') {
@@ -1034,7 +1305,14 @@ export class GameEngine {
             ? CANVAS_WIDTH - WALL_INSET
             : WALL_INSET;
           collisionStartY = hit.y;
-          hit = wrapSideWall(p, hit, this.terrain, this.state.tanks, this.workBudget);
+          hit = wrapSideWall(
+            p,
+            hit,
+            this.terrain,
+            this.state.tanks,
+            this.workBudget,
+            this.campaign?.objects,
+          );
           if (hit.type === 'none') {
             survivors.push(p);
             continue;
@@ -1042,7 +1320,7 @@ export class GameEngine {
         }
       }
 
-      // This projectile resolves. A direct TANK hit always detonates. A GROUND
+      // This projectile resolves. A direct TANK or OBJECT hit always detonates. A GROUND
       // hit on a bouncing shell with bounces REMAINING reflects (does NOT
       // detonate) and keeps flying; otherwise it detonates. An OOB miss produces
       // no blast. A still-bouncing shell is pushed back to survivors.
@@ -1052,6 +1330,13 @@ export class GameEngine {
           this.igniteNapalm(hit.x, hit.y, napalm, p.weaponType, 'tank'); // splashes burning fuel, no blast
         } else {
           this.detonate(hit.x, hit.y, p.weaponType, 'tank'); // direct tank hit always detonates
+        }
+      } else if (hit.type === 'object') {
+        const napalm = getWeapon(p.weaponType).behavior?.napalm;
+        if (napalm !== undefined) {
+          this.igniteNapalm(hit.x, hit.y, napalm, p.weaponType, 'object');
+        } else {
+          this.detonate(hit.x, hit.y, p.weaponType, 'object');
         }
       } else if (hit.type === 'ground') {
         if (concreteWallContact) {
@@ -1154,32 +1439,54 @@ export class GameEngine {
    *      each tick (fire is the visual focus; collapse settles under it).
    */
   private settleAndResolveTurn(survivors: ProjectileState[]): void {
-    const aliveCount = this.state.tanks.reduce((n, t) => (t.alive ? n + 1 : n), 0);
     const settled = survivors.length === 0 && this.fire.size === 0;
     const drilling = survivors.some(
       (projectile) => projectile.burrowTicksRemaining !== undefined,
     );
+    const hasQueuedCampaignEffects = (this.campaign?.effects?.pending.length ?? 0) > 0;
 
-    if (survivors.length > 0) {
+    if (hasQueuedCampaignEffects) {
+      // A destroyed volatile object is causal work of this root. Settle the
+      // weapon crater first, then drain the entire bounded effect chain before
+      // any ordinary elimination shortcut can publish a verdict.
+      this.flushSettleInstant();
+      this.settleCampaignObjectSupports(1);
+      this.drainCampaignEffectsFully();
+      if (this.campaign?.result) return;
+    } else if (survivors.length > 0) {
       // (A) Ordinary projectiles still in flight — flush instantly to keep
       // trajectory parity. A Sandhog drill deliberately holds its excavated
       // corridor open until the endpoint blast.
-      if (!drilling) this.flushSettleInstant();
+      if (!drilling) {
+        this.flushSettleInstant();
+        this.settleCampaignObjectSupports(1);
+        this.drainCampaignEffectsFully();
+        if (this.campaign?.result) return;
+      }
     } else if (!settled) {
       // (D) No projectiles but fire still burning — flush instantly each tick.
       this.flushSettleInstant();
+      this.settleCampaignObjectSupports(1);
+      this.drainCampaignEffectsFully();
+      if (this.campaign?.result) return;
     }
 
-    if (aliveCount <= 1) {
-      // (B) Game-ending condition — abandon any remaining in-flight state, flush
-      // instantly (no animation), and resolve immediately (preserves #14).
+    const aliveCount = this.state.tanks.reduce((n, t) => (t.alive ? n + 1 : n), 0);
+    if (aliveCount <= 1 && (!this.campaign || settled)) {
+      // (B) Ordinary matches preserve the immediate game-over path. Campaigns
+      // must first drain every projectile, fire tick, terrain settle, object
+      // effect, zone and warning so their final verdict remains causal.
       this.state.projectiles = [];
       this.syncProjectileAlias();
       this.fire.clear();
       this.fireDef = null;
+      this.fireWeaponType = null;
       this.fireScorched.clear();
       this.syncFire();
       this.flushSettleInstant();
+      this.settleCampaignObjectSupports(1);
+      this.drainCampaignEffectsFully();
+      if (this.campaign?.result) return;
       this.state.phase = 'RESOLVING';
       this.resolve();
     } else if (settled) {
@@ -1192,6 +1499,9 @@ export class GameEngine {
       if (this.pendingSettle === null) {
         // Nothing to animate — resolve immediately (same as before AC-02 for
         // no-deform turns, e.g. napalm-only or missed shots).
+        this.settleCampaignObjectSupports(1);
+        this.drainCampaignEffectsFully();
+        if (this.campaign?.result) return;
         this.resolve();
       }
       // else: stay in RESOLVING; tick() will drive the animated settle.
@@ -1252,8 +1562,12 @@ export class GameEngine {
     // mutual-kill shot paid out). Pure arithmetic — deterministic.
     const shooter = this.state.tanks.find((t) => t.id === this.shooterId);
     if (shooter) {
-      shooter.credits += Math.round(this.shotDamage * CREDITS_PER_DAMAGE) + TURN_STIPEND;
+      const economy = this.campaign?.combatProfile.economy;
+      shooter.credits += Math.round(this.shotDamage * (economy?.damageIncome ?? CREDITS_PER_DAMAGE))
+        + (economy?.shotStipend ?? TURN_STIPEND);
     }
+
+    if (this.settleCampaignCommitment()) return;
 
     // End the round/match if the board is down to <= 1 survivor; otherwise rotate to
     // the next living tank (stable order, wrapping), bump the turn counter, and draw
@@ -1263,6 +1577,500 @@ export class GameEngine {
     this.state.wind = this.nextWind(this.state.wind);
     this.state.turn += 1;
     this.state.phase = 'PLAYER_TURN';
+  }
+
+  /** Mint an accepted root before any primitive action mutation occurs. */
+  private openCampaignCommitment(action: PlayerAction, actorId: string): void {
+    const campaign = this.campaign;
+    if (!campaign) return;
+    const actionKind = classifyCampaignCommitment({ action, accepted: true });
+    if (!actionKind) return;
+
+    campaign.commitmentCount += 1;
+    campaign.activeCommitment = createCampaignCommitment({
+      id: campaign.commitmentCount,
+      actorId,
+      action: actionKind,
+    });
+    campaign.activeDamage = createCampaignDamageSummary({
+      actorId,
+      rootCommitmentId: campaign.activeCommitment.rootCommitmentId,
+    });
+    if (actorId === campaign.definition.humanId) {
+      campaign.humanCommitmentCount += 1;
+    }
+    campaign.settledOutcome = null;
+    this.publishCampaignProjection();
+  }
+
+  /**
+   * Publish one outcome only after the active root's causal work has drained.
+   * Authoritative primitives append physical components to the active summary;
+   * later effect-chain tasks can extend it without minting another root.
+   */
+  private settleCampaignCommitment(): boolean {
+    const campaign = this.campaign;
+    const commitment = campaign?.activeCommitment;
+    if (!campaign || !commitment) return campaign?.result !== null && campaign?.result !== undefined;
+
+    const actingTank = this.state.tanks.find(({ id }) => id === commitment.actorId);
+    if (actingTank) {
+      const exposure = resolveCampaignZoneExposure({
+        zones: campaign.zones,
+        commitmentId: commitment.id,
+        actingTank: {
+          id: actingTank.id,
+          x: actingTank.x,
+          y: actingTank.y,
+          width: TANK_WIDTH,
+          height: TANK_HEIGHT,
+        },
+        terrain: this.terrain,
+      });
+      campaign.zones = [...exposure.zones];
+      if (exposure.damage > 0 && exposure.sourceZoneId !== null) {
+        const applied = applyCampaignZoneDamage({
+          health: actingTank.health,
+          shieldHp: actingTank.shieldHp,
+          damage: exposure.damage,
+        });
+        actingTank.health = applied.health;
+        actingTank.shieldHp = applied.shieldHp;
+        actingTank.alive = actingTank.health > 0;
+        if (applied.absorbed > 0 && campaign.activeDamage) {
+          campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+            damageKind: 'shield',
+            amount: applied.absorbed,
+            creditedDamage: 0,
+            target: { kind: 'tank', id: actingTank.id },
+            attribution: 'environment',
+            source: { kind: 'hazard', id: exposure.sourceZoneId },
+            actorId: commitment.actorId,
+            rootCommitmentId: commitment.rootCommitmentId,
+          });
+        }
+        if (applied.hullDamage > 0 && campaign.activeDamage) {
+          campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+            damageKind: 'hazard',
+            amount: applied.hullDamage,
+            creditedDamage: 0,
+            target: { kind: 'tank', id: actingTank.id },
+            attribution: 'environment',
+            source: { kind: 'hazard', id: exposure.sourceZoneId },
+            actorId: commitment.actorId,
+            rootCommitmentId: commitment.rootCommitmentId,
+          });
+        }
+      }
+    }
+
+    this.resolveCampaignWarningAfterCommitment(commitment);
+    if (campaign.result) return true;
+
+    const damage = campaign.activeDamage ?? createCampaignDamageSummary({
+      actorId: commitment.actorId,
+      rootCommitmentId: commitment.rootCommitmentId,
+    });
+    campaign.settledOutcome = createCampaignSettledOutcome(commitment, damage);
+    campaign.activeCommitment = null;
+    campaign.activeDamage = null;
+
+    const human = this.state.tanks.find(({ id }) => id === campaign.definition.humanId);
+    const defendersDefeated = campaign.definition.defenderIds.every((id) =>
+      this.state.tanks.find((tank) => tank.id === id)?.alive === false);
+    const objective = campaign.definition.objective;
+    const verdict = decideCampaignOutcome({
+      protectedObjectFailed: objective.protectedObjectIds.some((id) =>
+        campaign.objects.find((object) => object.id === id)?.alive !== true),
+      playerFailed: human?.alive !== true,
+      objectiveSatisfied: defendersDefeated,
+      limitReached: objective.kind === 'survive-or-eliminate'
+        && campaign.humanCommitmentCount >= (objective.humanCommitments ?? Number.POSITIVE_INFINITY),
+      limitOutcome: 'success',
+    });
+    if (verdict) {
+      campaign.result = Object.freeze({ ...verdict, commitmentId: commitment.id });
+      this.state.phase = 'GAME_OVER';
+    }
+    this.publishCampaignProjection();
+    return campaign.result !== null;
+  }
+
+  /** Cancel or resolve the fixed announced strike after the response fully settles. */
+  private resolveCampaignWarningAfterCommitment(commitment: CampaignCommitment): void {
+    const campaign = this.campaign;
+    const warning = campaign?.warning;
+    if (!campaign || !warning || warning.status !== 'pending') return;
+    const sourceObjectAlive = campaign.objects.find(
+      ({ id }) => id === warning.sourceObjectId,
+    )?.alive === true;
+    const sourceSpawnAlive = this.state.tanks.find(
+      ({ id }) => id === warning.sourceSpawnId,
+    )?.alive === true;
+    const boundary = resolveCampaignWarningBoundary({
+      warning,
+      completedHumanCommitments: campaign.humanCommitmentCount,
+      sourceAlive: sourceObjectAlive && sourceSpawnAlive,
+    });
+    campaign.warning = boundary;
+    if (boundary.status !== 'due' || commitment.actorId !== campaign.definition.humanId) {
+      this.publishCampaignProjection();
+      return;
+    }
+
+    const impactY = surfaceAt(this.terrain, boundary.targetX, this.workBudget);
+    const range = deform(
+      this.terrain,
+      boundary.targetX,
+      impactY,
+      boundary.craterRadius,
+      false,
+      this.workBudget,
+    );
+    if (range !== null) {
+      this.pendingSettle = this.pendingSettle === null
+        ? { xStart: range.xStart, xEnd: range.xEnd }
+        : {
+            xStart: Math.min(this.pendingSettle.xStart, range.xStart),
+            xEnd: Math.max(this.pendingSettle.xEnd, range.xEnd),
+          };
+      this.state.terrainVersion++;
+    }
+
+    for (const tank of this.state.tanks) {
+      if (!tank.alive) continue;
+      const damage = resolveCampaignStrikeDamage(boundary, tank.x);
+      if (damage <= 0) continue;
+      const applied = applyCampaignZoneDamage({
+        health: tank.health,
+        shieldHp: tank.shieldHp,
+        damage,
+      });
+      tank.health = applied.health;
+      tank.shieldHp = applied.shieldHp;
+      tank.alive = tank.health > 0;
+      if (applied.absorbed > 0 && campaign.activeDamage) {
+        campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+          damageKind: 'shield', amount: applied.absorbed, creditedDamage: 0,
+          target: { kind: 'tank', id: tank.id }, attribution: 'environment',
+          source: { kind: 'hazard', id: boundary.id }, actorId: commitment.actorId,
+          rootCommitmentId: commitment.rootCommitmentId,
+        });
+      }
+      if (applied.hullDamage > 0 && campaign.activeDamage) {
+        campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+          damageKind: 'hazard', amount: applied.hullDamage, creditedDamage: 0,
+          target: { kind: 'tank', id: tank.id }, attribution: 'environment',
+          source: { kind: 'hazard', id: boundary.id }, actorId: commitment.actorId,
+          rootCommitmentId: commitment.rootCommitmentId,
+        });
+      }
+    }
+
+    this.applyCampaignObjectDamageBatch({
+      cx: boundary.targetX,
+      cy: impactY,
+      profile: {
+        maxDamage: boundary.maxDamage,
+        damageReach: boundary.damageReach,
+        craterRadius: boundary.craterRadius,
+        falloffExponent: 1,
+      },
+      source: { kind: 'environment', id: boundary.id },
+      childDepth: 1,
+      actorId: commitment.actorId,
+      rootCommitmentId: commitment.rootCommitmentId,
+    });
+    this.flushSettleInstant();
+    this.settleCampaignObjectSupports(
+      1,
+      commitment.actorId,
+      commitment.rootCommitmentId,
+    );
+    this.drainCampaignEffectsFully();
+    if (!campaign.result) campaign.warning = markCampaignWarningFired(boundary);
+    this.publishCampaignProjection();
+  }
+
+  /** Queue newly failed drums as one stable causal batch under the active root. */
+  private activateDestroyedCampaignDrums(
+    objects: readonly CampaignObjectState[],
+    depth: number,
+    actorId?: string,
+    rootCommitmentId?: number,
+  ): void {
+    const campaign = this.campaign;
+    const effects = campaign?.effects;
+    const commitment = campaign?.activeCommitment;
+    if (!campaign || !effects || !commitment || objects.length === 0) return;
+
+    const rootActorId = actorId ?? commitment.actorId;
+    const rootId = rootCommitmentId ?? commitment.rootCommitmentId;
+    for (const object of [...objects].sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0)) {
+      const activated = activateCampaignSupplyDrum({
+        state: campaign.effects!,
+        effect: {
+          kind: 'supply-drum',
+          sourceObjectId: object.id,
+          x: object.x,
+          y: object.collisionBounds.bottom,
+          actorId: rootActorId,
+          rootCommitmentId: rootId,
+          depth,
+          profile: campaign.combatProfile.environmentEffects.supplyDrum,
+        },
+      });
+      campaign.effects = activated.state;
+    }
+
+    // Once volatile physics begins, keep the engine-owned result ledger in its
+    // canonical identity order as well. This makes equivalent authored object
+    // permutations replay to the same projected state without affecting the
+    // untouched opening projection used by ordinary object encounters.
+    campaign.objects = [...campaign.objects].sort((left, right) =>
+      left.id < right.id ? -1 : left.id > right.id ? 1 : 0);
+  }
+
+  /** Apply one explicit campaign damage profile to every live physical object. */
+  private applyCampaignObjectDamageBatch(input: {
+    readonly cx: number;
+    readonly cy: number;
+    readonly profile: CampaignWeaponDamageDefinition;
+    readonly source: Readonly<{ kind: 'weapon' | 'object' | 'environment'; id: string }>;
+    readonly childDepth: number;
+    readonly actorId?: string;
+    readonly rootCommitmentId?: number;
+  }): void {
+    const campaign = this.campaign;
+    if (!campaign) return;
+    const newlyDestroyedDrums: CampaignObjectState[] = [];
+
+    const orderedObjects = campaign.objects
+      .map((object, index) => ({ object, index }))
+      .sort((left, right) => left.object.id < right.object.id
+        ? -1
+        : left.object.id > right.object.id ? 1 : 0);
+    for (const { object, index } of orderedObjects) {
+      this.workBudget?.charge('engineSteps');
+      if (!isLiveCampaignObject(object)) continue;
+      const applied = applyCampaignObjectBlast(object, {
+        cx: input.cx,
+        cy: input.cy,
+        radius: input.profile.damageReach,
+        maxDamage: input.profile.maxDamage,
+        falloffExponent: input.profile.falloffExponent,
+      });
+      campaign.objects[index] = applied.object;
+      if (object.kind === 'supply-drum' && object.alive && !applied.object.alive) {
+        newlyDestroyedDrums.push(applied.object);
+      }
+      if (applied.damage <= 0 || !campaign.activeCommitment || !campaign.activeDamage) continue;
+      campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+        damageKind: 'object',
+        amount: applied.damage,
+        creditedDamage: 0,
+        target: { kind: 'object', id: object.id },
+        attribution: input.source.kind === 'environment' ? 'environment' : 'object',
+        source: input.source,
+        actorId: input.actorId ?? campaign.activeCommitment.actorId,
+        rootCommitmentId: input.rootCommitmentId
+          ?? campaign.activeCommitment.rootCommitmentId,
+      });
+    }
+
+    this.activateDestroyedCampaignDrums(
+      newlyDestroyedDrums,
+      input.childDepth,
+      input.actorId,
+      input.rootCommitmentId,
+    );
+  }
+
+  /** Settle every live object against its three immutable opening feet. */
+  private settleCampaignObjectSupports(
+    childDepth: number,
+    actorId?: string,
+    rootCommitmentId?: number,
+  ): void {
+    const campaign = this.campaign;
+    if (!campaign?.effects) return;
+    const newlyDestroyedDrums: CampaignObjectState[] = [];
+
+    const orderedObjects = campaign.objects
+      .map((object, index) => ({ object, index }))
+      .sort((left, right) => left.object.id < right.object.id
+        ? -1
+        : left.object.id > right.object.id ? 1 : 0);
+    for (const { object, index } of orderedObjects) {
+      const settled = settleCampaignObjectSupport(object, this.terrain);
+      if (settled === object) continue;
+      campaign.objects[index] = settled;
+      if (object.kind === 'supply-drum') newlyDestroyedDrums.push(settled);
+
+      if (campaign.activeCommitment && campaign.activeDamage) {
+        campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+          damageKind: 'object',
+          amount: object.health,
+          creditedDamage: 0,
+          target: { kind: 'object', id: object.id },
+          attribution: 'environment',
+          source: { kind: 'environment', id: 'terrain-collapse' },
+          actorId: actorId ?? campaign.activeCommitment.actorId,
+          rootCommitmentId: rootCommitmentId
+            ?? campaign.activeCommitment.rootCommitmentId,
+        });
+      }
+    }
+
+    this.activateDestroyedCampaignDrums(
+      newlyDestroyedDrums,
+      childDepth,
+      actorId,
+      rootCommitmentId,
+    );
+  }
+
+  /** Apply one environment effect without substituting a catalog weapon. */
+  private applyCampaignEnvironmentEffect(effect: CampaignEffect): void {
+    const range = deform(
+      this.terrain,
+      effect.x,
+      effect.y,
+      effect.profile.craterRadius,
+      false,
+      this.workBudget,
+    );
+    if (range !== null) {
+      if (this.pendingSettle === null) {
+        this.pendingSettle = { xStart: range.xStart, xEnd: range.xEnd };
+      } else {
+        this.pendingSettle.xStart = Math.min(this.pendingSettle.xStart, range.xStart);
+        this.pendingSettle.xEnd = Math.max(this.pendingSettle.xEnd, range.xEnd);
+      }
+      this.state.terrainVersion++;
+    }
+
+    for (const tank of this.state.tanks) {
+      if (!tank.alive) continue;
+      const baseDamage = explosionDamage(
+        effect.x,
+        effect.y,
+        effect.profile.damageReach,
+        tank,
+        effect.profile.falloffExponent,
+      );
+      const scaled = (baseDamage / MAX_DAMAGE) * effect.profile.maxDamage;
+      if (scaled > 0) {
+        this.applyBlastDamage(tank, scaled, {
+          kind: 'object',
+          id: effect.sourceObjectId,
+        });
+      }
+    }
+
+    this.applyCampaignObjectDamageBatch({
+      cx: effect.x,
+      cy: effect.y,
+      profile: effect.profile,
+      source: { kind: 'object', id: effect.sourceObjectId },
+      childDepth: effect.depth + 1,
+      actorId: effect.actorId,
+      rootCommitmentId: effect.rootCommitmentId,
+    });
+
+    // Each environmental profile owns its full physical cycle. Settle before
+    // support evaluation, then discover any recursively failed drums at depth+1.
+    this.flushSettleInstant();
+    this.settleCampaignObjectSupports(
+      effect.depth + 1,
+      effect.actorId,
+      effect.rootCommitmentId,
+    );
+  }
+
+  /** Drain complete FIFO batches, then publish one technical refusal if bounded work fails. */
+  private drainCampaignEffectsFully(): void {
+    const campaign = this.campaign;
+    if (!campaign?.effects || campaign.result) return;
+
+    while (campaign.effects.pending.length > 0
+      && campaign.effects.technicalFailure === null) {
+      const drained = takeCampaignEffects({ state: campaign.effects });
+      campaign.effects = drained.state;
+      for (const effect of drained.effects) this.applyCampaignEnvironmentEffect(effect);
+    }
+
+    const failure = campaign.effects.technicalFailure;
+    if (failure !== null) {
+      const commitmentId = campaign.activeCommitment?.id ?? campaign.commitmentCount;
+      campaign.result = Object.freeze({
+        outcome: 'technical-failure',
+        reason: 'technical-failure',
+        code: failure.code,
+        reward: false,
+        commitmentId,
+      });
+      campaign.activeCommitment = null;
+      campaign.activeDamage = null;
+      campaign.settledOutcome = null;
+      this.state.phase = 'GAME_OVER';
+    }
+    this.publishCampaignProjection();
+  }
+
+  /** End a campaign deterministically when a bounded runtime policy refuses work. */
+  private failCampaignTechnically(code: CampaignEffectFailureCode): void {
+    const campaign = this.campaign;
+    if (!campaign || campaign.result) return;
+    campaign.effects = failCampaignEffects(
+      campaign.effects ?? createCampaignEffectState(),
+      code,
+    );
+    const commitmentId = campaign.activeCommitment?.id ?? campaign.commitmentCount;
+    campaign.result = Object.freeze({
+      outcome: 'technical-failure',
+      reason: 'technical-failure',
+      code,
+      reward: false,
+      commitmentId,
+    });
+    campaign.activeCommitment = null;
+    campaign.activeDamage = null;
+    campaign.settledOutcome = null;
+    this.fire.clear();
+    this.fireScorched.clear();
+    this.fireDef = null;
+    this.fireWeaponType = null;
+    this.state.fire = [];
+    this.state.projectiles = [];
+    this.syncProjectileAlias();
+    this.state.phase = 'GAME_OVER';
+    this.publishCampaignProjection();
+  }
+
+  /** Refuse a command before mutation when its durable replay cannot be admitted. */
+  refuseCampaignReplayLimit(): boolean {
+    if (!this.campaign || this.campaign.result || this.state.phase !== 'PLAYER_TURN') return false;
+    this.failCampaignTechnically('replay-limit');
+    return true;
+  }
+
+  /** Replace the borrowed projection without exposing mutable private authority. */
+  private publishCampaignProjection(): void {
+    const campaign = this.campaign;
+    if (!campaign) return;
+    this.state.campaign = {
+      encounterId: campaign.definition.encounterId,
+      objective: campaign.definition.objective,
+      commitmentCount: campaign.commitmentCount,
+      activeCommitment: campaign.activeCommitment,
+      settledOutcome: campaign.settledOutcome,
+      result: campaign.result,
+      ...(campaign.objects.length > 0 ? { objects: campaign.objects } : {}),
+      ...(campaign.effects ? { effects: campaign.effects } : {}),
+      ...(campaign.zones.length > 0 ? { zones: campaign.zones } : {}),
+      ...(campaign.warning ? { warning: campaign.warning } : {}),
+    };
   }
 
   /**
@@ -1502,6 +2310,7 @@ export class GameEngine {
     this.fire.clear();
     this.fireScorched.clear();
     this.fireDef = null;
+    this.fireWeaponType = null;
     this.pendingSettle = null; // clear any pending animated settle from the prior round
     this.fallDistances.clear();
     this.windRng = createRng(roundSeed);
@@ -1538,23 +2347,63 @@ export class GameEngine {
    * size (REVIEW_BACKLOG P1-5). Pure min/subtract — deterministic, no RNG. Burial
    * (terrain) does NOT come through here — being buried bypasses the field by design.
    */
-  private applyBlastDamage(tank: TankState, amount: number): void {
+  private applyBlastDamage(
+    tank: TankState,
+    amount: number,
+    campaignSource?: Readonly<{ kind: 'weapon' | 'object'; id: string }>,
+  ): void {
     if (amount <= 0) return;
     const shooter = this.state.tanks.find((candidate) => candidate.id === this.shooterId);
     if (this.teamMode && tank.id !== this.shooterId && shooter?.team !== null && shooter?.team === tank.team) return;
+    const campaign = this.campaign;
+    const commitment = campaign?.activeCommitment;
+    const campaignActor = commitment
+      ? this.state.tanks.find(({ id }) => id === commitment.actorId)
+      : undefined;
+    const attribution = commitment
+      ? tank.id === commitment.actorId
+        ? 'self'
+        : campaignActor?.team != null && campaignActor.team === tank.team
+          ? 'ally'
+          : 'enemy'
+      : null;
     if (tank.shieldHp > 0) {
       const absorbed = Math.min(tank.shieldHp, amount);
       tank.shieldHp -= absorbed;
       amount -= absorbed;
+      if (absorbed > 0 && campaignSource && campaign?.activeDamage && commitment && attribution) {
+        campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+          damageKind: 'shield',
+          amount: absorbed,
+          creditedDamage: 0,
+          target: { kind: 'tank', id: tank.id },
+          attribution,
+          source: campaignSource,
+          actorId: commitment.actorId,
+          rootCommitmentId: commitment.rootCommitmentId,
+        });
+      }
       if (amount <= 0) return; // hit fully soaked by the field
     }
     const before = tank.health;
     Tank.applyDamage(tank, amount);
+    const dealt = before - tank.health;
+    if (dealt > 0 && campaignSource && campaign?.activeDamage && commitment && attribution) {
+      campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+        damageKind: 'hull',
+        amount: dealt,
+        creditedDamage: attribution === 'enemy' ? dealt : 0,
+        target: { kind: 'tank', id: tank.id },
+        attribution,
+        source: campaignSource,
+        actorId: commitment.actorId,
+        rootCommitmentId: commitment.rootCommitmentId,
+      });
+    }
     // Store economy: credit the shooter for EFFECTIVE damage (post-clamp) dealt to
     // an OPPONENT this shot — self-damage, overkill, and shield-absorbed damage
     // don't pay (only the leaked overflow reaches health and counts).
     if (tank.id !== this.shooterId) {
-      const dealt = before - tank.health;
       this.shotDamage += dealt;
       // V1 scoreboard: accrue the shooter's match damage tally, and credit a kill
       // when this hit takes the opponent from alive to dead.
@@ -1624,7 +2473,23 @@ export class GameEngine {
         ? Math.floor(rawDamage * PARACHUTE_DAMAGE_FACTOR)
         : rawDamage;
       if (hasParachute) tank.accessories.parachute -= 1;
+      const healthBefore = tank.health;
       Tank.applyDamage(tank, damage);
+      const healthRemoved = healthBefore - tank.health;
+      const campaign = this.campaign;
+      const commitment = campaign?.activeCommitment;
+      if (healthRemoved > 0 && campaign?.activeDamage && commitment) {
+        campaign.activeDamage = appendCampaignDamageComponent(campaign.activeDamage, {
+          damageKind: 'fall',
+          amount: healthRemoved,
+          creditedDamage: 0,
+          target: { kind: 'tank', id: tank.id },
+          attribution: 'environment',
+          source: { kind: 'environment', id: 'terrain-collapse' },
+          actorId: commitment.actorId,
+          rootCommitmentId: commitment.rootCommitmentId,
+        });
+      }
     }
     this.fallDistances.clear();
   }
@@ -1736,8 +2601,23 @@ export class GameEngine {
       // weapon's maxDamage so the falloff shape is preserved.
       const scaled = (baseDamage / MAX_DAMAGE) * maxDamage;
       if (scaled > 0) {
-        this.applyBlastDamage(tank, scaled); // shield pool soaks up to its charge
+        this.applyBlastDamage(tank, scaled, { kind: 'weapon', id: weaponType });
       }
+    }
+
+    // Campaign objects use the resolved profile's explicit damage reach and
+    // maximum damage. Terrain deformation above deliberately retains the
+    // weapon definition's crater radius; these two geometries are independent.
+    const campaign = this.campaign;
+    if (campaign) {
+      const objectDamage = getCampaignWeapon(campaign.combatProfile, weaponType).damage;
+      this.applyCampaignObjectDamageBatch({
+        cx,
+        cy,
+        profile: objectDamage,
+        source: { kind: 'weapon', id: weaponType },
+        childDepth: 1,
+      });
     }
 
     // Style/color/duration come from the weapon definition; ids are strictly
@@ -1779,7 +2659,33 @@ export class GameEngine {
   ): void {
     const center = Math.round(cx);
     this.fireDef = def;
+    this.fireWeaponType = weaponType;
     this.fireCenter = center;
+    const commitment = this.campaign?.activeCommitment;
+    const zonePolicy = this.campaign?.definition.zonePolicy;
+    if (this.campaign && zonePolicy && commitment && weaponType === 'napalm'
+      && !this.campaign.zones.some(({ birthCommitmentId }) => birthCommitmentId === commitment.id)) {
+      if (this.campaign.zones.filter(
+        ({ expiryCommitmentId }) => expiryCommitmentId > commitment.id,
+      ).length >= zonePolicy.maxLive) {
+        this.failCampaignTechnically('zone-limit');
+        return;
+      }
+      this.campaign.zones = [...appendCampaignZone(
+        this.campaign.zones.filter(({ expiryCommitmentId }) => expiryCommitmentId > commitment.id),
+        createCampaignIncendiaryZone({
+          id: `zone-${commitment.id}`,
+          centerX: center,
+          birthCommitmentId: commitment.id,
+          initialRosterSize: this.state.tanks.length,
+          actorId: commitment.actorId,
+          rootCommitmentId: commitment.rootCommitmentId,
+          radius: zonePolicy.radius,
+          damage: zonePolicy.damage,
+        }),
+      )];
+      this.publishCampaignProjection();
+    }
     // Seed the initial puddle. ignite() refreshes life on overlap, so re-igniting
     // an already-burning column is harmless.
     for (let dx = -def.splashRadius; dx <= def.splashRadius; dx++) {
@@ -1885,7 +2791,15 @@ export class GameEngine {
           break;
         }
       }
-      if (inFire) this.applyBlastDamage(tank, def.dotPerTick); // shield pool drains per-tick
+      if (inFire) {
+        this.applyBlastDamage(
+          tank,
+          def.dotPerTick,
+          this.fireWeaponType === null
+            ? undefined
+            : { kind: 'weapon', id: this.fireWeaponType },
+        );
+      }
     }
 
     // 3. DECAY. Tick every column down; drop the burnt-out ones. Decrement survivors
@@ -1912,6 +2826,7 @@ export class GameEngine {
     // napalm starts with a clean slate (a fresh shot may light the same columns).
     if (this.fire.size === 0) {
       this.fireDef = null;
+      this.fireWeaponType = null;
       this.fireScorched.clear();
     }
 

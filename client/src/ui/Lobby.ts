@@ -92,6 +92,18 @@ import {
 import { VerifiedChallengeStorage } from '../client/verifiedChallengeStorage';
 import { VerifiedChallengeTransport } from '../client/verifiedChallenge';
 import { createVerifiedChallengeInvoker } from '../client/verifiedChallengeBackend';
+import { parseCampaignRun } from '@shared/campaign/definitions';
+import { ASH_ROAD_EPISODE, ASH_ROAD_ROUTE_IDS } from '../campaign/content/episode';
+import { FUEL_STOP_FIXTURE } from '../campaign/content/fuel-stop';
+import { campaignDescriptorFromCheckpoint, createCampaignCheckpoint } from '../campaign/checkpoint';
+import { createCampaignRunState, type CampaignRunState } from '../campaign/runReducer';
+import { createCampaignLoadout } from '../campaign/loadout';
+import {
+  parseCampaignReplayPayload,
+  type CampaignReplayPayload,
+} from '../campaign/replay';
+import { createIndexedDbCampaignStorage } from '../campaign/storage';
+import type { CampaignKitId } from './LobbyShellView';
 import type { VerifiedCareerState } from '../client/verifiedCareer';
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
@@ -150,6 +162,12 @@ export type LobbyPlayer = ModePlayer;
 
 /** Configuration produced by the lobby once the player(s) are ready. */
 export interface LobbyConfig extends ModeSetup {
+  /** Device-local campaign progress paired with the strict campaign descriptor. */
+  campaignRunState?: CampaignRunState;
+  /** Strict replay payload selected through the public device-local resume affordance. */
+  campaignReplayPayload?: CampaignReplayPayload;
+  /** CAS revision paired with campaignReplayPayload at lobby selection time. */
+  campaignReplayRevision?: number;
   /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
   quickOperation?: {
     readonly id: string;
@@ -397,6 +415,11 @@ export class Lobby {
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
   private networkRecoveryRetry: (() => void) | null = null;
+  private campaignResumePayload: Readonly<{
+    payload: CampaignReplayPayload;
+    revision: number;
+  }> | null = null;
+  private campaignResumeGeneration = 0;
 
   // Create form state
   private onlineName = '';
@@ -993,6 +1016,29 @@ export class Lobby {
     if (options.focusLobby) this.focusLobbyReturnTarget();
     void this.accountSession.initialize();
     void this.checkRejoinCandidate();
+    void this.checkCampaignResume();
+  }
+
+  private async checkCampaignResume(): Promise<void> {
+    const generation = ++this.campaignResumeGeneration;
+    try {
+      const record = await createIndexedDbCampaignStorage().load('ash-road-local');
+      const payload = record ? parseCampaignReplayPayload(record.payload) : null;
+      const compatible = payload
+        && payload.runState.checkpoint.run.episodeId === ASH_ROAD_EPISODE.episodeId
+        && payload.runState.checkpoint.run.episodeContentDigest === ASH_ROAD_EPISODE.contentDigest
+        && payload.runState.checkpoint.profile.contentDigest === FUEL_STOP_FIXTURE.combatProfile.contentDigest
+        ? payload
+        : null;
+      if (generation !== this.campaignResumeGeneration) return;
+      this.campaignResumePayload = compatible && record
+        ? Object.freeze({ payload: compatible, revision: record.revision })
+        : null;
+      this.render();
+    } catch {
+      if (generation !== this.campaignResumeGeneration) return;
+      this.campaignResumePayload = null;
+    }
   }
 
   /** Restore the online preparation surface after match acquisition times out. */
@@ -1274,6 +1320,9 @@ export class Lobby {
         onSeedChallenge: () => { this.startSeedChallenge(); },
       }),
       onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
+      onCampaign: (kitId) => { this.startAshRoad(kitId); },
+      campaignResumeAvailable: this.campaignResumePayload !== null,
+      onCampaignResume: () => { this.resumeAshRoad(); },
       onRejoin: () => { void this.handleRejoin(); },
       onBack: () => {
         const choice = this.activeTab === 'hotseat' ? 'Local Battle' : 'Play Online';
@@ -1631,6 +1680,81 @@ export class Lobby {
       target.__singedTerraE2E = Object.freeze({ quickDuelSeed: seed });
     }
     this.launchQuickDuel(operation, seed, 'local-selection');
+  }
+
+  private startAshRoad(kitId: CampaignKitId): void {
+    const route = ASH_ROAD_EPISODE.routes.find(({ id }) => id === ASH_ROAD_ROUTE_IDS.highRoad);
+    if (!route) throw new Error('Ash Road is missing its public opening route');
+    const run = parseCampaignRun({
+      kind: 'campaign-run',
+      runVersion: 1,
+      runId: 'ash-road-local-run',
+      episodeId: ASH_ROAD_EPISODE.episodeId,
+      episodeVersion: ASH_ROAD_EPISODE.episodeVersion,
+      episodeContentDigest: ASH_ROAD_EPISODE.contentDigest,
+      combatProfileId: FUEL_STOP_FIXTURE.combatProfile.profileId,
+      combatProfileVersion: FUEL_STOP_FIXTURE.combatProfile.profileVersion,
+      combatProfileContentDigest: FUEL_STOP_FIXTURE.combatProfile.contentDigest,
+      routeId: route.id,
+      encounterIds: route.encounterIds,
+      currentEncounterIndex: 0,
+    });
+    if (!run) throw new Error('Ash Road public run is invalid');
+    const checkpoint = createCampaignCheckpoint({
+      run,
+      encounter: FUEL_STOP_FIXTURE.encounter,
+      combatProfile: FUEL_STOP_FIXTURE.combatProfile,
+      attempt: 1,
+      supplies: 2,
+    });
+    const campaignRunState = createCampaignRunState(
+      checkpoint,
+      createCampaignLoadout({
+        offensiveWeaponIds: kitId === 'assault'
+          ? ['missile', 'cluster_bomb']
+          : kitId === 'breach'
+            ? ['missile', 'sandhog']
+            : ['missile', 'napalm'],
+      }),
+    );
+    this.onReady({
+      mode: 'hotseat',
+      experience: 'campaign',
+      campaign: {
+        encounter: checkpoint.encounter,
+        combatProfile: FUEL_STOP_FIXTURE.combatProfile,
+      },
+      campaignRunState,
+      players: [
+        { name: 'Ranger', color: PALETTE[0].value },
+        { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },
+      ],
+      playerNames: ['Ranger', 'Defender'],
+    });
+  }
+
+  private resumeAshRoad(): void {
+    const resume = this.campaignResumePayload;
+    if (!resume) return;
+    const { payload, revision } = resume;
+    const runState = payload.runState;
+    const descriptor = campaignDescriptorFromCheckpoint(
+      runState.checkpoint,
+      runState.attemptCheckpoint.loadout,
+    );
+    this.onReady({
+      mode: 'hotseat',
+      experience: 'campaign',
+      campaign: descriptor,
+      campaignRunState: runState,
+      campaignReplayPayload: payload,
+      campaignReplayRevision: revision,
+      players: [
+        { name: 'Ranger', color: PALETTE[0].value },
+        { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },
+      ],
+      playerNames: ['Ranger', 'Defender'],
+    });
   }
 
   /** Imported input reaches launch only after strict ST1 resolution. */

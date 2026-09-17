@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "aimErrorDegrees": [-2, 0, 2],
+  "scenarios": [
+    { "id": "fuel-preserve", "encounter": "fuel-stop", "transcript": "preserve", "terrainFamily": "industrial-ridge", "spawnFamily": "protected-near-human", "offense": ["missile", "napalm"], "inventorySource": "granted", "economicCost": 0 },
+    { "id": "fuel-chain", "encounter": "fuel-stop", "transcript": "detonation", "terrainFamily": "industrial-ridge", "spawnFamily": "volatile-near-defender", "offense": ["missile", "cluster_bomb"], "inventorySource": "granted", "economicCost": 0 },
+    { "id": "high-eliminate", "encounter": "high-road", "transcript": "eliminate", "terrainFamily": "high-low-road", "spawnFamily": "relay-overwatch", "offense": ["cluster_bomb", "missile"], "inventorySource": "granted", "economicCost": 0 },
+    { "id": "high-survive", "encounter": "high-road", "transcript": "survive", "terrainFamily": "high-low-road", "spawnFamily": "protected-warning", "offense": ["missile", "cluster_bomb"], "inventorySource": "granted", "economicCost": 0 },
+    { "id": "salvage-preserve", "encounter": "salvage-pit", "transcript": "preserve", "terrainFamily": "split-pit", "spawnFamily": "two-defenders-cache", "offense": ["cluster_bomb", "missile"], "inventorySource": "granted", "economicCost": 0 },
+    { "id": "salvage-aggressive", "encounter": "salvage-pit", "transcript": "aggressive", "terrainFamily": "split-pit", "spawnFamily": "volatile-cache", "offense": ["cluster_bomb", "missile"], "inventorySource": "granted", "economicCost": 0 },
+    { "id": "ridge-relay", "encounter": "relay-ridge", "transcript": "relay", "terrainFamily": "siege-ridge", "spawnFamily": "relay-before-gun", "offense": ["cluster_bomb", "missile"], "inventorySource": "checkpoint-refill", "economicCost": 1 },
+    { "id": "ridge-direct", "encounter": "relay-ridge", "transcript": "direct", "terrainFamily": "siege-ridge", "spawnFamily": "direct-gun-line", "offense": ["missile", "cluster_bomb"], "inventorySource": "checkpoint-refill", "economicCost": 1 },
+    { "id": "ridge-footing", "encounter": "relay-ridge", "transcript": "footing", "terrainFamily": "siege-ridge", "spawnFamily": "undercut-gun", "offense": ["sandhog", "missile"], "inventorySource": "granted", "economicCost": 0 }
+  ],
+  "holdouts": [
+    {
+      "id": "holdout-terrace",
+      "terrainFamily": "wide-terrace",
+      "spawnFamily": "opposed-outer-plateaus",
+      "offense": ["missile", "sandhog"],
+      "inventorySource": "granted",
+      "economicCost": 0,
+      "encounter": {
+        "kind": "campaign-encounter",
+        "episodeVersion": 1,
+        "encounterVersion": 1,
+        "encounterId": "balance-holdout-terrace",
+        "combatProfileId": "ash-road-v1",
+        "combatProfileVersion": 1,
+        "contentDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "seed": 9101,
+        "terrain": {
+          "kind": "height-control-points",
+          "version": 1,
+          "width": 1200,
+          "bitmapHeight": 600,
+          "floorY": 400,
+          "points": [
+            { "x": 0, "y": 310 },
+            { "x": 300, "y": 310 },
+            { "x": 500, "y": 270 },
+            { "x": 700, "y": 270 },
+            { "x": 900, "y": 330 },
+            { "x": 1199, "y": 330 }
+          ]
+        },
+        "spawns": [
+          { "id": "p1", "role": "human", "x": 180, "hull": 100, "equipment": ["baby_missile", "missile", "sandhog", "shield"] },
+          { "id": "p2", "role": "defender", "x": 1030, "hull": 100, "equipment": ["baby_missile", "missile"] }
+        ],
+        "objects": [
+          { "id": "terrace-marker", "kind": "protected", "x": 600, "width": 40, "height": 30, "health": 100 }
+        ],
+        "objective": { "kind": "eliminate", "protectedObjectIds": ["terrace-marker"] },
+        "warning": null
+      },
+      "prelude": [],
+      "decision": {
+        "actorId": "p1",
+        "actions": [
+          { "type": "select_weapon", "weapon": "missile" },
+          { "type": "set_angle", "angle": 45 },
+          { "type": "set_power", "power": 50 },
+          { "type": "fire" }
+        ]
+      }
+    },
+    {
+      "id": "holdout-wide-spawn",
+      "terrainFamily": "stepped-basin",
+      "spawnFamily": "maximum-separated-flanks",
+      "offense": ["cluster_bomb", "missile"],
+      "inventorySource": "checkpoint-refill",
+      "economicCost": 1,
+      "encounter": {
+        "kind": "campaign-encounter",
+        "episodeVersion": 1,
+        "encounterVersion": 1,
+        "encounterId": "balance-holdout-wide-spawn",
+        "combatProfileId": "ash-road-v1",
+        "combatProfileVersion": 1,
+        "contentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "seed": 9102,
+        "terrain": {
+          "kind": "height-control-points",
+          "version": 1,
+          "width": 1200,
+          "bitmapHeight": 600,
+          "floorY": 400,
+          "points": [
+            { "x": 0, "y": 330 },
+            { "x": 250, "y": 330 },
+            { "x": 400, "y": 300 },
+            { "x": 800, "y": 300 },
+            { "x": 950, "y": 340 },
+            { "x": 1199, "y": 340 }
+          ]
+        },
+        "spawns": [
+          { "id": "p1", "role": "human", "x": 140, "hull": 100, "equipment": ["baby_missile", "cluster_bomb", "missile", "shield"] },
+          { "id": "p2", "role": "defender", "x": 1060, "hull": 100, "equipment": ["baby_missile", "missile"] }
+        ],
+        "objects": [
+          { "id": "basin-cache", "kind": "cache", "x": 600, "width": 40, "height": 28, "health": 80 }
+        ],
+        "objective": { "kind": "eliminate", "protectedObjectIds": [] },
+        "warning": null
+      },
+      "prelude": [],
+      "decision": {
+        "actorId": "p1",
+        "actions": [
+          { "type": "select_weapon", "weapon": "cluster_bomb" },
+          { "type": "set_angle", "angle": 38 },
+          { "type": "set_power", "power": 60 },
+          { "type": "fire" }
+        ]
+      }
+    },
+    {
+      "id": "holdout-shielded-reply",
+      "terrainFamily": "level-shield-range",
+      "spawnFamily": "shielded-reply-line",
+      "offense": ["sandhog", "missile"],
+      "inventorySource": "granted",
+      "economicCost": 0,
+      "encounter": {
+        "kind": "campaign-encounter",
+        "episodeVersion": 1,
+        "encounterVersion": 1,
+        "encounterId": "balance-holdout-shielded-reply",
+        "combatProfileId": "ash-road-v1",
+        "combatProfileVersion": 1,
+        "contentDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "seed": 9103,
+        "terrain": {
+          "kind": "height-control-points",
+          "version": 1,
+          "width": 1200,
+          "bitmapHeight": 600,
+          "floorY": 400,
+          "points": [
+            { "x": 0, "y": 300 },
+            { "x": 1199, "y": 300 }
+          ]
+        },
+        "spawns": [
+          { "id": "p1", "role": "human", "x": 220, "hull": 100, "equipment": ["baby_missile", "sandhog", "missile", "shield"] },
+          { "id": "p2", "role": "defender", "x": 940, "hull": 100, "equipment": ["baby_missile", "missile"] }
+        ],
+        "objects": [
+          { "id": "shield-range-pump", "kind": "protected", "x": 430, "width": 44, "height": 34, "health": 100 }
+        ],
+        "objective": { "kind": "eliminate", "protectedObjectIds": ["shield-range-pump"] },
+        "warning": null
+      },
+      "prelude": [
+        { "actorId": "p1", "actions": [{ "type": "use_shield", "weapon": "shield" }] },
+        {
+          "actorId": "p2",
+          "actions": [
+            { "type": "set_angle", "angle": 90 },
+            { "type": "set_power", "power": 10 },
+            { "type": "fire" }
+          ]
+        }
+      ],
+      "decision": {
+        "actorId": "p1",
+        "actions": [
+          { "type": "select_weapon", "weapon": "sandhog" },
+          { "type": "set_angle", "angle": 45 },
+          { "type": "set_power", "power": 50 },
+          { "type": "fire" }
+        ]
+      }
+    },
+    {
+      "id": "holdout-object-chain",
+      "terrainFamily": "double-shoulder",
+      "spawnFamily": "objects-between-combatants",
+      "offense": ["napalm", "cluster_bomb"],
+      "inventorySource": "granted",
+      "economicCost": 0,
+      "encounter": {
+        "kind": "campaign-encounter",
+        "episodeVersion": 1,
+        "encounterVersion": 1,
+        "encounterId": "balance-holdout-object-chain",
+        "combatProfileId": "ash-road-v1",
+        "combatProfileVersion": 1,
+        "contentDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "seed": 9104,
+        "terrain": {
+          "kind": "height-control-points",
+          "version": 1,
+          "width": 1200,
+          "bitmapHeight": 600,
+          "floorY": 400,
+          "points": [
+            { "x": 0, "y": 320 },
+            { "x": 350, "y": 320 },
+            { "x": 500, "y": 290 },
+            { "x": 750, "y": 290 },
+            { "x": 900, "y": 320 },
+            { "x": 1199, "y": 320 }
+          ]
+        },
+        "spawns": [
+          { "id": "p1", "role": "human", "x": 180, "hull": 100, "equipment": ["baby_missile", "napalm", "cluster_bomb", "shield"] },
+          { "id": "p2", "role": "defender", "x": 1030, "hull": 100, "equipment": ["baby_missile", "missile"] }
+        ],
+        "objects": [
+          { "id": "chain-pump", "kind": "protected", "x": 320, "width": 44, "height": 34, "health": 100 },
+          { "id": "chain-drum", "kind": "supply-drum", "x": 600, "width": 32, "height": 38, "health": 40 },
+          { "id": "chain-relay", "kind": "relay", "x": 700, "width": 38, "height": 48, "health": 80 }
+        ],
+        "objective": { "kind": "eliminate", "protectedObjectIds": ["chain-pump"] },
+        "warning": null
+      },
+      "prelude": [],
+      "decision": {
+        "actorId": "p1",
+        "actions": [
+          { "type": "select_weapon", "weapon": "napalm" },
+          { "type": "set_angle", "angle": 45 },
+          { "type": "set_power", "power": 55 },
+          { "type": "fire" }
+        ]
+      }
+    }
+  ]
+}
