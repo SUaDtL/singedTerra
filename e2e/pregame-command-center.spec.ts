@@ -15,11 +15,13 @@ type CommandGeometry = Readonly<{
 }>;
 
 const GEOMETRIES = Object.freeze({
-  wide: { label: 'wide', viewport: { width: 1440, height: 900 }, narrow: false, evidenceName: 'command-center-wide-ash-road.png' },
-  standard: { label: 'standard', viewport: { width: 1024, height: 768 }, narrow: false, evidenceName: 'command-center-standard-ash-road.png' },
-  compact: { label: 'compact touch', viewport: { width: 700, height: 420 }, narrow: true, evidenceName: 'command-center-compact-touch-ash-road.png' },
-  portrait: { label: 'portrait', viewport: { width: 390, height: 844 }, narrow: true, evidenceName: 'command-center-portrait-ash-road.png' },
-  short: { label: 'short landscape', viewport: { width: 1024, height: 500 }, narrow: false },
+  wide: { label: 'wide', viewport: { width: 1920, height: 1080 }, narrow: false, evidenceName: 'command-center-empty-1920x1080.png' },
+  standard: { label: 'standard', viewport: { width: 1440, height: 900 }, narrow: false, evidenceName: 'command-center-empty-1440x900.png' },
+  ultrawide: { label: 'ultrawide', viewport: { width: 3440, height: 1440 }, narrow: false, evidenceName: 'command-center-empty-3440x1440.png' },
+  compact: { label: 'compact touch', viewport: { width: 844, height: 390 }, narrow: true, evidenceName: 'command-center-empty-844x390.png' },
+  portrait: { label: 'portrait', viewport: { width: 390, height: 844 }, narrow: true, evidenceName: 'command-center-empty-390x844.png' },
+  minimum: { label: 'minimum portrait', viewport: { width: 320, height: 568 }, narrow: true, evidenceName: 'command-center-empty-320x568.png' },
+  short: { label: 'short landscape', viewport: { width: 1024, height: 500 }, narrow: true },
 } as const satisfies Record<string, CommandGeometry>);
 
 async function openAshRoad(page: Page): Promise<void> {
@@ -76,10 +78,13 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   await expect(page.locator('#app')).toBeHidden();
   await expect(page.locator('.command-center__library')).toBeVisible();
   await expect(page.locator('.command-center__workspace-host')).toBeVisible();
+  await expect(page.locator('.command-center__body')).toHaveAttribute('data-command-collection', 'singleton');
   await expect(page.getByRole('heading', { name: 'Fuel Stop', exact: true })).toBeVisible();
   await expect(page.getByText('Immediate objective', { exact: true })).toBeVisible();
-  await expect(page.getByText('Selected kit', { exact: true })).toBeVisible();
-  await expect(page.getByText('Carried kit', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-campaign-route-map]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Starting loadout', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'New run kit', exact: true })).toBeVisible();
+  await expect(page.getByText('Saved loadout', { exact: true })).toHaveCount(0);
   await expect(page.locator('[data-command-primary]:visible')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Account', exact: true })).toBeVisible();
   await expect(page.locator('.lobby-deployment__masthead > h1')).toContainText('singedTerra');
@@ -126,19 +131,17 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
     battleHidden: true,
     battleInert: true,
     battleAriaHidden: 'true',
-    libraryOverflowY: 'auto',
+    libraryOverflowY: 'visible',
     workspaceOverflowY: 'auto',
   });
   expect(surface.documentOverflowX, `${geometry.label} document horizontal overflow`)
     .toBeLessThanOrEqual(1);
 
   const disclosures = page.locator('.campaign-command__disclosure');
-  await expect(disclosures).toHaveCount(2);
+  await expect(disclosures).toHaveCount(1);
   await expect(disclosures.nth(0)).not.toHaveAttribute('open', '');
-  await expect(disclosures.nth(1)).not.toHaveAttribute('open', '');
   await assertLobbyFrame(page);
   await assertTargets(page);
-  await assertLobbyControlReachable(page, '[data-command-primary]');
 
   const longLabel = await page.locator('.command-center__item-label').evaluate((element) => {
     element.textContent = 'Ash Road Expedition with an Improbably Long Campaign Designation';
@@ -157,8 +160,55 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   });
 
   if (EVIDENCE_DIR && geometry.evidenceName) {
+    await page.locator('.command-center__workspace-host').evaluate((workspace) => {
+      workspace.scrollTop = 0;
+    });
     await page.screenshot({ path: join(EVIDENCE_DIR, geometry.evidenceName) });
+    if (geometry === GEOMETRIES.standard) {
+      await page.locator('.command-center__item[aria-current="true"]').screenshot({
+        path: join(EVIDENCE_DIR, 'command-center-material-selected-item.png'),
+      });
+      await page.locator('[data-command-primary]').screenshot({
+        path: join(EVIDENCE_DIR, 'command-center-material-primary-empty.png'),
+      });
+      const decision = await page.locator('.campaign-command__decision').boundingBox();
+      if (!decision) throw new Error('Campaign decision frame is missing from material evidence');
+      await page.screenshot({
+        path: join(EVIDENCE_DIR, 'command-center-material-decision-corner.png'),
+        clip: {
+          x: decision.x,
+          y: decision.y,
+          width: Math.min(360, decision.width),
+          height: Math.min(220, decision.height),
+        },
+      });
+    }
   }
+  await assertLobbyControlReachable(page, '[data-command-primary]');
+}
+
+async function captureResumeGeometry(page: Page, geometry: CommandGeometry): Promise<void> {
+  await page.setViewportSize(geometry.viewport);
+  await openAshRoad(page);
+  await expect(page.locator('[data-command-primary]')).toHaveText('Resume Ash Road');
+  await expect(page.getByRole('heading', { name: 'Saved loadout', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'New run kit', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'New Run', exact: true })).toBeVisible();
+  await assertLobbyFrame(page);
+  await assertTargets(page);
+  if (EVIDENCE_DIR) {
+    await page.locator('.command-center__workspace-host').evaluate((workspace) => {
+      workspace.scrollTop = 0;
+    });
+    const { width, height } = geometry.viewport;
+    await page.screenshot({ path: join(EVIDENCE_DIR, `command-center-resume-${width}x${height}.png`) });
+    if (geometry === GEOMETRIES.standard) {
+      await page.locator('[data-command-primary]').screenshot({
+        path: join(EVIDENCE_DIR, 'command-center-material-primary-resume.png'),
+      });
+    }
+  }
+  await assertLobbyControlReachable(page, '[data-command-primary]');
 }
 
 async function returnFromBattle(page: Page): Promise<void> {
@@ -213,10 +263,11 @@ test.describe('T12 production command center', () => {
     }
   });
 
-  test('wide and standard layouts preserve the command hierarchy', async ({ page }, testInfo) => {
+  test('wide, standard, and ultrawide layouts preserve the command hierarchy', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'desktop geometry owner');
     await assertCommandGeometry(page, GEOMETRIES.wide);
     await assertCommandGeometry(page, GEOMETRIES.standard);
+    await assertCommandGeometry(page, GEOMETRIES.ultrawide);
   });
 
   test('short landscape keeps the primary action reachable without page overflow', async ({ page }, testInfo) => {
@@ -243,9 +294,25 @@ test.describe('T12 production command center', () => {
   test('portrait preparation stays usable without the battle orientation gate', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'portrait touch geometry owner');
     await assertCommandGeometry(page, GEOMETRIES.portrait);
+    await assertCommandGeometry(page, GEOMETRIES.minimum);
     await expect(page.locator('#portrait-warn')).toBeHidden();
     await expect(page.locator('#lobby')).not.toHaveAttribute('inert', '');
     await expect(page.locator('#lobby')).not.toHaveAttribute('aria-hidden', 'true');
+  });
+
+  test('compatible resume keeps saved equipment primary across the acceptance geometries', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'small-window', 'acceptance matrix split across desktop and touch');
+    await page.setViewportSize(GEOMETRIES.standard.viewport);
+    await openAshRoad(page);
+    await page.locator('[data-command-primary]').click();
+    await expect(page.locator('#app')).toBeVisible();
+    await returnFromBattle(page);
+    await expect(page.locator('[data-command-primary]')).toHaveText('Resume Ash Road');
+
+    const geometries = testInfo.project.name === 'desktop-fine'
+      ? [GEOMETRIES.wide, GEOMETRIES.standard, GEOMETRIES.ultrawide]
+      : [GEOMETRIES.compact, GEOMETRIES.portrait, GEOMETRIES.minimum];
+    for (const geometry of geometries) await captureResumeGeometry(page, geometry);
   });
 
   test('non-default keyboard selection survives account rerender and match return in session only', async ({ page }, testInfo) => {

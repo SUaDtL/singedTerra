@@ -22,6 +22,16 @@ describe('command center visual contract', () => {
     expect(commandCenterCss).not.toMatch(/#(?:app|hud|battle-rail)\b|\.st-battle/);
   });
 
+  it('nine-slices ornamental frames instead of stretching whole raster borders', () => {
+    expect(commandCenterCss).toContain('border-image-slice: 16 fill');
+    expect(commandCenterCss).toContain('border-image-slice: 22 fill');
+    expect(commandCenterCss).toContain('border-image-width: 12px');
+    expect(commandCenterCss).toContain('border-image-width: 10px');
+    expect(commandCenterCss).not.toMatch(
+      /background-image:\s*(?:\r?\n\s*)?var\(--command-(?:panel|button)[^;]+background-size:\s*100%\s+100%/s,
+    );
+  });
+
   it('binds every admitted material asset through the runtime style seam', () => {
     const bindings = [
       ['commandPanelFrameUrl', '--command-panel-frame'],

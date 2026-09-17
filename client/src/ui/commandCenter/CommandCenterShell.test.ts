@@ -267,6 +267,42 @@ describe('CommandCenterShell semantics and registry growth', () => {
 
     expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('range:1');
   });
+
+  it('exposes a generic singleton layout without weakening 4- or 18-item libraries', () => {
+    const views: ViewFixture[] = [];
+    const skirmishItems = Array.from(
+      { length: 4 },
+      (_, index) => fixtureItem(`skirmish-${index}`, views),
+    );
+    const manyItems = Array.from(
+      { length: 18 },
+      (_, index) => fixtureItem(`multiplayer-${index}`, views),
+    );
+    const contributions = [
+      fixtureCategory('campaigns', 'Campaigns', 10, [fixtureItem('ash-road', views)]),
+      fixtureCategory('skirmishes', 'Skirmishes', 20, skirmishItems),
+      fixtureCategory('multiplayer', 'Multiplayer', 30, manyItems),
+    ];
+    const fixtureContext = context(
+      1,
+      ['campaigns', 'skirmishes', 'multiplayer'],
+      ['ash-road', ...skirmishItems.map((item) => item.id), ...manyItems.map((item) => item.id)],
+    );
+    const { root } = setup({ contributions, fixtureContext });
+    const body = root.querySelector<HTMLElement>('.command-center__body')!;
+
+    expect(body.dataset.commandCollection).toBe('singleton');
+    expect(body.dataset.commandItemCount).toBe('1');
+
+    buttons(root, '.command-center__category-rail [data-command-category]')[1]!.click();
+    expect(body.dataset.commandCollection).toBe('library');
+    expect(body.dataset.commandItemCount).toBe('4');
+
+    buttons(root, '.command-center__category-rail [data-command-category]')[2]!.click();
+    expect(body.dataset.commandCollection).toBe('library');
+    expect(body.dataset.commandItemCount).toBe('18');
+    expect(buttons(root, '.command-center__library-items [data-command-item]')).toHaveLength(18);
+  });
 });
 
 describe('CommandCenterShell keyboard and focus', () => {

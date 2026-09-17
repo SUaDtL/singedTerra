@@ -341,6 +341,9 @@ export function createCommandCenterShell<Context>(
 
   const renderLibrary = (): void => {
     const category = findCategory(activeCategoryId);
+    const itemCount = category?.items.length ?? 0;
+    body.dataset.commandCollection = itemCount === 1 ? 'singleton' : 'library';
+    body.dataset.commandItemCount = String(itemCount);
     libraryTitle.textContent = category?.contribution.label ?? 'Commands';
     const fragment = document.createDocumentFragment();
     if (!category || category.items.length === 0) {

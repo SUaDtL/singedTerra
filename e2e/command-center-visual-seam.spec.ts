@@ -105,12 +105,12 @@ test.describe('T11 command-center production visual seam', () => {
         workspace: getComputedStyle(workspace).overflowY,
       };
     });
-    expect(scrollOwners).toEqual({ library: 'auto', workspace: 'auto' });
+    expect(scrollOwners).toEqual({ library: 'visible', workspace: 'auto' });
   });
 
   test('keeps compact, portrait, and 200%-zoom-equivalent layouts contained', async ({ page }) => {
     for (const viewport of [
-      { width: 700, height: 420, label: 'compact touch geometry' },
+      { width: 844, height: 390, label: 'compact touch geometry' },
       { width: 720, height: 450, label: '1440x900 at 200% reflow geometry' },
     ]) {
       await page.setViewportSize(viewport);

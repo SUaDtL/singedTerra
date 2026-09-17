@@ -120,13 +120,13 @@ describe('Ash Road command contribution', () => {
 
 describe('CampaignCommandView decision plane', () => {
   it.each([
-    ['checking', 'Checking this device for an Ash Road save.', 'Checking save', true],
-    ['empty', 'No Ash Road save is stored on this device.', 'Start Ash Road', false],
-    ['compatible', 'A compatible run is ready on this device.', 'Resume Ash Road', false],
-    ['incompatible', 'The stored run was created for a different Ash Road build.', 'Campaign unavailable', true],
-    ['unavailable', 'This browser could not read campaign storage.', 'Save unavailable', true],
-    ['restoring', 'Restoring the saved run.', 'Restoring Ash Road', true],
-    ['complete', 'Ash Road is complete on this device.', 'Campaign complete', true],
+    ['checking', 'Checking this device for a saved run.', 'Checking save', true],
+    ['empty', 'No saved run on this device.', 'Start Ash Road', false],
+    ['compatible', 'Saved run ready.', 'Resume Ash Road', false],
+    ['incompatible', 'Saved run uses a different Ash Road build.', 'Campaign unavailable', true],
+    ['unavailable', 'Campaign storage could not be read.', 'Save unavailable', true],
+    ['restoring', 'Restoring saved run.', 'Restoring Ash Road', true],
+    ['complete', 'Campaign complete.', 'Start New Run', false],
   ] as const)(
     'renders %s truthfully with exactly one primary control',
     (status, statusCopy, primaryLabel, disabled) => {
@@ -142,34 +142,40 @@ describe('CampaignCommandView decision plane', () => {
     },
   );
 
-  it('leads with mission, immediate objective, selected kit, and truthful carried/granted equipment', () => {
+  it('leads with the current mission, objective, visible route, and one truthful saved loadout', () => {
     const { host } = setup(savedContext('compatible', 'assault', 1));
     const decisionPlane = host.querySelector<HTMLElement>('[data-campaign-decision-plane]')!;
 
     expect(getByRole(decisionPlane, 'heading', { name: 'High Road' })).toBeTruthy();
     expect(decisionPlane.textContent).toContain('Hold the pump for 3 commitments or destroy the defender.');
-    expect(decisionPlane.textContent).toContain('Assault');
-    expect(decisionPlane.textContent).toContain('Missile, Cluster Bomb, Shield');
-    expect(decisionPlane.textContent).toContain('Baby Missile, Missile, Cluster Bomb, Shield');
+    expect(host.querySelector('[data-campaign-route-map]')).not.toBeNull();
+    expect(host.querySelector('[data-campaign-route="high-road"]')?.getAttribute('aria-current'))
+      .toBe('step');
+    expect(host.textContent).toContain('Saved loadout');
+    expect(host.textContent).toContain('Assault configuration');
+    expect(host.textContent).toContain('Baby Missile, Missile, Cluster Bomb, Shield');
+    expect(queryAllByRole(host, 'combobox', { name: 'New run kit' })).toHaveLength(0);
     expect(decisionPlane.querySelector('details')).toBeNull();
   });
 
-  it('keeps route map and campaign briefing in secondary native disclosures', () => {
+  it('keeps the authored branching route visible and only the deeper briefing in a disclosure', () => {
     const { host } = setup();
     const details = [...host.querySelectorAll('details')];
+    const route = host.querySelector<HTMLElement>('[data-campaign-route-map]')!;
 
-    expect(details).toHaveLength(2);
-    expect(details.map((node) => node.querySelector('summary')?.textContent)).toEqual([
-      'Route map',
-      'Campaign briefing',
-    ]);
-    expect(details[0]?.textContent).toContain('Fuel Stop');
-    expect(details[0]?.textContent).toContain('Relay Ridge');
-    expect(details[0]?.querySelector('img')?.getAttribute('src'))
+    expect(details).toHaveLength(1);
+    expect(details[0]?.querySelector('summary')?.textContent).toBe('Campaign briefing');
+    expect(route.textContent).toContain('Fuel Stop');
+    expect(route.textContent).toContain('High Road');
+    expect(route.textContent).toContain('Salvage Pit');
+    expect(route.textContent).toContain('Relay Ridge');
+    expect(host.querySelector('.campaign-command__scene-backdrop')?.getAttribute('src'))
       .toContain('art/campaign/ash-road-panorama.webp');
+    expect(route.querySelector('[data-campaign-route="fuel-stop"]')?.getAttribute('aria-current'))
+      .toBe('step');
   });
 
-  it('routes Start, Resume, confirmed New Run, retry, and kit selection to the current owner callbacks', () => {
+  it('routes Start, Resume, explicit replacement setup, retry, and kit selection to current owners', () => {
     const empty = savedContext('empty');
     const mounted = setup(empty);
     const kit = getByRole(mounted.host, 'combobox', { name: 'New run kit' }) as HTMLSelectElement;
@@ -185,7 +191,18 @@ describe('CampaignCommandView decision plane', () => {
     button(mounted.host, 'Resume Ash Road').click();
     button(mounted.host, 'New Run').click();
     expect(compatible.onResume).toHaveBeenCalledOnce();
-    expect(compatible.onNewRun).toHaveBeenCalledWith('assault', expect.any(AbortSignal));
+    expect(compatible.onNewRun).not.toHaveBeenCalled();
+    const replacementKit = getByRole(
+      mounted.host,
+      'combobox',
+      { name: 'New run kit' },
+    ) as HTMLSelectElement;
+    expect(document.activeElement).toBe(replacementKit);
+    replacementKit.value = 'breach';
+    fireEvent.change(replacementKit);
+    button(mounted.host, 'Replace Saved Run').click();
+    expect(compatible.onSelectKit).toHaveBeenCalledWith('breach');
+    expect(compatible.onNewRun).toHaveBeenCalledWith('breach', expect.any(AbortSignal));
     const lifetime = vi.mocked(compatible.onNewRun).mock.calls[0]![1];
     expect(lifetime.aborted).toBe(false);
 
@@ -197,7 +214,7 @@ describe('CampaignCommandView decision plane', () => {
     const complete = savedContext('complete', 'breach');
     mounted.view.update(complete);
     expect(queryAllByRole(mounted.host, 'button', { name: 'Resume Ash Road' })).toHaveLength(0);
-    button(mounted.host, 'New Run').click();
+    button(mounted.host, 'Start New Run').click();
     expect(complete.onNewRun).toHaveBeenCalledWith('breach', expect.any(AbortSignal));
     mounted.view.dispose();
     expect(lifetime.aborted).toBe(true);
@@ -214,6 +231,7 @@ describe('CampaignCommandView decision plane', () => {
     view.update(savedContext('compatible', 'assault', 1));
     expect(host.querySelector('[data-campaign-command-view]')).toBe(root);
     expect(select.value).toBe('assault');
+    expect(select.closest<HTMLElement>('.campaign-command__kit')?.hidden).toBe(true);
     expect(getByRole(host, 'heading', { name: 'High Road' })).toBeTruthy();
 
     view.focusDefault();
@@ -230,7 +248,7 @@ describe('CampaignCommandView decision plane', () => {
   });
 
   it.each([
-    ['complete', 'New Run'],
+    ['complete', 'Start New Run'],
     ['unavailable', 'Retry save check'],
     ['checking', null],
   ] as const)('focuses the meaningful %s-state fallback', (status, actionLabel) => {

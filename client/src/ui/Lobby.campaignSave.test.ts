@@ -416,8 +416,9 @@ describe('Lobby campaign save presentation owner', () => {
     launchOwner = lobby as unknown as CampaignLaunchRecoveryContract;
     lobby.show();
     await vi.waitFor(() => expect(button(root, 'Resume Ash Road')).toBeTruthy());
-    button(root, 'New Run').focus();
     button(root, 'New Run').click();
+    button(root, 'Replace Saved Run').focus();
+    button(root, 'Replace Saved Run').click();
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
 
     await launchOwner.refreshCampaignSaveAfterLaunchFailure();
@@ -478,6 +479,7 @@ describe('Lobby campaign save presentation owner', () => {
     await vi.waitFor(() => expect(button(root, 'Resume Ash Road')).toBeTruthy());
 
     button(root, 'New Run').click();
+    button(root, 'Replace Saved Run').click();
     await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce());
 
     expect(storage.compareAndSwap).not.toHaveBeenCalled();
@@ -508,7 +510,7 @@ describe('Lobby campaign save presentation owner', () => {
     });
 
     openCampaigns(root);
-    button(root, 'New Run').click();
+    button(root, 'Start New Run').click();
     await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce());
 
     expect(storage.compareAndSwap).not.toHaveBeenCalled();
@@ -545,11 +547,12 @@ describe('Lobby campaign save presentation owner', () => {
     );
     lobby.show();
     await vi.waitFor(() => expect(button(root, 'Resume Ash Road')).toBeTruthy());
+    button(root, 'New Run').click();
     const kit = root.querySelector<HTMLSelectElement>('[aria-label="New run kit"]')!;
     kit.value = 'breach';
     kit.dispatchEvent(new Event('change'));
 
-    button(root, 'New Run').click();
+    button(root, 'Replace Saved Run').click();
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
 
     expect(storage.compareAndSwap).toHaveBeenCalledWith(expect.objectContaining({
@@ -599,6 +602,7 @@ describe('Lobby campaign save presentation owner', () => {
     await vi.waitFor(() => expect(button(root, 'Resume Ash Road')).toBeTruthy());
 
     button(root, 'New Run').click();
+    button(root, 'Replace Saved Run').click();
     await vi.waitFor(() => expect(storage.compareAndSwap).toHaveBeenCalledOnce());
     root.querySelector<HTMLButtonElement>('[data-command-category="skirmishes"]')!.click();
     expect(root.querySelector('[data-campaign-command-view]')).toBeNull();
@@ -646,6 +650,7 @@ describe('Lobby campaign save presentation owner', () => {
     await vi.waitFor(() => expect(button(root, 'Resume Ash Road')).toBeTruthy());
 
     button(root, 'New Run').click();
+    button(root, 'Replace Saved Run').click();
     await vi.waitFor(() => expect(storage.compareAndSwap).toHaveBeenCalledOnce());
     await vi.waitFor(() => {
       expect(campaignInternals(lobby).campaignSavePresentation.resumeCandidate?.revision).toBe(15);
