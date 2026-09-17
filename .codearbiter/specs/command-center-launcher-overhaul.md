@@ -168,3 +168,24 @@ If every functional criterion passed while the command center still felt visuall
 - **Conform — ADR-0016:** diagnostics remain opt-in, allowlisted, and absent from normal navigation.
 - **Conform — ADR-0018:** the Preact battle console retains semantic ownership and remains structurally independent from the command center.
 - **No ruling required — ADR-0019:** proposed status is not accepted authority; current verified-challenge behavior is nevertheless preserved as an explicit product constraint.
+
+## Approved in-game command-menu extension — 2026-09-17
+
+After accepting the Campaigns / Ash Road visual slice, the maintainer explicitly extended the
+approved command-console treatment to the existing in-game **Command Menu** shown during battle.
+This is a bounded visual and information-hierarchy extension, not a structural battle-console
+change:
+
+- Preserve the existing non-destructive local-input hold, network loop continuity, modal isolation,
+  focus trap/restoration, Battle Settings handoff, conditional First Salvo replay, and lobby-return
+  owners.
+- Present one framed command deck with a linked command header, one dominant **Resume** action,
+  subordinate Settings/Replay utilities, and a physically separated **Return to Lobby** action.
+- Reuse the admitted command-center materials and semantic SVG icon seam. Keep controls as semantic
+  DOM, maintain 44px minimum targets after battle scaling, and retain responsive short-landscape and
+  compact-touch support.
+- Do not restyle or restructure the live battle console, settings dialog, First Salvo briefing, or
+  gameplay controls as part of this extension.
+
+Acceptance is direct visual coherence with the accepted launcher system plus fresh unit/browser
+proof of the retained lifecycle, keyboard, touch, focus, and containment behavior.

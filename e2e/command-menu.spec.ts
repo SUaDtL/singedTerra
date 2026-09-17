@@ -44,7 +44,11 @@ test.describe('Command Menu navigation', () => {
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       const panel = node.querySelector<HTMLElement>('.st-hud__overlay-panel')!;
       const panelRect = panel.getBoundingClientRect();
-      const titleNode = panel.querySelector<HTMLElement>('.st-hud__overlay-text')!;
+      const header = panel.querySelector<HTMLElement>('.st-hud__command-menu-header')!;
+      const headerRect = header.getBoundingClientRect();
+      const headerSegments = [...header.children]
+        .map((element) => (element as HTMLElement).getBoundingClientRect().toJSON());
+      const titleNode = header.querySelector<HTMLElement>('.st-hud__overlay-text')!;
       const title = titleNode.getBoundingClientRect();
       const titleRange = document.createRange();
       titleRange.selectNodeContents(titleNode);
@@ -52,6 +56,10 @@ test.describe('Command Menu navigation', () => {
       const actions = panel.querySelector<HTMLElement>('.st-hud__overlay-btns')!;
       const actionsRect = actions.getBoundingClientRect();
       const actionButtons = [...actions.querySelectorAll<HTMLButtonElement>('.st-hud__restart')];
+      const primary = actions.querySelector<HTMLElement>('.st-hud__command-menu-action--primary')!
+        .getBoundingClientRect();
+      const utilities = [...actions.querySelectorAll<HTMLElement>('.st-hud__command-menu-action--utility')]
+        .map((element) => element.getBoundingClientRect().toJSON());
       const exit = panel.querySelector<HTMLElement>('.st-hud__command-menu-exit')!;
       const exitButton = exit.querySelector<HTMLButtonElement>('.st-hud__restart')!;
       const exitRect = exit.getBoundingClientRect();
@@ -61,11 +69,32 @@ test.describe('Command Menu navigation', () => {
       const exitText = exitRange.getBoundingClientRect();
       const boxes = [panel, ...panel.querySelectorAll<HTMLElement>('button')]
         .map((element) => element.getBoundingClientRect().toJSON());
+      const buttonBoxes = [...panel.querySelectorAll<HTMLElement>('button')]
+        .map((element) => ({
+          ...element.getBoundingClientRect().toJSON(),
+          name: element.getAttribute('aria-label') ?? element.textContent ?? 'unnamed action',
+          minHeight: getComputedStyle(element).minHeight,
+          battleScale: getComputedStyle(element).getPropertyValue('--battle-ui-scale'),
+          storeTarget: getComputedStyle(element).getPropertyValue('--st-store-buy-target'),
+          pointerMedia: `coarse=${matchMedia('(pointer: coarse)').matches};fine=${matchMedia('(pointer: fine)').matches}`,
+        }));
       return {
         boxes,
-        titleAboveActions: title.bottom <= actionsRect.top,
+        buttonBoxes,
+        titleAboveActions: headerRect.bottom <= actionsRect.top,
         actionsAboveExit: actionsRect.bottom <= exitRect.top,
-        actionTextFits: actionButtons.every((button) => button.scrollWidth <= button.clientWidth && button.scrollHeight <= button.clientHeight),
+        linkedHeader: headerSegments.every((segment) =>
+          Math.abs(segment.top - headerRect.top) <= 1
+          && Math.abs(segment.bottom - headerRect.bottom) <= 1),
+        primaryDominates: utilities.every((utility) => primary.height > utility.height),
+        materialFrame: getComputedStyle(panel).borderImageSource,
+        actionMetrics: actionButtons.map((button) => ({
+          name: button.getAttribute('aria-label') ?? button.textContent ?? 'unnamed action',
+          scrollWidth: button.scrollWidth,
+          clientWidth: button.clientWidth,
+          scrollHeight: button.scrollHeight,
+          clientHeight: button.clientHeight,
+        })),
         panelDisplay: getComputedStyle(panel).display,
         titleCenterRatio: ((title.top + title.bottom) / 2 - panelRect.top) / panelRect.height,
         titleTextFits:
@@ -93,12 +122,26 @@ test.describe('Command Menu navigation', () => {
       expect(box.right).toBeLessThanOrEqual(geometry.viewport.width + 1);
       expect(box.bottom).toBeLessThanOrEqual(geometry.viewport.height + 1);
     }
+    for (const box of geometry.buttonBoxes) {
+      expect(box.width, `${box.name} retains a 44px physical target (${box.minHeight}, scale ${box.battleScale}, target ${box.storeTarget}, ${box.pointerMedia})`)
+        .toBeGreaterThanOrEqual(43.5);
+      expect(box.height, `${box.name} retains a 44px physical target (${box.minHeight}, scale ${box.battleScale}, target ${box.storeTarget}, ${box.pointerMedia})`)
+        .toBeGreaterThanOrEqual(43.5);
+    }
     expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewport.width + 1);
     expect(geometry.pageHeight).toBeLessThanOrEqual(geometry.viewport.height + 1);
     expect(geometry.panelDisplay).toBe('grid');
+    expect(geometry.linkedHeader, 'Menu header segments share one rail').toBe(true);
+    expect(geometry.primaryDominates, 'Resume remains the dominant command').toBe(true);
+    expect(geometry.materialFrame).not.toBe('none');
     expect(geometry.titleAboveActions, 'Menu heading clears the action group').toBe(true);
     expect(geometry.actionsAboveExit, 'Lobby exit stays separate from in-match actions').toBe(true);
-    expect(geometry.actionTextFits, 'Action labels stay inside their controls').toBe(true);
+    for (const action of geometry.actionMetrics) {
+      expect(action.scrollWidth, `${action.name} stays horizontally contained`)
+        .toBeLessThanOrEqual(action.clientWidth);
+      expect(action.scrollHeight, `${action.name} stays vertically contained`)
+        .toBeLessThanOrEqual(action.clientHeight);
+    }
     expect(geometry.exitTextCenterError, 'Lobby exit label is vertically centered').toBeLessThanOrEqual(3);
     await page.screenshot({ path: testInfo.outputPath(`command-menu-fitted-${testInfo.project.name}.png`) });
 
@@ -112,6 +155,6 @@ test.describe('Command Menu navigation', () => {
       hud: document.getElementById('hud')!.inert,
       lobby: document.getElementById('lobby')!.inert,
       store: document.querySelector<HTMLElement>('.st-hud__store')?.inert ?? null,
-    }))).toEqual({ stage: false, hud: false, lobby: false, store: null });
+    }))).toEqual({ stage: false, hud: false, lobby: true, store: null });
   });
 });

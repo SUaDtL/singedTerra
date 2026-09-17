@@ -1,4 +1,11 @@
 import hudCss from './HUD.css?raw';
+import commandPanelFrameUrl from './commandCenter/assets/chrome/panel-frame.png';
+import commandIronTileUrl from './commandCenter/assets/chrome/iron-tile.png';
+import commandGoldTileUrl from './commandCenter/assets/chrome/gold-tile.png';
+import commandButtonFrameUrl from './commandCenter/assets/chrome/button-frame.png';
+import commandButtonHoverFrameUrl from './commandCenter/assets/chrome/button-hover-frame.png';
+import commandButtonPressedFrameUrl from './commandCenter/assets/chrome/button-pressed-frame.png';
+import commandButtonGoldFrameUrl from './commandCenter/assets/chrome/button-gold-frame.png';
 import type { GameState, TankState } from '@shared/types/GameState';
 import { WEAPONS, ACCESSORIES } from '@shared/engine/WeaponSystem';
 import type { WeaponType, AccessoryType } from '@shared/engine/WeaponSystem';
@@ -72,6 +79,16 @@ import {
 import { CampaignMissionView } from './CampaignMissionView';
 
 export type { HUDVerifiedChallengePresentation } from './VerifiedChallengeView';
+
+const HUD_COMMAND_MENU_ASSET_CSS = `.st-hud__command-menu-panel {
+  --st-command-panel-frame: url("${commandPanelFrameUrl}");
+  --st-command-iron-tile: url("${commandIronTileUrl}");
+  --st-command-gold-tile: url("${commandGoldTileUrl}");
+  --st-command-button-frame: url("${commandButtonFrameUrl}");
+  --st-command-button-hover-frame: url("${commandButtonHoverFrameUrl}");
+  --st-command-button-pressed-frame: url("${commandButtonPressedFrameUrl}");
+  --st-command-button-gold-frame: url("${commandButtonGoldFrameUrl}");
+}`;
 
 
 function publicBattleConsoleHostMode(mode: BattleConsoleLayoutMode): BattleConsoleHostMode {
@@ -1378,37 +1395,51 @@ export class HUD {
     this.pauseEl.setAttribute('aria-hidden', 'true');
     const pausePanel = document.createElement('div');
     pausePanel.className = 'st-hud__overlay-panel st-hud__command-menu-panel';
+    const pauseHeader = document.createElement('header');
+    pauseHeader.className = 'st-hud__command-menu-header';
+    const pauseKicker = document.createElement('span');
+    pauseKicker.className = 'st-hud__command-menu-kicker';
+    pauseKicker.textContent = 'Battle Command';
     const pauseText = document.createElement('h2');
     pauseText.className = 'st-hud__overlay-text';
     pauseText.textContent = 'Command Menu';
+    const pauseStatus = document.createElement('span');
+    pauseStatus.className = 'st-hud__command-menu-status';
+    pauseStatus.textContent = 'Input Held';
+    pauseHeader.append(pauseKicker, pauseText, pauseStatus);
     const resumeBtn = document.createElement('button');
-    resumeBtn.className = 'st-hud__restart';
+    resumeBtn.className = 'st-hud__restart st-hud__command-menu-action st-hud__command-menu-action--primary';
     resumeBtn.type = 'button';
+    resumeBtn.dataset['commandMenuAction'] = 'resume';
     resumeBtn.setAttribute('aria-label', 'Resume');
-    resumeBtn.textContent = 'Resume';
+    resumeBtn.append(makeHudIcon('resume', 26), document.createTextNode('Resume'));
     this.pauseResumeBtnEl = resumeBtn;
     resumeBtn.addEventListener('click', () => this.togglePause(false));
     const replayFirstSalvoBtn = document.createElement('button');
-    replayFirstSalvoBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    replayFirstSalvoBtn.className = 'st-hud__restart st-hud__restart--ghost st-hud__command-menu-action st-hud__command-menu-action--utility';
     replayFirstSalvoBtn.type = 'button';
+    replayFirstSalvoBtn.dataset['commandMenuAction'] = 'replay-first-salvo';
     replayFirstSalvoBtn.setAttribute('aria-label', 'Replay First Salvo');
-    replayFirstSalvoBtn.textContent = 'Replay First Salvo';
+    replayFirstSalvoBtn.append(makeHudIcon('replay', 22), document.createTextNode('Replay First Salvo'));
     this.pauseReplayFirstSalvoBtnEl = replayFirstSalvoBtn;
     replayFirstSalvoBtn.addEventListener('click', () => {
       this.togglePause(false);
       this.firstSalvoReplayCb?.();
     });
     const battleSettingsBtn = document.createElement('button');
-    battleSettingsBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    battleSettingsBtn.className = 'st-hud__restart st-hud__restart--ghost st-hud__command-menu-action st-hud__command-menu-action--utility';
     battleSettingsBtn.type = 'button';
     battleSettingsBtn.dataset['command'] = 'battle-settings';
+    battleSettingsBtn.dataset['commandMenuAction'] = 'battle-settings';
     battleSettingsBtn.setAttribute('aria-label', 'Battle Settings');
-    battleSettingsBtn.textContent = 'Battle Settings';
+    battleSettingsBtn.append(makeHudIcon('settings', 22), document.createTextNode('Battle Settings'));
     battleSettingsBtn.addEventListener('click', () => this.showBattleConsoleSettings());
     const pauseQuitBtn = document.createElement('button');
-    pauseQuitBtn.className = 'st-hud__restart st-hud__restart--ghost';
+    pauseQuitBtn.className = 'st-hud__restart st-hud__restart--ghost st-hud__command-menu-action st-hud__command-menu-action--exit';
     pauseQuitBtn.type = 'button';
-    pauseQuitBtn.textContent = 'Return to Lobby';
+    pauseQuitBtn.dataset['commandMenuAction'] = 'return-to-lobby';
+    pauseQuitBtn.setAttribute('aria-label', 'Return to Lobby');
+    pauseQuitBtn.append(makeHudIcon('exit', 20), document.createTextNode('Return to Lobby'));
     pauseQuitBtn.addEventListener('click', () => { this.togglePause(false); this.quitCb?.(); });
     const pauseBtns = document.createElement('div');
     pauseBtns.className = 'st-hud__overlay-btns';
@@ -1419,8 +1450,11 @@ export class HUD {
     pauseExit.dataset['ui'] = 'command-menu-exit';
     pauseExit.setAttribute('role', 'group');
     pauseExit.setAttribute('aria-label', 'Leave this match');
-    pauseExit.append(pauseQuitBtn);
-    pausePanel.append(pauseText, pauseBtns, pauseExit);
+    const pauseExitLabel = document.createElement('span');
+    pauseExitLabel.className = 'st-hud__command-menu-exit-label';
+    pauseExitLabel.textContent = 'Leave Match';
+    pauseExit.append(pauseExitLabel, pauseQuitBtn);
+    pausePanel.append(pauseHeader, pauseBtns, pauseExit);
     this.pauseEl.append(pausePanel);
     this.pauseEl.addEventListener('keydown', (event) => {
       if (event.key !== 'Tab') return;
@@ -2768,7 +2802,7 @@ export class HUD {
     if (document.getElementById(HUD.STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = HUD.STYLE_ID;
-    style.textContent = hudCss;
+    style.textContent = `${hudCss}\n${HUD_COMMAND_MENU_ASSET_CSS}`;
     document.head.append(style);
   }
 
