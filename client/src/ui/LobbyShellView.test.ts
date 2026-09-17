@@ -70,6 +70,21 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
 }
 
 describe('buildLobbyShellView', () => {
+  it('assembles brand, command context, and commander state as one linked command rail', () => {
+    const account = section('account');
+    const root = buildLobbyShellView(options({ account }));
+    const rail = root.querySelector<HTMLElement>('.lobby-deployment__masthead');
+    const brand = rail?.querySelector<HTMLElement>(':scope > h1');
+    const context = rail?.querySelector<HTMLElement>(':scope > .lobby-command-header');
+
+    expect(rail?.classList.contains('lobby-command-rail')).toBe(true);
+    expect(rail?.getAttribute('aria-label')).toBe('Command header');
+    expect(brand?.classList.contains('lobby-command-rail__brand')).toBe(true);
+    expect(context?.classList.contains('lobby-command-rail__context')).toBe(true);
+    expect(account.classList.contains('lobby-command-rail__dossier')).toBe(true);
+    expect([...rail!.children].slice(0, 3)).toEqual([brand, context, account]);
+  });
+
   it('offers a distinct device-local Ash Road resume action when a compatible save exists', () => {
     const onCampaign = vi.fn()
     const onCampaignResume = vi.fn()

@@ -4688,3 +4688,8 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - Independent non-Astra branch and coverage reviews returned PASS after causal fixes for pristine campaign promotion, stale callback authority, exact return focus, modal inertness and retained Round Shop focus. The required Auth/Crypto gate also returned PASS: Node built-in SHA-256 is used only for the repository-approved asset-provenance test.
 - Commit d4cb3cf0a7729c14cf9bad441cf529946c885dc5 passed the CodeArbiter gate and was pushed. Draft PR #515 is open at https://github.com/SUaDtL/singedTerra/pull/515 and is explicitly incomplete pending G01 visual acceptance. No merge or deployment was performed.
 - T14 and later remain pending. Skirmishes and Multiplayer retain bounded transitional workspaces until the user accepts the Campaigns / Ash Road visual system or supplies corrections.
+
+## 2026-09-17 Command header segmented-rail revision · confidence: high · intent: per maintainer visual feedback requiring one command deck
+- Options weighed: wrap all three roles in one visually flat panel; retain independent widgets with spacing changes; use three linked bays inside one shared outer rail.
+- SMARTS verdict: the linked-bay assembly is strong. It preserves clear brand, context and commander ownership while sharing one material frame, baseline and internal divider rhythm; the dossier loses its standalone border/shadow and excess next-rank row, and the logo gains a restrained structural bay without additional ornament.
+- Compact screens keep the same assembly as two linked rows: brand and commander remain paired above a full-width command-context strip. Short landscape keeps all three on one row. No workspace, account lifecycle or battle-console ownership changed.

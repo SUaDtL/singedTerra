@@ -119,18 +119,23 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
   deployment.setAttribute('aria-label', 'Deployment preparation');
 
   const title = document.createElement('h1');
+  title.className = 'lobby-command-rail__brand';
   title.textContent = 'singedTerra';
   const masthead = document.createElement('header');
-  masthead.className = 'lobby-deployment__masthead';
+  masthead.className = 'lobby-deployment__masthead lobby-command-rail';
+  masthead.setAttribute('aria-label', 'Command header');
   const commandHeader = document.createElement('div');
-  commandHeader.className = 'lobby-command-header';
+  commandHeader.className = 'lobby-command-header lobby-command-rail__context';
   commandHeader.setAttribute('aria-label', 'Pre-game command preparation');
   const commandKicker = document.createElement('h2');
   commandKicker.className = 'lobby-command-header__kicker';
   commandKicker.textContent = 'COMMAND PREPARATION';
   commandHeader.append(commandKicker);
   masthead.append(title, commandHeader);
-  if (options.account) masthead.append(options.account);
+  if (options.account) {
+    options.account.classList.add('lobby-command-rail__dossier');
+    masthead.append(options.account);
+  }
 
   if (options.rejoinAvailable) {
     const banner = document.createElement('div');

@@ -71,6 +71,36 @@ describe('command center visual contract', () => {
     );
   });
 
+  it('frames the launcher masthead as one rail with three linked bays', () => {
+    expect(commandCenterCss).toMatch(
+      /\.lobby-card:has\(\.command-center\) \.lobby-deployment__masthead\s*\{[^}]*border-image-source:\s*var\(--command-panel-frame[^}]*grid-template-columns:/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-command-rail__brand\s*\{[^}]*display:\s*flex[^}]*border-right:/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-command-rail__context\s*\{[^}]*border:\s*0[^}]*border-right:/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-command-rail__dossier\s+\.account-panel__record\s*\{[^}]*border:\s*0[^}]*box-shadow:\s*none/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-command-rail__dossier\s+\.account-panel__career-next\s*\{[^}]*display:\s*none/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-command-rail__dossier\s*>\s*\.account-panel__summary,[\s\S]*?\{[^}]*border:\s*0[^}]*box-shadow:\s*none/s,
+    );
+  });
+
+  it('keeps all three header roles inside the compact rail instead of hiding the command context', () => {
+    expect(commandCenterCss).toMatch(
+      /@media\s*\(max-width:\s*720px\)[\s\S]*?\.lobby-command-rail__context\s*\{[^}]*display:\s*flex[^}]*grid-column:\s*1\s*\/\s*-1/s,
+    );
+    expect(commandCenterCss).not.toMatch(
+      /@media\s*\(max-width:\s*720px\)[\s\S]*?\.lobby-command-header\s*\{[^}]*display:\s*none/s,
+    );
+  });
+
   it('owns bounded scrolling, resilient labels, visible focus, and semantic state colours', () => {
     expect(commandCenterCss).toMatch(
       /\.command-center__workspace-host\s*\{[^}]*overflow-y:\s*auto/s,

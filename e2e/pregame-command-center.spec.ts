@@ -70,6 +70,58 @@ async function assertTargets(page: Page): Promise<void> {
     .toBeGreaterThanOrEqual(59.5);
 }
 
+async function assertCommandHeaderGeometry(page: Page, geometry: CommandGeometry): Promise<void> {
+  const header = await page.locator('.lobby-command-rail').evaluate((rail) => {
+    const bounds = (selector: string, root: Element = rail) => {
+      const element = root.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing command-header segment ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { ...box.toJSON(), display: getComputedStyle(element).display };
+    };
+    const dossier = rail.querySelector<HTMLElement>('.lobby-command-rail__dossier');
+    if (!dossier) throw new Error('Missing command-header dossier segment');
+    const box = rail.getBoundingClientRect();
+    return {
+      rail: box.toJSON(),
+      brand: bounds('.lobby-command-rail__brand'),
+      context: bounds('.lobby-command-rail__context'),
+      dossier: bounds('.lobby-command-rail__dossier'),
+      commanderState: bounds('.account-panel__record, button', dossier),
+    };
+  });
+
+  for (const [name, segment] of Object.entries({
+    brand: header.brand,
+    context: header.context,
+    dossier: header.dossier,
+  })) {
+    expect(segment.display, `${geometry.label} ${name} remains represented`).not.toBe('none');
+    expect(segment.left, `${geometry.label} ${name} begins inside the rail`)
+      .toBeGreaterThanOrEqual(header.rail.left - 1);
+    expect(segment.right, `${geometry.label} ${name} ends inside the rail`)
+      .toBeLessThanOrEqual(header.rail.right + 1);
+    expect(segment.top, `${geometry.label} ${name} begins inside the rail`)
+      .toBeGreaterThanOrEqual(header.rail.top - 1);
+    expect(segment.bottom, `${geometry.label} ${name} ends inside the rail`)
+      .toBeLessThanOrEqual(header.rail.bottom + 1);
+  }
+  expect(header.commanderState.top).toBeGreaterThanOrEqual(header.dossier.top - 1);
+  expect(header.commanderState.bottom).toBeLessThanOrEqual(header.dossier.bottom + 1);
+
+  if (geometry.viewport.width <= 720) {
+    expect(header.brand.top).toBeCloseTo(header.dossier.top, 0);
+    expect(header.brand.bottom).toBeCloseTo(header.dossier.bottom, 0);
+    expect(header.context.top).toBeGreaterThanOrEqual(header.brand.bottom - 1);
+    expect(header.context.left).toBeCloseTo(header.brand.left, 0);
+    expect(header.context.right).toBeCloseTo(header.dossier.right, 0);
+  } else {
+    expect(header.brand.top).toBeCloseTo(header.context.top, 0);
+    expect(header.context.top).toBeCloseTo(header.dossier.top, 0);
+    expect(header.brand.bottom).toBeCloseTo(header.context.bottom, 0);
+    expect(header.context.bottom).toBeCloseTo(header.dossier.bottom, 0);
+  }
+}
+
 async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Promise<void> {
   await page.setViewportSize(geometry.viewport);
   await openAshRoad(page);
@@ -88,6 +140,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   await expect(page.locator('[data-command-primary]:visible')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Account', exact: true })).toBeVisible();
   await expect(page.locator('.lobby-deployment__masthead > h1')).toContainText('singedTerra');
+  await assertCommandHeaderGeometry(page, geometry);
 
   const rail = page.locator('.command-center__category-rail');
   const sheetCategories = page.locator('.command-center__sheet-categories');
@@ -194,6 +247,7 @@ async function captureResumeGeometry(page: Page, geometry: CommandGeometry): Pro
   await expect(page.getByRole('heading', { name: 'Saved loadout', exact: true })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'New run kit', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'New Run', exact: true })).toBeVisible();
+  await assertCommandHeaderGeometry(page, geometry);
   await assertLobbyFrame(page);
   await assertTargets(page);
   if (EVIDENCE_DIR) {
