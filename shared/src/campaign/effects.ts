@@ -8,6 +8,7 @@ export const CAMPAIGN_EFFECT_LIMITS = Object.freeze({
 export type CampaignEffectFailureCode =
   | 'effect-depth-limit'
   | 'effect-queue-limit'
+  | 'replay-limit'
   | 'zone-limit'
 
 export interface CampaignEffectFailure {

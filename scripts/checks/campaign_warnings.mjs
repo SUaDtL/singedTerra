@@ -21,6 +21,6 @@ assert.equal(resolveCampaignStrikeDamage(warning, 556), 0)
 assert.deepEqual(findCampaignWarningResponses({
   warning, tank: { x: 500, y: 300, width: 28, fuel: 0 },
   terrain: buildBitmap(new Uint16Array(1200).fill(300)), objects: [],
-  guaranteedShieldCharges: 0, guaranteedSourceShot: false,
+  guaranteedShieldCharges: 0,
 }), [])
 console.log('campaign-warnings: PASS (fixed target, cancellation, actual reach, legal response)')

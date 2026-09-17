@@ -18,6 +18,20 @@ describe('AC-19 complete typed state and intents', () => {
       'armory.available',
       'armory.credits',
       'campaign.commitmentCount',
+      'campaign.encounterId',
+      'campaign.objective',
+      'campaign.warning',
+      'campaign.checkpoint',
+      'campaign.checkpoint.ammunition',
+      'campaign.checkpoint.decisionApplied',
+      'campaign.checkpoint.decisionPending',
+      'campaign.checkpoint.encounterId',
+      'campaign.checkpoint.finalEncounter',
+      'campaign.checkpoint.hull',
+      'campaign.checkpoint.emergencyPatchAvailable',
+      'campaign.checkpoint.routeRequired',
+      'campaign.checkpoint.selectedRouteId',
+      'campaign.checkpoint.story',
       'campaign.objects',
       'campaign.result',
       'campaign.retryable',
@@ -31,7 +45,14 @@ describe('AC-19 complete typed state and intents', () => {
     expect(presentationStateContract.intentDiscriminants).toEqual(
       visual.intents.flatMap((intent: { discriminant: string }) => (
         intent.discriminant === 'coach-skip'
-          ? [intent.discriminant, 'campaign-retry']
+          ? [
+              intent.discriminant,
+              'campaign-retry',
+              'campaign-route-select',
+              'campaign-checkpoint-choice',
+              'campaign-emergency-patch',
+              'campaign-continue',
+            ]
           : [intent.discriminant]
       )),
     );

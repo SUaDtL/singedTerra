@@ -327,10 +327,15 @@ export class InputHandler {
     if (!this.capabilities.weaponCycling) return;
     const roster = inputWeaponRosterFor(this.capabilities);
     if (roster.length === 0) return;
-    const nextIndex = (this.weaponIndex + 1) % roster.length;
-    const weapon = roster[nextIndex];
-    if (weapon === undefined) return;
-    if (this.emit({ type: 'select_weapon', weapon }) !== false) this.weaponIndex = nextIndex;
+    for (let offset = 1; offset < roster.length; offset += 1) {
+      const nextIndex = (this.weaponIndex + offset) % roster.length;
+      const weapon = roster[nextIndex];
+      if (weapon !== undefined
+        && this.emit({ type: 'select_weapon', weapon }) !== false) {
+        this.weaponIndex = nextIndex;
+        return;
+      }
+    }
   }
 
   // ----- Direct pointer aim (mouse, pen, and touch) -------------------------

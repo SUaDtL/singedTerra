@@ -20,6 +20,7 @@ export interface BattleConsoleControllerPort {
   retryCampaign(): void | Promise<void>;
   selectCampaignRoute(routeId: string): void | Promise<void>;
   chooseCampaignCheckpoint(choice: CampaignLoadoutDecision): void | Promise<void>;
+  applyCampaignEmergencyPatch(): void | Promise<void>;
   continueCampaign(): void | Promise<void>;
   skipCoach(): void | Promise<void>;
   enterCoach(): void | Promise<void>;
@@ -52,6 +53,7 @@ export function dispatchBattleConsoleIntent(
     case 'campaign-retry': return controller.retryCampaign();
     case 'campaign-route-select': return controller.selectCampaignRoute(intent.routeId);
     case 'campaign-checkpoint-choice': return controller.chooseCampaignCheckpoint(intent.choice);
+    case 'campaign-emergency-patch': return controller.applyCampaignEmergencyPatch();
     case 'campaign-continue': return controller.continueCampaign();
     case 'coach-skip': return controller.skipCoach();
     case 'coach-enter': return controller.enterCoach();

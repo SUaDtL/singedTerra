@@ -8,6 +8,7 @@ import { campaignDescriptorFromCheckpoint, createCampaignCheckpoint } from './ch
 import { ASH_ROAD_EPISODE, ASH_ROAD_ROUTE_IDS } from './content/episode'
 import { FUEL_STOP_FIXTURE, FUEL_STOP_TRANSCRIPTS } from './content/fuel-stop'
 import {
+  CAMPAIGN_RECEIPT_REPLAY_COMMAND_LIMIT,
   applyCampaignResult,
   createCampaignRunState,
   type CampaignResultReceipt,
@@ -264,6 +265,52 @@ describe('CampaignClient ownership contract', () => {
     })
     expect(resumedClient.getState()).toEqual(client.getState())
     expect(resumedClient.getCommittedReplayJournal()).toEqual(client.getCommittedReplayJournal())
+  })
+
+  it('admits an atomic commitment exactly at the replay bound', async () => {
+    const CampaignClient = await loadCampaignClient()
+    const prior = Array.from(
+      { length: CAMPAIGN_RECEIPT_REPLAY_COMMAND_LIMIT - 4 },
+      () => Object.freeze({ type: 'set_angle', angle: 45 }) as PlayerAction,
+    )
+    const client = new CampaignClient(operationalCampaignDescriptor(), {
+      engine: createCampaignGameEngine(operationalCampaignDescriptor()),
+      acceptedCommands: prior,
+    })
+
+    client.sendAction({ type: 'fire' })
+
+    expect(client.getCommittedReplayJournal()).toHaveLength(CAMPAIGN_RECEIPT_REPLAY_COMMAND_LIMIT)
+    expect(client.getState()?.phase).toBe('FIRING')
+    expect(client.getState()?.campaign?.result).toBeNull()
+  })
+
+  it('refuses an atomic commitment before mutation when its replay would overflow', async () => {
+    const CampaignClient = await loadCampaignClient()
+    const prior = Array.from(
+      { length: CAMPAIGN_RECEIPT_REPLAY_COMMAND_LIMIT - 3 },
+      () => Object.freeze({ type: 'set_angle', angle: 45 }) as PlayerAction,
+    )
+    const engine = createCampaignGameEngine(operationalCampaignDescriptor())
+    const projectileBefore = engine.getState().projectile
+    const client = new CampaignClient(operationalCampaignDescriptor(), {
+      engine,
+      acceptedCommands: prior,
+    })
+
+    client.sendAction({ type: 'fire' })
+
+    expect(client.getCommittedReplayJournal()).toHaveLength(prior.length)
+    expect(client.getState()?.projectile).toBe(projectileBefore)
+    expect(client.getState()?.campaign?.result).toMatchObject({
+      outcome: 'technical-failure',
+      reason: 'technical-failure',
+      code: 'replay-limit',
+      reward: false,
+    })
+    expect(client.getState()?.phase).toBe('GAME_OVER')
+    const payload = await client.createReplayPayload(campaignRunState())
+    expect(payload.acceptedCommands).toHaveLength(prior.length)
   })
 
   it('saves an in-flight committed shot through a settled clone without advancing the live engine', async () => {

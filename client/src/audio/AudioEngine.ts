@@ -3,6 +3,56 @@ import type { WallMode } from '@shared/types/GameOptions';
 import { getImpactAudioProfile } from '../feel/impactMaterial';
 import type { CampaignAudioCue } from './CampaignAudio';
 
+type CampaignToneProfile = Readonly<{
+  start: number;
+  end: number;
+  offset: number;
+  duration: number;
+  gain: number;
+  type: OscillatorType;
+}>;
+
+type CampaignNoiseProfile = Readonly<{
+  offset: number;
+  duration: number;
+  gain: number;
+  filter: BiquadFilterType;
+  frequency: number;
+  q: number;
+}>;
+
+export const CAMPAIGN_CUE_PROFILES: Readonly<Record<CampaignAudioCue, Readonly<{
+  tones: readonly CampaignToneProfile[];
+  noise: CampaignNoiseProfile | null;
+}>>> = Object.freeze({
+  'warning-announced': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 880, end: 740, offset: 0, duration: 0.1, gain: 0.1, type: 'square' }),
+      Object.freeze({ start: 880, end: 740, offset: 0.16, duration: 0.1, gain: 0.1, type: 'square' }),
+    ]),
+    noise: null,
+  }),
+  'relay-disabled': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 520, end: 150, offset: 0, duration: 0.28, gain: 0.13, type: 'sawtooth' }),
+    ]),
+    noise: Object.freeze({ offset: 0, duration: 0.12, gain: 0.06, filter: 'bandpass', frequency: 1300, q: 3 }),
+  }),
+  'volatile-chain': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 180, end: 72, offset: 0, duration: 0.24, gain: 0.16, type: 'triangle' }),
+    ]),
+    noise: Object.freeze({ offset: 0, duration: 0.3, gain: 0.2, filter: 'lowpass', frequency: 950, q: 0.8 }),
+  }),
+  'mission-concluded': Object.freeze({
+    tones: Object.freeze([
+      Object.freeze({ start: 330, end: 440, offset: 0, duration: 0.26, gain: 0.1, type: 'sine' }),
+      Object.freeze({ start: 440, end: 660, offset: 0.15, duration: 0.32, gain: 0.1, type: 'sine' }),
+    ]),
+    noise: null,
+  }),
+});
+
 export interface WallReflectAudioProfile {
   readonly startFrequency: number;
   readonly endFrequency: number;
@@ -413,23 +463,19 @@ export class AudioEngine {
       oscillator.stop(t + offset + duration + 0.02);
     };
 
-    switch (cue) {
-      case 'warning-announced':
-        tone(880, 740, 0, 0.1, 0.1, 'square');
-        tone(880, 740, 0.16, 0.1, 0.1, 'square');
-        break;
-      case 'relay-disabled':
-        tone(520, 150, 0, 0.28, 0.13, 'sawtooth');
-        this.noiseHit(t, 0.12, 0.06, 'bandpass', 1300, 3);
-        break;
-      case 'volatile-chain':
-        tone(180, 72, 0, 0.24, 0.16, 'triangle');
-        this.noiseHit(t, 0.3, 0.2, 'lowpass', 950, 0.8);
-        break;
-      case 'mission-concluded':
-        tone(330, 440, 0, 0.26, 0.1, 'sine');
-        tone(440, 660, 0.15, 0.32, 0.1, 'sine');
-        break;
+    const profile = CAMPAIGN_CUE_PROFILES[cue];
+    for (const entry of profile.tones) {
+      tone(entry.start, entry.end, entry.offset, entry.duration, entry.gain, entry.type);
+    }
+    if (profile.noise) {
+      this.noiseHit(
+        t + profile.noise.offset,
+        profile.noise.duration,
+        profile.noise.gain,
+        profile.noise.filter,
+        profile.noise.frequency,
+        profile.noise.q,
+      );
     }
   }
 

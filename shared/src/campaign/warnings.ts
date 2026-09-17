@@ -28,7 +28,6 @@ export interface CampaignAnnouncedStrike {
 export type CampaignWarningResponse = Readonly<
   | { kind: 'move'; safe: true; destinationX: number; fuelCost: number }
   | { kind: 'shield'; safe: true }
-  | { kind: 'destroy-source'; sourceObjectId: string; safe: true }
 >
 
 function identifier(value: unknown): value is string {
@@ -147,7 +146,6 @@ export function findCampaignWarningResponses(input: Readonly<{
   terrain: Uint8Array
   objects: readonly CampaignObjectState[]
   guaranteedShieldCharges: number
-  guaranteedSourceShot: boolean
 }>): readonly CampaignWarningResponse[] {
   if (!(input.terrain instanceof Uint8Array) || !finitePositive(input.tank.width)
     || !Number.isFinite(input.tank.x) || !Number.isFinite(input.tank.y)
@@ -161,8 +159,5 @@ export function findCampaignWarningResponses(input: Readonly<{
     .sort((a, b) => a.fuelCost - b.fuelCost || a.destinationX - b.destinationX)[0]
   if (move) responses.push(move)
   if (input.guaranteedShieldCharges > 0) responses.push(Object.freeze({ kind: 'shield', safe: true }))
-  if (input.guaranteedSourceShot) responses.push(Object.freeze({
-    kind: 'destroy-source', sourceObjectId: input.warning.sourceObjectId, safe: true,
-  }))
   return Object.freeze(responses)
 }

@@ -21,13 +21,35 @@ export function CampaignPanel({ campaign, dispatch }: Readonly<{
   const checkpoint = campaign.checkpoint ?? null;
   const root = useRef<HTMLElement>(null);
   const [storyVisible, setStoryVisible] = useState(true);
+  const focusFirstControl = (): void => {
+    root.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus({ preventScroll: true });
+  };
   useEffect(() => {
     if (!checkpoint) return;
     setStoryVisible(true);
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    root.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus({ preventScroll: true });
-    return () => { previous?.focus({ preventScroll: true }); };
+    const siblings = [...(root.current?.parentElement?.children ?? [])]
+      .filter((element): element is HTMLElement => element instanceof HTMLElement && element !== root.current)
+      .map((element) => ({ element, inert: element.inert, ariaHidden: element.getAttribute('aria-hidden') }));
+    for (const { element } of siblings) {
+      element.inert = true;
+      element.setAttribute('aria-hidden', 'true');
+    }
+    focusFirstControl();
+    return () => {
+      for (const { element, inert, ariaHidden } of siblings) {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute('aria-hidden');
+        else element.setAttribute('aria-hidden', ariaHidden);
+      }
+      previous?.focus({ preventScroll: true });
+    };
   }, [checkpoint?.encounterId]);
+  useEffect(() => {
+    if (checkpoint && !storyVisible && !root.current?.contains(document.activeElement)) {
+      focusFirstControl();
+    }
+  }, [checkpoint?.encounterId, storyVisible]);
   if (!checkpoint || campaign.result?.outcome !== 'success') return null;
 
   const canChoose = checkpoint.decisionPending;
@@ -40,6 +62,27 @@ export function CampaignPanel({ campaign, dispatch }: Readonly<{
       aria-label="Campaign checkpoint"
       data-campaign-checkpoint={checkpoint.encounterId}
       style={panelStyle}
+      onKeyDown={(event) => {
+        if (event.key !== 'Tab') return;
+        const controls = [...(root.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ) ?? [])].filter((control) => !control.hidden);
+        if (controls.length === 0) {
+          event.preventDefault();
+          root.current?.focus({ preventScroll: true });
+          return;
+        }
+        const first = controls[0]!;
+        const last = controls.at(-1)!;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }}
+      tabIndex={-1}
     >
       {checkpoint.encounterId === 'relay-ridge' ? (
         <img
@@ -56,6 +99,11 @@ export function CampaignPanel({ campaign, dispatch }: Readonly<{
         <button type="button" onClick={() => setStoryVisible(false)}>Skip story</button>
       </header> : null}
       <p role="status">{supplies} supplies · {Math.round(checkpoint.hull)} hull</p>
+      {checkpoint.emergencyPatchAvailable ? (
+        <button type="button" onClick={() => dispatch({ type: 'campaign-emergency-patch' })}>
+          Apply emergency hull patch · free · restore to 60
+        </button>
+      ) : null}
       <ul aria-label="Carried kit">
         {checkpoint.ammunition.map((entry) => (
           <li key={entry.weaponId}>

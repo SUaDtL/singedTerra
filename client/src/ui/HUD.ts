@@ -182,6 +182,7 @@ export class HUD {
   private campaignRetryCb: (() => void) | null = null;
   private campaignRouteChoiceCb: ((routeId: string) => void) | null = null;
   private campaignCheckpointChoiceCb: ((choice: CampaignLoadoutDecision) => void) | null = null;
+  private campaignEmergencyPatchCb: (() => void) | null = null;
   private campaignContinueCb: (() => void) | null = null;
   private campaignRunPresentation: Readonly<Pick<
     CampaignBattleConsolePresentation,
@@ -407,6 +408,7 @@ export class HUD {
     this.campaignCheckpointChoiceCb = cb;
   }
   onCampaignContinue(cb: () => void): void { this.campaignContinueCb = cb; }
+  onCampaignEmergencyPatch(cb: () => void): void { this.campaignEmergencyPatchCb = cb; }
 
   setCampaignRunPresentation(
     presentation: Readonly<Pick<
@@ -881,6 +883,16 @@ export class HUD {
     });
     const campaign = state.campaign
       ? {
+        encounterId: state.campaign.encounterId ?? 'campaign-encounter',
+        ...(state.campaign.objective ? { objective: {
+          ...state.campaign.objective,
+          protectedObjectIds: [...state.campaign.objective.protectedObjectIds],
+        } } : {}),
+        ...(state.campaign.warning ? { warning: {
+          status: state.campaign.warning.status,
+          dueHumanCommitment: state.campaign.warning.dueHumanCommitment,
+          targetX: state.campaign.warning.targetX,
+        } } : {}),
         commitmentCount: state.campaign.commitmentCount,
         supplies: this.campaignRunPresentation?.supplies ?? 0,
         retryable: this.campaignRunPresentation?.retryable ?? false,
@@ -952,6 +964,7 @@ export class HUD {
     retryCampaign: () => this.campaignRetryCb?.(),
     selectCampaignRoute: (routeId) => this.campaignRouteChoiceCb?.(routeId),
     chooseCampaignCheckpoint: (choice) => this.campaignCheckpointChoiceCb?.(choice),
+    applyCampaignEmergencyPatch: () => this.campaignEmergencyPatchCb?.(),
     continueCampaign: () => this.campaignContinueCb?.(),
     skipCoach: () => {
       this.setFirstSalvoStep(null);

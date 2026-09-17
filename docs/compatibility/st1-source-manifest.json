@@ -76,11 +76,11 @@
     },
     {
       "path": "client/src/main.ts",
-      "sha256": "8b170e29e0e8e71f86fd41669211480694897eb5af5b17ea2f9426c929cf7273"
+      "sha256": "20bf087233a95d090eb30c6bfe874cf8d04ae9be2f01c4c0f1043320b594beb2"
     },
     {
       "path": "client/src/ui/Lobby.ts",
-      "sha256": "b85352d5b5cd4cf26995fb4700f6fbba8f09c4ba9a26034c6da038eec5273312"
+      "sha256": "36aa9555527a3c9409467d35f40006824c9691782f3199c612a43a0653a22612"
     },
     {
       "path": "package.json",
@@ -104,7 +104,7 @@
     },
     {
       "path": "shared/src/engine/GameEngine.ts",
-      "sha256": "21f5b9755ee99d5515022cc4209ba2348d71f1d67a7730e894340e43012a5dd6"
+      "sha256": "02e0e9d0aa7e76eee7f46d52299f59698b1714b2349f7b68ca61a78b67234a5f"
     },
     {
       "path": "shared/src/engine/Movement.ts",

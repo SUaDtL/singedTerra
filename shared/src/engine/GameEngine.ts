@@ -107,6 +107,7 @@ import {
   drainCampaignEffects as takeCampaignEffects,
   failCampaignEffects,
   type CampaignEffect,
+  type CampaignEffectFailureCode,
   type CampaignEffectState,
 } from '../campaign/effects.ts';
 import { settleCampaignObjectSupport } from '../campaign/support.ts';
@@ -352,6 +353,8 @@ export class GameEngine {
   /** The burning napalm's def + impact column, retained while `fire` is non-empty
    *  so processFire() knows the spread bounds/rate. Null when nothing is alight. */
   private fireDef: NapalmDef | null = null;
+  /** Weapon identity retained with the active fire for causal campaign damage. */
+  private fireWeaponType: WeaponType | null = null;
   private fireCenter = 0;
 
   /**
@@ -641,6 +644,7 @@ export class GameEngine {
       ...(this.campaign ? {
         campaign: {
           encounterId: this.campaign.definition.encounterId,
+          objective: this.campaign.definition.objective,
           commitmentCount: 0,
           activeCommitment: null,
           settledOutcome: null,
@@ -746,6 +750,7 @@ export class GameEngine {
     c.explosionSeq  = this.explosionSeq;
     c.wallImpactSeq = this.wallImpactSeq;
     c.fireCenter    = this.fireCenter;
+    c.fireWeaponType = this.fireWeaponType;
     c.shooterId     = this.shooterId;
     c.shotDamage    = this.shotDamage;
     c.maxWind       = this.maxWind;
@@ -1467,13 +1472,15 @@ export class GameEngine {
     }
 
     const aliveCount = this.state.tanks.reduce((n, t) => (t.alive ? n + 1 : n), 0);
-    if (aliveCount <= 1) {
-      // (B) Game-ending condition — abandon any remaining in-flight state, flush
-      // instantly (no animation), and resolve immediately (preserves #14).
+    if (aliveCount <= 1 && (!this.campaign || settled)) {
+      // (B) Ordinary matches preserve the immediate game-over path. Campaigns
+      // must first drain every projectile, fire tick, terrain settle, object
+      // effect, zone and warning so their final verdict remains causal.
       this.state.projectiles = [];
       this.syncProjectileAlias();
       this.fire.clear();
       this.fireDef = null;
+      this.fireWeaponType = null;
       this.fireScorched.clear();
       this.syncFire();
       this.flushSettleInstant();
@@ -2012,7 +2019,7 @@ export class GameEngine {
   }
 
   /** End a campaign deterministically when a bounded runtime policy refuses work. */
-  private failCampaignTechnically(code: 'zone-limit'): void {
+  private failCampaignTechnically(code: CampaignEffectFailureCode): void {
     const campaign = this.campaign;
     if (!campaign || campaign.result) return;
     campaign.effects = failCampaignEffects(
@@ -2033,11 +2040,19 @@ export class GameEngine {
     this.fire.clear();
     this.fireScorched.clear();
     this.fireDef = null;
+    this.fireWeaponType = null;
     this.state.fire = [];
     this.state.projectiles = [];
     this.syncProjectileAlias();
     this.state.phase = 'GAME_OVER';
     this.publishCampaignProjection();
+  }
+
+  /** Refuse a command before mutation when its durable replay cannot be admitted. */
+  refuseCampaignReplayLimit(): boolean {
+    if (!this.campaign || this.campaign.result || this.state.phase !== 'PLAYER_TURN') return false;
+    this.failCampaignTechnically('replay-limit');
+    return true;
   }
 
   /** Replace the borrowed projection without exposing mutable private authority. */
@@ -2046,6 +2061,7 @@ export class GameEngine {
     if (!campaign) return;
     this.state.campaign = {
       encounterId: campaign.definition.encounterId,
+      objective: campaign.definition.objective,
       commitmentCount: campaign.commitmentCount,
       activeCommitment: campaign.activeCommitment,
       settledOutcome: campaign.settledOutcome,
@@ -2294,6 +2310,7 @@ export class GameEngine {
     this.fire.clear();
     this.fireScorched.clear();
     this.fireDef = null;
+    this.fireWeaponType = null;
     this.pendingSettle = null; // clear any pending animated settle from the prior round
     this.fallDistances.clear();
     this.windRng = createRng(roundSeed);
@@ -2642,6 +2659,7 @@ export class GameEngine {
   ): void {
     const center = Math.round(cx);
     this.fireDef = def;
+    this.fireWeaponType = weaponType;
     this.fireCenter = center;
     const commitment = this.campaign?.activeCommitment;
     const zonePolicy = this.campaign?.definition.zonePolicy;
@@ -2773,7 +2791,15 @@ export class GameEngine {
           break;
         }
       }
-      if (inFire) this.applyBlastDamage(tank, def.dotPerTick); // shield pool drains per-tick
+      if (inFire) {
+        this.applyBlastDamage(
+          tank,
+          def.dotPerTick,
+          this.fireWeaponType === null
+            ? undefined
+            : { kind: 'weapon', id: this.fireWeaponType },
+        );
+      }
     }
 
     // 3. DECAY. Tick every column down; drop the burnt-out ones. Decrement survivors
@@ -2800,6 +2826,7 @@ export class GameEngine {
     // napalm starts with a clean slate (a fresh shot may light the same columns).
     if (this.fire.size === 0) {
       this.fireDef = null;
+      this.fireWeaponType = null;
       this.fireScorched.clear();
     }
 

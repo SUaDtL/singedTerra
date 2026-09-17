@@ -103,7 +103,7 @@ async function assertCanonicalObjects(
   page: Page,
   drumText: FuelStopPath['expectedDrumText'],
 ): Promise<void> {
-  const objective = page.getByRole('region', { name: 'Campaign objective', exact: true });
+  const objective = page.locator('[data-campaign-objective]');
   await expect(objective).toBeVisible();
   await expect(objective.locator('[data-campaign-fact-id="refinery"]'))
     .toHaveText(/Refinery · protected · 100 \/ 100/u);
@@ -125,7 +125,9 @@ async function failFuelStopNaturallyAndRetry(page: Page): Promise<void> {
 
   const failed = page.locator('[role="status"][data-campaign-result="failure"]');
   await expect(failed).toBeVisible({ timeout: 30_000 });
-  await expect(failed).toContainText(/Objective failure/u);
+  await expect(failed).toContainText(
+    /Eliminate every defender · Protect Refinery · failure · protected object/u,
+  );
   const supplies = page.getByRole('status', { name: 'Campaign supplies', exact: true });
   await expect(supplies).toHaveText('2 supplies');
 
@@ -188,9 +190,11 @@ for (const path of PATHS) {
 
     const result = page.locator('[role="status"][data-campaign-result="success"]');
     await expect(result).toBeVisible({ timeout: 30_000 });
-    await expect(result).toContainText(/Objective success · objective · 3 commitments/u);
+    await expect(result).toContainText(
+      /Eliminate every defender · Protect Refinery · success · objective · 3 commitments/u,
+    );
     await assertCanonicalObjects(page, path.expectedDrumText);
-    await expect(page.getByRole('status', { name: 'Campaign supplies', exact: true }))
+    await expect(page.locator('[data-campaign-supplies]'))
       .toHaveText(`${path.expectedSupplies} supplies`);
     await assertNoPageOverflow(page);
   });

@@ -24,6 +24,7 @@ const campaign: CampaignBattleConsolePresentation = {
     decisionApplied: false,
     finalEncounter: false,
     hull: 72,
+    emergencyPatchAvailable: false,
     ammunition: [
       { weaponId: 'baby_missile', quantity: null, maximum: null },
       { weaponId: 'missile', quantity: 1, maximum: 3 },
@@ -70,6 +71,7 @@ describe('CampaignPanel', () => {
     fireEvent.click(skip);
     await waitFor(() => {
       expect(queryByRole(host, 'button', { name: 'Skip story' })).toBeNull();
+      expect(document.activeElement).toBe(getByRole(host, 'button', { name: 'Take High Road' }));
     });
     render(<CampaignPanel campaign={{
       ...campaign,
@@ -83,6 +85,30 @@ describe('CampaignPanel', () => {
     });
     render(<CampaignPanel campaign={{ ...campaign, checkpoint: null }} dispatch={dispatch} />, host);
     await waitFor(() => { expect(document.activeElement).toBe(before); });
+  });
+
+  it('traps keyboard traversal and exposes the free emergency hull recovery', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const dispatch = vi.fn();
+    render(<CampaignPanel campaign={{
+      ...campaign,
+      checkpoint: { ...campaign.checkpoint!, hull: 42, emergencyPatchAvailable: true },
+    }} dispatch={dispatch} />, host);
+    const dialog = getByRole(host, 'dialog', { name: 'Campaign checkpoint' });
+    const controls = [...dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+    const first = controls[0]!;
+    const last = controls.at(-1)!;
+    last.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+
+    fireEvent.click(getByRole(host, 'button', {
+      name: 'Apply emergency hull patch · free · restore to 60',
+    }));
+    expect(dispatch).toHaveBeenCalledWith({ type: 'campaign-emergency-patch' });
   });
 
   it('continues only after route and service decisions and labels the finale complete', () => {

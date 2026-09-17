@@ -53,6 +53,17 @@ export interface ArmoryItemPresentation {
 
 /** Detached campaign facts; geometry and interactions remain Canvas/domain owned. */
 export interface CampaignBattleConsolePresentation {
+  readonly encounterId?: string;
+  readonly objective?: Readonly<{
+    readonly kind: 'eliminate' | 'survive-or-eliminate';
+    readonly protectedObjectIds: readonly string[];
+    readonly humanCommitments?: number;
+  }>;
+  readonly warning?: Readonly<{
+    readonly status: 'pending' | 'due' | 'canceled' | 'fired';
+    readonly dueHumanCommitment: number;
+    readonly targetX: number;
+  }>;
   readonly commitmentCount: number;
   readonly supplies: number;
   readonly retryable: boolean;
@@ -70,6 +81,7 @@ export interface CampaignBattleConsolePresentation {
     readonly decisionApplied: boolean;
     readonly finalEncounter: boolean;
     readonly hull: number;
+    readonly emergencyPatchAvailable?: boolean;
     readonly ammunition: readonly {
       readonly weaponId: CampaignWeaponId;
       readonly quantity: number | null;
@@ -166,5 +178,6 @@ export type BattleConsoleIntent =
   | { readonly type: 'campaign-retry' }
   | { readonly type: 'campaign-route-select'; readonly routeId: string }
   | { readonly type: 'campaign-checkpoint-choice'; readonly choice: CampaignLoadoutDecision }
+  | { readonly type: 'campaign-emergency-patch' }
   | { readonly type: 'campaign-continue' }
   | { readonly type: 'coach-skip' | 'coach-enter' };

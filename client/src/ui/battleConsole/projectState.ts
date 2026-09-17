@@ -9,6 +9,20 @@ const fieldKeys = [
   'armory.available',
   'armory.credits',
   'campaign.commitmentCount',
+  'campaign.encounterId',
+  'campaign.objective',
+  'campaign.warning',
+  'campaign.checkpoint',
+  'campaign.checkpoint.ammunition',
+  'campaign.checkpoint.decisionApplied',
+  'campaign.checkpoint.decisionPending',
+  'campaign.checkpoint.encounterId',
+  'campaign.checkpoint.finalEncounter',
+  'campaign.checkpoint.hull',
+  'campaign.checkpoint.emergencyPatchAvailable',
+  'campaign.checkpoint.routeRequired',
+  'campaign.checkpoint.selectedRouteId',
+  'campaign.checkpoint.story',
   'campaign.objects',
   'campaign.result',
   'campaign.retryable',
@@ -54,6 +68,10 @@ const intentDiscriminants = [
   'coach-enter',
   'coach-skip',
   'campaign-retry',
+  'campaign-route-select',
+  'campaign-checkpoint-choice',
+  'campaign-emergency-patch',
+  'campaign-continue',
   'fire',
   'move',
   'power-step',
@@ -95,6 +113,14 @@ export function projectBattleConsoleState(
           ? null
           : {
             commitmentCount: campaign.commitmentCount,
+            encounterId: campaign.encounterId,
+            ...(campaign.objective ? {
+              objective: {
+                ...campaign.objective,
+                protectedObjectIds: [...campaign.objective.protectedObjectIds],
+              },
+            } : {}),
+            ...(campaign.warning ? { warning: { ...campaign.warning } } : {}),
             supplies: campaign.supplies,
             retryable: campaign.retryable,
             objects: campaign.objects.map((object) => ({
@@ -180,6 +206,9 @@ function sameCampaign(
   if (leftFacts === rightFacts) return true;
   return leftFacts !== null
     && rightFacts !== null
+    && leftFacts.encounterId === rightFacts.encounterId
+    && JSON.stringify(leftFacts.objective ?? null) === JSON.stringify(rightFacts.objective ?? null)
+    && JSON.stringify(leftFacts.warning ?? null) === JSON.stringify(rightFacts.warning ?? null)
     && leftFacts.commitmentCount === rightFacts.commitmentCount
     && leftFacts.supplies === rightFacts.supplies
     && leftFacts.retryable === rightFacts.retryable

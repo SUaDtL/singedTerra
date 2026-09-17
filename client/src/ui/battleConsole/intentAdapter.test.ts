@@ -23,6 +23,7 @@ function controller(): BattleConsoleControllerPort {
     retryCampaign: vi.fn(),
     selectCampaignRoute: vi.fn(),
     chooseCampaignCheckpoint: vi.fn(),
+    applyCampaignEmergencyPatch: vi.fn(),
     continueCampaign: vi.fn(),
     skipCoach: vi.fn(),
     enterCoach: vi.fn(),
@@ -48,11 +49,13 @@ describe('campaign battle-console intent adapter', () => {
     dispatchBattleConsoleIntent(port, {
       type: 'campaign-checkpoint-choice', choice: { kind: 'refill', weaponId: 'missile' },
     });
+    dispatchBattleConsoleIntent(port, { type: 'campaign-emergency-patch' });
     dispatchBattleConsoleIntent(port, { type: 'campaign-continue' });
     expect(port.selectCampaignRoute).toHaveBeenCalledWith('salvage-pit-route');
     expect(port.chooseCampaignCheckpoint).toHaveBeenCalledWith({
       kind: 'refill', weaponId: 'missile',
     });
+    expect(port.applyCampaignEmergencyPatch).toHaveBeenCalledOnce();
     expect(port.continueCampaign).toHaveBeenCalledOnce();
   });
 });

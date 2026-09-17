@@ -70,6 +70,12 @@ export type CampaignResult = CampaignResolvedResult | CampaignTechnicalFailureRe
 export interface CampaignProjection {
   /** Canonical authored identity for content-specific tactics and presentation. */
   encounterId?: string;
+  /** Authored win/failure requirements projected for semantic presentation. */
+  objective?: Readonly<{
+    kind: 'eliminate' | 'survive-or-eliminate';
+    protectedObjectIds: readonly string[];
+    humanCommitments?: number;
+  }>;
   commitmentCount: number;
   activeCommitment: CampaignCommitment | null;
   settledOutcome: CampaignSettledOutcome | null;

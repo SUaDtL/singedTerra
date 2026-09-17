@@ -90,9 +90,25 @@ function CampaignObjectiveFacts({ state, dispatch }: Readonly<{
   const result = campaign.result;
   const outcome = result?.outcome ?? 'active';
   const commitmentLabel = `${campaign.commitmentCount} commitment${campaign.commitmentCount === 1 ? '' : 's'}`;
+  const objective = campaign.objective;
+  const requirement = !objective
+    ? `Objective ${outcome.replace('-', ' ')}`
+    : objective.kind === 'survive-or-eliminate'
+      ? `Survive ${objective.humanCommitments ?? 0} commitments or eliminate every defender`
+      : 'Eliminate every defender';
+  const protectedFacts = objective && objective.protectedObjectIds.length > 0
+    ? ` · Protect ${objective.protectedObjectIds.map(humanizeCampaignIdentifier).join(', ')}`
+    : '';
   const statusText = result
-    ? `Objective ${outcome.replace('-', ' ')} · ${result.reason.replaceAll('-', ' ')} · ${commitmentLabel}`
-    : `Objective active · ${commitmentLabel}`;
+    ? `${requirement}${protectedFacts}${objective ? ` · ${outcome.replace('-', ' ')}` : ''} · ${result.reason.replaceAll('-', ' ')} · ${commitmentLabel}`
+    : `${requirement}${protectedFacts} · ${commitmentLabel}`;
+  const warningText = campaign.warning
+    ? campaign.warning.status === 'pending'
+      ? `Incoming strike at horizontal position ${campaignNumber(campaign.warning.targetX)} after commitment ${campaign.warning.dueHumanCommitment}`
+      : campaign.warning.status === 'due'
+        ? `Incoming strike due now at horizontal position ${campaignNumber(campaign.warning.targetX)}`
+        : `Incoming strike ${campaign.warning.status}`
+    : null;
   return (
     <section
       role="region"
@@ -110,6 +126,9 @@ function CampaignObjectiveFacts({ state, dispatch }: Readonly<{
       <div role="status" aria-label="Campaign supplies" data-campaign-supplies="">
         {campaign.supplies} supplies
       </div>
+      {warningText ? <div role="status" aria-label="Campaign warning" data-campaign-warning="">
+        {warningText}
+      </div> : null}
       <ul style={{ display: 'flex', gap: '10px', margin: 0, padding: 0, listStyle: 'none' }}>
         {campaign.objects.map((object) => (
           <li key={object.id} data-campaign-fact-id={object.id}>
@@ -129,7 +148,7 @@ function CampaignObjectiveFacts({ state, dispatch }: Readonly<{
             pointerEvents: 'auto',
           }}
         >
-          Retry Fuel Stop
+          Retry {humanizeCampaignIdentifier(campaign.encounterId ?? 'fuel-stop')}
         </button>
       ) : null}
     </section>

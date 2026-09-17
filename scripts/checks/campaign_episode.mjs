@@ -26,7 +26,10 @@ import {
 
 const profile = resolveCampaignCombatProfile(ASH_ROAD_COMBAT_PROFILE_REFERENCE)
 
-function initialState(routeId) {
+function initialState(routeId, {
+  supplies = 2,
+  offensiveWeaponIds = ['missile', 'cluster_bomb'],
+} = {}) {
   const route = ASH_ROAD_EPISODE.routes.find(({ id }) => id === routeId)
   const run = parseCampaignRun({
     kind: 'campaign-run', runVersion: 1, runId: `episode-${routeId}`,
@@ -38,11 +41,9 @@ function initialState(routeId) {
   })
   const checkpoint = createCampaignCheckpoint({
     run, encounter: ASH_ROAD_EPISODE.encounters[0], combatProfile: profile,
-    attempt: 1, supplies: 2,
+    attempt: 1, supplies,
   })
-  const loadout = createCampaignLoadout({
-    offensiveWeaponIds: ['missile', 'cluster_bomb'],
-  })
+  const loadout = createCampaignLoadout({ offensiveWeaponIds })
   return chooseCampaignRoute(createCampaignRunState(checkpoint, loadout), {
     kind: 'campaign-route-choice', routeChoiceVersion: 1, routeId,
   })
@@ -109,4 +110,21 @@ for (const route of routes) {
   assert.equal(state.pendingCheckpointDecision.resultAttempt, 1)
 }
 
-console.log('campaign-episode: PASS (both routes carry real settlement into natural finales)')
+let zeroSupplyState = initialState('high-road-route', {
+  supplies: 0,
+  offensiveWeaponIds: ['missile', 'sandhog'],
+})
+zeroSupplyState = play(zeroSupplyState, FUEL_STOP_TRANSCRIPTS.detonation)
+assert.equal(zeroSupplyState.attemptCheckpoint.supplies, 0)
+let suppliesBeforeRetain = zeroSupplyState.supplies
+zeroSupplyState = decideAndAdvance(zeroSupplyState)
+assert.equal(zeroSupplyState.supplies, suppliesBeforeRetain)
+zeroSupplyState = play(zeroSupplyState, HIGH_ROAD_TRANSCRIPTS.survive)
+suppliesBeforeRetain = zeroSupplyState.supplies
+zeroSupplyState = decideAndAdvance(zeroSupplyState, { kind: 'repair' })
+assert.equal(zeroSupplyState.supplies, suppliesBeforeRetain - 2)
+assert.equal(zeroSupplyState.loadout.hull, 100)
+zeroSupplyState = play(zeroSupplyState, RELAY_RIDGE_TRANSCRIPTS.footing)
+assert.equal(zeroSupplyState.appliedResults.at(-1).result.encounterId, 'relay-ridge')
+
+console.log('campaign-episode: PASS (both routes and a zero-start guaranteed-kit run reach natural finales)')

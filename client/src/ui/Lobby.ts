@@ -166,6 +166,8 @@ export interface LobbyConfig extends ModeSetup {
   campaignRunState?: CampaignRunState;
   /** Strict replay payload selected through the public device-local resume affordance. */
   campaignReplayPayload?: CampaignReplayPayload;
+  /** CAS revision paired with campaignReplayPayload at lobby selection time. */
+  campaignReplayRevision?: number;
   /** Local Quick Duel presentation only; never enters the deterministic action protocol. */
   quickOperation?: {
     readonly id: string;
@@ -413,7 +415,10 @@ export class Lobby {
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
   private networkRecoveryRetry: (() => void) | null = null;
-  private campaignResumePayload: CampaignReplayPayload | null = null;
+  private campaignResumePayload: Readonly<{
+    payload: CampaignReplayPayload;
+    revision: number;
+  }> | null = null;
   private campaignResumeGeneration = 0;
 
   // Create form state
@@ -1026,7 +1031,9 @@ export class Lobby {
         ? payload
         : null;
       if (generation !== this.campaignResumeGeneration) return;
-      this.campaignResumePayload = compatible;
+      this.campaignResumePayload = compatible && record
+        ? Object.freeze({ payload: compatible, revision: record.revision })
+        : null;
       this.render();
     } catch {
       if (generation !== this.campaignResumeGeneration) return;
@@ -1727,8 +1734,9 @@ export class Lobby {
   }
 
   private resumeAshRoad(): void {
-    const payload = this.campaignResumePayload;
-    if (!payload) return;
+    const resume = this.campaignResumePayload;
+    if (!resume) return;
+    const { payload, revision } = resume;
     const runState = payload.runState;
     const descriptor = campaignDescriptorFromCheckpoint(
       runState.checkpoint,
@@ -1740,6 +1748,7 @@ export class Lobby {
       campaign: descriptor,
       campaignRunState: runState,
       campaignReplayPayload: payload,
+      campaignReplayRevision: revision,
       players: [
         { name: 'Ranger', color: PALETTE[0].value },
         { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },

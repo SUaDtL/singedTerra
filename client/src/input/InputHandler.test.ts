@@ -321,25 +321,30 @@ describe('InputHandler public contract', () => {
     ]);
   });
 
-  it('keeps the primary action and local cursor when a campaign selection is rejected', () => {
+  it('skips unavailable campaign weapons and keeps the authoritative cursor', () => {
     const attempts: PlayerAction[] = [];
     handler = new InputHandler(target, (action) => {
       attempts.push(action);
-      return action.type === 'select_weapon' ? false : undefined;
+      return action.type === 'select_weapon' && action.weapon !== 'napalm' ? false : undefined;
     }, { capabilities: campaignCapabilities });
-    handler.setWeapon('shield');
+    handler.setWeapon('missile');
 
-    handler.setWeapon('nuke');
     handler.triggerFire();
     handler.nextWeapon();
     handler.triggerFire();
     handler.nextWeapon();
 
     expect(attempts).toEqual([
-      { type: 'use_shield' },
+      { type: 'fire' },
+      { type: 'select_weapon', weapon: 'cluster_bomb' },
+      { type: 'select_weapon', weapon: 'sandhog' },
+      { type: 'select_weapon', weapon: 'napalm' },
+      { type: 'fire' },
+      { type: 'select_weapon', weapon: 'shield' },
       { type: 'select_weapon', weapon: 'baby_missile' },
-      { type: 'use_shield' },
-      { type: 'select_weapon', weapon: 'baby_missile' },
+      { type: 'select_weapon', weapon: 'missile' },
+      { type: 'select_weapon', weapon: 'cluster_bomb' },
+      { type: 'select_weapon', weapon: 'sandhog' },
     ]);
   });
 

@@ -3,12 +3,15 @@
 import { fireEvent, getByRole, queryAllByRole } from '@testing-library/dom'
 import { render } from 'preact'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { CampaignResult } from '@shared/campaign/outcomes'
+import type { CampaignProjection, CampaignResult } from '@shared/campaign/outcomes'
 import type { CampaignObjectState } from '@shared/campaign/objects'
 import { BattleConsoleRoot } from './BattleConsoleRoot'
 import type { BattleConsolePresentationState } from './types'
 
 interface CampaignPresentationContract {
+  readonly encounterId?: string
+  readonly objective?: CampaignProjection['objective']
+  readonly warning?: CampaignProjection['warning']
   readonly commitmentCount: number
   readonly supplies: number
   readonly retryable: boolean
@@ -44,6 +47,18 @@ const baseState: BattleConsolePresentationState = {
 }
 
 const campaign: CampaignPresentationContract = {
+  encounterId: 'high-road',
+  objective: {
+    kind: 'survive-or-eliminate',
+    protectedObjectIds: ['refinery'],
+    humanCommitments: 5,
+  },
+  warning: {
+    id: 'high-road-strike', kind: 'announced-strike', sourceObjectId: 'gun-emplacement',
+    sourceSpawnId: 'gun-emplacement', announcedAtHumanCommitment: 4,
+    dueHumanCommitment: 5, targetX: 640, visibleReach: 55, maxDamage: 35,
+    damageReach: 55, craterRadius: 24, status: 'pending', fired: false,
+  },
   commitmentCount: 4,
   supplies: 2,
   retryable: false,
@@ -79,7 +94,9 @@ describe('campaign battle-console semantic projection', () => {
 
     expect(queryAllByRole(host, 'region', { name: 'Campaign objective' })).toHaveLength(1)
     expect(getByRole(host, 'status', { name: 'Campaign objective active' }).textContent)
-      .toBe('Objective active · 4 commitments')
+      .toBe('Survive 5 commitments or eliminate every defender · Protect Refinery · 4 commitments')
+    expect(getByRole(host, 'status', { name: 'Campaign warning' }).textContent)
+      .toBe('Incoming strike at horizontal position 640 after commitment 5')
     expect(getByRole(host, 'status', { name: 'Campaign supplies' }).textContent)
       .toBe('2 supplies')
     expect(host.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
@@ -153,7 +170,7 @@ describe('campaign battle-console semantic projection', () => {
       host,
     )
 
-    const retry = getByRole(host, 'button', { name: 'Retry Fuel Stop' })
+    const retry = getByRole(host, 'button', { name: 'Retry High Road' })
     expect(retry.tabIndex).toBe(0)
     expect(retry.style.pointerEvents).toBe('auto')
     fireEvent.click(retry)
@@ -170,6 +187,6 @@ describe('campaign battle-console semantic projection', () => {
       />,
       host,
     )
-    expect(queryAllByRole(host, 'button', { name: 'Retry Fuel Stop' })).toHaveLength(0)
+    expect(queryAllByRole(host, 'button', { name: 'Retry High Road' })).toHaveLength(0)
   })
 })

@@ -177,6 +177,105 @@ describe('campaign IndexedDB transaction core', () => {
     expect(database.close).toHaveBeenCalledOnce()
   })
 
+  it('rejects asynchronous read errors through the transaction abort boundary', async () => {
+    const getRequest = {} as IDBRequest
+    let transaction: IDBTransaction
+    const store = { get: vi.fn(() => {
+      queueMicrotask(() => {
+        Object.defineProperty(getRequest, 'error', {
+          configurable: true, value: new DOMException('read failed', 'UnknownError'),
+        })
+        getRequest.onerror?.call(getRequest, new Event('error'))
+      })
+      return getRequest
+    }) }
+    transaction = {
+      objectStore: vi.fn(() => store),
+      abort: vi.fn(() => queueMicrotask(() => transaction.onabort?.call(
+        transaction, new Event('abort'),
+      ))),
+      error: null,
+      oncomplete: null,
+      onabort: null,
+      onerror: null,
+    } as unknown as IDBTransaction
+    const database = {
+      objectStoreNames: { contains: vi.fn(() => true) },
+      createObjectStore: vi.fn(),
+      transaction: vi.fn(() => transaction),
+      close: vi.fn(),
+    }
+    const openRequest = {} as IDBOpenDBRequest
+    const factory = { open: vi.fn(() => {
+      queueMicrotask(() => {
+        Object.defineProperty(openRequest, 'result', {
+          configurable: true, value: database as unknown as IDBDatabase,
+        })
+        openRequest.onsuccess?.call(openRequest, new Event('success'))
+      })
+      return openRequest
+    }) } as unknown as IDBFactory
+
+    await expect(new IndexedDbCampaignStoragePort(factory).transact(
+      'ash-road-local', () => ({ next: {}, result: undefined }),
+    )).rejects.toThrow('read failed')
+    expect(transaction.abort).toHaveBeenCalledOnce()
+    expect(database.close).toHaveBeenCalledOnce()
+  })
+
+  it('preserves an asynchronous transaction error when abort rejects the write', async () => {
+    const getRequest = {} as IDBRequest
+    let transaction: IDBTransaction
+    const store = {
+      get: vi.fn(() => {
+        queueMicrotask(() => {
+          Object.defineProperty(getRequest, 'result', { configurable: true, value: null })
+          getRequest.onsuccess?.call(getRequest, new Event('success'))
+        })
+        return getRequest
+      }),
+      put: vi.fn(() => {
+        queueMicrotask(() => {
+          Object.defineProperty(transaction, 'error', {
+            configurable: true, value: new DOMException('write failed', 'UnknownError'),
+          })
+          transaction.onerror?.call(transaction, new Event('error'))
+          transaction.onabort?.call(transaction, new Event('abort'))
+        })
+        return {} as IDBRequest
+      }),
+    }
+    transaction = {
+      objectStore: vi.fn(() => store),
+      abort: vi.fn(),
+      error: null,
+      oncomplete: null,
+      onabort: null,
+      onerror: null,
+    } as unknown as IDBTransaction
+    const database = {
+      objectStoreNames: { contains: vi.fn(() => true) },
+      createObjectStore: vi.fn(),
+      transaction: vi.fn(() => transaction),
+      close: vi.fn(),
+    }
+    const openRequest = {} as IDBOpenDBRequest
+    const factory = { open: vi.fn(() => {
+      queueMicrotask(() => {
+        Object.defineProperty(openRequest, 'result', {
+          configurable: true, value: database as unknown as IDBDatabase,
+        })
+        openRequest.onsuccess?.call(openRequest, new Event('success'))
+      })
+      return openRequest
+    }) } as unknown as IDBFactory
+
+    await expect(new IndexedDbCampaignStoragePort(factory).transact(
+      'ash-road-local', () => ({ next: { revision: 1 }, result: 'saved' }),
+    )).rejects.toThrow('write failed')
+    expect(database.close).toHaveBeenCalledOnce()
+  })
+
   it('parses only exact v1 records with canonical content binding and detached payload', () => {
     const source = {
       kind: 'campaign-storage-record',

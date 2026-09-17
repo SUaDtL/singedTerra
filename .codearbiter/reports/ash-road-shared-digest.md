@@ -5,8 +5,8 @@ Status: backend manifest compatibility proof after the intentional Chapter One s
 ## Digest
 
 - Previous `verifiedReplayShared.sha256`: `4a8918572bfcc6cb428bdb07cc61834b832856f9647460d9798f523be15cf1b9`
-- Current `shared/src` digest: `dccd6d715f90d764a6acc0191aec3d0438b48a1e8e2109e2156729962564e335`
-- Manifest receipt SHA-256: `4bc2368b32ccc616ac8a277c2f86f64de297a23e59d62d5b03a693b3223defd6`
+- Current `shared/src` digest: `96116f758eb485b730a7556e576955c24b55a69d72cf5361a5897b362b1d06d6`
+- Manifest receipt SHA-256: `f92a4382bf07daf4b048d4591cac521665d1adb4f9abdc6e9aed84de3b3b3720`
 
 Only `verifiedReplayShared.sha256` changed in `supabase/backend-release-manifest.json`. Configuration, function-shared sources, migrations, Edge Functions, and declared compatibility remain byte-identical to `origin/main`.
 

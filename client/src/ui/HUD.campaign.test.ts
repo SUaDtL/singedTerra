@@ -87,6 +87,8 @@ describe('HUD campaign presentation boundary', () => {
       const projected = latestPresentation(requests, updates).campaign
       expect(projected).toBeDefined()
       expect(projected).toEqual({
+        encounterId: engineState.campaign!.encounterId,
+        objective: engineState.campaign!.objective,
         commitmentCount: engineState.campaign!.commitmentCount,
         supplies: 2,
         retryable: false,

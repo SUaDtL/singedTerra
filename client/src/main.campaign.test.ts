@@ -6,7 +6,11 @@ import type { GameState } from '@shared/types/GameState'
 import type { PlayerAction } from '@shared/types/PlayerAction'
 import { createCampaignCheckpoint } from './campaign/checkpoint'
 import { ASH_ROAD_EPISODE, ASH_ROAD_ROUTE_IDS } from './campaign/content/episode'
-import { createCampaignReplayPayload, type CampaignReplayPayload } from './campaign/replay'
+import {
+  campaignStorageBindingFromRunState,
+  createCampaignReplayPayload,
+  type CampaignReplayPayload,
+} from './campaign/replay'
 import { createCampaignRunState } from './campaign/runReducer'
 
 const seams = vi.hoisted(() => ({
@@ -17,6 +21,7 @@ const seams = vi.hoisted(() => ({
   onCampaignRetry: null as null | (() => void),
   onCampaignRouteChoice: null as null | ((routeId: string) => void),
   onCampaignCheckpointChoice: null as null | ((choice: Readonly<{ kind: 'retain' }>) => void),
+  onCampaignEmergencyPatch: null as null | (() => void),
   onCampaignContinue: null as null | (() => void),
   onQuit: null as null | (() => void),
   onWeaponSelect: null as null | ((weapon: WeaponType) => void),
@@ -31,6 +36,8 @@ const seams = vi.hoisted(() => ({
   inputSetWeapons: [] as WeaponType[],
   campaignPresentations: [] as Array<Readonly<{ supplies: number; retryable: boolean }> | null>,
   campaignCues: [] as string[],
+  campaignMessages: [] as string[],
+  recoveryMessages: [] as string[],
   campaignSaves: [] as CampaignReplayPayload[],
   campaignStorageRaw: null as unknown | null,
   campaignStorageTransactions: Promise.resolve() as Promise<void>,
@@ -241,7 +248,7 @@ vi.mock('./input/InputHandler', () => ({
 vi.mock('./ui/HUD', () => ({
   HUD: class {
     destroy() { return Promise.resolve() }
-    flashMessage() {}
+    flashMessage(message: string) { seams.campaignMessages.push(message) }
     hideEndScreens() {}
     isFirstSalvoBriefingOpen() { return false }
     isGameplayInputBlocked() { return false }
@@ -259,6 +266,7 @@ vi.mock('./ui/HUD', () => ({
     onCampaignCheckpointChoice(callback: (choice: Readonly<{ kind: 'retain' }>) => void) {
       seams.onCampaignCheckpointChoice = callback
     }
+    onCampaignEmergencyPatch(callback: () => void) { seams.onCampaignEmergencyPatch = callback }
     onCampaignContinue(callback: () => void) { seams.onCampaignContinue = callback }
     onMove() {}
     onNextRound() {}
@@ -332,7 +340,7 @@ vi.mock('./ui/Lobby', () => ({
     returnVerifiedDeploymentToBattery() { return false }
     show() {}
     showAccountSignIn() {}
-    showNetworkRecovery() {}
+    showNetworkRecovery(message: string) { seams.recoveryMessages.push(message) }
   },
 }))
 
@@ -462,6 +470,17 @@ const initialCampaignReplay = createCampaignReplayPayload({
   acceptedCommands: [],
 })
 
+function storedCampaignReplay(payload: CampaignReplayPayload, revision = 1) {
+  return Object.freeze({
+    kind: 'campaign-storage-record' as const,
+    schemaVersion: 1 as const,
+    slotId: 'ash-road-local',
+    revision,
+    binding: campaignStorageBindingFromRunState(payload.runState),
+    payload,
+  })
+}
+
 const campaignConfig = Object.freeze({
   mode: 'hotseat',
   experience: 'campaign',
@@ -483,6 +502,7 @@ describe('main campaign acquisition boundary', () => {
     seams.onCampaignRetry = null
     seams.onCampaignRouteChoice = null
     seams.onCampaignCheckpointChoice = null
+    seams.onCampaignEmergencyPatch = null
     seams.onCampaignContinue = null
     seams.onQuit = null
     seams.onWeaponSelect = null
@@ -497,6 +517,8 @@ describe('main campaign acquisition boundary', () => {
     seams.inputSetWeapons.length = 0
     seams.campaignPresentations.length = 0
     seams.campaignCues.length = 0
+    seams.campaignMessages.length = 0
+    seams.recoveryMessages.length = 0
     seams.campaignSaves.length = 0
     seams.campaignStorageRaw = null
     seams.campaignStorageTransactions = Promise.resolve()
@@ -657,6 +679,7 @@ describe('main campaign acquisition boundary', () => {
       return createCampaignReplayPayload({ runState, acceptedCommands: [] })
     })
     seams.clients.push(first, retry)
+    seams.campaignStorageRaw = storedCampaignReplay(initialCampaignReplay)
 
     await import('./main')
     if (!seams.onLobbyReady) throw new Error('Campaign lifecycle callback was not registered')
@@ -664,6 +687,7 @@ describe('main campaign acquisition boundary', () => {
       ...campaignConfig,
       campaignRunState,
       campaignReplayPayload: initialCampaignReplay,
+      campaignReplayRevision: 1,
     })
     expect(seams.restoredCampaignClients).toBe(1)
     expect(seams.setups).toHaveLength(0)
@@ -693,7 +717,59 @@ describe('main campaign acquisition boundary', () => {
     expect(seams.setups[0]).not.toHaveProperty('campaignReplayPayload')
     retry.emit(retryState)
     await vi.waitFor(() => expect(seams.campaignSaves.at(-1)?.runState.attempt).toBe(2))
-    expect((seams.campaignStorageRaw as { revision?: number })?.revision).toBe(2)
+    expect((seams.campaignStorageRaw as { revision?: number })?.revision).toBe(3)
+  })
+
+  it('rejects a stale lobby resume instead of overwriting the newer revision', async () => {
+    const stale = fakeCampaignClient(campaignState())
+    seams.clients.push(stale)
+    seams.campaignStorageRaw = storedCampaignReplay(initialCampaignReplay, 2)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Campaign lifecycle callback was not registered')
+    await seams.onLobbyReady({
+      ...campaignConfig,
+      campaignRunState,
+      campaignReplayPayload: initialCampaignReplay,
+      campaignReplayRevision: 1,
+    })
+
+    expect(seams.restoredCampaignClients).toBe(0)
+    expect(stale.start).not.toHaveBeenCalled()
+    expect(seams.campaignSaves).toEqual([])
+    expect(seams.recoveryMessages.at(-1)).toContain('changed in another session')
+  })
+
+  it('keeps a conflicted campaign read-only across retry transition', async () => {
+    const firstState = campaignState()
+    const first = fakeCampaignClient(firstState)
+    const retry = fakeCampaignClient(campaignState())
+    first.createResultReceipt.mockReturnValue(campaignResultReceipt('failure'))
+    seams.clients.push(first, retry)
+
+    await import('./main')
+    if (!seams.onLobbyReady || !seams.onCampaignRetry) {
+      throw new Error('Campaign lifecycle callback was not registered')
+    }
+    await seams.onLobbyReady({ ...campaignConfig, campaignRunState })
+    seams.campaignStorageRaw = storedCampaignReplay(initialCampaignReplay, 1)
+    firstState.phase = 'GAME_OVER'
+    firstState.campaign = {
+      commitmentCount: 3,
+      activeCommitment: null,
+      objects: [],
+      result: { outcome: 'failure', reason: 'limit', commitmentId: 3 },
+      effects: { technicalFailure: null },
+      settledOutcome: { outcome: 'failure', reason: 'limit', commitmentId: 3 },
+    } as unknown as GameState['campaign']
+    first.emit(firstState)
+
+    await vi.waitFor(() => expect(seams.campaignMessages.at(-1)).toContain('read-only'))
+    seams.onCampaignRetry()
+    await new Promise((resolve) => setTimeout(resolve, 25))
+
+    expect(retry.start).not.toHaveBeenCalled()
+    expect((seams.campaignStorageRaw as { revision?: number }).revision).toBe(1)
   })
 
   it('does not reopen a drained retry after quit retires its originating generation', async () => {
@@ -750,6 +826,7 @@ describe('main campaign acquisition boundary', () => {
     const next = fakeCampaignClient(nextState)
     first.createResultReceipt.mockReturnValue(campaignResultReceipt('success'))
     seams.clients.push(first, next)
+    seams.campaignStorageRaw = storedCampaignReplay(initialCampaignReplay)
 
     await import('./main')
     if (!seams.onLobbyReady) throw new Error('Campaign lifecycle callback was not registered')
@@ -757,6 +834,7 @@ describe('main campaign acquisition boundary', () => {
       ...campaignConfig,
       campaignRunState,
       campaignReplayPayload: initialCampaignReplay,
+      campaignReplayRevision: 1,
     })
 
     firstState.phase = 'GAME_OVER'
@@ -808,7 +886,50 @@ describe('main campaign acquisition boundary', () => {
     await vi.waitFor(() => expect(
       seams.campaignSaves.at(-1)?.runState.checkpoint.encounter.encounterId,
     ).toBe('high-road'))
-    expect((seams.campaignStorageRaw as { revision?: number })?.revision).toBe(4)
+    expect((seams.campaignStorageRaw as { revision?: number })?.revision).toBe(5)
+  })
+
+  it('exposes and persists the free emergency hull patch after a successful encounter', async () => {
+    const damagedRunState = createCampaignRunState(campaignCheckpoint, {
+      ...campaignRunState.loadout,
+      hull: 42,
+    })
+    const firstState = campaignState()
+    const first = fakeCampaignClient(firstState)
+    first.createResultReceipt.mockReturnValue(campaignResultReceipt('success'))
+    seams.clients.push(first)
+
+    await import('./main')
+    if (!seams.onLobbyReady) throw new Error('Campaign lifecycle callback was not registered')
+    await seams.onLobbyReady({ ...campaignConfig, campaignRunState: damagedRunState })
+
+    firstState.phase = 'GAME_OVER'
+    firstState.winner = 'p1'
+    firstState.campaign = {
+      commitmentCount: 3,
+      activeCommitment: null,
+      objects: [],
+      result: { outcome: 'success', reason: 'objective', commitmentId: 3 },
+      effects: { technicalFailure: null },
+      settledOutcome: { outcome: 'success', reason: 'objective', commitmentId: 3 },
+    } as unknown as GameState['campaign']
+    first.emit(firstState)
+
+    await vi.waitFor(() => expect(seams.campaignSaves).toHaveLength(1))
+    const beforePatch = seams.campaignPresentations.at(-1) as {
+      checkpoint?: { hull?: number; emergencyPatchAvailable?: boolean }
+    }
+    expect(beforePatch.checkpoint).toMatchObject({ hull: 42, emergencyPatchAvailable: true })
+    if (!seams.onCampaignEmergencyPatch) {
+      throw new Error('Campaign emergency patch callback was not registered')
+    }
+    seams.onCampaignEmergencyPatch()
+
+    await vi.waitFor(() => expect(seams.campaignSaves.at(-1)?.runState.loadout.hull).toBe(60))
+    const afterPatch = seams.campaignPresentations.at(-1) as {
+      checkpoint?: { hull?: number; emergencyPatchAvailable?: boolean }
+    }
+    expect(afterPatch.checkpoint).toMatchObject({ hull: 60, emergencyPatchAvailable: false })
   })
 
   it('synchronizes the local weapon cursor only after authoritative selection acceptance', async () => {

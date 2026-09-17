@@ -13,6 +13,7 @@ import type { CampaignDescriptor } from '../client/modeConfig';
 import { fastForwardTicks } from '../client/fastForward';
 import { FrameClock } from '../client/frameClock';
 import {
+  CAMPAIGN_RECEIPT_REPLAY_COMMAND_LIMIT,
   createCampaignResultReceipt,
   type CampaignResultReceipt,
   type CampaignRunState,
@@ -180,6 +181,20 @@ export class CampaignClient implements GameClient {
             : null,
         }
       : null;
+    const replayEntryCount = commitmentState
+      ? 4
+      : action.type === 'set_angle' || action.type === 'set_power' || action.type === 'select_weapon'
+        ? 0
+        : 1;
+    if (this.committedReplayCommands.length + replayEntryCount
+      > CAMPAIGN_RECEIPT_REPLAY_COMMAND_LIMIT) {
+      this.clearCpuTimers();
+      this.cpuTurnKey = null;
+      this.cpuGeneration += 1;
+      this.engine.refuseCampaignReplayLimit();
+      this.emit(this.engine.getState());
+      return;
+    }
     if (!this.engine.applyAction(action)) return;
     if (action.type === 'set_angle' || action.type === 'set_power' || action.type === 'select_weapon') {
       return;

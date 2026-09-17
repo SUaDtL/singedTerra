@@ -37,6 +37,7 @@ import { CampaignAudio } from './audio/CampaignAudio';
 import {
   CampaignSaveSession,
   campaignStorageBindingFromRunState,
+  parseCampaignReplayPayload,
   replayCampaignPayload,
   type CampaignReplayPayload,
 } from './campaign/replay';
@@ -73,6 +74,7 @@ import { campaignDescriptorFromCheckpoint } from './campaign/checkpoint';
 import {
   advanceCampaignEncounter,
   applyCampaignCheckpointDecision,
+  applyCampaignEmergencyPatch,
   applyCampaignResult,
   chooseCampaignRoute,
   parseCampaignRunState,
@@ -146,6 +148,7 @@ function isCampaignReplayClient(client: GameClient): client is CampaignReplayCli
 function withoutCampaignReplayPayload(config: LobbyConfig): LobbyConfig {
   const next = { ...config };
   delete next.campaignReplayPayload;
+  delete next.campaignReplayRevision;
   return next;
 }
 
@@ -516,6 +519,8 @@ function bootstrap(): void {
         finalEncounter: state.checkpoint.run.currentEncounterIndex
           === state.checkpoint.run.encounterIds.length - 1,
         hull: state.loadout.hull,
+        emergencyPatchAvailable: state.loadout.hull < 60
+          && !state.emergencyPatchAttempts.includes(state.attempt),
         ammunition: state.loadout.carried.ammunition.map((entry) => ({
           ...entry,
           maximum: getCampaignWeapon(profile, entry.weaponId).startingAmmunition,
@@ -847,6 +852,7 @@ function bootstrap(): void {
     let campaignSaveSession: CampaignSaveSession | null = null;
     let campaignSaveKey: string | null = null;
     let campaignSaveChain = Promise.resolve();
+    let campaignSaveHealthy = true;
     await gameSession.start({
       retirePresentation: resetMatchPresentation,
       afterRetire: releaseTankLoadoutPreviewResources,
@@ -884,20 +890,32 @@ function bootstrap(): void {
             const campaignSetup = requireCampaignModeSetup(setup);
             const parsedRunState = parseCampaignRunState(config.campaignRunState);
             if (!parsedRunState) throw new Error('invalid campaign run state');
+            let loadedCampaignRecord: Awaited<ReturnType<CampaignSaveSession['reload']>> = null;
             try {
               campaignSaveSession = new CampaignSaveSession(
                 createIndexedDbCampaignStorage(),
                 'ash-road-local',
                 campaignStorageBindingFromRunState(parsedRunState),
               );
-              await campaignSaveSession.reload();
+              loadedCampaignRecord = await campaignSaveSession.reload();
             } catch {
               // An incompatible retained record stays untouched. Campaign play
               // remains available, but this session deliberately stays unsaved.
               campaignSaveSession = null;
             }
             if (config.campaignReplayPayload) {
-              const restored = await replayCampaignPayload(config.campaignReplayPayload);
+              if (!campaignSaveSession || !loadedCampaignRecord
+                || config.campaignReplayRevision !== loadedCampaignRecord.revision) {
+                campaignSaveSession = null;
+                throw new Error('Campaign progress changed in another session. Return to the lobby and resume the latest save.');
+              }
+              const loadedPayload = parseCampaignReplayPayload(loadedCampaignRecord.payload);
+              if (!loadedPayload
+                || JSON.stringify(loadedPayload) !== JSON.stringify(config.campaignReplayPayload)) {
+                campaignSaveSession = null;
+                throw new Error('Campaign progress changed in another session. Return to the lobby and resume the latest save.');
+              }
+              const restored = await replayCampaignPayload(loadedPayload);
               return {
                 status: 'acquired',
                 client: new CampaignClient(campaignSetup.campaign, {
@@ -1288,7 +1306,14 @@ function bootstrap(): void {
           const retainedSession = campaignSaveSession;
           campaignSaveChain = campaignSaveChain.then(async () => {
             const payload = await newClient.createReplayPayload(retainedRunState);
-            await retainedSession.save(payload);
+            const result = await retainedSession.save(payload);
+            campaignSaveHealthy = result.status === 'saved';
+            if (result.status !== 'saved'
+              && matchSession.isCurrent(currentGameGeneration, newClient)) {
+              hud.flashMessage(result.status === 'read-only'
+                ? 'Campaign save changed in another session. Progress is read-only; return to preparation to resume the latest save.'
+                : 'Campaign progress could not be saved. Retry or continue is paused until saving recovers.');
+            }
           }).catch(() => {
             // Storage failure is non-mechanical. The in-memory run remains playable.
           });
@@ -1300,7 +1325,9 @@ function bootstrap(): void {
         };
         drainCampaignSaveChain = () => campaignSaveChain;
         ownsCampaignTransition = () => matchSession.pageAuthorityReady
-          && matchSession.isCurrent(currentGameGeneration, newClient);
+          && matchSession.isCurrent(currentGameGeneration, newClient)
+          && campaignSaveHealthy
+          && campaignSaveSession?.isReadOnly !== true;
         const syncChallenge = (): void => {
           if (challengeClient !== newClient || !matchSession.isCurrent(currentGameGeneration, newClient)) return;
           hud.setVerifiedChallenge(
@@ -1699,6 +1726,17 @@ function bootstrap(): void {
     campaignRunState = applyCampaignCheckpointDecision(campaignRunState, {
       kind: 'campaign-checkpoint-decision', checkpointDecisionVersion: 1,
       resultAttempt: campaignRunState.attempt, choice,
+    });
+    currentConfig = { ...currentConfig, campaignRunState };
+    syncCampaignRunPresentation();
+    persistCampaignRunState?.();
+  });
+
+  hud.onCampaignEmergencyPatch?.(() => {
+    if (currentConfig?.experience !== 'campaign' || campaignRunState === null) return;
+    campaignRunState = applyCampaignEmergencyPatch(campaignRunState, {
+      kind: 'campaign-emergency-patch', emergencyPatchVersion: 1,
+      resultAttempt: campaignRunState.attempt,
     });
     currentConfig = { ...currentConfig, campaignRunState };
     syncCampaignRunPresentation();

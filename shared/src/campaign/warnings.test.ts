@@ -52,11 +52,11 @@ describe('campaign announced strikes', () => {
     const terrain = buildBitmap(new Uint16Array(1200).fill(300))
     expect(findCampaignWarningResponses({
       warning: strike(), tank: { x: 500, y: 300, width: 28, fuel: 40 }, terrain,
-      objects: [], guaranteedShieldCharges: 0, guaranteedSourceShot: false,
+      objects: [], guaranteedShieldCharges: 0,
     })).toEqual([])
     expect(findCampaignWarningResponses({
       warning: strike(), tank: { x: 500, y: 300, width: 28, fuel: 80 }, terrain,
-      objects: [], guaranteedShieldCharges: 0, guaranteedSourceShot: false,
+      objects: [], guaranteedShieldCharges: 0,
     })).toContainEqual(expect.objectContaining({ kind: 'move', safe: true }))
   })
 
@@ -64,12 +64,9 @@ describe('campaign announced strikes', () => {
     const terrain = buildBitmap(new Uint16Array(1200).fill(300))
     const responses = findCampaignWarningResponses({
       warning: strike(), tank: { x: 500, y: 300, width: 28, fuel: 0 }, terrain,
-      objects: [], guaranteedShieldCharges: 1, guaranteedSourceShot: true,
+      objects: [], guaranteedShieldCharges: 1,
     })
-    expect(responses).toEqual([
-      { kind: 'shield', safe: true },
-      { kind: 'destroy-source', sourceObjectId: 'relay', safe: true },
-    ])
+    expect(responses).toEqual([{ kind: 'shield', safe: true }])
   })
 
   it('cancels in the real engine when the response shot destroys the relay before impact', () => {

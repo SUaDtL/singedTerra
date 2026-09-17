@@ -106,6 +106,34 @@ test('keyboard-only sound-off reduced-motion play survives campaign asset failur
   await expect(page.locator(SURFACE)).toHaveAttribute('data-battle-console-phase', /firing|resolving/u);
   await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p2', { timeout: 30_000 });
   await assertNoPageOverflow(page);
+
+  if (testInfo.project.name !== 'desktop-fine') return;
+  await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1', {
+    timeout: 30_000,
+  });
+  await expect(page.getByRole('button', { name: 'Fire Missile', exact: true }))
+    .toBeEnabled({ timeout: 30_000 });
+  await setReadoutWithKeyboard(page, 'angle', 44);
+  await setReadoutWithKeyboard(page, 'power', 84);
+  await page.getByRole('button', { name: 'Fire Missile', exact: true }).focus();
+  await page.keyboard.press('Space');
+
+  const checkpoint = page.getByRole('dialog', { name: 'Campaign checkpoint', exact: true });
+  await expect(checkpoint).toBeVisible({ timeout: 30_000 });
+  const route = checkpoint.getByRole('button', { name: 'Take High Road', exact: true });
+  await route.focus();
+  await page.keyboard.press('Enter');
+  const retain = checkpoint.getByRole('button', { name: 'Retain loadout', exact: true });
+  await retain.focus();
+  await page.keyboard.press('Enter');
+  const continueButton = checkpoint.getByRole('button', { name: 'Continue Ash Road', exact: true });
+  await expect(continueButton).toBeEnabled();
+  await continueButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1', {
+    timeout: 30_000,
+  });
+  await expect(checkpoint).toHaveCount(0);
 });
 
 test('a committed in-flight campaign shot survives a full reload and resumes from IndexedDB', async ({ page }, testInfo) => {

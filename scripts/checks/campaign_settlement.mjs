@@ -524,6 +524,55 @@ assert.strictEqual(
   'idle ticks cannot republish or replace a settled outcome',
 )
 
+// Campaign game-over waits for the last physical fire tick, and every burn is
+// attributed to the weapon/root that ignited it. Ordinary matches retain their
+// separate immediate terminal behavior below.
+const napalmEngine = createCampaignEngine({
+  encounterId: 'settlement-terminal-napalm',
+  humanEquipment: ['baby_missile', 'napalm'],
+})
+const napalmState = napalmEngine.getState()
+const napalmDefender = napalmState.tanks.find(({ id }) => id === 'p2')
+assert.ok(napalmDefender, 'terminal napalm fixture has the defender tank')
+napalmDefender.health = 1
+assert.equal(napalmEngine.applyAction({ type: 'select_weapon', weapon: 'napalm' }), true)
+assert.equal(napalmEngine.applyAction({ type: 'fire' }), true)
+const napalmProjectile = directGroundProjectile(napalmDefender.x, 318, 'napalm')
+napalmState.projectiles = [napalmProjectile]
+napalmState.projectile = napalmProjectile
+let sawDeadDefenderWhileFireRemained = false
+let napalmTicks = 0
+while (['FIRING', 'RESOLVING'].includes(napalmState.phase)) {
+  assert.ok(napalmTicks < MAX_SETTLEMENT_TICKS, 'terminal napalm exceeded settlement bound')
+  napalmEngine.tick()
+  napalmTicks += 1
+  if (!napalmDefender.alive && napalmState.fire.length > 0) {
+    sawDeadDefenderWhileFireRemained = true
+    assert.equal(napalmState.phase, 'FIRING', 'campaign remains active while terminal fire burns')
+    assert.equal(napalmState.campaign?.result, null, 'campaign verdict waits for terminal fire')
+  }
+}
+assert.equal(sawDeadDefenderWhileFireRemained, true, 'fixture proves fire outlives defender death')
+assert.equal(napalmState.fire.length, 0, 'terminal campaign drains every fire column')
+assert.equal(napalmState.phase, 'GAME_OVER', 'campaign resolves only after terminal fire drains')
+const napalmOutcome = campaignState(napalmEngine, 'terminal napalm:settled').settledOutcome
+assert.ok(napalmOutcome, 'terminal napalm publishes a settled outcome')
+assert.equal(napalmOutcome.damage.hullDamage, 1, 'burn ledger equals actual defender hull removed')
+const napalmHullComponents = napalmOutcome.damage.components
+  .filter(({ damageKind }) => damageKind === 'hull')
+assert.equal(
+  napalmHullComponents.reduce((total, { amount }) => total + amount, 0),
+  1,
+  'napalm component sum equals actual hull removed',
+)
+assert.ok(
+  napalmHullComponents.every(({ source, actorId, rootCommitmentId }) => (
+    source.kind === 'weapon' && source.id === 'napalm'
+      && actorId === 'p1' && rootCommitmentId === 1
+  )),
+  'every napalm burn component retains weapon and commitment attribution',
+)
+
 // The next accepted action receives the next monotonic ID. Shield uses the same
 // completion boundary even though its primitive resolution is synchronous.
 assert.equal(fireEngine.getState().activePlayerId, 'p2', 'fire rotated to the defender')

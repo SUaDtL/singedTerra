@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CampaignProjection } from '@shared/campaign/outcomes';
 import { CampaignAudio, type CampaignAudioCue } from './CampaignAudio';
+import { CAMPAIGN_CUE_PROFILES } from './AudioEngine';
 
 function projection(overrides: Record<string, unknown> = {}): CampaignProjection {
   return {
@@ -29,6 +30,24 @@ const effect = (rootCommitmentId: number) => ({
 } as const);
 
 describe('CampaignAudio', () => {
+  it('binds every cue to a distinct bounded WebAudio profile', () => {
+    expect(Object.keys(CAMPAIGN_CUE_PROFILES).sort()).toEqual([
+      'mission-concluded', 'relay-disabled', 'volatile-chain', 'warning-announced',
+    ]);
+    expect(new Set(Object.values(CAMPAIGN_CUE_PROFILES).map((profile) => JSON.stringify(profile))).size).toBe(4);
+    for (const profile of Object.values(CAMPAIGN_CUE_PROFILES)) {
+      expect(profile.tones.length).toBeGreaterThan(0);
+      for (const tone of profile.tones) {
+        expect(tone.start).toBeGreaterThan(0);
+        expect(tone.end).toBeGreaterThan(0);
+        expect(tone.duration).toBeGreaterThan(0);
+        expect(tone.gain).toBeGreaterThan(0);
+      }
+    }
+    expect(CAMPAIGN_CUE_PROFILES['relay-disabled'].noise?.filter).toBe('bandpass');
+    expect(CAMPAIGN_CUE_PROFILES['volatile-chain'].noise?.filter).toBe('lowpass');
+  });
+
   it('announces each live warning once and emits one cue for each new authoritative edge', () => {
     const cues: CampaignAudioCue[] = [];
     const audio = new CampaignAudio({ playCampaignCue: (cue) => cues.push(cue) });
