@@ -191,6 +191,7 @@ let initialUrl = ''
 beforeEach(() => {
   initialUrl = window.location.href
   localStorage.clear()
+  sessionStorage.clear()
 })
 
 afterEach(() => {
@@ -201,8 +202,23 @@ afterEach(() => {
 })
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text)
+  const category = text === 'Local Battle' || text === 'Play Online'
+    ? 'multiplayer'
+    : text.includes('Ash Road') ? 'campaigns' : null
+  if (!match && category) {
+    root.querySelector<HTMLButtonElement>(
+      `[data-command-surface="rail"][data-command-category="${category}"]`,
+    )?.click()
+    if (category === 'multiplayer') {
+      root.querySelector<HTMLButtonElement>(
+        `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
+      )?.click()
+    }
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text)
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`)
   return match
 }
@@ -338,7 +354,7 @@ describe('Lobby account composition', () => {
       profile: { id: 'user-1', displayName: 'Ranger', summary: null },
     })
     expect(document.activeElement).toBe(button(root, 'Sign out'))
-    button(root, 'Close').click()
+    root.querySelector<HTMLButtonElement>('.lobby-overlay__close')!.click()
     expect(root.querySelector<HTMLElement>('.lobby-card')?.hasAttribute('inert')).toBe(false)
     root.remove()
   })
@@ -369,7 +385,7 @@ describe('Lobby account composition', () => {
     const openTrigger = button(root, 'Commander Ranger')
     expect(openTrigger.getAttribute('aria-expanded')).toBe('true')
     expect(document.activeElement).toBe(root.querySelector('.lobby-overlay__close'))
-    button(root, 'Close').click()
+    root.querySelector<HTMLButtonElement>('.lobby-overlay__close')!.click()
     const restoredTrigger = button(root, 'Commander Ranger')
     expect(restoredTrigger.getAttribute('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(restoredTrigger)
@@ -601,10 +617,10 @@ describe('Lobby account composition', () => {
     expect(diagnostics.runChecks).not.toHaveBeenCalled()
     expect(diagnostics.dispose).toHaveBeenCalledOnce()
     expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(0)
+    expect(root.querySelectorAll('[role="dialog"]:not([hidden])')).toHaveLength(0)
     expect(root.querySelector('.lobby-card')?.hasAttribute('inert')).toBe(false)
     expect(detachedControl.isConnected).toBe(false)
-    expect(document.activeElement).toBe([...root.querySelectorAll('button')].find((candidate) => candidate.textContent === 'Local Battle'))
+    expect(document.activeElement).toBe(root.querySelector('[data-command-item][aria-current="true"]'))
     expect(window.location.pathname).toBe('/pregame')
     expect(window.location.search).toBe('?keep=1')
     expect(window.location.hash).toBe('#deck')

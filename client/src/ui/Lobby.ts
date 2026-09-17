@@ -1,6 +1,17 @@
 import { normalizeCreateRoomFallback, projectAuthoritativeNetworkMode, WIND_DEFAULT, GRAVITY_DEFAULT, type ModeSetup, type ModePlayer } from '../client/modeConfig';
 import lobbyCss from './Lobby.css?raw';
 import lobbyConsoleCss from './LobbyConsole.css?raw';
+import commandCenterCss from './commandCenter/CommandCenter.css?raw';
+import commandPanelFrameUrl from './commandCenter/assets/chrome/panel-frame.png';
+import commandIronTileUrl from './commandCenter/assets/chrome/iron-tile.png';
+import commandGoldTileUrl from './commandCenter/assets/chrome/gold-tile.png';
+import commandMapTileUrl from './commandCenter/assets/chrome/map-tile.png';
+import commandButtonFrameUrl from './commandCenter/assets/chrome/button-frame.png';
+import commandButtonSelectedFrameUrl from './commandCenter/assets/chrome/button-selected-frame.png';
+import commandButtonHoverFrameUrl from './commandCenter/assets/chrome/button-hover-frame.png';
+import commandButtonPressedFrameUrl from './commandCenter/assets/chrome/button-pressed-frame.png';
+import commandButtonGoldFrameUrl from './commandCenter/assets/chrome/button-gold-frame.png';
+import commandButtonDisabledFrameUrl from './commandCenter/assets/chrome/button-disabled-frame.png';
 import { VerifiedDeploymentSession, type VerifiedDeploymentState as LobbyVerifiedDeploymentState, type VerifiedDeploymentAccountPort } from '../client/VerifiedDeploymentSession';
 import type { AiDifficulty } from '@shared/types/GameState';
 import {
@@ -35,7 +46,11 @@ import { isFirstSalvoPreferenceUnseen } from './firstSalvoCoach';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
-import { buildLobbyOnlineView, buildLobbyShellView } from './LobbyShellView';
+import {
+  buildLobbyOnlineView,
+  buildLobbyShellView,
+  type LobbySeedChallengePresentation,
+} from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildAccountPanelOverlayContent, buildAccountPanelView } from './AccountPanelView';
 import { buildLobbyOverlayView } from './LobbyOverlayView';
@@ -99,11 +114,39 @@ import { campaignDescriptorFromCheckpoint, createCampaignCheckpoint } from '../c
 import { createCampaignRunState, type CampaignRunState } from '../campaign/runReducer';
 import { createCampaignLoadout } from '../campaign/loadout';
 import {
-  parseCampaignReplayPayload,
+  createCampaignReplayPayload,
   type CampaignReplayPayload,
 } from '../campaign/replay';
-import { createIndexedDbCampaignStorage } from '../campaign/storage';
-import type { CampaignKitId } from './LobbyShellView';
+import { createIndexedDbCampaignStorage, type CampaignStorage } from '../campaign/storage';
+import {
+  CampaignSavePresentationOwner,
+} from './commandCenter/CampaignSavePresentation';
+import {
+  browserCampaignRunReplacementConfirmation,
+  CampaignRunReplacementCoordinator,
+  type CampaignRunReplacementConfirmationPort,
+} from './commandCenter/CampaignRunReplacement';
+import {
+  createAshRoadCommandCategoryContribution,
+  type CampaignCommandContext,
+  type CampaignKitId,
+} from './commandCenter/CampaignCommandView';
+import {
+  createCommandCenterShell,
+  type CommandCenterShell,
+} from './commandCenter/CommandCenterShell';
+import {
+  createSessionCommandSelectionStore,
+  resolveCommandRegistry,
+  resolveInitialCommandSelection,
+  type SessionCommandSelectionStore,
+} from './commandCenter/registry';
+import {
+  commandCategoryId,
+  commandItemId,
+  type CommandCategoryContribution,
+  type MountedCommandView,
+} from './commandCenter/contracts';
 import type { VerifiedCareerState } from '../client/verifiedCareer';
 import {
   PRODUCTION_DIAGNOSTIC_CHECKS,
@@ -218,6 +261,19 @@ const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 const STYLE_ID = 'lobby-style';
 
+const COMMAND_CENTER_ASSET_CSS = `#lobby {
+  --command-panel-frame: url("${commandPanelFrameUrl}");
+  --command-iron-tile: url("${commandIronTileUrl}");
+  --command-gold-tile: url("${commandGoldTileUrl}");
+  --command-map-tile: url("${commandMapTileUrl}");
+  --command-button-frame: url("${commandButtonFrameUrl}");
+  --command-button-selected-frame: url("${commandButtonSelectedFrameUrl}");
+  --command-button-hover-frame: url("${commandButtonHoverFrameUrl}");
+  --command-button-pressed-frame: url("${commandButtonPressedFrameUrl}");
+  --command-button-gold-frame: url("${commandButtonGoldFrameUrl}");
+  --command-button-disabled-frame: url("${commandButtonDisabledFrameUrl}");
+}`;
+
 function browserQuickDuelSeed(): number {
   const word = new Uint32Array(1);
   globalThis.crypto.getRandomValues(word);
@@ -276,7 +332,7 @@ interface PreviewVehicle {
   loadout: TankLoadout;
 }
 
-interface LobbyFocusSnapshot {
+export interface LobbyLaunchFocusSnapshot {
   readonly key: string;
   readonly occurrence: number;
   readonly inOverlay: boolean;
@@ -347,6 +403,15 @@ const defaultProductionDiagnosticsFactory: ProductionDiagnosticsFactory = async 
   return createProductionDiagnostics(supabase, { readiness: 'loading' });
 };
 
+const defaultCampaignStorage: CampaignStorage = Object.freeze({
+  load: (slotId: string) => createIndexedDbCampaignStorage().load(slotId),
+  compareAndSwap: (input: Parameters<CampaignStorage['compareAndSwap']>[0]) => (
+    createIndexedDbCampaignStorage().compareAndSwap(input)
+  ),
+});
+
+interface LobbyCommandCenterContext extends CampaignCommandContext {}
+
 const DIAGNOSTICS_LOCAL_FAILURE: DiagnosticCheckResult = Object.freeze({
   id: PRODUCTION_DIAGNOSTIC_CHECKS[0].id,
   label: PRODUCTION_DIAGNOSTIC_CHECKS[0].label,
@@ -415,11 +480,13 @@ export class Lobby {
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
   private networkRecoveryRetry: (() => void) | null = null;
-  private campaignResumePayload: Readonly<{
-    payload: CampaignReplayPayload;
-    revision: number;
-  }> | null = null;
-  private campaignResumeGeneration = 0;
+  private readonly campaignSavePresentation: CampaignSavePresentationOwner;
+  private readonly campaignRunReplacement: CampaignRunReplacementCoordinator;
+  private readonly commandSelectionStore: SessionCommandSelectionStore;
+  private commandCenterShell: CommandCenterShell<LobbyCommandCenterContext> | null = null;
+  private campaignInitialPromotionEligible = false;
+  private selectedCampaignKit: CampaignKitId = 'precision';
+  private pendingLaunchFocus: LobbyLaunchFocusSnapshot | null = null;
 
   // Create form state
   private onlineName = '';
@@ -473,9 +540,13 @@ export class Lobby {
     createDiagnostics: ProductionDiagnosticsFactory = defaultProductionDiagnosticsFactory,
     private readonly generateQuickDuelSeed: () => number = browserQuickDuelSeed,
     createVerifiedChallengeSession: VerifiedChallengeSessionFactory = defaultVerifiedChallengeSessionFactory,
+    campaignSaveStorage: CampaignStorage = defaultCampaignStorage,
+    campaignRunReplacementConfirmation: CampaignRunReplacementConfirmationPort =
+      browserCampaignRunReplacementConfirmation,
   ) {
     this.root = root;
     this.onReady = onReady;
+    this.commandSelectionStore = createSessionCommandSelectionStore(window.sessionStorage);
     this.players = [defaultRow(0), defaultRow(1)];
     this.session = new LobbySession(this.transport, (event) => this.handleSessionEvent(event));
     this.roomController = new LobbyRoomController(
@@ -493,6 +564,12 @@ export class Lobby {
       ? this.accountSession.state.profile.id
       : null;
     this.verifiedChallengeSession = createVerifiedChallengeSession(authenticatedAccountId);
+    this.campaignSavePresentation = new CampaignSavePresentationOwner(campaignSaveStorage);
+    this.campaignRunReplacement = new CampaignRunReplacementCoordinator(
+      campaignSaveStorage,
+      this.campaignSavePresentation,
+      campaignRunReplacementConfirmation,
+    );
     this.accountSession.subscribeVerifiedCareer?.(() => { this.render(); });
     this.syncOnlineNameFromAccount();
     this.createDiagnostics = createDiagnostics;
@@ -773,8 +850,11 @@ export class Lobby {
   }
 
   private diagnosticsReturnFocus(): HTMLElement | null {
-    return [...this.root.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent === 'Local Battle')
+    return this.root.querySelector<HTMLElement>(
+      '.command-center__workspace-host .command-center__primary-action:not(:disabled), '
+      + '.command-center__workspace-host .primary:not(:disabled), '
+      + '[data-command-item][aria-current="true"]',
+    )
       ?? this.root.querySelector<HTMLButtonElement>('.account-panel button')
       ?? this.root.querySelector<HTMLButtonElement>('button');
   }
@@ -795,7 +875,12 @@ export class Lobby {
         )
         ?? this.root.querySelector<HTMLElement>('.lobby-deployment__back');
     }
-    return this.root.querySelector<HTMLElement>('.lobby-deployment-chooser .primary:not(:disabled)')
+    return this.root.querySelector<HTMLElement>(
+      '.command-center__workspace-host .command-center__primary-action:not(:disabled), '
+      + '.command-center__workspace-host .primary:not(:disabled), '
+      + '[data-command-item][aria-current="true"]',
+    )
+      ?? this.root.querySelector<HTMLElement>('.lobby-deployment-chooser .primary:not(:disabled)')
       ?? [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
         .find((button) => button.textContent === 'Local Battle')
       ?? this.root.querySelector<HTMLElement>('.lobby-deployment-chooser button:not(:disabled)');
@@ -829,7 +914,7 @@ export class Lobby {
     return null;
   }
 
-  private captureLobbyFocus(): LobbyFocusSnapshot | null {
+  private captureLobbyFocus(): LobbyLaunchFocusSnapshot | null {
     const active = document.activeElement;
     if (this.root.hidden || !(active instanceof HTMLElement) || !this.root.contains(active)) return null;
     if ((this.accountPanelOpen || this.settingsOpen) && !active.closest('.lobby-overlay')) return null;
@@ -840,7 +925,7 @@ export class Lobby {
     if (occurrence < 0) return null;
     let selectionStart: number | null = null;
     let selectionEnd: number | null = null;
-    let selectionDirection: LobbyFocusSnapshot['selectionDirection'] = null;
+    let selectionDirection: LobbyLaunchFocusSnapshot['selectionDirection'] = null;
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
       try {
         selectionStart = active.selectionStart;
@@ -860,7 +945,7 @@ export class Lobby {
     };
   }
 
-  private restoreLobbyFocus(snapshot: LobbyFocusSnapshot | null): void {
+  private restoreLobbyFocus(snapshot: LobbyLaunchFocusSnapshot | null): void {
     if (!snapshot) return;
     const matching = this.lobbyFocusableControls().filter((control) => (
       this.lobbyFocusKey(control) === snapshot.key
@@ -1020,36 +1105,83 @@ export class Lobby {
   }
 
   private async checkCampaignResume(): Promise<void> {
-    const generation = ++this.campaignResumeGeneration;
-    try {
-      const record = await createIndexedDbCampaignStorage().load('ash-road-local');
-      const payload = record ? parseCampaignReplayPayload(record.payload) : null;
-      const compatible = payload
-        && payload.runState.checkpoint.run.episodeId === ASH_ROAD_EPISODE.episodeId
-        && payload.runState.checkpoint.run.episodeContentDigest === ASH_ROAD_EPISODE.contentDigest
-        && payload.runState.checkpoint.profile.contentDigest === FUEL_STOP_FIXTURE.combatProfile.contentDigest
-        ? payload
-        : null;
-      if (generation !== this.campaignResumeGeneration) return;
-      this.campaignResumePayload = compatible && record
-        ? Object.freeze({ payload: compatible, revision: record.revision })
-        : null;
-      this.render();
-    } catch {
-      if (generation !== this.campaignResumeGeneration) return;
-      this.campaignResumePayload = null;
+    const refresh = this.campaignSavePresentation.refresh();
+    if (!this.root.hidden) {
+      this.commandCenterShell?.update(this.campaignCommandContext());
     }
+    await refresh;
+    if (!this.root.hidden) {
+      const context = this.campaignCommandContext();
+      this.commandCenterShell?.update(context);
+      if (
+        context.savePresentation.status === 'compatible'
+        && this.campaignInitialPromotionEligible
+      ) {
+        const promoted = this.commandCenterShell?.promoteInitialSelection({
+          categoryId: commandCategoryId('campaigns'),
+          itemId: commandItemId('ash-road'),
+        }) === true;
+        if (promoted) this.campaignInitialPromotionEligible = false;
+      }
+    }
+  }
+
+  /** Capture the meaningful control that initiated one application launch. */
+  captureLaunchFocus(): LobbyLaunchFocusSnapshot | null {
+    const pending = this.pendingLaunchFocus;
+    this.pendingLaunchFocus = null;
+    return pending ?? this.captureLobbyFocus();
+  }
+
+  /** Restore a still-valid initiating control after launch acquisition fails. */
+  restoreLaunchFocus(snapshot: LobbyLaunchFocusSnapshot | null): void {
+    this.restoreLobbyFocus(snapshot);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && this.root.contains(active)) return;
+    const networkRetry = this.root.querySelector<HTMLElement>('[data-network-recovery-retry]');
+    if (networkRetry) {
+      networkRetry.focus({ preventScroll: true });
+      return;
+    }
+    this.lobbyReturnFocusTarget()?.focus({ preventScroll: true });
+  }
+
+  /** Re-project the campaign save owner after a launch failed to commit. */
+  async refreshCampaignSaveAfterLaunchFailure(): Promise<void> {
+    await this.checkCampaignResume();
+  }
+
+  /**
+   * Surface a non-network launch failure in the still-mounted owner workspace.
+   * The existing primary action remains its retry path; network recovery keeps
+   * using showNetworkRecovery instead.
+   */
+  showLaunchFailure(message: string): void {
+    // Battle-originated restarts begin with the lobby intentionally unmounted.
+    // Reconstruct its remembered owner before presenting a recoverable failure;
+    // lobby-originated launches keep their existing DOM and local state intact.
+    if (!this.root.firstElementChild) this.show();
+    let alert = this.root.querySelector<HTMLElement>('[data-launch-failure]');
+    if (!alert) {
+      alert = document.createElement('p');
+      alert.dataset.launchFailure = '';
+      alert.className = 'lobby-launch-failure';
+      alert.setAttribute('role', 'alert');
+      const owner = this.root.querySelector<HTMLElement>('.command-center__workspace-host')
+        ?? this.root.querySelector<HTMLElement>('.lobby-mode-panel')
+        ?? this.root;
+      owner.prepend(alert);
+    }
+    alert.textContent = message;
   }
 
   /** Restore the online preparation surface after match acquisition times out. */
   showNetworkRecovery(message: string, retry: () => void): void {
-    this.surface = 'preparation';
-    this.activeTab = 'online';
-    this.onlineSubView = 'create';
     this.onlineBusy = false;
     this.onlineError = message;
     this.networkRecoveryRetry = retry;
-    this.show();
+    if (!this.root.firstElementChild) this.show();
+    else this.render();
   }
 
   /**
@@ -1067,6 +1199,10 @@ export class Lobby {
   /** Hide the lobby overlay (e.g. once the game starts). */
   hide(): void {
     this.networkRecoveryRetry = null;
+    this.pendingLaunchFocus = null;
+    this.campaignSavePresentation.invalidate();
+    this.commandCenterShell?.destroy();
+    this.commandCenterShell = null;
     this.roomController.retire();
     this.cleanupWaitingChannel();
     this.stopBrowsePoll();
@@ -1203,12 +1339,242 @@ export class Lobby {
     this.focusAccountOverlay();
   }
 
+  private campaignCommandContext(): LobbyCommandCenterContext {
+    return {
+      savePresentation: this.campaignSavePresentation.presentation,
+      resumeCandidate: this.campaignSavePresentation.resumeCandidate,
+      selectedKit: this.selectedCampaignKit,
+      onSelectKit: (kitId) => { this.selectedCampaignKit = kitId; },
+      onStart: (kitId) => this.startAshRoad(kitId),
+      onResume: () => { this.resumeAshRoad(); },
+      onNewRun: (kitId, lifetime) => this.startAshRoad(kitId, lifetime),
+      onRetrySave: () => this.checkCampaignResume(),
+    };
+  }
+
+  private seedChallengePresentation(): LobbySeedChallengePresentation | undefined {
+    if (this.seedChallenge.status === 'absent') return undefined;
+    if (this.seedChallenge.status === 'invalid') return { status: 'invalid' };
+    const operation = operationForSeedChallenge(this.seedChallenge.challenge);
+    const fieldOrder = operation?.practiceObjective
+      ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
+      : null;
+    return operation && fieldOrder
+      ? {
+        status: 'valid',
+        title: operation.title,
+        objective: renderFieldOrder(fieldOrder).brief,
+        seed: this.seedChallenge.challenge.seed,
+      }
+      : { status: 'invalid' };
+  }
+
+  private createLegacySkirmishCommandView(
+    host: HTMLElement,
+  ): MountedCommandView<LobbyCommandCenterContext> {
+    let listeners = new AbortController();
+    let disposed = false;
+    let chooser: HTMLElement | null = null;
+    const mountChooser = (): void => {
+      listeners.abort();
+      listeners = new AbortController();
+      const seedChallenge = this.seedChallengePresentation();
+      const card = buildLobbyShellView({
+        activeTab: this.activeTab,
+        surface: 'chooser',
+        showBack: true,
+        rejoinAvailable: false,
+        account: null,
+        firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
+        quickOperations: QUICK_OPERATIONS,
+        ...(seedChallenge === undefined ? {} : {
+          seedChallenge,
+          onSeedChallenge: () => { this.startSeedChallenge(); },
+        }),
+        onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
+        onCampaign: (kitId) => { void this.startAshRoad(kitId); },
+        campaignResumeAvailable: this.campaignSavePresentation.presentation.status === 'compatible'
+          && this.campaignSavePresentation.resumeCandidate !== null,
+        onCampaignResume: () => { this.resumeAshRoad(); },
+        onRejoin: () => { void this.handleRejoin(); },
+        onTabChange: (tab) => {
+          this.activeTab = tab;
+          if (tab === 'hotseat') this.hotSeatSurface = 'local';
+          this.surface = 'preparation';
+          this.render();
+        },
+        onBack: () => undefined,
+        listenerSignal: listeners.signal,
+        includeCrossCategoryDestinations: false,
+      });
+      chooser = card.querySelector<HTMLElement>('.lobby-deployment-chooser');
+      if (!chooser) throw new Error('Legacy Quick Operations chooser is missing');
+      host.replaceChildren(chooser);
+    };
+    mountChooser();
+    return {
+      // Quick Operations owns no campaign-save presentation. A late save check
+      // must not rebuild this view and erase its selected operation or focus.
+      update: () => undefined,
+      focusDefault: () => {
+        if (!disposed) chooser?.querySelector<HTMLElement>('button, select, summary')?.focus();
+      },
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        listeners.abort();
+        chooser?.remove();
+        chooser = null;
+      },
+    };
+  }
+
+  private createPreparationBridgeView(
+    host: HTMLElement,
+    tab: LobbyTab,
+  ): MountedCommandView<LobbyCommandCenterContext> {
+    const listeners = new AbortController();
+    let disposed = false;
+    const section = document.createElement('section');
+    section.className = 'command-center__bridge';
+    const title = document.createElement('h2');
+    const description = document.createElement('p');
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'command-center__action command-center__primary-action';
+    action.dataset.commandPrimary = '';
+    if (tab === 'hotseat') {
+      title.textContent = 'Local Battle';
+      description.textContent = 'Set up the existing shared-screen crew and battlefield controls.';
+      action.textContent = 'Local Battle';
+    } else {
+      title.textContent = 'Online';
+      description.textContent = 'Open the existing create, join, browse, and waiting-room flow.';
+      action.textContent = 'Play Online';
+    }
+    action.addEventListener('click', () => {
+      if (disposed) return;
+      this.activeTab = tab;
+      if (tab === 'hotseat') this.hotSeatSurface = 'local';
+      this.surface = 'preparation';
+      this.render();
+    }, { signal: listeners.signal });
+    section.append(title, description, action);
+    host.replaceChildren(section);
+    return {
+      update: () => undefined,
+      focusDefault: () => { if (!disposed) action.focus(); },
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        listeners.abort();
+        section.remove();
+      },
+    };
+  }
+
+  private commandCenterContributions(): readonly CommandCategoryContribution<
+    LobbyCommandCenterContext
+  >[] {
+    const skirmishes: CommandCategoryContribution<LobbyCommandCenterContext> = {
+      id: commandCategoryId('skirmishes'),
+      label: 'Skirmishes',
+      icon: 'skirmishes',
+      order: 20,
+      availability: () => true,
+      provideItems: () => [{
+        id: commandItemId('quick-operations'),
+        summary: {
+          label: 'Quick Operations',
+          description: 'Choose a battlefield condition and duel the CPU.',
+        },
+        availability: () => true,
+        createView: (host) => this.createLegacySkirmishCommandView(host),
+      }],
+    };
+    const multiplayer: CommandCategoryContribution<LobbyCommandCenterContext> = {
+      id: commandCategoryId('multiplayer'),
+      label: 'Multiplayer',
+      icon: 'multiplayer',
+      order: 30,
+      availability: () => true,
+      provideItems: () => [
+        {
+          id: commandItemId('local-battle'),
+          summary: {
+            label: 'Local Battle',
+            description: 'Share one screen with a local crew.',
+          },
+          availability: () => true,
+          createView: (host) => this.createPreparationBridgeView(host, 'hotseat'),
+        },
+        {
+          id: commandItemId('online'),
+          summary: {
+            label: 'Online',
+            description: 'Create, join, or browse a network room.',
+          },
+          availability: () => true,
+          createView: (host) => this.createPreparationBridgeView(host, 'online'),
+        },
+      ],
+    };
+    return [
+      createAshRoadCommandCategoryContribution<LobbyCommandCenterContext>(),
+      skirmishes,
+      multiplayer,
+    ];
+  }
+
+  private mountCommandCenter(): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'lobby-command-center';
+    const context = this.campaignCommandContext();
+    const contributions = this.commandCenterContributions();
+    const registry = resolveCommandRegistry(contributions, context);
+    const campaigns = {
+      categoryId: commandCategoryId('campaigns'),
+      itemId: commandItemId('ash-road'),
+    };
+    const quickOperations = {
+      categoryId: commandCategoryId('skirmishes'),
+      itemId: commandItemId('quick-operations'),
+    };
+    const online = {
+      categoryId: commandCategoryId('multiplayer'),
+      itemId: commandItemId('online'),
+    };
+    const resolvedInitialSelection = resolveInitialCommandSelection(registry, {
+      ...(this.rejoinCandidate ? { explicitInviteOrRejoin: online } : {}),
+      ...(this.seedChallenge.status === 'valid' ? {
+        importedChallenge: { explicit: true, validated: true, selection: quickOperations },
+      } : {}),
+      campaign: {
+        compatible: this.campaignSavePresentation.presentation.status === 'compatible',
+        selection: campaigns,
+      },
+      firstSalvo: quickOperations,
+      standardQuickDuel: quickOperations,
+    }, this.commandSelectionStore);
+    this.campaignInitialPromotionEligible = resolvedInitialSelection?.source === 'first-salvo'
+      || resolvedInitialSelection?.source === 'standard-quick-duel';
+    const initialSelection = resolvedInitialSelection?.selection ?? campaigns;
+    this.commandCenterShell = createCommandCenterShell(host, {
+      contributions,
+      context,
+      initialSelection,
+      selectionStore: this.commandSelectionStore,
+    });
+    return host;
+  }
+
   /** Inject the lobby's scoped <style> once (do NOT edit index.html). */
   private injectStyle(): void {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent = `${lobbyCss}\n${lobbyConsoleCss}`;
+    style.textContent = `${lobbyCss}\n${lobbyConsoleCss}\n${commandCenterCss}`;
+    style.textContent += `\n${COMMAND_CENTER_ASSET_CSS}`;
     document.head.append(style);
   }
 
@@ -1216,6 +1582,8 @@ export class Lobby {
   private render(): void {
     const explicitVerifiedFocusRequested = this.focusVerifiedDeploymentRequested;
     const focusSnapshot = this.captureLobbyFocus();
+    this.commandCenterShell?.destroy();
+    this.commandCenterShell = null;
     this.renderListeners.abort();
     this.renderListeners = new AbortController();
     this.root.replaceChildren();
@@ -1282,6 +1650,9 @@ export class Lobby {
 
     const accountPanel = buildAccountPanelView(accountOptions(this.accountPanelOpen, true));
     if (this.diagnosticsIntentActive) accountPanel?.removeAttribute('aria-label');
+    const commandCenter = this.surface === 'chooser' && !this.diagnosticsIntentActive
+      ? this.mountCommandCenter()
+      : undefined;
 
     const card = buildLobbyShellView({
       activeTab: this.activeTab,
@@ -1292,6 +1663,7 @@ export class Lobby {
       vehiclePreview,
       content,
       controls,
+      ...(commandCenter ? { commandCenter } : {}),
       onTabChange: (tab) => {
         this.activeTab = tab;
         if (tab === 'hotseat') this.hotSeatSurface = 'local';
@@ -1320,8 +1692,9 @@ export class Lobby {
         onSeedChallenge: () => { this.startSeedChallenge(); },
       }),
       onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
-      onCampaign: (kitId) => { this.startAshRoad(kitId); },
-      campaignResumeAvailable: this.campaignResumePayload !== null,
+      onCampaign: (kitId) => { void this.startAshRoad(kitId); },
+      campaignResumeAvailable: this.campaignSavePresentation.presentation.status === 'compatible'
+        && this.campaignSavePresentation.resumeCandidate !== null,
       onCampaignResume: () => { this.resumeAshRoad(); },
       onRejoin: () => { void this.handleRejoin(); },
       onBack: () => {
@@ -1333,7 +1706,7 @@ export class Lobby {
         }
         this.surface = 'chooser';
         this.render();
-        [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
+        [...this.root.querySelectorAll<HTMLButtonElement>('button')]
           .find((button) => button.textContent === choice)
           ?.focus();
       },
@@ -1682,7 +2055,7 @@ export class Lobby {
     this.launchQuickDuel(operation, seed, 'local-selection');
   }
 
-  private startAshRoad(kitId: CampaignKitId): void {
+  private async startAshRoad(kitId: CampaignKitId, lifetime?: AbortSignal): Promise<void> {
     const route = ASH_ROAD_EPISODE.routes.find(({ id }) => id === ASH_ROAD_ROUTE_IDS.highRoad);
     if (!route) throw new Error('Ash Road is missing its public opening route');
     const run = parseCampaignRun({
@@ -1717,7 +2090,7 @@ export class Lobby {
             : ['missile', 'napalm'],
       }),
     );
-    this.onReady({
+    const config: LobbyConfig = {
       mode: 'hotseat',
       experience: 'campaign',
       campaign: {
@@ -1730,12 +2103,49 @@ export class Lobby {
         { name: 'Defender', color: PALETTE[1].value, ai: 'hard' },
       ],
       playerNames: ['Ranger', 'Defender'],
+    };
+    const saveStatus = this.campaignSavePresentation.presentation.status;
+    if (saveStatus === 'empty') {
+      this.onReady(config);
+      return;
+    }
+    if (saveStatus !== 'compatible' && saveStatus !== 'complete') return;
+
+    const payload = createCampaignReplayPayload({
+      runState: campaignRunState,
+      acceptedCommands: [],
+    });
+    const replacement = await this.campaignRunReplacement.replace(payload);
+    if (lifetime?.aborted) {
+      // A confirmed replacement may commit after its initiating view retires.
+      // Re-project that durable state without reviving the stale view or
+      // launching from its callback.
+      if (replacement.status === 'replaced') await this.checkCampaignResume();
+      return;
+    }
+    if (replacement.status !== 'replaced') {
+      if (replacement.status === 'conflict') {
+        this.render();
+        this.showLaunchFailure(
+          'Campaign progress changed in another session. Review the refreshed save before trying again.',
+        );
+        this.root.querySelector<HTMLElement>('[data-command-primary]')?.focus({ preventScroll: true });
+      }
+      return;
+    }
+    this.onReady({
+      ...config,
+      campaignReplayPayload: replacement.payload,
+      campaignReplayRevision: replacement.revision,
     });
   }
 
   private resumeAshRoad(): void {
-    const resume = this.campaignResumePayload;
+    const resume = this.campaignSavePresentation.resumeCandidate;
     if (!resume) return;
+    this.pendingLaunchFocus = this.captureLobbyFocus();
+    if (!this.campaignSavePresentation.beginRestoring()) return;
+    this.render();
     const { payload, revision } = resume;
     const runState = payload.runState;
     const descriptor = campaignDescriptorFromCheckpoint(
@@ -2664,6 +3074,7 @@ export class Lobby {
       const retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'lobby-btn primary';
+      retry.dataset.networkRecoveryRetry = '';
       retry.textContent = 'Retry game recovery';
       retry.addEventListener('click', () => {
         const action = this.networkRecoveryRetry;

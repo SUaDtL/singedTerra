@@ -157,8 +157,16 @@ function accountBackedLobby(root: HTMLElement, displayName = 'Ranger'): {
 }
 
 function clickLobbyButton(root: HTMLElement, text: string): void {
-  const match = [...root.querySelectorAll<HTMLButtonElement>('button')]
+  let match = [...root.querySelectorAll<HTMLButtonElement>('button')]
     .find((candidate) => candidate.textContent === text);
+  if (!match && text === 'Play Online') {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="online"]')?.click();
+    match = [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((candidate) => candidate.textContent === text);
+  }
   if (!match) throw new Error(`Missing ${text} button`);
   match.click();
 }
@@ -175,6 +183,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-test');
     try {
       localStorage.clear();
+      sessionStorage.clear();
     } catch {
       /* jsdom localStorage always present, but stay defensive */
     }
@@ -206,6 +215,8 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       descriptor: { roomId: 'room-recovery', roomCode: 'NEXT', playerId: 'player-recovery' },
       room: { status: 'active', players: [{ id: 'player-recovery' }] },
     };
+    lobby.show();
+    clickLobbyButton(root, 'Play Online');
 
     lobby.showNetworkRecovery(
       'Game recovery timed out. Return to Online and try joining again.',
@@ -239,9 +250,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
     it('associates the side-wall label and hint with its select', () => {
       lobby.show();
-      const playOnline = Array.from(root.querySelectorAll('button'))
-        .find((button) => button.textContent === 'Play Online')!;
-      playOnline.click();
+      clickLobbyButton(root, 'Play Online');
       Array.from(root.querySelectorAll('button'))
         .find((button) => button.textContent === 'Advanced settings')!.click();
 
@@ -261,8 +270,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
     it('offers Automatic plus every authored battlefield world', () => {
       lobby.show();
-      Array.from(root.querySelectorAll('button'))
-        .find((button) => button.textContent === 'Play Online')!.click();
+      clickLobbyButton(root, 'Play Online');
       Array.from(root.querySelectorAll('button'))
         .find((button) => button.textContent === 'Advanced settings')!.click();
 
@@ -835,8 +843,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
         return account;
       });
       browseLobby.show();
-      [...browseRoot.querySelectorAll('button')]
-        .find((candidate) => candidate.textContent === 'Play Online')!.click();
+      clickLobbyButton(browseRoot, 'Play Online');
       [...browseRoot.querySelectorAll('button')]
         .find((candidate) => candidate.textContent === 'Browse public rooms')!.click();
       await vi.waitFor(() => expect(browseRoot.querySelector('.lobby-name')).not.toBeNull());

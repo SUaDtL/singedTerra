@@ -25,6 +25,32 @@ function projection(overrides: Partial<RoundOverViewProjection> = {}): RoundOver
 }
 
 describe('RoundOverView', () => {
+  it('defers initial focus until a launching battle surface becomes interactive', async () => {
+    const battle = document.createElement('div');
+    const host = document.createElement('div');
+    battle.inert = true;
+    battle.setAttribute('inert', '');
+    battle.append(host);
+    document.body.append(battle);
+    const view = new RoundOverView({
+      host,
+      onBuy: vi.fn(),
+      onNextRound: vi.fn(),
+      onTankSelect: vi.fn(),
+      focusFallback: () => null,
+    });
+
+    view.show(projection());
+    const select = host.querySelector<HTMLSelectElement>('select')!;
+    expect(document.activeElement).not.toBe(select);
+
+    battle.inert = false;
+    battle.removeAttribute('inert');
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(document.activeElement).toBe(select);
+    battle.remove();
+  });
+
   it('renders the immutable projection and emits buy, tank, and next-round intents', () => {
     const host = document.createElement('div');
     const onBuy = vi.fn();

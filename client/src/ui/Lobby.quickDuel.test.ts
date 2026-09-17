@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TankLoadout } from '@shared/types/TankLoadout';
 import { FIRST_SALVO_PREFERENCE_KEY } from './firstSalvoCoach';
 import { FUEL_STOP_FIXTURE } from '../campaign/content/fuel-stop';
+import type { CampaignStorage } from '../campaign/storage';
+import type { CampaignSavePresentationOwner } from './commandCenter/CampaignSavePresentation';
 import { Lobby, type LobbyConfig } from './Lobby';
 
 interface LobbyInternals {
@@ -11,6 +13,7 @@ interface LobbyInternals {
     ai?: 'easy' | 'medium' | 'hard';
     loadout: TankLoadout;
   }>;
+  readonly campaignSavePresentation: CampaignSavePresentationOwner;
 }
 
 function internals(lobby: Lobby): LobbyInternals {
@@ -18,10 +21,30 @@ function internals(lobby: Lobby): LobbyInternals {
 }
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text);
+  if (!match && text.includes('Ash Road')) {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="campaigns"]',
+    )?.click();
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text);
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`);
   return match;
+}
+
+function emptyCampaignStorage(): CampaignStorage {
+  return {
+    load: vi.fn(async () => null),
+    compareAndSwap: vi.fn(),
+  };
+}
+
+async function waitForEmptyCampaignSave(lobby: Lobby): Promise<void> {
+  await vi.waitFor(() => {
+    expect(internals(lobby).campaignSavePresentation.presentation).toEqual({ status: 'empty' });
+  });
 }
 
 describe('Lobby Quick Duel', () => {
@@ -29,6 +52,7 @@ describe('Lobby Quick Duel', () => {
   let onReady: ReturnType<typeof vi.fn<(config: LobbyConfig) => void>>;
 
   beforeEach(() => {
+    sessionStorage.clear();
     window.localStorage.setItem(FIRST_SALVO_PREFERENCE_KEY, 'v1:completed');
     root = document.createElement('div');
     document.body.append(root);
@@ -134,13 +158,16 @@ describe('Lobby Quick Duel', () => {
     expect(emitted.players[0]).not.toHaveProperty('ai');
   });
 
-  it('starts Ash Road from the canonical Fuel Stop checkpoint with two supplies', () => {
-    const lobby = new Lobby(root, onReady);
+  it('starts Ash Road from the canonical Fuel Stop checkpoint with two supplies', async () => {
+    const lobby = new Lobby(
+      root, onReady, undefined, undefined, undefined, undefined, emptyCampaignStorage(),
+    );
     lobby.show();
+    await waitForEmptyCampaignSave(lobby);
 
     button(root, 'Start Ash Road').click();
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
 
-    expect(onReady).toHaveBeenCalledOnce();
     const config = onReady.mock.calls[0]![0];
     expect(config).toMatchObject({
       mode: 'hotseat',
@@ -169,16 +196,20 @@ describe('Lobby Quick Duel', () => {
     expect(Object.isFrozen(config.campaignRunState)).toBe(true);
   });
 
-  it('acquires the public breach kit with Sandhog as granted carried ammunition', () => {
-    const lobby = new Lobby(root, onReady);
+  it('acquires the public breach kit with Sandhog as granted carried ammunition', async () => {
+    const lobby = new Lobby(
+      root, onReady, undefined, undefined, undefined, undefined, emptyCampaignStorage(),
+    );
     lobby.show();
-    const kit = root.querySelector<HTMLSelectElement>('[aria-label="Ash Road loadout"]')!;
+    await waitForEmptyCampaignSave(lobby);
+    button(root, 'Start Ash Road');
+    const kit = root.querySelector<HTMLSelectElement>('[aria-label="New run kit"]')!;
     kit.value = 'breach';
     kit.dispatchEvent(new Event('change'));
 
     button(root, 'Start Ash Road').click();
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce());
 
-    expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0].campaignRunState?.loadout).toMatchObject({
       carried: {
         basicWeaponId: 'baby_missile',

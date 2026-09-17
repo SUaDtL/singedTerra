@@ -24,9 +24,17 @@ function required<T>(value: T | undefined, label: string): T {
 
 function openLocal(lobby: Lobby, root: HTMLElement): void {
   lobby.show();
+  openMultiplayer(root, 'local-battle', 'Local Battle');
+}
+
+function openMultiplayer(root: HTMLElement, itemId: 'local-battle' | 'online', action: string): void {
+  root.querySelector<HTMLButtonElement>(
+    '[data-command-surface="rail"][data-command-category="multiplayer"]',
+  )?.click();
+  root.querySelector<HTMLButtonElement>(`[data-command-item="${itemId}"]`)?.click();
   const choice = Array.from(root.querySelectorAll<HTMLButtonElement>('button'))
-    .find((candidate) => candidate.textContent === 'Local Battle');
-  if (!choice) throw new Error('Expected Local Battle choice');
+    .find((candidate) => candidate.textContent === action);
+  if (!choice) throw new Error(`Expected ${action} choice`);
   choice.click();
 }
 
@@ -61,6 +69,7 @@ describe('Lobby tank Garage', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     history.replaceState(null, '', '/');
     root = document.createElement('div');
     root.id = 'lobby';
@@ -252,9 +261,7 @@ describe('Lobby tank Garage', () => {
   it('exposes the same Garage on the online create form', () => {
     const lobby = new Lobby(root, onReady);
     lobby.show();
-    Array.from(root.querySelectorAll('button'))
-      .find((button) => button.textContent === 'Play Online')!
-      .click();
+    openMultiplayer(root, 'online', 'Play Online');
 
     const garage = root.querySelector<HTMLElement>(
       '.lobby-garage[data-owner="online-player"]',
@@ -319,9 +326,7 @@ describe('Lobby tank Garage', () => {
   it('previews the joiner color in join mode instead of the host color', () => {
     const lobby = new Lobby(root, onReady);
     lobby.show();
-    Array.from(root.querySelectorAll('button'))
-      .find((button) => button.textContent === 'Play Online')!
-      .click();
+    openMultiplayer(root, 'online', 'Play Online');
     Array.from(root.querySelectorAll('button'))
       .find((button) => button.textContent === 'Join with a code')!
       .click();

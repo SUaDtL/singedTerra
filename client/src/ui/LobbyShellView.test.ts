@@ -125,6 +125,7 @@ describe('buildLobbyShellView', () => {
     expect(deployment.tagName).toBe('MAIN');
     expect(deployment.getAttribute('aria-label')).toBe('Deployment preparation');
     expect(chooser.getAttribute('aria-label')).toBe('Choose deployment');
+    expect(chooser.classList.contains('command-center__legacy-skirmish')).toBe(true);
     expect(choices.map((choice) => choice.textContent)).toEqual([
       'Quick Duel vs CPU',
       'Local Battle',
@@ -289,6 +290,24 @@ describe('buildLobbyShellView', () => {
     disclosure.open = true;
     button(root, 'Quick Duel vs CPU').click();
     expect(onQuickDuel).toHaveBeenLastCalledWith('standard');
+  });
+
+  it('keeps the transitional Skirmishes bridge free of Campaign and Multiplayer controls', () => {
+    const root = buildLobbyShellView(options({
+      firstSalvoPreferenceUnseen: true,
+      includeCrossCategoryDestinations: false,
+      onCampaign: vi.fn(),
+      onCampaignResume: vi.fn(),
+      campaignResumeAvailable: true,
+    }));
+
+    expect(root.querySelector('.command-center__legacy-skirmish')).not.toBeNull();
+    expect(root.querySelector('.lobby-campaign-kit')).toBeNull();
+    expect(root.querySelector('select[aria-label="Ash Road loadout"]')).toBeNull();
+    expect([...root.querySelectorAll('button')].map(({ textContent }) => textContent)).not.toContain('Start Ash Road');
+    expect([...root.querySelectorAll('button')].map(({ textContent }) => textContent)).not.toContain('Resume Ash Road');
+    expect([...root.querySelectorAll('button')].map(({ textContent }) => textContent)).not.toContain('Local Battle');
+    expect([...root.querySelectorAll('button')].map(({ textContent }) => textContent)).not.toContain('Play Online');
   });
 
   it.each([

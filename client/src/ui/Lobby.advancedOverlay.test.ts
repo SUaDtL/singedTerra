@@ -2,8 +2,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { Lobby } from './Lobby'
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text)
+  if (!match && (text === 'Local Battle' || text === 'Play Online')) {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click()
+    root.querySelector<HTMLButtonElement>(
+      `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
+    )?.click()
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text)
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`)
   return match
 }

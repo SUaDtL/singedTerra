@@ -1,0 +1,127 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const commandCenterCss = readFileSync(
+  join(process.cwd(), 'src/ui/commandCenter/CommandCenter.css'),
+  'utf8',
+);
+const lobbySource = readFileSync(join(process.cwd(), 'src/ui/Lobby.ts'), 'utf8');
+const lobbyCss = readFileSync(join(process.cwd(), 'src/ui/Lobby.css'), 'utf8');
+const lobbyConsoleCss = readFileSync(join(process.cwd(), 'src/ui/LobbyConsole.css'), 'utf8');
+const mainSource = readFileSync(join(process.cwd(), 'src/main.ts'), 'utf8');
+
+describe('command center visual contract', () => {
+  it('owns one framed shell with admitted chrome assets and no battle-console selectors', () => {
+    expect(commandCenterCss).toMatch(/\.command-center\s*\{/);
+    expect(commandCenterCss).toContain('panel-frame.png');
+    expect(commandCenterCss).toContain('iron-tile.png');
+    expect(commandCenterCss).toContain('gold-tile.png');
+    expect(commandCenterCss).toContain('button-frame.png');
+    expect(commandCenterCss).toContain('button-selected-frame.png');
+    expect(commandCenterCss).not.toMatch(/#(?:app|hud|battle-rail)\b|\.st-battle/);
+  });
+
+  it('binds every admitted material asset through the runtime style seam', () => {
+    const bindings = [
+      ['commandPanelFrameUrl', '--command-panel-frame'],
+      ['commandIronTileUrl', '--command-iron-tile'],
+      ['commandGoldTileUrl', '--command-gold-tile'],
+      ['commandMapTileUrl', '--command-map-tile'],
+      ['commandButtonFrameUrl', '--command-button-frame'],
+      ['commandButtonSelectedFrameUrl', '--command-button-selected-frame'],
+      ['commandButtonHoverFrameUrl', '--command-button-hover-frame'],
+      ['commandButtonPressedFrameUrl', '--command-button-pressed-frame'],
+      ['commandButtonGoldFrameUrl', '--command-button-gold-frame'],
+      ['commandButtonDisabledFrameUrl', '--command-button-disabled-frame'],
+    ] as const;
+
+    for (const [importName, propertyName] of bindings) {
+      expect(lobbySource).toContain(`${propertyName}: url("\${${importName}}")`);
+    }
+    expect(lobbySource).toContain('style.textContent += `\\n${COMMAND_CENTER_ASSET_CSS}`;');
+  });
+
+  it('keeps every command target at least 44px and gives the primary action extra weight', () => {
+    expect(commandCenterCss).toMatch(
+      /\.command-center\s+(?:button|select|summary)[^{]*\{[^}]*min-height:\s*44px/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.command-center__primary-action\s*\{[^}]*min-height:\s*(?:5[6-9]|[6-9]\d)px/s,
+    );
+    expect(commandCenterCss).not.toMatch(/account-panel__account-trigger\s*\{[^}]*min-height:\s*(?:[0-3]?\d|4[0-3])px/s);
+  });
+
+  it('places the masthead and console explicitly instead of inheriting the retired named grid', () => {
+    expect(commandCenterCss).toMatch(
+      /\.lobby-card:has\(\.command-center\) \.lobby-deployment__masthead\s*\{[^}]*grid-area:\s*auto[^}]*grid-row:\s*1/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.command-center\s*\{[^}]*grid-area:\s*auto[^}]*grid-row:\s*2/s,
+    );
+  });
+
+  it('owns bounded scrolling, resilient labels, visible focus, and semantic state colours', () => {
+    expect(commandCenterCss).toMatch(
+      /\.command-center__workspace-host\s*\{[^}]*overflow-y:\s*auto/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.command-center__library-items\s*\{[^}]*overflow-y:\s*auto/s,
+    );
+    expect(commandCenterCss).toContain('overflow-wrap: anywhere');
+    expect(commandCenterCss).toMatch(/:focus-visible\s*\{/);
+    expect(commandCenterCss).toContain('--command-success:');
+    expect(commandCenterCss).toContain('--command-danger:');
+  });
+
+  it('switches rail to the Modes sheet on narrow or portrait screens', () => {
+    expect(commandCenterCss).toMatch(
+      /@media\s*\([^)]*max-width:[^)]*\)[\s\S]*?\.command-center__category-rail\s*\{[^}]*display:\s*none/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /@media\s*\([^)]*max-width:[^)]*\)[\s\S]*?\.command-center__modes-trigger\s*\{[^}]*display:\s*inline-flex/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /@media\s*\(orientation:\s*portrait\)[\s\S]*?\.command-center__category-rail\s*\{[^}]*display:\s*none/s,
+    );
+  });
+
+  it('keeps the workspace as the portrait scroll owner and compacts secondary commander facts', () => {
+    expect(commandCenterCss).toMatch(
+      /@media\s*\(max-width:\s*720px\)\s*and\s*\(orientation:\s*portrait\)[\s\S]*?\.lobby-card:has\(\.command-center\)\s*\{[^}]*overflow:\s*hidden/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /@media\s*\(max-width:\s*400px\)\s*and\s*\(orientation:\s*portrait\)[\s\S]*?\.account-panel__commander-rank-row[\s\S]*?display:\s*none/s,
+    );
+  });
+
+  it('provides reduced-motion and forced-colour fallbacks without hiding semantics', () => {
+    expect(commandCenterCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+    expect(commandCenterCss).toMatch(/@media\s*\(forced-colors:\s*active\)/);
+    expect(commandCenterCss).toMatch(
+      /@media\s*\(forced-colors:\s*active\)[\s\S]*?forced-color-adjust:\s*auto/s,
+    );
+  });
+
+  it('is injected after the legacy preparation styles as the only command-center layer', () => {
+    expect(lobbySource).toContain("import commandCenterCss from './commandCenter/CommandCenter.css?raw';");
+    expect(lobbySource).toContain('`${lobbyCss}\\n${lobbyConsoleCss}\\n${commandCenterCss}`');
+  });
+
+  it('fences the temporary Quick Operations bridge and removes retired launcher campaign rules', () => {
+    expect(lobbyConsoleCss).toContain('.command-center__legacy-skirmish');
+    expect(lobbyCss).not.toContain('.lobby-deployment-chooser');
+    expect(lobbyCss).not.toContain('.lobby-campaign-kit');
+    expect(lobbyConsoleCss).not.toContain('.lobby-deployment-chooser');
+    expect(lobbyConsoleCss).not.toContain('.lobby-campaign-kit');
+  });
+
+  it('projects compact layout ownership onto the unscaled pregame sibling', () => {
+    expect(mainSource).toContain("lobbyRoot.classList.toggle('is-compact', s < COMPACT_SCALE)");
+    expect(lobbyCss).not.toContain('#app.is-compact #lobby');
+    expect(lobbyCss).not.toContain('#app:not(.is-compact) #lobby');
+    expect(lobbyConsoleCss).not.toContain('#app.is-compact #lobby');
+    expect(lobbyConsoleCss).not.toContain('#app:not(.is-compact) #lobby');
+    expect(lobbyCss).not.toMatch(/var\(--st-store-buy-target\)\s*\*/u);
+  });
+});

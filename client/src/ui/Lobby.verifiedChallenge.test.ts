@@ -76,7 +76,14 @@ class FakeAccountSession implements AccountSessionPort {
 }
 
 function button(root: HTMLElement, label: string): HTMLButtonElement {
-  const found = [...root.querySelectorAll('button')].find((candidate) => candidate.textContent === label)
+  let found = [...root.querySelectorAll('button')].find((candidate) => candidate.textContent === label)
+  if (!found && label === 'Local Battle') {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click()
+    root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]')?.click()
+    found = [...root.querySelectorAll('button')].find((candidate) => candidate.textContent === label)
+  }
   if (!(found instanceof HTMLButtonElement)) throw new Error(`Missing ${label}`)
   return found
 }
@@ -121,7 +128,10 @@ function fixture(
     setNow: (value: number) => { now = value } }
 }
 
-beforeEach(() => localStorage.clear())
+beforeEach(() => {
+  localStorage.clear()
+  sessionStorage.clear()
+})
 afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()

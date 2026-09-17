@@ -358,11 +358,11 @@
         padding: 3px 2px;
         text-align: left;
       }
-      #app:not(.is-compact) #lobby .lobby-garage__slot {
+      #lobby:not(.is-compact) .lobby-garage__slot {
         flex: 1 0 auto;
         min-width: max-content;
       }
-      #app:not(.is-compact) #lobby .lobby-garage__slot strong { padding-right: 4px; }
+      #lobby:not(.is-compact) .lobby-garage__slot strong { padding-right: 4px; }
       #lobby .lobby-garage__slot span,
       #lobby .lobby-garage__slot strong {
         display: block;
@@ -454,44 +454,44 @@
       /* Below 0.8 stage scale, tiny inline controls become a single large
          Garage trigger plus a focused editor. Logical dimensions account for
          the whole-stage CSS zoom, preserving >=24 rendered-pixel targets. */
-      #app.is-compact #lobby .lobby-swatch,
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-swatch {
+      #lobby.is-compact .lobby-swatch,
+      #lobby.is-compact .lobby-rows.crowded .lobby-swatch {
         width: 44px;
         height: 44px;
         border-width: 2px;
       }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-row {
+      #lobby.is-compact .lobby-rows.crowded .lobby-row {
         grid-template-columns: minmax(60px, 1fr) 68px 48px;
       }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-swatches {
+      #lobby.is-compact .lobby-rows.crowded .lobby-swatches {
         grid-column: 1 / -1;
         grid-row: 2;
         justify-content: center;
         gap: 4px;
       }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-control {
+      #lobby.is-compact .lobby-rows.crowded .lobby-control {
         grid-column: 2;
         grid-row: 1;
         width: 68px;
       }
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-garage:not(.editing) {
+      #lobby.is-compact .lobby-rows.crowded .lobby-garage:not(.editing) {
         grid-column: 3;
         grid-row: 1;
       }
-      #app.is-compact #lobby .lobby-garage:not(.editing),
-      #app.is-compact #lobby .lobby-rows.crowded .lobby-garage:not(.editing) {
+      #lobby.is-compact .lobby-garage:not(.editing),
+      #lobby.is-compact .lobby-rows.crowded .lobby-garage:not(.editing) {
         display: block;
         padding: 0;
         border: 0;
         background: none;
       }
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__heading,
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__presets,
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__slots,
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__close {
+      #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__heading,
+      #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__presets,
+      #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__slots,
+      #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__close {
         display: none;
       }
-      #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__open {
+      #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__open {
         display: flex;
         width: 100%;
         min-height: 48px;
@@ -502,13 +502,13 @@
         font-size: 13px;
         font-weight: 700;
       }
-      #app.is-compact #lobby .lobby-rows.crowded
+      #lobby.is-compact .lobby-rows.crowded
         .lobby-garage:not(.editing) .lobby-garage__open {
         padding: 4px;
         font-size: 9px;
         line-height: 1.05;
       }
-      #app.is-compact #lobby .lobby-garage.editing {
+      #lobby.is-compact .lobby-garage.editing {
         position: fixed;
         inset: 28px;
         z-index: 100;
@@ -526,67 +526,67 @@
           linear-gradient(145deg, #160d2e, #0c0716 72%);
         box-shadow: 0 24px 90px rgba(0, 0, 0, 0.78);
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__editor-header {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__editor-header {
         display: block;
         grid-column: 1 / -1;
         color: var(--gold);
         font-size: 14px;
         letter-spacing: 1.5px;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__build-summary {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__build-summary {
         grid-column: 1 / -1;
         margin: 0;
         color: var(--text-dim);
         font: 11px/1.25 var(--font-sans);
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__preset-group,
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__component-group {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__preset-group,
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__component-group {
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
         gap: 5px;
         min-width: 0;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__group-label {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__group-label {
         color: rgba(255, 233, 168, 0.56);
         font: 700 9px/1 var(--font-display);
         letter-spacing: 1px;
         text-transform: uppercase;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__open {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__open {
         display: none;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__presets,
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slots {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__presets,
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__slots {
         display: grid;
         gap: 10px;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__presets {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__presets {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slots {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__slots {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
-      #app.is-compact #lobby .lobby-garage.editing button {
+      #lobby.is-compact .lobby-garage.editing button {
         min-height: 52px;
         padding: 8px 12px;
         font-size: 13px;
       }
-      #app.is-compact #lobby .lobby-garage.editing button::after {
+      #lobby.is-compact .lobby-garage.editing button::after {
         content: none;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__slot {
         text-align: left;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot > * {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__slot > * {
         display: block;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot span {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__slot span {
         font-size: 10px;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__slot strong {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__slot strong {
         font-size: 13px;
       }
-      #app.is-compact #lobby .lobby-garage.editing .lobby-garage__close {
+      #lobby.is-compact .lobby-garage.editing .lobby-garage__close {
         display: block;
         grid-column: 1 / -1;
         color: var(--ink);
@@ -594,16 +594,16 @@
         background: linear-gradient(180deg, #ffe478, #d99b21);
       }
       @media (pointer: coarse) {
-        #app.is-compact #lobby .lobby-swatch,
-        #app.is-compact #lobby .lobby-rows.crowded .lobby-swatch {
+        #lobby.is-compact .lobby-swatch,
+        #lobby.is-compact .lobby-rows.crowded .lobby-swatch {
           width: max(50px, calc(24px / var(--battle-ui-scale, 1)));
           height: max(50px, calc(24px / var(--battle-ui-scale, 1)));
           flex-shrink: 0;
         }
-        #app.is-compact #lobby .lobby-rows.crowded .lobby-row {
+        #lobby.is-compact .lobby-rows.crowded .lobby-row {
           grid-template-columns: minmax(60px, 1fr) 68px 50px;
         }
-        #app.is-compact #lobby .lobby-garage:not(.editing) .lobby-garage__open {
+        #lobby.is-compact .lobby-garage:not(.editing) .lobby-garage__open {
           min-height: 50px;
         }
       }
@@ -704,7 +704,7 @@
         #lobby .lobby-mode-context p { font-size: 11px; }
         #lobby .lobby-mode-context + .lobby-hotseat .lobby-sub { display: none; }
       }
-      #app.is-compact #lobby .lobby-mode-panel[aria-labelledby="lobby-mode-online"] .lobby-sub {
+      #lobby.is-compact .lobby-mode-panel[aria-labelledby="lobby-mode-online"] .lobby-sub {
         margin-bottom: 5px;
       }
 
@@ -904,11 +904,11 @@
       #lobby .account-panel__progress dd {
         margin: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px;
       }
-      #app.is-compact #lobby .account-panel__progress dt,
-      #app.is-compact #lobby .account-panel__summary-unavailable {
+      #lobby.is-compact .account-panel__progress dt,
+      #lobby.is-compact .account-panel__summary-unavailable {
         font-size: 14px; line-height: 1.25;
       }
-      #app.is-compact #lobby .account-panel__progress dd {
+      #lobby.is-compact .account-panel__progress dd {
         font-size: 16px; line-height: 1.2;
       }
       #lobby .account-panel__xp {
@@ -935,11 +935,11 @@
       #lobby .account-panel__xp-meter {
         display: block; width: 100%; height: 10px; accent-color: var(--gold);
       }
-      #app.is-compact #lobby .account-panel__xp-label,
-      #app.is-compact #lobby .account-panel__xp-remaining {
+      #lobby.is-compact .account-panel__xp-label,
+      #lobby.is-compact .account-panel__xp-remaining {
         font-size: 14px;
       }
-      #app.is-compact #lobby .account-panel__xp-value {
+      #lobby.is-compact .account-panel__xp-value {
         font-size: 16px;
       }
       #lobby .account-panel__form { display: grid; gap: 9px; }
@@ -1055,19 +1055,19 @@
         #lobby .lobby-overlay .lobby-advanced-fields select,
         #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
       }
-      #app.is-compact #lobby .lobby-overlay__surface {
+      #lobby.is-compact .lobby-overlay__surface {
         width: calc(100% - 40px);
         max-height: calc(100% - 32px);
       }
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-field {
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields .lobby-field {
         grid-template-columns: minmax(0, 1fr);
         align-items: stretch;
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-field > label,
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields input[type="number"],
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields select,
-      #app.is-compact #lobby .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields .lobby-field > label,
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields input[type="number"],
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields select,
+      #lobby.is-compact .lobby-overlay .lobby-advanced-fields .lobby-hint { grid-column: 1; }
 
       /* Command preparation system: pre-game surfaces inherit the same
          austere field-console language as the battlefield HUD. */
@@ -1088,7 +1088,7 @@
       #lobby .lobby-tabs,
       #lobby .lobby-controls,
       #lobby .account-panel--open,
-      #app.is-compact #lobby .lobby-garage.editing {
+      #lobby.is-compact .lobby-garage.editing {
         border-radius: 0;
       }
       #lobby .lobby-command-header {
@@ -1331,31 +1331,31 @@
         height: 5px;
         accent-color: #d79a38;
       }
-      #app.is-compact #lobby .account-panel__record {
+      #lobby.is-compact .account-panel__record {
         gap: 1px;
         padding: 2px 3px;
       }
-      #app.is-compact #lobby .account-panel { top: 0; }
-      #app.is-compact #lobby .account-panel__record h2 {
-        font-size: calc(var(--st-store-buy-target) * 0.19);
+      #lobby.is-compact .account-panel { top: 0; }
+      #lobby.is-compact .account-panel__record h2 {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.19);
         letter-spacing: 1px;
       }
-      #app.is-compact #lobby .account-panel__record .account-panel__account-trigger {
-        min-height: calc(var(--st-store-buy-target) * 0.55);
-        font-size: calc(var(--st-store-buy-target) * 0.19);
+      #lobby.is-compact .account-panel__record .account-panel__account-trigger {
+        min-height: calc(var(--st-store-buy-target, 44px) * 0.55);
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.19);
       }
-      #app.is-compact #lobby .account-panel__record-milestone {
-        font-size: calc(var(--st-store-buy-target) * 0.16);
+      #lobby.is-compact .account-panel__record-milestone {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.16);
       }
-      #app.is-compact #lobby .account-panel__commander-rank,
-      #app.is-compact #lobby .account-panel__record .account-panel__career-next {
-        font-size: calc(var(--st-store-buy-target) * 0.2);
+      #lobby.is-compact .account-panel__commander-rank,
+      #lobby.is-compact .account-panel__record .account-panel__career-next {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.2);
       }
-      #app.is-compact #lobby .account-panel__commander-insignia {
-        font-size: calc(var(--st-store-buy-target) * 0.24);
+      #lobby.is-compact .account-panel__commander-insignia {
+        font-size: calc(var(--st-store-buy-target, 44px) * 0.24);
       }
-      #app.is-compact #lobby .account-panel__record-xp {
-        height: calc(var(--st-store-buy-target) * 0.1);
+      #lobby.is-compact .account-panel__record-xp {
+        height: calc(var(--st-store-buy-target, 44px) * 0.1);
       }
       #lobby .account-panel__xp-meter { accent-color: #d79a38; }
       #lobby .account-panel__career {
@@ -1382,17 +1382,17 @@
         letter-spacing: 0.35px;
       }
       #lobby .account-panel__career-insignia { font-size: 20px; }
-      #app.is-compact #lobby .account-panel__career > .account-panel__career-next {
+      #lobby.is-compact .account-panel__career > .account-panel__career-next {
         font-size: 16px;
       }
-      #app.is-compact #lobby .account-panel__career-current { font-size: 16px; }
-      #app.is-compact #lobby .account-panel__career-insignia { font-size: 24px; }
-      #app.is-compact #lobby .lobby-command-header {
+      #lobby.is-compact .account-panel__career-current { font-size: 16px; }
+      #lobby.is-compact .account-panel__career-insignia { font-size: 24px; }
+      #lobby.is-compact .lobby-command-header {
         min-height: 8px;
         margin-bottom: 0;
         padding-bottom: 0;
       }
-      #app.is-compact #lobby .lobby-command-header__kicker { font-size: 8px; letter-spacing: 1.6px; }
+      #lobby.is-compact .lobby-command-header__kicker { font-size: 8px; letter-spacing: 1.6px; }
 
       /* The online follow-through is an operations board, not a detached
          stack of setup controls. Discovery and staging share one field-report
@@ -1479,14 +1479,14 @@
         padding-top: 5px;
         border-top: 1px solid rgba(229, 161, 65, 0.18);
       }
-      #app.is-compact #lobby .lobby-operations-board { padding-left: 5px; }
-      #app.is-compact #lobby .lobby-operations-board__header { gap: 5px; }
-      #app.is-compact #lobby .lobby-operations-board__title { font-size: 10px; }
-      #app.is-compact #lobby .lobby-operations-board__purpose { display: none; }
-      #app.is-compact #lobby .lobby-operations-board__crew,
-      #app.is-compact #lobby .lobby-operations-board__section,
-      #app.is-compact #lobby .lobby-operations-board__mission,
-      #app.is-compact #lobby .lobby-operations-board__roster {
+      #lobby.is-compact .lobby-operations-board { padding-left: 5px; }
+      #lobby.is-compact .lobby-operations-board__header { gap: 5px; }
+      #lobby.is-compact .lobby-operations-board__title { font-size: 10px; }
+      #lobby.is-compact .lobby-operations-board__purpose { display: none; }
+      #lobby.is-compact .lobby-operations-board__crew,
+      #lobby.is-compact .lobby-operations-board__section,
+      #lobby.is-compact .lobby-operations-board__mission,
+      #lobby.is-compact .lobby-operations-board__roster {
         margin-top: 4px;
         padding-top: 3px;
       }
@@ -1845,93 +1845,93 @@
         }
         #lobby .lobby-route-brief--online .online-status:empty { display: none; }
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-field:has(> .lobby-swatches) {
+      #lobby.is-compact .lobby-route-brief--online .lobby-field:has(> .lobby-swatches) {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-field > .lobby-swatches {
+      #lobby.is-compact .lobby-route-brief--online .lobby-field > .lobby-swatches {
         grid-column: 1 / -1;
         min-width: 0;
         flex-wrap: wrap;
       }
-      #app.is-compact #lobby .lobby-route-brief {
+      #lobby.is-compact .lobby-route-brief {
         padding-left: 5px;
       }
-      #app.is-compact #lobby .lobby-route-brief__header {
+      #lobby.is-compact .lobby-route-brief__header {
         gap: 5px;
       }
-      #app.is-compact #lobby .lobby-route-brief__title { font-size: 10px; }
-      #app.is-compact #lobby .lobby-route-brief__purpose { display: none; }
-      #app.is-compact #lobby .lobby-hotseat-ready {
+      #lobby.is-compact .lobby-route-brief__title { font-size: 10px; }
+      #lobby.is-compact .lobby-route-brief__purpose { display: none; }
+      #lobby.is-compact .lobby-hotseat-ready {
         grid-template-columns: auto minmax(0, 1fr);
         padding: 5px 7px;
       }
-      #app.is-compact #lobby .lobby-hotseat-ready p { display: none; }
-      #app.is-compact #lobby .lobby-verified-deployment {
+      #lobby.is-compact .lobby-hotseat-ready p { display: none; }
+      #lobby.is-compact .lobby-verified-deployment {
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 3px 6px;
         margin-top: 3px;
         padding: 5px 6px;
       }
-      #app.is-compact #lobby .lobby-verified-deployment__matchup { font-size: 9px; }
-      #app.is-compact #lobby .lobby-verified-deployment__rules {
+      #lobby.is-compact .lobby-verified-deployment__matchup { font-size: 9px; }
+      #lobby.is-compact .lobby-verified-deployment__rules {
         gap: 1px 8px;
         font-size: 8px;
       }
-      #app.is-compact #lobby .lobby-verified-deployment__dossier { padding: 4px 5px; }
-      #app.is-compact #lobby .lobby-verified-deployment__dossier p { font-size: 8px; }
-      #app.is-compact #lobby .lobby-verified-deployment__actions {
+      #lobby.is-compact .lobby-verified-deployment__dossier { padding: 4px 5px; }
+      #lobby.is-compact .lobby-verified-deployment__dossier p { font-size: 8px; }
+      #lobby.is-compact .lobby-verified-deployment__actions {
         min-width: 168px;
       }
-      #app.is-compact #lobby .lobby-verified-deployment__actions > .lobby-btn {
+      #lobby.is-compact .lobby-verified-deployment__actions > .lobby-btn {
         min-height: var(--st-deployment-choice-target, 44px);
       }
-      #app.is-compact #lobby .lobby-commander-operations {
+      #lobby.is-compact .lobby-commander-operations {
         grid-template-columns: minmax(0, 1fr);
         gap: 4px;
         margin-top: 4px;
         padding: 5px;
       }
-      #app.is-compact #lobby .lobby-commander-operations .lobby-verified-deployment {
+      #lobby.is-compact .lobby-commander-operations .lobby-verified-deployment {
         grid-template-columns: minmax(0, 1fr);
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-commander-operations .lobby-verified-deployment__actions {
+      #lobby.is-compact .lobby-commander-operations .lobby-verified-deployment__actions {
         grid-column: 1;
         grid-row: auto;
         min-width: 0;
         align-content: stretch;
       }
-      #app.is-compact #lobby .lobby-commander-operations__career {
+      #lobby.is-compact .lobby-commander-operations__career {
         gap: 6px;
         padding: 4px 5px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__career p {
+      #lobby.is-compact .lobby-commander-operations__career p {
         font-size: 9px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__practice {
+      #lobby.is-compact .lobby-commander-operations__practice {
         gap: 3px;
         padding: 5px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__practice > p {
+      #lobby.is-compact .lobby-commander-operations__practice > p {
         display: none;
       }
-      #app.is-compact #lobby .lobby-commander-operations__cards {
+      #lobby.is-compact .lobby-commander-operations__cards {
         display: none;
       }
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch {
+      #lobby.is-compact .lobby-commander-operations__compact-launch {
         min-height: var(--st-deployment-choice-target, 44px);
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch select,
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+      #lobby.is-compact .lobby-commander-operations__compact-launch select,
+      #lobby.is-compact .lobby-commander-operations__compact-launch button {
         min-width: 0;
         min-height: var(--st-deployment-choice-target, 44px);
         font-size: 9px;
       }
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+      #lobby.is-compact .lobby-commander-operations__compact-launch button {
         min-width: var(--st-deployment-choice-target, 44px);
       }
       #lobby .lobby-commander-operations__career h3,
@@ -1946,28 +1946,28 @@
       #lobby .lobby-commander-operations .lobby-verified-deployment__dossier h4,
       #lobby .lobby-commander-operations .lobby-verified-deployment__dossier p,
       #lobby .lobby-commander-operations .lobby-verified-deployment__message,
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch select,
-      #app.is-compact #lobby .lobby-commander-operations__compact-launch button {
+      #lobby.is-compact .lobby-commander-operations__compact-launch select,
+      #lobby.is-compact .lobby-commander-operations__compact-launch button {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-hotseat-customization > summary { min-height: 34px; }
-      #app.is-compact #lobby .lobby-route-brief__setup {
+      #lobby.is-compact .lobby-hotseat-customization > summary { min-height: 34px; }
+      #lobby.is-compact .lobby-route-brief__setup {
         margin-top: 0;
       }
-      #app.is-compact #lobby .lobby-route-brief__setup > .lobby-field > label { width: 78px; }
-      #app.is-compact #lobby .lobby-preparation-section {
+      #lobby.is-compact .lobby-route-brief__setup > .lobby-field > label { width: 78px; }
+      #lobby.is-compact .lobby-preparation-section {
         margin-top: 2px;
         padding: 2px 5px 3px;
       }
-      #app.is-compact #lobby .lobby-preparation-section__title { font-size: 9px; }
-      #app.is-compact #lobby .lobby-preparation-section__purpose {
+      #lobby.is-compact .lobby-preparation-section__title { font-size: 9px; }
+      #lobby.is-compact .lobby-preparation-section__purpose {
         display: none;
       }
-      #app.is-compact #lobby .lobby-preparation-section__body {
+      #lobby.is-compact .lobby-preparation-section__body {
         gap: 2px;
         margin-top: 2px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+      #lobby.is-compact .lobby-route-brief--online .lobby-route-brief__setup {
         display: block;
       }
 
@@ -2031,40 +2031,6 @@
         min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
         font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
       }
-      #lobby .lobby-deployment-chooser {
-        grid-column: 1 / -1;
-        grid-row: 2 / -1;
-        align-self: center;
-        justify-self: center;
-        width: min(780px, 72%);
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        padding: 24px;
-        border-block: 1px solid rgba(255, 210, 63, 0.32);
-        background: linear-gradient(90deg, transparent, rgba(32, 22, 12, 0.72), transparent);
-      }
-      #lobby .lobby-deployment:has(.lobby-seed-challenge) {
-        height: calc(100% - 32px);
-        min-height: 0;
-      }
-      #lobby .lobby-deployment-chooser:has(.lobby-seed-challenge) {
-        align-self: stretch;
-        min-height: 0;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-      }
-      #lobby .lobby-deployment-chooser .lobby-btn {
-        min-height: var(--st-deployment-choice-target, 44px);
-        letter-spacing: 0.9px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-first-salvo,
-      #lobby .lobby-seed-challenge,
-      #lobby [data-ui="other-quick-duels"] {
-        grid-column: 1 / -1;
-        min-width: 0;
-      }
       #lobby .lobby-seed-challenge {
         display: grid;
         gap: 6px;
@@ -2080,91 +2046,6 @@
       }
       #lobby .lobby-seed-challenge > h2,
       #lobby .lobby-seed-challenge > p { margin: 0; }
-      #lobby .lobby-quick-operation {
-        grid-column: 1 / -1;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 7px;
-        padding: 12px;
-        border: 1px solid rgba(255, 210, 63, 0.28);
-        background: linear-gradient(135deg, rgba(44, 29, 19, 0.78), rgba(12, 16, 18, 0.92));
-      }
-      #lobby .lobby-quick-operation__kicker {
-        color: #e9ba55;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-      }
-      #lobby .lobby-quick-operation h2 {
-        margin: 0;
-        color: #fff0c6;
-        font-size: 18px;
-        line-height: 1.15;
-      }
-      #lobby .lobby-quick-operation__cards {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-      #lobby .lobby-quick-operation__card {
-        min-width: 0;
-        min-height: var(--st-deployment-choice-target, 44px);
-        padding: 10px 12px;
-        border: 1px solid rgba(170, 132, 72, 0.68);
-        background: rgba(13, 17, 18, 0.9);
-        color: #d8c6a2;
-        text-align: left;
-        transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
-      }
-      #lobby .lobby-quick-operation__card:hover,
-      #lobby .lobby-quick-operation__card:focus-visible {
-        border-color: rgba(255, 211, 92, 0.96);
-        outline: none;
-        background: rgba(63, 43, 24, 0.94);
-      }
-      #lobby .lobby-quick-operation__card[aria-pressed='true'] {
-        border-color: #ffd15d;
-        background: linear-gradient(135deg, rgba(110, 53, 27, 0.95), rgba(42, 27, 17, 0.96));
-        box-shadow: inset 3px 0 0 #f4b53c, 0 0 0 1px rgba(255, 217, 119, 0.2);
-        color: #fff0c6;
-      }
-      #lobby .lobby-quick-operation__card-title,
-      #lobby .lobby-quick-operation__card-briefing {
-        display: block;
-      }
-      #lobby .lobby-quick-operation__card-title {
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.35px;
-      }
-      #lobby .lobby-quick-operation__card-briefing,
-      #lobby .lobby-quick-operation__briefing {
-        color: #c6b795;
-        font-size: 12px;
-        line-height: 1.3;
-      }
-      #lobby .lobby-quick-operation__briefing {
-        min-height: 1.3em;
-        margin: 0;
-        color: #ffe0a0;
-      }
-      #lobby .lobby-deployment-chooser .lobby-btn.primary {
-        grid-column: 1 / -1;
-        min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
-        font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
-        letter-spacing: 1.4px;
-      }
-      #lobby .lobby-deployment-chooser .lobby-deployment-choice--secondary {
-        border: 1px solid rgba(170, 132, 72, 0.72);
-        background: #111416 linear-gradient(180deg, rgba(28, 30, 31, 0.96), rgba(8, 10, 12, 0.98));
-        color: #d8c6a2;
-        box-shadow: inset 0 1px 0 rgba(255, 236, 196, 0.08);
-      }
-      #lobby .lobby-deployment-chooser .lobby-deployment-choice--secondary:hover:not(:disabled) {
-        border-color: rgba(229, 161, 65, 0.9);
-        background: #171716 linear-gradient(180deg, rgba(42, 39, 33, 0.98), rgba(12, 12, 12, 0.98));
-        color: #ffe0a0;
-      }
       #lobby .lobby-deployment__back {
         grid-area: rail;
         justify-self: start;
@@ -2200,11 +2081,11 @@
         overflow: hidden;
         align-self: stretch;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-operations-board--waiting) > .lobby-mode-panel {
+      #lobby.is-compact .lobby-deployment:has(.lobby-operations-board--waiting) > .lobby-mode-panel {
         position: static;
         overflow-y: auto;
       }
-      #app.is-compact #lobby .lobby-operations-board--waiting {
+      #lobby.is-compact .lobby-operations-board--waiting {
         position: static;
         inset: auto;
       }
@@ -2225,7 +2106,7 @@
         z-index: 4;
         margin: 0;
       }
-      #app.is-compact #lobby .lobby-deployment {
+      #lobby.is-compact .lobby-deployment {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
         grid-template-areas:
@@ -2236,36 +2117,20 @@
         column-gap: 8px;
         row-gap: 5px;
       }
-      #app.is-compact #lobby .lobby-deployment__back,
-      #app.is-compact #lobby .lobby-deployment__mission-brief,
-      #app.is-compact #lobby .lobby-deployment > .lobby-mode-panel {
+      #lobby.is-compact .lobby-deployment__back,
+      #lobby.is-compact .lobby-deployment__mission-brief,
+      #lobby.is-compact .lobby-deployment > .lobby-mode-panel {
         width: min(600px, 52%);
       }
-      #app.is-compact #lobby .lobby-deployment-chooser {
-        /* Reserve the masthead's right-hand commander dossier. The chooser
-           owns the left deployment lane instead of flowing underneath it. */
-        width: min(600px, 52%);
-        justify-self: start;
-        margin-inline: 0 auto;
-        gap: 8px;
-        padding: 12px;
-      }
-      #app.is-compact #lobby .lobby-quick-operation {
-        gap: 5px;
-        padding: 9px;
-      }
-      #app.is-compact #lobby .lobby-quick-operation h2 { font-size: 16px; }
-      #app.is-compact #lobby .lobby-quick-operation__card { padding: 7px 9px; }
-      #app.is-compact #lobby .lobby-quick-operation__card-briefing { display: none; }
-      #app.is-compact #lobby .lobby-deployment__back {
+      #lobby.is-compact .lobby-deployment__back {
         width: max-content;
         align-self: center;
         min-height: var(--st-deployment-choice-target, 44px);
       }
-      #app.is-compact #lobby .lobby-card:has(.lobby-deployment__back) {
+      #lobby.is-compact .lobby-card:has(.lobby-deployment__back) {
         padding-block: 12px;
       }
-      #app.is-compact #lobby .lobby-deployment > .lobby-preview {
+      #lobby.is-compact .lobby-deployment > .lobby-preview {
         display: block;
         position: absolute;
         inset: 70px 0 30px auto;
@@ -2274,17 +2139,17 @@
         min-height: 0;
         height: auto;
       }
-      #app.is-compact #lobby .lobby-deployment > .lobby-controls { bottom: 56px; }
-      #app.is-compact #lobby .lobby-deployment__masthead { min-height: 0; }
-      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel__record) {
+      #lobby.is-compact .lobby-deployment > .lobby-controls { bottom: 56px; }
+      #lobby.is-compact .lobby-deployment__masthead { min-height: 0; }
+      #lobby.is-compact .lobby-deployment__masthead:has(.account-panel__record) {
         min-height: 205px;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.account-panel__record)
+      #lobby.is-compact .lobby-deployment:has(.account-panel__record)
         > .lobby-preview {
         inset-block-start: 165px;
       }
-      #app.is-compact #lobby .lobby-deployment__masthead > .account-panel,
-      #app.is-compact #lobby .lobby-deployment__masthead > .account-panel--open {
+      #lobby.is-compact .lobby-deployment__masthead > .account-panel,
+      #lobby.is-compact .lobby-deployment__masthead > .account-panel--open {
         position: absolute;
         top: 0;
         right: 0;
@@ -2294,115 +2159,115 @@
         justify-self: auto;
         margin: 0;
       }
-      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel--open)
+      #lobby.is-compact .lobby-deployment__masthead:has(.account-panel--open)
         ~ .lobby-preview,
-      #app.is-compact #lobby .lobby-deployment__masthead:has(.account-panel--open)
+      #lobby.is-compact .lobby-deployment__masthead:has(.account-panel--open)
         ~ .lobby-controls {
         visibility: hidden;
       }
-      #app.is-compact #lobby:has(.lobby-garage.editing) .lobby-preview {
+      #lobby.is-compact:has(.lobby-garage.editing) .lobby-preview {
         visibility: hidden;
       }
-      #app.is-compact #lobby .lobby-deployment__mission-brief {
+      #lobby.is-compact .lobby-deployment__mission-brief {
         display: block;
         padding: 5px 0;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat-customization[open])
         > .lobby-deployment__mission-brief {
         display: none;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat-customization[open]) {
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat-customization[open]) {
         row-gap: 0;
       }
       /* The fixed game stage is intentionally zoomed as one unit. Logical
          compact sizes preserve physical legibility without overgrowing the
          Vehicle Bay; the shorter coarse-pointer viewport gets a stronger tier. */
-      #app.is-compact #lobby .lobby-mode-context h2,
-      #app.is-compact #lobby .lobby-deployment .lobby-tab,
-      #app.is-compact #lobby .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
-      #app.is-compact #lobby .lobby-hotseat-ready h3,
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-preparation-section__title,
-      #app.is-compact #lobby .account-panel > button,
-      #app.is-compact #lobby .account-panel__record .account-panel__account-trigger,
-      #app.is-compact #lobby .lobby-preview__spotlight-identity {
+      #lobby.is-compact .lobby-mode-context h2,
+      #lobby.is-compact .lobby-deployment .lobby-tab,
+      #lobby.is-compact .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
+      #lobby.is-compact .lobby-hotseat-ready h3,
+      #lobby.is-compact .lobby-route-brief--online .lobby-preparation-section__title,
+      #lobby.is-compact .account-panel > button,
+      #lobby.is-compact .account-panel__record .account-panel__account-trigger,
+      #lobby.is-compact .lobby-preview__spotlight-identity {
         font-size: 21px;
       }
-      #app.is-compact #lobby .lobby-command-header__kicker,
-      #app.is-compact #lobby .lobby-preview__label,
-      #app.is-compact #lobby .lobby-preview__part span,
-      #app.is-compact #lobby .lobby-preview__part strong {
+      #lobby.is-compact .lobby-command-header__kicker,
+      #lobby.is-compact .lobby-preview__label,
+      #lobby.is-compact .lobby-preview__part span,
+      #lobby.is-compact .lobby-preview__part strong {
         font-size: 18px;
       }
-      #app.is-compact #lobby .lobby-preview__part strong {
+      #lobby.is-compact .lobby-preview__part strong {
         font-family: var(--font-sans);
         letter-spacing: -1.8px;
       }
-      #app.is-compact #lobby .lobby-preview__part span {
+      #lobby.is-compact .lobby-preview__part span {
         letter-spacing: -0.8px;
       }
-      #app.is-compact #lobby .lobby-preview__parts {
+      #lobby.is-compact .lobby-preview__parts {
         width: calc(100% - 8px);
         gap: 3px;
       }
-      #app.is-compact #lobby .lobby-preview__part {
+      #lobby.is-compact .lobby-preview__part {
         padding-inline: 3px;
       }
-      #app.is-compact #lobby .lobby-preview__convoy {
+      #lobby.is-compact .lobby-preview__convoy {
         bottom: 80px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-route-brief__setup {
+      #lobby.is-compact .lobby-route-brief--online .lobby-route-brief__setup {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         column-gap: 4px;
         align-items: start;
       }
-      #app.is-compact #lobby .lobby-route-brief--online
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="command-vehicle"] {
         grid-column: 1 / -1;
       }
-      #app.is-compact #lobby .lobby-route-brief--online
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="operation-profile"] {
         grid-column: 1;
       }
-      #app.is-compact #lobby .lobby-route-brief--online
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="battlefield-protocol"] {
         grid-column: 2;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-actions {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-actions {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);
         align-items: center;
         gap: 8px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-alternatives {
         flex-wrap: nowrap;
         gap: 6px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-label {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-alternatives-label {
         display: none;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-online-alternatives-buttons {
+      #lobby.is-compact .lobby-route-brief--online .lobby-online-alternatives-buttons {
         flex-wrap: nowrap;
         gap: 8px;
       }
-      #app.is-compact #lobby .lobby-route-brief--online .lobby-btn.secondary {
+      #lobby.is-compact .lobby-route-brief--online .lobby-btn.secondary {
         padding-block: 4px;
       }
       @media (pointer: coarse) {
-        #app.is-compact #lobby .lobby-mode-context h2,
-        #app.is-compact #lobby .lobby-deployment .lobby-tab,
-        #app.is-compact #lobby .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
-        #app.is-compact #lobby .lobby-hotseat-ready h3,
-        #app.is-compact #lobby .lobby-route-brief--online .lobby-preparation-section__title,
-        #app.is-compact #lobby .account-panel > button,
-        #app.is-compact #lobby .account-panel__record .account-panel__account-trigger,
-        #app.is-compact #lobby .lobby-preview__spotlight-identity {
+        #lobby.is-compact .lobby-mode-context h2,
+        #lobby.is-compact .lobby-deployment .lobby-tab,
+        #lobby.is-compact .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
+        #lobby.is-compact .lobby-hotseat-ready h3,
+        #lobby.is-compact .lobby-route-brief--online .lobby-preparation-section__title,
+        #lobby.is-compact .account-panel > button,
+        #lobby.is-compact .account-panel__record .account-panel__account-trigger,
+        #lobby.is-compact .lobby-preview__spotlight-identity {
           font-size: 25px;
         }
-        #app.is-compact #lobby .lobby-command-header__kicker,
-        #app.is-compact #lobby .lobby-preview__label,
-        #app.is-compact #lobby .lobby-preview__part span,
-        #app.is-compact #lobby .lobby-preview__part strong {
+        #lobby.is-compact .lobby-command-header__kicker,
+        #lobby.is-compact .lobby-preview__label,
+        #lobby.is-compact .lobby-preview__part span,
+        #lobby.is-compact .lobby-preview__part strong {
           font-size: 21px;
         }
       }
@@ -2851,54 +2716,54 @@
       #lobby .lobby-seed-challenge > span,
       #lobby .lobby-seed-challenge > h2,
       #lobby .lobby-seed-challenge > p,
-      #lobby .lobby-deployment-chooser .lobby-seed-challenge > .lobby-btn {
+      #lobby .command-center__legacy-skirmish .lobby-seed-challenge > .lobby-btn {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-commander-operations__career h3,
-      #app.is-compact #lobby .lobby-commander-operations__career p,
-      #app.is-compact #lobby .lobby-commander-operations__practice h3,
-      #app.is-compact #lobby .lobby-commander-operations__practice p,
-      #app.is-compact #lobby .lobby-commander-operations__card strong,
-      #app.is-compact #lobby .lobby-commander-operations__card span,
-      #app.is-compact #lobby .lobby-verified-deployment h3,
-      #app.is-compact #lobby .lobby-verified-deployment__matchup,
-      #app.is-compact #lobby .lobby-verified-deployment__rules,
-      #app.is-compact #lobby .lobby-verified-deployment__dossier h4,
-      #app.is-compact #lobby .lobby-verified-deployment__dossier p,
-      #app.is-compact #lobby .lobby-verified-deployment__message,
-      #app.is-compact #lobby .lobby-seed-challenge > span,
-      #app.is-compact #lobby .lobby-seed-challenge > h2,
-      #app.is-compact #lobby .lobby-seed-challenge > p,
-      #app.is-compact #lobby .lobby-deployment-chooser .lobby-seed-challenge > .lobby-btn {
+      #lobby.is-compact .lobby-commander-operations__career h3,
+      #lobby.is-compact .lobby-commander-operations__career p,
+      #lobby.is-compact .lobby-commander-operations__practice h3,
+      #lobby.is-compact .lobby-commander-operations__practice p,
+      #lobby.is-compact .lobby-commander-operations__card strong,
+      #lobby.is-compact .lobby-commander-operations__card span,
+      #lobby.is-compact .lobby-verified-deployment h3,
+      #lobby.is-compact .lobby-verified-deployment__matchup,
+      #lobby.is-compact .lobby-verified-deployment__rules,
+      #lobby.is-compact .lobby-verified-deployment__dossier h4,
+      #lobby.is-compact .lobby-verified-deployment__dossier p,
+      #lobby.is-compact .lobby-verified-deployment__message,
+      #lobby.is-compact .lobby-seed-challenge > span,
+      #lobby.is-compact .lobby-seed-challenge > h2,
+      #lobby.is-compact .lobby-seed-challenge > p,
+      #lobby.is-compact .command-center__legacy-skirmish .lobby-seed-challenge > .lobby-btn {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-practice-selection {
+      #lobby.is-compact .lobby-practice-selection {
         display: grid;
       }
-      #app.is-compact #lobby .lobby-verified-selector__choice {
+      #lobby.is-compact .lobby-verified-selector__choice {
         min-height: var(--st-deployment-choice-target, 44px);
         padding-inline: 6px;
         font-size: var(--st-command-readability-size, 10px);
       }
-      #app.is-compact #lobby .lobby-practice-selection > strong,
-      #app.is-compact #lobby .lobby-practice-selection > span {
+      #lobby.is-compact .lobby-practice-selection > strong,
+      #lobby.is-compact .lobby-practice-selection > span {
         color: #ead8b0;
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row {
+      #lobby.is-compact .lobby-hotseat-body .lobby-row {
         grid-template-columns: minmax(140px, 1fr) minmax(110px, auto);
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-name {
+      #lobby.is-compact .lobby-hotseat-body .lobby-row .lobby-name {
         grid-column: 1;
         grid-row: 1;
         min-width: 140px;
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-control {
+      #lobby.is-compact .lobby-hotseat-body .lobby-row .lobby-control {
         grid-column: 2;
         grid-row: 1;
         min-width: 110px;
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-swatches {
+      #lobby.is-compact .lobby-hotseat-body .lobby-row .lobby-swatches {
         grid-column: 1 / -1;
         grid-row: 2;
         min-width: 0;
@@ -2906,8 +2771,8 @@
         overflow-x: auto;
         overscroll-behavior-inline: contain;
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-swatch,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-rows.crowded .lobby-swatch {
+      #lobby.is-compact .lobby-hotseat-body .lobby-swatch,
+      #lobby.is-compact .lobby-hotseat-body .lobby-rows.crowded .lobby-swatch {
         width: var(--st-deployment-choice-target, 44px);
         height: var(--st-deployment-choice-target, 44px);
         flex-basis: var(--st-deployment-choice-target, 44px);
@@ -2915,14 +2780,14 @@
         padding: calc(var(--st-deployment-choice-target, 44px) * 0.22);
         background-clip: content-box !important;
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-row .lobby-garage {
+      #lobby.is-compact .lobby-hotseat-body .lobby-row .lobby-garage {
         grid-column: 1 / -1;
         grid-row: 3;
       }
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-hotseat-battlefield {
+      #lobby.is-compact .lobby-hotseat-body .lobby-hotseat-battlefield {
         grid-template-columns: minmax(0, 1fr);
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat) {
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat) {
         grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.7fr);
         grid-template-areas:
           'masthead masthead'
@@ -2932,22 +2797,22 @@
         column-gap: 12px;
         row-gap: 2px;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__masthead,
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__masthead:has(.account-panel__record) {
         min-height: 0;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__mission-brief,
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-mode-panel {
         width: 100%;
       }
-      #app.is-compact #lobby .lobby-card:has(.lobby-deployment:has(.lobby-hotseat)) {
+      #lobby.is-compact .lobby-card:has(.lobby-deployment:has(.lobby-hotseat)) {
         padding-block: 7px;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__mission-brief {
         grid-area: rail;
         width: auto;
@@ -2957,14 +2822,14 @@
         border-top: 0;
         pointer-events: none;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__back {
         position: relative;
         z-index: 2;
         min-height: var(--st-deployment-choice-target, 44px);
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__mission-brief
         > h2 {
         font-size: max(
@@ -2972,24 +2837,24 @@
           calc(12px / var(--battle-ui-scale, 1))
         );
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__mission-brief
         > p {
         display: none;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         .lobby-hotseat-scroll {
         padding-top: 3px;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         .lobby-hotseat-footer {
         margin-top: 2px;
         padding-block: 0;
       }
-      #app.is-compact #lobby .lobby-mode-panel
+      #lobby.is-compact .lobby-mode-panel
         .lobby-hotseat-footer
         > .lobby-btn.primary,
-      #app.is-compact #lobby .lobby-mode-panel
+      #lobby.is-compact .lobby-mode-panel
         .lobby-hotseat-footer
         > .lobby-btn {
         min-width: min(220px, 46%);
@@ -3010,65 +2875,65 @@
         background: linear-gradient(180deg, #ffe478, #e8a928);
         color: #11131a;
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section__title,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > label,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-name,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-control,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body .lobby-name,
+      #lobby.is-compact .lobby-hotseat-body .lobby-control,
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         > .lobby-field
         > label,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         input[type='number'],
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         select {
         font-size: var(--st-command-readability-size, 11px);
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-name,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-control,
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body .lobby-name,
+      #lobby.is-compact .lobby-hotseat-body .lobby-control,
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         input[type='number'],
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-hotseat-battlefield
         select,
-      #app.is-compact #lobby .lobby-hotseat-body .lobby-advanced-trigger {
+      #lobby.is-compact .lobby-hotseat-body .lobby-advanced-trigger {
         min-height: max(36px, calc(24px / var(--battle-ui-scale, 1)));
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select {
         min-width: max(36px, calc(24px / var(--battle-ui-scale, 1)));
       }
-      #app.is-compact #lobby .lobby-hotseat-body
+      #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']
         > .lobby-preparation-section__body
         > .lobby-field:first-child
         > select {
         min-height: var(--st-deployment-choice-target, 44px);
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-preview,
-      #app.is-compact #lobby .lobby-deployment:has(.account-panel__record):has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.account-panel__record):has(.lobby-hotseat)
         > .lobby-preview {
         position: relative;
         inset: auto;
@@ -3078,32 +2943,32 @@
         height: 100%;
         margin: 0;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-preview
         .lobby-preview__convoy {
         bottom: 8px;
       }
-      #app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-controls {
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat) > .lobby-controls {
         display: none;
       }
       @media (pointer: coarse) {
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-preparation-section[data-preparation-section='crew-manifest']
           > .lobby-preparation-section__body
           > .lobby-field:first-child
           > select,
-        #app.is-compact #lobby .lobby-hotseat-body .lobby-name,
-        #app.is-compact #lobby .lobby-hotseat-body .lobby-control,
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body .lobby-name,
+        #lobby.is-compact .lobby-hotseat-body .lobby-control,
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-hotseat-battlefield
           input[type='number'],
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-hotseat-battlefield
           select,
-        #app.is-compact #lobby .lobby-hotseat-body .lobby-advanced-trigger {
+        #lobby.is-compact .lobby-hotseat-body .lobby-advanced-trigger {
           min-height: var(--st-deployment-choice-target, 44px);
         }
-        #app.is-compact #lobby .lobby-hotseat-body
+        #lobby.is-compact .lobby-hotseat-body
           .lobby-preparation-section[data-preparation-section='crew-manifest']
           > .lobby-preparation-section__body
           > .lobby-field:first-child

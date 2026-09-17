@@ -27,6 +27,7 @@ describe('Lobby shareable room invites', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     history.replaceState(null, '', '/');
     root = document.createElement('div');
     root.id = 'lobby';
@@ -68,8 +69,12 @@ describe('Lobby shareable room invites', () => {
       history.replaceState(null, '', `/singedTerra/${query}`);
       const lobby = new Lobby(root, vi.fn());
       lobby.show();
-      expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(5);
-      expect(root.querySelector('button[aria-label="Start Ash Road"]')).toBeInstanceOf(HTMLButtonElement);
+      expect(root.querySelectorAll('[data-command-surface="rail"][data-command-category]'))
+        .toHaveLength(3);
+      expect(root.querySelector('.lobby-deployment-chooser button[aria-label="Start First Salvo"]'))
+        .toBeInstanceOf(HTMLButtonElement);
+      expect(root.querySelector('.lobby-deployment-chooser button[aria-label="Start Ash Road"]'))
+        .toBeNull();
       expect(root.getElementsByClassName('lobby-first-salvo')).toHaveLength(1);
       expect(root.querySelector('.lobby-mode-context')).toBeNull();
       expect(root.querySelector('.lobby-code-input')).toBeNull();

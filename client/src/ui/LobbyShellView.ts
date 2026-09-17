@@ -3,9 +3,10 @@ import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
 import type { GameOptions } from '@shared/types/GameOptions';
 import { QUICK_DUEL_DEFAULT_ROUNDS } from '../client/quickDuelLaunch';
 import { makeHudIcon } from './hudIcons';
+import type { CampaignKitId } from './commandCenter/CampaignCommandView';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
-export type CampaignKitId = 'precision' | 'assault' | 'breach';
+export type { CampaignKitId } from './commandCenter/CampaignCommandView';
 
 export type LobbySeedChallengePresentation =
   | { readonly status: 'invalid' }
@@ -57,6 +58,8 @@ export interface LobbyShellViewOptions {
   onRejoin: () => void;
   onBack: () => void;
   listenerSignal?: AbortSignal;
+  commandCenter?: HTMLElement;
+  includeCrossCategoryDestinations?: boolean;
 }
 
 export function buildLobbyOnlineView(content: HTMLElement): HTMLElement {
@@ -146,9 +149,15 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     masthead.append(banner);
   }
 
+  if (options.surface === 'chooser' && options.commandCenter) {
+    deployment.append(masthead, options.commandCenter);
+    card.append(deployment);
+    return card;
+  }
+
   if (options.surface === 'chooser') {
     const chooser = document.createElement('nav');
-    chooser.className = 'lobby-deployment-chooser';
+    chooser.className = 'lobby-deployment-chooser command-center__legacy-skirmish';
     chooser.setAttribute('aria-label', 'Choose deployment');
 
     const choice = (
@@ -177,7 +186,9 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     };
 
     const seedChallenge = options.seedChallenge;
-    const campaignChoiceAvailable = options.onCampaign !== undefined
+    const includeCrossCategoryDestinations = options.includeCrossCategoryDestinations !== false;
+    const campaignChoiceAvailable = includeCrossCategoryDestinations
+      && options.onCampaign !== undefined
       && seedChallenge?.status !== 'valid';
     if (seedChallenge) {
       const callout = document.createElement('section');
@@ -400,8 +411,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
       ordinaryQuickDuel,
       ...(options.campaignResumeAvailable && campaignChoiceAvailable ? [resumeAshRoad()] : []),
       ...(campaignChoiceAvailable ? [ashRoad()] : []),
-      localBattle,
-      playOnline,
+      ...(includeCrossCategoryDestinations ? [localBattle, playOnline] : []),
       readiness,
     );
     if (showFirstSalvo) {
@@ -428,15 +438,14 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
         ),
         ...(options.campaignResumeAvailable && campaignChoiceAvailable ? [resumeAshRoad()] : []),
         ...(campaignChoiceAvailable ? [ashRoad()] : []),
-        localBattle,
-        playOnline,
+        ...(includeCrossCategoryDestinations ? [localBattle, playOnline] : []),
         readiness,
       );
 
       chooser.append(
         introduction,
         alternatives,
-        campaignKit,
+        ...(campaignChoiceAvailable ? [campaignKit] : []),
         firstSalvoRail,
       );
     } else {

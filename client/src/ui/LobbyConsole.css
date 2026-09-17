@@ -47,24 +47,6 @@
     url('art/battlefield-backdrop.webp') center / cover no-repeat;
 }
 
-#lobby .lobby-card > .lobby-deployment:has(> .lobby-deployment-chooser) {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  min-height: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: none;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
-}
-
-#lobby .lobby-card > .lobby-deployment:has(> .lobby-deployment-chooser)
-  > .lobby-deployment__masthead {
-  grid-area: auto;
-}
-
 #lobby .lobby-deployment::before {
   content: '';
   position: absolute;
@@ -165,7 +147,10 @@
   border-left-width: 1px;
 }
 
-#lobby .lobby-deployment-chooser {
+/* Temporary T11 boundary: only the mounted Skirmishes bridge consumes these
+ * legacy Quick Operations rules. Command Center and Ash Road are styled by
+ * commandCenter/CommandCenter.css. */
+#lobby .command-center__legacy-skirmish {
   width: 100%;
   min-height: 0;
   align-self: stretch;
@@ -179,39 +164,6 @@
   overflow: hidden;
   border: 0;
   background: transparent;
-}
-
-#lobby .lobby-deployment-chooser:has(> .lobby-campaign-kit) {
-  grid-template-rows: minmax(0, 1fr) auto auto;
-}
-
-#lobby .lobby-campaign-kit {
-  min-width: 0;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 4px 8px;
-  border: 1px solid rgba(139, 81, 36, 0.62);
-  background: linear-gradient(180deg, rgba(42, 32, 24, 0.96), rgba(10, 11, 12, 0.98));
-  box-sizing: border-box;
-  color: var(--console-cream-dim);
-  font: 800 max(10px, var(--st-command-readability-size, 11px))/1 var(--font-mono);
-  letter-spacing: 0.8px;
-}
-
-#lobby .lobby-campaign-kit select {
-  min-width: min(260px, 55vw);
-  min-height: var(--st-deployment-choice-target, 44px);
-  border-color: rgba(194, 123, 56, 0.65);
-}
-
-#lobby .lobby-card > .lobby-deployment:has(> .lobby-deployment-chooser)
-  > .lobby-deployment-chooser {
-  grid-area: auto;
-  grid-column: 1;
-  grid-row: 2;
 }
 
 #lobby .lobby-deployment-console {
@@ -590,7 +542,7 @@
   padding: 6px 9px;
 }
 
-#lobby .lobby-deployment-chooser > .lobby-first-salvo {
+#lobby .command-center__legacy-skirmish > .lobby-first-salvo {
   align-self: center;
   justify-self: center;
   width: min(640px, 80%);
@@ -632,19 +584,15 @@
   margin-top: auto;
 }
 
-#lobby .lobby-deployment-chooser:has(> .lobby-first-salvo) {
+#lobby .command-center__legacy-skirmish:has(> .lobby-first-salvo) {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-#lobby .lobby-deployment-chooser:has(> .lobby-first-salvo):has(> .lobby-campaign-kit) {
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-}
-
-#lobby .lobby-deployment-chooser:has(> .lobby-seed-challenge) {
+#lobby .command-center__legacy-skirmish:has(> .lobby-seed-challenge) {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-#lobby .lobby-deployment-chooser:has(> .lobby-seed-challenge):has(> .lobby-first-salvo) {
+#lobby .command-center__legacy-skirmish:has(> .lobby-seed-challenge):has(> .lobby-first-salvo) {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
@@ -701,8 +649,8 @@
   flex: 0 0 auto;
 }
 
-#app.is-compact #lobby .lobby-deployment__back,
-#app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__back {
+#lobby.is-compact .lobby-deployment__back,
+#lobby.is-compact .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__back {
   width: fit-content;
   min-height: var(--st-deployment-choice-target, 44px);
 }
@@ -930,7 +878,7 @@
     width: min(390px, calc(100vw - 36px));
   }
 
-  #lobby .lobby-deployment-chooser { padding: 13px 12px 10px; gap: 7px; }
+  #lobby .command-center__legacy-skirmish { padding: 13px 12px 10px; gap: 7px; }
 
   #lobby .lobby-deployment-console {
     grid-template-columns: minmax(275px, 0.92fr) minmax(340px, 1.25fr);
@@ -996,41 +944,41 @@
   #lobby .lobby-deployment-rail__status span { font-size: 6px; }
 }
 
-#app.is-compact #lobby .lobby-card {
+#lobby.is-compact .lobby-card {
   padding: 5px 8px 7px;
 }
 
-#app.is-compact #lobby .lobby-deployment::before {
+#lobby.is-compact .lobby-deployment::before {
   inset: 41px 0 0;
   box-shadow: 0 0 0 1px rgba(183, 105, 44, 0.72), 0 0 0 3px #17100b, 0 12px 26px rgba(0, 0, 0, 0.62);
 }
 
-#app.is-compact #lobby .lobby-deployment__masthead {
+#lobby.is-compact .lobby-deployment__masthead {
   min-height: 36px;
   grid-template-columns: auto minmax(130px, 1fr) auto;
   gap: 7px;
   padding-inline: 3px;
 }
 
-#app.is-compact #lobby .lobby-deployment:has(.lobby-hotseat)
+#lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
   > .lobby-deployment__masthead:has(.account-panel__record) {
   margin-bottom: 6px;
 }
 
-#app.is-compact #lobby .lobby-deployment__masthead > h1 { font-size: 22px; }
+#lobby.is-compact .lobby-deployment__masthead > h1 { font-size: 22px; }
 
-#app.is-compact #lobby .lobby-command-header {
+#lobby.is-compact .lobby-command-header {
   min-height: 28px;
   padding-inline: 10px;
   box-shadow: 0 0 0 1px #ad672b, 0 0 0 3px #21130b;
 }
 
-#app.is-compact #lobby .lobby-command-header__kicker {
+#lobby.is-compact .lobby-command-header__kicker {
   font-size: max(14px, calc(14px / var(--battle-ui-scale, 1)));
   letter-spacing: 1.6px;
 }
 
-#app.is-compact #lobby .lobby-deployment-chooser {
+#lobby.is-compact .command-center__legacy-skirmish {
   width: 100%;
   justify-self: stretch;
   margin-inline: 0;
@@ -1039,81 +987,62 @@
   gap: 3px;
 }
 
-#app.is-compact #lobby .lobby-card > .lobby-deployment:has(> .lobby-deployment-chooser) {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: none;
-  grid-template-rows: auto minmax(0, 1fr);
-  column-gap: 0;
-  row-gap: 5px;
-}
-
-#app.is-compact #lobby .lobby-deployment-console {
+#lobby.is-compact .lobby-deployment-console {
   grid-template-columns: minmax(240px, 0.9fr) minmax(295px, 1.15fr);
   gap: 7px;
 }
 
-#app.is-compact #lobby .lobby-quick-operation,
-#app.is-compact #lobby .lobby-operation-preview { padding: 6px; }
+#lobby.is-compact .lobby-quick-operation,
+#lobby.is-compact .lobby-operation-preview { padding: 6px; }
 
-#app.is-compact #lobby .lobby-quick-operation__kicker,
-#app.is-compact #lobby .lobby-operation-preview__header {
+#lobby.is-compact .lobby-quick-operation__kicker,
+#lobby.is-compact .lobby-operation-preview__header {
   margin-inline: 8px;
   font-size: var(--st-command-readability-size, 11px);
 }
 
-#app.is-compact #lobby .lobby-quick-operation > h2 { display: none; }
-#app.is-compact #lobby .lobby-quick-operation__card {
+#lobby.is-compact .lobby-quick-operation > h2 { display: none; }
+#lobby.is-compact .lobby-quick-operation__card {
   min-height: var(--st-deployment-choice-target, 44px);
   padding-left: 32px;
 }
-#app.is-compact #lobby .lobby-quick-operation__card-title {
+#lobby.is-compact .lobby-quick-operation__card-title {
   font-size: max(14px, calc(14px / var(--battle-ui-scale, 1)));
 }
-#app.is-compact #lobby .lobby-quick-operation__card-briefing {
+#lobby.is-compact .lobby-quick-operation__card-briefing {
   display: block;
   font-size: max(11px, var(--st-command-readability-size, 11px));
 }
-#app.is-compact #lobby .lobby-operation-preview__viewport { min-height: 0; }
-#app.is-compact #lobby .lobby-operation-preview__facts > div { min-width: 68px; padding-inline: 5px; }
+#lobby.is-compact .lobby-operation-preview__viewport { min-height: 0; }
+#lobby.is-compact .lobby-operation-preview__facts > div { min-width: 68px; padding-inline: 5px; }
 
-#app.is-compact #lobby .lobby-deployment-rail {
+#lobby.is-compact .lobby-deployment-rail {
   min-height: 52px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
 }
 
-#app.is-compact #lobby .lobby-deployment-rail > .lobby-btn {
+#lobby.is-compact .lobby-deployment-rail > .lobby-btn {
   min-height: var(--st-deployment-choice-target, 44px);
   padding: 5px 7px 5px 30px;
   font-size: max(14px, calc(14px / var(--battle-ui-scale, 1)));
 }
 
-#app.is-compact #lobby .lobby-deployment-rail > .lobby-btn.primary {
+#lobby.is-compact .lobby-deployment-rail > .lobby-btn.primary {
   min-height: max(62px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
   font-size: max(14.1px, calc(14.1px / var(--battle-ui-scale, 1)));
 }
 
-#app.is-compact #lobby .lobby-deployment-rail__glyph { left: 8px; font-size: 15px; }
-#app.is-compact #lobby .lobby-deployment-rail__status strong {
+#lobby.is-compact .lobby-deployment-rail__glyph { left: 8px; font-size: 15px; }
+#lobby.is-compact .lobby-deployment-rail__status strong {
   font-size: max(12px, calc(12px / var(--battle-ui-scale, 1)));
 }
-#app.is-compact #lobby .lobby-deployment-rail__status { display: none; }
+#lobby.is-compact .lobby-deployment-rail__status { display: none; }
 
-#app.is-compact #lobby .lobby-campaign-kit {
-  min-height: 32px;
-  justify-content: space-between;
-  gap: 6px;
-  padding-block: 2px;
-}
-
-#app.is-compact #lobby .lobby-campaign-kit select {
-  min-width: min(225px, 58vw);
-}
-
-#app.is-compact #lobby .lobby-mode-panel { padding: 5px 6px; }
-#app.is-compact #lobby .lobby-deployment__mission-brief { padding: 4px 6px; }
-#app.is-compact #lobby .lobby-controls {
+#lobby.is-compact .lobby-mode-panel { padding: 5px 6px; }
+#lobby.is-compact .lobby-deployment__mission-brief { padding: 4px 6px; }
+#lobby.is-compact .lobby-controls {
   padding: 5px 7px;
   font-size: var(--st-command-readability-size, 11px);
 }

@@ -2,8 +2,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Lobby } from './Lobby';
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
-  const match = [...root.querySelectorAll('button')]
+  let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text);
+  const category = text === 'Local Battle' || text === 'Play Online'
+    ? 'multiplayer'
+    : text.includes('Ash Road') ? 'campaigns' : null;
+  if (!match && category) {
+    root.querySelector<HTMLButtonElement>(
+      `[data-command-surface="rail"][data-command-category="${category}"]`,
+    )?.click();
+    if (category === 'multiplayer') {
+      root.querySelector<HTMLButtonElement>(
+        `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
+      )?.click();
+    }
+    match = [...root.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent === text);
+  }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`);
   return match;
 }
@@ -13,6 +28,7 @@ describe('Lobby deployment chooser', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     history.replaceState(null, '', '/');
     root = document.createElement('div');
     root.id = 'lobby';
@@ -30,9 +46,16 @@ describe('Lobby deployment chooser', () => {
 
     lobby.show();
 
-    expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(5);
+    expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(2);
     expect(button(root, 'Start First Salvo')).toBeInstanceOf(HTMLButtonElement);
-    expect(button(root, 'Start Ash Road')).toBeInstanceOf(HTMLButtonElement);
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="campaigns"]',
+    )?.click();
+    const campaignPrimary = root.querySelector<HTMLButtonElement>(
+      '[data-campaign-command-view] [data-command-primary]',
+    );
+    expect(campaignPrimary?.disabled).toBe(true);
+    expect(['Checking save', 'Save unavailable']).toContain(campaignPrimary?.textContent);
     expect(root.querySelector('.lobby-start')).toBeNull();
     expect(root.querySelector('.lobby-name')).toBeNull();
     expect(root.querySelector('.lobby-preview')).toBeNull();
