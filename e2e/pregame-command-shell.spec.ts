@@ -46,9 +46,10 @@ test.describe('Pre-game command shell', () => {
     const alternatives = chooser.locator('[data-ui="other-quick-duels"]');
     const operations = chooser.locator('[data-operation-id]');
 
-    await expect(visibleChoices).toHaveCount(3);
+    await expect(visibleChoices).toHaveCount(4);
     await expect(visibleChoices).toHaveText([
       'Start First Salvo',
+      'Start Ash Road',
       'Local Battle',
       'Play Online',
     ]);
@@ -69,6 +70,7 @@ test.describe('Pre-game command shell', () => {
     const firstSalvo = chooser.getByRole('button', { name: 'Start First Salvo', exact: true });
     const alternatives = chooser.locator('[data-ui="other-quick-duels"]');
     const quick = chooser.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
+    const ashRoad = chooser.getByRole('button', { name: 'Start Ash Road', exact: true });
     const local = chooser.getByRole('button', { name: 'Local Battle', exact: true });
     const online = chooser.getByRole('button', { name: 'Play Online', exact: true });
     const operations = chooser.locator('[data-operation-id]');
@@ -81,7 +83,7 @@ test.describe('Pre-game command shell', () => {
       const app = document.getElementById('app');
       const firstSalvo = element.querySelector<HTMLElement>('.primary');
       const secondary = [...element.querySelectorAll<HTMLElement>('button:not(.primary):not([data-operation-id])')];
-      if (!app || !firstSalvo || secondary.length !== 3) throw new Error('Expected deployment choices');
+      if (!app || !firstSalvo || secondary.length !== 4) throw new Error('Expected deployment choices');
       const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
       return {
         publishedTarget: Number.parseFloat(
@@ -105,7 +107,7 @@ test.describe('Pre-game command shell', () => {
     expect(metrics.secondaryBackgrounds).not.toContain('rgb(255, 210, 63)');
     expect(new Set(metrics.secondaryBackgrounds).size).toBe(1);
     expect(metrics.firstSalvoBackground).not.toContain(metrics.secondaryBackgrounds[0]!);
-    for (const choice of [firstSalvo, quick, local, online]) {
+    for (const choice of [firstSalvo, quick, ashRoad, local, online]) {
       const box = await choice.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.height).toBeGreaterThanOrEqual(44);

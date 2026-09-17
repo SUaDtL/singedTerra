@@ -3,7 +3,6 @@ import type { PracticeObjectiveDescriptor } from '../client/quickOperations';
 import type { GameOptions } from '@shared/types/GameOptions';
 import { QUICK_DUEL_DEFAULT_ROUNDS } from '../client/quickDuelLaunch';
 import { makeHudIcon } from './hudIcons';
-import { ashRoadAsset } from '../assets/campaign/manifest';
 
 export type LobbyPrimaryTab = 'hotseat' | 'online';
 export type CampaignKitId = 'precision' | 'assault' | 'breach';
@@ -178,6 +177,8 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     };
 
     const seedChallenge = options.seedChallenge;
+    const campaignChoiceAvailable = options.onCampaign !== undefined
+      && seedChallenge?.status !== 'valid';
     if (seedChallenge) {
       const callout = document.createElement('section');
       callout.className = 'lobby-seed-challenge';
@@ -337,15 +338,9 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     let selectedCampaignKit: CampaignKitId = 'precision';
     const campaignKit = document.createElement('label');
     campaignKit.className = 'lobby-campaign-kit';
-    const campaignPanorama = document.createElement('img');
-    campaignPanorama.src = `${import.meta.env.BASE_URL}${ashRoadAsset('panorama').path}`;
-    campaignPanorama.alt = '';
-    campaignPanorama.setAttribute('aria-hidden', 'true');
-    campaignPanorama.style.cssText = 'display:block;width:100%;max-height:96px;object-fit:cover;margin-bottom:8px;border-radius:4px';
-    campaignPanorama.addEventListener('error', () => { campaignPanorama.hidden = true; }, {
-      signal: options.listenerSignal,
-    });
-    campaignKit.append(campaignPanorama, document.createTextNode('Ash Road loadout '));
+    const campaignKitLabel = document.createElement('span');
+    campaignKitLabel.textContent = 'ASH ROAD LOADOUT';
+    campaignKit.append(campaignKitLabel);
     const campaignKitSelect = document.createElement('select');
     campaignKitSelect.setAttribute('aria-label', 'Ash Road loadout');
     for (const [value, label] of [
@@ -403,8 +398,8 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
     readiness.innerHTML = '<strong>READY</strong><span>TO DEPLOY</span>';
     deploymentRail.append(
       ordinaryQuickDuel,
-      ...(options.campaignResumeAvailable ? [resumeAshRoad()] : []),
-      ...(options.onCampaign ? [ashRoad()] : []),
+      ...(options.campaignResumeAvailable && campaignChoiceAvailable ? [resumeAshRoad()] : []),
+      ...(campaignChoiceAvailable ? [ashRoad()] : []),
       localBattle,
       playOnline,
       readiness,
@@ -431,8 +426,8 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
           choice('Start First Salvo', 'lobby-btn primary', () => { options.onQuickDuel(firstSalvo.id); }),
           'quick',
         ),
-        ...(options.campaignResumeAvailable ? [resumeAshRoad()] : []),
-        ...(options.onCampaign ? [ashRoad()] : []),
+        ...(options.campaignResumeAvailable && campaignChoiceAvailable ? [resumeAshRoad()] : []),
+        ...(campaignChoiceAvailable ? [ashRoad()] : []),
         localBattle,
         playOnline,
         readiness,
@@ -445,7 +440,7 @@ export function buildLobbyShellView(options: LobbyShellViewOptions): HTMLElement
         firstSalvoRail,
       );
     } else {
-      if (options.onCampaign) chooser.append(deploymentConsole, campaignKit, deploymentRail);
+      if (campaignChoiceAvailable) chooser.append(deploymentConsole, campaignKit, deploymentRail);
       else chooser.append(deploymentConsole, deploymentRail);
     }
     deployment.append(masthead, chooser);
