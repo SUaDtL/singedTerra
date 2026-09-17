@@ -92,7 +92,7 @@ export const FUEL_STOP_TRANSCRIPTS = Object.freeze({
     turns: [
       turn('p1', 'player', 'napalm', 19, 76, 148),
       turn('p2', 'enemy-ai', 'cluster_bomb', 121.110796936322, 68.07412087395787, 123),
-      turn('p1', 'player', 'napalm', 44, 74, 171),
+      turn('p1', 'player', 'napalm', 44, 74, 191),
     ],
     expected: {
       terrainChecksum: 'fnv1a32:6ea970c5',

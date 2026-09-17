@@ -378,6 +378,7 @@ assert.deepEqual(
   campaignState(rejectedEngine, 'rejections:after'),
   {
     encounterId: 'settlement-rejections',
+    objective: { kind: 'eliminate', protectedObjectIds: [] },
     commitmentCount: 0,
     activeCommitment: null,
     settledOutcome: null,
