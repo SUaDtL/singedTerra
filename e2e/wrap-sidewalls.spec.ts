@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openHotSeatCustomization } from './support';
+import { openHotSeatCustomization, openLocalPreparation } from './support';
 
 async function openRoom(
   page: import('@playwright/test').Page,
@@ -7,7 +7,7 @@ async function openRoom(
 ): Promise<void> {
   await page.goto('.');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   if (walls !== 'open') {
     await openHotSeatCustomization(page);
     await page.getByRole('button', { name: 'Advanced settings', exact: true }).click();

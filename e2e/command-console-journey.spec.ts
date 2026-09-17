@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoRunningGame } from './support';
+import { gotoRunningGame, openOnlinePreparation } from './support';
 import { installConnectedRealtimeFixture } from './realtime-fixture';
 
 interface HotSeatProbe {
@@ -321,7 +321,7 @@ async function enterOnlineCpuBattle(page: Page, fixture: {
 }): Promise<void> {
   await page.goto('?tutorial=first-salvo');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
-  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+  await openOnlinePreparation(page);
   await page.locator('#lobby .lobby-name').fill('Ranger');
   await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
     .locator('select').first().selectOption('1');

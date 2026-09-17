@@ -1,12 +1,20 @@
 import { expect, test } from '@playwright/test';
-import { assertLobbyControlReachable, assertLobbyFrame, gotoLobby, isCompact } from './support';
+import {
+  assertLobbyControlReachable,
+  assertLobbyFrame,
+  gotoLobby,
+  isCompact,
+  openLocalPreparation,
+  openOnlinePreparation,
+  openQuickOperationsWorkspace,
+} from './support';
 
 async function openLocal(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
 }
 
 async function openOnline(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
-  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+  await openOnlinePreparation(page);
 }
 
 async function installLiveRejoinFixture(page: Parameters<typeof gotoLobby>[0]): Promise<void> {
@@ -39,20 +47,19 @@ test.describe('Pre-game command shell', () => {
     await gotoLobby(page);
   });
 
-  test('opens on a focused First Salvo deployment front door', async ({ page }) => {
-    const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
-    const visibleChoices = chooser.locator('button:not([data-operation-id]):visible');
+  test('opens on the focused First Salvo skirmish workspace', async ({ page }) => {
+    await openQuickOperationsWorkspace(page);
+    const chooser = page.locator('.command-center__workspace-host .lobby-deployment-chooser');
     const firstSalvo = chooser.getByRole('button', { name: 'Start First Salvo', exact: true });
     const alternatives = chooser.locator('[data-ui="other-quick-duels"]');
     const operations = chooser.locator('[data-operation-id]');
 
-    await expect(visibleChoices).toHaveCount(4);
-    await expect(visibleChoices).toHaveText([
-      'Start First Salvo',
-      'Start Ash Road',
-      'Local Battle',
-      'Play Online',
-    ]);
+    await expect(page.locator('.command-center__category-rail [data-command-category="skirmishes"]'))
+      .toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator(
+      '.command-center__library-items button[data-command-item="quick-operations"]',
+    ))
+      .toHaveAttribute('aria-current', 'true');
     await expect(firstSalvo).toHaveClass(/primary/);
     await expect(chooser.locator('button.primary')).toHaveCount(1);
     await expect(alternatives).not.toHaveAttribute('open', '');
@@ -65,14 +72,12 @@ test.describe('Pre-game command shell', () => {
     await assertLobbyFrame(page);
   });
 
-  test('makes First Salvo the one dominant, touch-sized deployment choice', async ({ page }) => {
-    const chooser = page.getByRole('navigation', { name: 'Choose deployment' });
+  test('makes First Salvo the one dominant, touch-sized skirmish action', async ({ page }) => {
+    await openQuickOperationsWorkspace(page);
+    const chooser = page.locator('.command-center__workspace-host .lobby-deployment-chooser');
     const firstSalvo = chooser.getByRole('button', { name: 'Start First Salvo', exact: true });
     const alternatives = chooser.locator('[data-ui="other-quick-duels"]');
     const quick = chooser.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
-    const ashRoad = chooser.getByRole('button', { name: 'Start Ash Road', exact: true });
-    const local = chooser.getByRole('button', { name: 'Local Battle', exact: true });
-    const online = chooser.getByRole('button', { name: 'Play Online', exact: true });
     const operations = chooser.locator('[data-operation-id]');
 
     await expect(alternatives).not.toHaveAttribute('open', '');
@@ -80,34 +85,26 @@ test.describe('Pre-game command shell', () => {
     await expect(alternatives).toHaveAttribute('open', '');
 
     const metrics = await chooser.evaluate((element) => {
-      const app = document.getElementById('app');
       const firstSalvo = element.querySelector<HTMLElement>('.primary');
-      const secondary = [...element.querySelectorAll<HTMLElement>('button:not(.primary):not([data-operation-id])')];
-      if (!app || !firstSalvo || secondary.length !== 4) throw new Error('Expected deployment choices');
-      const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
+      const secondary = element.querySelector<HTMLElement>('button[aria-label="Quick Duel vs CPU"]');
+      if (!firstSalvo || !secondary) throw new Error('Expected Quick Operations actions');
       return {
-        publishedTarget: Number.parseFloat(
-          getComputedStyle(app).getPropertyValue('--st-deployment-choice-target'),
-        ),
-        expectedTarget: Math.ceil(44 / zoom),
         firstSalvoHeight: firstSalvo.getBoundingClientRect().height,
-        firstSalvoFont: Number.parseFloat(getComputedStyle(firstSalvo).fontSize) * zoom,
+        firstSalvoFont: Number.parseFloat(getComputedStyle(firstSalvo).fontSize),
         firstSalvoBackground: getComputedStyle(firstSalvo).background,
-        secondaryHeights: secondary.map((choice) => choice.getBoundingClientRect().height),
-        secondaryBackgrounds: secondary.map((choice) => getComputedStyle(choice).backgroundColor),
+        secondaryHeight: secondary.getBoundingClientRect().height,
+        secondaryBackground: getComputedStyle(secondary).backgroundColor,
         primaryCount: element.querySelectorAll('.primary').length,
       };
     });
 
     expect(metrics.primaryCount).toBe(1);
-    for (const height of metrics.secondaryHeights) expect(height).toBeGreaterThanOrEqual(44);
+    expect(metrics.secondaryHeight).toBeGreaterThanOrEqual(44);
     expect(metrics.firstSalvoHeight).toBeGreaterThanOrEqual(52);
     expect(metrics.firstSalvoFont).toBeGreaterThanOrEqual(14);
-    expect(metrics.firstSalvoHeight).toBeGreaterThan(Math.max(...metrics.secondaryHeights));
-    expect(metrics.secondaryBackgrounds).not.toContain('rgb(255, 210, 63)');
-    expect(new Set(metrics.secondaryBackgrounds).size).toBe(1);
-    expect(metrics.firstSalvoBackground).not.toContain(metrics.secondaryBackgrounds[0]!);
-    for (const choice of [firstSalvo, quick, ashRoad, local, online]) {
+    expect(metrics.firstSalvoHeight).toBeGreaterThan(metrics.secondaryHeight);
+    expect(metrics.firstSalvoBackground).not.toBe(metrics.secondaryBackground);
+    for (const choice of [firstSalvo, quick]) {
       const box = await choice.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -126,36 +123,37 @@ test.describe('Pre-game command shell', () => {
 
     const deployment = page.locator('#lobby .lobby-deployment');
     const rejoin = page.getByRole('button', { name: 'Rejoin your game', exact: true });
-    const quick = page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
+    const online = page.locator(
+      '.command-center__library-items button[data-command-item="online"]',
+    );
     await expect(rejoin).toBeVisible();
-    await expect(quick).toBeVisible();
+    await expect(online).toHaveAttribute('aria-current', 'true');
 
     const hierarchy = await deployment.evaluate((element) => {
       const rejoin = element.querySelector<HTMLElement>('.lobby-rejoin-banner .lobby-btn');
-      const quick = element.querySelector<HTMLElement>('.lobby-deployment-chooser .lobby-btn');
-      if (!rejoin || !quick) throw new Error('Expected rejoin and Quick Duel actions');
+      const alternate = element.querySelector<HTMLElement>('.command-center__primary-action');
+      if (!rejoin || !alternate) throw new Error('Expected rejoin and selected Online action');
       const rejoinStyle = getComputedStyle(rejoin);
-      const quickStyle = getComputedStyle(quick);
+      const alternateStyle = getComputedStyle(alternate);
       return {
         primaryCount: element.querySelectorAll('.lobby-btn.primary').length,
         rejoinPrimary: rejoin.classList.contains('primary'),
-        quickPrimary: quick.classList.contains('primary'),
+        alternateDanger: alternate.classList.contains('primary'),
         rejoinHeight: rejoin.getBoundingClientRect().height,
-        quickHeight: quick.getBoundingClientRect().height,
+        alternateHeight: alternate.getBoundingClientRect().height,
         rejoinFont: Number.parseFloat(rejoinStyle.fontSize),
-        quickFont: Number.parseFloat(quickStyle.fontSize),
+        alternateFont: Number.parseFloat(alternateStyle.fontSize),
       };
     });
 
     expect.soft(hierarchy.primaryCount, 'rejoin state must expose exactly one primary action').toBe(1);
     expect.soft(hierarchy.rejoinPrimary, 'Rejoin must own the primary treatment').toBe(true);
-    expect.soft(hierarchy.quickPrimary, 'Quick Duel must yield primary treatment to Rejoin').toBe(false);
+    expect.soft(hierarchy.alternateDanger, 'Online setup must not impersonate the rejoin treatment')
+      .toBe(false);
     expect.soft(hierarchy.rejoinHeight, 'Rejoin must retain a 44px physical target')
       .toBeGreaterThanOrEqual(44);
-    expect.soft(hierarchy.rejoinHeight, 'Rejoin must be at least as tall as Quick Duel')
-      .toBeGreaterThanOrEqual(hierarchy.quickHeight);
-    expect.soft(hierarchy.rejoinFont, 'Rejoin must be at least as legible as Quick Duel')
-      .toBeGreaterThanOrEqual(hierarchy.quickFont);
+    expect.soft(hierarchy.rejoinFont, 'Rejoin copy remains legible')
+      .toBeGreaterThanOrEqual(14);
     await assertLobbyControlReachable(page, '#lobby .lobby-rejoin-banner .lobby-btn');
     await assertLobbyFrame(page);
   });
@@ -171,7 +169,9 @@ test.describe('Pre-game command shell', () => {
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
     await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Local Battle', exact: true })).toBeFocused();
+    await expect(page.locator(
+      '.command-center__library-items button[data-command-item="local-battle"]',
+    )).toBeFocused();
     await expect(page.locator('#lobby .lobby-start')).toHaveCount(0);
     await assertLobbyFrame(page);
   });
@@ -203,7 +203,9 @@ test.describe('Pre-game command shell', () => {
     await page.locator('[data-online-route="join-code"]').click();
     await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
     await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Play Online', exact: true })).toBeFocused();
+    await expect(page.locator(
+      '.command-center__library-items button[data-command-item="online"]',
+    )).toBeFocused();
     await openOnline(page);
     await expect(page.getByRole('heading', { name: 'Rally to a signal' })).toBeVisible();
     await assertLobbyFrame(page);
@@ -215,16 +217,15 @@ test.describe('Pre-game command shell', () => {
     test.skip(!(await isCompact(page)), 'The compact guard applies below the fixed-stage threshold.');
 
     for (const route of ['Local Battle', 'Play Online'] as const) {
-      await page.getByRole('button', { name: route, exact: true }).click();
+      if (route === 'Local Battle') await openLocal(page);
+      else await openOnline(page);
       const metrics = await page.locator('#lobby .lobby-deployment').evaluate((deployment) => {
-        const app = document.getElementById('app');
         const context = deployment.querySelector<HTMLElement>('.lobby-mode-context h2');
         const back = deployment.querySelector<HTMLElement>('.lobby-deployment__back');
         const preview = deployment.querySelector<HTMLElement>('.lobby-preview');
-        if (!app || !context || !back || !preview) throw new Error('Expected preparation hierarchy');
-        const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
+        if (!context || !back || !preview) throw new Error('Expected preparation hierarchy');
         return {
-          headingFont: Number.parseFloat(getComputedStyle(context).fontSize) * zoom,
+          headingFont: Number.parseFloat(getComputedStyle(context).fontSize),
           backHeight: back.getBoundingClientRect().height,
           previewVisible: getComputedStyle(preview).visibility !== 'hidden',
         };

@@ -4,7 +4,11 @@ import {
   TANK_PART_SETS,
   TANK_PART_SLOTS,
 } from '../client/src/renderer/tankPartCatalog';
-import { openHotSeatCustomization } from './support';
+import {
+  openHotSeatCustomization,
+  openLocalPreparation,
+  openOnlinePreparation,
+} from './support';
 
 async function openGarage(page: Page): Promise<void> {
   await page.goto('.');
@@ -405,7 +409,7 @@ test.describe('tank Garage', () => {
 
     await page.getByLabel('Players', { exact: true }).selectOption('2');
     await page.getByRole('button', { name: 'Back to deployment choices' }).click();
-    await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+    await openOnlinePreparation(page);
     await expect(page.locator('.lobby-garage')).toHaveCount(1);
     const onlineFit = await page.locator('.lobby-card').evaluate((card) => ({
       clientHeight: card.clientHeight,
@@ -415,7 +419,7 @@ test.describe('tank Garage', () => {
       onlineFit.clientHeight + 1,
     );
     await page.getByRole('button', { name: 'Back to deployment choices' }).click();
-    await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+    await openLocalPreparation(page);
 
     await openTankCustomization(page, 'Player 1');
     await page.getByRole('button', {

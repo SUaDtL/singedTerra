@@ -296,6 +296,28 @@ describe('Lobby return focus', () => {
     expect(button(root, 'Retry game recovery').isConnected).toBe(true)
   })
 
+  it('renders failed rejoin recovery inside the selected Online command workspace', () => {
+    const { lobby } = createLobby(root)
+    lobby.show()
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="multiplayer"]',
+    )?.click()
+    root.querySelector<HTMLButtonElement>(
+      '.command-center__library-items button[data-command-item="online"]',
+    )?.click()
+    const launchOwner = lobby as unknown as LobbyLaunchFocusContract
+
+    launchOwner.showNetworkRecovery('Game recovery timed out.', vi.fn())
+    launchOwner.restoreLaunchFocus(null)
+
+    expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+      .toBe('true')
+    expect(root.querySelector('[role="alert"]')?.textContent)
+      .toContain('Game recovery timed out.')
+    expect(button(root, 'Retry game recovery').isConnected).toBe(true)
+    expect(document.activeElement).toBe(root.querySelector('[data-command-item="online"]'))
+  })
+
   it('reconstructs the remembered owner when a battle-originated restart fails', () => {
     const { lobby } = createLobby(root)
     lobby.show()

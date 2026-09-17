@@ -65,6 +65,64 @@ export async function gotoLobby(page: Page): Promise<void> {
   await expect(page.locator('#lobby .lobby-card')).toBeVisible();
 }
 
+export type CommandCategoryName = 'Campaigns' | 'Skirmishes' | 'Multiplayer';
+export type CommandItemName = 'ash-road' | 'quick-operations' | 'local-battle' | 'online';
+
+/** Select one owned workspace through the public two-level command center. */
+export async function selectCommandWorkspace(
+  page: Page,
+  category: CommandCategoryName,
+  item: CommandItemName,
+): Promise<void> {
+  const center = page.locator('#lobby .command-center');
+  await expect(center).toBeVisible();
+  const rail = center.locator('.command-center__category-rail');
+  const railCategory = rail.getByRole('button', { name: category, exact: true });
+  if (await railCategory.isVisible()) {
+    await railCategory.click();
+  } else {
+    const modes = center.getByRole('button', { name: 'Modes', exact: true });
+    await modes.click();
+    const sheet = page.getByRole('navigation', { name: 'Modes', exact: true });
+    await sheet.getByRole('button', { name: category, exact: true }).click();
+    await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
+  }
+  const commandItem = center.locator(
+    `.command-center__library-items button[data-command-item="${item}"]`,
+  );
+  await expect(commandItem).toBeVisible();
+  if (await commandItem.getAttribute('aria-current') !== 'true') await commandItem.click();
+  await expect(commandItem).toHaveAttribute('aria-current', 'true');
+}
+
+export async function openAshRoadWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
+  await expect(page.locator('[data-campaign-command-view]')).toBeVisible();
+  await expect(page.locator('[data-campaign-save-status]')).not.toContainText('Checking');
+}
+
+export async function openQuickOperationsWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Skirmishes', 'quick-operations');
+  await expect(page.locator('.command-center__workspace-host .lobby-deployment-chooser'))
+    .toBeVisible();
+}
+
+export async function openLocalPreparation(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Multiplayer', 'local-battle');
+  await page.locator('.command-center__workspace-host')
+    .getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'Local Battle', exact: true }))
+    .toHaveAttribute('aria-selected', 'true');
+}
+
+export async function openOnlinePreparation(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Multiplayer', 'online');
+  await page.locator('.command-center__workspace-host')
+    .getByRole('button', { name: 'Play Online', exact: true }).click();
+  await expect(page.getByRole('tabpanel', { name: 'Play Online preparation', exact: true }))
+    .toBeVisible();
+}
+
 /** Open the campaign's mode-aware Match/Mission ledger when it is drawer-owned. */
 export async function openMissionLedger(page: Page): Promise<boolean> {
   const mission = page.getByRole('region', { name: 'Campaign mission', exact: true });
@@ -88,6 +146,8 @@ export async function closeMissionLedger(page: Page): Promise<void> {
  */
 export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
   await gotoLobby(page);
+
+  await openAshRoadWorkspace(page);
 
   const start = page.getByRole('button', { name: 'Start Ash Road', exact: true });
   await expect(start).toBeVisible({ timeout: 5_000 });
@@ -117,8 +177,7 @@ export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
 export async function openHotSeatCustomization(page: Page): Promise<void> {
   const tabs = page.getByRole('tablist', { name: 'Hot Seat modes', exact: true });
   if (!(await tabs.isVisible())) {
-    const localBattle = page.getByRole('button', { name: 'Local Battle', exact: true });
-    if (await localBattle.isVisible()) await localBattle.click();
+    await openLocalPreparation(page);
   }
   await selectHotSeatTab(page, 'Local Battle');
   await expect(page.locator('#lobby .lobby-name').first()).toBeVisible();

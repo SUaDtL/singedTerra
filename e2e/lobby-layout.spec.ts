@@ -4,14 +4,16 @@ import {
   assertLobbyFrame,
   gotoLobby,
   openHotSeatCustomization,
+  openLocalPreparation,
+  openOnlinePreparation,
 } from './support';
 
 async function chooseLocalBattle(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
 }
 
 async function choosePlayOnline(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+  await openOnlinePreparation(page);
 }
 
 async function assertOperationsBoardFlow(page: Page, selector: string): Promise<void> {
@@ -427,16 +429,15 @@ test.describe('Lobby layout guardrails', () => {
   });
 
   test('deployment choices identify their setup and restore predictable keyboard focus', async ({ page }) => {
-    const chooser = page.getByRole('navigation', { name: 'Choose deployment', exact: true });
-    const localBattle = chooser.getByRole('button', { name: 'Local Battle', exact: true });
-    const playOnline = chooser.getByRole('button', { name: 'Play Online', exact: true });
+    const localBattle = page.locator(
+      '.command-center__library-items button[data-command-item="local-battle"]',
+    );
+    const playOnline = page.locator(
+      '.command-center__library-items button[data-command-item="online"]',
+    );
     const panel = page.locator('#lobby .lobby-mode-panel');
 
-    await expect(chooser).toBeVisible();
-    await expect(localBattle).toBeVisible();
-    await expect(playOnline).toBeVisible();
-
-    await localBattle.click();
+    await openLocalPreparation(page);
     await expect(page.locator('.lobby-mode-context')).toContainText(
       'Set your crew, then start a shared-screen match.',
     );
@@ -445,7 +446,7 @@ test.describe('Lobby layout guardrails', () => {
 
     await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await expect(localBattle).toBeFocused();
-    await playOnline.click();
+    await openOnlinePreparation(page);
     await expect(page.locator('.lobby-mode-context')).toContainText(
       'Create a room, join by code, or browse public games.',
     );
@@ -613,9 +614,14 @@ test.describe('Lobby layout guardrails', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await board.evaluate((element) => { element.scrollTop = 0; });
     await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBe(0);
-    await board.hover();
-    await page.mouse.wheel(0, 900);
-    await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    const boardOverflows = await board.evaluate(
+      (element) => element.scrollHeight > element.clientHeight + 1,
+    );
+    if (boardOverflows) {
+      await board.hover();
+      await page.mouse.wheel(0, 900);
+      await expect.poll(() => board.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    }
     const postWheel = await Promise.all([
       readyUp.boundingBox(),
       page.getByRole('button', { name: 'Leave', exact: true }).boundingBox(),

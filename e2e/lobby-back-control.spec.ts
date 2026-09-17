@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { gotoLobby } from './support';
+import { gotoLobby, openLocalPreparation, openOnlinePreparation } from './support';
 
 test('preparation back action is framed, spaced and reachable', async ({ page }, testInfo) => {
   await gotoLobby(page);
   for (const route of ['Local Battle', 'Play Online']) {
-    await page.getByRole('button', { name: route, exact: true }).click();
+    if (route === 'Local Battle') await openLocalPreparation(page);
+    else await openOnlinePreparation(page);
     const back = page.getByRole('button', { name: 'Back to deployment choices', exact: true });
     await expect(back).toBeVisible();
     const geometry = await back.evaluate((button) => {
@@ -35,6 +36,9 @@ test('preparation back action is framed, spaced and reachable', async ({ page },
     expect(['none', 'normal']).toContain(geometry.legacyArrow);
     await page.screenshot({ path: testInfo.outputPath(`back-${route.replaceAll(' ', '-')}.png`) });
     await back.click();
-    await expect(page.getByRole('button', { name: route, exact: true })).toBeFocused();
+    const itemId = route === 'Local Battle' ? 'local-battle' : 'online';
+    await expect(page.locator(
+      `.command-center__library-items button[data-command-item="${itemId}"]`,
+    )).toBeFocused();
   }
 });

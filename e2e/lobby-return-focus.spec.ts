@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { enterBattleIfBriefed, gotoLobby } from './support';
+import { enterBattleIfBriefed, gotoLobby, openLocalPreparation } from './support';
 
 test('returning from a local match restores keyboard focus to its visible preparation tab', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
   });
   await gotoLobby(page);
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click();
   await enterBattleIfBriefed(page);
   await expect(page.locator('#lobby')).toBeHidden();

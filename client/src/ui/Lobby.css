@@ -2230,6 +2230,11 @@
         grid-column: 1;
       }
       #lobby.is-compact .lobby-route-brief--online
+        .lobby-preparation-section[data-preparation-section="operation-profile"]
+        .lobby-preparation-section__body {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      #lobby.is-compact .lobby-route-brief--online
         .lobby-preparation-section[data-preparation-section="battlefield-protocol"] {
         grid-column: 2;
       }

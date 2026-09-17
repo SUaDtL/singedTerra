@@ -1,11 +1,16 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { enterBattleIfBriefed, gotoLobby } from './support';
+import {
+  enterBattleIfBriefed,
+  gotoLobby,
+  openQuickOperationsWorkspace,
+} from './support';
 
 async function openReturningChooser(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
   });
   await gotoLobby(page);
+  await openQuickOperationsWorkspace(page);
 }
 
 async function assertReachableTarget(control: Locator): Promise<void> {
@@ -80,11 +85,16 @@ test('deployment console preview follows the selected operation and keeps launch
   }
 
   const launch = page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true });
-  for (const control of [
-    page.getByRole('button', { name: 'Local Battle', exact: true }),
-    page.getByRole('button', { name: 'Play Online', exact: true }),
-    launch,
-  ]) await assertReachableTarget(control);
+  await assertReachableTarget(launch);
+  const modes = page.getByRole('button', { name: 'Modes', exact: true });
+  if (await modes.isVisible()) {
+    await assertReachableTarget(modes);
+  } else {
+    for (const category of ['Campaigns', 'Skirmishes', 'Multiplayer']) {
+      await assertReachableTarget(page.locator('.command-center__category-rail')
+        .getByRole('button', { name: category, exact: true }));
+    }
+  }
 
   const overflow = await page.locator('.lobby-deployment').evaluate((element) => ({
     scrollWidth: element.scrollWidth, clientWidth: element.clientWidth,

@@ -94,7 +94,9 @@ describe('Lobby deployment chooser', () => {
     expect(root.querySelector('.lobby-preview')).not.toBeNull();
 
     button(root, 'Back to deployment choices').click();
-    expect(document.activeElement).toBe(button(root, 'Local Battle'));
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__library-items button[data-command-item="local-battle"]',
+    ));
     expect(root.querySelector('.lobby-start')).toBeNull();
   });
 

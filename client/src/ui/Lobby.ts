@@ -1459,11 +1459,17 @@ export class Lobby {
       this.surface = 'preparation';
       this.render();
     }, { signal: listeners.signal });
-    section.append(title, description, action);
+    const recovery = tab === 'online' && this.networkRecoveryRetry
+      ? this.renderOnlineStatus(true)
+      : null;
+    section.append(title, description, recovery ?? action);
     host.replaceChildren(section);
     return {
       update: () => undefined,
-      focusDefault: () => { if (!disposed) action.focus(); },
+      focusDefault: () => {
+        if (disposed) return;
+        (recovery?.querySelector<HTMLElement>('[data-network-recovery-retry]') ?? action).focus();
+      },
       dispose: () => {
         if (disposed) return;
         disposed = true;
@@ -1650,7 +1656,7 @@ export class Lobby {
 
     const accountPanel = buildAccountPanelView(accountOptions(this.accountPanelOpen, true));
     if (this.diagnosticsIntentActive) accountPanel?.removeAttribute('aria-label');
-    const commandCenter = this.surface === 'chooser' && !this.diagnosticsIntentActive
+    const commandCenter = this.surface === 'chooser'
       ? this.mountCommandCenter()
       : undefined;
 
@@ -1698,7 +1704,7 @@ export class Lobby {
       onCampaignResume: () => { this.resumeAshRoad(); },
       onRejoin: () => { void this.handleRejoin(); },
       onBack: () => {
-        const choice = this.activeTab === 'hotseat' ? 'Local Battle' : 'Play Online';
+        const itemId = this.activeTab === 'hotseat' ? 'local-battle' : 'online';
         if (this.activeTab === 'online' && this.onlineSubView === 'browse') {
           this.stopBrowsePoll();
           this.onlineSubView = 'create';
@@ -1706,9 +1712,9 @@ export class Lobby {
         }
         this.surface = 'chooser';
         this.render();
-        [...this.root.querySelectorAll<HTMLButtonElement>('button')]
-          .find((button) => button.textContent === choice)
-          ?.focus();
+        this.root.querySelector<HTMLButtonElement>(
+          `.command-center__library-items button[data-command-item="${itemId}"]`,
+        )?.focus();
       },
       listenerSignal: this.renderListeners.signal,
     });

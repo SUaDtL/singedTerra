@@ -1,10 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { gotoLobby, isCompact } from './support';
-
-async function openLocalPreparation(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
-  await expect(page.locator('.lobby-preview')).toBeVisible();
-}
+import { gotoLobby, isCompact, openLocalPreparation } from './support';
 
 async function gotoProductionAccountFixture(page: Page): Promise<void> {
   const configuredStorageKey = process.env['E2E_AUTH_STORAGE_KEY'] ?? null;
@@ -66,7 +61,9 @@ async function gotoProductionAccountFixture(page: Page): Promise<void> {
   await page.goto('./');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await expect(page.locator('#lobby')).toBeVisible();
-  await expect(page.locator('#lobby .account-panel--authenticated')).toBeVisible();
+  await expect(page.locator(
+    '#lobby .lobby-command-rail__dossier .account-panel__account-trigger',
+  )).toBeVisible();
 }
 
 async function expectInside(inner: Locator, outer: Locator): Promise<void> {
@@ -307,9 +304,9 @@ test.describe('Collapsed commander dossier front-door geometry', () => {
   });
 
   test('keeps the full dossier inside the masthead and clear of deployment choices', async ({ page }) => {
-    const panel = page.locator('#lobby .account-panel--authenticated');
-    const masthead = page.locator('.lobby-deployment__masthead');
-    const chooser = page.locator('.lobby-deployment-chooser');
+    const panel = page.locator('#lobby .lobby-command-rail__dossier');
+    const masthead = page.locator('.lobby-command-rail');
+    const chooser = page.locator('.command-center');
     const trigger = panel.locator('.account-panel__account-trigger');
     const commander = trigger.locator('.account-panel__commander-name');
     const insignia = trigger.locator('.account-panel__commander-insignia');
@@ -322,13 +319,14 @@ test.describe('Collapsed commander dossier front-door geometry', () => {
       'aria-label',
       'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account',
     );
+    await expect(nextRank).toBeHidden();
     expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
     expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
     await expectInside(panel, masthead);
 
     const triggerBox = await trigger.boundingBox();
     expect(triggerBox, 'dossier disclosure should render').not.toBeNull();
-    for (const text of [commander, insignia, rank, level, milestone, nextRank]) {
+    for (const text of [commander, insignia, rank, level, milestone]) {
       const textBox = await renderedTextBox(text);
       expect(textBox.x).toBeGreaterThanOrEqual(triggerBox!.x - 1);
       expect(textBox.y).toBeGreaterThanOrEqual(triggerBox!.y - 1);

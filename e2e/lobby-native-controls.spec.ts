@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { gotoLobby } from './support';
+import { gotoLobby, openLocalPreparation } from './support';
 
 test('practice native controls retain the dark console theme and keyboard selection', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await gotoLobby(page);
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   await page.getByRole('tab', { name: 'Practice vs CPU', exact: true }).click();
   const selector = page.locator('[data-ui="practice-operation-selector"]');
   await expect(selector).toBeVisible();

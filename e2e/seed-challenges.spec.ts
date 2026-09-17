@@ -34,58 +34,68 @@ for (const [code, title, seed] of [
     await expect(challengeSeed).toHaveText(`Seed · ${seed}`);
     await expect(page.locator('[data-console-owner="preact"]')).toBeHidden();
     const start = callout.getByRole('button', { name: 'Start challenge vs CPU' });
-    await expect(start).toBeInViewport();
-    const geometry = await start.boundingBox();
-    if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
-      expect(geometry!.height).toBeGreaterThanOrEqual(44);
-    }
     const receiverGeometry = await page.locator('.lobby-deployment').evaluate((deployment) => {
       const masthead = deployment.querySelector<HTMLElement>('.lobby-deployment__masthead');
+      const workspace = deployment.querySelector<HTMLElement>('.command-center__workspace-host');
       const chooser = deployment.querySelector<HTMLElement>('.lobby-deployment-chooser');
       const challenge = deployment.querySelector<HTMLElement>('[data-ui="seed-challenge"]');
-      if (!masthead || !chooser || !challenge) throw new Error('Missing challenge receiver structure');
+      if (!masthead || !workspace || !chooser || !challenge) {
+        throw new Error('Missing challenge receiver structure');
+      }
       const bounds = (element: HTMLElement) => element.getBoundingClientRect().toJSON();
       return {
         deployment: bounds(deployment),
         masthead: bounds(masthead),
+        workspace: bounds(workspace),
         chooser: bounds(chooser),
         challenge: bounds(challenge),
-        overflowY: getComputedStyle(chooser).overflowY,
-        clientHeight: chooser.clientHeight,
-        scrollHeight: chooser.scrollHeight,
+        workspaceOverflowY: getComputedStyle(workspace).overflowY,
+        workspaceClientHeight: workspace.clientHeight,
+        workspaceScrollHeight: workspace.scrollHeight,
       };
     });
     expect(receiverGeometry.chooser.top, 'challenge lane begins below the command masthead')
       .toBeGreaterThanOrEqual(receiverGeometry.masthead.bottom - 1);
-    expect(receiverGeometry.chooser.bottom, 'challenge lane stays inside deployment preparation')
+    expect(receiverGeometry.workspace.bottom, 'workspace stays inside deployment preparation')
       .toBeLessThanOrEqual(receiverGeometry.deployment.bottom + 1);
+    expect(receiverGeometry.chooser.left, 'challenge lane begins inside its workspace')
+      .toBeGreaterThanOrEqual(receiverGeometry.workspace.left - 1);
+    expect(receiverGeometry.chooser.right, 'challenge lane width stays inside its workspace')
+      .toBeLessThanOrEqual(receiverGeometry.workspace.right + 1);
     expect(receiverGeometry.challenge.top, 'challenge callout begins inside its scroll lane')
       .toBeGreaterThanOrEqual(receiverGeometry.chooser.top - 1);
-    expect(receiverGeometry.overflowY).toBe('auto');
-    expect(receiverGeometry.scrollHeight).toBeGreaterThanOrEqual(receiverGeometry.clientHeight);
+    expect(receiverGeometry.workspaceOverflowY).toBe('auto');
+    expect(receiverGeometry.workspaceScrollHeight)
+      .toBeGreaterThanOrEqual(receiverGeometry.workspaceClientHeight);
     for (const content of [challengeTitle, challengeObjective, challengeSeed, start]) {
+      await content.scrollIntoViewIfNeeded();
       await expect(content).toBeInViewport();
+      const metrics = await content.evaluate((target) => {
+        const workspace = target.closest<HTMLElement>('.command-center__workspace-host');
+        if (!workspace) throw new Error('Missing challenge scroll owner');
+        const box = target.getBoundingClientRect();
+        const owner = workspace.getBoundingClientRect();
+        return {
+          box: box.toJSON(),
+          owner: owner.toJSON(),
+          font: Number.parseFloat(getComputedStyle(target).fontSize),
+          clientWidth: (target as HTMLElement).clientWidth,
+          scrollWidth: (target as HTMLElement).scrollWidth,
+        };
+      });
+      expect(metrics.box.top).toBeGreaterThanOrEqual(metrics.owner.top - 1);
+      expect(metrics.box.bottom).toBeLessThanOrEqual(metrics.owner.bottom + 1);
+      expect(metrics.box.left).toBeGreaterThanOrEqual(metrics.owner.left - 1);
+      expect(metrics.box.right).toBeLessThanOrEqual(metrics.owner.right + 1);
+      expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+      expect(metrics.font, `${await content.textContent()} remains readable`)
+        .toBeGreaterThanOrEqual(10.5);
+    }
+    const geometry = await start.boundingBox();
+    if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
+      expect(geometry!.height).toBeGreaterThanOrEqual(44);
     }
     await page.screenshot({ path: testInfo.outputPath('seed-challenge-receiver.png') });
-    const receiverContent = await callout.evaluate((element) => {
-      const stage = element.closest('.lobby-card')!.getBoundingClientRect();
-      const header = document.querySelector('.lobby-deployment__masthead')!.getBoundingClientRect();
-      const scale = stage.height / 600;
-      return { stage: stage.toJSON(), header: header.toJSON(), children: [...element.children].map((child) => {
-        const target = child as HTMLElement;
-        return { text: target.textContent, box: target.getBoundingClientRect().toJSON(),
-          font: Number.parseFloat(getComputedStyle(target).fontSize) * scale,
-          clientWidth: target.clientWidth, scrollWidth: target.scrollWidth };
-      }) };
-    });
-    for (const item of receiverContent.children) {
-      expect(item.box.top, `${item.text} starts below the lobby header`).toBeGreaterThanOrEqual(receiverContent.header.bottom - 1);
-      expect(item.box.bottom, `${item.text} stays inside the stage`).toBeLessThanOrEqual(receiverContent.stage.bottom + 1);
-      expect(item.box.left).toBeGreaterThanOrEqual(receiverContent.stage.left - 1);
-      expect(item.box.right).toBeLessThanOrEqual(receiverContent.stage.right + 1);
-      expect(item.scrollWidth).toBeLessThanOrEqual(item.clientWidth + 1);
-      expect(item.font, `${item.text} remains readable`).toBeGreaterThanOrEqual(10.5);
-    }
     await enterChallenge(page);
     await page.getByRole('button', { name: 'Open match ledger', exact: true }).click();
     await expect(page.locator('#hud [data-ui="quick-operation"]')).toContainText(title);

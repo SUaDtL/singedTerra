@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { assertLobbyFrame, enterBattleIfBriefed } from './support';
+import {
+  assertLobbyFrame,
+  enterBattleIfBriefed,
+  openLocalPreparation,
+  openOnlinePreparation,
+} from './support';
 
 const SESSION_ID = '123e4567-e89b-42d3-a456-426614174000';
 const NEXT_SESSION_ID = '223e4567-e89b-42d3-a456-426614174000';
@@ -105,7 +110,7 @@ async function openLocalBattery(page: Page, search = './', mode = 'Verified Depl
   await page.goto(search);
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await expect(page.locator('#lobby')).toBeVisible();
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   if (mode !== 'Local Battle') await page.getByRole('tab', { name: mode, exact: true }).click();
   await expect(page.getByRole('tab', { name: mode, exact: true })).toHaveAttribute('aria-selected', 'true');
 }
@@ -941,7 +946,7 @@ test.describe('verified deployment production-browser journey', () => {
     await installOnlineCpuFixture(page);
     await page.goto('./');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await page.getByRole('button', { name: 'Play Online', exact: true }).click();
+    await openOnlinePreparation(page);
     await expect(page.getByRole('heading', { name: 'Open operation' })).toBeVisible();
     await page.locator('.lobby-field').filter({ hasText: 'CPU opponents' })
       .locator('select').first().selectOption('1');
@@ -955,7 +960,7 @@ test.describe('verified deployment production-browser journey', () => {
 test('keeps Field Orders absent from the anonymous local route', async ({ page }) => {
   await page.goto('./');
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
-  await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+  await openLocalPreparation(page);
   await expect(page.getByRole('region', { name: 'Verified deployment' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Deploy local battle', exact: true }).click();
   await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();

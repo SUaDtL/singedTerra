@@ -223,6 +223,14 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
   return match
 }
 
+function closeDiagnostics(root: HTMLElement): void {
+  const control = root.querySelector<HTMLButtonElement>(
+    '[aria-label="Production diagnostics"] .lobby-overlay__close',
+  )
+  if (!control) throw new Error('Missing diagnostics close control')
+  control.click()
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void
   let reject!: (reason?: unknown) => void
@@ -591,7 +599,7 @@ describe('Lobby account composition', () => {
       ?.dataset.diagnosticsState).toBe('FAIL')
   })
 
-  it('cancels a pending autorun when diagnostics closes and restores focus to a live lobby control', () => {
+  it('cancels a pending autorun while retaining the command center and restores live selection focus', () => {
     window.history.replaceState(null, '', '/pregame?keep=1&diagnostics=1&autorun=1#deck')
     const root = document.createElement('div')
     document.body.append(root)
@@ -607,9 +615,11 @@ describe('Lobby account composition', () => {
     )
 
     lobby.show()
-    const detachedControl = [...root.querySelectorAll<HTMLButtonElement>('button')]
-      .find((candidate) => candidate.textContent === 'Local Battle')
-    if (!detachedControl) throw new Error('Missing Local Battle control')
+    const detachedControl = root.querySelector<HTMLButtonElement>(
+      '.command-center__library-items [data-command-item][aria-current="true"]',
+    )
+    if (!detachedControl) throw new Error('Missing selected Command Center control')
+    expect(root.querySelector('.command-center')).not.toBeNull()
     const replaceState = vi.spyOn(window.history, 'replaceState')
     root.querySelector<HTMLButtonElement>('[aria-label="Production diagnostics"] .lobby-overlay__close')?.click()
     account.emit(authenticatedState())
@@ -648,7 +658,7 @@ describe('Lobby account composition', () => {
     await vi.waitFor(() => expect(root.querySelector('[aria-label="Production diagnostics"]')).not.toBeNull())
     expect(root.querySelectorAll('.lobby-card')).toHaveLength(1)
     expect(root.querySelectorAll('.lobby-overlay')).toHaveLength(1)
-    expect(root.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+    expect(root.querySelectorAll('[aria-label="Production diagnostics"][role="dialog"]')).toHaveLength(1)
   })
 
   it('disposes a lazy diagnostics instance that resolves after the console closes', async () => {
@@ -664,7 +674,7 @@ describe('Lobby account composition', () => {
     )
 
     lobby.show()
-    button(root, 'Close').click()
+    closeDiagnostics(root)
     factory.resolve(diagnostics)
     await Promise.resolve()
     await Promise.resolve()
@@ -692,7 +702,7 @@ describe('Lobby account composition', () => {
 
     lobby.show()
     button(root, 'Run checks').click()
-    button(root, 'Close').click()
+    closeDiagnostics(root)
     run.reject(new Error('late-run-secret'))
     await Promise.resolve()
     await Promise.resolve()
@@ -729,7 +739,7 @@ describe('Lobby account composition', () => {
       )
       lobby.show()
       button(root, 'Copy receipt').click()
-      button(root, 'Close').click()
+      closeDiagnostics(root)
       if (settlement === 'resolve') copy.resolve()
       else copy.reject(new Error('late-clipboard-secret'))
       await Promise.resolve()
@@ -786,7 +796,7 @@ describe('Lobby account composition', () => {
     lobby.show()
     vi.spyOn(window.history, 'replaceState').mockImplementationOnce(() => { throw new Error('history failure') })
 
-    button(root, 'Close').click()
+    closeDiagnostics(root)
 
     expect(diagnostics.dispose).toHaveBeenCalledOnce()
     expect(root.querySelector('[aria-label="Production diagnostics"]')).toBeNull()

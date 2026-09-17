@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openLocalPreparation } from './support';
 
 // Deliberately explicit: this test must represent an untouched guest, while the
 // configured fixture continues to inherit the project's base URL, device, and
@@ -217,7 +218,7 @@ test.describe('ordinary guest journey', () => {
     await splash.click();
     await expect(splash).toBeHidden({ timeout: 5_000 });
 
-    await page.getByRole('button', { name: 'Local Battle', exact: true }).click();
+    await openLocalPreparation(page);
     await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.lobby-name').first()).toBeVisible();
     await chooseFoundryPreset(page, 1);
