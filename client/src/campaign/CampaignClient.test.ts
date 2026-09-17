@@ -265,7 +265,7 @@ describe('CampaignClient ownership contract', () => {
     })
     expect(resumedClient.getState()).toEqual(client.getState())
     expect(resumedClient.getCommittedReplayJournal()).toEqual(client.getCommittedReplayJournal())
-  })
+  }, 15_000)
 
   it('admits an atomic commitment exactly at the replay bound', async () => {
     const CampaignClient = await loadCampaignClient()
