@@ -138,7 +138,7 @@ async function flushMicrotasks(count = 20): Promise<void> {
 }
 
 describe('R10 independent semantic readiness', () => {
-  it('rerenders campaign-only commitment, object, result, and presence changes', async () => {
+  it('keeps mission telemetry outside the command-console generation across campaign changes', async () => {
     pixiRuntime.denyWebGl = true;
     const target = hosts();
     const resources = new BattleConsoleResourceLedger();
@@ -161,8 +161,7 @@ describe('R10 independent semantic readiness', () => {
       layout: projectResponsiveLayout('wide', 1),
       generationToken: { generation: 10, resources, isCurrent: () => true },
     });
-    expect(target.semanticHost.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
-      .toBe('Refinery · protected · 61 / 100');
+    expect(target.semanticHost.querySelector('[data-campaign-objective]')).toBeNull();
 
     mounted?.update({
       ...initialState,
@@ -176,10 +175,7 @@ describe('R10 independent semantic readiness', () => {
         result: { outcome: 'success', reason: 'objective', commitmentId: 5 },
       },
     }, projectResponsiveLayout('wide', 1));
-    expect(target.semanticHost.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
-      .toBe('Refinery · protected · 24 / 100');
-    expect(getByRole(target.semanticHost, 'status', { name: 'Campaign objective success' }).textContent)
-      .toBe('Objective success · objective · 5 commitments');
+    expect(target.semanticHost.querySelector('[data-campaign-objective]')).toBeNull();
 
     mounted?.update({ ...baseState, campaign: null }, projectResponsiveLayout('wide', 1));
     expect(queryAllByRole(target.semanticHost, 'region', { name: 'Campaign objective' }))
@@ -187,7 +183,7 @@ describe('R10 independent semantic readiness', () => {
 
     mounted?.update(initialState, projectResponsiveLayout('wide', 1));
     expect(queryAllByRole(target.semanticHost, 'region', { name: 'Campaign objective' }))
-      .toHaveLength(1);
+      .toHaveLength(0);
     await vi.dynamicImportSettled();
     await waitFor(() => expect(mounted?.status).toBe('fallback'));
     await mounted?.destroy();

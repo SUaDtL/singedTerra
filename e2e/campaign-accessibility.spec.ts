@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { gotoFuelStopFromPublicEntry, gotoLobby } from './support';
+import {
+  closeMissionLedger,
+  gotoFuelStopFromPublicEntry,
+  gotoLobby,
+  openMissionLedger,
+} from './support';
 
 test.use({
   storageState: { cookies: [], origins: [] },
@@ -90,12 +95,18 @@ test('keyboard-only sound-off reduced-motion play survives campaign asset failur
   const start = page.getByRole('button', { name: 'Start Ash Road', exact: true });
   await start.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('region', { name: 'Campaign objective', exact: true })).toBeVisible();
+  await openMissionLedger(page);
+  await expect(page.getByRole('region', { name: 'Campaign mission', exact: true })).toBeVisible();
+  await closeMissionLedger(page);
   await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1');
 
   await page.keyboard.press('m');
   await expect(page.locator('.st-hud__toast')).toContainText('Sound off');
-  await page.keyboard.press('q');
+  const nextWeapon = page.getByRole('button', {
+    name: 'Select next weapon, current Baby Missile', exact: true,
+  });
+  await nextWeapon.focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Fire Missile', exact: true })).toBeEnabled();
   await setReadoutWithKeyboard(page, 'angle', 24);
   await setReadoutWithKeyboard(page, 'power', 74);
@@ -178,14 +189,16 @@ test('a committed in-flight campaign shot survives a full reload and resumes fro
   await expect(resume).toBeVisible({ timeout: 10_000 });
   await resume.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('region', { name: 'Campaign objective', exact: true })).toBeVisible();
+  await openMissionLedger(page);
+  await expect(page.getByRole('region', { name: 'Campaign mission', exact: true })).toBeVisible();
+  await closeMissionLedger(page);
   await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1', {
     timeout: 30_000,
   });
   await expect(page.getByRole('button', { name: /^Fire /u })).toBeEnabled({ timeout: 30_000 });
 
   await fireMissile(page, 44, 84);
-  await expect(page.locator('[role="status"][data-campaign-result="success"]'))
+  await expect(page.getByRole('dialog', { name: 'Campaign checkpoint', exact: true }))
     .toBeVisible({ timeout: 30_000 });
   await assertNoPageOverflow(page);
 });

@@ -65,6 +65,22 @@ export async function gotoLobby(page: Page): Promise<void> {
   await expect(page.locator('#lobby .lobby-card')).toBeVisible();
 }
 
+/** Open the campaign's mode-aware Match/Mission ledger when it is drawer-owned. */
+export async function openMissionLedger(page: Page): Promise<boolean> {
+  const mission = page.getByRole('region', { name: 'Campaign mission', exact: true });
+  if (await mission.isVisible()) return false;
+  const trigger = page.getByRole('button', { name: 'Open mission ledger', exact: true });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(mission).toBeVisible();
+  return true;
+}
+
+export async function closeMissionLedger(page: Page): Promise<void> {
+  const close = page.getByRole('button', { name: 'Close mission ledger', exact: true });
+  if (await close.isVisible()) await close.click();
+}
+
 /**
  * Start Fuel Stop through the ordinary guest-facing campaign entry. This helper
  * intentionally has no query fixture, storage seed, DOM removal after entry, or
@@ -83,8 +99,9 @@ export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
 
   await expect(page.locator('#lobby')).toBeHidden();
   await expect(page.locator('#game')).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Campaign objective', exact: true }))
-    .toBeVisible();
+  await expect(page.locator('[data-campaign-mission]')).toHaveAttribute(
+    'data-campaign-result', 'active',
+  );
   await expect(page.locator('[data-battle-console-surface]'))
     .toHaveAttribute('data-active-commander', 'p1');
   await enterBattleIfBriefed(page);

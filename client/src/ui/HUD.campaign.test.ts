@@ -107,6 +107,14 @@ describe('HUD campaign presentation boundary', () => {
         'drum-b',
       ])
       expect(Object.values(projected ?? {}).every((value) => typeof value !== 'function')).toBe(true)
+      const mission = document.querySelector<HTMLElement>('[data-campaign-mission]')!
+      expect(mission.hidden).toBe(false)
+      expect(mission.textContent).toContain('Fuel Stop')
+      expect(mission.textContent).toContain('Destroy all defenders')
+      expect(mission.textContent).toContain('Keep Refinery standing')
+      expect(mission.textContent).not.toContain('2 supplies')
+      expect(document.querySelector('[data-ui="match-title"]')?.textContent).toBe('Mission')
+      expect(document.querySelector('[data-ui="match-drawer-toggle"]')?.textContent).toBe('Mission')
     } finally {
       client.stop()
       await hud.destroy()
@@ -141,6 +149,8 @@ describe('HUD campaign presentation boundary', () => {
       expect(requests).toHaveLength(2)
       expect(latestPresentation(requests, updates).campaign).toBeNull()
       expect(document.querySelector('[data-campaign-fact-id]')).toBeNull()
+      expect(document.querySelector<HTMLElement>('[data-campaign-mission]')?.hidden).toBe(true)
+      expect(document.querySelector('[data-ui="match-title"]')?.textContent).toBe('Match')
     } finally {
       campaignClient.stop()
       await hud.destroy()

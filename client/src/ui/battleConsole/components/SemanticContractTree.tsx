@@ -46,115 +46,6 @@ function presentedCommanderHealth(state: BattleConsolePresentationState): number
 
 const ARMORY_TRIGGER_KEY = 'armory-inline-host::weapon-trigger';
 const ARMORY_TRIGGER_LABEL_KEY = 'node:span:Close Armory:36';
-const CAMPAIGN_ROOT_KEY = 'campaign-objective-host';
-
-const campaignFactsStyle: JSX.CSSProperties = {
-  position: 'absolute',
-  inset: '4px 8px auto',
-  zIndex: 5,
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  minHeight: '36px',
-  padding: '4px 10px',
-  overflow: 'clip',
-  border: '1px solid rgba(255, 207, 100, 0.75)',
-  borderRadius: '4px',
-  background: 'rgba(14, 13, 12, 0.92)',
-  color: '#fff1c7',
-  fontFamily: 'var(--font-mono)',
-  fontSize: '12px',
-  lineHeight: 1.2,
-  whiteSpace: 'nowrap',
-  pointerEvents: 'none',
-};
-
-function humanizeCampaignIdentifier(value: string): string {
-  return value
-    .split(/[-_]+/u)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ');
-}
-
-function campaignNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/u, '');
-}
-
-function CampaignObjectiveFacts({ state, dispatch }: Readonly<{
-  state: BattleConsolePresentationState;
-  dispatch: (intent: BattleConsoleIntent) => void;
-}>) {
-  const campaign = state.campaign;
-  if (!campaign) return null;
-  const result = campaign.result;
-  const outcome = result?.outcome ?? 'active';
-  const commitmentLabel = `${campaign.commitmentCount} commitment${campaign.commitmentCount === 1 ? '' : 's'}`;
-  const objective = campaign.objective;
-  const requirement = !objective
-    ? `Objective ${outcome.replace('-', ' ')}`
-    : objective.kind === 'survive-or-eliminate'
-      ? `Survive ${objective.humanCommitments ?? 0} commitments or eliminate every defender`
-      : 'Eliminate every defender';
-  const protectedFacts = objective && objective.protectedObjectIds.length > 0
-    ? ` · Protect ${objective.protectedObjectIds.map(humanizeCampaignIdentifier).join(', ')}`
-    : '';
-  const statusText = result
-    ? `${requirement}${protectedFacts}${objective ? ` · ${outcome.replace('-', ' ')}` : ''} · ${result.reason.replaceAll('-', ' ')} · ${commitmentLabel}`
-    : `${requirement}${protectedFacts} · ${commitmentLabel}`;
-  const warningText = campaign.warning
-    ? campaign.warning.status === 'pending'
-      ? `Incoming strike at horizontal position ${campaignNumber(campaign.warning.targetX)} after commitment ${campaign.warning.dueHumanCommitment}`
-      : campaign.warning.status === 'due'
-        ? `Incoming strike due now at horizontal position ${campaignNumber(campaign.warning.targetX)}`
-        : `Incoming strike ${campaign.warning.status}`
-    : null;
-  return (
-    <section
-      role="region"
-      aria-label="Campaign objective"
-      data-campaign-objective=""
-      style={campaignFactsStyle}
-    >
-      <div
-        role="status"
-        aria-label={`Campaign objective ${outcome.replace('-', ' ')}`}
-        data-campaign-result={outcome}
-      >
-        {statusText}
-      </div>
-      <div role="status" aria-label="Campaign supplies" data-campaign-supplies="">
-        {campaign.supplies} supplies
-      </div>
-      {warningText ? <div role="status" aria-label="Campaign warning" data-campaign-warning="">
-        {warningText}
-      </div> : null}
-      <ul style={{ display: 'flex', gap: '10px', margin: 0, padding: 0, listStyle: 'none' }}>
-        {campaign.objects.map((object) => (
-          <li key={object.id} data-campaign-fact-id={object.id}>
-            {humanizeCampaignIdentifier(object.id)} · {object.kind.replaceAll('-', ' ')} · {object.alive
-              ? `${campaignNumber(object.health)} / ${campaignNumber(object.maxHealth)}`
-              : 'destroyed'}
-          </li>
-        ))}
-      </ul>
-      {campaign.retryable && result?.outcome !== 'success' ? (
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'campaign-retry' })}
-          style={{
-            minWidth: '112px', minHeight: '28px', border: '1px solid #ffcf64',
-            borderRadius: '3px', background: '#312717', color: '#fff1c7', cursor: 'pointer',
-            pointerEvents: 'auto',
-          }}
-        >
-          Retry {humanizeCampaignIdentifier(campaign.encounterId ?? 'fuel-stop')}
-        </button>
-      ) : null}
-    </section>
-  );
-}
-
 function dynamicText(
   node: SemanticNodeDefinition,
   state: BattleConsolePresentationState,
@@ -395,8 +286,5 @@ export function SemanticContractTree({
     return createElement(record.tag.toLowerCase() as keyof JSX.IntrinsicElements, props, content);
   };
 
-  return <>
-    {roots.map(renderNode)}
-    {rootKey === CAMPAIGN_ROOT_KEY ? <CampaignObjectiveFacts state={state} dispatch={dispatch} /> : null}
-  </>;
+  return <>{roots.map(renderNode)}</>;
 }

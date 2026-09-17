@@ -69,6 +69,7 @@ import {
   VerifiedChallengeView,
   type HUDVerifiedChallengePresentation,
 } from './VerifiedChallengeView';
+import { CampaignMissionView } from './CampaignMissionView';
 
 export type { HUDVerifiedChallengePresentation } from './VerifiedChallengeView';
 
@@ -286,8 +287,10 @@ export class HUD {
   private shopTankId: string | null = null;
   /** Shrink-wrapped presentation owner for Match-only information. */
   private matchCardEl!: HTMLElement;
+  private matchTitleEl!: HTMLElement;
   private matchDrawerBtnEl!: HTMLButtonElement;
   private matchDrawerCloseEl!: HTMLButtonElement;
+  private campaignMissionView!: CampaignMissionView;
   private firstSalvoBriefingAcknowledged = false;
   // Networked liveness widgets (P1-6): a persistent connection banner (shown only
   // while reconnecting/connecting) and a transient toast for failed shots.
@@ -890,6 +893,7 @@ export class HUD {
         } } : {}),
         ...(state.campaign.warning ? { warning: {
           status: state.campaign.warning.status,
+          sourceObjectId: state.campaign.warning.sourceObjectId,
           dueHumanCommitment: state.campaign.warning.dueHumanCommitment,
           targetX: state.campaign.warning.targetX,
         } } : {}),
@@ -985,6 +989,7 @@ export class HUD {
     if (!this.built || this.destroyed) return;
     const state = this.projectLiveBattleConsole();
     if (!state) return;
+    this.syncCampaignMission(state.campaign ?? null);
     this.ensureBattleConsoleHosts();
     if (this.battleConsoleSurfaceHost) {
       this.battleConsoleSurfaceHost.dataset['activeCommander'] = state.commander.id ?? '';
@@ -1077,6 +1082,19 @@ export class HUD {
     this.lastSeenRound = state.round;
   }
 
+  private syncCampaignMission(campaign: CampaignBattleConsolePresentation | null): void {
+    const active = campaign !== null;
+    this.root.classList.toggle('st-hud--campaign', active);
+    this.root.setAttribute('aria-label', active ? 'Mission ledger' : 'Match ledger');
+    this.matchTitleEl.textContent = active ? 'Mission' : 'Match';
+    this.matchDrawerBtnEl.textContent = active ? 'Mission' : 'Match';
+    this.matchDrawerBtnEl.setAttribute('aria-label', active ? 'Open mission ledger' : 'Open match ledger');
+    this.matchDrawerCloseEl.setAttribute('aria-label', active ? 'Close mission ledger' : 'Close match ledger');
+    this.matchModeEl.hidden = active;
+    this.roundEl.hidden = active;
+    this.campaignMissionView.update(campaign);
+  }
+
   /** Build the static DOM scaffold + inject styles. Runs once (idempotent). */
   private build(): void {
     HUD.injectStyle();
@@ -1107,17 +1125,23 @@ export class HUD {
     this.matchCardEl = document.createElement('div');
     this.matchCardEl.className = 'st-hud__match-card';
     this.matchCardEl.dataset['matchSkin'] = 'ornate-field-console';
-    const matchTitle = document.createElement('h2');
-    matchTitle.className = 'st-hud__match-title';
-    matchTitle.dataset['ui'] = 'match-title';
-    matchTitle.textContent = 'Match';
+    this.matchTitleEl = document.createElement('h2');
+    this.matchTitleEl.className = 'st-hud__match-title';
+    this.matchTitleEl.dataset['ui'] = 'match-title';
+    this.matchTitleEl.textContent = 'Match';
+    const missionHost = document.createElement('div');
+    this.campaignMissionView = new CampaignMissionView({
+      host: missionHost,
+      onRetry: () => this.campaignRetryCb?.(),
+    });
     this.matchCardEl.append(
-      matchTitle,
+      this.matchTitleEl,
       this.matchDrawerCloseEl,
       menu,
       this.matchModeEl,
       this.quickOperationEl,
       this.roundEl,
+      missionHost,
       this.playersEl,
       this.connBannerEl,
     );

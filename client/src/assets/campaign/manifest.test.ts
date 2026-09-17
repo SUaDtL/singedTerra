@@ -29,4 +29,50 @@ describe('Ash Road art manifest', () => {
       expect(entry.fallback.length).toBeGreaterThan(20)
     }
   })
+
+  it('keeps wide object padding transparent instead of painting black world-space boxes', async () => {
+    const padding = new Map([['refinery', 32], ['cache', 32], ['siege', 64]])
+    for (const entry of ASH_ROAD_CAMPAIGN_ASSETS.filter(({ id }) => padding.has(id))) {
+      const file = path.resolve(process.cwd(), 'public', entry.path)
+      const decoded = await sharp(await readFile(file)).ensureAlpha().raw()
+        .toBuffer({ resolveWithObject: true })
+      const inset = padding.get(entry.id)!
+      for (let y = 0; y < decoded.info.height; y += 1) {
+        for (let x = 0; x < decoded.info.width; x += 1) {
+          if (x >= inset && x < decoded.info.width - inset) continue
+          expect(decoded.data[(y * decoded.info.width + x) * 4 + 3]).toBe(0)
+        }
+      }
+    }
+  })
+
+  it('records the actual opaque footprint used to ground every world object', async () => {
+    for (const entry of ASH_ROAD_CAMPAIGN_ASSETS.filter(({ id }) => id !== 'panorama')) {
+      expect('contentBounds' in entry).toBe(true)
+      if (!('contentBounds' in entry)) throw new Error(`${entry.id} has no content bounds`)
+      const file = path.resolve(process.cwd(), 'public', entry.path)
+      const decoded = await sharp(await readFile(file)).ensureAlpha().raw()
+        .toBuffer({ resolveWithObject: true })
+      const { width, height } = decoded.info
+      let minX = width
+      let minY = height
+      let maxX = -1
+      let maxY = -1
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          if (decoded.data[(y * width + x) * 4 + 3]! < 8) continue
+          minX = Math.min(minX, x)
+          minY = Math.min(minY, y)
+          maxX = Math.max(maxX, x)
+          maxY = Math.max(maxY, y)
+        }
+      }
+      expect(entry.contentBounds).toEqual({
+        left: minX,
+        top: minY,
+        right: maxX + 1,
+        bottom: maxY + 1,
+      })
+    }
+  })
 })

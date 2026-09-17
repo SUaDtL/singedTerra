@@ -47,6 +47,51 @@ const OBJECT_ASSET_IDS = Object.freeze({
   cache: 'cache',
 } as const satisfies Record<CampaignObjectState['kind'], AshRoadAssetId>);
 
+const OBJECT_VISUAL_SIZES = Object.freeze({
+  'supply-drum': Object.freeze({ width: 34, height: 34 }),
+  protected: Object.freeze({ width: 72, height: 58 }),
+  relay: Object.freeze({ width: 52, height: 52 }),
+  cache: Object.freeze({ width: 60, height: 48 }),
+} as const satisfies Record<CampaignObjectState['kind'], Readonly<{
+  width: number; height: number;
+}>>);
+
+interface EncounterVisualBounds {
+  readonly left: number; readonly right: number; readonly top: number; readonly bottom: number;
+}
+
+/** Visual art is bottom-anchored to canonical collision but never defines it. */
+function visualBounds(object: CampaignObjectState): EncounterVisualBounds {
+  const size = OBJECT_VISUAL_SIZES[object.kind];
+  const bottom = object.collisionBounds.bottom;
+  return Object.freeze({
+    left: object.x - size.width / 2,
+    right: object.x + size.width / 2,
+    top: bottom - size.height,
+    bottom,
+  });
+}
+
+/**
+ * Authored files retain transparent breathing room for reuse outside battle.
+ * Shift that file rectangle down so its last meaningful alpha row, rather than
+ * the file edge, meets the canonical terrain support line.
+ */
+function authoredArtBounds(object: CampaignObjectState): EncounterVisualBounds {
+  const bounds = visualBounds(object);
+  const asset = ashRoadAsset(OBJECT_ASSET_IDS[object.kind]);
+  const transparentBottom = asset.contentBounds
+    ? asset.height - asset.contentBounds.bottom
+    : 0;
+  const offset = transparentBottom / asset.height * (bounds.bottom - bounds.top);
+  return Object.freeze({
+    left: bounds.left,
+    right: bounds.right,
+    top: bounds.top + offset,
+    bottom: bounds.bottom + offset,
+  });
+}
+
 function positiveFinite(value: number, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
@@ -85,8 +130,9 @@ function formatHealth(value: number): string {
 function drawObjectBody(
   context: CanvasRenderingContext2D,
   object: CampaignObjectState,
+  bounds: EncounterVisualBounds,
 ): void {
-  const { left, right, top, bottom } = object.collisionBounds;
+  const { left, right, top, bottom } = bounds;
   const width = right - left;
   const height = bottom - top;
   context.globalAlpha = object.alive ? 1 : 0.48;
@@ -142,30 +188,47 @@ function drawObjectBody(
       break;
   }
 
+  context.globalAlpha = 1;
+}
+
+function objectLabel(object: CampaignObjectState): string {
+  if (object.kind === 'protected') return object.id === 'pump' ? 'PUMP' : 'REFINERY';
+  if (object.kind === 'relay') return 'RELAY';
+  if (object.kind === 'cache') return 'CACHE';
+  return 'SUPPLY';
+}
+
+function drawObjectVitals(
+  context: CanvasRenderingContext2D,
+  object: CampaignObjectState,
+  bounds: EncounterVisualBounds,
+): void {
+  const { left, right, top } = bounds;
+  const width = right - left;
   if (object.alive && object.maxHealth > 0) {
     const healthRatio = Math.max(0, Math.min(1, object.health / object.maxHealth));
     context.fillStyle = 'rgba(8, 13, 16, 0.82)';
-    context.fillRect(left, top - 7, width, 4);
+    context.fillRect(left, top - 6, width, 3);
     context.fillStyle = healthRatio > 0.35 ? '#82d98b' : '#ff795f';
-    context.fillRect(left, top - 7, width * healthRatio, 4);
+    context.fillRect(left, top - 6, width * healthRatio, 3);
     context.fillStyle = '#f5fbff';
-    context.font = '10px sans-serif';
+    context.font = 'bold 9px sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'bottom';
     context.fillText(
-      `${formatHealth(object.health)} / ${formatHealth(object.maxHealth)}`,
+      `${objectLabel(object)} · ${formatHealth(object.health)}`,
       left + width / 2,
-      top - 9,
+      top - 8,
     );
   }
-  context.globalAlpha = 1;
 }
 
 function drawObjectStateMark(
   context: CanvasRenderingContext2D,
   object: CampaignObjectState,
+  bounds: EncounterVisualBounds,
 ): void {
-  const { left, right, top, bottom } = object.collisionBounds;
+  const { left, right, top, bottom } = bounds;
   const width = right - left;
   const height = bottom - top;
   if (!object.alive) {
@@ -258,20 +321,50 @@ export class EncounterObjectRenderer {
     context.translate(view.offsetX, view.offsetY);
     context.scale(view.scale, view.scale);
     for (const object of objects) {
-      drawObjectBody(context, object);
+      const fallbackBounds = visualBounds(object);
       const image = this.images.get(object.kind);
+      const artReady = this.assetStates.get(object.kind) === 'ready' && image && object.alive;
+      const bounds = artReady ? authoredArtBounds(object) : fallbackBounds;
       if (this.assetStates.get(object.kind) === 'ready' && image && object.alive) {
-        const { left, right, top, bottom } = object.collisionBounds;
+        const { left, right, top, bottom } = bounds;
+        context.save();
+        context.globalAlpha = 0.34;
+        context.fillStyle = '#060507';
+        context.beginPath();
+        context.ellipse(
+          object.x,
+          object.collisionBounds.bottom + 1,
+          (right - left) * 0.42,
+          4,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        context.fill();
+        context.restore();
         context.drawImage(image, left, top, right - left, bottom - top);
+      } else {
+        drawObjectBody(context, object, bounds);
       }
-      drawObjectStateMark(context, object);
+      drawObjectVitals(context, object, bounds);
+      drawObjectStateMark(context, object, bounds);
       if (animationPending && object.alive) {
         const pulse = 0.18 + 0.08 * Math.sin(animationTime / 240 + object.x * 0.01);
-        const { left, right, top, bottom } = object.collisionBounds;
+        const { left, right } = bounds;
         context.globalAlpha = pulse;
         context.strokeStyle = '#dff7ff';
         context.lineWidth = 1.5 / positiveFinite(viewport.devicePixelRatio, 1);
-        context.strokeRect(left - 2, top - 2, right - left + 4, bottom - top + 4);
+        context.beginPath();
+        context.ellipse(
+          object.x,
+          object.collisionBounds.bottom + 1,
+          (right - left) * 0.48,
+          6,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        context.stroke();
         context.globalAlpha = 1;
       }
     }

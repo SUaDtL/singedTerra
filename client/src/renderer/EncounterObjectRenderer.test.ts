@@ -114,6 +114,7 @@ function contextTrace() {
     lineTo: vi.fn(),
     rect: vi.fn(),
     arc: vi.fn(),
+    ellipse: vi.fn(() => operations.push('ellipse')),
     fill: vi.fn(() => operations.push('fill')),
     stroke: vi.fn(() => operations.push('stroke')),
     fillRect: vi.fn(() => operations.push('fillRect')),
@@ -136,6 +137,49 @@ function contextTrace() {
 }
 
 describe('EncounterObjectRenderer campaign world authority', () => {
+  it('uses art-only visual bounds while collision and hit geometry stay unchanged', async () => {
+    const EncounterObjectRenderer = await loadRenderer()
+    const images: HTMLImageElement[] = []
+    const renderer = new EncounterObjectRenderer({
+      createImage: () => {
+        const image = {
+          src: '', naturalWidth: 320, naturalHeight: 256, onload: null, onerror: null,
+        } as unknown as HTMLImageElement
+        images.push(image)
+        return image
+      },
+      deferAssetLoad: true,
+      reducedMotion: true,
+    })
+    const loading = renderer.draw(contextTrace().context, [objects[0]!], {
+      width: 1200, height: 600, devicePixelRatio: 1, zoom: 1,
+    })
+    expect(loading.hitRegions[0]).toEqual({
+      id: 'refinery', kind: 'protected', left: 328, right: 372, top: 269, bottom: 305,
+    })
+    images[0]!.onload?.(new Event('load'))
+
+    const trace = contextTrace()
+    renderer.draw(trace.context, [objects[0]!], {
+      width: 1200, height: 600, devicePixelRatio: 1, zoom: 1,
+    })
+
+    expect(trace.context.drawImage).toHaveBeenCalledWith(
+      images[0],
+      314,
+      247 + 33 / 256 * 58,
+      72,
+      58,
+    )
+    const draw = vi.mocked(trace.context.drawImage).mock.calls[0]!
+    const opaqueBottom = Number(draw[2]) + (223 / 256) * Number(draw[4])
+    expect(opaqueBottom).toBeCloseTo(objects[0]!.collisionBounds.bottom, 8)
+    expect(trace.operations).not.toContain('strokeRect')
+    expect(trace.operations).toContain('ellipse')
+    expect(trace.operations).toContain('text:REFINERY · 61')
+    renderer.destroy()
+  })
+
   it('lets the aggregate Renderer defer campaign art until the first campaign draw', async () => {
     const assignedSources: string[] = []
     class TrackingImage {
@@ -294,8 +338,8 @@ describe('EncounterObjectRenderer campaign world authority', () => {
     expect(trace.operations).not.toContain('drawImage')
     expect(trace.operations.some((operation) =>
       operation === 'fillRect' || operation === 'strokeRect' || operation === 'fill')).toBe(true)
-    expect(trace.operations).toContain('text:61 / 100')
-    expect(trace.operations).toContain('text:20 / 20')
+    expect(trace.operations).toContain('text:REFINERY · 61')
+    expect(trace.operations).toContain('text:SUPPLY · 20')
     renderer.destroy()
   })
 

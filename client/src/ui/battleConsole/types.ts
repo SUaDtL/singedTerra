@@ -61,6 +61,7 @@ export interface CampaignBattleConsolePresentation {
   }>;
   readonly warning?: Readonly<{
     readonly status: 'pending' | 'due' | 'canceled' | 'fired';
+    readonly sourceObjectId: string;
     readonly dueHumanCommitment: number;
     readonly targetX: number;
   }>;

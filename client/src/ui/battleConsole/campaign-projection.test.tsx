@@ -81,7 +81,7 @@ afterEach(() => {
 })
 
 describe('campaign battle-console semantic projection', () => {
-  it('renders one authoritative objective/status tree without duplicating world hit geometry in DOM', () => {
+  it('keeps campaign telemetry out of the command deck without duplicating world geometry', () => {
     const host = document.createElement('div')
     render(
       <BattleConsoleRoot
@@ -92,24 +92,15 @@ describe('campaign battle-console semantic projection', () => {
       host,
     )
 
-    expect(queryAllByRole(host, 'region', { name: 'Campaign objective' })).toHaveLength(1)
-    expect(getByRole(host, 'status', { name: 'Campaign objective active' }).textContent)
-      .toBe('Survive 5 commitments or eliminate every defender · Protect Refinery · 4 commitments')
-    expect(getByRole(host, 'status', { name: 'Campaign warning' }).textContent)
-      .toBe('Incoming strike at horizontal position 640 after commitment 5')
-    expect(getByRole(host, 'status', { name: 'Campaign supplies' }).textContent)
-      .toBe('2 supplies')
-    expect(host.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
-      .toBe('Refinery · protected · 61 / 100')
-    expect(host.querySelector('[data-campaign-fact-id="drum-a"]')?.textContent)
-      .toBe('Drum A · supply drum · destroyed')
+    expect(queryAllByRole(host, 'region', { name: 'Campaign objective' })).toHaveLength(0)
+    expect(host.querySelector('[data-campaign-objective]')).toBeNull()
+    expect(host.textContent).not.toContain('horizontal position')
+    expect(host.textContent).not.toContain('supplies')
     expect(host.querySelector('[data-campaign-hit-region]')).toBeNull()
     expect(host.querySelector('canvas[data-campaign-object]')).toBeNull()
-    expect((host.querySelector('[data-campaign-objective]') as HTMLElement).style.pointerEvents)
-      .toBe('none')
   })
 
-  it('updates exact campaign facts by canonical ID and removes the tree for ordinary play', () => {
+  it('keeps campaign telemetry absent as state changes and ordinary play resumes', () => {
     const host = document.createElement('div')
     const dispatch = vi.fn()
     render(<BattleConsoleRoot state={state()} lifecycleStatus="ready" dispatch={dispatch} />, host)
@@ -128,9 +119,7 @@ describe('campaign battle-console semantic projection', () => {
       host,
     )
 
-    expect(host.querySelectorAll('[data-campaign-fact-id="refinery"]')).toHaveLength(1)
-    expect(host.querySelector('[data-campaign-fact-id="refinery"]')?.textContent)
-      .toBe('Refinery · protected · 24 / 100')
+    expect(host.querySelector('[data-campaign-objective]')).toBeNull()
 
     render(
       <BattleConsoleRoot
@@ -141,7 +130,7 @@ describe('campaign battle-console semantic projection', () => {
       host,
     )
     expect(queryAllByRole(host, 'region', { name: 'Campaign objective' })).toHaveLength(0)
-    expect(host.querySelector('[data-campaign-fact-id]')).toBeNull()
+    expect(host.querySelector('[data-campaign-objective]')).toBeNull()
   })
 
   it('keeps the campaign view callback-free and emits only typed battle intents', () => {
@@ -155,7 +144,7 @@ describe('campaign battle-console semantic projection', () => {
       Object.values(fact).every((value) => typeof value !== 'function'))).toBe(true)
   })
 
-  it('offers one typed keyboard retry only for a recorded non-success', () => {
+  it('does not duplicate the mission-owned retry action in the command deck', () => {
     const host = document.createElement('div')
     const dispatch = vi.fn()
     render(
@@ -170,11 +159,7 @@ describe('campaign battle-console semantic projection', () => {
       host,
     )
 
-    const retry = getByRole(host, 'button', { name: 'Retry High Road' })
-    expect(retry.tabIndex).toBe(0)
-    expect(retry.style.pointerEvents).toBe('auto')
-    fireEvent.click(retry)
-    expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: 'campaign-retry' })
+    expect(queryAllByRole(host, 'button', { name: 'Retry High Road' })).toHaveLength(0)
 
     render(
       <BattleConsoleRoot

@@ -1,5 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { gotoFuelStopFromPublicEntry } from './support';
+import {
+  closeMissionLedger,
+  gotoFuelStopFromPublicEntry,
+  openMissionLedger,
+} from './support';
 
 // This suite is the ordinary public journey. It must never acquire campaign
 // state from a query parameter, localStorage seed, DOM-only control, or forced
@@ -18,7 +22,6 @@ interface FuelStopPath {
     Readonly<{ angle: number; power: number }>,
   ];
   readonly expectedSupplies: number;
-  readonly expectedDrumText: '20 / 20' | 'destroyed';
 }
 
 const PATHS = Object.freeze([
@@ -30,7 +33,6 @@ const PATHS = Object.freeze([
       Object.freeze({ angle: 44, power: 74 }),
     ]),
     expectedSupplies: 6,
-    expectedDrumText: '20 / 20',
   }),
   Object.freeze({
     name: 'detonation',
@@ -40,7 +42,6 @@ const PATHS = Object.freeze([
       Object.freeze({ angle: 44, power: 84 }),
     ]),
     expectedSupplies: 4,
-    expectedDrumText: 'destroyed',
   }),
 ] satisfies readonly FuelStopPath[]);
 
@@ -99,19 +100,18 @@ async function assertNoPageOverflow(page: Page): Promise<void> {
   expect(overflow.y, 'campaign journey must not create vertical page scroll').toBeLessThanOrEqual(1);
 }
 
-async function assertCanonicalObjects(
-  page: Page,
-  drumText: FuelStopPath['expectedDrumText'],
-): Promise<void> {
-  const objective = page.locator('[data-campaign-objective]');
-  await expect(objective).toBeVisible();
-  await expect(objective.locator('[data-campaign-fact-id="refinery"]'))
-    .toHaveText(/Refinery · protected · 100 \/ 100/u);
-  for (const id of ['drum-a', 'drum-b']) {
-    const drum = objective.locator(`[data-campaign-fact-id="${id}"]`);
-    await expect(drum).toBeVisible();
-    await expect(drum).toContainText(drumText);
-  }
+async function assertFuelStopMission(page: Page): Promise<void> {
+  const opened = await openMissionLedger(page);
+  const mission = page.getByRole('region', { name: 'Campaign mission', exact: true });
+  await expect(mission).toBeVisible();
+  await expect(mission).toContainText('Fuel Stop');
+  await expect(mission).toContainText('Destroy all defenders');
+  await expect(mission).toContainText('Keep Refinery standing');
+  await expect(mission.locator('[data-campaign-object="refinery"]')).toHaveAttribute(
+    'aria-label', 'Refinery, protected, 100 of 100 health',
+  );
+  await expect(mission).not.toContainText('supplies');
+  if (opened) await closeMissionLedger(page);
 }
 
 async function failFuelStopNaturallyAndRetry(page: Page): Promise<void> {
@@ -123,13 +123,11 @@ async function failFuelStopNaturallyAndRetry(page: Page): Promise<void> {
   const fire = page.getByRole('button', { name: 'Fire Missile', exact: true });
   await fire.click();
 
-  const failed = page.locator('[role="status"][data-campaign-result="failure"]');
-  await expect(failed).toBeVisible({ timeout: 30_000 });
-  await expect(failed).toContainText(
-    /Eliminate every defender · Protect Refinery · failure · protected object/u,
-  );
-  const supplies = page.getByRole('status', { name: 'Campaign supplies', exact: true });
-  await expect(supplies).toHaveText('2 supplies');
+  await openMissionLedger(page);
+  const mission = page.locator('[data-campaign-mission][data-campaign-result="failure"]');
+  await expect(mission).toBeVisible({ timeout: 30_000 });
+  await expect(mission).toContainText('Mission failed');
+  await expect(mission).not.toContainText('supplies');
 
   const retry = page.getByRole('button', { name: 'Retry Fuel Stop', exact: true });
   await expect(retry).toBeVisible();
@@ -138,9 +136,9 @@ async function failFuelStopNaturallyAndRetry(page: Page): Promise<void> {
   await page.keyboard.press('Enter');
 
   await expect(page.locator(SURFACE)).toHaveAttribute('data-active-commander', 'p1');
-  await expect(page.locator('[role="status"][data-campaign-result="active"]')).toBeVisible();
-  await expect(supplies).toHaveText('2 supplies');
-  await assertCanonicalObjects(page, '20 / 20');
+  await expect(page.locator('[data-campaign-mission][data-campaign-result="active"]')).toBeVisible();
+  await closeMissionLedger(page);
+  await assertFuelStopMission(page);
 }
 
 async function fireRetainedCommitment(
@@ -179,23 +177,16 @@ for (const path of PATHS) {
 
     await gotoFuelStopFromPublicEntry(page);
     await assertNoPageOverflow(page);
-    await assertCanonicalObjects(page, '20 / 20');
-    await expect(page.getByRole('status', { name: 'Campaign supplies', exact: true }))
-      .toHaveText('2 supplies');
+    await assertFuelStopMission(page);
 
     await failFuelStopNaturallyAndRetry(page);
     await equipWeapon(page, path.weapon);
     await fireRetainedCommitment(page, path, path.shots[0], false);
     await fireRetainedCommitment(page, path, path.shots[1], true);
 
-    const result = page.locator('[role="status"][data-campaign-result="success"]');
-    await expect(result).toBeVisible({ timeout: 30_000 });
-    await expect(result).toContainText(
-      /Eliminate every defender · Protect Refinery · success · objective · 3 commitments/u,
-    );
-    await assertCanonicalObjects(page, path.expectedDrumText);
-    await expect(page.locator('[data-campaign-supplies]'))
-      .toHaveText(`${path.expectedSupplies} supplies`);
+    const checkpoint = page.getByRole('dialog', { name: 'Campaign checkpoint', exact: true });
+    await expect(checkpoint).toBeVisible({ timeout: 30_000 });
+    await expect(checkpoint).toContainText(`${path.expectedSupplies} supplies`);
     await assertNoPageOverflow(page);
   });
 }
