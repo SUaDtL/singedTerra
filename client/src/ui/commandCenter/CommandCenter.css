@@ -2687,7 +2687,7 @@
   }
 
   #lobby .multiplayer-command__local-workspace .lobby-preview__spotlight {
-    top: 34px;
+    top: 30px;
   }
 
   #lobby .multiplayer-command__local-workspace .lobby-preview__spotlight-canvas {
@@ -2735,6 +2735,11 @@
 }
 
 @container local-battle-setup (max-width: 460px) {
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+    gap: 4px;
+    padding: 8px 10px 9px;
+  }
+
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-row {
     grid-template:
       'selector selector' auto
