@@ -193,6 +193,7 @@ import {
 } from './lobbyValidation';
 import { paintTankLoadoutPreview } from '../renderer/TankLoadoutPreview';
 import {
+  TANK_KIT_LABELS,
   TANK_PART_VARIANT_LABELS,
   TANK_SLOT_LABELS,
 } from './tankPartLabels';
@@ -501,6 +502,8 @@ export class Lobby {
   private onlineLoadout: TankLoadout = { ...DEFAULT_TANK_LOADOUT };
   /** Compact layouts expose one touch-sized Garage editor at a time. */
   private openGarageOwner: string | null = null;
+  /** Exact Garage control to restore after an asynchronous Online mutation settles. */
+  private pendingGarageFocus: { owner: string; selector: string } | null = null;
   /** Garage owner currently featured in the large vehicle-bay preview. */
   private spotlightOwner: string | null = null;
   private onlineMaxPlayers = 2;
@@ -1656,24 +1659,36 @@ export class Lobby {
 
   /** Rebuild only the pointer-transparent bay, never the focused form. */
   private refreshVehiclePreview(): void {
-    this.root.querySelector('.lobby-preview')?.replaceWith(this.renderVehiclePreview());
+    const current = this.root.querySelector('.lobby-preview');
+    const presentation = current?.classList.contains('lobby-preview--inspection')
+      ? 'inspection'
+      : 'formation';
+    current?.replaceWith(this.renderVehiclePreview(presentation));
   }
 
   /** Select an editor without repainting an already-correct assembled tank. */
   private activatePreviewOwner(owner: string): void {
     const currentOwner = this.spotlightVehicle(this.previewRoster())?.owner;
     this.spotlightOwner = owner;
+    for (const seat of this.root.querySelectorAll<HTMLElement>('[data-crew-seat]')) {
+      const selected = seat.dataset.crewSeat === owner;
+      if (selected) seat.setAttribute('aria-current', 'true');
+      else seat.removeAttribute('aria-current');
+      seat.querySelector<HTMLButtonElement>('[data-crew-seat-select]')
+        ?.setAttribute('aria-pressed', String(selected));
+    }
     if (currentOwner !== owner) this.refreshVehiclePreview();
   }
 
   /** Live Garage bay: one selected build at inspection scale plus roster context. */
-  private renderVehiclePreview(): HTMLElement {
+  private renderVehiclePreview(presentation: 'formation' | 'inspection' = 'formation'): HTMLElement {
     const preview = document.createElement('div');
     preview.className = 'lobby-preview';
+    if (presentation === 'inspection') preview.classList.add('lobby-preview--inspection');
 
     const label = document.createElement('div');
     label.className = 'lobby-preview__label';
-    label.textContent = 'Vehicle Bay';
+    label.textContent = presentation === 'inspection' ? 'Selected vehicle' : 'Vehicle Bay';
 
     const roster = this.previewRoster();
     const featured = this.spotlightVehicle(roster);
@@ -1762,15 +1777,19 @@ export class Lobby {
   private renderGarage(
     owner: string,
     ownerLabel: string,
+    color: string,
     value: TankLoadout,
     onChange: (next: TankLoadout) => void,
     listenerSignal: AbortSignal = this.renderListeners.signal,
+    disabled = false,
   ): HTMLElement {
     return buildLobbyGarageView({
       owner,
       ownerLabel,
+      color,
       value,
       editing: this.openGarageOwner === owner,
+      disabled,
       isEditing: () => this.openGarageOwner === owner,
       listenerSignal,
       onChange,
@@ -1787,23 +1806,46 @@ export class Lobby {
   }
 
   private focusGarageControl(owner: string, selector: string): void {
-    this.garageFor(owner)
-      ?.querySelector<HTMLButtonElement>(selector)
-      ?.focus();
+    this.pendingGarageFocus = { owner, selector };
+    this.restorePendingGarageFocus();
+  }
+
+  private restorePendingGarageFocus(): void {
+    const pending = this.pendingGarageFocus;
+    if (!pending) return;
+    const garage = this.garageFor(pending.owner);
+    if (!garage) {
+      this.pendingGarageFocus = null;
+      return;
+    }
+    const target = garage.querySelector<HTMLButtonElement>(pending.selector);
+    if (target && !target.disabled) {
+      target.focus({ preventScroll: true });
+      this.pendingGarageFocus = null;
+      return;
+    }
+    const close = garage.querySelector<HTMLButtonElement>('.lobby-garage__close');
+    if (close) {
+      close.focus({ preventScroll: true });
+      return;
+    }
+    garage.tabIndex = -1;
+    garage.focus({ preventScroll: true });
   }
 
   private openGarage(owner: string): void {
+    this.pendingGarageFocus = null;
     this.openGarageOwner = owner;
+    this.spotlightOwner = owner;
     this.render();
     this.focusGarageControl(owner, '[data-preset]');
   }
 
   private closeGarage(owner: string): void {
+    this.pendingGarageFocus = { owner, selector: '.lobby-garage__open' };
     this.openGarageOwner = null;
     this.render();
-    this.garageFor(owner)
-      ?.querySelector<HTMLButtonElement>('.lobby-garage__open')
-      ?.focus();
+    this.restorePendingGarageFocus();
   }
 
   /**
@@ -2187,12 +2229,12 @@ export class Lobby {
     const workspace = document.createElement('div');
     workspace.className = 'multiplayer-command__local-workspace';
     workspace.append(
-      this.renderVehiclePreview(),
       buildLobbyLocalBattleView({
         minPlayers: MIN_PLAYERS,
         maxPlayers: MAX_PLAYERS,
         playerCount: this.players.length,
         playerRows: this.players.map((_, index) => this.renderRow(index, listenerSignal)),
+        vehicleInspection: this.renderVehiclePreview('inspection'),
         advanced: this.renderHotSeatBattlefield(listenerSignal),
         validationMessage: this.validationError(),
         onPlayerCountChange: (count) => { this.setPlayerCount(count); },
@@ -2347,12 +2389,14 @@ export class Lobby {
       garage: this.renderGarage(
         'online-player',
         'Your',
+        this.onlineColor,
         this.onlineLoadout,
         (loadout) => {
           this.onlineLoadout = loadout;
           this.render();
         },
         listenerSignal,
+        this.onlineBusy,
       ),
       advanced: this.renderAdvanced(listenerSignal),
       status: this.renderOnlineStatus(false, listenerSignal),
@@ -2499,12 +2543,14 @@ export class Lobby {
       garage: this.renderGarage(
         'online-player',
         'Your',
+        this.joinColor,
         this.onlineLoadout,
         (loadout) => {
           this.onlineLoadout = loadout;
           this.render();
         },
         listenerSignal,
+        this.onlineBusy,
       ),
       status: this.renderOnlineStatus(false, listenerSignal),
       onCodeInput: (value) => {
@@ -2632,12 +2678,14 @@ export class Lobby {
       garage: this.renderGarage(
         'online-player',
         'Your',
+        this.joinColor,
         this.onlineLoadout,
         (loadout) => {
           this.onlineLoadout = loadout;
           this.render();
         },
         listenerSignal,
+        this.onlineBusy,
       ),
       status: this.renderOnlineStatus(false, listenerSignal),
       rooms: this.browseRooms,
@@ -2839,11 +2887,13 @@ export class Lobby {
     nameInput.maxLength = 20;
     nameInput.value = me.name;
     nameInput.placeholder = 'Name';
+    nameInput.disabled = this.onlineBusy;
     nameInput.addEventListener('input', () => {
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
     }, { signal: listenerSignal });
     const commitName = (): void => {
+      if (this.onlineBusy) return;
       const next = nameInput.value.trim();
       if (!next || next === me.name.trim()) return;
       void this.updateMe({ name: next });
@@ -2890,12 +2940,14 @@ export class Lobby {
     wrapper.append(this.renderGarage(
       'online-player',
       'Your',
+      me.color,
       normalizeTankLoadout(me.loadout),
       (loadout) => {
         if (this.onlineBusy) return;
         void this.updateMe({ loadout });
       },
       listenerSignal,
+      this.onlineBusy,
     ));
 
     return wrapper;
@@ -2912,29 +2964,36 @@ export class Lobby {
     color?: string;
     loadout?: TankLoadout;
   }): Promise<void> {
+    if (this.onlineBusy) return;
     this.onlineBusy = true;
     this.onlineError = '';
     this.render();
 
     try {
       const result = await this.session.updatePlayer(fields);
-      if ('stale' in result) return;
+      if ('stale' in result) {
+        this.pendingGarageFocus = null;
+        return;
+      }
       const { ok, data } = result;
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to update.';
         this.onlineBusy = false;
         this.render();
+        this.restorePendingGarageFocus();
         return;
       }
 
       this.onlineBusy = false;
       this.render();
+      this.restorePendingGarageFocus();
     } catch (err) {
       console.error('Lobby.updatePlayer: network error —', err);
       this.onlineError = 'Network error. Try again.';
       this.onlineBusy = false;
       this.render();
+      this.restorePendingGarageFocus();
     }
   }
 
@@ -3074,8 +3133,44 @@ export class Lobby {
   ): HTMLElement {
     const player = this.players[index];
     if (player === undefined) throw new RangeError(`Missing lobby player at index ${index}`);
+    const owner = `player-${index + 1}`;
+    const ownerLabel = `Player ${index + 1}`;
+    const selected = this.spotlightVehicle(this.previewRoster())?.owner === owner;
+    const uniformKit = TANK_KIT_IDS.find((kit) =>
+      TANK_PART_SLOTS.every((slot) => player.loadout[slot] === kit),
+    );
+    const appearance = uniformKit
+      ? `${TANK_KIT_LABELS[uniformKit]} loadout`
+      : `Mixed assembly: ${TANK_PART_SLOTS.map((slot) =>
+        TANK_PART_VARIANT_LABELS[slot][player.loadout[slot]],
+      ).join(', ')}`;
     const row = document.createElement('div');
     row.className = 'lobby-row';
+    row.dataset.crewSeat = owner;
+    row.setAttribute('role', 'listitem');
+    row.setAttribute('aria-label', `${ownerLabel} crew seat`);
+    if (selected) row.setAttribute('aria-current', 'true');
+
+    const seatSelector = document.createElement('button');
+    seatSelector.type = 'button';
+    seatSelector.className = 'lobby-row__selector';
+    seatSelector.dataset.crewSeatSelect = owner;
+    seatSelector.setAttribute('aria-pressed', String(selected));
+    seatSelector.setAttribute('aria-label', `Inspect ${ownerLabel} vehicle, ${appearance}`);
+    const seatLabel = document.createElement('span');
+    seatLabel.className = 'lobby-row__seat-label';
+    seatLabel.textContent = ownerLabel;
+    const appearanceLabel = document.createElement('strong');
+    appearanceLabel.className = 'lobby-row__appearance';
+    appearanceLabel.textContent = appearance;
+    seatSelector.append(seatLabel, appearanceLabel);
+    seatSelector.addEventListener('click', () => {
+      this.activatePreviewOwner(owner);
+    }, { signal: listenerSignal });
+
+    row.addEventListener('focusin', () => {
+      this.activatePreviewOwner(owner);
+    }, { signal: listenerSignal });
 
     const name = document.createElement('input');
     name.type = 'text';
@@ -3088,7 +3183,6 @@ export class Lobby {
     name.setAttribute('aria-label', `Player ${index + 1} name`);
     name.addEventListener('input', () => {
       player.name = name.value;
-      const owner = `player-${index + 1}`;
       this.activatePreviewOwner(owner);
       this.syncPreviewName(owner, name.value);
       this.refreshStartState();
@@ -3109,9 +3203,15 @@ export class Lobby {
       );
       if (player.color === color.value) swatch.classList.add('selected');
       if (takenByOther) swatch.classList.add('taken');
+      swatch.setAttribute('aria-pressed', String(player.color === color.value));
+      swatch.setAttribute(
+        'aria-label',
+        `${ownerLabel} paint: ${color.name}${takenByOther ? ', unavailable' : ''}`,
+      );
+      if (takenByOther) swatch.setAttribute('aria-disabled', 'true');
       swatch.addEventListener('click', () => {
         if (takenByOther) return;
-        this.spotlightOwner = `player-${index + 1}`;
+        this.spotlightOwner = owner;
         player.color = color.value;
         this.render();
       }, { signal: listenerSignal });
@@ -3140,6 +3240,7 @@ export class Lobby {
     control.addEventListener('change', () => {
       const v = control.value;
       player.ai = v === 'human' ? undefined : (v as AiDifficulty);
+      this.spotlightOwner = owner;
       // Default a friendly CPU name if the seat is still on its placeholder.
       if (player.ai && !player.name.trim()) {
         player.name = `CPU ${index + 1}`;
@@ -3147,10 +3248,11 @@ export class Lobby {
       this.render();
     }, { signal: listenerSignal });
 
-    row.append(name, swatches, control);
+    row.append(seatSelector, name, swatches, control);
     row.append(this.renderGarage(
-      `player-${index + 1}`,
-      `Player ${index + 1}`,
+      owner,
+      ownerLabel,
+      player.color,
       player.loadout,
       (loadout) => {
         player.loadout = loadout;

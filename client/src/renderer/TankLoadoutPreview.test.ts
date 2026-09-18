@@ -98,6 +98,31 @@ describe('tank loadout preview lifecycle', () => {
     expect(art.drawBarrel.mock.calls[0]).toHaveLength(2);
   });
 
+  it('renders Garage presets at a high-density thumbnail profile', () => {
+    vi.stubGlobal('navigator', { userAgent: 'Chrome' });
+    art.state = 'ready';
+    art.drawStatic.mockReturnValue(true);
+    art.drawBarrel.mockReturnValue(true);
+    const ctx = fakeContext();
+    stub2DContext(ctx);
+    const canvas = document.createElement('canvas');
+
+    paintTankLoadoutPreview(
+      canvas,
+      '#e84d4d',
+      DEFAULT_TANK_LOADOUT,
+      'preset',
+    );
+
+    expect({ width: canvas.width, height: canvas.height }).toEqual({
+      width: 336,
+      height: 192,
+    });
+    expect(ctx.scale).toHaveBeenCalledWith(6.4, 6.4);
+    expect(art.drawStatic.mock.calls[0]).toHaveLength(2);
+    expect(art.drawBarrel.mock.calls[0]).toHaveLength(2);
+  });
+
   it('renders a materially larger spotlight from direct scale-four variants', () => {
     vi.stubGlobal('navigator', { userAgent: 'Chrome' });
     art.state = 'ready';
@@ -268,5 +293,28 @@ describe('tank loadout preview lifecycle', () => {
 
     expect(art.drawStatic).toHaveBeenCalledTimes(6);
     expect(canvases.every((canvas) => canvas.isConnected)).toBe(true);
+  });
+
+  it('prunes a connected generation after its replacement was assembled off-DOM', async () => {
+    vi.stubGlobal('navigator', { userAgent: 'Chrome' });
+    art.state = 'timed_out';
+    stub2DContext(fakeContext());
+    const host = document.createElement('div');
+    document.body.append(host);
+
+    const retired = document.createElement('canvas');
+    host.append(retired);
+    paintTankLoadoutPreview(retired, '#e84d4d', DEFAULT_TANK_LOADOUT);
+    await Promise.resolve();
+    expect(art.readyListeners.size).toBe(1);
+
+    const replacement = document.createElement('canvas');
+    paintTankLoadoutPreview(replacement, '#4d8ce8', DEFAULT_TANK_LOADOUT);
+    host.replaceChildren(replacement);
+    await Promise.resolve();
+
+    expect(retired.isConnected).toBe(false);
+    expect(replacement.isConnected).toBe(true);
+    expect(art.readyListeners.size).toBe(1);
   });
 });

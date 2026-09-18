@@ -189,3 +189,151 @@ change:
 
 Acceptance is direct visual coherence with the accepted launcher system plus fresh unit/browser
 proof of the retained lifecycle, keyboard, touch, focus, and containment behavior.
+
+## Approved feature-interior revision — 2026-09-18
+
+**Approval source:** the maintainer's “PR #515: finish the feature workspaces, not just the command
+shell” brief and its explicit Local Battle + Garage-first visual gate. Under `$ca-sprint`, SMARTS
+approved this bounded continuation at high confidence because the brief fixes the product outcome,
+ownership boundaries, first slice, evidence matrix, and stop condition without an unresolved fork.
+
+### Problem
+
+The accepted command header, category shell, campaign workspace, and in-game Command Menu now form a
+coherent command-console system, but Local Battle and the reusable Garage still present older form
+blocks and cryptic controls inside that shell. A new or returning player cannot easily tell which
+crew member is active, inspect that member's real tank, discover every appearance choice, or relate
+the configured crew and rules to the single deployment decision.
+
+The first affected caller is a local player preparing a two-to-four-seat battle. Done means Local
+Battle reads as one battery-assembly workspace and the same appearance editor is understandable and
+usable for both Local and Online owners. This revision does not yet restyle Online room access,
+Verified Operations, Match settings, or the full commander dossier; those remain later slices after
+the explicit visual gate.
+
+### Approach
+
+Retain `Lobby` and the existing feature builders as the state and callback owners, but recompose the
+Local view around an explicit selected crew seat, a useful real-tank inspection bay, a readable
+roster/rules region, and one adjacent Deploy action. Evolve `LobbyGarageView` into the one shared
+appearance editor, using `paintTankLoadoutPreview` for its live assembled tank and preset thumbnails
+and replacing cycle-only discovery with direct named choices for all legal variants.
+
+The rejected alternatives are enlarging the two existing Local blocks or adding another CSS override
+layer, both of which preserve the compositional defect, and introducing a new editor renderer or
+draft state, which would duplicate working art/lifecycle ownership and change the explicitly retained
+immediate-edit semantics.
+
+### Scope
+
+- Recompose Local Battle as a crew, vehicle, rules, and decision workspace using the existing local
+  player/setup owners and exact launch payload.
+- Make the selected seat visually and semantically explicit; editing Player 2 selects Player 2 as the
+  inspection and Garage owner without mutating another seat.
+- Reuse the real 2D painter at an intentional inspection size on a restrained workshop surface; remove
+  the fake angular terrain and unrelated filler decoration.
+- Make name, Human/CPU ownership, colour, and named appearance legible in the roster; preserve unique
+  name/colour validation and two-to-four-seat behavior.
+- Keep colour controls accessible but visually subordinate, with selected and unavailable/taken states
+  distinguishable without relying on colour alone.
+- Place a concise effective-rules summary and the sole Deploy action near the configured setup, with
+  controlled scrolling for four players and short/portrait workspaces.
+- Put the authoritative owner name and live assembled tank inside the shared Garage editor. Reuse its
+  existing preview loading, fallback, stale-signature, and disposal behavior.
+- Show Foundry, Ranger, Bulwark, and Jackal as named whole-tank presets with true painter thumbnails;
+  show Mobility, Hull, Turret, and Barrel with direct named choices for every legal family variant.
+- Preserve immediate edits, Done/Escape closure, focus restoration, local callbacks, and Online
+  waiting-room busy/rejection/server-acknowledgement semantics. Do not add a misleading Cancel.
+- Return native-size default and modified Local/Garage evidence at the requested desktop, standard,
+  ultrawide, compact-landscape, portrait, and narrow-phone viewports, then stop for owner acceptance.
+
+#### Out of scope for this acceptance slice
+
+- No Online room-access, Verified Operations, Match settings, account/dossier, campaign, or battle
+  console restyling beyond shared Garage integration needed to keep one editor.
+- No gameplay, campaign, protocol, backend, account schema, save schema, dependency, merge, or deploy
+  change.
+- No new tank mechanics, statistics, costs, unlocks, progression, fake world data, 3D art, or
+  photorealistic vehicle render.
+
+### Decided parameters
+
+- The current active owner defaults through the existing spotlight rule and changes when a seat's
+  identity, controller, colour, appearance summary, or Customize action is used.
+- The Garage remains a modal sibling inside the existing Lobby render/focus lifecycle; it does not
+  introduce a second overlay framework or draft/commit owner.
+- Body and control copy targets 14–16 CSS px, essential secondary labels at least 12 CSS px, and main
+  targets at least 44×44 CSS px. A colour chip may be 20–24 px inside its larger button.
+- Gold means current selection or safe action, green means truthful readiness/success, and red remains
+  danger/failure. Keyboard focus is a separate visible state from selection.
+- Responsive decisions use available workspace width and one deliberate scroll owner rather than
+  global viewport assumptions or reduced type.
+- The evidence matrix uses Chromium at CSS viewports 1920×1080, 1440×900, 3440×1440, 844×390,
+  390×844, and 320×568 where the supported browser geometry permits, with viewport, DPR, zoom,
+  browser, state, and commit recorded.
+
+### Acceptance criteria
+
+20. **AC-20** The accepted linked command header, category shell, Campaigns/Ash Road workspace, and
+    in-game Command Menu remain behaviorally and visually unchanged; the revision records the exact
+    baseline head before implementation.
+21. **AC-21** Local Battle presents a named crew-preparation workspace in which the roster, selected
+    vehicle, effective rules, validation state, and one Deploy action read as one composition rather
+    than two independent top-aligned widgets.
+22. **AC-22** Every local seat exposes its real name, Human/CPU ownership, colour, and named appearance;
+    selecting or editing Player 2 makes Player 2 the selected inspection/Garage owner and updates only
+    Player 2's state and launch payload.
+23. **AC-23** The selected owner is paired with a useful-size tank painted by the existing shared
+    renderer, a truthful named build summary, and one Customize action on a restrained inspection
+    surface with no fake angular terrain, invented statistics, or stretched canvas.
+24. **AC-24** The two-seat default is readable without hunting, while four seats, mixed Human/CPU
+    ownership, long names, and validation failures remain reachable through controlled scrolling with
+    no clipped field, focus, or Deploy action.
+25. **AC-25** Colour controls retain at least 44×44 CSS px hit areas with subordinate paint chips and
+    programmatic names; selected and taken states use non-colour cues and preserve current uniqueness
+    behavior.
+26. **AC-26** The open Garage visibly identifies its authoritative owner and contains the live assembled
+    tank at desktop, compact landscape, and portrait sizes, reusing painter fallback, late-load,
+    signature, and detached-view cleanup behavior.
+27. **AC-27** All four named whole-tank presets have true painter thumbnails, and Mobility, Hull,
+    Turret, and Barrel each expose all four legal named variants as direct choices; cycling may remain
+    supplemental but is not the only discovery or selection path.
+28. **AC-28** The editor states that appearance is cosmetic and performance is unchanged. Immediate
+    edits remain immediate, Done and Escape close accurately, focus returns to the initiating Customize
+    control, and no Cancel implies rollback.
+29. **AC-29** Local and Online creation/waiting owners use the same editor implementation. Existing
+    selected-owner callbacks, Online busy prevention, rejection recovery, server acknowledgement, and
+    stale/disposed-view guards remain causal in tests.
+30. **AC-30** Pointer, keyboard, and touch can select owners, presets, slots, and direct variants; focus,
+    selection, hover, scroll, modal trapping, Escape, and focus return remain distinguishable and
+    operable at 200% reflow, reduced motion, forced colours, and missing/late preview art.
+31. **AC-31** Native-size default and modified Local/Garage captures are produced for 1920×1080,
+    1440×900, 3440×1440, 844×390, 390×844, and 320×568 where supported, with viewport, DPR, zoom,
+    browser, state, and exact commit plus meaningful detail crops.
+32. **AC-32** Focused Local/Garage tests, the full client suite, typecheck, deterministic checks, build,
+    audit, secret scan, diff hygiene, and exact-head review pass without weakening existing behavioral
+    assertions; PR #515 remains draft/open and no merge or deployment occurs.
+33. **AC-33** The owner visually accepts the assembled Local + Garage slice before its treatment is
+    propagated to Online room access, Verified Operations, Match settings, or the commander dossier.
+
+### Open questions
+
+None. The maintainer brief explicitly fixes the immediate-edit model, shared-editor ownership,
+responsive evidence, visual stop, and all excluded product/transport boundaries.
+
+### Negative-space check
+
+Even if every structural, interaction, and containment test passed, the revision would still be
+broken if it looked like enlarged legacy forms or another layer of brass boxes. `AC-33` therefore
+keeps direct owner judgment of the full-size assembled screen as a hard product gate.
+
+### Recorded-intent ruling
+
+- **Conform — ADR-0004:** interactive labels and controls remain semantic DOM/CSS; Canvas is used only
+  by the existing non-interactive tank painter.
+- **Conform — ADR-0010:** `LobbySession` and `LobbyTransport` retain Online credential, generation,
+  mutation, and acknowledgement ownership; the shared editor emits the existing intent only.
+- **Conform — ADR-0011:** account and durable identity boundaries are untouched.
+- **Conform — ADR-0018:** the battle console and its Preact semantic ownership are out of scope.
+- **No collision — deferred remembered-selection precedence:** this revision does not alter command
+  category/item memory or initial context priority.

@@ -10,6 +10,7 @@ export interface LobbyLocalBattleViewOptions {
   maxPlayers: number;
   playerCount: number;
   playerRows: readonly HTMLElement[];
+  vehicleInspection: HTMLElement;
   advanced: HTMLElement;
   validationMessage: string | null;
   onPlayerCountChange: (count: number) => void;
@@ -339,12 +340,27 @@ export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions):
   const body = document.createElement('section');
   body.className = 'lobby-hotseat-body';
   body.dataset.multiplayerSurface = 'local';
-  body.setAttribute('aria-label', 'Local Battle');
+  body.dataset.localPreparation = '';
+  body.setAttribute('aria-labelledby', 'local-crew-preparation-heading');
+  body.setAttribute('aria-describedby', 'local-crew-preparation-context');
+
+  const preparationHeader = document.createElement('header');
+  preparationHeader.className = 'lobby-local-preparation__header';
+  const preparationHeading = document.createElement('h2');
+  preparationHeading.id = 'local-crew-preparation-heading';
+  preparationHeading.className = 'lobby-local-preparation__title';
+  preparationHeading.textContent = 'Local Battle crew preparation';
+  const preparationContext = document.createElement('p');
+  preparationContext.id = 'local-crew-preparation-context';
+  preparationContext.className = 'lobby-local-preparation__context';
+  preparationContext.textContent = 'Configure the crew, inspect each vehicle, and confirm the effective rules before deployment.';
+  preparationHeader.append(preparationHeading, preparationContext);
+
   const scroll = document.createElement('div');
   scroll.className = 'lobby-hotseat-scroll';
 
   const setup = document.createElement('section');
-  setup.className = 'lobby-route-brief__setup';
+  setup.className = 'lobby-route-brief__setup lobby-local-preparation__content';
   setup.setAttribute('aria-label', 'Local battery setup');
 
   const countField = document.createElement('div');
@@ -368,24 +384,32 @@ export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions):
   const rows = document.createElement('div');
   rows.className = 'lobby-rows';
   rows.classList.toggle('crowded', crowded);
+  rows.setAttribute('role', 'list');
+  rows.setAttribute('aria-labelledby', 'crew-manifest-heading');
   rows.append(...options.playerRows);
-  setup.append(
-    buildLobbyPreparationSection({
-      id: 'crew-manifest',
-      title: 'Crew',
-      children: [countField, rows],
-    }),
-    buildLobbyPreparationSection({
-      id: 'battlefield-protocol',
-      title: 'Battlefield',
-      children: [options.advanced],
-    }),
-  );
+  const crew = buildLobbyPreparationSection({
+    id: 'crew-manifest',
+    title: 'Crew',
+    children: [countField, rows],
+  });
+  crew.classList.add('lobby-local-preparation__crew');
+  const rules = buildLobbyPreparationSection({
+    id: 'battlefield-protocol',
+    title: 'Effective rules',
+    children: [options.advanced],
+  });
+  rules.classList.add('lobby-local-preparation__rules');
+  const inspection = document.createElement('section');
+  inspection.className = 'lobby-local-preparation__inspection';
+  inspection.setAttribute('aria-label', 'Selected vehicle inspection');
+  inspection.append(options.vehicleInspection);
+  setup.append(crew, inspection, rules);
 
   const error = document.createElement('div');
   error.className = 'lobby-error';
+  error.setAttribute('role', 'status');
+  error.setAttribute('aria-live', 'polite');
   error.textContent = options.validationMessage ?? '';
-  setup.append(error);
 
   const start = document.createElement('button');
   start.type = 'button';
@@ -394,13 +418,22 @@ export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions):
   start.disabled = options.validationMessage !== null;
   start.addEventListener('click', options.onStart, { signal: options.listenerSignal });
 
-  scroll.append(setup);
+  scroll.append(preparationHeader, setup);
   const footer = document.createElement('footer');
   footer.className = 'lobby-hotseat-footer';
+  footer.dataset.localDecision = '';
+  footer.setAttribute('aria-labelledby', 'local-deployment-decision-heading');
+  const decisionCopy = document.createElement('div');
+  decisionCopy.className = 'lobby-hotseat-footer__brief';
+  const decisionHeading = document.createElement('h3');
+  decisionHeading.id = 'local-deployment-decision-heading';
+  decisionHeading.className = 'lobby-hotseat-footer__heading';
+  decisionHeading.textContent = 'Deployment';
   const status = document.createElement('span');
   status.className = 'lobby-hotseat-footer__status';
   status.textContent = `${options.playerCount} players · Shared screen`;
-  footer.append(status, start);
+  decisionCopy.append(decisionHeading, status, error);
+  footer.append(decisionCopy, start);
   body.append(scroll, footer);
   wrapper.append(body);
   return wrapper;

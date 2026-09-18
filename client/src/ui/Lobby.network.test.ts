@@ -1243,6 +1243,30 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
       expect(internals(lobby).onlineError).toBe('');
     });
 
+    it('SUCCESS (Garage loadout): adopts the server-acknowledged mixed assembly', async () => {
+      const loadout: TankLoadout = {
+        treads: 'ranger',
+        hull: 'foundry',
+        turret: 'bulwark',
+        barrel: 'jackal',
+      };
+      const players = [{
+        id: 'p-1',
+        name: 'Alice',
+        color: '#e84d4d',
+        ready: false,
+        loadout,
+      }];
+      stubFetch({ json: () => ({ players }) });
+      seedWaiting();
+
+      await internals(lobby).updateMe({ loadout });
+
+      expect(internals(lobby).waitingPlayers).toEqual(players);
+      expect(internals(lobby).onlineBusy).toBe(false);
+      expect(internals(lobby).onlineError).toBe('');
+    });
+
     it('ERROR (taken): surfaces the server error WITHOUT mutating local players', async () => {
       const before = [{ id: 'p-1', name: 'Alice', color: '#e84d4d', ready: false }];
       stubFetch({ ok: false, json: () => ({ error: 'Color already taken' }) });
@@ -1252,6 +1276,31 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
 
       expect(internals(lobby).onlineError).toBe('Color already taken');
       expect(internals(lobby).waitingPlayers).toEqual(before); // unchanged
+    });
+
+    it('ERROR (Garage loadout): restores editing after rejection without optimistic mutation', async () => {
+      const before = [{
+        id: 'p-1',
+        name: 'Alice',
+        color: '#e84d4d',
+        ready: false,
+        loadout: DEFAULT_TANK_LOADOUT,
+      }];
+      const rejected: TankLoadout = {
+        treads: 'jackal',
+        hull: 'jackal',
+        turret: 'jackal',
+        barrel: 'jackal',
+      };
+      stubFetch({ ok: false, json: () => ({ error: 'Appearance update rejected' }) });
+      seedWaiting();
+      Object.assign(internals(lobby), { waitingPlayers: before });
+
+      await internals(lobby).updateMe({ loadout: rejected });
+
+      expect(internals(lobby).onlineError).toBe('Appearance update rejected');
+      expect(internals(lobby).onlineBusy).toBe(false);
+      expect(internals(lobby).waitingPlayers).toEqual(before);
     });
   });
 });

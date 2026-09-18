@@ -1,0 +1,721 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-18T17:31:56.878Z",
+  "purpose": "PR #515 Local Battle and shared Garage owner visual acceptance",
+  "provenance": {
+    "headCommit": "6bfb57811240f3f886b697794652983dd755b06c",
+    "mergeBase": "e332f3c2d1ddb9c0b549b7e34c5906872308becb",
+    "branch": "codex/command-center-launcher",
+    "sourceDirty": true,
+    "sourceStatus": [
+      "M .codearbiter/plans/command-center-launcher-overhaul.md",
+      " M .codearbiter/specs/command-center-launcher-overhaul.md",
+      " M .codearbiter/sprint-log.md",
+      " M client/src/renderer/TankLoadoutPreview.test.ts",
+      " M client/src/renderer/TankLoadoutPreview.ts",
+      " M client/src/ui/Lobby.css",
+      " M client/src/ui/Lobby.garage.test.ts",
+      " M client/src/ui/Lobby.network.test.ts",
+      " M client/src/ui/Lobby.sessionStaleActions.test.ts",
+      " M client/src/ui/Lobby.ts",
+      " M client/src/ui/LobbyConsole.css",
+      " M client/src/ui/LobbyGarageView.test.ts",
+      " M client/src/ui/LobbyGarageView.ts",
+      " M client/src/ui/LobbyHotSeatView.test.ts",
+      " M client/src/ui/LobbyHotSeatView.ts",
+      " M client/src/ui/commandCenter/CommandCenter.css",
+      " M client/src/ui/commandCenter/CommandCenterStyle.test.ts",
+      " M client/src/ui/commandCenter/MultiplayerCommandView.test.ts",
+      " M docs/compatibility/st1-source-manifest.json",
+      " M e2e/pregame-command-center.spec.ts"
+    ],
+    "sourceStatusSha256": "074faf99ac254328b2047368bcc5d166ed9901441f5ddb4e81fc223e4f48630f",
+    "sourceFiles": [
+      {
+        "path": ".codearbiter/plans/command-center-launcher-overhaul.md",
+        "state": "present",
+        "sha256": "553fed40b8cf3faef43fed50fb1daac74b69a6e4a680e9701aa8f2909e864f4c",
+        "gitStatus": "M"
+      },
+      {
+        "path": ".codearbiter/specs/command-center-launcher-overhaul.md",
+        "state": "present",
+        "sha256": "9e66210e22b2c8e02ef51c61a244dbedba03775ef728ce6888242eae765655e6",
+        "gitStatus": "M"
+      },
+      {
+        "path": ".codearbiter/sprint-log.md",
+        "state": "present",
+        "sha256": "7fe5dcfde3c5107dbd9a453dcc6fcb19456bbf8209210a659e334d881f036dde",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/renderer/TankLoadoutPreview.test.ts",
+        "state": "present",
+        "sha256": "3a5b144e4c06fecd59fa69fd63e7403360b75f8dc32be449f046e8ac13de0007",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/renderer/TankLoadoutPreview.ts",
+        "state": "present",
+        "sha256": "0ac2664b846122973172f099b46ddcac4b6c928dbfba76476fa2ad45f51ef37a",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/Lobby.css",
+        "state": "present",
+        "sha256": "6cd62818c53e48859abfe06064890887744b8d4c869e4059d38b470dc6c77d57",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/Lobby.garage.test.ts",
+        "state": "present",
+        "sha256": "d45b83942c5f0df48663a2db08e1c09e6506a5f25539bd09b9075999fa76982f",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/Lobby.network.test.ts",
+        "state": "present",
+        "sha256": "3bbb8aa58dbe7e951e352412fbc3e5908be722bb43a81568a4a5273b27a3ed74",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/Lobby.sessionStaleActions.test.ts",
+        "state": "present",
+        "sha256": "becd2f7dd68ba13f64d24ca5a52f93b547102a6ccc9882797950082c94daa0e4",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/Lobby.ts",
+        "state": "present",
+        "sha256": "5ccb79bb2842a70a873e57103461cf5a8f1954c9caaed31c41187a5018e45bc8",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/LobbyConsole.css",
+        "state": "present",
+        "sha256": "6e8861be8aa1753fe8486a8a9dd4d7dfc467ccd87ab6d804a7dcd2e8bec8e4b0",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/LobbyGarageView.test.ts",
+        "state": "present",
+        "sha256": "7b2f641272a2642bdbdf2e0fac7f634b529dc8614d485e9647682fc32c5678f6",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/LobbyGarageView.ts",
+        "state": "present",
+        "sha256": "92201bad170d83aff6d10e6572853c9a6c707c8eb9ef8117c4237d8da20729e2",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/LobbyHotSeatView.test.ts",
+        "state": "present",
+        "sha256": "3834c2f656e0c5483a1b5edddc1996457ebac84e32a2b27aa9f8d30aa9ec5c8b",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/LobbyHotSeatView.ts",
+        "state": "present",
+        "sha256": "1f005335a4dbf0920c32581d0b42e25a4b0bc7cbd066ce354d7b62f7587988cf",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/commandCenter/CommandCenter.css",
+        "state": "present",
+        "sha256": "7606bf7dcf814511a6dad050808f23bdb9f82561cc23fe274319d9cfd2191613",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/commandCenter/CommandCenterStyle.test.ts",
+        "state": "present",
+        "sha256": "6f98a7819d4c4a41e21c96696852ad800befe073a8a1e5c9d9f836990fe881ea",
+        "gitStatus": "M"
+      },
+      {
+        "path": "client/src/ui/commandCenter/MultiplayerCommandView.test.ts",
+        "state": "present",
+        "sha256": "4209611839ba5f622b185a90a1192f647e21071d6d1a1dff6f8ef6a9d239cc04",
+        "gitStatus": "M"
+      },
+      {
+        "path": "docs/compatibility/st1-source-manifest.json",
+        "state": "present",
+        "sha256": "55701dbca7e9788ddf2b18df26964d60d99a988def4ed8ad4c339ca423388f01",
+        "gitStatus": "M"
+      },
+      {
+        "path": "e2e/pregame-command-center.spec.ts",
+        "state": "present",
+        "sha256": "7255cc4d7afa5f7ff8823f56130036c28ced412268cb07ab279813a44c4a91ec",
+        "gitStatus": "M"
+      }
+    ],
+    "sourceContentSha256": "f8663b3bf36d18a19ac9461268c0635e3b39dbea11d5af9bb7380cdbb59b9777",
+    "servedResourceCount": 237,
+    "servedRuntimeSha256": "ee2d9583ece2beaf24aaa928532b781e01d4083b84084fa5ea03d9f04546177e",
+    "baseUrl": "http://localhost:4173/",
+    "testCommand": "E2E_LIVE_URL=http://localhost:4173/ COMMAND_CENTER_WORKSPACE_EVIDENCE_DIR=.codearbiter/evidence/command-center-workspace-finish npx playwright test e2e/pregame-command-center.spec.ts --grep \"retains native Local and Garage captures\" --project=desktop-fine"
+  },
+  "coverage": {
+    "states": [
+      "default-two-seat",
+      "modified-player-2",
+      "four-seat",
+      "open-garage"
+    ],
+    "viewports": [
+      {
+        "label": "wide",
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "label": "standard",
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "label": "ultrawide",
+        "width": 3440,
+        "height": 1440
+      },
+      {
+        "label": "compact-landscape",
+        "width": 844,
+        "height": 390
+      },
+      {
+        "label": "portrait",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "label": "narrow-phone",
+        "width": 320,
+        "height": 568
+      }
+    ],
+    "specialConditions": [
+      "200% equivalent reflow",
+      "reduced motion",
+      "forced colours",
+      "missing command chrome and tank atlas"
+    ]
+  },
+  "records": [
+    {
+      "file": "default-two-seat-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "9dd7141437e939d9787355b2a19904ecbfd697e34dca138b236d0fd52408dbe0"
+    },
+    {
+      "file": "modified-player-2-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "25dac819503b264adc0a0fbae62b9431f7b2a4fdf4d0a042afeee9e702090563"
+    },
+    {
+      "file": "four-seat-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "e4ad51a92cfeeb7fcd11e9180d11809cd2a5f1aa7bafe6cc38712deb7dbc4365"
+    },
+    {
+      "file": "open-garage-1920x1080.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "44375dbfe926777c35ae37ec3c6f4c7f3f8282ffe4a00e3f8ffdef13066af578"
+    },
+    {
+      "file": "default-two-seat-1440x900.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "49100dcff99ea6706fd827dfb76b6cd8168de3a3a1333e1249dfccb5e2352e59"
+    },
+    {
+      "file": "detail-default-crew-and-inspection.png",
+      "captureKind": "detail",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "ddc930ab5f88eb04721db2189eab198949ac3ba0fc4163be206cfb5b46dd6530"
+    },
+    {
+      "file": "modified-player-2-1440x900.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "13775a2c5cd0912c2c3686fd2fc80317622cc7ef8b9a6bed8939182936dc2d4c"
+    },
+    {
+      "file": "detail-modified-player-2.png",
+      "captureKind": "detail",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "4cec6be9542f997a330311b7b8ea5ae66d24aab3ddb22d5196ef7b14f09840b2"
+    },
+    {
+      "file": "four-seat-1440x900.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "632375fbd52795ea82c201b0d4c300b0e7fb99ec61aa549c97eab12ba549632e"
+    },
+    {
+      "file": "open-garage-1440x900.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "a5428173deb0ac9b046f81ca3fa3c1e17482daf0b893bb34fb45e01c1b1aea79"
+    },
+    {
+      "file": "detail-garage-owner-tank.png",
+      "captureKind": "detail",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "7ba0a2ed58ed8fce4c838d83c1f73af335b024aacf10907339669674d03f663b"
+    },
+    {
+      "file": "detail-garage-presets.png",
+      "captureKind": "detail",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "600e6dac5b7fbb64b79c0896dfc99bbd98c1c44520fb5083322fcedd3dbcfec5"
+    },
+    {
+      "file": "detail-garage-components.png",
+      "captureKind": "detail",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "89c8c47734291e5fe8feb8f7020200a2c49e244ac82866be7e1264d7b4605d97"
+    },
+    {
+      "file": "default-two-seat-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "0f615876fe0727a4893c2242701a21e8f82b36577b44df01b784699dd4160bdc"
+    },
+    {
+      "file": "modified-player-2-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "0660b87f87c8e29352a9f8dfaeb62e5c13187fd3f68bbef12ff42c5875966611"
+    },
+    {
+      "file": "four-seat-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "580f7215ee523daeb7f905d4f47796001e8b3dea00dd968bf25ce53c3d3b9b88"
+    },
+    {
+      "file": "open-garage-3440x1440.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "79c10276a7517e51577cc22f54d4f3e06d5400cc0bd838efa7bb98571af73a3a"
+    },
+    {
+      "file": "default-two-seat-844x390.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "bf08a21a2ff35c2993867d8308812b640fdb99dd082bd440971d248a0fa4ec82"
+    },
+    {
+      "file": "modified-player-2-844x390.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "cb70c4bc3f2d789056fd30830ed8cbb6d9e03c97b4f2ed2b931c1509e396458e"
+    },
+    {
+      "file": "four-seat-844x390.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "f50f15c437b1fbf409a1249480f6da837f6594847ea6639d8e4c14c5f51c4dc3"
+    },
+    {
+      "file": "open-garage-844x390.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "60073166cc8d0b8ec8cec9a19793160e0b1f462824b2a2679aa960268f7fd42f"
+    },
+    {
+      "file": "default-two-seat-390x844.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "4652ca8a958450f2795b93dd0266b0397e8d18cf2d1d0679b8b39086ea46d5dc"
+    },
+    {
+      "file": "modified-player-2-390x844.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "25517bd68007ad6ead0c91c5fc6bc3e9beee694a966ce11e541ed309f3ee2d74"
+    },
+    {
+      "file": "four-seat-390x844.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "8923b848b0b2f478fb323f6de22b28be6a436f965928111d28dfe3c47ab40f66"
+    },
+    {
+      "file": "open-garage-390x844.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "0cbf8928d45d318442b513e331b1173507c5ac56218d42a0b5e08f18d8acee5a"
+    },
+    {
+      "file": "default-two-seat-320x568.png",
+      "captureKind": "viewport",
+      "state": "default-two-seat",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "350e0baed64eb5cdd7ca3766a13d89cb13a790725ce087981ca3cf1b41d77013"
+    },
+    {
+      "file": "modified-player-2-320x568.png",
+      "captureKind": "viewport",
+      "state": "modified-player-2",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "413d41c1d3158d61f26cd429e532cc9397cbaded95d5385741376b9fc5baf47e"
+    },
+    {
+      "file": "four-seat-320x568.png",
+      "captureKind": "viewport",
+      "state": "four-seat",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "2eaf8d7610ebcbbd70be61b056ceb635571f0ef652b8d4a0e69154a7f45d8b17"
+    },
+    {
+      "file": "open-garage-320x568.png",
+      "captureKind": "viewport",
+      "state": "open-garage",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "d14a89c56865640038d9ce8ef033204cf5138ed7b95f33398e65ecd1116f1370"
+    },
+    {
+      "file": "special-200pct-equivalent-720x450.png",
+      "captureKind": "special",
+      "state": "open-garage",
+      "viewport": {
+        "width": 720,
+        "height": 450
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "200% equivalent of 1440x900",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "61c3648e3fc38d69f9d7eac3f934372b49728db227332a7dcb8a541f83439b11"
+    },
+    {
+      "file": "special-reduced-motion-forced-colours-1024x768.png",
+      "captureKind": "special",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "1939acb3c3c491fac64e433983955f4434a3154ba47d0d256dd0bf1ed3c8b3a3"
+    },
+    {
+      "file": "special-missing-art-fallback-1024x768.png",
+      "captureKind": "special",
+      "state": "open-garage",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "devicePixelRatio": 1,
+      "cssZoom": "1",
+      "reflowEquivalent": "100%",
+      "project": "desktop-fine",
+      "browser": "chromium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+      "sha256": "2276bb40d0dcefe325bec8a8011af847c3590485d9d6d864115ded04a5f80d6e"
+    }
+  ]
+}

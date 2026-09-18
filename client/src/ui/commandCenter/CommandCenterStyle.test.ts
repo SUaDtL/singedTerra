@@ -7,6 +7,10 @@ const commandCenterCss = readFileSync(
   'utf8',
 );
 const lobbySource = readFileSync(join(process.cwd(), 'src/ui/Lobby.ts'), 'utf8');
+const lobbyGarageSource = readFileSync(
+  join(process.cwd(), 'src/ui/LobbyGarageView.ts'),
+  'utf8',
+);
 const lobbyShellSource = readFileSync(join(process.cwd(), 'src/ui/LobbyShellView.ts'), 'utf8');
 const lobbyHotSeatSource = readFileSync(join(process.cwd(), 'src/ui/LobbyHotSeatView.ts'), 'utf8');
 const lobbyCss = readFileSync(join(process.cwd(), 'src/ui/Lobby.css'), 'utf8');
@@ -67,6 +71,103 @@ describe('command center visual contract', () => {
       /\.command-center__primary-action\s*\{[^}]*min-height:\s*(?:5[6-9]|[6-9]\d)px/s,
     );
     expect(commandCenterCss).not.toMatch(/account-panel__account-trigger\s*\{[^}]*min-height:\s*(?:[0-3]?\d|4[0-3])px/s);
+  });
+
+  it('treats Local Battle as one readable crew workstation with explicit state', () => {
+    expect(lobbyConsoleCss).toContain('--console-workshop-surface:');
+    expect(commandCenterCss).toMatch(
+      /\.lobby-local-preparation__title\s*\{[^}]*font:\s*8\d{2}[^;]+var\(--font-display\)/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-row\s*\{[^}]*border:\s*1px solid[^}]*background:/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-row\[aria-current='true'\]\s*\{[^}]*border-color:\s*var\(--command-gold\)[^}]*box-shadow:/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-row__appearance\s*\{[^}]*color:\s*var\(--command-muted\)[^}]*font-size:\s*(?:1[12])px/s,
+    );
+  });
+
+  it('keeps paint choices touch-sized while the colour chip stays visually subordinate', () => {
+    expect(commandCenterCss).toMatch(
+      /\.lobby-swatch\s*\{[^}]*width:\s*44px[^}]*height:\s*44px[^}]*padding:\s*10px[^}]*background-clip:\s*content-box\s*!important/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-swatch\.selected::after\s*\{[^}]*border-left:\s*2px solid[^}]*transform:[^;]*rotate\(-45deg\)/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-swatch\.taken::after\s*\{[^}]*background:\s*#f7e4bd[^}]*transform:[^;]*rotate\(-45deg\)/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-swatch:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--command-gold-bright\)/s,
+    );
+  });
+
+  it('uses the safe command action treatment for the single Local deployment decision', () => {
+    expect(commandCenterCss).toMatch(
+      /\.lobby-hotseat-footer\s*>\s*\.lobby-start\s*\{[^}]*min-height:\s*60px[^}]*border-image-source:\s*var\(--command-button-gold-frame/s,
+    );
+    expect(lobbyCss).not.toMatch(
+      /\.lobby-hotseat-body\s+\.lobby-row\s*\{[^}]*grid-template-columns:/s,
+    );
+  });
+
+  it('gives Local one bounded setup scroller across short and narrow layouts', () => {
+    expect(commandCenterCss).toMatch(
+      /\.command-center__workspace-host:has\(\.multiplayer-command__local-workspace\)\s*\{[^}]*overflow-y:\s*hidden/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.multiplayer-command__local-workspace\s+\.lobby-hotseat-scroll\s*\{[^}]*overflow-y:\s*auto/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /@media\s*\(max-height:\s*620px\)\s*and\s*\(orientation:\s*landscape\)[\s\S]*?\.multiplayer-command__local-workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^}]*overflow:\s*hidden/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /@container\s+local-battle-setup\s*\(max-width:\s*460px\)[\s\S]*?\.lobby-row\s*\{[^}]*'selector selector'[^}]*'garage garage'/s,
+    );
+    expect(lobbyCss).not.toMatch(
+      /:is\(\.multiplayer-command__local-workspace,\s*\.multiplayer-command__verified-workspace\)/s,
+    );
+  });
+
+  it('composes one shared Vehicle Bay workshop with one dense scroll owner', () => {
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage\.editing\s*\{[^}]*grid-template:[^}]*'inspection controls'[^}]*overflow:\s*hidden/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage__editor-scroll\s*\{[^}]*overflow-x:\s*hidden[^}]*overflow-y:\s*auto[^}]*overscroll-behavior:\s*contain/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage__inspection\s*\{[^}]*position:\s*sticky[^}]*grid-area:\s*inspection/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage__tank-preview\s*\{[^}]*width:\s*100%[^}]*aspect-ratio:\s*16\s*\/\s*9/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage\.editing\s+:is\(\.lobby-garage__preset, \.lobby-garage__variant\)\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage\.editing \.lobby-garage__close\s*\{[^}]*min-height:\s*56px[^}]*border-image-source:\s*var\(--command-button-gold-frame/s,
+    );
+    expect(commandCenterCss).toMatch(
+      />\s*\.lobby-deployment:has\(\.lobby-garage\.editing\)\s*\{[^}]*z-index:\s*4/s,
+    );
+    expect(commandCenterCss).toMatch(
+      />\s*\.lobby-deployment:has\(\.lobby-garage\.editing\)[^{]+>\s*\.command-center\s*\{[^}]*z-index:\s*4/s,
+    );
+  });
+
+  it('keeps complete names visible instead of restoring encoded Garage initials', () => {
+    expect(lobbyGarageSource).not.toContain('dataset.short');
+    expect(lobbyCss).not.toContain('attr(data-short)');
+    expect(commandCenterCss).not.toContain('attr(data-short)');
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage__preset-label\s*\{[^}]*overflow-wrap:\s*anywhere/s,
+    );
+    expect(commandCenterCss).toMatch(
+      /\.lobby-garage\.editing \.lobby-garage__variant\s*\{[^}]*overflow-wrap:\s*anywhere/s,
+    );
   });
 
   it('places the masthead and console explicitly instead of inheriting the retired named grid', () => {

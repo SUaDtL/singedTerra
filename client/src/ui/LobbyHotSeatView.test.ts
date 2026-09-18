@@ -20,6 +20,7 @@ function localOptions(
     maxPlayers: 4,
     playerCount: 2,
     playerRows: [section('player-1'), section('player-2')],
+    vehicleInspection: section('vehicle-inspection'),
     advanced: section('advanced'),
     validationMessage: null,
     onPlayerCountChange: vi.fn(),
@@ -77,6 +78,34 @@ describe('owned multiplayer preparation views', () => {
     expect(root.querySelector('.lobby-verified-deployment')).toBeNull();
   });
 
+  it('presents crew and effective rules as one named preparation flow with one Deploy action', () => {
+    const root = buildLobbyLocalBattleView(localOptions());
+    const preparation = root.querySelector<HTMLElement>('[data-local-preparation]');
+
+    expect(preparation).not.toBeNull();
+    const headingId = preparation?.getAttribute('aria-labelledby');
+    const contextId = preparation?.getAttribute('aria-describedby');
+    expect(headingId).toBeTruthy();
+    expect(contextId).toBeTruthy();
+    expect(root.querySelector(`#${headingId}`)?.textContent).toMatch(/crew preparation/i);
+    expect(root.querySelector(`#${contextId}`)?.textContent).toMatch(/crew/i);
+    expect(root.querySelector(`#${contextId}`)?.textContent).toMatch(/vehicle/i);
+    expect(root.querySelector(`#${contextId}`)?.textContent).toMatch(/rules/i);
+    const inspection = preparation?.querySelector<HTMLElement>(
+      '[aria-label="Selected vehicle inspection"]',
+    );
+    expect(inspection?.querySelector('[data-section="vehicle-inspection"]')).not.toBeNull();
+
+    const rules = preparation?.querySelector<HTMLElement>(
+      '[aria-labelledby="battlefield-protocol-heading"]',
+    );
+    expect(rules?.querySelector('#battlefield-protocol-heading')?.textContent)
+      .toBe('Effective rules');
+    expect(preparation?.querySelectorAll<HTMLButtonElement>('.lobby-start')).toHaveLength(1);
+    expect(preparation?.querySelector<HTMLButtonElement>('.lobby-start')?.textContent)
+      .toBe('Deploy local battle');
+  });
+
   it('renders the player range, selected count, shared-node order, and crowded layout', () => {
     const playerRows = [section('player-1'), section('player-2'), section('player-3')];
     const advanced = section('advanced');
@@ -96,6 +125,32 @@ describe('owned multiplayer preparation views', () => {
     expect(root.querySelector('[aria-labelledby="crew-manifest-heading"]')?.contains(rows)).toBe(true);
     expect(root.querySelector('[aria-labelledby="battlefield-protocol-heading"]')?.contains(advanced))
       .toBe(true);
+  });
+
+  it('keeps four labelled crew seats inside the controlled Local scroll owner', () => {
+    const playerRows = [1, 2, 3, 4].map((player) => {
+      const row = section(`player-${player}`);
+      row.setAttribute('role', 'listitem');
+      row.setAttribute('aria-label', `Player ${player} crew seat`);
+      return row;
+    });
+    const root = buildLobbyLocalBattleView(localOptions({
+      playerCount: 4,
+      playerRows,
+    }));
+    const scrollOwner = root.querySelector<HTMLElement>('.lobby-hotseat-scroll');
+    const roster = root.querySelector<HTMLElement>('.lobby-rows');
+
+    expect(roster?.getAttribute('role')).toBe('list');
+    expect(scrollOwner?.contains(roster ?? null)).toBe(true);
+    expect([...roster!.children]).toEqual(playerRows);
+    expect(playerRows.map((row) => row.getAttribute('aria-label'))).toEqual([
+      'Player 1 crew seat',
+      'Player 2 crew seat',
+      'Player 3 crew seat',
+      'Player 4 crew seat',
+    ]);
+    expect(root.querySelectorAll('.lobby-start')).toHaveLength(1);
   });
 
   it('routes Local Battle edits and the single owned launch action', () => {

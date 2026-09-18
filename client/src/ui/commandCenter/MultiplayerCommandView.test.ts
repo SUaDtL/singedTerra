@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TankLoadout } from '@shared/types/TankLoadout';
 import { Lobby, type LobbyConfig } from '../Lobby';
 import {
   createMultiplayerCommandCategoryContribution,
@@ -6,6 +7,8 @@ import {
 } from './MultiplayerCommandView';
 import { resolveCommandRegistry } from './registry';
 import { readSession, writeSession } from '../../lib/sessionDescriptor';
+
+const TEST_SESSION_VALUE = 'test-session-value';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -65,6 +68,37 @@ describe('Multiplayer Local Battle command contribution', () => {
     expect(workspace?.textContent).not.toContain('Practice vs CPU');
     expect(workspace?.textContent).not.toContain('Verified Deployment');
     expect(root.querySelector('.command-center')).not.toBeNull();
+  });
+
+  it('assembles selected vehicle, crew, effective rules, and Deploy under one Local context', () => {
+    const lobby = new Lobby(root, vi.fn());
+    lobby.show();
+    selectLocalBattle(root);
+
+    const workspace = root.querySelector<HTMLElement>(
+      '[data-multiplayer-command-view="local-battle"]',
+    )!;
+    const preparation = workspace.querySelector<HTMLElement>('[data-local-preparation]');
+    expect(preparation).not.toBeNull();
+    expect(preparation?.contains(workspace.querySelector('.lobby-preview')!)).toBe(true);
+    expect(preparation?.querySelector('[aria-labelledby="crew-manifest-heading"]')).not.toBeNull();
+
+    const effectiveRules = preparation?.querySelector<HTMLElement>(
+      '[aria-labelledby="battlefield-protocol-heading"]',
+    );
+    expect(effectiveRules?.querySelector('#battlefield-protocol-heading')?.textContent)
+      .toBe('Effective rules');
+    const rounds = effectiveRules?.querySelector<HTMLInputElement>('input[aria-label="Rounds"]');
+    const wind = effectiveRules?.querySelector<HTMLInputElement>('input[aria-label="Wind"]');
+    const walls = effectiveRules?.querySelector<HTMLSelectElement>('#lobby-hotseat-direct-walls');
+    expect(rounds?.value || rounds?.placeholder).toBe('1');
+    expect(wind?.value || wind?.placeholder).toBe('10');
+    expect(walls?.selectedOptions[0]?.textContent).toContain('Open');
+
+    const deployActions = [...preparation!.querySelectorAll<HTMLButtonElement>('button')]
+      .filter((button) => button.textContent?.startsWith('Deploy'));
+    expect(deployActions).toHaveLength(1);
+    expect(deployActions[0]?.textContent).toBe('Deploy local battle');
   });
 
   it('uses the existing validation and sole match-start owner without payload drift', () => {
@@ -161,6 +195,38 @@ describe('Multiplayer Local Battle command contribution', () => {
     expect(root.querySelector('[data-skirmish-command-view]')).not.toBeNull();
   });
 
+  it('retires detached Online Garage mutation and close callbacks with the workspace', () => {
+    const lobby = new Lobby(root, vi.fn());
+    lobby.show();
+    selectOnline(root);
+
+    root.querySelector<HTMLButtonElement>(
+      '.lobby-garage[data-owner="online-player"] .lobby-garage__open',
+    )!.click();
+    const staleEditor = root.querySelector<HTMLElement>(
+      '.lobby-garage[role="dialog"][data-owner="online-player"]',
+    )!;
+    const staleVariant = staleEditor.querySelector<HTMLButtonElement>(
+      '[data-slot="turret"][data-variant="bulwark"]',
+    )!;
+    const staleDone = staleEditor.querySelector<HTMLButtonElement>('.lobby-garage__close')!;
+
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="skirmishes"]',
+    )!.click();
+    expect(staleEditor.isConnected).toBe(false);
+
+    staleVariant.click();
+    staleDone.click();
+    staleEditor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    const internal = lobby as unknown as { onlineLoadout: TankLoadout };
+    expect(internal.onlineLoadout).toEqual({
+      treads: 'foundry', hull: 'foundry', turret: 'foundry', barrel: 'foundry',
+    });
+    expect(root.querySelector('[data-skirmish-command-view]')).not.toBeNull();
+  });
+
   it('rejects a late Online admission after command navigation retires its workspace', async () => {
     const lobby = new Lobby(root, vi.fn());
     const internal = lobby as unknown as {
@@ -200,7 +266,7 @@ describe('Multiplayer Local Battle command contribution', () => {
         roomId: 'late-room',
         code: 'LATE',
         playerId: 'late-player',
-        token: 'late-token',
+        token: TEST_SESSION_VALUE,
         options: {
           maxPlayers: 2,
           maxWind: 10,
@@ -220,7 +286,7 @@ describe('Multiplayer Local Battle command contribution', () => {
     expect(readSession()).toBeNull();
     expect(localStorage.getItem('singedterra:seat:late-player')).toBeNull();
     expect(release).toHaveBeenCalledWith({
-      roomId: 'late-room', playerId: 'late-player', token: 'late-token',
+      roomId: 'late-room', playerId: 'late-player', token: TEST_SESSION_VALUE,
     });
     expect(root.querySelector('[data-skirmish-command-view]')).not.toBeNull();
   });
@@ -272,7 +338,7 @@ describe('Multiplayer Local Battle command contribution', () => {
       data: {
         roomId: 'late-join-room',
         playerId: 'late-join-player',
-        token: 'late-join-token',
+        token: TEST_SESSION_VALUE,
         seed: 17,
         options: {
           maxPlayers: 2,
@@ -296,7 +362,7 @@ describe('Multiplayer Local Battle command contribution', () => {
     expect(render).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(retainedFocus);
     expect(release).toHaveBeenCalledWith({
-      roomId: 'late-join-room', playerId: 'late-join-player', token: 'late-join-token',
+      roomId: 'late-join-room', playerId: 'late-join-player', token: TEST_SESSION_VALUE,
     });
   });
 
@@ -318,7 +384,7 @@ describe('Multiplayer Local Battle command contribution', () => {
     internal.onlineSubView = 'waiting';
     internal.session.replaceWaiting({
       roomId: 'leaving-room', roomCode: 'LEAV', playerId: 'leaving-player',
-      token: 'leaving-token', players: [], seed: 17,
+      token: TEST_SESSION_VALUE, players: [], seed: 17,
       options: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
       thisPlayerReady: false,
     });
@@ -338,7 +404,7 @@ describe('Multiplayer Local Battle command contribution', () => {
       '[data-multiplayer-command-view="online"] button',
     )].find((button) => button.textContent === 'Leave')!.click();
     expect(leave).toHaveBeenCalledWith({
-      roomId: 'leaving-room', playerId: 'leaving-player', token: 'leaving-token',
+      roomId: 'leaving-room', playerId: 'leaving-player', token: TEST_SESSION_VALUE,
     });
 
     root.querySelector<HTMLButtonElement>(

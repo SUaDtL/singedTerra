@@ -25,6 +25,12 @@
   --console-panel: rgba(7, 9, 10, 0.96);
   --console-panel-soft: rgba(15, 15, 14, 0.92);
   --console-line: rgba(205, 133, 60, 0.48);
+  --console-workshop-surface:
+    linear-gradient(180deg, rgba(31, 27, 23, 0.98), rgba(9, 11, 12, 0.98));
+  --console-seat-surface:
+    linear-gradient(105deg, rgba(49, 35, 24, 0.78), rgba(8, 10, 11, 0.94) 44%);
+  --console-seat-selected:
+    linear-gradient(105deg, rgba(112, 68, 31, 0.76), rgba(12, 13, 13, 0.96) 48%);
   color-scheme: dark;
   scrollbar-color: var(--console-bronze-hi) #101414;
 }

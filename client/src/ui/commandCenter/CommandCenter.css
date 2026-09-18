@@ -35,6 +35,20 @@
   gap: clamp(9px, 1.3vw, 16px);
 }
 
+/* A fixed Vehicle Bay still participates in the command-center stacking
+ * context. Elevate that owner only while the modal exists so its workshop
+ * header clears the persistent command rail without changing normal chrome. */
+#lobby .lobby-card:has(.command-center)
+  > .lobby-deployment:has(.lobby-garage.editing) {
+  z-index: 4;
+}
+
+#lobby .lobby-card:has(.command-center)
+  > .lobby-deployment:has(.lobby-garage.editing)
+  > .command-center {
+  z-index: 4;
+}
+
 #lobby .lobby-card:has(.command-center) .lobby-deployment::before {
   display: none;
 }
@@ -497,15 +511,26 @@
     var(--command-iron-tile, none) center / 256px 256px repeat;
 }
 
+/* Local owns one internal setup scroller so its deployment decision remains
+   docked. The shell host must not become a second, competing scroll region. */
+#lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace) {
+  overflow-y: hidden;
+}
+
 #lobby .command-center__workspace-mount {
   min-width: 0;
   min-height: 100%;
   height: 100%;
 }
 
-/* Local Battle is a first-class command workspace. Re-establish the preview /
-   setup composition here because the legacy Lobby rules only normalize a
-   preview that is a direct child of `.lobby-deployment`. */
+#lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace)
+  > .command-center__workspace-mount {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Local Battle reads as one battery assembly: crew ownership and rules lead to
+   one selected vehicle and one deployment decision. */
 #lobby .multiplayer-command {
   min-width: 0;
   min-height: 100%;
@@ -518,14 +543,77 @@
   min-height: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   box-sizing: border-box;
   padding: 12px;
   overflow: hidden;
 }
 
-#lobby .multiplayer-command__local-workspace > .lobby-preview {
+#lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  container: local-battle-setup / inline-size;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 2px 7px 10px 2px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid rgba(190, 116, 50, 0.52);
+  background: linear-gradient(90deg, rgba(69, 42, 24, 0.58), rgba(9, 11, 12, 0.3) 76%);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-local-preparation__title {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 clamp(20px, 2vw, 28px)/1.1 var(--font-display);
+  letter-spacing: 0.035em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-local-preparation__context {
+  max-width: 76ch;
+  margin: 0;
+  color: var(--command-muted);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__inspection {
+  min-width: 0;
+  grid-area: inspection;
+  align-self: stretch;
+  margin: 0;
+  padding: 9px;
+  border: 1px solid rgba(154, 92, 41, 0.7);
+  background: var(--console-workshop-surface, #101214);
+  box-shadow: inset 0 1px 0 rgba(255, 223, 165, 0.08);
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__inspection > .lobby-preview--inspection {
   position: relative;
   inset: auto;
   z-index: 2;
@@ -533,10 +621,26 @@
   min-width: 0;
   max-width: none;
   min-height: 280px;
-  height: clamp(280px, 38vh, 420px);
-  max-height: 420px;
+  height: clamp(280px, 34vh, 360px);
+  max-height: 360px;
   align-self: start;
   margin: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 72%, rgba(0, 0, 0, 0.52) 0 18%, transparent 48%),
+    linear-gradient(180deg, rgba(31, 27, 23, 0.98), rgba(9, 11, 12, 0.98));
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview--inspection::before,
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview--inspection::after {
+  content: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview--inspection .lobby-preview__convoy {
+  display: none;
 }
 
 #lobby .multiplayer-command__verified-workspace,
@@ -561,22 +665,312 @@
   min-height: 56px;
 }
 
-#lobby .multiplayer-command__local-workspace > .lobby-hotseat {
-  min-width: 0;
-  min-height: 0;
-  height: 100%;
-  container: local-battle-setup / inline-size;
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  grid-template-areas:
+    'crew inspection'
+    'rules inspection';
+  align-items: start;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
-  min-width: 0;
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__crew {
+  grid-area: crew;
 }
 
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+#lobby .multiplayer-command__local-workspace
+  .lobby-local-preparation__rules {
+  grid-area: rules;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preparation-section {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid rgba(140, 82, 36, 0.64);
+  border-left: 3px solid var(--command-line-bright);
+  background: linear-gradient(100deg, rgba(55, 38, 25, 0.68), rgba(8, 10, 11, 0.9) 42%);
+  box-shadow: inset 0 1px 0 rgba(255, 219, 151, 0.07);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preparation-section__title {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 15px/1.15 var(--font-display);
+  letter-spacing: 0.055em;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preparation-section__body {
+  min-width: 0;
+  display: grid;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__title {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body {
+  display: contents;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body
+  > .lobby-field:first-child {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: auto 64px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
   .lobby-preparation-section[data-preparation-section='crew-manifest']
   > .lobby-preparation-section__body
   > .lobby-field:first-child
-  > select,
+  > label {
+  width: auto;
+  color: var(--command-muted);
+  font: 700 11px/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body
+  > .lobby-field:first-child
+  > select {
+  width: 64px;
+  min-height: 44px;
+  padding: 7px 8px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-rows {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 0;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row {
+  min-width: 0;
+  display: grid;
+  grid-template:
+    'selector name control' auto
+    'swatches swatches garage' auto
+    / minmax(138px, 0.8fr) minmax(150px, 1fr) minmax(132px, 0.74fr);
+  align-items: stretch;
+  gap: 7px 9px;
+  padding: 8px;
+  border: 1px solid rgba(136, 84, 43, 0.68);
+  border-left: 3px solid rgba(168, 104, 49, 0.74);
+  background: var(--console-seat-surface, rgba(11, 13, 14, 0.94));
+  box-shadow: inset 0 1px 0 rgba(255, 222, 158, 0.06);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row[aria-current='true'] {
+  border-color: var(--command-gold);
+  border-left-width: 5px;
+  background: var(--console-seat-selected, rgba(71, 44, 25, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(255, 222, 141, 0.18), 0 0 12px rgba(229, 150, 58, 0.12);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row__selector {
+  grid-area: selector;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid rgba(151, 93, 44, 0.5);
+  color: var(--command-copy);
+  background: rgba(8, 10, 11, 0.72);
+  text-align: left;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row__selector[aria-pressed='true'] {
+  border-color: var(--command-gold-bright);
+  color: var(--command-gold-bright);
+  background: linear-gradient(90deg, rgba(112, 67, 30, 0.58), rgba(15, 15, 14, 0.9));
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row__seat-label {
+  font: 800 12px/1.15 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row__appearance {
+  min-width: 0;
+  color: var(--command-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row .lobby-name {
+  grid-area: name;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row .lobby-control {
+  grid-area: control;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-row .lobby-swatches {
+  grid-area: swatches;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  overflow: visible;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background-clip: content-box !important;
+  box-shadow: inset 0 0 0 1px rgba(244, 223, 180, 0.16);
+  transform: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch:hover:not(.taken) {
+  border-color: var(--command-line-bright);
+  transform: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch:focus-visible {
+  outline: 3px solid var(--command-gold-bright);
+  outline-offset: 1px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.selected {
+  border-color: var(--command-gold-bright);
+  box-shadow: inset 0 0 0 2px #17100b, 0 0 0 1px var(--command-gold);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.selected::after,
+#lobby .multiplayer-command__local-workspace .lobby-swatch.taken::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.selected::after {
+  width: 11px;
+  height: 6px;
+  border-left: 2px solid #f7e4bd;
+  border-bottom: 2px solid #f7e4bd;
+  transform: translate(-50%, -62%) rotate(-45deg);
+  filter: drop-shadow(0 1px 1px #080a0c);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.taken {
+  cursor: not-allowed;
+  border-color: rgba(191, 180, 159, 0.54);
+  opacity: 0.5;
+  filter: saturate(0.45);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-swatch.taken::after {
+  width: 18px;
+  height: 2px;
+  background: #f7e4bd;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  box-shadow: 0 1px 2px #080a0c;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row .lobby-garage:not(.editing) {
+  grid-area: garage;
+  min-width: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row .lobby-garage:not(.editing)
+  :is(.lobby-garage__heading, .lobby-garage__presets, .lobby-garage__slots, .lobby-garage__close) {
+  display: none;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-row .lobby-garage:not(.editing) .lobby-garage__open {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  border-image-source: var(--command-button-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 6px;
+  color: var(--command-copy);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+@container local-battle-setup (max-width: 760px) {
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'crew'
+      'inspection'
+      'rules';
+  }
+}
+
 #lobby .multiplayer-command__local-workspace .lobby-hotseat-body input,
 #lobby .multiplayer-command__local-workspace .lobby-hotseat-body select,
 #lobby .multiplayer-command__local-workspace .lobby-hotseat-body button {
@@ -585,72 +979,127 @@
   box-sizing: border-box;
 }
 
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-control,
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-hotseat-battlefield input[type='number'],
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-hotseat-battlefield select,
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-advanced-trigger {
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield > .lobby-field {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 5px;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield > .lobby-field > label {
+  width: auto;
+  color: var(--command-muted);
+  font: 700 11px/1.2 var(--font-mono);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield .lobby-hint {
+  color: var(--command-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-battlefield :is(input[type='number'], select) {
+  width: 100%;
+  min-width: 0;
   min-height: 44px;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  font-size: 13px;
 }
 
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-row {
-  grid-template-columns: minmax(150px, 1fr) minmax(120px, auto) minmax(132px, auto);
-}
-
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-row .lobby-name {
-  grid-column: 1;
-  grid-row: 1;
+#lobby .multiplayer-command__local-workspace .lobby-advanced-trigger {
   min-height: 44px;
-}
-
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-row .lobby-control {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-row .lobby-garage:not(.editing) {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-row .lobby-swatches {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  gap: 6px;
-  overflow-x: auto;
-}
-
-#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-  .lobby-row .lobby-swatch {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  border-width: 2px;
-}
-
-#lobby .multiplayer-command__local-workspace .lobby-garage.editing
-  .lobby-garage__preset-group,
-#lobby .multiplayer-command__local-workspace .lobby-garage.editing
-  .lobby-garage__component-group {
-  margin-top: 6px;
+  justify-self: stretch;
+  padding: 7px 10px;
 }
 
 #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+  position: relative;
+  z-index: 5;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(177, 102, 43, 0.62);
+  background:
+    linear-gradient(180deg, rgba(55, 35, 22, 0.9), rgba(7, 9, 10, 0.98)),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+  box-shadow: inset 0 1px 0 rgba(255, 221, 152, 0.08);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__brief {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__heading {
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 800 15px/1.1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__status {
+  color: var(--command-muted);
+  font: 700 11px/1.25 var(--font-mono);
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-error {
+  color: var(--command-danger);
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
   width: 100%;
   min-width: 220px;
-  min-height: 56px;
+  min-height: 60px;
   justify-self: end;
-  font-size: max(var(--st-command-readability-size, 12px), 14px);
+  padding: 6px 14px;
+  border: 10px solid var(--command-gold-bright);
+  border-image-source: var(--command-button-gold-frame, none);
+  border-image-slice: 22 fill;
+  border-image-width: 10px;
+  color: #251306;
+  background:
+    var(--command-gold-tile, none),
+    linear-gradient(180deg, #ffd879, #cf8425);
+  background-size: 192px 192px, auto;
+  box-shadow: 0 0 0 2px #4f2d14, 0 5px 18px rgba(0, 0, 0, 0.34);
+  font: 900 clamp(15px, 1.4vw, 19px)/1.1 var(--font-display);
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-hotseat-footer > .lobby-start:disabled {
+  border-color: #4e4941;
+  border-image-source: var(--command-button-disabled-frame, none);
+  border-image-slice: 16 fill;
+  color: #8d877d;
+  background: linear-gradient(180deg, #242424, #101112);
+  box-shadow: none;
 }
 
 #lobby .multiplayer-command__online-workspace {
@@ -1368,13 +1817,6 @@
     min-height: 180px;
   }
 
-  #lobby .command-center .multiplayer-command__local-workspace
-    .lobby-hotseat-body .lobby-garage.editing {
-    inset: 16px;
-    gap: 6px;
-    padding: 12px;
-  }
-
   #lobby .command-center__library {
     padding: 14px 12px;
   }
@@ -2023,22 +2465,22 @@
 
 @container local-workspace-shell (max-width: 700px) {
   #lobby .multiplayer-command__local-workspace {
-    height: auto;
-    overflow: visible;
-  }
-
-  #lobby .multiplayer-command__local-workspace > .lobby-preview {
-    min-height: 240px;
-    height: clamp(240px, 34vh, 320px);
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
   #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
-    height: auto;
+    min-height: 0;
+    height: 100%;
   }
 
-  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body,
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    overflow-y: hidden;
+  }
+
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
-    overflow-y: visible;
+    overflow-y: auto;
   }
 }
 
@@ -2125,92 +2567,13 @@
   #lobby .multiplayer-command__local-workspace {
     min-height: 0;
     height: 100%;
-    grid-template-columns: minmax(180px, 0.72fr) minmax(280px, 1.28fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
   }
 
-  #lobby .multiplayer-command__local-workspace > .lobby-preview {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 160px;
-    height: 100%;
-    max-height: none;
-  }
-
-  #lobby .multiplayer-command__local-workspace .lobby-preview__parts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__label {
-    font-size: 12px;
-    letter-spacing: 1px;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__spotlight {
-    top: 28px;
-    bottom: 48px;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace
-    .lobby-preview__spotlight-identity {
-    font-size: 14px;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace
-    .lobby-preview__spotlight-canvas {
-    width: min(104px, 65%);
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__parts {
-    width: calc(100% - 8px);
-    gap: 2px;
-    margin-top: -8px;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__part {
-    padding: 1px;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__part span {
-    font-size: 9px;
-    line-height: 1.1;
-    letter-spacing: 0;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__part strong {
-    margin-top: 1px;
-    font-size: 10px;
-    line-height: 1.1;
-    letter-spacing: 0;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__convoy {
-    bottom: 3px;
-    height: 44px;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__tank {
-    left: calc(var(--slot, 0) * 82px + 8px);
-    bottom: 0;
-    width: 64px;
-    height: 42px;
-    animation: none;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__canvas {
-    width: 50px;
-    height: auto;
-  }
-
-  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__name {
-    top: 34px;
-    max-width: 58px;
-    font-size: 8px;
-  }
-
   #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
     min-height: 160px;
     height: 100%;
@@ -2257,21 +2620,27 @@
    illustrative tank preview below it. The footer remains docked while the
    setup body scrolls, so Deploy stays available without hiding configuration. */
 @media (max-width: 720px) and (orientation: portrait) {
+  #lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace)
+    > .command-center__workspace-mount,
+  #lobby .command-center__workspace-host:has(.multiplayer-command__local-workspace)
+    .multiplayer-command {
+    min-height: 0;
+    height: 100%;
+  }
+
   #lobby .multiplayer-command__local-workspace {
-    grid-template-rows: minmax(320px, 46vh) 260px;
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
   }
 
   #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
     grid-column: 1;
     grid-row: 1;
-    min-height: 320px;
-    height: 46vh;
+    min-height: 0;
+    height: 100%;
     overflow: hidden;
-  }
-
-  #lobby .multiplayer-command__local-workspace > .lobby-preview {
-    grid-column: 1;
-    grid-row: 2;
   }
 
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
@@ -2287,12 +2656,6 @@
 }
 
 @container local-workspace-shell (max-width: 460px) {
-  #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
-    > .lobby-preview {
-    min-height: 260px;
-    height: 260px;
-  }
-
   #lobby.is-compact
     :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
     .lobby-preview__spotlight-identity {
@@ -2352,34 +2715,18 @@
 
 @container local-battle-setup (max-width: 460px) {
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-row {
-    grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
-  }
-
-  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-    .lobby-row .lobby-name {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
-  }
-
-  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-    .lobby-row .lobby-control {
-    grid-column: 2;
-    grid-row: 1;
+    grid-template:
+      'selector selector' auto
+      'name control' auto
+      'swatches swatches' auto
+      'garage garage' auto
+      / minmax(0, 1fr) minmax(120px, 0.78fr);
   }
 
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
     .lobby-row .lobby-swatches {
-    grid-column: 1 / -1;
-    grid-row: 2;
     flex-wrap: wrap;
     overflow-x: visible;
-  }
-
-  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
-    .lobby-row .lobby-garage:not(.editing) {
-    grid-column: 1 / -1;
-    grid-row: 3;
   }
 
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
@@ -2400,6 +2747,59 @@
   #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
     min-width: 0;
     justify-self: stretch;
+  }
+}
+
+/* The 320px preparation shell leaves a deliberately small content window
+   below the global rail and mode chooser. Collapse explanatory copy—not crew
+   controls or the deployment decision—so the first selectable seat is part of
+   the initial fold and the remaining setup stays with the same scroll owner. */
+@media (max-width: 360px) {
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+    gap: 0;
+    padding: 5px 8px 6px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__title {
+    font-size: 14px;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__context {
+    display: none;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__content {
+    gap: 6px;
+    margin-top: 5px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preparation-section {
+    padding: 6px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+    gap: 2px;
+    padding: 3px 6px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__brief {
+    gap: 1px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__heading {
+    font-size: 12px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__status {
+    font-size: 9px;
+    line-height: 1.1;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
+    min-height: 48px;
+    font-size: 14px;
   }
 }
 
@@ -2845,6 +3245,402 @@
   }
 }
 
+/* Shared Vehicle Bay workshop
+ *
+ * Local and Online mount this same dialog. The frame, owner inspection, and
+ * Done action remain stationary while the single controls region owns dense
+ * scrolling. This replaces the retired inline abbreviations and the separate
+ * compact/desktop editor layouts from Lobby.css.
+ */
+#lobby .lobby-garage.editing {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 100;
+  width: min(1400px, calc(100vw - 48px));
+  height: min(700px, calc(100dvh - 48px));
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template:
+    'workshop-header workshop-header' auto
+    'inspection controls' minmax(0, 1fr)
+    'actions actions' auto
+    / minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  padding: 16px;
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  border: 12px solid var(--command-gold);
+  border-image-source: var(--command-panel-frame, none);
+  border-image-slice: 16 fill;
+  border-image-width: 12px;
+  color: var(--command-copy);
+  background:
+    linear-gradient(145deg, rgba(48, 31, 20, 0.78), rgba(6, 8, 9, 0.98) 30% 100%),
+    var(--command-iron-tile, none) center / 256px 256px repeat;
+  background-color: #080a0b;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(255, 224, 164, 0.1);
+}
+
+#lobby .lobby-garage__workshop-header {
+  grid-area: workshop-header;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px 16px;
+  padding: 9px 12px 11px;
+  border: 1px solid rgba(174, 105, 48, 0.7);
+  border-left: 4px solid var(--command-gold);
+  background: linear-gradient(90deg, rgba(90, 51, 24, 0.72), rgba(8, 10, 11, 0.76));
+}
+
+#lobby .lobby-garage__workshop-kicker,
+#lobby .lobby-garage__inspection-label,
+#lobby .lobby-garage__group-label {
+  color: var(--command-muted);
+  font: 800 11px/1.15 var(--font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+#lobby .lobby-garage.editing .lobby-garage__editor-header {
+  min-width: 0;
+  margin: 0;
+  color: var(--command-gold-bright);
+  font: 850 clamp(20px, 2.2vw, 30px)/1.05 var(--font-display);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage__inspection {
+  position: sticky;
+  top: 0;
+  grid-area: inspection;
+  min-width: 0;
+  min-height: 0;
+  align-self: start;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(151, 91, 42, 0.76);
+  background:
+    radial-gradient(ellipse at 50% 57%, rgba(0, 0, 0, 0.58) 0 19%, transparent 49%),
+    var(--console-workshop-surface, linear-gradient(180deg, #1f1b17, #090b0c));
+  box-shadow: inset 0 1px 0 rgba(255, 223, 165, 0.08), inset 0 -20px 28px rgba(0, 0, 0, 0.28);
+}
+
+#lobby .lobby-garage__tank-preview {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  justify-self: center;
+}
+
+#lobby .lobby-garage__inspection-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid rgba(166, 100, 45, 0.54);
+  background: rgba(5, 7, 8, 0.58);
+}
+
+#lobby .lobby-garage.editing .lobby-garage__build-summary {
+  margin: 0;
+  color: var(--command-copy);
+  font: 750 13px/1.4 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage__cosmetic-note {
+  margin: 0;
+  color: var(--command-muted);
+  font: 600 12px/1.42 var(--font-sans);
+}
+
+#lobby .lobby-garage__editor-scroll {
+  grid-area: controls;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 1px 8px 10px 1px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
+}
+
+#lobby .lobby-garage__preset-group,
+#lobby .lobby-garage__component-group {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(142, 84, 38, 0.66);
+  background: rgba(7, 9, 10, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 222, 158, 0.06);
+}
+
+#lobby .lobby-garage__presets {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#lobby .lobby-garage__preset {
+  position: relative;
+  min-width: 0;
+  min-height: 108px;
+  display: grid;
+  grid-template-rows: minmax(62px, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 7px;
+  text-align: center;
+}
+
+#lobby .lobby-garage__preset-thumbnail {
+  display: block;
+  width: 100%;
+  max-width: 148px;
+  height: auto;
+  aspect-ratio: 7 / 4;
+  justify-self: center;
+}
+
+#lobby .lobby-garage__preset-label {
+  min-width: 0;
+  color: inherit;
+  font: 800 12px/1.2 var(--font-display);
+  letter-spacing: 0.035em;
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage__slots {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+#lobby .lobby-garage__slot {
+  min-width: 0;
+  margin: 0;
+  padding: 9px;
+  border: 1px solid rgba(135, 81, 38, 0.58);
+  background: rgba(13, 14, 14, 0.82);
+}
+
+#lobby .lobby-garage__slot-label {
+  padding: 0 6px;
+  color: var(--command-gold-bright);
+  font: 800 12px/1.15 var(--font-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+#lobby .lobby-garage__variants {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+#lobby .lobby-garage.editing :is(.lobby-garage__preset, .lobby-garage__variant) {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(158, 95, 42, 0.72);
+  color: var(--command-copy);
+  background:
+    linear-gradient(180deg, rgba(63, 43, 29, 0.86), rgba(7, 9, 10, 0.96)),
+    var(--command-iron-tile, none) center / 192px 192px repeat;
+}
+
+#lobby .lobby-garage.editing .lobby-garage__variant {
+  padding: 9px 10px;
+  font: 750 12px/1.25 var(--font-sans);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+#lobby .lobby-garage.editing
+  :is(.lobby-garage__preset, .lobby-garage__variant).selected {
+  border-color: var(--command-gold-bright);
+  color: #fff0c9;
+  background:
+    linear-gradient(180deg, rgba(112, 68, 31, 0.95), rgba(27, 18, 11, 0.98)),
+    var(--command-gold-tile, none) center / 192px 192px repeat;
+  box-shadow: inset 4px 0 0 var(--command-gold-bright), inset 0 0 0 1px rgba(255, 233, 184, 0.16);
+}
+
+#lobby .lobby-garage.editing
+  :is(.lobby-garage__preset, .lobby-garage__variant):hover:not(:disabled) {
+  border-color: #f3c36f;
+  color: #fff0c9;
+  background-color: rgba(91, 57, 29, 0.84);
+}
+
+#lobby .lobby-garage.editing button:focus-visible {
+  outline: 3px solid var(--command-gold-bright);
+  outline-offset: 2px;
+}
+
+#lobby .lobby-garage.editing button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: saturate(0.35);
+}
+
+#lobby .lobby-garage__actions {
+  grid-area: actions;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(174, 105, 48, 0.62);
+}
+
+#lobby .lobby-garage.editing .lobby-garage__close {
+  min-width: min(100%, 260px);
+  min-height: 56px;
+  padding: 8px 20px;
+  border: 10px solid var(--command-gold-bright);
+  border-image-source: var(--command-button-gold-frame, none);
+  border-image-slice: 22 fill;
+  border-image-width: 10px;
+  color: #251306;
+  background:
+    var(--command-gold-tile, none),
+    linear-gradient(180deg, #ffd879, #cf8425);
+  background-size: 192px 192px, auto;
+  font: 900 16px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  #lobby .lobby-garage.editing {
+    width: calc(100vw - 24px);
+    height: calc(100dvh - 24px);
+    grid-template-columns: minmax(240px, 0.68fr) minmax(0, 1.32fr);
+    gap: 9px;
+    padding: 12px;
+  }
+
+  #lobby .lobby-garage__presets,
+  #lobby .lobby-garage__slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #lobby .lobby-garage__preset {
+    min-height: 96px;
+  }
+}
+
+@media (max-width: 700px) {
+  #lobby .lobby-garage.editing {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    grid-template:
+      'workshop-header' auto
+      'inspection' auto
+      'controls' minmax(0, 1fr)
+      'actions' auto
+      / minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  #lobby .lobby-garage__workshop-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 7px 9px;
+  }
+
+  #lobby .lobby-garage.editing .lobby-garage__editor-header {
+    font-size: clamp(18px, 5.2vw, 24px);
+  }
+
+  #lobby .lobby-garage__inspection {
+    grid-template-columns: minmax(118px, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  #lobby .lobby-garage__inspection-copy {
+    padding: 7px;
+  }
+
+  #lobby .lobby-garage__cosmetic-note {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  #lobby .lobby-garage__editor-scroll {
+    gap: 10px;
+    padding-right: 5px;
+  }
+
+  #lobby .lobby-garage__preset-group,
+  #lobby .lobby-garage__component-group {
+    padding: 8px;
+  }
+
+  #lobby .lobby-garage__slots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby .lobby-garage__actions {
+    padding-top: 7px;
+  }
+
+  #lobby .lobby-garage.editing .lobby-garage__close {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #lobby .lobby-garage.editing {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 12px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 9px;
+  }
+
+  #lobby .lobby-garage__workshop-header {
+    padding-block: 6px;
+  }
+
+  #lobby .lobby-garage__inspection {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  #lobby .lobby-garage__inspection-copy {
+    gap: 3px;
+    padding: 6px;
+  }
+
+  #lobby .lobby-garage__actions {
+    padding-top: 6px;
+  }
+
+  #lobby .lobby-garage.editing .lobby-garage__close {
+    min-height: 48px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #lobby .command-center *,
   #lobby .command-center *::before,
@@ -2870,6 +3666,12 @@
 
   #lobby .command-center {
     border: 2px solid CanvasText;
+  }
+
+  #lobby .lobby-garage.editing {
+    border: 2px solid CanvasText;
+    color: CanvasText;
+    background-color: Canvas !important;
   }
 
   #lobby .lobby-card:has(.command-center) .lobby-command-rail {
