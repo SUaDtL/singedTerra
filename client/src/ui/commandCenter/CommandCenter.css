@@ -1575,12 +1575,20 @@
     align-items: center;
     gap: 8px;
     overflow: hidden;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
+    font-size: 12px;
+    line-height: 1.05;
   }
 
   #lobby .lobby-card:has(.command-center) .account-panel__commander-name,
   #lobby .lobby-card:has(.command-center) .account-panel__commander-level {
     min-width: 0;
+  }
+
+  #lobby .lobby-card:has(.command-center) .account-panel__commander-name {
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   #lobby .lobby-card:has(.command-center) .account-panel__commander-rank-row {

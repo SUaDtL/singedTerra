@@ -161,7 +161,10 @@ test.describe('Pre-game command shell', () => {
   test('opens Local preparation only after selection and returns focus to its choice', async ({ page }) => {
     await openLocal(page);
 
-    await expect(page.getByRole('heading', { name: 'Hot Seat', exact: true })).toBeVisible();
+    await expect(page.getByRole('tabpanel', { name: 'Local Battle', exact: true })).toBeVisible();
+    if (!(await isCompact(page))) {
+      await expect(page.getByRole('heading', { name: 'Hot Seat', exact: true })).toBeVisible();
+    }
     await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#lobby .lobby-name')).toHaveCount(2);
     await expect(page.locator('#lobby .lobby-start')).toBeVisible();

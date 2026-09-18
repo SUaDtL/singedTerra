@@ -300,7 +300,7 @@ test.describe('Collapsed commander dossier front-door geometry', () => {
     await gotoProductionAccountFixture(page);
   });
 
-  test('keeps the full dossier inside the masthead and clear of deployment choices', async ({ page }) => {
+  test('keeps the visible dossier inside the masthead and clear of deployment choices', async ({ page }) => {
     const panel = page.locator('#lobby .lobby-command-rail__dossier');
     const masthead = page.locator('.lobby-command-rail');
     const chooser = page.locator('.command-center');
@@ -317,13 +317,20 @@ test.describe('Collapsed commander dossier front-door geometry', () => {
       'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account',
     );
     await expect(nextRank).toBeHidden();
+    const showsFullDossier = await insignia.isVisible();
     expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
     expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
+    if (!showsFullDossier) {
+      for (const detail of [insignia, rank, milestone]) await expect(detail).toBeHidden();
+    }
     await expectInside(panel, masthead);
 
     const triggerBox = await trigger.boundingBox();
     expect(triggerBox, 'dossier disclosure should render').not.toBeNull();
-    for (const text of [commander, insignia, rank, level, milestone]) {
+    const visibleIdentity = showsFullDossier
+      ? [commander, insignia, rank, level, milestone]
+      : [commander, level];
+    for (const text of visibleIdentity) {
       const textBox = await renderedTextBox(text);
       expect(textBox.x).toBeGreaterThanOrEqual(triggerBox!.x - 1);
       expect(textBox.y).toBeGreaterThanOrEqual(triggerBox!.y - 1);
@@ -351,7 +358,10 @@ test('opened Player Account owns the lobby stage without ghosting the deployment
   const masthead = page.locator('.lobby-deployment__masthead');
   const brief = page.locator('.lobby-deployment__mission-brief');
   const preview = page.locator('.lobby-preview');
-  const before = await Promise.all([masthead.boundingBox(), brief.boundingBox(), preview.boundingBox()]);
+  const stageLandmarks = (await isCompact(page))
+    ? [masthead, preview]
+    : [masthead, brief, preview];
+  const before = await Promise.all(stageLandmarks.map((landmark) => landmark.boundingBox()));
   for (const box of before) expect(box).not.toBeNull();
 
   await page.getByRole('button', { name: 'Account' }).click();
@@ -394,7 +404,7 @@ test('opened Player Account owns the lobby stage without ghosting the deployment
     expect(accountWidth.cssWidth).toBeGreaterThanOrEqual(650);
     expect(accountWidth.cssWidth).toBeLessThanOrEqual(720);
   }
-  const after = await Promise.all([masthead.boundingBox(), brief.boundingBox(), preview.boundingBox()]);
+  const after = await Promise.all(stageLandmarks.map((landmark) => landmark.boundingBox()));
   for (let index = 0; index < before.length; index += 1) {
     expect(after[index]!.x).toBeCloseTo(before[index]!.x, 1);
     expect(after[index]!.y).toBeCloseTo(before[index]!.y, 1);

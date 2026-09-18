@@ -43,11 +43,11 @@ async function visibleLayoutBox(locator: Locator): Promise<LayoutBox> {
   };
 }
 
-function expectContained(inner: LayoutBox, outer: LayoutBox): void {
-  expect(inner.left).toBeGreaterThanOrEqual(outer.left - LAYOUT_TOLERANCE);
-  expect(inner.top).toBeGreaterThanOrEqual(outer.top - LAYOUT_TOLERANCE);
-  expect(inner.right).toBeLessThanOrEqual(outer.right + LAYOUT_TOLERANCE);
-  expect(inner.bottom).toBeLessThanOrEqual(outer.bottom + LAYOUT_TOLERANCE);
+function expectContained(inner: LayoutBox, outer: LayoutBox, label = 'element'): void {
+  expect(inner.left, `${label} must stay inside the left edge`).toBeGreaterThanOrEqual(outer.left - LAYOUT_TOLERANCE);
+  expect(inner.top, `${label} must stay inside the top edge`).toBeGreaterThanOrEqual(outer.top - LAYOUT_TOLERANCE);
+  expect(inner.right, `${label} must stay inside the right edge`).toBeLessThanOrEqual(outer.right + LAYOUT_TOLERANCE);
+  expect(inner.bottom, `${label} must stay inside the bottom edge`).toBeLessThanOrEqual(outer.bottom + LAYOUT_TOLERANCE);
 }
 
 function expectSeparated(first: LayoutBox, second: LayoutBox): void {
@@ -112,7 +112,7 @@ async function expectGarageLayout(page: Page): Promise<void> {
   ];
   for (const selector of spotlightSelectors) {
     const box = await visibleLayoutBox(page.locator(selector));
-    expectContained(box, bay);
+    expectContained(box, bay, selector);
   }
 
   const convoy = await visibleLayoutBox(page.locator('.lobby-preview__convoy'));
