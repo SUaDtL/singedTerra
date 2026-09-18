@@ -101,7 +101,16 @@ async function garageEntryControl(
 
 async function expectGarageLayout(page: Page): Promise<void> {
   const bay = await visibleLayoutBox(page.locator('.lobby-preview'));
-  await expectInViewport(page, bay);
+  expect(bay.width).toBeGreaterThanOrEqual(180);
+  expect(bay.height).toBeGreaterThanOrEqual(160);
+  const scrollOwner = await page.locator('.lobby-hotseat-scroll').evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    overflowY: getComputedStyle(element).overflowY,
+  }));
+  expect(scrollOwner.clientHeight).toBeGreaterThan(0);
+  expect(scrollOwner.scrollHeight).toBeGreaterThanOrEqual(scrollOwner.clientHeight);
+  expect(scrollOwner.overflowY).toBe('auto');
 
   const spotlightSelectors = [
     '.lobby-preview__spotlight',
@@ -115,9 +124,11 @@ async function expectGarageLayout(page: Page): Promise<void> {
     expectContained(box, bay, selector);
   }
 
-  const convoy = await visibleLayoutBox(page.locator('.lobby-preview__convoy'));
+  // Local preparation now dedicates this surface to the selected vehicle. The
+  // old convoy remains in the shared preview DOM for Online, but must not
+  // compete with the inspection hierarchy here.
+  await expect(page.locator('.lobby-preview__convoy')).toBeHidden();
   await expect(page.locator('.lobby-controls')).toBeHidden();
-  expectContained(convoy, bay);
 
   const partBoxes: LayoutBox[] = [];
   const parts = page.locator('.lobby-preview__part');
@@ -125,7 +136,6 @@ async function expectGarageLayout(page: Page): Promise<void> {
   for (let index = 0; index < await parts.count(); index++) {
     const box = await visibleLayoutBox(parts.nth(index));
     expectContained(box, bay);
-    expectSeparated(box, convoy);
     for (const earlier of partBoxes) expectSeparated(box, earlier);
     partBoxes.push(box);
   }
@@ -308,11 +318,24 @@ test.describe('Garage spotlight', () => {
       'thumbnail|#4d8ce8|ranger|ranger|ranger|ranger',
     ]);
     await expect(page.locator(
+      '.lobby-garage[data-owner="player-1"] .lobby-garage__build-summary',
+    )).toHaveText('Foundry loadout');
+    await expect(page.locator(
+      '.lobby-garage[data-owner="player-2"] .lobby-garage__build-summary',
+    )).toHaveText('Ranger loadout');
+    await openPlayerGarage(page, 1);
+    await expect(page.locator(
       '.lobby-garage[data-owner="player-1"] [data-preset="foundry"]',
     )).toHaveAttribute('aria-pressed', 'true');
+    await closePlayerGarage(page);
+    await openPlayerGarage(page, 2);
     await expect(page.locator(
       '.lobby-garage[data-owner="player-2"] [data-preset="ranger"]',
     )).toHaveAttribute('aria-pressed', 'true');
+    await closePlayerGarage(page);
+    await page.getByRole('button', {
+      name: 'Inspect Player 1 vehicle, Foundry loadout',
+    }).click();
     await expectGarageLayout(page);
 
     const canvasSizes = await page.evaluate(() => {
@@ -355,12 +378,13 @@ test.describe('Garage spotlight', () => {
     ]);
     const rangerHash = await expectSettledSpotlightHash(page, foundryHash);
 
-    const turret = page.getByRole('button', {
-      name: /Change Player 2 turret/,
-    });
+    const turret = page.locator(
+      '.lobby-garage[data-owner="player-2"] [data-slot="turret"][data-variant="bulwark"]',
+    );
     await expectControlInViewport(page, turret);
     await turret.click();
     await expect(turret).toBeFocused();
+    await expect(turret).toHaveAttribute('aria-pressed', 'true');
     expect(await spotlightParts(page)).toEqual([
       ['Mobility', 'Spider Legs'],
       ['Hull', 'Scout Hull'],

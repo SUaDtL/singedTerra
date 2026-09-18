@@ -1,162 +1,64 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-18T17:31:56.878Z",
+  "generatedAt": "2026-09-18T18:15:35.760Z",
   "purpose": "PR #515 Local Battle and shared Garage owner visual acceptance",
   "provenance": {
-    "headCommit": "6bfb57811240f3f886b697794652983dd755b06c",
+    "headCommit": "2617788a74490d899a7bee50d31c02e7574d1d4a",
     "mergeBase": "e332f3c2d1ddb9c0b549b7e34c5906872308becb",
     "branch": "codex/command-center-launcher",
     "sourceDirty": true,
     "sourceStatus": [
-      "M .codearbiter/plans/command-center-launcher-overhaul.md",
-      " M .codearbiter/specs/command-center-launcher-overhaul.md",
-      " M .codearbiter/sprint-log.md",
-      " M client/src/renderer/TankLoadoutPreview.test.ts",
-      " M client/src/renderer/TankLoadoutPreview.ts",
+      "M .codearbiter/sprint-log.md",
       " M client/src/ui/Lobby.css",
-      " M client/src/ui/Lobby.garage.test.ts",
-      " M client/src/ui/Lobby.network.test.ts",
-      " M client/src/ui/Lobby.sessionStaleActions.test.ts",
-      " M client/src/ui/Lobby.ts",
-      " M client/src/ui/LobbyConsole.css",
-      " M client/src/ui/LobbyGarageView.test.ts",
-      " M client/src/ui/LobbyGarageView.ts",
-      " M client/src/ui/LobbyHotSeatView.test.ts",
-      " M client/src/ui/LobbyHotSeatView.ts",
       " M client/src/ui/commandCenter/CommandCenter.css",
-      " M client/src/ui/commandCenter/CommandCenterStyle.test.ts",
-      " M client/src/ui/commandCenter/MultiplayerCommandView.test.ts",
-      " M docs/compatibility/st1-source-manifest.json",
-      " M e2e/pregame-command-center.spec.ts"
+      " M e2e/garage-spotlight.spec.ts",
+      " M e2e/lobby-layout.spec.ts",
+      " M e2e/tank-garage.spec.ts"
     ],
-    "sourceStatusSha256": "074faf99ac254328b2047368bcc5d166ed9901441f5ddb4e81fc223e4f48630f",
+    "sourceStatusSha256": "537cabc77a494ca4f8c65c684f11d1c640a1b8508995c427208245384ecc8ba4",
     "sourceFiles": [
-      {
-        "path": ".codearbiter/plans/command-center-launcher-overhaul.md",
-        "state": "present",
-        "sha256": "553fed40b8cf3faef43fed50fb1daac74b69a6e4a680e9701aa8f2909e864f4c",
-        "gitStatus": "M"
-      },
-      {
-        "path": ".codearbiter/specs/command-center-launcher-overhaul.md",
-        "state": "present",
-        "sha256": "9e66210e22b2c8e02ef51c61a244dbedba03775ef728ce6888242eae765655e6",
-        "gitStatus": "M"
-      },
       {
         "path": ".codearbiter/sprint-log.md",
         "state": "present",
-        "sha256": "7fe5dcfde3c5107dbd9a453dcc6fcb19456bbf8209210a659e334d881f036dde",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/renderer/TankLoadoutPreview.test.ts",
-        "state": "present",
-        "sha256": "3a5b144e4c06fecd59fa69fd63e7403360b75f8dc32be449f046e8ac13de0007",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/renderer/TankLoadoutPreview.ts",
-        "state": "present",
-        "sha256": "0ac2664b846122973172f099b46ddcac4b6c928dbfba76476fa2ad45f51ef37a",
+        "sha256": "8b8e7158ea98546a19584fed7cb56474dbbedf82eb6af380dee35aaec197de1b",
         "gitStatus": "M"
       },
       {
         "path": "client/src/ui/Lobby.css",
         "state": "present",
-        "sha256": "6cd62818c53e48859abfe06064890887744b8d4c869e4059d38b470dc6c77d57",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/Lobby.garage.test.ts",
-        "state": "present",
-        "sha256": "d45b83942c5f0df48663a2db08e1c09e6506a5f25539bd09b9075999fa76982f",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/Lobby.network.test.ts",
-        "state": "present",
-        "sha256": "3bbb8aa58dbe7e951e352412fbc3e5908be722bb43a81568a4a5273b27a3ed74",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/Lobby.sessionStaleActions.test.ts",
-        "state": "present",
-        "sha256": "becd2f7dd68ba13f64d24ca5a52f93b547102a6ccc9882797950082c94daa0e4",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/Lobby.ts",
-        "state": "present",
-        "sha256": "5ccb79bb2842a70a873e57103461cf5a8f1954c9caaed31c41187a5018e45bc8",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/LobbyConsole.css",
-        "state": "present",
-        "sha256": "6e8861be8aa1753fe8486a8a9dd4d7dfc467ccd87ab6d804a7dcd2e8bec8e4b0",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/LobbyGarageView.test.ts",
-        "state": "present",
-        "sha256": "7b2f641272a2642bdbdf2e0fac7f634b529dc8614d485e9647682fc32c5678f6",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/LobbyGarageView.ts",
-        "state": "present",
-        "sha256": "92201bad170d83aff6d10e6572853c9a6c707c8eb9ef8117c4237d8da20729e2",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/LobbyHotSeatView.test.ts",
-        "state": "present",
-        "sha256": "3834c2f656e0c5483a1b5edddc1996457ebac84e32a2b27aa9f8d30aa9ec5c8b",
-        "gitStatus": "M"
-      },
-      {
-        "path": "client/src/ui/LobbyHotSeatView.ts",
-        "state": "present",
-        "sha256": "1f005335a4dbf0920c32581d0b42e25a4b0bc7cbd066ce354d7b62f7587988cf",
+        "sha256": "8b2f4f23ffa82fa48cc815890923d2cc875b94d7ca754b17d4e978472dd10686",
         "gitStatus": "M"
       },
       {
         "path": "client/src/ui/commandCenter/CommandCenter.css",
         "state": "present",
-        "sha256": "7606bf7dcf814511a6dad050808f23bdb9f82561cc23fe274319d9cfd2191613",
+        "sha256": "4456f367737223ff252f1cceaf966abade628740bf508f2c6037966172cc954b",
         "gitStatus": "M"
       },
       {
-        "path": "client/src/ui/commandCenter/CommandCenterStyle.test.ts",
+        "path": "e2e/garage-spotlight.spec.ts",
         "state": "present",
-        "sha256": "6f98a7819d4c4a41e21c96696852ad800befe073a8a1e5c9d9f836990fe881ea",
+        "sha256": "e0166ff415f8a6082339d2e292420e33cc2d105bcca8ed5789487ad2dec7cbbc",
         "gitStatus": "M"
       },
       {
-        "path": "client/src/ui/commandCenter/MultiplayerCommandView.test.ts",
+        "path": "e2e/lobby-layout.spec.ts",
         "state": "present",
-        "sha256": "4209611839ba5f622b185a90a1192f647e21071d6d1a1dff6f8ef6a9d239cc04",
+        "sha256": "b4624e0a440b23d0087e5140f1e73f398e21c3a5b942b3458e3f1a3da940e4e9",
         "gitStatus": "M"
       },
       {
-        "path": "docs/compatibility/st1-source-manifest.json",
+        "path": "e2e/tank-garage.spec.ts",
         "state": "present",
-        "sha256": "55701dbca7e9788ddf2b18df26964d60d99a988def4ed8ad4c339ca423388f01",
-        "gitStatus": "M"
-      },
-      {
-        "path": "e2e/pregame-command-center.spec.ts",
-        "state": "present",
-        "sha256": "7255cc4d7afa5f7ff8823f56130036c28ced412268cb07ab279813a44c4a91ec",
+        "sha256": "125e26e87997d574bbcaeefef3ab4fc5b4b9cb8835657f005c3f076275593e67",
         "gitStatus": "M"
       }
     ],
-    "sourceContentSha256": "f8663b3bf36d18a19ac9461268c0635e3b39dbea11d5af9bb7380cdbb59b9777",
-    "servedResourceCount": 237,
-    "servedRuntimeSha256": "ee2d9583ece2beaf24aaa928532b781e01d4083b84084fa5ea03d9f04546177e",
-    "baseUrl": "http://localhost:4173/",
-    "testCommand": "E2E_LIVE_URL=http://localhost:4173/ COMMAND_CENTER_WORKSPACE_EVIDENCE_DIR=.codearbiter/evidence/command-center-workspace-finish npx playwright test e2e/pregame-command-center.spec.ts --grep \"retains native Local and Garage captures\" --project=desktop-fine"
+    "sourceContentSha256": "08c4a3ee948f7159d91293a1e9f7a2c181d3b6a5a7a35db25490315ec549b896",
+    "servedResourceCount": 16,
+    "servedRuntimeSha256": "31562f54381a194e34985739faedd24bb3e7d7467a51e85f8f73ba8ce62de92b",
+    "baseUrl": "http://localhost:4174",
+    "testCommand": "E2E_LIVE_URL=http://localhost:4174 npx playwright test e2e/pregame-command-center.spec.ts --project=desktop-fine --grep \"retains native Local and Garage captures\""
   },
   "coverage": {
     "states": [
@@ -219,7 +121,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "9dd7141437e939d9787355b2a19904ecbfd697e34dca138b236d0fd52408dbe0"
+      "sha256": "5f38e66112b9eb0daf1e177821e29e1a681f08a2f65840500fc195a7e6734f63"
     },
     {
       "file": "modified-player-2-1920x1080.png",
@@ -235,7 +137,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "25dac819503b264adc0a0fbae62b9431f7b2a4fdf4d0a042afeee9e702090563"
+      "sha256": "14fed1eb3364000eb71c92d3daf162c6d266ac26322c3f87a273f04050cf1e11"
     },
     {
       "file": "four-seat-1920x1080.png",
@@ -251,7 +153,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "e4ad51a92cfeeb7fcd11e9180d11809cd2a5f1aa7bafe6cc38712deb7dbc4365"
+      "sha256": "5dec2e43733ecbce738fb0b6a9c02260ef8437ec4b44c777cc552fbb74617ef5"
     },
     {
       "file": "open-garage-1920x1080.png",
@@ -267,7 +169,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "44375dbfe926777c35ae37ec3c6f4c7f3f8282ffe4a00e3f8ffdef13066af578"
+      "sha256": "d7c621e07d6a912ad234ce44b7024ca532e38723e031604857ddd66a1447e52e"
     },
     {
       "file": "default-two-seat-1440x900.png",
@@ -427,7 +329,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "0f615876fe0727a4893c2242701a21e8f82b36577b44df01b784699dd4160bdc"
+      "sha256": "8edc71c300ec7d599a5c35aac9fdf19dd160edbcee3f28873f87dcb18f2dae1a"
     },
     {
       "file": "modified-player-2-3440x1440.png",
@@ -443,7 +345,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "0660b87f87c8e29352a9f8dfaeb62e5c13187fd3f68bbef12ff42c5875966611"
+      "sha256": "516e7d370aa2a5ba7a288da5bee5e28cc52c9b5fdf3b0195defb757cfd7a09d7"
     },
     {
       "file": "four-seat-3440x1440.png",
@@ -459,7 +361,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "580f7215ee523daeb7f905d4f47796001e8b3dea00dd968bf25ce53c3d3b9b88"
+      "sha256": "ab9dd34f5071789d7827f65ef4b090acc8a047cce13b3364cd1b2ffcd4e0352b"
     },
     {
       "file": "open-garage-3440x1440.png",
@@ -475,7 +377,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "79c10276a7517e51577cc22f54d4f3e06d5400cc0bd838efa7bb98571af73a3a"
+      "sha256": "e1a3c5effebbe4ef9835a855aa70b95e725c593adf8958735046e1933691d1ef"
     },
     {
       "file": "default-two-seat-844x390.png",
@@ -539,7 +441,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "60073166cc8d0b8ec8cec9a19793160e0b1f462824b2a2679aa960268f7fd42f"
+      "sha256": "d09b9acc038b2c7dcd18833124d05b8729fff387aa9eb0510677e95bead2e5b5"
     },
     {
       "file": "default-two-seat-390x844.png",
@@ -683,7 +585,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "61c3648e3fc38d69f9d7eac3f934372b49728db227332a7dcb8a541f83439b11"
+      "sha256": "7f3753b86937248c789d06b03a59a4f988049c19fd94dcdfb4c32d7288ca6885"
     },
     {
       "file": "special-reduced-motion-forced-colours-1024x768.png",
@@ -715,7 +617,7 @@
       "project": "desktop-fine",
       "browser": "chromium",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
-      "sha256": "2276bb40d0dcefe325bec8a8011af847c3590485d9d6d864115ded04a5f80d6e"
+      "sha256": "45e76bde698e6955903c1572c80ce1b05d2a3577513f202c19030e3acbc660ba"
     }
   ]
 }

@@ -452,7 +452,7 @@ test.describe('Lobby layout guardrails', () => {
     await assertMissionPreparation(
       page,
       '#lobby .lobby-hotseat',
-      ['Crew', 'Battlefield'],
+      ['Crew', 'Effective rules'],
       '#lobby .lobby-start',
     );
     await assertLobbyControlReachable(page, '#lobby .lobby-start');

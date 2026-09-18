@@ -643,6 +643,17 @@
   display: none;
 }
 
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview__part span {
+  letter-spacing: 0;
+}
+
+#lobby .multiplayer-command__local-workspace
+  .lobby-preview__part strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 #lobby .multiplayer-command__verified-workspace,
 #lobby .multiplayer-command__verified-workspace > .lobby-hotseat,
 #lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
@@ -2711,6 +2722,16 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+}
+
+/* Coarse-pointer emulation can retain the compact shell at a wide CSS
+   viewport. Keep the selected-kit labels fitted in that state as well as in
+   the narrow container branch above. */
+#lobby.is-compact .multiplayer-command__local-workspace
+  .lobby-preview__part span {
+  font-size: 10px;
+  letter-spacing: 0;
 }
 
 @container local-battle-setup (max-width: 460px) {
@@ -3623,8 +3644,20 @@
   }
 
   #lobby .lobby-garage__inspection {
+    box-sizing: border-box;
+    height: 100%;
+    max-height: 100%;
+    grid-template-columns: minmax(96px, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
     gap: 6px;
     padding: 8px;
+    overflow: hidden;
+  }
+
+  #lobby .lobby-garage__tank-preview {
+    width: 100%;
+    max-height: 100%;
+    object-fit: contain;
   }
 
   #lobby .lobby-garage__inspection-copy {

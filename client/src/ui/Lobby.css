@@ -1950,7 +1950,7 @@
         .lobby-hotseat-battlefield
         select,
       #lobby.is-compact .lobby-hotseat-body .lobby-advanced-trigger {
-        min-height: max(36px, calc(24px / var(--battle-ui-scale, 1)));
+        min-height: max(44px, calc(24px / var(--battle-ui-scale, 1)));
       }
       #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section[data-preparation-section='crew-manifest']

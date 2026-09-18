@@ -1,13 +1,13 @@
 # Command Center workspace finish evidence
 
-- HEAD: `6bfb57811240f3f886b697794652983dd755b06c`
+- HEAD: `2617788a74490d899a7bee50d31c02e7574d1d4a`
 - Merge base with `origin/main`: `e332f3c2d1ddb9c0b549b7e34c5906872308becb`
 - Branch: `codex/command-center-launcher`
 - Source dirty at capture: `true`
-- Source-status SHA-256: `074faf99ac254328b2047368bcc5d166ed9901441f5ddb4e81fc223e4f48630f`
-- Source-content SHA-256: `f8663b3bf36d18a19ac9461268c0635e3b39dbea11d5af9bb7380cdbb59b9777`
-- Served runtime SHA-256 (237 same-origin resources): `ee2d9583ece2beaf24aaa928532b781e01d4083b84084fa5ea03d9f04546177e`
-- Browser command: `E2E_LIVE_URL=http://localhost:4173/ COMMAND_CENTER_WORKSPACE_EVIDENCE_DIR=.codearbiter/evidence/command-center-workspace-finish npx playwright test e2e/pregame-command-center.spec.ts --grep "retains native Local and Garage captures" --project=desktop-fine`
+- Source-status SHA-256: `537cabc77a494ca4f8c65c684f11d1c640a1b8508995c427208245384ecc8ba4`
+- Source-content SHA-256: `08c4a3ee948f7159d91293a1e9f7a2c181d3b6a5a7a35db25490315ec549b896`
+- Served runtime SHA-256 (16 same-origin resources): `31562f54381a194e34985739faedd24bb3e7d7467a51e85f8f73ba8ce62de92b`
+- Browser command: `E2E_LIVE_URL=http://localhost:4174 npx playwright test e2e/pregame-command-center.spec.ts --project=desktop-fine --grep "retains native Local and Garage captures"`
 
 | State | Viewport | DPR | Zoom/reflow | Capture |
 |---|---:|---:|---|---|
