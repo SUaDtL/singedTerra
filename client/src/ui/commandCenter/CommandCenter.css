@@ -2602,6 +2602,19 @@
     overflow-y: auto;
   }
 
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__header {
+    gap: 3px;
+    padding: 7px 10px 8px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-local-preparation__content {
+    margin-top: 7px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preview__spotlight {
+    top: 32px;
+  }
+
   #lobby .multiplayer-command__online-workspace {
     min-height: 0;
     height: 100%;

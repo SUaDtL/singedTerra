@@ -122,6 +122,10 @@ async function expectGarageLayout(page: Page): Promise<void> {
   for (const selector of spotlightSelectors) {
     const box = await visibleLayoutBox(page.locator(selector));
     expectContained(box, bay, selector);
+    if (selector === '.lobby-preview__spotlight') {
+      expect(bay.bottom - box.bottom, 'spotlight bottom safety margin')
+        .toBeGreaterThanOrEqual(4);
+    }
   }
 
   // Local preparation now dedicates this surface to the selected vehicle. The

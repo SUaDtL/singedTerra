@@ -1,12 +1,12 @@
 # Command Center workspace finish evidence
 
-- HEAD: `02d3f70e28408d2bb66545a70e90b6c5b4ce0579`
+- HEAD: `aa4106a1cfd89bb32836de067ad1ac433b3afb2e`
 - Merge base with `origin/main`: `e332f3c2d1ddb9c0b549b7e34c5906872308becb`
 - Branch: `codex/command-center-launcher`
 - Source dirty at capture: `true`
-- Source-status SHA-256: `124fd83385c44485c19af188fc93219e9ed7232d4c450b82a0f5c88cc28bf56b`
-- Source-content SHA-256: `c2c9d41bc86a072162394e566c47a55c063e678cf5f0c28a322109d9a734cd4c`
-- Served runtime SHA-256 (16 same-origin resources): `a3b246ae9e91f832a78d9ca851904d7acc802187c814bfed84f0959fc15f6bd1`
+- Source-status SHA-256: `7282674a28f53f076067fd00214cf3ce08d100a314cde322b93e83991be7f858`
+- Source-content SHA-256: `8f0109482594e2bf01f2e5e45007b526e435bc647433e56e6b123ac29a9c28f8`
+- Served runtime SHA-256 (16 same-origin resources): `b4871a2afad344d81c343f65954d3015cd3a00cfbb6c749d807893e4634207dc`
 - Browser command: `E2E_LIVE_URL=http://localhost:4174 COMMAND_CENTER_WORKSPACE_EVIDENCE_DIR=.codearbiter/evidence/command-center-workspace-finish npx playwright test e2e/pregame-command-center.spec.ts --project=desktop-fine --grep "retains native Local"`
 
 | State | Viewport | DPR | Zoom/reflow | Capture |

@@ -164,7 +164,7 @@ async function assertLocalPreparationGeometry(
   await expect(deploy).toHaveCount(1);
   await expect(deploy).toBeInViewport({ ratio: 1 });
   if (geometry.viewport.width >= 390) {
-    await expect(workspace.locator('[data-crew-seat="player-1"]')).toBeInViewport({ ratio: 0.35 });
+    await expect(workspace.locator('[data-crew-seat="player-1"]')).toBeInViewport({ ratio: 0.36 });
   } else {
     await expect(workspace.locator('.lobby-local-preparation__header')).toBeInViewport({ ratio: 0.75 });
     const firstSeatFold = await workspace.evaluate((root) => {
