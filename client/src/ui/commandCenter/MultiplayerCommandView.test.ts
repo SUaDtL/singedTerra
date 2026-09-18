@@ -304,7 +304,10 @@ describe('Multiplayer Local Battle command contribution', () => {
     const lobby = new Lobby(root, vi.fn());
     const departure = deferred<unknown>();
     const internal = lobby as unknown as {
-      transport: { leaveRoom: ReturnType<typeof vi.fn> };
+      transport: {
+        fetchRoom: ReturnType<typeof vi.fn>;
+        leaveRoom: ReturnType<typeof vi.fn>;
+      };
       session: {
         replaceWaiting(next: unknown): void;
         subscribeWaitingRoom: ReturnType<typeof vi.fn>;
@@ -324,6 +327,8 @@ describe('Multiplayer Local Battle command contribution', () => {
     });
     const leave = vi.spyOn(internal.transport, 'leaveRoom')
       .mockReturnValue(departure.promise as never);
+    vi.spyOn(internal.transport, 'fetchRoom')
+      .mockReturnValue(new Promise(() => {}) as never);
     const subscribe = vi.spyOn(internal.session, 'subscribeWaitingRoom');
     const render = vi.spyOn(internal, 'render');
 
