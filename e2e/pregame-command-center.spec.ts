@@ -476,6 +476,8 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   const surface = await page.evaluate(() => {
     const pregame = document.getElementById('lobby')!;
     const battle = document.getElementById('app')!;
+    const deployment = document.querySelector<HTMLElement>('.lobby-deployment')!;
+    const commandCenter = document.querySelector<HTMLElement>('.command-center')!;
     const library = document.querySelector<HTMLElement>('.command-center__library-items')!;
     const workspace = document.querySelector<HTMLElement>('.command-center__workspace-host')!;
     return {
@@ -488,6 +490,8 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
       libraryOverflowY: getComputedStyle(library).overflowY,
       workspaceOverflowY: getComputedStyle(workspace).overflowY,
       documentOverflowX: document.documentElement.scrollWidth - innerWidth,
+      deploymentWidthRatio: deployment.getBoundingClientRect().width / innerWidth,
+      commandFontSize: Number.parseFloat(getComputedStyle(commandCenter).fontSize),
     };
   });
   expect(surface).toMatchObject({
@@ -502,6 +506,14 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   });
   expect(surface.documentOverflowX, `${geometry.label} document horizontal overflow`)
     .toBeLessThanOrEqual(1);
+  if (!geometry.narrow) {
+    expect(surface.deploymentWidthRatio, `${geometry.label} command deck should use the display`)
+      .toBeGreaterThanOrEqual(0.88);
+  }
+  if (geometry.viewport.width >= 2200) {
+    expect(surface.commandFontSize, `${geometry.label} command type should scale with the deck`)
+      .toBeGreaterThanOrEqual(16);
+  }
 
   const disclosures = page.locator('.campaign-command__disclosure');
   await expect(disclosures).toHaveCount(1);
@@ -1042,6 +1054,76 @@ test.describe('T25 Local Battle responsive geometry', () => {
     await assertLocalPreparationGeometry(page, LOCAL_GEOMETRIES.minimum, {
       validationFailure: true,
     });
+  });
+});
+
+test.describe('T33 large-display workspace composition', () => {
+  test('Local uses the large command field as one continuous preparation composition', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'large-display composition owner');
+    for (const viewport of [
+      { width: 2272, height: 1170 },
+      { width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await gotoLobby(page);
+      await openLocalPreparation(page);
+      const geometry = await page.locator(
+        '[data-multiplayer-command-view="local-battle"]',
+      ).evaluate((root) => {
+        const bounds = root.getBoundingClientRect();
+        const preparation = root.querySelector<HTMLElement>(
+          '.lobby-local-preparation__content',
+        )!.getBoundingClientRect();
+        const crew = root.querySelector<HTMLElement>(
+          '.lobby-local-preparation__crew',
+        )!.getBoundingClientRect();
+        const rules = root.querySelector<HTMLElement>(
+          '.lobby-local-preparation__rules',
+        )!.getBoundingClientRect();
+        const nodes = Array.from(root.querySelectorAll<HTMLElement>([
+          '.lobby-local-preparation__header',
+          '.lobby-local-preparation__crew',
+          '.lobby-local-preparation__inspection',
+          '.lobby-local-preparation__rules',
+          '.lobby-hotseat-footer',
+        ].join(','))).filter((node) => {
+          const box = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          return style.display !== 'none' && box.width > 0 && box.height > 0;
+        }).map((node) => {
+          const box = node.getBoundingClientRect();
+          return {
+            top: Math.max(bounds.top, box.top),
+            bottom: Math.min(bounds.bottom, box.bottom),
+          };
+        }).sort((left, right) => left.top - right.top);
+        const intervals: Array<{ top: number; bottom: number }> = [];
+        for (const node of nodes) {
+          const previous = intervals.at(-1);
+          if (previous && node.top <= previous.bottom + 1) previous.bottom = Math.max(previous.bottom, node.bottom);
+          else intervals.push({ ...node });
+        }
+        let largestGap = 0;
+        for (let index = 0; index < intervals.length - 1; index += 1) {
+          largestGap = Math.max(largestGap, intervals[index + 1]!.top - intervals[index]!.bottom);
+        }
+        return {
+          largestGapRatio: largestGap / bounds.height,
+          leftSequenceGapRatio: Math.max(0, rules.top - crew.bottom) / preparation.height,
+          inspectionHeightRatio: root.querySelector<HTMLElement>(
+            '.lobby-local-preparation__inspection',
+          )!.getBoundingClientRect().height / bounds.height,
+        };
+      });
+      expect(geometry.largestGapRatio, `${viewport.width} Local must not leave a dead vertical field`)
+        .toBeLessThanOrEqual(0.18);
+      expect(geometry.leftSequenceGapRatio, `${viewport.width} Local crew and rules must read as one sequence`)
+        .toBeLessThanOrEqual(0.08);
+      expect(geometry.inspectionHeightRatio, `${viewport.width} selected vehicle must remain a major region`)
+        .toBeGreaterThanOrEqual(0.42);
+    }
   });
 });
 

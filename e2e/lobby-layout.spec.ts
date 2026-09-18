@@ -644,6 +644,61 @@ test.describe('Lobby layout guardrails', () => {
     await assertLobbyControlReachable(page, '#lobby [data-online-route="browse"]');
   });
 
+  test('T33 Online Create forms one continuous large-display decision sequence', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'large-display composition owner');
+    for (const viewport of [
+      { width: 2272, height: 1170 },
+      { width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await gotoLobby(page);
+      await choosePlayOnline(page);
+      const geometry = await page.locator(
+        '[data-multiplayer-command-view="online"] .multiplayer-command__online-workspace',
+      ).evaluate((root) => {
+        const bounds = root.getBoundingClientRect();
+        const preview = root.querySelector<HTMLElement>(':scope > .lobby-preview')!;
+        const blocks = Array.from(root.querySelectorAll<HTMLElement>([
+          ':scope > .lobby-preview',
+          '.lobby-route-brief__header',
+          '.lobby-route-brief__setup > .lobby-preparation-section',
+          ':scope .lobby-online-actions',
+        ].join(','))).filter((node) => {
+          const box = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          return style.display !== 'none' && box.width > 0 && box.height > 0;
+        }).map((node) => {
+          const box = node.getBoundingClientRect();
+          return {
+            top: Math.max(bounds.top, box.top),
+            bottom: Math.min(bounds.bottom, box.bottom),
+          };
+        }).sort((left, right) => left.top - right.top);
+        const intervals: Array<{ top: number; bottom: number }> = [];
+        for (const block of blocks) {
+          const previous = intervals.at(-1);
+          if (previous && block.top <= previous.bottom + 1) previous.bottom = Math.max(previous.bottom, block.bottom);
+          else intervals.push({ ...block });
+        }
+        let largestGap = 0;
+        for (let index = 0; index < intervals.length - 1; index += 1) {
+          largestGap = Math.max(largestGap, intervals[index + 1]!.top - intervals[index]!.bottom);
+        }
+        return {
+          largestGapRatio: largestGap / bounds.height,
+          previewHeightRatio: preview.getBoundingClientRect().height / bounds.height,
+        };
+      });
+      expect(geometry.largestGapRatio, `${viewport.width} Online content islands`)
+        .toBeLessThanOrEqual(0.18);
+      expect(geometry.previewHeightRatio, `${viewport.width} vehicle bay should anchor its column`)
+        .toBeGreaterThanOrEqual(0.58);
+      await assertOwnedOnlineWorkspaceGeometry(page);
+    }
+  });
+
   test('Online Create and Join dock their sole action above the fold at review geometries', async ({
     page,
   }, testInfo) => {

@@ -315,6 +315,26 @@ immediate-edit semantics.
     assertions; PR #515 remains draft/open and no merge or deployment occurs.
 33. **AC-33** The owner visually accepts the assembled Local + Garage slice before its treatment is
     propagated to Online room access, Verified Operations, Match settings, or the commander dossier.
+34. **AC-34** At large desktop and ultrawide widths the command deck deliberately uses the available
+    canvas instead of remaining a small fixed composition: the outer deck, category rail, item library,
+    typography, spacing, and controls scale within bounded readable measures while preserving the
+    accepted linked-header and narrow-screen behavior.
+35. **AC-35** Local Battle distributes crew, selected-vehicle inspection, effective rules, validation,
+    and deployment across one visibly occupied preparation workspace. The primary content may scroll,
+    but it must not collapse into a shallow top cluster above an unexplained empty field or strand the
+    Deploy action at the opposite edge of the screen.
+36. **AC-36** Verified Operations presents battlefield context and authenticated orders as peer regions
+    in one preparation composition. Battlefield art is bounded context rather than full-screen wallpaper,
+    and the tabs, dossier, constraints, and one launch action remain readable and materially sized at
+    standard and ultrawide geometry.
+37. **AC-37** Online presents vehicle identity, commander setup, operation profile, battlefield protocol,
+    alternate entry routes, and one primary action as a compact decision sequence. It must not place
+    small form islands at the top, middle, and bottom of a mostly empty workspace.
+38. **AC-38** Real-browser evidence covers Local, Verified, and Online at 1440×900, approximately
+    2272×1170, and 3440×1440 plus the existing compact/portrait matrix. Geometry assertions guard
+    outer-deck utilization, bounded content gaps, readable control scale, primary-action proximity, no
+    horizontal overflow, and one deliberate scroll owner; direct visual review remains the acceptance
+    authority rather than containment tests alone.
 
 ### Open questions
 
@@ -326,6 +346,19 @@ responsive evidence, visual stop, and all excluded product/transport boundaries.
 Even if every structural, interaction, and containment test passed, the revision would still be
 broken if it looked like enlarged legacy forms or another layer of brass boxes. `AC-33` therefore
 keeps direct owner judgment of the full-size assembled screen as a hard product gate.
+
+### G02 bounded correction brief
+
+The maintainer rejected the first Local/Garage presentation after inspecting it on a 3433×1354
+display, then supplied Verified Operations and Online captures showing the same systemic defect. This
+is not authorization to restyle Match settings or the commander dossier. It is a bounded correction to
+the shared command-deck proportions and the three currently demonstrated Multiplayer workspaces.
+
+The revision fails even when every control is contained if the command deck remains a fixed-size island,
+if fixed-small typography makes the product recede on a large display, if a useful workspace is mostly
+unexplained dark area, or if battlefield art becomes wallpaper behind a small actionable card. The fix
+must establish intentional large-display composition while preserving existing state, lifecycle,
+network, save, input, and compact-screen ownership.
 
 ### Recorded-intent ruling
 

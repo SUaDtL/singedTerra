@@ -403,7 +403,10 @@ export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions):
   inspection.className = 'lobby-local-preparation__inspection';
   inspection.setAttribute('aria-label', 'Selected vehicle inspection');
   inspection.append(options.vehicleInspection);
-  setup.append(crew, inspection, rules);
+  const briefing = document.createElement('div');
+  briefing.className = 'lobby-local-preparation__briefing';
+  briefing.append(crew, rules);
+  setup.append(briefing, inspection);
 
   const error = document.createElement('div');
   error.className = 'lobby-error';

@@ -325,6 +325,42 @@ test.describe('verified deployment production-browser journey', () => {
     await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat-focused.png') });
   });
 
+  test('T33 Verified uses peer battlefield and orders regions on large displays', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'large-display composition owner');
+    for (const viewport of [
+      { width: 2272, height: 1170 },
+      { width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await openVerifiedWorkspace(page);
+      const geometry = await verifiedWorkspace(page).evaluate((root) => {
+        const bounds = root.getBoundingClientRect();
+        const art = root.querySelector<HTMLElement>('[data-battlefield-projection]')!;
+        const orders = root.querySelector<HTMLElement>('.multiplayer-command__verified-workspace')!;
+        const artBox = art.getBoundingClientRect();
+        const ordersBox = orders.getBoundingClientRect();
+        const overlapWidth = Math.max(0, Math.min(artBox.right, ordersBox.right) - Math.max(artBox.left, ordersBox.left));
+        const overlapHeight = Math.max(0, Math.min(artBox.bottom, ordersBox.bottom) - Math.max(artBox.top, ordersBox.top));
+        return {
+          artWidthRatio: artBox.width / bounds.width,
+          ordersWidthRatio: ordersBox.width / bounds.width,
+          ordersHeightRatio: ordersBox.height / bounds.height,
+          overlapRatio: (overlapWidth * overlapHeight) / (ordersBox.width * ordersBox.height),
+        };
+      });
+      expect(geometry.artWidthRatio, `${viewport.width} battlefield context must stay bounded`)
+        .toBeLessThanOrEqual(0.56);
+      expect(geometry.ordersWidthRatio, `${viewport.width} orders need peer horizontal weight`)
+        .toBeGreaterThanOrEqual(0.4);
+      expect(geometry.ordersHeightRatio, `${viewport.width} orders need peer vertical weight`)
+        .toBeGreaterThanOrEqual(0.78);
+      expect(geometry.overlapRatio, `${viewport.width} orders must not float over wallpaper`)
+        .toBeLessThanOrEqual(0.05);
+    }
+  });
+
   test('scrolls authenticated Hot Seat customization and starts the edited local crew', async ({ page }, testInfo) => {
     await openLocalWorkspace(page);
     await page.getByLabel('Players', { exact: true }).selectOption('4');
