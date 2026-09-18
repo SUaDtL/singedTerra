@@ -691,6 +691,11 @@
   min-height: 56px;
 }
 
+#lobby .multiplayer-command__verified-workspace .lobby-verified-challenge__launch {
+  /* Keep fractional Linux layout pixels clear of the short-window viewport edge. */
+  scroll-margin-block: 2px;
+}
+
 #lobby .multiplayer-command__local-workspace
   .lobby-local-preparation__content {
   display: grid;
@@ -1054,14 +1059,14 @@
   }
 
   #lobby .multiplayer-command__local-workspace .lobby-local-preparation__content {
-    min-height: clamp(420px, 50vh, 720px);
-    grid-template-rows: minmax(420px, 1fr);
+    min-height: clamp(380px, 44vh, 720px);
+    grid-template-rows: minmax(380px, 1fr);
     align-content: safe center;
   }
 
   #lobby .multiplayer-command__local-workspace
     .lobby-local-preparation__inspection > .lobby-preview--inspection {
-    min-height: clamp(420px, 50vh, 720px);
+    min-height: clamp(380px, 44vh, 720px);
   }
 
   #lobby .multiplayer-command__local-workspace
@@ -1078,6 +1083,15 @@
   #lobby .multiplayer-command__local-workspace
     .lobby-preview--inspection .lobby-preview__parts {
     width: min(720px, calc(100% - 32px));
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1799px) and (min-height: 621px) {
+  #lobby .multiplayer-command__local-workspace
+    .lobby-local-preparation__inspection {
+    /* Its bordered 100%-height preview resolves two pixels taller than this bay. */
+    height: calc(420px - 1px);
+    align-self: center;
   }
 }
 
