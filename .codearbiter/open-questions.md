@@ -24,4 +24,5 @@ revisiting.
 
 ## Deferred decisions
 
+- **(harvested)** Keep terminal harvest audit headings outside the low-confidence auto-decision grammar  (from sprint:command-center-launcher-overhaul#2)
 - **(harvested)** 2026-09-17 Command Center remembered-selection precedence  (from sprint:command-center-launcher-overhaul#1)

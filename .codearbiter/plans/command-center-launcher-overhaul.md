@@ -84,5 +84,5 @@ T01–T13 form the first independently reviewable vertical slice. `G01` is an in
 
 ## Needs triage
 
-- `[NEEDS-TRIAGE]` T02's design review noted two unchanged OrientationGate fallback strings using em dashes as prose separators. This is outside the surface-lifecycle slice and does not affect behavior.
-- `[NEEDS-TRIAGE]` T12 confirmed `e2e/lobby-return-focus.spec.ts` still targets the removed globally visible Local Battle chooser. The canonical campaign launch, battle return, selection, and focus path is green; broad legacy chooser migration remains with the later Skirmishes/Multiplayer adaptation rather than this campaign-first slice.
+- `[HARVESTED]` T02's two unchanged OrientationGate prose separators are queued as `sprint:command-center-launcher-overhaul#triage-1`; they remain outside this completed product slice.
+- `[RESOLVED]` T12's legacy global-chooser fixture was migrated through the accepted T14-T18 Skirmishes/Multiplayer work and needs no follow-up.
