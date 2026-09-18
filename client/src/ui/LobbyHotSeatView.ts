@@ -314,6 +314,8 @@ function buildVerifiedDeployment(
 
     const confirmation = document.createElement('div');
     confirmation.className = 'lobby-verified-deployment__confirm';
+    confirmation.setAttribute('role', 'alertdialog');
+    confirmation.setAttribute('aria-label', 'Confirm abandon verified deployment');
     confirmation.hidden = !options.abandonIntent;
     const warning = document.createElement('p');
     warning.textContent = 'Abandon this recoverable deployment and its pending verified run?';

@@ -1182,6 +1182,11 @@ export class Lobby {
     this.networkRecoveryRetry = retry;
     if (!this.root.firstElementChild) this.show();
     else this.render();
+    const recovery = this.root.querySelector<HTMLElement>('[data-network-recovery-retry]')
+      ?.closest<HTMLElement>('[role="alert"]');
+    recovery?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    this.root.querySelector<HTMLElement>('[data-network-recovery-retry]')
+      ?.focus({ preventScroll: true });
   }
 
   /**
@@ -2383,8 +2388,9 @@ export class Lobby {
       onConfirmAbandon: () => {
         if (this.verifiedLaunchBusy) return;
         this.verifiedLaunchBusy = true;
+        const abandonment = this.abandonVerifiedDeployment();
         this.render();
-        void this.abandonVerifiedDeployment().then(() => {
+        void abandonment.then(() => {
           this.verifiedLaunchBusy = false;
           this.verifiedAbandonIntent = false;
           this.render();

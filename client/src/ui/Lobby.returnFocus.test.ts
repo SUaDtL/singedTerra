@@ -314,8 +314,9 @@ describe('Lobby return focus', () => {
       .toBe('true')
     expect(root.querySelector('[role="alert"]')?.textContent)
       .toContain('Game recovery timed out.')
-    expect(button(root, 'Retry game recovery').isConnected).toBe(true)
-    expect(document.activeElement).toBe(root.querySelector('[data-command-item="online"]'))
+    const retry = button(root, 'Retry game recovery')
+    expect(retry.isConnected).toBe(true)
+    expect(document.activeElement).toBe(retry)
   })
 
   it('reconstructs the remembered owner when a battle-originated restart fails', () => {

@@ -2758,6 +2758,9 @@
       #lobby.is-compact .lobby-hotseat-body .lobby-row {
         grid-template-columns: minmax(140px, 1fr) minmax(110px, auto);
       }
+      #lobby.is-compact .lobby-hotseat-body .lobby-rows.crowded {
+        grid-template-columns: minmax(0, 1fr);
+      }
       #lobby.is-compact .lobby-hotseat-body .lobby-row .lobby-name {
         grid-column: 1;
         grid-row: 1;
@@ -2793,6 +2796,7 @@
         grid-template-columns: minmax(0, 1fr);
       }
       #lobby.is-compact .lobby-deployment:has(.lobby-hotseat) {
+        height: 100%;
         grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.7fr);
         grid-template-areas:
           'masthead masthead'
@@ -2814,18 +2818,12 @@
         > .lobby-mode-panel {
         width: 100%;
       }
-      #lobby.is-compact .lobby-card:has(.lobby-deployment:has(.lobby-hotseat)) {
-        padding-block: 7px;
+      #lobby.is-compact .lobby-card:has(.lobby-deployment):has(.lobby-hotseat) {
+        padding-block: 4px;
       }
       #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__mission-brief {
-        grid-area: rail;
-        width: auto;
-        box-sizing: border-box;
-        align-self: center;
-        padding: 0 0 2px max(300px, 28%);
-        border-top: 0;
-        pointer-events: none;
+        display: none;
       }
       #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         > .lobby-deployment__back {
@@ -2852,9 +2850,52 @@
         padding-top: 3px;
       }
       #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
+        .lobby-hotseat-tabs {
+        border-block: 0;
+      }
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
+        .lobby-hotseat-tab {
+        height: var(--st-deployment-choice-target, 44px);
+        min-height: var(--st-deployment-choice-target, 44px);
+        box-sizing: border-box;
+      }
+      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
         .lobby-hotseat-footer {
-        margin-top: 2px;
+        height: var(--st-deployment-choice-target, 44px);
+        margin-top: 0;
         padding-block: 0;
+        border-block: 0;
+      }
+      #lobby.is-compact .lobby-hotseat-footer
+        > .lobby-verified-deployment__confirm {
+        position: fixed;
+        z-index: 110;
+        top: 50%;
+        left: 50%;
+        width: min(380px, calc(100vw - 32px));
+        min-width: 0;
+        transform: translate(-50%, -50%);
+        box-sizing: border-box;
+        gap: 10px;
+        padding: 16px;
+        border: 2px solid rgba(255, 210, 63, 0.72);
+        background:
+          linear-gradient(180deg, rgba(31, 24, 18, 0.99), rgba(8, 10, 12, 0.99)),
+          var(--st-command-iron, #111418);
+        box-shadow:
+          0 0 0 100vmax rgba(2, 4, 7, 0.76),
+          0 18px 54px rgba(0, 0, 0, 0.72),
+          inset 0 0 0 1px rgba(255, 232, 173, 0.12);
+      }
+      #lobby.is-compact .lobby-hotseat-footer
+        > .lobby-verified-deployment__confirm p {
+        font-size: var(--st-command-readability-size, 12px);
+        line-height: 1.35;
+      }
+      #lobby.is-compact .lobby-hotseat-footer
+        > .lobby-verified-deployment__confirm > .lobby-btn {
+        min-width: 0;
+        min-height: var(--st-deployment-choice-target, 44px);
       }
       #lobby.is-compact .lobby-mode-panel
         .lobby-hotseat-footer

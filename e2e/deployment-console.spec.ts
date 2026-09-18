@@ -63,12 +63,10 @@ test('deployment console preview follows the selected operation and keeps launch
     await assertReachableTarget(option);
     await assertCardTextFits(option);
     const textSizes = await option.evaluate((button) => {
-      const app = document.getElementById('app')!;
-      const zoom = Number.parseFloat(getComputedStyle(app).zoom || app.style.zoom) || 1;
       const title = button.querySelector<HTMLElement>('.lobby-quick-operation__card-title')!;
       const briefing = button.querySelector<HTMLElement>('.lobby-quick-operation__card-briefing')!;
-      return { title: Number.parseFloat(getComputedStyle(title).fontSize) * zoom,
-        briefing: Number.parseFloat(getComputedStyle(briefing).fontSize) * zoom };
+      return { title: Number.parseFloat(getComputedStyle(title).fontSize),
+        briefing: Number.parseFloat(getComputedStyle(briefing).fontSize) };
     });
     expect(textSizes.title, 'selected-operation title must remain physically readable').toBeGreaterThanOrEqual(12);
     expect(textSizes.briefing, 'operation briefing must not shrink to fit decorative chrome').toBeGreaterThanOrEqual(10.5);

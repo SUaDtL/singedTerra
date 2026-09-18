@@ -283,17 +283,14 @@ test.describe('Account progression summary compact readability', () => {
     const reservedMastheadBox = await masthead.boundingBox();
     expect(panelBox).not.toBeNull();
     expect(spotlightBox).not.toBeNull();
-    expect(missionBriefBox).not.toBeNull();
+    expect(missionBriefBox).toBeNull();
     expect(reservedPreviewBox, 'dossier-reserved preview should render').not.toBeNull();
     expect(reservedMastheadBox, 'dossier-reserved masthead should render').not.toBeNull();
     expect(
       boxesOverlap(panelBox!, spotlightBox!),
       `collapsed account trigger must not cover the vehicle spotlight: ${JSON.stringify({ panelBox, spotlightBox })}`,
     ).toBe(false);
-    expect(
-      boxesOverlap(panelBox!, missionBriefBox!),
-      `collapsed account trigger must not cover the mission brief: ${JSON.stringify({ panelBox, missionBriefBox })}`,
-    ).toBe(false);
+    await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toBeVisible();
   });
 
 });

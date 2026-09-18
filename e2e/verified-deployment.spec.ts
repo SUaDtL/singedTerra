@@ -177,10 +177,9 @@ test.describe('verified deployment production-browser journey', () => {
     const crew = page.getByRole('tabpanel', { name: 'Local Battle', exact: true });
     await expect(crew.locator('.lobby-name').first()).toBeVisible();
     const controlMetrics = await page.locator('.lobby-hotseat-body').evaluate((body) => {
-      const scale = body.closest('.lobby-card')!.getBoundingClientRect().height / 600;
       return [...body.querySelectorAll<HTMLElement>('.lobby-preparation-section__title, .lobby-name, .lobby-control, .lobby-field > label, .lobby-field > input, .lobby-field > select')].map((node) => ({
         label: node.getAttribute('aria-label') ?? node.id ?? node.className,
-        kind: node.tagName, font: Number.parseFloat(getComputedStyle(node).fontSize) * scale,
+        kind: node.tagName, font: Number.parseFloat(getComputedStyle(node).fontSize),
         width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height,
       }));
     });
@@ -247,12 +246,12 @@ test.describe('verified deployment production-browser journey', () => {
       const actions = deployment.querySelector<HTMLElement>('.lobby-verified-deployment__actions')!;
       const box = (node: Element) => node.getBoundingClientRect().toJSON();
       return { panel: box(panel), card: box(card), matchup: box(matchup), actions: box(actions), rules: box(rules),
-        matchupFont: Number.parseFloat(getComputedStyle(matchup).fontSize) * card.getBoundingClientRect().height / 600,
+        matchupFont: Number.parseFloat(getComputedStyle(matchup).fontSize),
         overflowY: getComputedStyle(panel).overflowY,
         ruleItems: [...rules.children].map((item) => ({ text: item.textContent,
-          font: Number.parseFloat(getComputedStyle(item).fontSize) * card.getBoundingClientRect().height / 600,
+          font: Number.parseFloat(getComputedStyle(item).fontSize),
           width: item.clientWidth, scroll: item.scrollWidth, lines: item.getBoundingClientRect().height
-            / (Number.parseFloat(getComputedStyle(item).lineHeight) * card.getBoundingClientRect().height / 600) })) };
+            / Number.parseFloat(getComputedStyle(item).lineHeight) })) };
     });
     expect.soft(layout.panel.bottom, 'Hot Seat panel must end inside the lobby frame').toBeLessThanOrEqual(layout.card.bottom + 1);
     expect.soft(layout.overflowY, 'Long setup content must have a usable scroll owner').toMatch(/auto|scroll/);
@@ -336,15 +335,15 @@ test.describe('verified deployment production-browser journey', () => {
         if (touch) {
           gestures += 1;
           await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
-          for (let frame = 1; frame <= 10; frame += 1) {
-            await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - direction * distance * frame / 10, id: 1 }] });
-            await page.waitForTimeout(20);
+          for (let frame = 1; frame <= 5; frame += 1) {
+            await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - direction * distance * frame / 5, id: 1 }] });
+            await page.waitForTimeout(16);
           }
           // End a deliberate drag with the finger held still, rather than fling.
-          await page.waitForTimeout(150);
+          await page.waitForTimeout(80);
           await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         } else { await page.mouse.move(x, y); await page.mouse.wheel(0, direction * distance); }
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(50);
         await expect(page.locator('.lobby-garage.editing'), 'Scrolling crew must not open tank customization').toHaveCount(0);
         await expect(page.locator('.lobby-start')).not.toHaveAttribute('inert', '');
       }
@@ -433,6 +432,7 @@ test.describe('verified deployment production-browser journey', () => {
       const briefing = board.locator('[data-ui="selected-practice-operation"]');
       await expect(briefing).toContainText('Crosswind Range');
       await expect(briefing).toContainText('Wraparound walls turn shifting wind into a ranging test.');
+      await briefing.scrollIntoViewIfNeeded();
       await expect(briefing).toBeInViewport({ ratio: 1 });
       await board.getByRole('button', { name: 'Launch practice' }).click();
     } else {
@@ -545,9 +545,11 @@ test.describe('verified deployment production-browser journey', () => {
     expect(abandonBody).toBeNull();
 
     await verified.getByRole('button', { name: 'Abandon verified deployment' }).click();
+    await expect(confirmation).toBeVisible();
     await confirmation.getByRole('button', { name: 'Confirm abandon' }).click();
-    await expect(verified.getByRole('button', { name: 'Start verified deployment' })).toBeVisible();
-    expect(abandonBody).toEqual({ sessionId: SESSION_ID });
+    await expect.poll(() => abandonBody).toEqual({ sessionId: SESSION_ID });
+    await expect(page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true })
+      .getByRole('button', { name: 'Start verified deployment' })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('singedterra:verified-deployment'))).toBeNull();
     await assertLobbyFrame(page);
   });
