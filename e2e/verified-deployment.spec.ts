@@ -1,9 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  assertCommandHeaderAssembly,
+  assertDangerAction,
+  assertGoldSafeAction,
   assertLobbyFrame,
   enterBattleIfBriefed,
   openLocalPreparation,
   openOnlinePreparation,
+  openVerifiedOperations,
+  selectCommandWorkspace,
 } from './support';
 
 const SESSION_ID = '123e4567-e89b-42d3-a456-426614174000';
@@ -106,13 +111,25 @@ async function installAuthenticatedFixture(page: Page): Promise<void> {
   }));
 }
 
-async function openLocalBattery(page: Page, search = './', mode = 'Verified Deployment'): Promise<void> {
+async function openCommandCenter(page: Page, search = './'): Promise<void> {
   await page.goto(search);
   await page.evaluate(() => document.getElementById('st-splash')?.remove());
   await expect(page.locator('#lobby')).toBeVisible();
+}
+
+async function openLocalWorkspace(page: Page, search = './'): Promise<void> {
+  await openCommandCenter(page, search);
   await openLocalPreparation(page);
-  if (mode !== 'Local Battle') await page.getByRole('tab', { name: mode, exact: true }).click();
-  await expect(page.getByRole('tab', { name: mode, exact: true })).toHaveAttribute('aria-selected', 'true');
+}
+
+async function openCrosswindWorkspace(page: Page, search = './'): Promise<void> {
+  await openCommandCenter(page, search);
+  await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
+}
+
+async function openVerifiedWorkspace(page: Page, search = './'): Promise<void> {
+  await openCommandCenter(page, search);
+  await openVerifiedOperations(page);
 }
 
 /** Verified mission state lives in the adaptive Match ledger on non-ultrawide layouts. */
@@ -121,6 +138,10 @@ async function openVerifiedLedger(page: Page) {
   const toggle = page.getByRole('button', { name: 'Open match ledger' });
   if (await toggle.isVisible()) await toggle.click();
   return page.locator('#hud .st-hud__verified-deployment');
+}
+
+function verifiedWorkspace(page: Page) {
+  return page.locator('[data-multiplayer-command-view="verified-operations"]');
 }
 
 async function installOnlineCpuFixture(page: Page): Promise<void> {
@@ -169,12 +190,11 @@ async function installOnlineCpuFixture(page: Page): Promise<void> {
 test.describe('verified deployment production-browser journey', () => {
   test.beforeEach(async ({ page }) => installAuthenticatedFixture(page));
 
-  test('matches the Hot Seat mockup with direct crew editing and a persistent launch footer', async ({ page }, testInfo) => {
-    await openLocalBattery(page, './', 'Local Battle');
+  test('keeps Local, Skirmish, and Verified command workspaces distinct while retaining crew state', async ({ page }, testInfo) => {
+    await openLocalWorkspace(page);
     await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-entry.png') });
-    const tabs = page.getByRole('tablist', { name: 'Hot Seat modes', exact: true });
-    await expect(tabs.getByRole('tab')).toHaveText(['Local Battle', 'Practice vs CPU', 'Verified Deployment']);
-    const crew = page.getByRole('tabpanel', { name: 'Local Battle', exact: true });
+    await expect(page.getByRole('tablist', { name: 'Hot Seat modes', exact: true })).toHaveCount(0);
+    const crew = page.locator('[data-multiplayer-command-view="local-battle"]');
     await expect(crew.locator('.lobby-name').first()).toBeVisible();
     const controlMetrics = await page.locator('.lobby-hotseat-body').evaluate((body) => {
       return [...body.querySelectorAll<HTMLElement>('.lobby-preparation-section__title, .lobby-name, .lobby-control, .lobby-field > label, .lobby-field > input, .lobby-field > select')].map((node) => ({
@@ -195,8 +215,8 @@ test.describe('verified deployment production-browser journey', () => {
       await expect(page.getByRole('button', { name: 'Advanced settings', exact: true })).toBeInViewport({ ratio: 1 });
       await expect(crew.locator('.lobby-name').last()).toBeInViewport({ ratio: 1 });
     }
-    await expect(page.getByRole('region', { name: 'Verified deployment', exact: true })).toBeHidden();
-    await expect(page.getByRole('region', { name: 'Practice operations', exact: true })).toBeHidden();
+    await expect(page.locator('.lobby-verified-deployment')).toHaveCount(0);
+    await expect(page.locator('[data-skirmish-command-view]')).toHaveCount(0);
     const deploy = page.getByRole('button', { name: 'Deploy local battle', exact: true });
     await expect(deploy).toBeInViewport({ ratio: 1 });
     const geometry = await page.locator('.lobby-hotseat-footer').evaluate((footer) => {
@@ -210,21 +230,14 @@ test.describe('verified deployment production-browser journey', () => {
     expect(geometry.footer.bottom).toBeLessThanOrEqual(geometry.card.bottom + 1);
     expect(geometry.overflow).toMatch(/auto|scroll/);
     await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-local.png') });
-    const local = tabs.getByRole('tab', { name: 'Local Battle', exact: true });
-    await local.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(tabs.getByRole('tab', { name: 'Practice vs CPU', exact: true })).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('region', { name: 'Practice operations', exact: true })).toBeVisible();
+    await crew.locator('.lobby-name').first().fill('Local Scout');
+    await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
+    await expect(page.locator('[data-skirmish-command-view]')).toContainText('Crosswind Range');
     await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-practice.png') });
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('Enter');
+    await openVerifiedOperations(page);
     await expect(page.getByRole('region', { name: 'Verified deployment', exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('hot-seat-mockup-verified.png') });
-    await local.click();
-    await crew.locator('.lobby-name').first().fill('Local Scout');
-    await tabs.getByRole('tab', { name: 'Practice vs CPU', exact: true }).click();
-    await local.click();
+    await openLocalPreparation(page);
     await expect(crew.locator('.lobby-name').first()).toHaveValue('Local Scout');
     await expect(deploy).toBeInViewport({ ratio: 1 });
     if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await deploy.tap();
@@ -236,26 +249,41 @@ test.describe('verified deployment production-browser journey', () => {
   });
 
   test('keeps authenticated Hot Seat preparation readable and scroll-reachable', async ({ page }, testInfo) => {
-    await openLocalBattery(page);
+    await openVerifiedWorkspace(page);
+    await expect(page.locator(
+      '[data-multiplayer-command-view="verified-operations"] [data-battlefield-projection]',
+    )).toBeVisible();
+    await assertGoldSafeAction(
+      page,
+      '[data-multiplayer-command-view="verified-operations"] .lobby-btn.primary',
+    );
     await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat.png') });
     const layout = await page.locator('.lobby-deployment').evaluate((deployment) => {
       const panel = deployment.querySelector<HTMLElement>('.lobby-hotseat-scroll')!;
+      const workspaceViewport = deployment.querySelector<HTMLElement>(
+        '.command-center__workspace-host',
+      )!;
       const card = deployment.closest('.lobby-card')!;
       const matchup = panel.querySelector<HTMLElement>('.lobby-verified-deployment__matchup')!;
       const rules = panel.querySelector<HTMLElement>('.lobby-verified-deployment__rules')!;
       const actions = deployment.querySelector<HTMLElement>('.lobby-verified-deployment__actions')!;
       const box = (node: Element) => node.getBoundingClientRect().toJSON();
-      return { panel: box(panel), card: box(card), matchup: box(matchup), actions: box(actions), rules: box(rules),
+      return { panel: box(panel), viewport: box(workspaceViewport), card: box(card),
+        matchup: box(matchup), actions: box(actions), rules: box(rules),
         matchupFont: Number.parseFloat(getComputedStyle(matchup).fontSize),
         overflowY: getComputedStyle(panel).overflowY,
+        viewportOverflowY: getComputedStyle(workspaceViewport).overflowY,
         ruleItems: [...rules.children].map((item) => ({ text: item.textContent,
           font: Number.parseFloat(getComputedStyle(item).fontSize),
           width: item.clientWidth, scroll: item.scrollWidth, lines: item.getBoundingClientRect().height
             / Number.parseFloat(getComputedStyle(item).lineHeight) })) };
     });
-    expect.soft(layout.panel.bottom, 'Hot Seat panel must end inside the lobby frame').toBeLessThanOrEqual(layout.card.bottom + 1);
-    expect.soft(layout.overflowY, 'Long setup content must have a usable scroll owner').toMatch(/auto|scroll/);
-    expect.soft(layout.actions.top, 'Persistent launch actions must stay below the scroll viewport').toBeGreaterThanOrEqual(layout.panel.bottom - 1);
+    expect.soft(layout.viewport.bottom, 'Command workspace viewport must end inside the lobby frame')
+      .toBeLessThanOrEqual(layout.card.bottom + 1);
+    expect.soft(`${layout.viewportOverflowY} ${layout.overflowY}`,
+      'Long verified content must have a usable shell or owned scroll lane').toMatch(/auto|scroll/);
+    expect.soft(layout.panel.left).toBeGreaterThanOrEqual(layout.viewport.left - 1);
+    expect.soft(layout.panel.right).toBeLessThanOrEqual(layout.viewport.right + 1);
     expect.soft(layout.matchupFont, 'Matchup must remain readable').toBeGreaterThanOrEqual(10.5);
     expect.soft(layout.matchup.left).toBeGreaterThanOrEqual(layout.panel.left - 1);
     expect.soft(layout.matchup.right).toBeLessThanOrEqual(layout.panel.right + 1);
@@ -265,6 +293,10 @@ test.describe('verified deployment production-browser journey', () => {
       expect.soft(item.lines, `${item.text} must not collapse into a narrow text column`).toBeLessThanOrEqual(3.1);
     }
     const launch = page.getByRole('button', { name: 'Start verified deployment', exact: true });
+    await launch.scrollIntoViewIfNeeded();
+    const launchBox = await launch.boundingBox();
+    expect(launchBox).not.toBeNull();
+    expect(launchBox!.height).toBeGreaterThanOrEqual(56);
     for (const state of ['resting', 'hovered', 'focused'] as const) {
       if (state === 'hovered') await launch.hover();
       if (state === 'focused') await launch.focus();
@@ -286,15 +318,15 @@ test.describe('verified deployment production-browser journey', () => {
     }
     await launch.focus();
     await expect(launch).toBeInViewport({ ratio: 1 });
-    await page.getByRole('tab', { name: 'Verified Deployment', exact: true }).focus();
+    await page.getByRole('tab', { name: 'Deployment orders', exact: true }).focus();
     await page.keyboard.press('Tab');
     await expect(page.locator(':focus')).toBeVisible();
-    await expect(page.getByRole('tabpanel', { name: 'Practice vs CPU', exact: true }).locator(':focus')).toHaveCount(0);
+    await expect(page.locator('[data-skirmish-command-view] :focus')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('authenticated-hot-seat-focused.png') });
   });
 
   test('scrolls authenticated Hot Seat customization and starts the edited local crew', async ({ page }, testInfo) => {
-    await openLocalBattery(page, './', 'Local Battle');
+    await openLocalWorkspace(page);
     await page.getByLabel('Players', { exact: true }).selectOption('4');
     await page.locator('.lobby-name').first().fill('Local Scout');
     const panel = page.locator('.lobby-hotseat-scroll');
@@ -388,35 +420,22 @@ test.describe('verified deployment production-browser journey', () => {
     await touch?.detach();
   });
 
-  test('separates practice and verified preparation into contained tabs', async ({ page }) => {
-    await openLocalBattery(page);
-    const verifiedPanel = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+  test('separates Skirmish and Verified preparation into contained command items', async ({ page }) => {
+    await openVerifiedWorkspace(page);
+    const verifiedPanel = verifiedWorkspace(page);
     await expect(verifiedPanel).toBeVisible();
     await expect(verifiedPanel).toContainText('First Strike');
-    await expect(page.getByRole('region', { name: 'Practice operations', exact: true })).toBeHidden();
-    await page.getByRole('tab', { name: 'Practice vs CPU', exact: true }).click();
-    const board = page.getByRole('tabpanel', { name: 'Practice vs CPU', exact: true });
+    await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
+    const board = page.locator('[data-skirmish-command-view]');
     await expect(board).toBeVisible();
-    await expect(verifiedPanel).toBeHidden();
-    const compactSelector = board.getByLabel('Choose practice operation');
-    if (await compactSelector.isVisible()) {
-      const practiceLaunch = board.getByRole('button', { name: 'Launch practice' });
-      const practiceTarget = await practiceLaunch.boundingBox();
-      expect(practiceTarget, 'Practice launch needs a rendered touch target').not.toBeNull();
-      expect(practiceTarget!.width).toBeGreaterThanOrEqual(44);
-      expect(practiceTarget!.height).toBeGreaterThanOrEqual(44);
-      await compactSelector.focus();
-      await page.keyboard.press('Tab');
-      await expect(practiceLaunch).toBeFocused();
-    } else {
-      const cards = board.locator('button[data-operation-id]');
-      const practiceTarget = await cards.first().boundingBox();
-      expect(practiceTarget, 'Practice card needs a rendered target').not.toBeNull();
-      expect(practiceTarget!.height).toBeGreaterThanOrEqual(44);
-      await cards.first().focus();
-      await page.keyboard.press('Tab');
-      await expect(cards.nth(1)).toBeFocused();
-    }
+    await expect(verifiedPanel).toHaveCount(0);
+    const practiceLaunch = board.getByRole('button', { name: 'Start Crosswind Range' });
+    const practiceTarget = await practiceLaunch.boundingBox();
+    expect(practiceTarget, 'Practice launch needs a rendered touch target').not.toBeNull();
+    expect(practiceTarget!.width).toBeGreaterThanOrEqual(44);
+    expect(practiceTarget!.height).toBeGreaterThanOrEqual(56);
+    await practiceLaunch.focus();
+    await expect(practiceLaunch).toBeFocused();
 
     const metrics = await board.evaluate((node) => ({ client: node.clientWidth, scroll: node.scrollWidth }));
     expect(metrics.scroll).toBeLessThanOrEqual(metrics.client + 1);
@@ -424,20 +443,11 @@ test.describe('verified deployment production-browser journey', () => {
   });
 
   test('launches the selected local practice operation from Commander Operations', async ({ page }) => {
-    await openLocalBattery(page, './', 'Practice vs CPU');
-    const board = page.getByRole('tabpanel', { name: 'Practice vs CPU', exact: true });
-    const compactSelector = board.getByLabel('Choose practice operation');
-    if (await compactSelector.isVisible()) {
-      await compactSelector.selectOption('crosswind-range');
-      const briefing = board.locator('[data-ui="selected-practice-operation"]');
-      await expect(briefing).toContainText('Crosswind Range');
-      await expect(briefing).toContainText('Wraparound walls turn shifting wind into a ranging test.');
-      await briefing.scrollIntoViewIfNeeded();
-      await expect(briefing).toBeInViewport({ ratio: 1 });
-      await board.getByRole('button', { name: 'Launch practice' }).click();
-    } else {
-      await board.locator('button[data-operation-id="crosswind-range"]').click();
-    }
+    await openCrosswindWorkspace(page);
+    const board = page.locator('[data-skirmish-command-view]');
+    await expect(board).toContainText('Crosswind Range');
+    await expect(board).toContainText('Wraparound walls turn shifting wind into a ranging test.');
+    await board.getByRole('button', { name: 'Start Crosswind Range' }).click();
 
     await expect(page.locator('#lobby')).toBeHidden();
     await expect(page.locator('[data-ui="quick-operation"]'))
@@ -456,13 +466,13 @@ test.describe('verified deployment production-browser journey', () => {
       });
     });
 
-    await openLocalBattery(page);
-    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    await openVerifiedWorkspace(page);
+    const verified = verifiedWorkspace(page);
     await expect(verified.getByText('Baby Missile only')).toBeVisible();
     await expect(verified.getByText('6 human / 6 CPU salvos maximum')).toBeVisible();
     await expect(verified.getByText('Fixed battlefield rules')).toBeVisible();
     await expect(verified.getByText('30-minute deadline')).toBeVisible();
-    const commanderOperations = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    const commanderOperations = verifiedWorkspace(page);
     await expect(commanderOperations.getByRole('heading', { name: 'Commander dossier', exact: true })).toBeVisible();
     await expect(commanderOperations.getByText('First Strike · Damage the CPU within your first three salvos.')).toBeVisible();
     const launchComposition = await verified.evaluate((node) => {
@@ -478,6 +488,7 @@ test.describe('verified deployment production-browser journey', () => {
     const launchIsBesideRules = launchComposition.actions.left >= launchComposition.rules.right - 1;
     const launchIsBelowRules = launchComposition.actions.top >= launchComposition.scroll.bottom - 1;
     expect(launchIsBesideRules || launchIsBelowRules).toBe(true);
+    await assertCommandHeaderAssembly(page);
     await assertLobbyFrame(page);
 
     const launch = verified.getByRole('button', { name: 'Start verified deployment' });
@@ -522,7 +533,7 @@ test.describe('verified deployment production-browser journey', () => {
       });
     });
 
-    await openLocalBattery(page);
+    await openVerifiedWorkspace(page);
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     await enterBattleIfBriefed(page);
@@ -532,7 +543,7 @@ test.describe('verified deployment production-browser journey', () => {
     await menu.getByRole('button', { name: 'Return to Lobby' }).click();
     await expect(page.locator('#lobby')).toBeVisible();
 
-    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    const verified = verifiedWorkspace(page);
     await expect(verified.getByRole('button', { name: 'Resume verified deployment' })).toBeVisible();
     await expect(verified.getByText('Recovered 0 of 6 human salvos.')).toBeVisible();
     await verified.getByRole('button', { name: 'Abandon verified deployment' }).click();
@@ -546,9 +557,15 @@ test.describe('verified deployment production-browser journey', () => {
 
     await verified.getByRole('button', { name: 'Abandon verified deployment' }).click();
     await expect(confirmation).toBeVisible();
-    await confirmation.getByRole('button', { name: 'Confirm abandon' }).click();
+    const confirmAbandon = confirmation.getByRole('button', { name: 'Confirm abandon' });
+    await assertDangerAction(
+      page,
+      '#lobby .lobby-verified-deployment__confirm:not([hidden]) '
+        + '.lobby-verified-deployment__confirm-abandon',
+    );
+    await confirmAbandon.click();
     await expect.poll(() => abandonBody).toEqual({ sessionId: SESSION_ID });
-    await expect(page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true })
+    await expect(verifiedWorkspace(page)
       .getByRole('button', { name: 'Start verified deployment' })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('singedterra:verified-deployment'))).toBeNull();
     await assertLobbyFrame(page);
@@ -574,7 +591,7 @@ test.describe('verified deployment production-browser journey', () => {
       body: JSON.stringify(verifiedStart(true)),
     }));
 
-    await openLocalBattery(page, '?e2e=verified-lifecycle');
+    await openVerifiedWorkspace(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     const hud = await openVerifiedLedger(page);
     await expect(hud.getByText('Salvos · You 1 / 6 · CPU 1 / 6')).toBeVisible();
@@ -598,7 +615,7 @@ test.describe('verified deployment production-browser journey', () => {
       body: JSON.stringify(verifiedStart(false, expiresAt)),
     }));
 
-    await openLocalBattery(page, '?e2e=verified-lifecycle');
+    await openVerifiedWorkspace(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     const hud = await openVerifiedLedger(page);
     const setNow = (value: number) => page.evaluate((next) => {
@@ -671,8 +688,8 @@ test.describe('verified deployment production-browser journey', () => {
       contentType: 'application/json',
       body: JSON.stringify({ error: 'database exploded with private detail' }),
     }));
-    await openLocalBattery(page);
-    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    await openVerifiedWorkspace(page);
+    const verified = verifiedWorkspace(page);
     await verified.getByRole('button', { name: 'Start verified deployment' }).click();
     await expect(verified.getByRole('status')).toHaveText(
       'Verified deployment is unavailable. Try again.',
@@ -764,7 +781,7 @@ test.describe('verified deployment production-browser journey', () => {
       });
     });
 
-    await openLocalBattery(page, '?e2e=verified-lifecycle');
+    await openVerifiedWorkspace(page, '?e2e=verified-lifecycle');
     await page.getByRole('button', { name: 'Start verified deployment' }).click();
     const firstReport = page.locator('.st-hud__overlay--victory');
     await expect(firstReport).toBeVisible({ timeout: 10_000 });
@@ -802,7 +819,7 @@ test.describe('verified deployment production-browser journey', () => {
     await expect(firstReport.getByRole('button', { name: /fire/i })).toHaveCount(0);
     await firstReport.getByRole('button', { name: 'Main Menu' }).click();
 
-    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
+    const verified = verifiedWorkspace(page);
     await expect(verified.getByText('Recovered terminal evidence. Resume to retry verification.'))
       .toBeVisible();
     await verified.getByRole('button', { name: 'Resume verified deployment' }).click();
@@ -894,9 +911,9 @@ test.describe('verified deployment production-browser journey', () => {
       });
     });
 
-    await openLocalBattery(page, '?e2e=verified-lifecycle');
-    const verified = page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true });
-    await expect(page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true }).getByText(
+    await openVerifiedWorkspace(page, '?e2e=verified-lifecycle');
+    const verified = verifiedWorkspace(page);
+    await expect(verifiedWorkspace(page).getByText(
       /First Strike.*Damage the CPU within your first three salvos\./,
     )).toBeVisible();
 
@@ -914,7 +931,7 @@ test.describe('verified deployment production-browser journey', () => {
     await nextOrder.click();
     await expect(page.locator('#lobby')).toBeVisible();
     await expect(verified.getByRole('button', { name: 'Start verified deployment' })).toBeFocused();
-    await expect(page.getByRole('tabpanel', { name: 'Verified Deployment', exact: true }).getByText(
+    await expect(verifiedWorkspace(page).getByText(
       /Fire for Effect.*Damage the CPU on two separate human salvos\./,
     )).toBeVisible();
     // Reusable semantic nodes now remain in hidden, inert parking between games.
@@ -941,7 +958,8 @@ test.describe('verified deployment production-browser journey', () => {
 
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    await selectCommandWorkspace(page, 'Skirmishes', 'standard');
+    await page.getByRole('button', { name: 'Start Standard Duel', exact: true }).click();
     await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     await expect(page.locator('[data-ui="field-order"]')).toHaveCount(0);
 
@@ -973,8 +991,8 @@ test('Quick Duel publishes a bounded query-gated seed receipt on every redeploym
   const readSeed = async (): Promise<number> => {
     await page.goto('?e2e=quick-duel-seed');
     await page.evaluate(() => document.getElementById('st-splash')?.remove());
-    await page.locator('[data-ui="other-quick-duels"] > summary').click();
-    await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+    await selectCommandWorkspace(page, 'Skirmishes', 'standard');
+    await page.getByRole('button', { name: 'Start Standard Duel', exact: true }).click();
     await expect(page.locator('[data-battle-console-semantic-tree]')).toBeVisible();
     return page.evaluate(() => {
       const probe = (window as typeof window & { __singedTerraE2E?: { quickDuelSeed?: number } })

@@ -164,8 +164,7 @@ function clickLobbyButton(root: HTMLElement, text: string): void {
       '[data-command-surface="rail"][data-command-category="multiplayer"]',
     )?.click();
     root.querySelector<HTMLButtonElement>('[data-command-item="online"]')?.click();
-    match = [...root.querySelectorAll<HTMLButtonElement>('button')]
-      .find((candidate) => candidate.textContent === text);
+    return;
   }
   if (!match) throw new Error(`Missing ${text} button`);
   match.click();
@@ -228,7 +227,7 @@ describe('Lobby network layer (characterization of the 7 Edge-Function actions)'
     expect(alert?.textContent).toContain(
       'Game recovery timed out. Return to Online and try joining again.',
     );
-    expect(alert?.parentElement?.classList.contains('lobby-online-recovery')).toBe(true);
+    expect(alert?.closest('.multiplayer-command__online-context')).not.toBeNull();
     expect([...root.querySelectorAll('button')].some((button) => button.textContent === 'Rejoin your game')).toBe(false);
     clickLobbyButton(root, 'Retry game recovery');
     expect(retry).toHaveBeenCalledOnce();

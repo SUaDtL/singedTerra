@@ -404,10 +404,10 @@ test.describe('production diagnostics browser proof', () => {
       connected: true,
       insideLobby: true,
       usable: true,
-      text: 'Quick OperationsChoose a battlefield condition and duel the CPU.',
+      text: 'First SalvoA one-round duel that starts with the essentials.',
     });
     await expect(page.locator(
-      '.command-center__library-items button[data-command-item="quick-operations"]',
+      '.command-center__library-items button[data-command-item="first-salvo"]',
     )).toBeFocused();
   });
 });

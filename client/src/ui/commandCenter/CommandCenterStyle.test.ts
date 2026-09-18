@@ -7,9 +7,16 @@ const commandCenterCss = readFileSync(
   'utf8',
 );
 const lobbySource = readFileSync(join(process.cwd(), 'src/ui/Lobby.ts'), 'utf8');
+const lobbyShellSource = readFileSync(join(process.cwd(), 'src/ui/LobbyShellView.ts'), 'utf8');
+const lobbyHotSeatSource = readFileSync(join(process.cwd(), 'src/ui/LobbyHotSeatView.ts'), 'utf8');
 const lobbyCss = readFileSync(join(process.cwd(), 'src/ui/Lobby.css'), 'utf8');
 const lobbyConsoleCss = readFileSync(join(process.cwd(), 'src/ui/LobbyConsole.css'), 'utf8');
 const mainSource = readFileSync(join(process.cwd(), 'src/main.ts'), 'utf8');
+const e2eSupportSource = readFileSync(join(process.cwd(), '../e2e/support.ts'), 'utf8');
+const verifiedDeploymentE2eSource = readFileSync(
+  join(process.cwd(), '../e2e/verified-deployment.spec.ts'),
+  'utf8',
+);
 
 describe('command center visual contract', () => {
   it('owns one framed shell with admitted chrome assets and no battle-console selectors', () => {
@@ -143,17 +150,103 @@ describe('command center visual contract', () => {
     );
   });
 
-  it('is injected after the legacy preparation styles as the only command-center layer', () => {
+  it('is injected after the base lobby materials as the only command-center layer', () => {
     expect(lobbySource).toContain("import commandCenterCss from './commandCenter/CommandCenter.css?raw';");
     expect(lobbySource).toContain('`${lobbyCss}\\n${lobbyConsoleCss}\\n${commandCenterCss}`');
   });
 
-  it('fences the temporary Quick Operations bridge and removes retired launcher campaign rules', () => {
-    expect(lobbyConsoleCss).toContain('.command-center__legacy-skirmish');
+  it('has no superseded chooser, bridge, or positional preparation layer', () => {
+    const retiredSelectors = [
+      '.lobby-deployment-chooser',
+      '.command-center__legacy-skirmish',
+      '.command-center__bridge',
+      '.lobby-deployment-console',
+      '.lobby-quick-operation',
+      '.lobby-operation-preview',
+      '.lobby-deployment-rail',
+      '.lobby-campaign-kit',
+      '.lobby-first-salvo',
+      '.lobby-seed-challenge',
+      '.lobby-deployment__back',
+      '.lobby-deployment__mission-brief',
+      '.lobby-mode-panel',
+      '.lobby-mode-context',
+      '.lobby-controls',
+      '.lobby-rejoin-banner',
+    ];
+    for (const selector of retiredSelectors) {
+      expect(lobbyShellSource, selector).not.toContain(selector);
+      expect(lobbyCss, selector).not.toContain(selector);
+      expect(lobbyConsoleCss, selector).not.toContain(selector);
+    }
+    expect(commandCenterCss).not.toContain('.command-center__legacy-skirmish');
+    expect(commandCenterCss).not.toContain('.command-center__bridge');
+    expect(lobbySource).not.toContain('createLegacySkirmishCommandView');
+    expect(lobbySource).not.toContain("private surface: 'chooser' | 'preparation'");
+    expect(lobbySource).not.toContain('.lobby-deployment-chooser');
     expect(lobbyCss).not.toContain('.lobby-deployment-chooser');
     expect(lobbyCss).not.toContain('.lobby-campaign-kit');
-    expect(lobbyConsoleCss).not.toContain('.lobby-deployment-chooser');
-    expect(lobbyConsoleCss).not.toContain('.lobby-campaign-kit');
+  });
+
+  it('has no compatibility preparation router or route-specific shell wrapper', () => {
+    for (const retiredSource of [
+      'createPreparationBridgeView',
+      "private surface: 'chooser' | 'preparation'",
+      'private hotSeatSurface',
+      'LobbyHotSeatSurface',
+      'localWorkspace',
+      'verifiedWorkspace',
+      'ownedWorkspace',
+      'data-hotseat-surface',
+      'Hot Seat modes',
+      'buildPracticeLane',
+      'onSurfaceChange',
+    ]) {
+      expect(`${lobbySource}\n${lobbyHotSeatSource}`, retiredSource).not.toContain(retiredSource);
+    }
+    expect(lobbyShellSource).not.toContain('buildLobbyOnlineView');
+    expect(lobbySource).not.toContain('buildLobbyOnlineView');
+    expect(lobbySource).not.toMatch(/['"]chooser['"]\s*\|\s*['"]preparation['"]/u);
+    expect(lobbySource).not.toMatch(/\b(?:private\s+)?hotSeatSurface\s*[:=]/u);
+  });
+
+  it('keeps browser journeys on owned command workspaces instead of retired mode routes', () => {
+    expect(e2eSupportSource).not.toContain('selectHotSeatTab');
+    expect(verifiedDeploymentE2eSource).not.toContain('openLocalBattery');
+    expect(verifiedDeploymentE2eSource).not.toContain("mode === 'Practice vs CPU'");
+    expect(verifiedDeploymentE2eSource).not.toContain("mode = 'Verified Deployment'");
+  });
+
+  it('does not let retired Hot Seat selectors reposition the command shell or header', () => {
+    for (const retiredSelector of [
+      '.lobby-deployment:has(.lobby-hotseat)',
+      '.lobby-tabs',
+      '.lobby-tab',
+      '.lobby-hotseat-tabs',
+      '.lobby-hotseat-tab',
+    ]) {
+      expect(`${lobbyCss}\n${lobbyConsoleCss}`, retiredSelector).not.toContain(retiredSelector);
+    }
+    expect(`${lobbyCss}\n${lobbyConsoleCss}`).not.toMatch(
+      /\.lobby-deployment:has\(\.lobby-hotseat/u,
+    );
+  });
+
+  it('keeps outer deployment geometry in the command-center layer only', () => {
+    const retiredOuterCss = `${lobbyCss}\n${lobbyConsoleCss}`;
+    expect(retiredOuterCss).not.toMatch(
+      /#lobby(?:\.is-compact)?\s+\.lobby-deployment(?:\s*\{|::before|__masthead|:has\(|\s*>\s*\.lobby-preview)/u,
+    );
+    expect(retiredOuterCss).not.toContain('#lobby .lobby-card > .lobby-deployment');
+    expect(retiredOuterCss).not.toMatch(
+      /#lobby(?:\.is-compact)?\s+\.lobby-command-header(?:\s|__|\{)/u,
+    );
+    expect(commandCenterCss).toContain(
+      '#lobby .lobby-card:has(.command-center) > .lobby-deployment',
+    );
+    expect(commandCenterCss).toContain(
+      '#lobby .lobby-card:has(.command-center) .lobby-deployment__masthead',
+    );
   });
 
   it('projects compact layout ownership onto the unscaled pregame sibling', () => {

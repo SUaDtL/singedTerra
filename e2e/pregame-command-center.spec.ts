@@ -1,11 +1,111 @@
 import { expect, test, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { assertLobbyControlReachable, assertLobbyFrame, enterBattleIfBriefed, gotoLobby } from './support';
+import {
+  ASH_ROAD_COMBAT_PROFILE_REFERENCE,
+  resolveCampaignCombatProfile,
+} from '../shared/src/campaign/combatProfiles';
+import { parseCampaignRun } from '../shared/src/campaign/definitions';
+import { createCampaignCheckpoint } from '../client/src/campaign/checkpoint';
+import { ASH_ROAD_EPISODE } from '../client/src/campaign/content/episode';
+import { createCampaignLoadout } from '../client/src/campaign/loadout';
+import {
+  campaignStorageBindingFromRunState,
+  createCampaignReplayPayload,
+  type CampaignReplayPayload,
+} from '../client/src/campaign/replay';
+import { createCampaignRunState, parseCampaignRunState } from '../client/src/campaign/runReducer';
+import {
+  CAMPAIGN_STORAGE_SCHEMA_VERSION,
+  type CampaignStorageRecord,
+} from '../client/src/campaign/storage';
+import {
+  assertLobbyControlReachable,
+  assertLobbyFrame,
+  enterBattleIfBriefed,
+  gotoLobby,
+  selectCommandWorkspace,
+} from './support';
 
 const EVIDENCE_DIR = process.env['COMMAND_CENTER_EVIDENCE_DIR'];
 const REQUIRE_EVIDENCE = process.env['COMMAND_CENTER_REQUIRE_EVIDENCE'] === '1';
 const SELECTION_KEY = 'singedterra.command-center.selection.v1';
 const COMMAND_CATEGORIES = ['Campaigns', 'Skirmishes', 'Multiplayer'];
+
+function campaignRecord(revision = 4, encounterIndex = 0): CampaignStorageRecord {
+  const route = ASH_ROAD_EPISODE.routes[0]!;
+  const profile = resolveCampaignCombatProfile(ASH_ROAD_COMBAT_PROFILE_REFERENCE);
+  const run = parseCampaignRun({
+    kind: 'campaign-run',
+    runVersion: 1,
+    runId: 'ash-road-e2e-run',
+    episodeId: ASH_ROAD_EPISODE.episodeId,
+    episodeVersion: ASH_ROAD_EPISODE.episodeVersion,
+    episodeContentDigest: ASH_ROAD_EPISODE.contentDigest,
+    combatProfileId: profile.profileId,
+    combatProfileVersion: profile.profileVersion,
+    combatProfileContentDigest: profile.contentDigest,
+    routeId: route.id,
+    encounterIds: route.encounterIds,
+    currentEncounterIndex: encounterIndex,
+  });
+  if (!run) throw new Error('Invalid campaign browser fixture run');
+  const encounter = ASH_ROAD_EPISODE.encounters.find(
+    ({ encounterId }) => encounterId === route.encounterIds[encounterIndex],
+  );
+  if (!encounter) throw new Error('Invalid campaign browser fixture encounter');
+  const checkpoint = createCampaignCheckpoint({
+    run,
+    encounter,
+    combatProfile: profile,
+    attempt: 1,
+    supplies: 2,
+  });
+  const runState = createCampaignRunState(checkpoint, createCampaignLoadout());
+  return Object.freeze({
+    kind: 'campaign-storage-record',
+    schemaVersion: CAMPAIGN_STORAGE_SCHEMA_VERSION,
+    slotId: 'ash-road-local',
+    revision,
+    binding: campaignStorageBindingFromRunState(runState),
+    payload: createCampaignReplayPayload({ runState, acceptedCommands: [] }),
+  });
+}
+
+function completedCampaignRecord(revision = 4): CampaignStorageRecord {
+  const current = campaignRecord(
+    revision,
+    ASH_ROAD_EPISODE.routes[0]!.encounterIds.length - 1,
+  );
+  const payload = current.payload as CampaignReplayPayload;
+  const { runState } = payload;
+  const completed = parseCampaignRunState({
+    ...runState,
+    missionLoadout: runState.loadout,
+    pendingCheckpointDecision: { resultAttempt: runState.attempt },
+    appliedResults: [{
+      kind: 'campaign-result-receipt',
+      receiptVersion: 1,
+      result: {
+        kind: 'campaign-result',
+        resultVersion: 1,
+        runId: runState.checkpoint.run.runId,
+        encounterId: runState.checkpoint.encounter.encounterId,
+        encounterVersion: runState.checkpoint.encounter.encounterVersion,
+        encounterContentDigest: runState.checkpoint.encounter.contentDigest,
+        attempt: runState.attempt,
+        outcome: 'success',
+        commitments: 1,
+      },
+      intactSupplyDrumIds: ['siege-drum'],
+      suppliesAwarded: 0,
+    }],
+  });
+  if (!completed) throw new Error('Invalid completed campaign browser fixture');
+  return Object.freeze({
+    ...current,
+    payload: createCampaignReplayPayload({ runState: completed, acceptedCommands: [] }),
+  });
+}
 
 type CommandGeometry = Readonly<{
   label: string;
@@ -138,6 +238,7 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
   await expect(page.getByRole('combobox', { name: 'New run kit', exact: true })).toBeVisible();
   await expect(page.getByText('Saved loadout', { exact: true })).toHaveCount(0);
   await expect(page.locator('[data-command-primary]:visible')).toHaveCount(1);
+  await expect(page.locator('[data-command-primary]:visible')).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole('button', { name: 'Account', exact: true })).toBeVisible();
   await expect(page.locator('.lobby-deployment__masthead > h1')).toContainText('singedTerra');
   await assertCommandHeaderGeometry(page, geometry);
@@ -155,6 +256,20 @@ async function assertCommandGeometry(page: Page, geometry: CommandGeometry): Pro
     await expect(sheet).toBeVisible();
     await expect(sheet.locator('[data-command-category]')).toHaveText(COMMAND_CATEGORIES);
     await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
+    const [modesBox, selectedItemBox] = await Promise.all([
+      modes.boundingBox(),
+      page.locator('.command-center__item[aria-current="true"]').boundingBox(),
+    ]);
+    expect(modesBox, `${geometry.label} Modes trigger should render`).not.toBeNull();
+    expect(selectedItemBox, `${geometry.label} selected item should render`).not.toBeNull();
+    const overlapsSelectedItem = modesBox!.x < selectedItemBox!.x + selectedItemBox!.width - 1
+      && modesBox!.x + modesBox!.width > selectedItemBox!.x + 1
+      && modesBox!.y < selectedItemBox!.y + selectedItemBox!.height - 1
+      && modesBox!.y + modesBox!.height > selectedItemBox!.y + 1;
+    expect(
+      overlapsSelectedItem,
+      `${geometry.label} Modes trigger must not obscure the selected command item`,
+    ).toBe(false);
   } else {
     await expect(rail).toBeVisible();
     await expect(page.getByRole('button', { name: 'Modes', exact: true })).toBeHidden();
@@ -244,6 +359,7 @@ async function captureResumeGeometry(page: Page, geometry: CommandGeometry): Pro
   await page.setViewportSize(geometry.viewport);
   await openAshRoad(page);
   await expect(page.locator('[data-command-primary]')).toHaveText('Resume Ash Road');
+  await expect(page.locator('[data-command-primary]')).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole('heading', { name: 'Saved loadout', exact: true })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'New run kit', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'New Run', exact: true })).toBeVisible();
@@ -310,6 +426,56 @@ async function advanceCampaignRevision(page: Page): Promise<number> {
   }));
 }
 
+async function putCampaignRecord(page: Page, record: unknown): Promise<void> {
+  await page.evaluate(async (value) => new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open('singedterra-campaign', 1);
+    request.onerror = () => reject(request.error ?? new Error('campaign database open failed'));
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains('campaign-runs')) {
+        request.result.createObjectStore('campaign-runs');
+      }
+    };
+    request.onsuccess = () => {
+      const database = request.result;
+      const transaction = database.transaction('campaign-runs', 'readwrite');
+      transaction.objectStore('campaign-runs').put(value, 'ash-road-local');
+      transaction.oncomplete = () => {
+        database.close();
+        resolve();
+      };
+      transaction.onerror = () => {
+        database.close();
+        reject(transaction.error ?? new Error('campaign record write failed'));
+      };
+    };
+  }), record);
+}
+
+async function readCampaignRevision(page: Page): Promise<number> {
+  return page.evaluate(async () => new Promise<number>((resolve, reject) => {
+    const request = indexedDB.open('singedterra-campaign', 1);
+    request.onerror = () => reject(request.error ?? new Error('campaign database open failed'));
+    request.onsuccess = () => {
+      const database = request.result;
+      const read = database.transaction('campaign-runs').objectStore('campaign-runs')
+        .get('ash-road-local');
+      read.onerror = () => reject(read.error ?? new Error('campaign record read failed'));
+      read.onsuccess = () => {
+        database.close();
+        const revision = (read.result as { revision?: unknown } | undefined)?.revision;
+        if (typeof revision !== 'number') reject(new Error('campaign revision missing'));
+        else resolve(revision);
+      };
+    };
+  }));
+}
+
+async function openSeededCampaign(page: Page, record: unknown): Promise<void> {
+  await gotoLobby(page);
+  await putCampaignRecord(page, record);
+  await openAshRoad(page);
+}
+
 test.describe('T12 production command center', () => {
   test.beforeAll(() => {
     if (REQUIRE_EVIDENCE && !EVIDENCE_DIR) {
@@ -331,6 +497,9 @@ test.describe('T12 production command center', () => {
 
   test('compact touch uses the accessible Modes sheet and touch activation', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'pixel-touch', 'coarse touch geometry owner');
+    await page.addInitScript(() => {
+      localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
+    });
     await assertCommandGeometry(page, GEOMETRIES.compact);
 
     const modes = page.getByRole('button', { name: 'Modes', exact: true });
@@ -339,7 +508,7 @@ test.describe('T12 production command center', () => {
     const sheet = page.getByRole('navigation', { name: 'Modes', exact: true });
     await expect(sheet).toBeVisible();
     await sheet.getByRole('button', { name: 'Skirmishes', exact: true }).tap();
-    await expect(page.locator('.command-center__item[data-command-item="quick-operations"]'))
+    await expect(page.locator('.command-center__item[data-command-item="standard"]'))
       .toHaveAttribute('aria-current', 'true');
     await page.getByRole('button', { name: 'Close Modes', exact: true }).tap();
     await expect(modes).toBeFocused();
@@ -369,8 +538,170 @@ test.describe('T12 production command center', () => {
     for (const geometry of geometries) await captureResumeGeometry(page, geometry);
   });
 
+  test('checking remains a distinct compact, focused, blocked save presentation', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'campaign save-state browser owner');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'indexedDB', {
+        configurable: true,
+        value: { open: () => ({}) },
+      });
+    });
+    await gotoLobby(page);
+    await selectCommandWorkspace(page, 'Campaigns', 'ash-road');
+
+    const view = page.locator('[data-campaign-command-view]');
+    const primary = view.locator('[data-command-primary]');
+    const status = view.locator('[data-campaign-save-status]');
+    await expect(view).toHaveAttribute('data-campaign-save-state', 'checking');
+    await expect(view).toHaveAttribute('aria-busy', 'true');
+    await expect(primary).toHaveText('Checking save');
+    await expect(primary).toBeDisabled();
+    await expect(primary).toBeInViewport({ ratio: 1 });
+    await status.focus();
+    await expect(status).toBeFocused();
+    await primary.evaluate((button) => button.click());
+    await expect(page.locator('#app')).toBeHidden();
+  });
+
+  test('incompatible and unavailable saves stay truthful, reachable, and blocked', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'campaign save-state browser owner');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openSeededCampaign(page, { kind: 'campaign-storage-record', schemaVersion: 99 });
+    const incompatible = page.locator('[data-campaign-command-view]');
+    const incompatiblePrimary = incompatible.locator('[data-command-primary]');
+    await expect(incompatible).toHaveAttribute('data-campaign-save-state', 'incompatible');
+    await expect(incompatible.locator('[data-campaign-save-status]'))
+      .toContainText('different Ash Road build');
+    await expect(incompatiblePrimary).toHaveText('Campaign unavailable');
+    await expect(incompatiblePrimary).toBeDisabled();
+    await expect(incompatiblePrimary).toBeInViewport({ ratio: 1 });
+    await incompatiblePrimary.evaluate((button) => button.click());
+    await expect(page.locator('#app')).toBeHidden();
+
+    const unavailablePage = await page.context().newPage();
+    try {
+      await unavailablePage.setViewportSize({ width: 390, height: 844 });
+      await unavailablePage.addInitScript(() => {
+        Object.defineProperty(window, 'indexedDB', {
+          configurable: true,
+          value: { open: () => { throw new Error('IndexedDB unavailable fixture'); } },
+        });
+      });
+      await gotoLobby(unavailablePage);
+      await selectCommandWorkspace(unavailablePage, 'Campaigns', 'ash-road');
+      const unavailable = unavailablePage.locator('[data-campaign-command-view]');
+      const unavailablePrimary = unavailable.locator('[data-command-primary]');
+      const retry = unavailable.getByRole('button', { name: 'Retry save check', exact: true });
+      await expect(unavailable).toHaveAttribute('data-campaign-save-state', 'unavailable');
+      await expect(unavailable.locator('[data-campaign-save-status]'))
+        .toContainText('could not be read');
+      await expect(unavailablePrimary).toHaveText('Save unavailable');
+      await expect(unavailablePrimary).toBeDisabled();
+      await expect(unavailablePrimary).toBeInViewport({ ratio: 1 });
+      await retry.focus();
+      await expect(retry).toBeFocused();
+      await unavailablePrimary.evaluate((button) => button.click());
+      await expect(unavailablePage.locator('#app')).toBeHidden();
+    } finally {
+      await unavailablePage.close();
+    }
+  });
+
+  test('compatible resume exposes the restoring handoff before battle acquisition', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'campaign save-state browser owner');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openSeededCampaign(page, campaignRecord(14));
+    const primary = page.locator('[data-command-primary]');
+    await expect(primary).toHaveText('Resume Ash Road');
+    await expect(primary).toBeInViewport({ ratio: 1 });
+    await primary.focus();
+    await expect(primary).toBeFocused();
+
+    const handoff = await primary.evaluate((button) => {
+      button.click();
+      const view = document.querySelector<HTMLElement>('[data-campaign-command-view]');
+      const action = view?.querySelector<HTMLButtonElement>('[data-command-primary]');
+      return {
+        status: view?.dataset.campaignSaveState,
+        busy: view?.getAttribute('aria-busy'),
+        action: action?.textContent,
+        disabled: action?.disabled,
+      };
+    });
+    expect(handoff).toEqual({
+      status: 'restoring',
+      busy: 'true',
+      action: 'Restoring Ash Road',
+      disabled: true,
+    });
+  });
+
+  test('complete save presents a compact Start New Run decision without resuming', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'campaign save-state browser owner');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await openSeededCampaign(page, completedCampaignRecord(21));
+    const view = page.locator('[data-campaign-command-view]');
+    const primary = view.locator('[data-command-primary]');
+    await expect(view).toHaveAttribute('data-campaign-save-state', 'complete');
+    await expect(view.locator('[data-campaign-save-status]')).toContainText('Campaign complete');
+    await expect(primary).toHaveText('Start New Run');
+    await expect(primary).toBeEnabled();
+    await expect(primary).toBeInViewport({ ratio: 1 });
+    await primary.focus();
+    await expect(primary).toBeFocused();
+    await expect(view.getByRole('button', { name: 'Resume Ash Road', exact: true })).toHaveCount(0);
+  });
+
+  test('New Run cancellation and a CAS conflict preserve the displayed/newer revision', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'campaign replacement browser owner');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openSeededCampaign(page, campaignRecord(14));
+    const newRun = page.getByRole('button', { name: 'New Run', exact: true });
+    await newRun.click();
+    await expect(page.getByRole('button', { name: 'Replace Saved Run', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel New Run', exact: true }).click();
+    await expect(page.locator('[data-command-primary]')).toHaveText('Resume Ash Road');
+    await expect(page.locator('[data-command-primary]')).toBeFocused();
+    expect(await readCampaignRevision(page)).toBe(14);
+
+    await page.getByRole('button', { name: 'New Run', exact: true }).click();
+    page.once('dialog', async (dialog) => dialog.dismiss());
+    await page.getByRole('button', { name: 'Replace Saved Run', exact: true }).click();
+    await expect(page.locator('#lobby')).toBeVisible();
+    await expect(page.locator('#app')).toBeHidden();
+    expect(await readCampaignRevision(page)).toBe(14);
+
+    const newerRevision = await advanceCampaignRevision(page);
+    page.once('dialog', async (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Replace Saved Run', exact: true }).click();
+    await expect(page.locator('[data-launch-failure]')).toContainText(
+      'Campaign progress changed in another session.',
+    );
+    await expect(page.locator('#lobby')).toBeVisible();
+    await expect(page.locator('#app')).toBeHidden();
+    await expect(page.locator('[data-campaign-command-view]'))
+      .toHaveAttribute('data-campaign-save-state', 'compatible');
+    await expect(page.locator('[data-command-primary]')).toHaveText('Resume Ash Road');
+    await expect(page.locator('[data-command-primary]')).toBeFocused();
+    expect(await readCampaignRevision(page)).toBe(newerRevision);
+  });
+
   test('non-default keyboard selection survives account rerender and match return in session only', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-fine', 'fine-pointer keyboard owner');
+    await page.addInitScript(() => {
+      localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
+    });
     await page.setViewportSize(GEOMETRIES.standard.viewport);
     await openAshRoad(page);
     const rail = page.locator('.command-center__category-rail');
@@ -378,25 +709,32 @@ test.describe('T12 production command center', () => {
     await campaigns.focus();
     await page.keyboard.press('ArrowRight');
     await expect(rail.getByRole('button', { name: 'Skirmishes', exact: true })).toBeFocused();
-    await expect(page.locator('.command-center__item[data-command-item="quick-operations"]'))
+    await expect(page.locator('.command-center__item[data-command-item="standard"]'))
+      .toHaveAttribute('aria-current', 'true');
+    const crosswindItem = page.locator(
+      '.command-center__library-items button[data-command-item="crosswind-range"]',
+    );
+    await crosswindItem.focus();
+    await crosswindItem.press('Enter');
+    await expect(page.locator('.command-center__item[data-command-item="crosswind-range"]'))
       .toHaveAttribute('aria-current', 'true');
     await expect.poll(() => page.evaluate((key) => sessionStorage.getItem(key), SELECTION_KEY))
-      .toBe(JSON.stringify({ categoryId: 'skirmishes', itemId: 'quick-operations' }));
+      .toBe(JSON.stringify({ categoryId: 'skirmishes', itemId: 'crosswind-range' }));
     expect(await page.evaluate((key) => localStorage.getItem(key), SELECTION_KEY)).toBeNull();
 
     await page.getByRole('button', { name: 'Account', exact: true }).click();
     await page.getByRole('dialog', { name: 'Player account', exact: true })
       .getByRole('button', { name: 'Close', exact: true }).click();
-    await expect(page.locator('.command-center__item[data-command-item="quick-operations"]'))
+    await expect(page.locator('.command-center__item[data-command-item="crosswind-range"]'))
       .toHaveAttribute('aria-current', 'true');
 
-    await page.getByRole('button', { name: 'Start First Salvo', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Crosswind Range', exact: true }).click();
     await expect(page.locator('#app')).toBeVisible();
     await returnFromBattle(page);
-    await expect(page.locator('.command-center__item[data-command-item="quick-operations"]'))
+    await expect(page.locator('.command-center__item[data-command-item="crosswind-range"]'))
       .toHaveAttribute('aria-current', 'true');
     await expect.poll(() => page.evaluate((key) => sessionStorage.getItem(key), SELECTION_KEY))
-      .toBe(JSON.stringify({ categoryId: 'skirmishes', itemId: 'quick-operations' }));
+      .toBe(JSON.stringify({ categoryId: 'skirmishes', itemId: 'crosswind-range' }));
     expect(await page.evaluate((key) => localStorage.getItem(key), SELECTION_KEY)).toBeNull();
   });
 

@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Lobby } from './Lobby';
 
 interface LobbyInternals {
-  surface: 'chooser' | 'preparation';
   activeTab: string;
   onlineSubView: string;
   waitingRoomCode: string;
@@ -14,6 +13,13 @@ interface LobbyInternals {
 
 function internals(lobby: Lobby): LobbyInternals {
   return lobby as unknown as LobbyInternals;
+}
+
+function selectOnline(root: HTMLElement): void {
+  root.querySelector<HTMLButtonElement>(
+    '[data-command-surface="rail"][data-command-category="multiplayer"]',
+  )?.click();
+  root.querySelector<HTMLButtonElement>('[data-command-item="online"]')?.click();
 }
 
 async function flush(): Promise<void> {
@@ -52,10 +58,29 @@ describe('Lobby shareable room invites', () => {
 
     lobby.show();
 
-    expect(root.querySelector('.lobby-deployment-chooser')).toBeNull();
-    expect(root.querySelector('.lobby-mode-context h2')?.textContent).toBe('Play Online');
+    expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+      .toBe('true');
+    expect(root.querySelector('[data-multiplayer-command-view="online"]')).not.toBeNull();
+    expect(root.querySelector('.lobby-mode-context')).toBeNull();
     expect(root.querySelector<HTMLInputElement>('.lobby-code-input')?.value).toBe('AB12');
     expect(internals(lobby).onlineSubView).toBe('join');
+  });
+
+  it('consumes invite priority after entry so a user selection survives Account rerender', () => {
+    history.replaceState(null, '', '/singedTerra/?join=ab12');
+    const lobby = new Lobby(root, vi.fn());
+    lobby.show();
+
+    root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]')!.click();
+    expect(root.querySelector('[data-command-item="local-battle"]')?.getAttribute('aria-current'))
+      .toBe('true');
+    lobby.showAccountSignIn();
+
+    expect(root.querySelector('[data-command-item="local-battle"]')?.getAttribute('aria-current'))
+      .toBe('true');
+    expect(root.querySelector('[data-multiplayer-command-view="local-battle"]')).not.toBeNull();
+    expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+      .toBe('false');
   });
 
   it('ignores malformed invite parameters and keeps the normal landing view', () => {
@@ -71,11 +96,11 @@ describe('Lobby shareable room invites', () => {
       lobby.show();
       expect(root.querySelectorAll('[data-command-surface="rail"][data-command-category]'))
         .toHaveLength(3);
-      expect(root.querySelector('.lobby-deployment-chooser button[aria-label="Start First Salvo"]'))
+      expect(root.querySelector('[data-command-item="first-salvo"]'))
         .toBeInstanceOf(HTMLButtonElement);
-      expect(root.querySelector('.lobby-deployment-chooser button[aria-label="Start Ash Road"]'))
+      expect(root.querySelector('[data-command-item="ash-road"]'))
         .toBeNull();
-      expect(root.getElementsByClassName('lobby-first-salvo')).toHaveLength(1);
+      expect(root.querySelectorAll('[data-skirmish-command-view]')).toHaveLength(1);
       expect(root.querySelector('.lobby-mode-context')).toBeNull();
       expect(root.querySelector('.lobby-code-input')).toBeNull();
     }
@@ -90,7 +115,6 @@ describe('Lobby shareable room invites', () => {
     });
     const lobby = new Lobby(root, vi.fn());
     Object.assign(internals(lobby), {
-      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingRoomCode: 'ABCD',
@@ -101,6 +125,7 @@ describe('Lobby shareable room invites', () => {
     });
 
     lobby.show();
+    selectOnline(root);
     root.querySelector<HTMLButtonElement>('.online-invite-copy')!.click();
     await flush();
 
@@ -119,7 +144,6 @@ describe('Lobby shareable room invites', () => {
     });
     const lobby = new Lobby(root, vi.fn());
     Object.assign(internals(lobby), {
-      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingRoomCode: 'WXYZ',
@@ -130,6 +154,7 @@ describe('Lobby shareable room invites', () => {
     });
 
     lobby.show();
+    selectOnline(root);
     root.querySelector<HTMLButtonElement>('.online-invite-copy')!.click();
     await flush();
 
@@ -155,7 +180,6 @@ describe('Lobby shareable room invites', () => {
     });
     const lobby = new Lobby(root, vi.fn());
     Object.assign(internals(lobby), {
-      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingRoomCode: code,
@@ -165,6 +189,7 @@ describe('Lobby shareable room invites', () => {
       waitingOptions: { maxPlayers: 2, maxWind: 10, gravity: 0.15 },
     });
     lobby.show();
+    selectOnline(root);
 
     root.querySelector<HTMLButtonElement>('.online-invite-copy')!.click();
     await flush();

@@ -65,6 +65,7 @@ describe('Lobby rejoin affordance (T-09, AC-05)', () => {
     } catch {
       /* jsdom localStorage always present, but stay defensive */
     }
+    sessionStorage.clear();
     root = document.createElement('div');
     document.body.appendChild(root);
     lobby = new Lobby(root, vi.fn());
@@ -88,6 +89,22 @@ describe('Lobby rejoin affordance (T-09, AC-05)', () => {
     await flush();
 
     expect(root.textContent).toContain(REJOIN_TEXT);
+  });
+
+  it('consumes rejoin priority after entry so a user selection survives Account rerender', async () => {
+    writeSession({ roomId: 'room-1', roomCode: 'ABCD', playerId: 'p-1' });
+    vi.spyOn(internals(lobby).transport, 'fetchRoom').mockResolvedValue(activeRoom());
+    lobby.show();
+    await flush();
+    expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+      .toBe('true');
+
+    root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]')!.click();
+    lobby.showAccountSignIn();
+
+    expect(root.querySelector('[data-command-item="local-battle"]')?.getAttribute('aria-current'))
+      .toBe('true');
+    expect(root.querySelector('[data-multiplayer-command-view="local-battle"]')).not.toBeNull();
   });
 
   it('HIDDEN: no stored descriptor at all', async () => {

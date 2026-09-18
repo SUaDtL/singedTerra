@@ -15,6 +15,7 @@ export interface LobbyBrowseViewOptions {
   rooms: readonly BrowseRoom[];
   busy: boolean;
   onJoin: (code: string) => void;
+  onRefresh: () => void;
   onCreate: () => void;
   onJoinByCode: () => void;
   listenerSignal?: AbortSignal;
@@ -70,7 +71,7 @@ export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLEleme
 
       const join = document.createElement('button');
       join.type = 'button';
-      join.className = 'lobby-btn primary lobby-operations-board__room-join';
+      join.className = 'lobby-btn secondary lobby-operations-board__room-join';
       const full = room.playerCount >= room.maxPlayers;
       join.textContent = `Join (${room.playerCount}/${room.maxPlayers})`;
       join.disabled = full || options.busy;
@@ -85,7 +86,14 @@ export function buildLobbyBrowseView(options: LobbyBrowseViewOptions): HTMLEleme
   }
   operations.append(list);
 
-  root.append(header, crew, operations, buildOnlineRouteActions(null, [
+  const refresh = document.createElement('button');
+  refresh.type = 'button';
+  refresh.className = 'lobby-btn primary';
+  refresh.textContent = 'Refresh rooms';
+  refresh.disabled = options.busy;
+  refresh.addEventListener('click', options.onRefresh, { signal: options.listenerSignal });
+
+  root.append(header, crew, operations, buildOnlineRouteActions(refresh, [
     { id: 'create', label: 'Create a room', onClick: options.onCreate },
     { id: 'join-code', label: 'Join with a code', onClick: options.onJoinByCode },
   ], options.listenerSignal));

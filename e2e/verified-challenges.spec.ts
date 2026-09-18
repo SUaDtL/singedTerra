@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
-import { enterBattleIfBriefed, openLocalPreparation, openQuickOperationsWorkspace } from './support';
+import { enterBattleIfBriefed, openVerifiedOperations, selectCommandWorkspace } from './support';
 import {
   QUALIFYING_FIRE,
   VERIFIED_SESSION_ID,
@@ -51,10 +51,7 @@ async function expectModalContained(page: Page, report: Locator): Promise<void> 
 
 async function openVerifiedPreparation(page: Page, testInfo: TestInfo): Promise<void> {
   await gotoVerifiedFixtureLobby(page);
-  await openLocalPreparation(page);
-  const verifiedTab = page.getByRole('tab', { name: 'Verified Deployment', exact: true });
-  await expect(verifiedTab).toBeEnabled();
-  await verifiedTab.click();
+  await openVerifiedOperations(page);
   const operationSelector = page.getByRole('tablist', { name: 'Verified operation', exact: true });
   const challengeChoice = operationSelector.getByRole('tab', { name: 'Crosswind Qualification', exact: true });
   await challengeChoice.click();
@@ -239,11 +236,8 @@ test('[mocked network fixture] public ST1 and ordinary practice never allocate a
   await expect(page.locator('#lobby')).toBeHidden();
   expect(fixture.requests.start).toHaveLength(0);
   await gotoVerifiedFixtureLobby(page);
-  await openQuickOperationsWorkspace(page);
-  const otherOperations = page.locator('[data-ui="other-quick-duels"] > summary');
-  if (await otherOperations.isVisible()) await otherOperations.click();
-  await page.locator('[data-operation-id="crosswind-range"]').click();
-  await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+  await selectCommandWorkspace(page, 'Skirmishes', 'crosswind-range');
+  await page.getByRole('button', { name: 'Start Crosswind Range', exact: true }).click();
   await expect(page.locator('#lobby')).toBeHidden();
   expect(fixture.requests.start).toHaveLength(0);
 });

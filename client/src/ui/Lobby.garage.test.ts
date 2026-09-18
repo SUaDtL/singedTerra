@@ -4,7 +4,6 @@ import type { NetworkPlayer } from '../client/LobbyTransport';
 import { Lobby, type LobbyConfig } from './Lobby';
 
 interface LobbyInternals {
-  surface: 'chooser' | 'preparation';
   activeTab: 'hotseat' | 'online';
   onlineSubView: 'create' | 'join' | 'browse' | 'waiting';
   players: Array<{ loadout: TankLoadout }>;
@@ -32,6 +31,7 @@ function openMultiplayer(root: HTMLElement, itemId: 'local-battle' | 'online', a
     '[data-command-surface="rail"][data-command-category="multiplayer"]',
   )?.click();
   root.querySelector<HTMLButtonElement>(`[data-command-item="${itemId}"]`)?.click();
+  if (itemId === 'local-battle' || itemId === 'online') return;
   const choice = Array.from(root.querySelectorAll<HTMLButtonElement>('button'))
     .find((candidate) => candidate.textContent === action);
   if (!choice) throw new Error(`Expected ${action} choice`);
@@ -342,7 +342,6 @@ describe('Lobby tank Garage', () => {
   it('prefers the local seat in a waiting-room roster', () => {
     const lobby = new Lobby(root, onReady);
     Object.assign(internals(lobby), {
-      surface: 'preparation',
       activeTab: 'online',
       onlineSubView: 'waiting',
       waitingPlayerId: 'seat-local',
@@ -363,7 +362,8 @@ describe('Lobby tank Garage', () => {
         },
       ],
     });
-    internals(lobby).render();
+    lobby.show();
+    openMultiplayer(root, 'online', 'Play Online');
 
     expect(spotlight(root).dataset.owner).toBe('online-player');
     expect(spotlight(root).querySelector('.lobby-preview__spotlight-name')!.textContent)

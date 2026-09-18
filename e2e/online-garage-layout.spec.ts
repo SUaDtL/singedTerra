@@ -7,7 +7,6 @@ test('online garage action hierarchy stays inside the stage', async ({ page }) =
   await openLocalPreparation(page);
   await expect(page.locator('.lobby-garage')).toHaveCount(2);
 
-  await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
   await openOnlinePreparation(page);
   await expect(page.locator('.lobby-garage')).toHaveCount(1);
 

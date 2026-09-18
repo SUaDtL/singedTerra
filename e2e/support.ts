@@ -66,7 +66,9 @@ export async function gotoLobby(page: Page): Promise<void> {
 }
 
 export type CommandCategoryName = 'Campaigns' | 'Skirmishes' | 'Multiplayer';
-export type CommandItemName = 'ash-road' | 'quick-operations' | 'local-battle' | 'online';
+export type CommandItemName = 'ash-road' | 'local-battle'
+  | 'verified-operations' | 'online' | 'first-salvo' | 'standard' | 'crosswind-range'
+  | 'caldera-run' | 'last-light-siege' | 'lean-arsenal' | 'imported-challenge';
 
 /** Select one owned workspace through the public two-level command center. */
 export async function selectCommandWorkspace(
@@ -84,8 +86,12 @@ export async function selectCommandWorkspace(
     const modes = center.getByRole('button', { name: 'Modes', exact: true });
     await modes.click();
     const sheet = page.getByRole('navigation', { name: 'Modes', exact: true });
-    await sheet.getByRole('button', { name: category, exact: true }).click();
-    await page.getByRole('button', { name: 'Close Modes', exact: true }).click();
+    const categoryButton = sheet.getByRole('button', { name: category, exact: true });
+    if (await categoryButton.getAttribute('aria-pressed') !== 'true') {
+      await categoryButton.click();
+    }
+    const currentSheet = page.getByRole('dialog', { name: 'Modes', exact: true });
+    if (await currentSheet.isVisible()) await page.keyboard.press('Escape');
   }
   const commandItem = center.locator(
     `.command-center__library-items button[data-command-item="${item}"]`,
@@ -101,26 +107,43 @@ export async function openAshRoadWorkspace(page: Page): Promise<void> {
   await expect(page.locator('[data-campaign-save-status]')).not.toContainText('Checking');
 }
 
-export async function openQuickOperationsWorkspace(page: Page): Promise<void> {
-  await selectCommandWorkspace(page, 'Skirmishes', 'quick-operations');
-  await expect(page.locator('.command-center__workspace-host .lobby-deployment-chooser'))
-    .toBeVisible();
+export async function openStandardSkirmishWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Skirmishes', 'standard');
+  await expect(page.locator('[data-skirmish-command-view]')).toBeVisible();
+}
+
+export async function openFirstSalvoWorkspace(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Skirmishes', 'first-salvo');
+  await expect(page.locator('[data-skirmish-command-view]')).toBeVisible();
 }
 
 export async function openLocalPreparation(page: Page): Promise<void> {
   await selectCommandWorkspace(page, 'Multiplayer', 'local-battle');
-  await page.locator('.command-center__workspace-host')
-    .getByRole('button', { name: 'Local Battle', exact: true }).click();
-  await expect(page.getByRole('tab', { name: 'Local Battle', exact: true }))
-    .toHaveAttribute('aria-selected', 'true');
+  const workspace = page.locator('[data-multiplayer-command-view="local-battle"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole('tablist', { name: 'Hot Seat modes', exact: true }))
+    .toHaveCount(0);
+  await expect(workspace.locator('[data-operation-lane="practice"]')).toHaveCount(0);
+  await expect(workspace.locator('.lobby-verified-deployment, .lobby-verified-challenge'))
+    .toHaveCount(0);
+}
+
+export async function openVerifiedOperations(page: Page): Promise<void> {
+  await selectCommandWorkspace(page, 'Multiplayer', 'verified-operations');
+  const workspace = page.locator('[data-multiplayer-command-view="verified-operations"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole('tablist', { name: 'Hot Seat modes', exact: true }))
+    .toHaveCount(0);
+  await expect(workspace.getByRole('tablist', { name: 'Verified operation', exact: true }))
+    .toBeVisible();
 }
 
 export async function openOnlinePreparation(page: Page): Promise<void> {
   await selectCommandWorkspace(page, 'Multiplayer', 'online');
-  await page.locator('.command-center__workspace-host')
-    .getByRole('button', { name: 'Play Online', exact: true }).click();
+  const workspace = page.locator('[data-multiplayer-command-view="online"]');
+  await expect(workspace).toBeVisible();
   await expect(page.getByRole('tabpanel', { name: 'Play Online preparation', exact: true }))
-    .toBeVisible();
+    .toHaveCount(0);
 }
 
 /** Open the campaign's mode-aware Match/Mission ledger when it is drawer-owned. */
@@ -175,22 +198,8 @@ export async function gotoFuelStopFromPublicEntry(page: Page): Promise<void> {
  * intentionally leaves it closed so first-contact tests observe production.
  */
 export async function openHotSeatCustomization(page: Page): Promise<void> {
-  const tabs = page.getByRole('tablist', { name: 'Hot Seat modes', exact: true });
-  if (!(await tabs.isVisible())) {
-    await openLocalPreparation(page);
-  }
-  await selectHotSeatTab(page, 'Local Battle');
+  await openLocalPreparation(page);
   await expect(page.locator('#lobby .lobby-name').first()).toBeVisible();
-}
-
-export async function selectHotSeatTab(
-  page: Page,
-  name: 'Local Battle' | 'Practice vs CPU' | 'Verified Deployment',
-): Promise<void> {
-  const tab = page.getByRole('tab', { name, exact: true });
-  await tab.click();
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel', { name, exact: true })).toBeVisible();
 }
 
 /**
@@ -222,6 +231,45 @@ export async function assertLobbyFrame(page: Page): Promise<void> {
   expect(overflow.cardX, 'Lobby card must not overflow horizontally').toBeLessThanOrEqual(1);
 }
 
+/** Prove owned workspaces cannot collapse or hide the accepted three-bay command rail. */
+export async function assertCommandHeaderAssembly(page: Page): Promise<void> {
+  const header = page.locator('#lobby .lobby-command-rail');
+  const brand = header.locator('.lobby-command-rail__brand');
+  const context = header.locator('.lobby-command-rail__context');
+  const dossier = header.locator('.lobby-command-rail__dossier');
+  for (const region of [header, brand, context, dossier]) await expect(region).toBeVisible();
+
+  const geometry = await header.evaluate((element) => {
+    const bounds = (selector: string) => {
+      const target = element.querySelector<HTMLElement>(selector);
+      if (!target) throw new Error(`Missing command-header region: ${selector}`);
+      return target.getBoundingClientRect().toJSON();
+    };
+    return {
+      header: element.getBoundingClientRect().toJSON(),
+      brand: bounds('.lobby-command-rail__brand'),
+      context: bounds('.lobby-command-rail__context'),
+      dossier: bounds('.lobby-command-rail__dossier'),
+    };
+  });
+  for (const [name, region] of Object.entries({
+    brand: geometry.brand,
+    context: geometry.context,
+    dossier: geometry.dossier,
+  })) {
+    expect(region.width, `${name} header bay width`).toBeGreaterThan(0);
+    expect(region.height, `${name} header bay height`).toBeGreaterThan(0);
+    expect(region.left, `${name} header bay left containment`)
+      .toBeGreaterThanOrEqual(geometry.header.left - 1);
+    expect(region.right, `${name} header bay right containment`)
+      .toBeLessThanOrEqual(geometry.header.right + 1);
+    expect(region.top, `${name} header bay top containment`)
+      .toBeGreaterThanOrEqual(geometry.header.top - 1);
+    expect(region.bottom, `${name} header bay bottom containment`)
+      .toBeLessThanOrEqual(geometry.header.bottom + 1);
+  }
+}
+
 /**
  * Prove a primary control is reachable inside the Lobby's own scroll region.
  * Scrolling is intentional: long forms may use internal vertical overflow,
@@ -243,6 +291,97 @@ export async function assertLobbyControlReachable(page: Page, selector: string):
   expect(controlBox!.y).toBeGreaterThanOrEqual(cardBox!.y - 1);
   expect(controlBox!.x + controlBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
   expect(controlBox!.y + controlBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1);
+}
+
+type ActionSemantic = 'safe' | 'danger';
+
+async function assertSemanticActionFill(
+  page: Page,
+  selector: string,
+  semantic: ActionSemantic,
+): Promise<{
+  border: number[];
+  background: string;
+  backgroundColor: number[];
+  fillStops: number[][];
+  intent: string;
+  expectedTop: string;
+  expectedBottom: string;
+}> {
+  const action = page.locator(selector).filter({ visible: true });
+  await expect(action).toHaveCount(1);
+  const palette = await action.evaluate((element, expectedSemantic) => {
+    const style = getComputedStyle(element);
+    const channels = (value: string): number[] => (
+      value.match(/[\d.]+/g)?.slice(0, 3).map(Number) ?? []
+    );
+    const fillStops = style.backgroundImage.match(/rgba?\([^)]*\)/g)
+      ?.map(channels) ?? [];
+    const lobby = element.closest<HTMLElement>('#lobby');
+    if (!lobby) throw new Error('Semantic action must remain inside #lobby');
+    const lobbyStyle = getComputedStyle(lobby);
+    const prefix = expectedSemantic === 'safe'
+      ? '--console-safe-action-fill-'
+      : '--console-danger-action-fill-';
+    const normalizeColor = (value: string): string => {
+      const probe = document.createElement('span');
+      probe.style.color = value.trim();
+      lobby.append(probe);
+      const normalized = getComputedStyle(probe).color;
+      probe.remove();
+      return normalized;
+    };
+    return {
+      border: channels(style.borderTopColor),
+      background: style.backgroundImage,
+      backgroundColor: channels(style.backgroundColor),
+      fillStops,
+      intent: style.getPropertyValue('--console-action-semantic').trim(),
+      expectedTop: normalizeColor(lobbyStyle.getPropertyValue(`${prefix}top`)),
+      expectedBottom: normalizeColor(lobbyStyle.getPropertyValue(`${prefix}bottom`)),
+    };
+  }, semantic);
+  expect(palette.intent, `${selector} must retain its authoritative semantic marker`)
+    .toBe(semantic);
+  expect(palette.expectedTop, `${selector} must resolve its ${semantic} top fill token`)
+    .toMatch(/^rgba?\(/);
+  expect(palette.expectedBottom, `${selector} must resolve its ${semantic} bottom fill token`)
+    .toMatch(/^rgba?\(/);
+  expect(palette.fillStops.length, `${selector} must render at least two gradient fill stops`)
+    .toBeGreaterThanOrEqual(2);
+  if (semantic === 'safe') {
+    const [top, bottom] = palette.fillStops;
+    expect(top![0], `${selector} gold top red channel`).toBeGreaterThanOrEqual(230);
+    expect(top![1], `${selector} gold top green channel`).toBeGreaterThanOrEqual(160);
+    expect(top![2], `${selector} gold top blue channel`).toBeGreaterThanOrEqual(70);
+    expect(bottom![0], `${selector} gold bottom red channel`).toBeGreaterThanOrEqual(190);
+    expect(bottom![1], `${selector} gold bottom green channel`).toBeGreaterThanOrEqual(110);
+    expect(bottom![2], `${selector} gold bottom blue channel`).toBeLessThanOrEqual(100);
+  } else {
+    expect(palette.background, `${selector} must render the danger top fill token`)
+      .toContain(palette.expectedTop);
+    expect(palette.background, `${selector} must render the danger bottom fill token`)
+      .toContain(palette.expectedBottom);
+  }
+  return palette;
+}
+
+/** Safe launch/deployment actions render the command deck's gold fill, never a bordered fallback. */
+export async function assertGoldSafeAction(page: Page, selector: string): Promise<void> {
+  const palette = await assertSemanticActionFill(page, selector, 'safe');
+  expect(palette.border.length, `${selector} must expose a computed border colour`).toBe(3);
+  expect(palette.border[0], `${selector} gold border red channel`).toBeGreaterThanOrEqual(180);
+  expect(palette.border[1], `${selector} gold border green channel`).toBeGreaterThanOrEqual(150);
+  expect(palette.border[2], `${selector} gold border blue channel`).toBeGreaterThanOrEqual(70);
+}
+
+/** Explicit destructive confirmation renders the red danger fill, never the safe gold semantic. */
+export async function assertDangerAction(page: Page, selector: string): Promise<void> {
+  const palette = await assertSemanticActionFill(page, selector, 'danger');
+  expect(palette.border.length, `${selector} must expose a computed border colour`).toBe(3);
+  expect(palette.border[0], `${selector} danger border red channel`).toBeGreaterThanOrEqual(180);
+  expect(palette.border[1], `${selector} danger border green channel`).toBeLessThan(150);
+  expect(palette.border[2], `${selector} danger border blue channel`).toBeLessThan(130);
 }
 
 /** Whether the fixed stage is rendered below its compact-scale threshold. */

@@ -212,9 +212,11 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
       `[data-command-surface="rail"][data-command-category="${category}"]`,
     )?.click()
     if (category === 'multiplayer') {
-      root.querySelector<HTMLButtonElement>(
+      const item = root.querySelector<HTMLButtonElement>(
         `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
-      )?.click()
+      )
+      item?.click()
+      if (item) return item
     }
     match = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === text)
@@ -249,21 +251,21 @@ describe('Lobby account composition', () => {
     }, undefined, () => 42)
     lobby.show()
 
+    const crosswind = () => root.querySelector<HTMLButtonElement>(
+      '[data-command-item="crosswind-range"]',
+    )
     expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
-    button(root, 'Local Battle').click()
-
-    expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
-    button(root, 'Practice vs CPU').click()
-    expect(root.querySelector('[data-operation-lane="practice"]')).not.toBeNull()
+    expect(crosswind()).toBeInstanceOf(HTMLButtonElement)
 
     account.emit({ status: 'anonymous', busy: false, error: '' })
     expect(root.querySelector('[data-ui="commander-operations"]')).toBeNull()
-    expect(root.querySelector('[data-operation-lane="practice"]')).not.toBeNull()
+    expect(crosswind()).toBeInstanceOf(HTMLButtonElement)
 
     account.emit(verifiedAccountState(0))
-    const restoredPractice = root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')
+    const restoredPractice = crosswind()
     expect(restoredPractice).toBeInstanceOf(HTMLButtonElement)
     restoredPractice!.click()
+    root.querySelector<HTMLButtonElement>('[data-command-primary]')!.click()
     expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
       mode: 'hotseat',
       quickOperation: expect.objectContaining({ id: 'crosswind-range' }),
@@ -1087,9 +1089,7 @@ describe('Lobby account composition', () => {
       .mockResolvedValueOnce(verifiedStart)
       .mockResolvedValueOnce({ resumed: false, descriptor: freshDescriptor })
 
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
     button(root, 'Start verified deployment').click()
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledOnce())
     expect(onReady.mock.calls[0]?.[0].verifiedDeployment).toMatchObject({
@@ -1569,7 +1569,7 @@ describe('Lobby account composition', () => {
 
     expect(button(root, 'Deploy local battle').disabled).toBe(false)
     expect(root.querySelector('.lobby-verified-deployment')).toBeNull()
-    expect(button(root, 'Verified Deployment').disabled).toBe(true)
+    expect(root.textContent).not.toContain('Verified Deployment')
   })
 
   it('launches authenticated verified play from the server descriptor without identity re-entry or local-setting leakage', async () => {
@@ -1587,9 +1587,7 @@ describe('Lobby account composition', () => {
       maxWind: '10', gravity: '0.4', walls: 'wrap', hazards: 'sinkholes', seed: '999',
       rounds: '9', interestRate: '0.5', suddenDeathTurn: '2', armsLevel: '4', teamMode: 'true',
     })
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
 
     const verified = root.querySelector<HTMLElement>('.lobby-verified-deployment')!
     expect(verified.querySelector('input')).toBeNull()
@@ -1636,9 +1634,7 @@ describe('Lobby account composition', () => {
     })
     await lobby.startVerifiedDeployment()
     expect(lobby.recordVerifiedDeploymentFire({ angle: 37, power: 64 })).toBe(true)
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
 
     expect(root.querySelector('.lobby-verified-deployment')?.textContent)
       .toContain('Recovered 1 of 6 human salvos.')
@@ -1674,9 +1670,7 @@ describe('Lobby account composition', () => {
       })
       return account
     })
-    lobby.show()
-    button(root, 'Local Battle').click()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedDeployment: true })
 
     expect(button(root, 'Verified deployment busy').disabled).toBe(true)
     expect(account.startVerifiedDeployment).not.toHaveBeenCalled()

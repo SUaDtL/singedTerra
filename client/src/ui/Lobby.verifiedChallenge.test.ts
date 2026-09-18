@@ -81,11 +81,22 @@ function button(root: HTMLElement, label: string): HTMLButtonElement {
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="multiplayer"]',
     )?.click()
-    root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]')?.click()
+    const item = root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]')
+    item?.click()
+    if (item) return item
     found = [...root.querySelectorAll('button')].find((candidate) => candidate.textContent === label)
   }
   if (!(found instanceof HTMLButtonElement)) throw new Error(`Missing ${label}`)
   return found
+}
+
+function selectCommandItem(root: HTMLElement, category: string, item: string): HTMLButtonElement {
+  root.querySelector<HTMLButtonElement>(
+    `[data-command-surface="rail"][data-command-category="${category}"]`,
+  )!.click()
+  const target = root.querySelector<HTMLButtonElement>(`[data-command-item="${item}"]`)!
+  target.click()
+  return target
 }
 
 function fixture(
@@ -120,10 +131,7 @@ function fixture(
     () => 42,
     () => session,
   )
-  lobby.show()
-  button(root, 'Local Battle').click()
-  button(root, 'Verified Deployment').click()
-  button(root, 'Crosswind Qualification').click()
+  lobby.show({ focusVerifiedChallenge: true })
   return { root, lobby, onReady, account, transport, session,
     setNow: (value: number) => { now = value } }
 }
@@ -178,17 +186,18 @@ describe('Lobby Crosswind Qualification', () => {
     lobby.show({ focusVerifiedChallenge: true })
     expect(document.activeElement).toBe(button(root, 'Check availability and start'))
 
-    button(root, 'Practice vs CPU').click()
-    button(root, 'Practice vs CPU').focus()
+    selectCommandItem(root, 'skirmishes', 'crosswind-range').focus()
     lobby.show({ focusVerifiedDeployment: true })
     expect(document.activeElement).toBe(button(root, 'Start verified deployment'))
   })
 
-  it('keeps all three Hot Seat tabs and presents a separate exact trial without guessing career totals', () => {
+  it('presents a separate Verified Operations command item without retired outer tabs or guessed totals', () => {
     const { root, transport } = fixture()
 
-    expect([...root.querySelectorAll('.lobby-hotseat-tabs > [role="tab"]')].map((tab) => tab.textContent)).toEqual([
-      'Local Battle', 'Practice vs CPU', 'Verified Deployment',
+    expect(root.querySelectorAll('.lobby-hotseat-tabs > [role="tab"]')).toHaveLength(0)
+    expect([...root.querySelectorAll('.command-center__library-items [data-command-item]')]
+      .map((item) => item.getAttribute('data-command-item'))).toEqual([
+      'local-battle', 'verified-operations', 'online',
     ])
     const trial = root.querySelector<HTMLElement>('[data-verified-challenge="crosswind-qualification"]')
     expect(trial?.textContent).toContain('Crosswind Qualification')
@@ -245,7 +254,7 @@ describe('Lobby Crosswind Qualification', () => {
     await lobby.launchVerifiedChallenge()
     expect(lobby.recordVerifiedChallengeFire(fire)).toBe(true)
     await lobby.completeVerifiedChallenge()
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedChallenge: true })
 
     expect(root.textContent).toContain('Retry available in 5 seconds.')
     expect(button(root, 'Retry verification').disabled).toBe(true)
@@ -253,7 +262,7 @@ describe('Lobby Crosswind Qualification', () => {
     expect(transport.get).not.toHaveBeenCalled()
 
     setNow(Date.parse('2026-09-13T12:05:05.000Z'))
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedChallenge: true })
     expect(button(root, 'Retry verification').disabled).toBe(false)
   })
 
@@ -286,7 +295,7 @@ describe('Lobby Crosswind Qualification', () => {
     expect(account.refreshVerifiedCareer).toHaveBeenCalledOnce()
     expect(lobby.verifiedChallenge).toMatchObject({ status: 'completed', receipt })
 
-    button(root, 'Verified Deployment').click()
+    lobby.show({ focusVerifiedChallenge: true })
     expect(root.textContent).toContain('First clear verified: medal earned and +200 XP awarded.')
   })
 

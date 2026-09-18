@@ -72,6 +72,7 @@ export function createCommandCenterShell<Context>(
   let focusRequest = 0;
   let destroyed = false;
   let interactionObserved = false;
+  const lastItemByCategory = new Map<CommandCategoryId, CommandItemId>();
   const modalBackgrounds = new Map<HTMLElement, boolean>();
 
   const restoreModalBackgrounds = (): void => {
@@ -285,6 +286,27 @@ export function createCommandCenterShell<Context>(
     focusSelectedItem();
   };
 
+  const queueStableFocusFallback = (): void => {
+    const request = ++focusRequest;
+    const expectedGeneration = generation;
+    queueMicrotask(() => {
+      if (!destroyed && request === focusRequest && expectedGeneration === generation) {
+        focusFallbackSelection();
+      }
+    });
+  };
+
+  const queueSelectedItemReveal = (): void => {
+    const expectedItemId = selected?.itemId;
+    if (!expectedItemId) return;
+    queueMicrotask(() => {
+      if (destroyed || selected?.itemId !== expectedItemId) return;
+      libraryItems.querySelector<HTMLElement>(
+        `[data-command-item="${expectedItemId}"]`,
+      )?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    });
+  };
+
   const categoryButtons = (
     container: HTMLElement,
     surface: 'rail' | 'sheet',
@@ -407,6 +429,7 @@ export function createCommandCenterShell<Context>(
     const changed = selected?.categoryId !== next.categoryId || selected.itemId !== next.itemId;
     selected = next;
     activeCategoryId = next.categoryId;
+    lastItemByCategory.set(next.categoryId, next.itemId);
     if (changed) mountSelection(next);
     else activeView?.view.update(context);
     renderNavigation();
@@ -417,7 +440,8 @@ export function createCommandCenterShell<Context>(
     const category = findCategory(categoryId);
     if (!category) return;
     activeCategoryId = categoryId;
-    const item = category.items.find((candidate) => candidate.id === selected?.itemId)
+    const lastItemId = lastItemByCategory.get(categoryId);
+    const item = category.items.find((candidate) => candidate.id === lastItemId)
       ?? category.items[0];
     if (!item) {
       selected = null;
@@ -494,8 +518,10 @@ export function createCommandCenterShell<Context>(
     : null;
   selected = available?.selection ?? firstSelection();
   activeCategoryId = selected?.categoryId ?? registry.categories[0]?.contribution.id ?? null;
+  if (selected) lastItemByCategory.set(selected.categoryId, selected.itemId);
   renderNavigation();
   mountSelection(selected);
+  queueSelectedItemReveal();
 
   return {
     update: (nextContext) => {
@@ -509,22 +535,17 @@ export function createCommandCenterShell<Context>(
       if (current) {
         selected = current.selection;
         activeCategoryId = current.category.id;
+        lastItemByCategory.set(selected.categoryId, selected.itemId);
         renderNavigation();
         activeView?.view.update(context);
-        restoreStableFocus(focusToken);
+        if (focusToken && !restoreStableFocus(focusToken)) queueStableFocusFallback();
         return;
       }
       selected = firstSelection();
       activeCategoryId = selected?.categoryId ?? registry.categories[0]?.contribution.id ?? null;
       renderNavigation();
       mountSelection(selected);
-      const request = ++focusRequest;
-      const expectedGeneration = generation;
-      queueMicrotask(() => {
-        if (!destroyed && request === focusRequest && expectedGeneration === generation) {
-          focusFallbackSelection();
-        }
-      });
+      queueStableFocusFallback();
     },
     promoteInitialSelection: (nextSelection) => {
       if (destroyed || interactionObserved || root.contains(document.activeElement)) return false;
@@ -536,8 +557,10 @@ export function createCommandCenterShell<Context>(
       if (!availableSelection) return false;
       selected = availableSelection.selection;
       activeCategoryId = availableSelection.category.id;
+      lastItemByCategory.set(selected.categoryId, selected.itemId);
       renderNavigation();
       mountSelection(selected);
+      queueSelectedItemReveal();
       return true;
     },
     focusWorkspaceDefault: () => {

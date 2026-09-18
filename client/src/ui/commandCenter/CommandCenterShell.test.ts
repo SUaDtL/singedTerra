@@ -120,8 +120,8 @@ function setup(options: {
     ]),
     fixtureCategory('campaigns', 'Campaigns', 10, [fixtureItem('ash-road', views)]),
     fixtureCategory('skirmishes', 'Skirmishes', 20, [
-      fixtureItem('first-salvo', views),
       fixtureItem('standard', views),
+      fixtureItem('first-salvo', views),
     ]),
   ];
   const store = options.store ?? {
@@ -200,7 +200,7 @@ describe('CommandCenterShell semantics and registry growth', () => {
       expect(close.textContent).toBe('Close');
       categoryButtons[1]!.click();
       expect(root.querySelector('[data-command-workspace-mount]')?.textContent)
-        .toBe('first-salvo:1');
+        .toBe('standard:1');
       modes.click();
       expect(root.querySelector<HTMLElement>('[role="dialog"]')?.hidden).toBe(false);
       close.click();
@@ -240,13 +240,16 @@ describe('CommandCenterShell semantics and registry growth', () => {
     expect(root.querySelectorAll('[data-command-workspace-mount]')).toHaveLength(1);
   });
 
-  it('renders and mounts a fourth fixture category without shell-specific markup', () => {
+  it('renders and mounts a synthetic category and its items without shell-specific markup', () => {
     const views: ViewFixture[] = [];
     const contributions = [
       fixtureCategory('campaigns', 'Campaigns', 10, [fixtureItem('ash-road', views)]),
       fixtureCategory('skirmishes', 'Skirmishes', 20, [fixtureItem('standard', views)]),
       fixtureCategory('multiplayer', 'Multiplayer', 30, [fixtureItem('online', views)]),
-      fixtureCategory('training', 'Training', 40, [fixtureItem('range', views)]),
+      fixtureCategory('training', 'Training', 40, [
+        fixtureItem('range', views),
+        fixtureItem('drills', views),
+      ]),
     ];
     const { root } = setup({
       contributions,
@@ -255,17 +258,25 @@ describe('CommandCenterShell semantics and registry growth', () => {
         'standard',
         'online',
         'range',
+        'drills',
       ]),
     });
 
     const training = buttons(root, 'nav [data-command-category]')
       .find((button) => button.textContent === 'Training')!;
     training.click();
-    const range = buttons(root, '[data-command-item]')
-      .find((button) => button.textContent?.includes('range'))!;
-    range.click();
+    expect(buttons(root, '.command-center__library-items [data-command-item]')
+      .map((button) => button.dataset.commandItem))
+      .toEqual(['range', 'drills']);
+    const drills = buttons(root, '.command-center__library-items [data-command-item]')
+      .find((button) => button.dataset.commandItem === 'drills')!;
+    drills.click();
 
-    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('range:1');
+    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('drills:1');
+    expect(buttons(root, '.command-center__category-rail [data-command-category]'))
+      .toHaveLength(4);
+    expect(buttons(root, '.command-center__sheet-categories [data-command-category]'))
+      .toHaveLength(4);
   });
 
   it('exposes a generic singleton layout without weakening 4- or 18-item libraries', () => {
@@ -306,6 +317,19 @@ describe('CommandCenterShell semantics and registry growth', () => {
 });
 
 describe('CommandCenterShell keyboard and focus', () => {
+  it('uses provider order for ordinary category entry and restores a contextual per-category item', () => {
+    const ordinary = setup();
+    buttons(ordinary.root, '.command-center__category-rail [data-command-category]')[1]!.click();
+    expect(ordinary.root.querySelector('[data-command-workspace-mount]')?.textContent)
+      .toBe('standard:1');
+
+    const contextual = setup({ initialSelection: selection('skirmishes', 'first-salvo') });
+    buttons(contextual.root, '.command-center__category-rail [data-command-category]')[0]!.click();
+    buttons(contextual.root, '.command-center__category-rail [data-command-category]')[1]!.click();
+    expect(contextual.root.querySelector('[data-command-workspace-mount]')?.textContent)
+      .toBe('first-salvo:1');
+  });
+
   it('operates categories and items with the keyboard while containing command input', () => {
     const { root, store } = setup();
     const escapedKey = vi.fn();
@@ -317,17 +341,71 @@ describe('CommandCenterShell keyboard and focus', () => {
     railCategories[0]!.focus();
     fireEvent.keyDown(railCategories[0]!, { key: 'ArrowRight' });
     expect(document.activeElement?.textContent).toBe('Skirmishes');
-    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('first-salvo:1');
+    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('standard:1');
 
     const libraryItems = buttons(root, '[data-command-item]');
     libraryItems[0]!.focus();
     fireEvent.keyDown(libraryItems[0]!, { key: 'ArrowDown' });
-    expect(document.activeElement?.textContent).toContain('standard');
+    expect(document.activeElement?.textContent).toContain('first salvo');
     fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
-    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('standard:1');
-    expect(store.remember).toHaveBeenLastCalledWith(selection('skirmishes', 'standard'));
+    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('first-salvo:1');
+    expect(store.remember).toHaveBeenLastCalledWith(selection('skirmishes', 'first-salvo'));
     expect(escapedKey).not.toHaveBeenCalled();
     expect(escapedClick).not.toHaveBeenCalled();
+  });
+
+  it('applies exact wrap, Home, and End focus transitions on both category surfaces and items', () => {
+    const { root } = setup();
+    const rail = buttons(root, '.command-center__category-rail [data-command-category]');
+
+    rail[0]!.focus();
+    fireEvent.keyDown(rail[0]!, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__category-rail [data-command-category="multiplayer"]',
+    ));
+    fireEvent.keyDown(document.activeElement!, { key: 'Home' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__category-rail [data-command-category="campaigns"]',
+    ));
+    fireEvent.keyDown(document.activeElement!, { key: 'End' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__category-rail [data-command-category="multiplayer"]',
+    ));
+
+    const modes = root.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!;
+    modes.click();
+    const selectedSheetCategory = root.querySelector<HTMLButtonElement>(
+      '.command-center__sheet-categories [aria-pressed="true"]',
+    )!;
+    expect(document.activeElement).toBe(selectedSheetCategory);
+    fireEvent.keyDown(selectedSheetCategory, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__sheet-categories [data-command-category="campaigns"]',
+    ));
+    fireEvent.keyDown(document.activeElement!, { key: 'End' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__sheet-categories [data-command-category="multiplayer"]',
+    ));
+    root.querySelector<HTMLButtonElement>('[aria-label="Close Modes"]')!.click();
+    expect(document.activeElement).toBe(modes);
+
+    root.querySelector<HTMLButtonElement>(
+      '.command-center__category-rail [data-command-category="skirmishes"]',
+    )!.click();
+    const items = buttons(root, '.command-center__library-items [data-command-item]');
+    items[0]!.focus();
+    fireEvent.keyDown(items[0]!, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(items[1]);
+    expect(items[0]!.getAttribute('aria-current')).toBe('true');
+    fireEvent.keyDown(items[1]!, { key: ' ' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__library-items [data-command-item="first-salvo"]',
+    ));
+    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('first-salvo:1');
+    fireEvent.keyDown(document.activeElement!, { key: 'Home' });
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__library-items [data-command-item="standard"]',
+    ));
   });
 
   it('keeps real capture-phase battle input gated and pointer/touch events off the battle target', () => {
@@ -399,6 +477,35 @@ describe('CommandCenterShell keyboard and focus', () => {
     buttons(root, 'nav [data-command-category]')[2]!.click();
     expect(shell.promoteInitialSelection(initial)).toBe(false);
     expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('local:1');
+  });
+
+  it('reveals a promoted contextual item without moving focus out of its workspace', async () => {
+    const initial = selection('skirmishes', 'first-salvo');
+    const { root, shell } = setup({ initialSelection: initial });
+    const scrollIntoView = vi.fn();
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView');
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+
+    try {
+      expect(document.activeElement).toBe(document.body);
+      expect(shell.promoteInitialSelection(selection('multiplayer', 'online'))).toBe(true);
+      await Promise.resolve();
+
+      expect(scrollIntoView).toHaveBeenCalledOnce();
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' });
+      expect(document.activeElement).toBe(document.body);
+      expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+        .toBe('true');
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', descriptor);
+      } else {
+        delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+      }
+    }
   });
 
   it('keeps fallback focus inside an open Modes sheet when context removes the active category', async () => {
@@ -511,6 +618,44 @@ describe('CommandCenterShell mounted-view lifecycle', () => {
     expect(document.activeElement).toBe(root.querySelector('[data-command-item="ash-road"]'));
   });
 
+  it('queues a selected-item fallback when a focused non-selected item disappears', async () => {
+    const { root, shell } = setup({
+      initialSelection: selection('multiplayer', 'local'),
+    });
+    root.querySelector<HTMLButtonElement>('[data-command-item="online"]')!.focus();
+
+    shell.update(context(2, ['campaigns', 'skirmishes', 'multiplayer'], [
+      'ash-road',
+      'first-salvo',
+      'standard',
+      'local',
+    ]));
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(root.querySelector(
+      '.command-center__library-items [data-command-item="local"]',
+    ));
+  });
+
+  it('keeps fallback focus in an open Modes sheet when a focused non-selected category disappears', async () => {
+    const { root, shell } = setup();
+    root.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!.click();
+    const sheet = root.querySelector<HTMLElement>('[role="dialog"]')!;
+    sheet.querySelector<HTMLButtonElement>('[data-command-category="multiplayer"]')!.focus();
+
+    shell.update(context(2, ['campaigns', 'skirmishes'], [
+      'ash-road',
+      'first-salvo',
+      'standard',
+    ]));
+    await Promise.resolve();
+
+    expect(sheet.hidden).toBe(false);
+    expect(document.activeElement).toBe(sheet.querySelector(
+      '[data-command-category="campaigns"]',
+    ));
+  });
+
   it('falls back when the selected item disappears and keeps focus on a stable selected control', async () => {
     const { root, shell, views } = setup();
     const first = views[0]!;
@@ -519,7 +664,7 @@ describe('CommandCenterShell mounted-view lifecycle', () => {
     await Promise.resolve();
 
     expect(first.dispose).toHaveBeenCalledOnce();
-    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('first-salvo:2');
+    expect(root.querySelector('[data-command-workspace-mount]')?.textContent).toBe('standard:2');
     expect(document.activeElement).toBe(root.querySelector('[data-command-item][aria-current="true"]'));
   });
 

@@ -3,34 +3,26 @@ import { buildLobbyPreparationSection } from './LobbyPreparationSection';
 import type { VerifiedChallengeSessionState } from '../client/VerifiedChallengeSession';
 import type { VerifiedCareerState } from '../client/verifiedCareer';
 
-export type LobbyHotSeatSurface = 'local' | 'practice' | 'verified';
 export type LobbyVerifiedSurface = 'deployment' | 'challenge';
 
-export interface LobbyHotSeatViewOptions {
-  surface?: LobbyHotSeatSurface;
+export interface LobbyLocalBattleViewOptions {
   minPlayers: number;
   maxPlayers: number;
   playerCount: number;
   playerRows: readonly HTMLElement[];
   advanced: HTMLElement;
   validationMessage: string | null;
-  verifiedDeployment: LobbyHotSeatVerifiedDeploymentOptions | null;
-  verifiedChallenge?: LobbyHotSeatVerifiedChallengeOptions | null;
-  verifiedSurface?: LobbyVerifiedSurface;
-  /** Authenticated Local Battle may compose existing local practice operations here. */
-  quickOperations?: readonly LobbyQuickOperation[];
-  onQuickOperation?: (operationId: string) => void;
-  onSurfaceChange?: (surface: LobbyHotSeatSurface, restoreFocus: boolean) => void;
-  onVerifiedSurfaceChange?: (surface: LobbyVerifiedSurface, restoreFocus: boolean) => void;
   onPlayerCountChange: (count: number) => void;
   onStart: () => void;
   listenerSignal?: AbortSignal;
 }
 
-export interface LobbyQuickOperation {
-  readonly id: string;
-  readonly title: string;
-  readonly briefing: string;
+export interface LobbyVerifiedOperationsViewOptions {
+  verifiedDeployment: LobbyHotSeatVerifiedDeploymentOptions | null;
+  verifiedChallenge?: LobbyHotSeatVerifiedChallengeOptions | null;
+  verifiedSurface?: LobbyVerifiedSurface;
+  onVerifiedSurfaceChange?: (surface: LobbyVerifiedSurface, restoreFocus: boolean) => void;
+  listenerSignal?: AbortSignal;
 }
 
 export interface LobbyHotSeatVerifiedDeploymentOptions {
@@ -339,151 +331,17 @@ function buildVerifiedDeployment(
   return verified;
 }
 
-function buildPracticeLane(
-  operations: readonly LobbyQuickOperation[],
-  onQuickOperation: (operationId: string) => void,
-  listenerSignal?: AbortSignal,
-): HTMLElement {
-  const practice = document.createElement('section');
-  practice.dataset.operationLane = 'practice';
-  practice.className = 'lobby-commander-operations__practice';
-  practice.setAttribute('aria-label', 'Practice operations');
-  const title = document.createElement('h3');
-  title.textContent = 'Practice operations';
-  const purpose = document.createElement('p');
-  purpose.textContent = 'Local practice only. Results do not affect your verified record.';
-  const cards = document.createElement('div');
-  cards.className = 'lobby-commander-operations__cards';
-  let selectedOperation = operations[0]!;
-  const selection = document.createElement('div');
-  selection.className = 'lobby-practice-selection';
-  selection.dataset.ui = 'selected-practice-operation';
-  selection.setAttribute('aria-live', 'polite');
-  const selectionTitle = document.createElement('strong');
-  const selectionBriefing = document.createElement('span');
-  const syncSelection = (): void => {
-    selectionTitle.textContent = selectedOperation.title;
-    selectionBriefing.textContent = selectedOperation.briefing;
-  };
-  selection.append(selectionTitle, selectionBriefing);
-  syncSelection();
-  for (const operation of operations) {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'lobby-commander-operations__card lobby-btn secondary';
-    card.dataset.operationId = operation.id;
-    card.setAttribute('aria-label', `${operation.title}. ${operation.briefing}`);
-    const label = document.createElement('strong');
-    label.textContent = operation.title;
-    const briefing = document.createElement('span');
-    briefing.textContent = operation.briefing;
-    card.append(label, briefing);
-    card.addEventListener('click', () => { onQuickOperation(operation.id); }, { signal: listenerSignal });
-    cards.append(card);
-  }
-  const compactLaunch = document.createElement('div');
-  compactLaunch.className = 'lobby-commander-operations__compact-launch';
-  const selector = document.createElement('select');
-  selector.dataset.ui = 'practice-operation-selector';
-  selector.setAttribute('aria-label', 'Choose practice operation');
-  for (const operation of operations) {
-    const option = document.createElement('option');
-    option.value = operation.id;
-    option.textContent = operation.title;
-    selector.append(option);
-  }
-  selector.addEventListener('change', () => {
-    selectedOperation = operations.find((operation) => operation.id === selector.value) ?? operations[0]!;
-    syncSelection();
-  }, { signal: listenerSignal });
-  const launch = document.createElement('button');
-  launch.type = 'button';
-  launch.className = 'lobby-btn secondary';
-  launch.dataset.ui = 'launch-practice-operation';
-  launch.textContent = 'Launch practice';
-  launch.addEventListener('click', () => { onQuickOperation(selectedOperation.id); }, { signal: listenerSignal });
-  compactLaunch.append(selector, launch);
-  practice.append(title, purpose, selection, cards, compactLaunch);
-  return practice;
-}
-
-export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLElement {
+export function buildLobbyLocalBattleView(options: LobbyLocalBattleViewOptions): HTMLElement {
   const wrapper = document.createElement('div');
   const crowded = options.playerCount >= 3;
-  wrapper.className = `lobby-route-brief lobby-hotseat${crowded ? ' crowded' : ''}`;
-
-  const available: Record<LobbyHotSeatSurface, boolean> = {
-    local: true,
-    practice: Boolean(options.quickOperations?.length && options.onQuickOperation),
-    verified: options.verifiedDeployment !== null || Boolean(options.verifiedChallenge),
-  };
-  const requestedSurface = options.surface ?? 'local';
-  const surface = available[requestedSurface] ? requestedSurface : 'local';
-  const labels: Record<LobbyHotSeatSurface, string> = {
-    local: 'Local Battle', practice: 'Practice vs CPU', verified: 'Verified Deployment',
-  };
-  const surfaces: LobbyHotSeatSurface[] = ['local', 'practice', 'verified'];
-  const tabs = document.createElement('div');
-  tabs.className = 'lobby-hotseat-tabs';
-  tabs.setAttribute('role', 'tablist');
-  tabs.setAttribute('aria-label', 'Hot Seat modes');
-  for (const candidate of surfaces) {
-    const tab = document.createElement('button');
-    tab.type = 'button';
-    tab.className = 'lobby-hotseat-tab';
-    tab.id = `lobby-hotseat-tab-${candidate}`;
-    tab.dataset.hotseatSurface = candidate;
-    tab.setAttribute('role', 'tab');
-    tab.setAttribute('aria-controls', 'lobby-hotseat-body');
-    tab.setAttribute('aria-selected', String(candidate === surface));
-    tab.tabIndex = candidate === surface ? 0 : -1;
-    tab.disabled = !available[candidate];
-    tab.textContent = labels[candidate];
-    tab.addEventListener('click', () => options.onSurfaceChange?.(candidate, true), {
-      signal: options.listenerSignal,
-    });
-    tab.addEventListener('keydown', (event) => {
-      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-      event.preventDefault();
-      const enabled = surfaces.filter((entry) => available[entry]);
-      const current = enabled.indexOf(candidate);
-      const next = event.key === 'Home'
-        ? enabled[0]
-        : event.key === 'End'
-          ? enabled.at(-1)
-          : enabled[(current + (event.key === 'ArrowRight' ? 1 : -1) + enabled.length) % enabled.length];
-      if (next) options.onSurfaceChange?.(next, true);
-    }, { signal: options.listenerSignal });
-    tabs.append(tab);
-  }
+  wrapper.className = `lobby-route-brief lobby-hotseat lobby-hotseat--local${crowded ? ' crowded' : ''}`;
 
   const body = document.createElement('section');
   body.className = 'lobby-hotseat-body';
-  body.id = 'lobby-hotseat-body';
-  body.dataset.hotseatSurface = surface;
-  body.setAttribute('role', 'tabpanel');
-  body.setAttribute('aria-labelledby', `lobby-hotseat-tab-${surface}`);
-  body.setAttribute('aria-label', labels[surface]);
+  body.dataset.multiplayerSurface = 'local';
+  body.setAttribute('aria-label', 'Local Battle');
   const scroll = document.createElement('div');
   scroll.className = 'lobby-hotseat-scroll';
-  const hasVerifiedChoices = options.verifiedDeployment !== null && Boolean(options.verifiedChallenge);
-  const requestedVerifiedSurface = options.verifiedSurface ?? 'deployment';
-  const verifiedSurface: LobbyVerifiedSurface = requestedVerifiedSurface === 'challenge'
-    && options.verifiedChallenge
-    ? 'challenge'
-    : options.verifiedDeployment
-      ? 'deployment'
-      : 'challenge';
-  const verifiedSelector = hasVerifiedChoices
-    ? buildVerifiedSelector(verifiedSurface, options.onVerifiedSurfaceChange, options.listenerSignal)
-    : null;
-  const verifiedPanel = document.createElement('section');
-  verifiedPanel.className = 'lobby-verified-operation-panel';
-  if (hasVerifiedChoices) {
-    verifiedPanel.id = 'lobby-verified-operation-panel';
-    verifiedPanel.setAttribute('role', 'tabpanel');
-    verifiedPanel.setAttribute('aria-labelledby', `lobby-verified-choice-${verifiedSurface}`);
-  }
 
   const setup = document.createElement('section');
   setup.className = 'lobby-route-brief__setup';
@@ -536,23 +394,49 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
   start.disabled = options.validationMessage !== null;
   start.addEventListener('click', options.onStart, { signal: options.listenerSignal });
 
-  if (surface === 'local') {
-    scroll.append(setup);
-    const footer = document.createElement('footer');
-    footer.className = 'lobby-hotseat-footer';
-    const status = document.createElement('span');
-    status.className = 'lobby-hotseat-footer__status';
-    status.textContent = `${options.playerCount} players · Shared screen`;
-    footer.append(status, start);
-    body.append(scroll, footer);
-  } else if (surface === 'practice' && options.quickOperations && options.onQuickOperation) {
-    const practice = buildPracticeLane(options.quickOperations, options.onQuickOperation, options.listenerSignal);
-    const footer = practice.querySelector<HTMLElement>('.lobby-commander-operations__compact-launch');
-    footer?.classList.add('lobby-hotseat-footer');
-    scroll.append(practice);
-    body.append(scroll);
-    if (footer) body.append(footer);
-  } else if (surface === 'verified' && verifiedSurface === 'deployment' && options.verifiedDeployment) {
+  scroll.append(setup);
+  const footer = document.createElement('footer');
+  footer.className = 'lobby-hotseat-footer';
+  const status = document.createElement('span');
+  status.className = 'lobby-hotseat-footer__status';
+  status.textContent = `${options.playerCount} players · Shared screen`;
+  footer.append(status, start);
+  body.append(scroll, footer);
+  wrapper.append(body);
+  return wrapper;
+}
+
+export function buildLobbyVerifiedOperationsView(
+  options: LobbyVerifiedOperationsViewOptions,
+): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'lobby-route-brief lobby-hotseat lobby-hotseat--verified';
+  const body = document.createElement('section');
+  body.className = 'lobby-hotseat-body';
+  body.dataset.multiplayerSurface = 'verified';
+  body.setAttribute('aria-label', 'Verified Operations');
+  const scroll = document.createElement('div');
+  scroll.className = 'lobby-hotseat-scroll';
+  const hasVerifiedChoices = options.verifiedDeployment !== null && Boolean(options.verifiedChallenge);
+  const requestedVerifiedSurface = options.verifiedSurface ?? 'deployment';
+  const verifiedSurface: LobbyVerifiedSurface = requestedVerifiedSurface === 'challenge'
+    && options.verifiedChallenge
+    ? 'challenge'
+    : options.verifiedDeployment
+      ? 'deployment'
+      : 'challenge';
+  const verifiedSelector = hasVerifiedChoices
+    ? buildVerifiedSelector(verifiedSurface, options.onVerifiedSurfaceChange, options.listenerSignal)
+    : null;
+  const verifiedPanel = document.createElement('section');
+  verifiedPanel.className = 'lobby-verified-operation-panel';
+  if (hasVerifiedChoices) {
+    verifiedPanel.id = 'lobby-verified-operation-panel';
+    verifiedPanel.setAttribute('role', 'tabpanel');
+    verifiedPanel.setAttribute('aria-labelledby', `lobby-verified-choice-${verifiedSurface}`);
+  }
+
+  if (verifiedSurface === 'deployment' && options.verifiedDeployment) {
     if (verifiedSelector) scroll.append(verifiedSelector);
     const dossier = buildCommanderDossier(options.verifiedDeployment.fieldOrder);
     if (dossier) verifiedPanel.append(dossier);
@@ -563,13 +447,12 @@ export function buildLobbyHotSeatView(options: LobbyHotSeatViewOptions): HTMLEle
     scroll.append(verifiedPanel);
     body.append(scroll);
     if (footer) body.append(footer);
-  } else if (surface === 'verified' && options.verifiedChallenge) {
+  } else if (options.verifiedChallenge) {
     if (verifiedSelector) scroll.append(verifiedSelector);
     verifiedPanel.append(buildVerifiedChallenge(options.verifiedChallenge, options.listenerSignal));
     scroll.append(verifiedPanel);
     body.append(scroll);
   }
-  wrapper.append(tabs, body);
-
+  wrapper.append(body);
   return wrapper;
 }

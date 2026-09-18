@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { enterBattleIfBriefed, gotoLobby, openLocalPreparation } from './support';
 
-test('returning from a local match restores keyboard focus to its visible preparation tab', async ({ page }) => {
+test('returning from a local match restores focus to its selected command item and workspace', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('singedterra:first-salvo:v1', 'v1:skipped');
   });
@@ -17,9 +17,11 @@ test('returning from a local match restores keyboard focus to its visible prepar
   await menuButton.click();
   await page.getByRole('dialog', { name: 'Command Menu' })
     .getByRole('button', { name: 'Return to Lobby', exact: true }).click();
-  const localTab = page.getByRole('tab', { name: 'Local Battle', exact: true });
-  await expect(localTab).toBeVisible();
-  await expect(localTab).toBeFocused();
+  const localItem = page.locator('button[data-command-item="local-battle"]');
+  await expect(localItem).toBeVisible();
+  await expect(localItem).toHaveAttribute('aria-current', 'true');
+  await expect(localItem).toBeFocused();
+  await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => document.getElementById('lobby')?.contains(document.activeElement)))
     .toBe(true);

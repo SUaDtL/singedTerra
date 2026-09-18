@@ -209,7 +209,7 @@ describe('Lobby campaign save presentation owner', () => {
     }));
 
     (rail.querySelector('[data-command-category="skirmishes"]') as HTMLButtonElement).click();
-    expect(button(root, 'Quick Duel vs CPU')).toBeTruthy();
+    expect(button(root, 'Start First Salvo')).toBeTruthy();
     expect([...root.querySelectorAll('button')]
       .filter((control) => [
         'Start Ash Road',
@@ -301,7 +301,7 @@ describe('Lobby campaign save presentation owner', () => {
     );
 
     lobby.show();
-    expect(root.querySelector('[aria-current="true"]')?.textContent).toContain('Quick Operations');
+    expect(root.querySelector('[aria-current="true"]')?.textContent).toContain('First Salvo');
 
     resolveSave(campaignRecord(14));
     await vi.waitFor(() => {
@@ -311,7 +311,7 @@ describe('Lobby campaign save presentation owner', () => {
     });
   });
 
-  it('preserves an engaged Quick Operations choice and focus when save checking finishes', async () => {
+  it('preserves an engaged Skirmishes choice and focus when save checking finishes', async () => {
     let resolveSave!: (record: CampaignStorageRecord) => void;
     const save = new Promise<CampaignStorageRecord>((resolve) => { resolveSave = resolve; });
     const storage: CampaignStorage = {
@@ -329,7 +329,8 @@ describe('Lobby campaign save presentation owner', () => {
     );
 
     lobby.show();
-    const crosswind = root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')!;
+    root.querySelector<HTMLButtonElement>('[data-command-category="skirmishes"]')!.click();
+    const crosswind = root.querySelector<HTMLButtonElement>('[data-command-item="crosswind-range"]')!;
     crosswind.click();
     crosswind.focus();
 
@@ -338,10 +339,13 @@ describe('Lobby campaign save presentation owner', () => {
       campaignInternals(lobby).campaignSavePresentation.presentation.status,
     ).toBe('compatible'));
 
-    expect(root.querySelector('[data-operation-id="crosswind-range"]')).toBe(crosswind);
-    expect(crosswind.getAttribute('aria-pressed')).toBe('true');
-    expect(document.activeElement).toBe(crosswind);
-    expect(root.querySelector('[aria-current="true"]')?.textContent).toContain('Quick Operations');
+    const refreshedCrosswind = root.querySelector<HTMLButtonElement>(
+      '[data-command-item="crosswind-range"]',
+    );
+    expect(refreshedCrosswind).not.toBe(crosswind);
+    expect(refreshedCrosswind?.getAttribute('aria-current')).toBe('true');
+    expect(document.activeElement).toBe(refreshedCrosswind);
+    expect(root.querySelector('[aria-current="true"]')?.textContent).toContain('Crosswind Range');
   });
 
   it('recovers a failed Resume launch to a current retry owner and its initiating focus', async () => {

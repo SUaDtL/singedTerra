@@ -21,6 +21,13 @@ function internals(lobby: Lobby): LobbyInternals {
 }
 
 function button(root: HTMLElement, text: string): HTMLButtonElement {
+  if (text === 'Quick Duel vs CPU') {
+    root.querySelector<HTMLButtonElement>(
+      '[data-command-surface="rail"][data-command-category="skirmishes"]',
+    )?.click();
+    root.querySelector<HTMLButtonElement>('[data-command-item="standard"]')?.click();
+    text = 'Start Standard Duel';
+  }
   let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === text);
   if (!match && text.includes('Ash Road')) {
@@ -32,6 +39,13 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
   }
   if (!(match instanceof HTMLButtonElement)) throw new Error(`Missing ${text} button`);
   return match;
+}
+
+function selectOperation(root: HTMLElement, operationId: string): void {
+  root.querySelector<HTMLButtonElement>(
+    '[data-command-surface="rail"][data-command-category="skirmishes"]',
+  )?.click();
+  root.querySelector<HTMLButtonElement>(`[data-command-item="${operationId}"]`)?.click();
 }
 
 function emptyCampaignStorage(): CampaignStorage {
@@ -235,8 +249,8 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
     lobby.show();
 
-    root.querySelector<HTMLButtonElement>('[data-operation-id="crosswind-range"]')!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    selectOperation(root, 'crosswind-range');
+    button(root, 'Start Crosswind Range').click();
 
     expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0]).toMatchObject({
@@ -256,8 +270,8 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, generateQuickDuelSeed);
     lobby.show();
 
-    root.querySelector<HTMLButtonElement>('[data-operation-id="lean-arsenal"]')!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    selectOperation(root, 'lean-arsenal');
+    button(root, 'Start Lean Arsenal').click();
 
     expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
       settings: { seed: 42, rounds: 3, armsLevel: 0 },
@@ -273,8 +287,8 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, () => 0x1234abcd);
     lobby.show();
 
-    root.querySelector<HTMLButtonElement>('[data-operation-id="last-light-siege"]')!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    selectOperation(root, 'last-light-siege');
+    button(root, 'Start Last Light Siege').click();
 
     expect(onReady).toHaveBeenCalledOnce();
     expect(onReady.mock.calls[0]![0]).toMatchObject({
@@ -381,10 +395,10 @@ describe('Lobby Quick Duel', () => {
     const lobby = new Lobby(root, onReady, undefined, undefined, () => 42);
     lobby.show();
 
-    const operation = root.querySelector<HTMLButtonElement>('[data-operation-id="caldera-run"]');
+    selectOperation(root, 'caldera-run');
+    const operation = root.querySelector<HTMLButtonElement>('[data-command-item="caldera-run"]');
     expect(operation).not.toBeNull();
-    operation!.click();
-    button(root, 'Quick Duel vs CPU').click();
+    button(root, 'Start Caldera Run').click();
 
     expect(onReady).toHaveBeenCalledWith(expect.objectContaining({
       mode: 'hotseat',

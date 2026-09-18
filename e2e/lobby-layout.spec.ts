@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  assertGoldSafeAction,
   assertLobbyControlReachable,
   assertLobbyFrame,
   gotoLobby,
@@ -38,7 +39,10 @@ async function assertOperationsBoardFlow(page: Page, selector: string): Promise<
     return {
       root: serialize(root),
       header: serialize(header.getBoundingClientRect()),
-      sections: sections.map((section) => serialize(section.getBoundingClientRect())),
+      sections: sections.map((section) => ({
+        ...serialize(section.getBoundingClientRect()),
+        name: section.className,
+      })),
       primary: serialize(primary.getBoundingClientRect()),
     };
   });
@@ -49,7 +53,7 @@ async function assertOperationsBoardFlow(page: Page, selector: string): Promise<
   for (let index = 0; index < geometry.sections.length - 1; index += 1) {
     expect(
       geometry.sections[index]!.bottom,
-      'each operational section must clear the section that follows it',
+      `${geometry.sections[index]!.name} must clear ${geometry.sections[index + 1]!.name}`,
     ).toBeLessThanOrEqual(geometry.sections[index + 1]!.top + 1);
   }
   for (const rect of [...geometry.sections, geometry.primary]) {
@@ -194,6 +198,161 @@ async function assertOnlineSetupControlsStayWithinTheirSections(page: Page): Pro
   }
 }
 
+async function assertOwnedOnlineWorkspaceGeometry(page: Page): Promise<void> {
+  const primary = page.locator(
+    '[data-multiplayer-command-view="online"] .lobby-btn.primary:visible',
+  );
+  await expect(primary).toHaveCount(1);
+  await expect(primary).toBeInViewport({ ratio: 1 });
+  await assertGoldSafeAction(
+    page,
+    '[data-multiplayer-command-view="online"] .lobby-btn.primary:visible',
+  );
+  const geometry = await page.locator('[data-multiplayer-command-view="online"]').evaluate((owned) => {
+    const workspace = owned.querySelector<HTMLElement>('.multiplayer-command__online-workspace');
+    if (!workspace) throw new Error('Expected the owned Online workspace');
+    const ownedRect = owned.getBoundingClientRect();
+    const controls = Array.from(owned.querySelectorAll<HTMLElement>(
+      'button, input, select, summary, a[href]',
+    )).flatMap((control) => {
+      const style = getComputedStyle(control);
+      const rect = control.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden'
+        || rect.width <= 0 || rect.height <= 0) return [];
+      return [{
+        name: control.getAttribute('aria-label') ?? control.textContent?.trim()
+          ?? control.getAttribute('name') ?? control.tagName,
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        height: rect.height,
+      }];
+    });
+    const primary = Array.from(owned.querySelectorAll<HTMLElement>('.lobby-btn.primary'))
+      .filter((control) => {
+        const style = getComputedStyle(control);
+        const rect = control.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden'
+          && rect.width > 0 && rect.height > 0;
+      })
+      .map((control) => {
+        const rect = control.getBoundingClientRect();
+        return { width: rect.width, height: rect.height, name: control.textContent?.trim() ?? '' };
+      });
+    return {
+      owned: {
+        left: ownedRect.left,
+        right: ownedRect.right,
+        clientWidth: owned.clientWidth,
+        scrollWidth: owned.scrollWidth,
+      },
+      workspace: {
+        clientWidth: workspace.clientWidth,
+        scrollWidth: workspace.scrollWidth,
+      },
+      overflowing: Array.from(owned.querySelectorAll<HTMLElement>('*')).flatMap((element) => {
+        if (element.scrollWidth <= element.clientWidth + 1) return [];
+        return [{
+          className: element.className,
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+        }];
+      }).slice(0, 12),
+      controls,
+      primary,
+    };
+  });
+
+  expect(
+    geometry.owned.scrollWidth,
+    `Online owner must not overflow horizontally: ${JSON.stringify(geometry.overflowing)}`,
+  )
+    .toBeLessThanOrEqual(geometry.owned.clientWidth + 1);
+  expect(geometry.workspace.scrollWidth, 'Online workspace must not overflow horizontally')
+    .toBeLessThanOrEqual(geometry.workspace.clientWidth + 1);
+  expect(geometry.controls.length, 'Online workspace must expose controls').toBeGreaterThan(0);
+  for (const control of geometry.controls) {
+    expect(control.width, `${control.name} must retain a 44px-wide target`).toBeGreaterThanOrEqual(44);
+    expect(control.height, `${control.name} must retain a 44px-high target`).toBeGreaterThanOrEqual(44);
+    expect(control.left, `${control.name} must stay inside the Online owner`).toBeGreaterThanOrEqual(
+      geometry.owned.left - 1,
+    );
+    expect(control.right, `${control.name} must stay inside the Online owner`).toBeLessThanOrEqual(
+      geometry.owned.right + 1,
+    );
+  }
+  expect(geometry.primary, 'the current Online route must own exactly one primary action')
+    .toHaveLength(1);
+  expect(geometry.primary[0]!.width, `${geometry.primary[0]!.name} must remain actionable`)
+    .toBeGreaterThanOrEqual(44);
+  expect(geometry.primary[0]!.height, `${geometry.primary[0]!.name} must be the 56px primary`)
+    .toBeGreaterThanOrEqual(56);
+}
+
+async function assertVehicleBayFactsReadable(page: Page): Promise<void> {
+  const facts = await page.locator(
+    '#lobby .multiplayer-command__online-workspace .lobby-preview__part',
+  ).evaluateAll((parts) => parts.flatMap((part) => Array.from(
+    part.querySelectorAll<HTMLElement>('span, strong'),
+    (label) => ({
+      text: label.textContent?.trim() ?? '',
+      clientWidth: label.clientWidth,
+      scrollWidth: label.scrollWidth,
+    }),
+  )));
+  expect(facts.length, 'the Online vehicle bay should expose its four readable facts')
+    .toBeGreaterThanOrEqual(8);
+  for (const fact of facts) {
+    expect(
+      fact.scrollWidth,
+      `Online vehicle fact "${fact.text}" must not be visually truncated`,
+    ).toBeLessThanOrEqual(fact.clientWidth + 1);
+  }
+}
+
+async function assertLocalBattlefieldFactsReadable(page: Page): Promise<void> {
+  const geometry = await page.locator(
+    '#lobby [data-multiplayer-command-view="local-battle"] .lobby-hotseat-battlefield',
+  ).evaluate((battlefield) => {
+    const labels = Array.from(battlefield.querySelectorAll<HTMLElement>('label')).map((label) => ({
+      text: label.textContent?.trim() ?? '',
+      clientWidth: label.clientWidth,
+      scrollWidth: label.scrollWidth,
+    }));
+    const walls = battlefield.querySelector<HTMLSelectElement>('#lobby-hotseat-direct-walls');
+    if (!walls) throw new Error('Expected the Local Walls field');
+    const style = getComputedStyle(walls);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Expected a text measurement context');
+    context.font = style.font;
+    const selectedText = walls.selectedOptions[0]?.textContent?.trim() ?? '';
+    const horizontalPadding = Number.parseFloat(style.paddingLeft)
+      + Number.parseFloat(style.paddingRight);
+    return {
+      labels,
+      selectedText,
+      selectedTextWidth: context.measureText(selectedText).width,
+      selectedContentWidth: walls.clientWidth - horizontalPadding - 28,
+      clientWidth: battlefield.clientWidth,
+      scrollWidth: battlefield.scrollWidth,
+    };
+  });
+
+  expect(geometry.labels.map(({ text }) => text)).toEqual(['Rounds', 'Wind', 'Walls']);
+  for (const label of geometry.labels) {
+    expect(label.scrollWidth, `Local Battlefield label "${label.text}" must be complete`)
+      .toBeLessThanOrEqual(label.clientWidth + 1);
+  }
+  expect(geometry.selectedText).toBe('Open — shots exit');
+  expect(
+    geometry.selectedTextWidth,
+    `Local Walls value "${geometry.selectedText}" must fit its selected field`,
+  ).toBeLessThanOrEqual(geometry.selectedContentWidth + 1);
+  expect(geometry.scrollWidth, 'Local Battlefield fields must not overflow horizontally')
+    .toBeLessThanOrEqual(geometry.clientWidth + 1);
+}
+
 async function fulfillFunction(
   page: Page,
   name: string,
@@ -260,13 +419,32 @@ test.describe('Lobby layout guardrails', () => {
     await gotoLobby(page);
   });
 
-  test('Hot Seat setup stays framed and its primary action is reachable', async ({ page }) => {
+  test('Local setup stays framed and its primary action is reachable', async ({ page }) => {
     await chooseLocalBattle(page);
     await expect(page.locator('.lobby-row')).toHaveCount(2);
-    await expect(page.locator('.lobby-controls')).toContainText('Aim');
+    await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
 
     await assertLobbyFrame(page);
+    await assertLocalBattlefieldFactsReadable(page);
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
+    await assertGoldSafeAction(page, '#lobby .lobby-start');
+  });
+
+  test('Local Battlefield labels and selected Walls value reflow at review geometries', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'exact responsive geometry owner');
+    for (const viewport of [
+      { width: 1440, height: 900 },
+      { width: 900, height: 520 },
+      { width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await gotoLobby(page);
+      await chooseLocalBattle(page);
+      await assertLocalBattlefieldFactsReadable(page);
+      await assertGoldSafeAction(page, '#lobby .lobby-start');
+    }
   });
 
   test('mission preparation keeps Local Battery and Open Operation contained', async ({ page }) => {
@@ -279,7 +457,6 @@ test.describe('Lobby layout guardrails', () => {
     );
     await assertLobbyControlReachable(page, '#lobby .lobby-start');
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
     await choosePlayOnline(page);
     await assertMissionPreparation(
       page,
@@ -428,33 +605,27 @@ test.describe('Lobby layout guardrails', () => {
     await expect(page.getByRole('button', { name: 'Advanced settings', exact: true })).toBeFocused();
   });
 
-  test('deployment choices identify their setup and restore predictable keyboard focus', async ({ page }) => {
+  test('command items identify their setup and restore predictable keyboard focus', async ({ page }) => {
     const localBattle = page.locator(
       '.command-center__library-items button[data-command-item="local-battle"]',
     );
     const playOnline = page.locator(
       '.command-center__library-items button[data-command-item="online"]',
     );
-    const panel = page.locator('#lobby .lobby-mode-panel');
+    const localWorkspace = page.locator('[data-multiplayer-command-view="local-battle"]');
 
     await openLocalPreparation(page);
-    await expect(page.locator('.lobby-mode-context')).toContainText(
-      'Set your crew, then start a shared-screen match.',
-    );
-    await expect(panel).toHaveAttribute('aria-label', 'Hot Seat preparation');
+    await expect(localBattle).toHaveAttribute('aria-current', 'true');
+    await expect(localWorkspace).toBeVisible();
     await expect(page.locator('.lobby-row')).toHaveCount(2);
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
-    await expect(localBattle).toBeFocused();
     await openOnlinePreparation(page);
-    await expect(page.locator('.lobby-mode-context')).toContainText(
-      'Create a room, join by code, or browse public games.',
-    );
-    await expect(panel).toHaveAttribute('aria-label', 'Play Online preparation');
+    await expect(page.locator('[data-multiplayer-command-view="online"]')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Open operation', exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Back to deployment choices', exact: true }).click();
-    await expect(playOnline).toBeFocused();
+    await openLocalPreparation(page);
+    await expect(localBattle).toBeFocused();
+    await expect(playOnline).toHaveAttribute('aria-current', 'false');
   });
 
   test('Online Create stays framed and its primary action is reachable', async ({ page }) => {
@@ -473,6 +644,28 @@ test.describe('Lobby layout guardrails', () => {
     await assertLobbyControlReachable(page, '#lobby [data-online-route="browse"]');
   });
 
+  test('Online Create and Join dock their sole action above the fold at review geometries', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine', 'exact responsive geometry owner');
+    for (const viewport of [
+      { width: 900, height: 520 },
+      { width: 844, height: 390 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await gotoLobby(page);
+      await choosePlayOnline(page);
+      await assertVehicleBayFactsReadable(page);
+      await assertOwnedOnlineWorkspaceGeometry(page);
+
+      await page.getByRole('button', { name: 'Join with a code', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Join Room', exact: true }))
+        .toBeInViewport({ ratio: 1 });
+      await assertOwnedOnlineWorkspaceGeometry(page);
+    }
+  });
+
   test('Join by Code stays framed and its primary action is reachable', async ({ page }) => {
     await choosePlayOnline(page);
     await page.getByRole('button', { name: 'Join with a code', exact: true }).click();
@@ -485,6 +678,7 @@ test.describe('Lobby layout guardrails', () => {
     await expect(page.getByRole('button', { name: 'Browse public rooms', exact: true })).toBeVisible();
 
     await assertLobbyFrame(page);
+    await assertOwnedOnlineWorkspaceGeometry(page);
     await assertLobbyControlReachable(page, '#lobby .lobby-online-primary');
     await assertLobbyControlReachable(page, '#lobby [data-online-route="create"]');
     await assertLobbyControlReachable(page, '#lobby [data-online-route="browse"]');
@@ -535,7 +729,9 @@ test.describe('Lobby layout guardrails', () => {
     expect(await board.evaluate((element) => getComputedStyle(element).borderLeftStyle)).toBe('solid');
     const joinRoom = room.getByRole('button', { name: 'Join (1/4)', exact: true });
     await expect(joinRoom).toBeEnabled();
-    await expect(joinRoom).toHaveClass(/primary/);
+    await expect(joinRoom).toHaveClass(/secondary/);
+    await expect(board.getByRole('button', { name: 'Refresh rooms', exact: true }))
+      .toHaveClass(/primary/);
     const alternatives = page.getByRole('navigation', { name: 'Other ways to play online', exact: true });
     await expect(alternatives.getByRole('button', { name: 'Create a room', exact: true })).toBeVisible();
     await expect(alternatives.getByRole('button', { name: 'Join with a code', exact: true })).toBeVisible();
@@ -544,6 +740,7 @@ test.describe('Lobby layout guardrails', () => {
     await assertOperationsBoardFlow(page, '#lobby .lobby-operations-board--browse');
     await assertOperationRowsClear(page, '#lobby .lobby-operations-board--browse');
     await assertLobbyFrame(page);
+    await assertOwnedOnlineWorkspaceGeometry(page);
     await assertLobbyControlReachable(page, '#lobby .online-player-row:first-child .lobby-btn');
     await assertLobbyControlReachable(page, '#lobby [data-online-route="create"]');
     await assertLobbyControlReachable(page, '#lobby [data-online-route="join-code"]');
@@ -603,6 +800,7 @@ test.describe('Lobby layout guardrails', () => {
 
     await assertOperationsBoardFlow(page, '#lobby .lobby-operations-board--waiting');
     await assertLobbyFrame(page);
+    await assertOwnedOnlineWorkspaceGeometry(page);
     await assertLobbyControlReachable(
       page,
       '#lobby .lobby-btn-row:last-child .lobby-btn:not(.secondary)',
@@ -641,5 +839,45 @@ test.describe('Lobby layout guardrails', () => {
     });
     await readyUp.click();
     await assertExpectedFunctionCall(page, readyCalls, 'ready_up');
+  });
+
+  test('Online Join, populated Browse, and Waiting retain touch geometry in portrait', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-fine');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoLobby(page);
+    await fulfillFunction(page, 'list_rooms', {
+      rooms: [{
+        roomId: 'room-portrait-browse', code: 'PORT', hostName: 'Portrait Atlas',
+        playerCount: 1, maxPlayers: 4, rounds: 3, armsLevel: 2,
+        botCount: 1, interestRate: 0.2, suddenDeathTurn: 15,
+      }],
+    });
+    await fulfillFunction(page, 'create_room', {
+      roomId: 'room-portrait-wait', code: 'WAIT', playerId: 'portrait-host',
+      token: ['portrait', 'seat', 'value'].join('-'),
+      options: {
+        maxPlayers: 4, maxWind: 10, gravity: 0.15, commandProtocolVersion: 2,
+        walls: 'open', rounds: 3, armsLevel: 2,
+      },
+      players: [{
+        id: 'portrait-host', name: 'Portrait Host', color: '#e84d4d', ready: false,
+      }],
+    });
+
+    await choosePlayOnline(page);
+    await assertVehicleBayFactsReadable(page);
+    await page.getByRole('button', { name: 'Join with a code', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Rally to a signal', exact: true })).toBeVisible();
+    await assertOwnedOnlineWorkspaceGeometry(page);
+
+    await page.getByRole('button', { name: 'Browse public rooms', exact: true }).click();
+    await expect(page.getByText('Portrait Atlas', { exact: true })).toBeVisible();
+    await assertOwnedOnlineWorkspaceGeometry(page);
+
+    await page.getByRole('button', { name: 'Create a room', exact: true }).click();
+    await page.locator('#lobby .lobby-name').fill('Portrait Host');
+    await page.getByRole('button', { name: 'Create operation', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Staging operation', exact: true })).toBeVisible();
+    await assertOwnedOnlineWorkspaceGeometry(page);
   });
 });

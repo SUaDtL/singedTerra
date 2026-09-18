@@ -51,6 +51,11 @@ interface LobbyInternals {
 function button(root: HTMLElement, label: string): HTMLButtonElement {
   let match = [...root.querySelectorAll('button')]
     .find((candidate) => candidate.textContent === label)
+  if (!match && label === 'Local Battle' && root.querySelector(
+    '[data-multiplayer-command-view="local-battle"]',
+  )) {
+    match = root.querySelector<HTMLButtonElement>('[data-command-item="local-battle"]') ?? undefined
+  }
   const category = label === 'Local Battle' || label === 'Play Online'
     ? 'multiplayer'
     : label.includes('Ash Road') ? 'campaigns' : null
@@ -59,9 +64,11 @@ function button(root: HTMLElement, label: string): HTMLButtonElement {
       `[data-command-surface="rail"][data-command-category="${category}"]`,
     )?.click()
     if (category === 'multiplayer') {
-      root.querySelector<HTMLButtonElement>(
+      const item = root.querySelector<HTMLButtonElement>(
         `[data-command-item="${label === 'Play Online' ? 'online' : 'local-battle'}"]`,
-      )?.click()
+      )
+      item?.click()
+      if (item) return item
     }
     match = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === label)
@@ -165,25 +172,23 @@ describe('Lobby return focus', () => {
     expect(document.activeElement).toBe(outside)
   })
 
-  it('returns to the selected practice and online surfaces without forcing Local Battle', () => {
+  it('returns to the selected Local and Online workspaces without changing their owners', () => {
     const { lobby } = createLobby(root)
     const background = document.createElement('button')
     document.body.append(background)
     lobby.show()
     button(root, 'Local Battle').click()
-    button(root, 'Practice vs CPU').click()
     lobby.hide()
     background.focus()
 
     lobby.show({ focusLobby: true })
-    expect(document.activeElement).toBe(button(root, 'Practice vs CPU'))
+    expect(document.activeElement).toBe(button(root, 'Local Battle'))
 
-    button(root, 'Back to deployment choices').click()
     button(root, 'Play Online').click()
     lobby.hide()
     background.focus()
     lobby.show({ focusLobby: true })
-    expect(document.activeElement).toBe(button(root, 'Create operation'))
+    expect(document.activeElement).toBe(root.querySelector('[data-command-item="online"]'))
   })
 
   it('preserves selection in the genuinely focused lobby control without reclaiming outside focus', () => {
@@ -249,7 +254,9 @@ describe('Lobby return focus', () => {
     await flush()
 
     expect(root.textContent).toContain('Rejoin your game')
-    expect(document.activeElement).toBe(button(root, 'Local Battle'))
+    expect(document.activeElement).toBe(
+      root.querySelector('[data-command-item="local-battle"]'),
+    )
   })
 
   it('restores the exact command-center control after a failed launch without changing selection', () => {
@@ -292,7 +299,7 @@ describe('Lobby return focus', () => {
     launchOwner.showNetworkRecovery('Room acquisition failed.', vi.fn())
     launchOwner.restoreLaunchFocus(snapshot)
 
-    expect(document.activeElement).toBe(button(root, 'Create operation'))
+    expect(document.activeElement).toBe(button(root, 'Retry game recovery'))
     expect(button(root, 'Retry game recovery').isConnected).toBe(true)
   })
 
@@ -333,7 +340,7 @@ describe('Lobby return focus', () => {
     launchOwner.restoreLaunchFocus(null)
 
     expect(root.hidden).toBe(false)
-    expect(root.querySelector('[data-command-item="quick-operations"]')?.getAttribute('aria-current'))
+    expect(root.querySelector('[data-command-item="first-salvo"]')?.getAttribute('aria-current'))
       .toBe('true')
     expect(root.querySelector('[data-launch-failure]')?.textContent).toBe('Rematch setup failed.')
     expect(root.contains(document.activeElement)).toBe(true)

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { gotoLobby, selectCommandWorkspace } from './support';
 
 interface RectGeometry {
   readonly x: number;
@@ -37,15 +38,9 @@ const CONTROL_KEYS = [
 test('P06 compact short-height labels remain complete inside their control wells', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'pixel-touch', 'The defect requires the short-height coarse-pointer profile.');
 
-  await page.goto('?e2e=quick-duel-seed');
-  await page.evaluate(() => document.getElementById('st-splash')?.remove());
-  const operation = page.locator('[data-operation-id="last-light-siege"]');
-  if (!await operation.isVisible()) {
-    const otherQuickDuels = page.locator('[data-ui="other-quick-duels"] > summary');
-    if (await otherQuickDuels.isVisible()) await otherQuickDuels.click();
-  }
-  await operation.click();
-  await page.getByRole('button', { name: 'Quick Duel vs CPU', exact: true }).click();
+  await gotoLobby(page);
+  await selectCommandWorkspace(page, 'Skirmishes', 'last-light-siege');
+  await page.getByRole('button', { name: 'Start Last Light Siege', exact: true }).click();
 
   const entry = page.getByRole('button', { name: 'Enter battle', exact: true });
   if (await entry.isVisible()) await entry.click();

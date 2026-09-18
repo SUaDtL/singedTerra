@@ -24,13 +24,12 @@ import {
 } from '@shared/types/TankLoadout';
 import { clamp } from '@shared/engine/math';
 import {
-  buildLobbyHotSeatView,
+  buildLobbyLocalBattleView,
+  buildLobbyVerifiedOperationsView,
   updateVerifiedChallengeCountdown,
-  type LobbyHotSeatSurface,
   type LobbyVerifiedSurface,
 } from './LobbyHotSeatView';
 import {
-  QUICK_OPERATIONS,
   quickOperationById,
   type PracticeObjectiveDescriptor,
   type QuickOperation,
@@ -46,11 +45,7 @@ import { isFirstSalvoPreferenceUnseen } from './firstSalvoCoach';
 import { buildLobbyBrowseView } from './LobbyBrowseView';
 import { buildLobbyCreateView } from './LobbyCreateView';
 import { buildLobbyJoinView } from './LobbyJoinView';
-import {
-  buildLobbyOnlineView,
-  buildLobbyShellView,
-  type LobbySeedChallengePresentation,
-} from './LobbyShellView';
+import { buildLobbyShellView } from './LobbyShellView';
 import { buildLobbyWaitingView } from './LobbyWaitingView';
 import { buildAccountPanelOverlayContent, buildAccountPanelView } from './AccountPanelView';
 import { buildLobbyOverlayView } from './LobbyOverlayView';
@@ -132,6 +127,15 @@ import {
   type CampaignKitId,
 } from './commandCenter/CampaignCommandView';
 import {
+  createSkirmishCommandCategoryContribution,
+  type ImportedSkirmishChallenge,
+  type SkirmishCommandContext,
+} from './commandCenter/SkirmishCommandView';
+import {
+  createMultiplayerCommandCategoryContribution,
+  type MultiplayerCommandContext,
+} from './commandCenter/MultiplayerCommandView';
+import {
   createCommandCenterShell,
   type CommandCenterShell,
 } from './commandCenter/CommandCenterShell';
@@ -145,7 +149,6 @@ import {
   commandCategoryId,
   commandItemId,
   type CommandCategoryContribution,
-  type MountedCommandView,
 } from './commandCenter/contracts';
 import type { VerifiedCareerState } from '../client/verifiedCareer';
 import {
@@ -342,7 +345,6 @@ export interface LobbyLaunchFocusSnapshot {
 }
 
 const LOBBY_FOCUS_ATTRIBUTES = [
-  'data-hotseat-surface',
   'data-verified-surface',
   'data-operation-id',
   'data-online-route',
@@ -410,7 +412,10 @@ const defaultCampaignStorage: CampaignStorage = Object.freeze({
   ),
 });
 
-interface LobbyCommandCenterContext extends CampaignCommandContext {}
+interface LobbyCommandCenterContext extends
+  CampaignCommandContext,
+  SkirmishCommandContext,
+  MultiplayerCommandContext {}
 
 const DIAGNOSTICS_LOCAL_FAILURE: DiagnosticCheckResult = Object.freeze({
   id: PRODUCTION_DIAGNOSTIC_CHECKS[0].id,
@@ -469,16 +474,17 @@ export class Lobby {
   /** Whether the Operations Settings overlay is open (persist across renders). */
   private settingsOpen = false;
 
-  /** Selected Hot Seat surface; form state remains owned here across view replacement. */
-  private hotSeatSurface: LobbyHotSeatSurface = 'local';
   private verifiedHotSeatSurface: LobbyVerifiedSurface = 'deployment';
   private focusVerifiedDeploymentRequested = false;
   private focusVerifiedChallengeRequested = false;
 
   // ---- Tab / online sub-view state ----
-  private surface: 'chooser' | 'preparation' = 'chooser';
   private activeTab: LobbyTab = 'hotseat';
   private onlineSubView: OnlineSubView = 'create';
+  private inviteRouteRequested = false;
+  private contextualOnlineEntryPending = true;
+  private onlineWorkspaceSuspended = false;
+  private browseLifetimeSignal: AbortSignal | null = null;
   private networkRecoveryRetry: (() => void) | null = null;
   private readonly campaignSavePresentation: CampaignSavePresentationOwner;
   private readonly campaignRunReplacement: CampaignRunReplacementCoordinator;
@@ -584,7 +590,7 @@ export class Lobby {
     }
     const inviteCode = readRoomInviteCode(window.location.href);
     if (inviteCode) {
-      this.surface = 'preparation';
+      this.inviteRouteRequested = true;
       this.activeTab = 'online';
       this.onlineSubView = 'join';
       this.joinCode = inviteCode;
@@ -861,29 +867,11 @@ export class Lobby {
 
   private lobbyReturnFocusTarget(): HTMLElement | null {
     if (this.accountPanelOpen || this.settingsOpen || this.diagnosticsIntentActive) return null;
-    if (this.surface === 'preparation' && this.activeTab === 'hotseat') {
-      return this.root.querySelector<HTMLElement>(
-        `[role="tab"][data-hotseat-surface="${this.hotSeatSurface}"]:not(:disabled)`,
-      ) ?? this.root.querySelector<HTMLElement>(
-        '[role="tab"][data-hotseat-surface="local"]:not(:disabled)',
-      ) ?? this.root.querySelector<HTMLElement>('.lobby-mode-panel .primary:not(:disabled)');
-    }
-    if (this.surface === 'preparation') {
-      return this.root.querySelector<HTMLElement>('.lobby-mode-panel .primary:not(:disabled)')
-        ?? this.root.querySelector<HTMLElement>(
-          '.lobby-mode-panel input:not(:disabled), .lobby-mode-panel select:not(:disabled)',
-        )
-        ?? this.root.querySelector<HTMLElement>('.lobby-deployment__back');
-    }
     return this.root.querySelector<HTMLElement>(
       '.command-center__workspace-host .command-center__primary-action:not(:disabled), '
       + '.command-center__workspace-host .primary:not(:disabled), '
       + '[data-command-item][aria-current="true"]',
-    )
-      ?? this.root.querySelector<HTMLElement>('.lobby-deployment-chooser .primary:not(:disabled)')
-      ?? [...this.root.querySelectorAll<HTMLButtonElement>('.lobby-deployment-chooser button')]
-        .find((button) => button.textContent === 'Local Battle')
-      ?? this.root.querySelector<HTMLElement>('.lobby-deployment-chooser button:not(:disabled)');
+    );
   }
 
   private focusLobbyReturnTarget(): void {
@@ -1086,9 +1074,18 @@ export class Lobby {
     readonly focusVerifiedDeployment?: boolean;
     readonly focusVerifiedChallenge?: boolean;
   } = {}): void {
+    if (this.commandCenterShell === null || this.root.hidden) {
+      this.contextualOnlineEntryPending = true;
+    }
     if (options.focusVerifiedDeployment || options.focusVerifiedChallenge) {
-      this.hotSeatSurface = 'verified';
+      // Verified sessions return through their public command item while the
+      // retained session owners continue to supply state and callbacks.
+      this.activeTab = 'hotseat';
       this.verifiedHotSeatSurface = options.focusVerifiedChallenge ? 'challenge' : 'deployment';
+      this.commandSelectionStore.remember({
+        categoryId: commandCategoryId('multiplayer'),
+        itemId: commandItemId('verified-operations'),
+      });
       this.focusVerifiedDeploymentRequested = true;
       this.focusVerifiedChallengeRequested = options.focusVerifiedChallenge === true;
     }
@@ -1168,7 +1165,6 @@ export class Lobby {
       alert.className = 'lobby-launch-failure';
       alert.setAttribute('role', 'alert');
       const owner = this.root.querySelector<HTMLElement>('.command-center__workspace-host')
-        ?? this.root.querySelector<HTMLElement>('.lobby-mode-panel')
         ?? this.root;
       owner.prepend(alert);
     }
@@ -1344,6 +1340,20 @@ export class Lobby {
     this.focusAccountOverlay();
   }
 
+  private importedSkirmishChallenge(): ImportedSkirmishChallenge | null {
+    if (this.seedChallenge.status !== 'valid') return null;
+    const operation = operationForSeedChallenge(this.seedChallenge.challenge);
+    const fieldOrder = operation?.practiceObjective
+      ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
+      : null;
+    if (!operation || !fieldOrder) return null;
+    return {
+      operation,
+      objective: renderFieldOrder(fieldOrder).brief,
+      seed: this.seedChallenge.challenge.seed,
+    };
+  }
+
   private campaignCommandContext(): LobbyCommandCenterContext {
     return {
       savePresentation: this.campaignSavePresentation.presentation,
@@ -1354,185 +1364,32 @@ export class Lobby {
       onResume: () => { this.resumeAshRoad(); },
       onNewRun: (kitId, lifetime) => this.startAshRoad(kitId, lifetime),
       onRetrySave: () => this.checkCampaignResume(),
-    };
-  }
-
-  private seedChallengePresentation(): LobbySeedChallengePresentation | undefined {
-    if (this.seedChallenge.status === 'absent') return undefined;
-    if (this.seedChallenge.status === 'invalid') return { status: 'invalid' };
-    const operation = operationForSeedChallenge(this.seedChallenge.challenge);
-    const fieldOrder = operation?.practiceObjective
-      ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
-      : null;
-    return operation && fieldOrder
-      ? {
-        status: 'valid',
-        title: operation.title,
-        objective: renderFieldOrder(fieldOrder).brief,
-        seed: this.seedChallenge.challenge.seed,
-      }
-      : { status: 'invalid' };
-  }
-
-  private createLegacySkirmishCommandView(
-    host: HTMLElement,
-  ): MountedCommandView<LobbyCommandCenterContext> {
-    let listeners = new AbortController();
-    let disposed = false;
-    let chooser: HTMLElement | null = null;
-    const mountChooser = (): void => {
-      listeners.abort();
-      listeners = new AbortController();
-      const seedChallenge = this.seedChallengePresentation();
-      const card = buildLobbyShellView({
-        activeTab: this.activeTab,
-        surface: 'chooser',
-        showBack: true,
-        rejoinAvailable: false,
-        account: null,
-        firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
-        quickOperations: QUICK_OPERATIONS,
-        ...(seedChallenge === undefined ? {} : {
-          seedChallenge,
-          onSeedChallenge: () => { this.startSeedChallenge(); },
-        }),
-        onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
-        onCampaign: (kitId) => { void this.startAshRoad(kitId); },
-        campaignResumeAvailable: this.campaignSavePresentation.presentation.status === 'compatible'
-          && this.campaignSavePresentation.resumeCandidate !== null,
-        onCampaignResume: () => { this.resumeAshRoad(); },
-        onRejoin: () => { void this.handleRejoin(); },
-        onTabChange: (tab) => {
-          this.activeTab = tab;
-          if (tab === 'hotseat') this.hotSeatSurface = 'local';
-          this.surface = 'preparation';
-          this.render();
-        },
-        onBack: () => undefined,
-        listenerSignal: listeners.signal,
-        includeCrossCategoryDestinations: false,
-      });
-      chooser = card.querySelector<HTMLElement>('.lobby-deployment-chooser');
-      if (!chooser) throw new Error('Legacy Quick Operations chooser is missing');
-      host.replaceChildren(chooser);
-    };
-    mountChooser();
-    return {
-      // Quick Operations owns no campaign-save presentation. A late save check
-      // must not rebuild this view and erase its selected operation or focus.
-      update: () => undefined,
-      focusDefault: () => {
-        if (!disposed) chooser?.querySelector<HTMLElement>('button, select, summary')?.focus();
-      },
-      dispose: () => {
-        if (disposed) return;
-        disposed = true;
-        listeners.abort();
-        chooser?.remove();
-        chooser = null;
-      },
-    };
-  }
-
-  private createPreparationBridgeView(
-    host: HTMLElement,
-    tab: LobbyTab,
-  ): MountedCommandView<LobbyCommandCenterContext> {
-    const listeners = new AbortController();
-    let disposed = false;
-    const section = document.createElement('section');
-    section.className = 'command-center__bridge';
-    const title = document.createElement('h2');
-    const description = document.createElement('p');
-    const action = document.createElement('button');
-    action.type = 'button';
-    action.className = 'command-center__action command-center__primary-action';
-    action.dataset.commandPrimary = '';
-    if (tab === 'hotseat') {
-      title.textContent = 'Local Battle';
-      description.textContent = 'Set up the existing shared-screen crew and battlefield controls.';
-      action.textContent = 'Local Battle';
-    } else {
-      title.textContent = 'Online';
-      description.textContent = 'Open the existing create, join, browse, and waiting-room flow.';
-      action.textContent = 'Play Online';
-    }
-    action.addEventListener('click', () => {
-      if (disposed) return;
-      this.activeTab = tab;
-      if (tab === 'hotseat') this.hotSeatSurface = 'local';
-      this.surface = 'preparation';
-      this.render();
-    }, { signal: listeners.signal });
-    const recovery = tab === 'online' && this.networkRecoveryRetry
-      ? this.renderOnlineStatus(true)
-      : null;
-    section.append(title, description, recovery ?? action);
-    host.replaceChildren(section);
-    return {
-      update: () => undefined,
-      focusDefault: () => {
-        if (disposed) return;
-        (recovery?.querySelector<HTMLElement>('[data-network-recovery-retry]') ?? action).focus();
-      },
-      dispose: () => {
-        if (disposed) return;
-        disposed = true;
-        listeners.abort();
-        section.remove();
-      },
+      firstSalvoAvailable: firstSalvoPreferenceUnseen(),
+      importedChallenge: this.importedSkirmishChallenge(),
+      importedChallengeInvalid: this.seedChallenge.status === 'invalid',
+      onLaunchQuickOperation: (operationId) => { this.startQuickDuel(operationId); },
+      onLaunchImportedChallenge: () => { this.startSeedChallenge(); },
+      verifiedOperationsAvailable: this.isAccountAuthenticated(),
+      buildLocalBattleWorkspace: (listenerSignal) => (
+        this.renderLocalBattleCommandWorkspace(listenerSignal)
+      ),
+      buildVerifiedOperationsWorkspace: (listenerSignal) => (
+        this.renderVerifiedOperationsCommandWorkspace(listenerSignal)
+      ),
+      buildOnlineBattleWorkspace: (listenerSignal) => (
+        this.renderOnlineBattleCommandWorkspace(listenerSignal)
+      ),
+      releaseOnlineBattleWorkspace: () => { this.releaseOnlineBattleCommandWorkspace(); },
     };
   }
 
   private commandCenterContributions(): readonly CommandCategoryContribution<
     LobbyCommandCenterContext
   >[] {
-    const skirmishes: CommandCategoryContribution<LobbyCommandCenterContext> = {
-      id: commandCategoryId('skirmishes'),
-      label: 'Skirmishes',
-      icon: 'skirmishes',
-      order: 20,
-      availability: () => true,
-      provideItems: () => [{
-        id: commandItemId('quick-operations'),
-        summary: {
-          label: 'Quick Operations',
-          description: 'Choose a battlefield condition and duel the CPU.',
-        },
-        availability: () => true,
-        createView: (host) => this.createLegacySkirmishCommandView(host),
-      }],
-    };
-    const multiplayer: CommandCategoryContribution<LobbyCommandCenterContext> = {
-      id: commandCategoryId('multiplayer'),
-      label: 'Multiplayer',
-      icon: 'multiplayer',
-      order: 30,
-      availability: () => true,
-      provideItems: () => [
-        {
-          id: commandItemId('local-battle'),
-          summary: {
-            label: 'Local Battle',
-            description: 'Share one screen with a local crew.',
-          },
-          availability: () => true,
-          createView: (host) => this.createPreparationBridgeView(host, 'hotseat'),
-        },
-        {
-          id: commandItemId('online'),
-          summary: {
-            label: 'Online',
-            description: 'Create, join, or browse a network room.',
-          },
-          availability: () => true,
-          createView: (host) => this.createPreparationBridgeView(host, 'online'),
-        },
-      ],
-    };
+    const multiplayer = createMultiplayerCommandCategoryContribution<LobbyCommandCenterContext>();
     return [
       createAshRoadCommandCategoryContribution<LobbyCommandCenterContext>(),
-      skirmishes,
+      createSkirmishCommandCategoryContribution<LobbyCommandCenterContext>(),
       multiplayer,
     ];
   }
@@ -1547,26 +1404,41 @@ export class Lobby {
       categoryId: commandCategoryId('campaigns'),
       itemId: commandItemId('ash-road'),
     };
-    const quickOperations = {
+    const firstSalvo = {
       categoryId: commandCategoryId('skirmishes'),
-      itemId: commandItemId('quick-operations'),
+      itemId: commandItemId('first-salvo'),
+    };
+    const standardQuickDuel = {
+      categoryId: commandCategoryId('skirmishes'),
+      itemId: commandItemId('standard'),
+    };
+    const importedChallenge = {
+      categoryId: commandCategoryId('skirmishes'),
+      itemId: commandItemId('imported-challenge'),
     };
     const online = {
       categoryId: commandCategoryId('multiplayer'),
       itemId: commandItemId('online'),
     };
     const resolvedInitialSelection = resolveInitialCommandSelection(registry, {
-      ...(this.rejoinCandidate ? { explicitInviteOrRejoin: online } : {}),
+      ...(this.contextualOnlineEntryPending && (this.inviteRouteRequested || this.rejoinCandidate)
+        ? { explicitInviteOrRejoin: online }
+        : {}),
       ...(this.seedChallenge.status === 'valid' ? {
-        importedChallenge: { explicit: true, validated: true, selection: quickOperations },
+        importedChallenge: { explicit: true, validated: true, selection: importedChallenge },
       } : {}),
       campaign: {
         compatible: this.campaignSavePresentation.presentation.status === 'compatible',
         selection: campaigns,
       },
-      firstSalvo: quickOperations,
-      standardQuickDuel: quickOperations,
+      firstSalvo,
+      standardQuickDuel,
     }, this.commandSelectionStore);
+    if (resolvedInitialSelection?.source === 'explicit-invite-or-rejoin') {
+      this.contextualOnlineEntryPending = false;
+      this.inviteRouteRequested = false;
+      this.commandSelectionStore.remember(resolvedInitialSelection.selection);
+    }
     this.campaignInitialPromotionEligible = resolvedInitialSelection?.source === 'first-salvo'
       || resolvedInitialSelection?.source === 'standard-quick-duel';
     const initialSelection = resolvedInitialSelection?.selection ?? campaigns;
@@ -1574,7 +1446,14 @@ export class Lobby {
       contributions,
       context,
       initialSelection,
-      selectionStore: this.commandSelectionStore,
+      selectionStore: {
+        read: () => this.commandSelectionStore.read(),
+        remember: (selection) => {
+          this.contextualOnlineEntryPending = false;
+          return this.commandSelectionStore.remember(selection);
+        },
+        clear: () => { this.commandSelectionStore.clear(); },
+      },
     });
     return host;
   }
@@ -1598,35 +1477,6 @@ export class Lobby {
     this.renderListeners.abort();
     this.renderListeners = new AbortController();
     this.root.replaceChildren();
-
-    // The chooser does not own preparation UI. Constructing it eagerly creates an
-    // entire listener-bearing DOM tree that is never mounted and therefore appears
-    // as retained detached DOM in a real Chromium heap snapshot.
-    let vehiclePreview: HTMLElement | undefined;
-    let content: HTMLElement | undefined;
-    let controls: HTMLElement | undefined;
-    if (this.surface === 'preparation') {
-      vehiclePreview = this.renderVehiclePreview();
-      controls = this.renderControlsLegend();
-      if (this.activeTab === 'hotseat') {
-        content = this.renderHotSeatTab();
-      } else {
-        const onlineContent = this.onlineSubView === 'create'
-          ? this.renderCreateForm()
-          : this.onlineSubView === 'join'
-            ? this.renderJoinForm()
-            : this.onlineSubView === 'browse'
-              ? this.renderBrowse()
-              : this.renderWaitingRoom();
-        content = buildLobbyOnlineView(onlineContent);
-        if (this.networkRecoveryRetry) {
-          const recovery = document.createElement('div');
-          recovery.className = 'lobby-online-recovery';
-          recovery.append(this.renderOnlineStatus(true));
-          content.prepend(recovery);
-        }
-      }
-    }
 
     const accountOptions = (open: boolean, triggerOnly = false) => ({
       state: this.accountSession.state,
@@ -1661,67 +1511,9 @@ export class Lobby {
 
     const accountPanel = buildAccountPanelView(accountOptions(this.accountPanelOpen, true));
     if (this.diagnosticsIntentActive) accountPanel?.removeAttribute('aria-label');
-    const commandCenter = this.surface === 'chooser'
-      ? this.mountCommandCenter()
-      : undefined;
-
     const card = buildLobbyShellView({
-      activeTab: this.activeTab,
-      surface: this.surface,
-      showBack: !(this.activeTab === 'online' && this.onlineSubView === 'waiting'),
-      rejoinAvailable: this.rejoinCandidate !== null && this.networkRecoveryRetry === null,
       account: accountPanel,
-      vehiclePreview,
-      content,
-      controls,
-      ...(commandCenter ? { commandCenter } : {}),
-      onTabChange: (tab) => {
-        this.activeTab = tab;
-        if (tab === 'hotseat') this.hotSeatSurface = 'local';
-        this.surface = 'preparation';
-        this.render();
-      },
-      firstSalvoPreferenceUnseen: firstSalvoPreferenceUnseen(),
-      quickOperations: QUICK_OPERATIONS,
-      ...(this.seedChallenge.status === 'absent' ? {} : {
-        seedChallenge: this.seedChallenge.status === 'invalid'
-          ? { status: 'invalid' as const }
-          : (() => {
-            const operation = operationForSeedChallenge(this.seedChallenge.challenge);
-            const fieldOrder = operation?.practiceObjective
-              ? createPracticeFieldOrderById(operation.practiceObjective.fieldOrderId)
-              : null;
-            return operation && fieldOrder
-              ? {
-                status: 'valid' as const,
-                title: operation.title,
-                objective: renderFieldOrder(fieldOrder).brief,
-                seed: this.seedChallenge.challenge.seed,
-              }
-              : { status: 'invalid' as const };
-          })(),
-        onSeedChallenge: () => { this.startSeedChallenge(); },
-      }),
-      onQuickDuel: (operationId) => { this.startQuickDuel(operationId); },
-      onCampaign: (kitId) => { void this.startAshRoad(kitId); },
-      campaignResumeAvailable: this.campaignSavePresentation.presentation.status === 'compatible'
-        && this.campaignSavePresentation.resumeCandidate !== null,
-      onCampaignResume: () => { this.resumeAshRoad(); },
-      onRejoin: () => { void this.handleRejoin(); },
-      onBack: () => {
-        const itemId = this.activeTab === 'hotseat' ? 'local-battle' : 'online';
-        if (this.activeTab === 'online' && this.onlineSubView === 'browse') {
-          this.stopBrowsePoll();
-          this.onlineSubView = 'create';
-          this.onlineError = '';
-        }
-        this.surface = 'chooser';
-        this.render();
-        this.root.querySelector<HTMLButtonElement>(
-          `.command-center__library-items button[data-command-item="${itemId}"]`,
-        )?.focus();
-      },
-      listenerSignal: this.renderListeners.signal,
+      commandCenter: this.mountCommandCenter(),
     });
 
     this.root.append(card);
@@ -1794,24 +1586,6 @@ export class Lobby {
       });
     }
     if (!explicitVerifiedFocusRequested) this.restoreLobbyFocus(focusSnapshot);
-  }
-
-  /**
-   * Non-blocking controls legend shown in the lobby BEFORE the canvas is
-   * uncovered, so keyboard players know the aim/power/fire keys up front
-   * (P3-13b). Mirrors the in-game on-canvas legend; purely informational, so it
-   * never gates the start flow.
-   */
-  private renderControlsLegend(): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'lobby-controls';
-    el.innerHTML =
-      '<span class="lobby-controls__title">Controls</span>' +
-      '<span><kbd>&larr;</kbd>/<kbd>&rarr;</kbd> Aim</span>' +
-      '<span><kbd>&uarr;</kbd>/<kbd>&darr;</kbd> Power</span>' +
-      '<span><kbd>Q</kbd> Weapon</span>' +
-      '<span><kbd>Space</kbd>/<kbd>Enter</kbd> Fire</span>';
-    return el;
   }
 
   private previewRoster(): PreviewVehicle[] {
@@ -1986,6 +1760,7 @@ export class Lobby {
     ownerLabel: string,
     value: TankLoadout,
     onChange: (next: TankLoadout) => void,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     return buildLobbyGarageView({
       owner,
@@ -1993,7 +1768,7 @@ export class Lobby {
       value,
       editing: this.openGarageOwner === owner,
       isEditing: () => this.openGarageOwner === owner,
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
       onChange,
       onOpen: (nextOwner) => this.openGarage(nextOwner),
       onClose: (nextOwner) => this.closeGarage(nextOwner),
@@ -2403,31 +2178,35 @@ export class Lobby {
     };
   }
 
-  private renderHotSeatTab(): HTMLElement {
-    const verifiedDeployment = this.verifiedHotSeatView();
-    const verifiedChallenge = this.verifiedChallengeHotSeatView();
-    return buildLobbyHotSeatView({
-      surface: this.hotSeatSurface,
-      minPlayers: MIN_PLAYERS,
-      maxPlayers: MAX_PLAYERS,
-      playerCount: this.players.length,
-      playerRows: this.players.map((_, index) => this.renderRow(index)),
-      advanced: this.renderHotSeatBattlefield(),
-      validationMessage: this.validationError(),
-      verifiedDeployment,
-      verifiedChallenge,
+  private renderLocalBattleCommandWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    this.activeTab = 'hotseat';
+    const workspace = document.createElement('div');
+    workspace.className = 'multiplayer-command__local-workspace';
+    workspace.append(
+      this.renderVehiclePreview(),
+      buildLobbyLocalBattleView({
+        minPlayers: MIN_PLAYERS,
+        maxPlayers: MAX_PLAYERS,
+        playerCount: this.players.length,
+        playerRows: this.players.map((_, index) => this.renderRow(index, listenerSignal)),
+        advanced: this.renderHotSeatBattlefield(listenerSignal),
+        validationMessage: this.validationError(),
+        onPlayerCountChange: (count) => { this.setPlayerCount(count); },
+        onStart: () => { this.startLocalBattle(); },
+        listenerSignal,
+      }),
+    );
+    return workspace;
+  }
+
+  private renderVerifiedOperationsCommandWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    this.activeTab = 'hotseat';
+    const workspace = document.createElement('div');
+    workspace.className = 'multiplayer-command__verified-workspace';
+    workspace.append(buildLobbyVerifiedOperationsView({
+      verifiedDeployment: this.verifiedHotSeatView(),
+      verifiedChallenge: this.verifiedChallengeHotSeatView(),
       verifiedSurface: this.verifiedHotSeatSurface,
-      quickOperations: QUICK_OPERATIONS,
-      onQuickOperation: (operationId: string) => { this.startQuickDuel(operationId); },
-      onSurfaceChange: (surface, restoreFocus) => {
-        this.hotSeatSurface = surface;
-        this.render();
-        if (restoreFocus) {
-          this.root.querySelector<HTMLButtonElement>(
-            `[role="tab"][data-hotseat-surface="${surface}"]`,
-          )?.focus({ preventScroll: true });
-        }
-      },
       onVerifiedSurfaceChange: (surface, restoreFocus) => {
         this.verifiedHotSeatSurface = surface;
         this.render();
@@ -2437,30 +2216,114 @@ export class Lobby {
           )?.focus({ preventScroll: true });
         }
       },
-      onPlayerCountChange: (count) => { this.setPlayerCount(count); },
-      onStart: () => {
-        if (this.validationError() !== null) return;
-        const players = this.players.map((player, index) => ({
-          name: player.name.trim() || (player.ai ? `CPU ${index + 1}` : `Player ${index + 1}`),
-          color: player.color,
-          loadout: normalizeTankLoadout(player.loadout),
-          ...(player.ai ? { ai: player.ai } : {}),
-        }));
-        const settings = this.parseSettings();
-        this.onReady({
-          mode: 'hotseat',
-          players,
-          playerNames: players.map((player) => player.name),
-          ...(settings ? { settings } : {}),
-        });
-      },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
+    }));
+    return workspace;
+  }
+
+  private renderOnlineBattleCommandWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    const resumed = this.onlineWorkspaceSuspended;
+    if (resumed) {
+      this.onlineWorkspaceSuspended = false;
+      this.roomController.activate();
+      if (this.onlineSubView === 'waiting') void this.subscribeWaitingRoom();
+    }
+    this.browseLifetimeSignal = this.onlineSubView === 'browse' ? listenerSignal : null;
+    if (resumed && this.onlineSubView === 'browse') {
+      void this.fetchRooms(listenerSignal);
+      this.startBrowsePoll();
+    }
+    this.activeTab = 'online';
+    const onlineContent = this.networkRecoveryRetry
+      ? this.renderOnlineRecoveryWorkspace(listenerSignal)
+      : this.rejoinCandidate && this.onlineSubView === 'create'
+        ? this.renderOnlineRejoinWorkspace(listenerSignal)
+        : this.onlineSubView === 'create'
+          ? this.renderCreateForm(listenerSignal)
+          : this.onlineSubView === 'join'
+            ? this.renderJoinForm(listenerSignal)
+            : this.onlineSubView === 'browse'
+              ? this.renderBrowse(listenerSignal)
+              : this.renderWaitingRoom(listenerSignal);
+    onlineContent.classList.add('multiplayer-command__online-route');
+    const workspace = document.createElement('div');
+    workspace.className = 'multiplayer-command__online-workspace';
+    workspace.append(this.renderVehiclePreview(), onlineContent);
+    return workspace;
+  }
+
+  private renderOnlineRejoinWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'lobby-route-brief lobby-route-brief--online multiplayer-command__online-context';
+    const header = document.createElement('header');
+    header.className = 'lobby-route-brief__header';
+    const title = document.createElement('h2');
+    title.className = 'lobby-route-brief__title';
+    title.textContent = 'Active operation';
+    const description = document.createElement('p');
+    description.className = 'lobby-route-brief__purpose';
+    description.textContent = 'A compatible network battle is ready to resume.';
+    header.append(title, description);
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'lobby-btn primary';
+    action.textContent = 'Rejoin your game';
+    action.addEventListener('click', () => { void this.handleRejoin(); }, { signal: listenerSignal });
+    section.append(header, action);
+    return section;
+  }
+
+  private renderOnlineRecoveryWorkspace(listenerSignal: AbortSignal): HTMLElement {
+    const section = document.createElement('section');
+    section.className = 'lobby-route-brief lobby-route-brief--online multiplayer-command__online-context';
+    const header = document.createElement('header');
+    header.className = 'lobby-route-brief__header';
+    const title = document.createElement('h2');
+    title.className = 'lobby-route-brief__title';
+    title.textContent = 'Recovery required';
+    const description = document.createElement('p');
+    description.className = 'lobby-route-brief__purpose';
+    description.textContent = 'The operation is still selected. Retry without losing its owner.';
+    header.append(title, description);
+    section.append(header, this.renderOnlineStatus(true, listenerSignal));
+    return section;
+  }
+
+  private releaseOnlineBattleCommandWorkspace(): void {
+    // Shell-driven renders synchronously replace the same selected Online view.
+    // Defer resource suspension so only a genuine navigation away tears down
+    // browse/waiting resources rather than cancelling the route's own repaint.
+    queueMicrotask(() => {
+      if (this.root.querySelector('[data-multiplayer-command-view="online"]')) return;
+      if (this.onlineWorkspaceSuspended) return;
+      this.onlineWorkspaceSuspended = true;
+      this.browseLifetimeSignal = null;
+      this.roomController.suspendWorkspace();
+      this.stopBrowsePoll();
+      if (this.onlineSubView === 'waiting') this.cleanupWaitingChannel();
+    });
+  }
+
+  private startLocalBattle(): void {
+    if (this.validationError() !== null) return;
+    const players = this.players.map((player, index) => ({
+      name: player.name.trim() || (player.ai ? `CPU ${index + 1}` : `Player ${index + 1}`),
+      color: player.color,
+      loadout: normalizeTankLoadout(player.loadout),
+      ...(player.ai ? { ai: player.ai } : {}),
+    }));
+    const settings = this.parseSettings();
+    this.onReady({
+      mode: 'hotseat',
+      players,
+      playerNames: players.map((player) => player.name),
+      ...(settings ? { settings } : {}),
     });
   }
 
   // ---- Create Room sub-view ----
 
-  private renderCreateForm(): HTMLElement {
+  private renderCreateForm(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     return buildLobbyCreateView({
       minPlayers: MIN_PLAYERS,
       maxPlayers: MAX_PLAYERS,
@@ -2475,6 +2338,7 @@ export class Lobby {
         (value) => { this.setOnlineName(value); },
         (value) => { this.onlineColor = value; this.render(); },
         [],
+        listenerSignal,
       ),
       garage: this.renderGarage(
         'online-player',
@@ -2484,9 +2348,10 @@ export class Lobby {
           this.onlineLoadout = loadout;
           this.render();
         },
+        listenerSignal,
       ),
-      advanced: this.renderAdvanced(),
-      status: this.renderOnlineStatus(),
+      advanced: this.renderAdvanced(listenerSignal),
+      status: this.renderOnlineStatus(false, listenerSignal),
       onPlayerCountChange: (count) => {
         this.onlineMaxPlayers = count;
         if (this.onlineBots > count - 1) this.onlineBots = count - 1;
@@ -2502,54 +2367,56 @@ export class Lobby {
         this.render();
       },
       onBrowse: () => { this.enterBrowse(); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
-  private renderOnlineAdvancedFields(): HTMLElement {
+  private renderOnlineAdvancedFields(
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const fields = document.createElement('div');
     fields.className = 'lobby-advanced-fields';
     fields.append(
       this.onlineNumberField('Wind cap', this.onlineMaxWind, (value) => { this.onlineMaxWind = value; }, {
         min: WIND_MIN, max: WIND_MAX, step: 1, placeholder: String(WIND_DEFAULT),
         hint: `${WIND_MIN}–${WIND_MAX}`,
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Gravity', this.onlineGravity, (value) => { this.onlineGravity = value; }, {
         min: GRAVITY_MIN, max: GRAVITY_MAX, step: GRAVITY_STEP, placeholder: String(GRAVITY_DEFAULT),
         hint: `${GRAVITY_MIN}–${GRAVITY_MAX}`,
-      }),
+      }, listenerSignal),
       this.onlineChoiceField('Side walls', this.onlineWalls, (value) => { this.onlineWalls = value; }, [
         { value: '', label: 'Open — shots exit' },
         { value: 'reflective', label: 'Reflective — bank shots' },
         { value: 'wrap', label: 'Wrap — cross the arena' },
         { value: 'concrete', label: 'Concrete — impact at edge' },
-      ], 'shots exit, rebound, or cross through paired arena edges'),
+      ], 'shots exit, rebound, or cross through paired arena edges', listenerSignal),
       this.onlineChoiceField('Battlefield', this.onlineBattlefieldWorld, (value) => { this.onlineBattlefieldWorld = value; }, [
         { value: '', label: 'Automatic — terrain decides' },
         { value: 'ember-dusk', label: 'Ember Dusk — post-apocalypse' },
         { value: 'obsidian-caldera', label: 'Obsidian Caldera — volcanic night' },
         { value: 'glassstorm-expanse', label: 'Glassstorm Expanse — ice' },
-      ], 'visual world only; terrain and physics stay unchanged'),
+      ], 'visual world only; terrain and physics stay unchanged', listenerSignal),
       this.onlineChoiceField('Terrain hazards', this.onlineHazards, (value) => { this.onlineHazards = value; }, [
         { value: '', label: 'None — classic terrain' },
         { value: 'lava', label: 'Lava — lethal pools' },
-      ], 'deterministic lava pools are solid to shells but lethal to tanks'),
+      ], 'deterministic lava pools are solid to shells but lethal to tanks', listenerSignal),
       this.onlineChoiceField('Teams', this.onlineTeamMode ? '2v2' : '', (value) => { this.onlineTeamMode = value === '2v2'; }, [
         { value: '', label: 'Free-for-all' },
         { value: '2v2', label: '2v2 — alternating seats' },
-      ], 'four seats only; teammates cannot damage each other'),
+      ], 'four seats only; teammates cannot damage each other', listenerSignal),
       this.onlineNumberField('Rounds', this.onlineRounds, (value) => { this.onlineRounds = value; }, {
         min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2, placeholder: String(ROUNDS_DEFAULT), hint: 'best-of-N, odd',
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Interest', this.onlineInterestRate, (value) => { this.onlineInterestRate = value; }, {
         min: INTEREST_MIN, max: INTEREST_MAX, step: INTEREST_STEP, placeholder: String(INTEREST_DEFAULT), hint: 'per-round credit interest (0–0.5)',
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Sudden death', this.onlineSuddenDeath, (value) => { this.onlineSuddenDeath = value; }, {
         min: SUDDEN_DEATH_MIN, max: SUDDEN_DEATH_MAX, step: 1, placeholder: String(SUDDEN_DEATH_DEFAULT), hint: 'gravity ramps past this turn (0 = off)',
-      }),
+      }, listenerSignal),
       this.onlineNumberField('Arms level', this.onlineArmsLevel, (value) => { this.onlineArmsLevel = value; }, {
         min: ARMS_MIN, max: ARMS_MAX, step: 1, placeholder: String(ARMS_DEFAULT), hint: '0 = basic … 4 = full arsenal',
-      }),
+      }, listenerSignal),
     );
     return fields;
   }
@@ -2613,7 +2480,7 @@ export class Lobby {
   }
   // ---- Join Room sub-view ----
 
-  private renderJoinForm(): HTMLElement {
+  private renderJoinForm(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     return buildLobbyJoinView({
       code: this.joinCode,
       busy: this.onlineBusy,
@@ -2623,6 +2490,7 @@ export class Lobby {
         (value) => { this.setOnlineName(value); },
         (value) => { this.joinColor = value; this.render(); },
         [],
+        listenerSignal,
       ),
       garage: this.renderGarage(
         'online-player',
@@ -2632,8 +2500,9 @@ export class Lobby {
           this.onlineLoadout = loadout;
           this.render();
         },
+        listenerSignal,
       ),
-      status: this.renderOnlineStatus(),
+      status: this.renderOnlineStatus(false, listenerSignal),
       onCodeInput: (value) => {
         this.joinCode = normalizeRoomCode(value);
         return this.joinCode;
@@ -2645,7 +2514,7 @@ export class Lobby {
         this.render();
       },
       onBrowse: () => { this.enterBrowse(); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
@@ -2698,13 +2567,13 @@ export class Lobby {
     this.onlineError = '';
     this.browseRooms = [];
     this.render();
-    void this.fetchRooms();
+    void this.fetchRooms(this.browseLifetimeSignal);
     this.startBrowsePoll();
   }
 
   /** Begin (or restart) the 3s list_rooms poll. */
   private startBrowsePoll(): void {
-    this.session.startBrowsePoll(() => { void this.fetchRooms(); });
+    this.session.startBrowsePoll(() => { void this.fetchRooms(this.browseLifetimeSignal); });
   }
 
   /** Stop the list_rooms poll if running. */
@@ -2720,13 +2589,14 @@ export class Lobby {
     this.render();
   }
 
-  private async fetchRooms(): Promise<void> {
+  private async fetchRooms(lifetimeSignal: AbortSignal | null = this.browseLifetimeSignal): Promise<void> {
+    if (lifetimeSignal?.aborted) return;
     try {
       const { ok, data } = await this.transport.listRooms();
 
       // Only repaint if still on the browse view (the user may have navigated
       // away between the request and its response).
-      if (this.onlineSubView !== 'browse') return;
+      if (lifetimeSignal?.aborted || this.onlineSubView !== 'browse') return;
 
       if (!ok || data?.error) {
         this.onlineError = data?.error ?? 'Failed to load rooms.';
@@ -2738,14 +2608,14 @@ export class Lobby {
       this.onlineError = '';
       this.render();
     } catch (err) {
+      if (lifetimeSignal?.aborted || this.onlineSubView !== 'browse') return;
       console.error('Lobby.fetchRooms: network error —', err);
-      if (this.onlineSubView !== 'browse') return;
       this.onlineError = 'Network error. Try again.';
       this.render();
     }
   }
 
-  private renderBrowse(): HTMLElement {
+  private renderBrowse(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     return buildLobbyBrowseView({
       nameColor: this.renderOnlineNameColor(
         this.onlineName,
@@ -2753,6 +2623,7 @@ export class Lobby {
         (value) => { this.setOnlineName(value); },
         (value) => { this.joinColor = value; this.render(); },
         [],
+        listenerSignal,
       ),
       garage: this.renderGarage(
         'online-player',
@@ -2762,20 +2633,22 @@ export class Lobby {
           this.onlineLoadout = loadout;
           this.render();
         },
+        listenerSignal,
       ),
-      status: this.renderOnlineStatus(),
+      status: this.renderOnlineStatus(false, listenerSignal),
       rooms: this.browseRooms,
       busy: this.onlineBusy,
       onJoin: (code) => { void this.joinByCode(code); },
+      onRefresh: () => { void this.fetchRooms(listenerSignal); },
       onCreate: () => { this.leaveBrowse('create'); },
       onJoinByCode: () => { this.leaveBrowse('join'); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
   // ---- Waiting Room sub-view ----
 
-  private renderWaitingRoom(): HTMLElement {
+  private renderWaitingRoom(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     const colorClash = this.myColorClashes();
     const nameClash = this.myNameClashes();
     return buildLobbyWaitingView({
@@ -2788,14 +2661,14 @@ export class Lobby {
       clashNames: this.duplicateNames(),
       colorClash,
       nameClash,
-      selfEdit: this.renderWaitingSelfEdit(),
-      status: this.renderOnlineStatus(),
+      selfEdit: this.renderWaitingSelfEdit(listenerSignal),
+      status: this.renderOnlineStatus(false, listenerSignal),
       onCopyInvite: (button, status) => {
         void this.copyWaitingRoomInvite(button, status);
       },
       onReady: () => { void this.handleReadyUp(); },
       onLeave: () => { void this.handleLeaveRoom(); },
-      listenerSignal: this.renderListeners.signal,
+      listenerSignal,
     });
   }
 
@@ -2941,7 +2814,9 @@ export class Lobby {
    * Render the self-edit controls in the waiting room: color swatches (others'
    * colors disabled) and an inline rename input. Each commits via update_player.
    */
-  private renderWaitingSelfEdit(): HTMLElement {
+  private renderWaitingSelfEdit(
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const wrapper = document.createElement('div');
     const me = this.waitingPlayers.find((p) => p.id === this.waitingPlayerId);
     if (!me) return wrapper;
@@ -2963,7 +2838,7 @@ export class Lobby {
     nameInput.addEventListener('input', () => {
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
     const commitName = (): void => {
       const next = nameInput.value.trim();
       if (!next || next === me.name.trim()) return;
@@ -2971,8 +2846,8 @@ export class Lobby {
     };
     nameInput.addEventListener('keydown', (e) => {
       if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); commitName(); }
-    }, { signal: this.renderListeners.signal });
-    nameInput.addEventListener('blur', () => { commitName(); }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
+    nameInput.addEventListener('blur', () => { commitName(); }, { signal: listenerSignal });
 
     const applyBtn = document.createElement('button');
     applyBtn.type = 'button';
@@ -2980,7 +2855,7 @@ export class Lobby {
     applyBtn.style.cssText = 'padding:6px 12px;font-size:13px;';
     applyBtn.textContent = 'Apply';
     applyBtn.disabled = this.onlineBusy;
-    applyBtn.addEventListener('click', () => { commitName(); }, { signal: this.renderListeners.signal });
+    applyBtn.addEventListener('click', () => { commitName(); }, { signal: listenerSignal });
 
     nameField.append(nameInput, applyBtn);
     wrapper.append(nameField);
@@ -3004,7 +2879,7 @@ export class Lobby {
         if (taken || this.onlineBusy || color.value === me.color) return;
         this.spotlightOwner = 'online-player';
         void this.updateMe({ color: color.value });
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       swatches.append(swatch);
     }
     wrapper.append(swatches);
@@ -3016,6 +2891,7 @@ export class Lobby {
         if (this.onlineBusy) return;
         void this.updateMe({ loadout });
       },
+      listenerSignal,
     ));
 
     return wrapper;
@@ -3072,7 +2948,10 @@ export class Lobby {
 
   // ---- Shared online helpers ----
 
-  private renderOnlineStatus(includeRecovery = false): HTMLElement {
+  private renderOnlineStatus(
+    includeRecovery = false,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const el = document.createElement('div');
     el.className = 'online-status' + (this.onlineError ? ' error' : '');
     if (this.networkRecoveryRetry && !includeRecovery) return el;
@@ -3092,7 +2971,7 @@ export class Lobby {
         const action = this.networkRecoveryRetry;
         this.networkRecoveryRetry = null;
         action?.();
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       el.append(retry);
     }
     return el;
@@ -3109,6 +2988,7 @@ export class Lobby {
     onName: (v: string) => void,
     onColor: (v: string) => void,
     takenColors: string[],
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -3126,7 +3006,7 @@ export class Lobby {
       onName(nameInput.value);
       this.activatePreviewOwner('online-player');
       this.syncPreviewName('online-player', nameInput.value);
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -3143,7 +3023,7 @@ export class Lobby {
         if (taken) return;
         this.spotlightOwner = 'online-player';
         onColor(color.value);
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       swatches.append(swatch);
     }
 
@@ -3156,6 +3036,7 @@ export class Lobby {
     value: string,
     onChange: (v: string) => void,
     opts: { min?: number; max?: number; step?: number; placeholder: string; hint: string },
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -3170,7 +3051,7 @@ export class Lobby {
     if (opts.step !== undefined) input.step = String(opts.step);
     input.placeholder = opts.placeholder;
     input.value = value;
-    input.addEventListener('input', () => { onChange(input.value); }, { signal: this.renderListeners.signal });
+    input.addEventListener('input', () => { onChange(input.value); }, { signal: listenerSignal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';
@@ -3183,7 +3064,10 @@ export class Lobby {
   // ---- Hot seat helpers (unchanged) ----
 
   /** Render one player's row (name input + color swatches). */
-  private renderRow(index: number): HTMLElement {
+  private renderRow(
+    index: number,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const player = this.players[index];
     if (player === undefined) throw new RangeError(`Missing lobby player at index ${index}`);
     const row = document.createElement('div');
@@ -3204,7 +3088,7 @@ export class Lobby {
       this.activatePreviewOwner(owner);
       this.syncPreviewName(owner, name.value);
       this.refreshStartState();
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     const swatches = document.createElement('div');
     swatches.className = 'lobby-swatches';
@@ -3226,7 +3110,7 @@ export class Lobby {
         this.spotlightOwner = `player-${index + 1}`;
         player.color = color.value;
         this.render();
-      }, { signal: this.renderListeners.signal });
+      }, { signal: listenerSignal });
       swatches.append(swatch);
     }
 
@@ -3257,7 +3141,7 @@ export class Lobby {
         player.name = `CPU ${index + 1}`;
       }
       this.render();
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     row.append(name, swatches, control);
     row.append(this.renderGarage(
@@ -3268,6 +3152,7 @@ export class Lobby {
         player.loadout = loadout;
         this.render();
       },
+      listenerSignal,
     ));
     return row;
   }
@@ -3278,7 +3163,7 @@ export class Lobby {
    * the user types a value; blank fields are omitted from the emitted config so
    * the engine default applies.
    */
-  private renderAdvanced(): HTMLElement {
+  private renderAdvanced(listenerSignal: AbortSignal = this.renderListeners.signal): HTMLElement {
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'lobby-advanced-trigger lobby-btn secondary';
@@ -3288,23 +3173,25 @@ export class Lobby {
       this.accountPanelOpen = false;
       this.settingsOpen = true;
       this.render();
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
     return trigger;
   }
 
   /** Direct Hot Seat battlefield controls share the exact SettingsState parsed at launch. */
-  private renderHotSeatBattlefield(): HTMLElement {
+  private renderHotSeatBattlefield(
+    listenerSignal: AbortSignal = this.renderListeners.signal,
+  ): HTMLElement {
     const fields = document.createElement('div');
     fields.className = 'lobby-hotseat-battlefield';
     fields.append(
       this.numberField('Rounds', 'rounds', {
         min: ROUNDS_MIN, max: ROUNDS_MAX, step: 2,
         placeholder: String(ROUNDS_DEFAULT), hint: 'best-of-N, odd',
-      }),
+      }, listenerSignal),
       this.numberField('Wind', 'maxWind', {
         min: WIND_MIN, max: WIND_MAX, step: 1,
         placeholder: String(WIND_DEFAULT), hint: `${WIND_MIN}–${WIND_MAX}`,
-      }),
+      }, listenerSignal),
       this.choiceField('lobby-hotseat-direct-walls', 'Walls', this.settings.walls, (value) => {
         this.settings.walls = value;
       }, [
@@ -3312,31 +3199,31 @@ export class Lobby {
         { value: 'reflective', label: 'Reflective — bank shots' },
         { value: 'wrap', label: 'Wrap — paired edges' },
         { value: 'concrete', label: 'Concrete — impact at edge' },
-      ], 'arena edge behavior'),
-      this.renderAdvanced(),
+      ], 'arena edge behavior', listenerSignal),
+      this.renderAdvanced(listenerSignal),
     );
     return fields;
   }
 
   private focusRequestedVerifiedDeployment(): void {
     if (!this.focusVerifiedDeploymentRequested || this.root.hidden) return;
-    const verifiedTab = this.root.querySelector<HTMLButtonElement>(
-      '[role="tab"][data-hotseat-surface="verified"]:not(:disabled)',
+    const verifiedItem = this.root.querySelector<HTMLButtonElement>(
+      '[data-command-item="verified-operations"]',
     );
     if (this.focusVerifiedChallengeRequested) {
       const target = this.root.querySelector<HTMLButtonElement>('[data-verified-challenge] button:not(:disabled)')
-        ?? verifiedTab
-        ?? this.root.querySelector<HTMLButtonElement>('[role="tab"][data-hotseat-surface="local"]:not(:disabled)');
+        ?? this.root.querySelector<HTMLButtonElement>('[data-verified-surface="challenge"]')
+        ?? verifiedItem;
       if (!target) return;
       target.focus();
       this.focusVerifiedChallengeRequested = false;
       this.focusVerifiedDeploymentRequested = false;
       return;
     }
-    if (!verifiedTab) return;
+    if (!verifiedItem) return;
     (this.root.querySelector<HTMLButtonElement>(
       '.lobby-verified-deployment__launch:not(:disabled)',
-    ) ?? verifiedTab).focus({ preventScroll: true });
+    ) ?? verifiedItem).focus({ preventScroll: true });
     this.focusVerifiedDeploymentRequested = false;
   }
 
@@ -3447,6 +3334,7 @@ export class Lobby {
     label: string,
     key: keyof SettingsState,
     opts: { min?: number; max?: number; step?: number; placeholder: string; hint: string },
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -3464,7 +3352,7 @@ export class Lobby {
     input.value = this.settings[key];
     input.addEventListener('input', () => {
       this.settings[key] = input.value;
-    }, { signal: this.renderListeners.signal });
+    }, { signal: listenerSignal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';
@@ -3493,9 +3381,18 @@ export class Lobby {
     onChange: (value: string) => void,
     choices: ReadonlyArray<{ value: string; label: string }>,
     hintText: string,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return this.choiceField(`lobby-online-${slug}`, label, value, onChange, choices, hintText);
+    return this.choiceField(
+      `lobby-online-${slug}`,
+      label,
+      value,
+      onChange,
+      choices,
+      hintText,
+      listenerSignal,
+    );
   }
 
   private choiceField(
@@ -3505,6 +3402,7 @@ export class Lobby {
     onChange: (value: string) => void,
     choices: ReadonlyArray<{ value: string; label: string }>,
     hintText: string,
+    listenerSignal: AbortSignal = this.renderListeners.signal,
   ): HTMLElement {
     const field = document.createElement('div');
     field.className = 'lobby-field';
@@ -3522,7 +3420,7 @@ export class Lobby {
       option.selected = choice.value === value;
       select.append(option);
     }
-    select.addEventListener('change', () => onChange(select.value), { signal: this.renderListeners.signal });
+    select.addEventListener('change', () => onChange(select.value), { signal: listenerSignal });
 
     const hint = document.createElement('span');
     hint.className = 'lobby-hint';

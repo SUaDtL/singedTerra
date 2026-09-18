@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { gotoLobby, isCompact, openLocalPreparation } from './support';
+import {
+  assertGoldSafeAction,
+  gotoLobby,
+  isCompact,
+  openLocalPreparation,
+} from './support';
 
 async function gotoProductionAccountFixture(page: Page): Promise<void> {
   const configuredStorageKey = process.env['E2E_AUTH_STORAGE_KEY'] ?? null;
@@ -102,6 +107,15 @@ async function renderedTextBox(locator: Locator): Promise<{
     return { x: box.x, y: box.y, width: box.width, height: box.height };
   });
 }
+
+test('account submit renders as a safe gold action', async ({ page }) => {
+  await gotoLobby(page);
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  const account = page.getByRole('dialog', { name: 'Player account' });
+  await expect(account).toBeVisible();
+  await expect(account.locator('.account-panel__submit')).toBeVisible();
+  await assertGoldSafeAction(page, '#lobby .account-panel__submit');
+});
 
 test.describe('Account progression summary compact readability', () => {
   test.beforeEach(async ({ page }) => {
@@ -231,7 +245,6 @@ test.describe('Account progression summary compact readability', () => {
     const panel = page.locator('#lobby .account-panel--authenticated');
     const trigger = panel.locator('.account-panel__account-trigger');
     const spotlight = page.locator('.lobby-preview__spotlight');
-    const missionBrief = page.locator('.lobby-deployment__mission-brief');
     const summary = panel.locator('.account-panel__progress');
     const xp = panel.locator('.account-panel__xp');
 
@@ -240,7 +253,6 @@ test.describe('Account progression summary compact readability', () => {
     const record = panel.locator('.account-panel__record');
     await expect(record).toBeVisible();
     await expect(record).toHaveAttribute('aria-label', 'Commander dossier');
-    await expect(record.getByRole('heading', { name: 'COMMANDER DOSSIER', exact: true, includeHidden: true })).toBeHidden();
     await expect(trigger).toHaveAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX, R-03 Bombardier, Level 3, 300 XP to Level 4, next rank Artillerist at Level 5. Player account');
     await expect(record.locator('progress')).toHaveAttribute('aria-label', 'Commander ABCDEFGHIJKLMNOPQRSTUVWX Level 3 XP progress');
     const commander = trigger.locator('.account-panel__commander-name');
@@ -256,6 +268,21 @@ test.describe('Account progression summary compact readability', () => {
     await expect(level).toHaveText('Level 3');
     await expect(milestone).toHaveText('300 XP to Level 4');
     await expect(nextRank).toHaveText('NEXT RANK / ARTILLERIST / LEVEL 5');
+    const showsFullDossier = await insignia.isVisible();
+    const dossierHeading = record.getByRole('heading', {
+      name: 'COMMANDER DOSSIER', exact: true, includeHidden: true,
+    });
+    if (showsFullDossier) {
+      await expect(dossierHeading).toBeVisible();
+      for (const detail of [insignia, rank, milestone, record.locator('progress')]) {
+        await expect(detail).toBeVisible();
+      }
+    } else {
+      await expect(dossierHeading).toBeHidden();
+      for (const detail of [insignia, rank, milestone, record.locator('progress')]) {
+        await expect(detail).toBeHidden();
+      }
+    }
     expect(await trigger.evaluate((node) => getComputedStyle(node).whiteSpace)).not.toBe('nowrap');
     expect(await trigger.evaluate((node) => getComputedStyle(node).textOverflow)).not.toBe('ellipsis');
     for (const text of [commander, level]) {
@@ -271,26 +298,25 @@ test.describe('Account progression summary compact readability', () => {
     const triggerBox = await trigger.boundingBox();
     expect(triggerBox, 'Account disclosure should render').not.toBeNull();
     expect(triggerBox!.height, 'Account disclosure should meet the rendered touch floor').toBeGreaterThanOrEqual(24);
-    for (const detail of [insignia, rank, milestone, nextRank, record.locator('progress')]) {
-      await expect(detail).toBeHidden();
-    }
+    await expect(nextRank).toBeHidden();
     await expect(summary).toBeHidden();
     await expect(xp).toBeHidden();
     const panelBox = await panel.boundingBox();
     const spotlightBox = await spotlight.boundingBox();
-    const missionBriefBox = await missionBrief.boundingBox();
     const reservedPreviewBox = await preview.boundingBox();
     const reservedMastheadBox = await masthead.boundingBox();
     expect(panelBox).not.toBeNull();
     expect(spotlightBox).not.toBeNull();
-    expect(missionBriefBox).toBeNull();
+    await expect(page.locator('.lobby-deployment__mission-brief')).toHaveCount(0);
     expect(reservedPreviewBox, 'dossier-reserved preview should render').not.toBeNull();
     expect(reservedMastheadBox, 'dossier-reserved masthead should render').not.toBeNull();
     expect(
       boxesOverlap(panelBox!, spotlightBox!),
       `collapsed account trigger must not cover the vehicle spotlight: ${JSON.stringify({ panelBox, spotlightBox })}`,
     ).toBe(false);
-    await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toBeVisible();
+    await expect(page.locator('button[data-command-item="local-battle"]'))
+      .toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
   });
 
 });
@@ -356,11 +382,8 @@ test('opened Player Account owns the lobby stage without ghosting the deployment
   const lobby = page.locator('#lobby');
   const card = page.locator('#lobby .lobby-card');
   const masthead = page.locator('.lobby-deployment__masthead');
-  const brief = page.locator('.lobby-deployment__mission-brief');
   const preview = page.locator('.lobby-preview');
-  const stageLandmarks = (await isCompact(page))
-    ? [masthead, preview]
-    : [masthead, brief, preview];
+  const stageLandmarks = [masthead, preview];
   const before = await Promise.all(stageLandmarks.map((landmark) => landmark.boundingBox()));
   for (const box of before) expect(box).not.toBeNull();
 

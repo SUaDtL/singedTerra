@@ -124,7 +124,7 @@ describe('ApplicationLaunchLifecycle', () => {
     const roots = mount();
     const snapshot = Object.freeze({
       categoryId: 'skirmishes',
-      itemId: 'quick-operations',
+      itemId: 'standard',
       focusKey: 'operation:first-salvo',
     });
     const restore = vi.fn();
@@ -183,7 +183,7 @@ describe('ApplicationLaunchLifecycle', () => {
       restore: staleRestore,
     });
     const current = lifecycle.launch({
-      captureFocus: () => ({ categoryId: 'skirmishes', itemId: 'quick-operations', focusKey: 'launch' }),
+      captureFocus: () => ({ categoryId: 'skirmishes', itemId: 'standard', focusKey: 'launch' }),
       acquire: async () => ({ session: 'current' }),
       commit: currentCommit,
       restore: vi.fn(),
@@ -213,7 +213,7 @@ describe('ApplicationLaunchLifecycle', () => {
       restore: staleRestore,
     });
     await lifecycle.launch({
-      captureFocus: () => ({ categoryId: 'skirmishes', itemId: 'quick-operations', focusKey: 'launch' }),
+      captureFocus: () => ({ categoryId: 'skirmishes', itemId: 'standard', focusKey: 'launch' }),
       acquire: async () => ({ session: 'current' }),
       commit: currentCommit,
       restore: vi.fn(),

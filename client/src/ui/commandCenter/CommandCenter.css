@@ -192,11 +192,6 @@
   box-sizing: border-box;
 }
 
-#lobby .lobby-card:has(.command-center) .lobby-deployment__masthead > .lobby-rejoin-banner {
-  grid-column: 1 / -1;
-  grid-row: 2;
-}
-
 #lobby .lobby-command-center {
   min-width: 0;
   min-height: 0;
@@ -506,6 +501,264 @@
   min-width: 0;
   min-height: 100%;
   height: 100%;
+}
+
+/* Local Battle is a first-class command workspace. Re-establish the preview /
+   setup composition here because the legacy Lobby rules only normalize a
+   preview that is a direct child of `.lobby-deployment`. */
+#lobby .multiplayer-command {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  container: local-workspace-shell / inline-size;
+}
+
+#lobby .multiplayer-command__local-workspace {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__local-workspace > .lobby-preview {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 280px;
+  height: clamp(280px, 38vh, 420px);
+  max-height: 420px;
+  align-self: start;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-preview__convoy {
+  display: none;
+}
+
+#lobby .multiplayer-command__verified-workspace,
+#lobby .multiplayer-command__verified-workspace > .lobby-hotseat,
+#lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+#lobby .multiplayer-command__verified-workspace {
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__verified-workspace > .lobby-hotseat {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+#lobby .multiplayer-command__verified-workspace .lobby-btn.primary {
+  min-height: 56px;
+}
+
+#lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  container: local-battle-setup / inline-size;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+  min-width: 0;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-preparation-section[data-preparation-section='crew-manifest']
+  > .lobby-preparation-section__body
+  > .lobby-field:first-child
+  > select,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body input,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body select,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body button {
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-control,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-hotseat-battlefield input[type='number'],
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-hotseat-battlefield select,
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-advanced-trigger {
+  min-height: 44px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(120px, auto) minmax(132px, auto);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-row .lobby-name {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 44px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-row .lobby-control {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-row .lobby-garage:not(.editing) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-row .lobby-swatches {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+  .lobby-row .lobby-swatch {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-width: 2px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-garage.editing
+  .lobby-garage__preset-group,
+#lobby .multiplayer-command__local-workspace .lobby-garage.editing
+  .lobby-garage__component-group {
+  margin-top: 6px;
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
+  width: 100%;
+  min-width: 220px;
+  min-height: 56px;
+  justify-self: end;
+  font-size: max(var(--st-command-readability-size, 12px), 14px);
+}
+
+#lobby .multiplayer-command__online-workspace {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(360px, 1.28fr);
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__online-workspace > .lobby-preview {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 280px;
+  height: clamp(280px, 38vh, 420px);
+  max-height: 420px;
+  align-self: start;
+  margin: 0;
+}
+
+#lobby .multiplayer-command__online-workspace .lobby-preview__convoy {
+  display: none;
+}
+
+#lobby .multiplayer-command__online-route {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+}
+
+#lobby .multiplayer-command__online-route input,
+#lobby .multiplayer-command__online-route select,
+#lobby .multiplayer-command__online-route button,
+#lobby .multiplayer-command__online-route summary {
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+#lobby .multiplayer-command__online-route .lobby-field {
+  min-width: 0;
+  gap: 6px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-field > label {
+  width: 80px;
+  flex: 0 0 80px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-preparation-section
+  .lobby-garage button {
+  min-width: 45px;
+  min-height: 44px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-garage button {
+  min-width: 45px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-route-brief--online
+  .lobby-garage button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-swatch {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+#lobby .multiplayer-command__online-route .lobby-btn.primary {
+  min-height: 56px;
+  font-size: max(var(--st-command-readability-size, 12px), 14px);
+}
+
+#lobby .multiplayer-command__online-route .lobby-route-brief__title {
+  font-size: max(var(--st-command-readability-size, 12px), 14px);
+}
+
+#lobby .multiplayer-command__online-context {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: clamp(16px, 3vw, 34px);
+}
+
+#lobby .multiplayer-command__online-context > .lobby-btn.primary,
+#lobby .multiplayer-command__online-context .online-status {
+  width: min(100%, 420px);
 }
 
 #lobby .campaign-command {
@@ -992,31 +1245,6 @@
   line-height: 1.5;
 }
 
-#lobby .command-center__bridge {
-  min-height: 100%;
-  display: grid;
-  place-content: center;
-  justify-items: start;
-  gap: 12px;
-  box-sizing: border-box;
-  padding: clamp(28px, 6vw, 84px);
-}
-
-#lobby .command-center__bridge h2,
-#lobby .command-center__bridge p {
-  max-width: 52ch;
-  margin: 0;
-}
-
-#lobby .command-center__bridge h2 {
-  color: var(--command-gold-bright);
-  font: 800 clamp(28px, 3vw, 42px)/1 var(--font-display);
-}
-
-#lobby .command-center__bridge p {
-  color: var(--command-muted);
-}
-
 #lobby .command-center__modes-sheet {
   position: absolute;
   inset: 0;
@@ -1057,28 +1285,6 @@
 
 #lobby .command-center__sheet-categories {
   grid-column: 1 / -1;
-}
-
-/* Temporary ownership boundary. Only the transitional Skirmishes item may
- * consume the old Quick Operations chooser until T14 replaces that view. */
-#lobby .command-center__legacy-skirmish {
-  min-width: 0;
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 10px;
-  box-sizing: border-box;
-  padding: 14px;
-  overflow: hidden;
-}
-
-#lobby .command-center__legacy-skirmish .lobby-deployment-console {
-  min-width: 0;
-  min-height: 0;
-}
-
-#lobby .command-center__legacy-skirmish .lobby-deployment-rail {
-  flex-shrink: 0;
 }
 
 @media (max-width: 980px), (max-height: 620px) {
@@ -1144,6 +1350,31 @@
     grid-template-columns: minmax(190px, 29%) minmax(0, 1fr);
   }
 
+  #lobby .multiplayer-command__local-workspace {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  #lobby .multiplayer-command__online-workspace {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  #lobby .multiplayer-command__online-workspace > .lobby-preview {
+    min-height: 180px;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-preview {
+    min-height: 180px;
+  }
+
+  #lobby .command-center .multiplayer-command__local-workspace
+    .lobby-hotseat-body .lobby-garage.editing {
+    inset: 16px;
+    gap: 6px;
+    padding: 12px;
+  }
+
   #lobby .command-center__library {
     padding: 14px 12px;
   }
@@ -1169,6 +1400,63 @@
 
   #lobby .campaign-command__loadout {
     grid-template-columns: minmax(130px, 0.5fr) minmax(180px, 0.75fr) minmax(220px, 1.25fr);
+  }
+}
+
+/* The category/library rail can leave the owned workspace narrow even on a
+   wide viewport. Reflow from the workspace's actual width, not the window. */
+@container (max-width: 700px) {
+  #lobby .multiplayer-command__online-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(180px, 34%) minmax(0, 1fr);
+  }
+
+  #lobby .multiplayer-command__online-workspace > .lobby-preview {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 180px;
+    height: 100%;
+    max-height: none;
+  }
+
+  #lobby .multiplayer-command__online-route {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-field > label {
+    width: auto;
+    min-width: 0;
+    flex: none;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-name,
+  #lobby .multiplayer-command__online-route .lobby-swatches {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-swatches {
+    flex-wrap: wrap;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-operations-board__room-row {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  #lobby .multiplayer-command__online-route .lobby-operations-board__room-meta {
+    min-width: 0;
+    flex: 1 1 100%;
+    margin-left: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -1239,10 +1527,6 @@
   #lobby .lobby-card:has(.command-center) .lobby-command-rail__dossier > .account-panel__account-trigger {
     min-height: 44px;
     font-size: 12px;
-  }
-
-  #lobby .lobby-card:has(.command-center) .lobby-deployment__masthead > .lobby-rejoin-banner {
-    grid-row: 3;
   }
 
   #lobby .command-center {
@@ -1339,6 +1623,58 @@
 
   #lobby .command-center__workspace-mount {
     height: auto;
+  }
+
+  #lobby .multiplayer-command,
+  #lobby .multiplayer-command__local-workspace,
+  #lobby .multiplayer-command__online-workspace {
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__online-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(240px, 36vh) auto;
+    overflow: visible;
+  }
+
+  #lobby .multiplayer-command__online-workspace > .lobby-preview {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 240px;
+  }
+
+  #lobby .multiplayer-command__online-route {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  #lobby .multiplayer-command__local-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(240px, 36vh) auto;
+    overflow: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-preview {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 240px;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    overflow: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    overflow-y: visible;
   }
 
   #lobby .campaign-command__decision {
@@ -1682,6 +2018,751 @@
 
   #lobby .campaign-command__disclosure {
     align-self: start;
+  }
+}
+
+@container local-workspace-shell (max-width: 700px) {
+  #lobby .multiplayer-command__local-workspace {
+    height: auto;
+    overflow: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-preview {
+    min-height: 240px;
+    height: clamp(240px, 34vh, 320px);
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body,
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    overflow-y: visible;
+  }
+}
+
+/* Short landscape screens need a decision plane, not a tall document. Collapse
+   the mode rail to reclaim horizontal space, then keep Local setup and its
+   docked launch action inside the visible workspace while the setup details
+   retain their own controlled scroll region. */
+@media (max-height: 620px) and (orientation: landscape) {
+  #lobby .command-center {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  #lobby .command-center__navigation {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    z-index: 4;
+    width: max(160px, 20%);
+    min-height: 48px;
+    box-sizing: border-box;
+    display: block;
+    align-items: center;
+    padding: 4px 8px;
+    border: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--command-line-bright);
+    background: linear-gradient(180deg, rgba(57, 38, 25, 0.98), rgba(14, 15, 16, 0.98));
+  }
+
+  #lobby .command-center__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  #lobby .command-center__category-rail {
+    display: none;
+  }
+
+  #lobby .command-center__modes-trigger {
+    width: 100%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 3px 10px;
+    border: 1px solid var(--command-gold);
+    color: var(--command-gold-bright);
+    background: #171615;
+  }
+
+  #lobby .command-center__body {
+    grid-template-columns: minmax(160px, 20%) minmax(0, 1fr);
+  }
+
+  #lobby .command-center__library {
+    padding: 60px 8px 8px;
+  }
+
+  #lobby .command-center__body[data-command-collection='singleton']
+    .command-center__library {
+    padding: 4px 8px 8px calc(max(160px, 20%) + 8px);
+  }
+
+  #lobby .command-center__item {
+    padding: 7px 8px;
+  }
+
+  #lobby .command-center__item-description {
+    display: none;
+  }
+
+  #lobby .command-center__workspace-mount,
+  #lobby .multiplayer-command {
+    min-height: 0;
+    height: 100%;
+  }
+
+  #lobby .multiplayer-command__local-workspace {
+    min-height: 0;
+    height: 100%;
+    grid-template-columns: minmax(180px, 0.72fr) minmax(280px, 1.28fr);
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-preview {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 160px;
+    height: 100%;
+    max-height: none;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-preview__parts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__part span,
+  #lobby.is-compact .multiplayer-command__local-workspace .lobby-preview__part strong {
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 160px;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  #lobby .multiplayer-command__online-workspace {
+    min-height: 0;
+    height: 100%;
+    grid-template-columns: minmax(180px, 0.66fr) minmax(340px, 1.34fr);
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__online-workspace > .lobby-preview {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 160px;
+    height: 100%;
+    max-height: none;
+  }
+
+  #lobby .multiplayer-command__online-route {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+
+/* In portrait preparation, lead with the actionable setup bay and move the
+   illustrative tank preview below it. The footer remains docked while the
+   setup body scrolls, so Deploy stays available without hiding configuration. */
+@media (max-width: 720px) and (orientation: portrait) {
+  #lobby .multiplayer-command__local-workspace {
+    grid-template-rows: minmax(320px, 46vh) 260px;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-hotseat {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 320px;
+    height: 46vh;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace > .lobby-preview {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-scroll {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+@container local-workspace-shell (max-width: 460px) {
+  #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    > .lobby-preview {
+    min-height: 260px;
+    height: 260px;
+  }
+
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__spotlight-identity {
+    font-size: 13px;
+  }
+
+  #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__spotlight-canvas {
+    width: min(210px, 72%);
+  }
+
+  #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__parts {
+    width: calc(100% - 12px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: -8px;
+  }
+
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__part {
+    padding: 3px 4px;
+  }
+
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__part span,
+  #lobby.is-compact
+    :is(.multiplayer-command__local-workspace, .multiplayer-command__online-workspace)
+    .lobby-preview__part strong {
+    overflow: hidden;
+    font-size: 11px;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@container local-battle-setup (max-width: 460px) {
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body .lobby-row {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+    .lobby-row .lobby-name {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+    .lobby-row .lobby-control {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+    .lobby-row .lobby-swatches {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-body
+    .lobby-row .lobby-garage:not(.editing) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #lobby.is-compact .command-center .multiplayer-command__local-workspace
+    .lobby-hotseat-footer {
+    height: auto;
+    padding-block: 3px;
+    border-block-width: 1px;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer__status {
+    white-space: normal;
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-footer > .lobby-start {
+    min-width: 0;
+    justify-self: stretch;
+  }
+}
+
+#lobby .multiplayer-command.multiplayer-command--verified {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(420px, 1.28fr);
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* Skirmish and Verified share one authoritative battlefield-projection seam.
+   This turns the preparation field into an intentional tactical read rather
+   than leaving an apparently unfinished material void. */
+#lobby .command-center__battlefield-projection {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 220px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #8e5428;
+  background: #160f14;
+  box-shadow: inset 0 0 0 4px rgba(9, 7, 8, 0.8);
+}
+
+#lobby .multiplayer-command--verified > .command-center__battlefield-projection {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  height: 100%;
+}
+
+#lobby .command-center__battlefield-projection > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(0.86) brightness(0.66) contrast(1.08);
+}
+
+#lobby .command-center__battlefield-projection::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 46%, rgba(5, 7, 9, 0.88));
+}
+
+#lobby .command-center__battlefield-projection figcaption {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  bottom: 10px;
+  margin: 0;
+  padding: 5px 9px;
+  border-left: 2px solid var(--command-gold);
+  color: #dbc69f;
+  background: rgba(7, 8, 10, 0.76);
+  font: 700 10px/1.2 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace {
+  z-index: 2;
+  grid-column: 2;
+  grid-row: 1;
+  padding: 10px;
+  border-left: 1px solid rgba(190, 116, 50, 0.64);
+  background: linear-gradient(90deg, rgba(8, 10, 12, 0.96), rgba(8, 10, 12, 0.78));
+  box-shadow: -16px 0 28px rgba(0, 0, 0, 0.34);
+}
+
+/* Abandoning a recoverable deployment is the one destructive Verified
+   decision. Present its confirmation as a true modal command plate at every
+   geometry so the two choices never compete for the footer's inline width. */
+#lobby .command-center .multiplayer-command__verified-workspace
+  .lobby-hotseat-footer > .lobby-verified-deployment__confirm {
+  position: fixed;
+  z-index: 110;
+  top: 50%;
+  left: 50%;
+  width: min(420px, calc(100vw - 32px));
+  min-width: 0;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  gap: 10px;
+  padding: 16px;
+  border: 2px solid rgba(255, 210, 63, 0.72);
+  background:
+    linear-gradient(180deg, rgba(31, 24, 18, 0.99), rgba(8, 10, 12, 0.99)),
+    var(--st-command-iron, #111418);
+  box-shadow:
+    0 0 0 100vmax rgba(2, 4, 7, 0.76),
+    0 18px 54px rgba(0, 0, 0, 0.72),
+    inset 0 0 0 1px rgba(255, 232, 173, 0.12);
+}
+
+#lobby .command-center .multiplayer-command__verified-workspace
+  .lobby-hotseat-footer > .lobby-verified-deployment__confirm > .lobby-btn {
+  min-width: 0;
+  min-height: 44px;
+}
+
+@media (min-width: 1101px) and (min-height: 621px) {
+  #lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace,
+  #lobby .multiplayer-command__verified-workspace > .lobby-hotseat,
+  #lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__verified-workspace {
+    align-self: start;
+    max-height: 100%;
+  }
+
+  #lobby .multiplayer-command__verified-workspace .lobby-hotseat-body {
+    grid-template-rows: auto auto;
+    align-content: start;
+  }
+}
+
+/* Every Online route owns a visible decision row. Configuration and roster
+   details scroll independently, so the sole primary never begins below the
+   supported viewport. */
+#lobby .multiplayer-command__online-route.lobby-route-brief--online:has(
+    > .lobby-route-brief__setup
+  ) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__online-route.lobby-route-brief--online:has(
+    > .lobby-route-brief__setup
+  )
+  > .lobby-route-brief__setup {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#lobby .multiplayer-command__online-route > .lobby-online-actions,
+#lobby .multiplayer-command__online-route > .lobby-operations-board__actions {
+  position: relative;
+  z-index: 4;
+  margin-top: 0;
+  padding: 7px 0 0;
+}
+
+#lobby .multiplayer-command__online-route.lobby-operations-board--waiting {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__online-route.lobby-operations-board--waiting
+  > .lobby-operations-board__roster {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#lobby .multiplayer-command__online-route.lobby-operations-board--browse {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+#lobby .multiplayer-command__online-route.lobby-operations-board--browse
+  > .lobby-operations-board__section {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Battlefield controls reflow from their decision content. Giving Walls the
+   full row preserves the selected rule instead of reducing it to a prefix. */
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield
+  > .lobby-field:nth-child(3),
+#lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield
+  > .lobby-advanced-trigger {
+  grid-column: 1 / -1;
+}
+
+/* Wide command decks have enough horizontal measure to keep the short numeric
+   rules beside the descriptive wall rule. This reserves the next line for the
+   Advanced entry point instead of letting the docked deployment decision mask
+   it, while compact decks retain the full-width Walls row above. */
+@media (min-width: 1101px) and (min-height: 621px) {
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield {
+    grid-template-columns: minmax(64px, 0.62fr) minmax(64px, 0.62fr) minmax(170px, 1.76fr);
+  }
+
+  #lobby .multiplayer-command__local-workspace .lobby-hotseat-battlefield
+    > .lobby-field:nth-child(3) {
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 1100px) {
+  #lobby .multiplayer-command.multiplayer-command--verified {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(150px, 0.42fr) minmax(0, 1fr);
+  }
+
+  #lobby .multiplayer-command--verified > .command-center__battlefield-projection {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 150px;
+  }
+
+  #lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  #lobby .multiplayer-command__online-workspace .lobby-preview__parts {
+    width: calc(100% - 4px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  #lobby.is-compact .multiplayer-command__online-workspace .lobby-preview__part span,
+  #lobby.is-compact .multiplayer-command__online-workspace .lobby-preview__part strong {
+    font-size: 12px;
+    letter-spacing: 0;
+    text-overflow: clip;
+  }
+
+  #lobby .multiplayer-command__online-route {
+    overflow: hidden;
+  }
+
+  /* Short landscape keeps the decision row fixed while the room-access and
+     roster/discovery regions take responsibility for their own overflow. The
+     explicit flexible tracks prevent an intrinsic form or player list from
+     pushing the sole Online action below the command deck. */
+  #lobby
+    .multiplayer-command__online-workspace
+    > .multiplayer-command__online-route.lobby-operations-board--waiting {
+    grid-template-rows: auto minmax(0, 0.8fr) minmax(0, 1.2fr) auto;
+    overflow: hidden;
+  }
+
+  #lobby
+    .multiplayer-command__online-route.lobby-operations-board--waiting
+    > :is(.lobby-operations-board__mission, .lobby-operations-board__roster) {
+    box-sizing: border-box;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #lobby .multiplayer-command__online-route.lobby-operations-board--browse {
+    grid-template-rows: auto minmax(0, 1.35fr) minmax(0, 0.65fr) auto;
+  }
+
+  #lobby
+    .multiplayer-command__online-route.lobby-operations-board--browse
+    > :is(.lobby-operations-board__crew, .lobby-operations-board__section) {
+    box-sizing: border-box;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #lobby .campaign-command {
+    height: 100%;
+    min-height: 0;
+    grid-template:
+      'decision actions' minmax(0, 1fr)
+      'loadout actions' auto
+      'briefing briefing' auto
+      / minmax(0, 1fr) minmax(250px, 0.42fr);
+    overflow: hidden;
+  }
+
+  #lobby .campaign-command__decision {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #lobby .campaign-command__actions {
+    align-self: stretch;
+    align-content: start;
+  }
+
+  /* A skirmish is one compact decision, not a campaign document. On short
+     battle-shaped screens keep its identity, field order, facts, and launch
+     control on one command plane; the battlefield projection remains the
+     decision bay's material backdrop rather than consuming a separate row. */
+  #lobby .campaign-command.skirmish-command {
+    grid-template:
+      'decision loadout actions' minmax(0, 1fr)
+      / minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(190px, 0.65fr);
+  }
+
+  #lobby .skirmish-command .campaign-command__decision {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
+    padding: 8px;
+  }
+
+  #lobby .skirmish-command .campaign-command__scene {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    min-height: 0;
+    height: 100%;
+  }
+
+  #lobby .skirmish-command .campaign-command__identity {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 1px;
+    padding: 0 2px;
+  }
+
+  #lobby .skirmish-command .campaign-command__chapter {
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  #lobby .skirmish-command .campaign-command__mission {
+    margin-bottom: 1px;
+    font-size: clamp(18px, 2.8vw, 24px);
+  }
+
+  #lobby .skirmish-command .campaign-command__save-status {
+    margin-top: 1px;
+    padding: 2px 4px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  #lobby .skirmish-command .campaign-command__objective-panel {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 4px 6px;
+  }
+
+  #lobby .skirmish-command .campaign-command__objective-panel
+    .campaign-command__fact-label {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  #lobby .skirmish-command .campaign-command__objective {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #lobby .skirmish-command .campaign-command__scene figcaption {
+    display: none;
+  }
+
+  #lobby .skirmish-command .campaign-command__loadout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: start;
+    padding: 7px 8px;
+    overflow: hidden;
+  }
+
+  #lobby .skirmish-command .campaign-command__loadout-title {
+    font-size: 14px;
+  }
+
+  #lobby .skirmish-command .campaign-command__equipment {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #lobby .skirmish-command .campaign-command__equipment dt,
+  #lobby .skirmish-command .campaign-command__equipment dd {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  #lobby .multiplayer-command.multiplayer-command--verified {
+    grid-template-columns: minmax(180px, 0.52fr) minmax(360px, 1.48fr);
+    grid-template-rows: minmax(0, 1fr);
+    padding: 8px;
+  }
+
+  #lobby .multiplayer-command--verified > .command-center__battlefield-projection {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #lobby .multiplayer-command--verified > .multiplayer-command__verified-workspace {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 720px) and (orientation: portrait) {
+  #lobby .multiplayer-command__online-workspace {
+    grid-template-rows: auto 260px;
+  }
+
+  #lobby .multiplayer-command__online-workspace > .lobby-preview {
+    grid-row: 2;
+    min-height: 260px;
+    height: 260px;
+  }
+
+  #lobby .multiplayer-command__online-route {
+    grid-row: 1;
+    height: clamp(280px, calc(100dvh - 260px), 460px);
+    overflow: hidden;
+  }
+
+  #lobby .campaign-command {
+    grid-template:
+      'actions' auto
+      'decision' auto
+      'loadout' auto
+      'briefing' auto
+      / minmax(0, 1fr);
+  }
+
+  #lobby .campaign-command__actions {
+    position: relative;
+    z-index: 4;
+    padding-bottom: 2px;
   }
 }
 

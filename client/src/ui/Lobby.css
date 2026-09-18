@@ -431,7 +431,6 @@
         display: contents;
       }
       #lobby .lobby-rows.crowded .lobby-garage button {
-        min-height: 24px;
         padding: 2px;
         font-size: 0;
         text-align: center;
@@ -612,15 +611,7 @@
       #lobby .lobby-error:empty { display: none; }
       /* Rejoin affordance (T-09) — a prominent banner at the top of the lobby,
          shown only when a stored session validates as still live. */
-      #lobby .lobby-rejoin-banner {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        margin: 0 0 18px; padding: 10px 14px;
-        background: rgba(255, 210, 63, 0.1);
-        border: 1px solid rgba(255, 210, 63, 0.35);
-        border-radius: 6px;
-      }
       #lobby .lobby-rejoin-text { color: var(--text-gold, #ffe9b0); font-size: 13px; }
-      #lobby .lobby-rejoin-banner .lobby-btn { padding: 6px 14px; font-size: 13px; flex: 0 0 auto; }
       #lobby .lobby-start {
         width: 100%; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
         background:
@@ -650,63 +641,6 @@
         border-radius: 5px; padding: 6px 8px; font-size: 14px; width: 110px; font-family: var(--font-mono);
       }
       #lobby .lobby-advanced .lobby-hint { color: var(--text-dim); font-size: 12px; margin-left: 8px; }
-
-      /* Tab bar */
-      #lobby .lobby-tabs {
-        display: flex; gap: 6px; margin-bottom: 14px;
-        padding: 4px;
-        border: 1px solid rgba(255, 210, 63, 0.16);
-        border-radius: 9px;
-        background: rgba(12, 7, 22, 0.58);
-      }
-      #lobby .lobby-tab {
-        flex: 1;
-        padding: 9px 18px; font-size: 14px; font-weight: 700;
-        cursor: pointer; background: none; border: 1px solid transparent;
-        border-radius: 6px;
-        color: var(--text-dim);
-        font-family: var(--font-sans);
-        transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
-      }
-      #lobby .lobby-tab.active {
-        color: var(--text-gold);
-        border-color: rgba(255, 210, 63, 0.36);
-        background: rgba(255, 210, 63, 0.10);
-      }
-      #lobby .lobby-tab:hover:not(.active) { color: var(--text); }
-      #lobby .lobby-mode-context {
-        margin: 0 0 12px;
-        padding: 0 2px 10px;
-        border-bottom: 1px solid rgba(255, 210, 63, 0.16);
-      }
-      #lobby .lobby-mode-context h2 {
-        margin: 0 0 3px;
-        color: var(--text-gold);
-        font-family: var(--font-display);
-        font-size: 19px;
-        letter-spacing: 0.04em;
-      }
-      #lobby .lobby-mode-context p {
-        margin: 0;
-        color: var(--text-dim);
-        font-size: 13px;
-        line-height: 1.35;
-      }
-      @media (pointer: coarse) {
-        #lobby .lobby-mode-context {
-          display: flex;
-          align-items: baseline;
-          gap: 7px;
-          margin-bottom: 5px;
-          padding-bottom: 4px;
-        }
-        #lobby .lobby-mode-context h2 { margin: 0; font-size: 16px; }
-        #lobby .lobby-mode-context p { font-size: 11px; }
-        #lobby .lobby-mode-context + .lobby-hotseat .lobby-sub { display: none; }
-      }
-      #lobby.is-compact .lobby-mode-panel[aria-labelledby="lobby-mode-online"] .lobby-sub {
-        margin-bottom: 5px;
-      }
 
       /* Online sub-views */
       #lobby .lobby-btn {
@@ -806,34 +740,6 @@
       }
       /* Pre-canvas controls legend (P3-13b): non-blocking footer so keyboard
          players learn aim/power/fire before the play field is uncovered. */
-      #lobby .lobby-controls {
-        position: absolute;
-        right: 72px;
-        bottom: 72px;
-        left: auto;
-        z-index: 4;
-        width: min(478px, calc(42% - 30px));
-        max-width: none;
-        box-sizing: border-box;
-        display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-        gap: 5px 12px;
-        margin: 0; padding: 9px 12px;
-        border: 1px solid rgba(255, 210, 63, 0.16);
-        border-radius: 8px;
-        background: rgba(12, 7, 22, 0.78);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
-        color: var(--text-dim); font-size: 12px;
-      }
-      #lobby .lobby-controls .lobby-controls__title {
-        color: var(--text-gold); font-size: 11px;
-        text-transform: uppercase; letter-spacing: 0.5px;
-      }
-      #lobby .lobby-controls kbd {
-        font-family: var(--font-mono); font-size: 11px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 210, 63, 0.25);
-        border-radius: 3px; padding: 1px 5px;
-      }
       #lobby .account-panel {
         position: absolute; top: 16px; right: 18px; z-index: 8;
         width: auto; max-width: none; margin: 0;
@@ -1084,26 +990,9 @@
       #lobby .lobby-preview,
       #lobby .lobby-garage,
       #lobby .lobby-rows.crowded .lobby-row,
-      #lobby .lobby-rejoin-banner,
-      #lobby .lobby-tabs,
-      #lobby .lobby-controls,
       #lobby .account-panel--open,
       #lobby.is-compact .lobby-garage.editing {
         border-radius: 0;
-      }
-      #lobby .lobby-command-header {
-        display: flex;
-        align-items: center;
-        min-height: 10px;
-        margin: 0 0 4px;
-        padding: 0 0 2px;
-        border-bottom: 1px solid rgba(229, 161, 65, 0.58);
-      }
-      #lobby .lobby-command-header__kicker {
-        margin: 0;
-        color: rgba(255, 224, 159, 0.78);
-        font: 700 10px/1 var(--font-mono);
-        letter-spacing: 2.2px;
       }
       #lobby h1 {
         color: #ffd477;
@@ -1111,21 +1000,16 @@
         text-shadow: 0 2px 0 rgba(0, 0, 0, 0.9), 0 0 18px rgba(214, 111, 29, 0.24);
       }
       #lobby .lobby-sub,
-      #lobby .lobby-mode-context p,
       #lobby .online-status,
-      #lobby .lobby-controls,
       #lobby .account-panel__xp-label,
       #lobby .account-panel__xp-remaining {
         color: rgba(225, 214, 191, 0.68);
       }
-      #lobby .lobby-mode-context,
       #lobby .lobby-advanced {
         border-color: rgba(229, 161, 65, 0.30);
       }
-      #lobby .lobby-mode-context h2,
       #lobby .lobby-preview__spotlight-identity,
-      #lobby .lobby-garage__heading,
-      #lobby .lobby-controls .lobby-controls__title {
+      #lobby .lobby-garage__heading {
         color: #ffd477;
       }
       #lobby select,
@@ -1139,37 +1023,17 @@
       }
       #lobby .lobby-control,
       #lobby .lobby-garage button,
-      #lobby .lobby-tab,
       #lobby .online-code-char,
       #lobby .online-badge,
-      #lobby .lobby-controls kbd,
       #lobby .account-panel button {
         border-radius: 0;
       }
       #lobby .lobby-control,
       #lobby .lobby-garage button,
-      #lobby .lobby-tab,
-      #lobby .lobby-controls kbd,
       #lobby .account-panel button,
       #lobby .account-panel input {
         border-color: rgba(229, 161, 65, 0.34);
         background: rgba(7, 10, 12, 0.78);
-      }
-      #lobby .lobby-tabs {
-        gap: 0;
-        padding: 0;
-        background: rgba(4, 7, 9, 0.72);
-        border-color: rgba(229, 161, 65, 0.38);
-      }
-      #lobby .lobby-tab {
-        color: rgba(225, 214, 191, 0.64);
-        border-color: transparent;
-      }
-      #lobby .lobby-tab + .lobby-tab { border-left-color: rgba(229, 161, 65, 0.24); }
-      #lobby .lobby-tab.active {
-        color: #ffe0a0;
-        border-color: rgba(229, 161, 65, 0.58);
-        background: linear-gradient(180deg, rgba(169, 97, 27, 0.28), rgba(24, 18, 11, 0.86));
       }
       #lobby .lobby-start,
       #lobby .lobby-online-primary,
@@ -1222,10 +1086,6 @@
         background: rgba(7, 10, 12, 0.36);
       }
       #lobby .online-player-list { gap: 4px; }
-      #lobby .lobby-controls {
-        background: rgba(4, 7, 9, 0.90);
-        border-color: rgba(229, 161, 65, 0.36);
-      }
       #lobby .account-panel--open {
         background: linear-gradient(155deg, rgba(19, 15, 10, 0.99), rgba(4, 7, 9, 0.99));
         border-color: rgba(229, 161, 65, 0.54);
@@ -1387,13 +1247,6 @@
       }
       #lobby.is-compact .account-panel__career-current { font-size: 16px; }
       #lobby.is-compact .account-panel__career-insignia { font-size: 24px; }
-      #lobby.is-compact .lobby-command-header {
-        min-height: 8px;
-        margin-bottom: 0;
-        padding-bottom: 0;
-      }
-      #lobby.is-compact .lobby-command-header__kicker { font-size: 8px; letter-spacing: 1.6px; }
-
       /* The online follow-through is an operations board, not a detached
          stack of setup controls. Discovery and staging share one field-report
          hierarchy while their transport actions remain local to each view. */
@@ -1402,10 +1255,8 @@
         background: linear-gradient(90deg, rgba(32, 22, 12, 0.56), rgba(7, 10, 12, 0.22) 72%, transparent);
         padding: 0 0 0 9px;
       }
-      #lobby .lobby-operations-board--waiting {
+      #lobby .multiplayer-command__online-workspace .lobby-operations-board--waiting {
         box-sizing: border-box;
-        position: absolute;
-        inset: 0;
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
@@ -1746,10 +1597,6 @@
       #lobby .lobby-hotseat:has(.lobby-hotseat-customization[open]) .lobby-route-brief__header {
         display: none;
       }
-      #lobby .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mission-brief {
-        display: none;
-      }
       #lobby .lobby-route-brief__setup {
         margin-top: 4px;
       }
@@ -1828,7 +1675,7 @@
         #lobby .lobby-route-brief--online .lobby-garage__presets,
         #lobby .lobby-route-brief--online .lobby-garage__slots { display: contents; }
         #lobby .lobby-route-brief--online .lobby-garage button {
-          min-height: 24px; padding: 2px; font-size: 0; text-align: center;
+          padding: 2px; font-size: 0; text-align: center;
         }
         #lobby .lobby-route-brief--online .lobby-garage button::after {
           content: attr(data-short); font-size: 9px; font-weight: 700;
@@ -1971,220 +1818,9 @@
         display: block;
       }
 
-      /* One route hierarchy, shared by every pre-game screen. The route
-         content beneath it keeps its established gameplay and network logic. */
-      #lobby .lobby-deployment {
-        position: relative;
-        z-index: 3;
-        width: 100%;
-        min-height: calc(100% - 32px);
-        display: grid;
-        grid-template-columns: minmax(0, 1.12fr) minmax(420px, 0.88fr);
-        grid-template-areas:
-          'masthead masthead'
-          'rail preview'
-          'brief preview'
-          'panel preview'
-          'controls preview';
-        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-        column-gap: 32px;
-        row-gap: 9px;
-        align-content: center;
-      }
-      #lobby .lobby-card > .lobby-deployment {
-        width: calc(100% - 104px);
-        max-width: none;
-        margin-left: 52px;
-        margin-right: 52px;
-      }
-      #lobby .lobby-deployment__masthead {
-        grid-area: masthead;
-        position: relative;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-      }
-      #lobby .lobby-deployment__masthead > h1,
-      #lobby .lobby-deployment__masthead > .lobby-command-header {
-        grid-column: 1;
-      }
-      #lobby .lobby-deployment__masthead > .account-panel {
-        grid-column: 2;
-        grid-row: 1 / span 2;
-        position: relative;
-        top: auto;
-        right: auto;
-        z-index: 4;
-        margin: 0;
-      }
-      #lobby .lobby-deployment__masthead > .account-panel--open {
-        grid-column: 1 / -1;
-        grid-row: 3;
-        justify-self: end;
-        margin-top: 8px;
-      }
-      #lobby .lobby-deployment__masthead > .lobby-rejoin-banner {
-        grid-column: 1 / -1;
-        margin: 8px 0 0;
-      }
-      #lobby .lobby-deployment__masthead > .lobby-rejoin-banner .lobby-btn {
-        min-height: max(58px, calc(var(--st-deployment-choice-target, 44px) * 1.2));
-        font-size: max(18px, calc(var(--st-deployment-choice-target, 44px) * 0.34));
-      }
-      #lobby .lobby-seed-challenge {
-        display: grid;
-        gap: 6px;
-        padding: 12px 14px;
-        border: 1px solid rgba(255, 210, 63, 0.46);
-        border-radius: 8px;
-        background: rgba(255, 210, 63, 0.08);
-      }
-      #lobby .lobby-seed-challenge > span {
-        color: var(--text-gold);
-        font: 700 10px/1 var(--font-display);
-        letter-spacing: 1.8px;
-      }
-      #lobby .lobby-seed-challenge > h2,
-      #lobby .lobby-seed-challenge > p { margin: 0; }
-      #lobby .lobby-deployment__back {
-        grid-area: rail;
-        justify-self: start;
-        min-height: 34px;
-        padding: 5px 14px;
-        letter-spacing: 0.7px;
-        text-transform: uppercase;
-      }
-      #lobby .lobby-deployment__mission-brief {
-        grid-area: brief;
-        margin: 0;
-        padding: 12px 0 14px;
-        border-top: 1px solid rgba(255, 210, 63, 0.34);
-        border-bottom: 1px solid rgba(255, 210, 63, 0.16);
-      }
-      #lobby .lobby-deployment > .lobby-mode-panel {
-        grid-area: panel;
-        min-width: 0;
-        min-height: 0;
-        align-self: stretch;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-      }
-      #lobby .lobby-deployment:has(.lobby-operations-board--waiting) {
-        height: calc(100% - 32px);
-        min-height: 0;
-      }
-      #lobby .lobby-deployment:has(.lobby-operations-board--waiting) > .lobby-mode-panel {
-        grid-area: panel;
-        min-width: 0;
-        min-height: 0;
-        position: relative;
-        overflow: hidden;
-        align-self: stretch;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-operations-board--waiting) > .lobby-mode-panel {
-        position: static;
-        overflow-y: auto;
-      }
-      #lobby.is-compact .lobby-operations-board--waiting {
-        position: static;
-        inset: auto;
-      }
-      #lobby .lobby-deployment > .lobby-preview {
-        position: relative;
-        inset: auto;
-        grid-area: preview;
-        width: auto;
-        min-width: 0;
-        min-height: 362px;
-        height: 100%;
-        margin: 0;
-      }
-      #lobby .lobby-deployment > .lobby-controls {
-        position: absolute;
-        right: 20px;
-        bottom: 18px;
-        z-index: 4;
-        margin: 0;
-      }
-      #lobby.is-compact .lobby-deployment {
-        display: grid;
-        grid-template-columns: max-content minmax(0, 1fr);
-        grid-template-areas:
-          'rail masthead'
-          'brief brief'
-          'panel panel';
-        grid-template-rows: auto auto minmax(0, 1fr);
-        column-gap: 8px;
-        row-gap: 5px;
-      }
-      #lobby.is-compact .lobby-deployment__back,
-      #lobby.is-compact .lobby-deployment__mission-brief,
-      #lobby.is-compact .lobby-deployment > .lobby-mode-panel {
-        width: min(600px, 52%);
-      }
-      #lobby.is-compact .lobby-deployment__back {
-        width: max-content;
-        align-self: center;
-        min-height: var(--st-deployment-choice-target, 44px);
-      }
-      #lobby.is-compact .lobby-card:has(.lobby-deployment__back) {
-        padding-block: 12px;
-      }
-      #lobby.is-compact .lobby-deployment > .lobby-preview {
-        display: block;
-        position: absolute;
-        inset: 70px 0 30px auto;
-        grid-area: auto;
-        width: min(520px, 42%);
-        min-height: 0;
-        height: auto;
-      }
-      #lobby.is-compact .lobby-deployment > .lobby-controls { bottom: 56px; }
-      #lobby.is-compact .lobby-deployment__masthead { min-height: 0; }
-      #lobby.is-compact .lobby-deployment__masthead:has(.account-panel__record) {
-        min-height: 205px;
-      }
-      #lobby.is-compact .lobby-deployment:has(.account-panel__record)
-        > .lobby-preview {
-        inset-block-start: 165px;
-      }
-      #lobby.is-compact .lobby-deployment__masthead > .account-panel,
-      #lobby.is-compact .lobby-deployment__masthead > .account-panel--open {
-        position: absolute;
-        top: 0;
-        right: 0;
-        left: auto;
-        grid-column: auto;
-        grid-row: auto;
-        justify-self: auto;
-        margin: 0;
-      }
-      #lobby.is-compact .lobby-deployment__masthead:has(.account-panel--open)
-        ~ .lobby-preview,
-      #lobby.is-compact .lobby-deployment__masthead:has(.account-panel--open)
-        ~ .lobby-controls {
-        visibility: hidden;
-      }
-      #lobby.is-compact:has(.lobby-garage.editing) .lobby-preview {
-        visibility: hidden;
-      }
-      #lobby.is-compact .lobby-deployment__mission-brief {
-        display: block;
-        padding: 5px 0;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat-customization[open])
-        > .lobby-deployment__mission-brief {
-        display: none;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat-customization[open]) {
-        row-gap: 0;
-      }
       /* The fixed game stage is intentionally zoomed as one unit. Logical
          compact sizes preserve physical legibility without overgrowing the
          Vehicle Bay; the shorter coarse-pointer viewport gets a stronger tier. */
-      #lobby.is-compact .lobby-mode-context h2,
-      #lobby.is-compact .lobby-deployment .lobby-tab,
-      #lobby.is-compact .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
       #lobby.is-compact .lobby-hotseat-ready h3,
       #lobby.is-compact .lobby-route-brief--online .lobby-preparation-section__title,
       #lobby.is-compact .account-panel > button,
@@ -2192,7 +1828,6 @@
       #lobby.is-compact .lobby-preview__spotlight-identity {
         font-size: 21px;
       }
-      #lobby.is-compact .lobby-command-header__kicker,
       #lobby.is-compact .lobby-preview__label,
       #lobby.is-compact .lobby-preview__part span,
       #lobby.is-compact .lobby-preview__part strong {
@@ -2259,9 +1894,6 @@
         padding-block: 4px;
       }
       @media (pointer: coarse) {
-        #lobby.is-compact .lobby-mode-context h2,
-        #lobby.is-compact .lobby-deployment .lobby-tab,
-        #lobby.is-compact .lobby-mode-panel:not([hidden]) .lobby-btn.primary,
         #lobby.is-compact .lobby-hotseat-ready h3,
         #lobby.is-compact .lobby-route-brief--online .lobby-preparation-section__title,
         #lobby.is-compact .account-panel > button,
@@ -2269,7 +1901,6 @@
         #lobby.is-compact .lobby-preview__spotlight-identity {
           font-size: 25px;
         }
-        #lobby.is-compact .lobby-command-header__kicker,
         #lobby.is-compact .lobby-preview__label,
         #lobby.is-compact .lobby-preview__part span,
         #lobby.is-compact .lobby-preview__part strong {
@@ -2277,61 +1908,9 @@
         }
       }
 
-      /* Hot Seat follows the approved preparation mockup: stable chrome,
-         one selected mode, a scroll-owned body, and a sticky launch boundary. */
-      #lobby .lobby-deployment:has(.lobby-hotseat) {
-        height: calc(100% - 32px);
-        min-height: 0;
-        grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.7fr);
-        column-gap: 18px;
-        row-gap: 5px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-command-header {
-        display: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-deployment__masthead > h1 {
-        font-size: 32px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record {
-        width: auto;
-        min-width: 210px;
-        padding: 5px 8px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record > h2,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__commander-rank-row,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record-milestone,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record .account-panel__career-next,
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record-xp {
-        display: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .account-panel__record .account-panel__account-trigger {
-        min-height: var(--st-deployment-choice-target, 44px);
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-deployment__back {
-        min-height: 28px;
-        padding: 2px 0;
-        border: 0;
-        background: transparent;
-        color: #ffd46e;
-        text-decoration: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) .lobby-deployment__back::before {
-        content: '\2190';
-        margin-right: 8px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-deployment__mission-brief {
-        padding: 3px 0 6px;
-        border-top: 0;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview {
-        min-height: 0;
-        height: auto;
-        margin-bottom: 58px;
-      }
-      #lobby .lobby-deployment > .lobby-mode-panel:has(> .lobby-hotseat) {
-        overflow: hidden;
-      }
-      #lobby .lobby-hotseat {
+      /* Owned Local and Verified workspaces share the preparation body and footer. */
+      #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__verified-workspace)
+        > .lobby-hotseat {
         height: 100%;
         min-height: 0;
         display: grid;
@@ -2340,33 +1919,15 @@
         border: 0;
         background: transparent;
       }
-      #lobby .lobby-hotseat-tabs {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-      #lobby .lobby-hotseat-tab {
-        min-width: 0;
-        min-height: var(--st-deployment-choice-target, 44px);
-        padding: 6px 10px;
-        border: 1px solid rgba(229, 161, 65, 0.58);
-        background: rgba(9, 11, 13, 0.82);
-        color: #ead8b0;
-        font: 700 var(--st-command-readability-size, 12px)/1.15 var(--font-sans);
-      }
-      #lobby .lobby-hotseat-tab[aria-selected='true'] {
-        background: linear-gradient(180deg, #ffe478, #e8a928);
-        color: #11131a;
-      }
-      #lobby .lobby-hotseat-tab:disabled {
-        color: rgba(225, 214, 191, 0.42);
-      }
-      #lobby .lobby-hotseat-body {
+      #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__verified-workspace)
+        .lobby-hotseat-body {
         min-height: 0;
         display: grid;
         grid-template-rows: minmax(0, 1fr) auto;
         overflow: hidden;
       }
-      #lobby .lobby-hotseat-scroll {
+      #lobby :is(.multiplayer-command__local-workspace, .multiplayer-command__verified-workspace)
+        .lobby-hotseat-scroll {
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
@@ -2588,20 +2149,6 @@
         color: #11131a;
         font-size: var(--st-command-readability-size, 12px);
       }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-controls {
-        display: none;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview .lobby-preview__parts {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        row-gap: 4px;
-      }
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview .lobby-preview__part span,
-      #lobby .lobby-deployment:has(.lobby-hotseat) > .lobby-preview .lobby-preview__part strong {
-        overflow: visible;
-        color: #ead8b0;
-        font-size: var(--st-command-readability-size, 11px);
-        text-overflow: clip;
-      }
       #lobby .lobby-hotseat-body .lobby-verified-deployment {
         grid-template-columns: minmax(0, 1fr);
         align-content: start;
@@ -2718,12 +2265,6 @@
         width: auto;
         min-width: 0;
       }
-      #lobby .lobby-seed-challenge > span,
-      #lobby .lobby-seed-challenge > h2,
-      #lobby .lobby-seed-challenge > p,
-      #lobby .command-center__legacy-skirmish .lobby-seed-challenge > .lobby-btn {
-        font-size: var(--st-command-readability-size, 11px);
-      }
       #lobby.is-compact .lobby-commander-operations__career h3,
       #lobby.is-compact .lobby-commander-operations__career p,
       #lobby.is-compact .lobby-commander-operations__practice h3,
@@ -2735,11 +2276,7 @@
       #lobby.is-compact .lobby-verified-deployment__rules,
       #lobby.is-compact .lobby-verified-deployment__dossier h4,
       #lobby.is-compact .lobby-verified-deployment__dossier p,
-      #lobby.is-compact .lobby-verified-deployment__message,
-      #lobby.is-compact .lobby-seed-challenge > span,
-      #lobby.is-compact .lobby-seed-challenge > h2,
-      #lobby.is-compact .lobby-seed-challenge > p,
-      #lobby.is-compact .command-center__legacy-skirmish .lobby-seed-challenge > .lobby-btn {
+      #lobby.is-compact .lobby-verified-deployment__message {
         font-size: var(--st-command-readability-size, 11px);
       }
       #lobby.is-compact .lobby-practice-selection {
@@ -2795,71 +2332,11 @@
       #lobby.is-compact .lobby-hotseat-body .lobby-hotseat-battlefield {
         grid-template-columns: minmax(0, 1fr);
       }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat) {
-        height: 100%;
-        grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.7fr);
-        grid-template-areas:
-          'masthead masthead'
-          'rail rail'
-          'panel preview';
-        grid-template-rows: auto auto minmax(0, 1fr);
-        column-gap: 12px;
-        row-gap: 2px;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__masthead,
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__masthead:has(.account-panel__record) {
-        min-height: 0;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief,
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-mode-panel {
-        width: 100%;
-      }
-      #lobby.is-compact .lobby-card:has(.lobby-deployment):has(.lobby-hotseat) {
-        padding-block: 4px;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief {
-        display: none;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__back {
-        position: relative;
-        z-index: 2;
-        min-height: var(--st-deployment-choice-target, 44px);
-        font-size: var(--st-command-readability-size, 11px);
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief
-        > h2 {
-        font-size: max(
-          var(--st-command-readability-size, 12px),
-          calc(12px / var(--battle-ui-scale, 1))
-        );
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-deployment__mission-brief
-        > p {
-        display: none;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact :is(.multiplayer-command__local-workspace, .multiplayer-command__verified-workspace)
         .lobby-hotseat-scroll {
         padding-top: 3px;
       }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        .lobby-hotseat-tabs {
-        border-block: 0;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        .lobby-hotseat-tab {
-        height: var(--st-deployment-choice-target, 44px);
-        min-height: var(--st-deployment-choice-target, 44px);
-        box-sizing: border-box;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
+      #lobby.is-compact :is(.multiplayer-command__local-workspace, .multiplayer-command__verified-workspace)
         .lobby-hotseat-footer {
         height: var(--st-deployment-choice-target, 44px);
         margin-top: 0;
@@ -2896,30 +2373,6 @@
         > .lobby-verified-deployment__confirm > .lobby-btn {
         min-width: 0;
         min-height: var(--st-deployment-choice-target, 44px);
-      }
-      #lobby.is-compact .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-btn.primary,
-      #lobby.is-compact .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-btn {
-        min-width: min(220px, 46%);
-        min-height: var(--st-deployment-choice-target, 44px);
-        padding-block: 4px;
-        font-size: var(--st-command-readability-size, 12px);
-      }
-      #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-verified-deployment__launch,
-      #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-verified-deployment__launch:hover:not(:disabled),
-      #lobby .lobby-mode-panel
-        .lobby-hotseat-footer
-        > .lobby-verified-deployment__launch:focus-visible:not(:disabled) {
-        border-color: #ffe478;
-        background: linear-gradient(180deg, #ffe478, #e8a928);
-        color: #11131a;
       }
       #lobby.is-compact .lobby-hotseat-body
         .lobby-preparation-section__title,
@@ -2976,48 +2429,6 @@
         > .lobby-field:first-child
         > select {
         min-height: var(--st-deployment-choice-target, 44px);
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview,
-      #lobby.is-compact .lobby-deployment:has(.account-panel__record):has(.lobby-hotseat)
-        > .lobby-preview {
-        position: relative;
-        inset: auto;
-        grid-area: preview;
-        width: 100%;
-        min-height: 0;
-        height: 100%;
-        margin: 0;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview
-        .lobby-preview__spotlight-canvas {
-        width: min(240px, 72%);
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview
-        .lobby-preview__parts {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview
-        .lobby-preview__convoy {
-        bottom: 4px;
-        height: 20px;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview
-        .lobby-preview__tank {
-        transform: scale(0.35);
-        transform-origin: left bottom;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat)
-        > .lobby-preview
-        .lobby-preview__name {
-        display: none;
-      }
-      #lobby.is-compact .lobby-deployment:has(.lobby-hotseat) > .lobby-controls {
-        display: none;
       }
       @media (pointer: coarse) {
         #lobby.is-compact .lobby-hotseat-body

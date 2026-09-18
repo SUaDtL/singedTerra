@@ -12,9 +12,11 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
       `[data-command-surface="rail"][data-command-category="${category}"]`,
     )?.click();
     if (category === 'multiplayer') {
-      root.querySelector<HTMLButtonElement>(
+      const item = root.querySelector<HTMLButtonElement>(
         `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
-      )?.click();
+      );
+      item?.click();
+      if (item) return item;
     }
     match = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === text);
@@ -23,7 +25,7 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
   return match;
 }
 
-describe('Lobby deployment chooser', () => {
+describe('Lobby command center navigation', () => {
   let root: HTMLDivElement;
 
   beforeEach(() => {
@@ -41,12 +43,13 @@ describe('Lobby deployment chooser', () => {
     vi.restoreAllMocks();
   });
 
-  it('starts at deployment choices without rendering either setup flow', () => {
+  it('starts at the contextual command item without rendering Multiplayer setup', () => {
     const lobby = new Lobby(root, vi.fn());
 
     lobby.show();
 
-    expect(root.querySelectorAll('.lobby-deployment-chooser button:not([data-operation-id])')).toHaveLength(2);
+    expect(root.querySelectorAll('.command-center__library-items [data-command-item]'))
+      .toHaveLength(6);
     expect(button(root, 'Start First Salvo')).toBeInstanceOf(HTMLButtonElement);
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="campaigns"]',
@@ -61,7 +64,7 @@ describe('Lobby deployment chooser', () => {
     expect(root.querySelector('.lobby-preview')).toBeNull();
   });
 
-  it('does not construct listener-owning preparation nodes while only the chooser is active', () => {
+  it('does not construct listener-owning Multiplayer nodes while Skirmishes is active', () => {
     const listenerTargets: EventTarget[] = [];
     const nativeAddEventListener = EventTarget.prototype.addEventListener;
     vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function recordListener(
@@ -85,19 +88,17 @@ describe('Lobby deployment chooser', () => {
     expect(preparationTargets).toEqual([]);
   });
 
-  it('opens Local Battle and restores focus to that choice on return', () => {
+  it('mounts Local Battle in place and keeps focus on its selected library item', () => {
     const lobby = new Lobby(root, vi.fn());
     lobby.show();
 
     button(root, 'Local Battle').click();
     expect(root.querySelector('.lobby-start')).not.toBeNull();
     expect(root.querySelector('.lobby-preview')).not.toBeNull();
-
-    button(root, 'Back to deployment choices').click();
     expect(document.activeElement).toBe(root.querySelector(
       '.command-center__library-items button[data-command-item="local-battle"]',
     ));
-    expect(root.querySelector('.lobby-start')).toBeNull();
+    expect(root.querySelector('.command-center')).not.toBeNull();
   });
 
   it('aborts every rendered element listener before the lobby tree is hidden', () => {
@@ -134,16 +135,15 @@ describe('Lobby deployment chooser', () => {
     expect(onReady).not.toHaveBeenCalled();
   });
 
-  it('preserves Local and Online working state across chooser round trips', () => {
+  it('preserves Local and Online working state across command-item round trips', () => {
     const lobby = new Lobby(root, vi.fn());
     lobby.show();
 
     button(root, 'Local Battle').click();
-    expect(root.querySelector('[data-hotseat-surface="local"]')?.getAttribute('aria-selected')).toBe('true');
+    expect(root.querySelector('[data-multiplayer-command-view="local-battle"]')).not.toBeNull();
     const localName = root.querySelector<HTMLInputElement>('.lobby-name')!;
     localName.value = 'Dust Fox';
     localName.dispatchEvent(new Event('input', { bubbles: true }));
-    button(root, 'Back to deployment choices').click();
 
     button(root, 'Play Online').click();
     const onlineName = root.querySelector<HTMLInputElement>('.lobby-name')!;
@@ -151,11 +151,9 @@ describe('Lobby deployment chooser', () => {
     onlineName.dispatchEvent(new Event('input', { bubbles: true }));
     button(root, 'Join with a code').click();
     expect(root.querySelector('.lobby-code-input')).not.toBeNull();
-    button(root, 'Back to deployment choices').click();
 
     button(root, 'Local Battle').click();
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Dust Fox');
-    button(root, 'Back to deployment choices').click();
 
     button(root, 'Play Online').click();
     expect(root.querySelector<HTMLInputElement>('.lobby-name')?.value).toBe('Signal Fox');
@@ -168,8 +166,9 @@ describe('Lobby deployment chooser', () => {
 
     lobby.show();
 
-    expect(root.querySelector('.lobby-deployment-chooser')).toBeNull();
+    expect(root.querySelector('.command-center')).not.toBeNull();
+    expect(root.querySelector('[data-command-item="online"]')?.getAttribute('aria-current'))
+      .toBe('true');
     expect(root.querySelector<HTMLInputElement>('.lobby-code-input')?.value).toBe('AB12');
-    expect(button(root, 'Back to deployment choices')).toBeTruthy();
   });
 });

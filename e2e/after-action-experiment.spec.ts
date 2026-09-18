@@ -97,7 +97,9 @@ test.describe('P11 after-action same-scenario experiment', () => {
       await expect(splash).toBeHidden({ timeout: 5_000 });
 
       await openLocalPreparation(page);
-      await expect(page.getByRole('tab', { name: 'Local Battle', exact: true })).toHaveAttribute('aria-selected', 'true');
+      await expect(page.locator('button[data-command-item="local-battle"]'))
+        .toHaveAttribute('aria-current', 'true');
+      await expect(page.locator('[data-multiplayer-command-view="local-battle"]')).toBeVisible();
       await expect(page.locator('.lobby-name').first()).toBeVisible();
       await chooseFoundryPreset(page, 1);
       await chooseFoundryPreset(page, 2);

@@ -37,9 +37,8 @@ for (const [code, title, seed] of [
     const receiverGeometry = await page.locator('.lobby-deployment').evaluate((deployment) => {
       const masthead = deployment.querySelector<HTMLElement>('.lobby-deployment__masthead');
       const workspace = deployment.querySelector<HTMLElement>('.command-center__workspace-host');
-      const chooser = deployment.querySelector<HTMLElement>('.lobby-deployment-chooser');
       const challenge = deployment.querySelector<HTMLElement>('[data-ui="seed-challenge"]');
-      if (!masthead || !workspace || !chooser || !challenge) {
+      if (!masthead || !workspace || !challenge) {
         throw new Error('Missing challenge receiver structure');
       }
       const bounds = (element: HTMLElement) => element.getBoundingClientRect().toJSON();
@@ -47,23 +46,22 @@ for (const [code, title, seed] of [
         deployment: bounds(deployment),
         masthead: bounds(masthead),
         workspace: bounds(workspace),
-        chooser: bounds(chooser),
         challenge: bounds(challenge),
         workspaceOverflowY: getComputedStyle(workspace).overflowY,
         workspaceClientHeight: workspace.clientHeight,
         workspaceScrollHeight: workspace.scrollHeight,
       };
     });
-    expect(receiverGeometry.chooser.top, 'challenge lane begins below the command masthead')
+    expect(receiverGeometry.workspace.top, 'challenge workspace begins below the command masthead')
       .toBeGreaterThanOrEqual(receiverGeometry.masthead.bottom - 1);
     expect(receiverGeometry.workspace.bottom, 'workspace stays inside deployment preparation')
       .toBeLessThanOrEqual(receiverGeometry.deployment.bottom + 1);
-    expect(receiverGeometry.chooser.left, 'challenge lane begins inside its workspace')
-      .toBeGreaterThanOrEqual(receiverGeometry.workspace.left - 1);
-    expect(receiverGeometry.chooser.right, 'challenge lane width stays inside its workspace')
-      .toBeLessThanOrEqual(receiverGeometry.workspace.right + 1);
     expect(receiverGeometry.challenge.top, 'challenge callout begins inside its scroll lane')
-      .toBeGreaterThanOrEqual(receiverGeometry.chooser.top - 1);
+      .toBeGreaterThanOrEqual(receiverGeometry.workspace.top - 1);
+    expect(receiverGeometry.challenge.left, 'challenge callout begins inside its workspace')
+      .toBeGreaterThanOrEqual(receiverGeometry.workspace.left - 1);
+    expect(receiverGeometry.challenge.right, 'challenge callout width stays inside its workspace')
+      .toBeLessThanOrEqual(receiverGeometry.workspace.right + 1);
     expect(receiverGeometry.workspaceOverflowY).toBe('auto');
     expect(receiverGeometry.workspaceScrollHeight)
       .toBeGreaterThanOrEqual(receiverGeometry.workspaceClientHeight);
@@ -118,9 +116,11 @@ for (const suffix of [
     await openChallenge(page, suffix);
     await expect(page.getByRole('button', { name: 'Start challenge vs CPU' })).toHaveCount(0);
     await expect(page.locator('[data-console-owner="preact"]')).toBeHidden();
-    // A room invite owns its route; otherwise the chooser explains rejection.
+    // A room invite owns its route; otherwise the selected Skirmish workspace explains rejection.
     if (suffix.startsWith('?join=')) {
-      await expect(page.getByRole('tabpanel', { name: 'Play Online preparation' })).toBeVisible();
+      await expect(page.locator('.command-center__item[data-command-item="online"]'))
+        .toHaveAttribute('aria-current', 'true');
+      await expect(page.locator('[data-multiplayer-command-view="online"]')).toBeVisible();
       await expect(page.locator('.lobby-code-input')).toHaveValue('ABCD');
       await expect(page.getByRole('button', { name: 'Join Room', exact: true })).toBeVisible();
       expect(joinRequests).toEqual([]);

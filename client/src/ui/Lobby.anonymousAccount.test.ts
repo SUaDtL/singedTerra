@@ -105,9 +105,11 @@ function button(root: HTMLElement, text: string): HTMLButtonElement {
     root.querySelector<HTMLButtonElement>(
       '[data-command-surface="rail"][data-command-category="multiplayer"]',
     )?.click()
-    root.querySelector<HTMLButtonElement>(
+    const item = root.querySelector<HTMLButtonElement>(
       `[data-command-item="${text === 'Play Online' ? 'online' : 'local-battle'}"]`,
-    )?.click()
+    )
+    item?.click()
+    if (item) return item
     match = [...root.querySelectorAll('button')]
       .find((candidate) => candidate.textContent === text)
   }

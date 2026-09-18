@@ -408,7 +408,6 @@ test.describe('tank Garage', () => {
     }
 
     await page.getByLabel('Players', { exact: true }).selectOption('2');
-    await page.getByRole('button', { name: 'Back to deployment choices' }).click();
     await openOnlinePreparation(page);
     await expect(page.locator('.lobby-garage')).toHaveCount(1);
     const onlineFit = await page.locator('.lobby-card').evaluate((card) => ({
@@ -418,7 +417,6 @@ test.describe('tank Garage', () => {
     expect(onlineFit.scrollHeight).toBeLessThanOrEqual(
       onlineFit.clientHeight + 1,
     );
-    await page.getByRole('button', { name: 'Back to deployment choices' }).click();
     await openLocalPreparation(page);
 
     await openTankCustomization(page, 'Player 1');
