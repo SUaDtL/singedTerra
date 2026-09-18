@@ -104,6 +104,10 @@
           linear-gradient(180deg, rgba(122, 79, 46, 0.54), rgba(29, 18, 11, 0.92));
         clip-path: polygon(0 24%, 18% 11%, 37% 22%, 55% 6%, 73% 18%, 100% 8%, 100% 100%, 0 100%);
       }
+      #lobby .lobby-preview[aria-hidden='true'] {
+        visibility: hidden;
+        pointer-events: none;
+      }
       #lobby .lobby-preview__label {
         position: absolute;
         left: 22px;

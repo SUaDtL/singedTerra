@@ -298,6 +298,7 @@ describe('Lobby tank Garage', () => {
   it('names the editing Vehicle Bay and summarizes uniform and mixed loadouts', () => {
     const lobby = new Lobby(root, onReady);
     openLocal(lobby, root);
+    root.classList.add('is-compact');
 
     root.querySelector<HTMLButtonElement>(
       '.lobby-garage[data-owner="player-1"] .lobby-garage__open',
@@ -314,6 +315,7 @@ describe('Lobby tank Garage', () => {
       .toBe('Preset loadouts');
     expect(garage.querySelector('.lobby-garage__component-group')?.getAttribute('aria-label'))
       .toBe('Component bay');
+    expect(root.querySelector('.lobby-preview')?.getAttribute('aria-hidden')).toBe('true');
 
     garage.querySelector<HTMLButtonElement>('[data-slot="turret"]')!.click();
     garage = root.querySelector<HTMLElement>('.lobby-garage[data-owner="player-1"]')!;
@@ -321,6 +323,9 @@ describe('Lobby tank Garage', () => {
       .toContain('Mixed assembly');
     expect(garage.querySelector('.lobby-garage__build-summary')?.textContent)
       .toContain('Sensor Pod');
+
+    garage.querySelector<HTMLButtonElement>('.lobby-garage__close')!.click();
+    expect(root.querySelector('.lobby-preview')?.hasAttribute('aria-hidden')).toBe(false);
   });
 
   it('previews the joiner color in join mode instead of the host color', () => {

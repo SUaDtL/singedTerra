@@ -1578,6 +1578,10 @@ export class Lobby {
       '.lobby-garage.editing',
       )
       : null;
+    if (activeGarage && this.root.classList.contains('is-compact')) {
+      this.root.querySelector<HTMLElement>('.lobby-preview')
+        ?.setAttribute('aria-hidden', 'true');
+    }
     if (activeGarage) {
       this.root.querySelectorAll<HTMLElement>(
         'button, input, select, textarea, summary, a[href]',
