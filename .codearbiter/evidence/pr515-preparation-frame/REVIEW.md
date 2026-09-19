@@ -21,7 +21,7 @@ PNG dimensions and SHA-256 digest for all 36 screenshots.
 
 ## Live resize and interaction
 
-[Open the 7.48-second resize recording](live-resize-interaction.webm).
+[Open the 7.28-second resize recording](live-resize-interaction.webm).
 
 The recording changes Online name and visibility, retains the focused
 Visibility control while resizing wide -> intermediate -> compact -> wide,

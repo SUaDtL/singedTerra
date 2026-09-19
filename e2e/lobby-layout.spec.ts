@@ -299,7 +299,7 @@ async function assertOwnedOnlineWorkspaceGeometry(page: Page): Promise<void> {
     .toHaveLength(1);
   expect(geometry.primary[0]!.width, `${geometry.primary[0]!.name} must remain actionable`)
     .toBeGreaterThanOrEqual(44);
-  const primaryMinimum = geometry.viewportHeight <= 320 ? 46 : 56;
+  const primaryMinimum = 56;
   expect(
     geometry.primary[0]!.height,
     `${geometry.primary[0]!.name} must retain the adaptive enlarged primary target`,

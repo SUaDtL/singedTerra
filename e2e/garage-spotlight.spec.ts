@@ -103,14 +103,20 @@ async function expectGarageLayout(page: Page): Promise<void> {
   const bay = await visibleLayoutBox(page.locator('.lobby-preview'));
   expect(bay.width).toBeGreaterThanOrEqual(180);
   expect(bay.height).toBeGreaterThanOrEqual(160);
-  const scrollOwner = await page.locator('.lobby-hotseat-scroll').evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-    overflowY: getComputedStyle(element).overflowY,
-  }));
+  const scrollOwner = await page.locator('.preparation-frame__body').evaluate((element) => {
+    const retainedLane = element.querySelector<HTMLElement>('.lobby-hotseat-scroll');
+    if (!retainedLane) throw new Error('Local preparation lost its retained setup lane');
+    return {
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      overflowY: getComputedStyle(element).overflowY,
+      retainedOverflowY: getComputedStyle(retainedLane).overflowY,
+    };
+  });
   expect(scrollOwner.clientHeight).toBeGreaterThan(0);
   expect(scrollOwner.scrollHeight).toBeGreaterThanOrEqual(scrollOwner.clientHeight);
   expect(scrollOwner.overflowY).toBe('auto');
+  expect(scrollOwner.retainedOverflowY).toBe('visible');
 
   const spotlightSelectors = [
     '.lobby-preview__spotlight',
@@ -148,7 +154,12 @@ async function expectGarageLayout(page: Page): Promise<void> {
     page,
     page.getByRole('button', { name: 'Deploy local battle' }),
   );
-  expectSeparated(bay, start);
+  const body = await visibleLayoutBox(page.locator('.preparation-frame__body'));
+  const dock = await visibleLayoutBox(page.locator('.preparation-frame__dock'));
+  expectSeparated(body, dock);
+  expectContained(start, dock, 'deployment primary action');
+  expect(bay.left).toBeGreaterThanOrEqual(body.left - LAYOUT_TOLERANCE);
+  expect(bay.right).toBeLessThanOrEqual(body.right + LAYOUT_TOLERANCE);
 
   const garages = page.locator('.lobby-garage:visible');
   await expect(garages).toHaveCount(2);

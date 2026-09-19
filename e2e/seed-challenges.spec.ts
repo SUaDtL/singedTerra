@@ -37,8 +37,11 @@ for (const [code, title, seed] of [
     const receiverGeometry = await page.locator('.lobby-deployment').evaluate((deployment) => {
       const masthead = deployment.querySelector<HTMLElement>('.lobby-deployment__masthead');
       const workspace = deployment.querySelector<HTMLElement>('.command-center__workspace-host');
+      const frame = deployment.querySelector<HTMLElement>('[data-ui="seed-challenge"]');
+      const preparationBody = frame?.querySelector<HTMLElement>('.preparation-frame__body');
+      const dock = frame?.querySelector<HTMLElement>('.preparation-frame__dock');
       const challenge = deployment.querySelector<HTMLElement>('[data-ui="seed-challenge"]');
-      if (!masthead || !workspace || !challenge) {
+      if (!masthead || !workspace || !frame || !preparationBody || !dock || !challenge) {
         throw new Error('Missing challenge receiver structure');
       }
       const bounds = (element: HTMLElement) => element.getBoundingClientRect().toJSON();
@@ -46,31 +49,35 @@ for (const [code, title, seed] of [
         deployment: bounds(deployment),
         masthead: bounds(masthead),
         workspace: bounds(workspace),
+        preparationBody: bounds(preparationBody),
+        dock: bounds(dock),
         challenge: bounds(challenge),
         workspaceOverflowY: getComputedStyle(workspace).overflowY,
-        workspaceClientHeight: workspace.clientHeight,
-        workspaceScrollHeight: workspace.scrollHeight,
+        preparationOverflowY: getComputedStyle(preparationBody).overflowY,
+        preparationClientHeight: preparationBody.clientHeight,
+        preparationScrollHeight: preparationBody.scrollHeight,
       };
     });
     expect(receiverGeometry.workspace.top, 'challenge workspace begins below the command masthead')
       .toBeGreaterThanOrEqual(receiverGeometry.masthead.bottom - 1);
     expect(receiverGeometry.workspace.bottom, 'workspace stays inside deployment preparation')
       .toBeLessThanOrEqual(receiverGeometry.deployment.bottom + 1);
-    expect(receiverGeometry.challenge.top, 'challenge callout begins inside its scroll lane')
+    expect(receiverGeometry.challenge.top, 'challenge frame begins inside its workspace')
       .toBeGreaterThanOrEqual(receiverGeometry.workspace.top - 1);
     expect(receiverGeometry.challenge.left, 'challenge callout begins inside its workspace')
       .toBeGreaterThanOrEqual(receiverGeometry.workspace.left - 1);
     expect(receiverGeometry.challenge.right, 'challenge callout width stays inside its workspace')
       .toBeLessThanOrEqual(receiverGeometry.workspace.right + 1);
-    expect(receiverGeometry.workspaceOverflowY).toBe('auto');
-    expect(receiverGeometry.workspaceScrollHeight)
-      .toBeGreaterThanOrEqual(receiverGeometry.workspaceClientHeight);
-    for (const content of [challengeTitle, challengeObjective, challengeSeed, start]) {
+    expect(receiverGeometry.workspaceOverflowY).toBe('hidden');
+    expect(receiverGeometry.preparationOverflowY).toBe('auto');
+    expect(receiverGeometry.preparationScrollHeight)
+      .toBeGreaterThanOrEqual(receiverGeometry.preparationClientHeight);
+    for (const content of [challengeObjective, challengeSeed]) {
       await content.scrollIntoViewIfNeeded();
       await expect(content).toBeInViewport();
       const metrics = await content.evaluate((target) => {
-        const workspace = target.closest<HTMLElement>('.command-center__workspace-host');
-        if (!workspace) throw new Error('Missing challenge scroll owner');
+        const workspace = target.closest<HTMLElement>('.preparation-frame__body');
+        if (!workspace) throw new Error('Missing challenge preparation-body scroll owner');
         const box = target.getBoundingClientRect();
         const owner = workspace.getBoundingClientRect();
         return {
@@ -89,6 +96,21 @@ for (const [code, title, seed] of [
       expect(metrics.font, `${await content.textContent()} remains readable`)
         .toBeGreaterThanOrEqual(10.5);
     }
+    await challengeTitle.scrollIntoViewIfNeeded();
+    await expect(challengeTitle).toBeInViewport();
+    await start.scrollIntoViewIfNeeded();
+    await expect(start).toBeInViewport({ ratio: 1 });
+    const dockContainment = await start.evaluate((target) => {
+      const dock = target.closest<HTMLElement>('.preparation-frame__dock');
+      if (!dock) throw new Error('Challenge launch lost its reserved action dock');
+      const targetBox = target.getBoundingClientRect();
+      const dockBox = dock.getBoundingClientRect();
+      return { target: targetBox.toJSON(), dock: dockBox.toJSON() };
+    });
+    expect(dockContainment.target.left).toBeGreaterThanOrEqual(dockContainment.dock.left - 1);
+    expect(dockContainment.target.right).toBeLessThanOrEqual(dockContainment.dock.right + 1);
+    expect(dockContainment.target.top).toBeGreaterThanOrEqual(dockContainment.dock.top - 1);
+    expect(dockContainment.target.bottom).toBeLessThanOrEqual(dockContainment.dock.bottom + 1);
     const geometry = await start.boundingBox();
     if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
       expect(geometry!.height).toBeGreaterThanOrEqual(44);

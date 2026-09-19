@@ -59,16 +59,19 @@ async function openVerifiedPreparation(page: Page, testInfo: TestInfo): Promise<
   await expect(operationSelector.getByRole('tab', { name: 'Deployment orders', exact: true }))
     .toHaveAttribute('aria-selected', 'false');
   const trial = page.getByRole('region', { name: 'Crosswind Qualification verified trial' });
-  const primary = trial.getByRole('button', { name: 'Check availability and start', exact: true });
+  const frame = page.locator('[data-multiplayer-command-view="verified-operations"] .preparation-frame');
+  const body = frame.locator('.preparation-frame__body');
+  const dock = frame.locator('.preparation-frame__dock');
+  const primary = dock.getByRole('button', { name: 'Check availability and start', exact: true });
   await expect(trial).toBeVisible();
   await expect(page.locator('.lobby-verified-deployment')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Start verified deployment', exact: true })).toHaveCount(0);
   await operationSelector.scrollIntoViewIfNeeded();
-  await expectContained(operationSelector, page.locator('.lobby-hotseat-scroll'), 'verified operation selector');
+  await expectContained(operationSelector, body, 'verified operation selector');
   await page.screenshot({ path: testInfo.outputPath('verified-challenge-selection.png') });
   await primary.scrollIntoViewIfNeeded();
   await expect(primary).toBeInViewport({ ratio: 1 });
-  await expectContained(primary, trial, 'qualification primary action');
+  await expectContained(primary, dock, 'qualification primary action');
   await page.screenshot({ path: testInfo.outputPath('verified-challenge-preparation.png') });
 }
 
@@ -162,7 +165,9 @@ for (const scenario of [
     }]);
     await returnToPreparation.click();
     await expect(page.locator('#lobby')).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Crosswind Qualification verified trial' }).locator('button:focus'))
+    await expect(page.locator(
+      '[data-multiplayer-command-view="verified-operations"] .preparation-frame__dock button:focus',
+    ))
       .toHaveCount(1);
   });
 }
@@ -202,7 +207,9 @@ test('[mocked network fixture] disabled allocation stays in preparation without 
   await page.getByRole('button', { name: 'Check availability and start', exact: true }).click();
   const challenge = page.getByRole('region', { name: 'Crosswind Qualification verified trial' });
   await expect(challenge).toContainText('Trial starts are currently disabled by the verified backend');
-  await expect(challenge.getByRole('button', { name: 'Check availability again', exact: true })).toBeEnabled();
+  await expect(page.locator(
+    '[data-multiplayer-command-view="verified-operations"] .preparation-frame__dock',
+  ).getByRole('button', { name: 'Check availability again', exact: true })).toBeEnabled();
   await expect(page.locator('#lobby')).toBeVisible();
   expect(fixture.requests.start).toHaveLength(1);
   expect(fixture.requests.get).toHaveLength(0);

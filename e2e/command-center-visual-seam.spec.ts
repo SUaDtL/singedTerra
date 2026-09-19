@@ -84,7 +84,7 @@ test.describe('T11 command-center production visual seam', () => {
     expect(resilientText.whiteSpace).toBe('normal');
 
     const longLabel = await page.locator('.command-center__item-label').evaluate((element) => {
-      element.textContent = 'Ash Road Expedition with an Improbably Long Campaign Designation';
+      element.textContent = 'Ash Road Expedition with an Improbably Long Campaign Designation and Extended Theater Command';
       const item = element.closest<HTMLElement>('.command-center__item')!;
       const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
       return {
@@ -100,12 +100,18 @@ test.describe('T11 command-center production visual seam', () => {
     const scrollOwners = await page.locator('.command-center').evaluate((element) => {
       const library = element.querySelector<HTMLElement>('.command-center__library-items')!;
       const workspace = element.querySelector<HTMLElement>('.command-center__workspace-host')!;
+      const preparationBody = element.querySelector<HTMLElement>('.preparation-frame__body')!;
       return {
         library: getComputedStyle(library).overflowY,
         workspace: getComputedStyle(workspace).overflowY,
+        preparationBody: getComputedStyle(preparationBody).overflowY,
       };
     });
-    expect(scrollOwners).toEqual({ library: 'visible', workspace: 'auto' });
+    expect(scrollOwners).toEqual({
+      library: 'hidden',
+      workspace: 'hidden',
+      preparationBody: 'auto',
+    });
   });
 
   test('keeps compact, portrait, and 200%-zoom-equivalent layouts contained', async ({ page }) => {
@@ -136,11 +142,15 @@ test.describe('T11 command-center production visual seam', () => {
         const title = card.querySelector<HTMLElement>('.lobby-deployment__masthead > h1')!;
         const account = card.querySelector<HTMLElement>('.lobby-deployment__masthead > .account-panel')!;
         const workspace = card.querySelector<HTMLElement>('.command-center__workspace-host')!;
+        const preparationBody = card.querySelector<HTMLElement>('.preparation-frame__body')!;
         const titleBox = title.getBoundingClientRect();
         const accountBox = account.getBoundingClientRect();
         return {
           cardOverflowY: card.scrollHeight - card.clientHeight,
           workspaceOverflowY: workspace.scrollHeight - workspace.clientHeight,
+          workspaceOverflowStyle: getComputedStyle(workspace).overflowY,
+          preparationOverflowY: preparationBody.scrollHeight - preparationBody.clientHeight,
+          preparationOverflowStyle: getComputedStyle(preparationBody).overflowY,
           headerSeparated: titleBox.right <= accountBox.left + 1,
           rankDisplay: (() => {
             const rank = card.querySelector<HTMLElement>('.account-panel__commander-rank-row');
@@ -150,8 +160,14 @@ test.describe('T11 command-center production visual seam', () => {
       });
       expect(portrait.cardOverflowY, `${viewport.label} card must not become a second scroll owner`)
         .toBeLessThanOrEqual(1);
-      expect(portrait.workspaceOverflowY, `${viewport.label} workspace owns portrait overflow`)
+      expect(portrait.workspaceOverflowY, `${viewport.label} outer workspace stays inert`)
+        .toBeLessThanOrEqual(1);
+      expect(portrait.workspaceOverflowStyle, `${viewport.label} outer workspace clips its mounted frame`)
+        .toBe('hidden');
+      expect(portrait.preparationOverflowY, `${viewport.label} preparation body owns portrait overflow`)
         .toBeGreaterThan(0);
+      expect(portrait.preparationOverflowStyle, `${viewport.label} preparation body is the scroll lane`)
+        .toBe('auto');
       expect(portrait.headerSeparated, `${viewport.label} brand and commander chrome do not overlap`)
         .toBe(true);
       if (portrait.rankDisplay !== null) expect(portrait.rankDisplay).toBe('none');

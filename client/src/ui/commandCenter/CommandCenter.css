@@ -4037,6 +4037,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Compact workspaces lead with the task. The vehicle or battlefield preview
+     remains available below the form/briefing instead of consuming the first
+     visible body viewport. */
+  #lobby .preparation-frame__body-layout--online > .preparation-frame__mode-content,
+  #lobby .preparation-frame__body-layout--verified > .preparation-frame__mode-content {
+    order: -1;
+  }
+
   #lobby .preparation-frame__body-layout :is(.lobby-preview, .command-center__battlefield-projection) {
     height: clamp(220px, 34vh, 360px);
   }
@@ -4137,6 +4145,10 @@
 
   #lobby .preparation-frame__dock-copy {
     display: none;
+  }
+
+  #lobby .preparation-frame__dock-copy:has(.lobby-error:not(:empty)) {
+    display: grid;
   }
 
   /* State-bearing campaign messages remain part of the decision. Keep them in
@@ -4333,14 +4345,18 @@
 
   #lobby .command-center .preparation-frame__dock,
   #lobby .multiplayer-command__local-workspace .preparation-frame__dock {
-    min-height: 54px;
+    min-height: 68px;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
-    padding: 4px 8px;
+    padding: 5px 8px;
   }
 
   #lobby .preparation-frame__dock-copy {
     display: none;
+  }
+
+  #lobby .preparation-frame__dock-copy:has(.lobby-error:not(:empty)) {
+    display: grid;
   }
 
   #lobby .campaign-command:is(
@@ -4359,6 +4375,26 @@
 
   #lobby .command-center .preparation-frame__primary-action {
     min-height: 56px;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__content {
+    min-height: 0;
+    height: auto;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__inspection {
+    min-height: 280px;
+    max-height: 400px;
+  }
+
+  #lobby .multiplayer-command__local-workspace
+    .preparation-frame .lobby-local-preparation__inspection > .lobby-preview--inspection {
+    min-height: 280px;
+    height: 100%;
+    max-height: 400px;
+    box-sizing: border-box;
   }
 }
 
@@ -4429,14 +4465,14 @@
 
   #lobby .command-center .preparation-frame__dock,
   #lobby .multiplayer-command__local-workspace .preparation-frame__dock {
-    min-height: 53px;
-    padding-block: 3px;
+    min-height: 68px;
+    padding-block: 5px;
   }
 
   #lobby .command-center
     .command-center__primary-action.preparation-frame__primary-action {
-    height: 46px;
-    min-height: 46px;
+    height: 56px;
+    min-height: 56px;
     box-sizing: border-box;
   }
 }
