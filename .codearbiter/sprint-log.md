@@ -4866,3 +4866,11 @@ The fresh R07 review found no remaining CPU defect but identified a supported sa
 - Campaign now owns one mission board followed by one explicit full-width support stack. Skirmish owns one briefing board with its facts attached below a bounded scene. Outer and nested split thresholds follow their child minima; no offsets, overflow masking, or typography shrinkage conceal the transition failures.
 - Fresh proof passes the five-case body-layout regression matrix across desktop, Pixel touch, and small-window projects; the full 2,508-test client suite; coverage; typecheck; production build; complete deterministic checks; zero-vulnerability audit; empty secret scan; and diff hygiene. The retained correction packet contains 84 matched DPR1 captures and a no-reload resize recording. T47 remains in progress for commit, PR update, exact-head CI, and the unchanged G02 stop. No Astra review, merge, or deployment was used.
 - The required non-Astra CodeArbiter review fleet completed with both coverage and architecture units DONE. The funnel verdict is PASS with zero blocking, deferrable, non-blocking, or incomplete findings.
+
+## 2026-09-19 Command Center T47 hosted compact correction - confidence: high - intent: keep Skirmish field orders attached and reachable at the exact CI geometries
+
+- Hosted CI found the compact Skirmish field order outside the initial viewport in both touch and small-window projects.
+- Local reproduction kept the viewport assertion unchanged and traced the defect to Campaign container rules matching Skirmish plus an intrinsically expanding short-landscape scene row.
+- The corrected cascade excludes Skirmish from Campaign breakpoints and gives the compact briefing a bounded scene row followed by its max-content facts row above the unchanged shared dock.
+- Fresh proof: both exact failures pass, the combined browser matrix passes 39 of 39, and the 84-image packet plus resize recording were regenerated on the sole 4173 listener.
+- T47 remains in progress until the corrective PR head is green. G02 remains pending owner acceptance. No Astra review, merge, or deployment was performed.

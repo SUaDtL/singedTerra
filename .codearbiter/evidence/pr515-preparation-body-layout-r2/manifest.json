@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T04:46:31.137Z",
+  "generatedAt": "2026-09-19T05:31:25.803Z",
   "baseUrl": "http://localhost:4173/",
   "records": [
     {
@@ -1197,7 +1197,7 @@
         "height": 720,
         "scale": 1
       },
-      "sha256": "0b93c6cad4bba576b065c9d79d568d214e4df7feaa92dbe0f70a0b882a99715e"
+      "sha256": "3580ef80b7f113b6f3a10404c3bcbb5e36534f14c8a83fa4e91ef829b3765002"
     },
     {
       "file": "mission-board-stacked--skirmish-crosswind--820x720.png",
@@ -1216,7 +1216,7 @@
         "height": 720,
         "scale": 1
       },
-      "sha256": "67b496d048549e7e856a074af6d530ba3e2bb86dba0d4782151143e55bca4cf7"
+      "sha256": "d923bd336b54a0e247686288772b0680210fdca59c45676c2a15b4a796995759"
     },
     {
       "file": "mission-board-stacked--local-battle--820x720.png",
@@ -1425,7 +1425,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "b552b05232b0788e1ab46b20a4d3b28f7e2366666ec75448c35dcc2ac9ae8eaf"
+      "sha256": "568d442950732559156e2f2c0924214082e523a2e1082c51d5fb95d1555b4fac"
     },
     {
       "file": "compact--skirmish-crosswind--844x390.png",
@@ -1444,7 +1444,7 @@
         "height": 390,
         "scale": 1
       },
-      "sha256": "17dc03f6e72b2d8b419ccb9bc9e772fcc4ccc2678caea00cf435600ea748bf6c"
+      "sha256": "4c4778f71d8a6c2be4f0e63ff4a94b270c8c6beb13fe18c6de992efc34cb707a"
     },
     {
       "file": "compact--local-battle--844x390.png",

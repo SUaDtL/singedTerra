@@ -4055,13 +4055,13 @@
    can both keep their declared minimums. Stack before either nested grid is
    forced into an implicit overflow track. */
 @container preparation-workspace (max-width: 1140px) {
-  #lobby .campaign-command.preparation-frame > .preparation-frame__body
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) > .preparation-frame__body
     > .preparation-frame__body-inner {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  #lobby .campaign-command.preparation-frame .campaign-command__decision,
-  #lobby .campaign-command.preparation-frame .campaign-command__supporting {
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__decision,
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__supporting {
     grid-column: 1;
     grid-row: auto;
   }
@@ -4071,14 +4071,14 @@
    room than the old 560px threshold allowed. Below this width its scene,
    objective, and route become one explicit readable sequence. */
 @container preparation-workspace (max-width: 780px) {
-  #lobby .campaign-command.preparation-frame .campaign-command__decision {
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__decision {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto auto;
   }
 
-  #lobby .campaign-command.preparation-frame .campaign-command__scene,
-  #lobby .campaign-command.preparation-frame .campaign-command__objective-panel,
-  #lobby .campaign-command.preparation-frame .campaign-command__route-board {
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__scene,
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__objective-panel,
+  #lobby .campaign-command.preparation-frame:not(.skirmish-command) .campaign-command__route-board {
     grid-column: 1;
     grid-row: auto;
   }
@@ -4374,6 +4374,15 @@
     display: none;
   }
 
+  #lobby .skirmish-command.preparation-frame .campaign-command__decision {
+    grid-template-rows: 160px max-content;
+  }
+
+  #lobby .skirmish-command.preparation-frame .campaign-command__scene {
+    min-height: 160px;
+    height: auto;
+  }
+
   #lobby .preparation-frame__body-inner {
     padding-block: 8px;
   }
@@ -4496,6 +4505,19 @@
   #lobby .preparation-frame .preparation-frame__title,
   #lobby .preparation-frame__heading .campaign-command__mission {
     font-size: 17px;
+  }
+
+  /* Keep the authored field order in the first short-landscape briefing fold.
+     The shared dock leaves a deliberately shallow body at this height, so the
+     scene row must yield instead of preserving the taller compact minimum and
+     pushing its attached objective below the viewport. */
+  #lobby .skirmish-command.preparation-frame .campaign-command__decision {
+    grid-template-rows: 54px max-content;
+  }
+
+  #lobby .skirmish-command.preparation-frame .campaign-command__scene {
+    min-height: 54px;
+    height: auto;
   }
 
   #lobby .command-center .preparation-frame__dock,
