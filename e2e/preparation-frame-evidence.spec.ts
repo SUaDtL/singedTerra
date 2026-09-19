@@ -17,6 +17,10 @@ const BASE_URL = process.env['E2E_LIVE_URL'] ?? 'http://localhost:4173/';
 const GEOMETRIES = Object.freeze([
   { label: 'wide', width: 3440, height: 1440 },
   { label: 'intermediate', width: 1440, height: 900 },
+  { label: 'campaign-split-wide', width: 1220, height: 900 },
+  { label: 'campaign-split-stacked', width: 1180, height: 900 },
+  { label: 'mission-board-wide', width: 900, height: 720 },
+  { label: 'mission-board-stacked', width: 820, height: 720 },
   { label: 'compact', width: 844, height: 390 },
 ] as const);
 

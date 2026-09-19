@@ -399,3 +399,23 @@ and genuine callbacks remain authoritative, but their visual preparation contrac
     review, not isolated containment assertions, is the acceptance authority.
 45. **AC-45** The revised unified set returns to `G02` for maintainer visual acceptance. The draft PR
     remains open and unmerged, and no deployment is authorized.
+
+## G02 preparation body-layout regression correction — 2026-09-19
+
+The maintainer rejected the unified set after the shared frame exposed obsolete Campaign and Skirmish
+grid-placement rules from their previous parents. The frame, dock, product owners, and accepted visual
+system remain authoritative. This correction removes the inherited placement assumptions and composes
+the two mission-oriented bodies deliberately within the shared viewport.
+
+46. **AC-46** Campaign's loadout and briefing form one explicit full-width supporting stack beneath the
+    mission board. Skirmish's facts are an attached part of its briefing board. Neither view relies on a
+    named grid area or row declared only by a superseded parent, and no offset or margin simulates that
+    ownership.
+47. **AC-47** Outer and nested split-to-stack thresholds follow the real minimum widths of their child
+    tracks. At transition widths, ordinary text remains readable, required content neither clips nor
+    creates horizontal overflow, and the correction does not hide overflow or shrink typography to
+    satisfy geometry tests.
+48. **AC-48** Matched evidence returns Campaign new-run/resume and Skirmish ordinary/richer states at
+    wide, intermediate, compact, and transition-adjacent widths, with Local and Online alongside them as
+    shared-frame stability references. A no-reload resize journey preserves edited state and focus. The
+    draft PR then returns to `G02`; no further aesthetic propagation, merge, or deployment is authorized.

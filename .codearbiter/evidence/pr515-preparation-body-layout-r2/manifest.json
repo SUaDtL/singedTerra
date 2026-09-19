@@ -1,0 +1,1602 @@
+{
+  "generatedAt": "2026-09-19T04:46:31.137Z",
+  "baseUrl": "http://localhost:4173/",
+  "records": [
+    {
+      "file": "wide--campaign-empty--3440x1440.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "0ce435675d966e3ea5e81e09551fe05fa1b334e2e8f19db4c49a95ea566a8f28"
+    },
+    {
+      "file": "wide--campaign-resume--3440x1440.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "6770ce1593450bc528242a1ef96e0e2ce4dc2db3fbb25203ce8e10353c42bc18"
+    },
+    {
+      "file": "wide--skirmish-standard--3440x1440.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "df5b3f006bd2a73fefed6edc47ea37dd0688dd65aa98d9da55256f586d961c9a"
+    },
+    {
+      "file": "wide--skirmish-crosswind--3440x1440.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "05e2490a5f15271e721871c4954120a2ad46fcf637b0e28cfe61e9cada35da33"
+    },
+    {
+      "file": "wide--local-battle--3440x1440.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "9df2540446546febdb238a4aeb1b6cc9faacd9b94e81bf54a752bdd08e771368"
+    },
+    {
+      "file": "wide--local-four-player--3440x1440.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "9d88c41148e8833d750228177f4b513eceedc353ba972ef1db9d6a160a49414c"
+    },
+    {
+      "file": "wide--verified-operations--3440x1440.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "bfa0be32644306f47915b91a1b8d819e16300a2b73b8e3f98c11b0b5a6f4c826"
+    },
+    {
+      "file": "wide--verified-qualification--3440x1440.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "002b98c3cc06ddcf75ead0acd82f3a2988efe2d0b5f2d7fac734203167ec80e3"
+    },
+    {
+      "file": "wide--online-create--3440x1440.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "dc1506cfbdce739214e2ccf0de1e99852365dd04904745ccc6af25a53de80e3f"
+    },
+    {
+      "file": "wide--online-join--3440x1440.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "854e93c83f0a6c18708d9d6218d3cc468e6c963689cd23de38dff6002f441bd5"
+    },
+    {
+      "file": "wide--online-browse--3440x1440.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "3d763da6a38cc18fbda7d43f88e2e88e728d8ceb9f3b49f93a25c5d00d0a6da6"
+    },
+    {
+      "file": "wide--online-waiting--3440x1440.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "png": {
+        "width": 3440,
+        "height": 1440
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 3440,
+        "height": 1440,
+        "scale": 1
+      },
+      "sha256": "514fed0afd2ad4b5bd4ec6e3187723e04812b648819d3862ab84e25eaa32f2d0"
+    },
+    {
+      "file": "intermediate--campaign-empty--1440x900.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "68915a9167f459293e4c866cffbce452aadaffbe99b6dc038083c728c4e5e904"
+    },
+    {
+      "file": "intermediate--campaign-resume--1440x900.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "55778c82c8eda4cc6495ac5a83fd18e8331fcbb228f2fab7eebbab20c32f7c6c"
+    },
+    {
+      "file": "intermediate--skirmish-standard--1440x900.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "6fdf49e6d4e24fee6ee0e0eecef7a19f7793a6d26ec590e148c43bc4e1eb9776"
+    },
+    {
+      "file": "intermediate--skirmish-crosswind--1440x900.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "145689e5325b3c27b2c7594984806d3906029446551a3b1be1f5ed6b6e722a16"
+    },
+    {
+      "file": "intermediate--local-battle--1440x900.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "015af67910d5c72a0782fc42ecf2dcc838c70f99e5cdbdc0c27354deddeee65b"
+    },
+    {
+      "file": "intermediate--local-four-player--1440x900.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "3af61042aa28c4f39b435a1e790b3dc6e2118bec3bda080bfab4450ba5b5a8ac"
+    },
+    {
+      "file": "intermediate--verified-operations--1440x900.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "88cb5c221b414331c475fa8c6d26725eb06762c33c38d568e01681aff59b5ac4"
+    },
+    {
+      "file": "intermediate--verified-qualification--1440x900.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "0639d5156b4c203800f9bc5977595729db04a6c9af29fbfb6a2fbb6a6acc98ad"
+    },
+    {
+      "file": "intermediate--online-create--1440x900.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "0b8db8c84439efa81f66551ed4bafea9b0ee21baddb279bd5df49abce4b18988"
+    },
+    {
+      "file": "intermediate--online-join--1440x900.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "66b0f9a61bf7a6395cb658d5bdcb2306b1f0081e9f64767380d092dd715cf016"
+    },
+    {
+      "file": "intermediate--online-browse--1440x900.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "fe6ad946114ae0de9279466bb70321dab1c05ebbde99061b670a555d94547336"
+    },
+    {
+      "file": "intermediate--online-waiting--1440x900.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1440,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "1972d319507a6a17c3c925bd2ebc89b673cf72c7d558c19035ec91d7db07e0a8"
+    },
+    {
+      "file": "campaign-split-wide--campaign-empty--1220x900.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "08a2663733b6ed0b37099c21302554c323603385f6a7577b9179b8bf9b745973"
+    },
+    {
+      "file": "campaign-split-wide--campaign-resume--1220x900.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "1987574d71d2619125dc63d33e3a34a58faf2892fed2503f38522902e7f162b3"
+    },
+    {
+      "file": "campaign-split-wide--skirmish-standard--1220x900.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "788068bdb823f9ce26c034fb792ab9abfe562c35796d1b0b76740cef6459e190"
+    },
+    {
+      "file": "campaign-split-wide--skirmish-crosswind--1220x900.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "b32705d554c98eae14b54e61d3f7b23b96e8b920fb81bbb4d24830583e415249"
+    },
+    {
+      "file": "campaign-split-wide--local-battle--1220x900.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "f6110e632fee2f91f46e49647d5cb5c6055a5e62c66462a5047426f8790efd22"
+    },
+    {
+      "file": "campaign-split-wide--local-four-player--1220x900.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "5367fc4671da5cf3da6354fa33fc546122bd0c87771f7768f3697f1c9a28168e"
+    },
+    {
+      "file": "campaign-split-wide--verified-operations--1220x900.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "f44e73d41b2ef953aec83eb35a74ecc7779d7893d0af37919387de2e467268c5"
+    },
+    {
+      "file": "campaign-split-wide--verified-qualification--1220x900.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "935efab0eb76ea682ba399707c9d4a29893d6da2bdeebd95dd4896cc5c26e721"
+    },
+    {
+      "file": "campaign-split-wide--online-create--1220x900.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "4e1b22b95eb8a859567751aaaffa34a978825a34e0cb1d4cd214862c4fbc9bf2"
+    },
+    {
+      "file": "campaign-split-wide--online-join--1220x900.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "df4a1af88334a2de9a421b8b9e1e449a596793593be3e6e4f204d1a993aea617"
+    },
+    {
+      "file": "campaign-split-wide--online-browse--1220x900.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "eda2f199b1cc0c51778829b6f921c1afcd1d6379d0a02676ab55cbdc21d17098"
+    },
+    {
+      "file": "campaign-split-wide--online-waiting--1220x900.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 1220,
+        "height": 900
+      },
+      "png": {
+        "width": 1220,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1220,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "7f4b0d11558971f35a14a98de55e37128b7110517319454081f5d1795f24c1de"
+    },
+    {
+      "file": "campaign-split-stacked--campaign-empty--1180x900.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "7d8da07d9efe6262296a23d8cffa4d8924ac48098833220618966173c38308c2"
+    },
+    {
+      "file": "campaign-split-stacked--campaign-resume--1180x900.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "e60de5329c1a78b14e16e562124de0c8f2d8846ff9fe6e5a0aebb0e941a35fb5"
+    },
+    {
+      "file": "campaign-split-stacked--skirmish-standard--1180x900.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "cf084447d71d82ee4eea1e6088dbe5898b3b4a8bf803e85a6f558d11e9ba9cab"
+    },
+    {
+      "file": "campaign-split-stacked--skirmish-crosswind--1180x900.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "7f7b536f7fb2a9646e14857d380086d9c692ec2dcd7a93f6537e899f0ae85ddf"
+    },
+    {
+      "file": "campaign-split-stacked--local-battle--1180x900.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "eded638061dd2b3d72b82942aa11d94e0a83958cd922ee180bdf417cde4989a2"
+    },
+    {
+      "file": "campaign-split-stacked--local-four-player--1180x900.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "32f0ebab424f387a19a0d93c98d532213f6295635ab78fe5aab3f5081603fdd6"
+    },
+    {
+      "file": "campaign-split-stacked--verified-operations--1180x900.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "aa2de24b90d032a430f2a013a7b8b15c3d1273ddd52ebdce54172e938a7474fe"
+    },
+    {
+      "file": "campaign-split-stacked--verified-qualification--1180x900.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "b38455496d8efd39d96c577ddf1bd6916be227fd14189ac1d093a34cdd500097"
+    },
+    {
+      "file": "campaign-split-stacked--online-create--1180x900.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "c64178b80fb11b494999b4849fe8c79da7e6d4c60b19f020640e666dcd5a8b0d"
+    },
+    {
+      "file": "campaign-split-stacked--online-join--1180x900.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "5e78489eafe1df425630712786dbcbc4bb3637f39286486046b18539aa09e81a"
+    },
+    {
+      "file": "campaign-split-stacked--online-browse--1180x900.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "928ee1ce8eb5ba3214407686a0690470ae23120c19b682a635ba832d4e3c825d"
+    },
+    {
+      "file": "campaign-split-stacked--online-waiting--1180x900.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "png": {
+        "width": 1180,
+        "height": 900
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 1180,
+        "height": 900,
+        "scale": 1
+      },
+      "sha256": "78504475d0a77f152a2df88b47e06fe5939e7e77885130c6e0c46f015c32fb87"
+    },
+    {
+      "file": "mission-board-wide--campaign-empty--900x720.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "7acf46486c256c8b94b3184b40c42a4950a06721c1953e2dca26ebe96ea94102"
+    },
+    {
+      "file": "mission-board-wide--campaign-resume--900x720.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "e89fa42142b98dbd0bc14679191bbc6f69f94934f48bf81d7224903833ce6a4b"
+    },
+    {
+      "file": "mission-board-wide--skirmish-standard--900x720.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "8bc2a748651ae316f9e82c05651a43cd9c283e0ea63620c03a8118cd04eeb996"
+    },
+    {
+      "file": "mission-board-wide--skirmish-crosswind--900x720.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "352443603e683934a586f1df7cbcf3adb553ca4e75cd16efc581216b4654c186"
+    },
+    {
+      "file": "mission-board-wide--local-battle--900x720.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "0ed37c5381afc97b5fa173b8667a32da2acad1ab4084c109fc1039b4267aaf5e"
+    },
+    {
+      "file": "mission-board-wide--local-four-player--900x720.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "7ba5a051f18eff90bb3189ad6af62d8fa562345eceec3996f0994da1843e8ab6"
+    },
+    {
+      "file": "mission-board-wide--verified-operations--900x720.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "9d8c8f1e201cfab8ae98d683a1f8f02a9900340ab2970a4f0d56962f4ebafedd"
+    },
+    {
+      "file": "mission-board-wide--verified-qualification--900x720.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "b99823e783d8d40d2e0235e85b632f2b51061e9217c8b4a8cb5040121696cc33"
+    },
+    {
+      "file": "mission-board-wide--online-create--900x720.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "12d3a01cf172d1110be208558a3c2af58fa22a918c7a4411ade2039c45d519a1"
+    },
+    {
+      "file": "mission-board-wide--online-join--900x720.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "9bc51fe1cd7ebec0832a00efed0d52bdbcb50cb103a76056bbda127778a41be8"
+    },
+    {
+      "file": "mission-board-wide--online-browse--900x720.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "49d76e9ae13989db1525cd4c9544841cae7b9bdcd26e9909e81d6591eab940fa"
+    },
+    {
+      "file": "mission-board-wide--online-waiting--900x720.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 900,
+        "height": 720
+      },
+      "png": {
+        "width": 900,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 900,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "ac724bc4324a7f00930e51577940b3548c6a7c1dfd5b012dfacc9be162d21330"
+    },
+    {
+      "file": "mission-board-stacked--campaign-empty--820x720.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "29a2aad2be3b18a7ec99a734a3a90b25c4888c96157ccbc384df8113bf5f7bb5"
+    },
+    {
+      "file": "mission-board-stacked--campaign-resume--820x720.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "48f70ec7cd85f2d15e18e309dacf95efbff1cfd6889fd381bcc4be832321051f"
+    },
+    {
+      "file": "mission-board-stacked--skirmish-standard--820x720.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "0b93c6cad4bba576b065c9d79d568d214e4df7feaa92dbe0f70a0b882a99715e"
+    },
+    {
+      "file": "mission-board-stacked--skirmish-crosswind--820x720.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "67b496d048549e7e856a074af6d530ba3e2bb86dba0d4782151143e55bca4cf7"
+    },
+    {
+      "file": "mission-board-stacked--local-battle--820x720.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "766ec7594e4fc94ad955f8ac4e2e553f2823df56b18b5be23bf5e84c0e0313e1"
+    },
+    {
+      "file": "mission-board-stacked--local-four-player--820x720.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "b2bb6400dbf50c0db9b810e23789bd45a69aff0b1304306b7dd915ec08d61865"
+    },
+    {
+      "file": "mission-board-stacked--verified-operations--820x720.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "6030666ed1b1d733e97b01696d4270730a27c8a15bd726a066a9eac001c6fc41"
+    },
+    {
+      "file": "mission-board-stacked--verified-qualification--820x720.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "8c418d8c64215ea47e866dce54d400a4659af9bfa357eda9b23daf631719ce67"
+    },
+    {
+      "file": "mission-board-stacked--online-create--820x720.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "f2e704ec3dc4ef4d22a19d9470a1ebc9293b5acaa33572048a05461a702720dc"
+    },
+    {
+      "file": "mission-board-stacked--online-join--820x720.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "777d4fc58c6827e5b4dea8ff90cdce8fcc96f219bb373cbfe8b3b187ba2e942d"
+    },
+    {
+      "file": "mission-board-stacked--online-browse--820x720.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "b1a2c647fc848fe5bfe1260495ef3d089572ff66e9cd15837f33adcc8b827469"
+    },
+    {
+      "file": "mission-board-stacked--online-waiting--820x720.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 820,
+        "height": 720
+      },
+      "png": {
+        "width": 820,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 820,
+        "height": 720,
+        "scale": 1
+      },
+      "sha256": "2f7d62515587cb4c92edf2889399c0071f3821f162cdfd23981e8a51082a6780"
+    },
+    {
+      "file": "compact--campaign-empty--844x390.png",
+      "state": "campaign-empty",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "411e27d9a71221e542db4b0ce6fb87359149591d4c5a76bbd0c6b2818ee64fa7"
+    },
+    {
+      "file": "compact--campaign-resume--844x390.png",
+      "state": "campaign-resume",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "91b32757ef8b13bd07021c10da040d9753cffa82ddf1e96e9eca736aaef857e3"
+    },
+    {
+      "file": "compact--skirmish-standard--844x390.png",
+      "state": "skirmish-standard",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "b552b05232b0788e1ab46b20a4d3b28f7e2366666ec75448c35dcc2ac9ae8eaf"
+    },
+    {
+      "file": "compact--skirmish-crosswind--844x390.png",
+      "state": "skirmish-crosswind",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "17dc03f6e72b2d8b419ccb9bc9e772fcc4ccc2678caea00cf435600ea748bf6c"
+    },
+    {
+      "file": "compact--local-battle--844x390.png",
+      "state": "local-battle",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "659873e22ce6412a02d0a7b8f9f615d00be29f8780163cf2b9cc0b502c5c9e3e"
+    },
+    {
+      "file": "compact--local-four-player--844x390.png",
+      "state": "local-four-player",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "bb7221c1a259d0ea123976dd3cf06337f7073eae8bc31c84f20467d80b441ce8"
+    },
+    {
+      "file": "compact--verified-operations--844x390.png",
+      "state": "verified-operations",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "3410484ea4b5073e97a3c3d68a80ff2f10d4bef9d03d1b1fb99a99c3c2c49ad0"
+    },
+    {
+      "file": "compact--verified-qualification--844x390.png",
+      "state": "verified-qualification",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "1b29ea8eb0cb8beb3997d9c613bab131b67da3621e1a0e8188ae7a17cdd88d5d"
+    },
+    {
+      "file": "compact--online-create--844x390.png",
+      "state": "online-create",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "bd13c46de830b8bcb4745dc7254f4a0d30ea1de125f33d3d5ed9f1716e7a5d02"
+    },
+    {
+      "file": "compact--online-join--844x390.png",
+      "state": "online-join",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "43159fc4ae125d18de6498b03479f73461bd9a7c204648034bc02019a5cb87be"
+    },
+    {
+      "file": "compact--online-browse--844x390.png",
+      "state": "online-browse",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "0b6fcf64bd24b7480c5e065dbc45c0235f14862f17a52d6ca5bea4efbe2d9637"
+    },
+    {
+      "file": "compact--online-waiting--844x390.png",
+      "state": "online-waiting",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "png": {
+        "width": 844,
+        "height": 390
+      },
+      "devicePixelRatio": 1,
+      "visualViewport": {
+        "width": 844,
+        "height": 390,
+        "scale": 1
+      },
+      "sha256": "1a9aa530e99c983bd02eae74cbfc7f2dac377f1d1e77062972712222ba3a02ae"
+    }
+  ]
+}

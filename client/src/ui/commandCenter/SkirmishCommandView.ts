@@ -163,7 +163,7 @@ export function createSkirmishCommandView(
   }
 
   const factsPanel = document.createElement('section');
-  factsPanel.className = 'campaign-command__loadout';
+  factsPanel.className = 'campaign-command__loadout skirmish-command__facts';
   const factsTitle = document.createElement('h3');
   factsTitle.className = 'campaign-command__loadout-title';
   factsTitle.textContent = 'Operation facts';
@@ -190,6 +190,8 @@ export function createSkirmishCommandView(
     }
   }
 
+  decision.append(factsPanel);
+
   const invalidChallenge = document.createElement('p');
   invalidChallenge.dataset.ui = 'seed-challenge-error';
   invalidChallenge.setAttribute('role', 'alert');
@@ -211,7 +213,7 @@ export function createSkirmishCommandView(
   createPreparationFrame(document, {
     root,
     headingContent: identity,
-    body: [decision, invalidChallenge, factsPanel],
+    body: [decision, invalidChallenge],
     dockLabel: 'Launch order',
     dockStatus: selection.kind === 'imported-challenge'
       ? `Validated seed ${selection.challenge.seed}`
